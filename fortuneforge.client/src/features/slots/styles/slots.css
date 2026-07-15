@@ -1,0 +1,381 @@
+.slot-game-frame {
+  position: relative;
+  width: min(100%, 90rem);
+  aspect-ratio: 3 / 2;
+  margin-inline: auto;
+  isolation: isolate;
+  filter: drop-shadow(0 2rem 2.5rem rgb(0 0 0 / 55%));
+}
+
+.slot-game-frame__art {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-game-frame__header {
+  position: absolute;
+  z-index: 4;
+  top: 2.5%;
+  left: 39.5%;
+  width: 21%;
+  height: 9%;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.slot-game-frame__header h1 {
+  max-width: 100%;
+  margin: 0;
+  overflow: hidden;
+  color: #1a1010;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.45rem, 1.2vw, 1.05rem);
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px rgb(255 230 157 / 55%);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slot-game-frame__visuals {
+  position: absolute;
+  z-index: 1;
+  inset: 19% 12.5% 17.5%;
+  display: grid;
+  place-items: center;
+}
+
+.slot-machine {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8%;
+  align-items: center;
+  gap: 1.5%;
+}
+
+.reel-window {
+  --reel-count: 6;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+}
+
+.reel-window__reels {
+  position: absolute;
+  z-index: 1;
+  inset: 23.3% 6.5% 23.7%;
+  display: grid;
+  grid-template-columns: repeat(var(--reel-count), minmax(0, 1fr));
+  gap: 1.25%;
+  overflow: hidden;
+}
+
+.reel-window__art {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-reel {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 8%;
+  background: #f3e5c9;
+  color: #17131d;
+}
+
+.slot-reel__surface {
+  position: absolute;
+  z-index: 0;
+  top: -6%;
+  left: -45%;
+  width: 190%;
+  height: 112%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-reel__content {
+  position: absolute;
+  z-index: 1;
+  inset: 2% 5%;
+}
+
+.slot-reel__symbols {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  transform: translateZ(0);
+  transform-origin: center;
+  will-change: filter, transform;
+}
+
+.slot-reel__symbols--spinning {
+  animation: reel-rush 110ms linear infinite alternate;
+  filter: blur(0.055rem) saturate(0.85);
+}
+
+.slot-reel__symbols--settling {
+  animation: reel-brake 180ms cubic-bezier(0.2, 0.7, 0.25, 1) both;
+  filter: blur(0.025rem);
+}
+
+.slot-reel__symbols--stopped {
+  animation: reel-land 230ms cubic-bezier(0.16, 0.9, 0.3, 1.25) both;
+}
+
+.slot-symbol {
+  position: relative;
+  width: 72%;
+  height: 92%;
+  place-self: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.slot-symbol__card {
+  position: absolute;
+  z-index: 0;
+  top: -6%;
+  left: -16%;
+  width: 132%;
+  height: 112%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.slot-symbol__rank {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(0.62rem, 2.15vw, 2.05rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 65%),
+    0 0.08em 0.1em rgb(28 15 19 / 25%);
+}
+
+.slot-symbol--2 .slot-symbol__rank,
+.slot-symbol--4 .slot-symbol__rank,
+.slot-symbol--6 .slot-symbol__rank {
+  color: #2b477c;
+}
+
+.slot-symbol--3 .slot-symbol__rank,
+.slot-symbol--5 .slot-symbol__rank {
+  color: #8d2936;
+}
+
+.slot-symbol--7 .slot-symbol__rank {
+  color: #bb1f27;
+  text-shadow:
+    0 2px 0 #ffd889,
+    0 0 0.18em rgb(255 185 43 / 60%);
+}
+
+.slot-symbol--ace .slot-symbol__rank {
+  color: #9a6315;
+  text-shadow:
+    0 1px 0 #fff1bd,
+    0 0 0.18em rgb(213 151 38 / 55%);
+}
+
+.spin-lever {
+  position: relative;
+  width: 100%;
+  height: 76%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #ffd978;
+  cursor: pointer;
+}
+
+.spin-lever__shaft {
+  position: absolute;
+  left: 50%;
+  top: 14%;
+  width: 14%;
+  height: 59%;
+  border: 1px solid #555;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #555, #f5f5f5 48%, #777);
+  box-shadow: 0.2rem 0.35rem 0.6rem rgb(0 0 0 / 48%);
+  transform: translateX(-50%);
+}
+
+.spin-lever__knob {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 2%;
+  width: 58%;
+  aspect-ratio: 1;
+  border: 2px solid #6e090f;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #ff9891, #c41e2b 48%, #65070d 88%);
+  box-shadow:
+    inset -0.2rem -0.25rem 0.35rem rgb(52 0 5 / 45%),
+    0 0.35rem 0.7rem rgb(0 0 0 / 50%);
+  transform: translateX(-50%);
+}
+
+.spin-lever__label {
+  position: absolute;
+  inset-inline: -15%;
+  bottom: 3%;
+  color: #eec65f;
+  font-size: clamp(0.4rem, 0.9vw, 0.8rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 3px #000;
+  text-transform: uppercase;
+}
+
+.spin-lever:focus-visible {
+  outline: 2px solid #ffd978;
+  outline-offset: 0.15rem;
+  border-radius: 999px;
+}
+
+.spin-lever:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.spin-lever.spin-lever--active {
+  cursor: wait;
+  opacity: 1;
+}
+
+.spin-lever--active .spin-lever__knob {
+  animation: lever-knob-pull 780ms cubic-bezier(0.25, 0.75, 0.3, 1) both;
+}
+
+.spin-lever--active .spin-lever__shaft {
+  animation: lever-shaft-pull 780ms cubic-bezier(0.25, 0.75, 0.3, 1) both;
+}
+
+@keyframes reel-rush {
+  from {
+    transform: translateY(-2.5%) scaleY(1.025);
+  }
+
+  to {
+    transform: translateY(2.5%) scaleY(0.985);
+  }
+}
+
+@keyframes reel-brake {
+  from {
+    transform: translateY(-4%) scaleY(1.02);
+  }
+
+  to {
+    transform: translateY(3%) scaleY(0.99);
+  }
+}
+
+@keyframes reel-land {
+  0% {
+    transform: translateY(-5%) scaleY(1.02);
+  }
+
+  68% {
+    transform: translateY(1.8%) scaleY(0.985);
+  }
+
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes lever-knob-pull {
+  0%,
+  100% {
+    top: 2%;
+    transform: translateX(-50%) scale(1);
+  }
+
+  45% {
+    top: 46%;
+    transform: translateX(-50%) scale(0.92);
+  }
+
+  68% {
+    top: 40%;
+    transform: translateX(-50%) scale(0.96);
+  }
+}
+
+@keyframes lever-shaft-pull {
+  0%,
+  100% {
+    top: 14%;
+    height: 59%;
+  }
+
+  45% {
+    top: 28%;
+    height: 45%;
+  }
+
+  68% {
+    top: 24%;
+    height: 49%;
+  }
+}
+
+@media (max-width: 640px) {
+  .slot-game-frame__visuals {
+    inset-inline: 11.8%;
+  }
+
+  .slot-machine {
+    grid-template-columns: minmax(0, 1fr) 9%;
+    gap: 0.5%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-game-frame,
+  .reel-window,
+  .spin-lever {
+    scroll-behavior: auto;
+  }
+
+  .slot-reel__symbols--spinning,
+  .slot-reel__symbols--settling,
+  .slot-reel__symbols--stopped,
+  .spin-lever--active .spin-lever__knob,
+  .spin-lever--active .spin-lever__shaft {
+    animation: none;
+    filter: none;
+  }
+}

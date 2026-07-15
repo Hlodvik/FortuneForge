@@ -1,0 +1,6 @@
+@FortuneForge.Server_HostAddress = http://localhost:5150
+
+GET {{FortuneForge.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,104 @@
+.slots-page {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(circle at 50% 18%, rgb(99 66 28 / 32%), transparent 32rem),
+    linear-gradient(145deg, #08070b 0%, #16101d 48%, #070609 100%);
+  color: #f9edcf;
+}
+
+.slots-page__topbar {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem clamp(1rem, 4vw, 3.5rem);
+  border-bottom: 1px solid rgb(232 185 83 / 25%);
+  background: rgb(7 6 10 / 82%);
+  box-shadow: 0 0.9rem 2.5rem rgb(0 0 0 / 28%);
+  box-sizing: border-box;
+}
+
+.slots-page__brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.slots-page__brand-name {
+  color: #f3ca68;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.slots-page__brand-mode {
+  color: #8e8395;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.slots-page__balance {
+  display: grid;
+  justify-items: end;
+  line-height: 1.05;
+}
+
+.slots-page__balance-label {
+  color: #998da0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.slots-page__balance-value {
+  color: #fff2c8;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  font-weight: 700;
+}
+
+.slots-page__main {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  padding: clamp(1.25rem, 4vw, 3.5rem);
+  box-sizing: border-box;
+}
+
+.slots-page__stage {
+  width: min(100%, 90rem);
+}
+
+.slots-page__footer {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 1rem 1.25rem;
+  color: #756a7c;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slots-page__footer--error {
+  color: #ff8f94;
+}
+
+@media (max-width: 560px) {
+  .slots-page__brand-mode {
+    display: none;
+  }
+
+  .slots-page__main {
+    padding-inline: 0.45rem;
+  }
+}

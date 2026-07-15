@@ -1,0 +1,34 @@
+# Visual Studio and editors
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET build output
+**/bin/
+**/obj/
+TestResults/
+coverage/
+
+# Node and Vite output
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+# Logs and local process output
+*.log
+
+# Local environment and secret-bearing configuration
+.env
+.env.*
+!.env.example
+**/appsettings.Local.json
+**/appsettings.*.local.json
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+Desktop.ini

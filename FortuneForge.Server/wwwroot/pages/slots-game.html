@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Slots Game - FortuneForge</title>
+  <style>
+    .reel { display:inline-block; width:80px; height:80px; border:1px solid #333; text-align:center; line-height:80px; font-size:2rem; }
+  </style>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="/css/index.css" />
+  <link rel="stylesheet" href="/css/slots-game.css" />
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <header>
+    <h1>Slots</h1>
+  </header>
+  <main>
+    <div id="machine">
+      <div class="reel" id="r1">7</div>
+      <div class="reel" id="r2">7</div>
+      <div class="reel" id="r3">7</div>
+    </div>
+    <button id="spin">Spin</button>
+    <p id="result"></p>
+  </main>
+
+  <script>
+    const symbols = ['🍒','🍋','🔔','7️⃣','⭐','🍉'];
+    function spin() {
+      const r1 = symbols[Math.floor(Math.random()*symbols.length)];
+      const r2 = symbols[Math.floor(Math.random()*symbols.length)];
+      const r3 = symbols[Math.floor(Math.random()*symbols.length)];
+      document.getElementById('r1').textContent = r1;
+      document.getElementById('r2').textContent = r2;
+      document.getElementById('r3').textContent = r3;
+      const res = (r1===r2 && r2===r3) ? 'Jackpot!' : (r1===r2 || r2===r3 || r1===r3) ? 'Small win' : 'Try again';
+      document.getElementById('result').textContent = res;
+    }
+    document.getElementById('spin').addEventListener('click', spin);
+  </script>
+</body>
+</html>

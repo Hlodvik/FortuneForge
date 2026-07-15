@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="FortuneForge.AppHost/FortuneForge.AppHost.csproj" />
+  <Project Path="fortuneforge.client/fortuneforge.client.esproj">
+    <Build />
+  </Project>
+  <Project Path="FortuneForge.Server/FortuneForge.Server.csproj" />
+  <Project Path="FortuneForge.ServiceDefaults/FortuneForge.ServiceDefaults.csproj" />
+</Solution>

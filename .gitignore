@@ -20,6 +20,7 @@ coverage/
 
 # Logs and local process output
 *.log
+.firebase/
 
 # Local environment and secret-bearing configuration
 .env

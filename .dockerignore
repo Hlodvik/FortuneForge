@@ -1,0 +1,11 @@
+*
+!Dockerfile
+!FortuneForge.Server/
+!FortuneForge.Server/**
+!FortuneForge.ServiceDefaults/
+!FortuneForge.ServiceDefaults/**
+
+**/bin/
+**/obj/
+**/*.user
+**/*.suo

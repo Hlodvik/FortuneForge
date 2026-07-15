@@ -11,9 +11,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\fortuneforge.client\fortuneforge.client.esproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\FortuneForge.ServiceDefaults\FortuneForge.ServiceDefaults.csproj" />
   </ItemGroup>
 

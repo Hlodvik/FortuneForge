@@ -18,6 +18,9 @@ public sealed class GameDefinition
     public required GameMatchingRules Matching { get; init; }
     public required GameMathDefinition Math { get; init; }
     public required GameWageringDefinition Wagering { get; init; }
+    public GameFreeGamesDefinition? FreeGames { get; init; }
+    public GameSpecialPointsDefinition? SpecialPoints { get; init; }
+    public GameEnergyDefinition? Energy { get; init; }
     public List<List<int>> Paylines { get; init; } = [];
 }
 
@@ -25,6 +28,7 @@ public sealed class GameLayoutDefinition
 {
     public int ReelCount { get; init; }
     public int VisibleRows { get; init; }
+    public int PaylineCount { get; init; }
 }
 
 public sealed class GameSymbolRules
@@ -32,6 +36,7 @@ public sealed class GameSymbolRules
     public required string SymbolSetId { get; init; }
     public required string WildSymbolId { get; init; }
     public List<int> NativeWildMatchLengths { get; init; } = [];
+    public List<int> WildSubstitutionMatchLengths { get; init; } = [];
 }
 
 public sealed class GameMatchingRules
@@ -44,7 +49,31 @@ public sealed class GameMathDefinition
 {
     public required string ReelSetId { get; init; }
     public required string PaytableId { get; init; }
+    public List<int> PaylinePayoutSteps { get; init; } = [];
+    public int? FiveMatchPityMissLimit { get; init; }
     public required GameMathTargets Targets { get; init; }
+}
+
+public sealed class GameFreeGamesDefinition
+{
+    public required string SymbolId { get; init; }
+    public int RequiredSymbols { get; init; }
+    public int AwardedSpins { get; init; }
+}
+
+public sealed class GameSpecialPointsDefinition
+{
+    public required string SymbolId { get; init; }
+    public int ThreeMatchPoints { get; init; }
+    public int FiveMatchPoints { get; init; }
+    public int ActivationCost { get; init; }
+    public List<string> CommonSymbolIds { get; init; } = [];
+}
+
+public sealed class GameEnergyDefinition
+{
+    public required string SymbolId { get; init; }
+    public int PointsPerVisibleSymbol { get; init; }
 }
 
 public sealed class GameMathTargets
@@ -59,6 +88,7 @@ public sealed class GameWageringDefinition
     public decimal PointValueInCents { get; init; }
     public long MinimumWagerPoints { get; init; }
     public long? MaximumWagerPoints { get; init; }
+    public List<long> AllowedWagerPoints { get; init; } = [];
 }
 
 public sealed class SymbolSetDefinition

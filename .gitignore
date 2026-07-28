@@ -18,6 +18,10 @@ coverage/
 **/dist/
 **/dist-ssr/
 
+# Generated local captures and temporary analysis output
+/artifacts/
+/tmp/
+
 # Logs and local process output
 *.log
 .firebase/

@@ -1,0 +1,15 @@
+.gcloudignore
+.git
+.gitignore
+.vs
+.vs/**
+.firebase
+.firebase/**
+.codex-client.*.log
+.codex-server.*.log
+**/bin
+**/obj
+fortuneforge.client
+FortuneForge.AppHost
+artifacts
+tmp

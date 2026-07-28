@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react'
-import reelWindow from '../../../assets/slots/reel-window.png'
 import { Reel } from './Reel'
 
 type ReelWindowProps = {
@@ -23,7 +22,7 @@ export function ReelWindow({ reelCount, renderReel }: ReelWindowProps) {
           </Reel>
         ))}
       </div>
-      <img className="reel-window__art" src={reelWindow} alt="" aria-hidden="true" />
+      <span className="reel-window__shine" aria-hidden="true" />
     </div>
   )
 }

@@ -24,6 +24,12 @@ public sealed record PaylinePayout(
 
 public sealed record SpinPayout(long TotalPoints, IReadOnlyList<PaylinePayout> Paylines);
 
+public sealed record SlotSealCollection(
+    string SealId,
+    int Count,
+    long AverageWagerPoints,
+    int RequiredCount);
+
 public sealed record ReelOutcome(
     IReadOnlyList<int> StopIndexes,
     IReadOnlyList<IReadOnlyList<string>> VisibleReels);
@@ -38,4 +44,27 @@ public sealed record SpinResult(
     decimal PointValueInCents,
     IReadOnlyList<int> ReelStops,
     IReadOnlyList<IReadOnlyList<string>> Reels,
-    SpinPayout Payout);
+    SpinPayout Payout,
+    int ConsecutiveFiveMisses,
+    bool FiveMatchPityTriggered,
+    int FreeSpinsAwarded,
+    int SpecialPointsAwarded,
+    int EnergyAwarded,
+    bool SpecialBoostApplied)
+{
+    public long? SlotsCreditsBalance { get; init; }
+    public bool IsFreeSpin { get; init; }
+    public int FreeSpinsRemaining { get; init; }
+    public long? FreeSpinWagerPoints { get; init; }
+    public int SpecialPointsBalance { get; init; }
+    public long EnergyBalance { get; init; }
+    public bool EnergyMultiplierApplied { get; init; }
+    public decimal PayoutMultiplier { get; init; } = 1m;
+    public int MonkeyPawCount { get; init; }
+    public long MoneyGrabPoints { get; init; }
+    public long BananaBonusPoints { get; init; }
+    public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } =
+        new Dictionary<string, int>(StringComparer.Ordinal);
+    public IReadOnlyList<SlotSealCollection> SealCollections { get; init; } = [];
+    public string? FreeSpinFeatureMode { get; init; }
+}

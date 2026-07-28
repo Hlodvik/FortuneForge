@@ -6,6 +6,7 @@ public sealed class PayoutCalculator : IPayoutCalculator
 {
     public SpinPayout Calculate(
         IReadOnlyList<PaylineEvaluation> evaluations,
+        GameDefinition game,
         PaytableDefinition paytable,
         long wagerPoints)
     {
@@ -17,12 +18,19 @@ public sealed class PayoutCalculator : IPayoutCalculator
         var rules = paytable.Rules.ToDictionary(
             rule => (rule.SymbolId, rule.MatchLength),
             rule => rule.Multiplier);
-        var payouts = new List<PaylinePayout>();
+        var pricedCandidates = new List<PaylinePayout>();
 
         foreach (var evaluation in evaluations)
         {
+            var paylinePayoutStep = game.Math.PaylinePayoutSteps[evaluation.PaylineId - 1];
             var best = evaluation.Candidates
-                .Select(candidate => PriceCandidate(evaluation.PaylineId, candidate, rules, wagerPoints))
+                .Select(candidate => PriceCandidate(
+                    evaluation.PaylineId,
+                    candidate,
+                    rules,
+                    wagerPoints,
+                    game.Layout.ReelCount,
+                    paylinePayoutStep))
                 .Where(candidate => candidate.AmountPoints > 0)
                 .OrderByDescending(candidate => candidate.AmountPoints)
                 .ThenBy(candidate => CandidateKey(candidate), StringComparer.Ordinal)
@@ -30,7 +38,34 @@ public sealed class PayoutCalculator : IPayoutCalculator
 
             if (best is not null)
             {
-                payouts.Add(best);
+                pricedCandidates.Add(best);
+            }
+        }
+
+        var payouts = pricedCandidates
+            .Where(payout => payout.Matches.Any(match => match.Match.MatchLength == game.Layout.ReelCount))
+            .ToList();
+        var claimedShortMatches = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var candidate in pricedCandidates
+                     .Where(payout => payout.Matches.All(match =>
+                         match.Match.MatchLength < game.Layout.ReelCount))
+                     .OrderByDescending(payout => payout.Matches.Count)
+                     .ThenByDescending(payout => payout.AmountPoints)
+                     .ThenBy(payout => CandidateKey(payout), StringComparer.Ordinal))
+        {
+            var matchKeys = candidate.Matches
+                .Select(match => MatchGeometryKey(match.Match))
+                .ToArray();
+            if (matchKeys.Any(claimedShortMatches.Contains))
+            {
+                continue;
+            }
+
+            payouts.Add(candidate);
+            foreach (var matchKey in matchKeys)
+            {
+                claimedShortMatches.Add(matchKey);
             }
         }
 
@@ -41,12 +76,17 @@ public sealed class PayoutCalculator : IPayoutCalculator
         int paylineId,
         MatchCandidate candidate,
         IReadOnlyDictionary<(string SymbolId, int MatchLength), long> rules,
-        long wagerPoints)
+        long wagerPoints,
+        int fullMatchLength,
+        int paylinePayoutStep)
     {
         var paidMatches = candidate.Matches
             .Select(match =>
             {
-                var multiplier = rules.GetValueOrDefault((match.SymbolId, match.MatchLength));
+                var baseMultiplier = rules.GetValueOrDefault((match.SymbolId, match.MatchLength));
+                var multiplier = match.MatchLength == fullMatchLength && baseMultiplier > 0
+                    ? checked(baseMultiplier + paylinePayoutStep)
+                    : baseMultiplier;
                 return new PaidMatch(match, multiplier, checked(wagerPoints * multiplier));
             })
             .Where(match => match.AmountPoints > 0)
@@ -57,4 +97,8 @@ public sealed class PayoutCalculator : IPayoutCalculator
 
     private static string CandidateKey(PaylinePayout payout) => string.Join('|', payout.Matches.Select(match =>
         $"{match.Match.SymbolId}:{match.Match.MatchLength}:{match.Match.Positions[0].Reel}"));
+
+    private static string MatchGeometryKey(SymbolMatch match) =>
+        $"{match.MatchLength}:" + string.Join(',', match.Positions.Select(position =>
+            $"{position.Reel}.{position.Row}"));
 }

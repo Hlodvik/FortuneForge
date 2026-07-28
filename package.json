@@ -1,0 +1,10 @@
+{
+  "name": "fortune-forge-workspace",
+  "private": true,
+  "scripts": {
+    "analyze:slots": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
+    "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
+    "deploy:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target api",
+    "deploy:hosting": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target hosting"
+  }
+}

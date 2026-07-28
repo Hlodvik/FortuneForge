@@ -1,13 +1,19 @@
 type SpinLeverProps = {
   disabled?: boolean
+  animatePull?: boolean
   isSpinning?: boolean
   onSpin: () => void
 }
 
-export function SpinLever({ disabled = false, isSpinning = false, onSpin }: SpinLeverProps) {
+export function SpinLever({
+  disabled = false,
+  isSpinning = false,
+  animatePull = isSpinning,
+  onSpin,
+}: SpinLeverProps) {
   return (
     <button
-      className={`spin-lever${isSpinning ? ' spin-lever--active' : ''}`}
+      className={`spin-lever${animatePull ? ' spin-lever--active' : ''}`}
       type="button"
       onClick={onSpin}
       disabled={disabled || isSpinning}

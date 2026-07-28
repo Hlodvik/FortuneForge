@@ -1,29 +1,38 @@
 import type { ReactNode } from 'react'
-import { ReelWindow } from './ReelWindow'
+import type { SlotCabinetTheme } from '../config/cabinetThemes'
+import { Reel } from './Reel'
 import { SlotGameFrame } from './SlotGameFrame'
-import { SpinLever } from './SpinLever'
 import '../styles/slots.css'
 
 type SlotMachineProps = {
+  cabinetTheme: SlotCabinetTheme
   reelCount: number
   renderReel?: (index: number) => ReactNode
-  disabled?: boolean
-  isSpinning?: boolean
-  onSpin: () => void
 }
 
 export function SlotMachine({
+  cabinetTheme,
   reelCount,
   renderReel,
-  disabled,
-  isSpinning,
-  onSpin,
 }: SlotMachineProps) {
+  const safeReelCount = Math.max(1, Math.floor(reelCount))
+
   return (
-    <SlotGameFrame>
+    <SlotGameFrame cabinetTheme={cabinetTheme}>
       <div className="slot-machine">
-        <ReelWindow reelCount={reelCount} renderReel={renderReel} />
-        <SpinLever disabled={disabled} isSpinning={isSpinning} onSpin={onSpin} />
+        <div className="slot-machine__playfield">
+          <div
+            className="slot-machine__reels"
+            style={{ '--reel-count': safeReelCount } as React.CSSProperties}
+            aria-label={`${safeReelCount}-reel slot container`}
+          >
+            {Array.from({ length: safeReelCount }, (_, index) => (
+              <Reel index={index} key={index}>
+                {renderReel?.(index)}
+              </Reel>
+            ))}
+          </div>
+        </div>
       </div>
     </SlotGameFrame>
   )

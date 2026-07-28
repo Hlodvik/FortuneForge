@@ -4,5 +4,6 @@
     <Build />
   </Project>
   <Project Path="FortuneForge.Server/FortuneForge.Server.csproj" />
+  <Project Path="FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj" />
   <Project Path="FortuneForge.ServiceDefaults/FortuneForge.ServiceDefaults.csproj" />
 </Solution>

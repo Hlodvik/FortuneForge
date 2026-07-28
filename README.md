@@ -1,5 +1,15 @@
 # FortuneForge
 
+## Repository layout
+
+- `FortuneForge.Server/Configuration` contains application startup, service registration, and middleware composition.
+- `FortuneForge.Server/Accounts` owns authentication, profiles, account security, sessions, slot balances, and Firestore account persistence.
+- `FortuneForge.Server/Payments` owns checkout and withdrawal workflows, MerchantGateway integration, signed webhooks, reconciliation, and Firestore payment persistence.
+- `FortuneForge.Server/Slots` owns game definitions, reel generation, combination evaluation, payouts, bonuses, and spin orchestration.
+- `FortuneForge.Server.Tests` mirrors the payment and slot feature boundaries.
+- `fortuneforge.client/src/app` owns browser routing and shell composition; `features` owns account, payment, game-library, and slot workflows; `components` contains cross-feature presentation.
+- `tools/FortuneForge.SlotMath` is the deterministic slot-math analysis console, while `scripts` contains asset and deployment automation.
+
 ## MerchantGateway payment integration
 
 FortuneForge supports two server-side payment providers:

@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { SlotCabinetTheme } from '../config/cabinetThemes'
 import { Reel } from './Reel'
 import { SlotGameFrame } from './SlotGameFrame'
-import '../styles/slots.css'
+import '../styles/index.css'
 
 type SlotMachineProps = {
   cabinetTheme: SlotCabinetTheme

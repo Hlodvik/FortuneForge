@@ -1,0 +1,1383 @@
+/* Final active slot layout overrides: kept at EOF so the simplified table
+   layout beats the older cabinet/control CSS still retained for unused pieces. */
+.slots-page__main {
+  padding: clamp(0.75rem, 2.1vw, 1.65rem) clamp(0.75rem, 3vw, 2.4rem) 0.35rem;
+}
+
+.slots-page__stage {
+  width: min(100%, 86rem, calc((100svh - 12rem) * 1.72));
+  display: grid;
+  grid-template-rows: auto minmax(0, auto) auto;
+  align-content: start;
+  gap: clamp(0.34rem, 0.86vw, 0.82rem);
+  filter: drop-shadow(0 1.45rem 2.1rem rgb(8 2 24 / 52%));
+}
+
+.slots-page__meter-stack {
+  display: grid;
+  width: 100%;
+  gap: clamp(0.22rem, 0.5vw, 0.44rem);
+}
+
+.slots-page__seal-track {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(0.4rem, 0.9vw, 0.8rem);
+  width: 100%;
+  padding: clamp(0.25rem, 0.58vw, 0.48rem) clamp(0.46rem, 1vw, 0.86rem);
+  border: 1px solid rgb(246 185 47 / 48%);
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 8%), transparent 18% 82%, rgb(0 0 0 / 18%)),
+    linear-gradient(180deg, rgb(42 7 16 / 86%), rgb(21 4 10 / 88%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 6%),
+    0 0 1rem rgb(246 185 47 / 12%);
+  color: #fff7cf;
+  text-transform: uppercase;
+}
+
+.slots-page__seal-track--ready:not(:disabled),
+.slots-page__seal-track--armed {
+  border-color: rgb(255 241 164 / 92%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 12%),
+    0 0 1.1rem rgb(246 185 47 / 38%),
+    0 0 1.8rem rgb(255 80 48 / 20%);
+}
+
+.slots-page__seal-track--armed {
+  background:
+    radial-gradient(circle at 15% 50%, rgb(255 241 164 / 22%), transparent 32%),
+    linear-gradient(180deg, rgb(111 24 14 / 92%), rgb(66 9 28 / 92%));
+  transform: translateY(-1px);
+}
+
+.slots-page__seal-track-label {
+  color: #ffc63d;
+  font-size: clamp(0.58rem, 0.95vw, 0.84rem);
+  font-weight: 1000;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+}
+
+.slots-page__seal-track > strong {
+  color: #fff7cf;
+  font: 1000 clamp(0.72rem, 1.15vw, 1rem)/1 ui-monospace, Consolas, monospace;
+  text-shadow: 0 0 0.65rem rgb(246 185 47 / 62%);
+}
+
+.slots-page__seal-spots {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: clamp(0.2rem, 0.52vw, 0.48rem);
+  min-width: 0;
+}
+
+.slots-page__seal-spot {
+  position: relative;
+  display: grid;
+  aspect-ratio: 1;
+  min-height: clamp(1.45rem, 2.55vw, 2.35rem);
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgb(255 241 164 / 34%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 42% 32%, rgb(255 255 255 / 10%), transparent 30%),
+    linear-gradient(145deg, rgb(34 8 16 / 74%), rgb(9 3 8 / 82%));
+  box-shadow:
+    inset 0 0 0.58rem rgb(0 0 0 / 48%),
+    0 0 0.55rem rgb(246 185 47 / 10%);
+}
+
+.slots-page__seal-spot--filled {
+  border-color: rgb(255 241 164 / 86%);
+  background:
+    radial-gradient(circle at 38% 26%, rgb(255 255 255 / 28%), transparent 28%),
+    linear-gradient(145deg, #f6b92f, #892018 58%, #410714);
+  box-shadow:
+    inset 0 0 0.35rem rgb(255 255 255 / 28%),
+    0 0 0.8rem rgb(246 185 47 / 54%),
+    0 0 1.25rem rgb(255 80 48 / 22%);
+}
+
+.slots-page__seal-spot img {
+  width: 86%;
+  height: 86%;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 0.22rem rgb(255 255 255 / 58%))
+    drop-shadow(0 0 0.42rem rgb(246 185 47 / 72%));
+}
+
+.slots-page__seal-collections {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.28rem, 0.7vw, 0.54rem);
+  width: 100%;
+}
+
+.slots-page__seal-collection {
+  display: grid;
+  grid-template-columns: clamp(1.9rem, 3.25vw, 2.65rem) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.24rem, 0.58vw, 0.44rem);
+  min-width: 0;
+  padding: clamp(0.24rem, 0.52vw, 0.42rem);
+  border: 1px solid rgb(246 185 47 / 45%);
+  border-radius: clamp(0.52rem, 1vw, 0.84rem);
+  background:
+    radial-gradient(circle at 18% 16%, rgb(255 255 255 / 12%), transparent 34%),
+    linear-gradient(180deg, rgb(42 7 16 / 86%), rgb(17 5 18 / 91%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 7%),
+    0 0 0.8rem rgb(246 185 47 / 11%);
+  color: #fff7cf;
+}
+
+.slots-page__seal-collection > img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 0 0.2rem rgb(255 255 255 / 48%))
+    drop-shadow(0 0 0.36rem rgb(246 185 47 / 60%));
+}
+
+.slots-page__seal-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.slots-page__seal-row {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.28rem;
+}
+
+.slots-page__seal-row strong {
+  overflow: hidden;
+  color: #ffc63d;
+  font-size: clamp(0.52rem, 0.8vw, 0.68rem);
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slots-page__seal-row em {
+  color: rgb(255 255 255 / 84%);
+  font: 900 clamp(0.56rem, 0.82vw, 0.72rem)/1 ui-monospace, Consolas, monospace;
+  font-style: normal;
+}
+
+.slots-page__seal-meter {
+  position: relative;
+  display: block;
+  height: clamp(0.28rem, 0.52vw, 0.42rem);
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 44%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+}
+
+.slots-page__seal-meter span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffc63d, #fff1a2);
+  box-shadow: 0 0 0.65rem rgb(246 185 47 / 58%);
+  transition: width 240ms ease;
+}
+
+.slots-page__seal-copy small {
+  overflow: hidden;
+  color: rgb(255 255 255 / 60%);
+  font-size: clamp(0.48rem, 0.72vw, 0.6rem);
+  font-weight: 800;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.slots-page__energy-meter {
+  width: 100%;
+  box-sizing: border-box;
+  grid-template-columns: clamp(2.25rem, 3.6vw, 3.35rem) minmax(0, 1fr);
+  min-width: 0;
+  padding: clamp(0.24rem, 0.56vw, 0.46rem) clamp(0.55rem, 1.15vw, 1rem);
+  border-color: rgb(53 231 255 / 72%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 6% 50%, rgb(53 231 255 / 20%), transparent 18%),
+    linear-gradient(180deg, rgb(19 12 50 / 90%), rgb(8 6 30 / 92%));
+}
+
+.slots-page__energy-meter > img {
+  height: clamp(2.15rem, 3.5vw, 3.2rem);
+}
+
+.slots-page__energy-copy {
+  grid-template-columns: auto auto;
+  gap: 0.18rem 0.65rem;
+}
+
+.slots-page__energy-label {
+  font-size: clamp(0.62rem, 1vw, 0.86rem);
+  letter-spacing: 0.17em;
+}
+
+.slots-page__energy-copy strong {
+  justify-self: end;
+  font-size: clamp(0.75rem, 1.12vw, 1rem);
+}
+
+.slots-page__energy-track {
+  height: clamp(0.68rem, 1.1vw, 0.95rem);
+  border-color: rgb(142 244 255 / 48%);
+}
+
+.slots-page__bottom-controls {
+  justify-self: start;
+  display: grid;
+  width: min(31rem, 100%);
+  gap: clamp(0.28rem, 0.65vw, 0.56rem);
+  padding-left: clamp(0.05rem, 0.2vw, 0.25rem);
+}
+
+.slots-page__credit-free-row {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: clamp(0.34rem, 0.8vw, 0.74rem);
+}
+
+.slots-page__bottom-controls .slots-page__balance {
+  min-width: clamp(8.5rem, 13vw, 11rem);
+  justify-items: start;
+  padding: clamp(0.38rem, 0.82vw, 0.68rem) clamp(0.65rem, 1.25vw, 1rem);
+  border-color: rgb(246 185 47 / 54%);
+  border-radius: clamp(0.42rem, 0.9vw, 0.78rem);
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 7%), transparent 58%),
+    linear-gradient(135deg, rgb(43 8 18 / 86%), rgb(13 5 25 / 90%));
+}
+
+.slots-page__balance-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.slots-page__bottom-controls .slots-page__balance--win {
+  min-width: clamp(5.6rem, 8vw, 7.5rem);
+}
+
+.slots-page__bottom-controls .slots-page__free-option {
+  min-width: clamp(7rem, 10vw, 9rem);
+  border-radius: clamp(0.42rem, 0.9vw, 0.78rem);
+}
+
+.slots-page__bottom-controls .slots-page__wager {
+  width: min(23rem, 100%);
+  grid-template-columns: 2.4rem minmax(6rem, 1fr) 2.4rem;
+  border-color: rgb(53 231 255 / 54%);
+  border-radius: clamp(0.42rem, 0.9vw, 0.78rem);
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 6%), transparent 58%),
+    linear-gradient(135deg, rgb(25 11 56 / 90%), rgb(14 6 34 / 94%));
+}
+
+.slots-page__bottom-controls .slots-page__wager-button {
+  width: 2.4rem;
+  height: 2.4rem;
+}
+
+.slots-page__bottom-controls .slots-page__wager-readout {
+  min-height: 2.4rem;
+}
+
+.slots-page__footer {
+  min-height: 2.2rem;
+  padding: 0.15rem 1rem 0.65rem;
+}
+
+@media (max-width: 720px) {
+  .slots-page__stage {
+    width: min(100%, 44rem);
+  }
+
+  .slots-page__seal-collections {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slots-page__seal-track {
+    grid-template-columns: 1fr auto;
+  }
+
+  .slots-page__seal-track-label {
+    grid-column: 1 / -1;
+  }
+
+  .slots-page__seal-spots {
+    gap: 0.18rem;
+  }
+
+  .slots-page__seal-spot {
+    min-height: clamp(1.1rem, 6vw, 1.65rem);
+  }
+
+  .slots-page__credit-free-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .slots-page__main {
+    padding: 0.55rem 0.35rem 0;
+  }
+
+  .slots-page__stage {
+    gap: 0.32rem;
+  }
+
+  .slots-page__seal-collections {
+    gap: 0.22rem;
+  }
+
+  .slots-page__seal-collection {
+    grid-template-columns: 1.55rem minmax(0, 1fr);
+    padding: 0.2rem;
+  }
+
+  .slots-page__energy-meter {
+    grid-template-columns: 1.55rem minmax(0, 1fr);
+    padding: 0.18rem 0.35rem;
+  }
+
+  .slots-page__energy-meter > img {
+    height: 1.55rem;
+  }
+
+  .slots-page__energy-track {
+    height: 0.46rem;
+  }
+
+  .slots-page__bottom-controls {
+    width: min(23rem, 100%);
+  }
+}
+
+/* Active tuning: symbol values live beside the game, and spin controls live
+   below the reel window instead of occupying frame space. */
+.slots-page__main {
+  display: grid;
+  justify-items: center;
+  padding:
+    clamp(0.75rem, 1.8vw, 1.3rem)
+    clamp(0.55rem, 2.4vw, 2rem)
+    0.35rem;
+}
+
+.slots-page__layout {
+  display: grid;
+  grid-template-columns:
+    clamp(14rem, 21vw, 17rem)
+    minmax(0, min(46rem, calc((100svh - 12rem) * 1.52)));
+  align-items: start;
+  justify-content: center;
+  gap: clamp(0.75rem, 1.8vw, 1.35rem);
+  width: min(100%, 66rem);
+}
+
+.slots-page__stage {
+  width: 100%;
+  max-width: 46rem;
+  grid-template-rows: auto auto auto;
+  gap: clamp(0.3rem, 0.7vw, 0.58rem);
+}
+
+.slots-page__layout .symbol-value-guide--desktop {
+  position: sticky;
+  top: clamp(4.9rem, 8svh, 6.25rem);
+  left: auto;
+  bottom: auto;
+  width: 100%;
+  max-height: calc(100svh - 7rem);
+  box-sizing: border-box;
+  overflow-y: auto;
+  align-self: start;
+}
+
+.slots-page__playbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  justify-content: space-between;
+  gap: clamp(0.7rem, 1.5vw, 1.15rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.slots-page__spin-controls {
+  display: grid;
+  justify-items: end;
+  align-self: start;
+  justify-self: end;
+  gap: clamp(0.18rem, 0.45vw, 0.36rem);
+  min-width: clamp(6.9rem, 10vw, 8rem);
+}
+
+.slots-page__spin-controls .spin-button {
+  width: clamp(5rem, 7.3vw, 6.35rem);
+  flex: 0 0 auto;
+}
+
+.slots-page__spin-controls-secondary {
+  display: grid;
+  width: 100%;
+  justify-items: end;
+  min-width: 0;
+}
+
+.slots-page__spin-controls .slots-page__auto-spin {
+  width: auto;
+  min-width: clamp(6.5rem, 9vw, 7.7rem);
+  min-height: clamp(1.9rem, 3vw, 2.25rem);
+  flex-direction: row;
+  gap: 0.36rem;
+  padding: 0.28rem clamp(0.62rem, 1vw, 0.88rem);
+  border-color: rgb(255 255 255 / 72%);
+  background:
+    radial-gradient(circle at 30% 15%, rgb(255 255 255 / 18%), transparent 34%),
+    linear-gradient(145deg, rgb(34 24 54 / 90%), rgb(83 29 76 / 88%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 9%),
+    0 0 0.8rem rgb(255 255 255 / 18%),
+    0 0.38rem 0.7rem rgb(0 0 0 / 36%);
+  font-size: clamp(0.58rem, 0.76vw, 0.68rem);
+}
+
+.slots-page__bottom-controls {
+  width: min(31rem, 100%);
+  align-self: start;
+  justify-self: start;
+  padding-left: 0;
+}
+
+@media (max-width: 1040px) {
+  .slots-page__layout {
+    grid-template-columns: clamp(12.5rem, 22vw, 15.5rem) minmax(0, 1fr);
+    width: min(100%, 62rem);
+  }
+}
+
+@media (max-width: 900px) {
+  .slots-page__layout {
+    display: block;
+    width: min(100%, 50rem);
+  }
+
+  .slots-page__stage {
+    max-width: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .slots-page__layout {
+    width: 100%;
+  }
+
+  .slots-page__playbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem;
+  }
+
+  .slots-page__spin-controls {
+    min-width: 4.95rem;
+  }
+
+  .slots-page__spin-controls .spin-button {
+    width: clamp(4.15rem, 18vw, 4.85rem);
+  }
+
+  .slots-page__spin-controls .slots-page__auto-spin {
+    min-width: 5.2rem;
+    min-height: 2rem;
+    padding-inline: 0.5rem;
+    font-size: 0.52rem;
+  }
+}
+
+/* Active polish: keep the below-window controls light and game-like instead
+   of making that strip feel like a stack of dashboard cards. */
+.slots-page__playbar {
+  align-items: start;
+  padding-top: clamp(0.04rem, 0.22vw, 0.16rem);
+}
+
+.slots-page__bottom-controls {
+  width: min(25rem, calc(100% - clamp(6.2rem, 10vw, 8.4rem)));
+  gap: clamp(0.18rem, 0.46vw, 0.34rem);
+}
+
+.slots-page__credit-free-row {
+  align-items: end;
+  flex-wrap: nowrap;
+  gap: clamp(0.4rem, 0.9vw, 0.7rem);
+}
+
+.slots-page__bottom-controls .slots-page__balance {
+  min-width: auto;
+  justify-items: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-shadow: 0 0.14rem 0.32rem rgb(0 0 0 / 72%);
+}
+
+.slots-page__bottom-controls .slots-page__balance--win {
+  min-width: clamp(3.7rem, 5.4vw, 5rem);
+}
+
+.slots-page__bottom-controls .slots-page__balance-label,
+.slots-page__wager-label {
+  color: #ffc63d;
+  font-size: clamp(0.56rem, 0.78vw, 0.68rem);
+  font-weight: 1000;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.slots-page__balance--win .slots-page__balance-label {
+  color: #fff;
+}
+
+.slots-page__bottom-controls .slots-page__balance-value,
+.slots-page__wager-value {
+  color: #fff;
+  font-size: clamp(1rem, 1.62vw, 1.25rem);
+  font-weight: 1000;
+  line-height: 1;
+  text-shadow:
+    0 0 0.3rem rgb(0 0 0 / 70%),
+    0 0 0.65rem rgb(255 255 255 / 25%);
+}
+
+.slots-page__bottom-controls .slots-page__credit-coin {
+  width: clamp(0.94rem, 1.35vw, 1.15rem);
+  height: clamp(0.94rem, 1.35vw, 1.15rem);
+}
+
+.slots-page__bottom-controls .slots-page__free-option {
+  min-width: clamp(5.9rem, 8.2vw, 7.3rem);
+  min-height: clamp(2.05rem, 3.1vw, 2.42rem);
+  padding: 0.3rem 0.58rem;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 0.52rem;
+  background:
+    radial-gradient(circle at 28% 12%, rgb(255 255 255 / 18%), transparent 36%),
+    linear-gradient(180deg, rgb(44 39 83 / 66%), rgb(13 10 33 / 78%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 8%),
+    0 0.38rem 0.74rem rgb(0 0 0 / 30%);
+}
+
+.slots-page__bottom-controls .slots-page__free-option > span {
+  color: #fff;
+  font-size: clamp(0.54rem, 0.78vw, 0.66rem);
+}
+
+.slots-page__bottom-controls .slots-page__free-option strong {
+  font-size: clamp(0.88rem, 1.35vw, 1.05rem);
+}
+
+.slots-page__bottom-controls .slots-page__wager {
+  width: min(16.8rem, 100%);
+  grid-template-columns: 2.05rem minmax(5.8rem, auto) 2.05rem;
+  gap: 0.38rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.slots-page__bottom-controls .slots-page__wager--selected {
+  box-shadow: none;
+}
+
+.slots-page__bottom-controls .slots-page__wager-button {
+  width: 2.05rem;
+  height: 2.05rem;
+  border: 1px solid rgb(255 255 255 / 48%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 18%, rgb(255 255 255 / 20%), transparent 38%),
+    rgb(10 7 26 / 66%);
+  box-shadow:
+    inset 0 -0.2rem 0.38rem rgb(0 0 0 / 38%),
+    0 0.35rem 0.72rem rgb(0 0 0 / 34%);
+}
+
+.slots-page__bottom-controls .slots-page__wager-readout {
+  min-height: 2.05rem;
+  padding: 0.08rem 0.45rem;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.slots-page__spin-controls {
+  gap: clamp(0.14rem, 0.35vw, 0.28rem);
+}
+
+.slots-page__spin-controls .slots-page__auto-spin {
+  border-color: rgb(255 255 255 / 78%);
+  background:
+    radial-gradient(circle at 28% 12%, rgb(255 255 255 / 15%), transparent 35%),
+    linear-gradient(180deg, rgb(44 39 53 / 86%), rgb(8 7 16 / 92%));
+  color: #fff;
+  text-shadow: 0 0 0.45rem rgb(255 255 255 / 42%);
+}
+
+@media (max-width: 720px) {
+  .slots-page__bottom-controls {
+    width: min(25rem, 100%);
+  }
+
+  .slots-page__credit-free-row {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .slots-page__bottom-controls {
+    gap: 0.22rem;
+  }
+
+  .slots-page__bottom-controls .slots-page__wager {
+    grid-template-columns: 1.85rem minmax(4.8rem, auto) 1.85rem;
+  }
+
+  .slots-page__bottom-controls .slots-page__wager-button {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .slots-page__bottom-controls .slots-page__free-option {
+    min-width: 5.1rem;
+    padding-inline: 0.42rem;
+  }
+}
+
+/* Active control-strip layout: a flat row instead of nested dashboard blocks. */
+.slots-page__playbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: start;
+  gap: clamp(0.5rem, 1.15vw, 0.9rem);
+  width: 100%;
+  padding-top: clamp(0.08rem, 0.28vw, 0.18rem);
+}
+
+.slots-page__control-tile {
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(3.15rem, 4.6vw, 3.8rem);
+  box-sizing: border-box;
+}
+
+.slots-page__playbar > .slots-page__balance,
+.slots-page__playbar > .slots-page__wager,
+.slots-page__playbar > .slots-page__free-option {
+  align-self: start;
+  justify-self: stretch;
+  border: 1px solid rgb(255 255 255 / 34%);
+  border-radius: clamp(0.58rem, 1vw, 0.82rem);
+  background:
+    radial-gradient(circle at 28% 13%, rgb(255 255 255 / 18%), transparent 34%),
+    linear-gradient(180deg, rgb(42 35 68 / 78%), rgb(12 9 29 / 88%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 8%),
+    0 0.4rem 0.82rem rgb(0 0 0 / 30%);
+}
+
+.slots-page__playbar > .slots-page__balance {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: clamp(0.34rem, 0.74vw, 0.58rem) clamp(0.44rem, 0.9vw, 0.72rem);
+  text-align: center;
+  text-shadow: 0 0.14rem 0.32rem rgb(0 0 0 / 72%);
+}
+
+.slots-page__playbar .slots-page__balance-line {
+  justify-content: center;
+}
+
+.slots-page__playbar > .slots-page__wager {
+  grid-template-columns: clamp(1.8rem, 3vw, 2.15rem) minmax(0, 1fr) clamp(1.8rem, 3vw, 2.15rem);
+  gap: clamp(0.22rem, 0.55vw, 0.42rem);
+  align-items: center;
+  padding: clamp(0.3rem, 0.7vw, 0.5rem);
+}
+
+.slots-page__playbar > .slots-page__wager--selected {
+  border-color: rgb(255 198 61 / 72%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 11%),
+    0 0.5rem 0.86rem rgb(0 0 0 / 30%),
+    0 0 1rem rgb(255 198 61 / 22%);
+}
+
+.slots-page__playbar .slots-page__wager-button {
+  width: clamp(1.8rem, 3vw, 2.15rem);
+  height: clamp(1.8rem, 3vw, 2.15rem);
+  border-color: rgb(255 255 255 / 48%);
+  background:
+    radial-gradient(circle at 32% 18%, rgb(255 255 255 / 20%), transparent 38%),
+    rgb(10 7 26 / 66%);
+  box-shadow:
+    inset 0 -0.2rem 0.38rem rgb(0 0 0 / 38%),
+    0 0.35rem 0.72rem rgb(0 0 0 / 34%);
+}
+
+.slots-page__playbar .slots-page__wager-readout {
+  min-height: 0;
+  padding: 0;
+}
+
+.slots-page__playbar > .slots-page__free-option {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.12rem;
+  padding: clamp(0.34rem, 0.74vw, 0.58rem) clamp(0.44rem, 0.9vw, 0.72rem);
+  color: #fff;
+}
+
+.slots-page__playbar > .slots-page__free-option--selected {
+  border-color: #ffc63d;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 13%),
+    0 0.5rem 0.86rem rgb(0 0 0 / 30%),
+    0 0 1.4rem rgb(255 198 61 / 32%),
+    0 0 2rem rgb(53 231 255 / 16%);
+}
+
+.slots-page__playbar .slots-page__balance-label,
+.slots-page__playbar .slots-page__wager-label,
+.slots-page__playbar > .slots-page__free-option > span {
+  color: #ffc63d;
+  font-size: clamp(0.54rem, 0.78vw, 0.68rem);
+  font-weight: 1000;
+  letter-spacing: 0.13em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.slots-page__playbar .slots-page__balance-value,
+.slots-page__playbar .slots-page__wager-value,
+.slots-page__playbar > .slots-page__free-option strong {
+  color: #fff;
+  font-size: clamp(0.98rem, 1.55vw, 1.24rem);
+  font-weight: 1000;
+  line-height: 1;
+  text-shadow:
+    0 0 0.3rem rgb(0 0 0 / 70%),
+    0 0 0.65rem rgb(255 255 255 / 25%);
+}
+
+.slots-page__playbar .slots-page__credit-coin {
+  width: clamp(0.92rem, 1.3vw, 1.12rem);
+  height: clamp(0.92rem, 1.3vw, 1.12rem);
+}
+
+.slots-page__spin-controls {
+  width: 100%;
+  min-width: 0;
+  justify-self: center;
+  justify-items: center;
+  gap: clamp(0.2rem, 0.45vw, 0.34rem);
+}
+
+.slots-page__spin-controls .spin-button {
+  width: clamp(5.05rem, 7.25vw, 6.35rem);
+}
+
+.slots-page__spin-controls-secondary {
+  width: 100%;
+  justify-items: center;
+}
+
+.slots-page__spin-controls .slots-page__auto-spin {
+  width: min(100%, clamp(5.65rem, 8vw, 6.8rem));
+  min-width: 0;
+  min-height: clamp(1.8rem, 2.65vw, 2.12rem);
+  padding: 0.22rem clamp(0.42rem, 0.78vw, 0.68rem);
+  border-color: rgb(255 255 255 / 72%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 28% 12%, rgb(255 255 255 / 15%), transparent 35%),
+    linear-gradient(180deg, rgb(44 39 53 / 86%), rgb(8 7 16 / 92%));
+  color: #fff;
+  font-size: clamp(0.52rem, 0.72vw, 0.64rem);
+  text-shadow: 0 0 0.45rem rgb(255 255 255 / 42%);
+}
+
+@media (max-width: 720px) {
+  .slots-page__playbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slots-page__spin-controls {
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .slots-page__playbar {
+    gap: 0.38rem;
+  }
+
+  .slots-page__control-tile {
+    min-height: 2.9rem;
+  }
+
+  .slots-page__playbar > .slots-page__wager {
+    grid-template-columns: 1.65rem minmax(0, 1fr) 1.65rem;
+    padding: 0.28rem;
+  }
+
+  .slots-page__playbar .slots-page__wager-button {
+    width: 1.65rem;
+    height: 1.65rem;
+  }
+
+  .slots-page__spin-controls .spin-button {
+    width: clamp(4.25rem, 24vw, 5rem);
+  }
+
+  .slots-page__spin-controls .slots-page__auto-spin {
+    width: min(100%, 5.15rem);
+    min-height: 1.85rem;
+    font-size: 0.52rem;
+  }
+}
+
+/* Approved spinner cluster: Betway-style simple outline controls. */
+.slots-page__playbar {
+  grid-template-columns:
+    minmax(clamp(7.4rem, 14vw, 10rem), 0.82fr)
+    minmax(clamp(13rem, 22vw, 17rem), 1.32fr);
+  align-items: center;
+}
+
+.slots-page__spin-controls {
+  display: grid;
+  grid-template-columns:
+    clamp(2.35rem, 4vw, 3rem)
+    minmax(clamp(5.4rem, 8.5vw, 7.2rem), auto)
+    clamp(2.35rem, 4vw, 3rem);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.34rem, 0.75vw, 0.56rem);
+  width: 100%;
+}
+
+.slots-page__spin-stack {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.08rem, 0.25vw, 0.18rem);
+  min-width: 0;
+}
+
+.slots-page__spin-button-shell {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.slots-page__free-spin-badge {
+  position: absolute;
+  z-index: 3;
+  top: clamp(-0.64rem, -0.78vw, -0.46rem);
+  left: 50%;
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.22rem;
+  min-width: max-content;
+  padding: 0.22rem 0.56rem 0.24rem;
+  border: 2px solid rgb(255 255 255 / 94%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 32% 14%, rgb(255 255 255 / 35%), transparent 38%),
+    linear-gradient(180deg, #ffe372 0%, #ff9c35 54%, #d74218 100%);
+  box-shadow:
+    0 0.16rem 0 rgb(111 34 0 / 72%),
+    0 0.42rem 0.86rem rgb(0 0 0 / 44%),
+    0 0 1rem rgb(255 198 61 / 58%);
+  color: #2b0d07;
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: translateX(-50%) rotate(-3deg) scale(1);
+  animation: free-spin-badge-arrive 480ms cubic-bezier(0.16, 1, 0.24, 1.2) both;
+}
+
+.slots-page__free-spin-badge strong {
+  font-size: clamp(0.62rem, 1vw, 0.82rem);
+  font-weight: 1000;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 48%),
+    0 0 0.34rem rgb(255 255 255 / 34%);
+}
+
+.slots-page__free-spin-badge > span {
+  display: inline-grid;
+  min-width: 1.28rem;
+  min-height: 1.28rem;
+  place-items: center;
+  border-radius: 999px;
+  background: rgb(43 13 7 / 86%);
+  color: #fff8ce;
+  font-size: 0.66rem;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 22%);
+}
+
+.slots-page__free-spin-badge--popping {
+  animation: free-spin-badge-pop-away 420ms cubic-bezier(0.14, 0.88, 0.26, 1) both;
+}
+
+@keyframes free-spin-badge-arrive {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0.48rem) rotate(-3deg) scale(0.72);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translate(-50%, -0.08rem) rotate(-3deg) scale(1.12);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-3deg) scale(1);
+  }
+}
+
+@keyframes free-spin-badge-pop-away {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) rotate(-3deg) scale(1);
+  }
+
+  42% {
+    opacity: 1;
+    transform: translate(-50%, -0.24rem) rotate(2deg) scale(1.22);
+    filter: brightness(1.2);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -1.45rem) rotate(7deg) scale(0.28);
+    filter: brightness(1.45);
+  }
+}
+
+.slots-page__wager-nudge {
+  display: grid;
+  width: clamp(2.35rem, 4vw, 3rem);
+  aspect-ratio: 1;
+  place-items: center;
+  padding: 0;
+  border: 2px solid rgb(255 255 255 / 92%);
+  border-radius: 50%;
+  background: rgb(30 27 42 / 38%);
+  box-shadow: 0 0 0.45rem rgb(0 0 0 / 30%);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.slots-page__wager-nudge:hover:not(:disabled),
+.slots-page__wager-nudge:focus-visible {
+  background: rgb(255 255 255 / 14%);
+  box-shadow:
+    0 0 0.55rem rgb(255 255 255 / 24%),
+    0 0 0.45rem rgb(0 0 0 / 30%);
+  transform: translateY(-1px);
+}
+
+.slots-page__wager-nudge:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 0.18rem;
+}
+
+.slots-page__wager-nudge:disabled {
+  cursor: default;
+  opacity: 0.42;
+  transform: none;
+}
+
+.slots-page__wager-nudge svg {
+  width: 48%;
+  height: 48%;
+  overflow: visible;
+  stroke: currentColor;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.slots-page__spin-controls .spin-button {
+  width: clamp(5.35rem, 8vw, 7.1rem);
+}
+
+.slots-page__spin-controls .slots-page__auto-spin {
+  display: inline-grid;
+  width: auto;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  margin-top: clamp(-0.38rem, -0.45vw, -0.24rem);
+  padding: 0.16rem clamp(0.55rem, 1vw, 0.72rem) 0.18rem;
+  border: 2px solid rgb(255 255 255 / 92%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 74%);
+  box-shadow: 0 0.24rem 0.42rem rgb(0 0 0 / 44%);
+  color: #fff;
+  font-size: clamp(0.62rem, 1vw, 0.9rem);
+  font-weight: 1000;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  text-shadow: none;
+  text-transform: uppercase;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.slots-page__spin-controls .slots-page__auto-spin:hover,
+.slots-page__spin-controls .slots-page__auto-spin:focus-visible {
+  box-shadow:
+    0 0 0.65rem rgb(255 255 255 / 24%),
+    0 0.24rem 0.42rem rgb(0 0 0 / 44%);
+  transform: translateY(-1px);
+}
+
+.slots-page__spin-controls .slots-page__auto-spin:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 0.18rem;
+}
+
+.slots-page__spin-controls .slots-page__auto-spin--active {
+  background: #fff;
+  box-shadow:
+    0 0 0.75rem rgb(255 255 255 / 62%),
+    0 0.24rem 0.42rem rgb(0 0 0 / 44%);
+  color: #15111d;
+}
+
+.slots-page__spin-wager {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: 0.08rem 0.3rem 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 1000;
+  line-height: 1;
+  text-shadow: 0 0.22rem 0.4rem rgb(0 0 0 / 52%);
+  text-transform: uppercase;
+}
+
+.slots-page__spin-wager:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 0.12rem;
+}
+
+.slots-page__spin-wager:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
+.slots-page__spin-wager .slots-page__wager-label {
+  color: rgb(255 255 255 / 72%);
+  font-size: clamp(0.46rem, 0.72vw, 0.62rem);
+  letter-spacing: 0.14em;
+}
+
+.slots-page__spin-wager .slots-page__wager-value {
+  color: #fff;
+  font-size: clamp(0.82rem, 1.25vw, 1rem);
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+  .slots-page__playbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .slots-page__spin-controls {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: min(100%, 18rem);
+  }
+}
+
+@media (max-width: 480px) {
+  .slots-page__spin-controls {
+    grid-template-columns: 2.35rem minmax(5.2rem, auto) 2.35rem;
+    gap: 0.34rem;
+  }
+
+  .slots-page__wager-nudge {
+    width: 2.35rem;
+  }
+
+  .slots-page__spin-controls .spin-button {
+    width: clamp(5rem, 28vw, 5.8rem);
+  }
+}
+
+/* Match Free Spin to the approved simple outlined control language. */
+.slots-page__playbar > .slots-page__free-option {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  place-content: center;
+  align-items: center;
+  justify-self: center;
+  align-self: center;
+  gap: clamp(0.26rem, 0.6vw, 0.42rem);
+  width: min(100%, clamp(7.4rem, 11vw, 9.2rem));
+  min-height: clamp(2.1rem, 3.3vw, 2.65rem);
+  padding: 0.2rem clamp(0.62rem, 1.05vw, 0.86rem);
+  border: 2px solid rgb(255 255 255 / 88%);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 52%);
+  box-shadow:
+    0 0.24rem 0.42rem rgb(0 0 0 / 38%),
+    0 0 0.42rem rgb(255 255 255 / 10%);
+  color: #fff;
+  text-shadow: none;
+  transition:
+    background 140ms ease,
+    box-shadow 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.slots-page__playbar > .slots-page__free-option:hover:not(:disabled),
+.slots-page__playbar > .slots-page__free-option:focus-visible {
+  box-shadow:
+    0 0 0.65rem rgb(255 255 255 / 24%),
+    0 0.24rem 0.42rem rgb(0 0 0 / 42%);
+  transform: translateY(-1px);
+}
+
+.slots-page__playbar > .slots-page__free-option:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 0.18rem;
+}
+
+.slots-page__playbar > .slots-page__free-option > span {
+  color: currentColor;
+  font-size: clamp(0.62rem, 0.95vw, 0.82rem);
+  font-weight: 1000;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.slots-page__playbar > .slots-page__free-option strong {
+  display: inline-grid;
+  min-width: 1.55rem;
+  min-height: 1.25rem;
+  place-items: center;
+  padding-inline: 0.24rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: currentColor;
+  font: 1000 clamp(0.68rem, 1.05vw, 0.88rem) / 1 ui-monospace, Consolas, monospace;
+  text-shadow: none;
+}
+
+.slots-page__playbar > .slots-page__free-option--selected {
+  border-color: #fff;
+  background: #fff;
+  box-shadow:
+    0 0 0.75rem rgb(255 255 255 / 58%),
+    0 0.24rem 0.42rem rgb(0 0 0 / 42%);
+  color: #15111d;
+}
+
+.slots-page__playbar > .slots-page__free-option:disabled {
+  cursor: default;
+  opacity: 0.42;
+  transform: none;
+}
+
+@media (max-width: 480px) {
+  .slots-page__playbar > .slots-page__free-option {
+    width: min(100%, 8.3rem);
+    min-height: 2.3rem;
+    padding-inline: 0.58rem;
+  }
+}
+
+/* Match Balance to the approved simple outlined control language. */
+.slots-page__playbar > .slots-page__balance {
+  display: inline-grid;
+  align-content: center;
+  justify-items: start;
+  justify-self: center;
+  gap: 0.18rem;
+  width: min(100%, clamp(8rem, 14vw, 10.4rem));
+  min-height: clamp(2.8rem, 4.2vw, 3.45rem);
+  min-width: 0;
+  padding: 0.32rem clamp(0.72rem, 1.15vw, 0.92rem);
+  border: 2px solid rgb(255 255 255 / 88%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 28% 14%, rgb(255 255 255 / 14%), transparent 34%),
+    rgb(0 0 0 / 58%);
+  box-shadow:
+    0 0.24rem 0.42rem rgb(0 0 0 / 38%),
+    0 0 0.48rem rgb(255 255 255 / 10%);
+  color: #fff;
+  text-shadow: none;
+}
+
+.slots-page__playbar > .slots-page__balance .slots-page__balance-label {
+  color: rgb(255 255 255 / 72%);
+  font-size: clamp(0.5rem, 0.76vw, 0.64rem);
+  font-weight: 1000;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.slots-page__playbar > .slots-page__balance .slots-page__balance-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.slots-page__playbar > .slots-page__balance .slots-page__credit-coin {
+  width: clamp(1rem, 1.45vw, 1.22rem);
+  height: clamp(1rem, 1.45vw, 1.22rem);
+  filter:
+    drop-shadow(0 0 0.22rem rgb(255 198 61 / 72%))
+    drop-shadow(0 0.12rem 0.12rem rgb(0 0 0 / 50%));
+}
+
+.slots-page__playbar > .slots-page__balance .slots-page__balance-value {
+  overflow: hidden;
+  color: #fff;
+  font-size: clamp(1.02rem, 1.7vw, 1.36rem);
+  font-weight: 1000;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-shadow:
+    0 0 0.32rem rgb(255 255 255 / 32%),
+    0 0.2rem 0.36rem rgb(0 0 0 / 58%);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .slots-page__playbar > .slots-page__balance {
+    width: min(100%, 8.8rem);
+    min-height: 2.6rem;
+    padding-inline: 0.68rem;
+  }
+}
+
+/* Keep the complete Wukong play loop visible at common laptop heights. */
+@media (min-width: 901px) and (max-height: 940px) {
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__main {
+    padding-block: 0.45rem 0;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__layout {
+    grid-template-columns:
+      clamp(12.25rem, 18vw, 14.5rem)
+      minmax(0, min(42rem, calc((100svh - 11rem) * 1.08)));
+    gap: clamp(0.55rem, 1.2vw, 0.9rem);
+    width: min(100%, 58rem);
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__stage {
+    max-width: none;
+    gap: 0.3rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__meter-stack {
+    gap: 0.22rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__seal-collection {
+    grid-template-columns: 2.05rem minmax(0, 1fr);
+    padding: 0.2rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__energy-meter {
+    grid-template-columns: 2.15rem minmax(0, 1fr);
+    padding-block: 0.18rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__energy-meter > img {
+    height: 2.15rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__playbar {
+    padding-top: 0;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button {
+    width: clamp(4.5rem, 9svh, 5.35rem);
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .slots-page__auto-spin {
+    margin-top: -0.3rem;
+  }
+
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__footer {
+    min-height: 1.35rem;
+    padding-block: 0.08rem 0.2rem;
+  }
+}
+
+/* On compact mobile heights, Help already exposes the same rules; hiding this
+   secondary fixed trigger keeps it from covering the primary spin controls. */
+@media (max-width: 900px) and (max-height: 740px) {
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .symbol-value-guide__trigger {
+    display: none;
+  }
+}

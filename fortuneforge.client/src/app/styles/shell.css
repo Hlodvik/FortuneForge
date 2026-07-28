@@ -1,0 +1,58 @@
+.app-shell {
+  position: relative;
+  min-height: 100svh;
+  overflow-x: hidden;
+  background: #0a051c;
+  isolation: isolate;
+}
+
+.app-shell::before {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)),
+    url('../../assets/slots/backgrounds/background-clouds-poster.webp') 0 0 / 100vw 100vh no-repeat;
+  backface-visibility: hidden;
+  contain: strict;
+  content: '';
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+.app-shell__background-video {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  backface-visibility: hidden;
+  contain: strict;
+  object-fit: fill;
+  object-position: 0 0;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+.app-shell--themed-slot-backdrop::before {
+  background: #0a051c;
+}
+
+.app-shell--themed-slot-backdrop > .app-shell__background-video {
+  display: none;
+}
+
+.app-shell > .landing-page,
+.app-shell > .account-page,
+.app-shell > .player-page,
+.app-shell > .slots-page {
+  z-index: 1;
+}
+
+.app-shell--slot-game {
+  min-height: 100vh;
+}
+
+.app-shell--slot-game > .slots-page {
+  min-height: inherit;
+}

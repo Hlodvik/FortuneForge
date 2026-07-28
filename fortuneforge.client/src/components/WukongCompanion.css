@@ -1,0 +1,1086 @@
+.wukong-companion {
+  position: fixed;
+  z-index: 3;
+  right: clamp(0.15rem, 1.4vw, 1.4rem);
+  bottom: clamp(2.5rem, 6svh, 4.25rem);
+  width: clamp(12rem, 24vw, 24rem);
+  perspective: 48rem;
+  pointer-events: none;
+  transform-origin: 54% 88%;
+  animation: wukong-idle-float 3.8s ease-in-out infinite;
+  filter:
+    drop-shadow(0 1.15rem 0.85rem rgb(7 2 27 / 48%))
+    drop-shadow(0 0 1.1rem rgb(255 198 61 / 18%));
+  will-change: transform;
+}
+
+.wukong-companion::after {
+  position: absolute;
+  z-index: -1;
+  right: 10%;
+  bottom: -5%;
+  width: 68%;
+  height: 8%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgb(255 198 61 / 28%), rgb(239 61 255 / 11%) 42%, transparent 72%);
+  content: '';
+  filter: blur(0.55rem);
+  animation: wukong-idle-glow 3.8s ease-in-out infinite;
+}
+
+.wukong-companion__platform {
+  position: absolute;
+  z-index: 0;
+  top: 38%;
+  left: 0;
+  display: block;
+  width: 110%;
+  height: auto;
+  filter:
+    drop-shadow(0 0.7rem 0.8rem rgb(7 2 27 / 40%))
+    drop-shadow(0 0 1.05rem rgb(255 198 61 / 38%));
+  transform-origin: 50% 56%;
+  animation: wukong-cloud-idle 5.2s ease-in-out infinite;
+  user-select: none;
+  will-change: transform;
+}
+
+.wukong-companion--no-platform::after,
+.wukong-companion[data-platform='none']::after {
+  display: none;
+  content: none;
+}
+
+.wukong-companion--no-platform {
+  filter:
+    drop-shadow(0 1rem 0.75rem rgb(7 2 27 / 44%))
+    drop-shadow(0 0 1rem rgb(255 198 61 / 12%));
+}
+
+.wukong-companion__breath {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  aspect-ratio: 1;
+  scale: 1;
+  transform-origin: 54% 88%;
+  animation: wukong-idle-breathe 2.35s ease-in-out infinite;
+  will-change: transform;
+}
+
+.wukong-companion__sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.wukong-companion__sprite--idle {
+  transform-origin: 67% 84%;
+  animation: wukong-idle-staff-bob 2.9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.wukong-companion__action {
+  position: absolute;
+  z-index: 2;
+  right: auto;
+  bottom: 12%;
+  left: -5%;
+  width: 110%;
+  aspect-ratio: 2 / 3;
+  opacity: 0;
+  scale: 1;
+  filter:
+    drop-shadow(0 0.8rem 0.8rem rgb(7 2 27 / 44%))
+    drop-shadow(0 0 1rem rgb(255 198 61 / 24%));
+  transform-origin: 50% 86%;
+  transform-style: preserve-3d;
+  will-change: opacity, transform;
+}
+
+.wukong-companion__sprite--action {
+  height: auto;
+}
+
+.wukong-companion__backflip {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  opacity: 0;
+  scale: 1;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  transform-origin: 50% 50%;
+  will-change: opacity, transform;
+}
+
+.wukong-companion__sprite--backflip {
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.wukong-companion__celebration {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  opacity: 0;
+  transform: translate3d(0, 0.7rem, 0) scale(0.88);
+  transform-origin: 52% 88%;
+  will-change: opacity, transform;
+}
+
+.wukong-companion__celebration::before {
+  position: absolute;
+  z-index: 0;
+  inset: 10%;
+  border-radius: 50%;
+  background:
+    repeating-conic-gradient(from 4deg, rgb(255 230 116 / 0%) 0deg 9deg, rgb(255 230 116 / 68%) 10deg 12deg, rgb(255 230 116 / 0%) 13deg 28deg),
+    radial-gradient(circle, rgb(255 247 184 / 58%) 0 8%, rgb(255 198 61 / 24%) 35%, transparent 68%);
+  content: '';
+  filter: drop-shadow(0 0 1rem rgb(255 198 61 / 72%));
+  opacity: 0;
+  transform: scale(0.48) rotate(-12deg);
+}
+
+.wukong-companion__sprite--success {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  object-position: center;
+  opacity: 0;
+  filter:
+    drop-shadow(0 0.75rem 0.75rem rgb(7 2 27 / 46%))
+    drop-shadow(0 0 1rem rgb(255 218 80 / 38%));
+  will-change: opacity;
+}
+
+.wukong-companion__sprite--success-active {
+  opacity: 1;
+}
+
+.wukong-companion--performing .wukong-companion__breath {
+  animation: wukong-idle-launch 0.09s ease-in forwards;
+}
+
+.wukong-companion--performing {
+  animation: none;
+  filter: none;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.wukong-companion--performing .wukong-companion__backflip {
+  animation:
+    wukong-backflip-arc 0.54s linear 0.02s both,
+    wukong-backflip-fade 0.54s linear 0.02s both;
+}
+
+.wukong-companion--performing .wukong-companion__sprite--backflip {
+  animation: wukong-backflip-rotation 0.54s linear 0.02s both;
+}
+
+.wukong-companion--performing .wukong-companion__action {
+  animation: wukong-dab-landing 0.18s cubic-bezier(0.2, 0.85, 0.25, 1) 0.5s both;
+}
+
+.wukong-companion--celebrating {
+  animation: none;
+  filter: none;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.wukong-companion--celebrating .wukong-companion__action,
+.wukong-companion--celebrating .wukong-companion__backflip {
+  opacity: 0;
+  animation: none;
+}
+
+.wukong-companion--celebrating .wukong-companion__breath {
+  opacity: 0;
+  animation: wukong-success-idle-crossfade 0.11s ease-out 0.94s both;
+}
+
+.wukong-companion--celebrating .wukong-companion__celebration {
+  animation: wukong-success-pop 1.05s cubic-bezier(0.18, 0.82, 0.24, 1) both;
+}
+
+.wukong-companion--celebrating .wukong-companion__celebration::before {
+  animation: wukong-success-burst 1.05s ease-out both;
+}
+
+.wukong-companion--celebrating .wukong-companion__platform {
+  animation: wukong-success-cloud 0.21s ease-in-out 0.1s 5;
+}
+
+.wukong-companion--returning,
+.wukong-companion--success-returning {
+  animation: none;
+  filter: none;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.wukong-companion--returning .wukong-companion__action,
+.wukong-companion--success-returning .wukong-companion__action {
+  animation: wukong-dab-takeoff 0.16s cubic-bezier(0.55, 0, 0.9, 0.4) both;
+}
+
+.wukong-companion--returning .wukong-companion__backflip,
+.wukong-companion--success-returning .wukong-companion__backflip {
+  animation:
+    wukong-return-arc 0.58s linear 0.08s both,
+    wukong-return-fade 0.58s linear 0.08s both;
+}
+
+.wukong-companion--returning .wukong-companion__sprite--backflip,
+.wukong-companion--success-returning .wukong-companion__sprite--backflip {
+  animation: wukong-return-rotation 0.58s linear 0.08s both;
+}
+
+.wukong-companion--returning .wukong-companion__breath,
+.wukong-companion--success-returning .wukong-companion__breath {
+  animation: wukong-idle-return 0.12s cubic-bezier(0.18, 0.78, 0.28, 1.25) 0.6s both;
+}
+
+.wukong-companion--defeated {
+  animation: none;
+  filter: none;
+  transform: translate3d(0, 0, 0) rotate(0deg);
+}
+
+.wukong-companion--defeated .wukong-companion__action {
+  animation: wukong-defeat-fall 1.02s cubic-bezier(0.5, 0.05, 0.85, 0.4) both;
+}
+
+.wukong-companion--defeated .wukong-companion__sprite--action {
+  animation: wukong-defeat-flash 0.46s steps(1, end) both;
+}
+
+.wukong-companion--defeated .wukong-companion__backflip {
+  opacity: 0;
+}
+
+.wukong-companion--defeated .wukong-companion__breath {
+  animation: wukong-defeat-jump-back 0.7s cubic-bezier(0.2, 0.82, 0.24, 1) 1.45s both;
+}
+
+.wukong-companion--defeated .wukong-companion__platform {
+  animation: wukong-defeat-cloud-landing 2.15s linear both;
+}
+
+@keyframes wukong-success-pop {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0.75rem, 0) scale(0.86);
+  }
+
+  9% {
+    opacity: 1;
+    transform: translate3d(-0.12rem, -0.45rem, 0) scale(1.045);
+  }
+
+  17%,
+  92% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -0.22rem, 0) scale(0.98);
+  }
+}
+
+@keyframes wukong-success-idle-crossfade {
+  0%,
+  18% {
+    opacity: 0;
+    transform: translate3d(0, 0.12rem, 0) scale(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes wukong-success-burst {
+  0%,
+  5% {
+    opacity: 0;
+    transform: scale(0.42) rotate(-12deg);
+  }
+
+  18% {
+    opacity: 0.9;
+    transform: scale(1.02) rotate(4deg);
+  }
+
+  58% {
+    opacity: 0.42;
+    transform: scale(1.18) rotate(12deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.34) rotate(18deg);
+  }
+}
+
+@keyframes wukong-success-cloud {
+  0%,
+  100% { transform: translateY(0) scaleX(1); }
+  50% { transform: translateY(0.15rem) scaleX(1.025); }
+}
+
+@keyframes wukong-idle-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-0.45deg);
+  }
+
+  48% {
+    transform: translate3d(0, -0.55rem, 0) rotate(0.55deg);
+  }
+
+  72% {
+    transform: translate3d(0.12rem, -0.3rem, 0) rotate(0.15deg);
+  }
+}
+
+@keyframes wukong-idle-breathe {
+  0%,
+  100% {
+    transform: scaleX(1) scaleY(1);
+  }
+
+  50% {
+    transform: scaleX(1.012) scaleY(0.992);
+  }
+}
+
+@keyframes wukong-idle-staff-bob {
+  0%,
+  100% {
+    transform: rotate(-0.8deg) translateY(0);
+  }
+
+  46% {
+    transform: rotate(1.25deg) translateY(-0.12rem);
+  }
+
+  72% {
+    transform: rotate(0.3deg) translateY(-0.04rem);
+  }
+}
+
+@keyframes wukong-idle-launch {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  55% {
+    opacity: 1;
+    transform: translate3d(0, 0.45rem, 0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -1.7rem, 0);
+  }
+}
+
+@keyframes wukong-backflip-arc {
+  0% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.18, 0.68, 0.28, 1);
+  }
+
+  50% {
+    transform: translate3d(0, -29svh, 0);
+    animation-timing-function: cubic-bezier(0.72, 0, 0.82, 0.32);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes wukong-backflip-fade {
+  0% {
+    opacity: 0;
+  }
+
+  7%,
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes wukong-backflip-rotation {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-360deg);
+  }
+}
+
+@keyframes wukong-dab-landing {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -2.6rem, 0) rotate(-3deg);
+  }
+
+  30% {
+    opacity: 1;
+  }
+
+  70% {
+    opacity: 1;
+    transform: translate3d(0, 0.38rem, 0) rotate(1deg);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+@keyframes wukong-dab-takeoff {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  65% {
+    opacity: 1;
+    transform: translate3d(0, 0.45rem, 0) rotate(1deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -2.8rem, 0) rotate(-3deg);
+  }
+}
+
+@keyframes wukong-return-arc {
+  0% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.18, 0.68, 0.28, 1);
+  }
+
+  50% {
+    transform: translate3d(0, -24svh, 0);
+    animation-timing-function: cubic-bezier(0.72, 0, 0.82, 0.32);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes wukong-return-fade {
+  0% {
+    opacity: 0;
+  }
+
+  8%,
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes wukong-return-rotation {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-360deg);
+  }
+}
+
+@keyframes wukong-idle-return {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -1.8rem, 0) scale(0.98);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translate3d(0, 0.28rem, 0) scaleX(1.01) scaleY(0.985);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes wukong-defeat-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+
+  12% {
+    opacity: 1;
+    transform: translate3d(-1.35rem, -0.2rem, 0) rotate(-8deg) scale(1.035);
+  }
+
+  28% {
+    opacity: 1;
+    transform: translate3d(0.55rem, 0.65rem, 0) rotate(12deg) scale(1);
+  }
+
+  48% {
+    opacity: 1;
+    transform: translate3d(-0.3rem, 5svh, 0) rotate(-14deg) scale(0.99);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(1.5rem, 78svh, 0) rotate(56deg) scale(0.96);
+  }
+}
+
+@keyframes wukong-defeat-flash {
+  0%,
+  14%,
+  29%,
+  100% {
+    filter: none;
+  }
+
+  7%,
+  22% {
+    filter:
+      brightness(0)
+      invert(1)
+      drop-shadow(0 0 0.45rem #fff)
+      drop-shadow(0 0 1.35rem rgb(255 248 255 / 95%));
+  }
+}
+
+@keyframes wukong-defeat-jump-back {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 62svh, 0) scale(0.92);
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  68% {
+    opacity: 1;
+    transform: translate3d(0, -1.45rem, 0) scale(1.025);
+  }
+
+  84% {
+    opacity: 1;
+    transform: translate3d(0, 0.38rem, 0) scaleX(1.018) scaleY(0.975);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes wukong-defeat-cloud-landing {
+  0%,
+  78% {
+    transform: scale(1);
+  }
+
+  86% {
+    transform: scaleX(1.07) scaleY(0.93);
+  }
+
+  93% {
+    transform: scaleX(0.985) scaleY(1.025);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes wukong-cloud-idle {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scaleX(1) scaleY(1);
+  }
+
+  16% {
+    transform: translate3d(-0.08rem, -0.02rem, 0) scaleX(1.008) scaleY(0.996);
+  }
+
+  33% {
+    transform: translate3d(-0.04rem, -0.06rem, 0) scaleX(1.019) scaleY(0.988);
+  }
+
+  50% {
+    transform: translate3d(0, -0.08rem, 0) scaleX(1.027) scaleY(0.983);
+  }
+
+  67% {
+    transform: translate3d(0.05rem, -0.05rem, 0) scaleX(1.018) scaleY(0.989);
+  }
+
+  84% {
+    transform: translate3d(0.08rem, -0.02rem, 0) scaleX(1.007) scaleY(0.996);
+  }
+}
+
+@keyframes wukong-idle-glow {
+  0%,
+  100% {
+    opacity: 0.62;
+    transform: scaleX(0.92);
+  }
+
+  48% {
+    opacity: 0.92;
+    transform: scaleX(1.08);
+  }
+}
+
+@media (max-width: 560px) {
+  .slots-page {
+    background-attachment: scroll;
+    background-position: center bottom;
+  }
+
+  .slots-page__main {
+    padding: 0.75rem 0.35rem;
+  }
+
+  .slots-page__topbar {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.55rem;
+    padding: 0.65rem 0.6rem;
+  }
+
+  .slots-page__brand-name {
+    font-size: 1rem;
+    letter-spacing: 0.03em;
+  }
+
+  .slots-page__brand {
+    width: auto;
+    gap: 0.5rem;
+  }
+
+  .slots-page__brand-actions {
+    gap: 0.3rem;
+  }
+
+  .slots-page__purchase-credits {
+    padding-inline: 0.34rem 0.52rem;
+    font-size: 0.65rem;
+  }
+
+  .slots-page__help-button {
+    width: 2.15rem;
+    height: 2.15rem;
+    font-size: 1rem;
+  }
+
+  .slots-page__settings-button {
+    width: 2.15rem;
+    height: 2.15rem;
+    font-size: 1rem;
+  }
+
+  .slots-page__machine-hud {
+    width: 100%;
+    justify-content: center;
+    gap: 0.18rem;
+  }
+
+  .slots-page__machine-hud-primary {
+    grid-template-columns:
+      minmax(5.8rem, 1.35fr)
+      minmax(3.35rem, 0.8fr)
+      minmax(2.8rem, 0.7fr)
+      minmax(6.5rem, 1.25fr);
+    gap: 0.18rem;
+  }
+
+  .slots-page__machine-hud-bonuses {
+    gap: 0.18rem;
+  }
+
+  .slots-page__machine-hud .slots-page__balance {
+    min-width: 3.35rem;
+    padding: 0.25rem 0.32rem;
+  }
+
+  .slots-page__machine-hud .slots-page__balance--win {
+    min-width: 2.8rem;
+  }
+
+  .slots-page__energy-meter {
+    grid-template-columns: 1.45rem minmax(3.9rem, 5rem);
+    min-width: 5.8rem;
+    gap: 0.15rem;
+    padding: 0.16rem 0.3rem 0.16rem 0.2rem;
+  }
+
+  .slots-page__energy-meter > img {
+    height: 1.45rem;
+  }
+
+  .slots-page__energy-label {
+    font-size: 0.4rem;
+  }
+
+  .slots-page__energy-copy strong {
+    font-size: 0.5rem;
+  }
+
+  .slots-page__energy-track {
+    height: 0.32rem;
+  }
+
+  .slots-page__balance-label,
+  .slots-page__wager-label {
+    font-size: 0.47rem;
+  }
+
+  .slots-page__balance-value,
+  .slots-page__wager-value {
+    font-size: 0.86rem;
+  }
+
+  .slots-page__wager {
+    grid-template-columns: 1.65rem minmax(2.5rem, auto) 1.65rem;
+    padding: 0.12rem;
+  }
+
+  .slots-page__wager-button {
+    width: 1.65rem;
+    height: 1.65rem;
+    font-size: 0.92rem;
+  }
+
+  .slots-page__free-option {
+    min-width: 3.9rem;
+    padding: 0.24rem 0.32rem;
+    font-size: 0.4rem;
+  }
+
+  .slots-page__power-meter {
+    grid-template-columns: 1.55rem auto;
+    min-width: 5.6rem;
+    column-gap: 0.2rem;
+    padding: 0.22rem 0.35rem 0.22rem 0.25rem;
+  }
+
+  .slots-page__power-meter img {
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .slots-page__power-meter span,
+  .slots-page__power-meter small {
+    font-size: 0.34rem;
+  }
+
+  .slots-page__power-meter strong {
+    font-size: 0.72rem;
+  }
+
+  .slots-page__wager-button {
+    width: 2rem;
+    height: 2rem;
+    font-size: 1rem;
+  }
+
+  .slots-page__wager-readout {
+    padding-inline: 0.18rem;
+  }
+
+  .wukong-companion {
+    right: -0.7rem;
+    bottom: 2.6rem;
+    width: clamp(8.5rem, 36vw, 11rem);
+  }
+
+  .slots-page__footer {
+    min-height: 2.4rem;
+    padding: 0.5rem 0.75rem 0.7rem;
+    font-size: 0.58rem;
+    text-align: center;
+  }
+
+  .symbol-value-guide--modal {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: min(34rem, 100%);
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .win-help__backdrop {
+    place-items: end center;
+    padding: 0.55rem;
+  }
+
+  .fortune-prompt__backdrop {
+    place-items: end center;
+    padding: 0.55rem;
+  }
+
+  .game-settings__backdrop {
+    place-items: end center;
+    padding: 0.55rem;
+  }
+
+  .game-settings {
+    max-height: 94svh;
+    padding: 1.15rem;
+    border-radius: 1.25rem;
+  }
+
+  .fortune-prompt {
+    max-height: 94svh;
+    padding: 1.15rem;
+    border-radius: 1.25rem;
+  }
+
+  .win-help {
+    max-height: 91svh;
+    padding: 1.15rem;
+    border-radius: 1.25rem;
+  }
+
+  .win-help__rule {
+    grid-template-columns: 3.2rem 1fr;
+    gap: 0.7rem;
+    padding: 0.72rem;
+  }
+
+  .win-help__rule-number {
+    min-height: 2.65rem;
+    font-size: 0.95rem;
+  }
+
+  .win-help__pictograms {
+    grid-template-columns: repeat(4, minmax(2.8rem, 1fr));
+    gap: 0.35rem 0.5rem;
+  }
+
+  .win-help__five-pictograms {
+    grid-template-columns: repeat(3, minmax(3.5rem, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .slots-page__topbar {
+    padding-inline: 0.45rem;
+  }
+
+  .slots-page__purchase-credits {
+    width: 2.15rem;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .slots-page__purchase-credits > span {
+    display: none;
+  }
+
+  .slots-page__machine-hud {
+    gap: 0.2rem;
+  }
+
+  .slots-page__machine-hud-primary {
+    grid-template-columns: 1.35fr 0.8fr 0.7fr 1.25fr;
+    gap: 0.12rem;
+  }
+
+  .slots-page__energy-meter {
+    min-width: 0;
+    grid-template-columns: 1.3rem minmax(0, 1fr);
+    padding-inline: 0.16rem;
+  }
+
+  .slots-page__machine-hud .slots-page__balance {
+    min-width: 0;
+    padding-inline: 0.35rem;
+  }
+
+  .slots-page__balance-value,
+  .slots-page__wager-value {
+    font-size: 0.78rem;
+  }
+
+  .slots-page__wager {
+    grid-template-columns: 1.6rem minmax(0, 1fr) 1.6rem;
+  }
+
+  .slots-page__wager-button {
+    width: 1.6rem;
+    height: 1.8rem;
+  }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  .slots-page__topbar {
+    min-height: 3.35rem;
+    padding-block: 0.35rem;
+  }
+
+  .slots-page__main {
+    padding-block: 0.45rem;
+  }
+
+  .slots-page__stage {
+    width: min(100%, 94rem, calc((100svh - 7.25rem) * 1.34));
+  }
+
+  .slots-page__footer {
+    min-height: 2.2rem;
+    padding-block: 0.35rem 0.5rem;
+  }
+
+  .wukong-companion {
+    bottom: 1.8rem;
+    width: clamp(7.5rem, 22vw, 10rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell__background-video {
+    display: none;
+  }
+
+  .app-shell::before {
+    background-image:
+      linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)),
+      url('../assets/slots/backgrounds/background-clouds-poster.webp');
+  }
+
+  .app-shell--themed-slot-backdrop::before {
+    background: #0a051c;
+    background-image: none;
+  }
+
+  .slots-page {
+    background-attachment: scroll;
+  }
+
+  .wukong-companion,
+  .slots-page::before,
+  .wukong-companion::after,
+  .wukong-companion__platform,
+  .wukong-companion__breath,
+  .wukong-companion__backflip,
+  .wukong-companion__celebration,
+  .wukong-companion__celebration::before,
+  .wukong-companion__sprite--backflip,
+  .wukong-companion__sprite--idle,
+  .wukong-companion__sprite--success {
+    animation: none;
+  }
+
+  .slots-page__energy-flyover,
+  .slots-page__win-award,
+  .slots-page__free-spin-badge,
+  .slots-page__energy-meter--impact {
+    animation: none;
+  }
+
+  .wukong-companion--performing .wukong-companion__breath {
+    opacity: 0;
+  }
+
+  .wukong-companion--performing .wukong-companion__action {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .wukong-companion--performing .wukong-companion__backflip {
+    opacity: 0;
+    animation: none;
+  }
+
+  .wukong-companion--returning .wukong-companion__breath,
+  .wukong-companion--success-returning .wukong-companion__breath {
+    opacity: 1;
+    animation: none;
+  }
+
+  .wukong-companion--returning .wukong-companion__action,
+  .wukong-companion--returning .wukong-companion__backflip,
+  .wukong-companion--success-returning .wukong-companion__action,
+  .wukong-companion--success-returning .wukong-companion__backflip {
+    opacity: 0;
+    animation: none;
+  }
+
+  .wukong-companion--celebrating .wukong-companion__breath,
+  .wukong-companion--celebrating .wukong-companion__action,
+  .wukong-companion--celebrating .wukong-companion__backflip {
+    opacity: 0;
+    animation: none;
+  }
+
+  .wukong-companion--celebrating .wukong-companion__celebration,
+  .wukong-companion--celebrating .wukong-companion__sprite--success-active {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .wukong-companion--celebrating .wukong-companion__sprite--success {
+    transition: none;
+  }
+
+  .wukong-companion--defeated .wukong-companion__breath {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .wukong-companion--defeated .wukong-companion__action,
+  .wukong-companion--defeated .wukong-companion__backflip {
+    opacity: 0;
+    animation: none;
+  }
+
+  .wukong-companion--defeated .wukong-companion__platform,
+  .wukong-companion--defeated .wukong-companion__sprite--action {
+    animation: none;
+  }
+
+  .win-help__backdrop,
+  .win-help {
+    animation: none;
+  }
+}

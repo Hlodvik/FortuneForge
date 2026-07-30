@@ -35,6 +35,10 @@ type EnergyFlyover = {
   durationMs: number
 }
 
+type SealFlyover = EnergyFlyover & {
+  symbol: SlotSymbolId
+}
+
 type WinAwardFlyover = {
   id: number
   amount: number
@@ -181,6 +185,8 @@ export function useSlotsPageController({
     useState<SlotSealCollection[]>(defaultSealCollections)
   const [energyFlyover, setEnergyFlyover] = useState<EnergyFlyover | null>(null)
   const [energyImpactKey, setEnergyImpactKey] = useState(0)
+  const [sealFlyover, setSealFlyover] = useState<SealFlyover | null>(null)
+  const [sealImpactId, setSealImpactId] = useState<string | null>(null)
   const [winAwardFlyover, setWinAwardFlyover] = useState<WinAwardFlyover | null>(null)
   const [moneyGrabPresentation, setMoneyGrabPresentation] =
     useState<MoneyGrabPresentation | null>(null)
@@ -504,6 +510,133 @@ export function useSlotsPageController({
       }
     }
     settleEnergy()
+  }
+
+  async function animateSealCollection(
+    result: SpinResult,
+    isFastAutoSpin: boolean,
+    signal: AbortSignal,
+  ) {
+    const settleSeals = () => {
+      if (!isCurrentPresentation(signal)) {
+        return
+      }
+      setSealFlyover(null)
+      setSealImpactId(null)
+      setSealCollections(
+        result.sealCollections.length > 0
+          ? result.sealCollections
+          : defaultSealCollections,
+      )
+    }
+
+    const collectionFeature = featureSet.collections
+    if (!collectionFeature) {
+      settleSeals()
+      return
+    }
+
+    const collectionsBySymbol = new Map(
+      collectionFeature.entries.map((collection) => [collection.symbol, collection]),
+    )
+    const sealPositions = result.reels.flatMap((reel, reelIndex) =>
+      reel.flatMap((symbol, rowIndex) => {
+        const collection = collectionsBySymbol.get(symbol)
+        return collection
+          ? [{ collection, reel: reelIndex, row: rowIndex, symbol }]
+          : []
+      }),
+    )
+
+    if (
+      sealPositions.length === 0 ||
+      prefersReducedMotionRef.current ||
+      signal.aborted
+    ) {
+      settleSeals()
+      return
+    }
+
+    const delayCompleted = await waitForPresentation(
+      isFastAutoSpin ? 55 : 150,
+      signal,
+    )
+    const frameCompleted = delayCompleted
+      ? await waitForPresentationFrame(signal)
+      : false
+    if (!frameCompleted) {
+      settleSeals()
+      return
+    }
+
+    const animatedCounts = new Map(
+      visibleSealCollections.map((collection) => [collection.sealId, collection.count]),
+    )
+    const finalCollections = new Map(
+      result.sealCollections.map((collection) => [collection.sealId, collection]),
+    )
+
+    for (const [index, position] of sealPositions.entries()) {
+      const source = document.querySelector<HTMLElement>(
+        `.slot-symbol[data-symbol="${position.symbol}"][data-reel-index="${position.reel}"][data-row-index="${position.row}"]`,
+      )
+      const destination = document.querySelector<HTMLElement>(
+        `.slots-page__seal-collection[data-seal-id="${position.collection.id}"]`,
+      )
+      const sourceRect = source?.getBoundingClientRect()
+      const destinationRect = destination?.getBoundingClientRect()
+
+      if (sourceRect && destinationRect) {
+        const durationMs = isFastAutoSpin ? 330 : 560
+        setSealFlyover({
+          id: Date.now() + index,
+          symbol: position.symbol,
+          left: sourceRect.left,
+          top: sourceRect.top,
+          width: sourceRect.width,
+          height: sourceRect.height,
+          travelX:
+            destinationRect.left + destinationRect.width / 2 -
+            (sourceRect.left + sourceRect.width / 2),
+          travelY:
+            destinationRect.top + destinationRect.height / 2 -
+            (sourceRect.top + sourceRect.height / 2),
+          durationMs,
+        })
+        const completed = await waitForPresentation(durationMs, signal)
+        if (!completed) {
+          settleSeals()
+          return
+        }
+      }
+
+      const currentCount = animatedCounts.get(position.collection.id) ?? 0
+      const finalCollection = finalCollections.get(position.collection.id)
+      const nextCount = finalCollection && finalCollection.count >= currentCount
+        ? Math.min(finalCollection.count, currentCount + 1)
+        : Math.min(position.collection.requiredCount, currentCount + 1)
+      animatedCounts.set(position.collection.id, nextCount)
+      setSealCollections((currentCollections) =>
+        currentCollections.map((collection) =>
+          collection.sealId === position.collection.id
+            ? { ...collection, count: nextCount }
+            : collection,
+        ),
+      )
+      setSealFlyover(null)
+      setSealImpactId(position.collection.id)
+      const impactCompleted = await waitForPresentation(
+        isFastAutoSpin ? 45 : 105,
+        signal,
+      )
+      setSealImpactId(null)
+      if (!impactCompleted) {
+        settleSeals()
+        return
+      }
+    }
+
+    settleSeals()
   }
 
   async function animateNumberValue(
@@ -1024,7 +1157,6 @@ export function useSlotsPageController({
       setLastFreeSpinsAwarded(result.freeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
       setFreeSpinsRemaining(result.freeSpinsRemaining)
-      setSealCollections(result.sealCollections.length > 0 ? result.sealCollections : defaultSealCollections)
       setFreeSpinWagerPoints(
         result.freeSpinsRemaining > 0
           ? result.freeSpinWagerPoints ?? freeSpinWagerPoints ?? result.wagerPoints
@@ -1050,6 +1182,7 @@ export function useSlotsPageController({
         isFastAutoSpin,
         presentationSignal,
       )
+      await animateSealCollection(result, isFastAutoSpin, presentationSignal)
       await animateEnergyCollection(result, isFastAutoSpin, presentationSignal)
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {
@@ -1086,6 +1219,8 @@ export function useSlotsPageController({
       setLastEnergyAwarded(0)
       setLastEnergyMultiplierApplied(false)
       setEnergyFlyover(null)
+      setSealFlyover(null)
+      setSealImpactId(null)
       setWinAwardFlyover(null)
       setMoneyGrabPresentation(null)
       if (expectedFreeSpin && !isFreeSpinUnavailable) {
@@ -1247,6 +1382,8 @@ export function useSlotsPageController({
     reelStripStyle,
     reloadPromptCloseButtonRef,
     selectedWager,
+    sealFlyover,
+    sealImpactId,
     setIsAutoSpinning,
     setIsHelpOpen,
     setIsReloadPromptOpen,

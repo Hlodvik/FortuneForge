@@ -44,10 +44,10 @@ public sealed partial class FirestoreAccountStore
         if (energyCompleted)
         {
             var nearestMode = SealFeatureModes
-                .OrderByDescending(mode => Math.Min(counts[mode], SealCompletionTarget - 1))
+                .OrderByDescending(mode => Math.Min(counts[mode], SealCollectionRules.CompletionTarget - 1))
                 .ThenBy(mode => Array.IndexOf(SealFeatureModes, mode))
                 .First();
-            var missing = Math.Max(1, SealCompletionTarget - counts[nearestMode]);
+            var missing = Math.Max(1, SealCollectionRules.CompletionTarget - counts[nearestMode]);
             counts[nearestMode] = checked(counts[nearestMode] + missing);
             wagerTotals[nearestMode] = checked(wagerTotals[nearestMode] + result.WagerPoints * missing);
             changed = true;
@@ -59,7 +59,7 @@ public sealed partial class FirestoreAccountStore
 
         foreach (var mode in SealFeatureModes)
         {
-            if (counts[mode] < SealCompletionTarget)
+            if (counts[mode] < SealCollectionRules.CompletionTarget)
             {
                 continue;
             }
@@ -73,7 +73,7 @@ public sealed partial class FirestoreAccountStore
                 freeSpinWagerPoints = averageWager > 0 ? averageWager : result.WagerPoints;
             }
 
-            var overflow = counts[mode] - SealCompletionTarget;
+            var overflow = counts[mode] - SealCollectionRules.CompletionTarget;
             counts[mode] = Math.Max(0, overflow);
             wagerTotals[mode] = counts[mode] > 0
                 ? checked(averageWager * counts[mode])
@@ -98,7 +98,7 @@ public sealed partial class FirestoreAccountStore
             .Select(mode =>
             {
                 var count = Math.Min(
-                    SealCompletionTarget,
+                    SealCollectionRules.CompletionTarget,
                     Math.Max(0, counts.TryGetValue(mode, out var rawCount) ? rawCount : 0));
                 var wagerTotal = Math.Max(0, wagerTotals.TryGetValue(mode, out var rawTotal) ? rawTotal : 0);
                 var averageWager = count <= 0 ? 0 : DivideRounded(wagerTotal, count);
@@ -106,7 +106,7 @@ public sealed partial class FirestoreAccountStore
                     mode,
                     checked((int)count),
                     averageWager,
-                    SealCompletionTarget);
+                    SealCollectionRules.CompletionTarget);
             })
             .ToArray();
 

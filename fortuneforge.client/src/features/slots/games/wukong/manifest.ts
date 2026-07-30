@@ -14,10 +14,10 @@ const WUKONG_FEATURES: SlotFeatureSet = {
   collections: {
     ariaLabel: 'Power seal collections',
     entries: [
-      { id: 'sync', label: 'Sync reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 44 },
-      { id: 'rows', label: '+2 rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 44 },
-      { id: 'paw', label: 'Monkey paw odds', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 44 },
-      { id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 44 },
+      { id: 'sync', label: 'Sync reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40 },
+      { id: 'rows', label: '+2 rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40 },
+      { id: 'paw', label: 'Monkey paw odds', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40 },
+      { id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40 },
     ],
   },
   moneyGrab: {
@@ -41,9 +41,9 @@ const WUKONG_HELP: SlotHelpDefinition = {
       body: 'A monkey paw anywhere on screen grabs every Rand multiplier coin showing in the window. Two paws are much rarer and double the grabbed amount. Three bananas in a row, column, or diagonal pay 3× the wager.',
     },
     {
-      badge: '44',
+      badge: 'SEAL',
       title: 'Power seal collections',
-      body: 'Sync, Rows, Paw, and Rand seals collect from anywhere visible. A completed 44-seal collection awards ten free spins tied to that collection’s average wager. Energy at 25%, 50%, and 75% improves seal odds; a full energy meter boosts the payout by 1.5×, resets, and finishes the nearest seal track.',
+      body: 'Sync, Rows, Paw, and Rand seals collect from anywhere visible. A completed 40-seal collection awards ten free spins tied to that collection’s average wager. Energy at 25%, 50%, and 75% improves seal odds; a full energy meter boosts the payout by 1.5×, resets, and finishes the nearest seal track.',
     },
   ],
 }

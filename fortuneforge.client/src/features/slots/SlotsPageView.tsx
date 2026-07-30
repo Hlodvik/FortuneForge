@@ -6,7 +6,7 @@ import { AudioSettingsDialog, SlotMachine, SlotSymbol, SpinButton, SymbolValueGu
 import { getSlotSymbolDefinition } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
-import { creditFormatter, formatRand } from './slotPagePresentation'
+import { creditFormatter, formatRand, getSlotSymbolValueLabel } from './slotPagePresentation'
 import type { SlotsPageController } from './useSlotsPageController'
 import { WinHelpDialog } from './WinHelpDialog'
 
@@ -55,6 +55,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     reelStripStyle,
     reloadPromptCloseButtonRef,
     selectedWager,
+    sealFlyover,
+    sealImpactId,
     setIsAutoSpinning,
     setIsHelpOpen,
     setIsReloadPromptOpen,
@@ -155,7 +157,8 @@ export function SlotsPageView(controller: SlotsPageController) {
                 const progress = Math.min(100, collection.count / collection.requiredCount * 100)
                 return (
                   <div
-                    className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId}`}
+                    className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId}${sealImpactId === collection.sealId ? ' slots-page__seal-collection--impact' : ''}`}
+                    data-seal-id={collection.sealId}
                     key={collection.sealId}
                     role="progressbar"
                     aria-label={`${seal.label}: ${collection.count} of ${collection.requiredCount} seals`}
@@ -164,19 +167,8 @@ export function SlotsPageView(controller: SlotsPageController) {
                     aria-valuenow={collection.count}
                   >
                     <img src={getSlotSymbolDefinition(symbolSet, seal.symbol).image} alt="" aria-hidden="true" />
-                    <span className="slots-page__seal-copy">
-                      <span className="slots-page__seal-row">
-                        <strong>{seal.shortLabel}</strong>
-                        <em>{collection.count}/{collection.requiredCount}</em>
-                      </span>
-                      <span className="slots-page__seal-meter" aria-hidden="true">
-                        <span style={{ width: `${progress}%` }} />
-                      </span>
-                      <small>
-                        {collection.averageWagerPoints > 0
-                          ? `avg ${formatRand(collection.averageWagerPoints)}`
-                          : 'collect any'}
-                      </small>
+                    <span className="slots-page__seal-meter" aria-hidden="true">
+                      <span style={{ width: `${progress}%` }} />
                     </span>
                   </div>
                 )
@@ -224,6 +216,10 @@ export function SlotsPageView(controller: SlotsPageController) {
                     key={`row-${rowIndex}`}
                     symbol={symbol}
                     symbolSet={symbolSet}
+                    valueLabel={getSlotSymbolValueLabel(
+                      getSlotSymbolDefinition(symbolSet, symbol),
+                      activeWagerDisplay,
+                    )}
                     reelIndex={reelIndex}
                      rowIndex={rowIndex}
                     animated={shouldUseAnimatedSymbol(
@@ -360,6 +356,25 @@ export function SlotsPageView(controller: SlotsPageController) {
         />
       )}
 
+      {sealFlyover && collectionFeature && (
+        <img
+          key={sealFlyover.id}
+          className="slots-page__seal-flyover"
+          src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
+          alt=""
+          aria-hidden="true"
+          style={{
+            left: sealFlyover.left,
+            top: sealFlyover.top,
+            width: sealFlyover.width,
+            height: sealFlyover.height,
+            animationDuration: `${sealFlyover.durationMs}ms`,
+            '--seal-travel-x': `${sealFlyover.travelX}px`,
+            '--seal-travel-y': `${sealFlyover.travelY}px`,
+          } as CSSProperties}
+        />
+      )}
+
       {moneyGrabPresentation && moneyGrabFeature && (
         <div
           key={moneyGrabPresentation.id}
@@ -369,11 +384,12 @@ export function SlotsPageView(controller: SlotsPageController) {
         >
           {moneyGrabPresentation.tokens.map((token) => {
             const definition = getSlotSymbolDefinition(symbolSet, token.symbol)
+            const valueLabel = getSlotSymbolValueLabel(definition, activeWagerDisplay)
             return (
               <div
                 key={token.id}
                 className="slots-page__money-grab-token"
-                data-value-label={definition.valueLabel}
+                data-value-label={valueLabel}
                 aria-hidden="true"
                 style={{
                   left: token.left,

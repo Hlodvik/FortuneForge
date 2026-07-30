@@ -115,17 +115,17 @@
 .slots-page__seal-collections {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.28rem, 0.7vw, 0.54rem);
+  gap: clamp(0.36rem, 0.85vw, 0.68rem);
   width: 100%;
 }
 
 .slots-page__seal-collection {
   display: grid;
-  grid-template-columns: clamp(1.9rem, 3.25vw, 2.65rem) minmax(0, 1fr);
+  grid-template-columns: clamp(2.7rem, 4.4vw, 3.7rem) minmax(0, 1fr);
   align-items: center;
-  gap: clamp(0.24rem, 0.58vw, 0.44rem);
+  gap: clamp(0.34rem, 0.72vw, 0.62rem);
   min-width: 0;
-  padding: clamp(0.24rem, 0.52vw, 0.42rem);
+  padding: clamp(0.34rem, 0.68vw, 0.56rem);
   border: 1px solid rgb(246 185 47 / 45%);
   border-radius: clamp(0.52rem, 1vw, 0.84rem);
   background:
@@ -137,6 +137,10 @@
   color: #fff7cf;
 }
 
+.slots-page__seal-collection--impact {
+  animation: seal-card-impact 420ms cubic-bezier(0.2, 0.82, 0.2, 1);
+}
+
 .slots-page__seal-collection > img {
   width: 100%;
   aspect-ratio: 1;
@@ -146,46 +150,15 @@
     drop-shadow(0 0 0.36rem rgb(246 185 47 / 60%));
 }
 
-.slots-page__seal-copy {
-  display: grid;
-  gap: 0.12rem;
-  min-width: 0;
-}
-
-.slots-page__seal-row {
-  display: flex;
-  min-width: 0;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.28rem;
-}
-
-.slots-page__seal-row strong {
-  overflow: hidden;
-  color: #ffc63d;
-  font-size: clamp(0.52rem, 0.8vw, 0.68rem);
-  font-weight: 1000;
-  letter-spacing: 0.08em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.slots-page__seal-row em {
-  color: rgb(255 255 255 / 84%);
-  font: 900 clamp(0.56rem, 0.82vw, 0.72rem)/1 ui-monospace, Consolas, monospace;
-  font-style: normal;
-}
-
 .slots-page__seal-meter {
   position: relative;
   display: block;
-  height: clamp(0.28rem, 0.52vw, 0.42rem);
+  height: clamp(0.58rem, 0.9vw, 0.78rem);
   overflow: hidden;
   border-radius: 999px;
   background: rgb(0 0 0 / 44%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 12%);
+  box-shadow: inset 0 0 0.4rem rgb(0 0 0 / 56%);
 }
 
 .slots-page__seal-meter span {
@@ -198,15 +171,19 @@
   transition: width 240ms ease;
 }
 
-.slots-page__seal-copy small {
-  overflow: hidden;
-  color: rgb(255 255 255 / 60%);
-  font-size: clamp(0.48rem, 0.72vw, 0.6rem);
-  font-weight: 800;
-  line-height: 1;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
+@keyframes seal-card-impact {
+  0%, 100% {
+    border-color: rgb(246 185 47 / 45%);
+    transform: scale(1);
+  }
+
+  45% {
+    border-color: rgb(255 248 182 / 100%);
+    box-shadow:
+      inset 0 0 1rem rgb(255 228 92 / 24%),
+      0 0 1.15rem rgb(246 185 47 / 74%);
+    transform: scale(1.055);
+  }
 }
 
 .slots-page__energy-meter {
@@ -317,7 +294,7 @@
   }
 
   .slots-page__seal-collections {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .slots-page__seal-track {
@@ -355,8 +332,19 @@
   }
 
   .slots-page__seal-collection {
-    grid-template-columns: 1.55rem minmax(0, 1fr);
-    padding: 0.2rem;
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 0.15rem;
+    padding: 0.2rem 0.18rem 0.26rem;
+  }
+
+  .slots-page__seal-collection > img {
+    width: clamp(2.2rem, 11vw, 3rem);
+  }
+
+  .slots-page__seal-meter {
+    width: 100%;
+    height: clamp(0.42rem, 2vw, 0.58rem);
   }
 
   .slots-page__energy-meter {
@@ -1334,8 +1322,8 @@
   }
 
   .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__seal-collection {
-    grid-template-columns: 2.05rem minmax(0, 1fr);
-    padding: 0.2rem;
+    grid-template-columns: 2.65rem minmax(0, 1fr);
+    padding: 0.24rem;
   }
 
   .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__energy-meter {

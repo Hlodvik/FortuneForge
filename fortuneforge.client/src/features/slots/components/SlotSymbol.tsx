@@ -11,6 +11,7 @@ type SlotSymbolProps = {
   rowIndex?: number
   symbol: SlotSymbolId
   symbolSet: SlotSymbolSet
+  valueLabel?: string
 }
 
 export function SlotSymbol({
@@ -22,6 +23,7 @@ export function SlotSymbol({
   rowIndex,
   symbol,
   symbolSet,
+  valueLabel,
 }: SlotSymbolProps) {
   // The reel supplies its symbol set, keeping this renderer theme-agnostic.
   const definition = getSlotSymbolDefinition(symbolSet, symbol)
@@ -46,7 +48,7 @@ export function SlotSymbol({
     >
       <div
         className="slot-symbol__artwork"
-        data-value-label={definition.valueLabel}
+        data-value-label={valueLabel ?? definition.valueLabel}
       >
         <img
           className="slot-symbol__image"

@@ -364,6 +364,22 @@
   will-change: transform, opacity, filter;
 }
 
+.slots-page__seal-flyover {
+  position: fixed;
+  z-index: 146;
+  display: block;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center;
+  filter:
+    drop-shadow(0 0 0.72rem rgb(255 255 255 / 100%))
+    drop-shadow(0 0 1rem rgb(246 185 47 / 96%));
+  animation-name: seal-collect-flight;
+  animation-timing-function: cubic-bezier(0.16, 0.8, 0.2, 1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity, filter;
+}
+
 .slots-page__money-grab {
   position: fixed;
   z-index: 148;
@@ -589,6 +605,26 @@
   }
 }
 
+@keyframes seal-collect-flight {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.82) rotate(-12deg);
+  }
+
+  15%, 38% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.24) rotate(4deg);
+  }
+
+  100% {
+    opacity: 0.22;
+    transform: translate3d(var(--seal-travel-x), var(--seal-travel-y), 0) scale(0.2) rotate(28deg);
+    filter:
+      drop-shadow(0 0 0.24rem rgb(255 255 255 / 100%))
+      drop-shadow(0 0 0.36rem rgb(246 185 47 / 96%));
+  }
+}
+
 @keyframes money-grab-token-flight {
   0% {
     opacity: 0;
@@ -698,6 +734,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .slots-page__seal-flyover,
   .slots-page__money-grab-token,
   .slots-page__money-grab-paw,
   .slots-page__money-grab-award {

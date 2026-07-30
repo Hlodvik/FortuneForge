@@ -38,6 +38,7 @@ export type SlotSymbolDefinition = {
   image: string
   animatedImage?: string
   valueLabel?: string
+  wagerMultiplier?: number
 }
 
 export type SlotSymbolGuideEntry = {
@@ -88,13 +89,13 @@ const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
 >> = {
   BANANA: { id: 'BANANA', label: 'Celestial banana bunch', image: celestialBananaBunchSymbol, animatedImage: celestialBananaBunchSymbol },
   PAW: { id: 'PAW', label: 'Wukong grab', image: wukongMonkeyPawSymbol, animatedImage: wukongMonkeyPawSymbol },
-  RAND_05: { id: 'RAND_05', label: 'Rand 0.5×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R0.5×' },
-  RAND_1: { id: 'RAND_1', label: 'Rand 1×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R1×' },
-  RAND_15: { id: 'RAND_15', label: 'Rand 1.5×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R1.5×' },
-  RAND_2: { id: 'RAND_2', label: 'Rand 2×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R2×' },
-  RAND_3: { id: 'RAND_3', label: 'Rand 3×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R3×' },
-  RAND_4: { id: 'RAND_4', label: 'Rand 4×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R4×' },
-  RAND_5: { id: 'RAND_5', label: 'Rand 5×', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, valueLabel: 'R5×' },
+  RAND_05: { id: 'RAND_05', label: 'Rand 0.5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 0.5 },
+  RAND_1: { id: 'RAND_1', label: 'Rand 1× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 1 },
+  RAND_15: { id: 'RAND_15', label: 'Rand 1.5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 1.5 },
+  RAND_2: { id: 'RAND_2', label: 'Rand 2× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 2 },
+  RAND_3: { id: 'RAND_3', label: 'Rand 3× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 3 },
+  RAND_4: { id: 'RAND_4', label: 'Rand 4× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 4 },
+  RAND_5: { id: 'RAND_5', label: 'Rand 5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 5 },
   SEAL_SYNC: { id: 'SEAL_SYNC', label: 'Sync power seal', image: wukongPowerSealSymbol, animatedImage: wukongPowerSealSymbol },
   SEAL_ROWS: { id: 'SEAL_ROWS', label: 'Rows power seal', image: wukongPowerSealBlueSymbol, animatedImage: wukongPowerSealBlueSymbol },
   SEAL_PAW: { id: 'SEAL_PAW', label: 'Paw power seal', image: wukongPowerSealOrangeSymbol, animatedImage: wukongPowerSealOrangeSymbol },
@@ -131,10 +132,10 @@ export const WUKONG_SYMBOLS: SlotSymbolSet = {
     { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: '+1 energy' },
     { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },
     { symbol: 'PAW', firstLabel: 'Any', firstValue: 'grabs R coins', secondLabel: '2 paws', secondValue: 'double' },
-    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 44', secondLabel: 'Award', secondValue: '10 sync spins' },
-    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 44', secondLabel: 'Award', secondValue: '10 +2 row spins' },
-    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 44', secondLabel: 'Award', secondValue: '10 paw spins' },
-    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'collect 44', secondLabel: 'Award', secondValue: '10 rand spins' },
+    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 sync spins' },
+    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 +2 row spins' },
+    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 paw spins' },
+    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 rand spins' },
   ],
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { WUKONG_FEATURE_SYMBOL_IDS } from '../config/symbolSets'
 import type { SlotSymbolId } from '../types/slots'
+import { getSlotSymbolValueLabel } from '../slotPagePresentation'
 import { RAINBOW_REALM_SLOT_GAME, SLOT_GAME_MANIFESTS, WUKONG_SLOT_GAME } from '.'
 import { createSlotExperienceRouteMap } from './slotGameManifest'
 
@@ -46,6 +47,9 @@ describe('slot game manifests', () => {
 
   it('keeps seals, paw grabs, Rand tokens, and their help exclusive to Wukong', () => {
     expect(WUKONG_SLOT_GAME.experience.features.collections?.entries).toHaveLength(4)
+    expect(WUKONG_SLOT_GAME.experience.features.collections?.entries.every(
+      (collection) => collection.requiredCount === 40,
+    )).toBe(true)
     expect(WUKONG_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
     expect(WUKONG_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
 
@@ -56,6 +60,16 @@ describe('slot game manifests', () => {
       expect(WUKONG_SLOT_GAME.experience.symbols.definitions[symbol]).toBeDefined()
       expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions[symbol]).toBeUndefined()
     }
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_05?.wagerMultiplier).toBe(0.5)
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_5?.wagerMultiplier).toBe(5)
+    expect(getSlotSymbolValueLabel(
+      WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_05!,
+      50,
+    )).toBe('R25')
+    expect(getSlotSymbolValueLabel(
+      WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_5!,
+      50,
+    )).toBe('R250')
   })
 
   it('rejects duplicate routes before the application starts', () => {

@@ -51,10 +51,14 @@ internal sealed partial class FirestorePaymentStore
                 };
                 if (!snapshots[2].Exists)
                 {
-                    var balanceAfter = checked(ReadLong(snapshots[1], "available") + withdrawal.CreditsDebited);
+                    var balanceAfterWholeRand = checked(
+                        ReadLong(snapshots[1], "available") + withdrawal.CreditsDebited);
+                    var balanceAfter = BalanceWithFractionalCents(
+                        snapshots[1],
+                        balanceAfterWholeRand);
                     transaction.Update(balanceReference, new Dictionary<string, object>
                     {
-                        ["available"] = balanceAfter,
+                        ["available"] = balanceAfterWholeRand,
                         ["version"] = FieldValue.Increment(1L),
                         ["updatedAt"] = Timestamp.FromDateTime(updatedAtUtc)
                     });
@@ -64,7 +68,7 @@ internal sealed partial class FirestorePaymentStore
                         ["userId"] = userId,
                         ["currencyId"] = SlotsCreditsCurrencyId,
                         ["amount"] = withdrawal.CreditsDebited,
-                        ["balanceAfter"] = balanceAfter,
+                        ["balanceAfter"] = (double)balanceAfter,
                         ["type"] = "withdrawal-reservation-refund",
                         ["idempotencyKey"] = $"withdrawal-refund:{withdrawalId}",
                         ["withdrawalId"] = withdrawalId,

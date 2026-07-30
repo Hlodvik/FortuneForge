@@ -20,6 +20,7 @@ import {
   waitForPresentationFrame,
 } from './presentation/spinLifecycle'
 import { findBestPayline, selectWinSoundEvent } from './presentation/spinPresentation'
+import { slotPointsToRand } from './slotPagePresentation'
 import { requestDemoSpin, requestSlotState, requestSpin, SpinRequestError } from './services/slotsApi'
 import type { GridPosition, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
 import type { AccountSummary } from '../landing/services/accountsApi'
@@ -87,7 +88,7 @@ const manualStopBrakeDurationMs = 90
 const manualStopSettleDurationMs = 35
 const regularWinHoldDurationMs = 380
 const regularWinBalanceCountDurationMs = 420
-const bigWinMinimumPoints = 500
+const bigWinMinimumRand = 500
 const bigWinMultiplier = 50
 const bigWinCountDurationMs = 1250
 const bigWinBalanceCountDurationMs = 720
@@ -126,6 +127,7 @@ export function useSlotsPageController({
     energyMeterCapacity,
     gameId,
     initialReels,
+    pointValueInCents,
     wagerOptions,
   } = rules
   const defaultSealCollections = useMemo<SlotSealCollection[]>(
@@ -208,7 +210,8 @@ export function useSlotsPageController({
   const creditTileRef = useRef<HTMLDivElement | null>(null)
   const freeSpinBadgeTimerRef = useRef<number | null>(null)
   const [isStopRequested, setIsStopRequested] = useState(false)
-  const selectedWager = wagerOptions[wagerIndex] ?? wagerOptions[0] ?? 0
+  const selectedWagerPoints = wagerOptions[wagerIndex] ?? wagerOptions[0] ?? 0
+  const selectedWagerRand = slotPointsToRand(selectedWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
   const useFreeGameForNextSpin = freeSpinsRemaining > 0
   const closeSettings = useCallback(() => setIsSettingsOpen(false), [])
@@ -263,7 +266,7 @@ export function useSlotsPageController({
       return undefined
     }
 
-    if (!useFreeGameForNextSpin && balance < selectedWager) {
+    if (!useFreeGameForNextSpin && balance < selectedWagerRand) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -283,7 +286,7 @@ export function useSlotsPageController({
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
-    selectedWager,
+    selectedWagerRand,
     mascotPhase,
     useFreeGameForNextSpin,
   ])
@@ -695,7 +698,10 @@ export function useSlotsPageController({
     isFastAutoSpin: boolean,
     signal: AbortSignal,
   ) {
-    const awardedCredits = Math.max(0, result.payout.totalPoints)
+    const awardedCredits = Math.max(
+      0,
+      slotPointsToRand(result.payout.totalPoints, result.pointValueInCents),
+    )
     const finalBalance = result.slotsCreditsBalance ?? visibleBalanceBeforeAward + awardedCredits
     const settleAward = () => {
       if (!isCurrentPresentation(signal)) {
@@ -719,8 +725,8 @@ export function useSlotsPageController({
       ? Math.min(Math.max(1, autoSpinSpeedMultiplier), autoSpinWinPresentationMaxMultiplier)
       : 1
     const isBigWin = awardedCredits >= Math.max(
-      bigWinMinimumPoints,
-      result.wagerPoints * bigWinMultiplier,
+      bigWinMinimumRand,
+      slotPointsToRand(result.wagerPoints, result.pointValueInCents) * bigWinMultiplier,
     )
     const initialHoldDuration = isBigWin
       ? bigWinCountDurationMs / speedMultiplier
@@ -948,7 +954,7 @@ export function useSlotsPageController({
 
     setMoneyGrabPresentation({
       id: presentationId,
-      amount: result.moneyGrabPoints,
+      amount: slotPointsToRand(result.moneyGrabPoints, result.pointValueInCents),
       pawLeft: pawCenterX - pawSize / 2,
       pawTop: pawCenterY - pawSize / 2,
       pawSize,
@@ -1001,7 +1007,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (!useFreeGameForNextSpin && balance < selectedWager) {
+    if (!useFreeGameForNextSpin && balance < selectedWagerRand) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -1012,9 +1018,11 @@ export function useSlotsPageController({
     const expectedFreeSpin = useFreeGameForNextSpin
     const requestedSpecialBoost = false
     const wagerForSpin = expectedFreeSpin
-      ? freeSpinWagerPoints ?? selectedWager
-      : selectedWager
-    const optimisticCharge = expectedFreeSpin ? 0 : wagerForSpin
+      ? freeSpinWagerPoints ?? selectedWagerPoints
+      : selectedWagerPoints
+    const optimisticCharge = expectedFreeSpin
+      ? 0
+      : slotPointsToRand(wagerForSpin, pointValueInCents)
     const visibleBalanceBeforeAward = balance - optimisticCharge
     spinInProgressRef.current = true
     stopSpinRequestedRef.current = false
@@ -1130,6 +1138,11 @@ export function useSlotsPageController({
           `The spin used symbol set '${result.symbolSetId}' instead of '${expectedServerSymbolSetId}'.`,
         )
       }
+      if (result.pointValueInCents !== pointValueInCents) {
+        throw new Error(
+          `The spin used a ${result.pointValueInCents}-cent point instead of ${pointValueInCents} cents.`,
+        )
+      }
 
       slotStateRevisionGuardRef.current.advance()
       setSpinStage('stopping')
@@ -1153,7 +1166,7 @@ export function useSlotsPageController({
       }
       setBestWin(bestPayline)
       setBonusPositions(triggeredBonusPositions)
-      setLastWin(result.payout.totalPoints)
+      setLastWin(slotPointsToRand(result.payout.totalPoints, result.pointValueInCents))
       setLastFreeSpinsAwarded(result.freeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
       setFreeSpinsRemaining(result.freeSpinsRemaining)
@@ -1263,10 +1276,10 @@ export function useSlotsPageController({
   ]
   const canAffordSelectedWager = useFreeGameForNextSpin
     ? freeSpinsRemaining > 0
-    : balance >= selectedWager
+    : balance >= selectedWagerRand
   const activeWagerDisplay = useFreeGameForNextSpin
-    ? freeSpinWagerPoints ?? selectedWager
-    : selectedWager
+    ? slotPointsToRand(freeSpinWagerPoints ?? selectedWagerPoints, pointValueInCents)
+    : selectedWagerRand
   const showFreeSpinBadge = isFreeSpinBadgePopping || (!isSpinning && freeSpinsRemaining > 0)
   const visibleSealCollections = defaultSealCollections.map((fallback) => {
     const current = sealCollections.find((collection) => collection.sealId === fallback.sealId)
@@ -1381,7 +1394,7 @@ export function useSlotsPageController({
     reelMotion,
     reelStripStyle,
     reloadPromptCloseButtonRef,
-    selectedWager,
+    selectedWager: selectedWagerRand,
     sealFlyover,
     sealImpactId,
     setIsAutoSpinning,

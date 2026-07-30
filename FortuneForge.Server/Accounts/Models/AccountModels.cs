@@ -24,23 +24,23 @@ public sealed record ChangePasswordRequest(string CurrentPassword, string NewPas
 public sealed record DeleteAccountRequest(string Password);
 
 public sealed record AccountBalances(
-    long SlotsCredits,
+    decimal SlotsCredits,
     long FreeGames);
 
 public sealed record SlotStatistics(
     long SpinsPlayed,
     long Wins,
     long Losses,
-    long CreditsWagered,
-    long CreditsWon,
-    long NetCredits);
+    decimal CreditsWagered,
+    decimal CreditsWon,
+    decimal NetCredits);
 
 public sealed record SlotSpinHistoryItem(
     string SpinId,
     string GameId,
-    long WageredSlotsCredits,
-    long WonSlotsCredits,
-    long NetSlotsCredits,
+    decimal WageredSlotsCredits,
+    decimal WonSlotsCredits,
+    decimal NetSlotsCredits,
     string Result,
     DateTime CreatedAtUtc);
 
@@ -48,7 +48,7 @@ public sealed record SlotHistoryResponse(IReadOnlyList<SlotSpinHistoryItem> Spin
 
 public sealed record SlotSpinAdmission(
     long WagerPoints,
-    long ChargedWagerPoints,
+    long ChargedWagerCents,
     bool IsFreeSpin,
     int FreeSpinsRemaining,
     bool SpecialBoostApplied,
@@ -58,7 +58,7 @@ public sealed record SlotSpinAdmission(
     string? FreeSpinFeatureMode);
 
 public sealed record SlotSpinSettlement(
-    long SlotsCreditsBalance,
+    decimal SlotsCreditsBalance,
     int FreeSpinsRemaining,
     int SpecialPointsBalance,
     long EnergyBalance,
@@ -120,11 +120,11 @@ public enum AccountError
     AccountNotFound
 }
 
-public sealed class InsufficientSlotCreditsException(long available, long required) : Exception(
+public sealed class InsufficientSlotCreditsException(decimal available, decimal required) : Exception(
     $"This account has R{available}, but the wager requires R{required}.")
 {
-    public long Available { get; } = available;
-    public long Required { get; } = required;
+    public decimal Available { get; } = available;
+    public decimal Required { get; } = required;
 }
 
 public sealed class NoFreeSpinsException() : Exception(

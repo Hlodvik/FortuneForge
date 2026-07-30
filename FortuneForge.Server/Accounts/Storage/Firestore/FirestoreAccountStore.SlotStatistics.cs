@@ -13,9 +13,9 @@ public sealed partial class FirestoreAccountStore
         ReadLong(snapshot, "spinsPlayed"),
         ReadLong(snapshot, "wins"),
         ReadLong(snapshot, "losses"),
-        ReadLong(snapshot, "creditsWagered"),
-        ReadLong(snapshot, "creditsWon"),
-        ReadLong(snapshot, "netCredits"));
+        ReadDecimal(snapshot, "creditsWagered"),
+        ReadDecimal(snapshot, "creditsWon"),
+        ReadDecimal(snapshot, "netCredits"));
 
     private static SlotStatistics EmptySlotStatistics() => new(0, 0, 0, 0, 0, 0);
 
@@ -25,7 +25,10 @@ public sealed partial class FirestoreAccountStore
         bool energyCompleted)
     {
         var counts = ReadLongMap(guardSnapshot, "sealCounts");
-        var wagerTotals = ReadLongMap(guardSnapshot, "sealWagerTotals");
+        var wagerCents = ReadSealWagerCents(guardSnapshot);
+        var spinWagerCents = RandMoney.PointsToCents(
+            result.WagerPoints,
+            result.PointValueInCents);
         var changed = false;
 
         foreach (var awarded in result.SealsAwarded)
@@ -37,7 +40,8 @@ public sealed partial class FirestoreAccountStore
             }
 
             counts[featureMode] = checked(counts[featureMode] + awarded.Value);
-            wagerTotals[featureMode] = checked(wagerTotals[featureMode] + result.WagerPoints * awarded.Value);
+            wagerCents[featureMode] = checked(
+                wagerCents[featureMode] + spinWagerCents * awarded.Value);
             changed = true;
         }
 
@@ -49,7 +53,8 @@ public sealed partial class FirestoreAccountStore
                 .First();
             var missing = Math.Max(1, SealCollectionRules.CompletionTarget - counts[nearestMode]);
             counts[nearestMode] = checked(counts[nearestMode] + missing);
-            wagerTotals[nearestMode] = checked(wagerTotals[nearestMode] + result.WagerPoints * missing);
+            wagerCents[nearestMode] = checked(
+                wagerCents[nearestMode] + spinWagerCents * missing);
             changed = true;
         }
 
@@ -65,43 +70,56 @@ public sealed partial class FirestoreAccountStore
             }
 
             var completedCount = Math.Max(1, counts[mode]);
-            var averageWager = DivideRounded(wagerTotals[mode], completedCount);
+            var averageWagerPoints = DivideRounded(
+                RandMoney.CentsToPoints(wagerCents[mode], result.PointValueInCents),
+                completedCount);
             freeSpinsAwarded = checked(freeSpinsAwarded + SealCompletionFreeSpins);
             freeSpinFeatureMode ??= mode;
             if (freeSpinWagerPoints <= 0)
             {
-                freeSpinWagerPoints = averageWager > 0 ? averageWager : result.WagerPoints;
+                freeSpinWagerPoints = averageWagerPoints > 0
+                    ? averageWagerPoints
+                    : result.WagerPoints;
             }
 
             var overflow = counts[mode] - SealCollectionRules.CompletionTarget;
             counts[mode] = Math.Max(0, overflow);
-            wagerTotals[mode] = counts[mode] > 0
-                ? checked(averageWager * counts[mode])
+            wagerCents[mode] = counts[mode] > 0
+                ? checked(
+                    RandMoney.PointsToCents(averageWagerPoints, result.PointValueInCents) *
+                    counts[mode])
                 : 0;
             changed = true;
         }
 
         return new SealCollectionSettlement(
             counts,
-            wagerTotals,
+            wagerCents,
             freeSpinsAwarded,
             freeSpinFeatureMode,
             freeSpinWagerPoints,
-            CreateSealCollections(counts, wagerTotals),
+            CreateSealCollections(counts, wagerCents, result.PointValueInCents),
             changed);
     }
 
     private static IReadOnlyList<SlotSealCollection> CreateSealCollections(
         IReadOnlyDictionary<string, long> counts,
-        IReadOnlyDictionary<string, long> wagerTotals) =>
+        IReadOnlyDictionary<string, long> wagerCents,
+        decimal pointValueInCents) =>
         SealFeatureModes
             .Select(mode =>
             {
                 var count = Math.Min(
                     SealCollectionRules.CompletionTarget,
                     Math.Max(0, counts.TryGetValue(mode, out var rawCount) ? rawCount : 0));
-                var wagerTotal = Math.Max(0, wagerTotals.TryGetValue(mode, out var rawTotal) ? rawTotal : 0);
-                var averageWager = count <= 0 ? 0 : DivideRounded(wagerTotal, count);
+                var wagerTotalCents = Math.Max(
+                    0,
+                    wagerCents.TryGetValue(mode, out var rawTotal) ? rawTotal : 0);
+                var averageWager = count <= 0
+                    ? 0
+                    : DivideRounded(
+                        RandMoney.CentsToPoints(wagerTotalCents, pointValueInCents),
+                        count);
                 return new SlotSealCollection(
                     mode,
                     checked((int)count),
@@ -110,12 +128,33 @@ public sealed partial class FirestoreAccountStore
             })
             .ToArray();
 
+    private static IReadOnlyList<SlotSealCollection> CreateSealCollections(
+        DocumentSnapshot guardSnapshot,
+        decimal pointValueInCents) =>
+        CreateSealCollections(
+            ReadLongMap(guardSnapshot, "sealCounts"),
+            ReadSealWagerCents(guardSnapshot),
+            pointValueInCents);
+
+    private static Dictionary<string, long> ReadSealWagerCents(DocumentSnapshot snapshot)
+    {
+        if (snapshot.Exists && snapshot.ToDictionary().ContainsKey("sealWagerCents"))
+        {
+            return ReadLongMap(snapshot, "sealWagerCents");
+        }
+
+        return ReadLongMap(snapshot, "sealWagerTotals").ToDictionary(
+            pair => pair.Key,
+            pair => checked(pair.Value * RandMoney.CentsPerRand),
+            StringComparer.Ordinal);
+    }
+
     private static long DivideRounded(long total, long count) =>
         count <= 0 ? 0 : checked((long)Math.Round(total / (decimal)count, MidpointRounding.AwayFromZero));
 
     private sealed record SealCollectionSettlement(
         IReadOnlyDictionary<string, long> SealCounts,
-        IReadOnlyDictionary<string, long> SealWagerTotals,
+        IReadOnlyDictionary<string, long> SealWagerCents,
         int FreeSpinsAwarded,
         string? FreeSpinFeatureMode,
         long FreeSpinWagerPoints,

@@ -4,6 +4,9 @@ export const creditFormatter = new Intl.NumberFormat('en-US')
 
 export const formatRand = (amount: number) => `R${creditFormatter.format(amount)}`
 
+export const slotPointsToRand = (points: number, pointValueInCents: number) =>
+  points * pointValueInCents / 100
+
 export const getSlotSymbolValueLabel = (
   definition: SlotSymbolDefinition,
   wager: number,

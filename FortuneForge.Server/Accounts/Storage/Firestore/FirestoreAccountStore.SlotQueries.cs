@@ -12,6 +12,7 @@ public sealed partial class FirestoreAccountStore
     public async Task<SlotStateResponse> GetSlotStateAsync(
         string userId,
         string gameId,
+        decimal pointValueInCents,
         CancellationToken cancellationToken)
     {
         var guardReference = SlotSpinGuardDocument(userId, gameId);
@@ -27,9 +28,7 @@ public sealed partial class FirestoreAccountStore
             null,
             checked((int)ReadLong(snapshots[1], "available")),
             ReadLong(snapshots[2], "available"),
-            CreateSealCollections(
-                ReadLongMap(guardSnapshot, "sealCounts"),
-                ReadLongMap(guardSnapshot, "sealWagerTotals")),
+            CreateSealCollections(guardSnapshot, pointValueInCents),
             null);
     }
 
@@ -47,9 +46,9 @@ public sealed partial class FirestoreAccountStore
             .Select(snapshot => new SlotSpinHistoryItem(
                 snapshot.GetValue<string>("spinId"),
                 snapshot.GetValue<string>("gameId"),
-                ReadLong(snapshot, "wageredSlotsCredits"),
-                ReadLong(snapshot, "wonSlotsCredits"),
-                ReadLong(snapshot, "netSlotsCredits"),
+                ReadDecimal(snapshot, "wageredSlotsCredits"),
+                ReadDecimal(snapshot, "wonSlotsCredits"),
+                ReadDecimal(snapshot, "netSlotsCredits"),
                 snapshot.GetValue<string>("result"),
                 snapshot.GetValue<Timestamp>("createdAt").ToDateTime()))
             .OrderByDescending(spin => spin.CreatedAtUtc)

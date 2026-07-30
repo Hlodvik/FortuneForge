@@ -89,6 +89,7 @@ public sealed class GameWageringDefinition
     public decimal PointValueInCents { get; init; }
     public long MinimumWagerPoints { get; init; }
     public long? MaximumWagerPoints { get; init; }
+    public long? WagerIncrementPoints { get; init; }
     public List<long> AllowedWagerPoints { get; init; } = [];
 }
 

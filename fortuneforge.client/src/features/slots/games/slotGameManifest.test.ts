@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { WUKONG_FEATURE_SYMBOL_IDS } from '../config/symbolSets'
 import type { SlotSymbolId } from '../types/slots'
-import { getSlotSymbolValueLabel } from '../slotPagePresentation'
+import { getSlotSymbolValueLabel, slotPointsToRand } from '../slotPagePresentation'
 import { RAINBOW_REALM_SLOT_GAME, SLOT_GAME_MANIFESTS, WUKONG_SLOT_GAME } from '.'
 import { createSlotExperienceRouteMap } from './slotGameManifest'
 
@@ -70,6 +70,16 @@ describe('slot game manifests', () => {
       WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_5!,
       50,
     )).toBe('R250')
+  })
+
+  it('offers wagers from R0.50 through R500 in R0.50 steps', () => {
+    const { pointValueInCents, wagerOptions } = WUKONG_SLOT_GAME.experience.rules
+    const randValues = wagerOptions.map((points) => slotPointsToRand(points, pointValueInCents))
+
+    expect(randValues[0]).toBe(0.5)
+    expect(randValues.at(-1)).toBe(500)
+    expect(slotPointsToRand(1, pointValueInCents)).toBe(0.25)
+    expect(randValues.every((value, index) => index === 0 || value - randValues[index - 1] === 0.5)).toBe(true)
   })
 
   it('rejects duplicate routes before the application starts', () => {

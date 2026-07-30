@@ -77,9 +77,12 @@ internal sealed partial class FirestorePaymentStore
                 else if (status == "completed")
                 {
                     var balanceBefore = ReadLong(balanceSnapshot!, "available");
-                    var balanceAfter = ledgerSnapshot!.Exists
+                    var balanceAfterWholeRand = ledgerSnapshot!.Exists
                         ? balanceBefore
                         : checked(balanceBefore + checkout.Credits);
+                    var balanceAfter = BalanceWithFractionalCents(
+                        balanceSnapshot!,
+                        balanceAfterWholeRand);
                     checkoutUpdates["completedAt"] = Timestamp.FromDateTime(updatedAtUtc);
                     checkoutUpdates["creditedBalance"] = balanceAfter;
                     updated = updated with
@@ -92,7 +95,7 @@ internal sealed partial class FirestorePaymentStore
                     {
                         transaction.Update(balanceReference, new Dictionary<string, object>
                         {
-                            ["available"] = balanceAfter,
+                            ["available"] = balanceAfterWholeRand,
                             ["version"] = FieldValue.Increment(1L),
                             ["updatedAt"] = Timestamp.FromDateTime(updatedAtUtc)
                         });
@@ -102,7 +105,7 @@ internal sealed partial class FirestorePaymentStore
                             ["userId"] = userId,
                             ["currencyId"] = SlotsCreditsCurrencyId,
                             ["amount"] = checkout.Credits,
-                            ["balanceAfter"] = balanceAfter,
+                            ["balanceAfter"] = (double)balanceAfter,
                             ["type"] = "credit-purchase",
                             ["idempotencyKey"] = $"payment-settlement:{checkoutId}",
                             ["invoiceId"] = checkout.InvoiceId,

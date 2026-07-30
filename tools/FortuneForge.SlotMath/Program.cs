@@ -95,14 +95,25 @@ foreach (var configuredGame in root.Slots.GameDefinitions)
 
 void ValidateServerWagerAllowlist()
 {
-    foreach (var allowedWager in game.Wagering.AllowedWagerPoints)
+    var supportedWagers = game.Wagering.AllowedWagerPoints.Count > 0
+        ? game.Wagering.AllowedWagerPoints
+        : Enumerable.Range(
+                checked((int)game.Wagering.MinimumWagerPoints),
+                checked((int)((game.Wagering.MaximumWagerPoints!.Value - game.Wagering.MinimumWagerPoints) /
+                    game.Wagering.WagerIncrementPoints!.Value + 1)))
+            .Select(index => game.Wagering.MinimumWagerPoints +
+                (index - game.Wagering.MinimumWagerPoints) * game.Wagering.WagerIncrementPoints.Value)
+            .ToList();
+    foreach (var allowedWager in supportedWagers)
     {
         requestValidator.ValidateRequest(game.Id, allowedWager);
     }
 
     try
     {
-        requestValidator.ValidateRequest(game.Id, 51);
+        requestValidator.ValidateRequest(
+            game.Id,
+            checked((game.Wagering.MaximumWagerPoints ?? supportedWagers[^1]) + 1));
         throw new InvalidOperationException("The server accepted an off-menu wager.");
     }
     catch (ArgumentOutOfRangeException)

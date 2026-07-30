@@ -62,7 +62,7 @@ public sealed class DemoSlotsContractTests
 
         var response = controller.Spin(new DemoSpinRequest(
             "demo-contract",
-            50,
+            2,
             UseFreeSpin: false,
             FreeSpinsRemaining: 0,
             FreeSpinWagerPoints: null,
@@ -70,8 +70,39 @@ public sealed class DemoSlotsContractTests
 
         var result = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(response).Value);
         Assert.Null(result.SlotsCreditsBalance);
-        Assert.Equal(50, result.WagerPoints);
+        Assert.Equal(2, result.WagerPoints);
+        Assert.Equal(25, result.PointValueInCents);
         Assert.False(result.IsFreeSpin);
+    }
+
+    [Fact]
+    public void Spin_AcceptsHalfRandStepsAndRejectsQuarterRandWagers()
+    {
+        var controller = new DemoSlotsController(
+            new SpinService(
+                new Definitions(),
+                new Reels(),
+                new Evaluator(),
+                new Payouts(),
+                new Random()),
+            NullLogger<DemoSlotsController>.Instance)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var halfRand = controller.Spin(new DemoSpinRequest(
+            "demo-contract", 2, false, 0, null, 0));
+        var oneRand = controller.Spin(new DemoSpinRequest(
+            "demo-contract", 4, false, 0, null, 0));
+        var quarterStep = controller.Spin(new DemoSpinRequest(
+            "demo-contract", 3, false, 0, null, 0));
+
+        Assert.IsType<OkObjectResult>(halfRand);
+        Assert.IsType<OkObjectResult>(oneRand);
+        Assert.IsType<BadRequestObjectResult>(quarterStep);
     }
 
     private sealed class Definitions : ISlotsDefinitionProvider
@@ -90,10 +121,10 @@ public sealed class DemoSlotsContractTests
             },
             Wagering = new GameWageringDefinition
             {
-                PointValueInCents = 100,
-                MinimumWagerPoints = 50,
-                MaximumWagerPoints = 50,
-                AllowedWagerPoints = [50]
+                PointValueInCents = 25,
+                MinimumWagerPoints = 2,
+                MaximumWagerPoints = 2_000,
+                WagerIncrementPoints = 2
             },
             Paylines = [[0]]
         };

@@ -14,6 +14,7 @@ public sealed partial class FirestoreAccountStore(FirestoreDb database) : IAccou
     private const long AccountSchemaVersion = 7;
     private const string LegacyLoadedMoneyCurrencyId = "loadedMoney";
     private const string SlotsCreditsCurrencyId = "slotsCredits";
+    private const string AvailableFractionalCentsField = "availableFractionalCents";
     private const string FreeGamesCurrencyId = "freeGames";
     private const string SpecialPointsCurrencyId = "specialPoints";
     private const string EnergyCurrencyId = "energy";

@@ -8,6 +8,7 @@ import type { SlotSymbolSet } from './symbolSets'
 export type SlotRulesSet = {
   gameId: string
   initialReels: readonly (readonly SlotSymbolId[])[]
+  pointValueInCents: number
   wagerOptions: readonly number[]
   autoSpinDelayMs: number
   autoSpinSpeedMultiplier: number
@@ -35,7 +36,8 @@ const BASE_SLOT_RULES_SET: Omit<SlotRulesSet, 'gameId'> = {
     ['5', '6', '7', 'ACE'],
     ['FREE', '7', 'ACE', 'POWER'],
   ],
-  wagerOptions: [50, 100, 250, 500],
+  pointValueInCents: 25,
+  wagerOptions: Array.from({ length: 1_000 }, (_, index) => (index + 1) * 2),
   autoSpinDelayMs: 1_000,
   autoSpinSpeedMultiplier: 3,
   specialBoostCost: 8,

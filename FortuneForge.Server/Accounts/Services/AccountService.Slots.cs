@@ -20,7 +20,7 @@ public sealed partial class AccountService
         return accountStore.RecordSlotSpinAsync(
             userId,
             result,
-            admission.ChargedWagerPoints,
+            admission.ChargedWagerCents,
             admission.IsFreeSpin,
             admission.FreeSpinFeatureMode,
             DateTime.UtcNow,
@@ -31,6 +31,7 @@ public sealed partial class AccountService
         string userId,
         string gameId,
         long wagerPoints,
+        decimal pointValueInCents,
         bool useFreeSpin,
         bool useSpecialBoost,
         int specialBoostCost,
@@ -42,6 +43,7 @@ public sealed partial class AccountService
             userId,
             gameId,
             wagerPoints,
+            pointValueInCents,
             useFreeSpin,
             useSpecialBoost,
             specialBoostCost,
@@ -53,8 +55,9 @@ public sealed partial class AccountService
     public Task<SlotStateResponse> GetSlotStateAsync(
         string userId,
         string gameId,
+        decimal pointValueInCents,
         CancellationToken cancellationToken) =>
-        accountStore.GetSlotStateAsync(userId, gameId, cancellationToken);
+        accountStore.GetSlotStateAsync(userId, gameId, pointValueInCents, cancellationToken);
 
     public async Task<AccountResult<SlotHistoryResponse>> GetSlotHistoryAsync(
         string? token,

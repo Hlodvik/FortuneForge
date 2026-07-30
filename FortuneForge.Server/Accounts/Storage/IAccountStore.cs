@@ -58,6 +58,7 @@ public interface IAccountStore
         string userId,
         string gameId,
         long wagerPoints,
+        decimal pointValueInCents,
         bool useFreeSpin,
         bool useSpecialBoost,
         int specialBoostCost,
@@ -68,7 +69,7 @@ public interface IAccountStore
     Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,
         SpinResult result,
-        long chargedWagerPoints,
+        long chargedWagerCents,
         bool isFreeSpin,
         string? activeFreeSpinFeatureMode,
         DateTime createdAtUtc,
@@ -77,6 +78,7 @@ public interface IAccountStore
     Task<SlotStateResponse> GetSlotStateAsync(
         string userId,
         string gameId,
+        decimal pointValueInCents,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SlotSpinHistoryItem>> GetSlotSpinHistoryAsync(

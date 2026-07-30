@@ -24,7 +24,13 @@ public sealed partial class FirestoreAccountStore
             specialPointsCurrency.GetSnapshotAsync(cancellationToken),
             energyCurrency.GetSnapshotAsync(cancellationToken));
 
-        if (legacyLoadedMoneySnapshot.Exists || currencySnapshots.Any(snapshot => !snapshot.Exists))
+        var slotsCurrencyNeedsPrecision =
+            !currencySnapshots[0].Exists ||
+            !currencySnapshots[0].TryGetValue<long>("precision", out var slotsPrecision) ||
+            slotsPrecision != 2;
+        if (legacyLoadedMoneySnapshot.Exists ||
+            slotsCurrencyNeedsPrecision ||
+            currencySnapshots.Skip(1).Any(snapshot => !snapshot.Exists))
         {
             var batch = database.StartBatch();
             if (legacyLoadedMoneySnapshot.Exists)
@@ -32,11 +38,11 @@ public sealed partial class FirestoreAccountStore
                 batch.Delete(legacyLoadedMoneyCurrency);
             }
 
-            if (!currencySnapshots[0].Exists)
+            if (slotsCurrencyNeedsPrecision)
             {
                 batch.Set(
                     slotsCreditsCurrency,
-                    CurrencyData(SlotsCreditsCurrencyId, "South African rand", 0, createdAtUtc),
+                    CurrencyData(SlotsCreditsCurrencyId, "South African rand", 2, createdAtUtc),
                     SetOptions.MergeAll);
             }
 

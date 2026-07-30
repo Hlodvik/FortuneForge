@@ -90,8 +90,8 @@ internal sealed partial class FirestorePaymentStore
             expiresAt.ToDateTime(),
             ReadTimestamp(snapshot, "processingAt"),
             ReadTimestamp(snapshot, "completedAt"),
-            snapshot.TryGetValue<long>("creditedBalance", out var creditedBalance)
-                ? creditedBalance
+            snapshot.ToDictionary().ContainsKey("creditedBalance")
+                ? ReadDecimal(snapshot, "creditedBalance")
                 : null,
             new PaymentCustomerDetails(
                 ReadString(snapshot, "customerFirstName"),

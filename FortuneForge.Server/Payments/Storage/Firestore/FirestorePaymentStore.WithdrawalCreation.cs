@@ -67,6 +67,7 @@ internal sealed partial class FirestorePaymentStore
                 }
 
                 var availableAfter = checked(availableBefore - withdrawal.CreditsDebited);
+                var balanceAfter = BalanceWithFractionalCents(balanceSnapshot, availableAfter);
                 transaction.Create(withdrawalReference, WithdrawalData(withdrawal));
                 transaction.Create(idempotencyReference, new Dictionary<string, object>
                 {
@@ -87,7 +88,7 @@ internal sealed partial class FirestorePaymentStore
                     ["userId"] = withdrawal.UserId,
                     ["currencyId"] = SlotsCreditsCurrencyId,
                     ["amount"] = -withdrawal.CreditsDebited,
-                    ["balanceAfter"] = availableAfter,
+                    ["balanceAfter"] = (double)balanceAfter,
                     ["type"] = "withdrawal-reservation",
                     ["idempotencyKey"] = $"withdrawal-reservation:{withdrawal.WithdrawalId}",
                     ["withdrawalId"] = withdrawal.WithdrawalId,

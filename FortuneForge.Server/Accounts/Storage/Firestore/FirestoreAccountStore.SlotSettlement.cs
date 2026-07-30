@@ -12,7 +12,7 @@ public sealed partial class FirestoreAccountStore
     public Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,
         SpinResult result,
-        long chargedWagerPoints,
+        long chargedWagerCents,
         bool isFreeSpin,
         string? activeFreeSpinFeatureMode,
         DateTime createdAtUtc,
@@ -61,32 +61,44 @@ public sealed partial class FirestoreAccountStore
                 var guardSnapshot = await transaction.GetSnapshotAsync(
                     guardReference,
                     cancellationToken);
-                var availableCredits = ReadLong(slotsCreditsSnapshot, "available");
+                var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var currentFreeGames = ReadLong(freeGamesSnapshot, "available");
                 var currentSpecialPoints = ReadLong(specialPointsSnapshot, "available");
                 var currentEnergy = ReadLong(energySnapshot, "available");
                 if (existingResult.Exists)
                 {
                     var existingSealCollections = CreateSealCollections(
-                        ReadLongMap(guardSnapshot, "sealCounts"),
-                        ReadLongMap(guardSnapshot, "sealWagerTotals"));
-                    var existingFreeSpinWagerPoints = ReadLong(guardSnapshot, "freeSpinWagerPoints");
+                        guardSnapshot,
+                        result.PointValueInCents);
+                    var existingFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
+                    if (existingFreeSpinWagerCents <= 0)
+                    {
+                        existingFreeSpinWagerCents = checked(
+                            ReadLong(guardSnapshot, "freeSpinWagerPoints") *
+                            RandMoney.CentsPerRand);
+                    }
                     return new SlotSpinSettlement(
-                        availableCredits,
+                        RandMoney.CentsToRand(availableCents),
                         checked((int)currentFreeGames),
                         checked((int)currentSpecialPoints),
                         currentEnergy,
                         result.Payout,
                         false,
                         1m,
-                        existingFreeSpinWagerPoints > 0 ? existingFreeSpinWagerPoints : null,
+                        existingFreeSpinWagerCents > 0
+                            ? RandMoney.CentsToPoints(
+                                existingFreeSpinWagerCents,
+                                result.PointValueInCents)
+                            : null,
                         existingSealCollections,
                         ReadString(guardSnapshot, "freeSpinFeatureMode"));
                 }
 
-                if (availableCredits < chargedWagerPoints)
+                if (availableCents < chargedWagerCents)
                 {
-                    throw new InsufficientSlotCreditsException(availableCredits, chargedWagerPoints);
+                    throw new InsufficientSlotCreditsException(
+                        RandMoney.CentsToRand(availableCents),
+                        RandMoney.CentsToRand(chargedWagerCents));
                 }
 
                 var energyBonus = EnergyBonus.Settle(currentEnergy, result.EnergyAwarded, result.Payout);
@@ -95,10 +107,18 @@ public sealed partial class FirestoreAccountStore
                     result,
                     energyBonus.MultiplierApplied);
                 var settledPayout = energyBonus.Payout;
-                var netCredits = checked(settledPayout.TotalPoints - chargedWagerPoints);
+                var payoutCents = RandMoney.PointsToCents(
+                    settledPayout.TotalPoints,
+                    result.PointValueInCents);
+                var netCents = checked(payoutCents - chargedWagerCents);
                 var isWin = settledPayout.TotalPoints > 0;
-                var balanceAfterWager = checked(availableCredits - chargedWagerPoints);
-                var balanceAfterPayout = checked(balanceAfterWager + settledPayout.TotalPoints);
+                var balanceAfterWagerCents = checked(availableCents - chargedWagerCents);
+                var balanceAfterPayoutCents = checked(balanceAfterWagerCents + payoutCents);
+                var wagerRand = RandMoney.CentsToRand(chargedWagerCents);
+                var payoutRand = RandMoney.CentsToRand(payoutCents);
+                var netRand = RandMoney.CentsToRand(netCents);
+                var balanceAfterWagerRand = RandMoney.CentsToRand(balanceAfterWagerCents);
+                var balanceAfterPayoutRand = RandMoney.CentsToRand(balanceAfterPayoutCents);
                 var totalFreeSpinsAwarded = checked(
                     result.FreeSpinsAwarded + sealSettlement.FreeSpinsAwarded);
                 var freeGamesRemaining = checked(
@@ -113,6 +133,11 @@ public sealed partial class FirestoreAccountStore
                         ? sealSettlement.FreeSpinWagerPoints
                         : result.WagerPoints
                     : 0;
+                var nextFreeSpinWagerCents = nextFreeSpinWagerPoints > 0
+                    ? RandMoney.PointsToCents(
+                        nextFreeSpinWagerPoints,
+                        result.PointValueInCents)
+                    : 0;
 
                 transaction.Create(resultReference, new Dictionary<string, object>
                 {
@@ -123,10 +148,10 @@ public sealed partial class FirestoreAccountStore
                     ["symbolSetId"] = result.SymbolSetId,
                     ["paytableId"] = result.PaytableId,
                     ["reelStops"] = result.ReelStops.Select(static stop => (long)stop).ToArray(),
-                    ["wageredSlotsCredits"] = chargedWagerPoints,
+                    ["wageredSlotsCredits"] = (double)wagerRand,
                     ["payoutWagerPoints"] = result.WagerPoints,
-                    ["wonSlotsCredits"] = settledPayout.TotalPoints,
-                    ["netSlotsCredits"] = netCredits,
+                    ["wonSlotsCredits"] = (double)payoutRand,
+                    ["netSlotsCredits"] = (double)netRand,
                     ["isFreeSpin"] = isFreeSpin,
                     ["freeSpinsAwarded"] = result.FreeSpinsAwarded,
                     ["specialPointsAwarded"] = result.SpecialPointsAwarded,
@@ -145,40 +170,39 @@ public sealed partial class FirestoreAccountStore
                     ["specialBoostApplied"] = result.SpecialBoostApplied,
                     ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
                     ["fiveMatchPityTriggered"] = result.FiveMatchPityTriggered,
-                    ["outcomeSchemaVersion"] = 3,
+                    ["outcomeSchemaVersion"] = 4,
                     ["result"] = isWin ? "win" : "loss",
                     ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
                 });
                 transaction.Update(slotsCreditsReference, new Dictionary<string, object>
                 {
-                    ["available"] = balanceAfterPayout,
+                    ["available"] = balanceAfterPayoutCents / RandMoney.CentsPerRand,
+                    [AvailableFractionalCentsField] = balanceAfterPayoutCents % RandMoney.CentsPerRand,
                     ["version"] = FieldValue.Increment(1),
                     ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
                 });
-                if (chargedWagerPoints > 0)
+                if (chargedWagerCents > 0)
                 {
                     transaction.Create(
                         wagerTransactionReference,
-                        BalanceTransactionData(
+                        RandBalanceTransactionData(
                             wagerTransactionReference.Id,
                             userId,
-                            SlotsCreditsCurrencyId,
-                            -chargedWagerPoints,
-                            balanceAfterWager,
+                            -wagerRand,
+                            balanceAfterWagerRand,
                             "slot-wager",
                             wagerTransactionReference.Id,
                             createdAtUtc));
                 }
-                if (settledPayout.TotalPoints > 0)
+                if (payoutCents > 0)
                 {
                     transaction.Create(
                         payoutTransactionReference,
-                        BalanceTransactionData(
+                        RandBalanceTransactionData(
                             payoutTransactionReference.Id,
                             userId,
-                            SlotsCreditsCurrencyId,
-                            settledPayout.TotalPoints,
-                            balanceAfterPayout,
+                            payoutRand,
+                            balanceAfterPayoutRand,
                             "slot-payout",
                             payoutTransactionReference.Id,
                             createdAtUtc));
@@ -189,9 +213,9 @@ public sealed partial class FirestoreAccountStore
                     ["spinsPlayed"] = FieldValue.Increment(1),
                     ["wins"] = FieldValue.Increment(isWin ? 1 : 0),
                     ["losses"] = FieldValue.Increment(isWin ? 0 : 1),
-                    ["creditsWagered"] = FieldValue.Increment(chargedWagerPoints),
-                    ["creditsWon"] = FieldValue.Increment(settledPayout.TotalPoints),
-                    ["netCredits"] = FieldValue.Increment(netCredits),
+                    ["creditsWagered"] = FieldValue.Increment((double)wagerRand),
+                    ["creditsWon"] = FieldValue.Increment((double)payoutRand),
+                    ["netCredits"] = FieldValue.Increment((double)netRand),
                     ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
                 }, SetOptions.MergeAll);
 
@@ -241,12 +265,13 @@ public sealed partial class FirestoreAccountStore
                     {
                         ["userId"] = userId,
                         ["freeSpinWagerPoints"] = nextFreeSpinWagerPoints,
+                        ["freeSpinWagerCents"] = nextFreeSpinWagerCents,
                         ["freeSpinFeatureMode"] = nextFreeSpinFeatureMode ?? string.Empty,
                         ["sealCounts"] = sealSettlement.SealCounts.ToDictionary(
                             pair => pair.Key,
                             pair => (object)pair.Value,
                             StringComparer.Ordinal),
-                        ["sealWagerTotals"] = sealSettlement.SealWagerTotals.ToDictionary(
+                        ["sealWagerCents"] = sealSettlement.SealWagerCents.ToDictionary(
                             pair => pair.Key,
                             pair => (object)pair.Value,
                             StringComparer.Ordinal),
@@ -342,7 +367,7 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 return new SlotSpinSettlement(
-                    balanceAfterPayout,
+                    balanceAfterPayoutRand,
                     checked((int)freeGamesRemaining),
                     checked((int)specialPointsBalance),
                     energyBalance,

@@ -94,7 +94,7 @@ public sealed partial class FirestoreAccountStore
                 transaction.Create(statisticsReference, StatisticsData(userId, createdAtUtc));
                 transaction.Set(
                     CurrencyDocument(SlotsCreditsCurrencyId),
-                    CurrencyData(SlotsCreditsCurrencyId, "South African rand", 0, createdAtUtc),
+                    CurrencyData(SlotsCreditsCurrencyId, "South African rand", 2, createdAtUtc),
                     SetOptions.MergeAll);
                 transaction.Set(
                     CurrencyDocument(FreeGamesCurrencyId),

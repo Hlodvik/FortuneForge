@@ -46,7 +46,7 @@ internal sealed record StoredPaymentCheckout(
     DateTime ExpiresAtUtc,
     DateTime? ProcessingAtUtc,
     DateTime? CompletedAtUtc,
-    long? CreditedBalance,
+    decimal? CreditedBalance,
     PaymentCustomerDetails Customer,
     PaymentBankDetails PayerBank,
     BankTransferInstructions? BankTransfer,

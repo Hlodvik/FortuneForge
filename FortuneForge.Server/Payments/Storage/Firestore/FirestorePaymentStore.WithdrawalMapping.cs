@@ -68,6 +68,18 @@ internal sealed partial class FirestorePaymentStore
     private static long ReadLong(DocumentSnapshot snapshot, string field) =>
         snapshot.TryGetValue<long>(field, out var value) ? value : 0;
 
+    private static decimal ReadDecimal(DocumentSnapshot snapshot, string field) =>
+        snapshot.TryGetValue<long>(field, out var longValue)
+            ? longValue
+            : snapshot.TryGetValue<double>(field, out var doubleValue)
+                ? (decimal)doubleValue
+                : 0;
+
+    private static decimal BalanceWithFractionalCents(
+        DocumentSnapshot snapshot,
+        long wholeRand) =>
+        wholeRand + ReadLong(snapshot, "availableFractionalCents") / 100m;
+
     private static string ReadString(DocumentSnapshot snapshot, string field) =>
         snapshot.TryGetValue<string>(field, out var value) ? value : string.Empty;
 

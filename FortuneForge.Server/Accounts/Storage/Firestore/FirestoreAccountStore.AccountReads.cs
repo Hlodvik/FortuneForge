@@ -49,14 +49,14 @@ public sealed partial class FirestoreAccountStore
 
         return ToStoredAccount(
             userSnapshot,
-            ReadLong(slotsCreditsSnapshot, "available"),
+            ReadRandBalance(slotsCreditsSnapshot),
             ReadLong(freeGamesSnapshot, "available"),
             ToSlotStatistics(statisticsSnapshot));
     }
 
     private static StoredAccount? ToStoredAccount(
         DocumentSnapshot userSnapshot,
-        long slotsCredits,
+        decimal slotsCredits,
         long freeGames,
         SlotStatistics statistics)
     {
@@ -94,6 +94,32 @@ public sealed partial class FirestoreAccountStore
         string field,
         long fallback = 0) =>
         snapshot.Exists && snapshot.TryGetValue<long>(field, out var value) ? value : fallback;
+
+    private static decimal ReadDecimal(
+        DocumentSnapshot snapshot,
+        string field,
+        decimal fallback = 0)
+    {
+        if (!snapshot.Exists)
+        {
+            return fallback;
+        }
+        if (snapshot.TryGetValue<long>(field, out var longValue))
+        {
+            return longValue;
+        }
+        return snapshot.TryGetValue<double>(field, out var doubleValue)
+            ? (decimal)doubleValue
+            : fallback;
+    }
+
+    private static long ReadRandBalanceCents(DocumentSnapshot snapshot) =>
+        RandMoney.CombineCents(
+            ReadLong(snapshot, "available"),
+            ReadLong(snapshot, AvailableFractionalCentsField));
+
+    private static decimal ReadRandBalance(DocumentSnapshot snapshot) =>
+        RandMoney.CentsToRand(ReadRandBalanceCents(snapshot));
 
     private static string? ReadString(DocumentSnapshot snapshot, string field)
     {

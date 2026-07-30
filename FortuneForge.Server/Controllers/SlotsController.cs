@@ -31,6 +31,7 @@ public sealed class SlotsController(
         try
         {
             spinService.ValidateGame(gameId);
+            var pointValueInCents = spinService.GetPointValueInCents(gameId);
             var accountResult = await accountService.GetProfileAsync(SessionToken(), cancellationToken);
             if (accountResult.Value is null)
             {
@@ -40,6 +41,7 @@ public sealed class SlotsController(
             return Ok(await accountService.GetSlotStateAsync(
                 accountResult.Value.UserId,
                 gameId,
+                pointValueInCents,
                 cancellationToken));
         }
         catch (KeyNotFoundException exception)
@@ -77,6 +79,7 @@ public sealed class SlotsController(
 
             var account = accountResult.Value;
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
+            var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
             var specialBoostCost = request.UseSpecialBoost
                 ? spinService.GetSpecialBoostCost(request.GameId)
                 : 0;
@@ -84,6 +87,7 @@ public sealed class SlotsController(
                 account.UserId,
                 request.GameId,
                 request.WagerPoints,
+                pointValueInCents,
                 request.UseFreeSpin,
                 request.UseSpecialBoost,
                 specialBoostCost,

@@ -52,7 +52,7 @@ public sealed record SpinResult(
     int EnergyAwarded,
     bool SpecialBoostApplied)
 {
-    public long? SlotsCreditsBalance { get; init; }
+    public decimal? SlotsCreditsBalance { get; init; }
     public bool IsFreeSpin { get; init; }
     public int FreeSpinsRemaining { get; init; }
     public long? FreeSpinWagerPoints { get; init; }

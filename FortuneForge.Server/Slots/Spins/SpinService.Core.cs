@@ -76,4 +76,11 @@ public sealed partial class SpinService(
                 nameof(gameId));
     }
 
+    public decimal GetPointValueInCents(string gameId)
+    {
+        var game = definitions.GetGame(gameId)
+            ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
+        return game.Wagering.PointValueInCents;
+    }
+
 }

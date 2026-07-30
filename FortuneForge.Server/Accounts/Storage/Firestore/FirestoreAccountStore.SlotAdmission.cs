@@ -13,6 +13,7 @@ public sealed partial class FirestoreAccountStore
         string userId,
         string gameId,
         long wagerPoints,
+        decimal pointValueInCents,
         bool useFreeSpin,
         bool useSpecialBoost,
         int specialBoostCost,
@@ -69,8 +70,13 @@ public sealed partial class FirestoreAccountStore
                     }
                 }
 
-                var availableCredits = ReadLong(slotsCreditsSnapshot, "available");
-                var storedFreeSpinWagerPoints = ReadLong(guardSnapshot, "freeSpinWagerPoints");
+                var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
+                var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
+                if (storedFreeSpinWagerCents <= 0)
+                {
+                    storedFreeSpinWagerCents = checked(
+                        ReadLong(guardSnapshot, "freeSpinWagerPoints") * RandMoney.CentsPerRand);
+                }
                 var storedFreeSpinFeatureMode = ReadString(guardSnapshot, "freeSpinFeatureMode");
                 if (useFreeSpin && freeGamesAvailable <= 0)
                 {
@@ -90,13 +96,19 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 var effectiveWagerPoints = useFreeSpin
-                    ? storedFreeSpinWagerPoints > 0 ? storedFreeSpinWagerPoints : wagerPoints
+                    ? storedFreeSpinWagerCents > 0
+                        ? RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents)
+                        : wagerPoints
                     : wagerPoints;
                 var activeFreeSpinFeatureMode = useFreeSpin ? storedFreeSpinFeatureMode : null;
-                var chargedWagerPoints = useFreeSpin ? 0 : wagerPoints;
-                if (!useFreeSpin && availableCredits < wagerPoints)
+                var chargedWagerCents = useFreeSpin
+                    ? 0
+                    : RandMoney.PointsToCents(wagerPoints, pointValueInCents);
+                if (!useFreeSpin && availableCents < chargedWagerCents)
                 {
-                    throw new InsufficientSlotCreditsException(availableCredits, wagerPoints);
+                    throw new InsufficientSlotCreditsException(
+                        RandMoney.CentsToRand(availableCents),
+                        RandMoney.CentsToRand(chargedWagerCents));
                 }
 
                 var remainingAfterAdmission = useFreeSpin
@@ -168,6 +180,9 @@ public sealed partial class FirestoreAccountStore
                     ["freeSpinWagerPoints"] = remainingAfterAdmission > 0
                         ? effectiveWagerPoints
                         : 0,
+                    ["freeSpinWagerCents"] = remainingAfterAdmission > 0
+                        ? RandMoney.PointsToCents(effectiveWagerPoints, pointValueInCents)
+                        : 0,
                     ["freeSpinFeatureMode"] = remainingAfterAdmission > 0
                         ? activeFreeSpinFeatureMode ?? string.Empty
                         : string.Empty,
@@ -175,7 +190,7 @@ public sealed partial class FirestoreAccountStore
                 }, SetOptions.MergeAll);
                 return new SlotSpinAdmission(
                     effectiveWagerPoints,
-                    chargedWagerPoints,
+                    chargedWagerCents,
                     useFreeSpin,
                     checked((int)remainingAfterAdmission),
                     useSpecialBoost,

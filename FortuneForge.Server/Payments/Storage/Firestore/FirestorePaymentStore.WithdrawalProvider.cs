@@ -97,11 +97,14 @@ internal sealed partial class FirestorePaymentStore
                     refundLedgerSnapshot is not null &&
                     !refundLedgerSnapshot.Exists)
                 {
-                    var balanceAfter = checked(
+                    var balanceAfterWholeRand = checked(
                         ReadLong(balanceSnapshot!, "available") + withdrawal.CreditsDebited);
+                    var balanceAfter = BalanceWithFractionalCents(
+                        balanceSnapshot!,
+                        balanceAfterWholeRand);
                     transaction.Update(balanceReference, new Dictionary<string, object>
                     {
-                        ["available"] = balanceAfter,
+                        ["available"] = balanceAfterWholeRand,
                         ["version"] = FieldValue.Increment(1L),
                         ["updatedAt"] = Timestamp.FromDateTime(updatedAtUtc)
                     });
@@ -111,7 +114,7 @@ internal sealed partial class FirestorePaymentStore
                         ["userId"] = withdrawal.UserId,
                         ["currencyId"] = SlotsCreditsCurrencyId,
                         ["amount"] = withdrawal.CreditsDebited,
-                        ["balanceAfter"] = balanceAfter,
+                        ["balanceAfter"] = (double)balanceAfter,
                         ["type"] = "withdrawal-reservation-refund",
                         ["idempotencyKey"] = $"withdrawal-refund:{withdrawal.WithdrawalId}",
                         ["withdrawalId"] = withdrawal.WithdrawalId,

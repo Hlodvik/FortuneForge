@@ -42,7 +42,7 @@ public sealed record PaymentCheckoutResponse(
     DateTime ExpiresAtUtc,
     DateTime? ProcessingAtUtc,
     DateTime? CompletedAtUtc,
-    long? CreditedBalance,
+    decimal? CreditedBalance,
     PaymentCustomerDetails Customer,
     PaymentBankDetails PayerBank,
     BankTransferInstructions? BankTransfer,

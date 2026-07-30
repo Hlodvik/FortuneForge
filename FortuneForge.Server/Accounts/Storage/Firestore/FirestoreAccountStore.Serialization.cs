@@ -80,6 +80,25 @@ public sealed partial class FirestoreAccountStore
         ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
     };
 
+    private static Dictionary<string, object> RandBalanceTransactionData(
+        string transactionId,
+        string userId,
+        decimal amount,
+        decimal balanceAfter,
+        string type,
+        string idempotencyKey,
+        DateTime createdAtUtc) => new()
+    {
+        ["transactionId"] = transactionId,
+        ["userId"] = userId,
+        ["currencyId"] = SlotsCreditsCurrencyId,
+        ["amount"] = (double)amount,
+        ["balanceAfter"] = (double)balanceAfter,
+        ["type"] = type,
+        ["idempotencyKey"] = idempotencyKey,
+        ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
+    };
+
     private static Dictionary<string, object> StatisticsData(
         string userId,
         DateTime createdAtUtc) => new()

@@ -106,7 +106,12 @@ public sealed partial class SpinService
                 nameof(wagerPoints),
                 $"Game '{game.Id}' allows at most {maximum} points per spin.");
         }
-        if (!game.Wagering.AllowedWagerPoints.Contains(wagerPoints))
+        var allowedWagers = game.Wagering.AllowedWagerPoints;
+        var matchesIncrement = game.Wagering.WagerIncrementPoints is { } increment &&
+            (wagerPoints - game.Wagering.MinimumWagerPoints) % increment == 0;
+        if (allowedWagers.Count > 0
+                ? !allowedWagers.Contains(wagerPoints)
+                : !matchesIncrement)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(wagerPoints),

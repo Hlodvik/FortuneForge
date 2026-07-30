@@ -43,6 +43,10 @@ public sealed partial class SlotsOptionsValidator
         {
             errors.Add($"Game '{game.Id}' must define a positive point value.");
         }
+        if (game.Wagering.PointValueInCents != decimal.Truncate(game.Wagering.PointValueInCents))
+        {
+            errors.Add($"Game '{game.Id}' point value must use whole cents.");
+        }
         if (game.Wagering.MinimumWagerPoints <= 0)
         {
             errors.Add($"Game '{game.Id}' must define a positive minimum wager.");
@@ -52,9 +56,23 @@ public sealed partial class SlotsOptionsValidator
         {
             errors.Add($"Game '{game.Id}' has a maximum wager below its minimum wager.");
         }
+        if (game.Wagering.WagerIncrementPoints is <= 0)
+        {
+            errors.Add($"Game '{game.Id}' wager increment must be positive when configured.");
+        }
+        if (game.Wagering.MaximumWagerPoints is { } incrementMaximum &&
+            game.Wagering.WagerIncrementPoints is { } configuredIncrement &&
+            (incrementMaximum - game.Wagering.MinimumWagerPoints) % configuredIncrement != 0)
+        {
+            errors.Add($"Game '{game.Id}' maximum wager does not align with its wager increment.");
+        }
+        if (allowedWagers.Count == 0 && game.Wagering.WagerIncrementPoints is null)
+        {
+            errors.Add($"Game '{game.Id}' must define allowed wagers or a wager increment.");
+            return;
+        }
         if (allowedWagers.Count == 0)
         {
-            errors.Add($"Game '{game.Id}' must define at least one allowed wager.");
             return;
         }
         if (allowedWagers.Any(wager => wager <= 0))

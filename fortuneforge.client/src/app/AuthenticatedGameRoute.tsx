@@ -72,6 +72,22 @@ export function AuthenticatedSlotsRoute({
   )
 }
 
+export function DemoSlotsRoute({
+  experienceSet,
+  onSpinStateChange,
+}: {
+  experienceSet: SlotExperienceSet
+  onSpinStateChange: (isSpinning: boolean) => void
+}) {
+  return (
+    <SlotsPage
+      demoMode
+      experienceSet={experienceSet}
+      onSpinStateChange={onSpinStateChange}
+    />
+  )
+}
+
 export function AuthenticatedGameLibraryRoute() {
   const { account, error, isLoading, reload } =
     useAuthenticatedAccount('/slots')

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ForgeCoin } from '../../../components/ForgeCreditAmount'
-import type { SlotSymbolSet } from '../config/symbolSets'
+import { getSlotSymbolDefinition, type SlotSymbolSet } from '../config/symbolSets'
 
 function SymbolValuePanel({
   className,
@@ -38,14 +37,19 @@ function SymbolValuePanel({
       </div>
       <div className="symbol-value-guide__grid">
         {symbolSet.guideEntries.map(({ symbol, firstLabel, firstValue, secondLabel, secondValue }) => {
-          const definition = symbolSet.definitions[symbol]
+          const definition = getSlotSymbolDefinition(symbolSet, symbol)
           return (
             <div
               className={`symbol-value-guide__item symbol-value-guide__item--${symbol.toLowerCase()}`}
               key={symbol}
               title={definition.label}
             >
-              <img src={definition.image} alt="" aria-hidden="true" />
+              <div
+                className="symbol-value-guide__artwork"
+                data-value-label={definition.valueLabel}
+              >
+                <img src={definition.image} alt="" aria-hidden="true" />
+              </div>
               <span className="symbol-value-guide__name">{definition.label}</span>
               <span><b>{firstLabel}</b> {firstValue}</span>
               <span><b>{secondLabel}</b> {secondValue}</span>
@@ -53,7 +57,7 @@ function SymbolValuePanel({
           )
         })}
       </div>
-      <small><ForgeCoin /> Values multiply the selected wager.</small>
+      <small>Rand values multiply the selected wager.</small>
     </aside>
   )
 }
@@ -84,8 +88,6 @@ export function SymbolValueGuide({ symbolSet }: { symbolSet: SlotSymbolSet }) {
 
   return (
     <>
-      <SymbolValuePanel className="symbol-value-guide--desktop" symbolSet={symbolSet} />
-
       <button
         ref={triggerRef}
         className="symbol-value-guide__trigger"

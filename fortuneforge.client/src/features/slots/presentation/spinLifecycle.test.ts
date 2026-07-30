@@ -229,7 +229,7 @@ describe('reduced motion symbol policy', () => {
 })
 
 describe('spin control state', () => {
-  it('renders distinct visible Spin, Stop, and Stopping states', () => {
+  it('keeps the idle control icon-only and renders distinct Stop and Stopping states', () => {
     const onSpin = () => undefined
     const idle = renderToStaticMarkup(createElement(SpinButton, { onSpin }))
     const spinning = renderToStaticMarkup(
@@ -243,7 +243,7 @@ describe('spin control state', () => {
       }),
     )
 
-    expect(idle).toContain('Spin</strong>')
+    expect(idle).not.toContain('spin-button__label')
     expect(idle).toContain('aria-label="Spin the reels"')
     expect(spinning).toContain('spin-button--active')
     expect(spinning).toContain('Stop</strong>')

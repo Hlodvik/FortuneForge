@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   cancelSpinAnimation,
   finishSpinAnimation,
@@ -9,10 +9,7 @@ import {
   type SpinAnimation,
   type ReelMotionState,
 } from './animation/slotAnimation'
-import {
-  DEFAULT_SLOT_EXPERIENCE_SET,
-  type SlotExperienceSet,
-} from './config/slotExperienceSets'
+import type { SlotExperienceSet } from './config/slotExperienceSets'
 import type { SlotResultSoundEvent } from './config/soundSets'
 import { useMascotPerformance, type MascotOutcome } from './hooks/useMascotPerformance'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
@@ -23,23 +20,9 @@ import {
   waitForPresentationFrame,
 } from './presentation/spinLifecycle'
 import { findBestPayline, selectWinSoundEvent } from './presentation/spinPresentation'
-import { requestSlotState, requestSpin, SpinRequestError } from './services/slotsApi'
-import type {
-  GridPosition,
-  PaylinePayout,
-  SlotSealCollection,
-  SlotSymbolId,
-  SpinResult,
-} from './types/slots'
+import { requestDemoSpin, requestSlotState, requestSpin, SpinRequestError } from './services/slotsApi'
+import type { GridPosition, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
 import type { AccountSummary } from '../landing/services/accountsApi'
-
-const defaultSealCollections: SlotSealCollection[] = [
-  { sealId: 'sync', count: 0, averageWagerPoints: 0, requiredCount: 44 },
-  { sealId: 'rows', count: 0, averageWagerPoints: 0, requiredCount: 44 },
-  { sealId: 'paw', count: 0, averageWagerPoints: 0, requiredCount: 44 },
-  { sealId: 'rand', count: 0, averageWagerPoints: 0, requiredCount: 44 },
-]
-
 
 type EnergyFlyover = {
   id: number
@@ -65,6 +48,37 @@ type WinAwardFlyover = {
   durationMs: number
 }
 
+type MoneyGrabTokenFlyover = {
+  id: number
+  symbol: SlotSymbolId
+  reel: number
+  row: number
+  left: number
+  top: number
+  width: number
+  height: number
+  travelX: number
+  travelY: number
+  delayMs: number
+  durationMs: number
+}
+
+type MoneyGrabPresentation = {
+  id: number
+  amount: number
+  pawLeft: number
+  pawTop: number
+  pawSize: number
+  pawTravelX: number
+  pawTravelY: number
+  pawDurationMs: number
+  popupLeft: number
+  popupTop: number
+  popupDelayMs: number
+  popupDurationMs: number
+  tokens: MoneyGrabTokenFlyover[]
+}
+
 const manualStopBrakeDurationMs = 90
 const manualStopSettleDurationMs = 35
 const regularWinHoldDurationMs = 380
@@ -77,20 +91,26 @@ const winFlyoverDurationMs = 540
 const autoSpinWinPresentationMaxMultiplier = 1.35
 
 export type SlotsPageProps = {
-  account: AccountSummary
-  experienceSet?: SlotExperienceSet
+  account?: AccountSummary
+  demoMode?: boolean
+  experienceSet: SlotExperienceSet
   onSpinStateChange?: (isSpinning: boolean) => void
 }
 
+const demoStartingBalance = 10_000
+
 export function useSlotsPageController({
   account,
-  experienceSet = DEFAULT_SLOT_EXPERIENCE_SET,
+  demoMode = false,
+  experienceSet,
   onSpinStateChange,
 }: SlotsPageProps) {
   // This hook coordinates gameplay. Presentation assets and tunable rules enter
   // through this single composed set rather than direct file imports.
   const {
     cabinet: cabinetTheme,
+    features: featureSet,
+    help,
     mascot: mascotSet,
     rules,
     sounds: soundSet,
@@ -104,6 +124,15 @@ export function useSlotsPageController({
     initialReels,
     wagerOptions,
   } = rules
+  const defaultSealCollections = useMemo<SlotSealCollection[]>(
+    () => featureSet.collections?.entries.map((collection) => ({
+      sealId: collection.id,
+      count: 0,
+      averageWagerPoints: 0,
+      requiredCount: collection.requiredCount,
+    })) ?? [],
+    [featureSet.collections],
+  )
   const {
     preferences: audioPreferences,
     playCue,
@@ -137,7 +166,9 @@ export function useSlotsPageController({
   const [spinError, setSpinError] = useState<string | null>(null)
   const [bestWin, setBestWin] = useState<PaylinePayout | null>(null)
   const [bonusPositions, setBonusPositions] = useState<GridPosition[]>([])
-  const [balance, setBalance] = useState(account.balances.slotsCredits)
+  const [balance, setBalance] = useState(
+    demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
+  )
   const [lastWin, setLastWin] = useState(0)
   const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
   const [lastEnergyAwarded, setLastEnergyAwarded] = useState(0)
@@ -151,6 +182,8 @@ export function useSlotsPageController({
   const [energyFlyover, setEnergyFlyover] = useState<EnergyFlyover | null>(null)
   const [energyImpactKey, setEnergyImpactKey] = useState(0)
   const [winAwardFlyover, setWinAwardFlyover] = useState<WinAwardFlyover | null>(null)
+  const [moneyGrabPresentation, setMoneyGrabPresentation] =
+    useState<MoneyGrabPresentation | null>(null)
   const [wagerIndex, setWagerIndex] = useState(0)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -289,6 +322,14 @@ export function useSlotsPageController({
     setLastEnergyMultiplierApplied(false)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
+    setMoneyGrabPresentation(null)
+
+    if (demoMode) {
+      setBalance(demoStartingBalance)
+      return () => {
+        isCurrent = false
+      }
+    }
 
     void requestSlotState(gameId)
       .then((state) => {
@@ -317,7 +358,7 @@ export function useSlotsPageController({
     return () => {
       isCurrent = false
     }
-  }, [gameId, wagerOptions])
+  }, [defaultSealCollections, demoMode, gameId, wagerOptions])
 
   function isCurrentPresentation(signal: AbortSignal): boolean {
     return (
@@ -334,6 +375,13 @@ export function useSlotsPageController({
     if (!isCurrentPresentation(signal)) {
       return
     }
+
+    if (!featureSet.energy) {
+      setEnergyFlyover(null)
+      setEnergyBalance(result.energyBalance)
+      return
+    }
+    const energyFeature = featureSet.energy
 
     const settleEnergy = () => {
       if (!isCurrentPresentation(signal)) {
@@ -366,7 +414,7 @@ export function useSlotsPageController({
 
     const boltPositions = result.reels
       .flatMap((reel, reelIndex) => reel.flatMap((symbol, rowIndex) =>
-        symbol === 'BOLT' ? [{ reel: reelIndex, row: rowIndex }] : [],
+        symbol === energyFeature.symbol ? [{ reel: reelIndex, row: rowIndex }] : [],
       ))
       .sort((left, right) => left.reel - right.reel || left.row - right.row)
     if (boltPositions.length === 0 || prefersReducedMotionRef.current || signal.aborted) {
@@ -395,7 +443,7 @@ export function useSlotsPageController({
 
     for (const [index, position] of boltPositions.entries()) {
       const source = document.querySelector<HTMLElement>(
-        `.slot-symbol--bolt[data-reel-index="${position.reel}"][data-row-index="${position.row}"]`,
+        `.slot-symbol[data-symbol="${energyFeature.symbol}"][data-reel-index="${position.reel}"][data-row-index="${position.row}"]`,
       )
       const destination = energyMeterRef.current
       const sourceRect = source?.getBoundingClientRect()
@@ -665,6 +713,126 @@ export function useSlotsPageController({
     settleAward()
   }
 
+  async function animateMoneyGrab(
+    result: SpinResult,
+    isFastAutoSpin: boolean,
+    signal: AbortSignal,
+  ) {
+    const settleGrab = () => {
+      if (isCurrentPresentation(signal)) {
+        setMoneyGrabPresentation(null)
+      }
+    }
+
+    const moneyGrabFeature = featureSet.moneyGrab
+    if (
+      !moneyGrabFeature ||
+      result.moneyGrabPoints <= 0 ||
+      result.monkeyPawCount <= 0 ||
+      prefersReducedMotionRef.current ||
+      signal.aborted
+    ) {
+      settleGrab()
+      return
+    }
+
+    const pawPosition = result.reels.flatMap((reel, reelIndex) =>
+      reel.flatMap((symbol, row) =>
+        symbol === moneyGrabFeature.collectorSymbol ? [{ reel: reelIndex, row }] : [],
+      ),
+    )[0]
+    const moneyPositions = result.reels.flatMap((reel, reelIndex) =>
+      reel.flatMap((symbol, row) => symbol.startsWith(moneyGrabFeature.valueSymbolPrefix)
+        ? [{ reel: reelIndex, row, symbol }]
+        : []),
+    )
+
+    if (!pawPosition || moneyPositions.length === 0) {
+      settleGrab()
+      return
+    }
+
+    const frameCompleted = await waitForPresentationFrame(signal)
+    if (!frameCompleted || !isCurrentPresentation(signal)) {
+      settleGrab()
+      return
+    }
+
+    const findSymbolRect = (reel: number, row: number) =>
+      document.querySelector<HTMLElement>(
+        `.slot-symbol[data-reel-index="${reel}"][data-row-index="${row}"]`,
+      )?.getBoundingClientRect()
+    const pawRect = findSymbolRect(pawPosition.reel, pawPosition.row)
+    const moneyRects = moneyPositions.flatMap((position) => {
+      const rect = findSymbolRect(position.reel, position.row)
+      return rect && rect.width > 0 && rect.height > 0
+        ? [{ ...position, rect }]
+        : []
+    })
+    if (!pawRect || pawRect.width <= 0 || pawRect.height <= 0 || moneyRects.length === 0) {
+      settleGrab()
+      return
+    }
+
+    const targetX = moneyRects.reduce(
+      (sum, { rect }) => sum + rect.left + rect.width / 2,
+      0,
+    ) / moneyRects.length
+    const targetY = moneyRects.reduce(
+      (sum, { rect }) => sum + rect.top + rect.height / 2,
+      0,
+    ) / moneyRects.length
+    const frameRect = document.querySelector<HTMLElement>('.slot-game-frame')?.getBoundingClientRect()
+    const pawCenterX = pawRect.left + pawRect.width / 2
+    const pawCenterY = pawRect.top + pawRect.height / 2
+    const pawSize = Math.min(148, Math.max(76, Math.max(pawRect.width, pawRect.height) * 1.42))
+    const pawDurationMs = isFastAutoSpin ? 410 : 650
+    const tokenDurationMs = isFastAutoSpin ? 320 : 500
+    const tokenDelayStepMs = isFastAutoSpin ? 22 : 42
+    const popupDelayMs = isFastAutoSpin ? 245 : 420
+    const popupDurationMs = isFastAutoSpin ? 330 : 560
+    const presentationId = Date.now()
+    const tokens = moneyRects.map(({ rect, reel, row, symbol }, index) => ({
+      id: presentationId + index + 1,
+      symbol,
+      reel,
+      row,
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+      height: rect.height,
+      travelX: targetX - (rect.left + rect.width / 2),
+      travelY: targetY - (rect.top + rect.height / 2),
+      delayMs: index * tokenDelayStepMs,
+      durationMs: tokenDurationMs,
+    }))
+    const lastTokenEndMs = tokenDurationMs + (tokens.length - 1) * tokenDelayStepMs
+    const totalDurationMs = Math.max(
+      pawDurationMs,
+      lastTokenEndMs,
+      popupDelayMs + popupDurationMs,
+    )
+
+    setMoneyGrabPresentation({
+      id: presentationId,
+      amount: result.moneyGrabPoints,
+      pawLeft: pawCenterX - pawSize / 2,
+      pawTop: pawCenterY - pawSize / 2,
+      pawSize,
+      pawTravelX: targetX - pawCenterX,
+      pawTravelY: targetY - pawCenterY,
+      pawDurationMs,
+      popupLeft: frameRect ? frameRect.left + frameRect.width / 2 : targetX,
+      popupTop: frameRect ? frameRect.top + frameRect.height * 0.4 : targetY,
+      popupDelayMs,
+      popupDurationMs,
+      tokens,
+    })
+
+    await waitForPresentation(totalDurationMs, signal)
+    settleGrab()
+  }
+
   useEffect(() => {
     if (!isHelpOpen) {
       return undefined
@@ -733,6 +901,7 @@ export function useSlotsPageController({
     setLastEnergyMultiplierApplied(false)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
+    setMoneyGrabPresentation(null)
     if (!expectedFreeSpin) {
       setIsFreeSpinBadgePopping(false)
     }
@@ -804,12 +973,21 @@ export function useSlotsPageController({
     let shouldStartAutoSpinCooldown = false
 
     try {
-      const result = await requestSpin({
-        gameId,
-        wagerPoints: wagerForSpin,
-        useFreeSpin: expectedFreeSpin,
-        useSpecialBoost: requestedSpecialBoost,
-      })
+      const result = demoMode
+        ? await requestDemoSpin({
+            gameId,
+            wagerPoints: wagerForSpin,
+            useFreeSpin: expectedFreeSpin,
+            freeSpinsRemaining,
+            freeSpinWagerPoints,
+            energyBalance,
+          })
+        : await requestSpin({
+            gameId,
+            wagerPoints: wagerForSpin,
+            useFreeSpin: expectedFreeSpin,
+            useSpecialBoost: requestedSpecialBoost,
+          })
 
       if (result.reels.length !== displayedReels.length) {
         throw new Error(`Expected ${displayedReels.length} reels but received ${result.reels.length}.`)
@@ -865,6 +1043,7 @@ export function useSlotsPageController({
       if (resultSoundEvent !== null && revealPainted && !stopSpinRequestedRef.current) {
         playSequence(soundSet.events.results[resultSoundEvent])
       }
+      await animateMoneyGrab(result, isFastAutoSpin, presentationSignal)
       await animateCreditWinAward(
         result,
         visibleBalanceBeforeAward,
@@ -908,6 +1087,7 @@ export function useSlotsPageController({
       setLastEnergyMultiplierApplied(false)
       setEnergyFlyover(null)
       setWinAwardFlyover(null)
+      setMoneyGrabPresentation(null)
       if (expectedFreeSpin && !isFreeSpinUnavailable) {
         setFreeSpinsRemaining((current) => current + 1)
       }
@@ -1033,11 +1213,14 @@ export function useSlotsPageController({
     closeSettings,
     creditTileRef,
     displayedReels,
+    demoMode,
+    demoStartingBalance,
     energyBalance,
     energyFlyover,
     energyImpactKey,
     energyMeterCapacity,
     energyMeterRef,
+    featureSet,
     freeSpinsRemaining,
     handleSpinButtonClick,
     helpCloseButtonRef,
@@ -1056,6 +1239,8 @@ export function useSlotsPageController({
     mascotPhase,
     mascotSet,
     mascotSuccessFrame,
+    help,
+    moneyGrabPresentation,
     pageBackdropStyle,
     prefersReducedMotion,
     reelMotion,

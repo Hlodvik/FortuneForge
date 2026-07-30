@@ -15,11 +15,16 @@
 }
 
 .forge-coin {
-  display: block;
-  width: 1.75rem;
-  height: 1.75rem;
+  display: inline-grid;
+  width: 1.45rem;
+  height: 1.45rem;
   flex: 0 0 auto;
-  filter: drop-shadow(0 0.2rem 0.28rem rgb(84 25 0 / 48%));
+  place-items: center;
+  border: 1px solid rgb(255 240 163 / 55%);
+  border-radius: 50%;
+  background: rgb(255 198 61 / 15%);
+  color: #fff0a3;
+  font: 950 0.78rem/1 ui-monospace, Consolas, monospace;
 }
 
 .forge-credit-amount strong {
@@ -55,8 +60,8 @@
   }
 
   .forge-coin {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.3rem;
+    height: 1.3rem;
   }
 
   .forge-credit-amount strong {

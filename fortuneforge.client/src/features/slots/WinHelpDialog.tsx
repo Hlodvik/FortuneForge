@@ -1,10 +1,12 @@
 import type { RefObject } from 'react'
 import { FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from './config/paylinePatterns'
-import type { SlotSymbolSet } from './config/symbolSets'
+import type { SlotHelpDefinition } from './config/slotFeatures'
+import { getSlotSymbolDefinition, type SlotSymbolSet } from './config/symbolSets'
 
 type WinHelpDialogProps = {
   isOpen: boolean
   closeButtonRef: RefObject<HTMLButtonElement | null>
+  help: SlotHelpDefinition
   symbolSet: SlotSymbolSet
   onClose: () => void
 }
@@ -12,10 +14,12 @@ type WinHelpDialogProps = {
 export function WinHelpDialog({
   isOpen,
   closeButtonRef,
+  help,
   symbolSet,
   onClose,
 }: WinHelpDialogProps) {
   if (!isOpen) return null
+  const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
 
   return (
     <div
@@ -46,7 +50,7 @@ export function WinHelpDialog({
         <p className="win-help__eyebrow">Fortune guide</p>
         <h2 id="win-help-title">What counts as a win?</h2>
         <p className="win-help__intro">
-          Matching symbols must connect across neighboring reels. {symbolSet.definitions.ACE.label}
+          Matching symbols must connect across neighboring reels. {wildDefinition.label}
           is the highest-value symbol and can substitute on a full five-symbol payline.
         </p>
 
@@ -109,8 +113,8 @@ export function WinHelpDialog({
             <div>
               <h3>Five symbols</h3>
               <p>
-                A matching treasure across all five reels wins on any of the game’s 23 full
-                payline patterns. Wukong medallions may substitute here, and the more central
+                A matching symbol across all five reels wins on any of the game’s {help.paylineCount} full
+                payline patterns. {wildDefinition.label} symbols may substitute here, and the more central
                 patterns pay more. Four-symbol runs do not pay.
               </p>
               <div
@@ -163,41 +167,29 @@ export function WinHelpDialog({
             </div>
           </article>
 
+          {help.freeGames && (
           <article className="win-help__rule">
             <span className="win-help__rule-number">FREE</span>
             <div>
               <h3>Free games</h3>
               <p>
-                Land three or more FREE GAME symbols anywhere in the window to receive five
-                free games. Free games use the wager that triggered them.
+                Land {help.freeGames.requiredSymbols} or more FREE GAME symbols anywhere in the
+                window to receive {help.freeGames.awardedSpins} free games. Free games use the
+                wager that triggered them.
               </p>
             </div>
           </article>
+          )}
 
-          <article className="win-help__rule">
-            <span className="win-help__rule-number">PAW</span>
-            <div>
-              <h3>Monkey paw money grab</h3>
-              <p>
-                A monkey paw anywhere on screen grabs every Rand multiplier coin showing in
-                the window. Two paws are much rarer and double the grabbed amount. Three
-                bananas in a row, column, or diagonal pay 3× the wager.
-              </p>
-            </div>
-          </article>
-
-          <article className="win-help__rule">
-            <span className="win-help__rule-number">44</span>
-            <div>
-              <h3>Power seal collections</h3>
-              <p>
-                Sync, Rows, Paw, and Rand seals collect from anywhere visible. A completed
-                44-seal collection awards ten free spins tied to that collection’s average
-                wager. Energy at 25%, 50%, and 75% improves seal odds; a full energy meter
-                boosts the payout by 1.5×, resets, and finishes the nearest seal track.
-              </p>
-            </div>
-          </article>
+          {help.extraSections?.map((section) => (
+            <article className="win-help__rule" key={`${section.badge}-${section.title}`}>
+              <span className="win-help__rule-number">{section.badge}</span>
+              <div>
+                <h3>{section.title}</h3>
+                <p>{section.body}</p>
+              </div>
+            </article>
+          ))}
         </div>
 
         <p className="win-help__fine-print">

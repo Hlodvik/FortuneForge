@@ -65,7 +65,7 @@ export function AdminPaymentInvoicesPage() {
                     <span><small>Invoice</small><strong>{invoice.invoiceId}</strong></span>
                     <span><small>Date</small><strong>{new Date(invoice.createdAtUtc).toLocaleDateString()}</strong></span>
                     <span><small>Total</small><strong>{formatMoney(invoice)}</strong></span>
-                    <span><small>Credits</small><strong>{invoice.credits.toLocaleString()}</strong></span>
+                    <span><small>Rand added</small><strong>R{invoice.credits.toLocaleString()}</strong></span>
                     <em>{invoice.status}</em><b aria-hidden="true">›</b>
                   </a>
                 ))}

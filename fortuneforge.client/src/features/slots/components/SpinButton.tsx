@@ -45,9 +45,11 @@ export function SpinButton({
             />
           )}
       </svg>
-      <strong className="spin-button__label">
-        {isStopRequested ? 'Stopping' : isSpinning ? 'Stop' : 'Spin'}
-      </strong>
+      {isActive && (
+        <strong className="spin-button__label">
+          {isStopRequested ? 'Stopping' : 'Stop'}
+        </strong>
+      )}
     </button>
   )
 }

@@ -61,6 +61,16 @@ public sealed partial class SlotsOptionsValidator
             {
                 errors.Add($"Game '{game.Id}' must define positive free-game trigger and award counts.");
             }
+            if (freeGames.VisibleFrequencyDivisor <= 0)
+            {
+                errors.Add($"Game '{game.Id}' must define a positive free-game frequency divisor.");
+            }
+            if (freeGames.VisibleFrequencyDivisor > 1 &&
+                (game.SpecialPoints is null || game.SpecialPoints.CommonSymbolIds.Count == 0))
+            {
+                errors.Add(
+                    $"Game '{game.Id}' must define common symbols when reducing free-game frequency.");
+            }
         }
 
         if (game.SpecialPoints is { } specialPoints)

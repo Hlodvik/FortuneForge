@@ -86,7 +86,7 @@ export function WithdrawalRequestCard({
   async function handleWithdrawalSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!canSubmit || withdrawalMarket === null || amount === null) {
-      setWithdrawalError('Enter a valid customer, bank account, and payout amount that your current credits can cover.')
+      setWithdrawalError('Enter a valid customer, bank account, and payout amount that your current Rand balance can cover.')
       return
     }
 
@@ -126,8 +126,8 @@ export function WithdrawalRequestCard({
           <p className="account-eyebrow">Cash out</p>
           <h2 id="withdrawal-title">Withdrawal request</h2>
           <p>
-            Request a South African bank payout from eligible Fortune credits. The server reserves
-            credits first, then sends the payout request to the payment provider.
+            Request a South African bank payout from your Rand balance. The server reserves
+            the Rand first, then sends the payout request to the payment provider.
           </p>
         </div>
         <span className="withdrawal-card__status">Live form</span>
@@ -136,18 +136,18 @@ export function WithdrawalRequestCard({
       <div className="withdrawal-card__facts" aria-label="Withdrawal rules">
         <article>
           <span>Account balance</span>
-          <strong>{creditsFormatter.format(account.balances.slotsCredits)}</strong>
-          <small>Available Fortune credits</small>
+          <strong>R{creditsFormatter.format(account.balances.slotsCredits)}</strong>
+          <small>Available Rand</small>
         </article>
         <article>
           <span>South African rate</span>
-          <strong>10 credits = R1</strong>
-          <small>{withdrawalMarket?.currency ?? 'ZAR'} payout amount is converted server-side</small>
+          <strong>R1 balance = R1 payout</strong>
+          <small>{withdrawalMarket?.currency ?? 'ZAR'} payout amount is reserved one for one</small>
         </article>
         <article>
           <span>Reserved on submit</span>
-          <strong>{creditsRequired === null ? '—' : creditsFormatter.format(creditsRequired)}</strong>
-          <small>{hasEnoughCredits || creditsRequired === null ? 'Credits required' : 'Not enough credits'}</small>
+          <strong>{creditsRequired === null ? '—' : `R${creditsFormatter.format(creditsRequired)}`}</strong>
+          <small>{hasEnoughCredits || creditsRequired === null ? 'Rand required' : 'Not enough Rand'}</small>
         </article>
       </div>
 
@@ -181,7 +181,7 @@ export function WithdrawalRequestCard({
             {withdrawalMarket === null
               ? 'Withdrawal market unavailable.'
               : `Enter ${withdrawalMarket.minimumAmount.toLocaleString()}–${withdrawalMarket.maximumAmount.toLocaleString()} ${withdrawalMarket.currency}.`}
-            {' '}The account must have enough credits to reserve the request.
+            {' '}The account must have enough Rand to reserve the request.
           </p>
         </section>
 
@@ -246,7 +246,7 @@ export function WithdrawalRequestCard({
         {withdrawalError !== null && <p className="payment-checkout__error withdrawal-form__message" role="alert">{withdrawalError}</p>}
         {withdrawalResult !== null && (
           <p className="payment-checkout__result payment-checkout__result--success withdrawal-form__message" role="status">
-            Withdrawal {withdrawalResult.withdrawalId} submitted. {creditsFormatter.format(withdrawalResult.creditsDebited)} credits were reserved.
+            Withdrawal {withdrawalResult.withdrawalId} submitted. R{creditsFormatter.format(withdrawalResult.creditsDebited)} was reserved.
           </p>
         )}
 

@@ -121,6 +121,22 @@
   transition: box-shadow 150ms ease, filter 150ms ease, transform 150ms ease;
 }
 
+.slots-page__demo-badge {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  padding: 0.4rem 0.72rem;
+  border: 1px solid rgb(255 198 61 / 54%);
+  border-radius: 999px;
+  background: rgb(47 15 80 / 86%);
+  color: #fff2a8;
+  font-size: 0.66rem;
+  font-weight: 950;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
 .slots-page__purchase-credits-coin {
   width: 1.35rem;
   height: 1.35rem;
@@ -348,6 +364,126 @@
   will-change: transform, opacity, filter;
 }
 
+.slots-page__money-grab {
+  position: fixed;
+  z-index: 148;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.slots-page__money-grab-token {
+  position: fixed;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  filter:
+    drop-shadow(0 0 0.42rem rgb(255 255 255 / 96%))
+    drop-shadow(0 0 0.8rem rgb(255 198 61 / 88%));
+  transform-origin: center;
+  animation-name: money-grab-token-flight;
+  animation-timing-function: cubic-bezier(0.2, 0.74, 0.2, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity, filter;
+}
+
+.slots-page__money-grab-token img {
+  width: 94%;
+  height: 94%;
+  object-fit: contain;
+}
+
+.slots-page__money-grab-token[data-value-label]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64%;
+  color: #fff9d5;
+  content: attr(data-value-label);
+  font: 1000 clamp(0.56rem, 1.22vw, 1.05rem)/1 Inter, system-ui, sans-serif;
+  letter-spacing: -0.055em;
+  text-align: center;
+  text-shadow:
+    0 0.08em 0 #5c1008,
+    0 0 0.16em #5c1008,
+    0 0 0.32em rgb(255 198 61 / 92%);
+  transform: translate(-50%, -48%);
+  white-space: nowrap;
+}
+
+.slots-page__money-grab-paw {
+  position: fixed;
+  z-index: 2;
+  object-fit: contain;
+  opacity: 0;
+  filter:
+    drop-shadow(0 0.32rem 0.35rem rgb(49 9 9 / 64%))
+    drop-shadow(0 0 0.75rem rgb(255 174 47 / 78%));
+  transform-origin: 72% 72%;
+  animation-name: money-grab-paw-reach;
+  animation-timing-function: cubic-bezier(0.18, 0.82, 0.2, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity, filter;
+}
+
+.slots-page__money-grab-award {
+  position: fixed;
+  z-index: 3;
+  display: flex;
+  min-width: min(82vw, 20rem);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.2rem, 1.1vw, 0.7rem);
+  padding: clamp(0.35rem, 1vw, 0.7rem) clamp(0.75rem, 2.3vw, 1.4rem);
+  border: 2px solid rgb(255 220 104 / 86%);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 24% 20%, rgb(255 255 255 / 18%), transparent 38%),
+    linear-gradient(135deg, rgb(106 14 20 / 96%), rgb(44 7 24 / 96%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 19%),
+    0 0 0.8rem rgb(255 198 61 / 84%),
+    0 0 1.6rem rgb(255 84 43 / 44%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.55);
+  animation-name: money-grab-award-pop;
+  animation-timing-function: cubic-bezier(0.16, 0.92, 0.24, 1.16);
+  animation-fill-mode: both;
+}
+
+.slots-page__money-grab-award > img {
+  width: clamp(3rem, 7vw, 5.1rem);
+  height: clamp(3rem, 7vw, 5.1rem);
+  margin: clamp(-0.65rem, -1vw, -0.35rem) 0;
+  object-fit: contain;
+  filter: drop-shadow(0 0 0.48rem rgb(255 198 61 / 68%));
+  transform: rotate(-13deg);
+}
+
+.slots-page__money-grab-award span {
+  display: grid;
+  justify-items: start;
+  gap: 0.08rem;
+}
+
+.slots-page__money-grab-award small {
+  color: #ffd866;
+  font: 1000 clamp(0.62rem, 1.6vw, 0.92rem)/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0.12rem 0.2rem rgb(78 10 8 / 90%);
+  text-transform: uppercase;
+}
+
+.slots-page__money-grab-award strong {
+  color: #fffef0;
+  font: 1000 clamp(2rem, 5.5vw, 4.2rem)/0.9 Inter, system-ui, sans-serif;
+  letter-spacing: -0.05em;
+  text-shadow:
+    0 0.08em 0 #7a1707,
+    0 0 0.28rem rgb(255 255 255 / 92%),
+    0 0 0.7rem rgb(255 198 61 / 92%);
+}
+
 .slots-page__win-award {
   position: fixed;
   z-index: 150;
@@ -450,6 +586,123 @@
     filter:
       drop-shadow(0 0 0.2rem rgb(53 231 255 / 100%))
       drop-shadow(0 0 0.12rem rgb(255 255 255 / 100%));
+  }
+}
+
+@keyframes money-grab-token-flight {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.82) rotate(-8deg);
+  }
+
+  12%,
+  46% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1.08) rotate(0deg);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      var(--money-grab-travel-y),
+      0
+    ) scale(0.68) rotate(12deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      var(--money-grab-travel-y),
+      0
+    ) scale(0.12) rotate(26deg);
+    filter:
+      drop-shadow(0 0 0.2rem rgb(255 255 255 / 100%))
+      drop-shadow(0 0 0.34rem rgb(255 198 61 / 90%));
+  }
+}
+
+@keyframes money-grab-paw-reach {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.66) rotate(-24deg);
+  }
+
+  13% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(-14deg);
+  }
+
+  53% {
+    opacity: 1;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      var(--money-grab-travel-y),
+      0
+    ) scale(1.2) rotate(5deg);
+  }
+
+  66% {
+    opacity: 1;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      var(--money-grab-travel-y),
+      0
+    ) scale(0.94, 0.78) rotate(10deg);
+    filter:
+      drop-shadow(0 0.2rem 0.28rem rgb(49 9 9 / 58%))
+      drop-shadow(0 0 1.2rem rgb(255 198 61 / 100%));
+  }
+
+  82% {
+    opacity: 1;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      var(--money-grab-travel-y),
+      0
+    ) scale(1.05) rotate(2deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(
+      var(--money-grab-travel-x),
+      calc(var(--money-grab-travel-y) - 10px),
+      0
+    ) scale(0.82) rotate(-7deg);
+  }
+}
+
+@keyframes money-grab-award-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.55) rotate(-3deg);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08) rotate(1deg);
+  }
+
+  52%,
+  82% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1) rotate(0deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -58%) scale(0.92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slots-page__money-grab-token,
+  .slots-page__money-grab-paw,
+  .slots-page__money-grab-award {
+    display: none;
+    animation: none;
   }
 }
 
@@ -924,12 +1177,36 @@
   font: 800 0.72rem/1.1 system-ui, sans-serif;
 }
 
-.symbol-value-guide__item img {
+.symbol-value-guide__artwork {
+  position: relative;
   grid-row: 1 / -1;
   width: 2.15rem;
   height: 2.15rem;
+}
+
+.symbol-value-guide__artwork img {
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 0 0.28rem rgb(255 198 61 / 26%));
+}
+
+.symbol-value-guide__artwork[data-value-label]::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 68%;
+  color: #fff8d0;
+  content: attr(data-value-label);
+  font: 1000 0.46rem/1 Inter, system-ui, sans-serif;
+  letter-spacing: -0.045em;
+  text-align: center;
+  text-shadow:
+    0 1px 0 #5c1008,
+    0 0 0.14rem #5c1008,
+    0 0 0.22rem rgb(255 198 61 / 82%);
+  transform: translate(-50%, -48%);
+  white-space: nowrap;
 }
 
 .symbol-value-guide__item span {
@@ -976,27 +1253,17 @@
   text-align: center;
 }
 
-.symbol-value-guide > small .forge-coin {
-  width: 1rem;
-  height: 1rem;
-}
-
 .symbol-value-guide__trigger,
 .symbol-value-guide__backdrop,
 .symbol-value-guide__close {
   display: none;
 }
 
-@media (max-width: 900px) {
-  .symbol-value-guide--desktop {
-    display: none;
-  }
-
   .symbol-value-guide__trigger {
-    position: fixed;
+    position: absolute;
     z-index: 12;
-    left: clamp(0.65rem, 2.5vw, 1.15rem);
-    bottom: clamp(0.65rem, 2.5vw, 1.15rem);
+    left: clamp(0.8rem, 5.4vw, 2.3rem);
+    bottom: 0.55rem;
     display: inline-flex;
     min-height: 2.65rem;
     align-items: center;
@@ -1079,7 +1346,6 @@
     outline: 3px solid rgb(53 231 255 / 88%);
     outline-offset: 0.12rem;
   }
-}
 
 .slots-page__footer--error {
   color: #ff7993;

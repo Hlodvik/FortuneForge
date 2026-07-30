@@ -8,6 +8,12 @@ type SpinRequest = {
   useSpecialBoost: boolean
 }
 
+type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
+  freeSpinsRemaining: number
+  freeSpinWagerPoints: number | null
+  energyBalance: number
+}
+
 export type SlotState = {
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
@@ -65,6 +71,31 @@ export async function requestSpin(request: SpinRequest): Promise<SpinResult> {
   const result = (await response.json()) as unknown
   if (!isSpinResult(result)) {
     throw new Error('The spin server returned an invalid reel result.')
+  }
+
+  return result
+}
+
+export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinResult> {
+  const response = await fetch('/api/slots/demo/spins', {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as SpinProblem | null
+    throw new SpinRequestError(
+      problem?.error ?? problem?.detail ?? `Demo spin request failed with status ${response.status}.`,
+      response.status,
+      problem,
+    )
+  }
+
+  const result = (await response.json()) as unknown
+  if (!isSpinResult(result)) {
+    throw new Error('The demo spin server returned an invalid reel result.')
   }
 
   return result

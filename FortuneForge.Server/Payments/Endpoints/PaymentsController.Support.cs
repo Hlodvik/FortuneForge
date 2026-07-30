@@ -78,8 +78,8 @@ public sealed partial class PaymentsController
             detail: "Enter the account holder, bank name, account number, branch code, and account type for the payout."),
         PaymentError.InsufficientCredits => Problem(
             statusCode: StatusCodes.Status409Conflict,
-            title: "Insufficient credits",
-            detail: "The account does not have enough slot credits available for that withdrawal amount."),
+            title: "Insufficient Rand",
+            detail: "The account does not have enough Rand available for that withdrawal amount."),
         PaymentError.InvalidStatusTransition => Problem(
             statusCode: StatusCodes.Status409Conflict,
             title: "Invoice status conflict",
@@ -90,19 +90,19 @@ public sealed partial class PaymentsController
         PaymentError.ProviderAuthenticationFailed => Problem(
             statusCode: StatusCodes.Status503ServiceUnavailable,
             title: "Payment service configuration error",
-            detail: "Credit purchases are temporarily unavailable. Try again later."),
+            detail: "Rand funding is temporarily unavailable. Try again later."),
         PaymentError.ProviderRejected => Problem(
             statusCode: StatusCodes.Status502BadGateway,
-            title: "Credit purchase could not be created",
-            detail: "Credit purchases are temporarily unavailable. Try again later."),
+            title: "Rand funding could not be created",
+            detail: "Rand funding is temporarily unavailable. Try again later."),
         PaymentError.PaymentPathwayUnavailable => Problem(
             statusCode: StatusCodes.Status503ServiceUnavailable,
-            title: "Credit purchase temporarily unavailable",
+            title: "Rand funding temporarily unavailable",
             detail: "This payment option is not ready yet. Contact support before trying this checkout again."),
         PaymentError.ProviderUnavailable => Problem(
             statusCode: StatusCodes.Status503ServiceUnavailable,
             title: "Payment service unavailable",
-            detail: "Credit purchases are temporarily unavailable. Try again later."),
+            detail: "Rand funding is temporarily unavailable. Try again later."),
         PaymentError.CheckoutNotFound => Problem(
             statusCode: StatusCodes.Status404NotFound,
             title: "Checkout not found"),
@@ -112,7 +112,7 @@ public sealed partial class PaymentsController
         PaymentError.AccountBalanceNotFound => Problem(
             statusCode: StatusCodes.Status409Conflict,
             title: "Account balance unavailable",
-            detail: "The invoice was not completed and no credits were added."),
+            detail: "The invoice was not completed and no Rand was added."),
         _ => Problem(statusCode: StatusCodes.Status500InternalServerError)
     };
 }

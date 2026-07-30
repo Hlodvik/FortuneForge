@@ -40,7 +40,7 @@ internal sealed class MockPaymentProvider(IPaymentStore paymentStore)
             draft.Customer,
             draft.PayerBank,
             FakeInstructions(draft.Market.Code, reference),
-            "Mock checkout only. Do not transfer real money. Development simulation credits are added only after this invoice reaches completed status.");
+            "Mock checkout only. Do not transfer real money. Development Rand is added only after this invoice reaches completed status.");
         return paymentStore.CreateAsync(checkout, cancellationToken);
     }
 
@@ -67,7 +67,7 @@ internal sealed class MockPaymentProvider(IPaymentStore paymentStore)
             null,
             draft.Customer,
             draft.Bank,
-            "Mock withdrawal only. Development credits are reserved locally; no bank payout is sent.");
+            "Mock withdrawal only. Development Rand is reserved locally; no bank payout is sent.");
         return paymentStore.CreateWithdrawalReservationAsync(withdrawal, cancellationToken);
     }
 

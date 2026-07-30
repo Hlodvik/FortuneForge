@@ -66,8 +66,8 @@ export function LandingPage() {
                   Create Account <span aria-hidden="true">→</span>
                 </a>
               )}
-              <a className="landing-button landing-button--secondary" href="/slots">
-                View the game
+              <a className="landing-button landing-button--secondary" href="/demo">
+                Play demo
               </a>
               {!isCheckingSession && <a className="landing-button landing-button--secondary" href="/login">
                 Log in

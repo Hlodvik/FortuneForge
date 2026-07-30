@@ -112,7 +112,7 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
         <div className="landing-bar__account">
           {displayedBalance !== undefined && <ForgeCreditAmount amount={displayedBalance} />}
           <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Invoice navigation">{adminView ? <a className="landing-nav__link" href="/admin/invoices">Admin invoices</a> : <a className="landing-nav__link" href="/home/credits">Purchase credits</a>}<a className="landing-nav__link" href="/home">Home</a></nav>
+          <nav className="landing-nav" aria-label="Invoice navigation">{adminView ? <a className="landing-nav__link" href="/admin/invoices">Admin invoices</a> : <a className="landing-nav__link" href="/home/rand">Add Rand</a>}<a className="landing-nav__link" href="/home">Home</a></nav>
         </div>
       </header>
 
@@ -139,10 +139,10 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
             </section>
 
             {(invoice.status === 'failed' || invoice.status === 'expired') && (
-              <p className="invoice-sheet__failure" role="status">This order is {invoice.status}. No credits were added.</p>
+              <p className="invoice-sheet__failure" role="status">This order is {invoice.status}. No Rand was added.</p>
             )}
             {invoice.status === 'completed' && (
-              <p className="invoice-sheet__success" role="status">Payment completed. {creditsFormatter.format(invoice.credits)} credits were added exactly once.</p>
+              <p className="invoice-sheet__success" role="status">Payment completed. R{creditsFormatter.format(invoice.credits)} was added exactly once.</p>
             )}
 
             <div className="invoice-sheet__parties">
@@ -162,8 +162,8 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
 
             <section className="invoice-receipt" aria-labelledby="invoice-receipt-title">
               <div className="invoice-receipt__heading"><h2 id="invoice-receipt-title">Receipt</h2><span>{invoice.market} / {invoice.currency}</span></div>
-              <div className="invoice-receipt__row invoice-receipt__row--head"><span>Description</span><span>Payment</span><span>Credits</span></div>
-              <div className="invoice-receipt__row"><span>Fortune credits load</span><strong>{formatMoney(invoice)}</strong><strong>{creditsFormatter.format(invoice.credits)}</strong></div>
+              <div className="invoice-receipt__row invoice-receipt__row--head"><span>Description</span><span>Payment</span><span>Rand added</span></div>
+              <div className="invoice-receipt__row"><span>Rand balance load</span><strong>{formatMoney(invoice)}</strong><strong>R{creditsFormatter.format(invoice.credits)}</strong></div>
               <div className="invoice-receipt__total"><span>Total</span><strong>{formatMoney(invoice)}</strong></div>
             </section>
 

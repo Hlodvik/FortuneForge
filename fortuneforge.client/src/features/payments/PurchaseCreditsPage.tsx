@@ -14,7 +14,7 @@ import type { PaymentMarketOption } from './services/paymentsApi'
 
 export function PurchaseCreditsPage() {
   const { account, error: accountError, isLoading: isAccountLoading, reload } =
-    useAuthenticatedAccount('/home/credits')
+    useAuthenticatedAccount('/home/rand')
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof getPaymentCatalog>> | null>(null)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [selectedMarketCode, setSelectedMarketCode] = useState('')
@@ -170,7 +170,7 @@ export function PurchaseCreditsPage() {
         <div className="landing-bar__account">
           {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
           <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Credit account navigation">
+          <nav className="landing-nav" aria-label="Rand account navigation">
             <a className="landing-nav__link" href="/home">Home</a>
             <a className="landing-nav__link" href="#withdrawal-request">Withdraw</a>
             <a className="landing-nav__link" href="/slots">Games</a>
@@ -179,7 +179,7 @@ export function PurchaseCreditsPage() {
       </header>
 
       <main className="reload-main">
-        {isAccountLoading && <PageState label="Opening the credit forge…" />}
+        {isAccountLoading && <PageState label="Opening your Rand balance…" />}
         {!isAccountLoading && accountError !== null && (
           <PageError message={accountError} onRetry={reload} />
         )}
@@ -194,11 +194,11 @@ export function PurchaseCreditsPage() {
           <article className="reload-card" id="purchase-credits">
             <section className="reload-card__hero">
               <div className="reload-card__hero-copy">
-                <p className="account-eyebrow">Regional credit purchase</p>
+                <p className="account-eyebrow">Add Rand</p>
                 <h1>Refill your fortune.</h1>
                 <p className="reload-card__intro">
-                  Enter the exact whole-number amount you want to load. The server calculates the
-                  credit total and creates a persistent invoice linked to your account.
+                  Enter the exact whole-number amount you want to load. The server creates a
+                  persistent invoice linked to your account and adds the same Rand amount after payment.
                 </p>
                 {catalog.isMock && (
                   <div className="reload-card__preview-note" role="note">
@@ -211,12 +211,12 @@ export function PurchaseCreditsPage() {
                 <span className="reload-card__orbit reload-card__orbit--outer" />
                 <span className="reload-card__orbit reload-card__orbit--inner" />
                 <span className="reload-card__coin"><ForgeCoin /></span>
-                <small>Fortune credits</small>
+                <small>South African rand</small>
               </div>
             </section>
 
             <section className="reload-card__balances" aria-label="Current purchase context">
-              <article><span>Current balance</span><strong>{creditsFormatter.format(account.balances.slotsCredits)}</strong><small>Fortune credits</small></article>
+              <article><span>Current balance</span><strong>R{creditsFormatter.format(account.balances.slotsCredits)}</strong><small>South African rand</small></article>
               <article><span>Selected market</span><strong>{market.code}</strong><small>{market.displayName}</small></article>
               <article><span>Payment currency</span><strong>{market.currency}</strong><small>Recorded on the invoice</small></article>
             </section>
@@ -443,7 +443,7 @@ export function PurchaseCreditsPage() {
                   <h2 id="order-summary-title">Checkout summary</h2>
                   <dl>
                     <div><dt>Amount</dt><dd>{isValidAmount ? formatMoney(market, amount * 100) : '—'}</dd></div>
-                    <div><dt>Credits</dt><dd>{credits === null ? '—' : creditsFormatter.format(credits)}</dd></div>
+                    <div><dt>Rand added</dt><dd>{credits === null ? '—' : `R${creditsFormatter.format(credits)}`}</dd></div>
                     <div><dt>Customer</dt><dd>{customerFirstName.trim() || customerLastName.trim() ? `${customerFirstName.trim()} ${customerLastName.trim()}`.trim() : '—'}</dd></div>
                     <div><dt>Payer bank</dt><dd>{bankName.trim() || '—'}</dd></div>
                     <div><dt>Market</dt><dd>{market.displayName}</dd></div>
@@ -460,9 +460,9 @@ export function PurchaseCreditsPage() {
             </form>
 
             <footer className="reload-card__assurances">
-              <span><i>1</i><strong>Server-owned conversion</strong>The API validates the amount and calculates credits.</span>
+              <span><i>1</i><strong>Rand for Rand</strong>The API validates the amount and adds the same number of Rand.</span>
               <span><i>2</i><strong>Duplicate-safe requests</strong>Each checkout uses an idempotency key.</span>
-              <span><i>3</i><strong>Completion-only crediting</strong>Received or processing invoices never change the balance.</span>
+              <span><i>3</i><strong>Completion-only funding</strong>Received or processing invoices never change the balance.</span>
             </footer>
           </article>
           <WithdrawalRequestCard account={account} catalog={catalog} onAccountReload={reload} />
@@ -480,7 +480,7 @@ function PageState({ label }: { label: string }) {
 function PageError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div className="player-state player-state--error" role="alert">
-      <strong>The credit purchase page could not be opened.</strong><span>{message}</span>
+      <strong>The Rand funding page could not be opened.</strong><span>{message}</span>
       <button className="landing-button landing-button--secondary" type="button" onClick={onRetry}>Try again</button>
       <a href="/home">Return home</a>
     </div>

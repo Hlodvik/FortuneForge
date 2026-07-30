@@ -288,6 +288,18 @@
   padding-block: clamp(2.8rem, 7vw, 5.5rem);
 }
 
+.demo-mode-badge {
+  padding: 0.5rem 0.78rem;
+  border: 1px solid rgb(255 198 61 / 52%);
+  border-radius: 999px;
+  background: rgb(45 15 79 / 82%);
+  color: #fff2a8;
+  font-size: 0.7rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .game-picker-heading {
   max-width: 54rem;
 }

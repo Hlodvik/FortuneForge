@@ -3,9 +3,10 @@ import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../components/WukongCompanion'
 import { AudioSettingsDialog, SlotMachine, SlotSymbol, SpinButton, SymbolValueGuide } from './components'
+import { getSlotSymbolDefinition } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
-import { creditFormatter, formatRand, sealLabels } from './slotPagePresentation'
+import { creditFormatter, formatRand } from './slotPagePresentation'
 import type { SlotsPageController } from './useSlotsPageController'
 import { WinHelpDialog } from './WinHelpDialog'
 
@@ -20,14 +21,18 @@ export function SlotsPageView(controller: SlotsPageController) {
     closeSettings,
     creditTileRef,
     displayedReels,
+    demoMode,
+    demoStartingBalance,
     energyBalance,
     energyFlyover,
     energyImpactKey,
     energyMeterCapacity,
     energyMeterRef,
+    featureSet,
     freeSpinsRemaining,
     handleSpinButtonClick,
     helpCloseButtonRef,
+    help,
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
@@ -43,6 +48,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     mascotPhase,
     mascotSet,
     mascotSuccessFrame,
+    moneyGrabPresentation,
     pageBackdropStyle,
     prefersReducedMotion,
     reelMotion,
@@ -69,6 +75,9 @@ export function SlotsPageView(controller: SlotsPageController) {
     winAwardFlyover,
     winningPositions,
   } = controller
+  const collectionFeature = featureSet.collections
+  const energyFeature = featureSet.energy
+  const moneyGrabFeature = featureSet.moneyGrab
 
   return (
     <div className={slotsPageClassName} style={pageBackdropStyle} data-slot-theme={cabinetTheme.id}>
@@ -81,16 +90,28 @@ export function SlotsPageView(controller: SlotsPageController) {
           <span className="slots-page__brand-name">Fortune Forge</span>
         </a>
         <span className="slots-page__brand-actions">
-            <a
-              className="slots-page__purchase-credits"
-              href="/home/credits"
-              aria-label="Add balance"
-              onClick={() => setIsAutoSpinning(false)}
-            >
-              <ForgeCoin className="slots-page__purchase-credits-coin" />
-              <span>Add balance</span>
-            </a>
-            <PaymentAlertsMenu />
+            {demoMode ? (
+              <a
+                className="slots-page__demo-badge"
+                href="/demo"
+                onClick={() => setIsAutoSpinning(false)}
+              >
+                Demo · {formatRand(demoStartingBalance)} start
+              </a>
+            ) : (
+              <>
+                <a
+                  className="slots-page__purchase-credits"
+                  href="/home/rand"
+                  aria-label="Add Rand"
+                  onClick={() => setIsAutoSpinning(false)}
+                >
+                  <ForgeCoin className="slots-page__purchase-credits-coin" />
+                  <span>Add Rand</span>
+                </a>
+                <PaymentAlertsMenu />
+              </>
+            )}
             <button
               className="slots-page__help-button"
               type="button"
@@ -123,13 +144,14 @@ export function SlotsPageView(controller: SlotsPageController) {
 
       <main className="slots-page__main">
         <div className="slots-page__layout">
-          <SymbolValueGuide symbolSet={symbolSet} />
-
           <div className="slots-page__stage">
+          {(collectionFeature || energyFeature) && (
           <div className="slots-page__meter-stack">
-            <div className="slots-page__seal-collections" aria-label="Power seal collections">
+            {collectionFeature && (
+            <div className="slots-page__seal-collections" aria-label={collectionFeature.ariaLabel}>
               {visibleSealCollections.map((collection) => {
-                const seal = sealLabels[collection.sealId] ?? sealLabels.sync
+                const seal = collectionFeature.entries.find((entry) => entry.id === collection.sealId)
+                if (!seal) return null
                 const progress = Math.min(100, collection.count / collection.requiredCount * 100)
                 return (
                   <div
@@ -141,7 +163,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     aria-valuemax={collection.requiredCount}
                     aria-valuenow={collection.count}
                   >
-                    <img src={symbolSet.definitions[seal.symbol].image} alt="" aria-hidden="true" />
+                    <img src={getSlotSymbolDefinition(symbolSet, seal.symbol).image} alt="" aria-hidden="true" />
                     <span className="slots-page__seal-copy">
                       <span className="slots-page__seal-row">
                         <strong>{seal.shortLabel}</strong>
@@ -160,20 +182,22 @@ export function SlotsPageView(controller: SlotsPageController) {
                 )
               })}
             </div>
+            )}
 
+            {energyFeature && (
             <div
               key={`energy-meter-${energyImpactKey}`}
               ref={energyMeterRef}
               className={`slots-page__energy-meter${energyImpactKey > 0 ? ' slots-page__energy-meter--impact' : ''}`}
               role="progressbar"
-              aria-label={`Energy: ${creditFormatter.format(energyBalance)}`}
+              aria-label={`${energyFeature.label}: ${creditFormatter.format(energyBalance)}`}
               aria-valuemin={0}
               aria-valuemax={energyMeterCapacity}
               aria-valuenow={Math.min(energyMeterCapacity, energyBalance)}
             >
-              <img src={symbolSet.definitions.BOLT.image} alt="" aria-hidden="true" />
+              <img src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image} alt="" aria-hidden="true" />
               <span className="slots-page__energy-copy">
-                <span className="slots-page__energy-label">Energy</span>
+                <span className="slots-page__energy-label">{energyFeature.label}</span>
                 <span className="slots-page__energy-track" aria-hidden="true">
                   <span
                     className="slots-page__energy-fill"
@@ -183,7 +207,9 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <strong>{creditFormatter.format(energyBalance)}/{energyMeterCapacity}</strong>
               </span>
             </div>
+            )}
           </div>
+          )}
 
           <SlotMachine
             cabinetTheme={cabinetTheme}
@@ -204,6 +230,9 @@ export function SlotsPageView(controller: SlotsPageController) {
                       prefersReducedMotion,
                       reelMotion[reelIndex],
                     )}
+                    beingGrabbed={moneyGrabPresentation?.tokens.some(
+                      (token) => token.reel === reelIndex && token.row === rowIndex,
+                    ) ?? false}
                     highlighted={winningPositions.some(
                       (position) => position.reel === reelIndex && position.row === rowIndex,
                     )}
@@ -217,12 +246,14 @@ export function SlotsPageView(controller: SlotsPageController) {
           />
 
           <div className="slots-page__playbar" aria-label="Balance, wager, and spin controls">
+            <SymbolValueGuide symbolSet={symbolSet} />
+
             <div
               ref={creditTileRef}
               className="slots-page__balance slots-page__control-tile"
               aria-label={`Balance: ${formatRand(balance)}`}
             >
-              <span className="slots-page__balance-label">Balance</span>
+              <span className="slots-page__balance-label">{demoMode ? 'Demo balance' : 'Balance'}</span>
               <span className="slots-page__balance-line">
                 <span className="slots-page__balance-value">{formatRand(balance)}</span>
               </span>
@@ -310,11 +341,11 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       </main>
 
-      {energyFlyover && (
+      {energyFlyover && energyFeature && (
         <img
           key={energyFlyover.id}
           className="slots-page__energy-flyover"
-          src={symbolSet.definitions.BOLT.image}
+          src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image}
           alt=""
           aria-hidden="true"
           style={{
@@ -327,6 +358,72 @@ export function SlotsPageView(controller: SlotsPageController) {
             '--energy-travel-y': `${energyFlyover.travelY}px`,
           } as CSSProperties}
         />
+      )}
+
+      {moneyGrabPresentation && moneyGrabFeature && (
+        <div
+          key={moneyGrabPresentation.id}
+          className="slots-page__money-grab"
+          role="status"
+          aria-label={`${moneyGrabFeature.actorName} grabbed ${formatRand(moneyGrabPresentation.amount)}`}
+        >
+          {moneyGrabPresentation.tokens.map((token) => {
+            const definition = getSlotSymbolDefinition(symbolSet, token.symbol)
+            return (
+              <div
+                key={token.id}
+                className="slots-page__money-grab-token"
+                data-value-label={definition.valueLabel}
+                aria-hidden="true"
+                style={{
+                  left: token.left,
+                  top: token.top,
+                  width: token.width,
+                  height: token.height,
+                  animationDelay: `${token.delayMs}ms`,
+                  animationDuration: `${token.durationMs}ms`,
+                  '--money-grab-travel-x': `${token.travelX}px`,
+                  '--money-grab-travel-y': `${token.travelY}px`,
+                } as CSSProperties}
+              >
+                <img src={definition.image} alt="" />
+              </div>
+            )
+          })}
+
+          <img
+            className="slots-page__money-grab-paw"
+            src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image}
+            alt=""
+            aria-hidden="true"
+            style={{
+              left: moneyGrabPresentation.pawLeft,
+              top: moneyGrabPresentation.pawTop,
+              width: moneyGrabPresentation.pawSize,
+              height: moneyGrabPresentation.pawSize,
+              animationDuration: `${moneyGrabPresentation.pawDurationMs}ms`,
+              '--money-grab-travel-x': `${moneyGrabPresentation.pawTravelX}px`,
+              '--money-grab-travel-y': `${moneyGrabPresentation.pawTravelY}px`,
+            } as CSSProperties}
+          />
+
+          <div
+            className="slots-page__money-grab-award"
+            aria-hidden="true"
+            style={{
+              left: moneyGrabPresentation.popupLeft,
+              top: moneyGrabPresentation.popupTop,
+              animationDelay: `${moneyGrabPresentation.popupDelayMs}ms`,
+              animationDuration: `${moneyGrabPresentation.popupDurationMs}ms`,
+            }}
+          >
+            <img src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image} alt="" />
+            <span>
+              <small>{moneyGrabFeature.awardLabel}</small>
+              <strong>+{formatRand(moneyGrabPresentation.amount)}</strong>
+            </span>
+          </div>
+        </div>
       )}
 
       {winAwardFlyover && (
@@ -388,6 +485,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         isOpen={isHelpOpen}
         closeButtonRef={helpCloseButtonRef}
         symbolSet={symbolSet}
+        help={help}
         onClose={() => setIsHelpOpen(false)}
       />
 
@@ -396,6 +494,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         closeButtonRef={reloadPromptCloseButtonRef}
         selectedWager={selectedWager}
         balance={balance}
+        demoMode={demoMode}
         onClose={() => setIsReloadPromptOpen(false)}
       />
 

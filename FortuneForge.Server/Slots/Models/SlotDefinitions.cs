@@ -59,6 +59,7 @@ public sealed class GameFreeGamesDefinition
     public required string SymbolId { get; init; }
     public int RequiredSymbols { get; init; }
     public int AwardedSpins { get; init; }
+    public int VisibleFrequencyDivisor { get; init; } = 1;
 }
 
 public sealed class GameSpecialPointsDefinition

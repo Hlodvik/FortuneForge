@@ -85,12 +85,12 @@ internal static class WithdrawalStatusProjection
         status switch
         {
             "pending" => "Withdrawal request is pending payment provider processing.",
-            "processing" => "Withdrawal request is being processed. Reserved credits remain held.",
-            "completed" => "Withdrawal payout completed. Reserved credits were finalized.",
-            "rejected" => "Withdrawal request was rejected. Reserved credits were returned.",
-            "failed" => "Withdrawal request failed. Reserved credits were returned.",
-            "cancelled" => "Withdrawal request was cancelled. Reserved credits were returned.",
-            "reversed" => "Withdrawal request was reversed. Reserved credits were returned.",
+            "processing" => "Withdrawal request is being processed. Reserved Rand remains held.",
+            "completed" => "Withdrawal payout completed. Reserved Rand was finalized.",
+            "rejected" => "Withdrawal request was rejected. Reserved Rand was returned.",
+            "failed" => "Withdrawal request failed. Reserved Rand was returned.",
+            "cancelled" => "Withdrawal request was cancelled. Reserved Rand was returned.",
+            "reversed" => "Withdrawal request was reversed. Reserved Rand was returned.",
             _ => "Withdrawal status was updated by the payment provider."
         };
 

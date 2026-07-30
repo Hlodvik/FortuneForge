@@ -36,7 +36,7 @@ public sealed partial class FirestoreAccountStore
             {
                 batch.Set(
                     slotsCreditsCurrency,
-                    CurrencyData(SlotsCreditsCurrencyId, "Slots credits", 0, createdAtUtc),
+                    CurrencyData(SlotsCreditsCurrencyId, "South African rand", 0, createdAtUtc),
                     SetOptions.MergeAll);
             }
 

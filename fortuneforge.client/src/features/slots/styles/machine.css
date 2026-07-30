@@ -684,6 +684,40 @@
   user-select: none;
 }
 
+.slot-symbol__artwork {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  pointer-events: none;
+}
+
+.slot-symbol__artwork[data-value-label]::after {
+  position: absolute;
+  z-index: 3;
+  top: 50%;
+  left: 50%;
+  width: 64%;
+  color: #fff9d5;
+  content: attr(data-value-label);
+  font: 1000 clamp(0.56rem, 1.22vw, 1.05rem)/1 Inter, system-ui, sans-serif;
+  letter-spacing: -0.055em;
+  text-align: center;
+  text-shadow:
+    0 0.08em 0 #5c1008,
+    0 0 0.16em #5c1008,
+    0 0 0.32em rgb(255 198 61 / 92%),
+    0 0 0.48em rgb(255 255 255 / 52%);
+  transform: translate(-50%, -48%);
+  white-space: nowrap;
+}
+
+.slot-symbol--being-grabbed .slot-symbol__artwork {
+  animation: money-grab-source-fade 500ms ease-in both;
+}
+
 .slot-symbol--winner {
   z-index: 3;
   border-color: rgb(255 229 112 / 95%);
@@ -795,12 +829,12 @@
 
 .slot-symbol--banana {
   --symbol-glow: 255 218 54;
-  --symbol-image-size: 88%;
+  --symbol-image-size: 92%;
 }
 
 .slot-symbol--paw {
   --symbol-glow: 255 151 72;
-  --symbol-image-size: 86%;
+  --symbol-image-size: 94%;
 }
 
 .slot-symbol--rand_05,
@@ -811,7 +845,7 @@
 .slot-symbol--rand_4,
 .slot-symbol--rand_5 {
   --symbol-glow: 255 198 61;
-  --symbol-image-size: 92%;
+  --symbol-image-size: 94%;
 }
 
 .slot-symbol--seal_sync,
@@ -819,7 +853,7 @@
 .slot-symbol--seal_paw,
 .slot-symbol--seal_rand {
   --symbol-glow: 255 211 79;
-  --symbol-image-size: 88%;
+  --symbol-image-size: 92%;
 }
 
 .spin-lever {
@@ -932,6 +966,20 @@
 
 .spin-lever--active .spin-lever__shaft {
   animation: lever-shaft-pull 780ms cubic-bezier(0.25, 0.75, 0.3, 1) both;
+}
+
+@keyframes money-grab-source-fade {
+  0%,
+  46% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  64%,
+  100% {
+    opacity: 0;
+    transform: scale(0.35) rotate(-12deg);
+  }
 }
 
 @keyframes winning-symbol-shell {
@@ -1263,6 +1311,7 @@
   .slot-symbol--winner::before,
   .slot-symbol--winner::after,
   .slot-symbol--winner .slot-symbol__image,
+  .slot-symbol--being-grabbed .slot-symbol__artwork,
   .slot-symbol--power:not(.slot-symbol--winner) .slot-symbol__image,
   .spin-lever--active .spin-lever__knob,
   .spin-lever--active .spin-lever__shaft {

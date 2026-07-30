@@ -10,10 +10,12 @@ import { LandingPage } from '../features/landing/LandingPage'
 import { LoginPage } from '../features/landing/LoginPage'
 import { VerifyEmailPage } from '../features/landing/VerifyEmailPage'
 import { RainbowRealmMachinePreview } from '../features/slots/RainbowRealmMachinePreview'
+import { DemoGameLibraryPage } from '../features/games/GameLibraryPage'
 import type { SlotExperienceSet } from '../features/slots/config/slotExperienceSets'
 import {
   AuthenticatedGameLibraryRoute,
   AuthenticatedSlotsRoute,
+  DemoSlotsRoute,
 } from './AuthenticatedGameRoute'
 
 export function AppRoutes({
@@ -31,8 +33,17 @@ export function AppRoutes({
   )
 
   if (pathname === '/') return <LandingPage />
+  if (pathname === '/demo') return <DemoGameLibraryPage />
   if (pathname === '/slots') return <AuthenticatedGameLibraryRoute />
   if (slotExperienceSet !== null) {
+    if (pathname.endsWith('/demo')) {
+      return (
+        <DemoSlotsRoute
+          experienceSet={slotExperienceSet}
+          onSpinStateChange={onSpinStateChange}
+        />
+      )
+    }
     return (
       <AuthenticatedSlotsRoute
         experienceSet={slotExperienceSet}
@@ -50,7 +61,7 @@ export function AppRoutes({
   if (pathname === '/home') return <HomePage />
   if (pathname === '/home/settings') return <AccountSettingsPage />
   if (pathname === '/home/history') return <AccountHistoryPage />
-  if (pathname === '/home/credits') return <PurchaseCreditsPage />
+  if (pathname === '/home/rand' || pathname === '/home/credits') return <PurchaseCreditsPage />
   if (pathname === '/home/invoices') return <PaymentInvoicesPage />
   if (invoiceMatch !== null) {
     return <PaymentInvoicePage invoiceId={invoiceMatch[1]} />

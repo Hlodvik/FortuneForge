@@ -21,61 +21,7 @@
     ],
     "headers": [
       {
-        "source": "/",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/slots{,/**}",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/home{,/**}",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/admin{,/**}",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/create-account",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/login",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "no-cache,max-age=0,must-revalidate"
-          }
-        ]
-      },
-      {
-        "source": "/verify-email",
+        "source": "!/@(assets|api)/**",
         "headers": [
           {
             "key": "Cache-Control",

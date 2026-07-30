@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import slotBackgroundVideoMp4 from '../assets/slots/backgrounds/background-clouds-animated.mp4'
 import slotBackgroundVideoWebm from '../assets/slots/backgrounds/background-clouds-animated.webm'
-import { SLOT_EXPERIENCE_SETS_BY_ROUTE } from '../features/slots/config/slotExperienceSets'
+import { SLOT_EXPERIENCE_SETS_BY_ROUTE } from '../features/slots/games'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
 import './styles/index.css'
@@ -16,12 +16,10 @@ export default function App() {
     pathname in SLOT_EXPERIENCE_SETS_BY_ROUTE
       ? SLOT_EXPERIENCE_SETS_BY_ROUTE[pathname]
       : null
-  const isWukongSlotExperience =
-    slotExperienceSet?.cabinet.id === 'wukong-celestial-arcade-v1'
   const usesThemeSpecificSlotBackdrop =
-    slotExperienceSet !== null && !isWukongSlotExperience
-  const shouldRenderWukongShellBackdrop =
-    slotExperienceSet === null || isWukongSlotExperience
+    slotExperienceSet?.shellBackdrop === 'theme'
+  const shouldRenderDefaultShellBackdrop =
+    slotExperienceSet === null || slotExperienceSet.shellBackdrop === 'default-clouds'
   const appShellClassName = [
     'app-shell',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
@@ -49,7 +47,7 @@ export default function App() {
 
   return (
     <div className={appShellClassName}>
-      {shouldRenderWukongShellBackdrop && (
+      {shouldRenderDefaultShellBackdrop && (
         <video
           ref={backgroundVideoRef}
           className="app-shell__background-video"

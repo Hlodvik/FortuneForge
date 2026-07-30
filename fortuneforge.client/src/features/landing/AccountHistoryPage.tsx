@@ -75,7 +75,7 @@ export function AccountHistoryPage() {
               <article><span>Losses</span><strong>{numberFormatter.format(account.slots.losses)}</strong></article>
               <article>
                 <span className="history-summary__coin-label"><ForgeCoin /> Net</span>
-                <strong className={account.slots.netCredits >= 0 ? 'is-positive' : 'is-negative'}>{numberFormatter.format(account.slots.netCredits)}</strong>
+                <strong className={account.slots.netCredits >= 0 ? 'is-positive' : 'is-negative'}>{account.slots.netCredits < 0 ? '-' : ''}R{numberFormatter.format(Math.abs(account.slots.netCredits))}</strong>
               </article>
             </section>
 
@@ -98,9 +98,9 @@ export function AccountHistoryPage() {
                   {spins.map((spin) => (
                     <article key={spin.spinId} className={`history-row history-row--${spin.result}`}>
                       <span className="history-row__result">{spin.result}</span>
-                      <span><small>Wager</small><strong>{numberFormatter.format(spin.wageredSlotsCredits)}</strong></span>
-                      <span><small>Won</small><strong>{numberFormatter.format(spin.wonSlotsCredits)}</strong></span>
-                      <span><small>Net</small><strong>{spin.netSlotsCredits > 0 ? '+' : ''}{numberFormatter.format(spin.netSlotsCredits)}</strong></span>
+                      <span><small>Wager</small><strong>R{numberFormatter.format(spin.wageredSlotsCredits)}</strong></span>
+                      <span><small>Won</small><strong>R{numberFormatter.format(spin.wonSlotsCredits)}</strong></span>
+                      <span><small>Net</small><strong>{spin.netSlotsCredits > 0 ? '+' : spin.netSlotsCredits < 0 ? '-' : ''}R{numberFormatter.format(Math.abs(spin.netSlotsCredits))}</strong></span>
                       <time dateTime={spin.createdAtUtc}>{new Date(spin.createdAtUtc).toLocaleString()}</time>
                     </article>
                   ))}

@@ -27,7 +27,7 @@ public static class PaymentCatalog
             "This pathway is specifically for South African bank transfers in ZAR.",
             10,
             100_000,
-            10,
+            1,
             RegionalSuggestedAmounts,
             RegionalBankTransferMethods),
         new(
@@ -39,7 +39,7 @@ public static class PaymentCatalog
             "This pathway is specifically for Lesotho bank transfers in LSL. The loti is pegged to the rand, but this checkout records LSL explicitly.",
             10,
             100_000,
-            10,
+            1,
             RegionalSuggestedAmounts,
             RegionalBankTransferMethods)
     ];

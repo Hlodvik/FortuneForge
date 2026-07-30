@@ -41,13 +41,13 @@ internal sealed partial class FirestorePaymentStore
                 {
                     ["status"] = "failed",
                     ["statusUpdatedAt"] = Timestamp.FromDateTime(updatedAtUtc),
-                    ["notice"] = "Withdrawal request failed before the payment provider accepted it. Reserved credits were returned."
+                    ["notice"] = "Withdrawal request failed before the payment provider accepted it. Reserved Rand was returned."
                 };
                 var updated = withdrawal with
                 {
                     Status = "failed",
                     StatusUpdatedAtUtc = updatedAtUtc,
-                    Notice = "Withdrawal request failed before the payment provider accepted it. Reserved credits were returned."
+                    Notice = "Withdrawal request failed before the payment provider accepted it. Reserved Rand was returned."
                 };
                 if (!snapshots[2].Exists)
                 {
@@ -105,7 +105,7 @@ internal sealed partial class FirestorePaymentStore
                 }
 
                 const string notice =
-                    "Withdrawal request was submitted to the payment provider, but confirmation is pending. Reserved credits remain held.";
+                    "Withdrawal request was submitted to the payment provider, but confirmation is pending. Reserved Rand remains held.";
                 var updated = withdrawal with
                 {
                     Status = "pending",

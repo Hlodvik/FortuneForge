@@ -82,6 +82,7 @@ public sealed partial class SpinService
         for (var attempt = 0; attempt < maximumAttempts; attempt++)
         {
             outcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
+            outcome = FreeGameFrequency.Apply(outcome, effectiveGame, random);
             outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
@@ -136,4 +137,5 @@ public sealed partial class SpinService
             SealsAwarded = CountSealSymbols(outcome.VisibleReels)
         };
     }
+
 }

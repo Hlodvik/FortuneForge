@@ -33,7 +33,7 @@ export function PaymentInvoicesPage() {
         <div className="landing-bar__account">
           {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
           <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Invoice history navigation"><a className="landing-nav__link" href="/home/credits">Purchase credits</a><a className="landing-nav__link" href="/home">Home</a></nav>
+          <nav className="landing-nav" aria-label="Invoice history navigation"><a className="landing-nav__link" href="/home/rand">Add Rand</a><a className="landing-nav__link" href="/home">Home</a></nav>
         </div>
       </header>
       <main className="invoice-main">
@@ -43,7 +43,7 @@ export function PaymentInvoicesPage() {
         {!isAccountLoading && account !== null && invoiceError !== null && <div className="player-state player-state--error" role="alert"><strong>Invoices are unavailable.</strong><span>{invoiceError}</span><button className="landing-button landing-button--secondary" type="button" onClick={() => void loadInvoices()}>Try again</button></div>}
         {!isAccountLoading && account !== null && invoices !== null && (
           <section className="invoice-list" aria-labelledby="invoice-list-title">
-            <header><div><p className="account-eyebrow">Payment history</p><h1 id="invoice-list-title">Your invoices</h1><p>Open any order to view its live status and receipt.</p></div><a className="landing-button landing-button--gold" href="/home/credits">Purchase credits</a></header>
+            <header><div><p className="account-eyebrow">Payment history</p><h1 id="invoice-list-title">Your invoices</h1><p>Open any order to view its live status and receipt.</p></div><a className="landing-button landing-button--gold" href="/home/rand">Add Rand</a></header>
             {invoices.length === 0
               ? <div className="invoice-list__empty"><strong>No invoices yet.</strong><span>Your payment orders will appear here.</span></div>
               : <div className="invoice-list__items">{invoices.map((invoice) => <InvoiceRow key={invoice.checkoutId} invoice={invoice} />)}</div>}
@@ -61,7 +61,7 @@ function InvoiceRow({ invoice }: { invoice: PaymentCheckout }) {
       <span><small>Invoice</small><strong>{invoice.invoiceId}</strong></span>
       <span><small>Date</small><strong>{new Date(invoice.createdAtUtc).toLocaleDateString()}</strong></span>
       <span><small>Total</small><strong>{new Intl.NumberFormat(invoice.locale, { style: 'currency', currency: invoice.currency }).format(invoice.amountMinor / 100)}</strong></span>
-      <span><small>Credits</small><strong>{invoice.credits.toLocaleString()}</strong></span>
+      <span><small>Rand added</small><strong>R{invoice.credits.toLocaleString()}</strong></span>
       <em>{invoice.status}</em><b aria-hidden="true">›</b>
     </a>
   )

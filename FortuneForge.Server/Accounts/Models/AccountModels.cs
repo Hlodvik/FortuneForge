@@ -121,7 +121,7 @@ public enum AccountError
 }
 
 public sealed class InsufficientSlotCreditsException(long available, long required) : Exception(
-    $"This account has {available} slot credits, but the wager requires {required}.")
+    $"This account has R{available}, but the wager requires R{required}.")
 {
     public long Available { get; } = available;
     public long Required { get; } = required;

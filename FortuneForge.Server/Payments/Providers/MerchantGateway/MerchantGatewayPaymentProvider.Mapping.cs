@@ -42,7 +42,7 @@ internal sealed partial class MerchantGatewayPaymentProvider
             draft.Customer,
             draft.PayerBank,
             CreateBankTransfer(pathway, draft),
-            "Payment invoice was prepared locally. Slot credits are added only after the invoice is marked completed.");
+            "Payment invoice was prepared locally. Rand is added only after the invoice is marked completed.");
     }
 
     private static string CreateLocalCheckoutId(string invoiceId) =>

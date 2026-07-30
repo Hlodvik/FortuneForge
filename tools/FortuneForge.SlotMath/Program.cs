@@ -40,6 +40,7 @@ ReelSetDefinition reelSet = null!;
 ReelSetDefinition boostedReelSet = null!;
 PaytableDefinition paytable = null!;
 CryptoReelGenerator generator = null!;
+SeededRandomIndexSource frequencyRandom = null!;
 CombinationEvaluator evaluator = null!;
 PayoutCalculator payoutCalculator = null!;
 SpinService requestValidator = null!;
@@ -57,6 +58,7 @@ foreach (var configuredGame in root.Slots.GameDefinitions)
         : SpecialPointBonus.CreateBoostedReelSet(game, reelSet);
     paytable = root.Slots.Paytables.Single(table => table.Id == game.Math.PaytableId);
     generator = new CryptoReelGenerator(new SeededRandomIndexSource(defaultSeed));
+    frequencyRandom = new SeededRandomIndexSource(defaultSeed + 17);
     evaluator = new CombinationEvaluator();
     payoutCalculator = new PayoutCalculator();
     requestValidator = new SpinService(
@@ -174,6 +176,7 @@ long RunSpin(bool isFreeSpin)
     for (var attempt = 0; attempt < attempts; attempt++)
     {
         outcome = generator.Generate(game, activeReelSet, symbolSet);
+        outcome = FreeGameFrequency.Apply(outcome, game, frequencyRandom);
         evaluations = evaluator.Evaluate(outcome.VisibleReels, game, symbolSet);
         if (!pityTriggered || HasPayingFullMatch(evaluations))
         {
@@ -234,11 +237,16 @@ void PrintReport()
     Console.WriteLine($"Configuration: {Path.GetFullPath(configurationPath)}");
     Console.WriteLine($"Seed: {defaultSeed:N0}; paid spins: {statistics.PaidSpins:N0}; total resolved spins: {statistics.TotalSpins:N0}");
     Console.WriteLine();
-    Console.WriteLine("Reel frequency (positions per 64-stop reel):");
+    Console.WriteLine("Configured reel frequency (before the visible FREE divisor):");
     foreach (var symbol in symbolSet.Symbols.Select(symbol => symbol.Id))
     {
         var counts = reelSet.Reels.Select(reel => reel.Count(value => value == symbol)).ToArray();
         Console.WriteLine($"  {symbol,-4} {string.Join(" / ", counts.Select(count => count.ToString().PadLeft(2)))}");
+    }
+    if (game.FreeGames is { VisibleFrequencyDivisor: > 1 } freeGames)
+    {
+        Console.WriteLine(
+            $"  {freeGames.SymbolId} visible frequency: 1 in {freeGames.VisibleFrequencyDivisor} configured appearances");
     }
 
     Console.WriteLine();

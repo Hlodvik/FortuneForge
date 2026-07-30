@@ -65,10 +65,10 @@ export function HomePage() {
                     Customer invoices
                   </a>
                 )}
-                <a className="landing-button landing-button--gold" href="/home/credits">
-                  Purchase credits
+                <a className="landing-button landing-button--gold" href="/home/rand">
+                  Add Rand
                 </a>
-                <a className="landing-button landing-button--secondary" href="/home/credits#withdrawal-request">
+                <a className="landing-button landing-button--secondary" href="/home/rand#withdrawal-request">
                   Request withdrawal
                 </a>
                 <a className="landing-button landing-button--secondary" href="/home/settings">

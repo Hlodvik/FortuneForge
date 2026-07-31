@@ -26,6 +26,18 @@ public sealed partial class FirestoreAccountStore
     {
         var counts = ReadLongMap(guardSnapshot, "sealCounts");
         var wagerCents = ReadSealWagerCents(guardSnapshot);
+        if (!string.Equals(result.GameId, LegacyWukongGameId, StringComparison.Ordinal))
+        {
+            return new SealCollectionSettlement(
+                counts,
+                wagerCents,
+                0,
+                null,
+                0,
+                [],
+                false);
+        }
+
         var spinWagerCents = RandMoney.PointsToCents(
             result.WagerPoints,
             result.PointValueInCents);

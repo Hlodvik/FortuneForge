@@ -83,7 +83,7 @@ public sealed class PayoutCalculator : IPayoutCalculator
         var paidMatches = candidate.Matches
             .Select(match =>
             {
-                var baseMultiplier = rules.GetValueOrDefault((match.SymbolId, match.MatchLength));
+                var baseMultiplier = GetBaseMultiplier(rules, match.SymbolId, match.MatchLength);
                 var multiplier = match.MatchLength == fullMatchLength && baseMultiplier > 0
                     ? checked(baseMultiplier + paylinePayoutStep)
                     : baseMultiplier;
@@ -93,6 +93,22 @@ public sealed class PayoutCalculator : IPayoutCalculator
             .ToArray();
 
         return new PaylinePayout(paylineId, paidMatches.Sum(match => match.AmountPoints), paidMatches);
+    }
+
+    private static long GetBaseMultiplier(
+        IReadOnlyDictionary<(string SymbolId, int MatchLength), long> rules,
+        string symbolId,
+        int matchLength)
+    {
+        for (var pricedLength = matchLength; pricedLength > 0; pricedLength--)
+        {
+            if (rules.TryGetValue((symbolId, pricedLength), out var multiplier))
+            {
+                return multiplier;
+            }
+        }
+
+        return 0;
     }
 
     private static string CandidateKey(PaylinePayout payout) => string.Join('|', payout.Matches.Select(match =>

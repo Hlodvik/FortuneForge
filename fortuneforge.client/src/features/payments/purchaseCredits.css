@@ -302,7 +302,7 @@
   color: #fff;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
@@ -506,7 +506,7 @@
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
+  cursor: default;
   opacity: 0.78;
   transition: border-color 160ms ease, background 160ms ease, opacity 160ms ease;
 }
@@ -605,7 +605,7 @@
   color: #351239;
   font: inherit;
   font-weight: 1000;
-  cursor: pointer;
+  cursor: default;
 }
 
 .reload-card__checkout:disabled {
@@ -1069,7 +1069,7 @@
   font: inherit;
   font-size: 0.72rem;
   font-weight: 950;
-  cursor: pointer;
+  cursor: default;
 }
 
 .payment-checkout__actions button.is-secondary {

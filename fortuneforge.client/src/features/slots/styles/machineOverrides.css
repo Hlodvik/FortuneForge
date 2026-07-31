@@ -235,7 +235,7 @@
     0 0 0 1px rgb(255 255 255 / 20%),
     0 0.42rem 0.75rem rgb(0 0 0 / 42%);
   color: #fff;
-  cursor: pointer;
+  cursor: default;
   text-transform: uppercase;
   transition:
     background 140ms ease,

@@ -27,14 +27,14 @@ export function selectWinSoundEvent(
   const hasFiveInARow = payline.matches.some(
     ({ match }) => match.matchLength === reelCount,
   )
-  const threeInARowCount = payline.matches.filter(
-    ({ match }) => match.matchLength === 3,
+  const shortMatchCount = payline.matches.filter(
+    ({ match }) => match.matchLength >= 3 && match.matchLength < reelCount,
   ).length
   if (hasFiveInARow) {
     return 'five'
   }
-  if (threeInARowCount >= 2) {
+  if (shortMatchCount >= 2) {
     return 'premium'
   }
-  return threeInARowCount === 1 ? 'single-three' : null
+  return shortMatchCount === 1 ? 'single-three' : null
 }

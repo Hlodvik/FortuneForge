@@ -911,7 +911,7 @@
   border-radius: 50%;
   background: linear-gradient(145deg, rgb(41 31 108 / 94%), rgb(20 12 61 / 96%));
   color: #fff8ff;
-  cursor: pointer;
+  cursor: default;
   font: 900 1.15rem/1 system-ui, sans-serif;
   text-shadow: 0 0 0.55rem rgb(53 231 255 / 55%);
   transition:
@@ -944,7 +944,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  cursor: pointer;
+  cursor: default;
   line-height: 1.05;
 }
 

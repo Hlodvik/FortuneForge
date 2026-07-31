@@ -992,7 +992,7 @@
   background: rgb(30 27 42 / 38%);
   box-shadow: 0 0 0.45rem rgb(0 0 0 / 30%);
   color: #fff;
-  cursor: pointer;
+  cursor: default;
   transition:
     background 140ms ease,
     box-shadow 140ms ease,
@@ -1088,7 +1088,7 @@
   border: 0;
   background: transparent;
   color: #fff;
-  cursor: pointer;
+  cursor: default;
   font-weight: 1000;
   line-height: 1;
   text-shadow: 0 0.22rem 0.4rem rgb(0 0 0 / 52%);

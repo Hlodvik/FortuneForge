@@ -188,11 +188,16 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
             return true;
         }
 
-        if (length == 3)
+        if (length is 3 or 4)
         {
             if (start != 0 && start != fullMatchLength - length)
             {
                 return false;
+            }
+
+            if (length == 4)
+            {
+                return true;
             }
 
             var firstStep = paylineRows[start + 1] - paylineRows[start];

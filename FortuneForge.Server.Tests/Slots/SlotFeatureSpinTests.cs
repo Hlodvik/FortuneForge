@@ -70,6 +70,22 @@ public sealed class SlotFeatureSpinTests
         Assert.Equal(1, count);
     }
 
+    [Fact]
+    public void Spin_WhenSealModeCannotProduceFiveMatch_DoesNotRunFiveMatchPity()
+    {
+        var service = CreateService(new QueuedRandomIndexSource());
+        _ = service.Spin("classic-demo-v1", 100, "player", specialBoostApplied: false);
+
+        var result = service.Spin(
+            "classic-demo-v1",
+            100,
+            "player",
+            specialBoostApplied: false,
+            freeSpinFeatureMode: "rand");
+
+        Assert.False(result.FiveMatchPityTriggered);
+    }
+
     private static SpinService CreateService(IRandomIndexSource random) =>
         new(
             new TestSlotsDefinitionProvider(),
@@ -134,6 +150,7 @@ public sealed class SlotFeatureSpinTests
             {
                 ReelSetId = "test-reels",
                 PaytableId = "test-paytable",
+                FiveMatchPityMissLimit = 1,
                 Targets = new GameMathTargets()
             },
             Wagering = new GameWageringDefinition

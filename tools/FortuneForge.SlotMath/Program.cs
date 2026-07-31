@@ -14,6 +14,16 @@ using Microsoft.Extensions.Options;
 const int defaultPaidSpins = 250_000;
 const int defaultSeed = 20_260_720;
 const long wager = 100;
+const int sealCompletionTarget = 40;
+const int sealCompletionFreeSpins = 10;
+string[] sealFeatureModes = ["sync", "rows", "paw", "rand"];
+Dictionary<string, string> sealModesBySymbol = new(StringComparer.Ordinal)
+{
+    ["SEAL_SYNC"] = "sync",
+    ["SEAL_ROWS"] = "rows",
+    ["SEAL_PAW"] = "paw",
+    ["SEAL_RAND"] = "rand"
+};
 
 var repositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", ".."));
 var configurationPath = args.FirstOrDefault(argument => argument.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
@@ -40,13 +50,15 @@ ReelSetDefinition reelSet = null!;
 ReelSetDefinition boostedReelSet = null!;
 PaytableDefinition paytable = null!;
 CryptoReelGenerator generator = null!;
-SeededRandomIndexSource frequencyRandom = null!;
 CombinationEvaluator evaluator = null!;
 PayoutCalculator payoutCalculator = null!;
 SpinService requestValidator = null!;
 Statistics statistics = null!;
-var consecutiveFiveMisses = 0;
 var specialPoints = 0;
+var energyBalance = 0L;
+var sealCounts = new Dictionary<string, long>(StringComparer.Ordinal);
+var lastFreeSpinsAwarded = 0;
+string? lastFreeSpinFeatureMode = null;
 
 foreach (var configuredGame in root.Slots.GameDefinitions)
 {
@@ -57,8 +69,8 @@ foreach (var configuredGame in root.Slots.GameDefinitions)
         ? reelSet
         : SpecialPointBonus.CreateBoostedReelSet(game, reelSet);
     paytable = root.Slots.Paytables.Single(table => table.Id == game.Math.PaytableId);
-    generator = new CryptoReelGenerator(new SeededRandomIndexSource(defaultSeed));
-    frequencyRandom = new SeededRandomIndexSource(defaultSeed + 17);
+    var spinRandom = new SeededRandomIndexSource(defaultSeed);
+    generator = new CryptoReelGenerator(spinRandom);
     evaluator = new CombinationEvaluator();
     payoutCalculator = new PayoutCalculator();
     requestValidator = new SpinService(
@@ -66,10 +78,13 @@ foreach (var configuredGame in root.Slots.GameDefinitions)
         generator,
         evaluator,
         payoutCalculator,
-        new SeededRandomIndexSource(defaultSeed));
+        spinRandom);
     statistics = new Statistics(symbolSet.Symbols.Select(symbol => symbol.Id));
-    consecutiveFiveMisses = 0;
     specialPoints = 0;
+    energyBalance = 0;
+    sealCounts = sealFeatureModes.ToDictionary(mode => mode, _ => 0L, StringComparer.Ordinal);
+    lastFreeSpinsAwarded = 0;
+    lastFreeSpinFeatureMode = null;
 
     Console.WriteLine();
     Console.WriteLine($"Analyzing slot game: {game.Id}");
@@ -78,13 +93,15 @@ foreach (var configuredGame in root.Slots.GameDefinitions)
 
     for (var paidSpin = 0; paidSpin < paidSpinCount; paidSpin++)
     {
-        var cyclePayout = RunSpin(isFreeSpin: false);
-        var freeSpinsPending = statistics.LastFreeSpinsAwarded;
+        var cyclePayout = RunSpin(isFreeSpin: false, freeSpinFeatureMode: null);
+        var freeSpinsPending = lastFreeSpinsAwarded;
+        var freeSpinFeatureMode = lastFreeSpinFeatureMode;
         while (freeSpinsPending > 0)
         {
             freeSpinsPending--;
-            cyclePayout = checked(cyclePayout + RunSpin(isFreeSpin: true));
-            freeSpinsPending = checked(freeSpinsPending + statistics.LastFreeSpinsAwarded);
+            cyclePayout = checked(cyclePayout + RunSpin(isFreeSpin: true, freeSpinFeatureMode));
+            freeSpinsPending = checked(freeSpinsPending + lastFreeSpinsAwarded);
+            freeSpinFeatureMode = lastFreeSpinFeatureMode ?? freeSpinFeatureMode;
         }
 
         statistics.RecordCycle(cyclePayout, wager);
@@ -169,7 +186,7 @@ void ValidateSpecialPointBoost()
     Console.WriteLine("PASS: the power boost halves every configured common symbol on every reel.");
 }
 
-long RunSpin(bool isFreeSpin)
+long RunSpin(bool isFreeSpin, string? freeSpinFeatureMode)
 {
     var specialBoostApplied = game.SpecialPoints is { } specialRules &&
         specialPoints >= specialRules.ActivationCost;
@@ -177,71 +194,104 @@ long RunSpin(bool isFreeSpin)
     {
         specialPoints -= game.SpecialPoints!.ActivationCost;
     }
-    var activeReelSet = specialBoostApplied ? boostedReelSet : reelSet;
-    var pityTriggered = game.Math.FiveMatchPityMissLimit is { } pityLimit &&
-        consecutiveFiveMisses >= pityLimit;
-    ReelOutcome? outcome = null;
-    IReadOnlyList<PaylineEvaluation>? evaluations = null;
-    var attempts = pityTriggered ? 10_000 : 1;
-
-    for (var attempt = 0; attempt < attempts; attempt++)
-    {
-        outcome = generator.Generate(game, activeReelSet, symbolSet);
-        outcome = FreeGameFrequency.Apply(outcome, game, frequencyRandom);
-        evaluations = evaluator.Evaluate(outcome.VisibleReels, game, symbolSet);
-        if (!pityTriggered || HasPayingFullMatch(evaluations))
-        {
-            break;
-        }
-    }
-
-    if (outcome is null || evaluations is null || (pityTriggered && !HasPayingFullMatch(evaluations)))
-    {
-        throw new InvalidOperationException("A pity outcome could not be generated.");
-    }
-
-    var hasFullMatch = HasPayingFullMatch(evaluations);
-    consecutiveFiveMisses = hasFullMatch ? 0 : checked(consecutiveFiveMisses + 1);
-    var payout = payoutCalculator.Calculate(evaluations, game, paytable, wager);
-    var freeSpinsAwarded = CountFreeGameSymbols(outcome.VisibleReels) >=
-        (game.FreeGames?.RequiredSymbols ?? int.MaxValue)
-            ? game.FreeGames?.AwardedSpins ?? 0
-            : 0;
-    var specialPointsAwarded = SpecialPointBonus.CalculateAward(evaluations, game);
-    var energyAwarded = CountEnergySymbols(outcome.VisibleReels) *
-        (game.Energy?.PointsPerVisibleSymbol ?? 0);
-    specialPoints = checked(specialPoints + specialPointsAwarded);
+    var result = requestValidator.Spin(
+        game.Id,
+        wager,
+        $"slot-math-{game.Id}",
+        specialBoostApplied,
+        energyBalance,
+        freeSpinFeatureMode);
+    var hasFullMatch = result.Payout.Paylines
+        .SelectMany(payline => payline.Matches)
+        .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
+    var meterBeforeReset = Math.Min(100, checked(energyBalance + result.EnergyAwarded));
+    var energyMultiplierApplied = meterBeforeReset >= 100 && result.Payout.TotalPoints > 0;
+    var payout = energyMultiplierApplied
+        ? MultiplyPayout(result.Payout, 1.5m)
+        : result.Payout;
+    energyBalance = energyMultiplierApplied ? 0 : meterBeforeReset;
+    var sealFreeSpinsAwarded = SettleSeals(result.SealsAwarded, energyMultiplierApplied);
+    lastFreeSpinsAwarded = checked(result.FreeSpinsAwarded + sealFreeSpinsAwarded.FreeSpins);
+    lastFreeSpinFeatureMode = sealFreeSpinsAwarded.FeatureMode;
+    specialPoints = checked(specialPoints + result.SpecialPointsAwarded);
     statistics.RecordSpin(
         payout,
         hasFullMatch,
-        pityTriggered,
+        result.FiveMatchPityTriggered,
         isFreeSpin,
-        freeSpinsAwarded,
-        specialPointsAwarded,
-        energyAwarded,
+        lastFreeSpinsAwarded,
+        result.SpecialPointsAwarded,
+        result.EnergyAwarded,
         specialBoostApplied,
         wager);
     return payout.TotalPoints;
 }
 
-bool HasPayingFullMatch(IReadOnlyList<PaylineEvaluation> evaluations) =>
-    evaluations.Any(evaluation => evaluation.Candidates.Any(candidate =>
-        candidate.Matches.Any(match =>
-            match.MatchLength == game.Layout.ReelCount &&
-            paytable.Rules.Any(rule =>
-                rule.SymbolId == match.SymbolId &&
-                rule.MatchLength == match.MatchLength &&
-                rule.Multiplier > 0))));
+(int FreeSpins, string? FeatureMode) SettleSeals(
+    IReadOnlyDictionary<string, int> awardedSeals,
+    bool energyCompleted)
+{
+    if (!string.Equals(game.Id, "classic-demo-v1", StringComparison.Ordinal))
+    {
+        return (0, null);
+    }
 
-int CountFreeGameSymbols(IReadOnlyList<IReadOnlyList<string>> visibleReels) =>
-    game.FreeGames is null
-        ? 0
-        : visibleReels.Sum(reel => reel.Count(symbol => symbol == game.FreeGames.SymbolId));
+    foreach (var awarded in awardedSeals)
+    {
+        if (sealModesBySymbol.TryGetValue(awarded.Key, out var mode) && awarded.Value > 0)
+        {
+            sealCounts[mode] = checked(sealCounts[mode] + awarded.Value);
+        }
+    }
 
-int CountEnergySymbols(IReadOnlyList<IReadOnlyList<string>> visibleReels) =>
-    game.Energy is null
-        ? 0
-        : visibleReels.Sum(reel => reel.Count(symbol => symbol == game.Energy.SymbolId));
+    if (energyCompleted)
+    {
+        var nearestMode = sealFeatureModes
+            .OrderByDescending(mode => Math.Min(sealCounts[mode], sealCompletionTarget - 1))
+            .ThenBy(mode => Array.IndexOf(sealFeatureModes, mode))
+            .First();
+        sealCounts[nearestMode] = sealCompletionTarget;
+    }
+
+    var freeSpins = 0;
+    string? featureMode = null;
+    foreach (var mode in sealFeatureModes)
+    {
+        if (sealCounts[mode] < sealCompletionTarget)
+        {
+            continue;
+        }
+
+        freeSpins = checked(freeSpins + sealCompletionFreeSpins);
+        featureMode ??= mode;
+        sealCounts[mode] -= sealCompletionTarget;
+    }
+
+    return (freeSpins, featureMode);
+}
+
+SpinPayout MultiplyPayout(SpinPayout payout, decimal multiplier)
+{
+    var paylines = payout.Paylines.Select(payline =>
+    {
+        var matches = payline.Matches.Select(match => match with
+        {
+            AmountPoints = checked((long)Math.Round(
+                match.AmountPoints * multiplier,
+                MidpointRounding.AwayFromZero))
+        }).ToArray();
+        return payline with
+        {
+            AmountPoints = matches.Sum(match => match.AmountPoints),
+            Matches = matches
+        };
+    }).ToArray();
+    return payout with
+    {
+        TotalPoints = paylines.Sum(payline => payline.AmountPoints),
+        Paylines = paylines
+    };
+}
 
 void PrintReport()
 {

@@ -13,7 +13,7 @@
   border-radius: 999px;
   color: #f3d386;
   background: rgb(11 18 33 / 0.72);
-  cursor: pointer;
+  cursor: default;
   list-style: none;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
 }

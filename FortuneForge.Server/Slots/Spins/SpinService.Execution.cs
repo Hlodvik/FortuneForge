@@ -73,7 +73,8 @@ public sealed partial class SpinService
         string? freeSpinFeatureMode)
     {
         var effectiveGame = CreateEffectiveSpinGame(game, freeSpinFeatureMode);
-        var pityTriggered = game.Math.FiveMatchPityMissLimit is { } pityLimit &&
+        var pityTriggered = string.IsNullOrWhiteSpace(freeSpinFeatureMode) &&
+            game.Math.FiveMatchPityMissLimit is { } pityLimit &&
             pityState.ConsecutiveFiveMisses >= pityLimit;
         var maximumAttempts = pityTriggered ? MaximumPityGenerationAttempts : 1;
         ReelOutcome? outcome = null;

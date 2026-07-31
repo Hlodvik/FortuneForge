@@ -104,7 +104,7 @@ public sealed partial class SpinService
             return 2;
         }
 
-        return random.Next(7) == 0 ? 1 : 0;
+        return random.Next(14) == 0 ? 1 : 0;
     }
 
     private int RollMoneySymbolCount() =>

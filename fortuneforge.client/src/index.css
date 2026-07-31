@@ -30,6 +30,21 @@ textarea {
   font: inherit;
 }
 
+/* Keep the standard arrow over controls instead of switching to a hand. */
+a,
+button,
+summary,
+label,
+select,
+input[type='button'],
+input[type='checkbox'],
+input[type='radio'],
+input[type='reset'],
+input[type='submit'],
+[role='button'] {
+  cursor: default !important;
+}
+
 #root {
   min-height: 100svh;
 }

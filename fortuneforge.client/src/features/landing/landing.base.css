@@ -646,7 +646,7 @@
   align-items: center;
   gap: 0.7rem;
   width: fit-content;
-  cursor: pointer;
+  cursor: default;
   letter-spacing: normal;
   text-transform: none;
 }
@@ -658,7 +658,7 @@
   padding: 0;
   accent-color: #35e7ff;
   box-shadow: none;
-  cursor: pointer;
+  cursor: default;
 }
 
 .account-form__remember span {

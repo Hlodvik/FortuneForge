@@ -865,7 +865,7 @@
   border: 0;
   background: transparent;
   color: #fff8ff;
-  cursor: pointer;
+  cursor: default;
 }
 
 .spin-lever::before {

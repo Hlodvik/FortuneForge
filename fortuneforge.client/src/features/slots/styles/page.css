@@ -380,6 +380,13 @@
   will-change: transform, opacity, filter;
 }
 
+.slots-page__seal-flyover--sync {
+  filter:
+    drop-shadow(0 0 0.42rem rgb(255 255 255 / 100%))
+    drop-shadow(0 0 1.15rem rgb(236 74 255 / 100%))
+    drop-shadow(0 0 1.55rem rgb(255 61 122 / 88%));
+}
+
 .slots-page__money-grab {
   position: fixed;
   z-index: 148;

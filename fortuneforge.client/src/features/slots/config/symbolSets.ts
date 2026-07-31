@@ -11,6 +11,7 @@ import rainbowPowerCoinSymbol from '../../../assets/slots/symbols/rainbow-realm-
 import watermelonSymbol from '../../../assets/slots/symbols/watermelon-slice.gif'
 import celestialGourdSymbol from '../../../assets/slots/symbols/wukong/celestial-gourd.png'
 import celestialGourdAnimatedSymbol from '../../../assets/slots/symbols/wukong/celestial-gourd-animated.gif'
+import celestialHammerSymbol from '../../../assets/slots/symbols/wukong/celestial-hammer.png'
 import celestialStaffSymbol from '../../../assets/slots/symbols/wukong/celestial-staff.png'
 import celestialStaffAnimatedSymbol from '../../../assets/slots/symbols/wukong/celestial-staff-animated.gif'
 import goldenCircletSymbol from '../../../assets/slots/symbols/wukong/golden-circlet.png'
@@ -115,7 +116,7 @@ export const WUKONG_SYMBOLS: SlotSymbolSet = {
     '7': { id: '7', label: 'Celestial staff', image: celestialStaffSymbol, animatedImage: celestialStaffAnimatedSymbol },
     ACE: { id: 'ACE', label: 'Wukong medallion', image: wukongMedallionSymbol, animatedImage: wukongMedallionAnimatedSymbol },
     FREE: { id: 'FREE', label: 'Free game', image: freeGameSymbol, animatedImage: freeGameAnimatedSymbol },
-    POWER: { id: 'POWER', label: 'Wukong power seal', image: wukongPowerSealSymbol, animatedImage: wukongPowerSealSymbol },
+    POWER: { id: 'POWER', label: 'Celestial power hammer', image: celestialHammerSymbol, animatedImage: celestialHammerSymbol },
     BOLT: { id: 'BOLT', label: 'Energy bolt', image: celestialLightningBoltSymbol, animatedImage: celestialLightningBoltSymbol },
     ...WUKONG_FEATURE_SYMBOL_DEFINITIONS,
   },

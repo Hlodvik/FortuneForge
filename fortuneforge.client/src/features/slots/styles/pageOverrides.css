@@ -150,6 +150,26 @@
     drop-shadow(0 0 0.36rem rgb(246 185 47 / 60%));
 }
 
+.slots-page__seal-details {
+  display: grid;
+  gap: clamp(0.2rem, 0.4vw, 0.34rem);
+  width: 100%;
+  min-width: 0;
+}
+
+.slots-page__seal-title {
+  overflow: hidden;
+  color: #fff7cf;
+  font-size: clamp(0.54rem, 0.68vw, 0.66rem);
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 0.48rem rgb(246 185 47 / 44%);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .slots-page__seal-meter {
   position: relative;
   display: block;
@@ -340,6 +360,20 @@
 
   .slots-page__seal-collection > img {
     width: clamp(2.2rem, 11vw, 3rem);
+  }
+
+  .slots-page__seal-details {
+    gap: 0.12rem;
+    text-align: center;
+  }
+
+  .slots-page__seal-title {
+    min-height: 2em;
+    display: grid;
+    align-items: end;
+    font-size: clamp(0.5rem, 2.35vw, 0.66rem);
+    line-height: 1;
+    white-space: normal;
   }
 
   .slots-page__seal-meter {

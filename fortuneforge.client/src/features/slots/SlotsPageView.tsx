@@ -167,8 +167,11 @@ export function SlotsPageView(controller: SlotsPageController) {
                     aria-valuenow={collection.count}
                   >
                     <img src={getSlotSymbolDefinition(symbolSet, seal.symbol).image} alt="" aria-hidden="true" />
-                    <span className="slots-page__seal-meter" aria-hidden="true">
-                      <span style={{ width: `${progress}%` }} />
+                    <span className="slots-page__seal-details">
+                      <strong className="slots-page__seal-title">{seal.label}</strong>
+                      <span className="slots-page__seal-meter" aria-hidden="true">
+                        <span style={{ width: `${progress}%` }} />
+                      </span>
                     </span>
                   </div>
                 )
@@ -359,7 +362,8 @@ export function SlotsPageView(controller: SlotsPageController) {
       {sealFlyover && collectionFeature && (
         <img
           key={sealFlyover.id}
-          className="slots-page__seal-flyover"
+          className={`slots-page__seal-flyover slots-page__seal-flyover--${sealFlyover.collectionId}`}
+          data-seal-id={sealFlyover.collectionId}
           src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
           alt=""
           aria-hidden="true"

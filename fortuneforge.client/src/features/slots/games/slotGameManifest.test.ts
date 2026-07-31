@@ -46,10 +46,20 @@ describe('slot game manifests', () => {
   })
 
   it('keeps seals, paw grabs, Rand tokens, and their help exclusive to Wukong', () => {
-    expect(WUKONG_SLOT_GAME.experience.features.collections?.entries).toHaveLength(4)
-    expect(WUKONG_SLOT_GAME.experience.features.collections?.entries.every(
+    const collections = WUKONG_SLOT_GAME.experience.features.collections?.entries
+    expect(collections).toHaveLength(4)
+    expect(collections?.map((collection) => collection.label)).toEqual([
+      'Synced reels',
+      'Extra rows',
+      'Monkey paw',
+      'Rand column',
+    ])
+    expect(collections?.every(
       (collection) => collection.requiredCount === 40,
     )).toBe(true)
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions.POWER?.image).not.toBe(
+      WUKONG_SLOT_GAME.experience.symbols.definitions.SEAL_SYNC?.image,
+    )
     expect(WUKONG_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
     expect(WUKONG_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
 

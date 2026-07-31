@@ -14,9 +14,9 @@ const WUKONG_FEATURES: SlotFeatureSet = {
   collections: {
     ariaLabel: 'Power seal collections',
     entries: [
-      { id: 'sync', label: 'Sync reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: '+2 rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Monkey paw odds', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40 },
+      { id: 'sync', label: 'Synced reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40 },
+      { id: 'rows', label: 'Extra rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40 },
+      { id: 'paw', label: 'Monkey paw', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40 },
       { id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40 },
     ],
   },

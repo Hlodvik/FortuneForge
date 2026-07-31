@@ -37,6 +37,7 @@ type EnergyFlyover = {
 }
 
 type SealFlyover = EnergyFlyover & {
+  collectionId: string
   symbol: SlotSymbolId
 }
 
@@ -593,6 +594,7 @@ export function useSlotsPageController({
         const durationMs = isFastAutoSpin ? 330 : 560
         setSealFlyover({
           id: Date.now() + index,
+          collectionId: position.collection.id,
           symbol: position.symbol,
           left: sourceRect.left,
           top: sourceRect.top,

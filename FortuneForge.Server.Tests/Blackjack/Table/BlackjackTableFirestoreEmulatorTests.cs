@@ -422,6 +422,12 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
             }
             if (table.Phase == BlackjackTablePhases.Insurance)
             {
+                if (table.Transition is not null || table.ActiveSeat is null)
+                {
+                    var observer = table.Players.First(player => !player.IsBot).ActorId;
+                    await store.GetSessionAsync(observer, nowUtc.AddSeconds(attempt * 2 + 1), default);
+                    continue;
+                }
                 var active = table.Players.Single(player => player.Seat == table.ActiveSeat);
                 if (active.IsBot)
                 {

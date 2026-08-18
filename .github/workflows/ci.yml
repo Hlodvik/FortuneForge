@@ -47,7 +47,12 @@ jobs:
           firebase setup:emulators:firestore
 
       - name: Test server
-        run: dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"
+        run: |
+          firebase emulators:exec \
+            --only firestore \
+            --project demo-fortuneforge-ci-tests \
+            --config FortuneForge.Server.Tests/Cards/TexasHoldem/Credit/firebase-emulator.test.json \
+            'dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"'
 
       - name: Install frontend dependencies
         working-directory: fortuneforge.client

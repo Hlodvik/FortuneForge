@@ -23,6 +23,14 @@ public sealed class SolitaireFirestoreEmulatorFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         priorHost = Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST");
+        if (!string.IsNullOrWhiteSpace(priorHost))
+        {
+            if (!priorHost.StartsWith("127.0.0.1:", StringComparison.OrdinalIgnoreCase) &&
+                !priorHost.StartsWith("localhost:", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Competitive Solitaire integration tests require a localhost Firestore emulator.");
+            return;
+        }
+
         var repositoryRoot = FindRepositoryRoot();
         var configuration = Path.Combine(
             repositoryRoot,

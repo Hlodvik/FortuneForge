@@ -443,7 +443,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        await database.RunTransactionAsync(
+        await RunTransactionAsync(
             async transaction =>
             {
                 var graph = await ReadMatchGraphAsync(transaction, matchId, cancellationToken);

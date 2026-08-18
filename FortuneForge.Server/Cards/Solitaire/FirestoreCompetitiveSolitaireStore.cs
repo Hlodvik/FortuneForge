@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -24,6 +25,27 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
+    }
+
+    private async Task<T> RunTransactionAsync<T>(
+        Func<Transaction, Task<T>> callback,
+        CancellationToken cancellationToken)
+    {
+        const int maximumAttempts = 12;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await database.RunTransactionAsync(callback, cancellationToken: cancellationToken);
+            }
+            catch (RpcException exception) when (
+                exception.StatusCode == StatusCode.Aborted && attempt < maximumAttempts)
+            {
+                var exponential = Math.Min(500, 20 * (1 << Math.Min(attempt - 1, 5)));
+                var backoffMilliseconds = exponential + Random.Shared.Next(25, 126);
+                await Task.Delay(backoffMilliseconds, cancellationToken);
+            }
+        }
     }
 
     internal static string CreateLookupKey(string value)

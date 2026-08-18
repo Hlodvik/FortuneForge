@@ -42,7 +42,9 @@ jobs:
           done < <(find . -name '*.csproj' -print)
 
       - name: Install Firestore emulator CLI
-        run: npm install --global firebase-tools@14.4.0
+        run: |
+          npm install --global firebase-tools@14.4.0
+          firebase setup:emulators:firestore
 
       - name: Test server
         run: dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"

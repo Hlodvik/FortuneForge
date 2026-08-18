@@ -102,16 +102,19 @@ public sealed class CreditHoldemFirestoreEmulatorFixture : IAsyncLifetime
 
     private static async Task DeleteTemporaryDirectoryAsync(string directory)
     {
-        for (var attempt = 0; attempt < 20 && Directory.Exists(directory); attempt++)
+        const int maximumAttempts = 50;
+        for (var attempt = 0; attempt < maximumAttempts && Directory.Exists(directory); attempt++)
         {
             try
             {
                 Directory.Delete(directory, recursive: true);
                 return;
             }
-            catch (IOException) when (attempt < 19)
+            catch (Exception exception) when (
+                exception is IOException or UnauthorizedAccessException)
             {
-                await Task.Delay(100);
+                if (attempt + 1 < maximumAttempts)
+                    await Task.Delay(200);
             }
         }
     }

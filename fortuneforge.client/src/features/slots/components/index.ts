@@ -1,4 +1,5 @@
 export { AudioSettingsDialog } from './AudioSettingsDialog'
+export { CollectionProgressDisplay } from './CollectionProgressDisplay'
 export { Reel } from './Reel'
 export { ReelWindow } from './ReelWindow'
 export { RainbowRealmMachine } from './RainbowRealmMachine'

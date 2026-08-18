@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import type { MascotPhase, MascotSet } from '../../../components/WukongCompanion.config'
+import type { MascotPhase, MascotSet } from '../../../games/slots/shared/mascot/mascotTypes'
 
 export type MascotOutcome = 'loss' | 'neutral' | 'win'
 

@@ -1,8 +1,13 @@
 import type { CSSProperties } from 'react'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
-import { MascotCompanion } from '../../components/WukongCompanion'
-import { AudioSettingsDialog, SlotMachine, SlotSymbol, SpinButton, SymbolValueGuide } from './components'
+import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
+import { AudioSettingsDialog } from './components/AudioSettingsDialog'
+import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
+import { SlotMachine } from './components/SlotMachine'
+import { SlotSymbol } from './components/SlotSymbol'
+import { SpinButton } from './components/SpinButton'
+import { SymbolValueGuide } from './components/SymbolValueGuide'
 import { getSlotSymbolDefinition } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
@@ -21,6 +26,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     closeSettings,
     creditTileRef,
     displayedReels,
+    demoAvailability,
+    demoAvailabilityMessage,
     demoMode,
     demoStartingBalance,
     energyBalance,
@@ -36,6 +43,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
+    isDemoSpinDisabled,
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
@@ -154,26 +162,16 @@ export function SlotsPageView(controller: SlotsPageController) {
               {visibleSealCollections.map((collection) => {
                 const seal = collectionFeature.entries.find((entry) => entry.id === collection.sealId)
                 if (!seal) return null
-                const progress = Math.min(100, collection.count / collection.requiredCount * 100)
                 return (
-                  <div
-                    className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId}${sealImpactId === collection.sealId ? ' slots-page__seal-collection--impact' : ''}`}
-                    data-seal-id={collection.sealId}
+                  <CollectionProgressDisplay
+                    collection={collection}
+                    definition={seal}
+                    image={getSlotSymbolDefinition(symbolSet, seal.symbol).image}
+                    isImpacting={sealImpactId === collection.sealId}
+                    itemLabel={collectionFeature.itemLabel ?? 'seals'}
                     key={collection.sealId}
-                    role="progressbar"
-                    aria-label={`${seal.label}: ${collection.count} of ${collection.requiredCount} seals`}
-                    aria-valuemin={0}
-                    aria-valuemax={collection.requiredCount}
-                    aria-valuenow={collection.count}
-                  >
-                    <img src={getSlotSymbolDefinition(symbolSet, seal.symbol).image} alt="" aria-hidden="true" />
-                    <span className="slots-page__seal-details">
-                      <strong className="slots-page__seal-title">{seal.label}</strong>
-                      <span className="slots-page__seal-meter" aria-hidden="true">
-                        <span style={{ width: `${progress}%` }} />
-                      </span>
-                    </span>
-                  </div>
+                    presentation={collectionFeature.presentation ?? 'seal-pile'}
+                  />
                 )
               })}
             </div>
@@ -274,6 +272,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               <div className="slots-page__spin-stack">
                 <div className="slots-page__spin-button-shell">
                   <SpinButton
+                    disabled={isDemoSpinDisabled}
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
                     onSpin={handleSpinButtonClick}
@@ -291,6 +290,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <button
                   className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}`}
                   type="button"
+                  disabled={isDemoSpinDisabled}
                   aria-pressed={isAutoSpinning}
                   onClick={() => {
                     setSpinError(null)
@@ -469,10 +469,11 @@ export function SlotsPageView(controller: SlotsPageController) {
       )}
 
       <footer
-        className={`slots-page__footer${spinError ? ' slots-page__footer--error' : ''}`}
+        className={`slots-page__footer${spinError || demoAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
         aria-live="polite"
       >
-        {spinError
+        {demoAvailabilityMessage
+          ?? spinError
           ?? (isSpinning
             ? spinStage === 'requesting'
               ? 'The jewel reels are spinning'

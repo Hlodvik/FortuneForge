@@ -21,9 +21,15 @@ import {
 } from './presentation/spinLifecycle'
 import { findBestPayline, selectWinSoundEvent } from './presentation/spinPresentation'
 import { slotPointsToRand } from './slotPagePresentation'
-import { requestDemoSpin, requestSlotState, requestSpin, SpinRequestError } from './services/slotsApi'
+import {
+  requestDemoAvailability,
+  requestDemoSpin,
+  requestSlotState,
+  requestSpin,
+  SpinRequestError,
+} from './services/slotsApi'
 import type { GridPosition, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
-import type { AccountSummary } from '../landing/services/accountsApi'
+import type { AccountSummary } from '../account/services/accountsApi'
 
 type EnergyFlyover = {
   id: number
@@ -104,6 +110,7 @@ export type SlotsPageProps = {
 }
 
 const demoStartingBalance = 10_000
+type DemoAvailability = 'checking' | 'available' | 'unavailable'
 
 export function useSlotsPageController({
   account,
@@ -140,6 +147,11 @@ export function useSlotsPageController({
     })) ?? [],
     [featureSet.collections],
   )
+  const animationSymbolIds = useMemo(
+    () => Object.values(symbolSet.definitions).flatMap((definition) =>
+      definition ? [definition.id] : []),
+    [symbolSet],
+  )
   const {
     preferences: audioPreferences,
     playCue,
@@ -166,6 +178,9 @@ export function useSlotsPageController({
     initialReels.map(() => 'idle'),
   )
   const [isSpinning, setIsSpinning] = useState(false)
+  const [demoAvailability, setDemoAvailability] = useState<DemoAvailability>(
+    demoMode ? 'checking' : 'available',
+  )
   const [isAutoSpinning, setIsAutoSpinning] = useState(false)
   const [isAutoSpinCoolingDown, setIsAutoSpinCoolingDown] = useState(false)
   const [isFastSpinActive, setIsFastSpinActive] = useState(false)
@@ -182,6 +197,7 @@ export function useSlotsPageController({
   const [lastEnergyMultiplierApplied, setLastEnergyMultiplierApplied] = useState(false)
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
   const [freeSpinWagerPoints, setFreeSpinWagerPoints] = useState<number | null>(null)
+  const [freeSpinFeatureMode, setFreeSpinFeatureMode] = useState<string | null>(null)
   const [isFreeSpinBadgePopping, setIsFreeSpinBadgePopping] = useState(false)
   const [energyBalance, setEnergyBalance] = useState(0)
   const [sealCollections, setSealCollections] =
@@ -211,6 +227,12 @@ export function useSlotsPageController({
   const creditTileRef = useRef<HTMLDivElement | null>(null)
   const freeSpinBadgeTimerRef = useRef<number | null>(null)
   const [isStopRequested, setIsStopRequested] = useState(false)
+  const isDemoSpinDisabled = demoMode && demoAvailability !== 'available'
+  const demoAvailabilityMessage = !demoMode || demoAvailability === 'available'
+    ? null
+    : demoAvailability === 'checking'
+      ? 'Checking demo service availability…'
+      : 'Demo service unavailable — Spin is disabled. Reload after the API is restored.'
   const selectedWagerPoints = wagerOptions[wagerIndex] ?? wagerOptions[0] ?? 0
   const selectedWagerRand = slotPointsToRand(selectedWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
@@ -255,8 +277,33 @@ export function useSlotsPageController({
   ])
 
   useEffect(() => {
+    if (!demoMode) {
+      setDemoAvailability('available')
+      return undefined
+    }
+
+    const controller = new AbortController()
+    setDemoAvailability('checking')
+    void requestDemoAvailability(gameId, controller.signal)
+      .then(() => {
+        if (!controller.signal.aborted) {
+          setDemoAvailability('available')
+        }
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setDemoAvailability('unavailable')
+          setIsAutoSpinning(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [demoMode, gameId])
+
+  useEffect(() => {
     if (
       !isAutoSpinning ||
+      isDemoSpinDisabled ||
       isSpinning ||
       isAutoSpinCoolingDown ||
       mascotPhase !== 'idle' ||
@@ -284,6 +331,7 @@ export function useSlotsPageController({
     isAutoSpinning,
     isAutoSpinCoolingDown,
     isHelpOpen,
+    isDemoSpinDisabled,
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
@@ -324,6 +372,7 @@ export function useSlotsPageController({
     const requestedRevision = slotStateRevisionGuardRef.current.capture()
     setFreeSpinsRemaining(0)
     setFreeSpinWagerPoints(null)
+    setFreeSpinFeatureMode(null)
     setIsFreeSpinBadgePopping(false)
     setEnergyBalance(0)
     setSealCollections(defaultSealCollections)
@@ -352,6 +401,7 @@ export function useSlotsPageController({
 
         setFreeSpinsRemaining(state.freeSpinsRemaining)
         setFreeSpinWagerPoints(state.freeSpinWagerPoints)
+        setFreeSpinFeatureMode(state.freeSpinFeatureMode)
         setEnergyBalance(state.energyBalance)
         setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
         if (state.freeSpinWagerPoints !== null) {
@@ -1009,6 +1059,11 @@ export function useSlotsPageController({
       return
     }
 
+    if (isDemoSpinDisabled) {
+      setIsAutoSpinning(false)
+      return
+    }
+
     if (!useFreeGameForNextSpin && balance < selectedWagerRand) {
       setIsAutoSpinning(false)
       setSpinError(null)
@@ -1069,6 +1124,7 @@ export function useSlotsPageController({
     const animation = startSpinAnimation({
       reelCount: displayedReels.length,
       rowsPerReel: displayedReels[0]?.length ?? 4,
+      symbolIds: animationSymbolIds,
       displayFrame,
       setReelMotion: (reelIndex, state) => {
         setReelMotion((currentMotion) =>
@@ -1124,6 +1180,8 @@ export function useSlotsPageController({
             freeSpinsRemaining,
             freeSpinWagerPoints,
             energyBalance,
+            sealCollections,
+            freeSpinFeatureMode,
           })
         : await requestSpin({
             gameId,
@@ -1177,6 +1235,7 @@ export function useSlotsPageController({
           ? result.freeSpinWagerPoints ?? freeSpinWagerPoints ?? result.wagerPoints
           : null,
       )
+      setFreeSpinFeatureMode(result.freeSpinFeatureMode)
       let resultSoundEvent: SlotResultSoundEvent | null = winSoundCue
       if (result.freeSpinsAwarded > 0) {
         resultSoundEvent = 'bonus'
@@ -1205,6 +1264,9 @@ export function useSlotsPageController({
         return
       }
       setIsAutoSpinning(false)
+      if (demoMode) {
+        setDemoAvailability('unavailable')
+      }
       const isInsufficientBalance =
         error instanceof SpinRequestError && error.code === 'insufficient-slot-credits'
       const isFreeSpinUnavailable =
@@ -1215,6 +1277,7 @@ export function useSlotsPageController({
       if (isFreeSpinUnavailable) {
         setFreeSpinsRemaining(error.freeSpinsRemaining ?? 0)
         setFreeSpinWagerPoints(null)
+        setFreeSpinFeatureMode(null)
         setIsFreeSpinBadgePopping(false)
       }
 
@@ -1327,6 +1390,10 @@ export function useSlotsPageController({
       return
     }
 
+    if (isDemoSpinDisabled) {
+      return
+    }
+
     if (freeSpinsRemaining > 0) {
       if (freeSpinBadgeTimerRef.current !== null) {
         window.clearTimeout(freeSpinBadgeTimerRef.current)
@@ -1363,6 +1430,8 @@ export function useSlotsPageController({
     closeSettings,
     creditTileRef,
     displayedReels,
+    demoAvailability,
+    demoAvailabilityMessage,
     demoMode,
     demoStartingBalance,
     energyBalance,
@@ -1377,6 +1446,7 @@ export function useSlotsPageController({
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
+    isDemoSpinDisabled,
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,

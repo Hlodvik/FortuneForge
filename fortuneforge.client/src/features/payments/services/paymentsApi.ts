@@ -1,4 +1,4 @@
-import { fetchWithAccountSession } from '../../landing/services/accountsApi'
+import { fetchWithAccountSession } from '../../account/services/accountsApi'
 
 export type PaymentMethodOption = {
   id: string

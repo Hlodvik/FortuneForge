@@ -58,6 +58,7 @@ function startCadenceHarness() {
   const animation = startSpinAnimation({
     reelCount: targetReels.length,
     rowsPerReel: targetReels[0].length,
+    symbolIds: [...new Set(targetReels.flat())],
     displayFrame: (reelIndex, symbols) => {
       displayedReels[reelIndex] = [...symbols]
     },
@@ -124,6 +125,27 @@ describe('slot state revision guard', () => {
 })
 
 describe('slot presentation timing', () => {
+  it('builds transition frames only from the selected game symbol set', () => {
+    vi.useFakeTimers()
+    installAnimationWindow()
+    const frames: string[][] = []
+    const animation = startSpinAnimation({
+      reelCount: 1,
+      rowsPerReel: 4,
+      symbolIds: ['2', '3'],
+      displayFrame: (_, symbols) => frames.push([...symbols]),
+      reducedMotion: false,
+      setReelMotion: () => undefined,
+    })
+
+    expect(frames).toHaveLength(1)
+    expect(frames[0].every((symbol) => symbol === '2' || symbol === '3')).toBe(true)
+
+    cancelSpinAnimation(animation)
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
   it('keeps the worst-case normal reveal-to-settle budget below 1.4 seconds', () => {
     const reelSettleBudget = getLatestReelSettleBudgetMs(5, 1, false)
     const worstCaseBudget =
@@ -232,6 +254,9 @@ describe('spin control state', () => {
   it('keeps the idle control icon-only and renders distinct Stop and Stopping states', () => {
     const onSpin = () => undefined
     const idle = renderToStaticMarkup(createElement(SpinButton, { onSpin }))
+    const unavailable = renderToStaticMarkup(
+      createElement(SpinButton, { disabled: true, onSpin }),
+    )
     const spinning = renderToStaticMarkup(
       createElement(SpinButton, { isSpinning: true, onSpin }),
     )
@@ -245,6 +270,7 @@ describe('spin control state', () => {
 
     expect(idle).not.toContain('spin-button__label')
     expect(idle).toContain('aria-label="Spin the reels"')
+    expect(unavailable).toContain('disabled=""')
     expect(spinning).toContain('spin-button--active')
     expect(spinning).toContain('Stop</strong>')
     expect(spinning).toContain('aria-label="Stop the spin"')

@@ -6,6 +6,8 @@
 - `FortuneForge.Server/Accounts` owns authentication, profiles, account security, sessions, slot balances, and Firestore account persistence.
 - `FortuneForge.Server/Payments` owns checkout and withdrawal workflows, MerchantGateway integration, signed webhooks, reconciliation, and Firestore payment persistence.
 - `FortuneForge.Server/Slots` owns game definitions, reel generation, combination evaluation, payouts, bonuses, and spin orchestration.
+- `FortuneForge.Server/Cards` owns the public card API, authentication, Firestore adapters, matchmaking, and execution of credit settlement. Blackjack, Solitaire, and Texas Hold'em rules, state machines, competition logic, and bot decisions are consumed as immutable `FortuneForge.Games.*` packages from the separate `FortuneForge.Games` repository.
+- `packages/games` is the bootstrap NuGet feed used by local and isolated-release builds until the private package feed is connected in CI.
 - `FortuneForge.Server.Tests` mirrors the payment and slot feature boundaries.
 - `fortuneforge.client/src/app` owns browser routing and shell composition; `features` owns account, payment, game-library, and slot workflows; `components` contains cross-feature presentation.
 - `tools/FortuneForge.SlotMath` is the deterministic slot-math analysis console, while `scripts` contains asset and deployment automation.

@@ -1,0 +1,64 @@
+import catalogImage from '../../../assets/slots/games/your-theme/catalog.png'
+import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
+import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
+import { YOUR_CABINET_THEME } from './cabinetTheme'
+import { YOUR_SYMBOLS } from './symbols'
+import { defineSlotGame } from '../shared/slotGameManifest'
+
+// Start empty. Add only capabilities this game actually owns.
+const YOUR_FEATURES: SlotFeatureSet = {
+  // energy: { label: 'Energy', symbol: 'BOLT' },
+  // collections: {
+  //   ariaLabel: 'Relic collections',
+  //   entries: [
+  //     { id: 'relic', label: 'Relic', shortLabel: 'Relic', symbol: 'POWER', requiredCount: 10 },
+  //   ],
+  // },
+  // moneyGrab: {
+  //   actorName: 'Your mascot',
+  //   awardLabel: 'Treasure grab',
+  //   collectorSymbol: 'POWER',
+  //   valueSymbolPrefix: 'VALUE_',
+  // },
+}
+
+const YOUR_HELP: SlotHelpDefinition = {
+  paylineCount: 23,
+  freeGames: {
+    requiredSymbols: 3,
+    awardedSpins: 5,
+  },
+  // extraSections: [
+  //   { badge: 'NEW', title: 'Theme feature', body: 'Explain only this game\'s feature.' },
+  // ],
+}
+
+export const YOUR_EXPERIENCE_SET: SlotExperienceSet = {
+  id: 'your-theme-experience-v1',
+  cabinet: YOUR_CABINET_THEME,
+  features: YOUR_FEATURES,
+  help: YOUR_HELP,
+  shellBackdrop: 'theme',
+  symbols: YOUR_SYMBOLS,
+  mascot: null,
+  sounds: DEFAULT_SLOT_SOUNDS,
+  rules: createSlotRulesSet('your-server-game-v1'),
+}
+
+export const YOUR_SLOT_GAME = defineSlotGame({
+  id: 'your-theme',
+  routes: {
+    play: '/slots/your-theme',
+    demo: '/slots/your-theme/demo',
+  },
+  catalog: {
+    id: 'your-theme',
+    title: 'Your Theme',
+    shortTitle: 'Your Theme',
+    description: 'A short player-facing description.',
+    image: catalogImage,
+    imagePresentation: 'contain',
+  },
+  experience: YOUR_EXPERIENCE_SET,
+})

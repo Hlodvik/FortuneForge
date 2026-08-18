@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Golden ace crown power">
+  <title>Golden ace crown power</title>
+  <defs>
+    <radialGradient id="bg" cx="35%" cy="28%" r="75%"><stop stop-color="#7a1533"/><stop offset="1" stop-color="#170d1f"/></radialGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff4a9"/><stop offset=".35" stop-color="#d7a83e"/><stop offset=".72" stop-color="#8b4a12"/><stop offset="1" stop-color="#ffe891"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="12" stdDeviation="13" flood-color="#000" flood-opacity=".48"/></filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <circle cx="256" cy="256" r="212" fill="url(#ring)"/>
+    <circle cx="256" cy="256" r="188" fill="url(#bg)" stroke="#fff1a6" stroke-width="7"/>
+    <path d="M112 145 Q256 65 400 145" fill="none" stroke="#fff" stroke-opacity=".26" stroke-width="15" stroke-linecap="round"/>
+    <text x="256" y="306" text-anchor="middle" font-family="Segoe UI Emoji, Segoe UI Symbol, serif" font-size="190" font-weight="700">👑</text>
+    <path d="M116 369 Q256 438 396 369" fill="none" stroke="#d7a83e" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="256" cy="61" r="24" fill="#d7a83e" stroke="#fff3ad" stroke-width="6"/>
+  </g>
+</svg>

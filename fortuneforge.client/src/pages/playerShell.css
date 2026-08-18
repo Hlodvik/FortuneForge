@@ -1,0 +1,81 @@
+.player-shell-header {
+  position: relative;
+  z-index: 30;
+  display: grid;
+  min-height: 3.75rem;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.55rem max(1rem, calc((100vw - 86rem) / 2));
+  border-bottom: 1px solid rgb(53 231 255 / 22%);
+  background: linear-gradient(105deg, rgb(7 26 67 / 96%), rgb(38 10 70 / 95%));
+  color: #f8f2d8;
+  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+}
+
+.player-shell-header__brand,
+.player-shell-header__games { color: inherit; text-decoration: none; }
+.player-shell-header__brand { display: flex; align-items: center; gap: 0.55rem; font-size: 1rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
+.player-shell-header__brand strong { background: linear-gradient(90deg, #35e7ff, #fff8ff 38%, #f98cff 70%, #ffc63d); background-clip: text; color: transparent; }
+.player-shell-header__spark { display: grid; width: 2rem; aspect-ratio: 1; place-items: center; border: 1px solid rgb(255 198 61 / 62%); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8ff, #ffc63d 25%, #ef3dff 66%, #351160); box-shadow: 0 0 1.1rem rgb(239 61 255 / 34%), inset 0 0 0 2px rgb(44 11 74 / 45%); color: #32104b; font-size: 0.9rem; text-shadow: 0 1px #fff8ff; }
+.player-shell-header__games { padding: 0.58rem 0.8rem; border: 1px solid rgb(53 231 255 / 25%); border-radius: 999px; color: #d9d1ef; font-size: 0.7rem; font-weight: 800; }
+.player-shell-header__menus { display: flex; justify-content: flex-end; gap: 0.55rem; }
+.player-shell-menu { position: relative; }
+.player-shell-menu > summary { cursor: pointer; list-style: none; }
+.player-shell-menu > summary::-webkit-details-marker { display: none; }
+.player-shell-menu--balance > summary { padding: 0.2rem; border: 1px solid rgb(53 231 255 / 28%); border-radius: 999px; background: rgb(20 12 59 / 82%); }
+.player-shell-menu--more > summary { display: grid; width: 2.6rem; aspect-ratio: 1; place-content: center; gap: 0.23rem; border: 1px solid rgb(53 231 255 / 28%); border-radius: 50%; background: rgb(20 12 59 / 82%); }
+.player-shell-menu--more > summary span { display: block; width: 1rem; height: 2px; border-radius: 2px; background: #f5e5ae; }
+.player-shell-menu > nav { position: absolute; z-index: 40; top: calc(100% + 0.5rem); right: 0; display: grid; width: min(18rem, calc(100vw - 1rem)); overflow: hidden; padding: 0.4rem; border: 1px solid rgb(53 231 255 / 25%); border-radius: 0.85rem; background: rgb(18 9 55 / 97%); box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 45%); }
+.player-shell-menu nav a,
+.player-shell-menu nav button { display: grid; gap: 0.12rem; padding: 0.7rem; border: 0; border-radius: 0.55rem; background: transparent; color: #f7f1d8; cursor: pointer; font: inherit; text-align: left; text-decoration: none; }
+.player-shell-menu nav a:hover,
+.player-shell-menu nav button:hover { background: rgb(231 205 127 / 10%); }
+.player-shell-menu nav strong { font-size: 0.76rem; }
+.player-shell-menu nav small { color: #9db3ac; font-size: 0.62rem; }
+
+.game-hub-layout { display: grid; min-height: 0; grid-template-columns: 12rem minmax(0, 1fr); }
+.game-hub-sidebar { display: grid; align-content: start; gap: 0.4rem; padding: 1rem; border-right: 1px solid rgb(231 205 127 / 18%); background: rgb(3 24 20 / 88%); }
+.game-hub-sidebar a { padding: 0.72rem 0.8rem; border-radius: 0.6rem; color: #aec1bb; font-size: 0.73rem; font-weight: 800; text-decoration: none; }
+.game-hub-sidebar a:hover,
+.game-hub-sidebar a.is-active { background: rgb(231 205 127 / 11%); color: #f7e8b3; }
+.game-hub-content { min-width: 0; overflow: auto; }
+.player-page { font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif; }
+
+.player-home-page { height: 100svh; overflow: hidden; }
+.player-home-main { display: grid; width: min(100% - 2rem, 86rem); height: calc(100svh - 3.75rem); margin: 0 auto; padding: clamp(1rem, 4svh, 2.5rem) 0; place-items: center; }
+.player-home-grid { display: grid; width: 100%; min-height: min(31rem, calc(100svh - 7rem)); grid-template-columns: minmax(0, 2fr) repeat(2, minmax(13rem, 1fr)); gap: clamp(0.65rem, 1.4vw, 1rem); }
+.player-home-card { display: grid; min-width: 0; overflow: hidden; border: 1px solid rgb(121 151 231 / 26%); border-radius: 1.05rem; background: linear-gradient(145deg, rgb(20 31 83 / 62%), rgb(10 16 52 / 72%)); box-shadow: 0 1rem 2.6rem rgb(0 0 0 / 26%); color: #f8f2df; text-decoration: none; backdrop-filter: blur(8px); }
+.player-home-card > small, .player-home-card--recent > small { color: #78d9e8; font-size: 0.6rem; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; }
+.player-home-card--games { align-content: end; gap: 0.6rem; padding: clamp(1.25rem, 3vw, 2.35rem); background: radial-gradient(circle at 78% 18%, rgb(249 140 255 / 20%), transparent 18rem), linear-gradient(145deg, rgb(31 48 121 / 65%), rgb(12 19 65 / 76%)); }
+.player-home-card--games strong { font-size: clamp(2.8rem, 7vw, 5.6rem); letter-spacing: -0.065em; line-height: 0.88; }
+.player-home-card--games > span:not(.player-home-card__icon) { max-width: 34rem; color: #c9cee4; font-size: 0.85rem; }
+.player-home-card--games b, .player-home-card--recent b { color: #ffd35f; font-size: 0.72rem; }
+.player-home-card__icon { align-self: start; color: #f98cff; font-size: clamp(3rem, 8vw, 6.5rem); text-shadow: 0 0 2rem rgb(239 61 255 / 55%); }
+.player-home-card--recent { grid-template-rows: auto minmax(0, 1fr); gap: 0.55rem; padding: 0.8rem; }
+.player-home-card--recent > a, .player-home-card--recent > div { display: grid; min-height: 0; align-content: end; gap: 0.42rem; color: inherit; text-decoration: none; }
+.player-home-card--recent img { width: 100%; height: clamp(8rem, 24svh, 13rem); border-radius: 0.72rem; object-fit: cover; object-position: center; }
+.player-home-card--recent strong { font-size: clamp(1.2rem, 2.2vw, 1.75rem); }
+.player-home-card--recent span { overflow: hidden; color: #bcc5de; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.player-home-card__empty { display: grid; min-height: 11rem; place-items: center; border-radius: 0.7rem; background: rgb(255 255 255 / 3%); font-size: 3rem; }
+.player-home-card--account { grid-template-rows: 1.55fr 1fr 1fr; gap: 0.55rem; padding: 0.7rem; }
+.player-home-shortcut { display: grid; min-height: 0; grid-template-columns: auto 1fr; align-content: center; align-items: center; gap: 0.15rem 0.65rem; padding: 0.75rem; border: 1px solid rgb(121 151 231 / 18%); border-radius: 0.75rem; background: rgb(29 42 101 / 46%); color: #f8f2df; text-decoration: none; }
+.player-home-shortcut > span { grid-row: 1 / span 2; color: #78d9e8; font-size: 1.3rem; }
+.player-home-shortcut strong { font-size: 0.84rem; }
+.player-home-shortcut small { color: #adb7d2; font-size: 0.59rem; }
+.player-home-shortcut--recharge { background: linear-gradient(145deg, rgb(98 62 164 / 62%), rgb(31 54 126 / 66%)); }
+.player-home-shortcut--recharge strong { font-size: clamp(1.15rem, 2vw, 1.55rem); }
+
+@media (max-width: 650px) {
+  .player-shell-header { grid-template-columns: auto 1fr; }
+  .player-shell-header__games { display: none; }
+  .player-shell-header__brand { font-size: 0.88rem; }
+  .game-hub-layout { grid-template-columns: 1fr; }
+  .game-hub-sidebar { grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 0.45rem; border-right: 0; border-bottom: 1px solid rgb(231 205 127 / 18%); }
+  .game-hub-sidebar a { padding: 0.55rem 0.3rem; text-align: center; }
+  .player-home-main { width: min(100% - 1rem, 86rem); }
+  .player-home-main { overflow: auto; place-items: start center; }
+  .player-home-grid { grid-template-columns: 1fr; }
+  .player-home-card--games { min-height: 15rem; }
+  .player-home-card--recent, .player-home-card--account { min-height: 17rem; }
+}

@@ -1,0 +1,1224 @@
+.holdem-page {
+  --holdem-gold: #e4bd65;
+  --holdem-gold-bright: #fff0a5;
+  --holdem-felt: #075343;
+  --holdem-felt-deep: #032e2a;
+  --holdem-ink: #f6fbf8;
+  --holdem-muted: #a7beb8;
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at 12% -10%, rgb(48 164 134 / 18%), transparent 32rem),
+    radial-gradient(circle at 94% 110%, rgb(199 146 57 / 14%), transparent 38rem),
+    #061b1a;
+  color: var(--holdem-ink);
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.holdem-page *,
+.holdem-page *::before,
+.holdem-page *::after {
+  box-sizing: border-box;
+}
+
+.holdem-header {
+  display: flex;
+  width: min(100% - 2rem, 88rem);
+  min-height: 5.25rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-inline: auto;
+  border-bottom: 1px solid rgb(212 234 226 / 12%);
+}
+
+.holdem-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--holdem-ink);
+  text-decoration: none;
+}
+
+.holdem-brand > span:first-child {
+  display: grid;
+  width: 2.65rem;
+  aspect-ratio: 0.78;
+  place-items: center;
+  border: 1px solid rgb(239 213 142 / 52%);
+  border-radius: 0.42rem;
+  background: linear-gradient(145deg, rgb(228 189 101 / 14%), rgb(228 189 101 / 3%));
+  color: var(--holdem-gold-bright);
+  font: 1.45rem Georgia, serif;
+  transform: rotate(-4deg);
+}
+
+.holdem-brand > span:last-child {
+  display: grid;
+}
+
+.holdem-brand small,
+.holdem-eyebrow {
+  color: var(--holdem-gold);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.holdem-brand strong {
+  font: 500 clamp(1.15rem, 2.2vw, 1.75rem)/1.1 Georgia, serif;
+}
+
+.holdem-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.holdem-header button,
+.holdem-header__actions a {
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: #c3d4cf;
+  cursor: pointer;
+  font: 750 0.7rem/1 inherit;
+  text-decoration: none;
+}
+
+.holdem-header button:hover,
+.holdem-header__actions a:hover,
+.holdem-header button:focus-visible,
+.holdem-header__actions a:focus-visible {
+  background: rgb(255 255 255 / 7%);
+  color: white;
+  outline: 1px solid rgb(239 213 142 / 46%);
+}
+
+.holdem-practice-badge {
+  padding: 0.48rem 0.72rem;
+  border: 1px solid rgb(99 213 173 / 34%);
+  border-radius: 999px;
+  background: rgb(28 100 78 / 26%);
+  color: #8ce1c2;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.holdem-main {
+  display: grid;
+  width: min(100% - 2rem, 82rem);
+  gap: 1rem;
+  margin: 1.25rem auto;
+}
+
+.holdem-table-shell {
+  overflow: hidden;
+  border: 1px solid rgb(211 235 226 / 15%);
+  border-radius: 1.25rem;
+  background: #061f1d;
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 38%), inset 0 1px rgb(255 255 255 / 4%);
+}
+
+.holdem-table {
+  --ff-card-width: clamp(3.7rem, 6.2vw, 5.75rem);
+  position: relative;
+  display: grid;
+  min-height: clamp(36rem, 74svh, 47rem);
+  grid-template-rows: auto auto auto auto 1fr auto auto;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(0.4rem, 1.2vh, 0.75rem);
+  padding: clamp(1.1rem, 2.5vw, 2rem);
+  background:
+    radial-gradient(ellipse at 50% 48%, rgb(61 168 128 / 23%), transparent 46%),
+    repeating-linear-gradient(118deg, rgb(255 255 255 / 0.8%) 0 1px, transparent 1px 5px),
+    linear-gradient(145deg, var(--holdem-felt), var(--holdem-felt-deep));
+  isolation: isolate;
+}
+
+.holdem-table::before {
+  position: absolute;
+  z-index: -1;
+  inset: clamp(0.7rem, 2vw, 1.2rem);
+  border: clamp(0.45rem, 1vw, 0.85rem) solid #342117;
+  border-radius: 48% / 12%;
+  box-shadow:
+    inset 0 0 0 0.18rem rgb(228 189 101 / 38%),
+    inset 0 0 3rem rgb(0 0 0 / 28%),
+    0 0.9rem 1.4rem rgb(0 0 0 / 32%);
+  content: '';
+}
+
+.holdem-seat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 10rem;
+  padding: 0.38rem 0.7rem;
+  border: 1px solid rgb(216 236 229 / 13%);
+  border-radius: 999px;
+  background: rgb(3 26 24 / 72%);
+  box-shadow: 0 0.45rem 1rem rgb(0 0 0 / 24%);
+}
+
+.holdem-avatar {
+  display: grid;
+  width: 2.2rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgb(228 189 101 / 58%);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #322857, #161636);
+  color: var(--holdem-gold-bright);
+  font: 800 0.62rem/1 Georgia, serif;
+}
+
+.holdem-avatar--player {
+  background: linear-gradient(145deg, #18785d, #0b3b35);
+}
+
+.holdem-seat__copy {
+  display: grid;
+  min-width: 5.4rem;
+}
+
+.holdem-seat__copy strong {
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.holdem-seat__copy small {
+  color: var(--holdem-gold-bright);
+  font: 650 0.76rem Georgia, serif;
+}
+
+.holdem-dealer-button {
+  display: grid;
+  width: 1.45rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid #b58b38;
+  border-radius: 50%;
+  background: #f9ecbe;
+  color: #332716;
+  font-size: 0.58rem;
+  font-weight: 950;
+}
+
+.holdem-hole-cards,
+.holdem-community {
+  display: flex;
+  justify-content: center;
+  gap: clamp(0.3rem, 0.8vw, 0.65rem);
+}
+
+.holdem-hole-cards--opponent .ff-card-slot:first-child,
+.holdem-hole-cards--player .ff-card-slot:first-child {
+  transform: rotate(-3deg) translateX(0.15rem);
+}
+
+.holdem-hole-cards--opponent .ff-card-slot:last-child,
+.holdem-hole-cards--player .ff-card-slot:last-child {
+  transform: rotate(3deg) translateX(-0.15rem);
+}
+
+.holdem-pot {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 0 0.35rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgb(228 189 101 / 35%);
+  border-radius: 999px;
+  background: rgb(1 31 26 / 72%);
+}
+
+.holdem-pot > span {
+  grid-row: 1 / span 2;
+  color: #d94d6b;
+  text-shadow: 0 0 0.5rem #ff7b9a;
+}
+
+.holdem-pot small {
+  color: #8ea8a1;
+  font-size: 0.48rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.holdem-pot strong {
+  color: var(--holdem-gold-bright);
+  font: 650 0.9rem/1 Georgia, serif;
+}
+
+.holdem-community__empty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgb(213 236 228 / 16%);
+  border-radius: calc(var(--ff-card-width) * 0.068);
+  background: rgb(1 33 29 / 18%);
+  color: rgb(213 236 228 / 9%);
+  font: calc(var(--ff-card-width) * 0.42)/1 Georgia, serif;
+}
+
+.holdem-status {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  min-height: 4.4rem;
+  text-align: center;
+}
+
+.holdem-status > span {
+  color: #7ce0bd;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.holdem-status strong {
+  margin-top: 0.25rem;
+  font: 500 clamp(0.92rem, 2vw, 1.25rem)/1.2 Georgia, serif;
+}
+
+.holdem-status small {
+  margin-top: 0.25rem;
+  color: var(--holdem-gold-bright);
+  font-size: 0.68rem;
+}
+
+.holdem-controls {
+  display: flex;
+  min-height: 4.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgb(205 232 222 / 11%);
+  background: rgb(3 28 26 / 86%);
+}
+
+.holdem-hand-number {
+  margin-right: auto;
+  color: #7f9c95;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.holdem-action {
+  min-width: 6.4rem;
+  min-height: 2.65rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgb(213 235 227 / 17%);
+  border-radius: 0.55rem;
+  background: linear-gradient(180deg, #184d43, #0d372f);
+  color: var(--holdem-ink);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.holdem-action:hover:not(:disabled),
+.holdem-action:focus-visible {
+  border-color: var(--holdem-gold);
+  box-shadow: 0 0 1rem rgb(228 189 101 / 20%);
+  outline: none;
+  transform: translateY(-0.08rem);
+}
+
+.holdem-action--primary {
+  border-color: rgb(250 224 153 / 38%);
+  background: linear-gradient(180deg, #e7ca82, #cda956);
+  color: #19241f;
+}
+
+.holdem-action--fold {
+  color: #efa5ad;
+}
+
+.holdem-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.holdem-drawer {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgb(211 235 226 / 14%);
+  border-radius: 1rem;
+  background: rgb(211 235 226 / 10%);
+}
+
+.holdem-drawer > section {
+  padding: 1.2rem;
+  background: rgb(6 31 29 / 96%);
+}
+
+.holdem-drawer > section:only-child {
+  grid-column: 1 / -1;
+}
+
+.holdem-drawer h2 {
+  margin: 0.25rem 0 0.6rem;
+  font: 500 1.25rem Georgia, serif;
+}
+
+.holdem-drawer p,
+.holdem-drawer li {
+  color: var(--holdem-muted);
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+.holdem-drawer ol {
+  columns: 2;
+  margin: 0.8rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.holdem-history {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holdem-history li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.45rem;
+  background: rgb(255 255 255 / 3%);
+}
+
+.holdem-history small {
+  color: var(--holdem-gold-bright);
+}
+
+.holdem-footer {
+  display: flex;
+  width: min(100% - 2rem, 82rem);
+  justify-content: space-between;
+  gap: 1rem;
+  margin-inline: auto;
+  padding: 0 0.25rem 1.2rem;
+  color: #597b72;
+  font-size: 0.55rem;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-badge {
+  padding: 0.48rem 0.72rem;
+  border: 1px solid rgb(228 189 101 / 40%);
+  border-radius: 999px;
+  background: rgb(111 82 28 / 28%);
+  color: var(--holdem-gold-bright);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-balance {
+  color: #eaf8f3;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.credit-holdem-error {
+  display: flex;
+  width: min(100% - 2rem, 82rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem auto 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid rgb(244 137 146 / 34%);
+  border-radius: 0.75rem;
+  background: rgb(87 21 29 / 38%);
+  color: #ffc5ca;
+  font-size: 0.74rem;
+}
+
+.credit-holdem-error button,
+.credit-holdem-state button,
+.credit-holdem-panel button,
+.credit-holdem-actions button {
+  min-height: 2.55rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgb(213 235 227 / 18%);
+  border-radius: 0.55rem;
+  background: linear-gradient(180deg, #184d43, #0d372f);
+  color: var(--holdem-ink);
+  cursor: pointer;
+  font: 850 0.68rem/1 inherit;
+}
+
+.credit-holdem-error button:disabled,
+.credit-holdem-state button:disabled,
+.credit-holdem-panel button:disabled,
+.credit-holdem-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.credit-holdem-main,
+.credit-holdem-state {
+  width: min(100% - 2rem, 82rem);
+  margin: 1.25rem auto;
+}
+
+.credit-holdem-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.credit-holdem-state {
+  display: grid;
+  min-height: 28rem;
+  place-content: center;
+  justify-items: center;
+  gap: 0.7rem;
+  padding: 2rem;
+  border: 1px solid rgb(211 235 226 / 14%);
+  border-radius: 1rem;
+  background: rgb(6 31 29 / 88%);
+  text-align: center;
+}
+
+.credit-holdem-state > span {
+  color: var(--holdem-gold);
+  font: 3rem/1 Georgia, serif;
+}
+
+.credit-holdem-state h1,
+.credit-holdem-panel h1,
+.credit-holdem-table h1 {
+  margin: 0;
+  font: 500 clamp(1.55rem, 4vw, 2.45rem)/1.08 Georgia, serif;
+}
+
+.credit-holdem-state p,
+.credit-holdem-state strong,
+.credit-holdem-state small,
+.credit-holdem-panel p,
+.credit-holdem-panel small {
+  max-width: 48rem;
+  color: var(--holdem-muted);
+  line-height: 1.55;
+}
+
+.credit-holdem-state--error {
+  border-color: rgb(244 137 146 / 28%);
+}
+
+.credit-holdem-panel {
+  display: grid;
+  justify-items: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  border: 1px solid rgb(211 235 226 / 14%);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 50% 0, rgb(49 147 119 / 15%), transparent 30rem),
+    rgb(6 31 29 / 94%);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 24%);
+  text-align: center;
+}
+
+.credit-holdem-options {
+  display: grid;
+  width: min(100%, 34rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.credit-holdem-options label {
+  display: grid;
+  gap: 0.4rem;
+  text-align: left;
+}
+
+.credit-holdem-options label > span {
+  color: #a9c3bc;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-options select {
+  width: 100%;
+  min-height: 2.8rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid rgb(211 235 226 / 18%);
+  border-radius: 0.55rem;
+  background: #0b3530;
+  color: white;
+  font: 800 0.78rem/1 inherit;
+}
+
+.credit-holdem-primary {
+  border-color: rgb(250 224 153 / 42%) !important;
+  background: linear-gradient(180deg, #e7ca82, #cda956) !important;
+  color: #19241f !important;
+}
+
+.credit-holdem-seat-grid {
+  display: grid;
+  width: min(100%, 58rem);
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.65rem;
+}
+
+.credit-holdem-seat-grid > div {
+  display: grid;
+  min-height: 7rem;
+  place-content: center;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.65rem;
+  border: 1px dashed rgb(212 235 227 / 17%);
+  border-radius: 0.75rem;
+  color: #708f87;
+}
+
+.credit-holdem-seat-grid > div.is-filled {
+  border-style: solid;
+  border-color: rgb(228 189 101 / 30%);
+  background: rgb(255 255 255 / 3%);
+  color: white;
+}
+
+.credit-holdem-seat-grid span {
+  display: grid;
+  width: 2.4rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 50%;
+  background: #12463e;
+  color: var(--holdem-gold-bright);
+  font-weight: 900;
+}
+
+.credit-holdem-seat-grid strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credit-holdem-seat-grid small {
+  color: #78968f;
+  font-size: 0.6rem;
+}
+
+.credit-holdem-match {
+  overflow: hidden;
+  border: 1px solid rgb(211 235 226 / 14%);
+  border-radius: 1rem;
+  background: #061f1d;
+  box-shadow: 0 2rem 5rem rgb(0 0 0 / 32%);
+}
+
+.credit-holdem-match__summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid rgb(211 235 226 / 11%);
+}
+
+.credit-holdem-match__summary > div {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem;
+  border-right: 1px solid rgb(211 235 226 / 9%);
+  text-align: center;
+}
+
+.credit-holdem-match__summary span {
+  color: #77958d;
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-match__summary strong {
+  color: var(--holdem-gold-bright);
+  font: 650 0.8rem/1.1 Georgia, serif;
+}
+
+.credit-holdem-table {
+  --ff-card-width: clamp(3rem, 5.2vw, 4.5rem);
+  display: grid;
+  gap: 1rem;
+  min-height: 35rem;
+  align-content: center;
+  padding: clamp(1rem, 3vw, 2rem);
+  background:
+    radial-gradient(ellipse at 50% 48%, rgb(61 168 128 / 22%), transparent 48%),
+    repeating-linear-gradient(118deg, rgb(255 255 255 / 0.8%) 0 1px, transparent 1px 5px),
+    linear-gradient(145deg, var(--holdem-felt), var(--holdem-felt-deep));
+}
+
+.credit-holdem-table__heading {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  text-align: center;
+}
+
+.credit-holdem-table__heading > span {
+  color: #9bb7af;
+  font-size: 0.68rem;
+}
+
+.credit-holdem-community {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+}
+
+.credit-holdem-community > span {
+  color: #83bca9;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-cards {
+  display: flex;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.credit-holdem-card-empty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed rgb(213 236 228 / 20%);
+  border-radius: calc(var(--ff-card-width) * 0.068);
+  background: rgb(1 33 29 / 20%);
+  color: rgb(213 236 228 / 12%);
+  font: calc(var(--ff-card-width) * 0.42)/1 Georgia, serif;
+}
+
+.credit-holdem-player-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.credit-holdem-player {
+  display: grid;
+  min-width: 0;
+  gap: 0.55rem;
+  padding: 0.7rem;
+  border: 1px solid rgb(214 236 228 / 13%);
+  border-radius: 0.75rem;
+  background: rgb(3 29 26 / 78%);
+}
+
+.credit-holdem-player.is-active {
+  border-color: rgb(228 189 101 / 70%);
+  box-shadow: 0 0 1rem rgb(228 189 101 / 16%);
+}
+
+.credit-holdem-player.is-current {
+  background: rgb(12 66 55 / 82%);
+}
+
+.credit-holdem-player--open {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.credit-holdem-player__heading {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.credit-holdem-player__heading > span {
+  display: grid;
+  width: 2rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgb(228 189 101 / 40%);
+  border-radius: 50%;
+  background: #173e38;
+  color: var(--holdem-gold-bright);
+  font-size: 0.58rem;
+  font-weight: 900;
+}
+
+.credit-holdem-player__heading > div {
+  display: grid;
+  min-width: 0;
+}
+
+.credit-holdem-player__heading strong,
+.credit-holdem-player__heading small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.credit-holdem-player__heading strong {
+  font-size: 0.72rem;
+}
+
+.credit-holdem-player__heading small,
+.credit-holdem-player__status {
+  color: #91aaa3;
+  font-size: 0.58rem;
+}
+
+.credit-holdem-player__heading i {
+  display: grid;
+  width: 1.45rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 2px solid #b58b38;
+  border-radius: 50%;
+  background: #f9ecbe;
+  color: #332716;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.credit-holdem-player__status {
+  text-align: center;
+}
+
+.credit-holdem-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  padding: 0.75rem;
+  border-top: 1px solid rgb(205 232 222 / 11%);
+  background: rgb(3 28 26 / 92%);
+}
+
+.credit-holdem-result ol {
+  display: grid;
+  width: min(100%, 44rem);
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.credit-holdem-result li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem;
+  border: 1px solid rgb(211 235 226 / 10%);
+  border-radius: 0.55rem;
+  background: rgb(255 255 255 / 3%);
+  font-size: 0.72rem;
+  text-align: left;
+}
+
+.credit-holdem-result li.is-current {
+  border-color: rgb(228 189 101 / 42%);
+}
+
+.credit-holdem-result li small {
+  color: var(--holdem-gold-bright);
+}
+
+@media (max-width: 800px) {
+  .holdem-header {
+    align-items: flex-start;
+    padding-block: 0.75rem;
+  }
+
+  .holdem-header__actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .holdem-practice-badge {
+    width: 100%;
+    text-align: center;
+  }
+
+  .holdem-table {
+    --ff-card-width: clamp(3.25rem, 13vw, 4.9rem);
+    min-height: 39rem;
+  }
+
+  .credit-holdem-badge {
+    width: 100%;
+    text-align: center;
+  }
+
+  .credit-holdem-match__summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .credit-holdem-player-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .holdem-header {
+    display: grid;
+  }
+
+  .holdem-header__actions {
+    justify-content: flex-start;
+  }
+
+  .holdem-main {
+    width: min(100% - 0.7rem, 82rem);
+    margin-top: 0.55rem;
+  }
+
+  .holdem-table {
+    --ff-card-width: clamp(2.85rem, 14.4vw, 4rem);
+    min-height: 37rem;
+    gap: 0.35rem;
+    padding-inline: 0.55rem;
+  }
+
+  .holdem-table::before {
+    inset: 0.45rem;
+    border-width: 0.38rem;
+  }
+
+  .holdem-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.38rem;
+    padding: 0.65rem;
+  }
+
+  .holdem-hand-number {
+    grid-column: 1 / -1;
+    justify-self: center;
+    margin: 0;
+  }
+
+  .holdem-action {
+    min-width: 0;
+    padding-inline: 0.35rem;
+    font-size: 0.58rem;
+  }
+
+  .holdem-controls .holdem-action:only-of-type {
+    grid-column: 1 / -1;
+  }
+
+  .holdem-drawer {
+    grid-template-columns: 1fr;
+  }
+
+  .holdem-footer {
+    display: grid;
+    text-align: center;
+  }
+
+  .credit-holdem-error,
+  .credit-holdem-main,
+  .credit-holdem-state {
+    width: min(100% - 0.7rem, 82rem);
+  }
+
+  .credit-holdem-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .credit-holdem-options,
+  .credit-holdem-player-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .credit-holdem-table {
+    --ff-card-width: clamp(2.6rem, 14vw, 3.8rem);
+    padding-inline: 0.55rem;
+  }
+
+  .credit-holdem-match__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .credit-holdem-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .credit-holdem-result li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .credit-holdem-result li span {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holdem-page *,
+  .holdem-page *::before,
+  .holdem-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Credit table v2: the game owns the felt; the application shell owns global navigation. */
+.credit-holdem-page {
+  display: grid;
+  height: 100svh;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 5%, rgb(41 132 105 / 18%), transparent 34rem),
+    #041513;
+  color: #edf8f4;
+}
+.credit-holdem-page .card-room-header { border-bottom-color: rgb(231 201 121 / 18%); background: rgb(2 25 20 / 94%); }
+
+.credit-holdem-page .credit-holdem-main {
+  width: min(100% - 1rem, 82rem);
+  height: calc(100% - 0.5rem);
+  min-height: 0;
+  margin: 0.15rem auto 0.35rem;
+}
+
+.credit-holdem-local-header {
+  display: flex;
+  width: min(100% - 2rem, 78rem);
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-inline: auto;
+  padding-block: 0.8rem;
+  color: #a8c3bb;
+  font-size: 0.72rem;
+}
+
+.credit-holdem-local-header a { color: inherit; text-decoration: none; }
+.credit-holdem-local-header strong { color: #f6dda0; }
+
+.credit-holdem-lobby {
+  display: grid;
+  min-height: 32rem;
+  place-content: center;
+  justify-items: center;
+  gap: 1rem;
+  padding: clamp(1.25rem, 5vw, 3rem);
+  border: 1px solid rgb(214 236 228 / 14%);
+  border-radius: 1.2rem;
+  background: radial-gradient(circle at 50% 15%, rgb(50 153 119 / 19%), transparent 24rem), #061f1d;
+  text-align: center;
+}
+
+.credit-holdem-rule-grid {
+  display: grid;
+  width: min(100%, 47rem);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.credit-holdem-rule-grid label {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+  padding: 0.8rem;
+  border: 1px solid rgb(215 237 229 / 16%);
+  border-radius: 0.8rem;
+  background: rgb(4 35 31 / 75%);
+  cursor: pointer;
+  text-align: left;
+}
+
+.credit-holdem-rule-grid label.is-selected {
+  border-color: #e9cb79;
+  box-shadow: inset 0 0 0 1px rgb(233 203 121 / 24%);
+}
+
+.credit-holdem-rule-grid input { position: absolute; opacity: 0; pointer-events: none; }
+.credit-holdem-rule-grid strong { color: #f6dda0; font: 700 0.9rem/1.1 Georgia, serif; }
+.credit-holdem-rule-grid span { color: #b2c8c1; font-size: 0.64rem; line-height: 1.4; }
+.credit-holdem-rule-grid small { color: #73cbae; font-size: 0.58rem; font-weight: 800; }
+
+.credit-holdem-lobby h1 { margin: 0; font: 500 clamp(2rem, 6vw, 3.4rem)/1 Georgia, serif; }
+.credit-holdem-lobby p { max-width: 38rem; margin: 0; color: #91aaa3; line-height: 1.6; }
+.credit-holdem-kicker { color: #70d6b3; font-size: 0.62rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.credit-holdem-lobby dl { display: flex; gap: 1px; overflow: hidden; margin: 0; border-radius: 0.75rem; background: rgb(255 255 255 / 10%); }
+.credit-holdem-lobby dl > div { display: grid; gap: 0.2rem; min-width: 8rem; padding: 0.75rem; background: #0a2c28; }
+.credit-holdem-lobby dt { color: #78968f; font-size: 0.58rem; font-weight: 900; text-transform: uppercase; }
+.credit-holdem-lobby dd { margin: 0; color: #f6dda0; font: 600 1rem Georgia, serif; }
+
+.credit-holdem-queue-seats { display: grid; width: min(100%, 38rem); grid-template-columns: repeat(5, 1fr); gap: 0.5rem; }
+.credit-holdem-queue-seats > div { display: grid; min-width: 0; gap: 0.35rem; justify-items: center; padding: 0.7rem 0.3rem; border: 1px dashed rgb(215 237 229 / 18%); border-radius: 0.75rem; color: #6e8e85; }
+.credit-holdem-queue-seats > div.is-filled { border-style: solid; color: white; }
+.credit-holdem-queue-seats span { display: grid; width: 2.4rem; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #16483f; color: #f6dda0; font-size: 0.64rem; font-weight: 900; }
+.credit-holdem-queue-seats strong { max-width: 100%; overflow: hidden; font-size: 0.64rem; text-overflow: ellipsis; white-space: nowrap; }
+
+.credit-holdem-match,
+.credit-holdem-result { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; border: 1px solid rgb(214 236 228 / 14%); border-radius: 1.1rem; background: #051b19; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 36%); }
+
+.credit-holdem-table {
+  --ff-card-width: clamp(2.8rem, 5.2vw, 4.7rem);
+  position: relative;
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto 1fr;
+  gap: 0.8rem;
+  padding: clamp(1rem, 2.5vw, 2rem);
+  background:
+    radial-gradient(ellipse at 50% 52%, rgb(65 181 139 / 27%), transparent 45%),
+    repeating-linear-gradient(118deg, rgb(255 255 255 / 0.7%) 0 1px, transparent 1px 6px),
+    linear-gradient(145deg, #12614f, #073d35 72%, #052d28);
+}
+
+.credit-holdem-table::before {
+  position: absolute;
+  inset: 0.7rem;
+  border: clamp(0.45rem, 0.8vw, 0.75rem) solid #342117;
+  border-radius: 46% / 18%;
+  box-shadow: inset 0 0 0 0.16rem rgb(228 189 101 / 33%), inset 0 0 3rem rgb(0 0 0 / 25%);
+  content: '';
+  pointer-events: none;
+}
+
+.credit-holdem-primary-info { position: relative; z-index: 2; display: flex; justify-content: center; gap: 0.6rem; }
+.credit-holdem-primary-info > div { display: grid; min-width: 7rem; gap: 0.15rem; padding: 0.45rem 0.75rem; border: 1px solid rgb(246 221 160 / 30%); border-radius: 999px; background: rgb(3 27 24 / 76%); text-align: center; }
+.credit-holdem-primary-info span { color: #8eaaa2; font-size: 0.5rem; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+.credit-holdem-primary-info strong { color: #f6dda0; font: 650 0.92rem Georgia, serif; }
+
+.credit-holdem-community { position: relative; z-index: 2; display: flex; min-height: calc(var(--ff-card-width) * 1.4); align-items: center; justify-content: center; gap: 0.32rem; }
+.credit-holdem-card-empty { display: grid; width: var(--ff-card-width); aspect-ratio: 5 / 7; place-items: center; border: 1px dashed rgb(223 242 235 / 18%); border-radius: 0.32rem; color: rgb(223 242 235 / 12%); font: calc(var(--ff-card-width) * 0.42)/1 Georgia, serif; }
+
+.credit-holdem-seat-ring { position: relative; z-index: 2; min-height: 18rem; }
+.credit-holdem-player { position: absolute; display: grid; width: min(15rem, 28vw); min-width: 9.2rem; gap: 0.4rem; padding: 0.55rem; border: 1px solid rgb(216 238 230 / 17%); border-radius: 0.85rem; background: rgb(3 25 23 / 87%); box-shadow: 0 0.6rem 1.1rem rgb(0 0 0 / 23%); transition: border-color 180ms ease, transform 180ms ease; }
+.credit-holdem-player.seat-pos-0 { z-index: 3; bottom: 0; left: 50%; transform: translateX(-50%); }
+.credit-holdem-player.seat-pos-1 { bottom: 6%; left: 3%; }
+.credit-holdem-player.seat-pos-2 { top: 4%; left: 8%; }
+.credit-holdem-player.seat-pos-3 { top: 4%; right: 8%; }
+.credit-holdem-player.seat-pos-4 { right: 3%; bottom: 6%; }
+.credit-holdem-player.is-current { border-color: rgb(115 224 185 / 52%); background: rgb(8 60 50 / 93%); }
+.credit-holdem-player.is-active { border-color: #f6dda0; box-shadow: 0 0 1.2rem rgb(246 221 160 / 28%); }
+.credit-holdem-player.is-winner { animation: credit-holdem-winner 1.1s ease-in-out infinite alternate; border-color: #fff1ad; }
+
+.credit-holdem-player__name { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 0.45rem; }
+.credit-holdem-player__name > span { display: grid; width: 2rem; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #19483f; color: #f6dda0; font-size: 0.58rem; font-weight: 900; }
+.credit-holdem-player__name > div { display: grid; min-width: 0; }
+.credit-holdem-player__name strong,
+.credit-holdem-player__name small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.credit-holdem-player__name strong { font-size: 0.69rem; }
+.credit-holdem-player__name small { color: #9ab6ae; font-size: 0.59rem; }
+.credit-holdem-player__name i { display: grid; width: 1.35rem; aspect-ratio: 1; place-items: center; border-radius: 50%; background: #f5e6af; color: #2b2517; font-size: 0.55rem; font-style: normal; font-weight: 950; }
+.credit-holdem-seat-cards { display: flex; justify-content: center; gap: 0.2rem; }
+.credit-holdem-seat-cards .ff-card-slot { width: calc(var(--ff-card-width) * 0.72); }
+.credit-holdem-action-state { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; color: #8eaaa2; font-size: 0.56rem; }
+.credit-holdem-action-state strong { padding: 0.18rem 0.35rem; border-radius: 999px; background: rgb(97 216 173 / 13%); color: #90e1c5; text-transform: capitalize; }
+.credit-holdem-win { position: absolute; inset: -1.7rem 0 auto; color: #fff1ad; font: 750 1rem Georgia, serif; text-align: center; text-shadow: 0 0 0.8rem #ffc52d; }
+
+.credit-holdem-actions,
+.credit-holdem-result__controls { display: flex; min-height: 4.4rem; align-items: center; justify-content: center; gap: 0.55rem; padding: 0.75rem; border-top: 1px solid rgb(205 232 222 / 11%); background: rgb(3 25 23 / 95%); }
+.credit-holdem-actions button,
+.credit-holdem-result__controls button,
+.credit-holdem-lobby button { min-height: 2.6rem; padding: 0.6rem 0.9rem; border: 1px solid rgb(213 235 227 / 18%); border-radius: 0.55rem; background: linear-gradient(180deg, #184d43, #0d372f); color: #edf8f4; cursor: pointer; font-size: 0.67rem; font-weight: 900; }
+.credit-holdem-actions button:disabled,
+.credit-holdem-result__controls button:disabled,
+.credit-holdem-lobby button:disabled { cursor: not-allowed; opacity: 0.42; }
+.credit-holdem-leave { margin-left: auto; }
+.credit-holdem-result__controls > div { display: grid; margin-right: auto; }
+.credit-holdem-result__controls small { color: #8ca79f; font-size: 0.6rem; }
+
+.credit-holdem-raise-control {
+  display: grid;
+  width: min(22rem, 46vw);
+  gap: 0.3rem;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid rgb(233 203 121 / 24%);
+  border-radius: 0.65rem;
+  background: rgb(3 31 27 / 82%);
+}
+
+.credit-holdem-raise-control > label,
+.credit-holdem-raise-control > div { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+.credit-holdem-raise-control label span { color: #90aaa2; font-size: 0.55rem; font-weight: 900; text-transform: uppercase; }
+.credit-holdem-raise-control label strong { color: #f6dda0; font: 700 0.82rem/1 Georgia, serif; }
+.credit-holdem-raise-control input { width: 100%; accent-color: #e4c36e; }
+.credit-holdem-raise-control > div button { min-height: 2rem; padding: 0.35rem 0.65rem; }
+
+.credit-holdem-preview { width: 900px; min-height: 600px; }
+.credit-holdem-preview .credit-holdem-main { width: 900px; margin: 0; }
+.credit-holdem-preview .credit-holdem-table { min-height: 600px; border-radius: 0; }
+
+@keyframes credit-holdem-winner {
+  from { box-shadow: 0 0 0.4rem rgb(255 224 111 / 30%); }
+  to { box-shadow: 0 0 1.8rem rgb(255 224 111 / 86%), inset 0 0 1rem rgb(255 224 111 / 14%); }
+}
+
+@media (max-width: 700px) {
+  .credit-holdem-preview { width: 100%; min-height: 100svh; }
+  .credit-holdem-preview .credit-holdem-main { width: 100%; }
+  .credit-holdem-preview .credit-holdem-table { min-height: 100svh; }
+  .credit-holdem-local-header { width: min(100% - 1rem, 78rem); }
+  .credit-holdem-main { width: min(100% - 0.6rem, 82rem); margin-block: 0.15rem 0.35rem; }
+  .credit-holdem-table { --ff-card-width: clamp(2.15rem, 10vw, 3rem); min-height: 0; padding: 0.55rem; }
+  .credit-holdem-seat-ring { min-height: 0; }
+  .credit-holdem-player { box-sizing: border-box; width: min(10.2rem, 43vw); min-width: 0; padding: 0.42rem; }
+  .credit-holdem-player.seat-pos-1 { bottom: 4%; left: 0; }
+  .credit-holdem-player.seat-pos-2 { top: 2%; left: 0; }
+  .credit-holdem-player.seat-pos-3 { top: 2%; right: 0; }
+  .credit-holdem-player.seat-pos-4 { right: 0; bottom: 4%; }
+  .credit-holdem-player__name > span { width: 1.65rem; }
+  .credit-holdem-seat-cards .ff-card-slot { width: calc(var(--ff-card-width) * 0.64); }
+  .credit-holdem-actions { display: grid; min-height: 0; grid-template-columns: repeat(2, 1fr); padding: 0.4rem; }
+  .credit-holdem-raise-control { width: auto; grid-column: 1 / -1; }
+  .credit-holdem-leave { grid-column: 1 / -1; margin-left: 0; }
+  .credit-holdem-result__controls { flex-wrap: wrap; }
+  .credit-holdem-result__controls > div { width: 100%; margin: 0; text-align: center; }
+  .credit-holdem-queue-seats { grid-template-columns: repeat(3, 1fr); }
+  .credit-holdem-rule-grid { grid-template-columns: 1fr; }
+  .credit-holdem-lobby { min-height: 0; overflow: auto; padding: 0.8rem; }
+}
+
+@media (max-height: 760px) and (min-width: 701px) {
+  .credit-holdem-local-header { padding-block: 0.35rem; }
+  .credit-holdem-main { margin-block: 0.25rem; }
+  .credit-holdem-table { --ff-card-width: clamp(2.35rem, 4vw, 3.45rem); padding: 0.65rem 1rem; }
+  .credit-holdem-seat-ring { min-height: 14rem; }
+  .credit-holdem-player { width: min(12rem, 23vw); padding: 0.4rem; }
+  .credit-holdem-actions { min-height: 3.5rem; padding: 0.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credit-holdem-player.is-winner { animation: none; box-shadow: 0 0 0 0.24rem #fff1ad; }
+}

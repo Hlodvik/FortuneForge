@@ -1,5 +1,5 @@
 import { isSlotSymbolId, type SlotSealCollection, type SpinResult } from '../types/slots'
-import { fetchWithAccountSession } from '../../landing/services/accountsApi'
+import { fetchWithAccountSession } from '../../account/services/accountsApi'
 
 type SpinRequest = {
   gameId: string
@@ -12,6 +12,8 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   energyBalance: number
+  sealCollections: SlotSealCollection[]
+  freeSpinFeatureMode: string | null
 }
 
 export type SlotState = {
@@ -50,6 +52,22 @@ export class SpinRequestError extends Error {
     this.required = problem?.required
     this.freeSpinsRemaining = problem?.freeSpinsRemaining
     this.retryAfterMilliseconds = problem?.retryAfterMilliseconds
+  }
+}
+
+export async function requestDemoAvailability(gameId: string, signal?: AbortSignal): Promise<void> {
+  const response = await fetch(
+    `/api/slots/demo/status?gameId=${encodeURIComponent(gameId)}`,
+    {
+      method: 'GET',
+      credentials: 'omit',
+      cache: 'no-store',
+      signal,
+    },
+  )
+
+  if (response.status !== 204) {
+    throw new Error(`Demo service availability check failed with status ${response.status}.`)
   }
 }
 

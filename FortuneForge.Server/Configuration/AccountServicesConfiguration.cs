@@ -16,7 +16,9 @@ public static class AccountServicesConfiguration
     {
         services.AddHttpContextAccessor();
         services.AddAntiAbuseRateLimiting();
-        services.AddSingleton(_ => CreateFirestore(configuration));
+        services.AddSingleton(_ => CreateFirestore(
+            configuration,
+            Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST")));
         services.AddSingleton<IPasswordHashingService, Pbkdf2PasswordHashingService>();
         services.AddSingleton(_ => FirebaseApp.Create(new AppOptions
         {
@@ -33,16 +35,52 @@ public static class AccountServicesConfiguration
         return services;
     }
 
-    private static FirestoreDb CreateFirestore(IConfiguration configuration)
+    internal static FirestoreDb CreateFirestore(
+        IConfiguration configuration,
+        string? emulatorHost = null)
     {
         var projectId = configuration["GoogleCloud:ProjectId"]
             ?? throw new InvalidOperationException("GoogleCloud:ProjectId is required.");
         var databaseId = configuration["GoogleCloud:FirestoreDatabaseId"] ?? "(default)";
+
+        if (!string.IsNullOrWhiteSpace(emulatorHost))
+        {
+            if (!projectId.StartsWith("demo-", StringComparison.Ordinal) ||
+                !TryValidateLocalEmulatorHost(emulatorHost, out var endpoint))
+            {
+                throw new InvalidOperationException(
+                    "FIRESTORE_EMULATOR_HOST is accepted only for a localhost demo-* project.");
+            }
+
+            return new FirestoreDbBuilder
+            {
+                ProjectId = projectId,
+                DatabaseId = databaseId,
+                Endpoint = endpoint,
+                ChannelCredentials = Grpc.Core.ChannelCredentials.Insecure,
+                EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
+            }.Build();
+        }
 
         return new FirestoreDbBuilder
         {
             ProjectId = projectId,
             DatabaseId = databaseId
         }.Build();
+    }
+
+    private static bool TryValidateLocalEmulatorHost(string value, out string endpoint)
+    {
+        endpoint = value.Trim();
+        if (!Uri.TryCreate($"http://{endpoint}", UriKind.Absolute, out var uri) ||
+            !uri.IsLoopback ||
+            uri.Port is < 1 or > 65535 ||
+            !string.IsNullOrEmpty(uri.PathAndQuery.Trim('/')))
+        {
+            endpoint = string.Empty;
+            return false;
+        }
+
+        return true;
     }
 }

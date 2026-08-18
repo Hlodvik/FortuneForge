@@ -8,9 +8,24 @@ export type SlotCollectionDefinition = {
   requiredCount: number
 }
 
+export type SlotCollectionPresentation =
+  | 'seal-pile'
+  | 'juice-glass'
+  | 'gem-hoard'
+  | 'divine-offering'
+  | 'tackle-creel'
+  | 'frontier-trail'
+  | 'chip-stack'
+  | 'spellbook-shelf'
+  | 'star-orbit'
+  | 'fossil-dig'
+  | 'celestial-orbit'
+
 export type SlotCollectionFeature = {
   ariaLabel: string
   entries: readonly SlotCollectionDefinition[]
+  itemLabel?: string
+  presentation?: SlotCollectionPresentation
 }
 
 export type SlotEnergyFeature = {
@@ -39,6 +54,7 @@ export type SlotHelpSection = {
 
 export type SlotHelpDefinition = {
   paylineCount: number
+  paylinePatternIds?: readonly number[]
   freeGames?: {
     awardedSpins: number
     requiredSymbols: number

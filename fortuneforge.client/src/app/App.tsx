@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import slotBackgroundVideoMp4 from '../assets/slots/backgrounds/background-clouds-animated.mp4'
 import slotBackgroundVideoWebm from '../assets/slots/backgrounds/background-clouds-animated.webm'
-import { SLOT_EXPERIENCE_SETS_BY_ROUTE } from '../features/slots/games'
+import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
 import './styles/index.css'
@@ -9,20 +9,20 @@ import './styles/index.css'
 export default function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
   const backgroundVideoRef = useRef<HTMLVideoElement | null>(null)
-  const userAgent = window.navigator.userAgent
+  const userAgent = window.navigator?.userAgent ?? ''
   const isGoogleChrome =
     /\bChrome\//.test(userAgent) && !/\b(?:Edg|OPR)\//.test(userAgent)
-  const slotExperienceSet =
-    pathname in SLOT_EXPERIENCE_SETS_BY_ROUTE
-      ? SLOT_EXPERIENCE_SETS_BY_ROUTE[pathname]
-      : null
+  const slotRoute = findSlotRoute(pathname)
   const usesThemeSpecificSlotBackdrop =
-    slotExperienceSet?.shellBackdrop === 'theme'
-  const shouldRenderDefaultShellBackdrop =
-    slotExperienceSet === null || slotExperienceSet.shellBackdrop === 'default-clouds'
+    slotRoute?.shellBackdrop === 'theme'
+  const shouldRenderDefaultShellVideo =
+    slotRoute?.shellBackdrop === 'default-clouds'
   const appShellClassName = [
     'app-shell',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
+    pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
+      ? 'app-shell--card-room'
+      : '',
     usesThemeSpecificSlotBackdrop ? 'app-shell--themed-slot-backdrop' : '',
   ]
     .filter(Boolean)
@@ -47,7 +47,7 @@ export default function App() {
 
   return (
     <div className={appShellClassName}>
-      {shouldRenderDefaultShellBackdrop && (
+      {shouldRenderDefaultShellVideo && (
         <video
           ref={backgroundVideoRef}
           className="app-shell__background-video"
@@ -72,7 +72,7 @@ export default function App() {
       )}
       <AppRoutes
         pathname={pathname}
-        slotExperienceSet={slotExperienceSet}
+        slotRoute={slotRoute}
         onSpinStateChange={handleSlotSpinStateChange}
       />
     </div>

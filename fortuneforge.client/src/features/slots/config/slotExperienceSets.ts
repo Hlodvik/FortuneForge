@@ -1,4 +1,4 @@
-import type { MascotSet } from '../../../components/WukongCompanion.config'
+import type { MascotSet } from '../../../games/slots/shared/mascot/mascotTypes'
 import type { SlotSymbolId } from '../types/slots'
 import type { SlotFeatureSet, SlotHelpDefinition } from './slotFeatures'
 import type { SlotCabinetTheme } from './cabinetThemes'

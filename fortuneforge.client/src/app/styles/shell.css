@@ -11,8 +11,8 @@
   z-index: 0;
   inset: 0;
   background:
-    linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)),
-    url('../../assets/slots/backgrounds/background-clouds-poster.webp') 0 0 / 100vw 100vh no-repeat;
+    linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)) center / cover no-repeat,
+    url('../../assets/slots/backgrounds/background-clouds-poster.webp') center bottom / cover no-repeat;
   backface-visibility: hidden;
   contain: strict;
   content: '';
@@ -28,14 +28,35 @@
   height: 100vh;
   backface-visibility: hidden;
   contain: strict;
-  object-fit: fill;
-  object-position: 0 0;
+  object-fit: cover;
+  object-position: center bottom;
   pointer-events: none;
   transform: translateZ(0);
 }
 
 .app-shell--themed-slot-backdrop::before {
   background: #0a051c;
+}
+
+.app-shell--card-room {
+  background: #052f27;
+}
+
+.app-shell--card-room::before {
+  background:
+    radial-gradient(circle at 50% -20%, rgb(55 151 116 / 24%), transparent 48%),
+    linear-gradient(180deg, #073d31, #041f1a 72%);
+}
+
+.app-shell--card-room > .player-page {
+  background: transparent;
+}
+
+.app-shell--card-room > .player-page::before {
+  background:
+    radial-gradient(circle at 12% 14%, rgb(63 185 141 / 16%), transparent 28rem),
+    radial-gradient(circle at 88% 20%, rgb(230 190 97 / 10%), transparent 26rem),
+    linear-gradient(180deg, rgb(4 42 34 / 10%), rgb(2 24 20 / 42%));
 }
 
 .app-shell--themed-slot-backdrop > .app-shell__background-video {
@@ -45,8 +66,36 @@
 .app-shell > .landing-page,
 .app-shell > .account-page,
 .app-shell > .player-page,
-.app-shell > .slots-page {
+.app-shell > .blackjack-page,
+.app-shell > .credit-holdem-page,
+.app-shell > .holdem-page,
+.app-shell > .solitaire-page,
+.app-shell > .slots-page,
+.app-shell > .route-state {
+  position: relative;
   z-index: 1;
+}
+
+.route-state {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 0.8rem;
+  padding: 2rem;
+  color: #fff8ff;
+  text-align: center;
+}
+
+.route-state--error button,
+.route-state--error a {
+  border: 1px solid rgb(255 255 255 / 38%);
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  color: inherit;
+  background: rgb(34 16 67 / 82%);
+  text-decoration: none;
 }
 
 .app-shell--slot-game {

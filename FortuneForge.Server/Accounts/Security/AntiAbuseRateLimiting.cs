@@ -13,6 +13,11 @@ public static class RateLimitPolicies
     public const string PaymentWrites = "payment-writes";
     public const string SlotReads = "slot-reads";
     public const string SlotSpins = "slot-spins";
+    public const string AdminOperationsReads = "admin-operations-reads";
+    public const string CreditHoldemReads = "credit-holdem-reads";
+    public const string CreditHoldemWrites = "credit-holdem-writes";
+    public const string BlackjackTableReads = "blackjack-table-reads";
+    public const string BlackjackTableWrites = "blackjack-table-writes";
 }
 
 public static class AntiAbuseRateLimiting
@@ -58,6 +63,16 @@ public static class AntiAbuseRateLimiting
                 FixedWindow(context, useSession: true, permitLimit: 15, TimeSpan.FromMinutes(10)));
             options.AddPolicy(RateLimitPolicies.PaymentWebhooks, context =>
                 FixedWindow(context, useSession: false, permitLimit: 120, TimeSpan.FromMinutes(1)));
+            options.AddPolicy(RateLimitPolicies.AdminOperationsReads, context =>
+                FixedWindow(context, useSession: true, permitLimit: 120, TimeSpan.FromMinutes(5)));
+            options.AddPolicy(RateLimitPolicies.CreditHoldemReads, context =>
+                FixedWindow(context, useSession: true, permitLimit: 120, TimeSpan.FromMinutes(1)));
+            options.AddPolicy(RateLimitPolicies.CreditHoldemWrites, context =>
+                FixedWindow(context, useSession: true, permitLimit: 30, TimeSpan.FromMinutes(1)));
+            options.AddPolicy(RateLimitPolicies.BlackjackTableReads, context =>
+                FixedWindow(context, useSession: true, permitLimit: 120, TimeSpan.FromMinutes(1)));
+            options.AddPolicy(RateLimitPolicies.BlackjackTableWrites, context =>
+                FixedWindow(context, useSession: true, permitLimit: 30, TimeSpan.FromMinutes(1)));
 
             options.OnRejected = async (rejectionContext, cancellationToken) =>
             {

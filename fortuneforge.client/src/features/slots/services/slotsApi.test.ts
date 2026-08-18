@@ -1,8 +1,44 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { requestDemoSpin } from './slotsApi'
+import { requestDemoAvailability, requestDemoSpin } from './slotsApi'
 
 describe('demo slot API', () => {
   afterEach(() => vi.unstubAllGlobals())
+
+  it('checks availability without credentials or cached responses', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await requestDemoAvailability('rainbow-realm-fruits-v1')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/slots/demo/status?gameId=rainbow-realm-fruits-v1',
+      {
+        method: 'GET',
+        credentials: 'omit',
+        cache: 'no-store',
+        signal: undefined,
+      },
+    )
+  })
+
+  it('rejects an unavailable demo service', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })))
+
+    await expect(requestDemoAvailability('missing-game')).rejects.toThrow(
+      'Demo service availability check failed with status 503.',
+    )
+  })
+
+  it('rejects an HTML fallback even when it returns 200', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('<!doctype html>', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' },
+    })))
+
+    await expect(requestDemoAvailability('classic-demo-v1')).rejects.toThrow(
+      'Demo service availability check failed with status 200.',
+    )
+  })
 
   it('omits account credentials and accepts a non-persistent balance result', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
@@ -49,6 +85,8 @@ describe('demo slot API', () => {
       freeSpinsRemaining: 0,
       freeSpinWagerPoints: null,
       energyBalance: 0,
+      sealCollections: [],
+      freeSpinFeatureMode: null,
     })
 
     expect(result.slotsCreditsBalance).toBeNull()

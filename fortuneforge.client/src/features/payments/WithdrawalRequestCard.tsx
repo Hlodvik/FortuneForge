@@ -1,5 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import type { AccountSummary } from '../landing/services/accountsApi'
+import type { AccountSummary } from '../account/services/accountsApi'
 import {
   createPaymentWithdrawal,
   type PaymentCatalog,

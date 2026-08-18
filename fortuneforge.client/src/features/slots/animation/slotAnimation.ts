@@ -1,4 +1,4 @@
-import { slotSymbolIds, type SlotSymbolId } from '../types/slots'
+import type { SlotSymbolId } from '../types/slots'
 import {
   minimumSpinDurationMs,
   neutralAccelerationDurationMs,
@@ -22,6 +22,7 @@ type StartSpinAnimationOptions = {
   reducedMotion?: boolean
   setReelMotion: (reelIndex: number, state: ReelMotionState) => void
   speedMultiplier?: number
+  symbolIds: readonly SlotSymbolId[]
 }
 
 type StopReelAnimationOptions = {
@@ -56,6 +57,7 @@ export type SpinAnimation = {
   readonly setReelMotion: StartSpinAnimationOptions['setReelMotion']
   readonly speedMultiplier: number
   readonly startTimers: number[]
+  readonly symbolIds: readonly SlotSymbolId[]
   finished: boolean
   quickStopStartedAt: number | null
   spinStartedAt: number
@@ -71,6 +73,9 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
   const reducedMotion = options.reducedMotion
     ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const speedMultiplier = Math.max(1, options.speedMultiplier ?? 1)
+  const symbolIds: readonly SlotSymbolId[] = options.symbolIds.length > 0
+    ? [...options.symbolIds]
+    : ['2']
   const animation: SpinAnimation = {
     activeReels: Array.from({ length: reelCount }, () => !reducedMotion),
     displayFrame: options.displayFrame,
@@ -80,6 +85,7 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
     setReelMotion: options.setReelMotion,
     speedMultiplier,
     startTimers: [],
+    symbolIds,
     finished: false,
     quickStopStartedAt: null,
     spinStartedAt: performance.now(),
@@ -94,7 +100,11 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
 
     options.displayFrame(
       reelIndex,
-      buildFrame(animation.frameOffsets[reelIndex], rowsPerReel + spinTravelRows),
+      buildFrame(
+        animation.symbolIds,
+        animation.frameOffsets[reelIndex],
+        rowsPerReel + spinTravelRows,
+      ),
     )
     animation.startTimers.push(window.setTimeout(() => {
       if (!animation.finished && animation.activeReels[reelIndex]) {
@@ -252,7 +262,11 @@ export async function stopReelAnimation(
   animation.activeReels[options.reelIndex] = false
 
   const brakingStrip = [
-    ...buildFrame(animation.frameOffsets[options.reelIndex], brakingTravelRows),
+    ...buildFrame(
+      animation.symbolIds,
+      animation.frameOffsets[options.reelIndex],
+      brakingTravelRows,
+    ),
     ...options.targetSymbols,
   ]
   animation.displayFrame(options.reelIndex, brakingStrip)
@@ -314,10 +328,14 @@ export function cancelSpinAnimation(animation: SpinAnimation): void {
   }
 }
 
-function buildFrame(offset: number, rowCount: number): SlotSymbolId[] {
+function buildFrame(
+  symbolIds: readonly SlotSymbolId[],
+  offset: number,
+  rowCount: number,
+): SlotSymbolId[] {
   return Array.from(
     { length: rowCount },
-    (_, rowIndex) => slotSymbolIds[(offset + rowIndex) % slotSymbolIds.length],
+    (_, rowIndex) => symbolIds[(offset + rowIndex) % symbolIds.length],
   )
 }
 

@@ -9,9 +9,19 @@
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.6.0" />
+    <PackageReference Include="FortuneForge.Games.Blackjack" Version="0.4.0" />
+    <PackageReference Include="FortuneForge.Games.Solitaire" Version="0.4.0" />
+    <PackageReference Include="FortuneForge.Games.TexasHoldem" Version="0.4.0" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="FortuneForge.Games.Blackjack" />
+    <Using Include="FortuneForge.Games.Cards" />
+    <Using Include="FortuneForge.Games.Solitaire" />
+    <Using Include="FortuneForge.Games.TexasHoldem" />
   </ItemGroup>
 
   <ItemGroup>

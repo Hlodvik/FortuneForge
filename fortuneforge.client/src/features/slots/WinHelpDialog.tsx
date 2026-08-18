@@ -20,6 +20,15 @@ export function WinHelpDialog({
 }: WinHelpDialogProps) {
   if (!isOpen) return null
   const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
+  const paylinePatternIds = help.paylinePatternIds ??
+    Array.from({ length: help.paylineCount }, (_, index) => index + 1)
+  const fiveMatchPatterns = paylinePatternIds.map((patternId) => {
+    const rows = FIVE_MATCH_PATTERNS[patternId - 1]
+    if (!rows) {
+      throw new Error(`Win-help payline pattern ${patternId} is not defined.`)
+    }
+    return { patternId, rows }
+  })
 
   return (
     <div
@@ -50,7 +59,7 @@ export function WinHelpDialog({
         <p className="win-help__eyebrow">Fortune guide</p>
         <h2 id="win-help-title">What counts as a win?</h2>
         <p className="win-help__intro">
-          Matching symbols must connect across neighboring reels. {wildDefinition.label}
+          Matching symbols must connect across neighboring reels. {wildDefinition.label}{' '}
           is the highest-value symbol and can substitute on a full five-symbol payline.
         </p>
 
@@ -121,15 +130,15 @@ export function WinHelpDialog({
                 className="win-help__five-pictograms"
                 aria-label="All valid five-symbol paylines"
               >
-                {FIVE_MATCH_PATTERNS.map((rows, patternIndex) => (
+                {fiveMatchPatterns.map(({ patternId, rows }) => (
                   <svg
-                    key={rows.join('-')}
+                    key={patternId}
                     className="win-help__pictogram win-help__pictogram--five"
                     viewBox="0 0 100 70"
                     role="img"
-                    aria-label={`Valid five-symbol payline ${patternIndex + 1}`}
+                    aria-label={`Valid five-symbol payline ${patternId}`}
                   >
-                    <title>{`Valid five-symbol payline ${patternIndex + 1}`}</title>
+                    <title>{`Valid five-symbol payline ${patternId}`}</title>
                     <rect x="1" y="1" width="98" height="68" rx="9" />
                     {Array.from({ length: 20 }, (_, index) => {
                       const column = index % 5

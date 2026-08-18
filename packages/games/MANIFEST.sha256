@@ -1,6 +1,6 @@
-# FortuneForge.Games source commit: 1a5008f9f81b8789d134f9f23c83f6c9e418b92f
-cf1b6669b5a2942a5d4fcfd651ccb7c113cc5909bba815aa9ab32fcf94cf0d81  FortuneForge.Games.Abstractions.0.4.0.nupkg
-7c338c31bc831e851f114c1313bda3eaff8fb999f916bd51fee5e3d547aa3131  FortuneForge.Games.Blackjack.0.4.0.nupkg
-44361969f8cff2a8258d95e7e09d8fcc70a21c52e1136358cca4de85ae931096  FortuneForge.Games.Cards.0.4.0.nupkg
-52051cfe90aca4e637a3c3b2b4d92d1229fe5e584ac5a1e9abcc354f33390dc6  FortuneForge.Games.Solitaire.0.4.0.nupkg
-c15420d1258c351598fb95136b5a88c0cc7ca617b457eb26d15c86d033a47aca  FortuneForge.Games.TexasHoldem.0.4.0.nupkg
+# FortuneForge.Games source commit: c3a421cd706cc68625d27b601f587d97d92f49db
+988cad1c59bed7a36865b69e47386a2d3c87bb007c824d54efe65f1d76230967  FortuneForge.Games.Abstractions.0.4.1.nupkg
+8bdb483f94a117b22cfa984c64453cd546fbb480081a22a9b9b2122afccf53b2  FortuneForge.Games.Blackjack.0.4.1.nupkg
+219d85db5a0802f3d9e9c33c4c1b317e137627f21de5c6ef3a9a425704fcb3f0  FortuneForge.Games.Cards.0.4.1.nupkg
+ce24183b59c92f11db9fcbea2ba850d7f605968ce767adbe26331667b1ea9c25  FortuneForge.Games.Solitaire.0.4.1.nupkg
+1c437a7c0315f0636e8add8e4317ac20c20897fcb3524bd0b0e1b54dd4f88d82  FortuneForge.Games.TexasHoldem.0.4.1.nupkg

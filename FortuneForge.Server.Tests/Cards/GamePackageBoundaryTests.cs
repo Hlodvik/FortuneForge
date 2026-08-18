@@ -16,7 +16,7 @@ public sealed class GamePackageBoundaryTests
         var assembly = boundaryType.Assembly;
 
         Assert.Equal(expectedAssembly, assembly.GetName().Name);
-        Assert.Equal(new Version(0, 4, 0, 0), assembly.GetName().Version);
+        Assert.Equal(new Version(0, 4, 1, 0), assembly.GetName().Version);
 
         var references = assembly
             .GetReferencedAssemblies()

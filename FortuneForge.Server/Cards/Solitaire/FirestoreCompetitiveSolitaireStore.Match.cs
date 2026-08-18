@@ -120,7 +120,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         {
                             throw new SolitaireConflictException("This Solitaire game is not paused.");
                         }
-                        updated = ResumePause(player, nowUtc) with
+                        updated = ResumePause(graph.Match, player, nowUtc) with
                         {
                             Version = checked(player.Version + 1),
                             Game = player.Game with { Message = "Game resumed" }
@@ -145,6 +145,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         break;
                     case SolitaireCommandTypes.Submit:
                         updated = CompletePlayer(
+                            graph.Match,
                             player,
                             nowUtc,
                             SolitairePlayerStatuses.Finished,
@@ -153,6 +154,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         break;
                     case SolitaireCommandTypes.IntegrityFailure:
                         updated = CompletePlayer(
+                            graph.Match,
                             player with { Game = player.Game with { Score = 0 } },
                             nowUtc,
                             SolitairePlayerStatuses.IntegrityFailed,
@@ -190,7 +192,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                                 .ToArray(),
                             Version = checked(player.Version + 1),
                             Status = won ? SolitairePlayerStatuses.Finished : SolitairePlayerStatuses.Playing,
-                            ElapsedMilliseconds = won ? ActiveElapsedMilliseconds(player, nowUtc) : null,
+                            ElapsedMilliseconds = won
+                                ? ActiveElapsedMilliseconds(graph.Match, player, nowUtc)
+                                : null,
                             CompletedAtUtc = won ? nowUtc : null
                         };
                         terminal = won;
@@ -394,7 +398,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     throw new SolitaireNotFoundException("The Solitaire result was not found.");
                 }
                 var match = ReadMatch(snapshots[1]);
-                var player = ReadPlayer(snapshots[2]);
+                var player = ReadPlayer(snapshots[2], match);
                 if (player.IsSynthetic)
                 {
                     throw new SolitaireNotFoundException("The Solitaire result was not found.");
@@ -459,7 +463,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     {
                         return player;
                     }
-                    var advanced = AdvancePause(player, nowUtc);
+                    var advanced = AdvancePause(match, player, nowUtc);
                     return advanced.PausedAtUtc is null && nowUtc >= PlayerDeadline(match, advanced)
                         ? ExpirePlayer(advanced, PlayerDeadline(match, advanced))
                         : advanced;
@@ -622,7 +626,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             throw new InvalidOperationException("A Solitaire match is missing a player state.");
         }
         var realPlayerIds = playerSnapshots
-            .Select(ReadPlayer)
+            .Select(snapshot => ReadPlayer(snapshot, match))
             .Where(player => !player.IsSynthetic)
             .Select(player => player.UserId)
             .ToArray();
@@ -635,7 +639,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 cancellationToken);
         return new MatchGraph(
             match,
-            playerSnapshots.Select(ReadPlayer).ToArray(),
+            playerSnapshots.Select(snapshot => ReadPlayer(snapshot, match)).ToArray(),
             realPlayerIds.Zip(balanceSnapshots).ToDictionary(
                 pair => pair.First,
                 pair => pair.Second,
@@ -761,13 +765,16 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
     private static DateTime PlayerDeadline(SolitaireMatch match, SolitairePlayerState player) =>
         player.DeadlineAtUtc == DateTime.UnixEpoch ? match.DeadlineAtUtc : player.DeadlineAtUtc;
 
-    private static long ActiveElapsedMilliseconds(SolitairePlayerState player, DateTime nowUtc)
+    private static long ActiveElapsedMilliseconds(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime nowUtc)
     {
         var currentPause = player.PausedAtUtc is { } pausedAt
             ? Math.Max(0, checked((long)(nowUtc - pausedAt).TotalMilliseconds))
             : 0;
         return Math.Clamp(
-            checked((long)(nowUtc - player.StartedAtUtc).TotalMilliseconds) -
+            checked((long)(nowUtc - PlayerStartedAt(match, player)).TotalMilliseconds) -
                 player.PauseUsedMilliseconds -
                 currentPause,
             0,
@@ -786,7 +793,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 currentPause);
     }
 
-    private static SolitairePlayerState ResumePause(SolitairePlayerState player, DateTime nowUtc)
+    private static SolitairePlayerState ResumePause(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime nowUtc)
     {
         if (player.PausedAtUtc is not { } pausedAt) return player;
         var available = Math.Max(
@@ -801,17 +811,21 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         {
             PauseUsedMilliseconds = checked(player.PauseUsedMilliseconds + duration),
             PausedAtUtc = null,
-            DeadlineAtUtc = PlayerDeadlineFallback(player).AddMilliseconds(duration)
+            StartedAtUtc = PlayerStartedAt(match, player),
+            DeadlineAtUtc = PlayerDeadline(match, player).AddMilliseconds(duration)
         };
     }
 
-    private static SolitairePlayerState AdvancePause(SolitairePlayerState player, DateTime nowUtc)
+    private static SolitairePlayerState AdvancePause(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime nowUtc)
     {
         if (player.PausedAtUtc is null || PauseRemainingMilliseconds(player, nowUtc) > 0)
         {
             return player;
         }
-        var resumed = ResumePause(player, nowUtc);
+        var resumed = ResumePause(match, player, nowUtc);
         return resumed with
         {
             Version = checked(player.Version + 1),
@@ -819,21 +833,22 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         };
     }
 
-    private static DateTime PlayerDeadlineFallback(SolitairePlayerState player) =>
-        player.DeadlineAtUtc == DateTime.UnixEpoch
-            ? player.StartedAtUtc.Add(SolitaireCompetitionRules.MatchDuration)
-            : player.DeadlineAtUtc;
+    private static DateTime PlayerStartedAt(SolitaireMatch match, SolitairePlayerState player) =>
+        player.StartedAtUtc == DateTime.UnixEpoch ? match.StartedAtUtc : player.StartedAtUtc;
 
     private static SolitairePlayerState CompletePlayer(
+        SolitaireMatch match,
         SolitairePlayerState player,
         DateTime nowUtc,
         string status,
         string message)
     {
-        var elapsed = ActiveElapsedMilliseconds(player, nowUtc);
-        var resumed = player.PausedAtUtc is null ? player : ResumePause(player, nowUtc);
+        var elapsed = ActiveElapsedMilliseconds(match, player, nowUtc);
+        var resumed = player.PausedAtUtc is null ? player : ResumePause(match, player, nowUtc);
         return resumed with
         {
+            StartedAtUtc = PlayerStartedAt(match, resumed),
+            DeadlineAtUtc = PlayerDeadline(match, resumed),
             Status = status,
             Game = resumed.Game with { Message = message },
             Version = checked(player.Version + 1),

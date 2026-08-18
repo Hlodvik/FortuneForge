@@ -160,8 +160,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             snapshots.Add(snapshot);
         }
 
-        var players = snapshots.Select(ReadPlayer).ToArray();
-        var matchIds = players.Select(player => player.MatchId)
+        var matchIds = snapshots.Select(snapshot => ReadString(snapshot, "matchId"))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         var histories = new List<SolitaireHistoryItemResponse>();
@@ -222,7 +221,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         {
             throw new InvalidOperationException("A Solitaire match is missing a player state.");
         }
-        return new ReadGraph(match, playerSnapshots.Select(ReadPlayer).ToArray());
+        return new ReadGraph(
+            match,
+            playerSnapshots.Select(snapshot => ReadPlayer(snapshot, match)).ToArray());
     }
 
     private static SolitaireResultSessionResponse BuildResult(

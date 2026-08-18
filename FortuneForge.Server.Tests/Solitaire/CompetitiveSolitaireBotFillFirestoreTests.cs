@@ -349,6 +349,101 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
     }
 
     [Fact]
+    public async Task LegacyPlayerWithoutTimingFieldsUsesMatchClockAndRewritesCurrentSchema()
+    {
+        var (database, store, suffix) = CreateStore();
+        var user = $"legacy-clock-{suffix}";
+        await SeedBalanceAsync(database, user, 10_000);
+        var started = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
+            user, "Alice", 4, 500, 3, "legacy-clock-join01", 8080, Start, default)).Session);
+        var player = Assert.Single(await StoredPlayersAsync(database, started.MatchId));
+        await player.Reference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["startedAt"] = FieldValue.Delete,
+            ["deadlineAt"] = FieldValue.Delete
+        });
+
+        var paused = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
+            user,
+            started.MatchId,
+            new SolitaireCommandRequest(
+                SolitaireCommandTypes.Pause, started.Version, null, null, null, null),
+            "legacy-clock-pause1",
+            Start.AddMinutes(1),
+            default)).Session);
+        Assert.Equal(Start, paused.StartedAtUtc);
+        Assert.Equal(Start.AddMinutes(10), paused.DeadlineAtUtc);
+        player = await player.Reference.GetSnapshotAsync();
+        Assert.Equal(Timestamp.FromDateTime(Start), Field<Timestamp>(player, "startedAt"));
+        Assert.Equal(Timestamp.FromDateTime(Start.AddMinutes(10)), Field<Timestamp>(player, "deadlineAt"));
+
+        var resumed = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
+            user,
+            started.MatchId,
+            new SolitaireCommandRequest(
+                SolitaireCommandTypes.Resume, paused.Version, null, null, null, null),
+            "legacy-clock-resume1",
+            Start.AddMinutes(2),
+            default)).Session);
+        Assert.Equal(Start.AddMinutes(11), resumed.DeadlineAtUtc);
+        _ = await store.CommandAsync(
+            user,
+            started.MatchId,
+            new SolitaireCommandRequest(
+                SolitaireCommandTypes.Submit, resumed.Version, null, null, null, null),
+            "legacy-clock-submit1",
+            Start.AddMinutes(3),
+            default);
+        player = await player.Reference.GetSnapshotAsync();
+        Assert.Equal(2 * 60_000, Field<long>(player, "elapsedMilliseconds"));
+    }
+
+    [Fact]
+    public async Task LegacyFullHumanMatchWithoutBotsFilledSettlesAndRewritesCurrentSchema()
+    {
+        var (database, store, suffix) = CreateStore();
+        var users = Enumerable.Range(1, 4).Select(index => $"legacy-full-{index}-{suffix}").ToArray();
+        await Task.WhenAll(users.Select(user => SeedBalanceAsync(database, user, 10_000)));
+        SolitaireMatchSessionResponse? match = null;
+        for (var index = 0; index < users.Length; index++)
+        {
+            match = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
+                users[index],
+                $"Player {index + 1}",
+                4,
+                500,
+                3,
+                $"legacy-full-join-{index + 1}",
+                (uint)(9000 + index),
+                Start.AddSeconds(index),
+                default)).Session);
+        }
+        Assert.NotNull(match);
+        var matchReference = database.Collection("solitaireMatches").Document(match.MatchId);
+        await matchReference.UpdateAsync("botsFilled", FieldValue.Delete);
+
+        for (var index = 0; index < users.Length; index++)
+        {
+            var current = Assert.IsType<SolitaireMatchSessionResponse>(
+                (await store.GetSessionAsync(users[index], Start.AddMinutes(1), default)).Session);
+            _ = await store.ForfeitAsync(
+                users[index],
+                match.MatchId,
+                current.Version,
+                $"legacy-full-forfeit-{index + 1}",
+                Start.AddMinutes(1).AddSeconds(index),
+                default);
+        }
+
+        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync(users[0], Start.AddMinutes(2), default)).Session);
+        Assert.Equal(match.MatchId, result.MatchId);
+        var rewritten = await matchReference.GetSnapshotAsync();
+        Assert.True(Field<bool>(rewritten, "botsFilled"));
+        Assert.Equal("settled", Field<string>(rewritten, "status"));
+    }
+
+    [Fact]
     public async Task SubmitAndIntegrityRollback_WriteResultsAndPersistAcknowledgedWarning()
     {
         var (database, store, suffix) = CreateStore();

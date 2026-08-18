@@ -175,6 +175,37 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         Assert.True(shared.ContainsField("seenAt"));
     }
 
+    [Fact]
+    public async Task ProductionStore_LegacyMatchWithoutNewCollectionsReadsAndRewritesCompatibly()
+    {
+        var (database, store, suffix) = CreateStore();
+        var first = $"legacy-a-{suffix}";
+        var second = $"legacy-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var match = await StartMatchAsync(store, first, second);
+        var matchDocument = database.Collection("creditHoldemMatches").Document(match.Table.MatchId);
+        var snapshot = await matchDocument.GetSnapshotAsync();
+        var storedJson = Field<string>(snapshot, "matchJson");
+        using var document = JsonDocument.Parse(storedJson);
+        var legacyFields = document.RootElement.EnumerateObject()
+            .Where(property => property.Name is not "leavingActorIds" and not "humanPayoutsCents")
+            .ToDictionary(property => property.Name, property => property.Value.Clone());
+        var legacyJson = JsonSerializer.Serialize(
+            legacyFields, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        await matchDocument.SetAsync(new Dictionary<string, object> { ["matchJson"] = legacyJson }, SetOptions.MergeAll);
+
+        var left = await store.LeaveAsync(
+            first, match.Table.MatchId, match.Version, "legacy-leave-1", Start.AddSeconds(7), default);
+
+        Assert.IsType<CreditHoldemIdleSessionResponse>(left.Session);
+        snapshot = await matchDocument.GetSnapshotAsync();
+        using var rewritten = JsonDocument.Parse(Field<string>(snapshot, "matchJson"));
+        Assert.True(rewritten.RootElement.TryGetProperty("leavingActorIds", out var leaving));
+        Assert.Contains(first, leaving.EnumerateArray().Select(value => value.GetString()));
+        Assert.True(rewritten.RootElement.TryGetProperty("humanPayoutsCents", out var payouts));
+        Assert.Equal(JsonValueKind.Object, payouts.ValueKind);
+    }
+
     private static async Task<CreditHoldemMatchSessionResponse> StartMatchAsync(
         FirestoreCreditHoldemStore store, string first, string second)
     {

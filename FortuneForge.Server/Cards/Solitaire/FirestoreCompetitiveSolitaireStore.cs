@@ -275,9 +275,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private static SolitaireMatch ReadMatch(DocumentSnapshot snapshot)
     {
         var completed = ReadOptionalTimestamp(snapshot, "completedAt");
+        var playerCount = checked((int)ReadLong(snapshot, "playerCount"));
+        var playerIds = ReadStringArray(snapshot, "playerIds");
+        var botsFilled = snapshot.Exists && snapshot.TryGetValue<bool>("botsFilled", out var storedBotsFilled)
+            ? storedBotsFilled
+            : playerIds.Count >= playerCount;
         return new SolitaireMatch(
             ReadString(snapshot, "matchId"),
-            checked((int)ReadLong(snapshot, "playerCount")),
+            playerCount,
             ReadLong(snapshot, "buyInCents"),
             ReadLong(snapshot, "prizePoolCents"),
             ReadLong(snapshot, "winnerPayoutCents"),
@@ -286,7 +291,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             ReadTimestamp(snapshot, "startedAt"),
             ReadTimestamp(snapshot, "deadlineAt"),
             ReadString(snapshot, "status"),
-            ReadStringArray(snapshot, "playerIds"),
+            playerIds,
             ReadStringArray(snapshot, "displayNames"),
             ReadStringArray(snapshot, "ticketIds"),
             ReadTimestampArray(snapshot, "joinedAt"),
@@ -295,12 +300,12 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         {
             PartitionKey = ReadString(snapshot, "partitionKey"),
             BotFillEligibleAtUtc = ReadOptionalTimestamp(snapshot, "botFillEligibleAt"),
-            BotsFilled = ReadBool(snapshot, "botsFilled"),
+            BotsFilled = botsFilled,
             DrawCount = checked((int)ReadLong(snapshot, "drawCount", 3))
         };
     }
 
-    private static SolitairePlayerState ReadPlayer(DocumentSnapshot snapshot)
+    private static SolitairePlayerState ReadPlayer(DocumentSnapshot snapshot, SolitaireMatch match)
     {
         var gameJson = ReadString(snapshot, "gameStateJson");
         var game = JsonSerializer.Deserialize<SolitaireGameState>(gameJson, JsonOptions)
@@ -317,8 +322,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
                 ?? Array.Empty<SolitaireIntegrityWarning>();
         var elapsed = ReadLong(snapshot, "elapsedMilliseconds", -1);
         var syntheticSkill = ReadLong(snapshot, "syntheticSkill");
-        var startedAt = ReadOptionalTimestamp(snapshot, "startedAt") ?? DateTime.UnixEpoch;
-        var deadlineAt = ReadOptionalTimestamp(snapshot, "deadlineAt") ?? DateTime.UnixEpoch;
+        var startedAt = ReadOptionalTimestamp(snapshot, "startedAt") ?? match.StartedAtUtc;
+        var deadlineAt = ReadOptionalTimestamp(snapshot, "deadlineAt") ?? match.DeadlineAtUtc;
         return new SolitairePlayerState(
             ReadString(snapshot, "matchId"),
             ReadString(snapshot, "userId"),

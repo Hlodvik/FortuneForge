@@ -28,7 +28,9 @@ jobs:
           cache-dependency-path: fortuneforge.client/package-lock.json
 
       - name: Restore .NET dependencies
-        run: dotnet restore FortuneForge.slnx
+        run: |
+          dotnet restore FortuneForge.slnx
+          dotnet restore tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj
 
       - name: Build .NET
         run: dotnet build FortuneForge.slnx --configuration Release --no-restore

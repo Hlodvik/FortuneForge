@@ -1,5 +1,9 @@
 *
 !Dockerfile
+!NuGet.config
+!packages/
+!packages/games/
+!packages/games/**
 !FortuneForge.Server/
 !FortuneForge.Server/**
 !FortuneForge.ServiceDefaults/

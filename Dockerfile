@@ -1,6 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
+COPY NuGet.config ./
+COPY packages/games/ packages/games/
 COPY FortuneForge.Server/FortuneForge.Server.csproj FortuneForge.Server/
 COPY FortuneForge.ServiceDefaults/FortuneForge.ServiceDefaults.csproj FortuneForge.ServiceDefaults/
 RUN dotnet restore FortuneForge.Server/FortuneForge.Server.csproj

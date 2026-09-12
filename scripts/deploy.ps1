@@ -63,6 +63,16 @@ if ($Target -in @('all', 'api')) {
             '--quiet'
         ) `
         -WorkingDirectory $repoRoot
+    Invoke-Checked `
+        -Executable 'gcloud.cmd' `
+        -Arguments @(
+            'run', 'services', 'update-traffic', 'fortuneforge-api',
+            '--to-latest',
+            '--region', 'us-east4',
+            '--project', 'fortuneforgegame',
+            '--quiet'
+        ) `
+        -WorkingDirectory $repoRoot
 }
 
 if ($Target -in @('all', 'hosting')) {

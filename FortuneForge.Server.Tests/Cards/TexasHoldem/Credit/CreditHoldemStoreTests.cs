@@ -27,6 +27,21 @@ public sealed class CreditHoldemStoreTests
     }
 
     [Fact]
+    public async Task SoloPlayerStartsWithTwoBotsAfterTheHumanGraceWindow()
+    {
+        var store = NewStore(allowSingleHumanBotFill: true);
+        await store.JoinAsync("u1", "Alice", 0, "join-solo-bots", 11, Start, default);
+
+        var session = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync("u1", Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        var match = store.MatchForTest(session.Table.MatchId);
+
+        Assert.Equal(3, match.Players.Count);
+        Assert.Single(match.Players, player => !player.IsBot);
+        Assert.Equal(2, match.Players.Count(player => player.IsBot));
+    }
+
+    [Fact]
     public async Task BlindsAndActionsCommitCreditsOnlyAfterServerValidation()
     {
         var store = NewStore();
@@ -192,9 +207,9 @@ public sealed class CreditHoldemStoreTests
         Assert.Single((await store.HistoryAsync("u1", 1, default)).Items);
     }
 
-    private static InMemoryCreditHoldemStore NewStore()
+    private static InMemoryCreditHoldemStore NewStore(bool allowSingleHumanBotFill = false)
     {
-        var store = new InMemoryCreditHoldemStore();
+        var store = new InMemoryCreditHoldemStore(allowSingleHumanBotFill);
         store.SetBalance("u1", 10_000);
         store.SetBalance("u2", 10_000);
         return store;

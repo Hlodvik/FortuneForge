@@ -224,7 +224,7 @@ function QueueView({ session, busy, leave }: {
     <section className="credit-holdem-lobby">
       <span className="credit-holdem-kicker">Finding your table</span>
       <h1>Seat {session.position} in line</h1>
-      <p>No credits are committed while you wait. Open seats are offered to real players first.</p>
+      <p>No credits are committed while you wait. Open seats are offered to real players first, then bots fill the table after a brief wait.</p>
       <div className="credit-holdem-queue-seats">
         {Array.from({ length: 5 }, (_, index) => {
           const seat = session.players[index]

@@ -24,6 +24,7 @@ import {
   type BlackjackTableStatus,
   type PendingBlackjackTableMutation,
 } from '../../../games/cards/blackjack/blackjackTableApi'
+import { CardOutcomeSummary, type CardOutcomeTone } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
 import { CardRoomNavigation } from '../CardRoomNavigation'
@@ -250,6 +251,9 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const seatsByNumber = new Map(table.seats.map((seat) => [seat.seat, seat]))
   const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
+  const settledOutcome = betting && current && (current.outcome || current.payout > 0)
+    ? blackjackTableOutcome(current)
+    : null
   return (
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
@@ -280,6 +284,16 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
           </div>
         </div>
         <div className="blackjack-actions" aria-label="Blackjack controls">
+          {settledOutcome && (
+            <CardOutcomeSummary
+              className="blackjack-table__outcome"
+              tone={settledOutcome.tone}
+              eyebrow={settledOutcome.eyebrow}
+              title={settledOutcome.title}
+              detail={settledOutcome.detail}
+              nextAction="Choose a wager for the next round when ready."
+            />
+          )}
           {betting && (
             <>
               <WagerInput status={props.status} wager={props.wager} busy={props.busy} onChange={props.onWagerChange} />
@@ -356,6 +370,22 @@ function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlay
   const activeHand = hands.find((hand) => hand.active)
   const value = activeHand?.lastAction ?? activeHand?.status ?? seat.outcome ?? seat.lastAction ?? seat.status
   return formatLabel(value)
+}
+
+function blackjackTableOutcome(seat: BlackjackTableSeat): Readonly<{
+  tone: CardOutcomeTone
+  eyebrow: string
+  title: string
+  detail: string
+}> {
+  const won = seat.payout > seat.totalWager
+  const returned = seat.payout === seat.totalWager && seat.payout > 0
+  return {
+    tone: won ? 'positive' : returned ? 'neutral' : 'caution',
+    eyebrow: won ? 'Winning round' : returned ? 'Wager returned' : 'Round settled',
+    title: seat.outcome ? formatLabel(seat.outcome) : 'Your round is complete',
+    detail: seat.payout > 0 ? `Payout R${seat.payout.toFixed(2)}` : 'No payout this round.',
+  }
 }
 
 function WagerInput({ status, wager, busy, onChange }: { status: BlackjackTableStatus; wager: number; busy: boolean; onChange: (value: number) => void }) {

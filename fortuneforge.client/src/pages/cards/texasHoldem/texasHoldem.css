@@ -1156,7 +1156,8 @@
 .credit-holdem-result__controls button:disabled,
 .credit-holdem-lobby button:disabled { cursor: not-allowed; opacity: 0.42; }
 .credit-holdem-leave { margin-left: auto; }
-.credit-holdem-result__controls > div { display: grid; margin-right: auto; }
+.credit-holdem-result__summary { display: grid; flex: 1 1 16rem; margin-right: auto; }
+.credit-holdem-result__summary .ff-card-outcome { width: 100%; justify-items: start; padding: 0.48rem 0.65rem; text-align: left; }
 .credit-holdem-result__controls small { color: #8ca79f; font-size: 0.6rem; }
 
 .credit-holdem-raise-control {
@@ -1204,7 +1205,8 @@
   .credit-holdem-raise-control { width: auto; grid-column: 1 / -1; }
   .credit-holdem-leave { grid-column: 1 / -1; margin-left: 0; }
   .credit-holdem-result__controls { flex-wrap: wrap; }
-  .credit-holdem-result__controls > div { width: 100%; margin: 0; text-align: center; }
+  .credit-holdem-result__summary { width: 100%; margin: 0; }
+  .credit-holdem-result__summary .ff-card-outcome { justify-items: center; text-align: center; }
   .credit-holdem-queue-seats { grid-template-columns: repeat(3, 1fr); }
   .credit-holdem-rule-grid { grid-template-columns: 1fr; }
   .credit-holdem-lobby { min-height: 0; overflow: auto; padding: 0.8rem; }

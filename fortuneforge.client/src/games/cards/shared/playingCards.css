@@ -128,3 +128,71 @@
   letter-spacing: 0.05em;
   transform: rotate(-8deg);
 }
+
+.ff-card-outcome {
+  display: grid;
+  width: min(100%, 30rem);
+  gap: 0.25rem;
+  justify-items: center;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid rgb(207 235 226 / 38%);
+  border-radius: 0.85rem;
+  background: linear-gradient(145deg, rgb(9 42 37 / 96%), rgb(3 24 22 / 96%));
+  box-shadow: 0 0.65rem 1.4rem rgb(0 9 8 / 28%);
+  color: #eaf8f3;
+  text-align: center;
+}
+
+.ff-card-outcome__eyebrow {
+  color: #8ce0c3;
+  font-size: 0.59rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ff-card-outcome__title {
+  color: #fff8d8;
+  font: 700 clamp(0.98rem, 2vw, 1.18rem)/1.15 Georgia, serif;
+}
+
+.ff-card-outcome__detail {
+  color: #c7ddd6;
+  font-size: 0.74rem;
+}
+
+.ff-card-outcome__next {
+  color: #a8c5bc;
+  font-size: 0.67rem;
+}
+
+.ff-card-outcome__next b {
+  color: #e6d48b;
+}
+
+.ff-card-outcome--positive {
+  border-color: rgb(255 224 126 / 68%);
+  background:
+    radial-gradient(circle at 50% 0, rgb(255 218 102 / 19%), transparent 64%),
+    linear-gradient(145deg, rgb(58 55 18 / 96%), rgb(18 39 30 / 96%));
+  box-shadow: 0 0.7rem 1.8rem rgb(255 197 45 / 15%), 0 0.65rem 1.4rem rgb(0 9 8 / 28%);
+}
+
+.ff-card-outcome--positive .ff-card-outcome__eyebrow { color: #ffe190; }
+.ff-card-outcome--positive .ff-card-outcome__title { color: #fff4bc; }
+
+.ff-card-outcome--caution {
+  border-color: rgb(255 175 133 / 44%);
+  background: linear-gradient(145deg, rgb(62 35 27 / 94%), rgb(29 25 24 / 96%));
+}
+
+.ff-card-outcome--caution .ff-card-outcome__eyebrow { color: #ffc9a5; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .ff-card-outcome { animation: ff-card-outcome-enter 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+
+@keyframes ff-card-outcome-enter {
+  from { opacity: 0; transform: translateY(0.45rem) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

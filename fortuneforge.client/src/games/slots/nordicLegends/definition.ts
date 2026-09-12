@@ -7,6 +7,14 @@ export const NORDIC_LEGENDS_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23],
   presentation: 'divine-offering', collectionAriaLabel: 'Runestone offering collections', itemLabel: 'sacred runes',
   energyLabel: 'Thunder charge', actorName: 'The Valkyrie treasure chest', awardLabel: 'Valhalla war chest',
+  outcomeNarrative: {
+    lossTitle: 'No rune reward this spin', winTitle: 'Viking reward', greatWinTitle: 'Legendary boon', bigWinTitle: 'Valhalla jackpot',
+    freeGameSingular: 'free raid', freeGamePlural: 'free raids',
+    lossNextAction: 'Choose a wager, then sail for Valhalla again.',
+    winNextAction: 'Choose a wager, then claim another warrior reward.',
+    bonusNextAction: 'Your next raid is free and uses the locked wager.',
+  },
+  celebrationEffect: 'nordic-aurora',
   valueToken: ['stamped silver rune', '🪙'], motif: '⚔️', accentGlyph: '❄️',
   collectionLabels: [['Crimson wolf rune', '🐺'], ['Sapphire wave rune', '🌊'], ['Amber hammer rune', '🔨'], ['Emerald world-tree rune', '🌲']],
   symbolSpecs: {

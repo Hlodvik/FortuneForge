@@ -10,6 +10,7 @@ export const REEL_RICHES_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Reel Riches',
   subtitle: 'Land the Legendary Catch',
+  celebrationEffect: 'reel-ripple',
   emblemImage: reelRichesEmblem,
   accentImage: pearlJewel,
   backdropImage: dawnLake,

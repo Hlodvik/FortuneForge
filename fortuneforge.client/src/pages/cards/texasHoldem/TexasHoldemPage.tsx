@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { freshCardSeed } from '../../../games/cards/shared/cards'
 import {
@@ -67,6 +68,7 @@ export function TexasHoldemPage({
   const betSize = holdemBetSize(game.stage)
   const betLabel = game.stage === 'preflop' ? `Raise R${betSize}` : `Bet R${betSize}`
   const potDisplay = game.status === 'complete' ? game.result?.potWon ?? 0 : game.pot
+  const completedResult = game.status === 'complete' ? game.result : null
 
   return (
     <div className="holdem-page">
@@ -121,11 +123,22 @@ export function TexasHoldemPage({
               })}
             </div>
 
-            <div className="holdem-status" aria-live="polite">
-              <span>{game.status === 'complete' ? 'Hand complete' : stageLabels[game.stage]}</span>
-              <strong>{game.message}</strong>
-              {game.result?.playerHand && game.result.opponentHand && (
-                <small>Your {game.result.playerHand.name} · Dealer {game.result.opponentHand.name}</small>
+            <div className="holdem-status" aria-live={completedResult ? 'off' : 'polite'}>
+              {completedResult ? (
+                <CardOutcomeSummary
+                  tone={completedResult.winner === 'player' ? 'positive' : completedResult.winner === 'tie' ? 'neutral' : 'caution'}
+                  eyebrow={completedResult.winner === 'player' ? 'Winning hand' : completedResult.winner === 'tie' ? 'Split pot' : 'Hand complete'}
+                  title={completedResult.summary}
+                  detail={completedResult.playerHand && completedResult.opponentHand
+                    ? `Your ${completedResult.playerHand.name} · Dealer ${completedResult.opponentHand.name}`
+                    : `Pot R${completedResult.potWon}`}
+                  nextAction="Deal the next hand when ready."
+                />
+              ) : (
+                <>
+                  <span>{stageLabels[game.stage]}</span>
+                  <strong>{game.message}</strong>
+                </>
               )}
             </div>
 

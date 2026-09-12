@@ -6,6 +6,7 @@ import {
   type HoldemBotPracticeResponse,
   type HoldemPracticeCard,
 } from '../../../games/cards/texasHoldem/botPracticeApi'
+import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PracticeCard } from '../../../games/cards/shared/PracticeCard'
 import { PracticeLobby, PracticeModeNotice, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
 import type { PracticeBotSkill } from '../../../games/cards/shared/practiceBots'
@@ -58,6 +59,15 @@ export function TexasHoldemBotPracticePage() {
               <strong>{table.street} · pot {table.pot} practice chips</strong>
               <span>v{table.version} · current bet {table.currentBet}</span>
             </div>
+            {table.status === 'completed' && (
+              <CardOutcomeSummary
+                className="practice-bot-table__outcome"
+                eyebrow="Practice hand complete"
+                title="Final hands are revealed"
+                detail={`Final pot ${table.pot} practice chips · no account balance or payout changed.`}
+                nextAction="Review the final hands, then return to the card room when ready."
+              />
+            )}
             <section className="practice-bot-player">
               <h3>Community</h3>
               <CardRow cards={table.communityCards} />

@@ -10,6 +10,7 @@ export const GODS_OF_OLYMPUS_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Gods of Olympus',
   subtitle: 'Claim the Divine Tribute',
+  celebrationEffect: 'olympus-storm',
   emblemImage: olympusEmblem,
   accentImage: sapphireLaurelJewel,
   backdropImage: olympusTerrace,

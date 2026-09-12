@@ -21,6 +21,7 @@ import {
   projectRedactedDraw,
   SolitaireRuleError,
 } from '../../../games/cards/solitaire/solitaireEngine'
+import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { freshCardSeed } from '../../../games/cards/shared/cards'
 import '../../../games/cards/shared/playingCards.css'
 import { formatDuration } from '../../../games/cards/solitaire/solitaireDisplay'
@@ -815,9 +816,16 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
               </div>
             ) : (
               <div>
-                <p className="solitaire-eyebrow">Game complete</p>
+                <p className="solitaire-eyebrow">Game complete · deck cleared</p>
                 <h2 id="free-result-title">{props.game.score.toLocaleString()} points</h2>
-                <p>{props.game.moves} moves · {formatElapsed(props.freeElapsedMilliseconds)}</p>
+                <CardOutcomeSummary
+                  className="solitaire-free-outcome"
+                  tone="positive"
+                  eyebrow="Free game complete"
+                  title="Every card is home"
+                  detail={`${props.game.moves} moves · ${formatElapsed(props.freeElapsedMilliseconds)}`}
+                  nextAction="Replay this draw, start a new game, or return when ready."
+                />
                 <div className="solitaire-results__actions solitaire-results__actions--three">
                   <button className="solitaire-primary-action" type="button" onClick={props.onReplayFree}>Replay</button>
                   <button type="button" onClick={props.onChooseNewFreeGame}>New game</button>
@@ -842,8 +850,15 @@ function ResultPanel({ result, busy, onClaim, onReturn }: {
   const won = (current?.payoutCredits ?? 0) > 0
   return (
     <section className="solitaire-panel solitaire-results">
-      <p>{current ? `You placed #${current.rank}` : 'Game complete'}</p>
-      {current && <p>{current.score.toLocaleString()} points · {current.moves} moves · R{current.payoutCredits.toFixed(2)} ready to claim</p>}
+      <CardOutcomeSummary
+        tone={won ? 'positive' : 'neutral'}
+        eyebrow={won ? 'Reward earned' : 'Result settled'}
+        title={current ? `You placed #${current.rank}` : 'Game complete'}
+        detail={current ? `${current.score.toLocaleString()} points · ${current.moves} moves · R${current.payoutCredits.toFixed(2)} ready to claim` : undefined}
+        nextAction={result.canClaim
+          ? (won ? 'Claim your reward to finish this result.' : 'Accept this result to finish.')
+          : 'Return to the card room when ready.'}
+      />
       <ol>
         {result.standings.map((standing) => (
           <li className={standing.isCurrentPlayer ? 'is-current' : ''} key={standing.playerId}>

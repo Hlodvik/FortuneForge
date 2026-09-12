@@ -2,6 +2,7 @@ import { createElement, createRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { WinHelpDialog } from '../../features/slots/WinHelpDialog'
+import { describeSpinOutcome } from '../../features/slots/presentation/spinPresentation'
 import { WUKONG_FEATURE_SYMBOL_IDS } from './wukong/symbols'
 import type { SlotSymbolId } from '../../features/slots/types/slots'
 import { getSlotSymbolValueLabel, slotPointsToRand } from '../../features/slots/slotPagePresentation'
@@ -163,6 +164,55 @@ describe('slot game manifests', () => {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
     }
+  })
+
+  it('gives every non-Wukong/Pirates game its own settled-outcome narrative', () => {
+    const themedGames = SLOT_GAME_MANIFESTS.filter((game) =>
+      game.id !== 'wukong-journey-to-the-west' && game.id !== 'pirates-fortune',
+    )
+
+    expect(themedGames).toHaveLength(18)
+    for (const game of themedGames) {
+      const narrative = game.experience.outcomeNarrative
+      expect(narrative, `${game.id} is missing outcome copy`).toBeDefined()
+      expect(narrative?.lossTitle).toBeTruthy()
+      expect(narrative?.winTitle).toBeTruthy()
+      expect(narrative?.greatWinTitle).toBeTruthy()
+      expect(narrative?.bigWinTitle).toBeTruthy()
+      expect(narrative?.freeGameSingular).toBeTruthy()
+      expect(narrative?.freeGamePlural).toBeTruthy()
+      expect(narrative?.lossNextAction).toBeTruthy()
+      expect(narrative?.winNextAction).toBeTruthy()
+      expect(narrative?.bonusNextAction).toBeTruthy()
+      expect(game.experience.cabinet.celebrationEffect).toBeTruthy()
+      if (!narrative) continue
+
+      expect(describeSpinOutcome({
+        awardRand: 500,
+        wagerRand: 10,
+        freeSpinsAwarded: 0,
+        narrative,
+      })).toMatchObject({
+        kind: 'big-win',
+        title: narrative.bigWinTitle,
+        awardRand: 500,
+        nextAction: narrative.winNextAction,
+      })
+      expect(describeSpinOutcome({
+        awardRand: 0,
+        wagerRand: 10,
+        freeSpinsAwarded: 1,
+        narrative,
+      })).toMatchObject({
+        kind: 'bonus',
+        title: `1 ${narrative.freeGameSingular} won`,
+        nextAction: narrative.bonusNextAction,
+      })
+    }
+    expect(new Set(themedGames.map((game) => game.experience.outcomeNarrative?.bigWinTitle)).size)
+      .toBe(18)
+    expect(new Set(themedGames.map((game) => game.experience.cabinet.celebrationEffect)).size)
+      .toBe(18)
   })
 
   it('maps the pirate skin to gems and a skull-and-crossbones collector', () => {

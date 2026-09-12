@@ -8,6 +8,7 @@ export const ARCANE_ARCHIVES_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Arcane Archives',
   subtitle: 'Unlock the Forbidden Stacks',
+  celebrationEffect: 'arcane-orbit',
   emblemImage: art.emblem,
   accentImage: art.accent,
   backdropImage: art.backdrop,

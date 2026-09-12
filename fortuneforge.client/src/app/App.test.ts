@@ -13,6 +13,7 @@ describe('app shell slot media isolation', () => {
     expect(renderApp('/account')).not.toContain('app-shell__background-video')
     expect(renderApp('/')).not.toContain('app-shell__background-video')
   })
+
 })
 
 function renderApp(pathname: string): string {

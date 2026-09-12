@@ -7,6 +7,14 @@ export const CANDY_CARNIVAL_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: Array.from({ length: 22 }, (_, index) => index + 1),
   presentation: 'juice-glass', collectionAriaLabel: 'Candy jar collections', itemLabel: 'candy charms',
   energyLabel: 'Sugar-rush charge', actorName: 'The carnival candy bag', awardLabel: 'Sweet-shop haul',
+  outcomeNarrative: {
+    lossTitle: 'No sweet win this spin', winTitle: 'Sweet win', greatWinTitle: 'Sugar rush', bigWinTitle: 'Carnival jackpot',
+    freeGameSingular: 'free carnival spin', freeGamePlural: 'free carnival spins',
+    lossNextAction: 'Choose a wager, then step under the big top again.',
+    winNextAction: 'Choose a wager, then chase another sweet win.',
+    bonusNextAction: 'Your next carnival spin is free and uses the locked wager.',
+  },
+  celebrationEffect: 'candy-sprinkles',
   valueToken: ['rainbow candy token', '🍬'], motif: '🎪', accentGlyph: '🍭',
   collectionLabels: [['Strawberry heart charm', '💗'], ['Blueberry drop charm', '🔵'], ['Caramel star charm', '⭐'], ['Lime swirl charm', '🟢']],
   symbolSpecs: {

@@ -1,4 +1,5 @@
-import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
+import type { SlotCabinetTheme, SlotCelebrationEffect } from '../../../features/slots/config/cabinetThemes'
+import type { SlotOutcomeNarrative } from '../../../features/slots/config/outcomeNarratives'
 import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type {
@@ -30,6 +31,8 @@ export type ShowcaseSlotGameDefinition = {
   energyLabel: string
   actorName: string
   awardLabel: string
+  outcomeNarrative: SlotOutcomeNarrative
+  celebrationEffect: SlotCelebrationEffect
   valueToken: SymbolSpec
   collectionLabels: readonly [SymbolSpec, SymbolSpec, SymbolSpec, SymbolSpec]
   symbolSpecs: Readonly<Record<BaseSymbolId, SymbolSpec>>
@@ -147,6 +150,7 @@ export function createShowcaseSlotGame(
     eyebrow: 'Fortune Forge presents',
     title: definition.title,
     subtitle: definition.subtitle,
+    celebrationEffect: definition.celebrationEffect,
     emblemImage: icon(`${definition.title} emblem`, definition.motif, 0),
     accentImage: icon(`${definition.title} accent`, definition.accentGlyph, 1),
     backdropImage: backdrop,
@@ -168,6 +172,7 @@ export function createShowcaseSlotGame(
     cabinet,
     features,
     help,
+    outcomeNarrative: definition.outcomeNarrative,
     shellBackdrop: 'theme',
     symbols,
     mascot: null,

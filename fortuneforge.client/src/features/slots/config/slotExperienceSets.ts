@@ -2,6 +2,7 @@ import type { MascotSet } from '../../../games/slots/shared/mascot/mascotTypes'
 import type { SlotSymbolId } from '../types/slots'
 import type { SlotFeatureSet, SlotHelpDefinition } from './slotFeatures'
 import type { SlotCabinetTheme } from './cabinetThemes'
+import type { SlotOutcomeNarrative } from './outcomeNarratives'
 import type { SlotSoundSet } from './soundSets'
 import type { SlotSymbolSet } from './symbolSets'
 
@@ -21,6 +22,7 @@ export type SlotExperienceSet = {
   cabinet: SlotCabinetTheme
   features: SlotFeatureSet
   help: SlotHelpDefinition
+  outcomeNarrative?: SlotOutcomeNarrative
   shellBackdrop: 'default-clouds' | 'theme'
   symbols: SlotSymbolSet
   mascot: MascotSet | null

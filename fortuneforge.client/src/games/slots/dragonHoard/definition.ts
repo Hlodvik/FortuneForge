@@ -7,6 +7,14 @@ export const DRAGON_HOARD_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22, 23],
   presentation: 'gem-hoard', collectionAriaLabel: 'Dragon gem collections', itemLabel: 'royal gemstones',
   energyLabel: 'Dragonfire charge', actorName: 'The enchanted treasure chest', awardLabel: 'Ember-vault hoard',
+  outcomeNarrative: {
+    lossTitle: 'No hoard found this spin', winTitle: 'Hoard claimed', greatWinTitle: 'Ember reward', bigWinTitle: 'Dragon jackpot',
+    freeGameSingular: 'free flight', freeGamePlural: 'free flights',
+    lossNextAction: 'Choose a wager, then enter the ember vault again.',
+    winNextAction: 'Choose a wager, then seek another dragon hoard.',
+    bonusNextAction: 'Your next flight is free and uses the locked wager.',
+  },
+  celebrationEffect: 'dragon-embers',
   valueToken: ['dragon-stamped gold coin', '🪙'], motif: '🐉', accentGlyph: '🔥',
   collectionLabels: [['Crimson fire gem', '🔴'], ['Sapphire frost gem', '🔷'], ['Amber sun gem', '🔶'], ['Emerald earth gem', '🟢']],
   symbolSpecs: {

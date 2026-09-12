@@ -10,6 +10,7 @@ export const RAINBOW_REALM_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Rainbow Realm',
   subtitle: 'Fruit Frenzy',
+  celebrationEffect: 'orchard-cascade',
   emblemImage: cherrySymbol,
   accentImage: rainbowAppleMedallion,
   backdropImage: rainbowOrchard,

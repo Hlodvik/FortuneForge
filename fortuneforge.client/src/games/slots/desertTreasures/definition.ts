@@ -7,6 +7,14 @@ export const DESERT_TREASURES_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 20, 21, 22, 23],
   presentation: 'frontier-trail', collectionAriaLabel: 'Royal scarab collections', itemLabel: 'tomb relics',
   energyLabel: 'Sun-disc charge', actorName: 'The royal excavation satchel', awardLabel: 'Pharaoh vault haul',
+  outcomeNarrative: {
+    lossTitle: 'No tomb treasure this spin', winTitle: 'Tomb treasure', greatWinTitle: 'Golden discovery', bigWinTitle: "Pharaoh's jackpot",
+    freeGameSingular: 'free excavation', freeGamePlural: 'free excavations',
+    lossNextAction: 'Choose a wager, then explore the tomb again.',
+    winNextAction: 'Choose a wager, then search for another golden discovery.',
+    bonusNextAction: 'Your next excavation is free and uses the locked wager.',
+  },
+  celebrationEffect: 'desert-sandstorm',
   valueToken: ['ancient gold scarab', '🪲'], motif: '🔺', accentGlyph: '☀️',
   collectionLabels: [['Crimson ankh relic', '🔻'], ['Sapphire lotus relic', '🪷'], ['Amber sun relic', '☀️'], ['Emerald scarab relic', '🪲']],
   symbolSpecs: {

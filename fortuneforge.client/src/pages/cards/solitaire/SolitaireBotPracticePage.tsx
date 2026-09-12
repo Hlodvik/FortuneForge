@@ -8,6 +8,7 @@ import {
 import { SolitaireBoard } from '../../../games/cards/solitaire/SolitaireBoard'
 import { formatCountdown } from '../../../games/cards/solitaire/solitaireDisplay'
 import type { SolitaireCommand } from '../../../games/cards/solitaire/solitaireTypes'
+import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PracticeLobby, PracticeModeNotice, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
 import type { PracticeBotSkill } from '../../../games/cards/shared/practiceBots'
 import { usePracticeBotSession } from '../../../games/cards/shared/usePracticeBotSession'
@@ -74,6 +75,12 @@ export function SolitaireBotPracticePage() {
           <section className="practice-bot-panel" aria-labelledby="practice-solitaire-result-title">
             <p className="practice-bot-eyebrow">Final standings</p>
             <h2 id="practice-solitaire-result-title">Practice race complete</h2>
+            <CardOutcomeSummary
+              eyebrow="Practice result"
+              title={`${response.result.standings.length}-player race settled`}
+              detail="Synthetic results only. No payout or financial record was created."
+              nextAction="Review the standings, then return to the card room when ready."
+            />
             <ol className="practice-bot-results">
               {response.result.standings.map((standing) => (
                 <li key={standing.player.seatId}>
@@ -82,7 +89,6 @@ export function SolitaireBotPracticePage() {
                 </li>
               ))}
             </ol>
-            <small>Synthetic results only. No payout or financial record was created.</small>
           </section>
         )}
       </main>

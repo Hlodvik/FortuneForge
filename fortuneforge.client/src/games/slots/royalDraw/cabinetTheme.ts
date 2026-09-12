@@ -10,6 +10,7 @@ export const ROYAL_DRAW_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Royal Draw',
   subtitle: 'Sweep the High-Stakes Table',
+  celebrationEffect: 'royal-card-fan',
   emblemImage: royalDrawEmblem,
   accentImage: rubyCardJewel,
   backdropImage: pokerRoom,

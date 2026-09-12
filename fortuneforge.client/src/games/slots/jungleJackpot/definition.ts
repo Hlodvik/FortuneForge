@@ -7,6 +7,14 @@ export const JUNGLE_JACKPOT_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
   presentation: 'fossil-dig', collectionAriaLabel: 'Rainforest relic collections', itemLabel: 'jungle relics',
   energyLabel: 'Sunbeam charge', actorName: 'The explorer field pack', awardLabel: 'Temple expedition haul',
+  outcomeNarrative: {
+    lossTitle: 'No temple haul this spin', winTitle: 'Temple haul', greatWinTitle: 'Golden discovery', bigWinTitle: 'Jungle jackpot',
+    freeGameSingular: 'free expedition', freeGamePlural: 'free expeditions',
+    lossNextAction: 'Choose a wager, then explore the jungle again.',
+    winNextAction: 'Choose a wager, then set out for another temple haul.',
+    bonusNextAction: 'Your next expedition is free and uses the locked wager.',
+  },
+  celebrationEffect: 'jungle-canopy',
   valueToken: ['golden temple coin', '🪙'], motif: '🌴', accentGlyph: '🦜',
   collectionLabels: [['Jaguar fang relic', '🐆'], ['Blue orchid relic', '🪻'], ['Amber sun relic', '☀️'], ['Emerald frog relic', '🐸']],
   symbolSpecs: {

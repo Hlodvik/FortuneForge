@@ -7,6 +7,14 @@ export const ROBOT_REVOLUTION_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23],
   presentation: 'chip-stack', collectionAriaLabel: 'Circuit module collections', itemLabel: 'data modules',
   energyLabel: 'Fusion charge', actorName: 'The quantum magnet array', awardLabel: 'Megacity data haul',
+  outcomeNarrative: {
+    lossTitle: 'No charge this spin', winTitle: 'Power-up won', greatWinTitle: 'Mega charge', bigWinTitle: 'Robot jackpot',
+    freeGameSingular: 'free boost', freeGamePlural: 'free boosts',
+    lossNextAction: 'Choose a wager, then power up the city again.',
+    winNextAction: 'Choose a wager, then build another mega charge.',
+    bonusNextAction: 'Your next boost is free and uses the locked wager.',
+  },
+  celebrationEffect: 'robot-circuit',
   valueToken: ['quantum data chip', '💾'], motif: '🤖', accentGlyph: '⚙️',
   collectionLabels: [['Crimson combat module', '🔴'], ['Sapphire logic module', '🔷'], ['Amber power module', '🔶'], ['Emerald repair module', '🟢']],
   symbolSpecs: {

@@ -7,6 +7,14 @@ export const SAMURAI_FORTUNE_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: Array.from({ length: 23 }, (_, index) => index + 1),
   presentation: 'seal-pile', collectionAriaLabel: 'Clan crest collections', itemLabel: 'clan crests',
   energyLabel: 'Spirit charge', actorName: 'The shogun treasure satchel', awardLabel: 'Clan treasury haul',
+  outcomeNarrative: {
+    lossTitle: 'No honor won this spin', winTitle: 'Honor won', greatWinTitle: 'Warrior reward', bigWinTitle: 'Shogun jackpot',
+    freeGameSingular: 'free duel', freeGamePlural: 'free duels',
+    lossNextAction: 'Choose a wager, then challenge the province again.',
+    winNextAction: 'Choose a wager, then seek another warrior reward.',
+    bonusNextAction: 'Your next duel is free and uses the locked wager.',
+  },
+  celebrationEffect: 'samurai-blossom',
   valueToken: ['golden mon coin', '🪙'], motif: '⛩️', accentGlyph: '🌸',
   collectionLabels: [['Crimson crane crest', '🦢'], ['Sapphire moon crest', '🌙'], ['Amber sun crest', '☀️'], ['Jade dragon crest', '🐉']],
   symbolSpecs: {

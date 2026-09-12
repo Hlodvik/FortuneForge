@@ -6,6 +6,7 @@ import {
   type BlackjackBotPracticeResponse,
   type BlackjackPracticeHand,
 } from '../../../games/cards/blackjack/botPracticeApi'
+import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PracticeCard } from '../../../games/cards/shared/PracticeCard'
 import {
   PracticeLobby,
@@ -76,6 +77,15 @@ export function BlackjackBotPracticePage() {
               <strong>{table.status === 'completed' ? 'Round complete' : `Table state v${table.version}`}</strong>
               <span>{table.seats.length} seats · wagers are virtual units</span>
             </div>
+            {table.status === 'completed' && (
+              <CardOutcomeSummary
+                className="practice-bot-table__outcome"
+                eyebrow="Practice round complete"
+                title="Final hands are revealed"
+                detail={`${table.seats.length} practice hands settled · no account balance or payout changed.`}
+                nextAction="Review the final hands, then return to the card room when ready."
+              />
+            )}
             <PracticeHand label="Dealer" hand={table.dealer} />
             <div className="practice-bot-player-grid">
               {table.seats.map((seat) => (

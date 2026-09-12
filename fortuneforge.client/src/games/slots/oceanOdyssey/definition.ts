@@ -7,6 +7,14 @@ export const OCEAN_ODYSSEY_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23],
   presentation: 'gem-hoard', collectionAriaLabel: 'Coral treasure collections', itemLabel: 'sea treasures',
   energyLabel: 'Tidal charge', actorName: 'The pearl-diver net', awardLabel: 'Deep-sea treasure haul',
+  outcomeNarrative: {
+    lossTitle: 'No deep-sea find this spin', winTitle: 'Deep-sea find', greatWinTitle: 'Oceanic reward', bigWinTitle: 'Abyssal jackpot',
+    freeGameSingular: 'free dive', freeGamePlural: 'free dives',
+    lossNextAction: 'Choose a wager, then dive again when ready.',
+    winNextAction: 'Choose a wager, then search the deep again.',
+    bonusNextAction: 'Your next dive is free and uses the locked wager.',
+  },
+  celebrationEffect: 'ocean-swell',
   valueToken: ['luminous pearl', '🫧'], motif: '🌊', accentGlyph: '🐚',
   collectionLabels: [['Crimson coral treasure', '🪸'], ['Sapphire shell treasure', '🐚'], ['Amber star treasure', '⭐'], ['Emerald turtle treasure', '🐢']],
   symbolSpecs: {

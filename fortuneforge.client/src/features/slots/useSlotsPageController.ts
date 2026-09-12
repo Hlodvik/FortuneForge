@@ -19,7 +19,14 @@ import {
   waitForPresentation,
   waitForPresentationFrame,
 } from './presentation/spinLifecycle'
-import { findBestPayline, selectWinSoundEvent } from './presentation/spinPresentation'
+import {
+  describeSpinOutcome,
+  findBestPayline,
+  getSlotWinTier,
+  selectOutcomeSoundEvent,
+  type SlotSpinOutcome,
+  type SlotWinTier,
+} from './presentation/spinPresentation'
 import { slotPointsToRand } from './slotPagePresentation'
 import {
   requestDemoAvailability,
@@ -51,7 +58,7 @@ type WinAwardFlyover = {
   id: number
   amount: number
   displayAmount: number
-  isBigWin: boolean
+  winTier: SlotWinTier
   isFlying: boolean
   left: number
   top: number
@@ -95,8 +102,6 @@ const manualStopBrakeDurationMs = 90
 const manualStopSettleDurationMs = 35
 const regularWinHoldDurationMs = 380
 const regularWinBalanceCountDurationMs = 420
-const bigWinMinimumRand = 500
-const bigWinMultiplier = 50
 const bigWinCountDurationMs = 1250
 const bigWinBalanceCountDurationMs = 720
 const winFlyoverDurationMs = 540
@@ -125,6 +130,7 @@ export function useSlotsPageController({
     features: featureSet,
     help,
     mascot: mascotSet,
+    outcomeNarrative,
     rules,
     sounds: soundSet,
     symbols: symbolSet,
@@ -191,8 +197,8 @@ export function useSlotsPageController({
   const [balance, setBalance] = useState(
     demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
   )
-  const [lastWin, setLastWin] = useState(0)
-  const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
+  const [lastSpinOutcome, setLastSpinOutcome] = useState<SlotSpinOutcome | null>(null)
+  const [resultAtmosphereId, setResultAtmosphereId] = useState(0)
   const [lastEnergyAwarded, setLastEnergyAwarded] = useState(0)
   const [lastEnergyMultiplierApplied, setLastEnergyMultiplierApplied] = useState(false)
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
@@ -376,9 +382,9 @@ export function useSlotsPageController({
     setIsFreeSpinBadgePopping(false)
     setEnergyBalance(0)
     setSealCollections(defaultSealCollections)
-    setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
+    setLastSpinOutcome(null)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
     setMoneyGrabPresentation(null)
@@ -776,10 +782,11 @@ export function useSlotsPageController({
     const speedMultiplier = isFastAutoSpin
       ? Math.min(Math.max(1, autoSpinSpeedMultiplier), autoSpinWinPresentationMaxMultiplier)
       : 1
-    const isBigWin = awardedCredits >= Math.max(
-      bigWinMinimumRand,
-      slotPointsToRand(result.wagerPoints, result.pointValueInCents) * bigWinMultiplier,
+    const winTier = getSlotWinTier(
+      awardedCredits,
+      slotPointsToRand(result.wagerPoints, result.pointValueInCents),
     )
+    const isBigWin = winTier === 'big'
     const initialHoldDuration = isBigWin
       ? bigWinCountDurationMs / speedMultiplier
       : regularWinHoldDurationMs / speedMultiplier
@@ -818,7 +825,7 @@ export function useSlotsPageController({
       id: flyoverId,
       amount: awardedCredits,
       displayAmount: isBigWin ? 0 : awardedCredits,
-      isBigWin,
+      winTier,
       isFlying: false,
       left: startLeft,
       top: startTop,
@@ -1093,8 +1100,7 @@ export function useSlotsPageController({
     if (expectedFreeSpin) {
       setFreeSpinsRemaining((current) => Math.max(0, current - 1))
     }
-    setLastWin(0)
-    setLastFreeSpinsAwarded(0)
+    setLastSpinOutcome(null)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
     setEnergyFlyover(null)
@@ -1211,8 +1217,20 @@ export function useSlotsPageController({
       if (!isMountedRef.current) {
         return
       }
+      const awardedRand = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents)
+      const wagerRand = slotPointsToRand(result.wagerPoints, result.pointValueInCents)
+      const spinOutcome = describeSpinOutcome({
+        awardRand: awardedRand,
+        wagerRand,
+        freeSpinsAwarded: result.freeSpinsAwarded,
+        narrative: outcomeNarrative,
+      })
       const bestPayline = findBestPayline(result.payout.paylines)
-      const winSoundCue = selectWinSoundEvent(bestPayline, displayedReels.length)
+      const winSoundCue = selectOutcomeSoundEvent(
+        bestPayline,
+        displayedReels.length,
+        spinOutcome.winTier,
+      )
       const triggeredBonusPositions = result.freeSpinsAwarded > 0
         ? result.reels.flatMap((reel, reelIndex) =>
             reel.flatMap((symbol, row) => symbol === 'FREE' ? [{ reel: reelIndex, row }] : []),
@@ -1226,8 +1244,8 @@ export function useSlotsPageController({
       }
       setBestWin(bestPayline)
       setBonusPositions(triggeredBonusPositions)
-      setLastWin(slotPointsToRand(result.payout.totalPoints, result.pointValueInCents))
-      setLastFreeSpinsAwarded(result.freeSpinsAwarded)
+      setLastSpinOutcome(spinOutcome)
+      setResultAtmosphereId((current) => current + 1)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
       setFreeSpinsRemaining(result.freeSpinsRemaining)
       setFreeSpinWagerPoints(
@@ -1293,9 +1311,9 @@ export function useSlotsPageController({
       }
       setBestWin(null)
       setBonusPositions([])
-      setLastFreeSpinsAwarded(0)
       setLastEnergyAwarded(0)
       setLastEnergyMultiplierApplied(false)
+      setLastSpinOutcome(null)
       setEnergyFlyover(null)
       setSealFlyover(null)
       setSealImpactId(null)
@@ -1351,11 +1369,12 @@ export function useSlotsPageController({
     return current ?? fallback
   })
   const pageBackdropImage = cabinetTheme.pageBackdropImage ?? cabinetTheme.visualsBackdropImage
-  const pageBackdropStyle = pageBackdropImage
-    ? ({
-        '--slot-page-backdrop': `url("${pageBackdropImage}")`,
-      } as CSSProperties)
-    : undefined
+  const pageBackdropStyle = {
+    ...(pageBackdropImage ? { '--slot-page-backdrop': `url("${pageBackdropImage}")` } : {}),
+    '--slot-result-primary': cabinetTheme.palette.trimBright,
+    '--slot-result-secondary': cabinetTheme.palette.accent,
+    '--slot-result-glow': cabinetTheme.palette.glow,
+  } as CSSProperties
   const slotsPageClassName = [
     'slots-page',
     isFastSpinActive ? 'slots-page--fast-spin' : '',
@@ -1453,8 +1472,7 @@ export function useSlotsPageController({
     isStopRequested,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
-    lastFreeSpinsAwarded,
-    lastWin,
+    lastSpinOutcome,
     mascotActionKey,
     mascotPhase,
     mascotSet,
@@ -1465,6 +1483,7 @@ export function useSlotsPageController({
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,
+    resultAtmosphereId,
     reloadPromptCloseButtonRef,
     selectedWager: selectedWagerRand,
     sealFlyover,

@@ -8,6 +8,7 @@ export const DINO_DOMINION_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Dino Dominion',
   subtitle: 'Unearth a Prehistoric Fortune',
+  celebrationEffect: 'fossil-burst',
   emblemImage: art.emblem,
   accentImage: art.accent,
   backdropImage: art.backdrop,

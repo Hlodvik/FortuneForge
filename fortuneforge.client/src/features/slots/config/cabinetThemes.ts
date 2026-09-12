@@ -9,6 +9,26 @@ export type SlotCabinetPalette = {
   text: string
 }
 
+export type SlotCelebrationEffect =
+  | 'orchard-cascade'
+  | 'olympus-storm'
+  | 'reel-ripple'
+  | 'frontier-dust'
+  | 'royal-card-fan'
+  | 'arcane-orbit'
+  | 'cosmic-streak'
+  | 'fossil-burst'
+  | 'neon-scan'
+  | 'jungle-canopy'
+  | 'ocean-swell'
+  | 'samurai-blossom'
+  | 'candy-sprinkles'
+  | 'phantom-mist'
+  | 'nordic-aurora'
+  | 'desert-sandstorm'
+  | 'robot-circuit'
+  | 'dragon-embers'
+
 export type SlotCabinetTheme = {
   id: string
   chrome: 'ornate' | 'simple'
@@ -16,6 +36,7 @@ export type SlotCabinetTheme = {
   eyebrow: string
   title: string
   subtitle: string
+  celebrationEffect?: SlotCelebrationEffect
   emblemImage: string
   accentImage?: string
   backdropImage?: string

@@ -27,7 +27,6 @@ export function SpinButton({
       type="button"
       onClick={handleClick}
       disabled={disabled && !isActive}
-      aria-pressed={isActive}
       aria-label={isActive ? 'Stop the spin' : 'Spin the reels'}
     >
       <svg
@@ -45,11 +44,9 @@ export function SpinButton({
             />
           )}
       </svg>
-      {isActive && (
-        <strong className="spin-button__label">
-          {isStopRequested ? 'Stopping' : 'Stop'}
-        </strong>
-      )}
+      <strong className="spin-button__label">
+        {isStopRequested ? 'Stopping' : isSpinning ? 'Stop' : 'Spin'}
+      </strong>
     </button>
   )
 }

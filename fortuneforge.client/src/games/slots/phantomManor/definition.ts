@@ -7,6 +7,14 @@ export const PHANTOM_MANOR_DEFINITION: ShowcaseSlotGameDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
   presentation: 'spellbook-shelf', collectionAriaLabel: 'Haunted portrait collections', itemLabel: 'spirit seals',
   energyLabel: 'Moonlight charge', actorName: 'The séance spirit lantern', awardLabel: 'Phantom treasure haul',
+  outcomeNarrative: {
+    lossTitle: 'No spirit reward this spin', winTitle: 'Haunted win', greatWinTitle: 'Spectral reward', bigWinTitle: 'Manor jackpot',
+    freeGameSingular: 'free haunting', freeGamePlural: 'free hauntings',
+    lossNextAction: 'Choose a wager, then enter the manor again.',
+    winNextAction: 'Choose a wager, then call for another spectral reward.',
+    bonusNextAction: 'Your next haunting is free and uses the locked wager.',
+  },
+  celebrationEffect: 'phantom-mist',
   valueToken: ['captured spirit wisp', '👻'], motif: '🏚️', accentGlyph: '🌙',
   collectionLabels: [['Crimson raven seal', '🐦‍⬛'], ['Sapphire mirror seal', '🪞'], ['Amber candle seal', '🕯️'], ['Emerald key seal', '🗝️']],
   symbolSpecs: {

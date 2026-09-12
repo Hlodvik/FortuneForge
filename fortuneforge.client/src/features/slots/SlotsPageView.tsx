@@ -50,8 +50,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     isStopRequested,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
-    lastFreeSpinsAwarded,
-    lastWin,
+    lastSpinOutcome,
     mascotActionKey,
     mascotPhase,
     mascotSet,
@@ -61,6 +60,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,
+    resultAtmosphereId,
     reloadPromptCloseButtonRef,
     selectedWager,
     sealFlyover,
@@ -90,15 +90,27 @@ export function SlotsPageView(controller: SlotsPageController) {
   const moneyGrabFeature = featureSet.moneyGrab
 
   return (
-    <div className={slotsPageClassName} style={pageBackdropStyle} data-slot-theme={cabinetTheme.id}>
+    <div
+      className={slotsPageClassName}
+      style={pageBackdropStyle}
+      data-slot-theme={cabinetTheme.id}
+      data-slot-celebration={cabinetTheme.celebrationEffect}
+    >
       <header className="slots-page__topbar">
-        <a
-          className="slots-page__brand"
-          href="/"
-          aria-label="Return to the Fortune Forge landing page"
-        >
-          <span className="slots-page__brand-name">Fortune Forge</span>
-        </a>
+        <div className="slots-page__brand-cluster">
+          <a
+            className="slots-page__brand"
+            href="/"
+            aria-label="Return to the Fortune Forge landing page"
+          >
+            <span className="slots-page__brand-name">Fortune Forge</span>
+          </a>
+          <div className="slots-page__game-identity">
+            <span>{cabinetTheme.eyebrow}</span>
+            <h1>{cabinetTheme.title}</h1>
+            <small>{cabinetTheme.subtitle}</small>
+          </div>
+        </div>
         <span className="slots-page__brand-actions">
             {demoMode ? (
               <a
@@ -300,21 +312,15 @@ export function SlotsPageView(controller: SlotsPageController) {
                 >
                   <strong>Autospin</strong>
                 </button>
-                <button
+                <output
                   className={`slots-page__spin-wager${!useFreeGameForNextSpin ? ' slots-page__spin-wager--selected' : ''}`}
-                  type="button"
-                  aria-pressed={!useFreeGameForNextSpin}
                   aria-label={`${useFreeGameForNextSpin ? 'Locked free spin wager' : 'Wager'}: ${formatRand(activeWagerDisplay)}`}
-                  disabled={isSpinning || isAutoSpinning || useFreeGameForNextSpin}
-                  onClick={() => {
-                    setSpinError(null)
-                  }}
                 >
                   <span className="slots-page__wager-label">
                     {useFreeGameForNextSpin ? 'Free wager' : 'Wager'}
                   </span>
                   <span className="slots-page__wager-value">{formatRand(activeWagerDisplay)}</span>
-                </button>
+                </output>
               </div>
 
               <button
@@ -339,6 +345,19 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
         </div>
       </main>
+
+      {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && (
+        <div
+          key={resultAtmosphereId}
+          className="slots-page__result-atmosphere"
+          data-celebration={cabinetTheme.celebrationEffect}
+          data-outcome={lastSpinOutcome.kind}
+          aria-hidden="true"
+        >
+          <span />
+          <span />
+        </div>
+      )}
 
       {energyFlyover && energyFeature && (
         <img
@@ -451,7 +470,7 @@ export function SlotsPageView(controller: SlotsPageController) {
           key={winAwardFlyover.id}
           className={[
             'slots-page__win-award',
-            winAwardFlyover.isBigWin ? 'slots-page__win-award--big' : '',
+            `slots-page__win-award--${winAwardFlyover.winTier}`,
             winAwardFlyover.isFlying ? 'slots-page__win-award--flying' : '',
           ].filter(Boolean).join(' ')}
           aria-hidden="true"
@@ -463,34 +482,41 @@ export function SlotsPageView(controller: SlotsPageController) {
             '--win-travel-y': `${winAwardFlyover.travelY}px`,
           } as CSSProperties}
         >
-          {winAwardFlyover.isBigWin && <span>Big win</span>}
+          <span>{lastSpinOutcome?.title ?? (winAwardFlyover.winTier === 'big'
+            ? 'Big win'
+            : winAwardFlyover.winTier === 'great'
+              ? 'Great win'
+              : 'Win')}</span>
           <strong>+{formatRand(winAwardFlyover.displayAmount)}</strong>
         </div>
       )}
 
       <footer
-        className={`slots-page__footer${spinError || demoAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
-        aria-live="polite"
+        className={[
+          'slots-page__footer',
+          spinError || demoAvailability === 'unavailable' ? 'slots-page__footer--error' : '',
+          lastSpinOutcome ? `slots-page__footer--${lastSpinOutcome.kind}` : '',
+        ].filter(Boolean).join(' ')}
+        aria-live={isAutoSpinning ? 'off' : 'polite'}
+        aria-atomic="true"
       >
         {demoAvailabilityMessage
           ?? spinError
           ?? (isSpinning
             ? spinStage === 'requesting'
-              ? 'The jewel reels are spinning'
-              : ''
-            : lastFreeSpinsAwarded > 0
-              ? `${lastFreeSpinsAwarded} free games won — ${freeSpinsRemaining} ready`
-              : lastEnergyMultiplierApplied
+              ? `${cabinetTheme.title} reels are spinning`
+              : 'Reels are landing…'
+            : lastSpinOutcome
+              ? `${lastSpinOutcome.title}${lastSpinOutcome.awardRand > 0 ? ` · ${formatRand(lastSpinOutcome.awardRand)} credited` : ''} · ${lastSpinOutcome.nextAction}`
+            : lastEnergyMultiplierApplied
                 ? 'Energy boost ×1.5 — meter reset'
               : lastEnergyAwarded > 0
-                ? ''
+                ? 'Energy collected — spin again when ready.'
               : useFreeGameForNextSpin
-                ? ''
+                ? `${freeSpinsRemaining} free game${freeSpinsRemaining === 1 ? '' : 's'} ready`
             : !canAffordSelectedWager
               ? 'Choose a smaller wager'
-              : lastWin > 0
-                ? `Win ${formatRand(lastWin)}`
-                : '')}
+              : 'Choose a wager, then spin when ready.')}
       </footer>
 
       <AudioSettingsDialog

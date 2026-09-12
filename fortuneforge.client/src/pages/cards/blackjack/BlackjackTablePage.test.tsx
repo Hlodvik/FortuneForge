@@ -56,12 +56,28 @@ describe('Blackjack table composition', () => {
     const markup = render({
       kind: 'ready',
       status,
-      session: { ...tableSession, table: { ...tableSession.table, phase: 'betting', activeSeat: null, legalActions: [] } },
+      session: {
+        ...tableSession,
+        table: {
+          ...tableSession.table,
+          phase: 'betting',
+          activeSeat: null,
+          legalActions: [],
+          seats: tableSession.table.seats.map((seat) => seat.isCurrentPlayer ? {
+            ...seat,
+            outcome: 'player-win',
+            payout: 10,
+          } : seat),
+        },
+      },
     })
 
     expect(markup).toContain('blackjack-dealer__idle')
     expect(markup).not.toContain('ff-card-slot')
     expect(markup).toContain('Round wager')
+    expect(markup).toContain('Winning round')
+    expect(markup).toContain('Payout R10.00')
+    expect(markup).toContain('Choose a wager for the next round when ready.')
   })
 
   it('renders server-projected split hands and only the current player timer', () => {

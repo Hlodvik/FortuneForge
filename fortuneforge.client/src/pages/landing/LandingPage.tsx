@@ -1,10 +1,4 @@
 import { useEffect } from 'react'
-import celestialStaff from '../../assets/slots/symbols/wukong/celestial-staff.png'
-import immortalityPeach from '../../assets/slots/symbols/wukong/immortality-peach.png'
-import jadeDragonPearl from '../../assets/slots/symbols/wukong/jade-dragon-pearl.png'
-import wukongMedallion from '../../assets/slots/symbols/wukong/wukong-medallion.png'
-import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
-import { WUKONG_MASCOT } from '../../games/slots/wukong/mascot'
 import { useOptionalAccountSession } from '../../features/account/useOptionalAccountSession'
 import '../index.css'
 
@@ -53,11 +47,11 @@ export function LandingPage() {
             </p>
             <h1 id="landing-title">
               Find your fortune
-              <span>above the clouds.</span>
+              <span>your way.</span>
             </h1>
             <p className="landing-hero__lede">
-              Step into a jewel-bright world of celestial treasures and a fearless little Wukong who
-              celebrates every spin right beside you.
+              Step into a jewel-bright collection of slots, card tables, and arcade games built for a
+              quick play or a long night.
             </p>
 
             <div className="landing-hero__actions">
@@ -81,60 +75,6 @@ export function LandingPage() {
             </p>
 
           </div>
-
-          <div
-            className="landing-showcase"
-            role="img"
-            aria-label="Wukong standing on a Nimbus cloud surrounded by celestial treasure symbols"
-          >
-            <div className="landing-showcase__halo" />
-            <div className="landing-showcase__orbit landing-showcase__orbit--outer" />
-            <div className="landing-showcase__orbit landing-showcase__orbit--inner" />
-
-            <img
-              className="landing-showcase__fruit landing-showcase__fruit--apple"
-              src={wukongMedallion}
-              alt=""
-              aria-hidden="true"
-              draggable="false"
-            />
-            <img
-              className="landing-showcase__fruit landing-showcase__fruit--cherry"
-              src={celestialStaff}
-              alt=""
-              aria-hidden="true"
-              draggable="false"
-            />
-            <img
-              className="landing-showcase__fruit landing-showcase__fruit--grape"
-              src={jadeDragonPearl}
-              alt=""
-              aria-hidden="true"
-              draggable="false"
-            />
-            <img
-              className="landing-showcase__fruit landing-showcase__fruit--watermelon"
-              src={immortalityPeach}
-              alt=""
-              aria-hidden="true"
-              draggable="false"
-            />
-
-            <MascotCompanion
-              variant="showcase"
-              className="landing-showcase__companion"
-              mascotSet={WUKONG_MASCOT}
-            />
-
-            <div className="landing-showcase__badge landing-showcase__badge--top">
-              <span aria-hidden="true">✦</span>
-              <span><strong>Fortune found</strong>Wukong is ready</span>
-            </div>
-            <div className="landing-showcase__badge landing-showcase__badge--bottom">
-              <strong>Public preview</strong>
-              <span>Account creation is open</span>
-            </div>
-          </div>
         </section>
 
         <section className="landing-invite" aria-labelledby="invite-title">
@@ -142,7 +82,7 @@ export function LandingPage() {
             <p className="landing-invite__eyebrow">
               {isCheckingSession
                 ? 'Restoring your session'
-                : 'The clouds are calling'}
+                : 'Your seat is waiting'}
             </p>
             <h2 id="invite-title">
               {isCheckingSession

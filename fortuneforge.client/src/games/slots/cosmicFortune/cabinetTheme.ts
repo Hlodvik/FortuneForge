@@ -8,6 +8,7 @@ export const COSMIC_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'Cosmic Fortune',
   subtitle: 'Launch Beyond the Lucky Stars',
+  celebrationEffect: 'cosmic-streak',
   emblemImage: art.emblem,
   accentImage: art.accent,
   backdropImage: art.backdrop,

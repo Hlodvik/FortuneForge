@@ -10,6 +10,7 @@ export const HIGH_NOON_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
   eyebrow: 'Fortune Forge presents',
   title: 'High Noon Fortune',
   subtitle: 'Round Up the Frontier Gold',
+  celebrationEffect: 'frontier-dust',
   emblemImage: highNoonEmblem,
   accentImage: turquoiseJewel,
   backdropImage: westernTown,

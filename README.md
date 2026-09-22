@@ -12,6 +12,8 @@
 - `fortuneforge.client/src/app` owns browser routing and shell composition; `features` owns account, payment, game-library, and slot workflows; `components` contains cross-feature presentation.
 - `tools/FortuneForge.SlotMath` is the deterministic slot-math analysis console, while `scripts` contains asset and deployment automation.
 
+See [docs/BRANCH_WORKFLOW.md](docs/BRANCH_WORKFLOW.md) before starting or integrating parallel work. Run `./scripts/audit-worktrees.ps1` to find dirty worktrees and local branches that are not yet represented in `origin/main`.
+
 ## Local development
 
 FortuneForge's local Development profile uses only a disposable Firestore emulator project. It automatically authenticates API requests that do not already supply a session as **Local Player** with R10,000 in test credits. You can also use the normal sign-in screen with `local.player@fortuneforge.test` and `FortuneForgeLocal!`. This account and its data never connect to the production Firestore project, and the bypass cannot activate outside the ASP.NET Development environment.

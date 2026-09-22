@@ -20,6 +20,7 @@ coverage/
 
 # Generated local captures and temporary analysis output
 /artifacts/
+**/.artifacts/
 /tmp/
 
 # Logs and local process output

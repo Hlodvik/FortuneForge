@@ -35,3 +35,5 @@ dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configu
 ```
 
 Recovery branches prefixed with `salvage/` are evidence snapshots, not integration targets. Keep them until the consolidated branch has been reviewed and pushed. Then archive or delete them deliberately rather than merging them into `main`.
+
+The decisions and verification for the current cleanup are recorded in [CONSOLIDATION_2026-09-22.md](CONSOLIDATION_2026-09-22.md).

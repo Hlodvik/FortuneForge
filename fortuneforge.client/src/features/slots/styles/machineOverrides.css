@@ -283,6 +283,45 @@
   stroke: none;
 }
 
+.spin-button--pirate-helm .spin-button__icon {
+  width: 96%;
+  height: 96%;
+  filter: drop-shadow(0 0.12rem 0.16rem rgb(25 6 1 / 74%));
+}
+
+.spin-button__helm-rim {
+  stroke: #f9d67f;
+  stroke-width: 32;
+}
+
+.spin-button__helm-inner-rim {
+  stroke: #71320d;
+  stroke-width: 9;
+}
+
+.spin-button__helm-spoke {
+  stroke: #f1bd55;
+  stroke-width: 21;
+}
+
+.spin-button__helm-handle {
+  fill: #a95b23;
+  stroke: #ffe19a;
+  stroke-width: 9;
+}
+
+.spin-button__helm-hub {
+  fill: #6f3411;
+  stroke: #f7cf70;
+  stroke-width: 16;
+}
+
+.spin-button__helm-boss {
+  fill: #fff0ae;
+  stroke: #8c4215;
+  stroke-width: 8;
+}
+
 .spin-button__stop-icon {
   fill: currentColor;
   stroke: none;
@@ -344,6 +383,263 @@
 .spin-button--stopping .spin-button__label {
   font-size: clamp(0.42rem, 0.62vw, 0.54rem);
   letter-spacing: 0.045em;
+}
+
+/* Pirates' Fortune keeps a physical, wooden cabinet while the other games use
+   the slimmer shared reel frame. Equal visual padding keeps the first and
+   fifth columns perfectly balanced inside the brass window. */
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] {
+  width: min(94%, 76rem);
+  aspect-ratio: 1.7 / 1;
+  overflow: visible;
+  border: clamp(0.24rem, 0.48vw, 0.42rem) solid #d99b3c;
+  border-radius: clamp(0.88rem, 1.75vw, 1.5rem);
+  background:
+    radial-gradient(circle at 12% 18%, rgb(255 229 162 / 28%) 0 0.055rem, transparent 0.12rem) 0 0 / 1.7rem 1.45rem,
+    radial-gradient(circle at 77% 63%, rgb(255 205 103 / 20%) 0 0.065rem, transparent 0.14rem) 0 0 / 2.25rem 1.9rem,
+    repeating-linear-gradient(173deg, rgb(255 207 111 / 12%) 0 0.08rem, transparent 0.11rem 0.6rem),
+    linear-gradient(115deg, #6c3310 0%, #351506 46%, #7a3b12 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 234 172 / 72%),
+    inset 0.22rem 0.22rem 0.48rem rgb(255 222 147 / 30%),
+    inset -0.28rem -0.32rem 0.56rem rgb(17 5 1 / 70%),
+    0 0.75rem 1.5rem rgb(16 5 1 / 52%);
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1']::before {
+  position: absolute;
+  z-index: 0;
+  inset: clamp(0.4rem, 0.8vw, 0.7rem);
+  display: block;
+  border: clamp(0.11rem, 0.23vw, 0.2rem) solid rgb(255 224 146 / 72%);
+  border-radius: clamp(0.55rem, 1.15vw, 1rem);
+  background:
+    linear-gradient(90deg, rgb(255 221 149 / 18%), transparent 8% 92%, rgb(0 0 0 / 34%)),
+    linear-gradient(180deg, #2f1608 0%, #120703 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(55 22 5 / 76%),
+    inset 0 0.22rem 0.42rem rgb(0 0 0 / 54%);
+  content: '';
+  pointer-events: none;
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1']::after {
+  position: absolute;
+  z-index: -1;
+  right: 7%;
+  bottom: -7%;
+  left: 7%;
+  display: block;
+  height: 16%;
+  border-radius: 50%;
+  background: rgb(18 5 1 / 58%);
+  filter: blur(0.65rem);
+  content: '';
+  pointer-events: none;
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] .slot-game-frame__visuals {
+  padding: clamp(0.76rem, 1.35vw, 1.22rem) clamp(0.92rem, 1.85vw, 1.62rem);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] .slot-machine__playfield {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] .slot-machine__reels {
+  overflow: hidden;
+  border: clamp(0.1rem, 0.22vw, 0.18rem) solid rgb(230 177 77 / 78%);
+  border-radius: clamp(0.38rem, 0.8vw, 0.7rem);
+  background:
+    linear-gradient(90deg, rgb(255 214 130 / 12%), transparent 9% 91%, rgb(0 0 0 / 26%)),
+    linear-gradient(180deg, #143c36 0%, #082720 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(8 26 20 / 82%),
+    inset 0 0.26rem 0.5rem rgb(0 0 0 / 45%);
+}
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] .slot-reel {
+  border-right-color: rgb(255 225 157 / 38%);
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button {
+  cursor: pointer;
+  border-color: #ffe0a1;
+  background:
+    radial-gradient(circle at 50% 50%, #f5d078 0 8%, #583013 9% 25%, transparent 26%),
+    repeating-conic-gradient(from -4deg, #d99b3c 0 7deg, #6c3210 8deg 29deg, #f0c65c 30deg 37deg, #4b1d07 38deg 45deg),
+    linear-gradient(145deg, #7c3d15, #301003);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(47 17 4 / 70%),
+    inset 0.14rem 0.14rem 0.26rem rgb(255 228 155 / 36%),
+    0 0 0 1px rgb(255 223 141 / 42%),
+    0 0.46rem 0.78rem rgb(20 6 1 / 58%);
+  color: #fff1c5;
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button:hover:not(:disabled),
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button:focus-visible {
+  background:
+    radial-gradient(circle at 50% 50%, #fff0b8 0 9%, #74421b 10% 26%, transparent 27%),
+    repeating-conic-gradient(from -4deg, #efbd4e 0 7deg, #7c3b13 8deg 29deg, #ffe090 30deg 37deg, #552208 38deg 45deg),
+    linear-gradient(145deg, #955022, #3c1304);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(62 21 4 / 70%),
+    inset 0.14rem 0.14rem 0.3rem rgb(255 237 178 / 46%),
+    0 0 0 1px rgb(255 231 159 / 68%),
+    0 0 1.05rem rgb(222 161 48 / 48%),
+    0 0.46rem 0.78rem rgb(20 6 1 / 58%);
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button--active:not(.spin-button--stopping) {
+  border-color: #ffce60;
+  background:
+    radial-gradient(circle at 50% 50%, #ffe69b 0 8%, #91451a 9% 25%, transparent 26%),
+    repeating-conic-gradient(from -4deg, #d56722 0 7deg, #5b1c08 8deg 29deg, #f5a436 30deg 37deg, #3d1003 38deg 45deg),
+    linear-gradient(145deg, #7c250d, #2e0902);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(64 17 3 / 76%),
+    0 0 0 1px rgb(255 205 91 / 56%),
+    0 0 1rem rgb(230 117 27 / 56%),
+    0 0.46rem 0.78rem rgb(20 6 1 / 58%);
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button--stopping {
+  border-color: #fff0b2;
+  color: #fff8d9;
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .spin-button:disabled {
+  cursor: not-allowed;
+}
+
+/* A carved temple cabinet gives Gods of Olympus a distinct physical machine,
+   while equal inset values keep all five reels centred in its gold-framed nave. */
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] {
+  width: min(95%, 78rem);
+  aspect-ratio: 1.66 / 1;
+  overflow: visible;
+  border: clamp(0.2rem, 0.44vw, 0.38rem) solid #e6b642;
+  border-radius: clamp(0.9rem, 1.9vw, 1.55rem) clamp(0.9rem, 1.9vw, 1.55rem) clamp(0.48rem, 1.1vw, 0.9rem);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgb(255 243 180 / 38%), transparent 42%),
+    repeating-linear-gradient(118deg, rgb(255 255 255 / 12%) 0 0.1rem, transparent 0.13rem 1.3rem),
+    linear-gradient(132deg, #6d7197 0%, #303557 42%, #181a39 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 247 203 / 68%),
+    inset 0.26rem 0.28rem 0.55rem rgb(255 255 255 / 24%),
+    inset -0.32rem -0.34rem 0.64rem rgb(7 9 29 / 72%),
+    0 0.85rem 1.7rem rgb(7 8 31 / 54%);
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1']::before {
+  position: absolute;
+  z-index: 0;
+  inset: clamp(0.38rem, 0.82vw, 0.72rem);
+  display: block;
+  border: clamp(0.1rem, 0.22vw, 0.18rem) solid rgb(255 227 142 / 74%);
+  border-radius: clamp(0.62rem, 1.3vw, 1.08rem) clamp(0.62rem, 1.3vw, 1.08rem) clamp(0.32rem, 0.7vw, 0.54rem);
+  background:
+    linear-gradient(90deg, rgb(255 242 188 / 16%), transparent 7% 93%, rgb(2 4 20 / 32%)),
+    linear-gradient(180deg, #3c4275 0%, #1b1d44 55%, #10112c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(27 29 64 / 78%),
+    inset 0 0.3rem 0.5rem rgb(0 0 0 / 44%);
+  content: '';
+  pointer-events: none;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1']::after {
+  position: absolute;
+  z-index: -1;
+  right: 8%;
+  bottom: -7%;
+  left: 8%;
+  display: block;
+  height: 15%;
+  border-radius: 50%;
+  background: rgb(5 6 28 / 58%);
+  filter: blur(0.66rem);
+  content: '';
+  pointer-events: none;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-game-frame__visuals {
+  padding: clamp(0.74rem, 1.3vw, 1.16rem) clamp(0.94rem, 1.8vw, 1.58rem);
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-machine__playfield {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-machine__reels {
+  overflow: hidden;
+  border: clamp(0.1rem, 0.22vw, 0.18rem) solid rgb(246 211 112 / 82%);
+  border-radius: clamp(0.38rem, 0.82vw, 0.7rem);
+  background:
+    radial-gradient(ellipse at 50% -20%, rgb(89 184 255 / 22%), transparent 56%),
+    linear-gradient(180deg, #1b5274 0%, #142f58 48%, #101642 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(12 27 66 / 88%),
+    inset 0 0.28rem 0.52rem rgb(0 0 0 / 45%);
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-reel {
+  border-right-color: rgb(255 237 180 / 36%);
+}
+
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .spin-button {
+  cursor: pointer;
+  border-color: #fff1a3;
+  background:
+    radial-gradient(circle at 50% 50%, #fff2a9 0 8%, #c58d20 9% 22%, #3b367c 23% 34%, transparent 35%),
+    repeating-conic-gradient(from 0deg, #e6b642 0 8deg, #4b438e 9deg 29deg, #f6d76e 30deg 38deg, #252355 39deg 46deg),
+    linear-gradient(145deg, #5e59a4, #1d1b49);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(29 25 79 / 74%),
+    inset 0.14rem 0.14rem 0.3rem rgb(255 246 189 / 42%),
+    0 0 0 1px rgb(255 233 142 / 46%),
+    0 0.48rem 0.8rem rgb(6 7 35 / 58%);
+  color: #fff9df;
+}
+
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .spin-button:hover:not(:disabled),
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .spin-button:focus-visible {
+  background:
+    radial-gradient(circle at 50% 50%, #fffbd2 0 9%, #e0a82c 10% 23%, #5b55ad 24% 35%, transparent 36%),
+    repeating-conic-gradient(from 0deg, #ffd862 0 8deg, #5d56b3 9deg 29deg, #fff0a5 30deg 38deg, #302b76 39deg 46deg),
+    linear-gradient(145deg, #7069c0, #25205e);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(35 30 92 / 76%),
+    inset 0.14rem 0.14rem 0.32rem rgb(255 249 210 / 56%),
+    0 0 0 1px rgb(255 242 177 / 68%),
+    0 0 1.08rem rgb(255 213 87 / 52%),
+    0 0.48rem 0.8rem rgb(6 7 35 / 58%);
+}
+
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .spin-button--active:not(.spin-button--stopping) {
+  border-color: #94ddff;
+  background:
+    radial-gradient(circle at 50% 50%, #f8f5bf 0 8%, #69c8ff 9% 23%, #303782 24% 35%, transparent 36%),
+    repeating-conic-gradient(from 0deg, #65c8ff 0 8deg, #353682 9deg 29deg, #d6f6ff 30deg 38deg, #1d215b 39deg 46deg),
+    linear-gradient(145deg, #3d70b2, #181b58);
+  box-shadow:
+    inset 0 0 0 0.14rem rgb(23 26 83 / 76%),
+    0 0 0 1px rgb(157 224 255 / 56%),
+    0 0 1.08rem rgb(86 193 255 / 60%),
+    0 0.48rem 0.8rem rgb(6 7 35 / 58%);
+}
+
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .spin-button:disabled {
+  cursor: not-allowed;
 }
 
 @keyframes winning-symbol-shell {
@@ -408,6 +704,24 @@
 
   .spin-button {
     width: clamp(3.8rem, 17vw, 5rem);
+  }
+
+  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slot-game-frame {
+    width: min(96%, 34rem);
+    aspect-ratio: 1.4 / 1;
+  }
+
+  .slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1'] .slot-game-frame__visuals {
+    padding: clamp(0.48rem, 2vw, 0.72rem);
+  }
+
+  .slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .slot-game-frame {
+    width: min(96%, 34rem);
+    aspect-ratio: 1.4 / 1;
+  }
+
+  .slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-game-frame__visuals {
+    padding: clamp(0.48rem, 2vw, 0.72rem);
   }
 }
 

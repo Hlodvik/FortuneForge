@@ -5,12 +5,27 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node ./scripts/verify-current-catalog-build.mjs",
     "lint": "oxlint",
     "test": "vitest run",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortuneforge/games-asteroids": "file:../packages/client/fortuneforge-games-asteroids-0.1.0.tgz",
+    "@fortuneforge/games-2048": "file:../packages/client/fortuneforge-games-2048-0.1.0.tgz",
+    "@fortuneforge/games-baccarat": "file:../packages/client/fortuneforge-games-baccarat-0.1.9.tgz",
+    "@fortuneforge/games-casino-war": "file:../packages/client/fortuneforge-games-casino-war-0.1.8.tgz",
+    "@fortuneforge/games-craps": "file:../packages/client/fortuneforge-games-craps-0.1.0.tgz",
+    "@fortuneforge/games-drop-merge": "file:../packages/client/fortuneforge-games-drop-merge-0.1.0.tgz",
+    "@fortuneforge/games-flappy": "file:../packages/client/fortuneforge-games-flappy-0.1.1.tgz",
+    "@fortuneforge/games-horse-flight": "file:../packages/client/fortuneforge-games-horse-flight-0.1.25.tgz",
+    "@fortuneforge/games-snake": "file:../packages/client/fortuneforge-games-snake-0.1.0.tgz",
+    "@fortuneforge/games-hearts": "file:../packages/client/fortuneforge-games-hearts-0.1.0.tgz",
+    "@fortuneforge/games-liars-dice": "file:../packages/client/fortuneforge-games-liars-dice-0.1.0.tgz",
+    "@fortuneforge/games-roulette": "file:../packages/client/fortuneforge-games-roulette-0.1.0.tgz",
+    "@fortuneforge/games-keno": "file:../packages/client/fortuneforge-games-keno-0.1.7.tgz",
+    "@fortuneforge/games-sic-bo": "file:../packages/client/fortuneforge-games-sic-bo-0.1.7.tgz",
+    "@fortuneforge/games-video-poker": "file:../packages/client/fortuneforge-games-video-poker-0.1.12.tgz",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },

@@ -4,9 +4,15 @@ import { loadSlotGameCatalogById } from './catalogLoaders'
 import type { SlotGameCatalogEntry } from './catalogTypes'
 import { findSlotRouteByServerId } from './routeRegistry'
 
+type PlayedSlotGame = {
+  game: SlotGameCatalogEntry
+  playedAtUtc: string
+}
+
 type RecentSlotGameState = {
   error: string | null
   game: SlotGameCatalogEntry | null
+  games: readonly PlayedSlotGame[]
   isLoading: boolean
   playedAtUtc: string | null
 }
@@ -17,28 +23,42 @@ export function useRecentSlotGame(userId: string | undefined): RecentSlotGameSta
   const [state, setState] = useState<RecentSlotGameState>({
     error: null,
     game: null,
+    games: [],
     isLoading: userId !== undefined,
     playedAtUtc: null,
   })
 
   useEffect(() => {
     if (userId === undefined) {
-      setState({ error: null, game: null, isLoading: false, playedAtUtc: null })
+      setState({ error: null, game: null, games: [], isLoading: false, playedAtUtc: null })
       return undefined
     }
 
     let isActive = true
-    setState({ error: null, game: null, isLoading: true, playedAtUtc: null })
-    void getSlotHistory(1)
+    setState({ error: null, game: null, games: [], isLoading: true, playedAtUtc: null })
+    void getSlotHistory(100)
       .then(async ({ spins }) => {
-        const route = spins[0] === undefined ? null : findSlotRouteByServerId(spins[0].gameId)
-        const game = route === null ? null : await loadSlotGameCatalogById(route.id)
+        const seenGameIds = new Set<string>()
+        const playedRoutes = spins.flatMap((spin) => {
+          const route = findSlotRouteByServerId(spin.gameId)
+          if (route === null || seenGameIds.has(route.id)) return []
+          seenGameIds.add(route.id)
+          return [{ playedAtUtc: spin.createdAtUtc, routeId: route.id }]
+        })
+        const loadedGames = await Promise.all(playedRoutes.map(async ({ playedAtUtc, routeId }) => ({
+          game: await loadSlotGameCatalogById(routeId),
+          playedAtUtc,
+        })))
+        const games = loadedGames.flatMap(({ game, playedAtUtc }) =>
+          game === null ? [] : [{ game, playedAtUtc }],
+        )
         if (isActive) {
           setState({
             error: null,
-            game,
+            game: games[0]?.game ?? null,
+            games,
             isLoading: false,
-            playedAtUtc: spins[0]?.createdAtUtc ?? null,
+            playedAtUtc: games[0]?.playedAtUtc ?? null,
           })
         }
       })
@@ -47,6 +67,7 @@ export function useRecentSlotGame(userId: string | undefined): RecentSlotGameSta
           setState({
             error: error instanceof Error ? error.message : 'Recent play could not be loaded.',
             game: null,
+            games: [],
             isLoading: false,
             playedAtUtc: null,
           })

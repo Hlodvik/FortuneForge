@@ -6,7 +6,7 @@ export const COSMIC_FORTUNE_CATALOG: SlotGameCatalogDefinition = {
   title: 'Cosmic Fortune',
   shortTitle: 'Cosmic Fortune',
   description: 'Launch through the lucky stars, assemble four planetary orbits, and sweep up dark-matter prizes.',
-  image: art.emblem,
+  image: art.rocket,
   imagePresentation: 'contain',
   slotDivBackgroundImage: art.backdrop,
 }

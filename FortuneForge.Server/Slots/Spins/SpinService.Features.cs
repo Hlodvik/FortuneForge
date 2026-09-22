@@ -16,7 +16,7 @@ public sealed partial class SpinService
         long currentEnergyBalance,
         string? freeSpinFeatureMode)
     {
-        if (!string.Equals(game.Id, WukongGameId, StringComparison.Ordinal))
+        if (!SlotSpecialRoundProfiles.TryGet(game.Id, out var profile))
         {
             return outcome;
         }
@@ -25,14 +25,15 @@ public sealed partial class SpinService
             .Select(reel => reel.ToArray())
             .ToArray();
 
-        if (string.Equals(freeSpinFeatureMode, SyncedReelsFeatureMode, StringComparison.Ordinal))
+        if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, SyncedReelsFeatureMode))
         {
             var sourceReel = random.Next(reels.Length);
             var destinationReel = (sourceReel + 1 + random.Next(reels.Length - 1)) % reels.Length;
             reels[destinationReel] = reels[sourceReel].ToArray();
         }
 
-        if (string.Equals(freeSpinFeatureMode, RandColumnFeatureMode, StringComparison.Ordinal))
+        if (profile.UsesDirectValueTokens &&
+            SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, RandColumnFeatureMode))
         {
             var reel = random.Next(reels.Length);
             for (var row = 0; row < reels[reel].Length; row++)
@@ -40,15 +41,29 @@ public sealed partial class SpinService
                 reels[reel][row] = PickRandSymbol();
             }
         }
-        else
+        else if (profile.UsesDirectValueTokens)
         {
-            var moneyCount = RollMoneySymbolCount();
+            var moneyCount = RollMoneySymbolCount(game.Id);
             InjectSymbols(reels, moneyCount, PickRandSymbol);
         }
+        else if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, RandColumnFeatureMode))
+        {
+            FillWildReel(reels);
+        }
 
-        InjectSymbols(reels, RollMonkeyPawCount(freeSpinFeatureMode), () => MonkeyPawSymbolId);
+        if (profile.UsesDirectValueTokens)
+        {
+            InjectSymbols(reels, RollMonkeyPawCount(freeSpinFeatureMode), () => MonkeyPawSymbolId);
+        }
+        else if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
+        {
+            InjectSymbols(reels, 2, () => "ACE");
+        }
         InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
-        InjectSymbols(reels, RollSealCount(currentEnergyBalance), PickSealSymbol);
+        if (profile.UsesCollections)
+        {
+            InjectSymbols(reels, RollSealCount(game.Id, currentEnergyBalance), PickSealSymbol);
+        }
 
         return outcome with
         {
@@ -62,7 +77,8 @@ public sealed partial class SpinService
         GameDefinition game,
         string? freeSpinFeatureMode)
     {
-        if (!string.Equals(freeSpinFeatureMode, ExtraRowsFeatureMode, StringComparison.Ordinal))
+        SlotSpecialRoundProfiles.TryGet(game.Id, out var profile);
+        if (!SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, ExtraRowsFeatureMode))
         {
             return game;
         }
@@ -80,7 +96,9 @@ public sealed partial class SpinService
             Matching = game.Matching,
             Math = game.Math,
             Wagering = game.Wagering,
-            FreeGames = game.FreeGames,
+            FreeGames = game.FreeGames is null || profile is null
+                ? game.FreeGames
+                : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,
             Energy = game.Energy,
             Paylines = game.Paylines
@@ -89,7 +107,7 @@ public sealed partial class SpinService
 
     private int RollMonkeyPawCount(string? freeSpinFeatureMode)
     {
-        if (string.Equals(freeSpinFeatureMode, PawBoostFeatureMode, StringComparison.Ordinal))
+        if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
         {
             return random.Next(6) switch
             {
@@ -107,14 +125,32 @@ public sealed partial class SpinService
         return random.Next(14) == 0 ? 1 : 0;
     }
 
-    private int RollMoneySymbolCount() =>
-        random.Next(100) switch
+    private int RollMoneySymbolCount(string gameId) =>
+        GetMoneySymbolCountForRoll(gameId, random.Next(100));
+
+    internal static int GetMoneySymbolCountForRoll(string gameId, int roll)
+    {
+        var normalizedRoll = Math.Clamp(roll, 0, 99);
+        if (string.Equals(gameId, SlotSpecialRoundProfiles.PiratesFortuneGameId, StringComparison.Ordinal))
+        {
+            // Fifteen-gem chests and twice-common gems make Broadside Runs much
+            // more frequent, so direct doubloon tokens stay deliberately rare.
+            return normalizedRoll switch
+            {
+                < 91 => 0,
+                < 99 => 1,
+                _ => 2
+            };
+        }
+
+        return normalizedRoll switch
         {
             < 20 => 0,
             < 80 => 1,
             < 96 => 2,
             _ => 3
         };
+    }
 
     private int RollBananaCount() =>
         random.Next(100) switch
@@ -125,22 +161,47 @@ public sealed partial class SpinService
             _ => 3
         };
 
-    private int RollSealCount(long currentEnergyBalance)
+    private int RollSealCount(string gameId, long currentEnergyBalance)
     {
-        var chance = currentEnergyBalance switch
+        if (random.Next(100) >= GetSealAppearanceChance(gameId, currentEnergyBalance))
+        {
+            return 0;
+        }
+
+        return random.Next(25) == 0 ? 2 : 1;
+    }
+
+    internal static int GetSealCountForRoll(
+        string gameId,
+        long currentEnergyBalance,
+        int appearanceRoll,
+        int extraSealRoll)
+    {
+        if (Math.Clamp(appearanceRoll, 0, 99) >= GetSealAppearanceChance(gameId, currentEnergyBalance))
+        {
+            return 0;
+        }
+
+        return Math.Clamp(extraSealRoll, 0, 24) == 0 ? 2 : 1;
+    }
+
+    internal static int GetSealAppearanceChance(string gameId, long currentEnergyBalance)
+    {
+        if (string.Equals(gameId, SlotSpecialRoundProfiles.PiratesFortuneGameId, StringComparison.Ordinal))
+        {
+            // Pirates has no energy meter. Its 50% fixed gem chance keeps the
+            // smaller fifteen-gem chests meaningfully faster than the previous
+            // twenty-two-gem setup while keeping the feature RTP sustainable.
+            return 50;
+        }
+
+        return currentEnergyBalance switch
         {
             >= 75 => 67,
             >= 50 => 50,
             >= 25 => 40,
             _ => 33
         };
-
-        if (random.Next(100) >= chance)
-        {
-            return 0;
-        }
-
-        return random.Next(25) == 0 ? 2 : 1;
     }
 
     private void InjectSymbols(
@@ -157,6 +218,15 @@ public sealed partial class SpinService
             }
 
             reels[position.Value.Reel][position.Value.Row] = symbolFactory();
+        }
+    }
+
+    private void FillWildReel(IReadOnlyList<string[]> reels)
+    {
+        var reel = reels[random.Next(reels.Count)];
+        for (var row = 0; row < reel.Length; row++)
+        {
+            reel[row] = "ACE";
         }
     }
 

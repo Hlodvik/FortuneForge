@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { WUKONG_TREASURES_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
@@ -57,7 +57,7 @@ export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'default-clouds',
   symbols: WUKONG_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  sounds: WUKONG_TREASURES_SOUNDS,
   rules: createSlotRulesSet('classic-demo-v1'),
 }
 

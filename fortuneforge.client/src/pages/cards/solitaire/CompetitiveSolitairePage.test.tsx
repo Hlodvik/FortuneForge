@@ -180,6 +180,19 @@ describe('Solitaire presentation', () => {
     expect(markup).not.toContain('Game complete')
   })
 
+  it('keeps a failed authoritative submission retryable', () => {
+    const markup = render(
+      { kind: 'ready', session: { kind: 'idle' } },
+      {
+        freeGame: createLocalSolitaireGame(42, 3),
+        freeSubmissionError: 'The run could not be saved.',
+      },
+    )
+    expect(markup).toContain('The run could not be saved.')
+    expect(markup).toContain('Retry submission')
+    expect(markup).not.toContain('Game complete')
+  })
+
   it('opens a new-game draw chooser and retains Turn 1', () => {
     const markup = render(
       { kind: 'ready', session: { kind: 'idle' } },
@@ -213,6 +226,8 @@ function render(
     freePaused: false,
     freeComplete: false,
     freeAutoWinning: false,
+    freeSubmitting: false,
+    freeSubmissionError: null,
     freeSetupOpen: false,
     competitiveSetupMatchId: null,
     freeElapsedMilliseconds: 0,

@@ -5,6 +5,8 @@ using FortuneForge.Server.Cards.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.Cards.Solitaire.Bots;
 using FortuneForge.Server.Cards.TexasHoldem.Bots;
+using FortuneForge.Server.Bots;
+using FortuneForge.Server.Matchmaking.QueueBotScheduling;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Mvc;
 using Xunit;
@@ -46,10 +48,12 @@ public sealed class CardBotSafetyTests
         var now = DateTime.UnixEpoch;
         var queue = new HumanFirstBotQueue(
             "queue", CardBotGames.Blackjack, 3, now, TimeSpan.FromSeconds(5), 2, 3, 10);
-        var identities = new BotIdentityFactory();
+        var identities = Identities();
+        var scheduler = Scheduler();
+        var policy = QueuePolicy(initialWaitSeconds: 5);
         queue.AddHuman("human-a", "HumanA", now);
 
-        Assert.Null(queue.TryStart(now.AddSeconds(4), identities));
+        Assert.Null(queue.TryStart(now.AddSeconds(4), identities, scheduler, policy));
         var reserved = queue.ReserveBots(now.AddSeconds(5), identities);
         Assert.Equal(2, reserved.Count(seat => seat.IsBot));
         AssertPublicJsonIsAutomationNeutral(queue.ToDto());
@@ -58,7 +62,7 @@ public sealed class CardBotSafetyTests
         reserved = queue.ReserveBots(now.AddSeconds(6), identities);
         Assert.Single(reserved, seat => seat.IsBot);
         queue.AddHuman("human-c", "HumanC", now.AddSeconds(6));
-        var started = queue.TryStart(now.AddSeconds(6), identities);
+        var started = queue.TryStart(now.AddSeconds(6), identities, scheduler, policy);
 
         Assert.NotNull(started);
         Assert.All(started!, seat => Assert.False(seat.IsBot));
@@ -218,16 +222,17 @@ public sealed class CardBotSafetyTests
     {
         var now = DateTime.UnixEpoch;
         var options = Enabled();
+        options.QueueScheduler.MaximumHumanWaitMilliseconds = 120_000;
         options.Blackjack.HumanWaitGraceMilliseconds = 60_000;
         options.Solitaire.HumanWaitGraceMilliseconds = 60_000;
         options.TexasHoldem.HumanWaitGraceMilliseconds = 60_000;
 
         var blackjack = new BlackjackBotPracticeService(
-            new BotIdentityFactory(), new BlackjackBotAgent(), new InMemoryBotTurnLeaseStore(), Options.Create(options));
+            Identities(), new BlackjackBotAgent(), new InMemoryBotTurnLeaseStore(), Scheduler(), Options.Create(options));
         var solitaire = new SolitaireBotPracticeService(
-            new BotIdentityFactory(), new SolitaireBotAgent(), new InMemoryBotTurnLeaseStore(), Options.Create(options));
+            Identities(), new SolitaireBotAgent(), new InMemoryBotTurnLeaseStore(), Scheduler(), Options.Create(options));
         var holdem = new TexasHoldemBotPracticeService(
-            new BotIdentityFactory(), new TexasHoldemBotAgent(), new InMemoryBotTurnLeaseStore(), Options.Create(options));
+            Identities(), new TexasHoldemBotAgent(), new InMemoryBotTurnLeaseStore(), Scheduler(), Options.Create(options));
 
         var responses = new object[]
         {
@@ -364,22 +369,47 @@ public sealed class CardBotSafetyTests
     }
 
     private static BlackjackBotPracticeService BlackjackService() => new(
-        new BotIdentityFactory(),
+        Identities(),
         new BlackjackBotAgent(),
         new InMemoryBotTurnLeaseStore(),
+        Scheduler(),
         Options.Create(Enabled()));
 
     private static SolitaireBotPracticeService SolitaireService() => new(
-        new BotIdentityFactory(),
+        Identities(),
         new SolitaireBotAgent(),
         new InMemoryBotTurnLeaseStore(),
+        Scheduler(),
         Options.Create(Enabled()));
 
     private static TexasHoldemBotPracticeService HoldemService() => new(
-        new BotIdentityFactory(),
+        Identities(),
         new TexasHoldemBotAgent(),
         new InMemoryBotTurnLeaseStore(),
+        Scheduler(),
         Options.Create(Enabled()));
+
+    private static IQueueBotFillScheduler Scheduler() =>
+        new QueueBotFillScheduler(new InMemoryQueueStatisticsEvaluator());
+
+    private static ICardBotIdentityProvider Identities() =>
+        new DirectoryCardBotIdentityProvider(new ConfiguredBotDirectory(new BotDirectoryOptions
+        {
+            Profiles = Enumerable.Range(1, 8).Select(index => new BotProfileOptions
+            {
+                Id = $"test-bot-{index}",
+                DisplayName = $"TestBot{index}",
+                SkillLevel = 2 + index % 3,
+                SupportedGames = [CardBotGames.Blackjack, CardBotGames.Solitaire, CardBotGames.TexasHoldem]
+            }).ToList()
+        }));
+
+    private static QueueBotFillPolicy QueuePolicy(int initialWaitSeconds) => new(
+        MinimumHumanPlayers: 1,
+        MaximumBots: 2,
+        InitialHumanOnlyWait: TimeSpan.FromSeconds(initialWaitSeconds),
+        MaximumHumanWait: TimeSpan.FromSeconds(30),
+        ArrivalSampleWindow: TimeSpan.FromMinutes(1));
 
     private static void AssertRoute<TController>(string expected)
     {

@@ -12,6 +12,13 @@ import {
   stableSolitaireMutation,
   type PendingSolitaireMutation,
 } from '../../../games/cards/solitaire/solitaireApi'
+import {
+  completeSolitaireFreeRun,
+  createSolitaireFreeRunRequestId,
+  startSolitaireFreeRun,
+  type SolitaireFreeReplayCommand,
+  type SolitaireFreeRun,
+} from '../../../games/cards/solitaire/solitaireFreeRunApi'
 import { SolitaireBoard } from '../../../games/cards/solitaire/SolitaireBoard'
 import {
   applyLocalSolitaireCommand,
@@ -22,7 +29,7 @@ import {
   SolitaireRuleError,
 } from '../../../games/cards/solitaire/solitaireEngine'
 import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
-import { freshCardSeed } from '../../../games/cards/shared/cards'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import '../../../games/cards/shared/playingCards.css'
 import { formatDuration } from '../../../games/cards/solitaire/solitaireDisplay'
 import {
@@ -60,6 +67,8 @@ type SolitaireContentProps = Readonly<{
   freePaused: boolean
   freeComplete: boolean
   freeAutoWinning: boolean
+  freeSubmitting: boolean
+  freeSubmissionError: string | null
   freeSetupOpen: boolean
   competitiveSetupMatchId: string | null
   freeElapsedMilliseconds: number
@@ -94,6 +103,11 @@ type QueuedSolitaireCommand = Readonly<{
   idempotencyKey: string
 }>
 
+type FreeHistoryEntry = Readonly<{
+  game: SolitaireGame
+  commands: readonly SolitaireFreeReplayCommand[]
+}>
+
 export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePageProps) {
   const [availability, setAvailability] = useState<SolitaireAvailability>({ kind: 'loading' })
   const [balanceCredits, setBalanceCredits] = useState(account.balances.slotsCredits)
@@ -107,11 +121,16 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const [freePaused, setFreePaused] = useState(false)
   const [freeComplete, setFreeComplete] = useState(false)
   const [freeAutoWinning, setFreeAutoWinning] = useState(false)
+  const [freeSubmitting, setFreeSubmitting] = useState(false)
+  const [freeSubmissionError, setFreeSubmissionError] = useState<string | null>(null)
   const [freeSetupOpen, setFreeSetupOpen] = useState(false)
   const [competitiveSetupMatchId, setCompetitiveSetupMatchId] = useState<string | null>(null)
   const [freeElapsedMilliseconds, setFreeElapsedMilliseconds] = useState(0)
-  const [freeHistory, setFreeHistory] = useState<readonly SolitaireGame[]>([])
-  const [freeSeed, setFreeSeed] = useState<number | null>(null)
+  const [freeHistory, setFreeHistory] = useState<readonly FreeHistoryEntry[]>([])
+  const freeRunRef = useRef<SolitaireFreeRun | null>(null)
+  const freeCommandsRef = useRef<readonly SolitaireFreeReplayCommand[]>([])
+  const freeStartRequestRef = useRef<{ drawCount: SolitaireDrawCount, idempotencyKey: string } | null>(null)
+  const onCardAudioClick = useCardAudioClick()
   const serverMatchRef = useRef<SolitaireMatchSession | null>(null)
   const moveQueueRef = useRef<QueuedSolitaireCommand[]>([])
   const processingMovesRef = useRef(false)
@@ -121,7 +140,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const freeAutoWinGenerationRef = useRef(0)
 
   useEffect(() => {
-    if (freeGame === null || freePaused || freeComplete || freeAutoWinning) return
+    if (freeGame === null || freePaused || freeComplete || freeAutoWinning || freeSubmitting) return
     let previous = Date.now()
     const timer = window.setInterval(() => {
       const now = Date.now()
@@ -129,7 +148,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       previous = now
     }, 250)
     return () => window.clearInterval(timer)
-  }, [freeGame, freePaused, freeComplete, freeAutoWinning])
+  }, [freeGame, freePaused, freeComplete, freeAutoWinning, freeSubmitting])
 
   const loadSession = useCallback(async (quiet = false, signal?: AbortSignal) => {
     if (!quiet) setAvailability({ kind: 'loading' })
@@ -438,26 +457,67 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     `claim:${result.matchId}`,
     (key) => claimSolitaireResult(result.matchId, key),
   )
-  const resetFreeGame = (seed: number, choice: SolitaireDrawCount) => {
+  const resetFreeGame = (run: SolitaireFreeRun) => {
     freeAutoWinGenerationRef.current += 1
-    setFreeSeed(seed)
-    setFreeGame(createLocalSolitaireGame(seed, choice))
+    freeRunRef.current = run
+    freeCommandsRef.current = []
+    setFreeGame(createLocalSolitaireGame(run.seed, run.drawCount))
     setFreePaused(false)
     setFreeComplete(false)
     setFreeAutoWinning(false)
+    setFreeSubmitting(false)
+    setFreeSubmissionError(null)
     setFreeSetupOpen(false)
     setFreeElapsedMilliseconds(0)
     setFreeHistory([])
     setRequestError(null)
   }
-  const startFree = () => resetFreeGame(freshCardSeed(), drawCount)
-  const replayFree = () => resetFreeGame(
-    freeSeed ?? freshCardSeed(),
-    freeGame?.drawCount === 1 ? 1 : 3,
-  )
+  const startFree = async () => {
+    const existing = freeStartRequestRef.current
+    const request = existing?.drawCount === drawCount
+      ? existing
+      : { drawCount, idempotencyKey: createSolitaireFreeRunRequestId() }
+    freeStartRequestRef.current = request
+    setBusy(true)
+    setRequestError(null)
+    try {
+      const run = await startSolitaireFreeRun(request.drawCount, request.idempotencyKey)
+      freeStartRequestRef.current = null
+      resetFreeGame(run)
+    } catch (error) {
+      setRequestError(errorMessage(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const replayFree = () => void startFree()
+  const submitFreeRun = async (commands = freeCommandsRef.current) => {
+    const run = freeRunRef.current
+    if (run === null || freeSubmitting) return
+    setFreeSubmitting(true)
+    setFreePaused(true)
+    setFreeSubmissionError(null)
+    try {
+      const result = await completeSolitaireFreeRun(run.runId, commands)
+      setFreeGame((game) => game === null ? null : {
+        ...game,
+        score: result.score,
+        moves: result.moves,
+        message: result.terminal === 'won' ? 'Deck completed!' : 'Game submitted',
+      })
+      setFreeElapsedMilliseconds(result.elapsedMilliseconds)
+      setFreeComplete(true)
+    } catch (error) {
+      setFreeSubmissionError(errorMessage(error))
+      setFreePaused(false)
+    } finally {
+      setFreeSubmitting(false)
+    }
+  }
   const animateFreeAutoWin = (
     startingGame: SolitaireGame,
     commands: readonly Extract<SolitaireCommand, { type: 'move' }>[],
+    replayCommands: readonly SolitaireFreeReplayCommand[],
   ) => {
     const generation = ++freeAutoWinGenerationRef.current
     setFreeAutoWinning(true)
@@ -473,20 +533,25 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       await waitForSolitaireFrame(320)
       if (freeAutoWinGenerationRef.current !== generation) return
       setFreeAutoWinning(false)
-      setFreeComplete(true)
+      void submitFreeRun(replayCommands)
     })()
   }
   const freeCommand = (nextCommand: SolitaireCommand) => {
-    if (freeGame === null || freePaused || freeComplete || freeAutoWinning) return
+    if (freeGame === null || freePaused || freeComplete || freeAutoWinning || freeSubmitting) return
+    if (nextCommand.type !== 'draw' && nextCommand.type !== 'flip' && nextCommand.type !== 'move') return
     try {
       const next = applyLocalSolitaireCommand(freeGame, nextCommand)
       const autoFinished = autoFinishLocalSolitaire(next)
-      setFreeHistory((history) => [...history.slice(-49), freeGame])
+      const automatic = autoFinished.commands as readonly Extract<SolitaireCommand, { type: 'move' }>[]
+      const replayCommands = [...freeCommandsRef.current, nextCommand, ...automatic]
+      setFreeHistory((history) => [...history.slice(-49), {
+        game: freeGame,
+        commands: freeCommandsRef.current,
+      }])
+      freeCommandsRef.current = replayCommands
+      setFreeSubmissionError(null)
       if (isLocalSolitaireWon(autoFinished.game)) {
-        animateFreeAutoWin(
-          next,
-          autoFinished.commands as readonly Extract<SolitaireCommand, { type: 'move' }>[],
-        )
+        animateFreeAutoWin(next, automatic, replayCommands)
       } else {
         setFreeGame(autoFinished.game)
       }
@@ -497,8 +562,10 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const undoFree = () => {
     const previous = freeHistory[freeHistory.length - 1]
     if (previous === undefined || freeComplete) return
-    setFreeGame(previous)
+    freeCommandsRef.current = previous.commands
+    setFreeGame(previous.game)
     setFreeHistory((history) => history.slice(0, -1))
+    setFreeSubmissionError(null)
     setRequestError(null)
   }
   const refresh = () => {
@@ -508,7 +575,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   }
 
   return (
-    <div className="solitaire-page">
+    <div className="solitaire-page" onClickCapture={onCardAudioClick}>
       <CardRoomNavigation
         playerName={account.playerName}
         balanceCredits={balanceCredits}
@@ -532,6 +599,8 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         freePaused={freePaused}
         freeComplete={freeComplete}
         freeAutoWinning={freeAutoWinning}
+        freeSubmitting={freeSubmitting}
+        freeSubmissionError={freeSubmissionError}
         freeSetupOpen={freeSetupOpen}
         competitiveSetupMatchId={competitiveSetupMatchId}
         freeElapsedMilliseconds={freeElapsedMilliseconds}
@@ -547,7 +616,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         onChooseNewCompetitive={setCompetitiveSetupMatchId}
         onCancelCompetitiveSetup={() => setCompetitiveSetupMatchId(null)}
         onClaim={claim}
-        onStartFree={startFree}
+        onStartFree={() => void startFree()}
         onReplayFree={replayFree}
         onChooseNewFreeGame={() => setFreeSetupOpen(true)}
         onCancelFreeSetup={() => setFreeSetupOpen(false)}
@@ -556,12 +625,16 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
           if (!freeAutoWinning) setFreePaused((value) => !value)
         }}
         onFreeUndo={undoFree}
-        onFreeSubmit={() => setFreeComplete(true)}
+        onFreeSubmit={() => void submitFreeRun()}
         onExitFree={() => {
           freeAutoWinGenerationRef.current += 1
+          freeRunRef.current = null
+          freeCommandsRef.current = []
           setFreeGame(null)
           setFreeSetupOpen(false)
           setFreeAutoWinning(false)
+          setFreeSubmitting(false)
+          setFreeSubmissionError(null)
         }}
         onRefresh={refresh}
       />
@@ -786,15 +859,23 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
           <div><span>Time</span><strong>{formatElapsed(props.freeElapsedMilliseconds)}</strong></div>
         </div>
         <SolitaireBoard game={props.game} autoWinning={props.freeAutoWinning}
-          busy={props.freePaused || props.freeComplete || props.freeAutoWinning} onCommand={props.onFreeCommand} />
+          busy={props.freePaused || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+          onCommand={props.onFreeCommand} />
         <div className="solitaire-match__controls">
-          <button type="button" disabled={!props.freeCanUndo || props.freePaused || props.freeComplete || props.freeAutoWinning}
+          <button type="button" disabled={!props.freeCanUndo || props.freePaused || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
             onClick={props.onFreeUndo}>Undo</button>
-          <button type="button" disabled={props.freeComplete || props.freeAutoWinning}
+          <button type="button" disabled={props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
             onClick={props.onFreePause}>{props.freePaused ? 'Resume' : 'Pause'}</button>
           <button className="solitaire-primary-action" type="button"
-            disabled={props.freeComplete || props.freeAutoWinning} onClick={props.onFreeSubmit}>Submit game</button>
+            disabled={props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+            onClick={props.onFreeSubmit}>{props.freeSubmitting ? 'Saving…' : 'Submit game'}</button>
         </div>
+        {props.freeSubmissionError && (
+          <div className="solitaire-request-error" role="alert">
+            <span>{props.freeSubmissionError}</span>
+            <button type="button" disabled={props.freeSubmitting} onClick={props.onFreeSubmit}>Retry submission</button>
+          </div>
+        )}
         {props.freeComplete && (
           <div className="solitaire-result-dialog" role="dialog" aria-modal="true" aria-labelledby="free-result-title">
             {props.freeSetupOpen ? (

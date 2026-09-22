@@ -23,9 +23,11 @@ import {
   describeSpinOutcome,
   findBestPayline,
   getSlotWinTier,
+  getWinPresentationTier,
   selectOutcomeSoundEvent,
   type SlotSpinOutcome,
   type SlotWinTier,
+  type WinPresentationTier,
 } from './presentation/spinPresentation'
 import { slotPointsToRand } from './slotPagePresentation'
 import {
@@ -52,6 +54,7 @@ type EnergyFlyover = {
 type SealFlyover = EnergyFlyover & {
   collectionId: string
   symbol: SlotSymbolId
+  chestDropHeight: number
 }
 
 type WinAwardFlyover = {
@@ -60,6 +63,7 @@ type WinAwardFlyover = {
   displayAmount: number
   winTier: SlotWinTier
   isFlying: boolean
+  tier: WinPresentationTier
   left: number
   top: number
   travelX: number
@@ -98,6 +102,12 @@ type MoneyGrabPresentation = {
   tokens: MoneyGrabTokenFlyover[]
 }
 
+type CollectionAwardPresentation = {
+  collectionId: string
+  freeSpins: number
+  featureMode: string | null
+}
+
 const manualStopBrakeDurationMs = 90
 const manualStopSettleDurationMs = 35
 const regularWinHoldDurationMs = 380
@@ -106,6 +116,8 @@ const bigWinCountDurationMs = 1250
 const bigWinBalanceCountDurationMs = 720
 const winFlyoverDurationMs = 540
 const autoSpinWinPresentationMaxMultiplier = 1.35
+const extraRowsFeatureMode = 'rows'
+const specialSpinDelayMs = 2_400
 
 export type SlotsPageProps = {
   account?: AccountSummary
@@ -193,6 +205,9 @@ export function useSlotsPageController({
   const [spinStage, setSpinStage] = useState<'requesting' | 'stopping'>('requesting')
   const [spinError, setSpinError] = useState<string | null>(null)
   const [bestWin, setBestWin] = useState<PaylinePayout | null>(null)
+  const [lastWin, setLastWin] = useState(0)
+  const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
+  const [winningPaylineCount, setWinningPaylineCount] = useState(0)
   const [bonusPositions, setBonusPositions] = useState<GridPosition[]>([])
   const [balance, setBalance] = useState(
     demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
@@ -204,6 +219,12 @@ export function useSlotsPageController({
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
   const [freeSpinWagerPoints, setFreeSpinWagerPoints] = useState<number | null>(null)
   const [freeSpinFeatureMode, setFreeSpinFeatureMode] = useState<string | null>(null)
+  const [hasSpecialRoundStarted, setHasSpecialRoundStarted] = useState(false)
+  const [isSpecialSpinInProgress, setIsSpecialSpinInProgress] = useState(false)
+  const [isSpecialSpinDelayActive, setIsSpecialSpinDelayActive] = useState(false)
+  const [heldCompletedCollectionId, setHeldCompletedCollectionId] = useState<string | null>(null)
+  const [specialRoundWinnings, setSpecialRoundWinnings] = useState(0)
+  const [specialRoundGemCount, setSpecialRoundGemCount] = useState(0)
   const [isFreeSpinBadgePopping, setIsFreeSpinBadgePopping] = useState(false)
   const [energyBalance, setEnergyBalance] = useState(0)
   const [sealCollections, setSealCollections] =
@@ -215,6 +236,8 @@ export function useSlotsPageController({
   const [winAwardFlyover, setWinAwardFlyover] = useState<WinAwardFlyover | null>(null)
   const [moneyGrabPresentation, setMoneyGrabPresentation] =
     useState<MoneyGrabPresentation | null>(null)
+  const [collectionAwardPresentation, setCollectionAwardPresentation] =
+    useState<CollectionAwardPresentation | null>(null)
   const [wagerIndex, setWagerIndex] = useState(0)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -232,6 +255,7 @@ export function useSlotsPageController({
   const energyMeterRef = useRef<HTMLDivElement | null>(null)
   const creditTileRef = useRef<HTMLDivElement | null>(null)
   const freeSpinBadgeTimerRef = useRef<number | null>(null)
+  const specialSpinDelayTimerRef = useRef<number | null>(null)
   const [isStopRequested, setIsStopRequested] = useState(false)
   const isDemoSpinDisabled = demoMode && demoAvailability !== 'available'
   const demoAvailabilityMessage = !demoMode || demoAvailability === 'available'
@@ -243,7 +267,14 @@ export function useSlotsPageController({
   const selectedWagerRand = slotPointsToRand(selectedWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
   const useFreeGameForNextSpin = freeSpinsRemaining > 0
+  const isSpecialGameActive = featureSet.specialRound !== undefined &&
+    hasSpecialRoundStarted &&
+    (useFreeGameForNextSpin || isSpecialSpinInProgress)
   const closeSettings = useCallback(() => setIsSettingsOpen(false), [])
+  const dismissCollectionAwardPresentation = useCallback(
+    () => setCollectionAwardPresentation(null),
+    [],
+  )
 
   useEffect(() => {
     isMountedRef.current = true
@@ -253,6 +284,9 @@ export function useSlotsPageController({
       if (activeSpinAnimationRef.current !== null) {
         cancelSpinAnimation(activeSpinAnimationRef.current)
         activeSpinAnimationRef.current = null
+      }
+      if (specialSpinDelayTimerRef.current !== null) {
+        window.clearTimeout(specialSpinDelayTimerRef.current)
       }
       stopResultCues()
     }
@@ -268,6 +302,9 @@ export function useSlotsPageController({
     presentationAbortControllerRef.current?.abort()
     stopResultCues()
     stopLoop(soundSet.events.reelSpin)
+    if (soundSet.events.specialReelSpin !== undefined) {
+      stopLoop(soundSet.events.specialReelSpin)
+    }
     if (activeSpinAnimationRef.current !== null) {
       cancelSpinAnimation(activeSpinAnimationRef.current)
       activeSpinAnimationRef.current = null
@@ -278,9 +315,17 @@ export function useSlotsPageController({
   }, [
     prefersReducedMotion,
     soundSet.events.reelSpin,
+    soundSet.events.specialReelSpin,
     stopLoop,
     stopResultCues,
   ])
+
+  useEffect(() => {
+    const autoSpinAmbienceCue = soundSet.events.autoSpinAmbience
+    if (!isAutoSpinning && autoSpinAmbienceCue !== undefined) {
+      stopLoop(autoSpinAmbienceCue)
+    }
+  }, [isAutoSpinning, soundSet.events.autoSpinAmbience, stopLoop])
 
   useEffect(() => {
     if (!demoMode) {
@@ -315,7 +360,9 @@ export function useSlotsPageController({
       mascotPhase !== 'idle' ||
       isHelpOpen ||
       isSettingsOpen ||
-      isReloadPromptOpen
+      isReloadPromptOpen ||
+      collectionAwardPresentation !== null ||
+      isSpecialGameActive
     ) {
       return undefined
     }
@@ -336,6 +383,7 @@ export function useSlotsPageController({
     freeSpinsRemaining,
     isAutoSpinning,
     isAutoSpinCoolingDown,
+    collectionAwardPresentation,
     isHelpOpen,
     isDemoSpinDisabled,
     isReloadPromptOpen,
@@ -343,6 +391,78 @@ export function useSlotsPageController({
     isSpinning,
     selectedWagerRand,
     mascotPhase,
+    useFreeGameForNextSpin,
+    isSpecialGameActive,
+  ])
+
+  useEffect(() => {
+    const canQueueSpecialSpin =
+      isSpecialGameActive &&
+      freeSpinsRemaining > 0 &&
+      !isSpinning &&
+      mascotPhase === 'idle' &&
+      !isHelpOpen &&
+      !isSettingsOpen &&
+      !isReloadPromptOpen &&
+      collectionAwardPresentation === null
+
+    if (!canQueueSpecialSpin) {
+      if (specialSpinDelayTimerRef.current !== null) {
+        window.clearTimeout(specialSpinDelayTimerRef.current)
+        specialSpinDelayTimerRef.current = null
+      }
+      setIsSpecialSpinDelayActive((current) => current ? false : current)
+      return undefined
+    }
+
+    if (specialSpinDelayTimerRef.current !== null) {
+      return undefined
+    }
+
+    setIsSpecialSpinDelayActive(true)
+    const timer = window.setTimeout(() => {
+      specialSpinDelayTimerRef.current = null
+      setIsSpecialSpinDelayActive(false)
+      void handleSpinRef.current()
+    }, specialSpinDelayMs)
+    specialSpinDelayTimerRef.current = timer
+
+    return () => {
+      if (specialSpinDelayTimerRef.current === timer) {
+        window.clearTimeout(timer)
+        specialSpinDelayTimerRef.current = null
+      }
+    }
+  }, [
+    collectionAwardPresentation,
+    freeSpinsRemaining,
+    isHelpOpen,
+    isReloadPromptOpen,
+    isSettingsOpen,
+    isSpecialGameActive,
+    isSpinning,
+    mascotPhase,
+  ])
+
+  useEffect(() => {
+    if (isSpecialGameActive) {
+      return
+    }
+
+    if (hasSpecialRoundStarted) {
+      startLoop(soundSet.events.ambience)
+    }
+    setHeldCompletedCollectionId(null)
+    setSpecialRoundGemCount(0)
+    setSpecialRoundWinnings(0)
+    if (!useFreeGameForNextSpin) {
+      setHasSpecialRoundStarted(false)
+    }
+  }, [
+    hasSpecialRoundStarted,
+    isSpecialGameActive,
+    soundSet.events.ambience,
+    startLoop,
     useFreeGameForNextSpin,
   ])
 
@@ -379,15 +499,20 @@ export function useSlotsPageController({
     setFreeSpinsRemaining(0)
     setFreeSpinWagerPoints(null)
     setFreeSpinFeatureMode(null)
+    setHasSpecialRoundStarted(false)
     setIsFreeSpinBadgePopping(false)
     setEnergyBalance(0)
     setSealCollections(defaultSealCollections)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
+    setLastWin(0)
+    setLastFreeSpinsAwarded(0)
     setLastSpinOutcome(null)
+    setWinningPaylineCount(0)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
     setMoneyGrabPresentation(null)
+    setCollectionAwardPresentation(null)
 
     if (demoMode) {
       setBalance(demoStartingBalance)
@@ -635,19 +760,24 @@ export function useSlotsPageController({
     const finalCollections = new Map(
       result.sealCollections.map((collection) => [collection.sealId, collection]),
     )
+    let completedCollectionId: string | null = null
 
     for (const [index, position] of sealPositions.entries()) {
       const source = document.querySelector<HTMLElement>(
         `.slot-symbol[data-symbol="${position.symbol}"][data-reel-index="${position.reel}"][data-row-index="${position.row}"]`,
       )
-      const destination = document.querySelector<HTMLElement>(
-        `.slots-page__seal-collection[data-seal-id="${position.collection.id}"]`,
-      )
+      const destinationSelector = collectionFeature.presentation === 'gem-hoard'
+        ? `.slots-page__seal-collection[data-seal-id="${position.collection.id}"] .slots-page__treasure-chest`
+        : `.slots-page__seal-collection[data-seal-id="${position.collection.id}"]`
+      const destination = document.querySelector<HTMLElement>(destinationSelector)
       const sourceRect = source?.getBoundingClientRect()
       const destinationRect = destination?.getBoundingClientRect()
 
       if (sourceRect && destinationRect) {
-        const durationMs = isFastAutoSpin ? 330 : 560
+        const isGemHoard = collectionFeature.presentation === 'gem-hoard'
+        const durationMs = isGemHoard
+          ? (isFastAutoSpin ? 420 : 720)
+          : (isFastAutoSpin ? 330 : 560)
         setSealFlyover({
           id: Date.now() + index,
           collectionId: position.collection.id,
@@ -663,6 +793,9 @@ export function useSlotsPageController({
             destinationRect.top + destinationRect.height / 2 -
             (sourceRect.top + sourceRect.height / 2),
           durationMs,
+          chestDropHeight: isGemHoard
+            ? Math.max(18, destinationRect.height * 0.5)
+            : 0,
         })
         const completed = await waitForPresentation(durationMs, signal)
         if (!completed) {
@@ -673,6 +806,9 @@ export function useSlotsPageController({
 
       const currentCount = animatedCounts.get(position.collection.id) ?? 0
       const finalCollection = finalCollections.get(position.collection.id)
+      if (finalCollection && finalCollection.count < currentCount) {
+        completedCollectionId ??= position.collection.id
+      }
       const nextCount = finalCollection && finalCollection.count >= currentCount
         ? Math.min(finalCollection.count, currentCount + 1)
         : Math.min(position.collection.requiredCount, currentCount + 1)
@@ -698,6 +834,27 @@ export function useSlotsPageController({
     }
 
     settleSeals()
+    if (
+      completedCollectionId &&
+      collectionFeature.completionDialog &&
+      result.freeSpinsAwarded > 0 &&
+      isCurrentPresentation(signal)
+    ) {
+      setIsAutoSpinning(false)
+      stopLoop(soundSet.events.ambience)
+      if (soundSet.events.autoSpinAmbience !== undefined) {
+        stopLoop(soundSet.events.autoSpinAmbience)
+      }
+      setHasSpecialRoundStarted(true)
+      setHeldCompletedCollectionId(completedCollectionId)
+      setSpecialRoundGemCount(0)
+      setSpecialRoundWinnings(0)
+      setCollectionAwardPresentation({
+        collectionId: completedCollectionId,
+        freeSpins: result.freeSpinsAwarded,
+        featureMode: result.freeSpinFeatureMode,
+      })
+    }
   }
 
   async function animateNumberValue(
@@ -786,10 +943,14 @@ export function useSlotsPageController({
       awardedCredits,
       slotPointsToRand(result.wagerPoints, result.pointValueInCents),
     )
-    const isBigWin = winTier === 'big'
-    const initialHoldDuration = isBigWin
+    const wager = slotPointsToRand(result.wagerPoints, result.pointValueInCents)
+    const tier = getWinPresentationTier(awardedCredits, wager)
+    const isBigWin = tier !== 'win'
+    const initialHoldDuration = tier === 'jackpot'
       ? bigWinCountDurationMs / speedMultiplier
-      : regularWinHoldDurationMs / speedMultiplier
+      : tier === 'big'
+        ? bigWinCountDurationMs * 0.68 / speedMultiplier
+        : regularWinHoldDurationMs / speedMultiplier
     const flyoverDuration = winFlyoverDurationMs / speedMultiplier
     const balanceCountDuration = isBigWin
       ? bigWinBalanceCountDurationMs / speedMultiplier
@@ -827,6 +988,7 @@ export function useSlotsPageController({
       displayAmount: isBigWin ? 0 : awardedCredits,
       winTier,
       isFlying: false,
+      tier,
       left: startLeft,
       top: startTop,
       travelX: 0,
@@ -1062,11 +1224,11 @@ export function useSlotsPageController({
   }, [isReloadPromptOpen])
 
   async function handleSpin() {
-    if (spinInProgressRef.current || isSpinning) {
+    if (spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null) {
       return
     }
 
-    if (isDemoSpinDisabled) {
+    if (isDemoSpinDisabled || collectionAwardPresentation !== null) {
       setIsAutoSpinning(false)
       return
     }
@@ -1080,6 +1242,16 @@ export function useSlotsPageController({
 
     const isFastAutoSpin = isAutoSpinning
     const expectedFreeSpin = useFreeGameForNextSpin
+    const autoSpinAmbienceCue = soundSet.events.autoSpinAmbience
+    const ambienceCue = isFastAutoSpin && autoSpinAmbienceCue !== undefined
+      ? autoSpinAmbienceCue
+      : soundSet.events.ambience
+    const spinLoopCue = expectedFreeSpin
+      ? soundSet.events.specialReelSpin ?? soundSet.events.reelSpin
+      : soundSet.events.reelSpin
+    const reelStopCue = expectedFreeSpin
+      ? soundSet.events.specialReelStop ?? soundSet.events.reelStop
+      : soundSet.events.reelStop
     const requestedSpecialBoost = false
     const wagerForSpin = expectedFreeSpin
       ? freeSpinWagerPoints ?? selectedWagerPoints
@@ -1099,8 +1271,12 @@ export function useSlotsPageController({
     setBalance((currentBalance) => currentBalance - optimisticCharge)
     if (expectedFreeSpin) {
       setFreeSpinsRemaining((current) => Math.max(0, current - 1))
+      setHasSpecialRoundStarted(true)
+      setIsSpecialSpinInProgress(true)
     }
     setLastSpinOutcome(null)
+    setLastWin(0)
+    setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
     setEnergyFlyover(null)
@@ -1110,16 +1286,39 @@ export function useSlotsPageController({
       setIsFreeSpinBadgePopping(false)
     }
     beginPerformance(!isFastAutoSpin)
-    if (!isFastAutoSpin) {
+    if (!isFastAutoSpin && !expectedFreeSpin) {
       playCue(soundSet.events.leverPull)
     }
-    startLoop(soundSet.events.reelSpin)
+    if (expectedFreeSpin) {
+      stopLoop(soundSet.events.ambience)
+      if (autoSpinAmbienceCue !== undefined) {
+        stopLoop(autoSpinAmbienceCue)
+      }
+    } else {
+      if (isFastAutoSpin && autoSpinAmbienceCue !== undefined) {
+        stopLoop(soundSet.events.ambience)
+      }
+      startLoop(ambienceCue)
+    }
+    startLoop(spinLoopCue)
     setIsSpinning(true)
     setSpinStage('requesting')
     setSpinError(null)
     setBestWin(null)
+    setWinningPaylineCount(0)
     setBonusPositions([])
-    const reelsBeforeSpin = displayedReels.map((reel) => [...reel])
+    const regularRowCount = initialReels[0]?.length ?? 4
+    const expectedRowCount = getSpinRowCount(
+      expectedFreeSpin,
+      freeSpinFeatureMode,
+      regularRowCount,
+    )
+    const reelsBeforeSpin = displayedReels.map((reel, reelIndex) =>
+      normalizeReelRows(reel, initialReels[reelIndex], expectedRowCount),
+    )
+    if (displayedReels.some((reel) => reel.length !== expectedRowCount)) {
+      setDisplayedReels(reelsBeforeSpin)
+    }
     const displayFrame = (reelIndex: number, symbols: readonly SlotSymbolId[]) => {
       setDisplayedReels((currentReels) =>
         currentReels.map((reel, index) =>
@@ -1129,7 +1328,7 @@ export function useSlotsPageController({
     }
     const animation = startSpinAnimation({
       reelCount: displayedReels.length,
-      rowsPerReel: displayedReels[0]?.length ?? 4,
+      rowsPerReel: expectedRowCount,
       symbolIds: animationSymbolIds,
       displayFrame,
       setReelMotion: (reelIndex, state) => {
@@ -1152,15 +1351,15 @@ export function useSlotsPageController({
         }
         setDisplayedReels(targetReels.map((reel) => [...reel]))
         setReelMotion(targetReels.map(() => 'stopped'))
-        stopLoop(soundSet.events.reelSpin)
+        stopLoop(spinLoopCue)
       }
       await stopSpinAnimationWithCadence({
         animation,
         isQuickStopRequested: () => stopSpinRequestedRef.current,
         onReelStopped: (_, stoppedReelCount) => {
-          playCue(soundSet.events.reelStop)
+          playCue(reelStopCue)
           if (stoppedReelCount === targetReels.length) {
-            stopLoop(soundSet.events.reelSpin)
+            stopLoop(spinLoopCue)
           }
         },
         quickBrakeDurationMs: manualStopBrakeDurationMs,
@@ -1198,6 +1397,9 @@ export function useSlotsPageController({
 
       if (result.reels.length !== displayedReels.length) {
         throw new Error(`Expected ${displayedReels.length} reels but received ${result.reels.length}.`)
+      }
+      if (result.reels.some((reel) => reel.length !== expectedRowCount)) {
+        throw new Error(`Expected ${expectedRowCount} visible rows per reel but received an invalid slot grid.`)
       }
       if (result.symbolSetId !== expectedServerSymbolSetId) {
         throw new Error(
@@ -1243,9 +1445,22 @@ export function useSlotsPageController({
         mascotOutcome = 'win'
       }
       setBestWin(bestPayline)
+      setWinningPaylineCount(result.payout.paylines.length)
       setBonusPositions(triggeredBonusPositions)
       setLastSpinOutcome(spinOutcome)
       setResultAtmosphereId((current) => current + 1)
+      const spinWinnings = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents)
+      setLastWin(spinWinnings)
+      if (expectedFreeSpin) {
+        setSpecialRoundWinnings((current) => current + spinWinnings)
+        const heldCollection = heldCompletedCollectionId
+          ? result.sealCollections.find((collection) => collection.sealId === heldCompletedCollectionId)
+          : undefined
+        setSpecialRoundGemCount(heldCollection?.count ?? 0)
+      } else if (result.freeSpinsAwarded > 0) {
+        setSpecialRoundWinnings(0)
+      }
+      setLastFreeSpinsAwarded(result.freeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
       setFreeSpinsRemaining(result.freeSpinsRemaining)
       setFreeSpinWagerPoints(
@@ -1264,8 +1479,18 @@ export function useSlotsPageController({
       const revealPainted = resultSoundEvent !== null && !presentationSignal.aborted
         ? await waitForPresentationFrame(presentationSignal)
         : false
-      if (resultSoundEvent !== null && revealPainted && !stopSpinRequestedRef.current) {
-        playSequence(soundSet.events.results[resultSoundEvent])
+      const shouldPlayResultCue = resultSoundEvent !== null &&
+        revealPainted &&
+        !stopSpinRequestedRef.current &&
+        // A fast auto-spin keeps the voyage music uninterrupted. In
+        // particular, its no-win results must not trigger the wave cue.
+        !(isFastAutoSpin && resultSoundEvent === 'no-win')
+      if (shouldPlayResultCue && resultSoundEvent !== null) {
+        playSequence(
+          expectedFreeSpin
+            ? soundSet.events.specialResults?.[resultSoundEvent] ?? soundSet.events.results[resultSoundEvent]
+            : soundSet.events.results[resultSoundEvent],
+        )
       }
       await animateMoneyGrab(result, isFastAutoSpin, presentationSignal)
       await animateCreditWinAward(
@@ -1310,7 +1535,9 @@ export function useSlotsPageController({
         setDisplayedReels(reelsBeforeSpin)
       }
       setBestWin(null)
+      setWinningPaylineCount(0)
       setBonusPositions([])
+      setLastFreeSpinsAwarded(0)
       setLastEnergyAwarded(0)
       setLastEnergyMultiplierApplied(false)
       setLastSpinOutcome(null)
@@ -1329,7 +1556,7 @@ export function useSlotsPageController({
       }
       setSpinError(error instanceof Error ? error.message : 'The spin could not be completed.')
     } finally {
-      stopLoop(soundSet.events.reelSpin)
+      stopLoop(spinLoopCue)
       if (isMountedRef.current) {
         finishSpinAnimation(animation)
         completePerformance(mascotOutcome, !isFastAutoSpin)
@@ -1337,6 +1564,9 @@ export function useSlotsPageController({
         setIsSpinning(false)
         setIsFastSpinActive(false)
         setIsStopRequested(false)
+        if (expectedFreeSpin) {
+          setIsSpecialSpinInProgress(false)
+        }
       } else {
         cancelSpinAnimation(animation)
       }
@@ -1378,6 +1608,7 @@ export function useSlotsPageController({
   const slotsPageClassName = [
     'slots-page',
     isFastSpinActive ? 'slots-page--fast-spin' : '',
+    isSpecialGameActive ? 'slots-page--special-game' : '',
     pageBackdropImage ? 'slots-page--theme-backdrop' : '',
   ].filter(Boolean).join(' ')
 
@@ -1391,6 +1622,17 @@ export function useSlotsPageController({
     setWagerIndex((currentIndex) =>
       Math.min(wagerOptions.length - 1, Math.max(0, currentIndex + direction)),
     )
+    setSpinError(null)
+  }
+
+  function selectWager(nextIndex: number) {
+    if (freeSpinsRemaining > 0) {
+      setSpinError('Free spins are locked to the wager that won them.')
+      return
+    }
+
+    setIsAutoSpinning(false)
+    setWagerIndex(Math.min(wagerOptions.length - 1, Math.max(0, Math.round(nextIndex))))
     setSpinError(null)
   }
 
@@ -1409,7 +1651,22 @@ export function useSlotsPageController({
       return
     }
 
+    if (collectionAwardPresentation !== null) {
+      dismissCollectionAwardPresentation()
+      return
+    }
+
     if (isDemoSpinDisabled) {
+      return
+    }
+
+    if (isSpecialSpinDelayActive) {
+      if (specialSpinDelayTimerRef.current !== null) {
+        window.clearTimeout(specialSpinDelayTimerRef.current)
+        specialSpinDelayTimerRef.current = null
+      }
+      setIsSpecialSpinDelayActive(false)
+      void handleSpin()
       return
     }
 
@@ -1443,12 +1700,15 @@ export function useSlotsPageController({
     activeWagerDisplay,
     audioPreferences,
     balance,
+    bestWin,
     cabinetTheme,
     canAffordSelectedWager,
     changeWager,
     closeSettings,
+    collectionAwardPresentation,
     creditTileRef,
     displayedReels,
+    dismissCollectionAwardPresentation,
     demoAvailability,
     demoAvailabilityMessage,
     demoMode,
@@ -1459,6 +1719,7 @@ export function useSlotsPageController({
     energyMeterCapacity,
     energyMeterRef,
     featureSet,
+    freeSpinFeatureMode,
     freeSpinsRemaining,
     handleSpinButtonClick,
     helpCloseButtonRef,
@@ -1467,11 +1728,15 @@ export function useSlotsPageController({
     isHelpOpen,
     isDemoSpinDisabled,
     isReloadPromptOpen,
+    isSpecialGameActive,
+    isSpecialSpinDelayActive,
     isSettingsOpen,
     isSpinning,
     isStopRequested,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
+    lastFreeSpinsAwarded,
+    lastWin,
     lastSpinOutcome,
     mascotActionKey,
     mascotPhase,
@@ -1488,11 +1753,15 @@ export function useSlotsPageController({
     selectedWager: selectedWagerRand,
     sealFlyover,
     sealImpactId,
+    heldCompletedCollectionId,
+    specialRoundGemCount,
+    specialRoundWinnings,
     setIsAutoSpinning,
     setIsHelpOpen,
     setIsReloadPromptOpen,
     setIsSettingsOpen,
     setSpinError,
+    selectWager,
     setVolume,
     showFreeSpinBadge,
     slotsPageClassName,
@@ -1506,8 +1775,29 @@ export function useSlotsPageController({
     wagerIndex,
     wagerOptions,
     winAwardFlyover,
+    winningPaylineCount,
     winningPositions,
   }
+}
+
+function getSpinRowCount(
+  isFreeSpin: boolean,
+  featureMode: string | null,
+  regularRowCount: number,
+): number {
+  const hasExtraRows = isFreeSpin && featureMode?.split('-').includes(extraRowsFeatureMode)
+  return regularRowCount + (hasExtraRows ? 2 : 0)
+}
+
+function normalizeReelRows(
+  reel: readonly SlotSymbolId[],
+  fallbackReel: readonly SlotSymbolId[] | undefined,
+  rowCount: number,
+): SlotSymbolId[] {
+  return Array.from(
+    { length: rowCount },
+    (_, rowIndex) => reel[rowIndex] ?? fallbackReel?.[rowIndex] ?? '2',
+  )
 }
 
 export type SlotsPageController = ReturnType<typeof useSlotsPageController>

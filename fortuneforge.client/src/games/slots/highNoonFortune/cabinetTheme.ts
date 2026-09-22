@@ -1,6 +1,6 @@
-import highNoonEmblem from '../../../assets/slots/games/high-noon-fortune/high-noon-emblem.svg'
-import turquoiseJewel from '../../../assets/slots/games/high-noon-fortune/turquoise-jewel.svg'
-import westernTown from '../../../assets/slots/games/high-noon-fortune/western-town.svg'
+import highNoonEmblem from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-cabinet-emblem-v2.webp'
+import turquoiseJewel from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-gold-nugget-v2.webp'
+import westernTown from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-town-v2.webp'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 
 export const HIGH_NOON_FORTUNE_CABINET_THEME: SlotCabinetTheme = {

@@ -1,3 +1,7 @@
+using FortuneForge.Games.Craps;
+using FortuneForge.Games.Hearts;
+using FortuneForge.Games.LiarsDice;
+using FortuneForge.Games.Roulette;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Cards;
@@ -5,18 +9,27 @@ namespace FortuneForge.Server.Tests.Cards;
 public sealed class GamePackageBoundaryTests
 {
     [Theory]
-    [InlineData(typeof(BlackjackRules), "FortuneForge.Games.Blackjack")]
-    [InlineData(typeof(BlackjackTableEngine), "FortuneForge.Games.Blackjack")]
-    [InlineData(typeof(SolitaireEngine), "FortuneForge.Games.Solitaire")]
-    [InlineData(typeof(SolitaireCompetitionRules), "FortuneForge.Games.Solitaire")]
-    [InlineData(typeof(CreditHoldemEngine), "FortuneForge.Games.TexasHoldem")]
-    [InlineData(typeof(TexasHoldemRules), "FortuneForge.Games.TexasHoldem")]
-    public void Server_uses_versioned_game_assemblies(Type boundaryType, string expectedAssembly)
+    [InlineData(typeof(BlackjackRules), "FortuneForge.Games.Blackjack", 0, 4, 1)]
+    [InlineData(typeof(BlackjackTableEngine), "FortuneForge.Games.Blackjack", 0, 4, 1)]
+    [InlineData(typeof(CrapsEngine), "FortuneForge.Games.Craps", 0, 1, 1)]
+    [InlineData(typeof(HeartsEngine), "FortuneForge.Games.Hearts", 0, 1, 1)]
+    [InlineData(typeof(LiarsDiceEngine), "FortuneForge.Games.LiarsDice", 0, 1, 1)]
+    [InlineData(typeof(RouletteEngine), "FortuneForge.Games.Roulette", 0, 1, 1)]
+    [InlineData(typeof(SolitaireEngine), "FortuneForge.Games.Solitaire", 0, 4, 1)]
+    [InlineData(typeof(SolitaireCompetitionRules), "FortuneForge.Games.Solitaire", 0, 4, 1)]
+    [InlineData(typeof(CreditHoldemEngine), "FortuneForge.Games.TexasHoldem", 0, 4, 1)]
+    [InlineData(typeof(TexasHoldemRules), "FortuneForge.Games.TexasHoldem", 0, 4, 1)]
+    public void Server_uses_versioned_game_assemblies(
+        Type boundaryType,
+        string expectedAssembly,
+        int major,
+        int minor,
+        int patch)
     {
         var assembly = boundaryType.Assembly;
 
         Assert.Equal(expectedAssembly, assembly.GetName().Name);
-        Assert.Equal(new Version(0, 4, 1, 0), assembly.GetName().Version);
+        Assert.Equal(new Version(major, minor, patch, 0), assembly.GetName().Version);
 
         var references = assembly
             .GetReferencedAssemblies()

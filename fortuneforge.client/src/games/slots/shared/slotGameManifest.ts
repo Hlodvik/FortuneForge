@@ -7,6 +7,8 @@ export type SlotGameCatalogDefinition = {
   description: string
   image: string
   imagePresentation: 'contain' | 'cover'
+  /** Keeps edge-to-edge emblems clear of the catalogue-card frame. */
+  imageScale?: 'standard' | 'compact'
   slotDivBackgroundImage?: string
 }
 

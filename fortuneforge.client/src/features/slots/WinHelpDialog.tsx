@@ -180,11 +180,11 @@ export function WinHelpDialog({
           <article className="win-help__rule">
             <span className="win-help__rule-number">FREE</span>
             <div>
-              <h3>Free games</h3>
+              <h3>{help.freeGames.title ?? 'Free games'}</h3>
               <p>
-                Land {help.freeGames.requiredSymbols} or more FREE GAME symbols anywhere in the
-                window to receive {help.freeGames.awardedSpins} free games. Free games use the
-                wager that triggered them.
+                Land {help.freeGames.requiredSymbols} or more {help.freeGames.symbolLabel ?? 'FREE GAME'} symbols anywhere in the
+                window to receive {help.freeGames.awardedSpins} {help.freeGames.awardLabel ?? 'free games'}.
+                {' '}{help.freeGames.awardLabel ? 'Bonus rounds use the wager that triggered them.' : 'Free games use the wager that triggered them.'}
               </p>
             </div>
           </article>

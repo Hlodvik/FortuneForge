@@ -1,44 +1,42 @@
-import { createSlotBackdropSvg, createSlotIconSvg } from '../shared/themedSvg'
-
-const palette = [
-  ['#6a8f32', '#243b1f', '#f2c664', '#a7dd55'],
-  ['#b85a27', '#4b2418', '#f7d06b', '#ff8a47'],
-  ['#347ba1', '#133849', '#f3c85d', '#63ccec'],
-  ['#8a5d33', '#362719', '#f2ce77', '#d99b5d'],
-] as const
-
-function icon(label: string, glyph: string, variant: number): string {
-  const [background, backgroundDeep, rim, glow] = palette[variant % palette.length]
-  return createSlotIconSvg({ label, glyph, background, backgroundDeep, rim, glow })
-}
+import amberToken from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-amber-token-v2.webp'
+import amberTrackFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-amber-track-fossil-v2.webp'
+import cabinetEmblem from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-cabinet-emblem-v2.webp'
+import crimsonFangFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-crimson-fang-fossil-v2.webp'
+import dinosaurFootprint from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-dinosaur-footprint-v2.webp'
+import emeraldLeafFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-emerald-leaf-fossil-v2.webp'
+import fallingMeteor from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-falling-meteor-v2.webp'
+import fossilBone from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-fossil-bone-v2.webp'
+import fossilClawTrio from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-fossil-claw-trio-v2.webp'
+import goldenAmberStone from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-golden-amber-stone-v2.webp'
+import mightyTyrannosaurus from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-mighty-tyrannosaurus-v2.webp'
+import paleontologistFieldKit from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-paleontologist-field-kit-v2.webp'
+import primevalFern from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-primeval-fern-v2.webp'
+import sapphireShellFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-sapphire-shell-fossil-v2.webp'
+import speckledEgg from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-speckled-egg-v2.webp'
+import swiftRaptor from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-swift-raptor-v2.webp'
+import triceratopsWildCrest from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-triceratops-wild-crest-v2.webp'
+import valley from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-valley-v2.webp'
+import volcanicCave from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-volcanic-cave-v2.webp'
 
 export const DINO_DOMINION_VISUALS = {
-  backdrop: createSlotBackdropSvg({
-    label: 'Dino Dominion prehistoric fossil valley',
-    motif: '🦖',
-    skyTop: '#173e45',
-    skyBottom: '#cf7432',
-    horizon: '#3f6130',
-    accent: '#ffc75f',
-    ground: '#271d16',
-  }),
-  emblem: icon('Dino Dominion emblem', '🦖', 0),
-  accent: icon('Amber fossil accent', '🟠', 1),
-  bone: icon('Ancient fossil bone', '🦴', 0),
-  egg: icon('Speckled dinosaur egg', '🥚', 1),
-  fern: icon('Primeval fern', '🌿', 2),
-  footprint: icon('Giant dinosaur footprint', '🐾', 3),
-  raptor: icon('Swift raptor', '🦎', 0),
-  rex: icon('Mighty tyrannosaurus', '🦖', 1),
-  wild: icon('Triceratops wild crest', '🦕', 2),
-  free: icon('Volcanic cave free game', '🌋', 3),
-  power: icon('Golden amber power stone', '🟠', 0),
-  energy: icon('Falling meteor charge', '☄️', 1),
-  lineBonus: icon('Fossil claw trio', '🦅', 2),
-  collector: icon('Paleontologist field kit', '🧰', 3),
-  sync: icon('Crimson fang fossil', '🔻', 1),
-  rows: icon('Sapphire shell fossil', '🐚', 2),
-  paw: icon('Amber track fossil', '👣', 3),
-  rand: icon('Emerald leaf fossil', '🍃', 0),
-  value: icon('Museum amber token', '🟡', 1),
+  backdrop: valley,
+  emblem: cabinetEmblem,
+  accent: amberToken,
+  bone: fossilBone,
+  egg: speckledEgg,
+  fern: primevalFern,
+  footprint: dinosaurFootprint,
+  raptor: swiftRaptor,
+  rex: mightyTyrannosaurus,
+  wild: triceratopsWildCrest,
+  free: volcanicCave,
+  power: goldenAmberStone,
+  energy: fallingMeteor,
+  lineBonus: fossilClawTrio,
+  collector: paleontologistFieldKit,
+  sync: crimsonFangFossil,
+  rows: sapphireShellFossil,
+  paw: amberTrackFossil,
+  rand: emeraldLeafFossil,
+  value: amberToken,
 } as const

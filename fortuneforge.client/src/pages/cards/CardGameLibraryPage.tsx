@@ -53,78 +53,73 @@ export function CardGameLibraryPage({
 
       <div className={demoMode ? '' : 'game-hub-layout'}>
         {!demoMode && <GameTypeMenu active="cards" />}
-      <main className={`${demoMode ? '' : 'game-hub-content '}game-picker-main`}>
-        {demoMode && <GameTypeMenu active="cards" demoMode />}
-        <section className="game-picker-heading game-picker-heading--compact" aria-labelledby="card-picker-title">
-          <p className="account-eyebrow">Table room</p>
-          <h1 id="card-picker-title">Choose your card game</h1>
-        </section>
+        <main className={`${demoMode ? '' : 'game-hub-content '}game-picker-main`}>
+          {demoMode && <GameTypeMenu active="cards" demoMode />}
+          <section className="game-picker-heading game-picker-heading--compact" aria-labelledby="card-picker-title">
+            <p className="account-eyebrow">Table room</p>
+            <h1 id="card-picker-title">Choose your card game</h1>
+          </section>
 
-        <section className="card-game-library" aria-label="Available card games">
-          <article className={`machine-card card-game-card ${!demoMode && blackjackState === 'available' ? 'machine-card--available' : 'machine-card--coming'}`}>
-            <img className="card-game-card__preview" src={blackjackPreview} alt="" loading="lazy" decoding="async" />
-            <span className="machine-card__status">{demoMode ? 'Internal preview' : availabilityLabel(blackjackState)}</span>
-            <strong>Fortune Blackjack</strong>
-            <p>{demoMode
-              ? 'The no-account preview is available only by direct internal route.'
-              : 'A five-seat Blackjack table with adjustable wagers, visible turns, and continuous rounds.'}</p>
-            {!demoMode && blackjackState === 'available' ? (
-              <a className="machine-card__action" href="/cards/blackjack" aria-label="Play game: Fortune Blackjack">Play Blackjack</a>
-            ) : (
-              <span className="machine-card__action machine-card__action--disabled">{disabledActionLabel(demoMode, blackjackState)}</span>
-            )}
-          </article>
-          <article className={`machine-card card-game-card ${!demoMode && holdemState === 'available' ? 'machine-card--available' : 'machine-card--coming'}`}>
-            <img className="card-game-card__preview" src={holdemPreview} alt="" loading="lazy" decoding="async" />
-            <span className="machine-card__status">{demoMode ? 'Internal preview' : availabilityLabel(holdemState)}</span>
-            <strong>Texas Hold&apos;em</strong>
-            <p>{demoMode
-              ? 'The account-neutral practice table is available only by direct internal route.'
-              : 'Multi-seat poker with private cards, a live pot, and play that continues hand after hand.'}</p>
-            {!demoMode && holdemState === 'available' ? (
-              <a className="machine-card__action" href="/cards/texas-holdem" aria-label="Play game: Texas Hold'em">Play Hold’em</a>
-            ) : (
-              <span className="machine-card__action machine-card__action--disabled">{disabledActionLabel(demoMode, holdemState)}</span>
-            )}
-          </article>
-          <article className={`machine-card card-game-card ${!demoMode && solitaireState === 'available' ? 'machine-card--available' : 'machine-card--coming'}`}>
-            <img className="card-game-card__preview" src={solitairePreview} alt="" loading="lazy" decoding="async" />
-            <span className="machine-card__status">{demoMode ? 'Internal preview' : availabilityLabel(solitaireState)}</span>
-            <strong>Competitive Solitaire</strong>
-            <p>{demoMode
-              ? 'The account-neutral practice lab is available only by direct internal route.'
-              : 'Play a competitive timed deal or relax with free single-player Klondike.'}</p>
-            {!demoMode && solitaireState === 'available' ? (
-              <a className="machine-card__action" href="/cards/solitaire" aria-label="Play game: Competitive Solitaire">Play Solitaire</a>
-            ) : (
-              <span className="machine-card__action machine-card__action--disabled">{disabledActionLabel(demoMode, solitaireState)}</span>
-            )}
-          </article>
-          {['Pinochle', 'Spades', 'Hearts'].map((name) => (
-            <article className="machine-card card-game-card machine-card--coming compact-placeholder-card" key={name}>
-              <span className="compact-placeholder-card__mark" aria-hidden="true">{name === 'Hearts' ? '♥' : name === 'Spades' ? '♠' : '♣'}</span>
-              <span className="machine-card__status">In the forge</span>
-              <strong>{name}</strong>
-              <p>{name === 'Pinochle' ? 'A partnership meld-and-trick table.' : `${name} trick-taking tables are coming later.`}</p>
-              <span className="machine-card__action machine-card__action--disabled">Coming soon</span>
-            </article>
-          ))}
-        </section>
-      </main>
+          <section className="card-game-library" aria-label="Available card games">
+            <CardGameCard
+              available={!demoMode && blackjackState === 'available'}
+              description="A five-seat Blackjack table with adjustable wagers, visible turns, and continuous rounds."
+              href="/cards/blackjack"
+              image={blackjackPreview}
+              title="Fortune Blackjack"
+            />
+            <CardGameCard
+              available={!demoMode && holdemState === 'available'}
+              description="Multi-seat poker with private cards, a live pot, and play that continues hand after hand."
+              href="/cards/texas-holdem"
+              image={holdemPreview}
+              title="Texas Hold’em"
+            />
+            <CardGameCard
+              available={!demoMode && solitaireState === 'available'}
+              description="Build each foundation from Ace through King in a classic Klondike deal."
+              href="/cards/solitaire"
+              image={solitairePreview}
+              title="Competitive Solitaire"
+            />
+            {!demoMode && <CardGameCard
+              available
+              description="A four-player trick-taking match where the lowest score wins."
+              href="/cards/hearts"
+              mark="♥"
+              title="Hearts"
+            />}
+          </section>
+        </main>
       </div>
     </div>
   )
 }
 
-function availabilityLabel(state: CardGameAvailabilityState): string {
-  return state === 'available'
-    ? 'Credit play available'
-    : state === 'checking'
-      ? 'Checking server availability'
-      : 'Credit table unavailable'
-}
+function CardGameCard({
+  available,
+  description,
+  href,
+  image,
+  mark,
+  title,
+}: {
+  available: boolean
+  description: string
+  href: string
+  image?: string
+  mark?: string
+  title: string
+}) {
+  const className = `machine-card card-game-card ${available ? 'machine-card--available' : 'machine-card--coming'}`
+  const content = <>
+    {image && <img className="card-game-card__preview" src={image} alt="" loading="lazy" decoding="async" />}
+    {mark && <span className="compact-placeholder-card__mark" aria-hidden="true">{mark}</span>}
+    <strong>{title}</strong>
+    <p>{description}</p>
+  </>
 
-function disabledActionLabel(demoMode: boolean, state: CardGameAvailabilityState): string {
-  if (demoMode) return 'Internal route only'
-  return state === 'checking' ? 'Checking availability' : 'Unavailable'
+  return available
+    ? <a className={className} href={href} aria-label={`Play game: ${title}`}>{content}</a>
+    : <article className={className}>{content}</article>
 }

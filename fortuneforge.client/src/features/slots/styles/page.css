@@ -1,5 +1,9 @@
 .slots-page {
   --slot-page-backdrop: linear-gradient(180deg, #120727, #070317);
+  --slot-topbar-background: linear-gradient(90deg, rgb(16 7 45 / 86%), rgb(45 13 79 / 76%), rgb(16 7 45 / 86%));
+  --slot-topbar-border-color: rgb(53 231 255 / 34%);
+  --slot-topbar-shadow-color: rgb(5 2 20 / 42%);
+  --slot-topbar-accent-color: rgb(239 61 255 / 16%);
 
   position: relative;
   min-height: 100vh;
@@ -62,11 +66,12 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem clamp(1rem, 4vw, 3.5rem);
-  border-bottom: 1px solid rgb(53 231 255 / 34%);
-  background: linear-gradient(90deg, rgb(16 7 45 / 86%), rgb(45 13 79 / 76%), rgb(16 7 45 / 86%));
+  border-bottom: 1px solid var(--slot-topbar-border-color);
+  background: var(--slot-topbar-background);
   box-shadow:
-    0 0.7rem 2.5rem rgb(5 2 20 / 42%),
-    0 0.15rem 1.2rem rgb(239 61 255 / 16%);
+    0 0.7rem 2.5rem var(--slot-topbar-shadow-color),
+    0 0.15rem 1.2rem var(--slot-topbar-accent-color);
+  backdrop-filter: blur(0.9rem) saturate(1.08);
 }
 
 .slots-page__brand {
@@ -120,6 +125,13 @@
   white-space: nowrap;
 }
 
+.slots-page__navigation {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: clamp(0.45rem, 1.4vw, 1rem);
+}
+
 .slots-page__brand:hover {
   filter: brightness(1.16);
   transform: translateY(-1px);
@@ -128,6 +140,30 @@
 .slots-page__brand:focus-visible {
   outline: 2px solid #fff8ff;
   outline-offset: 0.35rem;
+}
+
+.slots-page__other-games {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.68rem;
+  border: 1px solid rgb(53 231 255 / 34%);
+  border-radius: 999px;
+  color: #d9d1ef;
+  font: 800 0.7rem/1 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.slots-page__other-games:hover {
+  border-color: rgb(255 211 95 / 58%);
+  background: rgb(255 211 95 / 10%);
+  color: #fff1bd;
+}
+
+.slots-page__other-games:focus-visible {
+  outline: 2px solid #fff8ff;
+  outline-offset: 0.2rem;
 }
 
 .slots-page__brand-actions {
@@ -202,9 +238,10 @@
   background: linear-gradient(90deg, #35e7ff 0%, #fff8ff 38%, #ef3dff 72%, #ffc63d 100%);
   background-clip: text;
   color: transparent;
+  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
   font-size: clamp(1.2rem, 2.2vw, 1.8rem);
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   line-height: 1;
   text-shadow: 0 0 1.2rem rgb(53 231 255 / 20%);
   text-transform: uppercase;
@@ -280,6 +317,27 @@
 .slots-page__help-button:focus-visible {
   outline: 2px solid #fff8ff;
   outline-offset: 3px;
+}
+
+.slots-page__help-button-label {
+  display: none;
+}
+
+@media (min-width: 720px) {
+  .slots-page__help-button {
+    width: auto;
+    min-width: 2.15rem;
+    gap: 0.32rem;
+    padding-inline: 0.6rem 0.72rem;
+    border-radius: 999px;
+  }
+
+  .slots-page__help-button-label {
+    display: inline;
+    font: 900 0.64rem/1 Inter, ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+  }
 }
 
 .slots-page__settings-button {
@@ -461,6 +519,11 @@
     drop-shadow(0 0 0.42rem rgb(255 255 255 / 100%))
     drop-shadow(0 0 1.15rem rgb(236 74 255 / 100%))
     drop-shadow(0 0 1.55rem rgb(255 61 122 / 88%));
+}
+
+.slots-page__seal-flyover--gem-hoard {
+  animation-name: pirate-gem-pour;
+  animation-delay: var(--treasure-gem-delay, 0ms);
 }
 
 .slots-page__money-grab {
@@ -717,6 +780,38 @@
     filter:
       drop-shadow(0 0 0.24rem rgb(255 255 255 / 100%))
       drop-shadow(0 0 0.36rem rgb(246 185 47 / 96%));
+  }
+}
+
+@keyframes pirate-gem-pour {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--treasure-gem-start-x), var(--treasure-gem-start-y), 0) scale(0.58) rotate(var(--treasure-gem-rotate));
+  }
+
+  12% {
+    opacity: 1;
+    transform: translate3d(var(--treasure-gem-start-x), calc(var(--treasure-gem-start-y) + 0.55rem), 0) scale(0.88) rotate(0deg);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translate3d(
+      calc(var(--seal-travel-x) + var(--treasure-gem-end-x)),
+      calc(var(--seal-travel-y) - var(--treasure-gem-drop-height)),
+      0
+    ) scale(0.64) rotate(var(--treasure-gem-rotate));
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.32, 1);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translate3d(calc(var(--seal-travel-x) + var(--treasure-gem-end-x)), calc(var(--seal-travel-y) + var(--treasure-gem-end-y)), 0) scale(0.16) rotate(calc(var(--treasure-gem-rotate) + 42deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--seal-travel-x) + var(--treasure-gem-end-x)), calc(var(--seal-travel-y) + var(--treasure-gem-end-y)), 0) scale(0.08) rotate(calc(var(--treasure-gem-rotate) + 58deg));
   }
 }
 
@@ -1624,13 +1719,13 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.55rem 0.85rem;
-    border: 1px solid rgb(53 231 255 / 58%);
+    border: 1px solid var(--slot-topbar-border-color);
     border-radius: 999px;
-    background: linear-gradient(135deg, rgb(31 12 72 / 96%), rgb(68 16 98 / 94%));
+    background: var(--slot-topbar-background);
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 8%),
-      0 0.65rem 1.35rem rgb(4 1 18 / 42%),
-      0 0 1rem rgb(53 231 255 / 18%);
+      0 0.65rem 1.35rem var(--slot-topbar-shadow-color),
+      0 0 1rem var(--slot-topbar-accent-color);
     color: #fff7cf;
     font: 900 0.72rem/1 system-ui, sans-serif;
     letter-spacing: 0.08em;
@@ -1653,7 +1748,7 @@
     z-index: 24;
     inset: 0;
     display: grid;
-    overflow-y: auto;
+    overflow: hidden;
     place-items: center;
     padding: clamp(0.65rem, 3vw, 1.5rem);
     background:
@@ -1668,16 +1763,43 @@
     z-index: 1;
     left: auto;
     bottom: auto;
-    width: min(34rem, 100%);
-    max-height: calc(100svh - 1.3rem);
+    width: min(52rem, 100%);
+    max-height: none;
     box-sizing: border-box;
-    overflow-y: auto;
+    overflow: hidden;
     margin: 0;
     animation: win-help-card-in 220ms cubic-bezier(0.18, 0.84, 0.24, 1.08) both;
   }
 
   .symbol-value-guide--modal .symbol-value-guide__heading {
     padding-right: 2.4rem;
+  }
+
+  .symbol-value-guide--modal .symbol-value-guide__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(0.18rem, 0.45svh, 0.32rem);
+  }
+
+  .symbol-value-guide--modal .symbol-value-guide__item {
+    grid-template-columns: clamp(1.55rem, 4.2svh, 2.15rem) minmax(0, 0.85fr) minmax(0, 1.15fr);
+    column-gap: clamp(0.2rem, 0.45svh, 0.35rem);
+    row-gap: 0.06rem;
+    padding: clamp(0.17rem, 0.42svh, 0.28rem) clamp(0.24rem, 0.5svh, 0.38rem);
+    font-size: clamp(0.52rem, 1.15svh, 0.72rem);
+  }
+
+  .symbol-value-guide--modal .symbol-value-guide__artwork {
+    width: clamp(1.55rem, 4.2svh, 2.15rem);
+    height: clamp(1.55rem, 4.2svh, 2.15rem);
+  }
+
+  .symbol-value-guide--modal .symbol-value-guide__name {
+    font-size: clamp(0.49rem, 1.06svh, 0.66rem);
+  }
+
+  .symbol-value-guide--modal > small {
+    margin-top: clamp(0.24rem, 0.5svh, 0.5rem);
+    font-size: clamp(0.48rem, 0.96svh, 0.6rem);
   }
 
   .symbol-value-guide__close {
@@ -1724,6 +1846,97 @@
   text-shadow:
     0 0 0.8rem rgb(255 198 61 / 42%),
     0 0 1.4rem rgb(239 61 255 / 20%);
+}
+
+.slots-page__cabinet-spotlight {
+  position: relative;
+  z-index: 0;
+}
+
+.slots-page__cabinet-spotlight--lit {
+  z-index: 31;
+  filter:
+    brightness(1.13)
+    drop-shadow(0 0 1.4rem rgb(255 199 73 / 68%))
+    drop-shadow(0 0 3.5rem rgb(255 128 42 / 34%));
+  isolation: isolate;
+}
+
+.slots-page__collection-award-dimmer {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 48%, rgb(56 18 3 / 34%), transparent min(42vw, 36rem)),
+    rgb(3 5 13 / 84%);
+  backdrop-filter: blur(0.45rem) saturate(0.78);
+  animation: win-help-backdrop-in 180ms ease-out both;
+}
+
+.slots-page__collection-award-dialog {
+  position: fixed;
+  z-index: 32;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: min(31rem, calc(100vw - 2rem));
+  box-sizing: border-box;
+  gap: 0.85rem;
+  padding: clamp(1.35rem, 4vw, 2.35rem);
+  transform: translate(-50%, -50%);
+  border: 1px solid rgb(255 218 120 / 72%);
+  border-radius: 1.3rem;
+  background:
+    linear-gradient(145deg, rgb(62 23 9 / 98%), rgb(16 9 21 / 98%)),
+    #160915;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 12%),
+    0 1.4rem 4.2rem rgb(0 0 0 / 72%),
+    0 0 3rem rgb(255 161 48 / 38%);
+  color: #fff8d6;
+  text-align: center;
+  animation: win-help-card-in 250ms cubic-bezier(0.18, 0.84, 0.24, 1.08) both;
+}
+
+.slots-page__collection-award-kicker {
+  color: #ffd46d;
+  font: 900 0.72rem/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.slots-page__collection-award-dialog h2 {
+  margin: 0;
+  color: #fff8e1;
+  font: 1000 clamp(1.75rem, 6vw, 2.7rem)/0.98 Georgia, serif;
+  text-shadow: 0 0.1rem 0 rgb(79 26 0 / 88%), 0 0 0.8rem rgb(255 189 55 / 60%);
+}
+
+.slots-page__collection-award-dialog p {
+  margin: 0;
+  color: #f9e6bd;
+  font: 600 clamp(0.95rem, 2.5vw, 1.08rem)/1.45 Inter, system-ui, sans-serif;
+}
+
+.slots-page__collection-award-dialog button {
+  justify-self: center;
+  min-width: 10rem;
+  margin-top: 0.25rem;
+  padding: 0.72rem 1.25rem;
+  border: 1px solid rgb(255 234 165 / 88%);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f7b63a, #b75b10);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 45%), 0 0.45rem 1.1rem rgb(0 0 0 / 40%);
+  color: #251006;
+  cursor: pointer;
+  font: 1000 0.88rem/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.slots-page__collection-award-dialog button:focus-visible {
+  outline: 3px solid #fff8ce;
+  outline-offset: 0.2rem;
 }
 
 .win-help__backdrop {

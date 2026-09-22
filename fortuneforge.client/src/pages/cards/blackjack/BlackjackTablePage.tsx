@@ -26,6 +26,7 @@ import {
 } from '../../../games/cards/blackjack/blackjackTableApi'
 import { CardOutcomeSummary, type CardOutcomeTone } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import '../../../games/cards/shared/playingCards.css'
 import { CardRoomNavigation } from '../CardRoomNavigation'
 import './blackjack.css'
@@ -44,6 +45,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [busy, setBusy] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const onCardAudioClick = useCardAudioClick()
 
   const load = useCallback(async (quiet = false, signal?: AbortSignal) => {
     if (!quiet) setAvailability({ kind: 'loading' })
@@ -160,7 +162,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   )
 
   return (
-    <div className="blackjack-page blackjack-table-page">
+    <div className="blackjack-page blackjack-table-page" onClickCapture={onCardAudioClick}>
       <CardRoomNavigation
         playerName={account.playerName}
         balanceCredits={balanceCredits}

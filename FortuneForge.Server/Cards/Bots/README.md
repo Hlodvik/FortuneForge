@@ -57,6 +57,8 @@ The exact configuration names are:
 
 - `Cards:Bots:WorkerIntervalMilliseconds`
 - `Cards:Bots:TurnLeaseSeconds`
+- `Cards:Bots:QueueScheduler:MaximumHumanWaitMilliseconds`
+- `Cards:Bots:QueueScheduler:ArrivalSampleWindowSeconds`
 - `Cards:Bots:{Blackjack|Solitaire|TexasHoldem}:Enabled`
 - `Cards:Bots:{Blackjack|Solitaire|TexasHoldem}:MaxBotsPerMatch`
 - `Cards:Bots:{Blackjack|Solitaire|TexasHoldem}:HumanWaitGraceMilliseconds`
@@ -67,6 +69,12 @@ The exact configuration names are:
 
 Bounds are validated at startup/options resolution. Four-star imperfection must remain greater
 than zero; one-star and five-star levels are rejected.
+
+After a game's human-only grace period, the queue scheduler evaluates recent compatible human
+arrivals in its sample window. It waits when that arrival rate forecasts a full human queue
+before the maximum wait, otherwise it returns only the missing bot-seat count. A queue must
+always contain at least one human player. The scheduler has no bot identity, game state, hidden
+information, balance, settlement, or strategy access.
 
 ## Local run
 

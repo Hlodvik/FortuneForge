@@ -9,6 +9,8 @@ namespace FortuneForge.Server.Accounts.Storage;
 
 public sealed partial class FirestoreAccountStore
 {
+    internal const long SlotOutcomeSchemaVersion = 5;
+
     public Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,
         SpinResult result,
@@ -69,7 +71,8 @@ public sealed partial class FirestoreAccountStore
                 {
                     var existingSealCollections = CreateSealCollections(
                         guardSnapshot,
-                        result.PointValueInCents);
+                        result.PointValueInCents,
+                        result.GameId);
                     var existingFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
                     if (existingFreeSpinWagerCents <= 0)
                     {
@@ -101,7 +104,11 @@ public sealed partial class FirestoreAccountStore
                         RandMoney.CentsToRand(chargedWagerCents));
                 }
 
-                var energyBonus = EnergyBonus.Settle(currentEnergy, result.EnergyAwarded, result.Payout);
+                SlotSpecialRoundProfiles.TryGet(result.GameId, out var specialRoundProfile);
+                var energyBonus = EnergyBonus.Settle(
+                    specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
+                    result.EnergyAwarded,
+                    result.Payout);
                 var sealSettlement = SettleSealCollections(
                     guardSnapshot,
                     result,
@@ -148,6 +155,8 @@ public sealed partial class FirestoreAccountStore
                     ["symbolSetId"] = result.SymbolSetId,
                     ["paytableId"] = result.PaytableId,
                     ["reelStops"] = result.ReelStops.Select(static stop => (long)stop).ToArray(),
+                    ["visibleSymbolWindow"] = CreateVisibleSymbolWindowData(result.Reels),
+                    ["payoutBreakdown"] = CreatePayoutBreakdownData(settledPayout),
                     ["wageredSlotsCredits"] = (double)wagerRand,
                     ["payoutWagerPoints"] = result.WagerPoints,
                     ["wonSlotsCredits"] = (double)payoutRand,
@@ -170,7 +179,7 @@ public sealed partial class FirestoreAccountStore
                     ["specialBoostApplied"] = result.SpecialBoostApplied,
                     ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
                     ["fiveMatchPityTriggered"] = result.FiveMatchPityTriggered,
-                    ["outcomeSchemaVersion"] = 4,
+                    ["outcomeSchemaVersion"] = SlotOutcomeSchemaVersion,
                     ["result"] = isWin ? "win" : "loss",
                     ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
                 });
@@ -380,4 +389,55 @@ public sealed partial class FirestoreAccountStore
             },
             cancellationToken: cancellationToken);
     }
+
+    internal static Dictionary<string, object> CreateVisibleSymbolWindowData(
+        IReadOnlyList<IReadOnlyList<string>> reels) => new()
+    {
+        ["reels"] = reels
+            .Select((symbols, reel) => (object)new Dictionary<string, object>
+            {
+                ["reel"] = (long)reel,
+                ["symbols"] = symbols
+                    .Select((symbolId, row) => (object)new Dictionary<string, object>
+                    {
+                        ["row"] = (long)row,
+                        ["symbolId"] = symbolId
+                    })
+                    .ToArray()
+            })
+            .ToArray()
+    };
+
+    internal static Dictionary<string, object> CreatePayoutBreakdownData(SpinPayout payout) => new()
+    {
+        ["totalPoints"] = payout.TotalPoints,
+        ["paylines"] = payout.Paylines
+            .Select(static payline => (object)new Dictionary<string, object>
+            {
+                ["paylineId"] = (long)payline.PaylineId,
+                ["amountPoints"] = payline.AmountPoints,
+                ["matches"] = payline.Matches
+                    .Select(static match => (object)new Dictionary<string, object>
+                    {
+                        ["paylineId"] = (long)match.Match.PaylineId,
+                        ["symbolId"] = match.Match.SymbolId,
+                        ["length"] = (long)match.Match.MatchLength,
+                        ["multiplier"] = match.Multiplier,
+                        ["amountPoints"] = match.AmountPoints,
+                        ["positions"] = CreateGridPositionData(match.Match.Positions),
+                        ["wildPositions"] = CreateGridPositionData(match.Match.WildPositions)
+                    })
+                    .ToArray()
+            })
+            .ToArray()
+    };
+
+    private static object[] CreateGridPositionData(IReadOnlyList<GridPosition> positions) =>
+        positions
+            .Select(static position => (object)new Dictionary<string, object>
+            {
+                ["reel"] = (long)position.Reel,
+                ["row"] = (long)position.Row
+            })
+            .ToArray();
 }

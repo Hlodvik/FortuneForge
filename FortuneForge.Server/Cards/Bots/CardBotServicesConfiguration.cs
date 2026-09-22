@@ -1,6 +1,7 @@
 using FortuneForge.Server.Cards.Blackjack.Bots;
 using FortuneForge.Server.Cards.Solitaire.Bots;
 using FortuneForge.Server.Cards.TexasHoldem.Bots;
+using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
 
@@ -15,7 +16,7 @@ public static class CardBotServicesConfiguration
         services.AddOptions<CardBotPlatformOptions>()
             .Bind(configuration.GetSection(CardBotPlatformOptions.SectionName));
         services.AddSingleton<IPostConfigureOptions<CardBotPlatformOptions>, CardBotOptionsPostConfigure>();
-        services.AddSingleton<BotIdentityFactory>();
+        services.AddSingleton<ICardBotIdentityProvider, DirectoryCardBotIdentityProvider>();
         services.AddSingleton<IBotTurnLeaseStore>(provider =>
             new FirestoreBotTurnLeaseStore(provider.GetRequiredService<FirestoreDb>()));
 

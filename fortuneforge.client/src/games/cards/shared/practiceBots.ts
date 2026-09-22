@@ -133,13 +133,13 @@ async function readPracticeResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const problem = isRecord(value) ? value as PracticeProblem : null
     throw new PracticeBotRequestError(
-      problem?.error ?? problem?.detail ?? `Practice table request failed (${response.status}).`,
+      problem?.error ?? problem?.detail ?? `Table request failed (${response.status}).`,
       response.status,
       problem,
     )
   }
   if (!isRecord(value) || value.contractVersion !== PRACTICE_BOT_CONTRACT) {
-    throw new Error('The practice table returned an unsupported contract.')
+    throw new Error('The table returned an unsupported response.')
   }
   return value as T
 }

@@ -6,7 +6,7 @@ export const DINO_DOMINION_CATALOG: SlotGameCatalogDefinition = {
   title: 'Dino Dominion',
   shortTitle: 'Dino Dominion',
   description: 'Dig through a prehistoric valley, uncover four fossil beds, and send rare amber to the museum.',
-  image: art.emblem,
+  image: art.rex,
   imagePresentation: 'contain',
   slotDivBackgroundImage: art.backdrop,
 }

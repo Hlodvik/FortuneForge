@@ -8,11 +8,6 @@
     max-width: 45rem;
   }
 
-  .landing-showcase {
-    width: min(100%, 35rem);
-    justify-self: center;
-  }
-
   .history-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -171,19 +166,6 @@
 
   .landing-button {
     width: 100%;
-  }
-
-  .landing-showcase {
-    width: 112%;
-    margin-left: -6%;
-  }
-
-  .landing-showcase__badge--top {
-    left: 1%;
-  }
-
-  .landing-showcase__badge--bottom {
-    right: 1%;
   }
 
   .landing-invite {
@@ -513,11 +495,7 @@
   .account-page::before,
   .account-page::after,
   .player-page::before,
-  .player-page::after,
-  .landing-showcase__halo,
-  .landing-showcase__orbit,
-  .landing-showcase__companion,
-  .landing-showcase__fruit {
+  .player-page::after {
     animation: none;
   }
 

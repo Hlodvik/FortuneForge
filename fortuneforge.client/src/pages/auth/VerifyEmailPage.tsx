@@ -1,4 +1,4 @@
-import wukongMedallion from '../../assets/slots/symbols/wukong/wukong-medallion.png'
+import wukongMedallion from '../../assets/slots/symbols/wukong/optimized/wukong-medallion.png'
 import '../index.css'
 
 export function VerifyEmailPage() {

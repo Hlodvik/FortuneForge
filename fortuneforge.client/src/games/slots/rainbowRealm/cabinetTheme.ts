@@ -1,5 +1,5 @@
-import rainbowOrchard from '../../../assets/slots/backgrounds/rainbow-realm-prismatic-orchard-v3-base.png'
-import rainbowAppleMedallion from '../../../assets/slots/games/rainbow-realm/rainbow-apple-medallion.png'
+import rainbowOrchard from '../../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.png'
+import rainbowAppleMedallion from '../../../assets/slots/games/rainbow-realm/optimized/rainbow-apple-medallion.png'
 import cherrySymbol from '../../../assets/slots/symbols/cherry.gif'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 

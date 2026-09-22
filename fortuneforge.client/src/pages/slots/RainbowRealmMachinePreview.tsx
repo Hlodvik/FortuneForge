@@ -1,14 +1,13 @@
-import strawberryMascot from '../../assets/mascots/strawberry-mascot.png'
-import orchardBase from '../../assets/slots/backgrounds/rainbow-realm-prismatic-orchard-v3-base.png'
-import pinwheelFlower from '../../assets/slots/backgrounds/rainbow-realm-pinwheel-flower.png'
-import energyBolt from '../../assets/slots/symbols/celestial-lightning-bolt.png'
+import orchardBase from '../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.png'
+import pinwheelFlower from '../../assets/slots/backgrounds/optimized/rainbow-realm-pinwheel-flower.png'
+import energyBolt from '../../assets/slots/symbols/optimized/celestial-lightning-bolt.png'
 import cherry from '../../assets/slots/symbols/cherry.gif'
 import goldenApple from '../../assets/slots/symbols/golden-apple.gif'
 import grape from '../../assets/slots/symbols/grape-bunch.gif'
 import lemon from '../../assets/slots/symbols/lemon.gif'
 import mango from '../../assets/slots/symbols/mango.gif'
 import orange from '../../assets/slots/symbols/orange.gif'
-import powerCoin from '../../assets/slots/symbols/rainbow-realm-power-coin.png'
+import powerCoin from '../../assets/slots/symbols/optimized/rainbow-realm-power-coin.png'
 import watermelon from '../../assets/slots/symbols/watermelon-slice.gif'
 import { RainbowRealmMachine } from '../../features/slots/components/RainbowRealmMachine'
 import '../index.css'
@@ -138,10 +137,6 @@ export function RainbowRealmMachinePreview() {
           />
         </div>
       </main>
-
-      <div className="rainbow-realm-preview__mascot" aria-hidden="true">
-        <img src={strawberryMascot} alt="" />
-      </div>
     </div>
   )
 }

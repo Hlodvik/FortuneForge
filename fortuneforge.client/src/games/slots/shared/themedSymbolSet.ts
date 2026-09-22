@@ -41,6 +41,9 @@ export type ThemedSymbolSetOptions = {
   energyEarnLabel: string
   collectorFirstValue: string
   collectorSecondValue: string
+  freeRequiredLabel?: string
+  freeAwardLabel?: string
+  collectionRequiredCount?: number
   collectionAwardLabels: Readonly<Record<CollectionSymbolId, string>>
 }
 
@@ -83,7 +86,13 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
     { symbol: '6', firstLabel: '3–4', firstValue: '2×', secondLabel: '5', secondValue: '8×' },
     { symbol: '7', firstLabel: '3–4', firstValue: '3×', secondLabel: '5', secondValue: '11×' },
     { symbol: 'ACE', firstLabel: '3–4', firstValue: '5×', secondLabel: '5', secondValue: '18×' },
-    { symbol: 'FREE', firstLabel: '3+', firstValue: 'anywhere', secondLabel: 'Award', secondValue: '5 free games' },
+    {
+      symbol: 'FREE',
+      firstLabel: options.freeRequiredLabel ?? '3+',
+      firstValue: 'anywhere',
+      secondLabel: 'Award',
+      secondValue: options.freeAwardLabel ?? '5 free games',
+    },
     { symbol: 'POWER', firstLabel: '3–4', firstValue: '2× +1 point', secondLabel: '5', secondValue: '4× +2 points' },
     { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: options.energyEarnLabel },
     { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },
@@ -91,7 +100,7 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
     ...(['SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND'] as const).map((symbol) => ({
       symbol,
       firstLabel: 'Any',
-      firstValue: 'collect 40',
+      firstValue: `collect ${options.collectionRequiredCount ?? 40}`,
       secondLabel: 'Award',
       secondValue: options.collectionAwardLabels[symbol],
     })),

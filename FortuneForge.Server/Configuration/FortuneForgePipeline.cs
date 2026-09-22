@@ -1,3 +1,5 @@
+using FortuneForge.Server.Accounts.Development;
+
 namespace FortuneForge.Server.Configuration;
 
 public static class FortuneForgePipeline
@@ -17,6 +19,7 @@ public static class FortuneForgePipeline
         }
 
         app.UseRouting();
+        app.UseDevelopmentDefaultAccount();
         app.Use(async (context, next) =>
         {
             if (context.Request.Path.StartsWithSegments("/api"))

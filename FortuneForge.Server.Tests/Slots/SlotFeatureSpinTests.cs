@@ -1,4 +1,5 @@
 using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Evaluation;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
@@ -10,6 +11,51 @@ namespace FortuneForge.Server.Tests.Slots;
 
 public sealed class SlotFeatureSpinTests
 {
+    [Fact]
+    public void DoubloonTokenFrequency_PiratesUsesACalibratedValueCadence()
+    {
+        var piratesTotal = Enumerable.Range(0, 100)
+            .Sum(roll => SpinService.GetMoneySymbolCountForRoll(
+                SlotSpecialRoundProfiles.PiratesFortuneGameId,
+                roll));
+        var sharedTotal = Enumerable.Range(0, 100)
+            .Sum(roll => SpinService.GetMoneySymbolCountForRoll(
+                SlotSpecialRoundProfiles.ClassicGameId,
+                roll));
+
+        Assert.Equal(104, sharedTotal);
+        Assert.Equal(10, piratesTotal);
+        Assert.True(piratesTotal < sharedTotal);
+    }
+
+    [Fact]
+    public void GemFrequency_PiratesUsesAHigherFixedAppearanceRate()
+    {
+        var sharedTotal = Enumerable.Range(0, 100)
+            .SelectMany(appearanceRoll => Enumerable.Range(0, 25)
+                .Select(extraSealRoll => SpinService.GetSealCountForRoll(
+                    SlotSpecialRoundProfiles.ClassicGameId,
+                    0,
+                    appearanceRoll,
+                    extraSealRoll)))
+            .Sum();
+        var piratesTotal = Enumerable.Range(0, 100)
+            .SelectMany(appearanceRoll => Enumerable.Range(0, 25)
+                .Select(extraSealRoll => SpinService.GetSealCountForRoll(
+                    SlotSpecialRoundProfiles.PiratesFortuneGameId,
+                    0,
+                    appearanceRoll,
+                    extraSealRoll)))
+            .Sum();
+
+        Assert.Equal(858, sharedTotal);
+        Assert.Equal(1_300, piratesTotal);
+        Assert.True(piratesTotal > sharedTotal);
+        Assert.Equal(50, SpinService.GetSealAppearanceChance(
+            SlotSpecialRoundProfiles.PiratesFortuneGameId,
+            currentEnergyBalance: 0));
+    }
+
     [Fact]
     public void Spin_WhenMonkeyPawAndRandMultiplierAreVisible_GrabsMultiplierValue()
     {
@@ -51,6 +97,20 @@ public sealed class SlotFeatureSpinTests
             freeSpinFeatureMode: "rows");
 
         Assert.All(result.Reels, reel => Assert.Equal(6, reel.Count));
+    }
+
+    [Fact]
+    public void Spin_WhenProfiledGameHasNoRowsFeatureMode_ReturnsItsRegularVisibleRows()
+    {
+        var service = CreateService(new QueuedRandomIndexSource());
+
+        var result = service.Spin(
+            "classic-demo-v1",
+            100,
+            "player",
+            specialBoostApplied: false);
+
+        Assert.All(result.Reels, reel => Assert.Equal(4, reel.Count));
     }
 
     [Fact]

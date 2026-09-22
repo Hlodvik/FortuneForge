@@ -22,6 +22,8 @@ createRoot(document.getElementById('root')!).render(
         freePaused={false}
         freeComplete={false}
         freeAutoWinning={false}
+        freeSubmitting={false}
+        freeSubmissionError={null}
         freeSetupOpen={false}
         competitiveSetupMatchId={null}
         freeElapsedMilliseconds={83_000}

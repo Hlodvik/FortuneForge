@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { commandBlackjackBotPractice, joinBlackjackBotPractice } from '../blackjack/botPracticeApi'
 import { commandSolitaireBotPractice } from '../solitaire/botPracticeApi'
 import { commandHoldemBotPractice } from '../texasHoldem/botPracticeApi'
-import { PracticeModeNotice, PracticeQueuePanel } from './PracticeBotChrome'
+import { PracticeQueuePanel } from './PracticeBotChrome'
 
 describe('account-neutral bot-practice client contract', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -68,7 +68,7 @@ describe('account-neutral bot-practice client contract', () => {
     expect(JSON.stringify(request)).not.toMatch(/score|elapsed|seed|payout|balance|identity/i)
   })
 
-  it('discloses automation generally but never identifies individual automated seats', () => {
+  it('keeps the participant queue focused on seats, not automation details', () => {
     const queue = {
       queueId: 'queue',
       game: 'blackjack',
@@ -78,16 +78,12 @@ describe('account-neutral bot-practice client contract', () => {
         { seatId: 'seat_a19f', displayName: 'RiverAce21', seat: 1, status: 'queued' },
       ],
     }
-    const markup = renderToStaticMarkup(createElement('div', null,
-      createElement(PracticeModeNotice),
-      createElement(PracticeQueuePanel, { queue }),
-    ))
+    const markup = renderToStaticMarkup(createElement(PracticeQueuePanel, { queue }))
 
-    expect(markup).toContain('Automated opponents may fill empty seats')
+    expect(markup).toContain('Empty seats will then be filled automatically')
     expect(markup).toContain('NightOwl77')
     expect(markup).toContain('RiverAce21')
-    expect(markup).not.toMatch(/4-star|automated seat/i)
-    expect(markup).toContain('No account balance, wager ledger, payout, or house result')
+    expect(markup).not.toMatch(/4-star|automated seat|account neutral/i)
   })
 })
 

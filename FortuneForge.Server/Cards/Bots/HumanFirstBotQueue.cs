@@ -1,3 +1,5 @@
+using FortuneForge.Server.Matchmaking.QueueBotScheduling;
+
 namespace FortuneForge.Server.Cards.Bots;
 
 internal sealed class HumanFirstBotQueue(
@@ -12,6 +14,8 @@ internal sealed class HumanFirstBotQueue(
 {
     private readonly List<QueueSeat> humans = [];
     private readonly List<QueueSeat> pendingBots = [];
+    private readonly DateTime queueCreatedAtUtc = createdAtUtc;
+    private readonly int maximumBots = maxBots;
     private bool started;
 
     public string QueueId { get; } = queueId;
@@ -20,8 +24,16 @@ internal sealed class HumanFirstBotQueue(
     public int BotSkillLevel { get; } = botSkillLevel;
     public DateTime GraceEndsAtUtc { get; } = createdAtUtc.Add(humanGrace);
     public ulong Seed { get; } = seed;
+    public string StatisticsKey => $"{Game}:{RequiredPlayers}:{BotSkillLevel}";
 
     public QueueSeat AddHuman(string sessionId, string displayName, DateTime nowUtc)
+        => AddHuman(sessionId, displayName, nowUtc, scheduler: null);
+
+    public QueueSeat AddHuman(
+        string sessionId,
+        string displayName,
+        DateTime nowUtc,
+        IQueueBotFillScheduler? scheduler)
     {
         lock (humans)
         {
@@ -41,47 +53,57 @@ internal sealed class HumanFirstBotQueue(
                 humans.Count,
                 nowUtc);
             humans.Add(seat);
+            scheduler?.RecordHumanArrival(StatisticsKey, nowUtc);
             for (var index = 0; index < pendingBots.Count; index++)
                 pendingBots[index] = pendingBots[index] with { Seat = humans.Count + index };
             return seat;
         }
     }
 
-    public IReadOnlyList<QueueSeat> ReserveBots(DateTime nowUtc, BotIdentityFactory identities)
+    public IReadOnlyList<QueueSeat> ReserveBots(DateTime nowUtc, ICardBotIdentityProvider identities)
     {
         lock (humans)
         {
             if (started || nowUtc < GraceEndsAtUtc || humans.Count >= RequiredPlayers)
                 return Seats();
 
-            var needed = Math.Min(RequiredPlayers - humans.Count, maxBots);
-            var bots = identities.Create(Seed, needed, BotSkillLevel);
-            pendingBots.Clear();
-            pendingBots.AddRange(bots.Select((bot, index) => new QueueSeat(
-                bot.SeatId,
-                CardBotPublicIds.NewSeatId(),
-                bot.DisplayName,
-                true,
-                bot.SkillLevel,
-                humans.Count + index,
-                nowUtc)));
+            ReserveBotsUnsafe(Math.Min(RequiredPlayers - humans.Count, maximumBots), nowUtc, identities);
             return Seats();
         }
     }
 
-    public IReadOnlyList<QueueSeat>? TryStart(DateTime nowUtc, BotIdentityFactory identities)
+    public IReadOnlyList<QueueSeat>? TryStart(DateTime nowUtc, ICardBotIdentityProvider identities)
     {
         lock (humans)
         {
             if (started) return null;
             if (humans.Count < RequiredPlayers && nowUtc < GraceEndsAtUtc) return null;
-            _ = ReserveBots(nowUtc, identities);
-            if (humans.Count + pendingBots.Count != RequiredPlayers) return null;
+            ReserveBotsUnsafe(Math.Min(RequiredPlayers - humans.Count, maximumBots), nowUtc, identities);
+            return StartUnsafe();
+        }
+    }
 
-            // Start and seat assignment happen under the same lock, so no bot can displace
-            // a human between reservation and the atomic transition.
-            started = true;
-            return Seats().Select((seat, index) => seat with { Seat = index }).ToArray();
+    public IReadOnlyList<QueueSeat>? TryStart(
+        DateTime nowUtc,
+        ICardBotIdentityProvider identities,
+        IQueueBotFillScheduler scheduler,
+        QueueBotFillPolicy policy)
+    {
+        lock (humans)
+        {
+            if (started) return null;
+            if (humans.Count < RequiredPlayers)
+            {
+                var decision = scheduler.Evaluate(new QueueFillSnapshot(
+                    StatisticsKey,
+                    RequiredPlayers,
+                    humans.Count,
+                    pendingBots.Count,
+                    queueCreatedAtUtc), policy, nowUtc);
+                if (!decision.ShouldReserveBots) return null;
+                ReserveBotsUnsafe(decision.BotSeatsToReserve, nowUtc, identities);
+            }
+            return StartUnsafe();
         }
     }
 
@@ -105,6 +127,29 @@ internal sealed class HumanFirstBotQueue(
         {
             lock (humans) return humans.Count + pendingBots.Count;
         }
+    }
+
+    private IReadOnlyList<QueueSeat>? StartUnsafe()
+    {
+        if (humans.Count + pendingBots.Count != RequiredPlayers) return null;
+        // Start and seat assignment happen under the same lock, so no bot can displace
+        // a human between reservation and the atomic transition.
+        started = true;
+        return Seats().Select((seat, index) => seat with { Seat = index }).ToArray();
+    }
+
+    private void ReserveBotsUnsafe(int needed, DateTime nowUtc, ICardBotIdentityProvider identities)
+    {
+        var bots = identities.Create(Game, Seed, Math.Min(needed, maximumBots), BotSkillLevel);
+        pendingBots.Clear();
+        pendingBots.AddRange(bots.Select((bot, index) => new QueueSeat(
+            bot.SeatId,
+            CardBotPublicIds.NewSeatId(),
+            bot.DisplayName,
+            true,
+            bot.SkillLevel,
+            humans.Count + index,
+            nowUtc)));
     }
 
     private IReadOnlyList<QueueSeat> Seats() => [.. humans, .. pendingBots];

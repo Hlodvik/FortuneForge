@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { COSMIC_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
@@ -13,34 +13,38 @@ const FEATURES: SlotFeatureSet = {
     itemLabel: 'worlds',
     presentation: 'star-orbit',
     entries: [
-      { id: 'sync', label: 'Binary link', shortLabel: 'Binary', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Orbital expansion', shortLabel: 'Orbit', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Tractor beam', shortLabel: 'Beam', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Star map', shortLabel: 'Map', symbol: 'SEAL_RAND', requiredCount: 40 },
+      { id: 'sync', label: 'Binary link', shortLabel: 'Binary', symbol: 'SEAL_SYNC', requiredCount: 24 },
+      { id: 'rows', label: 'Orbital expansion', shortLabel: 'Orbit', symbol: 'SEAL_ROWS', requiredCount: 24 },
+      { id: 'paw', label: 'Tractor beam', shortLabel: 'Beam', symbol: 'SEAL_PAW', requiredCount: 24 },
+      { id: 'rand', label: 'Star map', shortLabel: 'Map', symbol: 'SEAL_RAND', requiredCount: 24 },
     ],
   },
-  moneyGrab: {
-    actorName: 'The tractor-beam saucer',
-    awardLabel: 'Dark-matter haul',
-    collectorSymbol: 'PAW',
-    valueSymbolPrefix: 'RAND_',
+  specialRound: {
+    id: 'cosmic-orbit', title: 'Orbit Run',
+    earnLabel: 'Land 3 wormholes for 6 Orbit Runs, or complete 24 worlds for 7 enhanced runs.',
+    earnStyle: 'orbit', earnHint: 'World tokens orbit their matching planet. Complete one orbit to launch an enhanced Orbit Run.',
+    activeModes: {
+      sync: 'Binary Link · one reel mirrors another', rows: 'Orbital Expansion · two extra rows',
+      paw: 'Tractor Beam · extra wilds appear', rand: 'Star Map · a wild lane appears',
+      'sync-rows': 'Orbit Alignment · linked reels with two extra rows',
+    },
   },
 }
 
 const HELP: SlotHelpDefinition = {
   paylineCount: 15,
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 17, 18, 19, 20, 21, 22, 23],
-  freeGames: { requiredSymbols: 3, awardedSpins: 5 },
+  freeGames: { requiredSymbols: 3, awardedSpins: 6 },
   extraSections: [
     {
-      badge: 'BEAM',
-      title: 'Dark-matter haul',
-      body: 'The tractor-beam saucer gathers every dark-matter crystal in view. Two saucers double the haul. Three meteor showers in a row, column, or diagonal pay 3× the wager.',
+      badge: 'METEOR',
+      title: 'Meteor shower',
+      body: 'Three meteor showers in a row, column, or diagonal pay 3× the wager. Orbit Runs replace direct multiplier tokens with wild-enhanced reel effects.',
     },
     {
       badge: 'ORBIT',
       title: 'Planetary collections',
-      body: 'Collect 40 worlds in any orbit to unlock ten special free spins. Plasma charge improves planet odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest orbit.',
+      body: 'Collect 24 worlds in any orbit to unlock seven enhanced Orbit Runs. Plasma charge improves planet odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest orbit.',
     },
   ],
 }
@@ -64,7 +68,7 @@ export const COSMIC_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'theme',
   symbols: COSMIC_FORTUNE_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  sounds: COSMIC_FORTUNE_SOUNDS,
   rules: createSlotRulesSet('cosmic-fortune-v1'),
 }
 

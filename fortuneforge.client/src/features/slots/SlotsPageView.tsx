@@ -1,13 +1,17 @@
 import type { CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
 import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
 import { SlotMachine } from './components/SlotMachine'
+import { SlotPlayGuide } from './components/SlotPlayGuide'
 import { SlotSymbol } from './components/SlotSymbol'
 import { SpinButton } from './components/SpinButton'
 import { SymbolValueGuide } from './components/SymbolValueGuide'
+import { TreasureGemFlyover } from './components/TreasureGemFlyover'
+import { getSpecialRoundLabel } from './config/slotFeatures'
 import { getSlotSymbolDefinition } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
@@ -20,9 +24,11 @@ export function SlotsPageView(controller: SlotsPageController) {
     activeWagerDisplay,
     audioPreferences,
     balance,
+    bestWin,
     cabinetTheme,
     canAffordSelectedWager,
     changeWager,
+    collectionAwardPresentation,
     closeSettings,
     creditTileRef,
     displayedReels,
@@ -40,16 +46,21 @@ export function SlotsPageView(controller: SlotsPageController) {
     handleSpinButtonClick,
     helpCloseButtonRef,
     help,
+    heldCompletedCollectionId,
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
     isDemoSpinDisabled,
     isReloadPromptOpen,
+    isSpecialGameActive,
+    isSpecialSpinDelayActive,
     isSettingsOpen,
     isSpinning,
     isStopRequested,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
+    lastFreeSpinsAwarded,
+    lastWin,
     lastSpinOutcome,
     mascotActionKey,
     mascotPhase,
@@ -65,6 +76,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     selectedWager,
     sealFlyover,
     sealImpactId,
+    specialRoundGemCount,
+    specialRoundWinnings,
     setIsAutoSpinning,
     setIsHelpOpen,
     setIsReloadPromptOpen,
@@ -83,28 +96,67 @@ export function SlotsPageView(controller: SlotsPageController) {
     wagerIndex,
     wagerOptions,
     winAwardFlyover,
+    winningPaylineCount,
     winningPositions,
   } = controller
   const collectionFeature = featureSet.collections
   const energyFeature = featureSet.energy
   const moneyGrabFeature = featureSet.moneyGrab
+  const specialRound = featureSet.specialRound
+  const specialRoundLabel = specialRound
+    ? getSpecialRoundLabel(specialRound, isSpecialGameActive ? controller.freeSpinFeatureMode : null)
+    : null
+  const completedCollection = collectionAwardPresentation && collectionFeature
+    ? collectionFeature.entries.find((entry) => entry.id === collectionAwardPresentation.collectionId)
+    : undefined
+  const completedFeatureDetail = specialRound && collectionAwardPresentation?.featureMode
+    ? specialRound.activeModes[collectionAwardPresentation.featureMode] ?? null
+    : null
+  const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
+  const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
+  const completedChestImage = completedCollection?.containerFillImages?.[
+    (completedCollection.containerFillImages?.length ?? 1) - 1
+  ] ?? completedCollection?.containerImage ?? collectionFeature?.containerImage
+  const topbarStyle = cabinetTheme.topbar
+    ? ({
+        '--slot-topbar-background': cabinetTheme.topbar.background,
+        '--slot-topbar-border-color': cabinetTheme.topbar.borderColor,
+        '--slot-topbar-shadow-color': cabinetTheme.topbar.shadowColor,
+        '--slot-topbar-accent-color': cabinetTheme.topbar.accentColor,
+      } as CSSProperties)
+    : undefined
+  const pageStyle = {
+    ...pageBackdropStyle,
+    ...topbarStyle,
+  }
 
   return (
     <div
       className={slotsPageClassName}
-      style={pageBackdropStyle}
+      style={pageStyle}
       data-slot-theme={cabinetTheme.id}
       data-slot-celebration={cabinetTheme.celebrationEffect}
+      data-special-round={specialRound?.id}
+      data-special-earn-style={specialRound?.earnStyle}
     >
       <header className="slots-page__topbar">
         <div className="slots-page__brand-cluster">
-          <a
-            className="slots-page__brand"
-            href="/"
-            aria-label="Return to the Fortune Forge landing page"
-          >
-            <span className="slots-page__brand-name">Fortune Forge</span>
-          </a>
+          <nav className="slots-page__navigation" aria-label="Game navigation">
+            <a
+              className="slots-page__brand"
+              href="/"
+              aria-label="Return to the Fortune Forge landing page"
+            >
+              <span className="slots-page__brand-name">Fortune Forge</span>
+            </a>
+            <a
+              className="slots-page__other-games"
+              href={demoMode ? '/demo' : '/games'}
+              onClick={() => setIsAutoSpinning(false)}
+            >
+              Other games
+            </a>
+          </nav>
           <div className="slots-page__game-identity">
             <span>{cabinetTheme.eyebrow}</span>
             <h1>{cabinetTheme.title}</h1>
@@ -125,11 +177,11 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <a
                   className="slots-page__purchase-credits"
                   href="/home/rand"
-                  aria-label="Add Rand"
+                  aria-label={`Balance: ${formatRand(balance)}. Open recharge.`}
                   onClick={() => setIsAutoSpinning(false)}
                 >
                   <ForgeCoin className="slots-page__purchase-credits-coin" />
-                  <span>Add Rand</span>
+                  <span>{formatRand(balance)}</span>
                 </a>
                 <PaymentAlertsMenu />
               </>
@@ -145,7 +197,8 @@ export function SlotsPageView(controller: SlotsPageController) {
                 setIsHelpOpen(true)
               }}
             >
-              ?
+              <span aria-hidden="true">?</span>
+              <span className="slots-page__help-button-label">How to win</span>
             </button>
             <button
               className="slots-page__settings-button"
@@ -167,7 +220,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       <main className="slots-page__main">
         <div className="slots-page__layout">
           <div className="slots-page__stage">
-          {(collectionFeature || energyFeature) && (
+          {(collectionFeature || energyFeature || isSpecialGameActive) && (
           <div className="slots-page__meter-stack">
             {collectionFeature && (
             <div className="slots-page__seal-collections" aria-label={collectionFeature.ariaLabel}>
@@ -182,7 +235,23 @@ export function SlotsPageView(controller: SlotsPageController) {
                     isImpacting={sealImpactId === collection.sealId}
                     itemLabel={collectionFeature.itemLabel ?? 'seals'}
                     key={collection.sealId}
+                    containerImage={seal.containerImage ?? collectionFeature.containerImage}
+                    containerFillImages={seal.containerFillImages}
+                    displayCount={
+                      isSpecialGameActive && heldCompletedCollectionId === collection.sealId
+                        ? collection.requiredCount
+                        : undefined
+                    }
+                    isCelebrating={collectionAwardPresentation?.collectionId === collection.sealId}
                     presentation={collectionFeature.presentation ?? 'seal-pile'}
+                    showCount={collectionFeature.presentation !== 'gem-hoard'}
+                    statusDetail={
+                      isSpecialGameActive &&
+                      heldCompletedCollectionId === collection.sealId &&
+                      specialRoundGemCount > 0
+                        ? `${specialRoundGemCount} gems banked`
+                        : undefined
+                    }
                   />
                 )
               })}
@@ -213,13 +282,28 @@ export function SlotsPageView(controller: SlotsPageController) {
               </span>
             </div>
             )}
+
+            {isSpecialGameActive && specialRound && (
+              <aside className="slots-page__special-game-tally" aria-live="polite">
+                <span>{specialRoundLabel ?? specialRound.title} winnings</span>
+                <strong>{formatRand(specialRoundWinnings)}</strong>
+                <small>
+                  {isSpecialSpinDelayActive
+                    ? 'Next spin starts shortly — press Spin to continue now.'
+                    : isSpinning
+                      ? 'Special spin underway.'
+                      : 'Your special-game total.'}
+                </small>
+              </aside>
+            )}
           </div>
           )}
 
-          <SlotMachine
-            cabinetTheme={cabinetTheme}
-            reelCount={displayedReels.length}
-            renderReel={(reelIndex) => (
+          <div className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
+            <SlotMachine
+              cabinetTheme={cabinetTheme}
+              reelCount={displayedReels.length}
+              renderReel={(reelIndex) => (
               <div
                 className={`slot-reel__symbols slot-reel__symbols--${reelMotion[reelIndex]}`}
                 style={reelStripStyle(reelIndex)}
@@ -251,11 +335,17 @@ export function SlotsPageView(controller: SlotsPageController) {
                   />
                 ))}
               </div>
-            )}
-          />
+              )}
+            />
+          </div>
 
           <div className="slots-page__playbar" aria-label="Balance, wager, and spin controls">
-            <SymbolValueGuide symbolSet={symbolSet} />
+            <SymbolValueGuide
+              symbolSet={symbolSet}
+              showSidePanel={isPiratesFortune}
+              sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
+              showValueTokens={Boolean(moneyGrabFeature)}
+            />
 
             <div
               ref={creditTileRef}
@@ -268,19 +358,10 @@ export function SlotsPageView(controller: SlotsPageController) {
               </span>
             </div>
 
-            <div className="slots-page__spin-controls" aria-label="Spin, autospin, and wager controls">
-              <button
-                className="slots-page__wager-nudge"
-                type="button"
-                aria-label="Decrease wager"
-                disabled={isSpinning || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === 0}
-                onClick={() => changeWager(-1)}
-              >
-                <svg viewBox="0 0 100 100" aria-hidden="true">
-                  <path d="M28 50H72" />
-                </svg>
-              </button>
-
+            <div
+              className={`slots-page__spin-controls${specialControlsActive ? ' slots-page__spin-controls--special' : ''}`}
+              aria-label={specialControlsActive ? 'Special game spin control' : 'Spin, autospin, and wager controls'}
+            >
               <div className="slots-page__spin-stack">
                 <div className="slots-page__spin-button-shell">
                   <SpinButton
@@ -288,60 +369,91 @@ export function SlotsPageView(controller: SlotsPageController) {
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
                     onSpin={handleSpinButtonClick}
+                    variant={isPiratesFortune ? 'pirate-helm' : 'default'}
                   />
-                  {showFreeSpinBadge && (
+                  {showFreeSpinBadge && !specialControlsActive && (
                     <span
                       className={`slots-page__free-spin-badge${isFreeSpinBadgePopping ? ' slots-page__free-spin-badge--popping' : ''}`}
                       aria-hidden="true"
                     >
-                      <strong>Free spin!</strong>
+                      <strong>{specialRoundLabel ?? 'Free spin!'}</strong>
                       {freeSpinsRemaining > 1 && <span>×{freeSpinsRemaining}</span>}
                     </span>
                   )}
                 </div>
-                <button
-                  className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}`}
-                  type="button"
-                  disabled={isDemoSpinDisabled}
-                  aria-pressed={isAutoSpinning}
-                  onClick={() => {
-                    setSpinError(null)
-                    setIsAutoSpinning((current) => !current)
-                  }}
-                  aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
-                >
-                  <strong>Autospin</strong>
-                </button>
-                <output
-                  className={`slots-page__spin-wager${!useFreeGameForNextSpin ? ' slots-page__spin-wager--selected' : ''}`}
-                  aria-label={`${useFreeGameForNextSpin ? 'Locked free spin wager' : 'Wager'}: ${formatRand(activeWagerDisplay)}`}
-                >
-                  <span className="slots-page__wager-label">
-                    {useFreeGameForNextSpin ? 'Free wager' : 'Wager'}
-                  </span>
-                  <span className="slots-page__wager-value">{formatRand(activeWagerDisplay)}</span>
-                </output>
+                {!specialControlsActive && (
+                  <>
+                    <button
+                      className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}`}
+                      type="button"
+                      disabled={isDemoSpinDisabled}
+                      aria-pressed={isAutoSpinning}
+                      onClick={() => {
+                        setSpinError(null)
+                        setIsAutoSpinning((current) => !current)
+                      }}
+                      aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
+                    >
+                      <strong>Autospin</strong>
+                    </button>
+                  </>
+                )}
+                {!specialControlsActive && (
+                  <div className="slots-page__wager-control" role="group" aria-label={`Wager: ${formatRand(activeWagerDisplay)}`}>
+                    <button
+                      className="slots-page__wager-nudge"
+                      type="button"
+                      aria-label="Decrease wager"
+                      disabled={isSpinning || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === 0}
+                      onClick={() => changeWager(-1)}
+                    >
+                      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 50H72" /></svg>
+                    </button>
+                    <output className="slots-page__wager-display" aria-live="polite">
+                      <span>Bet</span>
+                      <strong>{formatRand(activeWagerDisplay)}</strong>
+                    </output>
+                    <button
+                      className="slots-page__wager-nudge"
+                      type="button"
+                      aria-label="Increase wager"
+                      disabled={isSpinning || isAutoSpinning || freeSpinsRemaining > 0 || wagerIndex === wagerOptions.length - 1}
+                      onClick={() => changeWager(1)}
+                    >
+                      <svg viewBox="0 0 100 100" aria-hidden="true"><path d="M28 50H72" /><path d="M50 28V72" /></svg>
+                    </button>
+                  </div>
+                )}
               </div>
-
-              <button
-                className="slots-page__wager-nudge"
-                type="button"
-                aria-label="Increase wager"
-                disabled={
-                  isSpinning ||
-                  isAutoSpinning ||
-                  freeSpinsRemaining > 0 ||
-                  wagerIndex === wagerOptions.length - 1
-                }
-                onClick={() => changeWager(1)}
-              >
-                <svg viewBox="0 0 100 100" aria-hidden="true">
-                  <path d="M28 50H72" />
-                  <path d="M50 28V72" />
-                </svg>
-              </button>
             </div>
+
+            {isPiratesFortune && createPortal(
+              <SlotPlayGuide
+                bestWin={bestWin}
+                collections={collectionFeature}
+                help={help}
+                lastWin={lastWin}
+                selectedWager={activeWagerDisplay}
+                specialRound={specialRound}
+                symbolSet={symbolSet}
+                winningPaylineCount={winningPaylineCount}
+                onOpenHelp={() => {
+                  setIsAutoSpinning(false)
+                  setIsHelpOpen(true)
+                }}
+              />,
+              document.body,
+            )}
           </div>
+          {specialRound?.showStatusPanel !== false && specialRound && (
+            <aside className="slots-page__special-round" aria-live="polite">
+              <span>{isSpecialGameActive ? 'Special round active' : 'Earn a special round'}</span>
+              <strong>{specialRoundLabel}</strong>
+              <p>{isSpecialGameActive
+                ? 'The special game spins on its own. Press Spin to skip the next delay.'
+                : specialRound.earnHint ?? specialRound.earnLabel}</p>
+            </aside>
+          )}
         </div>
         </div>
       </main>
@@ -357,6 +469,32 @@ export function SlotsPageView(controller: SlotsPageController) {
           <span />
           <span />
         </div>
+      )}
+
+      {isSpecialGameActive && <div className="slots-page__special-game-dimmer" aria-hidden="true" />}
+
+      {collectionAwardPresentation && (
+          <section
+            className="slots-page__collection-award-dialog"
+            role="status"
+            aria-live="assertive"
+            aria-labelledby="collection-award-title"
+          >
+            {completedChestImage && (
+              <img className="slots-page__collection-award-chest" src={completedChestImage} alt="" aria-hidden="true" />
+            )}
+            <span className="slots-page__collection-award-kicker">Treasure chest filled</span>
+            <h2 id="collection-award-title">{completedCollection?.label ?? 'Gem collection'} complete</h2>
+            <p>
+              {collectionAwardPresentation.freeSpins} {specialRound?.title ?? 'free game'}
+              {collectionAwardPresentation.freeSpins === 1 ? ' is' : 's are'} now loaded.
+              {' '}The chest stays full while any new gems are banked for the next run.
+            </p>
+            {completedFeatureDetail && (
+              <p>Every free game: {completedFeatureDetail}.</p>
+            )}
+            <p className="slots-page__collection-award-hint">Press the Spin button to begin.</p>
+          </section>
       )}
 
       {energyFlyover && energyFeature && (
@@ -379,23 +517,30 @@ export function SlotsPageView(controller: SlotsPageController) {
       )}
 
       {sealFlyover && collectionFeature && (
-        <img
-          key={sealFlyover.id}
-          className={`slots-page__seal-flyover slots-page__seal-flyover--${sealFlyover.collectionId}`}
-          data-seal-id={sealFlyover.collectionId}
-          src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
-          alt=""
-          aria-hidden="true"
-          style={{
-            left: sealFlyover.left,
-            top: sealFlyover.top,
-            width: sealFlyover.width,
-            height: sealFlyover.height,
-            animationDuration: `${sealFlyover.durationMs}ms`,
-            '--seal-travel-x': `${sealFlyover.travelX}px`,
-            '--seal-travel-y': `${sealFlyover.travelY}px`,
-          } as CSSProperties}
-        />
+        collectionFeature.presentation === 'gem-hoard' ? (
+          <TreasureGemFlyover
+            flyover={sealFlyover}
+            image={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
+          />
+        ) : (
+          <img
+            key={sealFlyover.id}
+            className={`slots-page__seal-flyover slots-page__seal-flyover--${sealFlyover.collectionId}`}
+            data-seal-id={sealFlyover.collectionId}
+            src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
+            alt=""
+            aria-hidden="true"
+            style={{
+              left: sealFlyover.left,
+              top: sealFlyover.top,
+              width: sealFlyover.width,
+              height: sealFlyover.height,
+              animationDuration: `${sealFlyover.durationMs}ms`,
+              '--seal-travel-x': `${sealFlyover.travelX}px`,
+              '--seal-travel-y': `${sealFlyover.travelY}px`,
+            } as CSSProperties}
+          />
+        )
       )}
 
       {moneyGrabPresentation && moneyGrabFeature && (
@@ -471,6 +616,7 @@ export function SlotsPageView(controller: SlotsPageController) {
           className={[
             'slots-page__win-award',
             `slots-page__win-award--${winAwardFlyover.winTier}`,
+            `slots-page__win-award--${winAwardFlyover.tier}`,
             winAwardFlyover.isFlying ? 'slots-page__win-award--flying' : '',
           ].filter(Boolean).join(' ')}
           aria-hidden="true"
@@ -506,9 +652,11 @@ export function SlotsPageView(controller: SlotsPageController) {
             ? spinStage === 'requesting'
               ? `${cabinetTheme.title} reels are spinning`
               : 'Reels are landing…'
+            : lastFreeSpinsAwarded > 0
+              ? `${lastFreeSpinsAwarded} ${help.freeGames?.awardLabel ?? 'free games'} won — ${freeSpinsRemaining} ready`
             : lastSpinOutcome
               ? `${lastSpinOutcome.title}${lastSpinOutcome.awardRand > 0 ? ` · ${formatRand(lastSpinOutcome.awardRand)} credited` : ''} · ${lastSpinOutcome.nextAction}`
-            : lastEnergyMultiplierApplied
+              : lastEnergyMultiplierApplied
                 ? 'Energy boost ×1.5 — meter reset'
               : lastEnergyAwarded > 0
                 ? 'Energy collected — spin again when ready.'

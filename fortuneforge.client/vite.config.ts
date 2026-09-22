@@ -1,12 +1,20 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const buildAssetVersion = 'payment-bank-fields-v2'
+// A distinct asset namespace prevents browsers from reusing legacy catalogue
+// chunks after a Hosting release. The content hash still changes per build.
+const buildAssetVersion = 'game-catalog-v1'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // Game clients are linked source packages. Resolve their peer React imports
+  // from this host app so every game shares the same React runtime.
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name]-${buildAssetVersion}-[hash].js`,

@@ -1,0 +1,29 @@
+.flappy-free-run-page { min-height: 100vh; background: radial-gradient(circle at 50% -18%, #28658a, #071724 58%); color: #f5f9ff; }
+.flappy-free-run-page__content { box-sizing: border-box; margin: 0 auto; max-width: 66rem; padding: clamp(1rem, 3vw, 2rem) 1rem 3rem; }
+.flappy-free-run-page__lobby, .flappy-free-run-page__run, .flappy-free-run-page__result { border: 1px solid #73c8dc80; border-radius: 1.1rem; background: rgb(6 21 34 / 88%); box-shadow: 0 1rem 3rem rgb(0 0 0 / 24%); padding: clamp(1rem, 3vw, 1.6rem); }
+.flappy-free-run-page__lobby { max-width: 43rem; margin: min(12vh, 6rem) auto 0; }
+.flappy-free-run-page__eyebrow { color: #77dce7; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.flappy-free-run-page h1, .flappy-free-run-page h2 { margin-top: 0; }
+.flappy-free-run-page h1 { font-size: clamp(3rem, 11vw, 6rem); line-height: .9; margin-bottom: 1rem; }
+.flappy-free-run-page__lobby p { color: #c3d5e4; max-width: 39rem; }
+.flappy-free-run-page button { border: 1px solid #ffdf81; border-radius: .7rem; background: #ffd05a; color: #17202a; cursor: pointer; font: inherit; font-weight: 800; min-height: 2.8rem; padding: .65rem 1rem; }
+.flappy-free-run-page button:hover:not(:disabled) { background: #ffe28a; }
+.flappy-free-run-page button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.flappy-free-run-page button:disabled { cursor: wait; opacity: .65; }
+.flappy-free-run-page__run { margin: 0 auto; max-width: 58rem; }
+.flappy-free-run-page__instruction { color: #c3d5e4; margin: 0 0 .7rem; }.flappy-free-run-page__instruction strong { color: #fff; }
+.flappy-free-run-page__result { margin: min(12vh, 6rem) auto 0; max-width: 38rem; }.flappy-free-run-page__secondary { margin-left: .65rem; background: #27455a; border-color: #8db5c8; color: #fff; }
+.flappy-free-run-page__error { border-left: 4px solid #ff9393; color: #ffd2d2; margin: 1rem auto 0; max-width: 43rem; padding-left: .75rem; }
+.flappy-free-run-page .ff-flappy-sun { fill: #ffe39a; opacity: .8; filter: drop-shadow(0 0 1.2rem #ffd56b88); }
+.flappy-free-run-page .ff-flappy-cloud { fill: #d6f1f3; opacity: .18; }
+.flappy-free-run-page .ff-flappy-cloud--far { opacity: .1; }
+.flappy-free-run-page .ff-flappy-pipe .ff-flappy-pipe-shaft { fill: #3a9e73; stroke: #bff5d6; stroke-width: 3; }
+.flappy-free-run-page .ff-flappy-pipe .ff-flappy-pipe-rim { fill: #58c98d; stroke: #d9ffe7; stroke-width: 3; }
+.flappy-free-run-page .ff-flappy-ground { fill: url(#flappy-ground); stroke: #f5cc76; stroke-width: 2; }
+.flappy-free-run-page .ff-flappy-bird-art { filter: drop-shadow(.2rem .35rem .3rem #0008); }
+.flappy-free-run-page .ff-flappy-bird-body { fill: url(#flappy-bird); stroke: #fff2bc; stroke-width: 3; }
+.flappy-free-run-page .ff-flappy-bird-wing { fill: #df7228; stroke: #ffd583; stroke-width: 2; }
+.flappy-free-run-page .ff-flappy-bird-beak { fill: #ef5d35; stroke: #fff0b1; stroke-width: 1.5; }
+.flappy-free-run-page .ff-flappy-bird-eye { fill: #fffdf2; stroke: #26323a; stroke-width: 1.5; }
+.flappy-free-run-page .ff-flappy-bird-pupil { fill: #15222a; }
+@media (max-width: 600px) { .flappy-free-run-page__content { padding-inline: .75rem; }.flappy-free-run-page__run { border: 0; border-radius: 0; padding: 0; background: transparent; box-shadow: none; }.flappy-free-run-page__secondary { margin: .65rem 0 0; display: block; } }

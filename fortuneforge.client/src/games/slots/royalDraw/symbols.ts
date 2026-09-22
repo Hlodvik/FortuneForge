@@ -1,25 +1,25 @@
-import aceSpadesCrest from '../../../assets/slots/games/royal-draw/ace-spades-crest.svg'
-import blackChip from '../../../assets/slots/games/royal-draw/black-chip.svg'
-import blueChip from '../../../assets/slots/games/royal-draw/blue-chip.svg'
-import cardVault from '../../../assets/slots/games/royal-draw/card-vault.svg'
-import chipTray from '../../../assets/slots/games/royal-draw/chip-tray.svg'
-import clubMedallion from '../../../assets/slots/games/royal-draw/club-medallion.svg'
-import diamondMedallion from '../../../assets/slots/games/royal-draw/diamond-medallion.svg'
-import electricCardShoe from '../../../assets/slots/games/royal-draw/electric-card-shoe.svg'
-import goldenAceCrown from '../../../assets/slots/games/royal-draw/golden-ace-crown.svg'
-import goldChip from '../../../assets/slots/games/royal-draw/gold-chip.svg'
-import greenChip from '../../../assets/slots/games/royal-draw/green-chip.svg'
-import heartMedallion from '../../../assets/slots/games/royal-draw/heart-medallion.svg'
-import jackpotChipToken from '../../../assets/slots/games/royal-draw/jackpot-chip-token.svg'
-import redChip from '../../../assets/slots/games/royal-draw/red-chip.svg'
-import royalFlush from '../../../assets/slots/games/royal-draw/royal-flush.svg'
-import spadeMedallion from '../../../assets/slots/games/royal-draw/spade-medallion.svg'
-import tripleCardStack from '../../../assets/slots/games/royal-draw/triple-card-stack.svg'
+import aceSpadesCrest from '../../../assets/slots/games/royal-draw/optimized/royal-draw-ace-spades-crest-v2.webp'
+import blackChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-black-chip-v2.webp'
+import blueChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-blue-chip-v2.webp'
+import cardVault from '../../../assets/slots/games/royal-draw/optimized/royal-draw-card-vault-v2.webp'
+import chipTray from '../../../assets/slots/games/royal-draw/optimized/royal-draw-chip-tray-v2.webp'
+import clubMedallion from '../../../assets/slots/games/royal-draw/optimized/royal-draw-club-medallion-v2.webp'
+import diamondMedallion from '../../../assets/slots/games/royal-draw/optimized/royal-draw-diamond-medallion-v2.webp'
+import electricCardShoe from '../../../assets/slots/games/royal-draw/optimized/royal-draw-electric-card-shoe-v2.webp'
+import goldenAceCrown from '../../../assets/slots/games/royal-draw/optimized/royal-draw-golden-ace-crown-v2.webp'
+import goldChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-gold-chip-v2.webp'
+import greenChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-green-chip-v2.webp'
+import heartMedallion from '../../../assets/slots/games/royal-draw/optimized/royal-draw-heart-medallion-v2.webp'
+import jackpotChipToken from '../../../assets/slots/games/royal-draw/optimized/royal-draw-jackpot-chip-v2.webp'
+import redChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-red-chip-v2.webp'
+import royalFlush from '../../../assets/slots/games/royal-draw/optimized/royal-draw-royal-flush-v2.webp'
+import spadeMedallion from '../../../assets/slots/games/royal-draw/optimized/royal-draw-spade-medallion-v2.webp'
+import tripleCardStack from '../../../assets/slots/games/royal-draw/optimized/royal-draw-triple-card-stack-v2.webp'
 import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const ROYAL_DRAW_SYMBOLS = createThemedSymbolSet({
   id: 'royal-draw-symbols-v1',
-  serverSymbolSetId: 'royal-draw-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Blue poker chip', image: blueChip },
     '3': { label: 'Red poker chip', image: redChip },
@@ -43,9 +43,9 @@ export const ROYAL_DRAW_SYMBOLS = createThemedSymbolSet({
   collectorFirstValue: 'sweeps jackpot chips',
   collectorSecondValue: 'double pot',
   collectionAwardLabels: {
-    SEAL_SYNC: '10 heart spins',
-    SEAL_ROWS: '10 diamond spins',
-    SEAL_PAW: '10 club spins',
-    SEAL_RAND: '10 spade spins',
+    SEAL_SYNC: '7 heart spins',
+    SEAL_ROWS: '7 diamond spins',
+    SEAL_PAW: '7 club spins',
+    SEAL_RAND: '7 spade spins',
   },
 })

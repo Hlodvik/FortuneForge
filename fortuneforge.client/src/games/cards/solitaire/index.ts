@@ -21,6 +21,16 @@ export type {
   SolitaireCommandTransport,
 } from './solitaireApi'
 export {
+  completeSolitaireFreeRun,
+  createSolitaireFreeRunRequestId,
+  startSolitaireFreeRun,
+} from './solitaireFreeRunApi'
+export type {
+  SolitaireFreeReplayCommand,
+  SolitaireFreeRun,
+  SolitaireFreeRunCompletion,
+} from './solitaireFreeRunApi'
+export {
   SOLITAIRE_BUY_INS,
   SOLITAIRE_DRAW_COUNTS,
   SOLITAIRE_PLAYER_COUNTS,

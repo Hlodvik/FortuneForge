@@ -1,17 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { getSlotSymbolDefinition, type SlotSymbolSet } from '../config/symbolSets'
 
 function SymbolValuePanel({
   className,
   headingId,
   onClose,
+  showValueTokens,
   symbolSet,
 }: {
   className: string
   headingId?: string
   onClose?: () => void
+  showValueTokens: boolean
   symbolSet: SlotSymbolSet
 }) {
+  const guideEntries = showValueTokens
+    ? symbolSet.guideEntries
+    : symbolSet.guideEntries.filter(({ symbol }) => !getSlotSymbolDefinition(symbolSet, symbol).wagerMultiplier)
   return (
     <aside
       className={`symbol-value-guide ${className}`}
@@ -36,7 +42,14 @@ function SymbolValuePanel({
         <span>3 in a row · 5 in a row</span>
       </div>
       <div className="symbol-value-guide__grid">
-        {symbolSet.guideEntries.map(({ symbol, firstLabel, firstValue, secondLabel, secondValue }) => {
+        {guideEntries.map(({
+          symbol,
+          firstLabel,
+          firstValue,
+          secondLabel,
+          secondValue,
+          artworkValueLabel,
+        }) => {
           const definition = getSlotSymbolDefinition(symbolSet, symbol)
           return (
             <div
@@ -46,7 +59,7 @@ function SymbolValuePanel({
             >
               <div
                 className="symbol-value-guide__artwork"
-                data-value-label={definition.valueLabel}
+                data-value-label={artworkValueLabel ?? definition.valueLabel}
               >
                 <img src={definition.image} alt="" aria-hidden="true" />
               </div>
@@ -57,12 +70,22 @@ function SymbolValuePanel({
           )
         })}
       </div>
-      <small>Rand values multiply the selected wager.</small>
+      {showValueTokens && <small>Rand values multiply the selected wager.</small>}
     </aside>
   )
 }
 
-export function SymbolValueGuide({ symbolSet }: { symbolSet: SlotSymbolSet }) {
+export function SymbolValueGuide({
+  symbolSet,
+  showSidePanel = false,
+  sidePanelClassName = '',
+  showValueTokens = true,
+}: {
+  symbolSet: SlotSymbolSet
+  showSidePanel?: boolean
+  sidePanelClassName?: string
+  showValueTokens?: boolean
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
@@ -88,6 +111,15 @@ export function SymbolValueGuide({ symbolSet }: { symbolSet: SlotSymbolSet }) {
 
   return (
     <>
+      {showSidePanel && createPortal(
+        <SymbolValuePanel
+          className={`symbol-value-guide--side ${sidePanelClassName}`.trim()}
+          showValueTokens={showValueTokens}
+          symbolSet={symbolSet}
+        />,
+        document.body,
+      )}
+
       <button
         ref={triggerRef}
         className="symbol-value-guide__trigger"
@@ -114,6 +146,7 @@ export function SymbolValueGuide({ symbolSet }: { symbolSet: SlotSymbolSet }) {
             className="symbol-value-guide--modal"
             headingId="symbol-value-guide-title"
             onClose={closeGuide}
+            showValueTokens={showValueTokens}
             symbolSet={symbolSet}
           />
         </div>

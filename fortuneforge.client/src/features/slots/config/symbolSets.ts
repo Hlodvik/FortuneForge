@@ -15,6 +15,7 @@ export type SlotSymbolGuideEntry = {
   firstValue: string
   secondLabel?: string
   secondValue?: string
+  artworkValueLabel?: string
 }
 
 export type SlotSymbolSet = {

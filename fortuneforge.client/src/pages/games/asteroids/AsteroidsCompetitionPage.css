@@ -1,0 +1,97 @@
+.asteroids-competition-page {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #182b4f, #091222 58%);
+  color: #f5f7ff;
+}
+
+.asteroids-competition-page__content {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 70rem;
+  padding: 1.25rem 1rem 3rem;
+}
+
+.asteroids-competition-page__intro,
+.asteroids-competition-page__leaderboard,
+.asteroids-competition-page__options,
+.asteroids-competition-page__run,
+.asteroids-competition-page__result {
+  border: 1px solid #40557c;
+  border-radius: 1rem;
+  background: rgb(9 18 34 / 88%);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 22%);
+  padding: clamp(1rem, 2vw, 1.4rem);
+}
+
+.asteroids-competition-page__intro { margin-bottom: 1rem; }
+.asteroids-competition-page__eyebrow { color: #8fc7ff; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.asteroids-competition-page h1, .asteroids-competition-page h2 { margin-top: 0; }
+.asteroids-competition-page__lobby-grid { align-items: start; display: grid; gap: 1rem; grid-template-columns: minmax(0, 1.15fr) minmax(17rem, .85fr); }
+.asteroids-competition-page__choice-grid { display: grid; gap: .65rem; grid-template-columns: 1fr; margin: .85rem 0 0; }
+.asteroids-competition-page button { border: 1px solid #7ca9da; border-radius: .6rem; background: #1c4f85; color: #fff; cursor: pointer; font: inherit; min-height: 2.75rem; padding: .65rem 1rem; }
+.asteroids-competition-page button:hover:not(:disabled) { background: #2868aa; }
+.asteroids-competition-page button:disabled { cursor: wait; opacity: .65; }
+.asteroids-competition-page button:focus-visible { outline: 3px solid #ffe070; outline-offset: 3px; }
+.asteroids-competition-page__choice--free { background: #253246; }
+.asteroids-competition-page__run, .asteroids-competition-page__result { margin-top: 1rem; }
+.asteroids-competition-page__error { border-left: 4px solid #ff9393; color: #ffd2d2; margin-top: 1rem; padding-left: .75rem; }
+.asteroids-competition-page .arcade-leaderboard__heading { color: #ffe070; font-size: 1.2rem; margin-bottom: .8rem; }
+.asteroids-competition-page .arcade-leaderboard__periods { display: grid; gap: .4rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.asteroids-competition-page .arcade-leaderboard__period { background: #17283f; border-color: #486b92; min-height: 2.3rem; padding: .4rem; }
+.asteroids-competition-page .arcade-leaderboard__period--active { background: #c88d19; border-color: #ffe070; color: #101b2c; font-weight: 800; }
+.asteroids-competition-page .arcade-leaderboard__panel { margin-top: .85rem; }
+.asteroids-competition-page .arcade-leaderboard__dates { color: #c7d9ef; font-size: .86rem; margin: 0 0 .65rem; }
+.asteroids-competition-page .arcade-leaderboard__summary { display: flex; flex-wrap: wrap; gap: .4rem; margin: 0; }
+.asteroids-competition-page .arcade-leaderboard__summary div { align-items: baseline; background: rgb(58 88 124 / 38%); border-radius: .4rem; display: flex; gap: .25rem; padding: .35rem .45rem; }
+.asteroids-competition-page .arcade-leaderboard__summary dt { color: #b9cce3; font-size: .72rem; }
+.asteroids-competition-page .arcade-leaderboard__summary dd { margin: 0; font-size: .82rem; font-weight: 700; }
+.asteroids-competition-page .arcade-leaderboard__rows { display: grid; gap: .35rem; list-style: none; margin: .8rem 0 0; padding: 0; }
+.asteroids-competition-page .arcade-leaderboard__row { align-items: center; background: rgb(22 42 68 / 74%); border-left: 2px solid #c88d19; border-radius: .35rem; display: grid; gap: .5rem; grid-template-columns: 2.5rem 1fr auto; padding: .45rem .55rem; }
+.asteroids-competition-page .arcade-leaderboard__position { color: #ffe070; font-weight: 800; }
+.asteroids-competition-page .arcade-leaderboard__player { overflow-wrap: anywhere; }
+.asteroids-competition-page .arcade-leaderboard__score { color: #fff3c2; }
+.asteroids-competition-page .arcade-leaderboard__state { color: #c7d9ef; margin: .7rem 0 0; }
+.asteroids-competition-page .arcade-leaderboard__state--error { color: #ffd2d2; }
+.asteroids-competition-page .arcade-leaderboard__retry { margin-top: .65rem; min-height: 2.1rem; padding: .35rem .6rem; }
+.asteroids-competition-page .arcade-leaderboard__history { display: flex; gap: .5rem; margin-top: .7rem; }
+.asteroids-competition-page .arcade-leaderboard__history button { min-height: 2.1rem; padding: .35rem .6rem; }
+.asteroids-competition-page .arcade-leaderboard__refund { color: #d9e8f7; font-size: .8rem; margin: .65rem 0 0; }
+
+@media (min-width: 43rem) and (min-height: 42rem) {
+  .asteroids-competition-page--active .asteroids-competition-page__content {
+    align-content: center;
+    display: grid;
+    min-height: calc(100svh - 3.75rem);
+    padding-block: .4rem;
+  }
+
+  .asteroids-competition-page--active .asteroids-competition-page__run {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .asteroids-competition-page--active .ff-asteroids-replay {
+    width: min(100%, max(32rem, calc((100svh - 20rem) * 1.3333)));
+    padding: .65rem;
+  }
+
+  .asteroids-competition-page--active .ff-asteroids-replay-head { padding: .25rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay h2 { font-size: 1.45rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-stats { gap: .4rem; margin-bottom: .45rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-stats > div { min-height: 3rem; padding: .4rem .55rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-canvas-wrap { padding: .4rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-message { margin: .35rem 0 !important; }
+  .asteroids-competition-page--active .ff-asteroids-replay-control { min-height: 3.35rem; }
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-canvas,
+.asteroids-competition-page--active .ff-asteroids-replay-control { touch-action: none; }
+
+@media (max-width: 42rem) {
+  .asteroids-competition-page__content { padding: 1rem .75rem 2rem; }
+  .asteroids-competition-page__lobby-grid { grid-template-columns: 1fr; }
+}

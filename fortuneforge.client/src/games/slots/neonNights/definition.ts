@@ -1,4 +1,6 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import { NEON_NIGHTS_SOUNDS } from '../../../features/slots/config/soundSets'
+import { NEON_NIGHTS_SYMBOL_IMAGES as symbols } from './symbols'
 
 export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'neon-nights',
@@ -21,15 +23,30 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next night spin is free and uses the locked wager.',
   },
   celebrationEffect: 'neon-scan',
-  valueToken: ['glowing arcade chip', '💿'],
+  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  valueToken: ['glowing arcade chip', '💿', symbols.VALUE],
   motif: '🌃',
   accentGlyph: '🎵',
-  collectionLabels: [['Pink heart badge', '💗'], ['Blue diamond badge', '💎'], ['Orange star badge', '🌟'], ['Green music badge', '🎵']],
+  collectionLabels: [['Pink heart badge', '💗', symbols.SEAL_SYNC], ['Blue diamond badge', '💎', symbols.SEAL_ROWS], ['Orange star badge', '🌟', symbols.SEAL_PAW], ['Green music badge', '🎵', symbols.SEAL_RAND]],
   symbolSpecs: {
-    '2': ['Neon cherry', '🍒'], '3': ['Retro cassette', '📼'], '4': ['Electric roller skate', '🛼'],
-    '5': ['Arcade joystick', '🕹️'], '6': ['Midnight sports car', '🏎️'], '7': ['Neon skyline', '🌃'],
-    ACE: ['Diamond shades wild', '🕶️'], FREE: ['Nightclub doorway free game', '🚪'], POWER: ['Electric star power', '🌟'],
-    BOLT: ['Voltage lightning', '⚡'], BANANA: ['Triple neon sevens', '7️⃣'], PAW: ['Midnight DJ deck', '🎛️'],
+    '2': ['Neon cherry', '🍒', symbols['2']], '3': ['Retro cassette', '📼', symbols['3']], '4': ['Electric roller skate', '🛼', symbols['4']],
+    '5': ['Arcade joystick', '🕹️', symbols['5']], '6': ['Midnight sports car', '🏎️', symbols['6']], '7': ['Neon skyline', '🌃', symbols['7']],
+    ACE: ['Diamond shades wild', '🕶️', symbols.ACE], FREE: ['Nightclub doorway free game', '🚪', symbols.FREE], POWER: ['Electric star power', '🌟', symbols.POWER],
+    BOLT: ['Voltage lightning', '⚡', symbols.BOLT], BANANA: ['Triple neon sevens', '7️⃣', symbols.BANANA], PAW: ['Midnight DJ deck', '🎛️', symbols.PAW],
+  },
+  specialRound: {
+    collectionTarget: 26, collectionAwardedSpins: 7,
+    freeGames: { requiredSymbols: 3, awardedSpins: 6 }, sounds: NEON_NIGHTS_SOUNDS,
+    usesEnergy: false, usesDirectValueTokens: false,
+    feature: {
+      id: 'neon-midnight-mix', title: 'Midnight Mix',
+      earnLabel: 'Land 3 nightclub doors for 6 Midnight Mixes, or complete 26 badges for 7 enhanced mixes.',
+      earnStyle: 'orbit', earnHint: 'Neon badges light the dancefloor ring; a full ring unlocks a Midnight Mix.',
+      activeModes: {
+        sync: 'Beat Match · a matching reel is copied', rows: 'Laser Wall · two extra rows',
+        paw: 'DJ Drop · extra wilds appear', rand: 'Arcade Rush · a wild reel appears',
+      },
+    },
   },
   colors: { skyTop: '#070b2d', skyBottom: '#34105c', horizon: '#091c43', ground: '#050819', primary: '#cf2cff', secondary: '#22e7ff', deep: '#16072e', rim: '#ffd34d', glow: '#ff4fd8', text: '#fff4ff' },
 }

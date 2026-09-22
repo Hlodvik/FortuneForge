@@ -38,13 +38,13 @@ describe('card game route integration', () => {
   })
 
   it('provides card-specific page titles', () => {
-    expect(pageTitleForPath('/cards/blackjack')).toBe('Credit Blackjack Table — Fortune Forge')
+    expect(pageTitleForPath('/cards/blackjack')).toBe('Blackjack Table — Fortune Forge')
     expect(pageTitleForPath('/demo/cards/blackjack')).toBe('Blackjack Demo — Fortune Forge')
-    expect(pageTitleForPath('/cards/texas-holdem')).toBe('Credit Texas Hold’em — Fortune Forge')
+    expect(pageTitleForPath('/cards/texas-holdem')).toBe('Texas Hold’em Table — Fortune Forge')
     expect(pageTitleForPath('/cards/solitaire')).toBe('Competitive Solitaire — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/blackjack/bot-practice')).toBe('Blackjack Practice Lab — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/texas-holdem/bot-practice')).toBe('Texas Hold’em Practice Lab — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/solitaire/bot-practice')).toBe('Solitaire Practice Lab — Fortune Forge')
+    expect(pageTitleForPath('/demo/cards/blackjack/bot-practice')).toBe('Blackjack Table — Fortune Forge')
+    expect(pageTitleForPath('/demo/cards/texas-holdem/bot-practice')).toBe('Texas Hold’em Table — Fortune Forge')
+    expect(pageTitleForPath('/demo/cards/solitaire/bot-practice')).toBe('Solitaire Race — Fortune Forge')
   })
 
   it('keeps every card table above the shared cloud backdrop', () => {
@@ -67,9 +67,9 @@ describe('card game route integration', () => {
 
     expect(markup).toContain('href="/demo/cards" aria-current="page"')
     expect(markup).toContain('Fortune Blackjack')
-    expect(markup).toContain('Texas Hold&#x27;em')
+    expect(markup).toContain('Texas Hold’em')
     expect(markup).toContain('Competitive Solitaire')
-    expect(markup.match(/Internal preview/g)).toHaveLength(3)
+    expect(markup).not.toContain('Internal preview')
     expect(markup).not.toContain('href="/demo/cards/blackjack"')
     expect(markup).not.toContain('href="/demo/cards/texas-holdem"')
     expect(markup).not.toContain('href="/demo/cards/solitaire"')
@@ -88,11 +88,11 @@ describe('card game route integration', () => {
     expect(markup).toContain('href="/cards/blackjack"')
     expect(markup).toContain('href="/cards/texas-holdem"')
     expect(markup).toContain('href="/cards/solitaire"')
-    expect(markup.match(/Credit play available/g)).toHaveLength(3)
+    expect(markup).not.toContain('Credit play available')
     expect(markup).not.toContain('bot-practice')
   })
 
-  it('renders no game anchor when a server feature gate is closed or unresolved', () => {
+  it('keeps unavailable cards non-interactive without rendering bottom action buttons', () => {
     const markup = renderToStaticMarkup(createElement(CardGameLibraryPage, {
       availability: {
         blackjack: 'unavailable',
@@ -104,8 +104,7 @@ describe('card game route integration', () => {
     expect(markup).not.toContain('href="/cards/blackjack"')
     expect(markup).not.toContain('href="/cards/texas-holdem"')
     expect(markup).not.toContain('href="/cards/solitaire"')
-    expect(markup).toContain('Checking server availability')
-    expect(markup.match(/Credit table unavailable/g)).toHaveLength(2)
+    expect(markup).not.toContain('machine-card__action')
   })
 })
 

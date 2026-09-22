@@ -1,6 +1,6 @@
-import pokerRoom from '../../../assets/slots/games/royal-draw/poker-room.svg'
-import royalDrawEmblem from '../../../assets/slots/games/royal-draw/royal-draw-emblem.svg'
-import rubyCardJewel from '../../../assets/slots/games/royal-draw/ruby-card-jewel.svg'
+import pokerRoom from '../../../assets/slots/games/royal-draw/optimized/royal-draw-poker-salon-v2.webp'
+import royalDrawEmblem from '../../../assets/slots/games/royal-draw/optimized/royal-draw-cabinet-emblem-v2.webp'
+import rubyCardJewel from '../../../assets/slots/games/royal-draw/optimized/royal-draw-jackpot-chip-v2.webp'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 
 export const ROYAL_DRAW_CABINET_THEME: SlotCabinetTheme = {

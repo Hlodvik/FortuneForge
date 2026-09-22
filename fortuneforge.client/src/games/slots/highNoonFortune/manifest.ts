@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { HIGH_NOON_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
@@ -7,23 +7,20 @@ import { HIGH_NOON_FORTUNE_CATALOG } from './catalog'
 import { HIGH_NOON_FORTUNE_SYMBOLS } from './symbols'
 
 const FEATURES: SlotFeatureSet = {
-  energy: { label: 'Fuse charge', symbol: 'BOLT' },
-  collections: {
-    ariaLabel: 'Frontier badge collections',
-    itemLabel: 'badges',
-    presentation: 'frontier-trail',
-    entries: [
-      { id: 'sync', label: 'Quick draw', shortLabel: 'Bandana', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Canyon trail', shortLabel: 'Spur', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Lasso rush', shortLabel: 'Lasso', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Gold trail', shortLabel: 'Cactus', symbol: 'SEAL_RAND', requiredCount: 40 },
-    ],
-  },
   moneyGrab: {
     actorName: 'The golden lasso',
     awardLabel: 'Lasso roundup',
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
+  },
+  specialRound: {
+    id: 'high-noon-showdown', title: 'Showdown Spin',
+    earnLabel: 'Land 3 saloon doors for 5 Showdown Spins.',
+    earnStyle: 'gates', earnHint: 'Three saloon doors in one spin opens a Showdown with a linked matching reel.',
+    activeModes: {
+      sync: 'Quick Draw · a matching reel is copied', rows: 'Canyon Trail · two extra rows',
+      paw: 'Lasso Rush · stronger gold collection', rand: 'Gold Trail · a prize column appears',
+    },
   },
 }
 
@@ -38,9 +35,9 @@ const HELP: SlotHelpDefinition = {
       body: 'The golden lasso ropes every gold-nugget value showing in the window. Two lassos double the roundup. Three dynamite bundles in a row, column, or diagonal pay 3× the wager.',
     },
     {
-      badge: 'BADGES',
-      title: 'Frontier badge collections',
-      body: 'Collect 40 bandana, spur, lasso, or cactus badges to unlock ten special free spins. Fuse charge improves badge odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest frontier track.',
+      badge: 'DOORS',
+      title: 'Saloon-door trigger',
+      body: 'Land three saloon doors anywhere in one spin to unlock five enhanced Showdown Spins. Every Showdown uses a linked matching reel.',
     },
   ],
 }
@@ -64,7 +61,7 @@ export const HIGH_NOON_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'theme',
   symbols: HIGH_NOON_FORTUNE_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  sounds: HIGH_NOON_FORTUNE_SOUNDS,
   rules: createSlotRulesSet('high-noon-fortune-v1'),
 }
 

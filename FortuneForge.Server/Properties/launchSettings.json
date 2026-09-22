@@ -7,7 +7,9 @@
       "launchBrowser": false,
       "applicationUrl": "http://localhost:5150",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "FIRESTORE_EMULATOR_HOST": "127.0.0.1:8080",
+        "Payments__Provider": "mock"
       }
     },
     "https": {
@@ -16,7 +18,9 @@
       "launchBrowser": false,
       "applicationUrl": "https://localhost:7188;http://localhost:5150",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "FIRESTORE_EMULATOR_HOST": "127.0.0.1:8080",
+        "Payments__Provider": "mock"
       }
     }
   }

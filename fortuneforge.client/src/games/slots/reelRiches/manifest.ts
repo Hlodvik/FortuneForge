@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { REEL_RICHES_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
@@ -64,7 +64,7 @@ export const REEL_RICHES_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'theme',
   symbols: REEL_RICHES_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  sounds: REEL_RICHES_SOUNDS,
   rules: createSlotRulesSet('reel-riches-v1'),
 }
 

@@ -16,7 +16,6 @@ public sealed partial class SpinService(
     IRandomIndexSource random)
 {
     private const int MaximumPityGenerationAttempts = 10_000;
-    private const string WukongGameId = "classic-demo-v1";
     private const string MonkeyPawSymbolId = "PAW";
     private const string BananaSymbolId = "BANANA";
     private const string PawBoostFeatureMode = "paw";

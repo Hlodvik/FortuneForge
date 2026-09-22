@@ -137,7 +137,10 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   }, [])
 
   const startLoop = useCallback((cueId: SlotSoundCueId) => {
-    stopLoop(cueId)
+    if (loopsRef.current.has(cueId)) {
+      return
+    }
+
     const cue = soundSet.cues[cueId]
     if (!isCueAllowed(cue)) {
       return
@@ -153,7 +156,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
         loopsRef.current.delete(cueId)
       }
     })
-  }, [isCueAllowed, soundSet, stopLoop])
+  }, [isCueAllowed, soundSet])
 
   const setVolume = useCallback((volume: number) => {
     updatePreferences((current) => ({

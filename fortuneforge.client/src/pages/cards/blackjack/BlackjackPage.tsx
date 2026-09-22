@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { CardOutcomeSummary, type CardOutcomeTone } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import {
   actOnBlackjackGame,
   BlackjackRequestError,
@@ -150,9 +151,10 @@ export function BlackjackPage({
   const pending = pendingRequest.current
   const serviceReady = status?.available === true
   const completedGame = game?.status === 'completed' ? game : null
+  const onCardAudioClick = useCardAudioClick()
 
   return (
-    <div className="blackjack-page">
+    <div className="blackjack-page" onClickCapture={onCardAudioClick}>
       <header className="blackjack-header">
         <a href={demoMode ? '/demo/cards' : '/cards'} aria-label="Back to card games">← Card room</a>
         <div>
@@ -237,6 +239,7 @@ export function BlackjackPage({
                 <button
                   className="blackjack-controls__deal"
                   type="button"
+                  data-card-audio="shuffle"
                   disabled={!serviceReady || isBusy || wager <= 0}
                   onClick={() => void deal()}
                 >

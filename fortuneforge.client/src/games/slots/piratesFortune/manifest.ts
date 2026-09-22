@@ -1,32 +1,58 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { PIRATES_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { PIRATES_FORTUNE_CABINET_THEME } from './cabinetTheme'
 import { PIRATES_FORTUNE_CATALOG } from './catalog'
+import { PIRATES_FORTUNE_CHEST_PROGRESSIONS } from './chestProgressions'
 import { PIRATES_FORTUNE_SYMBOLS } from './symbols'
 
+const { emerald, lapis, ruby, topaz } = PIRATES_FORTUNE_CHEST_PROGRESSIONS
+
 const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
-  energy: {
-    label: 'Storm charge',
-    symbol: 'BOLT',
-  },
   collections: {
     ariaLabel: 'Treasure gem collections',
     itemLabel: 'gems',
     presentation: 'gem-hoard',
+    completionDialog: true,
     entries: [
-      { id: 'sync', label: 'Broadside sync', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'High-tide rows', shortLabel: 'Sapphire', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Skull storm', shortLabel: 'Amber', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Doubloon column', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 40 },
+      {
+        id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15,
+        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, one reel is copied to match the winning setup.',
+        containerImage: ruby.empty, containerFillImages: ruby.fillLevels,
+      },
+      {
+        id: 'rows', label: 'Extra rows', shortLabel: 'Lapis', symbol: 'SEAL_ROWS', requiredCount: 15,
+        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, two extra reel rows open for more winning ways.',
+        containerImage: lapis.empty, containerFillImages: lapis.fillLevels,
+      },
+      {
+        id: 'paw', label: 'Stronger purse hauls', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 15,
+        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, Doubloon Purse hauls become stronger.',
+        containerImage: topaz.empty, containerFillImages: topaz.fillLevels,
+      },
+      {
+        id: 'rand', label: 'Prize multiplier column', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 15,
+        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, a prize multiplier column appears.',
+        containerImage: emerald.empty, containerFillImages: emerald.fillLevels,
+      },
     ],
   },
   moneyGrab: {
-    actorName: 'The Jolly Roger',
-    awardLabel: 'Skull plunder',
+    actorName: 'The Doubloon Purse',
+    awardLabel: 'Doubloon haul',
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
+  },
+  specialRound: {
+    id: 'pirates-broadside', title: 'Free Game',
+    showStatusPanel: false,
+    earnLabel: 'Land 3 Treasure Maps for 7 Island Search bonus rounds, or complete 15 matching gems for 10 free games.',
+    earnStyle: 'buckets', earnHint: 'Ruby, lapis, orange, and emerald gems tumble into four treasure chests. Fill one chest to launch 10 free games with that chest\'s special feature.',
+    activeModes: {
+      sync: 'Matching Reel · one reel is copied to match the winning setup', rows: 'Extra Rows · two extra reel rows open',
+      paw: 'Stronger Purse Hauls · Doubloon Purse hauls are boosted', rand: 'Prize Multiplier Column · a prize multiplier column appears',
+    },
   },
 }
 
@@ -35,18 +61,21 @@ const PIRATES_FORTUNE_HELP: SlotHelpDefinition = {
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23],
   freeGames: {
     requiredSymbols: 3,
-    awardedSpins: 5,
+    awardedSpins: 7,
+    title: 'Island Search bonus',
+    symbolLabel: 'TREASURE MAP',
+    awardLabel: 'Island Search bonus rounds',
   },
   extraSections: [
     {
-      badge: 'SKULL',
-      title: 'Skull-and-crossbones plunder',
-      body: 'A skull-and-crossbones anywhere on screen plunders every doubloon multiplier showing in the window. Two skulls are much rarer and double the haul. Three powder-keg stacks in a row, column, or diagonal pay 3× the wager.',
+      badge: 'PURSE',
+      title: 'Doubloon purse haul',
+      body: 'A doubloon purse anywhere on screen collects every doubloon multiplier showing in the window. Two purses are much rarer and double the haul. Three powder-keg stacks in a row, column, or diagonal pay 3× the wager.',
     },
     {
       badge: 'GEMS',
       title: 'Treasure gem collections',
-      body: 'Ruby, sapphire, amber, and emerald gems collect from anywhere visible. A completed 40-gem collection awards ten free spins tied to that collection\'s average wager. Storm charge at 25%, 50%, and 75% improves gem odds; a full meter boosts the payout by 1.5×, resets, and finishes the nearest gem track.',
+      body: 'Ruby, lapis, orange, and emerald gems collect from anywhere visible. A completed 15-gem chest awards 10 free games with that chest\'s special feature, tied to the collection\'s average wager.',
     },
   ],
 }
@@ -59,8 +88,16 @@ export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'theme',
   symbols: PIRATES_FORTUNE_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
-  rules: createSlotRulesSet('pirates-fortune-v1'),
+  sounds: PIRATES_FORTUNE_SOUNDS,
+  rules: createSlotRulesSet('pirates-fortune-v1', {
+    initialReels: [
+      ['2', '3', '4', '6'],
+      ['3', '4', '5', '6'],
+      ['4', '5', '6', '7'],
+      ['5', '6', '7', 'ACE'],
+      ['FREE', '7', 'ACE', 'POWER'],
+    ],
+  }),
 }
 
 export const PIRATES_FORTUNE_SLOT_GAME = defineSlotGame({

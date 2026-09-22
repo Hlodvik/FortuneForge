@@ -3,6 +3,7 @@ WORKDIR /src
 
 COPY NuGet.config ./
 COPY packages/games/ packages/games/
+RUN cd packages/games && sha256sum --check MANIFEST.sha256
 COPY FortuneForge.Server/FortuneForge.Server.csproj FortuneForge.Server/
 COPY FortuneForge.ServiceDefaults/FortuneForge.ServiceDefaults.csproj FortuneForge.ServiceDefaults/
 RUN dotnet restore FortuneForge.Server/FortuneForge.Server.csproj

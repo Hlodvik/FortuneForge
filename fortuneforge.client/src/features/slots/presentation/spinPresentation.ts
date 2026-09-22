@@ -20,6 +20,13 @@ const bigWinMinimumRand = 500
 const bigWinMultiplier = 50
 const greatWinMultiplier = 10
 
+export type WinPresentationTier = 'win' | 'big' | 'jackpot'
+
+export function getWinPresentationTier(amount: number, wager: number): WinPresentationTier {
+  if (amount >= Math.max(500, wager * 50)) return 'jackpot'
+  return amount >= Math.max(25, wager * 10) ? 'big' : 'win'
+}
+
 // Presentation chooses one payline to highlight without changing payout math.
 export function findBestPayline(paylines: readonly PaylinePayout[]): PaylinePayout | null {
   return [...paylines]

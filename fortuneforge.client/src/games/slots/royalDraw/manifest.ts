@@ -1,4 +1,4 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { ROYAL_DRAW_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
@@ -13,10 +13,10 @@ const FEATURES: SlotFeatureSet = {
     itemLabel: 'medallions',
     presentation: 'chip-stack',
     entries: [
-      { id: 'sync', label: 'Hearts together', shortLabel: 'Hearts', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Diamond spread', shortLabel: 'Diamonds', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Club sweep', shortLabel: 'Clubs', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Spade stack', shortLabel: 'Spades', symbol: 'SEAL_RAND', requiredCount: 40 },
+      { id: 'sync', label: 'Hearts together', shortLabel: 'Hearts', symbol: 'SEAL_SYNC', requiredCount: 24 },
+      { id: 'rows', label: 'Diamond spread', shortLabel: 'Diamonds', symbol: 'SEAL_ROWS', requiredCount: 24 },
+      { id: 'paw', label: 'Club sweep', shortLabel: 'Clubs', symbol: 'SEAL_PAW', requiredCount: 24 },
+      { id: 'rand', label: 'Spade stack', shortLabel: 'Spades', symbol: 'SEAL_RAND', requiredCount: 24 },
     ],
   },
   moneyGrab: {
@@ -25,12 +25,22 @@ const FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'royal-high-stakes', title: 'High Stakes Hand',
+    earnLabel: 'Land 3 royal seals for 6 High Stakes Hands, or complete 24 medallions for 7 enhanced hands.',
+    earnStyle: 'cards', earnHint: 'Suit medallions build four card stacks; complete a stack to deal a High Stakes Hand.',
+    activeModes: {
+      sync: 'Hearts Together · a matching reel is copied', rows: 'Diamond Spread · two extra rows',
+      paw: 'Club Sweep · stronger pot collection', rand: 'Spade Stack · a prize column appears',
+      'rows-rand': 'Royal Spread · two extra rows with a prize column',
+    },
+  },
 }
 
 const HELP: SlotHelpDefinition = {
   paylineCount: 17,
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 19, 20, 21, 22, 23],
-  freeGames: { requiredSymbols: 3, awardedSpins: 5 },
+  freeGames: { requiredSymbols: 3, awardedSpins: 6 },
   extraSections: [
     {
       badge: 'POT',
@@ -40,7 +50,7 @@ const HELP: SlotHelpDefinition = {
     {
       badge: 'SUITS',
       title: 'Four-suit collections',
-      body: 'Collect 40 heart, diamond, club, or spade medallions to unlock ten special free spins. Table heat improves medallion odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest suit track.',
+      body: 'Collect 24 heart, diamond, club, or spade medallions to unlock seven enhanced High Stakes Hands. Table heat improves medallion odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest suit track.',
     },
   ],
 }
@@ -64,7 +74,7 @@ export const ROYAL_DRAW_EXPERIENCE_SET: SlotExperienceSet = {
   shellBackdrop: 'theme',
   symbols: ROYAL_DRAW_SYMBOLS,
   mascot: null,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  sounds: ROYAL_DRAW_SOUNDS,
   rules: createSlotRulesSet('royal-draw-v1'),
 }
 

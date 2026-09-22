@@ -23,6 +23,12 @@ public sealed class DemoSlotsContractTests
             .Cast<RouteAttribute>());
         Assert.Equal("api/slots/demo", route.Template);
 
+        var status = typeof(DemoSlotsController).GetMethod(nameof(DemoSlotsController.Status));
+        Assert.NotNull(status);
+        Assert.Equal("status", Assert.Single(status
+            .GetCustomAttributes(typeof(HttpGetAttribute), inherit: true)
+            .Cast<HttpGetAttribute>()).Template);
+
         var spin = typeof(DemoSlotsController).GetMethod(nameof(DemoSlotsController.Spin));
         Assert.NotNull(spin);
         Assert.Equal("spins", Assert.Single(spin
@@ -43,22 +49,19 @@ public sealed class DemoSlotsContractTests
     }
 
     [Fact]
+    public void Status_ReturnsNoContentForKnownGamesAndNotFoundForUnknownGames()
+    {
+        var controller = CreateController();
+
+        Assert.IsType<NoContentResult>(controller.Status("demo-contract"));
+        Assert.IsType<NotFoundObjectResult>(controller.Status("missing-game"));
+        Assert.IsType<BadRequestObjectResult>(controller.Status(""));
+    }
+
+    [Fact]
     public void Spin_ReturnsResultWithoutAnAccountBalanceOrStorageDependency()
     {
-        var controller = new DemoSlotsController(
-            new SpinService(
-                new Definitions(),
-                new Reels(),
-                new Evaluator(),
-                new Payouts(),
-                new Random()),
-            NullLogger<DemoSlotsController>.Instance)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            }
-        };
+        var controller = CreateController();
 
         var response = controller.Spin(new DemoSpinRequest(
             "demo-contract",
@@ -75,10 +78,7 @@ public sealed class DemoSlotsContractTests
         Assert.False(result.IsFreeSpin);
     }
 
-    [Fact]
-    public void Spin_AcceptsHalfRandStepsAndRejectsQuarterRandWagers()
-    {
-        var controller = new DemoSlotsController(
+    private static DemoSlotsController CreateController() => new(
             new SpinService(
                 new Definitions(),
                 new Reels(),
@@ -92,6 +92,11 @@ public sealed class DemoSlotsContractTests
                 HttpContext = new DefaultHttpContext()
             }
         };
+
+    [Fact]
+    public void Spin_AcceptsHalfRandStepsAndRejectsQuarterRandWagers()
+    {
+        var controller = CreateController();
 
         var halfRand = controller.Spin(new DemoSpinRequest(
             "demo-contract", 2, false, 0, null, 0));

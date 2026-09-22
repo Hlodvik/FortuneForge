@@ -9,9 +9,23 @@
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.6.0" />
+    <PackageReference Include="FortuneForge.Games.Asteroids" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.TwentyFortyEight" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.Baccarat" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.CasinoWar" Version="0.4.1" />
     <PackageReference Include="FortuneForge.Games.Blackjack" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.Craps" Version="0.1.1" />
+    <PackageReference Include="FortuneForge.Games.DropMerge" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.Flappy" Version="0.1.1" />
+    <PackageReference Include="FortuneForge.Games.Hearts" Version="0.1.1" />
+    <PackageReference Include="FortuneForge.Games.HorseFlight" Version="0.1.4" />
+    <PackageReference Include="FortuneForge.Games.LiarsDice" Version="0.1.1" />
+    <PackageReference Include="FortuneForge.Games.Keno" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.Roulette" Version="0.1.1" />
+    <PackageReference Include="FortuneForge.Games.SicBo" Version="0.4.1" />
     <PackageReference Include="FortuneForge.Games.Solitaire" Version="0.4.1" />
     <PackageReference Include="FortuneForge.Games.TexasHoldem" Version="0.4.1" />
+    <PackageReference Include="FortuneForge.Games.VideoPoker" Version="0.4.1" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />

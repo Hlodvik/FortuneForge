@@ -8,7 +8,8 @@ import {
 } from '../../../games/cards/texasHoldem/botPracticeApi'
 import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PracticeCard } from '../../../games/cards/shared/PracticeCard'
-import { PracticeLobby, PracticeModeNotice, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
+import { PracticeLobby, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
 import type { PracticeBotSkill } from '../../../games/cards/shared/practiceBots'
 import { usePracticeBotSession } from '../../../games/cards/shared/usePracticeBotSession'
 import '../../../games/cards/shared/playingCards.css'
@@ -18,6 +19,7 @@ export function TexasHoldemBotPracticePage() {
   const controller = usePracticeBotSession<HoldemBotPracticeResponse>({ getSession: getHoldemBotPractice })
   const [playerCount, setPlayerCount] = useState(4)
   const [skill, setSkill] = useState<PracticeBotSkill>(3)
+  const onCardAudioClick = useCardAudioClick()
   const response = controller.state.kind === 'ready' ? controller.state.response : null
   const table = response?.table ?? null
 
@@ -40,21 +42,20 @@ export function TexasHoldemBotPracticePage() {
   }
 
   return (
-    <div className="practice-bot-page">
-      <header className="practice-bot-header"><a href="/demo/cards">← Card room</a><span>Hold’em practice lab</span></header>
+    <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
+      <header className="practice-bot-header"><a href="/demo/cards">← Card room</a><span>Texas Hold’em</span></header>
       <main className="practice-bot-main">
-        <section className="practice-bot-hero"><p>Fortune Forge practice</p><h1>Texas Hold’em</h1><span>Visible table action · private hole cards protected</span></section>
-        <PracticeModeNotice />
+        <section className="practice-bot-hero"><p>Fortune Forge</p><h1>Texas Hold’em</h1><span>Visible table action · private hole cards protected</span></section>
         {controller.message && <div className="practice-bot-error" role="alert">{controller.message}</div>}
         {controller.state.kind === 'loading' && <div className="practice-bot-panel" role="status">Opening the table…</div>}
         {controller.state.kind === 'error' && <StatePanel title="Table unavailable" message={controller.state.message} onRetry={controller.refresh} />}
-        {controller.state.kind === 'disabled' && <StatePanel title="Practice table is locked" message={controller.state.message} />}
+        {controller.state.kind === 'disabled' && <StatePanel title="Table unavailable" message={controller.state.message} />}
         {controller.state.kind === 'idle' && (
           <PracticeLobby game="Texas Hold’em" minimumPlayers={2} maximumPlayers={6} playerCount={playerCount} skill={skill} busy={controller.busy} disabled={false} onPlayerCountChange={setPlayerCount} onSkillChange={setSkill} onJoin={join} />
         )}
         {response?.queue && <PracticeQueuePanel queue={response.queue} />}
         {table && (
-          <section className="practice-bot-table" aria-label="Account-neutral Texas Hold’em practice table">
+          <section className="practice-bot-table" aria-label="Texas Hold’em table">
             <div className="practice-bot-table__status">
               <strong>{table.street} · pot {table.pot} practice chips</strong>
               <span>v{table.version} · current bet {table.currentBet}</span>

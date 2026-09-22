@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   describeSpinOutcome,
+  getWinPresentationTier,
   getSlotWinTier,
   selectOutcomeSoundEvent,
   selectWinSoundEvent,
@@ -74,5 +75,11 @@ describe('spin presentation', () => {
   it('uses an escalated sound for high-importance outcomes', () => {
     expect(selectOutcomeSoundEvent(null, 5, 'great')).toBe('premium')
     expect(selectOutcomeSoundEvent(null, 5, 'big')).toBe('five')
+  })
+
+  it('keeps a small return brief and reserves the celebration for materially larger wins', () => {
+    expect(getWinPresentationTier(0.5, 0.5)).toBe('win')
+    expect(getWinPresentationTier(25, 2.5)).toBe('big')
+    expect(getWinPresentationTier(500, 5)).toBe('jackpot')
   })
 })

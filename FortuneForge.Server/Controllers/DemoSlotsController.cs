@@ -1,5 +1,6 @@
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Spins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -12,7 +13,9 @@ public sealed record DemoSpinRequest(
     bool UseFreeSpin,
     int FreeSpinsRemaining,
     long? FreeSpinWagerPoints,
-    long EnergyBalance);
+    long EnergyBalance,
+    IReadOnlyList<SlotSealCollection>? SealCollections = null,
+    string? FreeSpinFeatureMode = null);
 
 [ApiController]
 [Route("api/slots/demo")]
@@ -21,6 +24,24 @@ public sealed class DemoSlotsController(
     ILogger<DemoSlotsController> logger) : ControllerBase
 {
     private const string DemoPlayerId = "public-demo";
+
+    [HttpGet("status")]
+    public IActionResult Status([FromQuery] string gameId)
+    {
+        try
+        {
+            spinService.ValidateGame(gameId);
+            return NoContent();
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return NotFound(new { error = exception.Message });
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { error = exception.Message });
+        }
+    }
 
     [HttpPost("spins")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
@@ -46,18 +67,33 @@ public sealed class DemoSlotsController(
             }
 
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
+            SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
+            var usesEnergy = profile?.UsesEnergy != false;
+            var currentEnergy = usesEnergy ? request.EnergyBalance : 0;
             var result = spinService.Spin(
                 request.GameId,
                 request.WagerPoints,
                 DemoPlayerId,
                 specialBoostApplied: false,
-                request.EnergyBalance);
+                currentEnergy,
+                request.UseFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
+                    ? request.FreeSpinFeatureMode
+                    : null);
             var energy = EnergyBonus.Settle(
-                request.EnergyBalance,
+                currentEnergy,
                 result.EnergyAwarded,
                 result.Payout);
+            var specialRounds = profile is null
+                ? new SlotSpecialRoundProgress(0, null, [])
+                : SlotSpecialRoundProfiles.SettleDemo(
+                    profile,
+                    request.SealCollections ?? [],
+                    result.SealsAwarded,
+                    result.WagerPoints,
+                    energy.MultiplierApplied);
             var freeSpinsRemaining = checked(
-                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) + result.FreeSpinsAwarded);
+                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
+                result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
                 ? request.FreeSpinWagerPoints ?? request.WagerPoints
                 : null;
@@ -71,7 +107,13 @@ public sealed class DemoSlotsController(
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,
-                PayoutMultiplier = energy.PayoutMultiplier
+                PayoutMultiplier = energy.PayoutMultiplier,
+                SealCollections = specialRounds.Collections,
+                FreeSpinFeatureMode = freeSpinsRemaining > 0
+                    ? specialRounds.FeatureMode ??
+                        (result.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
+                        (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
+                    : null
             });
         }
         catch (KeyNotFoundException exception)

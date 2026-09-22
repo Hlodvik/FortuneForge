@@ -15,6 +15,21 @@ const AuthenticatedGameHubRoute = lazy(() => import('./routes/GameHubRoute').the
 const AuthenticatedBlackjackRoute = lazy(() => import('./routes/BlackjackRoute').then((module) => ({ default: module.AuthenticatedBlackjackRoute })))
 const AuthenticatedTexasHoldemRoute = lazy(() => import('./routes/TexasHoldemRoute').then((module) => ({ default: module.AuthenticatedTexasHoldemRoute })))
 const AuthenticatedSolitaireRoute = lazy(() => import('./routes/SolitaireRoute').then((module) => ({ default: module.AuthenticatedSolitaireRoute })))
+const AuthenticatedAsteroidsRoute = lazy(() => import('./routes/AsteroidsRoute').then((module) => ({ default: module.AuthenticatedAsteroidsRoute })))
+const AuthenticatedTwentyFortyEightRoute = lazy(() => import('./routes/TwentyFortyEightRoute').then((module) => ({ default: module.AuthenticatedTwentyFortyEightRoute })))
+const AuthenticatedDropMergeRoute = lazy(() => import('./routes/DropMergeRoute').then((module) => ({ default: module.AuthenticatedDropMergeRoute })))
+const AuthenticatedBaccaratRoute = lazy(() => import('./routes/BaccaratRoute').then((module) => ({ default: module.AuthenticatedBaccaratRoute })))
+const AuthenticatedCasinoWarRoute = lazy(() => import('./routes/CasinoWarRoute').then((module) => ({ default: module.AuthenticatedCasinoWarRoute })))
+const AuthenticatedKenoRoute = lazy(() => import('./routes/KenoRoute').then((module) => ({ default: module.AuthenticatedKenoRoute })))
+const AuthenticatedSicBoRoute = lazy(() => import('./routes/SicBoRoute').then((module) => ({ default: module.AuthenticatedSicBoRoute })))
+const AuthenticatedFlappyRoute = lazy(() => import('./routes/FlappyRoute').then((module) => ({ default: module.AuthenticatedFlappyRoute })))
+const AuthenticatedHorseFlightRoute = lazy(() => import('./routes/HorseFlightRoute').then((module) => ({ default: module.AuthenticatedHorseFlightRoute })))
+const AuthenticatedSnakeRoute = lazy(() => import('./routes/SnakeRoute').then((module) => ({ default: module.AuthenticatedSnakeRoute })))
+const AuthenticatedVideoPokerRoute = lazy(() => import('./routes/VideoPokerRoute').then((module) => ({ default: module.AuthenticatedVideoPokerRoute })))
+const AuthenticatedHeartsRoute = lazy(() => import('./routes/HeartsRoute').then((module) => ({ default: module.AuthenticatedHeartsRoute })))
+const AuthenticatedRouletteRoute = lazy(() => import('./routes/RouletteRoute').then((module) => ({ default: module.AuthenticatedRouletteRoute })))
+const AuthenticatedCrapsRoute = lazy(() => import('./routes/CrapsRoute').then((module) => ({ default: module.AuthenticatedCrapsRoute })))
+const AuthenticatedLiarsDiceRoute = lazy(() => import('./routes/LiarsDiceRoute').then((module) => ({ default: module.AuthenticatedLiarsDiceRoute })))
 const SlotGameRoute = lazy(() => import('./routes/SlotGameRoute').then((module) => ({ default: module.SlotGameRoute })))
 const RainbowRealmMachinePreview = lazy(() => import('../pages/slots/RainbowRealmMachinePreview').then((module) => ({ default: module.RainbowRealmMachinePreview })))
 const CreateAccountPage = lazy(() => import('../pages/auth/CreateAccountPage').then((module) => ({ default: module.CreateAccountPage })))
@@ -54,6 +69,21 @@ export function AppRoutes({
   else if (pathname === '/slots') route = <AuthenticatedSlotsLibraryRoute />
   else if (pathname === '/cards') route = <AuthenticatedCardLibraryRoute />
   else if (pathname === '/games') route = <AuthenticatedGameHubRoute />
+  else if (pathname === '/games/asteroids') route = <AuthenticatedAsteroidsRoute />
+  else if (pathname === '/games/2048') route = <AuthenticatedTwentyFortyEightRoute />
+  else if (pathname === '/games/drop-merge') route = <AuthenticatedDropMergeRoute />
+  else if (pathname === '/games/baccarat') route = <AuthenticatedBaccaratRoute />
+  else if (pathname === '/games/casino-war') route = <AuthenticatedCasinoWarRoute />
+  else if (pathname === '/games/keno') route = <AuthenticatedKenoRoute />
+  else if (pathname === '/games/sic-bo') route = <AuthenticatedSicBoRoute />
+  else if (pathname === '/games/flappy') route = <AuthenticatedFlappyRoute />
+  else if (pathname === '/games/horse-flight') route = <AuthenticatedHorseFlightRoute />
+  else if (pathname === '/games/snake') route = <AuthenticatedSnakeRoute />
+  else if (pathname === '/games/video-poker') route = <AuthenticatedVideoPokerRoute />
+  else if (pathname === '/games/roulette') route = <AuthenticatedRouletteRoute />
+  else if (pathname === '/games/craps') route = <AuthenticatedCrapsRoute />
+  else if (pathname === '/games/liars-dice') route = <AuthenticatedLiarsDiceRoute />
+  else if (pathname === '/cards/hearts') route = <AuthenticatedHeartsRoute />
   else if (pathname === '/cards/blackjack') route = <AuthenticatedBlackjackRoute />
   else if (pathname === '/cards/texas-holdem') route = <AuthenticatedTexasHoldemRoute />
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />

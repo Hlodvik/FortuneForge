@@ -1,10 +1,9 @@
-import { DEFAULT_SLOT_SOUNDS } from '../../../features/slots/config/soundSets'
+import { RAINBOW_REALM_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { RAINBOW_REALM_CABINET_THEME } from './cabinetTheme'
 import { RAINBOW_REALM_CATALOG } from './catalog'
-import { RAINBOW_REALM_MASCOT } from './mascot'
 import { RAINBOW_REALM_SYMBOLS } from './symbols'
 
 const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
@@ -69,8 +68,8 @@ export const RAINBOW_REALM_EXPERIENCE_SET: SlotExperienceSet = {
   },
   shellBackdrop: 'theme',
   symbols: RAINBOW_REALM_SYMBOLS,
-  mascot: RAINBOW_REALM_MASCOT,
-  sounds: DEFAULT_SLOT_SOUNDS,
+  mascot: null,
+  sounds: RAINBOW_REALM_SOUNDS,
   rules: createSlotRulesSet('rainbow-realm-fruits-v1'),
 }
 

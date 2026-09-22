@@ -59,6 +59,8 @@
 .player-home-card--recent { grid-template-rows: auto minmax(0, 1fr); gap: 0.55rem; padding: 0.8rem; }
 .player-home-card--recent > a { display: grid; min-height: 0; align-content: end; gap: 0.42rem; color: inherit; text-decoration: none; }
 .player-home-card--recent img { width: 100%; height: clamp(5.5rem, 13svh, 9rem); border-radius: 0.72rem; object-fit: cover; object-position: center; }
+.player-home-card--recent img.player-home-card__image--contain { box-sizing: border-box; padding: 0.45rem; background: radial-gradient(circle, rgb(249 140 255 / 17%), transparent 64%), rgb(27 40 96 / 55%); object-fit: contain; }
+.player-home-card--recent img.player-home-card__image--compact { padding: 0.9rem; }
 .player-home-card--recent strong { font-size: clamp(1.2rem, 2.2vw, 1.75rem); }
 .player-home-card--recent span { overflow: hidden; color: #bcc5de; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
 .player-home-card--account { grid-template-rows: 1.55fr repeat(2, minmax(0, 0.45fr)); gap: 0.15rem; padding: 0.7rem; }

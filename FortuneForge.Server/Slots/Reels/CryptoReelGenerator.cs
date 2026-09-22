@@ -4,6 +4,8 @@ namespace FortuneForge.Server.Slots.Reels;
 
 public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenerator
 {
+    private const string EnergySymbolId = "BOLT";
+
     public ReelOutcome Generate(
         GameDefinition game,
         ReelSetDefinition reelSet,
@@ -15,7 +17,7 @@ public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenera
 
         for (var reel = 0; reel < game.Layout.ReelCount; reel++)
         {
-            var strip = reelSet.Reels[reel];
+            var strip = GetPlayableStrip(game, reelSet.Reels[reel]);
             var stop = random.Next(strip.Count);
             stops[reel] = stop;
             var rows = new List<string>(game.Layout.VisibleRows);
@@ -49,7 +51,7 @@ public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenera
         var symbolIds = symbolSet.Symbols.Select(symbol => symbol.Id).ToHashSet(StringComparer.Ordinal);
         for (var reel = 0; reel < reelSet.Reels.Count; reel++)
         {
-            var strip = reelSet.Reels[reel];
+            var strip = GetPlayableStrip(game, reelSet.Reels[reel]);
             if (strip.Count < game.Layout.VisibleRows)
             {
                 throw new InvalidOperationException(
@@ -64,5 +66,16 @@ public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenera
                     $"Strip {reel + 1} in reel set '{reelSet.Id}' references unknown symbol '{unknown}'.");
             }
         }
+    }
+
+    private static IReadOnlyList<string> GetPlayableStrip(
+        GameDefinition game,
+        IReadOnlyList<string> source)
+    {
+        if (game.Energy is not null) return source;
+
+        return source
+            .Where(symbolId => !string.Equals(symbolId, EnergySymbolId, StringComparison.Ordinal))
+            .ToArray();
     }
 }

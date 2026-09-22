@@ -29,6 +29,13 @@ export type SlotCelebrationEffect =
   | 'robot-circuit'
   | 'dragon-embers'
 
+export type SlotTopbarTheme = {
+  background: string
+  borderColor: string
+  shadowColor: string
+  accentColor?: string
+}
+
 export type SlotCabinetTheme = {
   id: string
   chrome: 'ornate' | 'simple'
@@ -42,5 +49,6 @@ export type SlotCabinetTheme = {
   backdropImage?: string
   visualsBackdropImage?: string
   pageBackdropImage?: string
+  topbar?: SlotTopbarTheme
   palette: SlotCabinetPalette
 }

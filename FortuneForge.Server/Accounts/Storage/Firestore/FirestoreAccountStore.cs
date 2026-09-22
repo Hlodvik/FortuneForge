@@ -19,7 +19,6 @@ public sealed partial class FirestoreAccountStore(FirestoreDb database) : IAccou
     private const string SpecialPointsCurrencyId = "specialPoints";
     private const string EnergyCurrencyId = "energy";
     private const string LegacyWukongGameId = "classic-demo-v1";
-    private const int SealCompletionFreeSpins = 10;
     private const string SyncedReelsFeatureMode = "sync";
     private const string ExtraRowsFeatureMode = "rows";
     private const string PawBoostFeatureMode = "paw";

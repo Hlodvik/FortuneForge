@@ -1,11 +1,13 @@
 using System.Text.Json;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
+using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Cards.TexasHoldem.Credit;
 
+[Collection(SolitaireFirestoreEmulatorCollection.Name)]
 public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHoldemFirestoreEmulatorFixture>
 {
     private static readonly DateTime Start = new(2026, 8, 16, 14, 0, 0, DateTimeKind.Utc);

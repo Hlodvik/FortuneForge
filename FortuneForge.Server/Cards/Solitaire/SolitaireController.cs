@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace FortuneForge.Server.Cards.Solitaire;
 
 public sealed record SolitaireForfeitRequest(int ExpectedVersion);
+public sealed record SolitaireFreeRunStartRequest(int DrawCount);
+public sealed record SolitaireFreeRunReplayRequest(IReadOnlyList<SolitaireFreeReplayCommand>? Commands);
 
 [ApiController]
 [Route("api/solitaire")]
@@ -15,8 +17,48 @@ public sealed class SolitaireController(
     FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
+    FirestoreSolitaireFreeRunService freeRunService,
     ILogger<SolitaireController> logger) : ControllerBase
 {
+    [HttpPost("free/runs")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> StartFreeRun(
+        SolitaireFreeRunStartRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to play free Solitaire." });
+        try
+        {
+            return Ok(await freeRunService.StartAsync(
+                idempotencyKey ?? string.Empty, account.UserId, request.DrawCount, cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            return FreeRunHttp(exception);
+        }
+    }
+
+    [HttpPost("free/runs/{runId}/replay")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> CompleteFreeRun(
+        string runId,
+        SolitaireFreeRunReplayRequest request,
+        CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to submit free Solitaire." });
+        try
+        {
+            return Ok(await freeRunService.CompleteAsync(
+                runId, account.UserId, request.Commands ?? [], cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            return FreeRunHttp(exception);
+        }
+    }
     [HttpGet("session")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
     public async Task<ActionResult> Session(CancellationToken cancellationToken)
@@ -230,6 +272,13 @@ public sealed class SolitaireController(
             AllowSingleHumanBotFill = IsSingleHumanBotFillEnabled(configuration)
         }));
 
+    private ActionResult FreeRunHttp(Exception exception) => exception switch
+    {
+        ArgumentException => BadRequest(new { error = exception.Message }),
+        InvalidOperationException => Conflict(new { error = exception.Message }),
+        _ => SolitaireHttp.FromException(this, exception, logger),
+    };
+
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null
         : StatusCode(StatusCodes.Status503ServiceUnavailable, new
@@ -253,6 +302,7 @@ public sealed class SolitaireController(
 
     private static SolitaireMutationResponse ToMutation(SolitaireStoreSession value) =>
         new(value.Session, SolitaireMoney.ToCredits(value.BalanceCents));
+
 }
 
 internal static class SolitaireHttp

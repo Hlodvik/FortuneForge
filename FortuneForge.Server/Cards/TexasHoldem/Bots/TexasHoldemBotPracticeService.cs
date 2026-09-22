@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using FortuneForge.Server.Cards.Bots;
+using FortuneForge.Server.Matchmaking.QueueBotScheduling;
 using Microsoft.Extensions.Options;
 
 namespace FortuneForge.Server.Cards.TexasHoldem.Bots;
@@ -11,21 +12,24 @@ internal sealed class TexasHoldemBotPracticeService : ICardBotGameRunner
     private readonly ConcurrentDictionary<string, HumanFirstBotQueue> sessionQueues = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, TexasHoldemState> sessionMatches = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, TexasHoldemState> matches = new(StringComparer.Ordinal);
-    private readonly BotIdentityFactory identities;
+    private readonly ICardBotIdentityProvider identities;
     private readonly TexasHoldemBotAgent agent;
     private readonly IBotTurnLeaseStore leases;
+    private readonly IQueueBotFillScheduler scheduler;
     private readonly CardBotPlatformOptions platform;
     private readonly string ownerId = $"{Environment.MachineName}-{Guid.NewGuid():N}";
 
     public TexasHoldemBotPracticeService(
-        BotIdentityFactory identities,
+        ICardBotIdentityProvider identities,
         TexasHoldemBotAgent agent,
         IBotTurnLeaseStore leases,
+        IQueueBotFillScheduler scheduler,
         IOptions<CardBotPlatformOptions> options)
     {
         this.identities = identities;
         this.agent = agent;
         this.leases = leases;
+        this.scheduler = scheduler;
         platform = options.Value;
     }
 
@@ -61,7 +65,7 @@ internal sealed class TexasHoldemBotPracticeService : ICardBotGameRunner
                     CardBotSeed.Create());
                 queues.Add(queue);
             }
-            queue.AddHuman(sessionId, displayName, nowUtc);
+            queue.AddHuman(sessionId, displayName, nowUtc, scheduler);
             sessionQueues[sessionId] = queue;
             StartIfReady(queue, nowUtc);
             return sessionMatches.TryGetValue(sessionId, out current)
@@ -352,7 +356,11 @@ internal sealed class TexasHoldemBotPracticeService : ICardBotGameRunner
 
     private void StartIfReady(HumanFirstBotQueue queue, DateTime nowUtc)
     {
-        var seats = queue.TryStart(nowUtc, identities);
+        var seats = queue.TryStart(
+            nowUtc,
+            identities,
+            scheduler,
+            CardBotQueueFillPolicies.Create(platform, platform.TexasHoldem));
         if (seats is null) return;
         lock (gate)
         {

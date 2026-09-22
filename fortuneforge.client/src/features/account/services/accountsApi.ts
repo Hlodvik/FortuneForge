@@ -231,8 +231,8 @@ async function accountRequest<T>(
 }
 
 export async function fetchWithAccountSession(
-  path: string,
-  init: RequestInit,
+  path: RequestInfo | URL,
+  init: RequestInit = {},
 ): Promise<Response> {
   const sessionToken = readStoredToken('sessionStorage')
   const persistentToken = readStoredToken('localStorage')

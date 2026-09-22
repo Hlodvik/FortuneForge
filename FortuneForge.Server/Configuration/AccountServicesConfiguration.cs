@@ -1,6 +1,7 @@
 using FirebaseAdmin;
 using FirebaseAdmin.Auth;
 using FortuneForge.Server.Accounts;
+using FortuneForge.Server.Accounts.Development;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Storage;
 using Google.Apis.Auth.OAuth2;
@@ -30,6 +31,8 @@ public static class AccountServicesConfiguration
         services.AddHttpClient<FirebaseEmailVerificationService>();
         services.AddSingleton<IAccountStore, FirestoreAccountStore>();
         services.AddHostedService<AccountSchemaInitializer>();
+        services.AddSingleton<DevelopmentDefaultAccount>();
+        services.AddHostedService<DevelopmentDefaultAccountBootstrapper>();
         services.AddSingleton<AccountService>();
 
         return services;

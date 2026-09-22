@@ -1,0 +1,12 @@
+.snake-page {
+  display: grid;
+  min-height: 100svh;
+  height: 100svh;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: #071a16;
+}
+
+.snake-page > .ff-snake {
+  min-height: 0;
+}

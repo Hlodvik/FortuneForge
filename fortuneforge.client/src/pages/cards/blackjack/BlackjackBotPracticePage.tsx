@@ -8,9 +8,9 @@ import {
 } from '../../../games/cards/blackjack/botPracticeApi'
 import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PracticeCard } from '../../../games/cards/shared/PracticeCard'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import {
   PracticeLobby,
-  PracticeModeNotice,
   PracticeQueuePanel,
 } from '../../../games/cards/shared/PracticeBotChrome'
 import type { PracticeBotSkill } from '../../../games/cards/shared/practiceBots'
@@ -24,6 +24,7 @@ export function BlackjackBotPracticePage() {
   })
   const [playerCount, setPlayerCount] = useState(3)
   const [skill, setSkill] = useState<PracticeBotSkill>(3)
+  const onCardAudioClick = useCardAudioClick()
   const response = controller.state.kind === 'ready' ? controller.state.response : null
   const table = response?.table ?? null
 
@@ -40,18 +41,17 @@ export function BlackjackBotPracticePage() {
   }
 
   return (
-    <div className="practice-bot-page">
+    <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
       <header className="practice-bot-header">
         <a href="/demo/cards">← Card room</a>
-        <span>Blackjack practice lab</span>
+        <span>Blackjack</span>
       </header>
       <main className="practice-bot-main">
         <section className="practice-bot-hero">
-          <p>Fortune Forge practice</p>
+          <p>Fortune Forge</p>
           <h1>Blackjack Table</h1>
           <span>Dealer stands on 17 · synthetic chips only</span>
         </section>
-        <PracticeModeNotice />
         {controller.message && <div className="practice-bot-error" role="alert">{controller.message}</div>}
         {controller.state.kind === 'loading' && <div className="practice-bot-panel" role="status">Opening the table…</div>}
         {controller.state.kind === 'error' && <ErrorPanel message={controller.state.message} onRetry={controller.refresh} />}
@@ -72,7 +72,7 @@ export function BlackjackBotPracticePage() {
         )}
         {response?.queue && <PracticeQueuePanel queue={response.queue} />}
         {table && (
-          <section className="practice-bot-table" aria-label="Account-neutral Blackjack practice table">
+          <section className="practice-bot-table" aria-label="Blackjack table">
             <div className="practice-bot-table__status">
               <strong>{table.status === 'completed' ? 'Round complete' : `Table state v${table.version}`}</strong>
               <span>{table.seats.length} seats · wagers are virtual units</span>
@@ -150,7 +150,7 @@ function EventList({ events }: { events: readonly { version: number; type: strin
 }
 
 function DisabledPanel({ message }: { message: string }) {
-  return <section className="practice-bot-panel" role="status"><h2>Practice table is locked.</h2><p>{message}</p></section>
+  return <section className="practice-bot-panel" role="status"><h2>Table unavailable</h2><p>{message}</p></section>
 }
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {

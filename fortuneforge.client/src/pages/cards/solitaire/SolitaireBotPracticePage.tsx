@@ -9,7 +9,8 @@ import { SolitaireBoard } from '../../../games/cards/solitaire/SolitaireBoard'
 import { formatCountdown } from '../../../games/cards/solitaire/solitaireDisplay'
 import type { SolitaireCommand } from '../../../games/cards/solitaire/solitaireTypes'
 import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
-import { PracticeLobby, PracticeModeNotice, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
+import { PracticeLobby, PracticeQueuePanel } from '../../../games/cards/shared/PracticeBotChrome'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import type { PracticeBotSkill } from '../../../games/cards/shared/practiceBots'
 import { usePracticeBotSession } from '../../../games/cards/shared/usePracticeBotSession'
 import '../../../games/cards/shared/playingCards.css'
@@ -21,6 +22,7 @@ export function SolitaireBotPracticePage() {
   const [playerCount, setPlayerCount] = useState(4)
   const [skill, setSkill] = useState<PracticeBotSkill>(3)
   const [now, setNow] = useState(() => Date.now())
+  const onCardAudioClick = useCardAudioClick()
   const response = controller.state.kind === 'ready' ? controller.state.response : null
   const match = response?.match ?? null
 
@@ -43,21 +45,20 @@ export function SolitaireBotPracticePage() {
   }
 
   return (
-    <div className="practice-bot-page solitaire-page">
-      <header className="practice-bot-header"><a href="/demo/cards">← Card room</a><span>Solitaire practice lab</span></header>
+    <div className="practice-bot-page solitaire-page" onClickCapture={onCardAudioClick}>
+      <header className="practice-bot-header"><a href="/demo/cards">← Card room</a><span>Solitaire Race</span></header>
       <main className="practice-bot-main">
-        <section className="practice-bot-hero"><p>Fortune Forge practice</p><h1>Solitaire Race</h1><span>Your board is private</span></section>
-        <PracticeModeNotice />
+        <section className="practice-bot-hero"><p>Fortune Forge</p><h1>Solitaire Race</h1><span>Your board is private</span></section>
         {controller.message && <div className="practice-bot-error" role="alert">{controller.message}</div>}
-        {controller.state.kind === 'loading' && <div className="practice-bot-panel" role="status">Opening the practice race…</div>}
-        {controller.state.kind === 'error' && <StatePanel title="Practice race unavailable" message={controller.state.message} onRetry={controller.refresh} />}
-        {controller.state.kind === 'disabled' && <StatePanel title="Practice race is locked" message={controller.state.message} />}
+        {controller.state.kind === 'loading' && <div className="practice-bot-panel" role="status">Opening the race…</div>}
+        {controller.state.kind === 'error' && <StatePanel title="Race unavailable" message={controller.state.message} onRetry={controller.refresh} />}
+        {controller.state.kind === 'disabled' && <StatePanel title="Race unavailable" message={controller.state.message} />}
         {controller.state.kind === 'idle' && (
           <PracticeLobby game="Solitaire" minimumPlayers={2} maximumPlayers={8} playerCount={playerCount} skill={skill} busy={controller.busy} disabled={false} onPlayerCountChange={setPlayerCount} onSkillChange={setSkill} onJoin={join} />
         )}
         {response?.queue && <PracticeQueuePanel queue={response.queue} />}
         {match && (
-          <section className="practice-bot-table solitaire-match" aria-label="Account-neutral Solitaire practice match">
+          <section className="practice-bot-table solitaire-match" aria-label="Solitaire match">
             <div className="practice-bot-table__status">
               <strong>Your board · v{match.version}</strong>
               <span>{formatCountdown(match.deadlineAtUtc, now)} remaining</span>
@@ -89,6 +90,7 @@ export function SolitaireBotPracticePage() {
                 </li>
               ))}
             </ol>
+            <small>Final standings are shown above.</small>
           </section>
         )}
       </main>

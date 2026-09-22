@@ -1,15 +1,5 @@
 import { PRACTICE_BOT_SKILLS, type PracticeBotSkill, type PracticeQueue } from './practiceBots'
 
-export function PracticeModeNotice() {
-  return (
-    <aside className="practice-bot-notice" role="note">
-      <strong>Synthetic practice chips · account neutral</strong>
-      <span>Automated opponents may fill empty seats after the human-first waiting period.</span>
-      <small>No account balance, wager ledger, payout, or house result is created by this table.</small>
-    </aside>
-  )
-}
-
 export function PracticeLobby({
   game,
   minimumPlayers,
@@ -39,8 +29,8 @@ export function PracticeLobby({
   )
   return (
     <section className="practice-bot-panel" aria-labelledby="practice-bot-lobby-title">
-      <p className="practice-bot-eyebrow">Local/test practice entry</p>
-      <h2 id="practice-bot-lobby-title">Open a {game} practice table</h2>
+      <p className="practice-bot-eyebrow">Table setup</p>
+      <h2 id="practice-bot-lobby-title">Open a {game} table</h2>
       <div className="practice-bot-options">
         <label>
           <span>Seats</span>
@@ -66,7 +56,7 @@ export function PracticeLobby({
         </label>
       </div>
       <button type="button" disabled={busy || disabled} onClick={onJoin}>
-        {busy ? 'Opening table…' : 'Join practice queue'}
+        {busy ? 'Opening table…' : 'Join table'}
       </button>
     </section>
   )
@@ -87,7 +77,7 @@ export function PracticeQueuePanel({ queue }: { queue: PracticeQueue }) {
             </div>
           ))}
       </div>
-      <p>Waiting briefly for more people. Empty seats may then be filled automatically.</p>
+      <p>Waiting briefly for more people. Empty seats will then be filled automatically.</p>
     </section>
   )
 }

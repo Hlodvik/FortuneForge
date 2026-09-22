@@ -38,6 +38,14 @@
   background: #0a051c;
 }
 
+.app-shell--landing::before {
+  background:
+    radial-gradient(circle at 14% 16%, rgb(53 231 255 / 16%), transparent 28rem),
+    radial-gradient(circle at 84% 20%, rgb(239 61 255 / 18%), transparent 32rem),
+    radial-gradient(ellipse at 50% 100%, rgb(255 184 34 / 16%), transparent 42rem),
+    linear-gradient(180deg, #0b0929, #160d3c 58%, #0c0829);
+}
+
 .app-shell--card-room {
   background: #052f27;
 }
@@ -70,6 +78,7 @@
 .app-shell > .credit-holdem-page,
 .app-shell > .holdem-page,
 .app-shell > .solitaire-page,
+.app-shell > .asteroids-competition-page,
 .app-shell > .slots-page,
 .app-shell > .route-state {
   position: relative;

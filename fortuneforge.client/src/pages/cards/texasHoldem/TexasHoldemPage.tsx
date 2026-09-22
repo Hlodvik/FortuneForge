@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import { freshCardSeed } from '../../../games/cards/shared/cards'
 import {
   createHoldemGame,
@@ -34,13 +35,13 @@ const stageLabels = {
 export function TexasHoldemPage({
   playerName = 'You',
   returnHref = '/demo/cards',
-  demoMode = true,
 }: TexasHoldemPageProps) {
   const [game, setGame] = useState<HoldemGame>(() => createHoldemGame({ seed: freshCardSeed() }))
   const [handNumber, setHandNumber] = useState(1)
   const [history, setHistory] = useState<HandHistoryItem[]>([])
   const [showHistory, setShowHistory] = useState(false)
   const [showRules, setShowRules] = useState(false)
+  const onCardAudioClick = useCardAudioClick()
 
   const act = (action: HoldemAction) => {
     const next = playHoldemAction(game, action)
@@ -71,7 +72,7 @@ export function TexasHoldemPage({
   const completedResult = game.status === 'complete' ? game.result : null
 
   return (
-    <div className="holdem-page">
+    <div className="holdem-page" onClickCapture={onCardAudioClick}>
       <header className="holdem-header">
         <a className="holdem-brand" href="/" aria-label="Fortune Forge home">
           <span aria-hidden="true">♠</span>
@@ -90,7 +91,7 @@ export function TexasHoldemPage({
       </header>
 
       <main className="holdem-main">
-        <section className="holdem-table-shell" aria-label="Heads-up Texas Hold'em practice table">
+        <section className="holdem-table-shell" aria-label="Heads-up Texas Hold'em table">
           <div className="holdem-table">
             <div className="holdem-seat holdem-seat--opponent">
               <span className="holdem-avatar" aria-hidden="true">FF</span>
@@ -184,7 +185,7 @@ export function TexasHoldemPage({
               <section>
                 <span className="holdem-eyebrow">Table rules</span>
                 <h2>Heads-up fixed-bet Hold&apos;em</h2>
-                <p>Make the best five-card hand from your two hole cards and the five shared cards. This practice table uses R10/R20 blinds, R40 bets before the turn, and R80 bets on the turn and river.</p>
+                <p>Make the best five-card hand from your two hole cards and the five shared cards. The table uses R10/R20 blinds, R40 bets before the turn, and R80 bets on the turn and river.</p>
                 <ol>
                   <li>Straight Flush</li><li>Four of a Kind</li><li>Full House</li><li>Flush</li><li>Straight</li><li>Three of a Kind</li><li>Two Pair</li><li>One Pair</li><li>High Card</li>
                 </ol>
@@ -208,8 +209,8 @@ export function TexasHoldemPage({
       </main>
 
       <footer className="holdem-footer">
-        <span>{demoMode ? 'Demo practice table' : 'Account-neutral practice table'}</span>
-        <span>Practice chips reset automatically if either stack falls below the big blind.</span>
+        <span>Texas Hold’em table</span>
+        <span>Chips reset automatically if either stack falls below the big blind.</span>
       </footer>
     </div>
   )

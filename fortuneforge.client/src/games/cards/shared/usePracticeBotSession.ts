@@ -98,5 +98,5 @@ export function usePracticeBotSession<T>({
 
 function messageFor(error: unknown): string {
   if (error instanceof Error) return error.message
-  return 'The account-neutral practice table could not complete the request.'
+  return 'The table could not complete the request.'
 }

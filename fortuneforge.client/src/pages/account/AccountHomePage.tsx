@@ -17,6 +17,8 @@ const cardDetails = {
 type HomeGameHighlight = {
   href: string
   image: string
+  imagePresentation?: 'contain' | 'cover'
+  imageScale?: 'standard' | 'compact'
   summary: string
   title: string
 }
@@ -55,6 +57,8 @@ function featuredSlot(id: string, summary: string): HomeGameHighlight {
   return {
     href: game.playHref ?? '/slots',
     image: game.image,
+    imagePresentation: game.imagePresentation,
+    imageScale: game.imageScale,
     title: game.shortTitle,
     summary,
   }
@@ -72,10 +76,12 @@ export function HomePage() {
   const cardPlayedAt = recentCard?.completedAtUtc ?? recentCard?.startedAtUtc ?? null
   const slotIsLatest = recentSlot.game !== null && recentSlot.playedAtUtc !== null
     && (cardPlayedAt === null || Date.parse(recentSlot.playedAtUtc) > Date.parse(cardPlayedAt))
-  const recent = slotIsLatest && recentSlot.game !== null
+  const recent: HomeGameHighlight | null = slotIsLatest && recentSlot.game !== null
     ? {
         href: recentSlot.game.playHref ?? '/slots',
         image: recentSlot.game.image,
+        imagePresentation: recentSlot.game.imagePresentation,
+        imageScale: recentSlot.game.imageScale,
         title: recentSlot.game.title,
         summary: 'Continue your most recently played slot machine.',
       }
@@ -116,7 +122,7 @@ export function HomePage() {
               <section className="player-home-card player-home-card--recent" aria-labelledby="recently-played-title">
                 <small>{isFeaturedGame ? 'Featured today' : 'Recently played'}</small>
                 <a href={gameHighlight.href}>
-                  <img src={gameHighlight.image} alt="" draggable="false" />
+                  <img className={`player-home-card__image player-home-card__image--${gameHighlight.imagePresentation ?? 'cover'}${gameHighlight.imageScale === 'compact' ? ' player-home-card__image--compact' : ''}`} src={gameHighlight.image} alt="" draggable="false" />
                   <strong id="recently-played-title">{gameHighlight.title}</strong>
                   <span>{gameHighlight.summary}</span><b>{isFeaturedGame ? 'Play now →' : 'Continue →'}</b>
                 </a>

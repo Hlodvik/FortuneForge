@@ -12,6 +12,24 @@
 - `fortuneforge.client/src/app` owns browser routing and shell composition; `features` owns account, payment, game-library, and slot workflows; `components` contains cross-feature presentation.
 - `tools/FortuneForge.SlotMath` is the deterministic slot-math analysis console, while `scripts` contains asset and deployment automation.
 
+## Local development
+
+FortuneForge's local Development profile uses only a disposable Firestore emulator project. It automatically authenticates API requests that do not already supply a session as **Local Player** with R10,000 in test credits. You can also use the normal sign-in screen with `local.player@fortuneforge.test` and `FortuneForgeLocal!`. This account and its data never connect to the production Firestore project, and the bypass cannot activate outside the ASP.NET Development environment.
+
+Run these commands in separate terminals from the repository root:
+
+```powershell
+npm run local:emulator
+npm run local:api
+npm run local:web
+```
+
+Open the Vite address shown by `local:web` (normally `http://localhost:5173`). Stop the Firestore emulator to discard the local database. To reset it while it is running, use Firebase's emulator UI/API or stop it and remove its local emulator data if you have configured export storage.
+
+## Game releases
+
+Hearts, Liar's Dice, Roulette, and Craps are authenticated free-play games. Their first release uses no-credit tables while richer multiplayer and persistence work continues.
+
 ## MerchantGateway payment integration
 
 FortuneForge supports two server-side payment providers:

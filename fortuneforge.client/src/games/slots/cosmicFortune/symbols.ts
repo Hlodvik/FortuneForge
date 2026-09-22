@@ -3,7 +3,7 @@ import { COSMIC_FORTUNE_VISUALS as art } from './visuals'
 
 export const COSMIC_FORTUNE_SYMBOLS = createThemedSymbolSet({
   id: 'cosmic-fortune-symbols-v1',
-  serverSymbolSetId: 'cosmic-fortune-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Fortune satellite', image: art.satellite },
     '3': { label: 'Silver comet', image: art.comet },
@@ -27,9 +27,9 @@ export const COSMIC_FORTUNE_SYMBOLS = createThemedSymbolSet({
   collectorFirstValue: 'tractor beam gathers crystals',
   collectorSecondValue: 'double beam haul',
   collectionAwardLabels: {
-    SEAL_SYNC: '10 binary-link spins',
-    SEAL_ROWS: '10 orbital-expansion spins',
-    SEAL_PAW: '10 tractor-beam spins',
-    SEAL_RAND: '10 star-map spins',
+    SEAL_SYNC: '7 binary-link spins',
+    SEAL_ROWS: '7 orbital-expansion spins',
+    SEAL_PAW: '7 tractor-beam spins',
+    SEAL_RAND: '7 star-map spins',
   },
 })

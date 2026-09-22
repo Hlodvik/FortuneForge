@@ -28,9 +28,7 @@ public sealed partial class FirestoreAccountStore
             null,
             checked((int)ReadLong(snapshots[1], "available")),
             ReadLong(snapshots[2], "available"),
-            string.Equals(gameId, LegacyWukongGameId, StringComparison.Ordinal)
-                ? CreateSealCollections(guardSnapshot, pointValueInCents)
-                : [],
+            CreateSealCollections(guardSnapshot, pointValueInCents, gameId),
             null);
     }
 

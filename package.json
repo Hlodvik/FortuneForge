@@ -2,6 +2,9 @@
   "name": "fortune-forge-workspace",
   "private": true,
   "scripts": {
+    "local:emulator": "firebase emulators:start --only firestore --project demo-fortuneforge-local",
+    "local:api": "dotnet run --project ./FortuneForge.Server/FortuneForge.Server.csproj",
+    "local:web": "npm run dev --prefix ./fortuneforge.client",
     "analyze:slots": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
     "deploy:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target api",

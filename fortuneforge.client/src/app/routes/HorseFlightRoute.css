@@ -1,0 +1,12 @@
+.horse-flight-page {
+  display: grid;
+  min-height: 100svh;
+  height: 100svh;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: #080d1c;
+}
+
+.horse-flight-page > .ff-horse-flight {
+  min-height: 0;
+}

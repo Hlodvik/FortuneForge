@@ -69,10 +69,11 @@ function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; d
     'machine-card',
     'machine-card--slot',
     `machine-card--${game.imagePresentation}`,
+    game.imageScale === 'compact' ? 'machine-card--image-compact' : '',
     game.playHref === null ? 'machine-card--coming' : 'machine-card--available',
   ].join(' ')
   const href = demoMode ? game.demoHref : game.playHref
-  const actionLabel = demoMode ? 'Play demo' : game.playHref === null ? 'In the forge' : 'Play game'
+  const actionLabel = demoMode ? 'Play demo' : game.playHref === null ? 'Unavailable' : 'Play game'
   const statusLabel = demoMode ? 'No-account demo' : game.playHref === null ? 'Coming soon' : null
 
   return (

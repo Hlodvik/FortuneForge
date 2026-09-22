@@ -1,25 +1,25 @@
-import ambrosiaFlame from '../../../assets/slots/games/gods-of-olympus/ambrosia-flame.png'
-import amphora from '../../../assets/slots/games/gods-of-olympus/amphora.png'
-import aresHelmetMedallion from '../../../assets/slots/games/gods-of-olympus/ares-helmet-medallion.png'
-import athenaOwlMedallion from '../../../assets/slots/games/gods-of-olympus/athena-owl-medallion.png'
-import drachmaToken from '../../../assets/slots/games/gods-of-olympus/drachma-token.png'
-import goldenFleece from '../../../assets/slots/games/gods-of-olympus/golden-fleece.png'
-import hermesWingMedallion from '../../../assets/slots/games/gods-of-olympus/hermes-wing-medallion.png'
-import laurelWreath from '../../../assets/slots/games/gods-of-olympus/laurel-wreath.png'
-import lightningBolt from '../../../assets/slots/games/gods-of-olympus/lightning-bolt.png'
-import lightningVolley from '../../../assets/slots/games/gods-of-olympus/lightning-volley.png'
-import olympusGates from '../../../assets/slots/games/gods-of-olympus/olympus-gates.png'
-import poseidonTrident from '../../../assets/slots/games/gods-of-olympus/poseidon-trident.png'
-import poseidonWaveMedallion from '../../../assets/slots/games/gods-of-olympus/poseidon-wave-medallion.png'
-import thunderboltShield from '../../../assets/slots/games/gods-of-olympus/thunderbolt-shield.png'
-import wingedSandal from '../../../assets/slots/games/gods-of-olympus/winged-sandal.png'
-import zeusEagleCrest from '../../../assets/slots/games/gods-of-olympus/zeus-eagle-crest.png'
-import zeusGauntlet from '../../../assets/slots/games/gods-of-olympus/zeus-gauntlet.png'
+import ambrosiaFlame from '../../../assets/slots/games/gods-of-olympus/optimized/ambrosia-flame.png'
+import amphora from '../../../assets/slots/games/gods-of-olympus/optimized/amphora.png'
+import aresHelmetMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/ares-helmet-medallion.png'
+import athenaOwlMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/athena-owl-medallion.png'
+import drachmaToken from '../../../assets/slots/games/gods-of-olympus/optimized/drachma-token.png'
+import goldenFleece from '../../../assets/slots/games/gods-of-olympus/optimized/golden-fleece.png'
+import hermesWingMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/hermes-wing-medallion.png'
+import laurelWreath from '../../../assets/slots/games/gods-of-olympus/optimized/laurel-wreath.png'
+import lightningBolt from '../../../assets/slots/games/gods-of-olympus/optimized/lightning-bolt.png'
+import lightningVolley from '../../../assets/slots/games/gods-of-olympus/optimized/lightning-volley.png'
+import olympusGates from '../../../assets/slots/games/gods-of-olympus/optimized/olympus-gates.png'
+import poseidonTrident from '../../../assets/slots/games/gods-of-olympus/optimized/poseidon-trident.png'
+import poseidonWaveMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/poseidon-wave-medallion.png'
+import thunderboltShield from '../../../assets/slots/games/gods-of-olympus/optimized/thunderbolt-shield.png'
+import wingedSandal from '../../../assets/slots/games/gods-of-olympus/optimized/winged-sandal.png'
+import zeusEagleCrest from '../../../assets/slots/games/gods-of-olympus/optimized/zeus-eagle-crest.png'
+import zeusGauntlet from '../../../assets/slots/games/gods-of-olympus/optimized/zeus-gauntlet.png'
 import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
   id: 'gods-of-olympus-symbols-v1',
-  serverSymbolSetId: 'gods-of-olympus-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Olympian amphora', image: amphora },
     '3': { label: 'Golden laurel wreath', image: laurelWreath },
@@ -42,10 +42,13 @@ export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
   energyEarnLabel: '+1 divine favor',
   collectorFirstValue: 'claims drachmas',
   collectorSecondValue: 'double tribute',
+  freeRequiredLabel: '4+',
+  freeAwardLabel: '6 Olympian Trials',
+  collectionRequiredCount: 28,
   collectionAwardLabels: {
-    SEAL_SYNC: '10 Athena spins',
-    SEAL_ROWS: '10 Poseidon spins',
-    SEAL_PAW: '10 Ares spins',
-    SEAL_RAND: '10 Hermes spins',
+    SEAL_SYNC: '6 Athena spins',
+    SEAL_ROWS: '6 Poseidon spins',
+    SEAL_PAW: '6 Ares spins',
+    SEAL_RAND: '6 Hermes spins',
   },
 })

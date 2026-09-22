@@ -11,7 +11,13 @@ type CollectionProgressDisplayProps = {
   image: string
   isImpacting: boolean
   itemLabel: string
+  containerImage?: string
+  containerFillImages?: readonly string[]
+  displayCount?: number
+  isCelebrating?: boolean
   presentation: SlotCollectionPresentation
+  showCount?: boolean
+  statusDetail?: string
 }
 
 const pileLayout = [
@@ -29,29 +35,68 @@ const pileLayout = [
 
 const orbitSteps = Array.from({ length: 10 }, (_, index) => index)
 
+function selectCollectionContainerImage(
+  emptyImage: string | undefined,
+  fillImages: readonly string[] | undefined,
+  count: number,
+  requiredCount: number,
+): string | undefined {
+  if (!fillImages?.length || count <= 0) return emptyImage
+
+  const safeRequiredCount = Math.max(1, requiredCount)
+  const progressRatio = Math.min(1, count / safeRequiredCount)
+  const levelIndex = Math.min(
+    fillImages.length - 1,
+    Math.max(0, Math.ceil(progressRatio * fillImages.length) - 1),
+  )
+
+  return fillImages[levelIndex] ?? emptyImage
+}
+
 export function CollectionProgressDisplay({
   collection,
   definition,
   image,
   isImpacting,
   itemLabel,
+  containerImage,
+  containerFillImages,
+  displayCount,
+  isCelebrating = false,
   presentation,
+  showCount = true,
+  statusDetail,
 }: CollectionProgressDisplayProps) {
-  const progress = Math.min(100, collection.count / collection.requiredCount * 100)
-  const visiblePieceCount = collection.count === 0
+  const visualCount = displayCount ?? collection.count
+  const progress = Math.min(100, visualCount / collection.requiredCount * 100)
+  const selectedContainerImage = selectCollectionContainerImage(
+    containerImage,
+    containerFillImages,
+    visualCount,
+    collection.requiredCount,
+  )
+  const visiblePieceCount = visualCount === 0
     ? 0
     : Math.max(1, Math.ceil(progress / 10))
+  const isGemChest = presentation === 'gem-hoard'
+  const collectionName = isGemChest ? `${definition.shortLabel} chest` : definition.label
+  const collectible = isGemChest ? `${definition.shortLabel} gems` : itemLabel
+  const rewardDescription = definition.rewardDescription ?? 'Fill it to unlock a special round.'
+  const collectionHint = `${collectionName}: land ${collectible} anywhere on the reels to ${isGemChest ? 'fill' : 'complete'} it. ${collection.count} of ${collection.requiredCount} collected; ${rewardDescription}`
+  const tooltipId = `slot-collection-hint-${collection.sealId}`
 
   return (
     <div
-      className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId} slots-page__seal-collection--${presentation}${isImpacting ? ' slots-page__seal-collection--impact' : ''}`}
+      className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId} slots-page__seal-collection--${presentation}${isImpacting ? ' slots-page__seal-collection--impact' : ''}${isCelebrating ? ' slots-page__seal-collection--celebrating' : ''}`}
       data-seal-id={collection.sealId}
       data-collection-presentation={presentation}
       role="progressbar"
-      aria-label={`${definition.label}: ${collection.count} of ${collection.requiredCount} ${itemLabel}`}
+      aria-label={`${definition.label}: ${collectionHint}`}
+      aria-describedby={tooltipId}
       aria-valuemin={0}
       aria-valuemax={collection.requiredCount}
       aria-valuenow={collection.count}
+      tabIndex={0}
       style={{ '--collection-progress': `${progress}%` } as CSSProperties}
     >
       <span className="slots-page__collection-visual" aria-hidden="true">
@@ -84,6 +129,33 @@ export function CollectionProgressDisplay({
             </span>
             <img className="slots-page__collection-garnish" src={image} alt="" />
           </>
+        ) : presentation === 'gem-hoard' && selectedContainerImage ? (
+          <span className={`slots-page__treasure-chest${isImpacting ? ' slots-page__treasure-chest--impact' : ''}`}>
+            <img className="slots-page__treasure-chest-art" src={selectedContainerImage} alt="" />
+          </span>
+        ) : presentation === 'gem-hoard' ? (
+          <>
+            <span className="slots-page__gem-bucket">
+              <span className="slots-page__gem-bucket-fill" style={{ height: `${progress}%` }}>
+                {pileLayout.map((layout, index) => (
+                  <img
+                    className="slots-page__gem-bucket-piece"
+                    key={index}
+                    src={image}
+                    alt=""
+                    style={{
+                      '--collection-piece-x': `${layout.x}rem`,
+                      '--collection-piece-y': `${layout.y}rem`,
+                      '--collection-piece-rotate': `${layout.rotate}deg`,
+                      '--collection-piece-scale': layout.scale,
+                      '--collection-piece-visible': index < visiblePieceCount ? 1 : 0,
+                    } as CSSProperties}
+                  />
+                ))}
+              </span>
+            </span>
+            <img className="slots-page__collection-garnish" src={image} alt="" />
+          </>
         ) : (
           <>
             <span className="slots-page__collection-pile">
@@ -110,10 +182,24 @@ export function CollectionProgressDisplay({
 
       <span className="slots-page__seal-details">
         <strong className="slots-page__seal-title">{definition.label}</strong>
-        <span className="slots-page__collection-count" aria-hidden="true">
-          <b>{collection.count}</b>
-          <small>/{collection.requiredCount}</small>
-        </span>
+        {showCount && (
+          <span className="slots-page__collection-count" aria-hidden="true">
+            <b>{collection.count}</b>
+            <small>/{collection.requiredCount}</small>
+          </span>
+        )}
+        {statusDetail && (
+          <span className="slots-page__collection-status-detail" aria-live="polite">
+            {statusDetail}
+          </span>
+        )}
+      </span>
+
+      <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
+        <span className="slots-page__collection-tooltip-kicker">Treasure reward</span>
+        <strong>{collectionName}</strong>
+        <span className="slots-page__collection-tooltip-copy">Land {collectible} anywhere on the reels to bank them.</span>
+        <span className="slots-page__collection-tooltip-progress"><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</span>
       </span>
     </div>
   )

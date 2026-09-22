@@ -29,6 +29,7 @@ import {
   type PendingCreditHoldemMutation,
 } from '../../../games/cards/texasHoldem/creditHoldemApi'
 import { CardRoomNavigation } from '../CardRoomNavigation'
+import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import './texasHoldem.css'
 
 type Availability =
@@ -44,6 +45,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   const [busy, setBusy] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [selectedRuleId, setSelectedRuleId] = useState('standard')
+  const onCardAudioClick = useCardAudioClick()
 
   const load = useCallback(async (quiet = false, signal?: AbortSignal) => {
     if (!quiet) setAvailability({ kind: 'loading' })
@@ -132,15 +134,15 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
       onBalanceChange={setBalanceCredits}
     />
   )
-  if (availability.kind === 'loading') return <div className="credit-holdem-page">{navigation}<StateCard title="Opening the table…" body="Connecting to the dealer." /></div>
-  if (availability.kind === 'disabled') return <div className="credit-holdem-page">{navigation}<StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div>
-  if (availability.kind === 'error') return <div className="credit-holdem-page">{navigation}<StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div>
+  if (availability.kind === 'loading') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Opening the table…" body="Connecting to the dealer." /></div>
+  if (availability.kind === 'disabled') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div>
+  if (availability.kind === 'error') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div>
 
   const { status, session } = availability
   const tableRules = status.tableRules?.length ? status.tableRules : [legacyRule(status)]
   const selectedRule = tableRules.find((rule) => rule.id === selectedRuleId) ?? tableRules[0]
   return (
-    <div className="credit-holdem-page">
+    <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>
       {navigation}
       {requestError && (
         <div className="credit-holdem-error" role="alert">

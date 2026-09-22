@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import wukongMedallion from '../../assets/slots/symbols/wukong/wukong-medallion.png'
 import {
   AccountRequestError,
   loginAccount,
@@ -96,10 +95,7 @@ export function LoginPage() {
       </header>
 
       <main className="account-main">
-        <section className="account-card" aria-labelledby="login-title">
-          <div className="account-card__symbol" aria-hidden="true">
-            <img src={wukongMedallion} alt="" draggable="false" />
-          </div>
+        <section className="account-card account-card--login" aria-labelledby="login-title">
           <p className="account-eyebrow">Welcome back</p>
           <h1 id="login-title">Log in</h1>
           <p className="account-card__intro">

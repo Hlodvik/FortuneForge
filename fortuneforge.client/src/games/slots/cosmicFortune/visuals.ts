@@ -1,44 +1,42 @@
-import { createSlotBackdropSvg, createSlotIconSvg } from '../shared/themedSvg'
-
-const palette = [
-  ['#2746b8', '#070d3c', '#f5d96c', '#54c9ff'],
-  ['#8b2dc0', '#2b0a48', '#ffe271', '#ee6cff'],
-  ['#0a9d8c', '#062f3e', '#f7ca5f', '#5effdf'],
-  ['#e95745', '#511329', '#ffd773', '#ff8b6d'],
-] as const
-
-function icon(label: string, glyph: string, variant: number): string {
-  const [background, backgroundDeep, rim, glow] = palette[variant % palette.length]
-  return createSlotIconSvg({ label, glyph, background, backgroundDeep, rim, glow })
-}
+import alienCaptain from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-alien-captain-v2.webp'
+import amberSolarWorld from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-amber-solar-world-v2.webp'
+import astronaut from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-astronaut-v2.webp'
+import atomicPlasmaCharge from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-atomic-plasma-charge-v2.webp'
+import cabinetEmblem from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-cabinet-emblem-v2.webp'
+import comet from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-comet-v2.webp'
+import crimsonBinaryStar from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-crimson-binary-star-v2.webp'
+import darkMatterToken from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-dark-matter-token-v2.webp'
+import emeraldGardenPlanet from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-emerald-garden-planet-v2.webp'
+import meteorTrio from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-meteor-trio-v2.webp'
+import moonStation from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-moon-station-v2.webp'
+import observationDeck from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-observation-deck-v2.webp'
+import ringedGasGiant from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-ringed-gas-giant-v2.webp'
+import rocket from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-rocket-v2.webp'
+import sapphireIcePlanet from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-sapphire-ice-planet-v2.webp'
+import satellite from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-satellite-v2.webp'
+import supernovaCore from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-supernova-core-v2.webp'
+import tractorBeamSaucer from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-tractor-beam-saucer-v2.webp'
+import wormhole from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-wormhole-v2.webp'
 
 export const COSMIC_FORTUNE_VISUALS = {
-  backdrop: createSlotBackdropSvg({
-    label: 'Cosmic Fortune deep-space launch corridor',
-    motif: '🪐',
-    skyTop: '#05092b',
-    skyBottom: '#35125c',
-    horizon: '#162a61',
-    accent: '#54c9ff',
-    ground: '#050819',
-  }),
-  emblem: icon('Cosmic Fortune emblem', '🚀', 0),
-  accent: icon('Orbiting star accent', '🌟', 1),
-  satellite: icon('Fortune satellite', '🛰️', 0),
-  comet: icon('Silver comet', '☄️', 1),
-  moon: icon('Crescent moon station', '🌙', 2),
-  planet: icon('Ringed gas giant', '🪐', 3),
-  astronaut: icon('Lucky astronaut', '🧑‍🚀', 0),
-  rocket: icon('Interstellar rocket', '🚀', 1),
-  wild: icon('Alien captain wild', '👽', 2),
-  free: icon('Wormhole free game', '🌀', 3),
-  power: icon('Supernova power core', '🌟', 0),
-  energy: icon('Atomic plasma charge', '⚛️', 1),
-  lineBonus: icon('Meteor shower bonus', '🌠', 2),
-  collector: icon('Tractor-beam saucer', '🛸', 3),
-  sync: icon('Crimson binary star', '🔴', 3),
-  rows: icon('Sapphire ice planet', '🔵', 0),
-  paw: icon('Amber solar world', '🟠', 1),
-  rand: icon('Emerald garden planet', '🟢', 2),
-  value: icon('Dark-matter crystal', '💎', 0),
+  backdrop: observationDeck,
+  emblem: cabinetEmblem,
+  accent: darkMatterToken,
+  satellite,
+  comet,
+  moon: moonStation,
+  planet: ringedGasGiant,
+  astronaut,
+  rocket,
+  wild: alienCaptain,
+  free: wormhole,
+  power: supernovaCore,
+  energy: atomicPlasmaCharge,
+  lineBonus: meteorTrio,
+  collector: tractorBeamSaucer,
+  sync: crimsonBinaryStar,
+  rows: sapphireIcePlanet,
+  paw: amberSolarWorld,
+  rand: emeraldGardenPlanet,
+  value: darkMatterToken,
 } as const

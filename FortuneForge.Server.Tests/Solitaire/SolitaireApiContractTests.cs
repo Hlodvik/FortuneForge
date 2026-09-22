@@ -11,7 +11,7 @@ namespace FortuneForge.Server.Tests.Solitaire;
 public sealed class SolitaireApiContractTests
 {
     [Fact]
-    public void Controller_ExposesOnlyAuthoritativeQueueCommandResultAndHistorySurface()
+    public void Controller_ExposesAuthoritativeCompetitiveAndAuthenticatedFreeRunSurface()
     {
         var controller = typeof(SolitaireController);
         var route = Assert.Single(controller
@@ -28,7 +28,9 @@ public sealed class SolitaireApiContractTests
             .Where(value => value.Http is not null)
             .ToArray();
 
-        Assert.Equal(8, actions.Length);
+        Assert.Equal(10, actions.Length);
+        AssertRoute(actions, "StartFreeRun", "free/runs", "POST");
+        AssertRoute(actions, "CompleteFreeRun", "free/runs/{runId}/replay", "POST");
         AssertRoute(actions, "Session", "session", "GET");
         AssertRoute(actions, "Join", "queue", "POST");
         AssertRoute(actions, "Cancel", "queue/{ticketId}", "DELETE");

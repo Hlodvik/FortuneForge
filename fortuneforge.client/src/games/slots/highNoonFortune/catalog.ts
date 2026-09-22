@@ -1,5 +1,5 @@
-import highNoonEmblem from '../../../assets/slots/games/high-noon-fortune/high-noon-emblem.svg'
-import westernTown from '../../../assets/slots/games/high-noon-fortune/western-town.svg'
+import stagecoach from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-stagecoach-v2.webp'
+import westernTown from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-town-v2.webp'
 import type { SlotGameCatalogDefinition } from '../shared/slotGameManifest'
 
 export const HIGH_NOON_FORTUNE_CATALOG: SlotGameCatalogDefinition = {
@@ -7,7 +7,7 @@ export const HIGH_NOON_FORTUNE_CATALOG: SlotGameCatalogDefinition = {
   title: 'High Noon Fortune',
   shortTitle: 'High Noon',
   description: 'Ride into a sunset frontier town, complete four badge trails, and lasso every gold nugget on the reels.',
-  image: highNoonEmblem,
+  image: stagecoach,
   imagePresentation: 'contain',
   slotDivBackgroundImage: westernTown,
 }

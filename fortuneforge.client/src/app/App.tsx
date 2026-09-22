@@ -19,6 +19,7 @@ export default function App() {
     slotRoute?.shellBackdrop === 'default-clouds'
   const appShellClassName = [
     'app-shell',
+    pathname === '/' ? 'app-shell--landing' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
     pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
       ? 'app-shell--card-room'

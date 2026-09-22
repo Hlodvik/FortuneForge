@@ -402,41 +402,6 @@
   transform: translate(-50%, -50%);
 }
 
-.rainbow-realm-preview__mascot {
-  position: absolute;
-  z-index: 7;
-  right: clamp(0.15rem, 1.4vw, 1.4rem);
-  bottom: clamp(-2.25rem, -1.8vw, -0.35rem);
-  width: clamp(12rem, 24vw, 24rem);
-  pointer-events: none;
-  transform-origin: 54% 88%;
-  animation: rainbow-realm-mascot-bob 3.2s ease-in-out infinite;
-  filter:
-    drop-shadow(0 1.15rem 0.85rem rgb(64 11 61 / 42%))
-    drop-shadow(0 0 1.1rem rgb(255 240 163 / 20%));
-}
-
-.rainbow-realm-preview__mascot::after {
-  position: absolute;
-  z-index: -1;
-  right: 9%;
-  bottom: 11%;
-  width: 72%;
-  height: 7%;
-  border-radius: 50%;
-  background: radial-gradient(ellipse, rgb(91 50 40 / 42%), rgb(90 39 80 / 15%) 48%, transparent 72%);
-  content: '';
-  filter: blur(0.55rem);
-}
-
-.rainbow-realm-preview__mascot img {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
 .rainbow-realm-preview__reel-bank {
   width: 100%;
   height: 100%;
@@ -743,11 +708,6 @@
   to { opacity: 1; transform: scale(1.08); }
 }
 
-@keyframes rainbow-realm-mascot-bob {
-  0%, 100% { transform: translateY(0) rotate(-1deg); }
-  50% { transform: translateY(-2.5%) rotate(1deg); }
-}
-
 @keyframes rainbow-realm-pinwheel-left {
   to { transform: rotate(360deg); }
 }
@@ -814,11 +774,6 @@
 
   .rainbow-realm-preview__power-meter img { width: 1.45rem; }
 
-  .rainbow-realm-preview__mascot {
-    right: -0.7rem;
-    bottom: -0.35rem;
-    width: clamp(8.5rem, 36vw, 11rem);
-  }
 }
 
 @media (min-width: 1000px) and (min-aspect-ratio: 8 / 5) {
@@ -831,7 +786,6 @@
 @media (prefers-reduced-motion: reduce) {
   .rainbow-realm-machine__topper-lights i,
   .rainbow-realm-machine__rail i,
-  .rainbow-realm-preview__mascot,
   .rainbow-realm-preview__flower,
   .rainbow-realm-preview__effect-sparkle {
     animation: none;

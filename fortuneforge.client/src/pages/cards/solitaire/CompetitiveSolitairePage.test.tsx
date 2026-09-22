@@ -134,6 +134,8 @@ describe('Solitaire presentation', () => {
     }
     const markup = render({ kind: 'ready', session: result })
     expect(markup).toContain('R18.00 ready to claim')
+    expect(markup).toContain('Reward earned')
+    expect(markup).toContain('Claim your reward, then return to the card room.')
     expect(markup).toContain('Claim reward')
     expect(markup).not.toContain('Recent matches')
   })
@@ -163,6 +165,8 @@ describe('Solitaire presentation', () => {
       { freeGame: createLocalSolitaireGame(42, 3), freeComplete: true },
     )
     expect(markup).toContain('Game complete')
+    expect(markup).toContain('Deck cleared')
+    expect(markup).toContain('Every card reached a foundation')
     expect(markup).toContain('Replay')
     expect(markup).toContain('New game')
     expect(markup).toContain('Return')

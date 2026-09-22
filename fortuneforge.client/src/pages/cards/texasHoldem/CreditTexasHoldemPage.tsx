@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
-import { CardOutcomeSummary, type CardOutcomeTone } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
 import {
@@ -244,23 +244,33 @@ function QueueView({ session, busy, leave }: {
 function ResultView({ session, busy, next, leave }: {
   session: CreditHoldemResultSession; busy: boolean; next: () => void; leave: () => void
 }) {
-  const tone = creditHoldemOutcomeTone(session)
-  const returned = session.humanPayoutCredits === session.humanCommittedCredits && session.humanPayoutCredits > 0
+  const current = session.standings.find((standing) => standing.isCurrentPlayer)
+  const wonHand = current !== undefined
+    && session.finalTable.winningSeatIds.includes(current.seatId)
+  const collected = session.humanPayoutCredits
+  const handName = session.finalTable.seats.find((seat) => seat.isCurrentPlayer)?.handName
+  const sharedPot = !wonHand && collected > 0
   return (
     <section className="credit-holdem-result">
       <CreditHoldemTableSurface table={session.finalTable} revealDelay={130} />
+      <GameOutcomeBanner
+        className="credit-holdem-result__outcome"
+        label={wonHand ? 'Hand won' : sharedPot ? 'Hand settled' : 'Hand complete'}
+        title={wonHand
+          ? `You took R${chips(collected)}`
+          : sharedPot
+            ? `R${chips(collected)} returned to your stack`
+            : 'The dealer has settled this hand'}
+        detail={handName
+          ? `Your final hand: ${handName}.`
+          : 'The final table shows every revealed hand and payout.'}
+        nextAction="Deal the next hand, or leave the table."
+        significance={wonHand && collected >= Math.max(1, session.humanCommittedCredits * 2)
+          ? 'major'
+          : 'standard'}
+        tone={wonHand ? 'win' : sharedPot ? 'neutral' : 'loss'}
+      />
       <div className="credit-holdem-result__controls">
-        <div className="credit-holdem-result__summary">
-          <CardOutcomeSummary
-            tone={tone}
-            eyebrow={tone === 'positive' ? 'Winning hand' : returned ? 'Hand returned' : 'Hand settled'}
-            title={tone === 'positive' ? `Hand ${session.handNumber} won` : returned ? `Hand ${session.handNumber} returned` : `Hand ${session.handNumber} settled`}
-            detail={session.humanPayoutCredits > 0
-              ? `Payout R${chips(session.humanPayoutCredits)} · applied by the server exactly once.`
-              : 'No payout this hand · settled by the server exactly once.'}
-            nextAction="Deal the next hand or leave the table when ready."
-          />
-        </div>
         <button className="credit-holdem-primary" type="button" disabled={busy} onClick={next}>Deal next hand</button>
         <button type="button" disabled={busy} onClick={leave}>Leave table</button>
       </div>
@@ -400,11 +410,6 @@ function StateCard({ title, body, retry }: { title: string; body: string; retry?
 }
 function chips(value: number): string { return (value / 100).toFixed(2) }
 
-function creditHoldemOutcomeTone(session: CreditHoldemResultSession): CardOutcomeTone {
-  if (session.humanPayoutCredits > session.humanCommittedCredits) return 'positive'
-  if (session.humanPayoutCredits === session.humanCommittedCredits && session.humanPayoutCredits > 0) return 'neutral'
-  return 'caution'
-}
 function initials(value: string): string {
   return value.split(/[^a-z0-9]+/i).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'P'
 }

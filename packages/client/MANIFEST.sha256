@@ -110,3 +110,6 @@ d39dbd3bcf4a3adde3257da8142b34c278cc576b1593596b6f58d6cfbe6ef796  fortuneforge-g
 # FortuneForge.Games 2048 and Drop Merge account-session client packages: 2026-09-13
 af49d773eb07cf425fa0f5214e3008473f68dcc06d0c19bcb5f95c713646a15f  fortuneforge-games-2048-0.1.0.tgz
 da81198e106ccdbf15dec8a0da77a3fb94d0c81330c45c1c3671b0d21bd3619b  fortuneforge-games-drop-merge-0.1.0.tgz
+# Consolidated current Horse Flight and Snake clients: 2026-09-22
+9135cf5ad6ea8f226937e04c651eef79f0afbf24fb3690dbfdac94053d9c4705  fortuneforge-games-horse-flight-0.1.25.tgz
+b962fbbc219db86e079032f5a0df329385eeda2c351e4de94f4c9a5caadf2f05  fortuneforge-games-snake-0.1.0.tgz

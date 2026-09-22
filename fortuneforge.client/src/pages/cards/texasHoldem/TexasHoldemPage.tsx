@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
+import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import { freshCardSeed } from '../../../games/cards/shared/cards'
@@ -69,7 +69,9 @@ export function TexasHoldemPage({
   const betSize = holdemBetSize(game.stage)
   const betLabel = game.stage === 'preflop' ? `Raise R${betSize}` : `Bet R${betSize}`
   const potDisplay = game.status === 'complete' ? game.result?.potWon ?? 0 : game.pot
-  const completedResult = game.status === 'complete' ? game.result : null
+  const handOutcome = game.status === 'complete' && game.result
+    ? getHandOutcome(game.result)
+    : null
 
   return (
     <div className="holdem-page" onClickCapture={onCardAudioClick}>
@@ -124,18 +126,8 @@ export function TexasHoldemPage({
               })}
             </div>
 
-            <div className="holdem-status" aria-live={completedResult ? 'off' : 'polite'}>
-              {completedResult ? (
-                <CardOutcomeSummary
-                  tone={completedResult.winner === 'player' ? 'positive' : completedResult.winner === 'tie' ? 'neutral' : 'caution'}
-                  eyebrow={completedResult.winner === 'player' ? 'Winning hand' : completedResult.winner === 'tie' ? 'Split pot' : 'Hand complete'}
-                  title={completedResult.summary}
-                  detail={completedResult.playerHand && completedResult.opponentHand
-                    ? `Your ${completedResult.playerHand.name} · Dealer ${completedResult.opponentHand.name}`
-                    : `Pot R${completedResult.potWon}`}
-                  nextAction="Deal the next hand when ready."
-                />
-              ) : (
+            <div className="holdem-status" aria-live={handOutcome ? 'off' : 'polite'}>
+              {!handOutcome && (
                 <>
                   <span>{stageLabels[game.stage]}</span>
                   <strong>{game.message}</strong>
@@ -155,6 +147,8 @@ export function TexasHoldemPage({
               {game.dealer === 'player' && <span className="holdem-dealer-button" title="Dealer button">D</span>}
             </div>
           </div>
+
+          {handOutcome && <GameOutcomeBanner className="holdem-table__outcome" {...handOutcome} />}
 
           <div className="holdem-controls" aria-label="Poker actions">
             <span className="holdem-hand-number">Hand #{handNumber}</span>
@@ -209,9 +203,44 @@ export function TexasHoldemPage({
       </main>
 
       <footer className="holdem-footer">
-        <span>Texas Hold’em table</span>
+        <span>Account-neutral practice table</span>
         <span>Chips reset automatically if either stack falls below the big blind.</span>
       </footer>
     </div>
   )
+}
+
+function getHandOutcome(result: NonNullable<HoldemGame['result']>) {
+  const playerShare = result.winner === 'tie' ? Math.ceil(result.potWon / 2) : result.potWon
+  const handDetail = result.playerHand && result.opponentHand
+    ? `Your ${result.playerHand.name} · Forge Dealer ${result.opponentHand.name}.`
+    : 'The hand ended before showdown.'
+  if (result.winner === 'player') {
+    return {
+      label: 'Hand won',
+      title: `You took the R${result.potWon} pot`,
+      detail: handDetail,
+      nextAction: 'Deal the next hand when you are ready.',
+      tone: 'win' as const,
+      significance: 'major' as const,
+    }
+  }
+  if (result.winner === 'tie') {
+    return {
+      label: 'Pot split',
+      title: `R${playerShare} returned to your stack`,
+      detail: handDetail,
+      nextAction: 'Deal the next hand when you are ready.',
+      tone: 'neutral' as const,
+      significance: 'standard' as const,
+    }
+  }
+  return {
+    label: 'Hand complete',
+    title: `Forge Dealer took the R${result.potWon} pot`,
+    detail: handDetail,
+    nextAction: 'Deal the next hand when you are ready.',
+    tone: 'loss' as const,
+    significance: 'standard' as const,
+  }
 }

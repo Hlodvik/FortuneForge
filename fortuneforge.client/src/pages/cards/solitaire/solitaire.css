@@ -188,6 +188,23 @@
   cursor: pointer;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .solitaire-primary-action,
+  .solitaire-panel button,
+  .solitaire-state button,
+  .solitaire-request-error button,
+  .solitaire-match__heading button,
+  .solitaire-match__controls button,
+  .solitaire-result-dialog button {
+    transition: transform 110ms ease, filter 110ms ease;
+  }
+}
+
+.solitaire-page button:not(:disabled):active {
+  transform: translateY(1px) scale(0.985);
+  filter: brightness(0.96);
+}
+
 .solitaire-lobby__actions,
 .solitaire-match__controls {
   display: grid;
@@ -302,6 +319,12 @@
 
 .solitaire-results__actions--three {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.solitaire-results__outcome,
+.solitaire-result-dialog__outcome {
+  margin: 0.9rem 0;
+  text-align: left;
 }
 
 .solitaire-new-game-options {

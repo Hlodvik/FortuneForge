@@ -216,6 +216,8 @@ export function useSlotsPageController({
   const [resultAtmosphereId, setResultAtmosphereId] = useState(0)
   const [lastEnergyAwarded, setLastEnergyAwarded] = useState(0)
   const [lastEnergyMultiplierApplied, setLastEnergyMultiplierApplied] = useState(false)
+  const [hasCompletedSpin, setHasCompletedSpin] = useState(false)
+  const [lastSpinOutcomeKey, setLastSpinOutcomeKey] = useState(0)
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
   const [freeSpinWagerPoints, setFreeSpinWagerPoints] = useState<number | null>(null)
   const [freeSpinFeatureMode, setFreeSpinFeatureMode] = useState<string | null>(null)
@@ -509,6 +511,7 @@ export function useSlotsPageController({
     setLastFreeSpinsAwarded(0)
     setLastSpinOutcome(null)
     setWinningPaylineCount(0)
+    setHasCompletedSpin(false)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
     setMoneyGrabPresentation(null)
@@ -1279,6 +1282,7 @@ export function useSlotsPageController({
     setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
+    setHasCompletedSpin(false)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
     setMoneyGrabPresentation(null)
@@ -1462,6 +1466,8 @@ export function useSlotsPageController({
       }
       setLastFreeSpinsAwarded(result.freeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
+      setHasCompletedSpin(true)
+      setLastSpinOutcomeKey((current) => current + 1)
       setFreeSpinsRemaining(result.freeSpinsRemaining)
       setFreeSpinWagerPoints(
         result.freeSpinsRemaining > 0
@@ -1721,6 +1727,7 @@ export function useSlotsPageController({
     featureSet,
     freeSpinFeatureMode,
     freeSpinsRemaining,
+    hasCompletedSpin,
     handleSpinButtonClick,
     helpCloseButtonRef,
     isAutoSpinning,
@@ -1736,6 +1743,7 @@ export function useSlotsPageController({
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
+    lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
     mascotActionKey,

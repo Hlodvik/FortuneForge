@@ -148,6 +148,7 @@ export function FlappyFreeRunPage({ account, gateway }: FlappyFreeRunPageProps) 
         <h1>Flappy</h1>
         <p>Thread the flier through the openings. Every flight is securely recorded to your account.</p>
         <p><strong>Space or left click/tap to flap.</strong> Gravity never stops pulling downward.</p>
+        <p>Free play does not enter the jackpot.</p>
         <button disabled={phase === 'starting' || pending !== null} onClick={() => void beginRun()} type="button">
           {phase === 'starting' ? 'Preparing recorded flight…' : 'Start flight'}
         </button>

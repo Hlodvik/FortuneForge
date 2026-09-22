@@ -341,7 +341,7 @@ describe('slot game manifests', () => {
       [COSMIC_FORTUNE_SLOT_GAME, 'cosmic-orbit', 'cosmic-fortune-audio-v1', 24, 3, 6, true],
       [HIGH_NOON_FORTUNE_SLOT_GAME, 'high-noon-showdown', 'high-noon-fortune-audio-v1', 20, 3, 5, false],
       [GODS_OF_OLYMPUS_SLOT_GAME, 'olympus-trial', 'gods-of-olympus-audio-v1', 28, 4, 6, true],
-      [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v6', 15, 3, 7, true],
+      [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v9', 15, 3, 7, true],
       [ROYAL_DRAW_SLOT_GAME, 'royal-high-stakes', 'royal-draw-audio-v1', 24, 3, 6, true],
     ] as const
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   cancelSolitaireQueue,
@@ -28,7 +29,6 @@ import {
   projectRedactedDraw,
   SolitaireRuleError,
 } from '../../../games/cards/solitaire/solitaireEngine'
-import { CardOutcomeSummary } from '../../../games/cards/shared/CardOutcomeSummary'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import '../../../games/cards/shared/playingCards.css'
 import { formatDuration } from '../../../games/cards/solitaire/solitaireDisplay'
@@ -899,13 +899,14 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
               <div>
                 <p className="solitaire-eyebrow">Game complete · deck cleared</p>
                 <h2 id="free-result-title">{props.game.score.toLocaleString()} points</h2>
-                <CardOutcomeSummary
-                  className="solitaire-free-outcome"
-                  tone="positive"
-                  eyebrow="Free game complete"
-                  title="Every card is home"
-                  detail={`${props.game.moves} moves · ${formatElapsed(props.freeElapsedMilliseconds)}`}
-                  nextAction="Replay this draw, start a new game, or return when ready."
+                <GameOutcomeBanner
+                  className="solitaire-result-dialog__outcome"
+                  label="Deck cleared"
+                  title="Every card reached a foundation"
+                  detail={`${props.game.score.toLocaleString()} points · ${props.game.moves} moves · ${formatElapsed(props.freeElapsedMilliseconds)}`}
+                  nextAction="Replay this draw, choose a new game, or return to the card room."
+                  tone="win"
+                  significance="major"
                 />
                 <div className="solitaire-results__actions solitaire-results__actions--three">
                   <button className="solitaire-primary-action" type="button" onClick={props.onReplayFree}>Replay</button>
@@ -931,14 +932,20 @@ function ResultPanel({ result, busy, onClaim, onReturn }: {
   const won = (current?.payoutCredits ?? 0) > 0
   return (
     <section className="solitaire-panel solitaire-results">
-      <CardOutcomeSummary
-        tone={won ? 'positive' : 'neutral'}
-        eyebrow={won ? 'Reward earned' : 'Result settled'}
-        title={current ? `You placed #${current.rank}` : 'Game complete'}
-        detail={current ? `${current.score.toLocaleString()} points · ${current.moves} moves · R${current.payoutCredits.toFixed(2)} ready to claim` : undefined}
-        nextAction={result.canClaim
-          ? (won ? 'Claim your reward to finish this result.' : 'Accept this result to finish.')
-          : 'Return to the card room when ready.'}
+      <GameOutcomeBanner
+        className="solitaire-results__outcome"
+        label={won ? 'Reward earned' : 'Match settled'}
+        title={won && current
+          ? `R${current.payoutCredits.toFixed(2)} ready to claim`
+          : current
+            ? `You finished in place #${current.rank}`
+            : 'Your result is ready'}
+        detail={current
+          ? `${current.score.toLocaleString()} points in ${current.moves} moves.`
+          : 'Review the final standings before you leave the table.'}
+        nextAction={won ? 'Claim your reward, then return to the card room.' : 'Accept this result, then return to the card room.'}
+        tone={won ? 'win' : 'neutral'}
+        significance={won ? 'major' : 'standard'}
       />
       <ol>
         {result.standings.map((standing) => (
@@ -1026,6 +1033,17 @@ function CompetitiveCompletionDialog({
         <p className="solitaire-eyebrow">{integrityFailed ? 'Game ended' : 'Game complete'}</p>
         <h2 id="competitive-result-title">{match.score.toLocaleString()} points</h2>
         <p>{match.moves} moves · {formatDuration(current?.elapsedSeconds ?? 0)}</p>
+        <GameOutcomeBanner
+          className="solitaire-result-dialog__outcome"
+          label={integrityFailed ? 'Game ended' : 'Your run is complete'}
+          title={integrityFailed ? 'This result cannot be scored' : 'Your result is being finalized'}
+          detail={integrityFailed
+            ? 'No reward was issued for this run.'
+            : `${match.score.toLocaleString()} points in ${match.moves} moves.`}
+          nextAction="Start a new game or return to the card room."
+          tone={integrityFailed ? 'loss' : 'milestone'}
+          significance="standard"
+        />
         <ol>
           {match.players.filter((player) => player.status !== 'open').map((player) => (
             <li className={player.isCurrentPlayer ? 'is-current' : ''} key={player.playerId}>

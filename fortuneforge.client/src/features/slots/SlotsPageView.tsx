@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
+import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
@@ -14,6 +15,7 @@ import { TreasureGemFlyover } from './components/TreasureGemFlyover'
 import { getSpecialRoundLabel } from './config/slotFeatures'
 import { getSlotSymbolDefinition } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
+import { getSlotOutcomePresentation } from './presentation/spinPresentation'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
 import { creditFormatter, formatRand, getSlotSymbolValueLabel } from './slotPagePresentation'
 import type { SlotsPageController } from './useSlotsPageController'
@@ -44,6 +46,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     featureSet,
     freeSpinsRemaining,
     handleSpinButtonClick,
+    hasCompletedSpin,
     helpCloseButtonRef,
     help,
     heldCompletedCollectionId,
@@ -60,6 +63,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
+    lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
     mascotActionKey,
@@ -129,6 +133,30 @@ export function SlotsPageView(controller: SlotsPageController) {
     ...pageBackdropStyle,
     ...topbarStyle,
   }
+  const bestWinMatch = bestWin?.matches.reduce((best, candidate) => (
+    candidate.amountPoints > best.amountPoints ? candidate : best
+  ))
+  const slotOutcome = getSlotOutcomePresentation({
+    activeWager: activeWagerDisplay,
+    bestPayline: bestWin,
+    bestSymbolLabel: bestWinMatch
+      ? getSlotSymbolDefinition(symbolSet, bestWinMatch.match.symbolId).label
+      : null,
+    canAffordSelectedWager,
+    demoAvailabilityMessage,
+    energyLabel: energyFeature?.label ?? null,
+    gameTitle: cabinetTheme.title,
+    hasCompletedSpin,
+    isSpinning,
+    lastEnergyAwarded,
+    lastEnergyMultiplierApplied,
+    lastFreeSpinsAwarded,
+    lastWin,
+    spinError,
+    spinStage,
+    freeSpinsRemaining,
+    useFreeGameForNextSpin,
+  })
 
   return (
     <div
@@ -638,33 +666,13 @@ export function SlotsPageView(controller: SlotsPageController) {
       )}
 
       <footer
-        className={[
-          'slots-page__footer',
-          spinError || demoAvailability === 'unavailable' ? 'slots-page__footer--error' : '',
-          lastSpinOutcome ? `slots-page__footer--${lastSpinOutcome.kind}` : '',
-        ].filter(Boolean).join(' ')}
-        aria-live={isAutoSpinning ? 'off' : 'polite'}
-        aria-atomic="true"
+        className={`slots-page__footer${spinError || demoAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
       >
-        {demoAvailabilityMessage
-          ?? spinError
-          ?? (isSpinning
-            ? spinStage === 'requesting'
-              ? `${cabinetTheme.title} reels are spinning`
-              : 'Reels are landing…'
-            : lastFreeSpinsAwarded > 0
-              ? `${lastFreeSpinsAwarded} ${help.freeGames?.awardLabel ?? 'free games'} won — ${freeSpinsRemaining} ready`
-            : lastSpinOutcome
-              ? `${lastSpinOutcome.title}${lastSpinOutcome.awardRand > 0 ? ` · ${formatRand(lastSpinOutcome.awardRand)} credited` : ''} · ${lastSpinOutcome.nextAction}`
-              : lastEnergyMultiplierApplied
-                ? 'Energy boost ×1.5 — meter reset'
-              : lastEnergyAwarded > 0
-                ? 'Energy collected — spin again when ready.'
-              : useFreeGameForNextSpin
-                ? `${freeSpinsRemaining} free game${freeSpinsRemaining === 1 ? '' : 's'} ready`
-            : !canAffordSelectedWager
-              ? 'Choose a smaller wager'
-              : 'Choose a wager, then spin when ready.')}
+        <GameOutcomeBanner
+          key={lastSpinOutcomeKey}
+          className="slots-page__outcome"
+          {...slotOutcome}
+        />
       </footer>
 
       <AudioSettingsDialog

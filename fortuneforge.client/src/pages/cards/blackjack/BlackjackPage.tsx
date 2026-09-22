@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { GameOutcomeBanner, type GameOutcomeTone } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
-import { CardOutcomeSummary, type CardOutcomeTone } from '../../../games/cards/shared/CardOutcomeSummary'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import {
@@ -150,8 +150,8 @@ export function BlackjackPage({
   const balance = game?.balance ?? account?.balances.slotsCredits ?? null
   const pending = pendingRequest.current
   const serviceReady = status?.available === true
-  const completedGame = game?.status === 'completed' ? game : null
   const onCardAudioClick = useCardAudioClick()
+  const roundOutcome = game?.status === 'completed' ? getRoundOutcome(game) : null
 
   return (
     <div className="blackjack-page" onClickCapture={onCardAudioClick}>
@@ -177,19 +177,11 @@ export function BlackjackPage({
             emptyLabel="Dealer waits for the deal"
           />
 
-          <div className="blackjack-table__message" aria-live={completedGame ? 'off' : 'polite'}>
-            {completedGame ? (
-              <CardOutcomeSummary
-                tone={blackjackOutcomeTone(completedGame)}
-                eyebrow={blackjackOutcomeEyebrow(completedGame)}
-                title={completedGame.message}
-                detail={completedGame.payout > 0 ? `Payout R${completedGame.payout.toFixed(2)}` : 'No payout this hand.'}
-                nextAction="Set a wager, then deal when ready."
-              />
-            ) : (
-              <strong>{game?.message ?? (serviceReady ? 'Place a wager to begin.' : 'Checking the table…')}</strong>
-            )}
+          <div className="blackjack-table__message" aria-live={roundOutcome ? 'off' : 'polite'}>
+            {!roundOutcome && <strong>{game?.message ?? (serviceReady ? 'Place a wager to begin.' : 'Checking the table…')}</strong>}
           </div>
+
+          {roundOutcome && <GameOutcomeBanner className="blackjack-demo__outcome" {...roundOutcome} />}
 
           <Hand
             label="Your hand"
@@ -275,6 +267,32 @@ export function BlackjackPage({
   )
 }
 
+function getRoundOutcome(game: BlackjackGame): {
+  detail: string
+  label: string
+  nextAction: string
+  significance: 'standard' | 'major'
+  title: string
+  tone: GameOutcomeTone
+} {
+  const winning = game.payout > game.totalWager
+    || game.outcome === 'player-blackjack'
+    || game.outcome === 'player-win'
+  const returned = game.payout > 0 && !winning
+  return {
+    label: winning ? 'Hand won' : returned ? 'Hand pushed' : 'Hand complete',
+    title: winning
+      ? `You won R${game.payout.toFixed(2)}`
+      : returned
+        ? `R${game.payout.toFixed(2)} returned`
+        : 'This hand did not pay',
+    detail: game.message,
+    nextAction: 'Choose a wager and deal the next hand, or clear the table.',
+    significance: winning && game.payout >= Math.max(1, game.totalWager * 2) ? 'major' : 'standard',
+    tone: winning ? 'win' : returned ? 'neutral' : 'loss',
+  }
+}
+
 function Hand({
   label,
   hand,
@@ -312,18 +330,6 @@ function messageFor(error: unknown): string {
 
 function isDefiniteFailure(error: unknown): boolean {
   return error instanceof BlackjackRequestError && error.status < 500
-}
-
-function blackjackOutcomeTone(game: BlackjackGame): CardOutcomeTone {
-  if (game.payout > game.totalWager) return 'positive'
-  if (game.payout === game.totalWager && game.payout > 0) return 'neutral'
-  return 'caution'
-}
-
-function blackjackOutcomeEyebrow(game: BlackjackGame): string {
-  if (game.payout > game.totalWager) return 'Winning hand'
-  if (game.payout === game.totalWager && game.payout > 0) return 'Push'
-  return 'Hand settled'
 }
 
 function readSessionValue(key: string): string | null {

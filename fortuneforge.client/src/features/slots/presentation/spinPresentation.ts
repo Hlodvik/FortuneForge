@@ -16,8 +16,8 @@ export type SlotSpinOutcome = {
   winTier: SlotWinTier | null
 }
 
-const bigWinMinimumRand = 500
-const bigWinMultiplier = 50
+export const bigWinMinimumRand = 500
+export const bigWinMultiplier = 50
 const greatWinMultiplier = 10
 
 export type WinPresentationTier = 'win' | 'big' | 'jackpot'
@@ -25,6 +25,197 @@ export type WinPresentationTier = 'win' | 'big' | 'jackpot'
 export function getWinPresentationTier(amount: number, wager: number): WinPresentationTier {
   if (amount >= Math.max(500, wager * 50)) return 'jackpot'
   return amount >= Math.max(25, wager * 10) ? 'big' : 'win'
+}
+
+export type SlotOutcomePresentation = Readonly<{
+  detail?: string
+  label: string
+  nextAction: string
+  significance: 'standard' | 'major'
+  title: string
+  tone: 'win' | 'milestone' | 'neutral' | 'loss'
+}>
+
+export type SlotOutcomePresentationInput = Readonly<{
+  activeWager: number
+  bestPayline: PaylinePayout | null
+  bestSymbolLabel: string | null
+  canAffordSelectedWager: boolean
+  demoAvailabilityMessage: string | null
+  energyLabel: string | null
+  gameTitle: string
+  hasCompletedSpin: boolean
+  isSpinning: boolean
+  lastEnergyAwarded: number
+  lastEnergyMultiplierApplied: boolean
+  lastFreeSpinsAwarded: number
+  lastWin: number
+  spinError: string | null
+  spinStage: 'requesting' | 'stopping'
+  freeSpinsRemaining: number
+  useFreeGameForNextSpin: boolean
+}>
+
+export function isBigWinAward(award: number, wager: number): boolean {
+  return award >= Math.max(bigWinMinimumRand, wager * bigWinMultiplier)
+}
+
+/**
+ * Keeps a result's explanation separate from the result itself. This is UI
+ * copy only: it reads values already calculated by the game and never changes
+ * a spin, balance, payout, or feature state.
+ */
+export function getSlotOutcomePresentation({
+  activeWager,
+  bestPayline,
+  bestSymbolLabel,
+  canAffordSelectedWager,
+  demoAvailabilityMessage,
+  energyLabel,
+  gameTitle,
+  hasCompletedSpin,
+  isSpinning,
+  lastEnergyAwarded,
+  lastEnergyMultiplierApplied,
+  lastFreeSpinsAwarded,
+  lastWin,
+  spinError,
+  spinStage,
+  freeSpinsRemaining,
+  useFreeGameForNextSpin,
+}: SlotOutcomePresentationInput): SlotOutcomePresentation {
+  if (demoAvailabilityMessage !== null) {
+    return {
+      label: 'Demo unavailable',
+      title: 'The demo table is offline',
+      detail: demoAvailabilityMessage,
+      nextAction: 'Reload after the service is restored.',
+      significance: 'standard',
+      tone: 'loss',
+    }
+  }
+
+  if (spinError !== null) {
+    return {
+      label: 'Spin needs attention',
+      title: 'No new result was recorded',
+      detail: spinError,
+      nextAction: 'Review the message, then choose a valid wager or try again.',
+      significance: 'standard',
+      tone: 'loss',
+    }
+  }
+
+  if (isSpinning) {
+    return {
+      label: 'Spin in progress',
+      title: `${gameTitle} is ${spinStage === 'requesting' ? 'spinning' : 'landing'}`,
+      detail: spinStage === 'requesting'
+        ? 'The reels are in motion.'
+        : 'The result is being revealed.',
+      nextAction: 'Press Spin again if you want the reels to stop early.',
+      significance: 'standard',
+      tone: 'neutral',
+    }
+  }
+
+  if (lastFreeSpinsAwarded > 0) {
+    const noun = lastFreeSpinsAwarded === 1 ? 'free game' : 'free games'
+    const remainingNoun = freeSpinsRemaining === 1 ? 'free game is' : 'free games are'
+    return {
+      label: 'Feature unlocked',
+      title: `${lastFreeSpinsAwarded} ${noun} won`,
+      detail: `${freeSpinsRemaining} ${remainingNoun} ready at ${formatOutcomeRand(activeWager)}.`,
+      nextAction: 'Press Spin to begin your free games.',
+      significance: 'major',
+      tone: 'milestone',
+    }
+  }
+
+  if (lastEnergyMultiplierApplied) {
+    return {
+      label: 'Boosted result',
+      title: `${energyLabel ?? 'Energy'} boost ×1.5${lastWin > 0 ? ` · +${formatOutcomeRand(lastWin)}` : ''}`,
+      detail: `${energyLabel ?? 'The meter'} reset after applying the boost to this spin.`,
+      nextAction: 'Spin again to start charging the meter.',
+      significance: 'major',
+      tone: 'milestone',
+    }
+  }
+
+  if (lastEnergyAwarded > 0) {
+    return {
+      label: 'Meter progress',
+      title: `${energyLabel ?? 'Energy'} collected`,
+      detail: `+${lastEnergyAwarded} added to the ${energyLabel?.toLowerCase() ?? 'energy'} meter.`,
+      nextAction: 'Keep spinning to build the next boost.',
+      significance: 'standard',
+      tone: 'milestone',
+    }
+  }
+
+  if (lastWin > 0) {
+    const bestMatch = bestPayline?.matches.reduce((best, candidate) => (
+      candidate.amountPoints > best.amountPoints ? candidate : best
+    ))
+    const matchDetail = bestMatch
+      ? `Best line: ${bestSymbolLabel ?? 'matching symbols'} ×${bestMatch.match.matchLength} on line ${bestPayline?.paylineId ?? 0}.`
+      : 'Winning symbols are highlighted on the reels.'
+    const bigWin = isBigWinAward(lastWin, activeWager)
+    return {
+      label: bigWin ? 'Big win' : 'Line win',
+      title: `+${formatOutcomeRand(lastWin)}`,
+      detail: matchDetail,
+      nextAction: 'Spin again, or adjust your wager before the next result.',
+      significance: bigWin ? 'major' : 'standard',
+      tone: 'win',
+    }
+  }
+
+  if (hasCompletedSpin) {
+    if (useFreeGameForNextSpin) {
+      return {
+        label: 'Free game ready',
+        title: `${freeSpinsRemaining} free ${freeSpinsRemaining === 1 ? 'game' : 'games'} remain`,
+        detail: `The free-game wager stays locked at ${formatOutcomeRand(activeWager)}.`,
+        nextAction: 'Press Spin for the next free game.',
+        significance: 'standard',
+        tone: 'milestone',
+      }
+    }
+    return {
+      label: 'No line win',
+      title: 'The reels are ready for the next spin',
+      detail: `This ${formatOutcomeRand(activeWager)} spin did not land a paying line.`,
+      nextAction: 'Spin again or adjust your wager.',
+      significance: 'standard',
+      tone: 'neutral',
+    }
+  }
+
+  if (!canAffordSelectedWager) {
+    return {
+      label: 'Wager selection',
+      title: 'Choose a smaller wager',
+      detail: `${formatOutcomeRand(activeWager)} is above the available balance.`,
+      nextAction: 'Use the minus control, then press Spin.',
+      significance: 'standard',
+      tone: 'loss',
+    }
+  }
+
+  return {
+    label: 'Ready to play',
+    title: `${formatOutcomeRand(activeWager)} wager ready`,
+    detail: 'Paying symbols and active features are explained after every spin.',
+    nextAction: 'Press Spin when you are ready.',
+    significance: 'standard',
+    tone: 'neutral',
+  }
+}
+
+function formatOutcomeRand(amount: number): string {
+  return `R${new Intl.NumberFormat('en-US').format(amount)}`
 }
 
 // Presentation chooses one payline to highlight without changing payout math.

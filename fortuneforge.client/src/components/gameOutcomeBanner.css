@@ -1,0 +1,109 @@
+.game-outcome-banner {
+  --outcome-accent: #9dddc5;
+  --outcome-edge: rgb(157 221 197 / 46%);
+  --outcome-glow: rgb(111 222 184 / 16%);
+
+  display: grid;
+  gap: 0.18rem 0.65rem;
+  min-width: 0;
+  padding: 0.72rem 0.9rem;
+  border: 1px solid var(--outcome-edge);
+  border-radius: 0.8rem;
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 7%), transparent 38%),
+    rgb(5 28 24 / 92%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 5%),
+    0 0.6rem 1.4rem rgb(0 0 0 / 16%),
+    0 0 1rem var(--outcome-glow);
+  color: #effff8;
+  font-family: Inter, system-ui, sans-serif;
+  text-wrap: balance;
+}
+
+.game-outcome-banner--win {
+  --outcome-accent: #fff0a8;
+  --outcome-edge: rgb(255 220 106 / 62%);
+  --outcome-glow: rgb(255 207 80 / 18%);
+}
+
+.game-outcome-banner--milestone {
+  --outcome-accent: #a9edff;
+  --outcome-edge: rgb(107 218 255 / 62%);
+  --outcome-glow: rgb(85 211 255 / 18%);
+}
+
+.game-outcome-banner--loss {
+  --outcome-accent: #ffd2d2;
+  --outcome-edge: rgb(255 155 155 / 45%);
+  --outcome-glow: rgb(255 123 123 / 10%);
+}
+
+.game-outcome-banner__label {
+  color: var(--outcome-accent);
+  font-size: 0.61rem;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.game-outcome-banner__title {
+  color: #fffdf3;
+  font-size: clamp(0.95rem, 2vw, 1.14rem);
+  line-height: 1.1;
+}
+
+.game-outcome-banner__detail {
+  color: #c5ddd4;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.game-outcome-banner__next {
+  color: var(--outcome-accent);
+  font-size: 0.69rem;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.game-outcome-banner__next span {
+  display: inline-block;
+  margin-right: 0.16rem;
+}
+
+.game-outcome-banner--major {
+  border-width: 2px;
+  animation: game-outcome-arrive 360ms cubic-bezier(0.18, 0.84, 0.24, 1.08) both;
+}
+
+.game-outcome-banner--major .game-outcome-banner__title {
+  color: var(--outcome-accent);
+  font-size: clamp(1.12rem, 2.7vw, 1.42rem);
+  text-shadow: 0 0 0.9rem var(--outcome-glow);
+}
+
+@keyframes game-outcome-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(0.45rem) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 520px) {
+  .game-outcome-banner {
+    padding: 0.62rem 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-outcome-banner,
+  .game-outcome-banner--major {
+    animation: none;
+    transition: none;
+  }
+}

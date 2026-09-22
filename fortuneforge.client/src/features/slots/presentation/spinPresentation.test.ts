@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   describeSpinOutcome,
+  getSlotOutcomePresentation,
   getWinPresentationTier,
   getSlotWinTier,
+  isBigWinAward,
   selectOutcomeSoundEvent,
   selectWinSoundEvent,
+  type SlotOutcomePresentationInput,
 } from './spinPresentation'
 import type { PaylinePayout } from '../types/slots'
 
@@ -82,4 +85,70 @@ describe('spin presentation', () => {
     expect(getWinPresentationTier(25, 2.5)).toBe('big')
     expect(getWinPresentationTier(500, 5)).toBe('jackpot')
   })
+
+  it('gives a feature award precedence and explains the next action', () => {
+    const outcome = getSlotOutcomePresentation({
+      ...outcomeInput(),
+      lastFreeSpinsAwarded: 5,
+      freeSpinsRemaining: 5,
+      lastWin: 25,
+    })
+
+    expect(outcome).toMatchObject({
+      label: 'Feature unlocked',
+      title: '5 free games won',
+      significance: 'major',
+      tone: 'milestone',
+    })
+    expect(outcome.nextAction).toContain('Press Spin')
+  })
+
+  it('uses the same threshold for a big-win summary as the win flyover', () => {
+    expect(isBigWinAward(499, 5)).toBe(false)
+    expect(isBigWinAward(500, 5)).toBe(true)
+    expect(isBigWinAward(499, 10)).toBe(false)
+    expect(isBigWinAward(500, 10)).toBe(true)
+
+    const outcome = getSlotOutcomePresentation({
+      ...outcomeInput(),
+      lastWin: 500,
+    })
+    expect(outcome.label).toBe('Big win')
+    expect(outcome.significance).toBe('major')
+  })
+
+  it('does not call a new screen a loss before the player has spun', () => {
+    expect(getSlotOutcomePresentation(outcomeInput()).label).toBe('Ready to play')
+
+    const outcome = getSlotOutcomePresentation({
+      ...outcomeInput(),
+      hasCompletedSpin: true,
+    })
+    expect(outcome).toMatchObject({
+      label: 'No line win',
+      title: 'The reels are ready for the next spin',
+    })
+  })
 })
+
+function outcomeInput(): SlotOutcomePresentationInput {
+  return {
+    activeWager: 5,
+    bestPayline: null,
+    bestSymbolLabel: null,
+    canAffordSelectedWager: true,
+    demoAvailabilityMessage: null,
+    energyLabel: null,
+    gameTitle: 'Wukong’s Journey',
+    hasCompletedSpin: false,
+    isSpinning: false,
+    lastEnergyAwarded: 0,
+    lastEnergyMultiplierApplied: false,
+    lastFreeSpinsAwarded: 0,
+    lastWin: 0,
+    spinError: null,
+    spinStage: 'requesting',
+    freeSpinsRemaining: 0,
+    useFreeGameForNextSpin: false,
+  }
+}

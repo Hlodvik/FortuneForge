@@ -67,6 +67,7 @@ export function CardGameLibraryPage({
               href="/cards/blackjack"
               image={blackjackPreview}
               title="Fortune Blackjack"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             <CardGameCard
               available={!demoMode && holdemState === 'available'}
@@ -74,6 +75,7 @@ export function CardGameLibraryPage({
               href="/cards/texas-holdem"
               image={holdemPreview}
               title="Texas Hold’em"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             <CardGameCard
               available={!demoMode && solitaireState === 'available'}
@@ -81,6 +83,7 @@ export function CardGameLibraryPage({
               href="/cards/solitaire"
               image={solitairePreview}
               title="Competitive Solitaire"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             {!demoMode && <CardGameCard
               available
@@ -103,6 +106,7 @@ function CardGameCard({
   image,
   mark,
   title,
+  unavailableLabel,
 }: {
   available: boolean
   description: string
@@ -110,6 +114,7 @@ function CardGameCard({
   image?: string
   mark?: string
   title: string
+  unavailableLabel?: string
 }) {
   const className = `machine-card card-game-card ${available ? 'machine-card--available' : 'machine-card--coming'}`
   const content = <>
@@ -117,6 +122,7 @@ function CardGameCard({
     {mark && <span className="compact-placeholder-card__mark" aria-hidden="true">{mark}</span>}
     <strong>{title}</strong>
     <p>{description}</p>
+    {!available && unavailableLabel && <span className="machine-card__action machine-card__action--disabled">{unavailableLabel}</span>}
   </>
 
   return available

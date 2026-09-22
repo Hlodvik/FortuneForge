@@ -75,9 +75,34 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('blackjack-dealer__idle')
     expect(markup).not.toContain('ff-card-slot')
     expect(markup).toContain('Round wager')
-    expect(markup).toContain('Winning round')
-    expect(markup).toContain('Payout R10.00')
-    expect(markup).toContain('Choose a wager for the next round when ready.')
+    expect(markup).toContain('Round won')
+    expect(markup).toContain('You won R10.00')
+    expect(markup).toContain('Choose your next wager when you are ready.')
+  })
+
+  it('summarizes a settled winning round before the next wager', () => {
+    const markup = render({
+      kind: 'ready',
+      status,
+      session: {
+        ...tableSession,
+        table: {
+          ...tableSession.table,
+          phase: 'betting',
+          activeSeat: null,
+          legalActions: [],
+          seats: tableSession.table.seats.map((seat) => seat.isCurrentPlayer ? {
+            ...seat,
+            outcome: 'player-blackjack',
+            payout: 12.5,
+          } : seat),
+        },
+      },
+    })
+
+    expect(markup).toContain('Round won')
+    expect(markup).toContain('You won R12.50')
+    expect(markup).toContain('Choose your next wager when you are ready.')
   })
 
   it('renders server-projected split hands and only the current player timer', () => {

@@ -31,6 +31,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .blackjack-table::before { position: absolute; inset: 11% 8% 14%; z-index: -1; border: 2px solid rgb(234 211 142 / 15%); border-radius: 50%; content: ''; }
 .blackjack-table__round { position: relative; z-index: 4; display: flex; min-height: 1.8rem; align-items: end; justify-content: space-between; gap: .75rem; padding: .45rem clamp(4rem, 12vw, 14rem) 0; color: #e6d08b; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
 .blackjack-table__round strong { overflow: hidden; max-width: 70%; color: #fff7d6; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.blackjack-table__outcome { position: absolute; z-index: 4; top: 48%; left: 50%; width: min(28rem, calc(100% - 2rem)); box-sizing: border-box; pointer-events: none; transform: translate(-50%, -50%); }
+.blackjack-demo__outcome { position: absolute; z-index: 4; top: 50%; left: 50%; width: min(28rem, calc(100% - 2rem)); box-sizing: border-box; pointer-events: none; transform: translate(-50%, -50%); }
 .blackjack-playfield { position: relative; min-height: 0; }
 .blackjack-dealer { position: absolute; z-index: 2; top: 0; left: 50%; transform: translateX(-50%); }
 .blackjack-dealer.is-active { filter: drop-shadow(0 0 1.25rem rgb(255 215 76 / 76%)); }
@@ -82,7 +84,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 
 .blackjack-actions { position: relative; z-index: 3; display: flex; min-height: 2.55rem; flex-wrap: wrap; align-items: center; justify-content: center; gap: .35rem; padding-top: .35rem; }
 .blackjack-actions > button { min-width: 5.2rem; min-height: 2.4rem; padding-block: .45rem; }
-.blackjack-actions > .blackjack-table__outcome { flex: 1 1 15rem; max-width: 22rem; justify-items: start; padding: .48rem .65rem; text-align: left; }
+.blackjack-primary:not(:disabled):active, .blackjack-secondary:not(:disabled):active, .blackjack-actions button:not(:disabled):active, .blackjack-wager button:not(:disabled):active { transform: translateY(1px) scale(.98); }
 .blackjack-wager { display: flex; align-items: stretch; }
 .blackjack-wager > button { min-width: 2.65rem; padding-inline: .6rem; border-radius: .7rem 0 0 .7rem; }
 .blackjack-wager > button:last-child { border-radius: 0 .7rem .7rem 0; }
@@ -109,6 +111,8 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
   .blackjack-table { --ff-card-width: clamp(3.15rem, min(15vw, 8vh), 4.1rem); min-height: calc(100svh - 5rem); padding: .45rem .3rem; border-width: .4rem; border-radius: 2.1rem 2.1rem 1.1rem 1.1rem; }
   .blackjack-table__round { min-height: 1.45rem; padding: .25rem clamp(1.25rem, 7vw, 2.8rem) 0; font-size: .56rem; }
   .blackjack-table__round strong { max-width: 72%; }
+  .blackjack-table__outcome { top: 47%; width: min(22rem, calc(100% - 1rem)); }
+  .blackjack-demo__outcome { width: min(22rem, calc(100% - 1rem)); }
   .blackjack-seat-slot { width: clamp(6.7rem, 29vw, 8.2rem); }
   .blackjack-seat-slot--1 { top: 24%; left: 0; }
   .blackjack-seat-slot--2 { top: 50%; left: 10%; }

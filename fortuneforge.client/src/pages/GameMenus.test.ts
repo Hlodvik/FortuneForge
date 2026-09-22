@@ -50,7 +50,7 @@ describe('game category menus', () => {
     expect(markup).toContain('Choose your card game')
     expect(markup).toContain('Fortune Blackjack')
     expect(markup).not.toContain('href="/demo/cards/blackjack"')
-    expect(markup).toContain('Texas Hold&#x27;em')
+    expect(markup).toContain('Texas Hold’em')
     expect(markup).not.toContain('href="/demo/cards/texas-holdem"')
     expect(markup).toContain('Competitive Solitaire')
     expect(markup).not.toContain('href="/demo/cards/solitaire"')

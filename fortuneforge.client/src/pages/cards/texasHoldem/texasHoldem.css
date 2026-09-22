@@ -140,6 +140,10 @@
   isolation: isolate;
 }
 
+.holdem-table__outcome {
+  margin: 0.75rem 1rem 0;
+}
+
 .holdem-table::before {
   position: absolute;
   z-index: -1;
@@ -1088,6 +1092,8 @@
 
 .credit-holdem-match,
 .credit-holdem-result { display: grid; min-height: 0; grid-template-rows: minmax(0, 1fr) auto; overflow: hidden; border: 1px solid rgb(214 236 228 / 14%); border-radius: 1.1rem; background: #051b19; box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 36%); }
+.credit-holdem-result { grid-template-rows: minmax(0, 1fr) auto auto; }
+.credit-holdem-result__outcome { margin: 0.55rem 0.7rem 0; }
 
 .credit-holdem-table {
   --ff-card-width: clamp(2.8rem, 5.2vw, 4.7rem);

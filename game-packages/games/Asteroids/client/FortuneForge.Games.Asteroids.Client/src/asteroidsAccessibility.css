@@ -1,0 +1,10 @@
+.ff-asteroids-controls { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+@media (max-width: 520px) {
+  .ff-asteroids-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .ff-asteroids-controls button:last-child { grid-column: 1 / -1; min-height: 2.8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-asteroids-page * { scroll-behavior: auto !important; animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

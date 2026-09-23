@@ -66,7 +66,7 @@ public static class TwentyFortyEightEngine
         var random = game.RandomState;
         AddRandomTile(tiles, ref random);
         var highestTile = tiles.Max();
-        var phase = highestTile >= TargetTile
+        var phase = game.HighestTile < TargetTile && highestTile >= TargetTile
             ? TwentyFortyEightPhase.Won
             : HasAvailableMove(tiles, game.Size)
                 ? TwentyFortyEightPhase.Playing

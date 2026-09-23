@@ -3,6 +3,7 @@ export type SnakePhase = 'playing' | 'won' | 'lost'
 export type SnakeEvent = 'started' | 'turned' | 'moved' | 'ate-food' | 'no-op' | 'won' | 'lost'
 
 export type SnakePoint = Readonly<{ x: number; y: number }>
+export type SnakeOptions = Readonly<{ width?: number; height?: number }>
 
 export type SnakeStatus = Readonly<{
   available: boolean
@@ -32,8 +33,8 @@ export type SnakeGameState = Readonly<{
 
 export interface SnakeGateway {
   getStatus(signal?: AbortSignal): Promise<SnakeStatus>
-  startGame(seed?: number, signal?: AbortSignal): Promise<SnakeGameState>
+  startGame(seed?: number, signal?: AbortSignal, options?: SnakeOptions): Promise<SnakeGameState>
   turn(gameId: string, direction: SnakeDirection, signal?: AbortSignal): Promise<SnakeGameState>
   tick(gameId: string, signal?: AbortSignal): Promise<SnakeGameState>
-  reset(gameId: string, seed?: number, signal?: AbortSignal): Promise<SnakeGameState>
+  reset(gameId: string, seed?: number, signal?: AbortSignal, options?: SnakeOptions): Promise<SnakeGameState>
 }

@@ -1,6 +1,6 @@
 export type TwentyFortyEightDirection = 'up' | 'right' | 'down' | 'left'
 export type TwentyFortyEightPhase = 'playing' | 'won' | 'lost'
-export type TwentyFortyEightEvent = 'started' | 'moved' | 'no-move' | 'won' | 'lost' | 'undone'
+export type TwentyFortyEightEvent = 'started' | 'moved' | 'no-move' | 'won' | 'lost' | 'undone' | 'continued'
 
 export type TwentyFortyEightStatus = Readonly<{
   available: boolean
@@ -28,5 +28,6 @@ export interface TwentyFortyEightGateway {
   startGame(seed?: number, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   move(gameId: string, direction: TwentyFortyEightDirection, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   undo(gameId: string, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
+  continueGame(gameId: string, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
   reset(gameId: string, seed?: number, signal?: AbortSignal): Promise<TwentyFortyEightGameState>
 }

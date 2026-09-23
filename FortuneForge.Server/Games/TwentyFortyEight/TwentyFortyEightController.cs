@@ -29,6 +29,11 @@ public sealed class TwentyFortyEightController(TwentyFortyEightGameService games
     public async Task<ActionResult> Undo(Guid gameId, CancellationToken cancellationToken) =>
         await WithAccount(cancellationToken, account => Execute(() => games.Undo(account.UserId, gameId)));
 
+    [HttpPost("games/{gameId:guid}/continue")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> Continue(Guid gameId, CancellationToken cancellationToken) =>
+        await WithAccount(cancellationToken, account => Execute(() => games.Continue(account.UserId, gameId)));
+
     [HttpPost("games/{gameId:guid}/reset")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Reset(Guid gameId, StartTwentyFortyEightRequest? request, CancellationToken cancellationToken) =>

@@ -7,6 +7,7 @@ export type FlappyGameProps = Readonly<{ gateway: FlappyGateway; backHref?: stri
 export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
   const [status, setStatus] = useState<FlappyStatus | null>(null)
   const [game, setGame] = useState<FlappyGameState | null>(null)
+  const [started, setStarted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const gameRef = useRef<FlappyGameState | null>(null)
   const playfieldRef = useRef<HTMLElement | null>(null)
@@ -20,6 +21,7 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
 
   const start = useCallback(async () => {
     setError(null)
+    setStarted(false)
     flapQueue.current = 0
     try {
       const next = gameRef.current
@@ -55,7 +57,7 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
     if (!status) return
     const timer = window.setInterval(() => {
       const current = gameRef.current
-      if (!current || current.phase !== 'playing' || tickInFlight.current) return
+      if (!current || current.phase !== 'playing' || !started || tickInFlight.current) return
       tickInFlight.current = true
       const flap = flapQueue.current > 0
       if (flap) flapQueue.current--
@@ -65,9 +67,9 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
         .finally(() => { tickInFlight.current = false })
     }, status.tickMilliseconds)
     return () => window.clearInterval(timer)
-  }, [acceptGame, gateway, status])
+  }, [acceptGame, gateway, started, status])
 
-  const queueFlap = () => { flapQueue.current++ }
+  const queueFlap = () => { setStarted(true); flapQueue.current++ }
   const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     const intent = keyboardFlapIntent(event.code, event.repeat, game?.phase === 'playing')
     if (intent.preventDefault) event.preventDefault()
@@ -85,8 +87,8 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
   return <div className="ff-flappy-page">
     <header className="ff-flappy-header"><a href={backHref}>✦ Fortune Forge</a><span>Local sample</span></header>
     <main className="ff-flappy-main">
-      <div className="ff-flappy-title"><div><small>Classic arcade</small><h1>Flappy</h1><p>Thread the bird through each opening for as long as you can.</p></div><button type="button" onClick={() => void start()}>{game ? 'Restart' : 'Start'}</button></div>
-      <p className="ff-flappy-instructions"><strong>Space or click/tap to flap.</strong> Gravity is always pulling the bird down.</p>
+      <div className="ff-flappy-title"><div><small>Classic arcade</small><h1>Flappy</h1><p>Thread the bird through each opening for as long as you can.</p></div><button type="button" onClick={() => void start()}>{game ? 'New course' : 'Prepare course'}</button></div>
+      <p className="ff-flappy-instructions"><strong>Space or click/tap starts the run and flaps in one action.</strong> Gravity begins on your first input.</p>
       {game && <>
         <div className="ff-flappy-stats" aria-live="polite"><span>Score <strong>{game.score}</strong></span><span>Best <strong>{game.bestScore}</strong></span><span>Level <strong>{game.level}</strong></span></div>
         <section
@@ -108,7 +110,8 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
             <circle className="ff-flappy-bird" cx={game.birdX} cy={game.birdY} r={game.birdRadius} />
             <circle className="ff-flappy-eye" cx={game.birdX + 5} cy={game.birdY - 3} r={2.5} />
           </svg>
-          {game.phase !== 'playing' && <div className="ff-flappy-overlay"><small>Game over</small><strong>Score {game.score}</strong><button type="button" onClick={() => void start()}>Play again</button></div>}
+          {!started && game.phase === 'playing' && <div className="ff-flappy-overlay"><small>Course ready</small><strong>Tap to fly</strong><span>Space, click, or tap starts immediately.</span><button type="button" onClick={event => { event.stopPropagation(); queueFlap() }}>Start flight</button></div>}
+          {game.phase !== 'playing' && <div className="ff-flappy-overlay"><small>Game over</small><strong>Score {game.score}</strong><button type="button" onClick={event => { event.stopPropagation(); void start() }}>Play again</button></div>}
         </section>
       </>}
       {!game && <div className="ff-flappy-loading">{error ?? 'Preparing the course…'}</div>}

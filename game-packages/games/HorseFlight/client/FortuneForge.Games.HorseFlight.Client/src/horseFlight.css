@@ -69,6 +69,11 @@
 
 .ff-horse-flight__lobby-copy span { color: #f5ca72; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
 .ff-horse-flight__lobby-copy strong { font-size: clamp(1.1rem, 2vw, 1.6rem); }
+.ff-horse-flight__rehearsal { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .45rem; }
+.ff-horse-flight__rehearsal button { display: grid; gap: .12rem; padding: .45rem .65rem; border: 1px solid rgb(255 226 143 / 48%); border-radius: .55rem; background: rgb(8 18 36 / 86%); color: #f8e5a8; font: 800 .65rem/1.1 inherit; text-align: left; }
+.ff-horse-flight__rehearsal button span { color: #aebcca; font-size: .55rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.ff-horse-flight__rehearsal button.is-complete { border-color: #80d39a; color: #a9edb8; }
+.ff-horse-flight__rehearsal button:disabled { opacity: .55; }
 
 .ff-horse-flight__start,
 .ff-horse-flight__over button {
@@ -127,6 +132,8 @@
 .ff-horse-flight__sky { fill: #12294a; }
 .ff-horse-flight__platform { fill: #615234; }
 .ff-horse-flight__obstacle { fill: #bd473a; }
+.ff-horse-flight__obstacle[data-clearance="ground"] { filter: drop-shadow(0 0 3px rgb(255 168 89 / 58%)); }
+.ff-horse-flight__obstacle[data-clearance="high"] { filter: drop-shadow(0 0 4px rgb(121 204 255 / 76%)); }
 .ff-horse-flight__horse { fill: #e5ae4d; }
 .ff-horse-flight__horse + circle { fill: #1c2537; }
 
@@ -145,6 +152,12 @@
 
 .ff-horse-flight__over strong:first-child { font-size: clamp(1.35rem, 2.5vw, 2rem); }
 .ff-horse-flight__error { color: #ffaba1; font-size: 0.7rem; text-align: center; }
+.ff-horse-flight__near-miss { position: absolute; z-index: 3; top: 12%; left: 50%; translate: -50% 0; padding: .38rem .7rem; border: 1px solid #ffe299; border-radius: 999px; background: rgb(8 16 30 / 88%); color: #ffe299; font-size: .7rem; font-weight: 900; animation: ff-horse-near-miss .9s ease-out both; }
+.ff-horse-flight__touch-controls { position: absolute; z-index: 4; right: .55rem; bottom: .55rem; left: .55rem; display: flex; justify-content: flex-end; gap: .4rem; pointer-events: none; }
+.ff-horse-flight__touch-controls button { min-width: 4.5rem; min-height: 2.7rem; padding: .35rem .65rem; border: 1px solid rgb(255 226 143 / 72%); border-radius: .65rem; background: rgb(7 16 31 / 88%); color: #ffe5a1; font: 900 .66rem/1 Inter, sans-serif; pointer-events: auto; touch-action: manipulation; }
+.ff-horse-flight__touch-controls button span { display: block; margin-top: .2rem; color: #aebcca; font-size: .48rem; font-weight: 650; }
+
+@keyframes ff-horse-near-miss { 0% { opacity: 0; transform: translateY(.4rem) scale(.92); } 20% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-.7rem); } }
 
 @media (max-width: 650px) {
   .ff-horse-flight__header { grid-template-columns: 1fr; gap: 0.25rem; }
@@ -156,4 +169,13 @@
 @media (max-height: 540px) {
   .ff-horse-flight__header p { display: none; }
   .ff-horse-flight { padding-block: 0.35rem; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ff-horse-flight__touch-controls { opacity: .42; }
+  .ff-horse-flight__touch-controls:hover, .ff-horse-flight__touch-controls:focus-within { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-horse-flight__near-miss { animation: none; }
 }

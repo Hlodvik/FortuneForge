@@ -25,6 +25,7 @@ public enum TwentyFortyEightEventType
     Won,
     Lost,
     Undone,
+    Continued,
 }
 
 public sealed record TwentyFortyEightState(

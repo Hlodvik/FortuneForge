@@ -1,4 +1,4 @@
-import type { SnakeDirection, SnakeEvent, SnakeGameState, SnakeGateway, SnakePhase, SnakePoint, SnakeStatus } from './contracts'
+import type { SnakeDirection, SnakeEvent, SnakeGameState, SnakeGateway, SnakeOptions, SnakePhase, SnakePoint, SnakeStatus } from './contracts'
 
 type SnakeSession = Readonly<{ state: SnakeGameState; randomState: number }>
 
@@ -16,7 +16,7 @@ const status: SnakeStatus = {
  * server engine rules while keeping an arcade run responsive offline.
  */
 export class LocalSnakeGateway implements SnakeGateway {
-  private bestScore = 0
+  private bestScore = readBestScore()
   private gameNumber = 0
   private readonly sessions = new Map<string, SnakeSession>()
 
@@ -25,17 +25,19 @@ export class LocalSnakeGateway implements SnakeGateway {
     return status
   }
 
-  async startGame(seed?: number, signal?: AbortSignal): Promise<SnakeGameState> {
+  async startGame(seed?: number, signal?: AbortSignal, options?: SnakeOptions): Promise<SnakeGameState> {
     assertNotAborted(signal)
     const gameId = `snake-${++this.gameNumber}`
     const randomState = normalizeSeed(seed ?? seededNow(this.gameNumber))
-    const center: SnakePoint = { x: Math.floor(status.width / 2), y: Math.floor(status.height / 2) }
+    const width = normalizeDimension(options?.width, status.width)
+    const height = normalizeDimension(options?.height, status.height)
+    const center: SnakePoint = { x: Math.floor(width / 2), y: Math.floor(height / 2) }
     const body: readonly SnakePoint[] = [center, { x: center.x - 1, y: center.y }, { x: center.x - 2, y: center.y }]
-    const food = findFood(body, status.width, status.height, randomState)
+    const food = findFood(body, width, height, randomState)
     const state: SnakeGameState = {
       gameId,
-      width: status.width,
-      height: status.height,
+      width,
+      height,
       body,
       food: food.point,
       direction: 'right',
@@ -79,6 +81,7 @@ export class LocalSnakeGateway implements SnakeGateway {
     const scoreGained = eating ? status.foodScore : 0
     const score = current.score + scoreGained
     this.bestScore = Math.max(this.bestScore, score)
+    writeBestScore(this.bestScore)
     const food = eating ? findFood(body, current.width, current.height, session.randomState) : { point: current.food, randomState: session.randomState }
     const phase: SnakePhase = food.point === null ? 'won' : 'playing'
     const lastEvent: SnakeEvent = phase === 'won' ? 'won' : eating ? 'ate-food' : 'moved'
@@ -86,10 +89,10 @@ export class LocalSnakeGateway implements SnakeGateway {
     return this.save(gameId, { ...current, body, food: food.point, score, bestScore: this.bestScore, moves: current.moves + 1, length: body.length, phase, lastEvent, scoreGained, message }, food.randomState)
   }
 
-  async reset(gameId: string, seed?: number, signal?: AbortSignal): Promise<SnakeGameState> {
+  async reset(gameId: string, seed?: number, signal?: AbortSignal, options?: SnakeOptions): Promise<SnakeGameState> {
     assertNotAborted(signal)
     this.sessionFor(gameId)
-    const state = await this.startGame(seed, signal)
+    const state = await this.startGame(seed, signal, options)
     this.sessions.delete(gameId)
     return state
   }
@@ -112,6 +115,11 @@ function assertNotAborted(signal?: AbortSignal) {
 }
 
 function seededNow(gameNumber: number): number { return ((Date.now() >>> 0) ^ Math.imul(gameNumber, 0x9e3779b9)) >>> 0 }
+function normalizeDimension(value: number | undefined, fallback: number): number { return Number.isInteger(value) && value! >= 12 && value! <= 30 ? value! : fallback }
+function readBestScore(): number {
+  try { const value = Number(globalThis.localStorage?.getItem('fortuneforge:snake:best-score')); return Number.isSafeInteger(value) && value > 0 ? value : 0 } catch { return 0 }
+}
+function writeBestScore(score: number): void { try { globalThis.localStorage?.setItem('fortuneforge:snake:best-score', String(score)) } catch { /* storage is optional */ } }
 function normalizeSeed(seed: number): number { const normalized = Math.trunc(seed) >>> 0; return normalized === 0 ? 0x9e3779b9 : normalized }
 function nextRandom(value: number): number { let next = normalizeSeed(value); next ^= next << 13; next ^= next >>> 17; next ^= next << 5; return next >>> 0 }
 

@@ -34,6 +34,10 @@ export class HttpTwentyFortyEightGateway implements TwentyFortyEightGateway {
     return this.request(`/games/${encodeURIComponent(gameId)}/undo`, { method: 'POST', signal }, isGame)
   }
 
+  continueGame(gameId: string, signal?: AbortSignal) {
+    return this.request(`/games/${encodeURIComponent(gameId)}/continue`, { method: 'POST', signal }, isGame)
+  }
+
   reset(gameId: string, seed?: number, signal?: AbortSignal) {
     return this.request(`/games/${encodeURIComponent(gameId)}/reset`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify(seed === undefined ? {} : { seed }), signal }, isGame)
   }
@@ -58,5 +62,5 @@ function isGame(value: unknown): value is TwentyFortyEightGameState {
   return isRecord(value) && typeof value.gameId === 'string' && typeof value.size === 'number' && Number.isInteger(value.size) && Array.isArray(value.tiles) && value.tiles.length === value.size * value.size && value.tiles.every(tile => Number.isInteger(tile) && tile >= 0) && Number.isInteger(value.score) && Number.isInteger(value.moves) && Number.isInteger(value.highestTile) && isPhase(value.phase) && typeof value.canUndo === 'boolean' && isEvent(value.lastEvent) && Number.isInteger(value.scoreGained) && typeof value.message === 'string'
 }
 function isPhase(value: unknown): value is TwentyFortyEightPhase { return value === 'playing' || value === 'won' || value === 'lost' }
-function isEvent(value: unknown): value is TwentyFortyEightEvent { return value === 'started' || value === 'moved' || value === 'no-move' || value === 'won' || value === 'lost' || value === 'undone' }
+function isEvent(value: unknown): value is TwentyFortyEightEvent { return value === 'started' || value === 'moved' || value === 'no-move' || value === 'won' || value === 'lost' || value === 'undone' || value === 'continued' }
 function isError(value: unknown): value is { code: string; message: string } { return isRecord(value) && typeof value.code === 'string' && typeof value.message === 'string' }

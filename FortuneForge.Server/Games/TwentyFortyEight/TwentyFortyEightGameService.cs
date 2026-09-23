@@ -35,6 +35,17 @@ public sealed class TwentyFortyEightGameService
         session.Message = "Move undone.";
     });
 
+    public TwentyFortyEightGameResponse Continue(string userId, Guid gameId) => Change(userId, gameId, session =>
+    {
+        if (session.State.Phase is not TwentyFortyEightPhase.Won)
+            throw new TwentyFortyEightRuleException("Continue is only available after reaching 2048.");
+
+        session.State = session.State with { Phase = TwentyFortyEightPhase.Playing };
+        session.LastEvent = "continued";
+        session.ScoreGained = 0;
+        session.Message = "Keep going. Build the largest tile you can.";
+    });
+
     public TwentyFortyEightGameResponse Reset(string userId, Guid gameId, uint? seed) => Change(userId, gameId, session =>
     {
         session.State = TwentyFortyEightEngine.Start(Seed(seed));
@@ -82,6 +93,7 @@ public sealed class TwentyFortyEightGameService
         TwentyFortyEightEventType.Won => "won",
         TwentyFortyEightEventType.Lost => "lost",
         TwentyFortyEightEventType.Undone => "undone",
+        TwentyFortyEightEventType.Continued => "continued",
         _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, "Unknown 2048 event."),
     };
 

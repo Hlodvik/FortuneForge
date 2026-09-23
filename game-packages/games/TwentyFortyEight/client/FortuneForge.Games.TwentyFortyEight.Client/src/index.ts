@@ -1,3 +1,5 @@
+import './twentyFortyEightAccessibility.css'
+
 export * from './contracts'
 export * from './httpTwentyFortyEightGateway'
 export * from './TwentyFortyEightGame'

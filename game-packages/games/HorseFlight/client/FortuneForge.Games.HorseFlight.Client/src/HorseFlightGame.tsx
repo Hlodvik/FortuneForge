@@ -110,6 +110,9 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   const [openingPose, setOpeningPose] = useState(false)
   const [rearingFrame, setRearingFrame] = useState(0)
   const [runningFrame, setRunningFrame] = useState(0)
+  const [paused, setPaused] = useState(false)
+  const [nearMiss, setNearMiss] = useState<string | null>(null)
+  const [rehearsalStep, setRehearsalStep] = useState(readRehearsalComplete() ? 2 : 0)
   const gameRef = useRef<HorseState | null>(null)
   const runId = useRef<string | null>(null)
   const queuedJump = useRef(false)
@@ -152,6 +155,8 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
     dashHeld.current = false
     jumps.current = []
     rightClicks.current = []
+    setPaused(false)
+    setNearMiss(null)
     const idempotencyKey = startRequestKey.current ??= key('start')
     try {
       const run = await gateway.start({ idempotencyKey })
@@ -199,7 +204,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   }, [])
 
   useEffect(() => {
-    if (openingPose || game?.phase !== 'running') {
+    if (openingPose || game?.phase !== 'running' || paused) {
       setRunningFrame(0)
       return undefined
     }
@@ -208,7 +213,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
       () => setRunningFrame(frame => (frame + 1) % 8),
       runningFrameMilliseconds)
     return () => window.clearInterval(timer)
-  }, [game?.phase, openingPose])
+  }, [game?.phase, openingPose, paused])
 
   const complete = useCallback((terminal: HorseState) => {
     const currentRunId = runId.current
@@ -233,7 +238,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   }, [gateway])
 
   useEffect(() => {
-    if (!status || !game || game.phase !== 'running' || openingPose) return undefined
+    if (!status || !game || game.phase !== 'running' || openingPose || paused) return undefined
     const timer = window.setInterval(() => {
       const current = gameRef.current
       if (!current || current.phase !== 'running') return
@@ -243,11 +248,41 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
       queuedRightClick.current = false
       if (next.jumped) jumps.current.push(current.tick)
       if (next.slid || next.fastFell) rightClicks.current.push(current.tick)
+      const clearedObstacle = current.obstacles.find(obstacle => {
+        const moved = next.state.obstacles.find(candidate => candidate.id === obstacle.id)
+        return moved && obstacle.x + obstacle.width >= horseScreenX - 24 && moved.x + moved.width < horseScreenX - 24
+      })
+      if (clearedObstacle) {
+        setNearMiss(`Clean pass: ${obstacleArtwork[clearedObstacle.kind].label}`)
+        window.setTimeout(() => setNearMiss(null), 900)
+      }
       accept(next.state)
       if (next.state.phase !== 'running') complete(next.state)
     }, status.tickMilliseconds)
     return () => window.clearInterval(timer)
-  }, [accept, complete, game?.phase, openingPose, status])
+  }, [accept, complete, game?.phase, openingPose, paused, status])
+
+  useEffect(() => {
+    if (game?.phase !== 'running') return
+    let frame = 0
+    let prior = ''
+    const poll = () => {
+      const pad = navigator.getGamepads?.()[0]
+      const jumpPressed = Boolean(pad?.buttons[0]?.pressed)
+      const dashPressed = Boolean(pad?.buttons[1]?.pressed || pad?.buttons[7]?.pressed)
+      const pausePressed = Boolean(pad?.buttons[9]?.pressed)
+      const current = `${jumpPressed}:${dashPressed}:${pausePressed}`
+      if (current !== prior) {
+        if (jumpPressed) jump()
+        if (dashPressed) beginDash(); else endDash()
+        if (pausePressed) setPaused(value => !value)
+        prior = current
+      }
+      frame = window.requestAnimationFrame(poll)
+    }
+    frame = window.requestAnimationFrame(poll)
+    return () => window.cancelAnimationFrame(frame)
+  })
 
   const jump = () => {
     if (!openingPose && gameRef.current?.phase === 'running') {
@@ -272,6 +307,13 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
     setTableUnavailable(false)
     setStatusLoadAttempt(attempt => attempt + 1)
   }
+  const rehearse = (action: 'jump' | 'dash') => {
+    setRehearsalStep(step => {
+      const next = action === 'jump' ? Math.max(step, 1) : step >= 1 ? 2 : step
+      if (next === 2) writeRehearsalComplete()
+      return next
+    })
+  }
   const horseSpriteFrame = game && !openingPose ? spriteFrameFor(game, runningFrame) : null
   const runInProgress = !openingPose && game?.phase === 'running'
   const runInProgressRatio = runInProgress ? Math.min(game.tick / openingRunInTicks, 1) : 1
@@ -284,11 +326,11 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   return <main className="ff-horse-flight" data-active-biome={activeBiome}>
     <header className="ff-horse-flight__header">
       <div><small>{activeBiome === 'haunted' ? 'Haunted trail' : 'Mountain pass'}</small><h1>Horse Flight</h1></div>
-      <p><b>Space / click</b> to double-jump. <b>Hold right-click</b> to slide under low hazards or fast-fall in mid-air.</p>
+      <p><b>Space / tap Jump / A</b> to double-jump. <b>Hold Dash / B</b> to slide under high hazards or fast-fall in mid-air. <b>P / Start</b> pauses.</p>
     </header>
     {!game && <section className="ff-horse-flight__lobby">
       <div className="ff-horse-flight__lobby-scene" style={{ backgroundImage: `linear-gradient(180deg, rgb(5 11 23 / 12%) 20%, rgb(5 11 23 / 72%) 100%), url(${horseMountainBackground})` }} aria-hidden="true">
-        <div className="ff-horse-flight__lobby-copy"><span>Mountain pass</span><strong>Ready to ride?</strong></div>
+        <div className="ff-horse-flight__lobby-copy"><span>Mountain pass</span><strong>Ready to ride?</strong><div className="ff-horse-flight__rehearsal" aria-label="Control rehearsal"><button type="button" className={rehearsalStep >= 1 ? 'is-complete' : ''} onClick={() => rehearse('jump')}>1. Tap Jump <span>clear ground hazards</span></button><button type="button" className={rehearsalStep >= 2 ? 'is-complete' : ''} onClick={() => rehearse('dash')} disabled={rehearsalStep < 1}>2. Hold Dash <span>duck high hazards</span></button></div></div>
       </div>
       {result && <p role="status">Previous run saved. Official score: <strong>{result.score}</strong>.</p>}
       {!status && error && !tableUnavailable && <button className="ff-horse-flight__start" onClick={retryStatus} type="button">Retry connection</button>}
@@ -296,7 +338,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
     </section>}
     {game && <>
       <div className="ff-horse-flight__stats"><span>Score <b>{game.score}</b></span><span>Level <b>{1 + Math.floor(game.score / 500)}</b></span><span>Jumps <b>{game.jumpsRemaining}</b></span><span>Dash <b>{game.slideTicksRemaining > 0 ? 'On' : 'Ready'}</b></span><span className="ff-horse-flight__biome">{activeBiome === 'haunted' ? 'Haunted trail' : 'Mountain pass'}</span></div>
-      <section className="ff-horse-flight__field" ref={field} tabIndex={0} aria-label="Horse Flight playfield" onMouseDown={event => { if (event.button === 0) { field.current?.focus(); jump() } else if (event.button === 2) { event.preventDefault(); field.current?.focus(); beginDash() } }} onMouseUp={event => { if (event.button === 2) endDash() }} onMouseLeave={endDash} onContextMenu={event => event.preventDefault()} onKeyDown={event => { if (event.code === 'Space' && !event.repeat) { event.preventDefault(); jump() } }}>
+      <section className="ff-horse-flight__field" ref={field} tabIndex={0} aria-label="Horse Flight playfield" onMouseDown={event => { if (event.button === 0) { field.current?.focus(); jump() } else if (event.button === 2) { event.preventDefault(); field.current?.focus(); beginDash() } }} onMouseUp={event => { if (event.button === 2) endDash() }} onMouseLeave={endDash} onContextMenu={event => event.preventDefault()} onKeyDown={event => { if (event.code === 'Space' && !event.repeat) { event.preventDefault(); jump() } else if ((event.code === 'KeyP' || event.code === 'Escape') && !event.repeat) { event.preventDefault(); setPaused(value => !value) } }}>
         <svg viewBox="0 0 960 540" role="img" aria-label="Horse and platforms" data-active-biome={activeBiome}>
           <defs>
             <pattern id="horse-flight-earth" width="32" height="32" patternUnits="userSpaceOnUse">
@@ -354,7 +396,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
             const spriteSource = isKnockedDown ? artwork.knockdownSource! : artwork.source
             const spriteFrame = spriteSheet ? obstacleSpriteFrameFor(spriteSheet, game.tick, obstacle.id, obstacle.knockedDownAt) : null
             const staticCrop = artwork.staticCrop
-            return platform && <g key={obstacle.id} className="ff-horse-flight__obstacle" data-obstacle-kind={obstacle.kind} data-knocked-down={isKnockedDown || undefined} aria-label={artwork.label} transform={`translate(${obstacle.x} ${platform.y - obstacle.elevation - obstacle.height})`}>
+            return platform && <g key={obstacle.id} className="ff-horse-flight__obstacle" data-obstacle-kind={obstacle.kind} data-clearance={obstacle.elevation > 0 ? 'high' : 'ground'} data-knocked-down={isKnockedDown || undefined} aria-label={`${obstacle.elevation > 0 ? 'High' : 'Ground'} hazard: ${artwork.label}`} transform={`translate(${obstacle.x} ${platform.y - obstacle.elevation - obstacle.height})`}>
               {obstacle.kind === 'crate' || obstacle.kind === 'crate-cluster'
                 ? <TombstoneObstacle width={obstacle.width} height={obstacle.height} cluster={obstacle.kind === 'crate-cluster'} />
                 : obstacle.kind === 'oil-spill'
@@ -379,6 +421,8 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
             <image clipPath="url(#horse-flight-running-frame)" href={horseSpriteFrame.sheet} x={-horseSpriteFrame.index * horseSpriteFrameWidth} y="0" width="2172" height={horseSpriteSheetHeight} preserveAspectRatio="none" />
           </svg>}
         </svg>
+        {nearMiss && <div className="ff-horse-flight__near-miss" role="status">{nearMiss}</div>}
+        {paused && <div className="ff-horse-flight__over" role="status"><strong>Run paused</strong><span>Your replay clock is stopped too.</span><button type="button" onClick={() => setPaused(false)}>Resume run</button></div>}
         {game.phase !== 'running' && <div className="ff-horse-flight__over" role="status" aria-live="assertive">
           <strong>Run ended</strong>
           <span>{game.phase === 'obstacle-collision' ? 'You hit an obstacle.' : 'The horse left the track.'}</span>
@@ -387,6 +431,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
           {!result && error && <button onClick={() => complete(game)} type="button">Try saving again</button>}
           {result && <button onClick={() => void start()} type="button">Start fresh run</button>}
         </div>}
+        {game.phase === 'running' && <div className="ff-horse-flight__touch-controls" aria-label="Horse controls"><button type="button" onPointerDown={event => { event.stopPropagation(); jump() }}>Jump <span>ground hazard</span></button><button type="button" onPointerDown={event => { event.stopPropagation(); beginDash() }} onPointerUp={endDash} onPointerCancel={endDash}>Dash <span>high hazard</span></button><button type="button" onClick={event => { event.stopPropagation(); setPaused(value => !value) }}>{paused ? 'Resume' : 'Pause'}</button></div>}
       </section>
     </>}
     {error && <p role="alert" className="ff-horse-flight__error">{error}</p>}
@@ -424,6 +469,8 @@ function GreenGooObstacle({ width, height }: Readonly<{ width: number; height: n
 }
 
 function key(action: 'start' | 'complete') { const random = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID().replaceAll('-', '') : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`; return `horse-flight-${action}-${random}` }
+function readRehearsalComplete(): boolean { try { return window.localStorage.getItem('fortuneforge:horse-flight:rehearsal') === 'complete' } catch { return false } }
+function writeRehearsalComplete(): void { try { window.localStorage.setItem('fortuneforge:horse-flight:rehearsal', 'complete') } catch { /* optional storage */ } }
 function messageForError(reason: unknown, fallback: string): string { return reason instanceof Error && reason.message.trim().length > 0 ? reason.message : fallback }
 function isTableUnavailable(reason: unknown): boolean { return reason instanceof HorseFlightGatewayError && reason.code === 'horse-flight-disabled' }
 function spriteFrameFor(game: HorseState, runningFrame: number): HorseSpriteFrame {

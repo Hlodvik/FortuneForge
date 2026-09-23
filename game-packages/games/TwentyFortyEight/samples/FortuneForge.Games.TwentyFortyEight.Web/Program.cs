@@ -91,6 +91,21 @@ api.MapPost("/games/{gameId:guid}/undo", (Guid gameId) =>
     }
 });
 
+api.MapPost("/games/{gameId:guid}/continue", (Guid gameId) =>
+{
+    if (!games.TryGetValue(gameId, out var session)) return NotFound();
+    lock (session.SyncRoot)
+    {
+        if (session.State.Phase is not TwentyFortyEightPhase.Won)
+            return Results.BadRequest(new TwentyFortyEightErrorResponse("2048-invalid-action", "Continue is only available after reaching 2048."));
+        session.State = session.State with { Phase = TwentyFortyEightPhase.Playing };
+        session.LastEvent = EventName(TwentyFortyEightEventType.Continued);
+        session.ScoreGained = 0;
+        session.Message = "Keep going. Build the largest tile you can.";
+        return Results.Ok(ToResponse(session));
+    }
+});
+
 api.MapPost("/games/{gameId:guid}/reset", (Guid gameId, StartTwentyFortyEightRequest? request) =>
 {
     if (!games.TryGetValue(gameId, out var session))
@@ -127,6 +142,7 @@ static string EventName(TwentyFortyEightEventType eventType) => eventType switch
     TwentyFortyEightEventType.Won => "won",
     TwentyFortyEightEventType.Lost => "lost",
     TwentyFortyEightEventType.Undone => "undone",
+    TwentyFortyEightEventType.Continued => "continued",
     _ => throw new ArgumentOutOfRangeException(nameof(eventType), eventType, "Unknown 2048 event."),
 };
 

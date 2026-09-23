@@ -1,0 +1,18 @@
+.ff-2048-stats {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.ff-2048-board-wrap {
+  touch-action: none;
+  user-select: none;
+}
+
+@media (max-width: 460px) {
+  .ff-2048-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ff-2048-stats > div {
+    min-height: 2.8rem;
+  }
+}

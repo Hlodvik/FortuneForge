@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
 import { DropMergeGatewayError } from './httpDropMergeGateway'
 import type { DropMergeGameState, DropMergeGateway, DropMergeMergeStep } from './contracts'
 import { tileClass, tileLabel, tileTone } from './dropMergeHelpers'
@@ -15,6 +15,7 @@ const fastDropRatio = 0.38
 const mergeDurationMilliseconds = 300
 const landingPauseMilliseconds = 100
 const chainMergePauseMilliseconds = 70
+const bestTileKey = 'fortuneforge:drop-merge:best-tile'
 
 export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local free play' }: DropMergeGameProps) {
   const [game, setGame] = useState<DropMergeGameState | null>(null)
@@ -26,7 +27,10 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
   const [isPaused, setIsPaused] = useState(false)
   const [mergeStep, setMergeStep] = useState<DropMergeMergeStep | null>(null)
   const [visualTiles, setVisualTiles] = useState<readonly number[] | null>(null)
+  const [bestTile, setBestTile] = useState(readBestTile)
   const timerRemainingRef = useRef(0)
+  const dragStart = useRef<{ x: number; pointerId: number; moved: boolean } | null>(null)
+  const suppressClick = useRef(false)
   const updateTimerRemaining = useCallback((milliseconds: number) => {
     const next = Math.max(0, milliseconds)
     timerRemainingRef.current = next
@@ -121,6 +125,12 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
   }, [game?.dropTimerMilliseconds, game?.gameId, game?.moves, updateTimerRemaining])
 
   useEffect(() => {
+    if (!game || game.highestTile <= bestTile) return
+    setBestTile(game.highestTile)
+    try { window.localStorage.setItem(bestTileKey, String(game.highestTile)) } catch { /* storage is optional */ }
+  }, [bestTile, game])
+
+  useEffect(() => {
     if (!game || busy || isPaused || game.phase !== 'playing') return
     const duration = timerRemainingRef.current
     if (duration <= 0) {
@@ -199,6 +209,29 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
     if (game) void run(() => gateway.undo(game.gameId))
   }
   const boardTiles = visualTiles ?? game?.tiles ?? []
+  const columnForPointer = (event: ReactPointerEvent<HTMLElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    return Math.max(0, Math.min(6, Math.floor(((event.clientX - bounds.left) / bounds.width) * 7)))
+  }
+  const beginDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    dragStart.current = { x: event.clientX, pointerId: event.pointerId, moved: false }
+    event.currentTarget.setPointerCapture?.(event.pointerId)
+    setTargetColumn(columnForPointer(event))
+  }
+  const moveDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = dragStart.current
+    if (!drag || drag.pointerId !== event.pointerId) return
+    if (Math.abs(event.clientX - drag.x) > 8) drag.moved = true
+    setTargetColumn(columnForPointer(event))
+  }
+  const finishDrag = (event: ReactPointerEvent<HTMLElement>) => {
+    const drag = dragStart.current
+    dragStart.current = null
+    if (!drag || drag.pointerId !== event.pointerId || !drag.moved) return
+    const column = columnForPointer(event)
+    suppressClick.current = true
+    drop(column)
+  }
 
   return <div className="ff-drop-merge-page">
     <header className="ff-drop-merge-header">
@@ -226,7 +259,7 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
           <section className="ff-drop-merge-stats" aria-live="polite">
             <div><small>Score</small><strong>{game.score.toLocaleString()}</strong></div>
             <div><small>Best combo</small><strong>{game.bestCombo}×</strong></div>
-            <div><small>High tile</small><strong>{tileLabel(game.highestTile)}</strong></div>
+            <div><small>Best tile</small><strong>{tileLabel(Math.max(bestTile, game.highestTile))}</strong><span>this run {tileLabel(game.highestTile)}</span></div>
             <div><small>Tempo</small><strong>{game.tempoLevel}</strong><span>gentle ramp</span></div>
           </section>
 
@@ -234,12 +267,12 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
             <div className="ff-drop-merge-drop-preview" aria-label={`Current box above column ${targetColumn + 1}`} style={{ '--preview-duration': `${game.dropTimerMilliseconds}ms` } as CSSProperties}>
               {columns.map(column => <span className="ff-drop-merge-drop-preview-slot" key={column}>{!busy && targetColumn === column && <span className={`ff-drop-merge-preview-tile ${tileClass(game.currentTile)} ${tileTone(game.currentTile)}`} style={previewStyle(game, timerRemaining, isPaused)} key={`${game.moves}-${targetColumn}`}>{tileLabel(game.currentTile)}</span>}</span>)}
             </div>
-            <div className="ff-drop-merge-column-board" aria-label="Drop Merge seven columns">
+            <div className="ff-drop-merge-column-board" aria-label="Drop Merge seven columns. Drag across the board and release to drop." onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={finishDrag} onPointerCancel={() => { dragStart.current = null }}>
               {columns.map(column => <button
                 className={`ff-drop-merge-column ${targetColumn === column ? 'is-selected' : ''}`}
                 type="button"
                 key={column}
-                onClick={() => drop(column)}
+                onClick={() => { if (suppressClick.current) { suppressClick.current = false; return } drop(column) }}
                 disabled={busy || isPaused || game.phase !== 'playing'}
                 aria-label={`Drop the current tile into column ${column + 1}`}>
                 <span className="ff-drop-merge-column-stack">
@@ -263,7 +296,7 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
         <aside className="ff-drop-merge-sidebar">
           <section className="ff-drop-merge-queue"><div><small>Coming next</small><strong className={`ff-drop-merge-queue-tile ${tileClass(game.nextTile)}`}>{tileLabel(game.nextTile)}</strong></div><div className="ff-drop-merge-next"><small>Current tile</small><strong>{tileLabel(game.currentTile)}</strong></div></section>
           <section className={`ff-drop-merge-surge ${game.lastEvent === 'big-tile-reached' ? 'is-active' : ''}`}><div className="ff-drop-merge-surge-top"><small>Big tile bonus</small><strong>{game.smallestTileClearCount}</strong></div><p>Make a {game.nextBigTile.toLocaleString()} tile to clear the smallest tile tier and shift future tiles upward.</p>{game.lastEvent === 'big-tile-reached' && <div className="ff-drop-merge-surge-event"><b>all {tileLabel(game.removedTile)}s cleared</b><span>→</span><b>new tiles start at {tileLabel(game.removedTile * 2)}</b></div>}</section>
-          <section className="ff-drop-merge-how"><small>How to play</small><p>Click a column to drop immediately. Otherwise, the box descends through the top lane and auto-drops into the previous column when it reaches the divider.</p><p>Every touching group of matching numbers merges together: three 2s make 8, four 2s make 16. A drop into a full column ends the run.</p><span>Seven columns · timed drops · 2 through 32 in the opening queue</span></section>
+          <section className="ff-drop-merge-how"><small>How to play</small><p>Tap a column, or drag across the board and release, to drop immediately. Otherwise, the box descends through the top lane and auto-drops into the selected column.</p><p>Every touching group of matching numbers merges together: three 2s make 8, four 2s make 16. A drop into a full column ends the run.</p><span>Seven columns · timed drops · persistent best tile · 2 through 32 in the opening queue</span></section>
         </aside>
       </div> : <div className="ff-drop-merge-loading">{error ?? 'Building your columns…'}</div>}
 
@@ -294,4 +327,8 @@ function lowestEmptyRow(tiles: readonly number[], columns: number, column: numbe
     if (tiles[(row * columns) + column] === 0) return row
   }
   return -1
+}
+function readBestTile(): number {
+  if (typeof window === 'undefined') return 0
+  try { const value = Number(window.localStorage.getItem(bestTileKey)); return Number.isSafeInteger(value) && value > 0 ? value : 0 } catch { return 0 }
 }

@@ -1,4 +1,4 @@
-.ff-drop-merge-column-board{position:relative}
+.ff-drop-merge-column-board{position:relative;touch-action:none;user-select:none}
 .ff-drop-merge-column,.ff-drop-merge-column:disabled{cursor:default}
 .ff-drop-merge-column.is-selected .ff-drop-merge-column-stack{border-color:#ffd166;background:#1c5354;box-shadow:inset 0 0 1.1rem #ffd16633,0 0 0 .12rem #ffd16688,0 .45rem .9rem #0005}
 .ff-drop-merge-column.is-selected:not(:disabled) .ff-drop-merge-column-stack{animation:ff-drop-merge-selected-pulse 1.2s ease-in-out infinite}

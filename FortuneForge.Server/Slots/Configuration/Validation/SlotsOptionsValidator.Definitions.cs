@@ -7,6 +7,10 @@ public sealed partial class SlotsOptionsValidator
 {
     private static void ValidateTargets(GameDefinition game, ICollection<string> errors)
     {
+        if (game.Math.PayoutMultiplier <= 0)
+        {
+            errors.Add($"Game '{game.Id}' payout multiplier must be greater than zero.");
+        }
         if (game.Math.Targets.Rtp is { } rtp && rtp is <= 0 or > 1)
         {
             errors.Add($"Game '{game.Id}' target RTP must be greater than zero and at most one.");

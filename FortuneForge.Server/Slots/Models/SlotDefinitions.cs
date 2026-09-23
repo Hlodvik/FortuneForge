@@ -49,6 +49,7 @@ public sealed class GameMathDefinition
 {
     public required string ReelSetId { get; init; }
     public required string PaytableId { get; init; }
+    public decimal PayoutMultiplier { get; init; } = 1m;
     public List<int> PaylinePayoutSteps { get; init; } = [];
     public int? FiveMatchPityMissLimit { get; init; }
     public required GameMathTargets Targets { get; init; }

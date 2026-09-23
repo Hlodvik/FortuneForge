@@ -44,7 +44,10 @@ if (validation.Failed)
 }
 ValidateClientAddressParsing();
 var definitions = new OptionsSlotsDefinitionProvider(Options.Create(root.Slots));
-var gamesToAnalyze = root.Slots.GameDefinitions.ToList();
+var gamesToAnalyze = SlotSpecialRoundProfiles.All
+    .Select(profile => definitions.GetGame(profile.GameId)
+        ?? throw new InvalidOperationException($"The catalog slot game '{profile.GameId}' was not found."))
+    .ToList();
 if (!string.IsNullOrWhiteSpace(requestedGameId))
 {
     gamesToAnalyze =

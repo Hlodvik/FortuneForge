@@ -104,7 +104,10 @@ public sealed partial class SpinService
             ? 0
             : checked(pityState.ConsecutiveFiveMisses + 1);
         var payout = payoutCalculator.Calculate(evaluations, game, paytable, wagerPoints);
-        var featurePayout = CalculateFeaturePayout(outcome.VisibleReels, wagerPoints);
+        var featurePayout = CalculateFeaturePayout(
+            outcome.VisibleReels,
+            wagerPoints,
+            game.Math.PayoutMultiplier);
         payout = AddFeaturePayout(payout, featurePayout);
         var freeSpinsAwarded = CountFreeGameSymbols(outcome.VisibleReels, effectiveGame) >=
             (effectiveGame.FreeGames?.RequiredSymbols ?? int.MaxValue)

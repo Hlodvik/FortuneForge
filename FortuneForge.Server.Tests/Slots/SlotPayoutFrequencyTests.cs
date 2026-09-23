@@ -8,7 +8,7 @@ namespace FortuneForge.Server.Tests.Slots;
 public sealed class SlotPayoutFrequencyTests
 {
     [Fact]
-    public void FourSymbolRun_PaysTheConfiguredThreeSymbolRate()
+    public void FourSymbolRun_AppliesTheGamePayoutCalibration()
     {
         var game = new GameDefinition
         {
@@ -35,6 +35,7 @@ public sealed class SlotPayoutFrequencyTests
             {
                 ReelSetId = "reels",
                 PaytableId = "paytable",
+                PayoutMultiplier = 1.5m,
                 PaylinePayoutSteps = [0],
                 Targets = new GameMathTargets()
             },
@@ -82,6 +83,6 @@ public sealed class SlotPayoutFrequencyTests
         var paidMatch = Assert.Single(Assert.Single(payout.Paylines).Matches);
         Assert.Equal(4, paidMatch.Match.MatchLength);
         Assert.Equal(1, paidMatch.Multiplier);
-        Assert.Equal(2, payout.TotalPoints);
+        Assert.Equal(3, payout.TotalPoints);
     }
 }

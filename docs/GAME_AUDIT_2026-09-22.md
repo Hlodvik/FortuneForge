@@ -1,5 +1,7 @@
 # Fortune Forge game audit
 
+> **Archived baseline:** This report records the defects found before the completion pass. Its release blockers and actionable usability backlog were resolved in the follow-up documented in [game-qa-audit-2026-09-23.md](game-qa-audit-2026-09-23.md). Product-expansion ideas such as new multiplayer ecosystems or additional commercial variants are optional roadmap concepts, not open consolidation defects.
+
 Completed September 22, 2026 against production commit `2b408ef`.
 
 ## Outcome
@@ -42,7 +44,7 @@ This was a functional and product audit, not certification. Slot simulations are
 - **Resolved — CI ownership guard.** CI verifies that server games use source projects, every client game dependency maps to an in-repository workspace, and obsolete copied-package feeds are absent.
 - **Resolved — package UI pipeline.** CI type-checks, tests, and builds every deployed client game workspace before testing and building the host application.
 
-## Cross-game release backlog
+## Historical cross-game release findings
 
 - **P0 — Expand slot math validation to all 20 catalog entries.** The deploy script currently analyzes only the two explicit JSON definitions. It passed while 12 cloned server profiles were outside the same configured safeguards and three profiles did not exist.
 - **P0 — Keep Pirates' Fortune, Cosmic Fortune, and Jungle Jackpot away from wallet-credit settlement until their over-100% samples are corrected and independently verified.** Their 100,000-spin samples returned 124.229%, 105.133%, and 103.898% respectively.
@@ -64,7 +66,7 @@ All slot pages share a capable base cabinet: wager controls, spin/early-stop, au
 
 Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time configured definitions) and 100,000 paid spins for each cloned profile. “Pass” means the current tool's configured safeguard passed; it is not certification.
 
-| # | Game | Primary path | Math sample | Ruin | Verdict and TODO |
+| # | Game | Primary path | Math sample | Ruin | Historical verdict and finding |
 |---:|---|---|---:|---:|---|
 | 1 | Wukong's Journey to the West | Production spin, win explanation, early stop, autospin, rules, settings, and meters worked | 90.807% | 58.82% | **Pass.** Add RTP/volatility/max-win disclosure, a mobile title, and session/responsible-play controls. Expand settings beyond audio. |
 | 2 | Rainbow Realm | Availability is 204, but every spin is rejected by the client | 87.746% | 74.96% | **P1.** Server returns `wukong-treasures-v3`; client requires `rainbow-realm-fruits-v1-symbols`. Rules say 22 paylines while server config says 23. Align the contract and add a cross-tier test. |
@@ -93,42 +95,42 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 
 - Exercised a five-seat credit table: selected R5, received a two-card hand, stood, saw the dealer resolve, settlement update, and next-round state.
 - Server rule, contract, table-state, and Firestore-emulator tests passed in the application suite.
-- **P2 TODO:** label the `−` and `+` wager controls; keep rules, table limits, deck/S17/surrender/insurance policy, and help available after seating; add optional practice-only basic-strategy/misclick protection. Professional clients disclose variant rules and commonly provide insurance, side bets, and configurable action warnings.
+- **Historical P2 finding:** label the `−` and `+` wager controls; keep rules, table limits, deck/S17/surrender/insurance policy, and help available after seating; add optional practice-only basic-strategy/misclick protection. Professional clients disclose variant rules and commonly provide insurance, side bets, and configurable action warnings.
 
 ### 22. Texas Hold'em — functional
 
 - Joined the Standard R0.50/R1 table, received pocket eights, called, and reached a flop with the pot and action state updating.
 - Engine, credit-store, API, and emulator tests passed.
-- **P2 TODO:** add the current best-hand label, hand/action history and replay, descriptive raise-step controls, quick bet sizes, and optional keyboard shortcuts. Keep real-time strategy advice out of competitive play; professional poker clients emphasize history/replay, bet-slider presets, and hotkeys.
+- **Historical P2 finding:** add the current best-hand label, hand/action history and replay, descriptive raise-step controls, quick bet sizes, and optional keyboard shortcuts. Keep real-time strategy advice out of competitive play; professional poker clients emphasize history/replay, bet-slider presets, and hotkeys.
 
 ### 23. Competitive Solitaire — functional with accessibility gaps
 
 - Started a free deal, drew from the stock, moved through the board, and verified score, moves, timer, undo, pause, and submission surfaces.
 - Client engine/API and server competitive/free-run/emulator tests passed.
-- **P2 TODO:** add an `h1`; rename or explain “Submit game” in free play; label foundation targets by suit; add hint/autocomplete/restart/game-number affordances. Longer term, add daily challenges, difficulty, themes, achievements, and cross-device progression comparable to Microsoft Solitaire Collection.
+- **Historical P2 finding:** add an `h1`; rename or explain “Submit game” in free play; label foundation targets by suit; add hint/autocomplete/restart/game-number affordances. Longer term, add daily challenges, difficulty, themes, achievements, and cross-device progression comparable to Microsoft Solitaire Collection.
 
 ### 24. Video Poker — functional
 
 - Dealt five cards at one coin, held four, drew to a straight, and verified the R4 return and account balance.
 - Full-pay Jacks or Better engine/paytable and application contract tests passed.
-- **P2 TODO:** add Max Bet, auto-hold suggestions as an optional learning aid, a visible 9/6 explanation with theoretical return, and clearer paytable discovery. Professional cabinets keep the paytable continuously legible and commonly support several poker variants/multi-hand modes.
+- **Historical P2 finding:** add Max Bet, auto-hold suggestions as an optional learning aid, a visible 9/6 explanation with theoretical return, and clearer paytable discovery. Professional cabinets keep the paytable continuously legible and commonly support several poker variants/multi-hand modes.
 
 ### 25. Baccarat — functional
 
 - Bet R1 on Player, dealt Player 7 versus Banker 1, and verified a R2 total return and wallet refresh.
 - Punto Banco engine, paytable, client, contract, and Firestore-backed settlement tests passed.
-- **P2 TODO:** add a rules/tableau drawer, Player/Banker pair side bets, commission explanation at decision time, recent-result roads/history, and result replay. Professional Baccarat makes fixed third-card rules and commissions readily inspectable.
+- **Historical P2 finding:** add a rules/tableau drawer, Player/Banker pair side bets, commission explanation at decision time, recent-result roads/history, and result replay. Professional Baccarat makes fixed third-card rules and commissions readily inspectable.
 
 ### 26. Casino War — functional
 
 - Placed a R1 primary wager, received King versus 2, and verified a R2 return and wallet refresh. Tie stake and Go to War/Surrender are exposed; automated contracts cover the tie branch.
-- **P2 TODO:** add in-table rules/help and a complete payout/war-flow explanation; provide hand history and a deterministic way to learn the tie branch in practice mode; label whether the second tie favors the player before the wager.
+- **Historical P2 finding:** add in-table rules/help and a complete payout/war-flow explanation; provide hand history and a deterministic way to learn the tie branch in practice mode; label whether the second tie favors the player before the wager.
 
 ### 27. Hearts — functional
 
 - Completed three-card passing, followed suit with a legal card, and completed the first trick with score/trick counters updating.
 - Domain and application service tests passed.
-- **P2 TODO:** add a persistent rules/scoring panel, trick/round history, pass-direction history, and multiplayer/private-table options. Bicycle's current product adds ranked/public/private play, leaderboards, and social features. **P3:** capitalize bot status copy such as “south is thinking…”.
+- **Historical P2 finding:** add a persistent rules/scoring panel, trick/round history, pass-direction history, and multiplayer/private-table options. Bicycle's current product adds ranked/public/private play, leaderboards, and social features. **P3:** capitalize bot status copy such as “south is thinking…”.
 
 ## Casino and dice games (28–32)
 
@@ -136,20 +138,20 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 
 - Selected five numbers, completed the animated 20-number draw, and verified accessible hit/drawn/missed labels and a 2-hit result.
 - Engine, package client, application contract, and endpoint tests passed.
-- **P2 TODO:** add Quick Pick, spots/payout table, stake or explicit practice-only labeling, multi-draw, draw-speed/skip controls, and recent tickets. Professional lottery Keno supports Quick Pick, selectable stake, consecutive draws, and optional multipliers.
+- **Historical P2 finding:** add Quick Pick, spots/payout table, stake or explicit practice-only labeling, multi-draw, draw-speed/skip controls, and recent tickets. Professional lottery Keno supports Quick Pick, selectable stake, consecutive draws, and optional multipliers.
 
 ### 29. Sic Bo — logic works; mouse path can be blocked
 
 - Built a Small wager and settled a 4+5+5 roll through the keyboard path.
 - **P1:** the fixed bottom-left music pill overlaps Roll Dice at 1021×732. A mouse click toggles music instead of rolling; keyboard activation works. Move the pill or reserve safe-area padding and add a viewport interaction test.
-- **P2 TODO:** clean accessible quick-bet names (`SmallTotal 4–10`), hide the raw `three-dice-sic-bo` mode identifier, expose a complete odds/RTP guide, and consider distinct premium mechanics only after the base table is reliable.
+- **Historical P2 finding:** clean accessible quick-bet names (`SmallTotal 4–10`), hide the raw `three-dice-sic-bo` mode identifier, expose a complete odds/RTP guide, and consider distinct premium mechanics only after the base table is reliable.
 
 ### 30. Roulette — functional practice table
 
 - Opened a single-zero round, placed R1 on 17, spun 0, and saw the losing settlement.
 - Roulette package tests passed; application server tests cover validation and settlement.
 - **P2:** show an explicit “Practice balance” label. The page initially flashes R0 before status resolves, then uses a separate in-memory R1,000 balance rather than the account wallet.
-- **P2 TODO:** add recent results, rebet/double, saved bets, racetrack/neighbors, hot/cold statistics with a randomness disclaimer, and round recovery/history. Professional single-zero tables expose these efficiency/history tools and publish the 97.3% theoretical RTP.
+- **Historical P2 finding:** add recent results, rebet/double, saved bets, racetrack/neighbors, hot/cold statistics with a randomness disclaimer, and round recovery/history. Professional single-zero tables expose these efficiency/history tools and publish the 97.3% theoretical RTP.
 
 ### 31. Craps — functional narrow foundation
 
@@ -163,7 +165,7 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 - Played a bid, received three bot raises, called liar, resolved the challenge, lost one die, and started the next round with 19 dice.
 - Engine, package, and application service tests passed.
 - **P2:** replace internal status copy (`bot-3 placed a bid`) with the bot display name; fix grammar (`you loses a die`); make the resolved screen immediately show the post-challenge total/hand instead of stale 20-dice/five-dice values.
-- **P2 TODO:** add a rules/tutorial panel, bidding history, difficulty, multiplayer/private tables, and clearly selectable exact-face versus wild-ones variants.
+- **Historical P2 finding:** add a rules/tutorial panel, bidding history, difficulty, multiplayer/private tables, and clearly selectable exact-face versus wild-ones variants.
 
 ## Arcade and puzzle games (33–38)
 
@@ -171,20 +173,20 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 
 - Started a casual server-seeded run, used fire/thrust controls, saw frame/life state advance, and verified desktop and touch controls plus leaderboard entry choices.
 - Engine/replay, free-run, paid-entry, package-client, and page tests passed.
-- **P2 TODO:** add pause/abandon, controller support, better playfield narration, and more modes/content. Atari's current professional version adds power-ups, 30 challenge levels, global/local leaderboards, co-op, UFOs, and a dynamic soundtrack.
+- **Historical P2 finding:** add pause/abandon, controller support, better playfield narration, and more modes/content. Atari's current professional version adds power-ups, 30 challenge levels, global/local leaderboards, co-op, UFOs, and a dynamic soundtrack.
 
 ### 34. Flappy — functional
 
 - Started, flapped with Space, crashed, and verified the server-recorded official score and replay path.
 - Engine/free-run, package-client, and page tests passed.
-- **P2 TODO:** collapse the redundant outer “Start flight” plus inner “Start flight” flow into one clear launch; add pause, richer level/obstacle progression, challenge/quest modes, and an immediately visible personal-best/history surface.
+- **Historical P2 finding:** collapse the redundant outer “Start flight” plus inner “Start flight” flow into one clear launch; add pause, richer level/obstacle progression, challenge/quest modes, and an immediately visible personal-best/history surface.
 
 ### 35. Horse Flight — functional on mouse/keyboard; incomplete on touch
 
 - Started a run, double-jumped, scored 42, hit an obstacle, and verified the leaderboard save.
 - Engine, package-client, Firestore store, and application contract tests passed.
 - **P1 mobile:** slide/fast-fall is implemented only as held right mouse button (`button === 2`). Touch users have no equivalent control even though click/tap handles jump. Add a dedicated touch/keyboard control and a mobile interaction test.
-- **P2 TODO:** add pause/restart confirmation, visible control buttons, input remapping/controller support, missions, and clearer hazard telegraphs.
+- **Historical P2 finding:** add pause/restart confirmation, visible control buttons, input remapping/controller support, missions, and clearer hazard telegraphs.
 
 ### 36. 2048 — functional
 
@@ -197,13 +199,13 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 
 - Started a seven-column run, dropped an 8, verified the next/current queue, and paused/resumed the timer.
 - Domain tests pass in the reusable-games suite, but **P1:** the client package has no test files and `npm test` exits 1.
-- **P2 TODO:** add client tests for timed auto-drop, pause, undo, chain merges, full-column game over, keyboard controls, and restart; add danger-zone warnings, stronger combo feedback, themes/modes, and cloud leaderboard/persistence comparable to polished drop-merge products.
+- **Historical P2 finding:** add client tests for timed auto-drop, pause, undo, chain merges, full-column game over, keyboard controls, and restart; add danger-zone warnings, stronger combo feedback, themes/modes, and cloud leaderboard/persistence comparable to polished drop-merge products.
 
 ### 38. Snake — functional
 
 - Started by choosing a direction, steered with touch controls, and verified collision/game-over behavior and statistics.
 - Engine, local gateway, package-client, and application route tests passed.
-- **P2 TODO:** add pause, speed/board-size/mode settings, persistent best scores/leaderboards, and a first-move grace period or clearer explanation that Start Moving immediately continues Right. Add row/column context or a concise board summary for assistive technology.
+- **Historical P2 finding:** add pause, speed/board-size/mode settings, persistent best scores/leaderboards, and a first-move grace period or clearer explanation that Start Moving immediately continues Right. Add row/column context or a concise board summary for assistive technology.
 
 ## Professional comparison references
 
@@ -215,7 +217,7 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 - Government/lottery rules: [Georgia Lottery Keno](https://gas-origin2.galottery.com/en-us/games/draw-games/keno.html), [California Casino War rules](https://oag.ca.gov/sites/all/files/agweb/pdfs/gambling/BGC_war.pdf), and [Singapore Casino War rules](https://www.gra.gov.sg/docs/default-source/game-rules/rws/other-games/rws-gr---casino-war-v2.pdf).
 - Arcade/puzzle: [Atari Asteroids: Recharged](https://atari.com/products/asteroids-recharged), [the original 2048 source](https://github.com/gabrielecirulli/2048), and the current [Flappy Bird product listing](https://play.google.com/store/apps/details?id=com.flappybirdfoundation.flappybird).
 
-## Recommended execution order
+## Original execution order (completed)
 
 1. Freeze wallet settlement for unverified slot profiles; fix the all-game math gate.
 2. Register/remove the three missing slots and repair Rainbow Realm's contract.
@@ -223,4 +225,4 @@ Math samples used 250,000 paid spins for Wukong and Rainbow (the deploy-time con
 4. Fix Sic Bo's blocked Roll control and Horse Flight's missing touch action.
 5. Standardize free-play labeling, rules/RTP/responsible-play surfaces, mobile titles, errors, and accessibility.
 6. Retune the remaining nine under/over-target slot profiles.
-7. Work through the per-game professional-feature backlog, starting with result/history tools and the narrow Craps/Keno/Roulette experiences.
+7. Work through the per-game professional-feature findings, starting with result/history tools and the narrow Craps/Keno/Roulette experiences.

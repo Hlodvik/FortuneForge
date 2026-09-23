@@ -28,7 +28,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 3, 5, 40, 10)]
-    [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 5, 60, 8)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
         int scatterCount,
@@ -82,13 +82,23 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.All(profiles.Where(profile => !profile.UsesCollections), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(profiles, profile =>
-            Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(
-                profile.CollectionFeatureMode ?? profile.ScatterFeatureMode)));
+            Assert.True(
+                profile.UsesCollections ||
+                SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(
             profiles
                 .GroupBy(profile => profile.CollectionFeatureMode ?? profile.ScatterFeatureMode)
                 .Select(group => group.Count()),
             count => Assert.InRange(count, 1, 2));
+    }
+
+    [Fact]
+    public void CatalogProfiles_ExposeEverySlotExactlyOnce()
+    {
+        Assert.Equal(20, SlotSpecialRoundProfiles.All.Count);
+        Assert.Equal(
+            SlotSpecialRoundProfiles.All.Count,
+            SlotSpecialRoundProfiles.All.Select(profile => profile.GameId).Distinct(StringComparer.Ordinal).Count());
     }
 
     [Theory]

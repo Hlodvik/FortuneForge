@@ -1,12 +1,27 @@
 # Fortune Forge game QA audit — 2026-09-23
 
+## Completion status
+
+The actionable consolidation backlog from this audit is closed. The professional-product comparisons below remain useful context, but ideas that would create an entirely new product surface—such as a second multiplayer ecosystem, additional commercial game variants, or a new social layer—are optional roadmap work rather than unresolved defects.
+
+- The application and every reusable game package now live in this repository. The ownership guard verifies 17 server game projects and 15 client workspaces, with no binary/package dependency on the retired `fortuneforge.games` repository.
+- `main` is the only local and remote branch. The catalog guard verifies exactly 38 playable routes and 20 slot contracts.
+- Keno was rebuilt with pick presets, Quick Pick, saved tickets, an always-visible prize table, staged draws, repeat play, keyboard/touch support, and responsive controls.
+- Card and table work added disclosed rules, strategy/practice help, fast bet controls, timers, histories, statistics, replay/review surfaces, Roulette racetrack controls, Craps odds/propositions, Liar's Dice variants/probability help, Baccarat Big Road and a persistent eight-deck shoe, and atomic multi-hand Video Poker settlement.
+- Arcade and puzzle work added touch/controller-equivalent controls, pause/retry flows, persistent bests, accessible narration, progression feedback, and broader tests. Asteroids now adds a deterministic hunter enemy from wave two onward in both live and replay simulation.
+- Every slot now exposes its named feature, trigger, persistent progress, rules, status, controls, reduced-motion/audio behavior, and keyboard focus states. Six real-browser visual baselines cover idle, rules, feature, win, error, and narrow-mobile states.
+- Slot math now analyzes all 20 catalog entries during deployment. Each profile passes a deterministic 250,000-paid-spin release check for configured RTP, hit rate, sub-100% return, and majority bankroll depletion. Game-level payout calibration applies consistently to both line and feature-token awards.
+- Current automated release coverage is 413 shared game-engine tests, 441 server tests, 168 game-client tests, 240 host-client tests, six browser visual tests, the 38-route/20-slot inventory guard, and the production smoke that exercises all routes plus every slot demo spin.
+
+The detailed game notes below record the baseline that drove this work. They are retained as audit history, not as an active TODO list.
+
 ## Scope
 
 This is the first production smoke and product-quality pass after the repository consolidation. It covers all 38 catalog games on the deployed site. A pass here means the route loaded and the named core interaction completed; it is not a claim that every rule branch, device, animation, or long-session state has been exhaustively tested.
 
 - 34 games received an interactive production check using demo, free-play, practice, or non-wallet play.
 - Video Poker, Baccarat, Casino War, and Sic Bo received production route/render checks plus client, API-contract, and engine tests. A live wallet debit was intentionally not used for QA.
-- Automated coverage passed: 430 server integration tests, 405 shared game-package tests, all 15 client game suites, and 233 host-client tests.
+- Automated coverage at the start of the pass was 430 server integration tests, 405 shared game-package tests, all 15 client game suites, and 233 host-client tests. The completion baseline is recorded above.
 
 ## Defects fixed during this pass
 
@@ -16,14 +31,14 @@ This is the first production smoke and product-quality pass after the repository
 
 ## Product benchmark
 
-The backlog below uses these current professional products as a quality bar, not as a request to copy their trade dress or mechanics:
+The baseline findings below used these professional products as a quality bar, not as a request to copy their trade dress or mechanics:
 
 - Modern premium slots: readable feature states, strong anticipation/settlement, distinct mechanics, and an immediately accessible rules/paytable surface. Pragmatic Play's Gates of Olympus pages are a useful example of how a product explains tumbles, multipliers, scatters, and free spins.
 - Digital casino tables: obvious betting state, result history, statistics, rule disclosure, and polished table feedback. Evolution's live and First Person catalogs are the presentation benchmark; its Baccarat material also demonstrates roads, statistics, and side-bet discoverability.
 - Poker and blackjack: explicit table rules, hand/rank help, fast bet controls, and unambiguous action/settlement feedback. PokerStars' rules and Video Poker pages are the benchmark.
 - Casual games: touch support, instant restart, persistent bests/progression, readable tutorials, and satisfying feedback. Microsoft Solitaire Collection, the original 2048 project, Atari's modernized Asteroids releases, and Pogo's card catalog are useful reference points.
 
-## Game-by-game results and backlog
+## Baseline game-by-game results and findings
 
 ### Slots (20)
 
@@ -84,7 +99,7 @@ Shared slot priorities:
 37. **Drop Merge — pass.** Dropping 16 into column 4 changed the next tile and enabled Undo. Add a projected landing/merge preview, combo chain feedback, clearer danger/failure line, touch drag support, persistent best tile, and stronger high-tile celebrations.
 38. **Snake — pass.** The run started and Arrow Down changed direction. Add swipe/controller input, pause/resume, speed or board-size choices, persistent high score, buffered turns, clearer food spawning, and a one-action restart.
 
-## Recommended execution order
+## Original execution order (completed)
 
 1. **Keno product rebuild** — quick pick, paytable/prize transparency, staged reveal, saved/repeat tickets, and mobile QA.
 2. **Production smoke automation** — every route plus one free/demo core action, run after deploy.

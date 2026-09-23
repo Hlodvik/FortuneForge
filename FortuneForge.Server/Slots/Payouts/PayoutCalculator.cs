@@ -30,7 +30,8 @@ public sealed class PayoutCalculator : IPayoutCalculator
                     rules,
                     wagerPoints,
                     game.Layout.ReelCount,
-                    paylinePayoutStep))
+                    paylinePayoutStep,
+                    game.Math.PayoutMultiplier))
                 .Where(candidate => candidate.AmountPoints > 0)
                 .OrderByDescending(candidate => candidate.AmountPoints)
                 .ThenBy(candidate => CandidateKey(candidate), StringComparer.Ordinal)
@@ -78,7 +79,8 @@ public sealed class PayoutCalculator : IPayoutCalculator
         IReadOnlyDictionary<(string SymbolId, int MatchLength), long> rules,
         long wagerPoints,
         int fullMatchLength,
-        int paylinePayoutStep)
+        int paylinePayoutStep,
+        decimal payoutMultiplier)
     {
         var paidMatches = candidate.Matches
             .Select(match =>
@@ -87,7 +89,11 @@ public sealed class PayoutCalculator : IPayoutCalculator
                 var multiplier = match.MatchLength == fullMatchLength && baseMultiplier > 0
                     ? checked(baseMultiplier + paylinePayoutStep)
                     : baseMultiplier;
-                return new PaidMatch(match, multiplier, checked(wagerPoints * multiplier));
+                var baseAmount = checked(wagerPoints * multiplier);
+                var calibratedAmount = checked((long)Math.Round(
+                    baseAmount * payoutMultiplier,
+                    MidpointRounding.AwayFromZero));
+                return new PaidMatch(match, multiplier, calibratedAmount);
             })
             .Where(match => match.AmountPoints > 0)
             .ToArray();

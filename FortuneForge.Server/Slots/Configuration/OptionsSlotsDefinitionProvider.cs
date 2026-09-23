@@ -69,6 +69,7 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     {
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
         PaytableId = source.PaytableId,
+        PayoutMultiplier = profile.PayoutMultiplier,
         PaylinePayoutSteps = paylineIndexes is null
             ? source.PaylinePayoutSteps
             : paylineIndexes.Select(index => source.PaylinePayoutSteps[index]).ToList(),

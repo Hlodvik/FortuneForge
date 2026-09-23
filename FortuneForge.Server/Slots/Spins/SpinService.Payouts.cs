@@ -12,7 +12,8 @@ public sealed partial class SpinService
 {
     private static FeaturePayout CalculateFeaturePayout(
         IReadOnlyList<IReadOnlyList<string>> reels,
-        long wagerPoints)
+        long wagerPoints,
+        decimal payoutMultiplier)
     {
         var moneyPositions = VisiblePositions(reels)
             .Select(position => new
@@ -38,7 +39,9 @@ public sealed partial class SpinService
                 multiplier *= 2;
             }
 
-            moneyGrabPoints = MultiplyWager(wagerPoints, multiplier);
+            moneyGrabPoints = ApplyPayoutMultiplier(
+                MultiplyWager(wagerPoints, multiplier),
+                payoutMultiplier);
             moneyGrabPayout = new PaylinePayout(
                 901,
                 moneyGrabPoints,
@@ -55,7 +58,7 @@ public sealed partial class SpinService
                 ]);
         }
 
-        var bananaPayouts = CalculateBananaPayouts(reels, wagerPoints);
+        var bananaPayouts = CalculateBananaPayouts(reels, wagerPoints, payoutMultiplier);
         return new FeaturePayout(
             pawPositions.Length,
             moneyGrabPoints,
@@ -65,7 +68,8 @@ public sealed partial class SpinService
 
     private static IReadOnlyList<PaylinePayout> CalculateBananaPayouts(
         IReadOnlyList<IReadOnlyList<string>> reels,
-        long wagerPoints)
+        long wagerPoints,
+        decimal payoutMultiplier)
     {
         var payouts = new List<PaylinePayout>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -88,7 +92,7 @@ public sealed partial class SpinService
                 return;
             }
 
-            var amount = checked(wagerPoints * 3);
+            var amount = ApplyPayoutMultiplier(checked(wagerPoints * 3), payoutMultiplier);
             var currentPaylineId = paylineId++;
             payouts.Add(new PaylinePayout(
                 currentPaylineId,
@@ -148,6 +152,9 @@ public sealed partial class SpinService
 
         return payouts;
     }
+
+    private static long ApplyPayoutMultiplier(long amount, decimal payoutMultiplier) =>
+        checked((long)Math.Round(amount * payoutMultiplier, MidpointRounding.AwayFromZero));
 
     private static bool IsBananaAt(IReadOnlyList<IReadOnlyList<string>> reels, GridPosition position) =>
         position.Reel >= 0 &&

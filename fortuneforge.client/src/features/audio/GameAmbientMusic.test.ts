@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { AMBIENT_GAME_MUSIC } from './GameAmbientMusic'
+import { AMBIENT_GAME_MUSIC } from './ambientGameMusic'
 
 describe('ambient game music', () => {
   it('provides an audible, low-volume loop source for every playable arcade and dice game', () => {

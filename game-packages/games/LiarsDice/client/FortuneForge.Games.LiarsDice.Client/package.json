@@ -9,7 +9,7 @@
     "dev": "concurrently -k -n api,ui -c magenta,cyan \"dotnet run --project ../../samples/FortuneForge.Games.LiarsDice.Web/FortuneForge.Games.LiarsDice.Web.csproj\" \"vite --host 127.0.0.1 --port 5180\"",
     "dev:api": "dotnet run --project ../../samples/FortuneForge.Games.LiarsDice.Web/FortuneForge.Games.LiarsDice.Web.csproj",
     "dev:ui": "vite --host 127.0.0.1 --port 5180",
-    "build": "vite build && tsc -p tsconfig.build.json",
+    "build": "vite build && tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },

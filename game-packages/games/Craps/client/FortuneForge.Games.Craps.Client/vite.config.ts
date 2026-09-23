@@ -1,6 +1,9 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+const packageExternals = new Set(['react', 'react-dom', 'react/jsx-runtime'])
+const diceSprite = /(?:^|[/\\])assets[/\\]dice[/\\]dice-throw-[1-4]\.png$/
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -17,7 +20,7 @@ export default defineConfig({
       fileName: 'index',
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: (id) => packageExternals.has(id) || diceSprite.test(id),
     },
     cssCodeSplit: false,
   },

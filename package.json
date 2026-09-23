@@ -29,6 +29,8 @@
     "verify:game-source": "node ./scripts/verify-game-source-ownership.mjs",
     "verify:game-routes": "node ./scripts/verify-game-route-inventory.mjs",
     "web:test": "npm run test --workspace fortuneforge.client",
+    "test:slots:visual": "npm run test:visual --workspace fortuneforge.client",
+    "test:slots:visual:update": "npm run test:visual:update --workspace fortuneforge.client",
     "web:lint": "npm run lint --workspace fortuneforge.client",
     "web:build": "npm run build --workspace fortuneforge.client",
     "smoke:production": "node ./scripts/smoke-production.mjs",

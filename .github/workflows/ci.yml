@@ -79,3 +79,25 @@ jobs:
 
       - name: Build deployment image
         run: docker build --file Dockerfile --tag fortuneforge:ci .
+
+  slots-visual:
+    runs-on: windows-latest
+    timeout-minutes: 12
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Compare slot screenshots
+        run: npm run test:slots:visual

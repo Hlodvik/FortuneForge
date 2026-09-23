@@ -166,6 +166,7 @@ public sealed class BlackjackTableController(
         BlackjackTableEngine.Capacity,
         checked((int)BlackjackTableEngine.HumanGrace.TotalSeconds),
         checked((int)BlackjackTableEngine.ActionDuration.TotalSeconds),
+        1,
         "Dealer stands on all 17s",
         "3:2",
         true,

@@ -260,7 +260,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
-        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
+        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
         {roundOutcome && <GameOutcomeBanner className="blackjack-table__outcome" {...roundOutcome} />}
         <div className="blackjack-playfield">
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>

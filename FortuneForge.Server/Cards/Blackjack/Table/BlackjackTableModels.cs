@@ -136,6 +136,7 @@ public sealed record BlackjackTableStatusResponse(
     int TableCapacity,
     int HumanGraceSeconds,
     int ActionDeadlineSeconds,
+    int DeckCount,
     string DealerRule,
     string BlackjackPayout,
     bool DoubleAllowed,

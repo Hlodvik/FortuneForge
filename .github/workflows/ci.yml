@@ -28,7 +28,9 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Verify monorepo game ownership
-        run: npm run verify:game-source
+        run: |
+          npm run verify:game-source
+          npm run verify:game-routes
 
       - name: Restore .NET dependencies
         run: |

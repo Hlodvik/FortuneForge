@@ -160,6 +160,14 @@ internal static class CreditHoldemEngine
                 break;
         }
         player.LastAction = action;
+        match.ActionLog.Add(new CreditHoldemActionLogEntry(
+            match.ActionLog.Count + 1,
+            match.HandNumber,
+            match.Street,
+            player.PublicSeatId,
+            player.DisplayName,
+            action,
+            player.CommittedHand - before));
         player.BetWhenLastActed = match.CurrentBet;
         player.ReopenRaiseIncrement = match.MinimumRaise;
         match.Version = checked(match.Version + 1);
@@ -216,6 +224,14 @@ internal static class CreditHoldemEngine
             var wasActive = player.Seat == match.ActiveSeat;
             player.Status = "folded";
             player.LastAction = "left";
+            match.ActionLog.Add(new CreditHoldemActionLogEntry(
+                match.ActionLog.Count + 1,
+                match.HandNumber,
+                match.Street,
+                player.PublicSeatId,
+                player.DisplayName,
+                "left",
+                0));
             player.HasActed = true;
             player.CanRaise = false;
             match.Version = checked(match.Version + 1);
@@ -371,6 +387,8 @@ internal static class CreditHoldemEngine
             Version = version,
             HandNumber = handNumber
         };
+        match.ActionLog.Add(new CreditHoldemActionLogEntry(1, handNumber, "preflop", players[smallBlindIndex].PublicSeatId, players[smallBlindIndex].DisplayName, "small-blind", players[smallBlindIndex].CommittedHand));
+        match.ActionLog.Add(new CreditHoldemActionLogEntry(2, handNumber, "preflop", players[bigBlindIndex].PublicSeatId, players[bigBlindIndex].DisplayName, "big-blind", players[bigBlindIndex].CommittedHand));
         SetActionDeadline(match, nowUtc);
         return match;
     }

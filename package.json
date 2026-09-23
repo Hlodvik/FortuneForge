@@ -27,6 +27,7 @@
     "games:test": "node ./scripts/run-game-workspaces.mjs test",
     "games:build": "node ./scripts/run-game-workspaces.mjs build",
     "verify:game-source": "node ./scripts/verify-game-source-ownership.mjs",
+    "verify:game-routes": "node ./scripts/verify-game-route-inventory.mjs",
     "web:test": "npm run test --workspace fortuneforge.client",
     "web:lint": "npm run lint --workspace fortuneforge.client",
     "web:build": "npm run build --workspace fortuneforge.client",

@@ -555,6 +555,7 @@ public sealed class BlackjackTableStateTests
         Assert.Equal(60, status.ActionDeadlineSeconds);
         Assert.Equal("3:2", status.BlackjackPayout);
         Assert.Equal("Dealer stands on all 17s", status.DealerRule);
+        Assert.Equal(1, status.DeckCount);
     }
 
     private static async Task<BlackjackTablePlaySessionResponse> JoinAtTable(

@@ -50,6 +50,15 @@ public sealed record CreditHoldemSeatResponse(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? HandName,
     bool IsCurrentPlayer);
 
+public sealed record CreditHoldemActionEntryResponse(
+    int Sequence,
+    int HandNumber,
+    string Street,
+    string SeatId,
+    string DisplayName,
+    string Action,
+    int Amount);
+
 [JsonDerivedType(typeof(CreditHoldemIdleSessionResponse))]
 [JsonDerivedType(typeof(CreditHoldemQueueSessionResponse))]
 [JsonDerivedType(typeof(CreditHoldemMatchSessionResponse))]
@@ -90,7 +99,8 @@ public sealed record CreditHoldemTableResponse(
     DateTime MatchDeadlineAtUtc,
     DateTime? ActionDeadlineAtUtc,
     long RemainingActionMilliseconds,
-    CreditHoldemTableRuleResponse? TableRule = null);
+    CreditHoldemTableRuleResponse? TableRule = null,
+    IReadOnlyList<CreditHoldemActionEntryResponse>? ActionLog = null);
 
 public sealed record CreditHoldemMatchSessionResponse(
     CreditHoldemTableResponse Table,
@@ -186,6 +196,7 @@ internal sealed class CreditHoldemMatch
     // were persisted. Keep absent JSON fields compatible with those matches.
     public HashSet<string> LeavingActorIds { get; init; } = new(StringComparer.Ordinal);
     public Dictionary<string, long> HumanPayoutsCents { get; set; } = new(StringComparer.Ordinal);
+    public List<CreditHoldemActionLogEntry> ActionLog { get; init; } = [];
     public DateTime? ActionDeadlineAtUtc { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
     public int NextCardIndex { get; set; }
@@ -202,6 +213,15 @@ internal sealed class CreditHoldemMatch
     public long HumanPayoutCents { get; set; }
     public long HouseNetCents { get; set; }
 }
+
+internal sealed record CreditHoldemActionLogEntry(
+    int Sequence,
+    int HandNumber,
+    string Street,
+    string PublicSeatId,
+    string DisplayName,
+    string Action,
+    int Amount);
 
 internal sealed class CreditHoldemPlayer
 {

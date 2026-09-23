@@ -12,7 +12,15 @@
 .ff-roulette-racetrack button, .ff-roulette-bet-tools button { border: 1px solid #efc47a66; border-radius: .35rem; background: #6b1a36; color: #ffe1a0; font-size: .6rem; font-weight: 850; cursor: pointer; }
 .ff-roulette-bet-tools { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; }
 .ff-roulette-bet-tools button { min-height: 2rem; }
+.ff-roulette-stats { position: relative; }
+.ff-roulette-stats summary { cursor: pointer; color: #f4d593; font-size: .62rem; font-weight: 900; list-style: none; }
+.ff-roulette-stats summary::-webkit-details-marker { display: none; }
+.ff-roulette-stats > div { position: absolute; z-index: 20; right: 0; top: calc(100% + .35rem); display: grid; min-width: 12rem; gap: .25rem; padding: .65rem; border: 1px solid #efc47a66; border-radius: .55rem; background: #230b18f5; box-shadow: 0 .8rem 2rem #0008; }
+.ff-roulette-stats span { display: flex; justify-content: space-between; gap: 1rem; color: #f7e7cb; font-size: .62rem; }
+.ff-roulette-stats > small { position: absolute; z-index: 21; right: .65rem; top: calc(100% + 8.25rem); width: 10.7rem; color: #cdbb9f; font-size: .5rem; line-height: 1.35; }
 
 @media (max-width: 680px) {
   .ff-roulette-history span:nth-of-type(n+5) { display: none; }
+  .ff-roulette-stats > div { right: -3.25rem; }
+  .ff-roulette-stats > small { right: -2.6rem; }
 }

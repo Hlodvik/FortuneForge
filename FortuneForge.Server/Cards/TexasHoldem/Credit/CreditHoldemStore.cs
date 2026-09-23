@@ -168,7 +168,15 @@ internal static class CreditHoldemProjection
             match.ActionDeadlineAtUtc is { } deadline
                 ? Math.Max(0, (long)(deadline - nowUtc).TotalMilliseconds)
                 : 0,
-            rule.Public);
+            rule.Public,
+            match.ActionLog.Select(entry => new CreditHoldemActionEntryResponse(
+                entry.Sequence,
+                entry.HandNumber,
+                entry.Street,
+                entry.PublicSeatId,
+                entry.DisplayName,
+                entry.Action,
+                entry.Amount)).ToArray());
     }
 
     private static CreditHoldemCardResponse Card(string card)

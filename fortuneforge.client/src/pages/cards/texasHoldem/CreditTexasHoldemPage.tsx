@@ -324,7 +324,7 @@ function TableView({ table, version, busy, act, leave }: {
         </div>}
         <button className="credit-holdem-leave" type="button" disabled={busy} onClick={leave}>Leave after hand</button>
       </div>
-      <details className="credit-holdem-hand-history"><summary>Hand action trail</summary><ol>{table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)} committed{seat.status === 'all-in' ? ' · eligible pots tracked separately' : ''}</span></li>)}</ol>{table.seats.some(seat => seat.status === 'all-in') && <p>All-in players can win only the main/side-pot layers their committed chips cover.</p>}</details>
+      <details className="credit-holdem-hand-history"><summary>Hand action trail · {table.actionLog?.length ?? 0}</summary><ol>{table.actionLog?.map(entry => <li key={entry.sequence}><b>{entry.displayName}</b><span>{entry.street} · {entry.action}{entry.amount > 0 ? ` R${chips(entry.amount)}` : ''}</span></li>) ?? table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)} committed{seat.status === 'all-in' ? ' · eligible pots tracked separately' : ''}</span></li>)}</ol>{table.seats.some(seat => seat.status === 'all-in') && <p>All-in players can win only the main/side-pot layers their committed chips cover.</p>}</details>
     </section>
   )
 }

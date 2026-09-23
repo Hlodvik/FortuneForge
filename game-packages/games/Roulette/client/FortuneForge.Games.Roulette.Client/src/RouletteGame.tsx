@@ -154,7 +154,7 @@ export function RouletteGame({ gateway, backHref = '/games', playerName = 'Playe
       <main className="ff-roulette-main">
         <section className="ff-roulette-title">
           <div><small>Single-zero table · Balance R{(round?.balance ?? status?.startingBalance ?? 0).toFixed(2)}</small><h1>Roulette</h1></div>
-          <div className="ff-roulette-title-actions">{history.length > 0 && <div className="ff-roulette-history" aria-label="Recent winning numbers"><small>Recent</small>{history.slice(0, 8).map((value, index) => <span className={pocketColor(value)} key={`${value}-${index}`}>{value}</span>)}</div>}<button ref={tipsRef} className="ff-roulette-tips" onClick={() => setTips(true)} aria-expanded={tips}>Tips</button></div>
+          <div className="ff-roulette-title-actions">{history.length > 0 && <><div className="ff-roulette-history" aria-label="Recent winning numbers"><small>Recent</small>{history.slice(0, 8).map((value, index) => <span className={pocketColor(value)} key={`${value}-${index}`}>{value}</span>)}</div><RouletteStats history={history} /></>}<button ref={tipsRef} className="ff-roulette-tips" onClick={() => setTips(true)} aria-expanded={tips}>Tips</button></div>
         </section>
         <section className="ff-roulette-table" aria-label="Roulette table">
           <div className="ff-roulette-wheel" aria-live="polite">
@@ -198,6 +198,18 @@ function payoutFor(kind: RouletteBetKind) { return ({ straight: '35:1', split: '
 function messageForError(reason: unknown) { return reason instanceof RouletteGatewayError ? reason.message : 'The Roulette table is unavailable.' }
 function readRouletteHistory(): readonly number[] { try { const value = JSON.parse(localStorage.getItem('fortuneforge:roulette:history') ?? '[]'); return Array.isArray(value) ? value.filter(pocket => Number.isInteger(pocket) && pocket >= 0 && pocket <= 36).slice(0, 20) : [] } catch { return [] } }
 function neighborPockets(center: number, depth: number): number[] { const index = europeanWheelOrder.indexOf(center as typeof europeanWheelOrder[number]); return Array.from({ length: depth * 2 + 1 }, (_, offset) => europeanWheelOrder[(index - depth + offset + europeanWheelOrder.length) % europeanWheelOrder.length]!) }
+
+function RouletteStats({ history }: Readonly<{ history: readonly number[] }>) {
+  const nonZero = history.filter(value => value !== 0)
+  const red = nonZero.filter(value => pocketColor(value) === 'red').length
+  const black = nonZero.length - red
+  const even = nonZero.filter(value => value % 2 === 0).length
+  const low = nonZero.filter(value => value <= 18).length
+  const frequencies = new Map<number, number>()
+  history.forEach(value => frequencies.set(value, (frequencies.get(value) ?? 0) + 1))
+  const hot = [...frequencies].sort((left, right) => right[1] - left[1] || history.indexOf(left[0]) - history.indexOf(right[0]))[0]
+  return <details className="ff-roulette-stats"><summary>Stats · {history.length}</summary><div><span>Red / black <b>{red} / {black}</b></span><span>Even / odd <b>{even} / {nonZero.length - even}</b></span><span>Low / high <b>{low} / {nonZero.length - low}</b></span><span>Zero <b>{history.length - nonZero.length}</b></span>{hot && <span>Most frequent <b>{hot[0]} × {hot[1]}</b></span>}</div><small>Last {history.length} spins on this device. Past results do not change the odds.</small></details>
+}
 
 function Tips({ closeRef, onClose }: { closeRef: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
   return <div className="ff-roulette-overlay"><section className="ff-roulette-tips-dialog" role="dialog" aria-modal="true" aria-labelledby="roulette-tips-title"><header><div><small>Table guide</small><h2 id="roulette-tips-title">Roulette tips</h2></div><button ref={closeRef} onClick={onClose} aria-label="Close Roulette tips">×</button></header><div className="tips-grid"><article><h3>Inside bets</h3><p>Straight-up pays 35:1, split 17:1, street 11:1, corner 8:1, and six-line 5:1. Select the bet type, choose its pockets, then add each chip.</p></article><article><h3>Outside bets</h3><p>Columns and dozens pay 2:1. Red, Black, Even, Odd, 1–18, and 19–36 pay 1:1. Bets can overlap and every chip settles independently.</p></article><article><h3>Zero &amp; controls</h3><p>Zero is green and loses outside bets. This is a single-zero table, so American 00 is not offered. Remove individual chips or clear all before spinning.</p></article></div></section></div>

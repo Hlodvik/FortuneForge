@@ -1,0 +1,48 @@
+export const slotSmokeInventory = [
+  ['wukong', 'classic-demo-v1'],
+  ['rainbow-realm', 'rainbow-realm-fruits-v1'],
+  ['pirates-fortune', 'pirates-fortune-v1'],
+  ['gods-of-olympus', 'gods-of-olympus-v1'],
+  ['reel-riches', 'reel-riches-v1'],
+  ['high-noon-fortune', 'high-noon-fortune-v1'],
+  ['royal-draw', 'royal-draw-v1'],
+  ['arcane-archives', 'arcane-archives-v1'],
+  ['cosmic-fortune', 'cosmic-fortune-v1'],
+  ['dino-dominion', 'dino-dominion-v1'],
+  ['neon-nights', 'neon-nights-v1'],
+  ['jungle-jackpot', 'jungle-jackpot-v1'],
+  ['ocean-odyssey', 'ocean-odyssey-v1'],
+  ['samurai-fortune', 'samurai-fortune-v1'],
+  ['candy-carnival', 'candy-carnival-v1'],
+  ['phantom-manor', 'phantom-manor-v1'],
+  ['nordic-legends', 'nordic-legends-v1'],
+  ['desert-treasures', 'desert-treasures-v1'],
+  ['robot-revolution', 'robot-revolution-v1'],
+  ['dragon-hoard', 'dragon-hoard-v1'],
+]
+
+export const nonSlotSmokeInventory = [
+  { smokePath: '/demo/cards/blackjack', catalogPath: '/cards/blackjack' },
+  { smokePath: '/demo/cards/texas-holdem', catalogPath: '/cards/texas-holdem' },
+  { smokePath: '/demo/cards/solitaire/bot-practice', catalogPath: '/cards/solitaire' },
+  { smokePath: '/games/video-poker' },
+  { smokePath: '/games/baccarat' },
+  { smokePath: '/games/casino-war' },
+  { smokePath: '/cards/hearts' },
+  { smokePath: '/games/keno' },
+  { smokePath: '/games/sic-bo' },
+  { smokePath: '/games/roulette' },
+  { smokePath: '/games/craps' },
+  { smokePath: '/games/liars-dice' },
+  { smokePath: '/games/asteroids' },
+  { smokePath: '/games/flappy' },
+  { smokePath: '/games/horse-flight' },
+  { smokePath: '/games/2048' },
+  { smokePath: '/games/drop-merge' },
+  { smokePath: '/games/snake' },
+]
+
+export const gameSmokeRoutes = [
+  ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
+  ...nonSlotSmokeInventory.map(({ smokePath }) => smokePath),
+]

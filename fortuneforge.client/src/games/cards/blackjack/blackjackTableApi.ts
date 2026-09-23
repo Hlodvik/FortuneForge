@@ -22,6 +22,7 @@ export type BlackjackTableStatus = Readonly<{
   tableCapacity: number
   humanGraceSeconds: number
   actionDeadlineSeconds: number
+  deckCount?: number
   dealerRule: string
   blackjackPayout: string
   doubleAllowed: boolean
@@ -358,6 +359,7 @@ function isBlackjackTableStatus(value: unknown): value is BlackjackTableStatus {
     && value.tableCapacity === 5
     && isPositiveInteger(value.humanGraceSeconds)
     && isPositiveInteger(value.actionDeadlineSeconds)
+    && (value.deckCount === undefined || isPositiveInteger(value.deckCount))
     && typeof value.dealerRule === 'string'
     && typeof value.blackjackPayout === 'string'
     && typeof value.doubleAllowed === 'boolean'

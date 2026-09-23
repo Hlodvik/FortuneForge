@@ -40,6 +40,15 @@ export type CreditHoldemSeat = Readonly<{
   handName?: string | null
   isCurrentPlayer: boolean
 }>
+export type CreditHoldemActionEntry = Readonly<{
+  sequence: number
+  handNumber: number
+  street: string
+  seatId: string
+  displayName: string
+  action: string
+  amount: number
+}>
 type CreditHoldemSessionBase = Readonly<{
   contractVersion: typeof contractVersion
   kind: 'idle' | 'queue' | 'match' | 'result'
@@ -77,6 +86,7 @@ export type CreditHoldemTable = Readonly<{
   actionDeadlineAtUtc?: string | null
   remainingActionMilliseconds: number
   tableRule?: CreditHoldemTableRule | null
+  actionLog?: readonly CreditHoldemActionEntry[] | null
 }>
 export type CreditHoldemMatchSession = CreditHoldemSessionBase & Readonly<{
   kind: 'match'
@@ -301,7 +311,19 @@ function isCreditHoldemTable(value: unknown): value is CreditHoldemTable {
     && typeof value.matchDeadlineAtUtc === 'string'
     && (value.actionDeadlineAtUtc == null || typeof value.actionDeadlineAtUtc === 'string')
     && isNonNegativeNumber(value.remainingActionMilliseconds)
+    && (value.actionLog == null || Array.isArray(value.actionLog) && value.actionLog.every(isCreditHoldemActionEntry))
     && (value.tableRule == null || isCreditHoldemTableRule(value.tableRule))
+}
+
+function isCreditHoldemActionEntry(value: unknown): value is CreditHoldemActionEntry {
+  return isRecord(value)
+    && isPositiveInteger(value.sequence)
+    && isPositiveInteger(value.handNumber)
+    && typeof value.street === 'string'
+    && typeof value.seatId === 'string'
+    && typeof value.displayName === 'string'
+    && typeof value.action === 'string'
+    && isNonNegativeNumber(value.amount)
 }
 function isCreditHoldemTableRule(value: unknown): value is CreditHoldemTableRule {
   return isRecord(value) && typeof value.id === 'string' && typeof value.name === 'string'

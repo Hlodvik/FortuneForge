@@ -95,10 +95,10 @@ describe('slot game manifests', () => {
     expect(new Set(catalogIds).size).toBe(catalogIds.length)
     expect(new Set(experienceIds).size).toBe(experienceIds.length)
     expect(new Set(serverGameIds).size).toBe(serverGameIds.length)
-    expect(serverSymbolSetIds.filter((id) => id === 'wukong-treasures-v3')).toHaveLength(16)
+    expect(serverSymbolSetIds).toEqual(Array(20).fill('wukong-treasures-v3'))
     expect([...paylineCounts].sort((left, right) => left - right)).toEqual([
       14, 14, 15, 15, 16, 16, 17, 17, 18, 18,
-      19, 19, 20, 20, 21, 21, 22, 22, 23, 23,
+      19, 19, 20, 20, 21, 21, 22, 23, 23, 23,
     ])
     for (const game of SLOT_GAME_MANIFESTS) {
       const patternIds = game.experience.help.paylinePatternIds ??

@@ -15,7 +15,8 @@ public sealed record SlotSpecialRoundProfile(
     string? ScatterFeatureMode = null,
     string? CollectionFeatureMode = null,
     string? BaseReelSetId = null,
-    decimal? TargetHitRate = null)
+    decimal? TargetHitRate = null,
+    IReadOnlyList<int>? PaylinePatternIds = null)
 {
     public GameFreeGamesDefinition Configure(GameFreeGamesDefinition source) => new()
     {
@@ -49,6 +50,9 @@ public static class SlotSpecialRoundProfiles
     public const string DesertTreasuresGameId = "desert-treasures-v1";
     public const string NeonNightsGameId = "neon-nights-v1";
     public const string NordicLegendsGameId = "nordic-legends-v1";
+    public const string ReelRichesGameId = "reel-riches-v1";
+    public const string ArcaneArchivesGameId = "arcane-archives-v1";
+    public const string DinoDominionGameId = "dino-dominion-v1";
 
     private static readonly string[] Modes = ["sync", "rows", "paw", "rand"];
     private static readonly IReadOnlyDictionary<string, string> ModesBySeal =
@@ -89,7 +93,19 @@ public static class SlotSpecialRoundProfiles
             [CandyCarnivalGameId] = new(CandyCarnivalGameId, 4, 5, 20, 8, false, false, false, "rand"),
             [DesertTreasuresGameId] = new(DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows"),
             [NeonNightsGameId] = new(NeonNightsGameId, 3, 6, 26, 7, true, false, false, null, "sync"),
-            [NordicLegendsGameId] = new(NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw")
+            [NordicLegendsGameId] = new(NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw"),
+            [ReelRichesGameId] = new(
+                ReelRichesGameId, 3, 5, 40, 10,
+                CollectionFeatureMode: "sync-rows-rand",
+                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23]),
+            [ArcaneArchivesGameId] = new(
+                ArcaneArchivesGameId, 3, 5, 40, 10,
+                CollectionFeatureMode: "sync-paw-rand",
+                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23]),
+            [DinoDominionGameId] = new(
+                DinoDominionGameId, 3, 5, 40, 10,
+                CollectionFeatureMode: "rows-paw-rand",
+                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23])
         };
 
     public static bool TryGet(string gameId, out SlotSpecialRoundProfile profile) =>

@@ -1,4 +1,5 @@
 import { CrapsGame, HttpCrapsGateway } from '@fortuneforge/games-craps'
+import '@fortuneforge/games-craps/styles.css'
 import { useMemo } from 'react'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'

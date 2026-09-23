@@ -37,7 +37,7 @@ const fruitToken = (
 
 export const RAINBOW_REALM_SYMBOLS: SlotSymbolSet = {
   id: 'rainbow-realm-fruits-v2',
-  serverSymbolSetId: 'rainbow-realm-fruits-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   definitions: {
     '2': staticSymbol('2', 'Cherry', cherrySymbol),
     '3': staticSymbol('3', 'Orange', orangeSymbol),

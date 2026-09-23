@@ -1,4 +1,5 @@
 import { HeartsGame, HttpHeartsGateway } from '@fortuneforge/games-hearts'
+import '@fortuneforge/games-hearts/styles.css'
 import { useMemo } from 'react'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'

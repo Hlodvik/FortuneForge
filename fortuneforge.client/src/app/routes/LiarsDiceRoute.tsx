@@ -1,4 +1,5 @@
 import { HttpLiarsDiceGateway, LiarsDiceGame } from '@fortuneforge/games-liars-dice'
+import '@fortuneforge/games-liars-dice/styles.css'
 import { useMemo } from 'react'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'

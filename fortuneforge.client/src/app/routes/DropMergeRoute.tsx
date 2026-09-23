@@ -1,4 +1,5 @@
 import { DropMergeGame, HttpDropMergeGateway } from '@fortuneforge/games-drop-merge'
+import '@fortuneforge/games-drop-merge/styles.css'
 import { useMemo } from 'react'
 import { fetchWithAccountSession } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'

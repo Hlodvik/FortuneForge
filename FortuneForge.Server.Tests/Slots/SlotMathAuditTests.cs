@@ -175,6 +175,9 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         SlotSpecialRoundProfiles.CandyCarnivalGameId,
         SlotSpecialRoundProfiles.DesertTreasuresGameId,
         SlotSpecialRoundProfiles.NeonNightsGameId,
-        SlotSpecialRoundProfiles.NordicLegendsGameId
+        SlotSpecialRoundProfiles.NordicLegendsGameId,
+        SlotSpecialRoundProfiles.ReelRichesGameId,
+        SlotSpecialRoundProfiles.ArcaneArchivesGameId,
+        SlotSpecialRoundProfiles.DinoDominionGameId
     ];
 }

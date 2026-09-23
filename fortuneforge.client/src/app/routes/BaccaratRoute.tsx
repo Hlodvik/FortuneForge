@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { BaccaratGame, HttpBaccaratGateway } from '@fortuneforge/games-baccarat'
+import '@fortuneforge/games-baccarat/styles.css'
 import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'

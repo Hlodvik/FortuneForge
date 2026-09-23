@@ -31,7 +31,7 @@ const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
 }
 
 const RAINBOW_REALM_HELP: SlotHelpDefinition = {
-  paylineCount: 22,
+  paylineCount: 23,
   freeGames: {
     requiredSymbols: 3,
     awardedSpins: 5,

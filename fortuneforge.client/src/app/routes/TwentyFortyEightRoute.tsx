@@ -1,4 +1,5 @@
 import { HttpTwentyFortyEightGateway, TwentyFortyEightGame } from '@fortuneforge/games-2048'
+import '@fortuneforge/games-2048/styles.css'
 import { useMemo } from 'react'
 import { fetchWithAccountSession } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'

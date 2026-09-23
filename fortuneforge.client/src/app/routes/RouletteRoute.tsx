@@ -1,4 +1,5 @@
 import { HttpRouletteGateway, RouletteGame } from '@fortuneforge/games-roulette'
+import '@fortuneforge/games-roulette/styles.css'
 import { useMemo } from 'react'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'

@@ -25,6 +25,9 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.DesertTreasuresGameId, 3, 7, 24, 7)]
     [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 6, 26, 7)]
     [InlineData(SlotSpecialRoundProfiles.NordicLegendsGameId, 4, 6, 28, 6)]
+    [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 3, 5, 40, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
         int scatterCount,
@@ -59,7 +62,10 @@ public sealed class SlotSpecialRoundProfilesTests
             SlotSpecialRoundProfiles.CandyCarnivalGameId,
             SlotSpecialRoundProfiles.DesertTreasuresGameId,
             SlotSpecialRoundProfiles.NeonNightsGameId,
-            SlotSpecialRoundProfiles.NordicLegendsGameId
+            SlotSpecialRoundProfiles.NordicLegendsGameId,
+            SlotSpecialRoundProfiles.ReelRichesGameId,
+            SlotSpecialRoundProfiles.ArcaneArchivesGameId,
+            SlotSpecialRoundProfiles.DinoDominionGameId
         }
         .Select(gameId =>
         {
@@ -68,7 +74,7 @@ public sealed class SlotSpecialRoundProfilesTests
         })
         .ToArray();
 
-        Assert.Equal(4, profiles.Count(profile => profile.UsesEnergy));
+        Assert.Equal(7, profiles.Count(profile => profile.UsesEnergy));
         Assert.Equal(10, profiles.Count(profile => !profile.UsesDirectValueTokens));
         Assert.Equal(5, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections), profile =>
@@ -81,6 +87,24 @@ public sealed class SlotSpecialRoundProfilesTests
                 .GroupBy(profile => profile.CollectionFeatureMode ?? profile.ScatterFeatureMode)
                 .Select(group => group.Count()),
             count => Assert.InRange(count, 1, 2));
+    }
+
+    [Theory]
+    [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 19)]
+    [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 16)]
+    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 14)]
+    public void OptionsProvider_AppliesTheClientPaylineSelection(string gameId, int expectedCount)
+    {
+        var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
+        {
+            GameDefinitions = [Prototype()]
+        }));
+
+        var game = Assert.IsType<GameDefinition>(provider.GetGame(gameId));
+
+        Assert.Equal(expectedCount, game.Layout.PaylineCount);
+        Assert.Equal(expectedCount, game.Paylines.Count);
+        Assert.Equal(expectedCount, game.Math.PaylinePayoutSteps.Count);
     }
 
     [Fact]
@@ -138,12 +162,20 @@ public sealed class SlotSpecialRoundProfilesTests
     private static GameDefinition Prototype() => new()
     {
         Id = SlotSpecialRoundProfiles.ClassicGameId,
-        Layout = new GameLayoutDefinition(),
+        Layout = new GameLayoutDefinition { ReelCount = 5, VisibleRows = 4, PaylineCount = 23 },
         Symbols = new GameSymbolRules { SymbolSetId = "symbols", WildSymbolId = "ACE" },
         Matching = new GameMatchingRules(),
-        Math = new GameMathDefinition { ReelSetId = "reels", PaytableId = "paytable", Targets = new GameMathTargets() },
+        Math = new GameMathDefinition
+        {
+            ReelSetId = "reels",
+            PaytableId = "paytable",
+            PaylinePayoutSteps = Enumerable.Repeat(0, 23).ToList(),
+            Targets = new GameMathTargets()
+        },
         Wagering = new GameWageringDefinition(),
         FreeGames = new GameFreeGamesDefinition { SymbolId = "FREE", RequiredSymbols = 3, AwardedSpins = 5 },
-        Paylines = []
+        Paylines = Enumerable.Range(0, 23)
+            .Select(index => Enumerable.Repeat(index % 4, 5).ToList())
+            .ToList()
     };
 }

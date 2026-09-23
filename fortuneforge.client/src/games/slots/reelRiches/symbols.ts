@@ -19,7 +19,7 @@ import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const REEL_RICHES_SYMBOLS = createThemedSymbolSet({
   id: 'reel-riches-symbols-v1',
-  serverSymbolSetId: 'reel-riches-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Lucky fishing bobber', image: bobber },
     '3': { label: 'Sparkling feather lure', image: featherLure },

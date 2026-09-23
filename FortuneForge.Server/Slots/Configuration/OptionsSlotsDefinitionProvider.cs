@@ -32,25 +32,46 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     public PaytableDefinition? GetPaytable(string id) =>
         options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
 
-    private static GameDefinition ClonePrototype(GameDefinition source, SlotSpecialRoundProfile profile) => new()
+    private static GameDefinition ClonePrototype(GameDefinition source, SlotSpecialRoundProfile profile)
     {
-        Id = profile.GameId,
-        Layout = source.Layout,
-        Symbols = source.Symbols,
-        Matching = source.Matching,
-        Math = CloneMath(source.Math, profile),
-        Wagering = source.Wagering,
-        FreeGames = source.FreeGames is null ? null : profile.Configure(source.FreeGames),
-        SpecialPoints = source.SpecialPoints,
-        Energy = profile.UsesEnergy ? source.Energy : null,
-        Paylines = source.Paylines
-    };
+        var paylineIndexes = profile.PaylinePatternIds?
+            .Select(patternId => patternId - 1)
+            .ToArray();
 
-    private static GameMathDefinition CloneMath(GameMathDefinition source, SlotSpecialRoundProfile profile) => new()
+        return new GameDefinition
+        {
+            Id = profile.GameId,
+            Layout = paylineIndexes is null
+                ? source.Layout
+                : new GameLayoutDefinition
+                {
+                    ReelCount = source.Layout.ReelCount,
+                    VisibleRows = source.Layout.VisibleRows,
+                    PaylineCount = paylineIndexes.Length
+                },
+            Symbols = source.Symbols,
+            Matching = source.Matching,
+            Math = CloneMath(source.Math, profile, paylineIndexes),
+            Wagering = source.Wagering,
+            FreeGames = source.FreeGames is null ? null : profile.Configure(source.FreeGames),
+            SpecialPoints = source.SpecialPoints,
+            Energy = profile.UsesEnergy ? source.Energy : null,
+            Paylines = paylineIndexes is null
+                ? source.Paylines
+                : paylineIndexes.Select(index => source.Paylines[index]).ToList()
+        };
+    }
+
+    private static GameMathDefinition CloneMath(
+        GameMathDefinition source,
+        SlotSpecialRoundProfile profile,
+        IReadOnlyList<int>? paylineIndexes) => new()
     {
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
         PaytableId = source.PaytableId,
-        PaylinePayoutSteps = source.PaylinePayoutSteps,
+        PaylinePayoutSteps = paylineIndexes is null
+            ? source.PaylinePayoutSteps
+            : paylineIndexes.Select(index => source.PaylinePayoutSteps[index]).ToList(),
         FiveMatchPityMissLimit = source.FiveMatchPityMissLimit,
         Targets = profile.TargetHitRate is { } targetHitRate
             ? new GameMathTargets

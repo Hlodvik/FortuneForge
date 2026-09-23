@@ -3,7 +3,7 @@ import { ARCANE_ARCHIVES_VISUALS as art } from './visuals'
 
 export const ARCANE_ARCHIVES_SYMBOLS = createThemedSymbolSet({
   id: 'arcane-archives-symbols-v1',
-  serverSymbolSetId: 'arcane-archives-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Whispering candle', image: art.candle },
     '3': { label: 'Moon-feather quill', image: art.quill },

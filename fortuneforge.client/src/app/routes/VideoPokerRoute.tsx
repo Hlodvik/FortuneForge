@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HttpVideoPokerGateway, VideoPokerGame } from '@fortuneforge/games-video-poker'
+import '@fortuneforge/games-video-poker/styles.css'
 import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'

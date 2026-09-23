@@ -3,7 +3,7 @@ import { DINO_DOMINION_VISUALS as art } from './visuals'
 
 export const DINO_DOMINION_SYMBOLS = createThemedSymbolSet({
   id: 'dino-dominion-symbols-v1',
-  serverSymbolSetId: 'dino-dominion-v1-symbols',
+  serverSymbolSetId: 'wukong-treasures-v3',
   symbols: {
     '2': { label: 'Ancient fossil bone', image: art.bone },
     '3': { label: 'Speckled dinosaur egg', image: art.egg },

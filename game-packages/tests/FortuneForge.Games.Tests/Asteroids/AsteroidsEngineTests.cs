@@ -27,6 +27,7 @@ public sealed class AsteroidsEngineTests
         Assert.Equal(6, first.Asteroids.First(asteroid => asteroid.Size == AsteroidSize.Medium).HitPoints);
         Assert.Equal(4, first.Asteroids.First(asteroid => asteroid.Size == AsteroidSize.Small).HitPoints);
         Assert.Equal(2, first.Asteroids.First(asteroid => asteroid.Size == AsteroidSize.Tiny).HitPoints);
+        Assert.All(first.Asteroids, asteroid => Assert.Equal(AsteroidKind.Drifter, asteroid.Kind));
     }
 
     [Fact]
@@ -162,6 +163,23 @@ public sealed class AsteroidsEngineTests
     }
 
     [Fact]
+    public void Hunter_asteroids_accelerate_toward_the_ship_with_a_bounded_speed()
+    {
+        var state = State(
+            new AsteroidsShip(new AsteroidsVector(200, 100), new AsteroidsVector(0, 0), -Math.PI / 2, 0),
+            [new Asteroid(1, new AsteroidsVector(100, 100), new AsteroidsVector(0, 1), 20, AsteroidSize.Small, 4, 0, AsteroidKind.Hunter)]);
+
+        var transition = AsteroidsEngine.Apply(state, AsteroidsAction.Tick);
+        var hunter = Assert.Single(transition.State.Asteroids);
+
+        Assert.Equal(100.035, hunter.Position.X, 10);
+        Assert.Equal(101, hunter.Position.Y, 10);
+        Assert.Equal(0.035, hunter.Velocity.X, 10);
+        Assert.Equal(1, hunter.Velocity.Y, 10);
+        Assert.InRange(hunter.Velocity.Length, 0, AsteroidsEngine.HunterMaxSpeed);
+    }
+
+    [Fact]
     public void Shooting_a_large_asteroid_requires_eight_hits_before_it_splits()
     {
         var state = State(
@@ -186,6 +204,22 @@ public sealed class AsteroidsEngineTests
         Assert.Equal(2, transition.State.AsteroidCount);
         Assert.All(transition.State.Asteroids, asteroid => Assert.Equal(AsteroidSize.Medium, asteroid.Size));
         Assert.Empty(transition.State.Bullets);
+    }
+
+    [Fact]
+    public void Destroying_a_hunter_awards_bonus_points_and_its_fragments_become_drifters()
+    {
+        var state = State(
+            new AsteroidsShip(new AsteroidsVector(400, 300), new AsteroidsVector(0, 0), -Math.PI / 2, 0),
+            [new Asteroid(1, new AsteroidsVector(100, 100), new AsteroidsVector(0, 0), 20, AsteroidSize.Small, 1, 0, AsteroidKind.Hunter)],
+            [new AsteroidsBullet(2, new AsteroidsVector(100, 100), new AsteroidsVector(0, 0), 10)]);
+
+        var transition = AsteroidsEngine.Apply(state, AsteroidsAction.Tick);
+
+        Assert.Equal(155, transition.ScoreGained);
+        Assert.Equal(155, transition.State.Score);
+        Assert.Equal(2, transition.State.AsteroidCount);
+        Assert.All(transition.State.Asteroids, asteroid => Assert.Equal(AsteroidKind.Drifter, asteroid.Kind));
     }
 
     [Fact]
@@ -248,6 +282,8 @@ public sealed class AsteroidsEngineTests
         Assert.Equal(2, transition.State.Wave);
         Assert.Equal(200, transition.ScoreGained);
         Assert.Equal(6, transition.State.AsteroidCount);
+        Assert.Equal(1, transition.State.Asteroids.Count(asteroid => asteroid.Kind == AsteroidKind.Hunter));
+        Assert.Contains("1 hunter tracking", transition.Message);
     }
 
     [Fact]

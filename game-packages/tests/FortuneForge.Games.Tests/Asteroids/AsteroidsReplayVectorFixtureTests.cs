@@ -76,6 +76,7 @@ public sealed class AsteroidsReplayVectorFixtureTests
         Assert.Equal(expected.GetProperty("size").GetString(), actual.Size.ToString().ToLowerInvariant());
         Assert.Equal(expected.GetProperty("hitPoints").GetInt32(), actual.HitPoints);
         Assert.Equal(expected.GetProperty("spriteVariant").GetInt32(), actual.SpriteVariant);
+        Assert.Equal(AsteroidKind.Drifter, actual.Kind);
         Close(expected.GetProperty("x").GetDouble(), actual.Position.X, tolerance);
         Close(expected.GetProperty("y").GetDouble(), actual.Position.Y, tolerance);
         Close(expected.GetProperty("velocityX").GetDouble(), actual.Velocity.X, tolerance);

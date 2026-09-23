@@ -232,6 +232,7 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
     setPaused(false)
     void run(() => game ? gateway.reset(game.gameId) : gateway.startGame())
   }
+  const hunterCount = game?.asteroids.filter(asteroid => asteroid.kind === 'hunter').length ?? 0
 
   return <div className="ff-asteroids-page">
     <header className="ff-asteroids-header"><a className="ff-asteroids-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-asteroids-games" href={backHref}>Other games</a><div className="ff-asteroids-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>
@@ -246,7 +247,7 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
         <button className="ff-asteroids-play-again" type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'Play again'}</button>
       </section> : game ? <>
         <section className="ff-asteroids-stats" aria-live="polite"><div><small>Score</small><strong>{formatScore(game.score)}</strong></div><div><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div><small>Hull</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div><small>Wave / boost</small><strong>{game.wave} · {game.rapidFireTicks > 0 ? 'Rapid' : 'Normal'}</strong></div></section>
-        <section className="ff-asteroids-canvas-wrap" aria-label="Asteroids playfield"><canvas ref={canvasRef} className="ff-asteroids-canvas" />{paused && <div className="ff-asteroids-overlay"><small>Mission held</small><strong>Paused</strong><span>Press P, Start, or Resume when you are ready.</span><button type="button" onClick={() => setPaused(false)}>Resume</button></div>}</section>
+        <section className="ff-asteroids-canvas-wrap" aria-label={hunterCount > 0 ? `Asteroids playfield. ${hunterCount} hunter ${hunterCount === 1 ? 'is' : 'are'} tracking the ship.` : 'Asteroids playfield'}><canvas ref={canvasRef} className="ff-asteroids-canvas" />{hunterCount > 0 && <div className="ff-asteroids-hunter-alert" role="status"><span aria-hidden="true">⌖</span> Hunter threat ×{hunterCount} · tracks your ship</div>}{paused && <div className="ff-asteroids-overlay"><small>Mission held</small><strong>Paused</strong><span>Press P, Start, or Resume when you are ready.</span><button type="button" onClick={() => setPaused(false)}>Resume</button></div>}</section>
         <p className="ff-asteroids-message" aria-live="polite">{game.message || (paused ? 'Simulation paused.' : 'Hull diamonds show remaining hits. Rapid fire appears when its power-up is active.')}</p>
         <section className="ff-asteroids-controls" aria-label="Asteroids touch controls">
           <button type="button" disabled={paused} onClick={() => perform('rotate-left')} aria-label="Rotate left">↶<span>Left</span></button>

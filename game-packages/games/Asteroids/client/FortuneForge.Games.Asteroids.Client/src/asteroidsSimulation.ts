@@ -3,10 +3,11 @@ export const AsteroidsControl = { None: 0, Thrust: 1, TurnLeft: 2, TurnRight: 4,
 export type AsteroidsControl = number
 export type AsteroidsPhase = 'playing' | 'game-over'
 export type AsteroidSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge'
+export type AsteroidKind = 'drifter' | 'hunter'
 export type PowerUpType = 'shield' | 'rapid-fire' | 'extra-life'
 export type AsteroidsVector = Readonly<{ x: number; y: number }>
 export type AsteroidsShipSimulation = Readonly<{ position: AsteroidsVector; velocity: AsteroidsVector; angle: number; invulnerabilityTicks: number; thrustTicks: number }>
-export type AsteroidSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; radius: number; size: AsteroidSize; hitPoints: number; spriteVariant: number }>
+export type AsteroidSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; radius: number; size: AsteroidSize; hitPoints: number; spriteVariant: number; kind: AsteroidKind }>
 export type BulletSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; remainingTicks: number }>
 export type PowerUpSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; type: PowerUpType; remainingTicks: number }>
 export type AsteroidsSimulationState = Readonly<{
@@ -19,6 +20,7 @@ export type AsteroidsSimulationState = Readonly<{
 const maxShipSpeed = 7, thrustPower = 0.22, bulletSpeed = 10, bulletLifetime = 80, fireCooldown = 8, rapidFireCooldown = 2
 const rapidFireTicks = 300, shieldTicks = 240, powerUpLifetime = 2_147_483_647, powerUpRadius = 18, shipRadius = 12
 const shipInvulnerabilityTicks = 120, thrustVisualTicks = 3, maxAsteroidSpeed = 3.08
+export const hunterAcceleration = 0.035, hunterMaxSpeed = 2.6, hunterScoreBonus = 75
 
 export function foldPaidSeedHex(seedHex: string): number {
   if (!/^[0-9a-f]{16}$/.test(seedHex)) throw new Error('Asteroids paid seed must be 16 lowercase hexadecimal characters.')
@@ -83,7 +85,7 @@ function fire(state: AsteroidsSimulationState): AsteroidsSimulationState {
 function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
   const requested = add(state.ship.position, state.ship.velocity), position = clampToField(requested, state.width, state.height, shipRadius), decelerated = scale(state.ship.velocity, 0.995)
   let ship: AsteroidsShipSimulation = { ...state.ship, position, velocity: vector(position.x === requested.x ? decelerated.x : 0, position.y === requested.y ? decelerated.y : 0), invulnerabilityTicks: Math.max(0, state.ship.invulnerabilityTicks - 1), thrustTicks: Math.max(0, state.ship.thrustTicks - 1) }
-  let asteroids = state.asteroids.map(asteroid => moveAsteroid(asteroid, state.width, state.height))
+  let asteroids = state.asteroids.map(asteroid => moveAsteroid(asteroid, ship.position, state.width, state.height))
   const moving = state.bullets.map(bullet => ({ previous: bullet.position, value: { ...bullet, position: add(bullet.position, bullet.velocity), remainingTicks: bullet.remainingTicks - 1 } })).filter(bullet => bullet.value.remainingTicks > 0 && inside(bullet.value.position, state.width, state.height))
   let powerUps = state.powerUps.map(powerUp => ({ ...powerUp, position: add(powerUp.position, powerUp.velocity) })).filter(powerUp => inside(powerUp.position, state.width, state.height))
   let random = state.randomState, nextEntityId = state.nextEntityId, scoreGained = 0, hitCount = 0, destroyedCount = 0
@@ -94,7 +96,7 @@ function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
     const hit = asteroids[hitIndex]!; hitCount++
     if (hit.hitPoints > 1) asteroids[hitIndex] = { ...hit, hitPoints: hit.hitPoints - 1 }
     else {
-      asteroids.splice(hitIndex, 1); scoreGained += scoreFor(hit.size); destroyedCount++
+      asteroids.splice(hitIndex, 1); scoreGained += scoreFor(hit.size) + (hit.kind === 'hunter' ? hunterScoreBonus : 0); destroyedCount++
       const splitResult = split(hit, random, nextEntityId); random = splitResult.random; nextEntityId = splitResult.nextEntityId; asteroids.push(...splitResult.asteroids)
       const powerResult = trySpawnPowerUp(hit.position, random, nextEntityId, powerUps); random = powerResult.random; nextEntityId = powerResult.nextEntityId; powerUps = powerResult.powerUps
     }
@@ -117,14 +119,14 @@ function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
   let wave = state.wave
   if (phase === 'playing' && asteroids.length === 0) {
     wave++; const spawned = spawnWave(wave, ship.position, state.width, state.height, random, nextEntityId); asteroids = spawned.asteroids; random = spawned.random; nextEntityId = spawned.nextEntityId
-    const bonus = wave * 100; scoreGained += bonus; event = 'wave-cleared'; message = `Wave ${wave - 1} cleared. Wave ${wave} incoming · +${bonus} points.`
+    const bonus = wave * 100, hunters = hunterCountFor(wave); scoreGained += bonus; event = 'wave-cleared'; message = hunters > 0 ? `Wave ${wave - 1} cleared. Wave ${wave} incoming · ${hunters} hunter${hunters === 1 ? '' : 's'} tracking · +${bonus} points.` : `Wave ${wave - 1} cleared. Wave ${wave} incoming · +${bonus} points.`
   }
   const score = state.score + scoreGained
   return { ...state, randomState: random, ship, asteroids, bullets, powerUps, nextEntityId, fireCooldownTicks: Math.max(0, state.fireCooldownTicks - 1), rapidFireTicks: rapidTicks, score, bestScore: Math.max(state.bestScore, score), lives, wave, tick: state.tick + 1, phase, event, scoreGained, message }
 }
 
 function spawnWave(wave: number, ship: AsteroidsVector, width: number, height: number, random: number, nextEntityId: number) {
-  const asteroids: AsteroidSimulation[] = []
+  const asteroids: AsteroidSimulation[] = [], hunterCount = hunterCountFor(wave)
   for (let index = 0; index < Math.min(18, 4 + wave); index++) {
     const size = initialSize(wave, index), radius = radiusFor(size); let position = vector(0, 0)
     for (let attempt = 0; ; attempt++) { const x = randomRange(random, radius, width - radius); random = x.random; const y = randomRange(random, radius, height - radius); random = y.random; position = vector(x.value, y.value); if (distance(position, ship) >= 150 || attempt >= 64) break }
@@ -132,14 +134,14 @@ function spawnWave(wave: number, ship: AsteroidsVector, width: number, height: n
     const range = size === 'huge' ? [0.12, 0.55] : size === 'large' ? [0.25, 1.05] : size === 'medium' ? [0.5, 1.65] : size === 'small' ? [0.9, 2.35] : [1.3, 3.02]
     const base = randomRange(random, range[0], range[1]); random = base.random
     const speed = Math.min(maxAsteroidSpeed, base.value + Math.min(0.6, Math.max(0, wave - 1) * 0.06))
-    asteroids.push({ id: nextEntityId++, position, velocity: vector(Math.cos(angleResult.value) * speed, Math.sin(angleResult.value) * speed), radius, size, hitPoints: hitPointsFor(size), spriteVariant: (wave * 3 + index * 2) % 5 })
+    asteroids.push({ id: nextEntityId++, position, velocity: vector(Math.cos(angleResult.value) * speed, Math.sin(angleResult.value) * speed), radius, size, hitPoints: hitPointsFor(size), spriteVariant: (wave * 3 + index * 2) % 5, kind: index < hunterCount ? 'hunter' : 'drifter' })
   }
   return { asteroids, random, nextEntityId }
 }
 function split(hit: AsteroidSimulation, random: number, nextEntityId: number) {
   if (hit.size === 'tiny') return { asteroids: [] as AsteroidSimulation[], random, nextEntityId }
   const size: AsteroidSize = hit.size === 'huge' ? 'large' : hit.size === 'large' ? 'medium' : hit.size === 'medium' ? 'small' : 'tiny', variants = splitVariants(hit.spriteVariant), asteroids: AsteroidSimulation[] = [], baseAngle = Math.atan2(hit.velocity.y, hit.velocity.x)
-  for (let index = 0; index < 2; index++) { const drift = randomRange(random, -0.18, 0.18); random = drift.random; const speed = randomRange(random, 0.25, 0.85); random = speed.random; const velocityLength = Math.min(maxAsteroidSpeed, Math.max(0.45, length(hit.velocity) + speed.value)); const angle = baseAngle + (index === 0 ? -0.65 : 0.65) + drift.value; asteroids.push({ id: nextEntityId++, position: hit.position, velocity: vector(Math.cos(angle) * velocityLength, Math.sin(angle) * velocityLength), radius: radiusFor(size), size, hitPoints: hitPointsFor(size), spriteVariant: variants[index]! }) }
+  for (let index = 0; index < 2; index++) { const drift = randomRange(random, -0.18, 0.18); random = drift.random; const speed = randomRange(random, 0.25, 0.85); random = speed.random; const velocityLength = Math.min(maxAsteroidSpeed, Math.max(0.45, length(hit.velocity) + speed.value)); const angle = baseAngle + (index === 0 ? -0.65 : 0.65) + drift.value; asteroids.push({ id: nextEntityId++, position: hit.position, velocity: vector(Math.cos(angle) * velocityLength, Math.sin(angle) * velocityLength), radius: radiusFor(size), size, hitPoints: hitPointsFor(size), spriteVariant: variants[index]!, kind: 'drifter' }) }
   return { asteroids, random, nextEntityId }
 }
 function trySpawnPowerUp(position: AsteroidsVector, random: number, nextEntityId: number, powerUps: readonly PowerUpSimulation[]) {
@@ -148,7 +150,7 @@ function trySpawnPowerUp(position: AsteroidsVector, random: number, nextEntityId
   const angle = randomRange(random, 0, Math.PI * 2); random = angle.random
   return { powerUps: [...powerUps, { id: nextEntityId++, position, velocity: vector(Math.cos(angle.value) * 0.8, Math.sin(angle.value) * 0.8), type, remainingTicks: powerUpLifetime }], random, nextEntityId }
 }
-function moveAsteroid(asteroid: AsteroidSimulation, width: number, height: number): AsteroidSimulation { const requested = add(asteroid.position, asteroid.velocity), position = clampToField(requested, width, height, asteroid.radius); return { ...asteroid, position, velocity: vector(position.x === requested.x ? asteroid.velocity.x : -asteroid.velocity.x, position.y === requested.y ? asteroid.velocity.y : -asteroid.velocity.y) } }
+function moveAsteroid(asteroid: AsteroidSimulation, ship: AsteroidsVector, width: number, height: number): AsteroidSimulation { let velocity = asteroid.velocity; if (asteroid.kind === 'hunter') { const pursuit = vector(ship.x - asteroid.position.x, ship.y - asteroid.position.y), pursuitLength = length(pursuit); if (pursuitLength > 0) velocity = clampSpeed(add(velocity, scale(pursuit, hunterAcceleration / pursuitLength)), hunterMaxSpeed) } const requested = add(asteroid.position, velocity), position = clampToField(requested, width, height, asteroid.radius); return { ...asteroid, position, velocity: vector(position.x === requested.x ? velocity.x : -velocity.x, position.y === requested.y ? velocity.y : -velocity.y) } }
 function validateControl(control: number): void { const known = AsteroidsControl.Thrust | AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight | AsteroidsControl.Fire; if (!Number.isInteger(control) || (control & ~known) !== 0 || (control & (AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight)) === (AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight)) throw new Error('Asteroids control contains unknown or contradictory bits.') }
 function normalizeSeed(seed: number): number { return seed === 0 ? 0xA341316C : seed >>> 0 }
 function nextRandom(value: number): number { value >>>= 0; if (value === 0) value = 0xA341316C; value = (value ^ (value << 13)) >>> 0; value = (value ^ (value >>> 17)) >>> 0; return (value ^ (value << 5)) >>> 0 }
@@ -164,6 +166,7 @@ function clampToField(position: AsteroidsVector, width: number, height: number, 
 function inside(position: AsteroidsVector, width: number, height: number): boolean { return position.x >= 0 && position.x <= width && position.y >= 0 && position.y <= height }
 function segmentIntersectsCircle(start: AsteroidsVector, end: AsteroidsVector, center: AsteroidsVector, radius: number): boolean { const segment = vector(end.x - start.x, end.y - start.y), squared = segment.x * segment.x + segment.y * segment.y; if (squared === 0) return distance(start, center) <= radius; const toCenter = vector(center.x - start.x, center.y - start.y), projection = Math.min(Math.max((toCenter.x * segment.x + toCenter.y * segment.y) / squared, 0), 1); return distance(add(start, scale(segment, projection)), center) <= radius }
 function initialSize(wave: number, index: number): AsteroidSize { return (wave + index) % 5 === 0 ? 'huge' : (wave + index) % 5 === 1 ? 'large' : (wave + index) % 5 === 2 ? 'medium' : (wave + index) % 5 === 3 ? 'small' : 'tiny' }
+function hunterCountFor(wave: number): number { return wave < 2 ? 0 : Math.min(3, Math.floor(wave / 2)) }
 function radiusFor(size: AsteroidSize): number { return size === 'huge' ? 52 : size === 'large' ? 40 : size === 'medium' ? 29 : size === 'small' ? 20 : 13 }
 function hitPointsFor(size: AsteroidSize): number { return size === 'huge' ? 10 : size === 'large' ? 8 : size === 'medium' ? 6 : size === 'small' ? 4 : 2 }
 function scoreFor(size: AsteroidSize): number { return size === 'huge' ? 20 : size === 'large' ? 35 : size === 'medium' ? 55 : size === 'small' ? 80 : 110 }

@@ -97,6 +97,7 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
   }
   const result = view.status === 'finished' ? localResult(view) : null
   const seconds = Math.ceil(view.remainingSteps * 0.033)
+  const hunterCount = view.state.asteroids.filter(asteroid => asteroid.kind === 'hunter').length
 
   return <section className="ff-asteroids-replay" aria-label={modeLabel + ' Asteroids replay'}>
     <header className="ff-asteroids-replay-head">
@@ -110,14 +111,15 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
       <div><small>Frame</small><strong>{view.state.tick}/3600</strong></div>
     </section>
     <div className="ff-asteroids-replay-canvas-wrap">
-      <canvas ref={canvasRef} className="ff-asteroids-replay-canvas" aria-label="Asteroids deterministic replay playfield" />
+      <canvas ref={canvasRef} className="ff-asteroids-replay-canvas" aria-label={hunterCount > 0 ? `Asteroids deterministic replay playfield. ${hunterCount} hunter ${hunterCount === 1 ? 'is' : 'are'} tracking the ship.` : 'Asteroids deterministic replay playfield'} />
+      {hunterCount > 0 && <div className="ff-asteroids-replay-threat" role="status"><span aria-hidden="true">⌖</span> Hunter threat ×{hunterCount} · tracks your ship</div>}
       {view.status !== 'running' && <div className="ff-asteroids-replay-overlay" role={view.status === 'failed' ? 'alert' : 'status'}>
         <small>{view.status === 'failed' ? 'Replay unavailable' : result?.reason === 'time-up' ? 'Time up' : 'Mission ended'}</small>
         <strong>{view.status === 'failed' ? 'Run stopped' : result?.reason === 'time-up' ? 'Two-minute limit reached' : 'Game over'}</strong>
         <span>{view.status === 'failed' ? view.error : formatScore(result?.score ?? view.state.score) + ' points · Wave ' + (result?.wave ?? view.state.wave) + ' · ' + (result?.lives ?? view.state.lives) + ' lives'}</span>
       </div>}
     </div>
-    <p className="ff-asteroids-replay-message" aria-live="polite">{view.status === 'running' ? 'A / Left · D / Right · W / Up · Space to fire' : 'Controls are locked after the replay ends.'}</p>
+    <p className="ff-asteroids-replay-message" aria-live="polite">{view.status === 'running' ? hunterCount > 0 ? 'Hunter warning: ringed targets accelerate toward your ship.' : 'A / Left · D / Right · W / Up · Space to fire' : 'Controls are locked after the replay ends.'}</p>
     <div className="ff-asteroids-replay-controls" aria-label="Touch controls">
       <ControlButton label="Turn left" control="left" setControl={setPointerControl} disabled={view.status !== 'running'} />
       <ControlButton label="Thrust" control="thrust" setControl={setPointerControl} disabled={view.status !== 'running'} />
@@ -150,7 +152,7 @@ function rendererGame(runId: string, view: AsteroidsReplaySessionView): Asteroid
   return {
     gameId: runId, width: state.width, height: state.height,
     ship: { x: state.ship.position.x, y: state.ship.position.y, velocityX: state.ship.velocity.x, velocityY: state.ship.velocity.y, angle: state.ship.angle, invulnerabilityTicks: state.ship.invulnerabilityTicks, thrustTicks: state.ship.thrustTicks },
-    asteroids: state.asteroids.map(asteroid => ({ id: asteroid.id, x: asteroid.position.x, y: asteroid.position.y, velocityX: asteroid.velocity.x, velocityY: asteroid.velocity.y, radius: asteroid.radius, size: asteroid.size, hitPoints: asteroid.hitPoints, spriteVariant: asteroid.spriteVariant })),
+    asteroids: state.asteroids.map(asteroid => ({ id: asteroid.id, x: asteroid.position.x, y: asteroid.position.y, velocityX: asteroid.velocity.x, velocityY: asteroid.velocity.y, radius: asteroid.radius, size: asteroid.size, hitPoints: asteroid.hitPoints, spriteVariant: asteroid.spriteVariant, kind: asteroid.kind })),
     bullets: state.bullets.map(bullet => ({ id: bullet.id, x: bullet.position.x, y: bullet.position.y, velocityX: bullet.velocity.x, velocityY: bullet.velocity.y, remainingTicks: bullet.remainingTicks })),
     powerUps: state.powerUps.map(powerUp => ({ id: powerUp.id, x: powerUp.position.x, y: powerUp.position.y, velocityX: powerUp.velocity.x, velocityY: powerUp.velocity.y, remainingTicks: powerUp.remainingTicks, type: powerUp.type })),
     score: state.score, bestScore: state.bestScore, lives: state.lives, wave: state.wave, tick: state.tick, phase: state.phase, lastEvent: state.event as AsteroidsEvent, scoreGained: state.scoreGained, rapidFireTicks: state.rapidFireTicks, message: state.message,

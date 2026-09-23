@@ -32,6 +32,44 @@ describe('authoritative Asteroids simulation mirror', () => {
     const high = vectors.vectors.find(vector => vector.name === 'upper-seed-changed')!.expected
     expect([low.score, low.randomState, low.asteroidCount]).not.toEqual([high.score, high.randomState, high.asteroidCount])
   })
+
+  it('introduces a hunter in wave two and makes it accelerate toward the ship', () => {
+    const initial = startAsteroidsSimulation(7)
+    const waveTwo = advanceAsteroidsFrame({ ...initial, asteroids: [] }, AsteroidsControl.None)
+
+    expect(waveTwo.wave).toBe(2)
+    expect(waveTwo.asteroids.filter(asteroid => asteroid.kind === 'hunter')).toHaveLength(1)
+    expect(waveTwo.message).toContain('1 hunter tracking')
+
+    const pursued = advanceAsteroidsFrame({
+      ...initial,
+      ship: { ...initial.ship, position: { x: 200, y: 100 } },
+      asteroids: [{ id: 1, position: { x: 100, y: 100 }, velocity: { x: 0, y: 1 }, radius: 20, size: 'small', hitPoints: 4, spriteVariant: 0, kind: 'hunter' }],
+      bullets: [],
+      powerUps: [],
+    }, AsteroidsControl.None)
+    const hunter = pursued.asteroids[0]!
+
+    expect(hunter.position.x).toBeCloseTo(100.035, 10)
+    expect(hunter.position.y).toBeCloseTo(101, 10)
+    expect(hunter.velocity.x).toBeCloseTo(0.035, 10)
+    expect(hunter.velocity.y).toBeCloseTo(1, 10)
+  })
+
+  it('awards hunter bonus points and converts split fragments into drifters', () => {
+    const initial = startAsteroidsSimulation(7)
+    const result = advanceAsteroidsFrame({
+      ...initial,
+      asteroids: [{ id: 1, position: { x: 100, y: 100 }, velocity: { x: 0, y: 0 }, radius: 20, size: 'small', hitPoints: 1, spriteVariant: 0, kind: 'hunter' }],
+      bullets: [{ id: 2, position: { x: 100, y: 100 }, velocity: { x: 0, y: 0 }, remainingTicks: 10 }],
+      powerUps: [],
+    }, AsteroidsControl.None)
+
+    expect(result.scoreGained).toBe(155)
+    expect(result.score).toBe(155)
+    expect(result.asteroids).toHaveLength(2)
+    expect(result.asteroids.every(asteroid => asteroid.kind === 'drifter')).toBe(true)
+  })
 })
 
 function assertSnapshot(state: ReturnType<typeof replayAsteroidsSimulation>, expected: Expected, tolerance: number): void {
@@ -57,6 +95,7 @@ function assertAsteroid(actual: ReturnType<typeof replayAsteroidsSimulation>['as
   expect(actual === null).toBe(expected === null)
   if (actual === null || expected === null) return
   expect([actual.id, actual.radius, actual.size, actual.hitPoints, actual.spriteVariant]).toEqual([expected.id, expected.radius, expected.size, expected.hitPoints, expected.spriteVariant])
+  expect(actual.kind).toBe('drifter')
   close(actual.position.x, expected.x, tolerance); close(actual.position.y, expected.y, tolerance)
   close(actual.velocity.x, expected.velocityX, tolerance); close(actual.velocity.y, expected.velocityY, tolerance)
 }

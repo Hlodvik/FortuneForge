@@ -29,8 +29,10 @@ export function renderAsteroids(context: CanvasRenderingContext2D, game: Asteroi
   context.fillStyle = '#070c15'
   context.fillRect(0, 0, game.width, game.height)
   drawStars(context, game.width, game.height)
-  for (const asteroid of game.asteroids)
+  for (const asteroid of game.asteroids) {
     drawAsteroid(context, asteroid, game.tick, asteroid.x, asteroid.y, atlases.asteroid)
+    if (asteroid.kind === 'hunter') drawHunterCue(context, asteroid)
+  }
   for (const bullet of game.bullets)
     drawLaser(context, bullet, game.tick, bullet.x, bullet.y, atlases.laserImpact)
   for (const powerUp of game.powerUps)
@@ -93,6 +95,25 @@ function drawAsteroid(context: CanvasRenderingContext2D, asteroid: Asteroid, tic
     context.arc(Math.cos(angle) * distance, Math.sin(angle) * distance, asteroid.radius * (0.1 + (index * 0.035)), 0, Math.PI * 2)
     context.fill()
   }
+  context.restore()
+}
+
+function drawHunterCue(context: CanvasRenderingContext2D, asteroid: Asteroid): void {
+  const heading = Math.atan2(asteroid.velocityY, asteroid.velocityX)
+  context.save()
+  context.translate(asteroid.x, asteroid.y)
+  context.strokeStyle = '#ff6688'
+  context.lineWidth = 3
+  context.beginPath()
+  context.arc(0, 0, asteroid.radius + 7, 0, Math.PI * 2)
+  context.stroke()
+  context.rotate(heading)
+  context.beginPath()
+  context.moveTo(asteroid.radius + 13, 0)
+  context.lineTo(asteroid.radius + 6, -6)
+  context.moveTo(asteroid.radius + 13, 0)
+  context.lineTo(asteroid.radius + 6, 6)
+  context.stroke()
   context.restore()
 }
 

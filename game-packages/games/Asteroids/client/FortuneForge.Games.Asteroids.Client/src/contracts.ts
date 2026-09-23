@@ -2,10 +2,11 @@ export type AsteroidsAction = 'tick' | 'rotate-left' | 'rotate-right' | 'thrust'
 export type AsteroidsPhase = 'playing' | 'game-over'
 export type AsteroidsEvent = 'started' | 'ticked' | 'rotated' | 'thrusted' | 'fired' | 'hit' | 'damaged' | 'wave-cleared' | 'power-up-collected' | 'no-op' | 'game-over'
 export type AsteroidSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge'
+export type AsteroidKind = 'drifter' | 'hunter'
 export type AsteroidsPowerUpType = 'shield' | 'rapid-fire' | 'extra-life'
 
 export type AsteroidsShip = Readonly<{ x: number; y: number; velocityX: number; velocityY: number; angle: number; invulnerabilityTicks: number; thrustTicks: number }>
-export type Asteroid = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; radius: number; hitPoints: number; spriteVariant: number; size: AsteroidSize }>
+export type Asteroid = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; radius: number; hitPoints: number; spriteVariant: number; size: AsteroidSize; kind: AsteroidKind }>
 export type AsteroidsBullet = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; remainingTicks: number }>
 export type AsteroidsPowerUp = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; remainingTicks: number; type: AsteroidsPowerUpType }>
 

@@ -44,6 +44,17 @@ describe('renderAsteroids', () => {
     expect(context.drawImageCalls).toHaveLength(1)
     expect(context.drawImageCalls[0].slice(1, 5)).toEqual([272, 0, 272, 362])
   })
+
+  it('marks hunter asteroids with a visible targeting ring even when a sprite is available', () => {
+    const drifter = testContext()
+    const hunter = testContext()
+
+    renderAsteroids(drifter.value, gameWith({ id: 1, size: 'small', radius: 13 }), { asteroid: readyImage(3038) })
+    renderAsteroids(hunter.value, gameWith({ id: 1, size: 'small', radius: 13, kind: 'hunter' }), { asteroid: readyImage(3038) })
+
+    expect(drifter.strokeCalls).toBe(1)
+    expect(hunter.strokeCalls).toBe(3)
+  })
 })
 
 function gameWith(asteroid: Pick<Asteroid, 'id' | 'size' | 'radius'> & Partial<Asteroid>): AsteroidsGameState {
@@ -52,7 +63,7 @@ function gameWith(asteroid: Pick<Asteroid, 'id' | 'size' | 'radius'> & Partial<A
     width: 800,
     height: 600,
     ship: { x: 400, y: 300, velocityX: 0, velocityY: 0, angle: 0, invulnerabilityTicks: 0, thrustTicks: 0 },
-    asteroids: [{ x: 400, y: 300, velocityX: 0, velocityY: 0, hitPoints: 1, spriteVariant: 0, ...asteroid }],
+    asteroids: [{ x: 400, y: 300, velocityX: 0, velocityY: 0, hitPoints: 1, spriteVariant: 0, kind: 'drifter', ...asteroid }],
     bullets: [],
     powerUps: [],
     score: 0,

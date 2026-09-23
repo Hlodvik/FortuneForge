@@ -181,6 +181,12 @@ static AsteroidsGameResponse ToResponse(AsteroidsSession session)
                 AsteroidSize.Large => "large",
                 AsteroidSize.Huge => "huge",
                 _ => throw new InvalidOperationException("Unknown asteroid size."),
+            },
+            asteroid.Kind switch
+            {
+                AsteroidKind.Drifter => "drifter",
+                AsteroidKind.Hunter => "hunter",
+                _ => throw new InvalidOperationException("Unknown asteroid kind."),
             })).ToArray(),
         state.Bullets.Select(bullet => new BulletResponse(
             bullet.Id,
@@ -260,7 +266,7 @@ public sealed record StartAsteroidsGameRequest(uint? Seed);
 public sealed record AsteroidsActionRequest(string Action);
 public sealed record AsteroidsStatusResponse(bool Available, int Width, int Height, int TickMilliseconds, int StartingLives, string Mode);
 public sealed record ShipResponse(double X, double Y, double VelocityX, double VelocityY, double Angle, int InvulnerabilityTicks, int ThrustTicks);
-public sealed record AsteroidResponse(int Id, double X, double Y, double VelocityX, double VelocityY, double Radius, int HitPoints, int SpriteVariant, string Size);
+public sealed record AsteroidResponse(int Id, double X, double Y, double VelocityX, double VelocityY, double Radius, int HitPoints, int SpriteVariant, string Size, string Kind);
 public sealed record BulletResponse(int Id, double X, double Y, double VelocityX, double VelocityY, int RemainingTicks);
 public sealed record PowerUpResponse(int Id, double X, double Y, double VelocityX, double VelocityY, int RemainingTicks, string Type);
 public sealed record AsteroidsGameResponse(Guid GameId, int Width, int Height, ShipResponse Ship, IReadOnlyList<AsteroidResponse> Asteroids, IReadOnlyList<BulletResponse> Bullets, int Score, int BestScore, int Lives, int Wave, int Tick, string Phase, string LastEvent, int ScoreGained, string Message, IReadOnlyList<PowerUpResponse> PowerUps, int RapidFireTicks);

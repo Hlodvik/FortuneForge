@@ -1,5 +1,20 @@
 .ff-asteroids-controls { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 
+.ff-asteroids-hunter-alert {
+  position: absolute;
+  z-index: 1;
+  top: 1rem;
+  right: 1rem;
+  padding: .42rem .65rem;
+  border: 1px solid #ff8ca5;
+  border-radius: .4rem;
+  background: #3a0e1ee6;
+  color: #fff0f4;
+  font-size: .67rem;
+  font-weight: 800;
+  letter-spacing: .025em;
+}
+
 @media (max-width: 520px) {
   .ff-asteroids-controls { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .ff-asteroids-controls button:last-child { grid-column: 1 / -1; min-height: 2.8rem; }

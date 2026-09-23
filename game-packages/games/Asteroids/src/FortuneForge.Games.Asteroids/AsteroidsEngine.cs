@@ -11,6 +11,9 @@ public static class AsteroidsEngine
     public const int ShipInvulnerabilityTicks = 120;
     public const double ShipRadius = 12;
     public const double MaxAsteroidSpeed = 3.08;
+    public const double HunterAcceleration = 0.035;
+    public const double HunterMaxSpeed = 2.6;
+    public const int HunterScoreBonus = 75;
 
     private const double MaxShipSpeed = 7;
     private const double ThrustPower = 0.22;
@@ -150,7 +153,7 @@ public static class AsteroidsEngine
             ThrustTicks = Math.Max(0, game.Ship.ThrustTicks - 1),
         };
         var asteroids = game.Asteroids
-            .Select(asteroid => MoveAsteroid(asteroid, game.Width, game.Height))
+            .Select(asteroid => MoveAsteroid(asteroid, ship.Position, game.Width, game.Height))
             .ToList();
         var bullets = game.Bullets
             .Select(bullet => new MovingBullet(
@@ -194,7 +197,7 @@ public static class AsteroidsEngine
             else
             {
                 asteroids.RemoveAt(hitIndex);
-                scoreGained = checked(scoreGained + ScoreFor(hit.Size));
+                scoreGained = checked(scoreGained + ScoreFor(hit.Size) + (hit.Kind == AsteroidKind.Hunter ? HunterScoreBonus : 0));
                 destroyedCount++;
                 Split(hit, ref random, ref nextEntityId, asteroids);
                 TrySpawnPowerUp(hit.Position, ref random, ref nextEntityId, powerUps);
@@ -261,7 +264,10 @@ public static class AsteroidsEngine
             var waveBonus = checked(wave * 100);
             scoreGained = checked(scoreGained + waveBonus);
             eventType = AsteroidsEventType.WaveCleared;
-            message = $"Wave {wave - 1} cleared. Wave {wave} incoming · +{waveBonus} points.";
+            var hunterCount = HunterCountFor(wave);
+            message = hunterCount > 0
+                ? $"Wave {wave - 1} cleared. Wave {wave} incoming · {hunterCount} hunter{(hunterCount == 1 ? string.Empty : "s")} tracking · +{waveBonus} points."
+                : $"Wave {wave - 1} cleared. Wave {wave} incoming · +{waveBonus} points.";
         }
 
         var score = checked(game.Score + scoreGained);
@@ -357,6 +363,7 @@ public static class AsteroidsEngine
         ref int nextEntityId)
     {
         var count = Math.Min(18, 4 + wave);
+        var hunterCount = HunterCountFor(wave);
         var asteroids = new List<Asteroid>(count);
         for (var index = 0; index < count; index++)
         {
@@ -387,7 +394,8 @@ public static class AsteroidsEngine
                 radius,
                 size,
                 HitPointsFor(size),
-                InitialSpriteVariantFor(wave, index)));
+                InitialSpriteVariantFor(wave, index),
+                index < hunterCount ? AsteroidKind.Hunter : AsteroidKind.Drifter));
         }
         return asteroids.ToImmutableArray();
     }
@@ -420,16 +428,25 @@ public static class AsteroidsEngine
 
     private static AsteroidsVector Forward(double angle) => new(Math.Cos(angle), Math.Sin(angle));
 
-    private static Asteroid MoveAsteroid(Asteroid asteroid, int width, int height)
+    private static int HunterCountFor(int wave) => wave < 2 ? 0 : Math.Min(3, wave / 2);
+
+    private static Asteroid MoveAsteroid(Asteroid asteroid, AsteroidsVector shipPosition, int width, int height)
     {
-        var requestedPosition = asteroid.Position + asteroid.Velocity;
+        var velocity = asteroid.Velocity;
+        if (asteroid.Kind == AsteroidKind.Hunter)
+        {
+            var pursuit = shipPosition - asteroid.Position;
+            if (pursuit.Length > 0)
+                velocity = ClampSpeed(velocity + pursuit * (HunterAcceleration / pursuit.Length), HunterMaxSpeed);
+        }
+        var requestedPosition = asteroid.Position + velocity;
         var position = ClampToField(requestedPosition, width, height, asteroid.Radius);
         return asteroid with
         {
             Position = position,
             Velocity = new AsteroidsVector(
-                position.X == requestedPosition.X ? asteroid.Velocity.X : -asteroid.Velocity.X,
-                position.Y == requestedPosition.Y ? asteroid.Velocity.Y : -asteroid.Velocity.Y),
+                position.X == requestedPosition.X ? velocity.X : -velocity.X,
+                position.Y == requestedPosition.Y ? velocity.Y : -velocity.Y),
         };
     }
 
@@ -493,7 +510,7 @@ public static class AsteroidsEngine
         ValidateDimensions(game.Width, game.Height);
         if (game.Score < 0 || game.BestScore < game.Score || game.Lives < 0 || game.Wave < 1 || game.Tick < 0 || game.NextEntityId < 1 || game.FireCooldownTicks < 0 || game.RapidFireTicks < 0 || game.Ship.ThrustTicks < 0)
             throw new ArgumentException("Asteroids scores and counters are invalid.", nameof(game));
-        if (game.Asteroids.Any(asteroid => asteroid.Radius <= 0 || asteroid.Id < 1 || asteroid.HitPoints <= 0 || asteroid.SpriteVariant is < 0 or >= AsteroidSpriteVariantCount) || game.Bullets.Any(bullet => bullet.Id < 1 || bullet.RemainingTicks <= 0) || (!game.PowerUps.IsDefault && game.PowerUps.Any(powerUp => powerUp.Id < 1 || powerUp.RemainingTicks <= 0)))
+        if (game.Asteroids.Any(asteroid => asteroid.Radius <= 0 || asteroid.Id < 1 || asteroid.HitPoints <= 0 || asteroid.SpriteVariant is < 0 or >= AsteroidSpriteVariantCount || !Enum.IsDefined(asteroid.Kind)) || game.Bullets.Any(bullet => bullet.Id < 1 || bullet.RemainingTicks <= 0) || (!game.PowerUps.IsDefault && game.PowerUps.Any(powerUp => powerUp.Id < 1 || powerUp.RemainingTicks <= 0)))
             throw new ArgumentException("Asteroids entities are invalid.", nameof(game));
     }
 

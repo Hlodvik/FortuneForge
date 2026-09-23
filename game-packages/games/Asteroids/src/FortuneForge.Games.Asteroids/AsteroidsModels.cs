@@ -51,6 +51,12 @@ public enum AsteroidSize
     Huge,
 }
 
+public enum AsteroidKind
+{
+    Drifter,
+    Hunter,
+}
+
 public enum AsteroidsPowerUpType
 {
     Shield,
@@ -81,7 +87,8 @@ public sealed record Asteroid(
     double Radius,
     AsteroidSize Size,
     int HitPoints = 1,
-    int SpriteVariant = 0);
+    int SpriteVariant = 0,
+    AsteroidKind Kind = AsteroidKind.Drifter);
 
 public sealed record AsteroidsBullet(
     int Id,

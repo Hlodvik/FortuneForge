@@ -32,6 +32,8 @@ export type BaccaratRound = Readonly<{
   disposition: BaccaratBetDisposition
   profit: number
   totalReturn: number
+  shoeCardsUsed?: number
+  shoeCardsRemaining?: number
 }>
 export type BaccaratRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string }>
 

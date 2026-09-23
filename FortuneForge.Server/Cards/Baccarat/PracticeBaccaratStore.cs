@@ -13,6 +13,7 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
     private readonly Dictionary<string, StoredRound> rounds = [];
     private readonly Dictionary<(string UserId, string Key), string> starts = [];
     private readonly Dictionary<string, long> balances = [];
+    private readonly Dictionary<string, ShoeState> shoes = [];
 
     public Task<BaccaratStoreResult> StartAsync(string userId, string idempotencyKey, BaccaratBetSide betSide,
         long stakeCents, IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
@@ -29,11 +30,16 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
 
             var balance = Balance(userId);
             if (balance < stakeCents) throw new BaccaratInsufficientCreditsException(balance, stakeCents);
-            var dealt = PuntoBancoRoundDealer.Deal(shuffledShoe);
+            var shoe = shoes.GetValueOrDefault(userId);
+            if (shoe is null || shoe.NextIndex >= 312)
+                shoe = new ShoeState(shuffledShoe.ToArray(), 0);
+            var dealt = PuntoBancoRoundDealer.Deal(shoe.Cards.Skip(shoe.NextIndex).ToArray());
+            var nextIndex = checked(shoe.NextIndex + dealt.ConsumedCards.Length);
+            shoes[userId] = shoe with { NextIndex = nextIndex };
             var settlement = PuntoBancoPaytable.Settle(betSide, BaccaratMoney.ToRand(stakeCents), dealt);
             var returned = checked((long)(settlement.TotalReturn * 100m));
             var id = Id("baccarat", userId, idempotencyKey);
-            var round = new BaccaratStoreRound(id, userId, betSide, dealt, settlement);
+            var round = new BaccaratStoreRound(id, userId, betSide, dealt, settlement, nextIndex, shoe.Cards.Count - nextIndex);
             var stored = new StoredRound(round, idempotencyKey);
             balances[userId] = checked(balance - stakeCents + returned);
             rounds[id] = stored;
@@ -52,4 +58,5 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
     private long Balance(string userId) => balances.GetValueOrDefault(userId, StartingBalanceCents);
     private static string Id(string game, string userId, string key) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"practice\n{game}\n{userId}\n{key}")));
     private sealed record StoredRound(BaccaratStoreRound Round, string StartKey);
+    private sealed record ShoeState(IReadOnlyList<PlayingCard> Cards, int NextIndex);
 }

@@ -31,7 +31,9 @@ public sealed record BaccaratRoundResponse(
     bool EndedOnNatural,
     string Disposition,
     decimal Profit,
-    decimal TotalReturn);
+    decimal TotalReturn,
+    int ShoeCardsUsed,
+    int ShoeCardsRemaining);
 
 public sealed record BaccaratErrorResponse(string Code, string Message);
 
@@ -40,7 +42,9 @@ internal sealed record BaccaratStoreRound(
     string UserId,
     BaccaratBetSide BetSide,
     PuntoBancoRoundResult Round,
-    BaccaratBetSettlement Settlement);
+    BaccaratBetSettlement Settlement,
+    int ShoeCardsUsed = 0,
+    int ShoeCardsRemaining = 416);
 
 internal sealed record BaccaratStoreResult(BaccaratStoreRound Round, long BalanceCents);
 
@@ -146,7 +150,9 @@ internal sealed class BaccaratService(
             round.EndedOnNatural,
             DispositionName(settlement.Disposition),
             settlement.Profit,
-            settlement.TotalReturn);
+            settlement.TotalReturn,
+            stored.ShoeCardsUsed,
+            stored.ShoeCardsRemaining);
     }
 
     internal static BaccaratBetSide ParseBetSide(string? value) => value?.Trim().ToLowerInvariant() switch

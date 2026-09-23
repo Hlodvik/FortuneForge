@@ -36,13 +36,14 @@ api.MapGet("/status", () => Results.Ok(new HeartsStatusResponse(
 
 api.MapPost("/matches", (StartHeartsMatchRequest? request) =>
 {
-    request ??= new StartHeartsMatchRequest(null, HeartsMatchEngine.DefaultTargetScore);
+    request ??= new StartHeartsMatchRequest(null, HeartsMatchEngine.DefaultTargetScore, null);
     var targetScore = request.TargetScore ?? HeartsMatchEngine.DefaultTargetScore;
     if (targetScore <= 0)
         return Results.BadRequest(new HeartsErrorResponse("hearts-invalid-target", "The target score must be positive."));
 
     var seed = request.Seed ?? (uint)RandomNumberGenerator.GetInt32(1, int.MaxValue);
-    var session = new HeartsSession(Guid.NewGuid(), HeartsMatchEngine.Start(seed, targetScore), CardBotSeed.Create());
+    var skillLevel = ParseDifficulty(request.Difficulty);
+    var session = new HeartsSession(Guid.NewGuid(), HeartsMatchEngine.Start(seed, targetScore), CardBotSeed.Create(), skillLevel);
     matches[session.Id] = session;
     PrepareBotTurn(session);
     return Results.Created($"/api/games/hearts/matches/{session.Id}", ToResponse(session));
@@ -173,7 +174,7 @@ void AdvanceBots(HeartsSession session)
         session.State,
         botSeats,
         bot,
-        CardBotSkillLevels.Strong,
+        session.SkillLevel,
         session.BotSeed,
         session.BotActionVersion++,
         botOptions,
@@ -275,6 +276,7 @@ static HeartsMatchResponse ToResponse(HeartsSession session)
         round.CompletedTricks.Select(trick => new HeartsCompletedTrickResponse(trick.Number, SeatName(trick.Leader), SeatName(trick.Winner), trick.Plays.Sum(play => HeartsRules.PointValue(play.Card)))).ToArray(),
         new HeartsScoreResponse(state.Score.North, state.Score.East, state.Score.South, state.Score.West),
         new HeartsScoreResponse(roundScores[PlayerSeat.North], roundScores[PlayerSeat.East], roundScores[PlayerSeat.South], roundScores[PlayerSeat.West]),
+        DifficultyName(session.SkillLevel),
         state.Winner is { } winner ? SeatName(winner) : null,
         session.Message);
 }
@@ -285,6 +287,8 @@ static string DirectionName(HeartsPassDirection direction) => direction switch {
 static string SeatName(PlayerSeat seat) => seat switch { PlayerSeat.North => "north", PlayerSeat.East => "east", PlayerSeat.South => "south", PlayerSeat.West => "west", _ => throw new ArgumentOutOfRangeException(nameof(seat)) };
 static string RankName(CardRank rank) => rank switch { CardRank.Ace => "ace", CardRank.Jack => "jack", CardRank.Queen => "queen", CardRank.King => "king", _ => ((int)rank).ToString(System.Globalization.CultureInfo.InvariantCulture) };
 static string SuitName(CardSuit suit) => suit switch { CardSuit.Clubs => "clubs", CardSuit.Diamonds => "diamonds", CardSuit.Hearts => "hearts", CardSuit.Spades => "spades", _ => throw new ArgumentOutOfRangeException(nameof(suit)) };
+static int ParseDifficulty(string? difficulty) => difficulty?.Trim().ToLowerInvariant() switch { null or "" or "standard" => CardBotSkillLevels.Average, "relaxed" => CardBotSkillLevels.Poor, "sharp" => CardBotSkillLevels.Strong, _ => throw new ArgumentOutOfRangeException(nameof(difficulty)) };
+static string DifficultyName(int difficulty) => difficulty switch { CardBotSkillLevels.Poor => "relaxed", CardBotSkillLevels.Average => "standard", CardBotSkillLevels.Strong => "sharp", _ => throw new ArgumentOutOfRangeException(nameof(difficulty)) };
 static string CardLabel(PlayingCard card) => $"{card.Code.Split('|')[0]}{card.Suit switch { CardSuit.Clubs => "♣", CardSuit.Diamonds => "♦", CardSuit.Hearts => "♥", CardSuit.Spades => "♠", _ => "?" }}";
 static IResult NotFound() => Results.NotFound(new HeartsErrorResponse("hearts-match-not-found", "That local Hearts match does not exist."));
 
@@ -294,12 +298,13 @@ static void RememberCompletedTrick(HeartsSession session, int completedTricksBef
         session.LastCompletedTrick = session.State.Round.CompletedTricks[^1];
 }
 
-public sealed class HeartsSession(Guid id, HeartsMatchState state, ulong botSeed)
+public sealed class HeartsSession(Guid id, HeartsMatchState state, ulong botSeed, int skillLevel)
 {
     public object SyncRoot { get; } = new();
     public Guid Id { get; } = id;
     public HeartsMatchState State { get; set; } = state;
     public ulong BotSeed { get; } = botSeed;
+    public int SkillLevel { get; } = skillLevel;
     public int BotActionVersion { get; set; }
     public bool BotThinking { get; set; }
     public DateTimeOffset? NextBotActionAt { get; set; }
@@ -307,12 +312,12 @@ public sealed class HeartsSession(Guid id, HeartsMatchState state, ulong botSeed
     public string Message { get; set; } = "Pass three cards to the left.";
 }
 
-public sealed record StartHeartsMatchRequest(uint? Seed, int? TargetScore);
+public sealed record StartHeartsMatchRequest(uint? Seed, int? TargetScore, string? Difficulty = null);
 public sealed record PassHeartsRequest(IReadOnlyList<string> Cards);
 public sealed record PlayHeartsCardRequest(string Card);
 public sealed record NextHeartsRoundRequest(uint? Seed);
 public sealed record HeartsStatusResponse(bool Available, int DefaultTargetScore, string Mode);
-public sealed record HeartsMatchResponse(Guid MatchId, int TargetScore, int RoundNumber, string Phase, string PassDirection, string Turn, string HumanSeat, bool YourTurn, bool BotsThinking, bool HeartsBroken, IReadOnlyList<string> SubmittedPasses, IReadOnlyList<HeartsPlayerResponse> Players, IReadOnlyList<HeartsCardResponse> Hand, IReadOnlyList<HeartsCardResponse> LegalCards, HeartsTrickResponse CurrentTrick, HeartsRecentTrickResponse? RecentTrick, IReadOnlyList<HeartsCompletedTrickResponse> CompletedTricks, HeartsScoreResponse Score, HeartsScoreResponse RoundScore, string? Winner, string Message);
+public sealed record HeartsMatchResponse(Guid MatchId, int TargetScore, int RoundNumber, string Phase, string PassDirection, string Turn, string HumanSeat, bool YourTurn, bool BotsThinking, bool HeartsBroken, IReadOnlyList<string> SubmittedPasses, IReadOnlyList<HeartsPlayerResponse> Players, IReadOnlyList<HeartsCardResponse> Hand, IReadOnlyList<HeartsCardResponse> LegalCards, HeartsTrickResponse CurrentTrick, HeartsRecentTrickResponse? RecentTrick, IReadOnlyList<HeartsCompletedTrickResponse> CompletedTricks, HeartsScoreResponse Score, HeartsScoreResponse RoundScore, string Difficulty, string? Winner, string Message);
 public sealed record HeartsPlayerResponse(string Seat, int HandCount, int RoundScore, int MatchScore, bool HasPassed);
 public sealed record HeartsCardResponse(string Code, string Rank, string Suit, string Label);
 public sealed record HeartsTrickResponse(string Leader, IReadOnlyList<HeartsTrickPlayResponse> Plays);

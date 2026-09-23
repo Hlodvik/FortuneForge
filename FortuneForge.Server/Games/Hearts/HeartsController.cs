@@ -31,7 +31,7 @@ public sealed class HeartsController(
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AccountAsync(cancellationToken);
         if (account is null) return Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."));
-        return Execute(() => games.Start(account.UserId, request ?? new(null, null)));
+        return Execute(() => games.Start(account.UserId, request ?? new(null, null, null)));
     }
 
     [HttpGet("matches/{matchId:guid}")]

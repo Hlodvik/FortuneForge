@@ -1,6 +1,6 @@
 namespace FortuneForge.Server.Games.Hearts;
 
-public sealed record StartHeartsMatchRequest(uint? Seed, int? TargetScore);
+public sealed record StartHeartsMatchRequest(uint? Seed, int? TargetScore, string? Difficulty = null);
 public sealed record PassHeartsRequest(IReadOnlyList<string>? Cards);
 public sealed record PlayHeartsCardRequest(string? Card);
 public sealed record NextHeartsRoundRequest(uint? Seed);
@@ -26,6 +26,7 @@ public sealed record HeartsMatchResponse(
     IReadOnlyList<HeartsCompletedTrickResponse> CompletedTricks,
     HeartsScoreResponse Score,
     HeartsScoreResponse RoundScore,
+    string Difficulty,
     string? Winner,
     string Message);
 public sealed record HeartsPlayerResponse(string Seat, int HandCount, int RoundScore, int MatchScore, bool HasPassed);

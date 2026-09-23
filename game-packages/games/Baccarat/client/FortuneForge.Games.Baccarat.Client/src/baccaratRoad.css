@@ -8,6 +8,13 @@
 .ff-baccarat__road li.is-tie { color: #318855; }
 .ff-baccarat__road-stats { display: grid; gap: .15rem; color: #d8d0bd; font-size: .55rem; }
 .ff-baccarat__road-stats span { display: flex; justify-content: space-between; gap: .45rem; }
+.ff-baccarat__big-road { display: grid; grid-column: 1 / -1; grid-row: 2; gap: .3rem; }
+.ff-baccarat__big-road > small { color: #d5bc84; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.ff-baccarat__big-road > div { display: grid; grid-template: repeat(6, 1.35rem) / repeat(12, 1.35rem); gap: .12rem; padding: .35rem; overflow: hidden; border: 1px solid #ead89b33; border-radius: .45rem; background-image: linear-gradient(#d9d0bd20 1px, transparent 1px), linear-gradient(90deg, #d9d0bd20 1px, transparent 1px); background-size: 1.47rem 1.47rem; }
+.ff-baccarat__big-road i { position: relative; display: grid; width: 1rem; height: 1rem; place-self: center; border: 2px solid currentColor; border-radius: 50%; font-style: normal; }
+.ff-baccarat__big-road i.is-player { color: #4d95ef; }
+.ff-baccarat__big-road i.is-banker { color: #ef5f65; }
+.ff-baccarat__big-road i span { position: absolute; right: -.3rem; bottom: -.35rem; color: #65d58b; font-size: .55rem; font-weight: 950; text-shadow: 0 1px 2px #001; }
 .ff-baccarat__shoe { display: grid; gap: .18rem; }
 .ff-baccarat__shoe strong { color: #f5df9c; font-size: .72rem; }
 .ff-baccarat__shoe i { height: .3rem; overflow: hidden; border-radius: 999px; background: #152f31; }
@@ -15,5 +22,5 @@
 .ff-baccarat__shoe small { letter-spacing: 0; text-transform: none; }
 .ff-baccarat__card { animation: ff-baccarat-card-deal .28s ease-out both; }
 @keyframes ff-baccarat-card-deal { from { opacity: 0; transform: translateY(-1rem) rotate(-3deg); } to { opacity: 1; transform: none; } }
-@media (max-width: 680px) { .ff-baccarat__road { grid-template-columns: 1fr auto; } .ff-baccarat__shoe { grid-column: 1 / -1; } }
+@media (max-width: 680px) { .ff-baccarat__road { grid-template-columns: 1fr auto; } .ff-baccarat__big-road { grid-column: 1 / -1; overflow-x: auto; } .ff-baccarat__big-road > div { grid-template: repeat(6, 1.15rem) / repeat(12, 1.15rem); background-size: 1.27rem 1.27rem; } .ff-baccarat__shoe { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { .ff-baccarat__card { animation: none; } }

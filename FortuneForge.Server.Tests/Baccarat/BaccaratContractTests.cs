@@ -92,6 +92,28 @@ public sealed class BaccaratContractTests
             "player-1", new CreateBaccaratRoundRequest("tie", 1m), "baccarat_start_0004", CancellationToken.None));
     }
 
+    [Fact]
+    public async Task PracticeStore_ConsumesOnePersistentShoeAndReplayDoesNotAdvanceIt()
+    {
+        var service = new BaccaratService(
+            new PracticeBaccaratStore(),
+            TimeProvider.System,
+            () => Enumerable.Range(0, 8).SelectMany(_ => StandardDeck.Create()).ToArray());
+
+        var first = await service.StartAsync(
+            "practice-player", new CreateBaccaratRoundRequest("player", 1m), "baccarat_shoe_0001", CancellationToken.None);
+        var replay = await service.StartAsync(
+            "practice-player", new CreateBaccaratRoundRequest("player", 1m), "baccarat_shoe_0001", CancellationToken.None);
+        var second = await service.StartAsync(
+            "practice-player", new CreateBaccaratRoundRequest("banker", 1m), "baccarat_shoe_0002", CancellationToken.None);
+
+        Assert.Equal(first.RoundId, replay.RoundId);
+        Assert.Equal(first.ShoeCardsUsed, replay.ShoeCardsUsed);
+        Assert.True(first.ShoeCardsUsed is >= 4 and <= 6);
+        Assert.True(second.ShoeCardsUsed > first.ShoeCardsUsed);
+        Assert.Equal(416, second.ShoeCardsUsed + second.ShoeCardsRemaining);
+    }
+
     private static IReadOnlyList<PlayingCard> BankerNaturalShoe() =>
     [
         new PlayingCard(CardRank.Two, CardSuit.Clubs),

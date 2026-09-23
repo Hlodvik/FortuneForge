@@ -4,6 +4,7 @@ import {
   autoFinishLocalSolitaire,
   canApplyLocalSolitaireCommand,
   createLocalSolitaireGame,
+  findLocalSolitaireHint,
   firstLegalFoundation,
   SolitaireRuleError,
 } from './solitaireEngine'
@@ -79,6 +80,15 @@ describe('local Klondike rules', () => {
       startIndex: 0,
       to: { zone: 'tableau', index: 1 },
     })).toBe(false)
+  })
+
+  it('returns a concrete legal move for the hint surface', () => {
+    const game = state({ tableau: [[ace('hearts')], [], [], [], [], [], []] })
+
+    expect(findLocalSolitaireHint(game)).toMatchObject({
+      command: { type: 'move', from: { zone: 'tableau', index: 0 }, to: { zone: 'foundation', index: 0 } },
+      message: 'Move Ace of hearts to foundation 1.',
+    })
   })
 
   it('auto-finishes exposed cards for draw-one and draw-three games', () => {

@@ -34,10 +34,20 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
+  const [revealStage, setRevealStage] = useState(0)
   const openingRequestKey = useRef<string | null>(null)
   const decisionRequestKey = useRef<string | null>(null)
   const pendingOpeningStakes = useRef<Readonly<{ primaryStake: number; tieStake: number }> | null>(null)
   const pendingDecision = useRef<CasinoWarDecision | null>(null)
+
+  useEffect(() => {
+    if (!round) { setRevealStage(0); return }
+    const hasWarCards = round.phase === 'completed' && (round.playerWarCard || round.dealerWarCard)
+    setRevealStage(hasWarCards ? 2 : 0)
+    const targets = hasWarCards ? [3, 4] : [1, 2]
+    const timers = targets.map((target, index) => window.setTimeout(() => setRevealStage(target), 180 + index * 280))
+    return () => timers.forEach(timer => window.clearTimeout(timer))
+  }, [round?.phase, round?.roundId])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -162,6 +172,27 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     clearStoredRoundId(playerId)
   }
 
+  const rebet = () => {
+    if (!round || round.phase !== 'completed' || busy || recovery !== 'ready' || !status?.available) return
+    const stakes = { primaryStake: round.primaryStake, tieStake: round.tieStake }
+    setPrimaryStake(stakes.primaryStake)
+    setTieStake(stakes.tieStake)
+    setRound(null)
+    const idempotencyKey = createRequestKey('opening')
+    openingRequestKey.current = idempotencyKey
+    pendingOpeningStakes.current = stakes
+    storePendingAction(playerId, { operation: 'opening', idempotencyKey, ...stakes })
+    void act(async () => {
+      const nextRound = await gateway.createRound(stakes.primaryStake, stakes.tieStake, { idempotencyKey })
+      openingRequestKey.current = null
+      pendingOpeningStakes.current = null
+      clearPendingAction(playerId)
+      if (nextRound.phase === 'awaiting-tie-decision') storeRoundId(playerId, nextRound.roundId)
+      setRound(nextRound)
+      onBalanceChange?.(nextRound.balance)
+    })
+  }
+
   const retryStatus = () => {
     setError(null)
     setTableUnavailable(false)
@@ -192,21 +223,24 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
         {round && <section className="ff-casino-war__round" aria-live="polite">
           <div className="ff-casino-war__round-heading"><span>{round.phase === 'awaiting-tie-decision' ? 'Opening tie' : 'Round complete'}</span><strong>{round.phase === 'awaiting-tie-decision' ? 'Choose your move' : primaryOutcomeLabel(round)}</strong></div>
           <div className="ff-casino-war__cards-grid">
-            <CardGroup label="Player opening card" card={round.playerOpeningCard} />
-            <CardGroup label="Dealer opening card" card={round.dealerOpeningCard} />
+            <CardGroup label="Player opening card" card={revealStage >= 1 ? round.playerOpeningCard : null} />
+            <CardGroup label="Dealer opening card" card={revealStage >= 2 ? round.dealerOpeningCard : null} />
           </div>
-          {round.phase === 'awaiting-tie-decision' && <section className="ff-casino-war__decision" aria-label="Tie decision">
+          {round.phase === 'awaiting-tie-decision' && revealStage >= 2 && <section className="ff-casino-war__decision" aria-label="Tie decision">
             <p>Opening tie. <strong>Go to War adds one matching {formatMoney(round.primaryStake, currencySymbol)} primary stake.</strong></p>
+            <div className="ff-casino-war__decision-consequences"><span><b>Surrender</b>End now and recover half of the primary stake.</span><span><b>Go to War</b>Add {formatMoney(round.primaryStake, currencySymbol)}, burn three cards each, then compare again. A second tie favors you.</span></div>
             <div><button className="ff-casino-war__secondary" disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'surrender')} onClick={() => decide('surrender')}>{pendingDecision.current === 'surrender' ? 'Retry Surrender' : 'Surrender'}</button><button className="ff-casino-war__primary" disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'go-to-war')} onClick={() => decide('go-to-war')}>{busy ? 'Resolving…' : pendingDecision.current === 'go-to-war' ? 'Retry Go to War' : 'Go to War'}</button></div>
           </section>}
           {round.phase === 'awaiting-tie-decision' && round.tieSettlement && <TieSettlement settlement={round.tieSettlement} currencySymbol={currencySymbol} />}
           {round.phase === 'completed' && <>
             {(round.playerWarCard || round.dealerWarCard) && <div className="ff-casino-war__cards-grid ff-casino-war__cards-grid--war">
-              <CardGroup label="Player War card" card={round.playerWarCard} />
-              <CardGroup label="Dealer War card" card={round.dealerWarCard} />
+              <CardGroup label="Player War card" card={revealStage >= 3 ? round.playerWarCard : null} />
+              <CardGroup label="Dealer War card" card={revealStage >= 4 ? round.dealerWarCard : null} />
             </div>}
-            <Settlements round={round} currencySymbol={currencySymbol} />
-            <button className="ff-casino-war__primary" disabled={busy} onClick={reset}>New Round</button>
+            {revealStage >= ((round.playerWarCard || round.dealerWarCard) ? 4 : 2) && <>
+              <Settlements round={round} currencySymbol={currencySymbol} />
+              <div className="ff-casino-war__round-actions"><button className="ff-casino-war__secondary" disabled={busy} onClick={rebet}>Rebet</button><button className="ff-casino-war__primary" disabled={busy} onClick={reset}>New Round</button></div>
+            </>}
           </>}
         </section>}
       </section>

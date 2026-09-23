@@ -29,6 +29,7 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         var wagerReference = BalanceTransactionDocument($"baccarat-{roundId}-wager");
         var payoutReference = BalanceTransactionDocument($"baccarat-{roundId}-payout");
         var eventReference = RoundEventDocument(roundId);
+        var shoeReference = ShoeDocument(userId);
 
         return database.RunTransactionAsync(async transaction =>
         {
@@ -37,7 +38,8 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
                 transaction.GetSnapshotAsync(balanceReference, cancellationToken),
                 transaction.GetSnapshotAsync(wagerReference, cancellationToken),
                 transaction.GetSnapshotAsync(payoutReference, cancellationToken),
-                transaction.GetSnapshotAsync(eventReference, cancellationToken));
+                transaction.GetSnapshotAsync(eventReference, cancellationToken),
+                transaction.GetSnapshotAsync(shoeReference, cancellationToken));
             var balanceCents = ReadBalanceCents(snapshots[1]);
             if (snapshots[0].Exists)
             {
@@ -54,15 +56,19 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             if (balanceCents < stakeCents)
                 throw new BaccaratInsufficientCreditsException(balanceCents, stakeCents);
 
-            var round = PuntoBancoRoundDealer.Deal(shuffledShoe);
+            var shoe = snapshots[5].Exists ? ReadShoe(snapshots[5], userId) : new BaccaratShoe(shuffledShoe.ToArray(), 0);
+            if (shoe.NextIndex >= 312) shoe = new BaccaratShoe(shuffledShoe.ToArray(), 0);
+            var round = PuntoBancoRoundDealer.Deal(shoe.Cards.Skip(shoe.NextIndex).ToArray());
+            var nextShoeIndex = checked(shoe.NextIndex + round.ConsumedCards.Length);
             var stake = BaccaratMoney.ToRand(stakeCents);
             var settlement = PuntoBancoPaytable.Settle(betSide, stake, round);
             var returnedCentsForRound = ToCents(settlement.TotalReturn);
             var balanceAfterWagerCents = checked(balanceCents - stakeCents);
             var finalBalanceCents = checked(balanceAfterWagerCents + returnedCentsForRound);
-            var stored = new BaccaratStoreRound(roundId, userId, betSide, round, settlement);
+            var stored = new BaccaratStoreRound(roundId, userId, betSide, round, settlement, nextShoeIndex, shoe.Cards.Count - nextShoeIndex);
 
             transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc));
+            transaction.Set(shoeReference, ShoeData(userId, shoe.Cards, nextShoeIndex, nowUtc));
             transaction.Set(balanceReference, BalanceUpdate(finalBalanceCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(
                 wagerReference.Id, userId, -stakeCents, balanceAfterWagerCents, "baccarat-wager", idempotencyKey, nowUtc));
@@ -93,6 +99,7 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
 
     private DocumentReference RoundDocument(string roundId) => database.Collection("baccaratRounds").Document(roundId);
     private DocumentReference RoundEventDocument(string roundId) => database.Collection("baccaratRoundEvents").Document($"{roundId}-settled");
+    private DocumentReference ShoeDocument(string userId) => database.Collection("baccaratShoes").Document(CreateLookupKey(userId));
     private DocumentReference BalanceDocument(string userId) => database.Collection("userBalances").Document($"{userId}_{SlotsCreditsCurrencyId}");
     private DocumentReference BalanceTransactionDocument(string transactionId) => database.Collection("balanceTransactions").Document(transactionId);
 
@@ -108,8 +115,23 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         ["disposition"] = BaccaratService.DispositionName(stored.Settlement.Disposition),
         ["profitCents"] = ToCents(stored.Settlement.Profit),
         ["totalReturnCents"] = ToCents(stored.Settlement.TotalReturn),
+        ["shoeCardsUsed"] = (long)stored.ShoeCardsUsed,
+        ["shoeCardsRemaining"] = (long)stored.ShoeCardsRemaining,
         ["startIdempotencyKey"] = idempotencyKey,
         ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
+        ["schemaVersion"] = 1L,
+    };
+
+    private static Dictionary<string, object> ShoeData(
+        string userId,
+        IReadOnlyList<PlayingCard> cards,
+        int nextIndex,
+        DateTimeOffset nowUtc) => new()
+    {
+        ["userId"] = userId,
+        ["cards"] = cards.Select(CardCode.Format).ToArray(),
+        ["nextIndex"] = (long)nextIndex,
+        ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
         ["schemaVersion"] = 1L,
     };
 
@@ -179,7 +201,28 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         {
             throw new InvalidOperationException("The Baccarat round settlement is corrupt.");
         }
-        return new BaccaratStoreRound(roundId, userId, betSide, round, settlement);
+        var shoeCardsUsed = snapshot.TryGetValue<long>("shoeCardsUsed", out var rawUsed)
+            ? checked((int)rawUsed)
+            : round.ConsumedCards.Length;
+        var shoeCardsRemaining = snapshot.TryGetValue<long>("shoeCardsRemaining", out var rawRemaining)
+            ? checked((int)rawRemaining)
+            : 416 - shoeCardsUsed;
+        if (shoeCardsUsed is < 0 or > 416 || shoeCardsRemaining is < 0 or > 416 || shoeCardsUsed + shoeCardsRemaining != 416)
+            throw new InvalidOperationException("The Baccarat shoe position is corrupt.");
+        return new BaccaratStoreRound(roundId, userId, betSide, round, settlement, shoeCardsUsed, shoeCardsRemaining);
+    }
+
+    private static BaccaratShoe ReadShoe(DocumentSnapshot snapshot, string expectedUserId)
+    {
+        if (!snapshot.TryGetValue<string>("userId", out var userId) || userId != expectedUserId ||
+            !snapshot.TryGetValue<long>("nextIndex", out var rawNextIndex) || rawNextIndex is < 0 or > 416 ||
+            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
+            throw new InvalidOperationException("The Baccarat shoe is corrupt.");
+        var cards = ReadStringArray(snapshot, "cards").Select(CardCode.Parse).ToArray();
+        var standard = StandardDeck.Create();
+        if (cards.Length != 416 || standard.Any(card => cards.Count(value => value == card) != 8))
+            throw new InvalidOperationException("The Baccarat shoe is corrupt.");
+        return new BaccaratShoe(cards, checked((int)rawNextIndex));
     }
 
     private static long ValidateStakeCents(long stakeCents)
@@ -208,4 +251,6 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         if (!snapshot.ToDictionary().TryGetValue(field, out var raw) || raw is not IEnumerable values) return [];
         return values.Cast<object?>().Select(value => value as string ?? string.Empty).ToArray();
     }
+
+    private sealed record BaccaratShoe(IReadOnlyList<PlayingCard> Cards, int NextIndex);
 }

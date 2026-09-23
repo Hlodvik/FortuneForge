@@ -21,7 +21,8 @@ public sealed class HeartsGameService
     {
         var targetScore = request.TargetScore ?? HeartsMatchEngine.DefaultTargetScore;
         var seed = request.Seed ?? NextSeed();
-        var session = new HeartsSession(userId, HeartsMatchEngine.Start(seed, targetScore), CardBotSeed.Create());
+        var skillLevel = ParseDifficulty(request.Difficulty);
+        var session = new HeartsSession(userId, HeartsMatchEngine.Start(seed, targetScore), CardBotSeed.Create(), skillLevel);
         if (!sessions.TryAdd(session.Id, session)) throw new InvalidOperationException("Could not open a Hearts table.");
         return ToResponse(session);
     }
@@ -92,7 +93,7 @@ public sealed class HeartsGameService
         }
         var completedBefore = round.CompletedTricks.Count;
         var transition = HeartsMatchEngine.AdvanceBotTurn(
-            session.State, BotSeats, bot, CardBotSkillLevels.Strong, session.BotSeed,
+            session.State, BotSeats, bot, session.SkillLevel, session.BotSeed,
             session.BotActionVersion++, botOptions, HumanSeat);
         session.State = transition.State;
         RememberCompletedTrick(session, completedBefore);
@@ -162,11 +163,25 @@ public sealed class HeartsGameService
                 trick.Plays.Sum(play => HeartsRules.PointValue(play.Card)))).ToArray(),
             new HeartsScoreResponse(state.Score.North, state.Score.East, state.Score.South, state.Score.West),
             new HeartsScoreResponse(scores[PlayerSeat.North], scores[PlayerSeat.East], scores[PlayerSeat.South], scores[PlayerSeat.West]),
-            state.Winner is { } winner ? SeatName(winner) : null, session.Message);
+            DifficultyName(session.SkillLevel), state.Winner is { } winner ? SeatName(winner) : null, session.Message);
     }
 
     private static HeartsCardResponse ToCard(PlayingCard card) => new(card.Code, RankName(card.Rank), SuitName(card.Suit), CardLabel(card));
     private static uint NextSeed() => (uint)RandomNumberGenerator.GetInt32(1, int.MaxValue);
+    private static int ParseDifficulty(string? difficulty) => difficulty?.Trim().ToLowerInvariant() switch
+    {
+        null or "" or "standard" => CardBotSkillLevels.Average,
+        "relaxed" => CardBotSkillLevels.Poor,
+        "sharp" => CardBotSkillLevels.Strong,
+        _ => throw new ArgumentOutOfRangeException(nameof(difficulty), "Hearts difficulty must be relaxed, standard, or sharp."),
+    };
+    private static string DifficultyName(int skillLevel) => skillLevel switch
+    {
+        CardBotSkillLevels.Poor => "relaxed",
+        CardBotSkillLevels.Average => "standard",
+        CardBotSkillLevels.Strong => "sharp",
+        _ => throw new ArgumentOutOfRangeException(nameof(skillLevel)),
+    };
     private static string PhaseName(HeartsPhase phase) => phase switch { HeartsPhase.Passing => "passing", HeartsPhase.Playing => "playing", HeartsPhase.Complete => "complete", _ => throw new ArgumentOutOfRangeException(nameof(phase)) };
     private static string DirectionName(HeartsPassDirection value) => value switch { HeartsPassDirection.Left => "left", HeartsPassDirection.Right => "right", HeartsPassDirection.Across => "across", HeartsPassDirection.Hold => "hold", _ => throw new ArgumentOutOfRangeException(nameof(value)) };
     private static string SeatName(PlayerSeat seat) => seat.ToString().ToLowerInvariant();
@@ -174,13 +189,14 @@ public sealed class HeartsGameService
     private static string SuitName(CardSuit suit) => suit.ToString().ToLowerInvariant();
     private static string CardLabel(PlayingCard card) => $"{card.Code.Split('|')[0]}{card.Suit switch { CardSuit.Clubs => "♣", CardSuit.Diamonds => "♦", CardSuit.Hearts => "♥", CardSuit.Spades => "♠", _ => "?" }}";
 
-    private sealed class HeartsSession(string userId, HeartsMatchState state, ulong botSeed)
+    private sealed class HeartsSession(string userId, HeartsMatchState state, ulong botSeed, int skillLevel)
     {
         public Guid Id { get; } = Guid.NewGuid();
         public object SyncRoot { get; } = new();
         public string UserId { get; } = userId;
         public HeartsMatchState State { get; set; } = state;
         public ulong BotSeed { get; } = botSeed;
+        public int SkillLevel { get; } = skillLevel;
         public int BotActionVersion { get; set; }
         public bool BotThinking { get; set; }
         public CompletedTrick? LastCompletedTrick { get; set; }

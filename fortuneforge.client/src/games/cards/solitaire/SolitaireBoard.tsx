@@ -10,6 +10,7 @@ import {
 import { cardLabel } from '../shared/cards'
 import {
   canApplyLocalSolitaireCommand,
+  findLocalSolitaireHint,
   firstLegalFoundation,
 } from './solitaireEngine'
 import type {
@@ -66,6 +67,7 @@ export function SolitaireBoard({
   const [selection, setSelection] = useState<Selection | null>(null)
   const [drag, setDrag] = useState<DragState | null>(null)
   const [autoWinFlight, setAutoWinFlight] = useState<AutoWinFlight | null>(null)
+  const [hint, setHint] = useState<ReturnType<typeof findLocalSolitaireHint>>(null)
   const compactCards = useCompactCardFaces()
   const boardRef = useRef<HTMLElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
@@ -77,6 +79,7 @@ export function SolitaireBoard({
   useEffect(() => {
     setSelection(null)
     setDrag(null)
+    setHint(null)
     dragRef.current = null
   }, [game])
 
@@ -333,6 +336,11 @@ export function SolitaireBoard({
     onDragEnd: finishNativeDrag,
   })
 
+  const hintedSource = (from: SolitairePileReference, startIndex: number) => hint?.command.type === 'move'
+    && samePile(hint.command.from, from) && hint.command.startIndex === startIndex
+  const hintedTarget = (target: SolitairePileReference) => hint?.command.type === 'move'
+    && samePile(hint.command.to, target)
+
   return (
     <section
       ref={boardRef}
@@ -366,7 +374,7 @@ export function SolitaireBoard({
       <div className="solitaire-board__top-row">
         <div className="solitaire-stock-group">
           <button
-            className="solitaire-pile solitaire-stock"
+            className={`solitaire-pile solitaire-stock${hint?.command.type === 'draw' ? ' is-hinted' : ''}`}
             type="button"
             disabled={busy || (game.stock.length === 0 && game.waste.length === 0)}
             aria-label={game.stock.length > 0
@@ -398,6 +406,7 @@ export function SolitaireBoard({
                     className="solitaire-waste-card"
                     compact={compactCards}
                     selected={source !== null && selection?.cardId === card.id}
+                    hinted={source !== null && hintedSource(source.from, source.startIndex)}
                     disabled={busy || source === null}
                     key={card.isFaceUp ? card.id : `waste-${visibleIndex}`}
                     style={{
@@ -424,7 +433,7 @@ export function SolitaireBoard({
             const target = { zone: 'foundation', index } as const
             return (
               <div
-                className="solitaire-pile"
+                className={`solitaire-pile${hintedTarget(target) ? ' is-hinted' : ''}`}
                 data-solitaire-drop-zone={target.zone}
                 data-solitaire-drop-index={target.index}
                 key={`foundation-${index}`}
@@ -445,6 +454,7 @@ export function SolitaireBoard({
                         compact={compactCards}
                         key={top.id}
                         selected={source !== null && selection?.cardId === top.id}
+                        hinted={source !== null && hintedSource(source.from, source.startIndex)}
                         disabled={busy || !top.isFaceUp}
                         onClick={() => {
                           if (source !== null) activate(() => choose(target, source.startIndex, top))
@@ -476,7 +486,7 @@ export function SolitaireBoard({
           let faceUpBefore = 0
           return (
             <div
-              className="solitaire-tableau__pile"
+              className={`solitaire-tableau__pile${hintedTarget(target) ? ' is-hinted' : ''}`}
               data-solitaire-drop-zone={target.zone}
               data-solitaire-drop-index={target.index}
               key={column}
@@ -515,6 +525,7 @@ export function SolitaireBoard({
                     disabled={busy || (!card.isFaceUp && !isTop)}
                     key={`${column}-${index}`}
                     selected={card.isFaceUp && selection?.cardId === card.id}
+                    hinted={(card.isFaceUp && source !== null && hintedSource(source.from, source.startIndex)) || (hint?.command.type === 'flip' && hint.command.column === column && isTop)}
                     style={{
                       '--solitaire-down-before': downOffset,
                       '--solitaire-up-before': upOffset,
@@ -541,11 +552,14 @@ export function SolitaireBoard({
         })}
       </div>
 
-      <p className="solitaire-board__hint" aria-live="polite">
-        {selection === null
-          ? 'Drag a face-up card or run to its destination. Tap-to-select also works.'
-          : `Selected ${selection.label}. Tap a tableau or foundation pile, or drag the card.`}
-      </p>
+      <div className="solitaire-board__help">
+        <p className="solitaire-board__hint" aria-live="polite">
+          {hint?.message ?? (selection === null
+            ? 'Drag, tap, or use Tab and Enter to select a card and its destination.'
+            : `Selected ${selection.label}. Tap a tableau or foundation pile, or drag the card.`)}
+        </p>
+        <button type="button" disabled={busy} onClick={() => setHint(findLocalSolitaireHint(game))}>Hint</button>
+      </div>
     </section>
   )
 }
@@ -556,6 +570,7 @@ function CardButton({
   className = '',
   disabled,
   selected,
+  hinted = false,
   style,
   dragSource,
   dragState,
@@ -574,6 +589,7 @@ function CardButton({
   className?: string
   disabled: boolean
   selected: boolean
+  hinted?: boolean
   style?: CSSProperties
   dragSource?: Selection
   dragState?: DragState | null
@@ -594,7 +610,7 @@ function CardButton({
       : dragState.source.cardId === card.id)
   return (
     <button
-      className={`solitaire-card-button ${className}${selected ? ' is-selected' : ''}${dragging ? ' is-dragging' : ''}`}
+      className={`solitaire-card-button ${className}${selected ? ' is-selected' : ''}${hinted ? ' is-hinted' : ''}${dragging ? ' is-dragging' : ''}`}
       type="button"
       disabled={disabled}
       draggable={false}

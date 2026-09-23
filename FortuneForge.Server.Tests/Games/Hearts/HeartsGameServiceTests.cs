@@ -9,9 +9,10 @@ public sealed class HeartsGameServiceTests
     public void Started_match_is_private_and_deals_the_human_thirteen_cards()
     {
         var service = new HeartsGameService();
-        var match = service.Start("player-a", new StartHeartsMatchRequest(1931, 50));
+        var match = service.Start("player-a", new StartHeartsMatchRequest(1931, 50, "relaxed"));
 
         Assert.Equal(50, match.TargetScore);
+        Assert.Equal("relaxed", match.Difficulty);
         Assert.Equal("passing", match.Phase);
         Assert.Equal(13, match.Hand.Count);
         Assert.Throws<HeartsAccessException>(() => service.Get("player-b", match.MatchId));
@@ -32,6 +33,15 @@ public sealed class HeartsGameServiceTests
         Assert.NotEmpty(next.LegalCards);
 
         var afterPlay = service.PlayCard("player-a", started.MatchId, next.LegalCards[0].Code);
-        Assert.True(afterPlay.BotsThinking || afterPlay.Phase == "complete");
+        Assert.True(afterPlay.BotsThinking || afterPlay.YourTurn || afterPlay.Phase == "complete");
+    }
+
+    [Fact]
+    public void Started_match_rejects_an_unknown_bot_difficulty()
+    {
+        var service = new HeartsGameService();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            service.Start("player-a", new StartHeartsMatchRequest(1931, 50, "impossible")));
     }
 }

@@ -37,6 +37,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>(() => readHistory(playerId))
   const [revealedCards, setRevealedCards] = useState(0)
   const [shoeUsed, setShoeUsed] = useState(() => readShoeUsed(playerId))
+  const [shoeVerified, setShoeVerified] = useState(false)
   const dealRequestKey = useRef<string | null>(null)
   const pendingBet = useRef<Readonly<{ side: BaccaratBetSide; stake: number }> | null>(null)
 
@@ -89,7 +90,8 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
       if (current.some(item => item.roundId === round.roundId)) return current
       const next = [{ roundId: round.roundId, outcome: round.outcome, cardsUsed, natural: round.endedOnNatural }, ...current].slice(0, 40)
       writeHistory(playerId, next)
-      const used = shoeUsed + cardsUsed > 312 ? cardsUsed : shoeUsed + cardsUsed
+      const used = round.shoeCardsUsed ?? (shoeUsed + cardsUsed > 312 ? cardsUsed : shoeUsed + cardsUsed)
+      setShoeVerified(round.shoeCardsUsed !== undefined)
       setShoeUsed(used)
       writeShoeUsed(playerId, used)
       return next
@@ -155,7 +157,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
       </header>
 
       <section className="ff-baccarat__table" aria-label="Baccarat table">
-        <BaccaratRoad history={history} shoeUsed={shoeUsed} />
+        <BaccaratRoad history={history} shoeUsed={shoeUsed} shoeVerified={shoeVerified} />
         {!round && <section className="ff-baccarat__betting">
           <div className="ff-baccarat__table-mark"><span aria-hidden="true">♣</span><h2>Place your bet</h2><p>One hand settles automatically under the Punto Banco tableau.</p></div>
           <div className="ff-baccarat__bet-sides" role="group" aria-label="Baccarat bet side">
@@ -200,11 +202,32 @@ function Hand({ label, cards, total, winner }: Readonly<{ label: string; cards: 
   return <section className={`ff-baccarat__hand${winner ? ' is-winner' : ''}`} aria-label={`${label} hand${total === null ? '' : `, total ${total}`}`}><div className="ff-baccarat__hand-title"><span>{label}</span><strong>{total === null ? 'Dealing…' : `Total ${total}`}</strong></div><div className="ff-baccarat__cards">{cards.map((card, index) => <CardFace key={index} card={card} />)}</div></section>
 }
 
-function BaccaratRoad({ history, shoeUsed }: Readonly<{ history: readonly BaccaratHistoryItem[]; shoeUsed: number }>) {
+function BaccaratRoad({ history, shoeUsed, shoeVerified }: Readonly<{ history: readonly BaccaratHistoryItem[]; shoeUsed: number; shoeVerified: boolean }>) {
   const player = history.filter(item => item.outcome === 'player').length
   const banker = history.filter(item => item.outcome === 'banker').length
   const ties = history.filter(item => item.outcome === 'tie').length
-  return <section className="ff-baccarat__road" aria-label="Bead plate and shoe progress"><div><small>Bead plate</small><ol>{history.slice(0, 24).map(item => <li className={`is-${item.outcome}`} title={`${capitalize(item.outcome)}${item.natural ? ' natural' : ''}`} key={item.roundId}>{item.outcome[0]?.toUpperCase()}</li>)}</ol></div><div className="ff-baccarat__road-stats"><span>Player <b>{player}</b></span><span>Banker <b>{banker}</b></span><span>Tie <b>{ties}</b></span></div><div className="ff-baccarat__shoe"><span>8-deck shoe tracker</span><strong>{Math.max(0, 416 - shoeUsed)} cards</strong><i><b style={{ width: `${Math.min(100, (shoeUsed / 312) * 100)}%` }} /></i><small>Resets at the 75% cut-card point on this device.</small></div></section>
+  const bigRoad = buildBigRoad(history)
+  return <section className="ff-baccarat__road" aria-label="Bead plate, Big Road, and shoe progress"><div><small>Bead plate</small><ol>{history.slice(0, 24).map(item => <li className={`is-${item.outcome}`} title={`${capitalize(item.outcome)}${item.natural ? ' natural' : ''}`} key={item.roundId}>{item.outcome[0]?.toUpperCase()}</li>)}</ol></div><div className="ff-baccarat__big-road"><small>Big Road</small><div role="img" aria-label={`Big Road showing ${player} Player wins, ${banker} Banker wins, and ${ties} ties`}>{bigRoad.map(cell => <i className={`is-${cell.outcome}`} style={{ gridColumn: cell.column + 1, gridRow: cell.row + 1 }} title={`${capitalize(cell.outcome)}${cell.ties ? ` with ${cell.ties} tie${cell.ties === 1 ? '' : 's'}` : ''}`} key={`${cell.column}-${cell.row}`}><span>{cell.ties || ''}</span></i>)}</div></div><div className="ff-baccarat__road-stats"><span>Player <b>{player}</b></span><span>Banker <b>{banker}</b></span><span>Tie <b>{ties}</b></span></div><div className="ff-baccarat__shoe"><span>{shoeVerified ? 'Live 8-deck shoe' : 'Session cut-card estimate'}</span><strong>{Math.max(0, 416 - shoeUsed)} cards</strong><i><b style={{ width: `${Math.min(100, (shoeUsed / 312) * 100)}%` }} /></i><small>{shoeVerified ? 'Server shoe reshuffles at 75% penetration.' : 'Tracks cards shown on this device until server shoe data arrives.'}</small></div></section>
+}
+
+function buildBigRoad(history: readonly BaccaratHistoryItem[]): readonly { outcome: 'player' | 'banker'; column: number; row: number; ties: number }[] {
+  const cells: { outcome: 'player' | 'banker'; column: number; row: number; ties: number }[] = []
+  let column = -1
+  let row = 0
+  for (const item of [...history].reverse()) {
+    if (item.outcome === 'tie') {
+      if (cells.length > 0) cells[cells.length - 1]!.ties++
+      continue
+    }
+    const previous = cells.at(-1)
+    if (!previous || previous.outcome !== item.outcome) { column++; row = 0 }
+    else if (row < 5) row++
+    else column++
+    while (cells.some(cell => cell.column === column && cell.row === row)) column++
+    cells.push({ outcome: item.outcome, column, row, ties: 0 })
+  }
+  const offset = Math.max(0, (cells.at(-1)?.column ?? 0) - 11)
+  return cells.filter(cell => cell.column >= offset).map(cell => ({ ...cell, column: cell.column - offset }))
 }
 
 function CardFace({ card }: Readonly<{ card: BaccaratCard }>) {

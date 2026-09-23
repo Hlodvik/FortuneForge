@@ -903,6 +903,43 @@ button.solitaire-pile,
   text-align: center;
 }
 
+.solitaire-board__help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.solitaire-board__help .solitaire-board__hint {
+  margin-top: 0.55rem;
+}
+
+.solitaire-board__help button {
+  min-height: 1.8rem;
+  margin-top: 0.55rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid rgb(255 232 141 / 58%);
+  border-radius: 999px;
+  background: rgb(5 39 33 / 88%);
+  color: #fff0a6;
+  font-size: 0.65rem;
+  font-weight: 900;
+}
+
+.solitaire-pile.is-hinted,
+.solitaire-tableau__pile.is-hinted,
+.solitaire-card-button.is-hinted {
+  outline: 3px solid #ffe36f;
+  outline-offset: 0.16rem;
+  animation: solitaire-hint-pulse 0.75s ease-in-out infinite alternate;
+}
+
+@keyframes solitaire-hint-pulse {
+  from { box-shadow: 0 0 0 rgb(255 227 111 / 0%); }
+  to { box-shadow: 0 0 1rem rgb(255 227 111 / 70%); }
+}
+
 .solitaire-match-complete {
   display: grid;
   min-height: 24rem;
@@ -1166,5 +1203,11 @@ button.solitaire-pile,
     transition-duration: 0.001ms !important;
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+  }
+
+  .solitaire-pile.is-hinted,
+  .solitaire-tableau__pile.is-hinted,
+  .solitaire-card-button.is-hinted {
+    animation: none;
   }
 }

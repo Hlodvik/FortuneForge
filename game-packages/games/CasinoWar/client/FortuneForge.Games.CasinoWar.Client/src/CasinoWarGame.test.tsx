@@ -85,8 +85,8 @@ describe('CasinoWarGame', () => {
 
     expect(gateway.createRound).toHaveBeenCalledWith(10, 2, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^casino-war-opening-/) }))
     expect((await screen.findAllByText('Player Opening Win')).length).toBeGreaterThan(0)
-    expect(screen.getByLabelText('ace of clubs')).toBeTruthy()
-    expect(screen.getByText('Tie side bet')).toBeTruthy()
+    expect(await screen.findByLabelText('ace of clubs')).toBeTruthy()
+    expect(await screen.findByText('Tie side bet')).toBeTruthy()
     expect(screen.getByText('-R2.00')).toBeTruthy()
     expect(screen.getByText('+R8.00')).toBeTruthy()
   })
@@ -116,13 +116,13 @@ describe('CasinoWarGame', () => {
     render(<CasinoWarGame gateway={gateway} />)
 
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
-    expect(screen.getByText(/Go to War adds one matching R10.00 primary stake/)).toBeTruthy()
+    expect(await screen.findByText(/Go to War adds one matching R10.00 primary stake/)).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Go to War' }))
 
     expect(gateway.decide).toHaveBeenCalledWith('round-12', 'go-to-war', expect.objectContaining({ idempotencyKey: expect.stringMatching(/^casino-war-decision-/) }))
     expect((await screen.findAllByText('Player War Win')).length).toBeGreaterThan(0)
-    expect(screen.getByLabelText('ace of hearts')).toBeTruthy()
-    expect(screen.getByLabelText('king of spades')).toBeTruthy()
+    expect(await screen.findByLabelText('ace of hearts')).toBeTruthy()
+    expect(await screen.findByLabelText('king of spades')).toBeTruthy()
   })
 
   it('prevents duplicate deals while busy', async () => {
@@ -138,6 +138,25 @@ describe('CasinoWarGame', () => {
 
     resolveRound?.(immediateRound)
     await screen.findByRole('button', { name: 'New Round' })
+  })
+
+  it('repeats the settled stakes without making the player re-enter them', async () => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue(immediateRound)
+    render(<CasinoWarGame gateway={fakeGateway({ createRound })} />)
+
+    const primary = await screen.findByRole('spinbutton', { name: 'Primary stake' })
+    await user.clear(primary)
+    await user.type(primary, '10')
+    const tie = screen.getByRole('spinbutton', { name: 'Tie stake (optional)' })
+    await user.clear(tie)
+    await user.type(tie, '2')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    await user.click(await screen.findByRole('button', { name: 'Rebet' }))
+
+    expect(createRound).toHaveBeenNthCalledWith(2, 10, 2, expect.objectContaining({
+      idempotencyKey: expect.stringMatching(/^casino-war-opening-/),
+    }))
   })
 
   it('restores a pending tie decision for the same player', async () => {

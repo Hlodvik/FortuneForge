@@ -1,6 +1,7 @@
 export type HeartsPhase = 'passing' | 'playing' | 'complete'
 export type HeartsPassDirection = 'left' | 'right' | 'across' | 'hold'
 export type HeartsSeat = 'north' | 'east' | 'south' | 'west'
+export type HeartsDifficulty = 'relaxed' | 'standard' | 'sharp'
 
 export type HeartsCard = Readonly<{ code: string; rank: string; suit: string; label: string }>
 export type HeartsPlayer = Readonly<{ seat: HeartsSeat; handCount: number; roundScore: number; matchScore: number; hasPassed: boolean }>
@@ -31,13 +32,14 @@ export type HeartsMatch = Readonly<{
   completedTricks: readonly HeartsCompletedTrick[]
   score: HeartsScore
   roundScore: HeartsScore
+  difficulty: HeartsDifficulty
   winner: HeartsSeat | null
   message: string
 }>
 
 export interface HeartsGateway {
   getStatus(signal?: AbortSignal): Promise<HeartsStatus>
-  startMatch(options: { targetScore: number; seed?: number }, signal?: AbortSignal): Promise<HeartsMatch>
+  startMatch(options: { targetScore: number; difficulty?: HeartsDifficulty; seed?: number }, signal?: AbortSignal): Promise<HeartsMatch>
   pass(matchId: string, cards: readonly string[], signal?: AbortSignal): Promise<HeartsMatch>
   playCard(matchId: string, card: string, signal?: AbortSignal): Promise<HeartsMatch>
   advance(matchId: string, signal?: AbortSignal): Promise<HeartsMatch>

@@ -1,4 +1,4 @@
-import { CARD_SUITS, createShuffledDeck, type CardRank, type CardSuit } from '../shared/cards'
+import { CARD_SUITS, cardLabel, createShuffledDeck, type CardRank, type CardSuit } from '../shared/cards'
 import type {
   SolitaireCard,
   SolitaireCommand,
@@ -87,6 +87,46 @@ export function canApplyLocalSolitaireCommand(
   } catch {
     return false
   }
+}
+
+export type SolitaireHint = Readonly<{ command: Extract<SolitaireCommand, { type: 'move' | 'draw' | 'flip' }>; message: string }>
+
+export function findLocalSolitaireHint(game: SolitaireGame): SolitaireHint | null {
+  for (let column = 0; column < game.tableau.length; column += 1) {
+    const pile = game.tableau[column]!
+    const top = pile[pile.length - 1]
+    if (top && !top.isFaceUp) {
+      return { command: { type: 'flip', column }, message: `Flip the face-down card in column ${column + 1}.` }
+    }
+  }
+
+  const sources: Array<Readonly<{ from: SolitairePileReference; startIndex: number; label: string }>> = []
+  const waste = game.waste[game.waste.length - 1]
+  if (waste?.isFaceUp) sources.push({ from: { zone: 'waste', index: 0 }, startIndex: game.waste.length - 1, label: cardLabel(waste) })
+  game.tableau.forEach((pile, column) => pile.forEach((card, startIndex) => {
+    if (card.isFaceUp) sources.push({ from: { zone: 'tableau', index: column }, startIndex, label: cardLabel(card) })
+  }))
+
+  for (const source of sources) {
+    for (let foundation = 0; foundation < game.foundations.length; foundation += 1) {
+      const command = { type: 'move', from: source.from, startIndex: source.startIndex, to: { zone: 'foundation', index: foundation } } as const
+      if (canApplyLocalSolitaireCommand(game, command)) {
+        return { command, message: `Move ${source.label} to foundation ${foundation + 1}.` }
+      }
+    }
+  }
+  for (const source of sources) {
+    for (let column = 0; column < game.tableau.length; column += 1) {
+      const command = { type: 'move', from: source.from, startIndex: source.startIndex, to: { zone: 'tableau', index: column } } as const
+      if (canApplyLocalSolitaireCommand(game, command)) {
+        return { command, message: `Move ${source.label} to tableau column ${column + 1}.` }
+      }
+    }
+  }
+  if (game.stock.length > 0 || game.waste.length > 0) {
+    return { command: { type: 'draw' }, message: game.stock.length > 0 ? 'Draw from the stock to look for another move.' : 'Recycle the waste pile to continue.' }
+  }
+  return null
 }
 
 export function nextAutoFoundationCommand(game: SolitaireGame): SolitaireCommand | null {

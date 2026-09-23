@@ -64,10 +64,15 @@ function isRound(value: unknown): value is BaccaratRound {
     value.phase !== 'settled' || !isBaccaratCards(value.playerCards) || !isBaccaratCards(value.bankerCards) ||
     !isTotal(value.playerTotal) || !isTotal(value.bankerTotal) || !isOutcome(value.outcome) ||
     typeof value.endedOnNatural !== 'boolean' || !isDisposition(value.disposition) ||
-    !isFiniteNumber(value.profit) || !isNonNegativeFinite(value.totalReturn)) return false
+    !isFiniteNumber(value.profit) || !isNonNegativeFinite(value.totalReturn) ||
+    value.shoeCardsUsed != null && !isShoeCount(value.shoeCardsUsed) ||
+    value.shoeCardsRemaining != null && !isShoeCount(value.shoeCardsRemaining) ||
+    value.shoeCardsUsed != null && value.shoeCardsRemaining != null && value.shoeCardsUsed + value.shoeCardsRemaining !== 416) return false
 
   return nearlyEqual(value.profit, value.totalReturn - value.stake)
 }
+
+function isShoeCount(value: unknown): value is number { return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 416 }
 
 function isBaccaratCards(value: unknown): value is readonly BaccaratCard[] {
   return Array.isArray(value) && value.length >= 2 && value.length <= 3 && value.every(isCard)

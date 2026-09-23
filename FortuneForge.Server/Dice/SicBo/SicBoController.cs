@@ -19,7 +19,7 @@ public sealed class SicBoController(FirestoreDb database, AccountService account
         var account = await AccountAsync(cancellationToken);
         return account is null
             ? Unauthorized(new SicBoErrorResponse("sic-bo-authentication-required", "Sign in to play Sic Bo."))
-            : Ok(new SicBoStatusResponse(true, SicBoMoney.ToRand(SicBoMoney.MinimumStakeCents), SicBoMoney.ToRand(SicBoMoney.MaximumStakeCents), SicBoMoney.ToRand(SicBoMoney.StakeIncrementCents), SicBoMoney.MaximumBetsPerRound, account.Balances.SlotsCredits, "three-dice-sic-bo"));
+            : Ok(new SicBoStatusResponse(true, SicBoMoney.ToRand(SicBoMoney.MinimumStakeCents), SicBoMoney.ToRand(SicBoMoney.MaximumStakeCents), SicBoMoney.ToRand(SicBoMoney.StakeIncrementCents), SicBoMoney.MaximumBetsPerRound, IsPractice ? SicBoMoney.ToRand(PracticeSicBoStore.StartingBalanceCents) : account.Balances.SlotsCredits, IsPractice ? "practice-three-dice-sic-bo" : "three-dice-sic-bo"));
     }
 
     [HttpPost("rounds")]
@@ -49,7 +49,8 @@ public sealed class SicBoController(FirestoreDb database, AccountService account
     }
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:SicBoEnabled", false);
-    private SicBoService Service() => new(new SicBoFirestoreStore(database), TimeProvider.System);
+    private SicBoService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeSicBoStore>() : new SicBoFirestoreStore(database), TimeProvider.System);
+    private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true && values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new SicBoErrorResponse("sic-bo-disabled", "Sic Bo is still being verified and cannot accept a wager yet."));
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) => (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
 }

@@ -5,6 +5,8 @@ import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
+import { WalletPracticeMode } from './WalletPracticeMode'
+import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedVideoPokerRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/video-poker')
@@ -16,7 +18,10 @@ export function AuthenticatedVideoPokerRoute() {
 
 function VideoPokerSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
-  const gateway = useMemo(() => new HttpVideoPokerGateway('/api/games/video-poker', fetchWithAccountSession), [])
+  const practiceMode = walletPracticeModeEnabled()
+  const gateway = useMemo(() => practiceMode
+    ? new HttpVideoPokerGateway('/api/games/video-poker', practiceAccountFetch(fetchWithAccountSession))
+    : new HttpVideoPokerGateway('/api/games/video-poker', fetchWithAccountSession), [practiceMode])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {
@@ -25,6 +30,7 @@ function VideoPokerSession({ initialAccount }: Readonly<{ initialAccount: Accoun
 
   return <div className="player-page">
     <PlayerHeader account={account} />
-    <VideoPokerGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />
+    <WalletPracticeMode enabled={practiceMode} path="/games/video-poker" />
+    <VideoPokerGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

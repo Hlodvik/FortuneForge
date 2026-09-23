@@ -94,4 +94,10 @@ if ($Target -in @('all', 'hosting')) {
         -WorkingDirectory $repoRoot
 }
 
+Write-Host "`nRunning the deployed 38-game production smoke..." -ForegroundColor Yellow
+Invoke-Checked `
+    -Executable 'npm.cmd' `
+    -Arguments @('run', 'smoke:production') `
+    -WorkingDirectory $repoRoot
+
 Write-Host "`nFortune Forge deployment complete ($Target)." -ForegroundColor Green

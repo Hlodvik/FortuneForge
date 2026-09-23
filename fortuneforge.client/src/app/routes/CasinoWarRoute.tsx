@@ -5,6 +5,8 @@ import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
+import { WalletPracticeMode } from './WalletPracticeMode'
+import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedCasinoWarRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/casino-war')
@@ -16,7 +18,10 @@ export function AuthenticatedCasinoWarRoute() {
 
 function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
-  const gateway = useMemo(() => new HttpCasinoWarGateway('/api/games/casino-war', fetchWithAccountSession), [])
+  const practiceMode = walletPracticeModeEnabled()
+  const gateway = useMemo(() => practiceMode
+    ? new HttpCasinoWarGateway('/api/games/casino-war', practiceAccountFetch(fetchWithAccountSession))
+    : new HttpCasinoWarGateway('/api/games/casino-war', fetchWithAccountSession), [practiceMode])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {
@@ -25,6 +30,7 @@ function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: Account
 
   return <div className="player-page">
     <PlayerHeader account={account} />
-    <CasinoWarGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />
+    <WalletPracticeMode enabled={practiceMode} path="/games/casino-war" />
+    <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

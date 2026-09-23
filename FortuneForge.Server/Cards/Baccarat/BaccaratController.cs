@@ -28,8 +28,8 @@ public sealed class BaccaratController(
                 BaccaratMoney.ToRand(BaccaratMoney.MinimumStakeCents),
                 BaccaratMoney.ToRand(BaccaratMoney.MaximumStakeCents),
                 BaccaratMoney.ToRand(BaccaratMoney.StakeIncrementCents),
-                account.Balances.SlotsCredits,
-                "eight-deck-punto-banco"));
+                IsPractice ? BaccaratMoney.ToRand(PracticeBaccaratStore.StartingBalanceCents) : account.Balances.SlotsCredits,
+                IsPractice ? "practice-eight-deck-punto-banco" : "eight-deck-punto-banco"));
     }
 
     [HttpPost("rounds")]
@@ -65,7 +65,14 @@ public sealed class BaccaratController(
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:BaccaratEnabled", false);
 
-    private BaccaratService Service() => new(new BaccaratFirestoreStore(database), TimeProvider.System);
+    private BaccaratService Service() => new(
+        IsPractice
+            ? HttpContext.RequestServices.GetRequiredService<PracticeBaccaratStore>()
+            : new BaccaratFirestoreStore(database),
+        TimeProvider.System);
+
+    private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
+        values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null

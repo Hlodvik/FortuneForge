@@ -28,7 +28,7 @@ public sealed class VideoPokerController(
                 VideoPokerMoney.MinimumCoinsWagered,
                 VideoPokerMoney.MaximumCoinsWagered,
                 VideoPokerMoney.ToRand(VideoPokerMoney.CoinValueCents),
-                account.Balances.SlotsCredits));
+                IsPractice ? VideoPokerMoney.ToRand(PracticeVideoPokerStore.StartingBalanceCents) : account.Balances.SlotsCredits));
     }
 
     [HttpPost("rounds")]
@@ -84,7 +84,14 @@ public sealed class VideoPokerController(
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:VideoPokerEnabled", false);
 
-    private VideoPokerService Service() => new(new VideoPokerFirestoreStore(database), TimeProvider.System);
+    private VideoPokerService Service() => new(
+        IsPractice
+            ? HttpContext.RequestServices.GetRequiredService<PracticeVideoPokerStore>()
+            : new VideoPokerFirestoreStore(database),
+        TimeProvider.System);
+
+    private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
+        values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
 
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null

@@ -41,6 +41,14 @@
 .game-hub-sidebar a.is-active { background: linear-gradient(135deg, rgb(255 198 61 / 18%), rgb(239 61 255 / 14%)); color: #fff1bd; }
 .game-hub-content { min-width: 0; overflow: auto; }
 .player-page { font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif; }
+.wallet-practice { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .65rem max(1rem, calc((100vw - 86rem) / 2)); border-bottom: 1px solid rgb(255 198 61 / 35%); background: #160c2c; color: #efe7ff; }
+.wallet-practice.is-enabled { border-color: rgb(72 240 176 / 48%); background: linear-gradient(90deg, #07352e, #10243a); }
+.wallet-practice div { display: grid; gap: .12rem; }
+.wallet-practice strong { color: #fff0a9; font-size: .78rem; }
+.wallet-practice.is-enabled strong { color: #8ff3c7; }
+.wallet-practice span { color: #bfc5da; font-size: .65rem; }
+.wallet-practice a { flex: 0 0 auto; min-height: 2.45rem; padding: .65rem .85rem; border: 1px solid currentColor; border-radius: 999px; color: #ffe58a; font-size: .68rem; font-weight: 900; text-decoration: none; }
+.wallet-practice.is-enabled a { color: #9ce9d2; }
 
 .player-home-page { min-height: 100svh; }
 .player-home-main { display: grid; width: min(100% - 2rem, 86rem); min-height: calc(100svh - 3.75rem); margin: 0 auto; padding: clamp(1.5rem, 4svh, 2.5rem) 0; align-content: start; }
@@ -85,4 +93,6 @@
   .player-home-grid { height: auto; margin-top: 2rem; grid-template-columns: 1fr; }
   .player-home-card--games { min-height: 15rem; }
   .player-home-card--recent, .player-home-card--account { min-height: 17rem; }
+  .wallet-practice { align-items: stretch; flex-direction: column; }
+  .wallet-practice a { text-align: center; }
 }

@@ -12,6 +12,10 @@ using FortuneForge.Server.Games.TwentyFortyEight;
 using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Arcade.Competition;
+using FortuneForge.Server.Cards.VideoPoker;
+using FortuneForge.Server.Cards.Baccarat;
+using FortuneForge.Server.Cards.CasinoWar;
+using FortuneForge.Server.Dice.SicBo;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -46,6 +50,10 @@ public static class FortuneForgeStartup
         builder.Services.AddSingleton<DropMergeGameService>();
         builder.Services.AddSingleton<LiarsDiceGameService>();
         builder.Services.AddSingleton<TwentyFortyEightGameService>();
+        builder.Services.AddSingleton<PracticeVideoPokerStore>();
+        builder.Services.AddSingleton<PracticeBaccaratStore>();
+        builder.Services.AddSingleton<PracticeCasinoWarStore>();
+        builder.Services.AddSingleton<PracticeSicBoStore>();
 
         return builder;
     }

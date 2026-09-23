@@ -30,6 +30,7 @@
     "web:test": "npm run test --workspace fortuneforge.client",
     "web:lint": "npm run lint --workspace fortuneforge.client",
     "web:build": "npm run build --workspace fortuneforge.client",
+    "smoke:production": "node ./scripts/smoke-production.mjs",
     "test": "npm run games:test && npm run web:test",
     "lint": "npm run web:lint",
     "build": "npm run games:build && npm run web:build",

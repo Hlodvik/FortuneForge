@@ -5,6 +5,8 @@ import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
+import { WalletPracticeMode } from './WalletPracticeMode'
+import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedBaccaratRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/baccarat')
@@ -16,7 +18,10 @@ export function AuthenticatedBaccaratRoute() {
 
 function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
-  const gateway = useMemo(() => new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession), [])
+  const practiceMode = walletPracticeModeEnabled()
+  const gateway = useMemo(() => practiceMode
+    ? new HttpBaccaratGateway('/api/games/baccarat', practiceAccountFetch(fetchWithAccountSession))
+    : new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession), [practiceMode])
 
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const refreshBalance = useCallback(() => {
@@ -25,6 +30,7 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
 
   return <div className="player-page">
     <PlayerHeader account={account} />
-    <BaccaratGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />
+    <WalletPracticeMode enabled={practiceMode} path="/games/baccarat" />
+    <BaccaratGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

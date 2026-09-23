@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KenoGame } from './KenoGame'
 import { KenoGatewayError, type KenoGateway, type KenoRound } from './contracts'
 
-afterEach(() => { cleanup(); sessionStorage.clear() })
+afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear() })
 
 describe('KenoGame', () => {
   it('retries an unavailable table connection without requiring a page refresh', async () => {
@@ -76,7 +76,9 @@ describe('KenoGame', () => {
     await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
 
     expect(gateway.createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] } }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^keno-/) }))
-    expect(await screen.findByText('2 hits')).toBeTruthy()
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(screen.getByRole('button', { name: 'Repeat this ticket' })).toBeTruthy()
+    expect(screen.getByText('2 hits', { selector: '.ff-keno__result strong' })).toBeTruthy()
     expect(screen.getByText('2 of 3 picks hit.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Number 3, hit' }).className).toContain('is-hit')
     expect(screen.getByRole('button', { name: 'Number 15, missed' }).className).toContain('is-missed')
@@ -115,7 +117,7 @@ describe('KenoGame', () => {
     await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
     await screen.findByRole('alert')
     await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
-    await screen.findByText('2 hits')
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
 
     expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).toBe(createRound.mock.calls[0]?.[1]?.idempotencyKey)
   })
@@ -127,10 +129,68 @@ describe('KenoGame', () => {
     const createRound = vi.fn().mockResolvedValue(completedRound)
     render(<KenoGame playerId="player-7" gateway={fakeGateway({ createRound })} />)
 
-    expect(await screen.findByText('2 hits')).toBeTruthy()
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(screen.getByRole('button', { name: 'Repeat this ticket' })).toBeTruthy()
     expect(createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] } }, expect.objectContaining({
       idempotencyKey: 'keno-recovery-0001', signal: expect.any(AbortSignal),
     }))
+  })
+
+  it('builds full quick-pick tickets and explains that the table is free play', async () => {
+    const user = userEvent.setup()
+    render(<KenoGame gateway={fakeGateway()} />)
+    await screen.findByText('Keno ready')
+
+    await user.click(screen.getByRole('button', { name: 'Quick pick 10 numbers' }))
+
+    expect(screen.getByText(/10 of 10 numbers selected/)).toBeTruthy()
+    expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(10)
+    expect(screen.getByText(/awards no credits/i)).toBeTruthy()
+    expect(screen.getByRole('table', { name: '10-spot hit probabilities' })).toBeTruthy()
+  })
+
+  it('saves and restores a favorite ticket for the current player', async () => {
+    const user = userEvent.setup()
+    render(<KenoGame playerId="player-7" gateway={fakeGateway()} initialSelection={[4, 17, 72]} />)
+    await screen.findByText('Keno ready')
+
+    await user.click(screen.getByRole('button', { name: 'Save ticket' }))
+    await user.click(screen.getByRole('button', { name: 'Clear selection' }))
+    await user.click(screen.getByRole('button', { name: 'Load saved' }))
+
+    expect(screen.getByText(/3 of 10 numbers selected/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Number 4' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Number 17' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Number 72' }).getAttribute('aria-pressed')).toBe('true')
+    expect(localStorage.getItem('fortuneforge:keno:favorite:player-7')).toBe('[4,17,72]')
+  })
+
+  it('reveals the draw in stages and locks ticket changes until it is complete', async () => {
+    const user = userEvent.setup()
+    render(<KenoGame gateway={fakeGateway()} initialSelection={[3, 7, 15]} />)
+    await screen.findByText('Keno ready')
+
+    await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
+
+    expect(await screen.findByText('Drawing live')).toBeTruthy()
+    expect((screen.getByRole('button', { name: /^Number 3$/ }) as HTMLButtonElement).disabled).toBe(true)
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(screen.getByRole('button', { name: 'Repeat this ticket' })).toBeTruthy()
+    expect(screen.getByText('2 hits', { selector: '.ff-keno__result strong' })).toBeTruthy()
+  })
+
+  it('repeats the exact completed ticket as a fresh draw', async () => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue(completedRound)
+    render(<KenoGame gateway={fakeGateway({ createRound })} initialSelection={[3, 7, 15]} />)
+    await screen.findByText('Keno ready')
+    await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    await user.click(screen.getByRole('button', { name: 'Repeat this ticket' }))
+
+    expect(createRound).toHaveBeenCalledTimes(2)
+    expect(createRound.mock.calls[1]?.[0]).toEqual({ ticket: { numbers: [3, 7, 15] } })
+    expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).not.toBe(createRound.mock.calls[0]?.[1]?.idempotencyKey)
   })
 })
 

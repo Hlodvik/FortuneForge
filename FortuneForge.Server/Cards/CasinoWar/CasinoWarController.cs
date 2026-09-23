@@ -14,7 +14,7 @@ public sealed class CasinoWarController(FirestoreDb database, AccountService acc
     [HttpGet("status")][EnableRateLimiting(RateLimitPolicies.SlotReads)] public async Task<ActionResult> Status(CancellationToken cancellationToken)
     {
         if (Disabled() is { } unavailable) return unavailable; var account = await AccountAsync(cancellationToken);
-        return account is null ? Unauthorized(new CasinoWarErrorResponse("casino-war-authentication-required", "Sign in to play Casino War.")) : Ok(new CasinoWarStatusResponse(true, CasinoWarMoney.ToRand(CasinoWarMoney.MinimumPrimaryStakeCents), CasinoWarMoney.ToRand(CasinoWarMoney.MaximumPrimaryStakeCents), CasinoWarMoney.ToRand(CasinoWarMoney.StakeIncrementCents), CasinoWarMoney.ToRand(CasinoWarMoney.MaximumTieStakeCents), account.Balances.SlotsCredits, "six-deck-casino-war"));
+        return account is null ? Unauthorized(new CasinoWarErrorResponse("casino-war-authentication-required", "Sign in to play Casino War.")) : Ok(new CasinoWarStatusResponse(true, CasinoWarMoney.ToRand(CasinoWarMoney.MinimumPrimaryStakeCents), CasinoWarMoney.ToRand(CasinoWarMoney.MaximumPrimaryStakeCents), CasinoWarMoney.ToRand(CasinoWarMoney.StakeIncrementCents), CasinoWarMoney.ToRand(CasinoWarMoney.MaximumTieStakeCents), IsPractice ? CasinoWarMoney.ToRand(PracticeCasinoWarStore.StartingBalanceCents) : account.Balances.SlotsCredits, IsPractice ? "practice-six-deck-casino-war" : "six-deck-casino-war"));
     }
     [HttpPost("rounds")][EnableRateLimiting(RateLimitPolicies.SlotSpins)] public async Task<ActionResult> Start(CreateCasinoWarRoundRequest request, [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey, CancellationToken cancellationToken)
     {
@@ -32,7 +32,8 @@ public sealed class CasinoWarController(FirestoreDb database, AccountService acc
         try { return Ok(await Service().DecideAsync(account.UserId, roundId, request, idempotencyKey ?? string.Empty, cancellationToken)); } catch (Exception exception) { return CasinoWarHttp.FromException(this, exception, logger); }
     }
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:CasinoWarEnabled", false);
-    private CasinoWarService Service() => new(new CasinoWarFirestoreStore(database), TimeProvider.System);
+    private CasinoWarService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeCasinoWarStore>() : new CasinoWarFirestoreStore(database), TimeProvider.System);
+    private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true && values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new CasinoWarErrorResponse("casino-war-disabled", "Casino War is still being verified and cannot accept a wager yet."));
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) => (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
 }

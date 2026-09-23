@@ -6,7 +6,7 @@ import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from 
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { WalletPracticeMode } from './WalletPracticeMode'
+import { PracticeModeBanner } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedSicBoRoute() {
@@ -32,7 +32,7 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
   return <div className="player-page">
     <GameAmbientMusic game="sic-bo" />
     <PlayerHeader account={account} />
-    <WalletPracticeMode enabled={practiceMode} path="/games/sic-bo" />
+    <PracticeModeBanner enabled={practiceMode} path="/games/sic-bo" />
     <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

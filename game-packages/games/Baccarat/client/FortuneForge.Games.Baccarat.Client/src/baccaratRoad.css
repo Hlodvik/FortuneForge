@@ -1,0 +1,19 @@
+.ff-baccarat__road { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(9rem, .7fr); gap: .65rem; align-items: center; margin-bottom: .75rem; padding: .6rem; border: 1px solid rgb(255 224 156 / 20%); border-radius: .65rem; background: rgb(4 28 27 / 70%); }
+.ff-baccarat__road > div:first-child { min-width: 0; }
+.ff-baccarat__road small, .ff-baccarat__shoe span { color: #cbb888; font-size: .52rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.ff-baccarat__road ol { display: flex; gap: .23rem; margin: .25rem 0 0; padding: 0; overflow-x: auto; list-style: none; }
+.ff-baccarat__road li { display: grid; flex: 0 0 1.35rem; aspect-ratio: 1; place-items: center; border: 2px solid currentColor; border-radius: 50%; background: #f5efe3; font-size: .53rem; font-weight: 1000; }
+.ff-baccarat__road li.is-player { color: #286bc1; }
+.ff-baccarat__road li.is-banker { color: #c23b45; }
+.ff-baccarat__road li.is-tie { color: #318855; }
+.ff-baccarat__road-stats { display: grid; gap: .15rem; color: #d8d0bd; font-size: .55rem; }
+.ff-baccarat__road-stats span { display: flex; justify-content: space-between; gap: .45rem; }
+.ff-baccarat__shoe { display: grid; gap: .18rem; }
+.ff-baccarat__shoe strong { color: #f5df9c; font-size: .72rem; }
+.ff-baccarat__shoe i { height: .3rem; overflow: hidden; border-radius: 999px; background: #152f31; }
+.ff-baccarat__shoe i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #56a588, #e4b95d); }
+.ff-baccarat__shoe small { letter-spacing: 0; text-transform: none; }
+.ff-baccarat__card { animation: ff-baccarat-card-deal .28s ease-out both; }
+@keyframes ff-baccarat-card-deal { from { opacity: 0; transform: translateY(-1rem) rotate(-3deg); } to { opacity: 1; transform: none; } }
+@media (max-width: 680px) { .ff-baccarat__road { grid-template-columns: 1fr auto; } .ff-baccarat__shoe { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .ff-baccarat__card { animation: none; } }

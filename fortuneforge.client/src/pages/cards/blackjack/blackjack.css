@@ -90,6 +90,14 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid 
 .blackjack-wager > button:last-child { border-radius: 0 .7rem .7rem 0; }
 .blackjack-wager label { display: grid; min-width: 7rem; padding: .24rem .45rem; background: rgb(2 27 20 / 86%); color: #b9c8c0; font-size: .58rem; font-weight: 850; }
 .blackjack-wager input { width: 6rem; border: 0; background: transparent; color: #fff4c5; font: inherit; font-size: .9rem; font-weight: 900; text-align: center; }
+.blackjack-wager-wrap { display: grid; gap: .3rem; }
+.blackjack-chip-shortcuts { display: flex; gap: .25rem; }
+.blackjack-chip-shortcuts button { min-height: 1.9rem; flex: 1; padding: .3rem; border-radius: 999px; font-size: .58rem; }
+.blackjack-chip-shortcuts button.is-selected { outline: 2px solid #fff0a4; outline-offset: 1px; }
+.blackjack-rules-strip { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .3rem .55rem; border-block: 1px solid rgb(232 210 146 / 16%); background: rgb(3 28 21 / 62%); }
+.blackjack-rules-strip span { padding: .22rem .38rem; border-radius: 999px; background: rgb(255 255 255 / 7%); color: #d5c99e; font-size: .54rem; font-weight: 750; }
+.blackjack-rules-strip button { margin-left: auto; min-height: 1.75rem; padding: .25rem .5rem; border: 1px solid rgb(229 205 136 / 35%); border-radius: 999px; background: #173b31; color: #f1dc98; font-size: .55rem; cursor: pointer; }
+.blackjack-actions button.is-recommended { outline: 3px solid #94e0aa; outline-offset: 2px; box-shadow: 0 0 1rem rgb(108 220 139 / 34%); }
 .blackjack-balance { margin: .7rem 0 0; text-align: center; }
 .blackjack-error { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: .75rem 1rem 0; padding: .75rem 1rem; border: 1px solid rgb(255 125 125 / 43%); border-radius: .85rem; background: rgb(77 12 17 / 75%); color: #ffd8d8; font-size: .78rem; }
 .blackjack-preview { box-sizing: border-box; display: grid; width: 100%; height: 100svh; padding: clamp(.5rem, 2vw, 1.9rem); place-items: stretch; }

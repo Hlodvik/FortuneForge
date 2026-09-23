@@ -35,6 +35,9 @@ public sealed class LiarsDiceGameService
     public LiarsDiceMatchResponse Challenge(string userId, Guid matchId) =>
         Change(userId, matchId, session => ApplyHumanAction(session, new ChallengeLiarsDiceBid(HumanId)));
 
+    public LiarsDiceMatchResponse SpotOn(string userId, Guid matchId) =>
+        Change(userId, matchId, session => ApplyHumanAction(session, new SpotOnLiarsDiceBid(HumanId)));
+
     public LiarsDiceMatchResponse Advance(string userId, Guid matchId) => Change(userId, matchId, AdvanceBots);
 
     public LiarsDiceMatchResponse NextRound(string userId, Guid matchId, uint? seed) => Change(userId, matchId, session =>
@@ -89,7 +92,7 @@ public sealed class LiarsDiceGameService
             state.AllPlayerIds.Select(player => new LiarsDicePlayerResponse(player, DisplayName(player), state.DiceCounts[player],
                 state.DiceCounts[player] > 0, player == HumanId)).ToArray(),
             state.LastOutcome is { } outcome ? new LiarsDiceOutcomeResponse(outcome.ChallengerId, outcome.BidderId, outcome.LoserId,
-                outcome.Bid.Quantity, outcome.Bid.Face.Value, outcome.MatchingDice) : null,
+                outcome.Bid.Quantity, outcome.Bid.Face.Value, outcome.MatchingDice, outcome.IsSpotOn ? "spot-on" : "liar") : null,
             state.Winner, session.Message);
     }
 

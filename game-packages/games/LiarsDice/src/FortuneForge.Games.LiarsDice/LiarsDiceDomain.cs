@@ -32,13 +32,15 @@ public abstract record LiarsDiceCommand(string PlayerId);
 public sealed record PlaceLiarsDiceBid(string PlayerId, LiarsDiceBid Bid) : LiarsDiceCommand(PlayerId);
 
 public sealed record ChallengeLiarsDiceBid(string PlayerId) : LiarsDiceCommand(PlayerId);
+public sealed record SpotOnLiarsDiceBid(string PlayerId) : LiarsDiceCommand(PlayerId);
 
 public sealed record LiarsDiceChallengeOutcome(
     string ChallengerId,
     string BidderId,
     string LoserId,
     LiarsDiceBid Bid,
-    int MatchingDice);
+    int MatchingDice,
+    bool IsSpotOn = false);
 
 public sealed record LiarsDiceRoundState(
     LiarsDiceVariant Variant,

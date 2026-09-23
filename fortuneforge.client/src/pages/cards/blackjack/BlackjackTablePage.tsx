@@ -244,6 +244,7 @@ export function BlackjackTableContent(props: ContentProps) {
 }
 
 function TablePanel(props: ContentProps & { status: BlackjackTableStatus; session: BlackjackTablePlaySession }) {
+  const [showStrategy, setShowStrategy] = useState(false)
   const { table } = props.session
   const current = table.seats.find((seat) => seat.isCurrentPlayer)
   const betting = table.phase === 'betting'
@@ -254,10 +255,12 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
   const roundOutcome = getRoundOutcome(current, betting)
+  const recommendedAction = showStrategy && activeRound ? basicStrategyAction(current, table) : null
   return (
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
+        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
         {roundOutcome && <GameOutcomeBanner className="blackjack-table__outcome" {...roundOutcome} />}
         <div className="blackjack-playfield">
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
@@ -299,8 +302,8 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
             </button>
           ))}
           {activeRound && (['hit', 'stand', 'double', 'split', 'surrender'] as const).map((action) => (
-            <button type="button" key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
-              {formatLabel(action)}
+            <button type="button" className={recommendedAction === action ? 'is-recommended' : ''} key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
+              {formatLabel(action)}{recommendedAction === action ? ' · suggested' : ''}
             </button>
           ))}
           <button className="blackjack-leave" type="button" disabled={props.busy} onClick={() => props.onLeave(props.session)}>Leave table</button>
@@ -395,7 +398,21 @@ function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlay
 
 function WagerInput({ status, wager, busy, onChange }: { status: BlackjackTableStatus; wager: number; busy: boolean; onChange: (value: number) => void }) {
   const bump = (direction: -1 | 1) => onChange(Math.min(status.maximumWager, Math.max(status.minimumWager, wager + direction * status.wagerIncrement)))
-  return <div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span>Round wager</span><input inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button></div>
+  return <div className="blackjack-wager-wrap"><div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span>Round wager</span><input inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button></div><div className="blackjack-chip-shortcuts" aria-label="Quick chip values">{[1, 5, 10, 25, 50].filter(value => value >= status.minimumWager && value <= status.maximumWager).map(value => <button type="button" className={wager === value ? 'is-selected' : ''} disabled={busy} onClick={() => onChange(value)} key={value}>R{value}</button>)}</div></div>
+}
+
+function basicStrategyAction(seat: BlackjackTableSeat | undefined, table: BlackjackTable): BlackjackTableAction | null {
+  if (!seat || seat.seat !== table.activeSeat) return null
+  const hand = seat.hands?.find(item => item.active)?.hand ?? seat.hand
+  const score = hand.score
+  if (score === null) return null
+  if ((score === 10 || score === 11) && table.legalActions.includes('double')) return 'double'
+  const dealerRank = table.dealer.cards.find(card => !card.hidden)?.rank
+  const numericDealerRank = Number(dealerRank)
+  const dealerValue = dealerRank === 'A' ? 11 : Number.isFinite(numericDealerRank) ? Math.min(10, numericDealerRank) : 10
+  if (score >= 17) return table.legalActions.includes('stand') ? 'stand' : null
+  if (score <= 11) return table.legalActions.includes('hit') ? 'hit' : null
+  return dealerValue >= 2 && dealerValue <= 6 && table.legalActions.includes('stand') ? 'stand' : table.legalActions.includes('hit') ? 'hit' : null
 }
 
 function Hand({ label, hand, scope, compact = false }: { label: string; hand: BlackjackTableHand; scope: string; compact?: boolean }) {

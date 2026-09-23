@@ -1,0 +1,11 @@
+.ff-liars-probability { display: grid; gap: .12rem; margin-top: .45rem; padding: .4rem; border: 1px solid #ddbf7655; border-radius: .5rem; background: rgb(16 20 34 / 74%); }
+.ff-liars-probability small { color: #cdbb8d; font-size: .5rem; }
+.ff-liars-probability b { color: #ffe49b; font-size: 1rem; }
+.ff-liars-probability span { color: #aeb7c6; font-size: .52rem; }
+.ff-liars-history { padding: .55rem .7rem; border: 1px solid #dbc47b33; border-radius: .65rem; background: rgb(17 19 32 / 72%); color: #e8d8a8; }
+.ff-liars-history summary { cursor: pointer; font-size: .65rem; font-weight: 850; }
+.ff-liars-history ol { display: grid; gap: .3rem; max-height: 7rem; overflow: auto; margin: .45rem 0 0; padding: 0; list-style: none; }
+.ff-liars-history li { display: flex; gap: .55rem; color: #c8cbd5; font-size: .58rem; }
+.ff-liars-history li b { color: #f0d68a; white-space: nowrap; }
+.ff-liars-calls { display: grid; grid-template-columns: 1fr 1fr; gap: .4rem; }
+.ff-liars-spot-on { min-height: 2.65rem; border: 1px solid #d7bc7255; border-radius: .55rem; background: #344d65; color: #e6f3ff; font-weight: 900; cursor: pointer; }

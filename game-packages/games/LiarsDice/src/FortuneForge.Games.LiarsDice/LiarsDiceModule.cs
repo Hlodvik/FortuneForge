@@ -15,7 +15,7 @@ public static class LiarsDiceModule
             "0.1.1",
             "/games/liars-dice",
             "/api/games/liars-dice",
-            GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.Bots);
+            GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.Bots | GameCapability.History);
         descriptor.Validate();
         return descriptor;
     }

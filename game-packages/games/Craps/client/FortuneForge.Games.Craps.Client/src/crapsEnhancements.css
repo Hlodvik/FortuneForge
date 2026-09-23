@@ -1,0 +1,25 @@
+.ff-craps-coach { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: .35rem .55rem; padding: .45rem .65rem; border: 1px solid #f2cf7a66; border-radius: .55rem; background: rgb(28 34 52 / 88%); color: #f8e4ad; }
+.ff-craps-coach div { display: grid; gap: .1rem; }
+.ff-craps-coach small { color: #e8bb62; font-size: .52rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.ff-craps-coach strong { font-size: .68rem; line-height: 1.3; }
+.ff-craps-coach button, .ff-craps-advanced-toggle { border: 1px solid #e4bd6f66; border-radius: .4rem; background: #3d2730; color: #f4d795; font-size: .6rem; cursor: pointer; }
+.ff-craps-extra-bets { display: flex; flex-wrap: wrap; gap: .3rem; padding: .3rem .55rem; }
+.ff-craps-extra-bets span { padding: .26rem .42rem; border: 1px solid #e3c98144; border-radius: 999px; background: rgb(20 34 45 / 82%); color: #ddd4bd; font-size: .58rem; }
+.ff-craps-extra-bets span.is-win { border-color: #78d09b; color: #baf0c9; }
+.ff-craps-extra-bets span.is-loss { opacity: .6; }
+.ff-craps-advanced-toggle { min-height: 2rem; width: 100%; }
+.ff-craps-advanced { display: grid; gap: .45rem; padding: .55rem; border: 1px solid #e3c98133; border-radius: .55rem; background: rgb(28 20 28 / 52%); }
+.ff-craps-advanced p { margin: 0; color: #d7cab0; font-size: .61rem; line-height: 1.35; }
+.ff-craps-advanced > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem; }
+.ff-craps-advanced button { min-height: 2rem; border: 1px solid #e3c98144; border-radius: .4rem; background: #34232b; color: #ead49e; font-size: .59rem; }
+.ff-craps-advanced button.is-selected { border-color: #ffe092; background: #765125; color: #fff2c7; }
+.ff-craps-odds { display: grid; grid-template-columns: 1fr 4.5rem auto; gap: .35rem; align-items: center; padding: .45rem; border: 1px solid #e4bd6f55; border-radius: .5rem; background: #261e2a; }
+.ff-craps-odds p { display: grid; gap: .1rem; margin: 0; color: #f4dfa9; font-size: .61rem; }
+.ff-craps-odds p span { color: #c8b98f; font-size: .55rem; }
+.ff-craps-odds input { min-width: 0; width: 100%; }
+.ff-craps-odds button { min-height: 2.15rem; border: 1px solid #f0cf81; border-radius: .4rem; background: #9a672c; color: #fff3c6; font-size: .6rem; font-weight: 900; }
+
+@media (max-width: 600px) {
+  .ff-craps-odds { grid-template-columns: 1fr 4.2rem; }
+  .ff-craps-odds button { grid-column: 1 / -1; }
+}

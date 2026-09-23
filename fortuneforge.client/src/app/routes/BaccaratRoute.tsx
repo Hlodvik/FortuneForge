@@ -5,7 +5,7 @@ import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { WalletPracticeMode } from './WalletPracticeMode'
+import { PracticeModeBanner } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedBaccaratRoute() {
@@ -30,7 +30,7 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
 
   return <div className="player-page">
     <PlayerHeader account={account} />
-    <WalletPracticeMode enabled={practiceMode} path="/games/baccarat" />
+    <PracticeModeBanner enabled={practiceMode} path="/games/baccarat" />
     <BaccaratGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

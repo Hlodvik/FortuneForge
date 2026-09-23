@@ -13,6 +13,7 @@ export type SicBoGameProps = Readonly<{
 
 const defaultGateway = new HttpSicBoGateway()
 type StoredPendingRoll = Readonly<{ idempotencyKey: string; bets: readonly SicBoBetRequest[] }>
+type RollHistory = Readonly<{ roundId: string; dice: readonly [number, number, number]; total: number; isTriple: boolean }>
 const quickBets: readonly Readonly<{ kind: SicBoBetKind; label: string; hint: string }>[] = [
   { kind: 'small', label: 'Small', hint: 'Total 4–10' }, { kind: 'big', label: 'Big', hint: 'Total 11–17' },
   { kind: 'odd', label: 'Odd', hint: 'Odd total' }, { kind: 'even', label: 'Even', hint: 'Even total' },
@@ -41,6 +42,9 @@ export function SicBoGame({ gateway = defaultGateway, playerId, currencySymbol =
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
+  const [lastSlip, setLastSlip] = useState<readonly SicBoBetRequest[]>([])
+  const [history, setHistory] = useState<readonly RollHistory[]>(() => readRollHistory(playerId))
+  const [revealedDice, setRevealedDice] = useState(0)
   const roundRequestKey = useRef<string | null>(null)
   const pendingSlip = useRef<readonly SicBoBetRequest[] | null>(null)
 
@@ -86,6 +90,23 @@ export function SicBoGame({ gateway = defaultGateway, playerId, currencySymbol =
     return () => controller.abort()
   }, [gateway, onBalanceChange, playerId, recoveryAttempt])
 
+  useEffect(() => {
+    setHistory(readRollHistory(playerId))
+  }, [playerId])
+
+  useEffect(() => {
+    if (!round) { setRevealedDice(0); return }
+    setHistory(current => {
+      if (current.some(item => item.roundId === round.roundId)) return current
+      const next = [{ roundId: round.roundId, dice: round.dice, total: round.total, isTriple: round.isTriple }, ...current].slice(0, 12)
+      writeRollHistory(playerId, next)
+      return next
+    })
+    setRevealedDice(0)
+    const timers = [0, 1, 2].map(index => window.setTimeout(() => setRevealedDice(index + 1), 220 + index * 260))
+    return () => timers.forEach(timer => window.clearTimeout(timer))
+  }, [playerId, round])
+
   const balance = currentBalance ?? round?.balance ?? status?.balance ?? null
   const totalStake = useMemo(() => slip.reduce((sum, bet) => sum + bet.stake, 0), [slip])
   const remainingBalance = balance === null ? null : balance - totalStake
@@ -109,6 +130,7 @@ export function SicBoGame({ gateway = defaultGateway, playerId, currencySymbol =
     if (!canRoll || busy) return
     const idempotencyKey = roundRequestKey.current ??= createRequestKey()
     const bets = pendingSlip.current ?? slip
+    setLastSlip(bets)
     pendingSlip.current = bets
     storePendingRoll(playerId, { idempotencyKey, bets })
     setBusy(true)
@@ -123,10 +145,10 @@ export function SicBoGame({ gateway = defaultGateway, playerId, currencySymbol =
     }).catch(reason => setError(messageForError(reason))).finally(() => setBusy(false))
   }
 
-  const newRound = () => {
+  const newRound = (repeat = false) => {
     if (busy) return
     setRound(null)
-    setSlip([])
+    setSlip(repeat ? lastSlip : [])
     setError(null)
     roundRequestKey.current = null
     pendingSlip.current = null
@@ -187,30 +209,33 @@ export function SicBoGame({ gateway = defaultGateway, playerId, currencySymbol =
         {!stakeValid && <p className="ff-sic-bo__validation">Use a stake from {formatMoney(status.minimumStake, currencySymbol)} to {formatMoney(status.maximumStakePerBet, currencySymbol)} in {formatMoney(status.stakeIncrement, currencySymbol)} steps.</p>}
       </section>
 
-      <Slip slip={slip} totalStake={totalStake} balance={balance} locked={locked} busy={busy} retryPending={pendingSlip.current !== null} maxBets={status.maximumBetsPerRound} currencySymbol={currencySymbol} onRemove={index => { roundRequestKey.current = null; setSlip(current => current.filter((_, currentIndex) => currentIndex !== index)) }} onRoll={roll} canRoll={canRoll} />
+      <Slip slip={slip} totalStake={totalStake} balance={balance} locked={locked} busy={busy} retryPending={pendingSlip.current !== null} maxBets={status.maximumBetsPerRound} currencySymbol={currencySymbol} onRemove={index => { roundRequestKey.current = null; setSlip(current => current.filter((_, currentIndex) => currentIndex !== index)) }} onClear={() => { roundRequestKey.current = null; setSlip([]) }} onRoll={roll} canRoll={canRoll} />
     </section>}
 
     {recovery === 'recovering' && <p className="ff-sic-bo__state" role="status">Restoring your pending Sic Bo roll…</p>}
     {recovery === 'failed' && <button className="ff-sic-bo__primary" type="button" onClick={() => setRecoveryAttempt(value => value + 1)}>Retry restoration</button>}
 
-    {round && <SettledRound round={round} currencySymbol={currencySymbol} onNewRound={newRound} disabled={busy} />}
+    {round && <SettledRound round={round} currencySymbol={currencySymbol} onNewRound={() => newRound(false)} onRepeat={() => newRound(true)} canRepeat={lastSlip.length > 0 && lastSlip.reduce((sum, bet) => sum + bet.stake, 0) <= round.balance + 1e-9} disabled={busy} revealedDice={revealedDice} history={history} />}
     {error && <p className="ff-sic-bo__error" role="alert">{error}</p>}
   </main>
 }
 
-function Slip({ slip, totalStake, balance, locked, busy, retryPending, maxBets, currencySymbol, onRemove, onRoll, canRoll }: Readonly<{ slip: readonly SicBoBetRequest[]; totalStake: number; balance: number | null; locked: boolean; busy: boolean; retryPending: boolean; maxBets: number; currencySymbol: string; onRemove: (index: number) => void; onRoll: () => void; canRoll: boolean }>) {
-  return <aside className="ff-sic-bo__slip" aria-label="Bet slip"><div className="ff-sic-bo__section-heading"><div><span>Round slip</span><h2>{slip.length} / {maxBets} bets</h2></div><p>{slip.length === 0 ? 'Add one or more bets to roll.' : 'Bets roll in this order.'}</p></div>
+function Slip({ slip, totalStake, balance, locked, busy, retryPending, maxBets, currencySymbol, onRemove, onClear, onRoll, canRoll }: Readonly<{ slip: readonly SicBoBetRequest[]; totalStake: number; balance: number | null; locked: boolean; busy: boolean; retryPending: boolean; maxBets: number; currencySymbol: string; onRemove: (index: number) => void; onClear: () => void; onRoll: () => void; canRoll: boolean }>) {
+  return <aside className="ff-sic-bo__slip" aria-label="Bet slip"><div className="ff-sic-bo__section-heading"><div><span>Round slip</span><h2>{slip.length} / {maxBets} bets</h2></div>{slip.length > 0 ? <button className="ff-sic-bo__clear" type="button" disabled={locked} onClick={onClear}>Clear all</button> : <p>Add one or more bets to roll.</p>}</div>
     {slip.length === 0 ? <p className="ff-sic-bo__empty">Your bet slip is empty.</p> : <ol>{slip.map((bet, index) => <li key={`${bet.kind}-${index}`}><span><strong>{describeBet(bet)}</strong><small>{formatMoney(bet.stake, currencySymbol)}</small></span><button type="button" aria-label={`Remove ${describeBet(bet)}`} disabled={locked} onClick={() => onRemove(index)}>Remove</button></li>)}</ol>}
     <dl><div><dt>Total stake</dt><dd>{formatMoney(totalStake, currencySymbol)}</dd></div><div><dt>Remaining balance</dt><dd>{balance === null ? '—' : formatMoney(balance - totalStake, currencySymbol)}</dd></div></dl>
     <button className="ff-sic-bo__primary" type="button" disabled={!canRoll} onClick={onRoll}>{busy ? 'Rolling…' : retryPending ? 'Retry Roll' : 'Roll Dice'}</button>
   </aside>
 }
 
-function SettledRound({ round, currencySymbol, onNewRound, disabled }: Readonly<{ round: SicBoRound; currencySymbol: string; onNewRound: () => void; disabled: boolean }>) {
-  return <section className="ff-sic-bo__result" aria-live="polite"><div className="ff-sic-bo__result-top"><div><span>Round settled</span><h2>{round.isTriple ? 'Triple rolled' : `Total ${round.total}`}</h2><p>{round.isTriple ? `All dice show ${round.dice[0]}.` : 'Authoritative results returned by the table.'}</p></div><div className="ff-sic-bo__dice" aria-label={`Dice: ${round.dice.join(', ')}`}>{round.dice.map((value, index) => <Die key={index} value={value} />)}</div></div>
-    <section className="ff-sic-bo__settlements" aria-label="Round settlements">{round.settlements.map(settlement => <article key={settlement.betIndex} className={settlement.won ? 'is-win' : 'is-loss'}><div><span>Bet {settlement.betIndex + 1}</span><strong>{describeBet(settlement)}</strong></div><div><span>Stake</span><strong>{formatMoney(settlement.stake, currencySymbol)}</strong></div><div><span>Outcome</span><strong>{settlement.won ? 'Win' : 'Loss'}</strong><small>{settlement.won ? `${settlement.profitOdds}:1 odds` : 'No return'}</small></div><div><span>Return</span><strong>{formatMoney(settlement.totalReturn, currencySymbol)}</strong></div></article>)}</section>
+function SettledRound({ round, currencySymbol, onNewRound, onRepeat, canRepeat, disabled, revealedDice, history }: Readonly<{ round: SicBoRound; currencySymbol: string; onNewRound: () => void; onRepeat: () => void; canRepeat: boolean; disabled: boolean; revealedDice: number; history: readonly RollHistory[] }>) {
+  const smallCount = history.filter(item => !item.isTriple && item.total <= 10).length
+  const bigCount = history.filter(item => !item.isTriple && item.total >= 11).length
+  return <section className="ff-sic-bo__result" aria-live="polite"><div className="ff-sic-bo__result-top"><div><span>{revealedDice < 3 ? 'Dice tumbling' : 'Round settled'}</span><h2>{revealedDice < 3 ? 'Revealing…' : round.isTriple ? 'Triple rolled' : `Total ${round.total}`}</h2><p>{revealedDice < 3 ? 'Each die is revealed before bets settle.' : round.isTriple ? `All dice show ${round.dice[0]}.` : 'Authoritative results returned by the table.'}</p></div><div className="ff-sic-bo__dice" aria-label={`Dice: ${round.dice.join(', ')}`}>{round.dice.map((value, index) => index < revealedDice ? <Die key={index} value={value} /> : <span className="ff-sic-bo__die is-rolling" key={index} aria-label="Die rolling">?</span>)}</div></div>
+    {revealedDice === 3 && <section className="ff-sic-bo__settlements" aria-label="Round settlements">{round.settlements.map(settlement => <article key={settlement.betIndex} className={settlement.won ? 'is-win' : 'is-loss'}><div><span>Bet {settlement.betIndex + 1}</span><strong>{describeBet(settlement)}</strong></div><div><span>Stake</span><strong>{formatMoney(settlement.stake, currencySymbol)}</strong></div><div><span>Outcome</span><strong>{settlement.won ? 'Win' : 'Loss'}</strong><small>{settlement.won ? `${settlement.profitOdds}:1 odds` : 'No return'}</small></div><div><span>Return</span><strong>{formatMoney(settlement.totalReturn, currencySymbol)}</strong></div></article>)}</section>}
     <section className="ff-sic-bo__totals" aria-label="Round totals"><div><span>Total staked</span><strong>{formatMoney(round.totalStaked, currencySymbol)}</strong></div><div><span>Total return</span><strong>{formatMoney(round.totalReturn, currencySymbol)}</strong></div><div><span>Net profit/loss</span><strong className={round.profit >= 0 ? 'is-win' : 'is-loss'}>{formatSignedMoney(round.profit, currencySymbol)}</strong></div><div><span>Updated balance</span><strong>{formatMoney(round.balance, currencySymbol)}</strong></div></section>
-    <button className="ff-sic-bo__primary" type="button" disabled={disabled} onClick={onNewRound}>New Round</button>
+    <section className="ff-sic-bo__history" aria-label="Recent roll history"><div><small>Last {history.length} rolls</small><strong>Small {smallCount} · Big {bigCount} · Triples {history.filter(item => item.isTriple).length}</strong></div><ol>{history.map(item => <li key={item.roundId} className={item.isTriple ? 'is-triple' : item.total <= 10 ? 'is-small' : 'is-big'} title={item.dice.join(' + ')}>{item.total}</li>)}</ol></section>
+    <div className="ff-sic-bo__result-actions"><button className="ff-sic-bo__secondary" type="button" disabled={disabled || !canRepeat} onClick={onRepeat}>Repeat Bets</button><button className="ff-sic-bo__primary" type="button" disabled={disabled} onClick={onNewRound}>New Round</button></div>
   </section>
 }
 
@@ -256,3 +281,7 @@ function isStoredBet(value: unknown): value is SicBoBetRequest {
 function isSicBoBetKind(value: string): value is SicBoBetKind { return ['small', 'big', 'odd', 'even', 'single-number', 'total', 'two-number-combination', 'specific-double', 'any-triple', 'specific-triple'].includes(value) }
 function storePendingRoll(playerId: string | undefined, roll: StoredPendingRoll) { if (!playerId) return; try { sessionStorage.setItem(pendingRollKey(playerId), JSON.stringify(roll)) } catch { /* session storage is optional */ } }
 function clearPendingRoll(playerId: string | undefined) { if (!playerId) return; try { sessionStorage.removeItem(pendingRollKey(playerId)) } catch { /* session storage is optional */ } }
+function rollHistoryKey(playerId: string | undefined) { return `fortuneforge:sic-bo:history:${playerId ?? 'guest'}` }
+function readRollHistory(playerId: string | undefined): readonly RollHistory[] { try { const value = JSON.parse(localStorage.getItem(rollHistoryKey(playerId)) ?? '[]'); return Array.isArray(value) ? value.filter(isRollHistory).slice(0, 12) : [] } catch { return [] } }
+function writeRollHistory(playerId: string | undefined, history: readonly RollHistory[]): void { try { localStorage.setItem(rollHistoryKey(playerId), JSON.stringify(history)) } catch { /* storage is optional */ } }
+function isRollHistory(value: unknown): value is RollHistory { if (!value || typeof value !== 'object') return false; const item = value as Record<string, unknown>; return typeof item.roundId === 'string' && Array.isArray(item.dice) && item.dice.length === 3 && item.dice.every(die => Number.isInteger(die) && die >= 1 && die <= 6) && Number.isInteger(item.total) && typeof item.isTriple === 'boolean' }

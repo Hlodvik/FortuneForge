@@ -5,7 +5,7 @@ import { PlayerHeader } from '../../components/PlayerHeader'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { WalletPracticeMode } from './WalletPracticeMode'
+import { PracticeModeBanner } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedCasinoWarRoute() {
@@ -30,7 +30,7 @@ function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: Account
 
   return <div className="player-page">
     <PlayerHeader account={account} />
-    <WalletPracticeMode enabled={practiceMode} path="/games/casino-war" />
+    <PracticeModeBanner enabled={practiceMode} path="/games/casino-war" />
     <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </div>
 }

@@ -9,6 +9,7 @@ import {
 } from './contracts'
 import { HttpBaccaratGateway } from './httpBaccaratGateway'
 import './baccarat.css'
+import './baccaratRoad.css'
 
 export type BaccaratGameProps = Readonly<{
   gateway?: BaccaratGateway
@@ -20,6 +21,7 @@ export type BaccaratGameProps = Readonly<{
 const defaultGateway = new HttpBaccaratGateway()
 
 type StoredPendingDeal = Readonly<{ idempotencyKey: string; betSide: BaccaratBetSide; stake: number }>
+type BaccaratHistoryItem = Readonly<{ roundId: string; outcome: BaccaratRound['outcome']; cardsUsed: number; natural: boolean }>
 
 export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange }: BaccaratGameProps) {
   const [status, setStatus] = useState<BaccaratStatus | null>(null)
@@ -32,6 +34,9 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
+  const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>(() => readHistory(playerId))
+  const [revealedCards, setRevealedCards] = useState(0)
+  const [shoeUsed, setShoeUsed] = useState(() => readShoeUsed(playerId))
   const dealRequestKey = useRef<string | null>(null)
   const pendingBet = useRef<Readonly<{ side: BaccaratBetSide; stake: number }> | null>(null)
 
@@ -74,6 +79,25 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
     })
     return () => controller.abort()
   }, [gateway, onBalanceChange, playerId, recoveryAttempt])
+
+  useEffect(() => { setHistory(readHistory(playerId)); setShoeUsed(readShoeUsed(playerId)) }, [playerId])
+
+  useEffect(() => {
+    if (!round) { setRevealedCards(0); return }
+    const cardsUsed = round.playerCards.length + round.bankerCards.length
+    setHistory(current => {
+      if (current.some(item => item.roundId === round.roundId)) return current
+      const next = [{ roundId: round.roundId, outcome: round.outcome, cardsUsed, natural: round.endedOnNatural }, ...current].slice(0, 40)
+      writeHistory(playerId, next)
+      const used = shoeUsed + cardsUsed > 312 ? cardsUsed : shoeUsed + cardsUsed
+      setShoeUsed(used)
+      writeShoeUsed(playerId, used)
+      return next
+    })
+    setRevealedCards(0)
+    const timers = Array.from({ length: cardsUsed }, (_, index) => window.setTimeout(() => setRevealedCards(index + 1), 160 + index * 220))
+    return () => timers.forEach(timer => window.clearTimeout(timer))
+  }, [playerId, round])
 
   const balance = round?.balance ?? status?.balance ?? null
   const stakeIsValid = status !== null && stake >= status.minimumStake && stake <= status.maximumStake &&
@@ -131,6 +155,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
       </header>
 
       <section className="ff-baccarat__table" aria-label="Baccarat table">
+        <BaccaratRoad history={history} shoeUsed={shoeUsed} />
         {!round && <section className="ff-baccarat__betting">
           <div className="ff-baccarat__table-mark"><span aria-hidden="true">♣</span><h2>Place your bet</h2><p>One hand settles automatically under the Punto Banco tableau.</p></div>
           <div className="ff-baccarat__bet-sides" role="group" aria-label="Baccarat bet side">
@@ -149,15 +174,15 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         </section>}
 
         {round && <section className="ff-baccarat__settled" aria-live="polite">
-          <div className="ff-baccarat__round-head"><span>{round.endedOnNatural ? 'Natural' : 'Tableau complete'}</span><strong>{outcomeLabel(round.outcome)}</strong></div>
-          <Hand label="Player" cards={round.playerCards} total={round.playerTotal} winner={round.outcome === 'player'} />
-          <Hand label="Banker" cards={round.bankerCards} total={round.bankerTotal} winner={round.outcome === 'banker'} />
-          <div className="ff-baccarat__settlement">
+          <div className="ff-baccarat__round-head"><span>{revealedCards < round.playerCards.length + round.bankerCards.length ? 'Dealing the tableau' : round.endedOnNatural ? 'Natural' : 'Tableau complete'}</span><strong>{revealedCards < round.playerCards.length + round.bankerCards.length ? 'Cards in the air…' : outcomeLabel(round.outcome)}</strong></div>
+          <Hand label="Player" cards={round.playerCards.slice(0, Math.ceil(revealedCards / 2))} total={revealedCards >= round.playerCards.length + round.bankerCards.length ? round.playerTotal : null} winner={revealedCards >= round.playerCards.length + round.bankerCards.length && round.outcome === 'player'} />
+          <Hand label="Banker" cards={round.bankerCards.slice(0, Math.floor(revealedCards / 2))} total={revealedCards >= round.playerCards.length + round.bankerCards.length ? round.bankerTotal : null} winner={revealedCards >= round.playerCards.length + round.bankerCards.length && round.outcome === 'banker'} />
+          {revealedCards >= round.playerCards.length + round.bankerCards.length && <div className="ff-baccarat__settlement">
             <div><span>Bet</span><strong>{capitalize(round.betSide)} · {formatMoney(round.stake, currencySymbol)}</strong></div>
             <div><span>Result</span><strong className={`is-${round.disposition}`}>{capitalize(round.disposition)}</strong></div>
             <div><span>Profit</span><strong>{formatSignedMoney(round.profit, currencySymbol)}</strong></div>
             <div><span>Total return</span><strong>{formatMoney(round.totalReturn, currencySymbol)}</strong></div>
-          </div>
+          </div>}
           <button className="ff-baccarat__primary" disabled={busy} onClick={dealAgain}>Deal Again</button>
         </section>}
       </section>
@@ -171,8 +196,15 @@ function BetButton({ side, current, label, payout, disabled, onSelect }: Readonl
   return <button type="button" className={`ff-baccarat__bet${selected ? ' is-selected' : ''}`} aria-pressed={selected} disabled={disabled} onClick={() => onSelect(side)}><strong>{label}</strong><span>{payout}</span></button>
 }
 
-function Hand({ label, cards, total, winner }: Readonly<{ label: string; cards: readonly BaccaratCard[]; total: number; winner: boolean }>) {
-  return <section className={`ff-baccarat__hand${winner ? ' is-winner' : ''}`} aria-label={`${label} hand, total ${total}`}><div className="ff-baccarat__hand-title"><span>{label}</span><strong>Total {total}</strong></div><div className="ff-baccarat__cards">{cards.map((card, index) => <CardFace key={index} card={card} />)}</div></section>
+function Hand({ label, cards, total, winner }: Readonly<{ label: string; cards: readonly BaccaratCard[]; total: number | null; winner: boolean }>) {
+  return <section className={`ff-baccarat__hand${winner ? ' is-winner' : ''}`} aria-label={`${label} hand${total === null ? '' : `, total ${total}`}`}><div className="ff-baccarat__hand-title"><span>{label}</span><strong>{total === null ? 'Dealing…' : `Total ${total}`}</strong></div><div className="ff-baccarat__cards">{cards.map((card, index) => <CardFace key={index} card={card} />)}</div></section>
+}
+
+function BaccaratRoad({ history, shoeUsed }: Readonly<{ history: readonly BaccaratHistoryItem[]; shoeUsed: number }>) {
+  const player = history.filter(item => item.outcome === 'player').length
+  const banker = history.filter(item => item.outcome === 'banker').length
+  const ties = history.filter(item => item.outcome === 'tie').length
+  return <section className="ff-baccarat__road" aria-label="Bead plate and shoe progress"><div><small>Bead plate</small><ol>{history.slice(0, 24).map(item => <li className={`is-${item.outcome}`} title={`${capitalize(item.outcome)}${item.natural ? ' natural' : ''}`} key={item.roundId}>{item.outcome[0]?.toUpperCase()}</li>)}</ol></div><div className="ff-baccarat__road-stats"><span>Player <b>{player}</b></span><span>Banker <b>{banker}</b></span><span>Tie <b>{ties}</b></span></div><div className="ff-baccarat__shoe"><span>8-deck shoe tracker</span><strong>{Math.max(0, 416 - shoeUsed)} cards</strong><i><b style={{ width: `${Math.min(100, (shoeUsed / 312) * 100)}%` }} /></i><small>Resets at the 75% cut-card point on this device.</small></div></section>
 }
 
 function CardFace({ card }: Readonly<{ card: BaccaratCard }>) {
@@ -208,3 +240,10 @@ function readPendingDeal(playerId: string): StoredPendingDeal | null {
 }
 function storePendingDeal(playerId: string | undefined, deal: StoredPendingDeal) { if (!playerId) return; try { sessionStorage.setItem(pendingDealKey(playerId), JSON.stringify(deal)) } catch { /* session storage is optional */ } }
 function clearPendingDeal(playerId: string | undefined) { if (!playerId) return; try { sessionStorage.removeItem(pendingDealKey(playerId)) } catch { /* session storage is optional */ } }
+function historyKey(playerId: string | undefined) { return `fortuneforge:baccarat:history:${playerId ?? 'guest'}` }
+function shoeKey(playerId: string | undefined) { return `fortuneforge:baccarat:shoe:${playerId ?? 'guest'}` }
+function readHistory(playerId: string | undefined): readonly BaccaratHistoryItem[] { try { const value = JSON.parse(localStorage.getItem(historyKey(playerId)) ?? '[]'); return Array.isArray(value) ? value.filter(isHistoryItem).slice(0, 40) : [] } catch { return [] } }
+function writeHistory(playerId: string | undefined, history: readonly BaccaratHistoryItem[]): void { try { localStorage.setItem(historyKey(playerId), JSON.stringify(history)) } catch { /* optional storage */ } }
+function isHistoryItem(value: unknown): value is BaccaratHistoryItem { if (!value || typeof value !== 'object') return false; const item = value as Record<string, unknown>; return typeof item.roundId === 'string' && (item.outcome === 'player' || item.outcome === 'banker' || item.outcome === 'tie') && Number.isInteger(item.cardsUsed) && typeof item.natural === 'boolean' }
+function readShoeUsed(playerId: string | undefined): number { try { const value = Number(localStorage.getItem(shoeKey(playerId))); return Number.isInteger(value) && value >= 0 && value <= 312 ? value : 0 } catch { return 0 } }
+function writeShoeUsed(playerId: string | undefined, used: number): void { try { localStorage.setItem(shoeKey(playerId), String(used)) } catch { /* optional storage */ } }

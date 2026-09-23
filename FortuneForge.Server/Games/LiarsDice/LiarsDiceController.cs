@@ -35,6 +35,11 @@ public sealed class LiarsDiceController(LiarsDiceGameService games, AccountServi
     public async Task<ActionResult> Challenge(Guid matchId, CancellationToken cancellationToken) =>
         await WithAccount(cancellationToken, account => Execute(() => games.Challenge(account.UserId, matchId)));
 
+    [HttpPost("matches/{matchId:guid}/spot-on")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> SpotOn(Guid matchId, CancellationToken cancellationToken) =>
+        await WithAccount(cancellationToken, account => Execute(() => games.SpotOn(account.UserId, matchId)));
+
     [HttpPost("matches/{matchId:guid}/advance")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Advance(Guid matchId, CancellationToken cancellationToken) =>

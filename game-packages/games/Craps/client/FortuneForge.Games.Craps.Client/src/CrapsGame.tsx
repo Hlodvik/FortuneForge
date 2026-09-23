@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { CrapsGatewayError, type CrapsGateway, type CrapsRound, type CrapsStatus } from './contracts'
+import { CrapsGatewayError, type CrapsExtraBetKind, type CrapsExtraBetRequest, type CrapsGateway, type CrapsRound, type CrapsStatus } from './contracts'
 import { DiceThrow } from './DiceThrow'
 import './craps.css'
+import './crapsEnhancements.css'
 
 export type CrapsGameProps = Readonly<{
   gateway: CrapsGateway
@@ -35,6 +36,11 @@ export function CrapsGame({
   const [error, setError] = useState<string | null>(null)
   const [statusRevision, setStatusRevision] = useState(0)
   const [tipsOpen, setTipsOpen] = useState(false)
+  const [coachOpen, setCoachOpen] = useState(readCoachPreference)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [extraStake, setExtraStake] = useState(5)
+  const [selectedExtras, setSelectedExtras] = useState<readonly Exclude<CrapsExtraBetKind, 'odds'>[]>([])
+  const [oddsStake, setOddsStake] = useState(10)
   const tipsButtonRef = useRef<HTMLButtonElement>(null)
   const tipsCloseRef = useRef<HTMLButtonElement>(null)
 
@@ -65,13 +71,23 @@ export function CrapsGame({
     setIsBusy(true)
     setError(null)
     try {
-      publishRound(await gateway.startRound(clampStake(stake, status)))
+      const extraBets: CrapsExtraBetRequest[] = selectedExtras.map(kind => ({ kind, stake: clampStake(extraStake, status) }))
+      publishRound(await gateway.startRound(clampStake(stake, status), undefined, extraBets))
     } catch (reason) {
       setError(messageForError(reason))
     } finally {
       setIsBusy(false)
     }
-  }, [gateway, isBusy, isYourTurn, publishRound, stake, status])
+  }, [extraStake, gateway, isBusy, isYourTurn, publishRound, selectedExtras, stake, status])
+
+  const placeOdds = useCallback(async () => {
+    if (!round || round.phase !== 'point' || !gateway.placeOdds || isBusy || !status) return
+    setIsBusy(true)
+    setError(null)
+    try { publishRound(await gateway.placeOdds(round.roundId, clampStake(oddsStake, status))) }
+    catch (reason) { setError(messageForError(reason)) }
+    finally { setIsBusy(false) }
+  }, [gateway, isBusy, oddsStake, publishRound, round, status])
 
   const roll = useCallback(async () => {
     if (!round || round.phase === 'resolved' || isBusy || !isYourTurn) return
@@ -171,6 +187,8 @@ export function CrapsGame({
               ))}
             </div>
 
+            {coachOpen && <aside className="ff-craps-coach" aria-label="Beginner coach"><div><small>Beginner coach</small><strong>{coachMessage(round)}</strong></div><button type="button" onClick={() => { setCoachOpen(false); writeCoachPreference() }}>Dismiss</button></aside>}
+
             <div className="ff-craps-center">
               <div className="ff-craps-callout" aria-live="polite">
                 <small>{isDiceInMotion ? 'Dice rolling' : phaseLabel(round)}</small>
@@ -208,6 +226,7 @@ export function CrapsGame({
               <span>PASS LINE</span>
               <strong>{round ? `R${round.stake.toFixed(2)} · Even money — R${(round.stake * 2).toFixed(2)} total return` : 'Even money (1:1)'}</strong>
             </div>
+            {(round?.extraBets?.length ?? 0) > 0 && <div className="ff-craps-extra-bets" aria-label="Extra bets">{round!.extraBets!.map((bet, index) => <span className={bet.resolved ? bet.won ? 'is-win' : 'is-loss' : ''} key={`${bet.kind}-${index}`}><b>{extraBetLabel(bet.kind)}</b> R{bet.stake.toFixed(2)}{bet.resolved ? ` · ${bet.won ? `returned R${bet.totalReturn?.toFixed(2)}` : 'lost'}` : ' · working'}</span>)}</div>}
           </div>
 
           <div className="ff-craps-controls">
@@ -240,6 +259,8 @@ export function CrapsGame({
                     >R{value}</button>
                   ))}
                 </div>
+                <button className="ff-craps-advanced-toggle" type="button" aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(value => !value)}>Common one-roll bets {advancedOpen ? '−' : '+'}</button>
+                {advancedOpen && <section className="ff-craps-advanced" aria-label="Proposition bets"><p>These resolve on the very next roll. Field pays 1:1 (2 and 12 pay 2:1), Any Seven pays 4:1, and Any Craps pays 7:1.</p><label><span>Each extra bet</span><input type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={extraStake} onChange={event => setExtraStake(Number(event.target.value))} /></label><div>{(['field', 'any-seven', 'any-craps'] as const).map(kind => <button type="button" className={selectedExtras.includes(kind) ? 'is-selected' : ''} onClick={() => setSelectedExtras(current => current.includes(kind) ? current.filter(value => value !== kind) : [...current, kind])} key={kind}>{extraBetLabel(kind)}</button>)}</div></section>}
                 <button
                   className="ff-craps-primary"
                   type="button"
@@ -252,9 +273,9 @@ export function CrapsGame({
                 New Pass Line bet
               </button>
             ) : (
-              <button className="ff-craps-primary ff-craps-primary--roll" type="button" disabled={isBusy || !isYourTurn} onClick={() => void roll()}>
+              <>{round.phase === 'point' && gateway.placeOdds && !round.extraBets?.some(bet => bet.kind === 'odds' && !bet.resolved) && <section className="ff-craps-odds"><p><b>Back the point with true odds</b><span>{oddsCopy(round.point)}</span></p><input aria-label="Pass Line odds stake" type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={oddsStake} onChange={event => setOddsStake(Number(event.target.value))} /><button type="button" disabled={isBusy} onClick={() => void placeOdds()}>Add odds</button></section>}<button className="ff-craps-primary ff-craps-primary--roll" type="button" disabled={isBusy || !isYourTurn} onClick={() => void roll()}>
                 {isBusy ? 'Dice out…' : round.phase === 'come-out' ? 'Roll the come-out' : `Roll for point ${round.point}`}
-              </button>
+              </button></>
             )}
           </div>
         </section>
@@ -331,6 +352,12 @@ function messageForError(reason: unknown): string {
   if (reason instanceof CrapsGatewayError) return reason.message
   return 'The Craps table is unavailable. Your Pass Line bet was not placed.'
 }
+
+function coachMessage(round: CrapsRound | null): string { return !round ? 'Start with Pass Line. Add one-roll bets only if you want more action.' : round.phase === 'come-out' ? 'A 7 or 11 wins now; 2, 3, or 12 loses. Any other number becomes the point.' : round.phase === 'point' ? `The puck is ON ${round.point}. Repeat ${round.point} before a 7; odds now pay without a house edge.` : 'The hand is settled. Review each return, then begin a new come-out.' }
+function extraBetLabel(kind: CrapsExtraBetKind): string { return kind === 'field' ? 'Field' : kind === 'any-seven' ? 'Any Seven' : kind === 'any-craps' ? 'Any Craps' : 'Pass Odds' }
+function oddsCopy(point: number | null): string { return point === 4 || point === 10 ? 'Pays 2:1' : point === 5 || point === 9 ? 'Pays 3:2' : 'Pays 6:5' }
+function readCoachPreference(): boolean { try { return localStorage.getItem('fortuneforge:craps:coach-dismissed') !== 'true' } catch { return true } }
+function writeCoachPreference(): void { try { localStorage.setItem('fortuneforge:craps:coach-dismissed', 'true') } catch { /* optional storage */ } }
 
 function CrapsTipsDialog({
   closeButtonRef,

@@ -30,6 +30,11 @@ public sealed class CrapsController(CrapsGameService games, AccountService accou
     public async Task<ActionResult> Roll(Guid roundId, CancellationToken cancellationToken) =>
         await WithAccount(cancellationToken, account => Execute(() => games.Roll(account.UserId, roundId)));
 
+    [HttpPost("rounds/{roundId:guid}/odds")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> PlaceOdds(Guid roundId, PlaceCrapsOddsRequest request, CancellationToken cancellationToken) =>
+        await WithAccount(cancellationToken, account => Execute(() => games.PlaceOdds(account.UserId, roundId, request.Stake)));
+
     private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action)
     {
         if (Disabled() is { } unavailable) return unavailable;

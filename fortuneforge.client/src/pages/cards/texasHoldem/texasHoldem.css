@@ -1182,6 +1182,15 @@
 .credit-holdem-raise-control label strong { color: #f6dda0; font: 700 0.82rem/1 Georgia, serif; }
 .credit-holdem-raise-control input { width: 100%; accent-color: #e4c36e; }
 .credit-holdem-raise-control > div button { min-height: 2rem; padding: 0.35rem 0.65rem; }
+.credit-holdem-raise-shortcuts { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: .3rem !important; }
+.credit-holdem-turn-clock { position: absolute; z-index: 6; top: .55rem; right: .65rem; display: grid; justify-items: end; padding: .32rem .48rem; border: 1px solid rgb(246 221 160 / 35%); border-radius: .5rem; background: rgb(3 27 24 / 86%); }
+.credit-holdem-turn-clock span { color: #9fb4ae; font-size: .48rem; font-weight: 900; text-transform: uppercase; }
+.credit-holdem-turn-clock strong { color: #f6dda0; font-size: .8rem; }
+.credit-holdem-hand-history { margin: .35rem .55rem .55rem; padding: .45rem .6rem; border: 1px solid rgb(246 221 160 / 20%); border-radius: .55rem; background: rgb(3 27 24 / 58%); color: #cad5d0; }
+.credit-holdem-hand-history summary { cursor: pointer; color: #e5cf91; font-size: .59rem; font-weight: 850; }
+.credit-holdem-hand-history ol { display: grid; gap: .2rem; max-height: 5rem; overflow: auto; margin: .4rem 0 0; padding: 0; list-style: none; }
+.credit-holdem-hand-history li { display: flex; justify-content: space-between; gap: .5rem; font-size: .54rem; }
+.credit-holdem-hand-history p { margin: .35rem 0 0; color: #dfbd78; font-size: .52rem; }
 
 .credit-holdem-preview { width: 900px; min-height: 600px; }
 .credit-holdem-preview .credit-holdem-main { width: 900px; margin: 0; }

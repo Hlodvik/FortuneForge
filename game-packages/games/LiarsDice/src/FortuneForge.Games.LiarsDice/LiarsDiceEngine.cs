@@ -59,6 +59,7 @@ public static class LiarsDiceEngine
         {
             PlaceLiarsDiceBid placeBid => PlaceBid(state, placeBid),
             ChallengeLiarsDiceBid challenge => Challenge(state, challenge),
+            SpotOnLiarsDiceBid spotOn => SpotOn(state, spotOn),
             _ => throw new ArgumentException("Unknown Liar's Dice command.", nameof(command)),
         };
     }
@@ -98,6 +99,17 @@ public static class LiarsDiceEngine
             matchingDice);
         var resolved = state with { Phase = LiarsDiceRoundPhase.Resolved, Outcome = outcome };
         return new LiarsDiceTransition(resolved, outcome);
+    }
+
+    private static LiarsDiceTransition SpotOn(LiarsDiceRoundState state, SpotOnLiarsDiceBid command)
+    {
+        if (state.CurrentBid is null || state.CurrentBidderId is null)
+            throw new LiarsDiceRuleException("A bid must be placed before it can be called spot-on.");
+
+        var matchingDice = CountMatchingDice(state);
+        var loserId = matchingDice == state.CurrentBid.Quantity ? state.CurrentBidderId : command.PlayerId;
+        var outcome = new LiarsDiceChallengeOutcome(command.PlayerId, state.CurrentBidderId, loserId, state.CurrentBid, matchingDice, true);
+        return new LiarsDiceTransition(state with { Phase = LiarsDiceRoundPhase.Resolved, Outcome = outcome }, outcome);
     }
 
     private static ImmutableArray<DieValue> CopyHand(

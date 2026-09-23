@@ -28,4 +28,16 @@ public sealed class CrapsGameServiceTests
         Assert.InRange(roll.Second, 1, 6);
         Assert.NotNull(afterRoll.LastOutcome);
     }
+
+    [Fact]
+    public void Common_one_roll_bets_are_accepted_and_settled_with_the_come_out()
+    {
+        var service = new CrapsGameService();
+        var round = service.Start("player-a", new StartCrapsRoundRequest(10m,
+            [new CrapsExtraBetRequest("field", 5m), new CrapsExtraBetRequest("any-seven", 2m)]));
+
+        Assert.Equal(2, round.ExtraBets.Count);
+        var afterRoll = service.Roll("player-a", round.RoundId);
+        Assert.All(afterRoll.ExtraBets, bet => Assert.True(bet.Resolved));
+    }
 }

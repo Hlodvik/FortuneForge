@@ -10,6 +10,7 @@ import {
 import { HttpVideoPokerGateway } from './httpVideoPokerGateway'
 import './videoPoker.css'
 import './videoPokerPaytable.css'
+import './videoPokerEnhancements.css'
 
 export type VideoPokerGameProps = Readonly<{
   gateway?: VideoPokerGateway
@@ -34,6 +35,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
+  const [strategyHelp, setStrategyHelp] = useState(false)
   const dealRequestKey = useRef<string | null>(null)
   const drawRequestKey = useRef<string | null>(null)
   const pendingDealCoins = useRef<number | null>(null)
@@ -115,12 +117,13 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const balance = round?.balance ?? status?.balance ?? null
   const awaitingDraw = round?.phase === 'awaiting-draw'
   const completed = round?.phase === 'completed'
-  const paytable = paytableRows(coinsWagered)
+  const paytable = paytableRows(round?.coinsWagered ?? coinsWagered)
+  const suggestedHolds = awaitingDraw && round?.initialCards ? recommendedHolds(round.initialCards) : []
 
-  const deal = () => {
+  const deal = (coinOverride?: number) => {
     if (!status?.available || busy || recovery !== 'ready') return
     const idempotencyKey = dealRequestKey.current ??= createRequestKey('video-poker-deal')
-    const coins = pendingDealCoins.current ?? coinsWagered
+    const coins = pendingDealCoins.current ?? coinOverride ?? coinsWagered
     pendingDealCoins.current = coins
     storePendingAction(playerId, { operation: 'deal', idempotencyKey, coinsWagered: coins })
     void act(async () => {
@@ -214,7 +217,8 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
               {wagerOptions.map(value => <option key={value} value={value}>{value} {value === 1 ? 'coin' : 'coins'} · {formatMoney(value * (status?.coinValue ?? 0), currencySymbol)}</option>)}
             </select>
           </label>
-          <button className="ff-video-poker__primary" disabled={busy || recovery !== 'ready' || !status?.available} onClick={deal}>
+          <div className="ff-video-poker__bet-controls"><button type="button" disabled={busy || !status} onClick={() => status && setCoinsWagered(value => value >= status.maximumCoinsWagered ? status.minimumCoinsWagered : value + 1)}>Bet 1</button><button type="button" disabled={busy || !status} onClick={() => { if (!status) return; setCoinsWagered(status.maximumCoinsWagered); deal(status.maximumCoinsWagered) }}>Bet Max &amp; Deal</button><button type="button" aria-pressed={strategyHelp} onClick={() => setStrategyHelp(value => !value)}>Strategy {strategyHelp ? 'On' : 'Off'}</button></div>
+          <button className="ff-video-poker__primary" disabled={busy || recovery !== 'ready' || !status?.available} onClick={() => deal()}>
             {busy ? 'Dealing…' : pendingDealCoins.current ? 'Retry Deal' : 'Deal'}
           </button>
           {recovery === 'recovering' && <p className="ff-video-poker__loading" role="status">Restoring your unfinished hand…</p>}
@@ -230,12 +234,14 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
               ? <CardButton key={index} card={card} position={index as VideoPokerCardPosition} held={heldPositions.includes(index as VideoPokerCardPosition)} disabled={busy || pendingDrawPositions.current !== null} onToggle={toggleHold} />
               : <CardFace key={index} card={card} />)}
           </div>
+          <details className="ff-video-poker__paytable ff-video-poker__paytable--round" open={completed}><summary>Paytable · {round.coinsWagered} coins</summary><table><tbody>{paytable.map(row => <tr className={completed && humanizeHandRank(round.handRank) === row.hand ? 'is-winning-row' : ''} key={row.hand}><th>{row.hand}</th><td>{row.payout}</td></tr>)}</tbody></table></details>
           {awaitingDraw && <div className="ff-video-poker__actions">
             <p>{heldPositions.length === 0 ? 'No cards held — all five will be replaced.' : `${heldPositions.length} ${heldPositions.length === 1 ? 'card' : 'cards'} held.`}</p>
+            {strategyHelp && <p className="ff-video-poker__strategy" role="status">{suggestedHolds.length === 0 ? 'No made pair or high-card hold found; drawing five is reasonable.' : `Strategy check: consider holding ${suggestedHolds.map(position => cardName(round.initialCards[position])).join(', ')}.${samePositions(suggestedHolds, heldPositions) ? ' Your holds match this simple guide.' : ' Review your holds before drawing.'}`}</p>}
             <button className="ff-video-poker__primary" disabled={busy} onClick={draw}>{busy ? 'Drawing…' : pendingDrawPositions.current ? 'Retry Draw' : 'Draw'}</button>
           </div>}
           {completed && <div className="ff-video-poker__result">
-            <span>Final hand</span><strong>{humanizeHandRank(round.handRank)}</strong><p>{round.payout === 0 ? 'No winning hand this round.' : `${formatMoney(round.payout ?? 0, currencySymbol)} won`}</p>
+            <span>Final hand</span><strong>Result: {humanizeHandRank(round.handRank)}</strong><p>{round.payout === 0 ? 'No winning hand this round.' : `${formatMoney(round.payout ?? 0, currencySymbol)} won`}</p>
             <button className="ff-video-poker__primary" disabled={busy} onClick={newHand}>New Hand</button>
           </div>}
         </section>}
@@ -277,6 +283,14 @@ function paytableRows(coinsWagered: number) { return [
   { hand: 'Two Pair', payout: 2 * coinsWagered },
   { hand: 'Jacks or Better', payout: coinsWagered },
 ] }
+function recommendedHolds(cards: readonly VideoPokerCard[]): VideoPokerCardPosition[] {
+  const groups = new Map<string, number[]>()
+  cards.forEach((card, index) => groups.set(card.rank, [...(groups.get(card.rank) ?? []), index]))
+  const made = [...groups.values()].filter(indices => indices.length >= 2).flat()
+  if (made.length > 0) return made.sort() as VideoPokerCardPosition[]
+  return cards.map((card, index) => ({ card, index })).filter(({ card }) => ['jack', 'queen', 'king', 'ace'].includes(card.rank)).map(({ index }) => index as VideoPokerCardPosition)
+}
+function samePositions(left: readonly number[], right: readonly number[]): boolean { return left.length === right.length && left.every((value, index) => value === [...right].sort()[index]) }
 function messageForError(reason: unknown) { return reason instanceof VideoPokerGatewayError ? reason.message : 'The Video Poker service is unavailable.' }
 function isTableUnavailable(reason: unknown) { return reason instanceof VideoPokerGatewayError && reason.code === 'video-poker-disabled' }
 function createRequestKey(prefix: string) { const random = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID().replaceAll('-', '') : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`; return `${prefix}-${random}` }

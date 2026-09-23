@@ -1,6 +1,7 @@
 import {
   CrapsGatewayError,
   type CrapsGateway,
+  type CrapsExtraBetRequest,
   type CrapsOutcome,
   type CrapsPhase,
   type CrapsRoll,
@@ -20,8 +21,17 @@ export class HttpCrapsGateway implements CrapsGateway {
     return this.request('/status', { signal }, isCrapsStatus)
   }
 
-  startRound(stake: number, signal?: AbortSignal): Promise<CrapsRound> {
+  startRound(stake: number, signal?: AbortSignal, extraBets?: readonly CrapsExtraBetRequest[]): Promise<CrapsRound> {
     return this.request('/rounds', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ stake, extraBets: extraBets ?? [] }),
+      signal,
+    }, isCrapsRound)
+  }
+
+  placeOdds(roundId: string, stake: number, signal?: AbortSignal): Promise<CrapsRound> {
+    return this.request(`/rounds/${encodeURIComponent(roundId)}/odds`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ stake }),
@@ -76,7 +86,10 @@ function isCrapsRound(value: unknown): value is CrapsRound {
     && Array.isArray(value.rolls)
     && value.rolls.every(isRoll)
     && (value.lastOutcome === null || isOutcome(value.lastOutcome))
+    && (value.extraBets === undefined || (Array.isArray(value.extraBets) && value.extraBets.every(isExtraBet)))
 }
+
+function isExtraBet(value: unknown): boolean { return isRecord(value) && (value.kind === 'field' || value.kind === 'any-seven' || value.kind === 'any-craps' || value.kind === 'odds') && isPositiveNumber(value.stake) && typeof value.resolved === 'boolean' && typeof value.won === 'boolean' && (value.totalReturn === null || isNonNegativeNumber(value.totalReturn)) }
 
 function isRoll(value: unknown): value is CrapsRoll {
   return isRecord(value)

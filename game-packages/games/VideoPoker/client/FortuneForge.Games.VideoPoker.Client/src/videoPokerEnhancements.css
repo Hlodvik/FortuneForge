@@ -1,0 +1,8 @@
+.ff-video-poker__bet-controls { display: flex; flex-wrap: wrap; justify-content: center; gap: .35rem; }
+.ff-video-poker__bet-controls button { min-height: 2.2rem; padding: .4rem .7rem; border: 1px solid #f9d99166; border-radius: .5rem; background: #26142b; color: #f7d99a; font-size: .65rem; font-weight: 850; cursor: pointer; }
+.ff-video-poker__bet-controls button[aria-pressed="true"] { border-color: #a9e2ae; color: #bdebc1; }
+.ff-video-poker__card-button.is-held::before { position: absolute; z-index: 3; top: -.85rem; right: .2rem; left: .2rem; padding: .22rem; border-radius: .35rem; background: #ffd66f; color: #351624; font-size: clamp(.62rem, 1.4vw, .9rem); font-weight: 1000; letter-spacing: .14em; content: "HELD"; box-shadow: 0 .25rem .5rem #0007; }
+.ff-video-poker__strategy { max-width: 42rem; padding: .55rem .7rem; border: 1px solid #a9e2ae55; border-radius: .55rem; background: #122a28; color: #c9edd0 !important; font-size: .7rem; line-height: 1.4; }
+.ff-video-poker__paytable--round { width: min(100%, 34rem); margin: auto; }
+.ff-video-poker__paytable tr.is-winning-row { background: #5f4a1f; color: #fff0a3; box-shadow: inset .25rem 0 #ffe178; }
+.ff-video-poker__paytable tr.is-winning-row th::after { content: "  WIN"; color: #ffe178; font-size: .58rem; }

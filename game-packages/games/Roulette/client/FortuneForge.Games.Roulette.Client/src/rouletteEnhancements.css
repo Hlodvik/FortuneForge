@@ -1,0 +1,18 @@
+.ff-roulette-title-actions { display: flex; align-items: center; gap: .55rem; }
+.ff-roulette-history { display: flex; align-items: center; gap: .22rem; }
+.ff-roulette-history small { margin-right: .18rem; }
+.ff-roulette-history span { display: grid; width: 1.55rem; aspect-ratio: 1; place-items: center; border: 1px solid #f5dca266; border-radius: 50%; color: #fff7e8; font-size: .55rem; font-weight: 900; }
+.ff-roulette-history span.red { background: #a22039; }
+.ff-roulette-history span.black { background: #24232a; }
+.ff-roulette-history span.green { background: #20733e; }
+.ff-roulette-racetrack { display: grid; gap: .22rem; padding: .4rem; border: 1px solid rgb(232 193 115 / 26%); border-radius: .5rem; background: #3d1024; }
+.ff-roulette-racetrack > small { color: #e2b97a; font-size: .53rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.ff-roulette-racetrack > div { display: grid; grid-template-columns: .65fr 1fr auto; gap: .22rem; }
+.ff-roulette-racetrack select { min-width: 0 !important; min-height: 1.9rem !important; font-size: .58rem !important; }
+.ff-roulette-racetrack button, .ff-roulette-bet-tools button { border: 1px solid #efc47a66; border-radius: .35rem; background: #6b1a36; color: #ffe1a0; font-size: .6rem; font-weight: 850; cursor: pointer; }
+.ff-roulette-bet-tools { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; }
+.ff-roulette-bet-tools button { min-height: 2rem; }
+
+@media (max-width: 680px) {
+  .ff-roulette-history span:nth-of-type(n+5) { display: none; }
+}

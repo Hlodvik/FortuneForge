@@ -290,14 +290,20 @@ function TableView({ table, version, busy, act, leave }: {
   const defaultRaise = creditHoldemRaiseTarget(table)
   const raiseStep = Math.max(1, Math.round((table.tableRule?.bigBlindCredits ?? 1) * 100))
   const [raiseTo, setRaiseTo] = useState(defaultRaise)
+  const [now, setNow] = useState(() => Date.now())
   useEffect(() => setRaiseTo(defaultRaise), [defaultRaise, table.handNumber, table.street])
+  useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 250); return () => window.clearInterval(timer) }, [])
   const changeRaise = (value: number) => setRaiseTo(Math.min(
     table.maximumRaiseTo,
     Math.max(defaultRaise, Number.isFinite(value) ? Math.round(value) : defaultRaise),
   ))
+  const halfPot = Math.min(table.maximumRaiseTo, Math.max(defaultRaise, table.currentBet + Math.round(table.pot / 2)))
+  const fullPot = Math.min(table.maximumRaiseTo, Math.max(defaultRaise, table.currentBet + table.pot))
+  const secondsRemaining = table.actionDeadlineAtUtc ? Math.max(0, Math.ceil((Date.parse(table.actionDeadlineAtUtc) - now) / 1000)) : Math.ceil(table.remainingActionMilliseconds / 1000)
   return (
     <section className="credit-holdem-match" data-version={version}>
       <CreditHoldemTableSurface table={table} revealDelay={260} />
+      {table.status === 'active' && <div className="credit-holdem-turn-clock" role="timer"><span>{viewer?.seat === table.activeSeat ? 'Your action' : 'Active player'}</span><strong>{secondsRemaining}s</strong></div>}
       <div className="credit-holdem-actions">
         {table.legalActions.includes('fold') && <button type="button" disabled={busy} onClick={() => act('fold')}>Fold</button>}
         {table.legalActions.includes('check') && <button type="button" disabled={busy} onClick={() => act('check')}>Check</button>}
@@ -314,9 +320,11 @@ function TableView({ table, version, busy, act, leave }: {
             <button type="button" disabled={busy || raiseTo >= table.maximumRaiseTo}
               onClick={() => changeRaise(raiseTo + raiseStep)}>+</button>
           </div>
+          <div className="credit-holdem-raise-shortcuts" aria-label="Raise shortcuts"><button type="button" onClick={() => changeRaise(halfPot)}>½ pot</button><button type="button" onClick={() => changeRaise(fullPot)}>Pot</button><button type="button" onClick={() => changeRaise(table.maximumRaiseTo)}>All in</button></div>
         </div>}
         <button className="credit-holdem-leave" type="button" disabled={busy} onClick={leave}>Leave after hand</button>
       </div>
+      <details className="credit-holdem-hand-history"><summary>Hand action trail</summary><ol>{table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)} committed{seat.status === 'all-in' ? ' · eligible pots tracked separately' : ''}</span></li>)}</ol>{table.seats.some(seat => seat.status === 'all-in') && <p>All-in players can win only the main/side-pot layers their committed chips cover.</p>}</details>
     </section>
   )
 }

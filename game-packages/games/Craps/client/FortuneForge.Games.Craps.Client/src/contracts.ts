@@ -33,6 +33,10 @@ export type CrapsOutcome = Readonly<{
   totalReturn: number | null
 }>
 
+export type CrapsExtraBetKind = 'field' | 'any-seven' | 'any-craps' | 'odds'
+export type CrapsExtraBet = Readonly<{ kind: CrapsExtraBetKind; stake: number; resolved: boolean; won: boolean; totalReturn: number | null }>
+export type CrapsExtraBetRequest = Readonly<{ kind: Exclude<CrapsExtraBetKind, 'odds'>; stake: number }>
+
 export type CrapsRound = Readonly<{
   roundId: string
   stake: number
@@ -40,12 +44,14 @@ export type CrapsRound = Readonly<{
   point: number | null
   rolls: readonly CrapsRoll[]
   lastOutcome: CrapsOutcome | null
+  extraBets?: readonly CrapsExtraBet[]
 }>
 
 export interface CrapsGateway {
   getStatus(signal?: AbortSignal): Promise<CrapsStatus>
-  startRound(stake: number, signal?: AbortSignal): Promise<CrapsRound>
+  startRound(stake: number, signal?: AbortSignal, extraBets?: readonly CrapsExtraBetRequest[]): Promise<CrapsRound>
   roll(roundId: string, signal?: AbortSignal): Promise<CrapsRound>
+  placeOdds?(roundId: string, stake: number, signal?: AbortSignal): Promise<CrapsRound>
 }
 
 export class CrapsGatewayError extends Error {

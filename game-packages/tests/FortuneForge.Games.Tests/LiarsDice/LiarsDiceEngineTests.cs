@@ -35,6 +35,21 @@ public sealed class LiarsDiceEngineTests
     }
 
     [Fact]
+    public void SpotOnCallWinsOnlyWhenBidIsExact()
+    {
+        var exact = LiarsDiceEngine.Apply(
+            LiarsDiceEngine.Apply(StartRound([4, 4], [2, 4]), new PlaceLiarsDiceBid("alice", new LiarsDiceBid(3, Die(4)))).State,
+            new SpotOnLiarsDiceBid("bob"));
+        var inexact = LiarsDiceEngine.Apply(
+            LiarsDiceEngine.Apply(StartRound([4, 4], [2, 4]), new PlaceLiarsDiceBid("alice", new LiarsDiceBid(2, Die(4)))).State,
+            new SpotOnLiarsDiceBid("bob"));
+
+        Assert.Equal("alice", exact.Outcome?.LoserId);
+        Assert.True(exact.Outcome?.IsSpotOn);
+        Assert.Equal("bob", inexact.Outcome?.LoserId);
+    }
+
+    [Fact]
     public void BidMustIncreaseAndFollowTurnOrder()
     {
         var state = StartRound([3], [4]);
@@ -86,7 +101,7 @@ public sealed class LiarsDiceEngineTests
         Assert.Equal("0.1.1", descriptor.PackageVersion);
         Assert.Equal(GameCategory.Dice, descriptor.Category);
         Assert.True(descriptor.Capabilities.HasFlag(GameCapability.Multiplayer));
-        Assert.False(descriptor.Capabilities.HasFlag(GameCapability.History));
+        Assert.True(descriptor.Capabilities.HasFlag(GameCapability.History));
     }
 
     private static LiarsDiceRoundState StartRound(int[] alice, int[] bob) =>

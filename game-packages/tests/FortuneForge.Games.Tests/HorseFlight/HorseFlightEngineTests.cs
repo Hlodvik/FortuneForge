@@ -25,9 +25,9 @@ public sealed class HorseFlightEngineTests
     }
 
     [Theory]
-    [InlineData(1, 135, 167)]
-    [InlineData(17, 125, 162)]
-    [InlineData(42, 119, 159)]
+    [InlineData(1, 129, 164)]
+    [InlineData(17, 124, 162)]
+    [InlineData(42, 103, 51)]
     [InlineData(99, 119, 159)]
     [InlineData(123456789, 130, 165)]
     public void BrowserSimulationSeedsReachTheSameTerminalTickAndScore(uint seed, int expectedTick, int expectedScore)
@@ -288,10 +288,17 @@ public sealed class HorseFlightEngineTests
             .Select(obstacle => obstacle.Kind)
             .ToHashSet();
 
-        var openingKinds = Enum.GetValues<HorseFlightObstacleKind>()
-            .Where(kind => kind is not HorseFlightObstacleKind.BatFlock and not HorseFlightObstacleKind.Skeleton)
-            .Order();
-        Assert.Equal(openingKinds, kinds.Order());
+        HorseFlightObstacleKind[] openingKinds =
+        [
+            HorseFlightObstacleKind.Boulder,
+            HorseFlightObstacleKind.Carriage,
+            HorseFlightObstacleKind.FallenLog,
+            HorseFlightObstacleKind.Fence,
+            HorseFlightObstacleKind.LassoThrower,
+            HorseFlightObstacleKind.NetTower,
+            HorseFlightObstacleKind.RollingBarrel,
+        ];
+        Assert.Equal(openingKinds.Order(), kinds.Order());
     }
 
     [Fact]
@@ -314,8 +321,18 @@ public sealed class HorseFlightEngineTests
             .Select(obstacle => obstacle.Kind)
             .ToHashSet();
 
-        Assert.Contains(HorseFlightObstacleKind.BatFlock, kinds);
-        Assert.Contains(HorseFlightObstacleKind.Skeleton, kinds);
+        HorseFlightObstacleKind[] hauntedKinds =
+        [
+            HorseFlightObstacleKind.BatFlock,
+            HorseFlightObstacleKind.Crate,
+            HorseFlightObstacleKind.CrateCluster,
+            HorseFlightObstacleKind.Dog,
+            HorseFlightObstacleKind.OilSpill,
+            HorseFlightObstacleKind.Pit,
+            HorseFlightObstacleKind.Skeleton,
+            HorseFlightObstacleKind.Well,
+        ];
+        Assert.Equal(hauntedKinds.Order(), kinds.Order());
     }
 
     [Fact]

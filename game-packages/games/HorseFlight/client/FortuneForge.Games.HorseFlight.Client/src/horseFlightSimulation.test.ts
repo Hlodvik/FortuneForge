@@ -97,13 +97,17 @@ describe('authoritative Horse Flight simulation mirror', () => {
     expect(fastFall.state.grounded).toBe(true)
   })
 
-  it('uses the same terminal replay shape expected by the server evaluator', () => {
-    let state = startHorse(17)
+  it.each([
+    [1, 129, 164],
+    [17, 124, 162],
+    [42, 103, 51],
+    [99, 119, 159],
+    [123456789, 130, 165],
+  ])('matches the server replay fixture for seed %i', (seed, expectedTick, expectedScore) => {
+    let state = startHorse(seed)
     while (state.phase === 'running') state = stepHorse(state, false).state
 
-    expect(state.phase).not.toBe('running')
-    expect(state.tick).toBeGreaterThan(1)
-    expect(state.score).toBeGreaterThan(0)
+    expect(state).toMatchObject({ phase: 'obstacle-collision', tick: expectedTick, score: expectedScore })
   })
 
   it('selects only mountain-pass obstacles before the biome transition', () => {

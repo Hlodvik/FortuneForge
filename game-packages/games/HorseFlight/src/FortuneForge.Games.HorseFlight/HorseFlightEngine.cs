@@ -35,29 +35,33 @@ public static class HorseFlightEngine
     private const int LevelsPerAdditionalObstacle = 3;
     private const int MaximumObstaclesPerPlatform = 3;
     private const double ObstacleClearance = 18;
-    private const double MaximumObstacleWidth = 84;
+    private const double MaximumObstacleWidth = 92;
     private const double HorizontalHitboxInset = 3;
     private const double VerticalHitboxInset = 2;
     private const double FenceSlideClearance = 24;
     private const double PositionTolerance = 0.000_001;
 
-    private static readonly HorseFlightObstacleDefinition[] ObstacleDefinitions =
+    private static readonly HorseFlightObstacleDefinition[] MountainObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.Fence, Width: 84, Height: 42),
+        new(HorseFlightObstacleKind.Carriage, Width: 72, Height: 48),
+        new(HorseFlightObstacleKind.Boulder, Width: 54, Height: 36),
+        new(HorseFlightObstacleKind.FallenLog, Width: 80, Height: 40),
+        new(HorseFlightObstacleKind.LassoThrower, Width: 76, Height: 64, AdditionalSpeed: 0.8),
+        new(HorseFlightObstacleKind.NetTower, Width: 92, Height: 108),
+        new(HorseFlightObstacleKind.RollingBarrel, Width: 42, Height: 42, AdditionalSpeed: 2.6),
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] HauntedObstacleDefinitions =
     [
         new(HorseFlightObstacleKind.Crate, Width: 38, Height: 34),
         new(HorseFlightObstacleKind.CrateCluster, Width: 50, Height: 60),
         new(HorseFlightObstacleKind.Pit, Width: 80, Height: 32),
         new(HorseFlightObstacleKind.Well, Width: 56, Height: 52),
-        new(HorseFlightObstacleKind.Fence, Width: 84, Height: 42),
-        new(HorseFlightObstacleKind.Carriage, Width: 72, Height: 48),
         new(HorseFlightObstacleKind.OilSpill, Width: 78, Height: 12),
-        new(HorseFlightObstacleKind.Boulder, Width: 54, Height: 36),
-        new(HorseFlightObstacleKind.FallenLog, Width: 80, Height: 40),
         new(HorseFlightObstacleKind.Dog, Width: 58, Height: 38, AdditionalSpeed: 2.2),
         new(HorseFlightObstacleKind.BatFlock, Width: 64, Height: 42, Elevation: 88, AdditionalSpeed: 1.4),
-        new(HorseFlightObstacleKind.LassoThrower, Width: 76, Height: 64, AdditionalSpeed: 0.8),
-        new(HorseFlightObstacleKind.NetTower, Width: 92, Height: 108),
         new(HorseFlightObstacleKind.Skeleton, Width: 42, Height: 52, AdditionalSpeed: 1.1),
-        new(HorseFlightObstacleKind.RollingBarrel, Width: 42, Height: 42, AdditionalSpeed: 2.6),
     ];
 
     private static double HorseLeft => HorseX - (HorseWidth / 2);
@@ -349,10 +353,9 @@ public static class HorseFlightEngine
 
             var usableWidth = platform.Width - 80 - ((obstacleSlots - 1) * ObstacleClearance);
             var slotWidth = usableWidth / obstacleSlots;
-            var eligibleDefinitions = tick >= HauntedBiomeStartTick
-                ? ObstacleDefinitions
-                : ObstacleDefinitions.Where(definition =>
-                    definition.Kind is not HorseFlightObstacleKind.BatFlock and not HorseFlightObstacleKind.Skeleton).ToArray();
+            var eligibleDefinitions = tick >= HauntedBiomeTransitionStartTick
+                ? HauntedObstacleDefinitions
+                : MountainObstacleDefinitions;
             for (var slot = 0; slot < obstacleSlots; slot++)
             {
                 var definition = eligibleDefinitions[

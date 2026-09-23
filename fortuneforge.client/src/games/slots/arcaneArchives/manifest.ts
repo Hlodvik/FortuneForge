@@ -25,6 +25,20 @@ const FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'arcane-forbidden-chapter',
+    title: 'Forbidden Chapter',
+    earnLabel: 'Land 3 archive doors for 5 chapters, or shelve 40 matching runes for 10 enhanced chapters.',
+    earnStyle: 'shelf',
+    earnHint: 'Runes remain visible on four archive shelves. Complete one 40-rune shelf to open ten Forbidden Chapters.',
+    activeModes: {
+      sync: 'Echo Chamber · one reel mirrors another',
+      rows: 'Moonlit Stacks · two extra rows open',
+      paw: 'Oracle Sight · stronger harvests appear',
+      rand: 'Fortune Script · a prize column appears',
+      'sync-paw-rand': 'Grand Grimoire · linked reels, stronger harvests, and a prize column',
+    },
+  },
 }
 
 const HELP: SlotHelpDefinition = {

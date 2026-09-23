@@ -25,6 +25,20 @@ const FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'dino-meteor-dig',
+    title: 'Meteor Dig',
+    earnLabel: 'Land 3 meteor craters for 5 digs, or excavate 40 matching fossils for 10 enhanced digs.',
+    earnStyle: 'dig',
+    earnHint: 'Fossils stay exposed across four dig sites. Complete one 40-fossil site to begin ten Meteor Dig spins.',
+    activeModes: {
+      sync: 'Predator Pack · one reel mirrors another',
+      rows: 'Deep Strata · two extra rows open',
+      paw: 'Fossil Rush · stronger field-kit hauls appear',
+      rand: 'Amber Vein · a prize column appears',
+      'rows-paw-rand': 'Extinction Layer · extra rows, stronger hauls, and a prize column',
+    },
+  },
 }
 
 const HELP: SlotHelpDefinition = {

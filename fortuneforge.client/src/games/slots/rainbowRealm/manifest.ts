@@ -28,6 +28,20 @@ const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'rainbow-orchard-rush',
+    title: 'Orchard Rush',
+    earnLabel: 'Land 3 orchard gates for 5 rushes, or fill a 40-charm glass for 10 enhanced rushes.',
+    earnStyle: 'glass',
+    earnHint: 'Fruit charms fill four orchard glasses. Finish one 40-charm glass to carry its power into ten Orchard Rush spins.',
+    activeModes: {
+      sync: 'Strawberry Sync · one reel mirrors another',
+      rows: 'Blueberry Bounty · two extra rows open',
+      paw: 'Basket Harvest · stronger basket grabs appear',
+      rand: 'Kiwi Column · a prize column appears',
+      'sync-rows-paw-rand': 'Full Spectrum · linked reels, extra rows, stronger harvests, and a prize column',
+    },
+  },
 }
 
 const RAINBOW_REALM_HELP: SlotHelpDefinition = {

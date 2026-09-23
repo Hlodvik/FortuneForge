@@ -30,6 +30,7 @@ import {
   type WinPresentationTier,
 } from './presentation/spinPresentation'
 import { slotPointsToRand } from './slotPagePresentation'
+import { getSlotKeyboardAction } from './slotKeyboard'
 import {
   requestDemoAvailability,
   requestDemoSpin,
@@ -1225,6 +1226,39 @@ export function useSlotsPageController({
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [isReloadPromptOpen])
+
+  useEffect(() => {
+    const handleKeyboardControl = (event: KeyboardEvent) => {
+      const target = event.target instanceof Element ? event.target : null
+      const isEditableTarget = target?.closest(
+        'a, button, input, select, textarea, summary, [contenteditable="true"], [role="button"], [role="slider"]',
+      ) !== null
+      const action = getSlotKeyboardAction(event.key, {
+        hasOpenDialog: isHelpOpen || isSettingsOpen || isReloadPromptOpen,
+        isEditableTarget,
+        modified: event.altKey || event.ctrlKey || event.metaKey,
+        repeated: event.repeat,
+      })
+      if (action === null) return
+
+      event.preventDefault()
+      if (action === 'spin-or-stop') {
+        handleSpinButtonClick()
+      } else if (action === 'decrease-wager') {
+        changeWager(-1)
+      } else if (action === 'increase-wager') {
+        changeWager(1)
+      } else if (action === 'toggle-mute') {
+        toggleMuted()
+      } else {
+        setIsAutoSpinning(false)
+        setIsHelpOpen(true)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyboardControl)
+    return () => window.removeEventListener('keydown', handleKeyboardControl)
+  })
 
   async function handleSpin() {
     if (spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null) {

@@ -35,6 +35,7 @@ public sealed record SlotSpecialRoundProgress(
 public static class SlotSpecialRoundProfiles
 {
     public const string ClassicGameId = "classic-demo-v1";
+    public const string RainbowRealmGameId = "rainbow-realm-fruits-v1";
     public const string CosmicFortuneGameId = "cosmic-fortune-v1";
     public const string HighNoonFortuneGameId = "high-noon-fortune-v1";
     public const string GodsOfOlympusGameId = "gods-of-olympus-v1";
@@ -67,6 +68,13 @@ public static class SlotSpecialRoundProfiles
         new Dictionary<string, SlotSpecialRoundProfile>(StringComparer.Ordinal)
         {
             [ClassicGameId] = new(ClassicGameId, 3, 5, 40, 10),
+            [RainbowRealmGameId] = new(
+                RainbowRealmGameId,
+                3,
+                5,
+                40,
+                10,
+                ScatterFeatureMode: "sync-rows-paw-rand"),
             [CosmicFortuneGameId] = new(CosmicFortuneGameId, 3, 6, 24, 7, true, true, false, null, "sync-rows"),
             [HighNoonFortuneGameId] = new(HighNoonFortuneGameId, 3, 5, 20, 8, false, false, true, "sync"),
             [GodsOfOlympusGameId] = new(GodsOfOlympusGameId, 4, 6, 28, 6, true, false, false, null, "paw-rand"),

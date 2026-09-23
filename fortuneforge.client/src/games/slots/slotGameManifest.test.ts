@@ -251,6 +251,19 @@ describe('slot game manifests', () => {
       .toBe(18)
   })
 
+  it('gives every cabinet a named, persistent feature contract', () => {
+    const features = SLOT_GAME_MANIFESTS.map((game) => game.experience.features.specialRound)
+
+    expect(features.every(Boolean)).toBe(true)
+    expect(new Set(features.map((feature) => feature?.id)).size).toBe(20)
+    for (const feature of features) {
+      expect(feature?.title).toBeTruthy()
+      expect(feature?.earnLabel).toBeTruthy()
+      expect(feature?.earnHint).toBeTruthy()
+      expect(Object.keys(feature?.activeModes ?? {})).not.toHaveLength(0)
+    }
+  })
+
   it('uses a high-paying reel symbol for every slot catalog card', () => {
     for (const gameId of REEL_SYMBOL_CATALOG_GAME_IDS) {
       const game = requireGame(gameId)

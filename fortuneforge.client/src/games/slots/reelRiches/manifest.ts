@@ -25,6 +25,20 @@ const FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'reel-riches-trophy-catch',
+    title: 'Trophy Catch',
+    earnLabel: 'Land 3 moonlit piers for 5 casts, or complete 40 tackle badges for 10 enhanced casts.',
+    earnStyle: 'buckets',
+    earnHint: 'Every tackle badge fills its own creel. Complete one 40-badge creel to launch ten Trophy Catch spins.',
+    activeModes: {
+      sync: 'Perfect Cast · one reel mirrors another',
+      rows: 'Rising Tide · two extra rows open',
+      paw: 'Net Frenzy · stronger net hauls appear',
+      rand: 'Jackpot Hook · a prize column appears',
+      'sync-rows-rand': 'Legendary Catch · linked reels, extra rows, and a prize column',
+    },
+  },
 }
 
 const HELP: SlotHelpDefinition = {

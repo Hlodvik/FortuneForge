@@ -6,6 +6,7 @@ import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
 import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
+import { SlotFeatureStatus } from './components/SlotFeatureStatus'
 import { SlotMachine } from './components/SlotMachine'
 import { SlotPlayGuide } from './components/SlotPlayGuide'
 import { SlotSymbol } from './components/SlotSymbol'
@@ -473,14 +474,22 @@ export function SlotsPageView(controller: SlotsPageController) {
               document.body,
             )}
           </div>
+          <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
+            <span><kbd>Space</kbd> Spin / stop</span>
+            <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
+            <span><kbd>M</kbd> Mute</span>
+            <span><kbd>?</kbd> Rules</span>
+          </div>
           {specialRound?.showStatusPanel !== false && specialRound && (
-            <aside className="slots-page__special-round" aria-live="polite">
-              <span>{isSpecialGameActive ? 'Special round active' : 'Earn a special round'}</span>
-              <strong>{specialRoundLabel}</strong>
-              <p>{isSpecialGameActive
-                ? 'The special game spins on its own. Press Spin to skip the next delay.'
-                : specialRound.earnHint ?? specialRound.earnLabel}</p>
-            </aside>
+            <SlotFeatureStatus
+              collections={collectionFeature}
+              collectionStates={visibleSealCollections}
+              freeSpinsRemaining={freeSpinsRemaining}
+              help={help}
+              isActive={isSpecialGameActive}
+              label={specialRoundLabel ?? specialRound.title}
+              specialRound={specialRound}
+            />
           )}
         </div>
         </div>

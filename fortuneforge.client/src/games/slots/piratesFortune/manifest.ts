@@ -46,7 +46,6 @@ const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
   },
   specialRound: {
     id: 'pirates-broadside', title: 'Free Game',
-    showStatusPanel: false,
     earnLabel: 'Land 3 Treasure Maps for 7 Island Search bonus rounds, or complete 15 matching gems for 10 free games.',
     earnStyle: 'buckets', earnHint: 'Ruby, lapis, orange, and emerald gems tumble into four treasure chests. Fill one chest to launch 10 free games with that chest\'s special feature.',
     activeModes: {

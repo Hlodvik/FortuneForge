@@ -27,6 +27,19 @@ const WUKONG_FEATURES: SlotFeatureSet = {
     collectorSymbol: 'PAW',
     valueSymbolPrefix: 'RAND_',
   },
+  specialRound: {
+    id: 'wukong-celestial-quest',
+    title: 'Celestial Quest',
+    earnLabel: 'Land 3 FREE GAME clouds for 5 quests, or complete a 40-seal orbit for 10 enhanced quests.',
+    earnStyle: 'orbit',
+    earnHint: 'Each seal circles its matching power. Complete one 40-seal orbit to unlock that power for ten Celestial Quests.',
+    activeModes: {
+      sync: 'Mirror Nimbus · one reel mirrors another',
+      rows: 'Skyward Path · two extra rows open',
+      paw: 'Monkey Paw Rush · stronger grabs appear',
+      rand: 'Fortune Cloud · a prize column appears',
+    },
+  },
 }
 
 const WUKONG_HELP: SlotHelpDefinition = {

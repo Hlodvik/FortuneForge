@@ -28,6 +28,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 5, 40, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
         int scatterCount,
@@ -65,7 +66,8 @@ public sealed class SlotSpecialRoundProfilesTests
             SlotSpecialRoundProfiles.NordicLegendsGameId,
             SlotSpecialRoundProfiles.ReelRichesGameId,
             SlotSpecialRoundProfiles.ArcaneArchivesGameId,
-            SlotSpecialRoundProfiles.DinoDominionGameId
+            SlotSpecialRoundProfiles.DinoDominionGameId,
+            SlotSpecialRoundProfiles.RainbowRealmGameId
         }
         .Select(gameId =>
         {
@@ -74,7 +76,7 @@ public sealed class SlotSpecialRoundProfilesTests
         })
         .ToArray();
 
-        Assert.Equal(7, profiles.Count(profile => profile.UsesEnergy));
+        Assert.Equal(8, profiles.Count(profile => profile.UsesEnergy));
         Assert.Equal(10, profiles.Count(profile => !profile.UsesDirectValueTokens));
         Assert.Equal(5, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections), profile =>

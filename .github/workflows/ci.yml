@@ -25,15 +25,24 @@ jobs:
         with:
           node-version: 24.18.0
           cache: npm
-          cache-dependency-path: fortuneforge.client/package-lock.json
+          cache-dependency-path: package-lock.json
+
+      - name: Verify monorepo game ownership
+        run: npm run verify:game-source
 
       - name: Restore .NET dependencies
         run: |
           dotnet restore FortuneForge.slnx
+          dotnet restore game-packages/FortuneForge.Games.slnx
           dotnet restore tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj
 
       - name: Build .NET
-        run: dotnet build FortuneForge.slnx --configuration Release --no-restore
+        run: |
+          dotnet build FortuneForge.slnx --configuration Release --no-restore
+          dotnet build game-packages/FortuneForge.Games.slnx --configuration Release --no-restore
+
+      - name: Test game packages
+        run: dotnet test game-packages/FortuneForge.Games.slnx --configuration Release --no-build
 
       - name: Audit .NET dependencies
         run: |
@@ -55,15 +64,15 @@ jobs:
             'dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build --logger "console;verbosity=normal"'
 
       - name: Install frontend dependencies
-        working-directory: fortuneforge.client
         run: npm ci
 
-      - name: Check frontend
-        working-directory: fortuneforge.client
+      - name: Check game clients and frontend
         run: |
-          npm run test
-          npm run lint
+          npm run games:check
+          npm run games:test
           npm run build
+          npm run web:test
+          npm run web:lint
           npm audit --audit-level=high
 
       - name: Build deployment image

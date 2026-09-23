@@ -1,0 +1,159 @@
+.ff-horse-flight {
+  display: grid;
+  width: min(100%, 72rem);
+  min-height: 0;
+  height: 100%;
+  margin: 0 auto;
+  padding: clamp(0.45rem, 1vw, 0.85rem) clamp(0.55rem, 1.6vw, 1.25rem);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: clamp(0.32rem, 0.8vh, 0.55rem);
+  overflow: hidden;
+  color: #f8f0df;
+}
+
+.ff-horse-flight__header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.25rem 1rem;
+}
+
+.ff-horse-flight__header > div { display: grid; gap: 0.08rem; }
+.ff-horse-flight__header small { color: #f5ca72; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.ff-horse-flight h1 { margin: 0; font-size: clamp(1.45rem, 2.5vw, 2.25rem); letter-spacing: -0.045em; line-height: 0.95; }
+.ff-horse-flight p { margin: 0; color: #c6cbd7; }
+.ff-horse-flight__header p { justify-self: end; max-width: 43rem; color: #bac8d6; font-size: clamp(0.62rem, 0.85vw, 0.76rem); line-height: 1.35; text-align: right; }
+.ff-horse-flight__header p b { color: #f8e5a8; font-weight: 850; }
+
+.ff-horse-flight > section:not(.ff-horse-flight__field) {
+  grid-row: 2 / -1;
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+}
+
+.ff-horse-flight > section.ff-horse-flight__lobby {
+  align-self: stretch;
+  justify-self: stretch;
+  justify-items: stretch;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  height: 100%;
+}
+
+.ff-horse-flight__lobby-scene {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  border: 2px solid rgb(239 194 104 / 78%);
+  border-radius: clamp(0.55rem, 1vw, 0.9rem);
+  background-color: #101c31;
+  background-position: center;
+  background-size: cover;
+  box-shadow: 0 0.85rem 2.2rem rgb(0 0 0 / 32%), inset 0 0 0 1px rgb(255 238 177 / 12%);
+}
+
+.ff-horse-flight__lobby-copy {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 0.12rem;
+  padding: 1rem;
+  background: linear-gradient(180deg, transparent, rgb(5 11 23 / 86%));
+  color: #f8f0df;
+  text-align: left;
+}
+
+.ff-horse-flight__lobby-copy span { color: #f5ca72; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
+.ff-horse-flight__lobby-copy strong { font-size: clamp(1.1rem, 2vw, 1.6rem); }
+
+.ff-horse-flight__start,
+.ff-horse-flight__over button {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border: 1px solid rgb(255 226 143 / 72%);
+  border-radius: 0.65rem;
+  background: linear-gradient(145deg, #f5c75e, #bb7724);
+  box-shadow: 0 0.65rem 1.2rem rgb(0 0 0 / 24%);
+  color: #17120b;
+  font-weight: 900;
+}
+
+.ff-horse-flight__stats {
+  display: flex;
+  width: min(100%, 50rem);
+  min-width: 0;
+  align-items: center;
+  gap: 0.3rem;
+  justify-self: center;
+  overflow: hidden;
+}
+
+.ff-horse-flight__stats span {
+  white-space: nowrap;
+  padding: 0.26rem 0.45rem;
+  border: 1px solid rgb(251 224 152 / 22%);
+  border-radius: 999px;
+  background: rgb(5 12 28 / 72%);
+  color: #b9c9d5;
+  font-size: clamp(0.56rem, 0.75vw, 0.68rem);
+}
+
+.ff-horse-flight__stats b { color: #ffe09b; }
+.ff-horse-flight__biome { margin-left: auto; color: #e9c1df !important; }
+
+.ff-horse-flight__field {
+  position: relative;
+  min-height: 0;
+  width: min(100%, 50rem);
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+  align-self: center;
+  justify-self: center;
+  outline: none;
+  border: 2px solid rgb(239 194 104 / 88%);
+  border-radius: clamp(0.55rem, 1vw, 0.9rem);
+  overflow: hidden;
+  background: #101c31;
+  box-shadow: 0 0.85rem 2.2rem rgb(0 0 0 / 32%), inset 0 0 0 1px rgb(255 238 177 / 12%);
+  cursor: pointer;
+}
+
+.ff-horse-flight__field:focus-visible { box-shadow: 0 0 0 3px rgb(255 235 158 / 78%), 0 0.85rem 2.2rem rgb(0 0 0 / 32%); }
+.ff-horse-flight__field > svg { display: block; width: 100%; height: 100%; background: #101c31; }
+.ff-horse-flight__sky { fill: #12294a; }
+.ff-horse-flight__platform { fill: #615234; }
+.ff-horse-flight__obstacle { fill: #bd473a; }
+.ff-horse-flight__horse { fill: #e5ae4d; }
+.ff-horse-flight__horse + circle { fill: #1c2537; }
+
+.ff-horse-flight__over {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 0.35rem;
+  padding: 1rem;
+  background: rgb(6 10 16 / 87%);
+  text-align: center;
+  font-size: clamp(0.8rem, 1.4vw, 1.1rem);
+}
+
+.ff-horse-flight__over strong:first-child { font-size: clamp(1.35rem, 2.5vw, 2rem); }
+.ff-horse-flight__error { color: #ffaba1; font-size: 0.7rem; text-align: center; }
+
+@media (max-width: 650px) {
+  .ff-horse-flight__header { grid-template-columns: 1fr; gap: 0.25rem; }
+  .ff-horse-flight__header p { justify-self: start; max-width: none; text-align: left; }
+  .ff-horse-flight__stats { flex-wrap: wrap; }
+  .ff-horse-flight__biome { margin-left: 0; }
+}
+
+@media (max-height: 540px) {
+  .ff-horse-flight__header p { display: none; }
+  .ff-horse-flight { padding-block: 0.35rem; }
+}

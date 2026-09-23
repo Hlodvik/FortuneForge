@@ -34,13 +34,13 @@ This was a functional and product audit, not certification. Slot simulations are
 - The remote has only `main` and the older `refactor/feature-organization` branch. Local salvage branches remain as recovery points and do not affect deployment.
 - All application restore/build/test/deploy steps run from the consolidated checkout.
 
-### What is not yet truly consolidated
+### Game-source consolidation resolved
 
-- **P0 — Make game-package releases reproducible from committed source.** Most reusable engines and UIs are consumed as vendored `.nupkg` and `.tgz` artifacts under `packages/`. Their source lives in the separate `FortuneForge.Games` checkout, which is still on `feature/game-skeletons-wave-1` with a large uncommitted migration (deleted legacy paths plus untracked `games/` source). A future package refresh can therefore rebuild from an ambiguous or stale working tree and reintroduce old behavior.
-- **P1 — Repair the reusable-games source test baseline before publishing another package.** `dotnet test FortuneForge.Games.slnx -c Release --no-restore` built all projects but finished **429 passed / 3 failed / 432 total**. The failures are stale `0.1.0` versus `0.1.1` expectations for Roulette and Hearts plus a Roulette manifest/descriptor mismatch.
-- **P1 — Add Drop Merge client tests.** Fifteen deployed reusable client packages passed **192 tests** in the source checkout; Drop Merge's `npm test` fails because it contains no test files.
-- **P1 — Build vendored packages in CI from a pinned source commit.** Record package source commit, version, and SHA in one manifest; reject dirty source trees and reject artifacts whose embedded version does not match the catalog.
-- **P2 — Run package UI tests from the application pipeline.** Many host route tests only assert that a lazy import string and API path exist. They do not render or interact with the packaged game.
+- **Resolved — reproducible package source.** Reusable server engines and deployed client packages now live under `game-packages` in this repository. The server uses project references, the web application uses npm workspaces, and copied `.nupkg`/`.tgz` feeds have been removed.
+- **Resolved — package test baseline.** Roulette and Hearts metadata now agree with their manifests and tests. The retained package suite passes from the monorepo.
+- **Resolved — Drop Merge client coverage.** Drop Merge now has a runnable helper test suite, so every deployed client workspace has tests.
+- **Resolved — CI ownership guard.** CI verifies that server games use source projects, every client game dependency maps to an in-repository workspace, and obsolete copied-package feeds are absent.
+- **Resolved — package UI pipeline.** CI type-checks, tests, and builds every deployed client game workspace before testing and building the host application.
 
 ## Cross-game release backlog
 

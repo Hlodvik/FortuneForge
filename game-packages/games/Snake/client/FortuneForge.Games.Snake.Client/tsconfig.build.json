@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src/index.ts", "src/SnakeGame.tsx", "src/contracts.ts", "src/httpSnakeGateway.ts", "src/snakeHelpers.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/dev"]
+}

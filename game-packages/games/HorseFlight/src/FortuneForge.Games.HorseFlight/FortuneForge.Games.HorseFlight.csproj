@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.HorseFlight</PackageId>
+    <Version>0.1.4</Version>
+    <Description>Deterministic fixed-step platform-running physics, generation, collisions, and scoring for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

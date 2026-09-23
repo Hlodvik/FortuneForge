@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "roulette",
+  "displayName": "Roulette",
+  "category": "casino",
+  "packageVersion": "0.1.1",
+  "clientRoute": "/games/roulette",
+  "apiBasePath": "/api/games/roulette",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

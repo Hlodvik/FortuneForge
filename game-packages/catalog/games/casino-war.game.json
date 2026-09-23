@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "casino-war",
+  "displayName": "Casino War",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/casino-war",
+  "clientPackage": "@fortuneforge/games-casino-war",
+  "apiBasePath": "/api/games/casino-war",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

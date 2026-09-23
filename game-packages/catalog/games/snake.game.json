@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "snake",
+  "displayName": "Snake",
+  "category": "arcade",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/snake",
+  "clientPackage": "@fortuneforge/games-snake",
+  "apiBasePath": "/api/games/snake",
+  "capabilities": ["free-play"],
+  "migrationState": "package-backed"
+}

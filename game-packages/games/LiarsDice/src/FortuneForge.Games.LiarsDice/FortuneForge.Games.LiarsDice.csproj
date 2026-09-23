@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.LiarsDice</PackageId>
+    <Description>Pure exact-face Liar's Dice round rules and state transitions for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.1</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+  </ItemGroup>
+</Project>

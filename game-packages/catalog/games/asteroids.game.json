@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "asteroids",
+  "displayName": "Asteroids",
+  "category": "arcade",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/asteroids",
+  "clientPackage": "@fortuneforge/games-asteroids",
+  "apiBasePath": "/api/games/asteroids",
+  "capabilities": ["free-play"],
+  "migrationState": "package-backed"
+}

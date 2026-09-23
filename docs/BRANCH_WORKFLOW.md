@@ -23,15 +23,17 @@ Generated output belongs outside commits. In particular, `node_modules`, `dist`,
 Current verification commands:
 
 ```powershell
-Push-Location fortuneforge.client
 npm ci
-npm test
-npm run lint
+npm run verify:game-source
+npm run games:check
+npm run games:test
+npm run web:test
+npm run web:lint
 npm run build
-Pop-Location
 
 dotnet build FortuneForge.slnx --configuration Release
-dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build
+dotnet test game-packages/FortuneForge.Games.slnx --configuration Release
+firebase emulators:exec --only firestore --project demo-fortuneforge-ci-tests --config FortuneForge.Server.Tests/Cards/TexasHoldem/Credit/firebase-emulator.test.json "dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build"
 ```
 
 Recovery branches prefixed with `salvage/` are evidence snapshots, not integration targets. Keep them until the consolidated branch has been reviewed and pushed. Then archive or delete them deliberately rather than merging them into `main`.

@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="10.0.10" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../games/Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
+    <ProjectReference Include="../../src/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+    <ProjectReference Include="../../games/Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
+    <ProjectReference Include="../../src/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+    <ProjectReference Include="../../games/Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
+    <ProjectReference Include="../../games/LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
+    <ProjectReference Include="../../games/Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
+    <ProjectReference Include="../../games/Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj" />
+    <ProjectReference Include="../../games/TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
+    <ProjectReference Include="../../games/TwentyFortyEight/src/FortuneForge.Games.TwentyFortyEight/FortuneForge.Games.TwentyFortyEight.csproj" />
+    <ProjectReference Include="../../games/DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
+    <ProjectReference Include="../../games/Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
+    <ProjectReference Include="../../games/HorseFlight/src/FortuneForge.Games.HorseFlight/FortuneForge.Games.HorseFlight.csproj" />
+    <ProjectReference Include="../../games/Snake/src/FortuneForge.Games.Snake/FortuneForge.Games.Snake.csproj" />
+    <ProjectReference Include="../../games/Asteroids/src/FortuneForge.Games.Asteroids/FortuneForge.Games.Asteroids.csproj" />
+    <ProjectReference Include="../../games/Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
+    <ProjectReference Include="../../games/CasinoWar/src/FortuneForge.Games.CasinoWar/FortuneForge.Games.CasinoWar.csproj" />
+    <ProjectReference Include="../../games/SicBo/src/FortuneForge.Games.SicBo/FortuneForge.Games.SicBo.csproj" />
+    <ProjectReference Include="../../games/VideoPoker/src/FortuneForge.Games.VideoPoker/FortuneForge.Games.VideoPoker.csproj" />
+    <ProjectReference Include="../../games/Keno/src/FortuneForge.Games.Keno/FortuneForge.Games.Keno.csproj" />
+    <ProjectReference Include="../../games/Keno/samples/FortuneForge.Games.Keno.Web/FortuneForge.Games.Keno.Web.csproj" />
+    <ProjectReference Include="../../src/FortuneForge.Games.TrickTaking/FortuneForge.Games.TrickTaking.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

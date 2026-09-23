@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.DropMerge</PackageId>
+    <Description>Deterministic 7×7 drop-and-merge rules for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

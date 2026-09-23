@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "drop-merge",
+  "displayName": "Drop Merge",
+  "category": "arcade",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/drop-merge",
+  "clientPackage": "@fortuneforge/games-drop-merge",
+  "apiBasePath": "/api/games/drop-merge",
+  "capabilities": ["free-play", "history"],
+  "migrationState": "package-backed"
+}

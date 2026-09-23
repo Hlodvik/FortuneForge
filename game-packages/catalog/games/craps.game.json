@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "craps",
+  "displayName": "Craps",
+  "category": "casino",
+  "packageVersion": "0.1.1",
+  "clientRoute": "/games/craps",
+  "clientPackage": "@fortuneforge/games-craps",
+  "apiBasePath": "/api/games/craps",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

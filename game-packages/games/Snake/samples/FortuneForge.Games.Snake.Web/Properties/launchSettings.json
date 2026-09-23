@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FortuneForge.Games.Snake.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:56237;http://localhost:56247"
+    }
+  }
+}

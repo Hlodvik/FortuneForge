@@ -1,0 +1,8 @@
+export type RouletteBetKind = 'straight' | 'split' | 'street' | 'corner' | 'six-line' | 'column' | 'dozen' | 'red' | 'black' | 'even' | 'odd' | 'low' | 'high'
+export type RoulettePhase = 'open' | 'settled'
+export type RouletteStatus = Readonly<{ available: boolean; minimumStake: number; maximumStake: number; stakeIncrement: number; startingBalance: number; mode: string }>
+export type RouletteBet = Readonly<{ betIndex: number; playerId: string; kind: RouletteBetKind; stake: number; number: number | null; numbers: readonly number[] }>
+export type RouletteSettlement = Readonly<{ playerId: string; kind: RouletteBetKind; stake: number; won: boolean; totalReturn: number }>
+export type RouletteRound = Readonly<{ roundId: string; balance: number; phase: RoulettePhase; bets: readonly RouletteBet[]; winningPocket: number | null; settlements: readonly RouletteSettlement[] }>
+export interface RouletteGateway { getStatus(signal?: AbortSignal): Promise<RouletteStatus>; openRound(signal?: AbortSignal): Promise<RouletteRound>; placeBet(roundId: string, bet: { kind: RouletteBetKind; stake: number; number: number | null; numbers: readonly number[] }, signal?: AbortSignal): Promise<RouletteRound>; removeBet(roundId: string, betIndex: number, signal?: AbortSignal): Promise<RouletteRound>; clearBets(roundId: string, signal?: AbortSignal): Promise<RouletteRound>; spin(roundId: string, signal?: AbortSignal): Promise<RouletteRound> }
+export class RouletteGatewayError extends Error { readonly code: string; readonly status: number; constructor(message: string, code = 'roulette-request-failed', status = 0) { super(message); this.name = 'RouletteGatewayError'; this.code = code; this.status = status } }

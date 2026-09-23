@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "wukong",
+  "displayName": "Wukong's Journey to the West",
+  "category": "slot",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/slots/wukong",
+  "apiBasePath": "/api/slots",
+  "capabilities": ["credits", "history"],
+  "migrationState": "catalog-only"
+}

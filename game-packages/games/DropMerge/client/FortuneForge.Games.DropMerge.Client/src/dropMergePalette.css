@@ -1,0 +1,11 @@
+.ff-drop-merge-tile,.ff-drop-merge-falling-tile,.ff-drop-merge-preview-tile,.ff-drop-merge-queue-tile{color:#121826!important;border:1.5px solid #20283a!important;text-shadow:none;user-select:none;-webkit-user-select:none;box-shadow:inset 0 1px #ffffff99,0 .2rem .45rem #10182755}
+
+[class*="tile-rank-"]{background:var(--tile-color)!important}
+.tile-rank-0{--tile-color:hsl(199 85% 80%)}.tile-rank-1{--tile-color:hsl(336 85% 80%)}.tile-rank-2{--tile-color:hsl(113 85% 80%)}.tile-rank-3{--tile-color:hsl(250 85% 82%)}.tile-rank-4{--tile-color:hsl(27 88% 80%)}
+.tile-rank-5{--tile-color:hsl(164 82% 78%)}.tile-rank-6{--tile-color:hsl(301 82% 81%)}.tile-rank-7{--tile-color:hsl(78 88% 78%)}.tile-rank-8{--tile-color:hsl(215 85% 80%)}.tile-rank-9{--tile-color:hsl(352 86% 80%)}
+.tile-rank-10{--tile-color:hsl(129 84% 78%)}.tile-rank-11{--tile-color:hsl(266 83% 82%)}.tile-rank-12{--tile-color:hsl(43 92% 80%)}.tile-rank-13{--tile-color:hsl(180 83% 78%)}.tile-rank-14{--tile-color:hsl(317 84% 82%)}
+.tile-rank-15{--tile-color:hsl(94 85% 78%)}.tile-rank-16{--tile-color:hsl(231 84% 81%)}.tile-rank-17{--tile-color:hsl(8 88% 80%)}.tile-rank-18{--tile-color:hsl(145 82% 78%)}.tile-rank-19{--tile-color:hsl(282 84% 82%)}
+.tile-rank-20{--tile-color:hsl(59 92% 80%)}.tile-rank-21{--tile-color:hsl(196 84% 78%)}.tile-rank-22{--tile-color:hsl(333 85% 81%)}.tile-rank-23{--tile-color:hsl(110 86% 78%)}.tile-rank-24{--tile-color:hsl(247 84% 82%)}
+.tile-rank-25{--tile-color:hsl(24 90% 80%)}.tile-rank-26{--tile-color:hsl(161 82% 78%)}.tile-rank-27{--tile-color:hsl(298 83% 82%)}.tile-rank-28{--tile-color:hsl(75 88% 78%)}.tile-rank-29{--tile-color:hsl(212 85% 80%)}
+.tile-rank-30{--tile-color:hsl(349 86% 80%)}.tile-rank-31{--tile-color:hsl(126 84% 78%)}.tile-rank-32{--tile-color:hsl(263 84% 82%)}.tile-rank-33{--tile-color:hsl(40 92% 80%)}.tile-rank-34{--tile-color:hsl(177 83% 78%)}
+.tile-rank-35{--tile-color:hsl(314 84% 82%)}.tile-rank-36{--tile-color:hsl(91 86% 78%)}.tile-rank-37{--tile-color:hsl(228 84% 81%)}.tile-rank-38{--tile-color:hsl(5 89% 80%)}.tile-rank-39{--tile-color:hsl(142 83% 78%)}

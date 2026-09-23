@@ -1,0 +1,38 @@
+@media (min-height:500px){
+  .ff-asteroids-page{display:flex;flex-direction:column;height:100svh;min-height:0;padding-bottom:0;overflow:hidden}
+  .ff-asteroids-page:has(.ff-asteroids-leaderboard){height:auto;min-height:100svh;overflow:visible}
+  .ff-asteroids-page:has(.ff-asteroids-leaderboard) .ff-asteroids-main{display:block;height:auto;min-height:0}
+  .ff-asteroids-header{min-height:3.5rem;padding-block:.45rem}
+  .ff-asteroids-main{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;flex:1;height:calc(100svh - 3.5rem);min-height:0;margin:0 auto}
+  .ff-asteroids-title{min-height:5.25rem;margin-top:.55rem;padding:.7rem 1rem;border-radius:.75rem;background:radial-gradient(circle at 78% 18%,#263a5b66 0,transparent 19rem),linear-gradient(115deg,#0a1120,#0c1628)}
+  .ff-asteroids-title h1{font-size:clamp(2.3rem,5vw,3.7rem)}
+  .ff-asteroids-title p{margin-top:.35rem;font-size:.68rem}
+  .ff-asteroids-stats{margin:.45rem 0;gap:.4rem}
+  .ff-asteroids-stats>div{min-height:3.35rem;padding:.5rem .7rem}
+  .ff-asteroids-canvas-wrap{display:grid;min-height:0;overflow:hidden;padding:.45rem;place-items:center}
+  .ff-asteroids-canvas{width:auto;height:min(100%,calc((100vw - 3rem)*.75));min-height:0;max-width:100%;max-height:100%;aspect-ratio:4/3}
+  .ff-asteroids-overlay{inset:.45rem}
+  .ff-asteroids-message{min-height:1rem;margin:.35rem 0;font-size:.7rem}
+  .ff-asteroids-help{margin:.3rem 0 .45rem;font-size:.62rem}
+}
+
+@media (max-height:720px) and (min-width:651px){
+  .ff-asteroids-title{min-height:4rem}
+  .ff-asteroids-title p{display:none}
+  .ff-asteroids-stats>div{min-height:2.85rem}
+}
+
+@media (max-width:650px) and (min-height:500px){
+  .ff-asteroids-title{flex-direction:row;align-items:center;min-height:5rem;padding:.65rem .8rem}
+  .ff-asteroids-title p{display:none}
+  .ff-asteroids-new{width:auto}
+}
+
+@media (max-width:430px) and (min-height:500px){
+  .ff-asteroids-header{min-height:3.1rem}
+  .ff-asteroids-title{min-height:4.6rem}
+  .ff-asteroids-title h1{font-size:2.25rem}
+  .ff-asteroids-stats{gap:.3rem}
+  .ff-asteroids-stats>div{min-height:2.7rem;padding:.4rem .55rem}
+  .ff-asteroids-message{font-size:.65rem}
+}

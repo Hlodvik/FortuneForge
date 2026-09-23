@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "2048",
+  "displayName": "2048",
+  "category": "arcade",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/2048",
+  "clientPackage": "@fortuneforge/games-2048",
+  "apiBasePath": "/api/games/2048",
+  "capabilities": ["free-play", "history"],
+  "migrationState": "package-backed"
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "liars-dice",
+  "displayName": "Liar's Dice",
+  "category": "dice",
+  "packageVersion": "0.1.1",
+  "clientRoute": "/games/liars-dice",
+  "apiBasePath": "/api/games/liars-dice",
+  "capabilities": ["free-play", "multiplayer", "bots"],
+  "migrationState": "rules-pilot"
+}

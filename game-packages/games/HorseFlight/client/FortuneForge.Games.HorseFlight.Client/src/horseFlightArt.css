@@ -1,0 +1,90 @@
+.ff-horse-flight__background-pan,
+.ff-horse-flight__midground-pan {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.ff-horse-flight__background-pan {
+  /* The 1,620px background crosses its 960px viewport (660px) in five minutes. */
+  animation: ff-horse-flight-background-pan 300s linear infinite alternate;
+  animation-play-state: running;
+}
+
+.ff-horse-flight__midground-pan {
+  /* 5,520px at 627.27s is exactly four times the background's pixel speed. */
+  animation: ff-horse-flight-midground-pan 627.273s linear infinite alternate;
+  animation-play-state: running;
+}
+
+.ff-horse-flight__background-pan image,
+.ff-horse-flight__midground-pan image {
+  image-rendering: pixelated;
+}
+
+@keyframes ff-horse-flight-background-pan {
+  from { transform: translateX(-330px); }
+  to { transform: translateX(330px); }
+}
+
+@keyframes ff-horse-flight-midground-pan {
+  from { transform: translateX(0); }
+  to { transform: translateX(-5520px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-horse-flight__background-pan,
+  .ff-horse-flight__midground-pan {
+    animation: none;
+  }
+}
+
+.ff-horse-flight__platform {
+  fill: url(#horse-flight-earth);
+  shape-rendering: crispEdges;
+}
+
+.ff-horse-flight__grass {
+  fill: url(#horse-flight-grass);
+  shape-rendering: crispEdges;
+}
+
+.ff-horse-flight__obstacle image {
+  filter: drop-shadow(.15rem .2rem .18rem #0009);
+  image-rendering: pixelated;
+}
+
+.ff-horse-flight__horse-art {
+  overflow: hidden;
+  filter: drop-shadow(.2rem .35rem .28rem #0009);
+}
+
+.ff-horse-flight__horse-art image {
+  image-rendering: pixelated;
+}
+
+.ff-horse-flight__horse-body {
+  fill: url(#horse-flight-coat);
+  stroke: #ffe5a0;
+  stroke-width: 2.3;
+  stroke-linejoin: round;
+}
+
+.ff-horse-flight__horse-tail,
+.ff-horse-flight__horse-mane {
+  fill: none;
+  stroke: #502a22;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ff-horse-flight__horse-leg {
+  fill: none;
+  stroke: #643322;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.ff-horse-flight__horse-eye {
+  fill: #1c2537;
+}

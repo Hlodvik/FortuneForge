@@ -1,0 +1,68 @@
+.ff-video-poker__paytable {
+  width: min(100%, 25rem);
+  border: 1px solid #f7d28c52;
+  border-radius: .65rem;
+  background: #080b18a8;
+  color: #f6ead3;
+  font-size: .78rem;
+  text-align: left;
+}
+
+.ff-video-poker__paytable summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .7rem .8rem;
+  color: #ffe39d;
+  cursor: pointer;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ff-video-poker__paytable summary span {
+  color: #d8c3a1;
+  font-size: .62rem;
+}
+
+.ff-video-poker__paytable table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ff-video-poker__paytable th,
+.ff-video-poker__paytable td {
+  padding: .36rem .8rem;
+  border-top: 1px solid #f7d28c24;
+}
+
+.ff-video-poker__paytable thead {
+  color: #d8c3a1;
+  font-size: .62rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ff-video-poker__paytable tbody th {
+  font-weight: 750;
+}
+
+.ff-video-poker__paytable td {
+  color: #ffe39d;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ff-video-poker__paytable p {
+  margin: .7rem .8rem;
+  color: #d8c3a1;
+  font-size: .68rem;
+  line-height: 1.45;
+}
+
+.ff-video-poker__paytable summary:focus-visible {
+  outline: 3px solid #fff1a8;
+  outline-offset: .18rem;
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fortuneforgegame.web.app/schemas/game-manifest.v1.json",
+  "title": "Fortune Forge game manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "displayName", "category", "packageVersion", "clientRoute", "capabilities"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "displayName": { "type": "string", "minLength": 1 },
+    "category": { "enum": ["card", "slot", "casino", "arcade", "dice", "other"] },
+    "packageVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" },
+    "clientRoute": { "type": "string", "pattern": "^/[^/].*$" },
+    "clientPackage": { "type": ["string", "null"], "pattern": "^@[a-z0-9-]+/[a-z0-9-]+$" },
+    "apiBasePath": { "type": ["string", "null"], "pattern": "^/api/[^/].*$" },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "enum": ["credits", "free-play", "multiplayer", "bots", "history"] }
+    },
+    "migrationState": { "enum": ["catalog-only", "rules-pilot", "package-backed"] }
+  }
+}

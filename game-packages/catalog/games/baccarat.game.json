@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "baccarat",
+  "displayName": "Baccarat",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/baccarat",
+  "clientPackage": "@fortuneforge/games-baccarat",
+  "apiBasePath": "/api/games/baccarat",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "FortuneForge.Games.VideoPoker.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:56261;http://localhost:56265"
+    }
+  }
+}

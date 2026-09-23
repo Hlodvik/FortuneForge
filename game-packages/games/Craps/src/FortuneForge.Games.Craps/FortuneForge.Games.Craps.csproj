@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.Craps</PackageId>
+    <Description>Pure Craps pass-line point lifecycle rules for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.1</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "sic-bo",
+  "displayName": "Sic Bo",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/sic-bo",
+  "clientPackage": "@fortuneforge/games-sic-bo",
+  "apiBasePath": "/api/games/sic-bo",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

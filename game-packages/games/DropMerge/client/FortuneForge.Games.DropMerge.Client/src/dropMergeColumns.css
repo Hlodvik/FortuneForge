@@ -1,0 +1,14 @@
+.ff-drop-merge-board-shell{position:relative}
+.ff-drop-merge-column-board{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.34rem;aspect-ratio:1;width:100%;padding:.2rem .1rem .1rem;border-bottom:1px solid #9bd6c52a}
+.ff-drop-merge-column{display:grid;grid-template-rows:auto minmax(0,1fr);gap:.38rem;min-width:0;min-height:0;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
+.ff-drop-merge-column:hover:not(:disabled) .ff-drop-merge-column-stack,.ff-drop-merge-column:focus-visible .ff-drop-merge-column-stack{border-color:#f0c56e;background:#16484a;box-shadow:inset 0 0 1rem #4aa89433,0 0 .8rem #e6b75422;outline:none}
+.ff-drop-merge-column:focus-visible{outline:none}
+.ff-drop-merge-column:disabled{cursor:not-allowed;opacity:.72}
+.ff-drop-merge-column-label{display:grid;justify-items:center;gap:.06rem;min-height:2.25rem;padding:.28rem .12rem .18rem;border:1px solid #4f9f91;border-radius:.55rem;background:#173c3e;color:#def5e8;font-size:.72rem;font-weight:900;line-height:1}
+.ff-drop-merge-column-label strong{font-weight:900}
+.ff-drop-merge-column-label i{color:#efc168;font-size:.92rem;font-style:normal;line-height:.8}
+.ff-drop-merge-column-stack{--column-gap:.25rem;position:relative;display:grid;grid-template-rows:repeat(7,minmax(0,1fr));gap:var(--column-gap);min-height:0;padding:.38rem .2rem .26rem;border:1px solid #5ab4a177;border-radius:.7rem .7rem .95rem .95rem;background:linear-gradient(180deg,#153f41,#0e2b30);box-shadow:inset 0 0 1rem #071d21,0 .4rem .8rem #0003;overflow:hidden;transition:border-color .14s ease,background .14s ease,box-shadow .14s ease}
+.ff-drop-merge-column-slot{display:grid;place-items:center;min-width:0;min-height:0;border-radius:.34rem;background:#194346;box-shadow:inset 0 1px #b9e5d315}
+.ff-drop-merge-column-slot .ff-drop-merge-tile{width:100%;height:100%;font-size:clamp(.74rem,3.2vw,1.7rem)}
+.ff-drop-merge-column-stack .ff-drop-merge-falling-tile{left:.2rem;right:.2rem;top:calc((var(--fall-row) * (100% + var(--column-gap))) / var(--board-rows));bottom:auto;width:auto;height:calc((100% - (6 * var(--column-gap))) / var(--board-rows));aspect-ratio:auto}
+@media(max-width:600px){.ff-drop-merge-column-board{gap:.16rem;padding-inline:0}.ff-drop-merge-column-stack{--column-gap:.16rem;padding:.28rem .12rem .18rem}.ff-drop-merge-column-label{min-height:2rem;font-size:.65rem}.ff-drop-merge-column-label i{font-size:.78rem}.ff-drop-merge-column-slot .ff-drop-merge-tile{font-size:clamp(.62rem,3.1vw,1.15rem)}}

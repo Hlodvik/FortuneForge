@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.Dice</PackageId>
+    <Description>Shared immutable dice value contracts for Fortune Forge games.</Description>
+    <IsPackable>true</IsPackable>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+</Project>

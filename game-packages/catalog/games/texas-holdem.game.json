@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "texas-holdem",
+  "displayName": "Texas Hold'em",
+  "category": "card",
+  "packageVersion": "0.4.1",
+  "clientRoute": "/cards/texas-holdem",
+  "apiBasePath": "/api/cards/texas-holdem/credit",
+  "capabilities": ["credits", "multiplayer", "bots", "history"],
+  "migrationState": "package-backed"
+}

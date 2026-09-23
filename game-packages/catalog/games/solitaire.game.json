@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "solitaire",
+  "displayName": "Competitive Solitaire",
+  "category": "card",
+  "packageVersion": "0.4.1",
+  "clientRoute": "/cards/solitaire",
+  "apiBasePath": "/api/solitaire",
+  "capabilities": ["credits", "free-play", "multiplayer", "bots", "history"],
+  "migrationState": "package-backed"
+}

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.TrickTaking</PackageId>
+    <Description>Shared deterministic four-player trick-taking contracts and rules for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+    <VersionPrefix>0.1.0</VersionPrefix>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+  </ItemGroup>
+</Project>

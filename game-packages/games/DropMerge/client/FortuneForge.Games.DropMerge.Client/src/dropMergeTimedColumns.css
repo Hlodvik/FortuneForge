@@ -1,0 +1,4 @@
+.ff-drop-merge-column-board{padding:.1rem .1rem 0}
+.ff-drop-merge-column{grid-template-rows:minmax(0,1fr);gap:0}
+.ff-drop-merge-drop-preview{margin:0 .1rem}
+.ff-drop-merge-timer-row{margin:.5rem .1rem .2rem}

@@ -1,0 +1,41 @@
+{
+  "name": "@fortuneforge/games-craps",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/index.css",
+    "./table-art.png": "./dist/assets/craps-table-backdrop.png"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,ui -c yellow,cyan \"dotnet run --project ../../samples/FortuneForge.Games.Craps.Web/FortuneForge.Games.Craps.Web.csproj\" \"vite --host 127.0.0.1 --port 5174\"",
+    "dev:api": "dotnet run --project ../../samples/FortuneForge.Games.Craps.Web/FortuneForge.Games.Craps.Web.csproj",
+    "dev:ui": "vite --host 127.0.0.1 --port 5174",
+    "build": "vite build && tsc -p tsconfig.build.json && node scripts/copy-assets.mjs",
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^9.2.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  }
+}

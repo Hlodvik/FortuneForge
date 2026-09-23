@@ -9,23 +9,6 @@
 
   <ItemGroup>
     <PackageReference Include="FirebaseAdmin" Version="3.6.0" />
-    <PackageReference Include="FortuneForge.Games.Asteroids" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.TwentyFortyEight" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Baccarat" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.CasinoWar" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Blackjack" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Craps" Version="0.1.1" />
-    <PackageReference Include="FortuneForge.Games.DropMerge" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Flappy" Version="0.1.1" />
-    <PackageReference Include="FortuneForge.Games.Hearts" Version="0.1.1" />
-    <PackageReference Include="FortuneForge.Games.HorseFlight" Version="0.1.4" />
-    <PackageReference Include="FortuneForge.Games.LiarsDice" Version="0.1.1" />
-    <PackageReference Include="FortuneForge.Games.Keno" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Roulette" Version="0.1.1" />
-    <PackageReference Include="FortuneForge.Games.SicBo" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.Solitaire" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.TexasHoldem" Version="0.4.1" />
-    <PackageReference Include="FortuneForge.Games.VideoPoker" Version="0.4.1" />
     <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
@@ -39,6 +22,23 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\game-packages\games\Asteroids\src\FortuneForge.Games.Asteroids\FortuneForge.Games.Asteroids.csproj" />
+    <ProjectReference Include="..\game-packages\games\TwentyFortyEight\src\FortuneForge.Games.TwentyFortyEight\FortuneForge.Games.TwentyFortyEight.csproj" />
+    <ProjectReference Include="..\game-packages\games\Baccarat\src\FortuneForge.Games.Baccarat\FortuneForge.Games.Baccarat.csproj" />
+    <ProjectReference Include="..\game-packages\games\CasinoWar\src\FortuneForge.Games.CasinoWar\FortuneForge.Games.CasinoWar.csproj" />
+    <ProjectReference Include="..\game-packages\games\Blackjack\src\FortuneForge.Games.Blackjack\FortuneForge.Games.Blackjack.csproj" />
+    <ProjectReference Include="..\game-packages\games\Craps\src\FortuneForge.Games.Craps\FortuneForge.Games.Craps.csproj" />
+    <ProjectReference Include="..\game-packages\games\DropMerge\src\FortuneForge.Games.DropMerge\FortuneForge.Games.DropMerge.csproj" />
+    <ProjectReference Include="..\game-packages\games\Flappy\src\FortuneForge.Games.Flappy\FortuneForge.Games.Flappy.csproj" />
+    <ProjectReference Include="..\game-packages\games\Hearts\src\FortuneForge.Games.Hearts\FortuneForge.Games.Hearts.csproj" />
+    <ProjectReference Include="..\game-packages\games\HorseFlight\src\FortuneForge.Games.HorseFlight\FortuneForge.Games.HorseFlight.csproj" />
+    <ProjectReference Include="..\game-packages\games\LiarsDice\src\FortuneForge.Games.LiarsDice\FortuneForge.Games.LiarsDice.csproj" />
+    <ProjectReference Include="..\game-packages\games\Keno\src\FortuneForge.Games.Keno\FortuneForge.Games.Keno.csproj" />
+    <ProjectReference Include="..\game-packages\games\Roulette\src\FortuneForge.Games.Roulette\FortuneForge.Games.Roulette.csproj" />
+    <ProjectReference Include="..\game-packages\games\SicBo\src\FortuneForge.Games.SicBo\FortuneForge.Games.SicBo.csproj" />
+    <ProjectReference Include="..\game-packages\games\Solitaire\src\FortuneForge.Games.Solitaire\FortuneForge.Games.Solitaire.csproj" />
+    <ProjectReference Include="..\game-packages\games\TexasHoldem\src\FortuneForge.Games.TexasHoldem\FortuneForge.Games.TexasHoldem.csproj" />
+    <ProjectReference Include="..\game-packages\games\VideoPoker\src\FortuneForge.Games.VideoPoker\FortuneForge.Games.VideoPoker.csproj" />
     <ProjectReference Include="..\FortuneForge.ServiceDefaults\FortuneForge.ServiceDefaults.csproj" />
   </ItemGroup>
 

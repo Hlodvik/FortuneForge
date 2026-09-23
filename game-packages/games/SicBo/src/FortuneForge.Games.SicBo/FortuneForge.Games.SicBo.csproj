@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.SicBo</PackageId>
+    <Description>Immutable Sic Bo roll and bet primitives for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../../../src/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+  </ItemGroup>
+</Project>

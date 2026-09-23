@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "blackjack",
+  "displayName": "Fortune Blackjack",
+  "category": "card",
+  "packageVersion": "0.4.1",
+  "clientRoute": "/cards/blackjack",
+  "apiBasePath": "/api/cards/blackjack/table",
+  "capabilities": ["credits", "multiplayer", "bots", "history"],
+  "migrationState": "package-backed"
+}

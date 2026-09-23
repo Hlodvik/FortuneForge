@@ -9,7 +9,6 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$clientRoot = Join-Path $repoRoot 'fortuneforge.client'
 $serverProject = Join-Path $repoRoot 'FortuneForge.Server\FortuneForge.Server.csproj'
 
 function Invoke-Checked {
@@ -39,8 +38,8 @@ function Invoke-Checked {
 
 if ($Target -in @('all', 'hosting')) {
     Write-Host "`nValidating the web client..." -ForegroundColor Yellow
-    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'lint') -WorkingDirectory $clientRoot
-    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'build') -WorkingDirectory $clientRoot
+    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'lint') -WorkingDirectory $repoRoot
+    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'build') -WorkingDirectory $repoRoot
 }
 
 if ($Target -in @('all', 'api')) {

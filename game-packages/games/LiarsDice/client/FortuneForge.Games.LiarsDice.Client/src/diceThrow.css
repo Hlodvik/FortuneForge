@@ -1,0 +1,16 @@
+.ff-dice-throw {
+  position: relative;
+  width: min(100%, 32rem);
+  height: 11rem;
+  isolation: isolate;
+  pointer-events: none;
+}
+.ff-die-sprite-frame, .ff-die-throw-sprite { position: absolute; inset: 0; display: block; }
+.ff-die-sprite-frame { transform: translate(var(--ff-die-shift-x), var(--ff-die-shift-y)); }
+.ff-die-throw-sprite { background-image: var(--ff-die-sprite-image); background-position: 100% var(--ff-die-face-position); background-repeat: no-repeat; background-size: 1800% 600%; }
+.ff-die-sprite-frame:not(.is-idle) { animation: ff-die-course var(--ff-die-duration) cubic-bezier(.22, .61, .28, 1) var(--ff-die-delay) both; }
+.ff-die-sprite-frame:not(.is-idle) .ff-die-throw-sprite { animation: ff-die-sprite-play var(--ff-die-duration) steps(17, end) var(--ff-die-delay) both; }
+.ff-die-sprite-frame.is-idle .ff-die-throw-sprite { opacity: .48; filter: saturate(.55); }
+@keyframes ff-die-course { from { transform: translate(0, 0); } to { transform: translate(var(--ff-die-shift-x), var(--ff-die-shift-y)); } }
+@keyframes ff-die-sprite-play { from { background-position: 0 var(--ff-die-face-position); } to { background-position: 100% var(--ff-die-face-position); } }
+@media (prefers-reduced-motion: reduce) { .ff-die-sprite-frame, .ff-die-sprite-frame .ff-die-throw-sprite { animation: none !important; } }

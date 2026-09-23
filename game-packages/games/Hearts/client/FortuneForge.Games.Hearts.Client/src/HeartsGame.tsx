@@ -1,0 +1,106 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCardAudioClick } from './cardAudio'
+import { HeartsGatewayError, type HeartsGateway, type HeartsMatch } from './contracts'
+import { cardColor, directionLabel, seatLabel, turnLabel } from './heartsHelpers'
+
+export type HeartsGameProps = Readonly<{ gateway: HeartsGateway; backHref?: string; playerName?: string; tableLabel?: string }>
+
+export function HeartsGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local bot table' }: HeartsGameProps) {
+  const [status, setStatus] = useState<Awaited<ReturnType<HeartsGateway['getStatus']>> | null>(null)
+  const [match, setMatch] = useState<HeartsMatch | null>(null)
+  const [targetScore, setTargetScore] = useState(100)
+  const [selectedPass, setSelectedPass] = useState<readonly string[]>([])
+  const [revealedTrick, setRevealedTrick] = useState<HeartsMatch['recentTrick']>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const botPollInFlight = useRef(false)
+  const onCardAudioClick = useCardAudioClick()
+
+  const publish = useCallback((next: HeartsMatch) => { setMatch(next); setError(null) }, [])
+  const run = useCallback(async (action: () => Promise<HeartsMatch>) => {
+    if (busy) return
+    setBusy(true)
+    setError(null)
+    try { publish(await action()) } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
+  }, [busy, publish])
+
+  useEffect(() => {
+    if (match?.phase !== 'passing') setSelectedPass([])
+  }, [match?.phase, match?.roundNumber])
+
+  useEffect(() => {
+    const recent = match?.recentTrick ?? null
+    if (!recent) { setRevealedTrick(null); return }
+    setRevealedTrick(recent)
+    const timer = window.setTimeout(() => setRevealedTrick(current => current?.number === recent.number ? null : current), 1600)
+    return () => window.clearTimeout(timer)
+  }, [match?.matchId, match?.recentTrick?.number])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    void gateway.getStatus(controller.signal)
+      .then(nextStatus => { setStatus(nextStatus); return gateway.startMatch({ targetScore: 100 }, controller.signal) })
+      .then(publish)
+      .catch((reason: unknown) => { if (!(reason instanceof DOMException && reason.name === 'AbortError')) setError(messageForError(reason)) })
+    return () => controller.abort()
+  }, [gateway, publish])
+
+  useEffect(() => {
+    if (!match?.botsThinking) return
+    const timer = window.setTimeout(() => {
+      if (busy || botPollInFlight.current) return
+      botPollInFlight.current = true
+      setBusy(true)
+      setError(null)
+      void gateway.advance(match.matchId)
+        .then(publish)
+        .catch((reason: unknown) => setError(messageForError(reason)))
+        .finally(() => {
+          botPollInFlight.current = false
+          setBusy(false)
+        })
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [busy, gateway, match, publish])
+
+  const startMatch = useCallback(() => { void run(() => gateway.startMatch({ targetScore })) }, [gateway, run, targetScore])
+  const togglePass = useCallback((code: string) => {
+    if (busy || !match || match.phase !== 'passing' || match.submittedPasses.includes(match.humanSeat)) return
+    setSelectedPass(current => current.includes(code) ? current.filter(value => value !== code) : current.length < 3 ? [...current, code] : current)
+  }, [busy, match])
+
+  const serviceReady = status?.available === true
+  const canPass = match?.phase === 'passing' && !match.submittedPasses.includes(match.humanSeat)
+  const canPlay = match?.phase === 'playing' && match.yourTurn
+  const legalCodes = new Set(match?.legalCards.map(card => card.code) ?? [])
+
+  return <div className="ff-hearts-page" onClickCapture={onCardAudioClick}>
+    <header className="ff-hearts-header"><a className="ff-hearts-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-hearts-games" href={backHref}>Other games</a><div className="ff-hearts-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>
+    <main className="ff-hearts-main">
+      <section className="ff-hearts-title"><div><small>Take the fewest points to win</small><h1>Hearts</h1></div><div className="ff-hearts-start"><label htmlFor="target-score">Score limit</label><select id="target-score" value={targetScore} onChange={event => setTargetScore(Number(event.target.value))} disabled={busy} aria-label="Score limit; the player with the lowest score wins when someone reaches this total"><option value={50}>50</option><option value={100}>100</option><option value={150}>150</option></select><button type="button" data-card-audio="shuffle" onClick={startMatch} disabled={!serviceReady || busy}>{busy ? 'Dealing…' : 'New game'}</button></div></section>
+      {match ? <>
+        <section className="ff-hearts-scoreboard" aria-label="Hearts scoreboard">
+          {match.players.map(player => <div className={`ff-hearts-score ${player.seat === match.turn ? 'is-turn' : ''} ${player.seat === match.humanSeat ? 'is-human' : ''}`} key={player.seat}><small>{player.seat === match.humanSeat ? 'You' : seatLabel(player.seat)}</small><strong>{player.matchScore}</strong><span>{player.roundScore} this round</span></div>)}
+          <div className="ff-hearts-round"><small>Round {match.roundNumber} · {match.botsThinking ? 'Bot thinking…' : turnLabel(match)}</small><strong>{phaseLabel(match)}</strong><span>{match.message}</span></div>
+        </section>
+
+        <section className="ff-hearts-table" aria-label="Hearts table">
+          <div className="ff-hearts-table-head"><span className={`ff-hearts-phase phase-${match.phase}`}>{phaseLabel(match)}</span><span>Pass {directionLabel(match.passDirection)}</span><span>{match.heartsBroken ? '♥ Hearts broken' : '♥ Hearts not broken'}</span></div>
+          <div className="ff-hearts-players">{match.players.map(player => <div className={`ff-hearts-player ${player.seat === match.turn ? 'is-turn' : ''}`} key={player.seat}><strong>{player.seat === match.humanSeat ? 'You' : seatLabel(player.seat)}</strong><span>{player.handCount} cards</span><span>{player.hasPassed ? 'Passed' : 'Waiting'}</span></div>)}</div>
+          <div className={`ff-hearts-trick ${revealedTrick ? 'is-revealing' : ''}`}><div className="ff-hearts-trick-heading"><small>{revealedTrick ? `Trick ${revealedTrick.number} complete · ${seatLabel(revealedTrick.winner)} takes it` : `Current trick · led by ${seatLabel(match.currentTrick.leader)}`}</small><strong>{revealedTrick ? `${revealedTrick.points} point${revealedTrick.points === 1 ? '' : 's'}` : `${match.currentTrick.plays.length}/4 cards`}</strong></div><div className="ff-hearts-trick-cards">{(revealedTrick?.plays ?? match.currentTrick.plays).length === 0 ? <span className="ff-hearts-empty">The next trick will appear here.</span> : (revealedTrick?.plays ?? match.currentTrick.plays).map(play => <div className="ff-hearts-trick-card" key={`${play.seat}-${play.card.code}`}><small>{seatLabel(play.seat)}</small><CardFace card={play.card} /></div>)}</div></div>
+        </section>
+
+        <section className="ff-hearts-hand-section" aria-labelledby="your-hand-title"><div className="ff-hearts-section-heading"><div><small>Your hand · North</small><h2 id="your-hand-title">{canPass ? `Choose 3 cards to pass ${directionLabel(match.passDirection).toLowerCase()}` : 'Choose your play'}</h2></div><span>{canPass ? `${selectedPass.length}/3 selected` : canPlay ? 'Select a highlighted legal card.' : match.botsThinking ? 'A bot is thinking…' : match.phase === 'complete' ? 'Round over.' : `${seatLabel(match.turn)} is acting.`}</span></div><div className="ff-hearts-hand">{match.hand.map(card => <button className={`ff-hearts-card ${cardColor(card)} ${selectedPass.includes(card.code) ? 'is-selected' : ''} ${legalCodes.has(card.code) ? 'is-legal' : ''}`} type="button" key={card.code} data-card-audio={canPass ? 'move' : 'deal'} disabled={(!canPass && (!canPlay || !legalCodes.has(card.code))) || busy} onClick={() => canPass ? togglePass(card.code) : void run(() => gateway.playCard(match.matchId, card.code))} aria-label={`${card.label}${canPass ? selectedPass.includes(card.code) ? ', selected to pass' : ', select to pass' : legalCodes.has(card.code) ? ', play card' : ', not legal now'}`}><CardFace card={card} /></button>)}</div>{match.phase === 'playing' && <p className="ff-hearts-help">Avoid hearts and the queen of spades. Follow suit when possible; hearts cannot lead until broken.</p>}</section>
+
+        <section className="ff-hearts-actions" aria-label="Hearts actions">{canPass && <button className="ff-hearts-primary" type="button" data-card-audio="move" disabled={busy || selectedPass.length !== 3} onClick={() => void run(() => gateway.pass(match.matchId, selectedPass))}>{busy ? 'Passing…' : `Pass ${selectedPass.length}/3 cards`}</button>}{match.phase === 'complete' && !match.winner && <button className="ff-hearts-primary" type="button" data-card-audio="shuffle" onClick={() => void run(() => gateway.nextRound(match.matchId))} disabled={busy}>{busy ? 'Dealing…' : 'Start next round'}</button>}</section>
+
+        <section className="ff-hearts-history" aria-label="Round details"><div><small>Round points</small><strong>{match.roundScore.north} · {match.roundScore.east} · {match.roundScore.south} · {match.roundScore.west}</strong></div><div><small>Tricks completed</small><strong>{match.completedTricks.length} / 13</strong></div><div><small>Point cards</small><strong>{match.completedTricks.reduce((total, trick) => total + trick.points, 0)} / 26</strong></div></section>
+      </> : <div className="ff-hearts-loading">{error ?? 'Dealing the first hand…'}</div>}
+      {error && <div className="ff-hearts-error" role="alert"><strong>{error}</strong><button type="button" onClick={startMatch} disabled={busy}>Try a new game</button></div>}
+    </main>
+  </div>
+}
+
+function CardFace({ card }: { card: HeartsMatch['hand'][number] }) { return <span className="ff-hearts-card-face" aria-label={card.label}><span>{card.label.slice(0, -1)}</span><b>{card.label.slice(-1)}</b></span> }
+function phaseLabel(match: HeartsMatch): string { return match.phase === 'passing' ? 'Passing' : match.phase === 'playing' ? 'Playing' : match.winner ? 'Game won' : 'Round complete' }
+function messageForError(reason: unknown): string { return reason instanceof HeartsGatewayError ? reason.message : 'The Hearts table is unavailable. Start a new local game.' }

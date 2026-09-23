@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "video-poker",
+  "displayName": "Video Poker",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/video-poker",
+  "clientPackage": "@fortuneforge/games-video-poker",
+  "apiBasePath": "/api/games/video-poker",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

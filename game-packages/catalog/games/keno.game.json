@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "keno",
+  "displayName": "Keno",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/keno",
+  "clientPackage": "@fortuneforge/games-keno",
+  "apiBasePath": "/api/games/keno",
+  "capabilities": ["free-play"],
+  "migrationState": "rules-pilot"
+}

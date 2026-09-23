@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "hearts",
+  "displayName": "Hearts",
+  "category": "card",
+  "packageVersion": "0.1.1",
+  "clientRoute": "/cards/hearts",
+  "apiBasePath": "/api/games/hearts",
+  "capabilities": ["free-play", "multiplayer", "bots"],
+  "migrationState": "rules-pilot"
+}

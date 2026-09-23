@@ -105,6 +105,8 @@ public sealed class VideoPokerContractTests
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.StartAsync(
             "player-1", new CreateVideoPokerRoundRequest(6), "video_poker_start_0004", CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.StartAsync(
+            "player-1", new CreateVideoPokerRoundRequest(1, HandCount: 2), "video_poker_start_0004b", CancellationToken.None));
 
         var started = await service.StartAsync(
             "player-1", new CreateVideoPokerRoundRequest(1), "video_poker_start_0005", CancellationToken.None);
@@ -113,6 +115,65 @@ public sealed class VideoPokerContractTests
 
         await Assert.ThrowsAsync<VideoPokerRoundConflictException>(() => service.DrawAsync(
             "player-1", started.RoundId, new DrawVideoPokerRoundRequest([]), "video_poker_draw_0006", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Service_MultiHandChargesAndPaysAllHandsAtomically()
+    {
+        var store = new InMemoryVideoPokerStore();
+        var service = new VideoPokerService(store, TimeProvider.System, RoyalFlushDeck);
+
+        var started = await service.StartAsync(
+            "player-1",
+            new CreateVideoPokerRoundRequest(CoinsWagered: 5, HandCount: 3),
+            "video_poker_multi_start_0001",
+            CancellationToken.None);
+
+        Assert.Equal(3, started.HandCount);
+        Assert.Equal(15m, started.Wager);
+        Assert.Equal(85m, started.Balance);
+
+        var completed = await service.DrawAsync(
+            "player-1",
+            started.RoundId,
+            new DrawVideoPokerRoundRequest([0, 1, 2, 3, 4]),
+            "video_poker_multi_draw_0001",
+            CancellationToken.None);
+
+        Assert.Equal(12_000m, completed.Payout);
+        Assert.Equal([4_000m, 4_000m, 4_000m], completed.HandPayouts);
+        Assert.Equal(3, completed.FinalHands!.Count);
+        Assert.Equal(12_085m, completed.Balance);
+        Assert.Equal(2, store.EventCount);
+        Assert.Equal(2, store.LedgerEntryCount);
+    }
+
+    [Fact]
+    public async Task PracticeStore_MultiHandReplayDoesNotChargeOrPayTwice()
+    {
+        var service = new VideoPokerService(new PracticeVideoPokerStore(), TimeProvider.System, RoyalFlushDeck);
+        var request = new CreateVideoPokerRoundRequest(CoinsWagered: 3, HandCount: 3);
+
+        var started = await service.StartAsync("practice-player", request, "video_poker_practice_start_01", CancellationToken.None);
+        var replayedStart = await service.StartAsync("practice-player", request, "video_poker_practice_start_01", CancellationToken.None);
+        Assert.Equal(9_991m, started.Balance);
+        Assert.Equal(started.RoundId, replayedStart.RoundId);
+        Assert.Equal(started.Balance, replayedStart.Balance);
+        Assert.Equal(started.InitialCards, replayedStart.InitialCards);
+
+        var draw = new DrawVideoPokerRoundRequest([0, 1, 2, 3, 4]);
+        var completed = await service.DrawAsync(
+            "practice-player", started.RoundId, draw, "video_poker_practice_draw_01", CancellationToken.None);
+        var replayedDraw = await service.DrawAsync(
+            "practice-player", started.RoundId, draw, "video_poker_practice_draw_02", CancellationToken.None);
+
+        Assert.Equal(2_250m, completed.Payout);
+        Assert.Equal(12_241m, completed.Balance);
+        Assert.Equal(completed.RoundId, replayedDraw.RoundId);
+        Assert.Equal(completed.Balance, replayedDraw.Balance);
+        Assert.Equal(completed.Payout, replayedDraw.Payout);
+        Assert.Equal(completed.HandRanks, replayedDraw.HandRanks);
+        Assert.Equal(completed.HandPayouts, replayedDraw.HandPayouts);
     }
 
     private static IReadOnlyList<PlayingCard> RoyalFlushDeck()
@@ -143,23 +204,25 @@ public sealed class VideoPokerContractTests
             string requestedUserId,
             string idempotencyKey,
             int coinsWagered,
-            IReadOnlyList<PlayingCard> shuffledDeck,
+            int handCount,
+            IReadOnlyList<IReadOnlyList<PlayingCard>> shuffledDecks,
             DateTimeOffset nowUtc,
             CancellationToken cancellationToken)
         {
             if (round is not null)
             {
-                if (requestedUserId != userId || idempotencyKey != startIdempotencyKey || coinsWagered != round.CoinsWagered)
+                if (requestedUserId != userId || idempotencyKey != startIdempotencyKey ||
+                    coinsWagered != round.CoinsWagered || handCount != round.HandCount)
                     throw new VideoPokerRoundConflictException("start conflict");
                 return Task.FromResult(new VideoPokerStoreResult(roundId!, round, BalanceCents));
             }
 
-            var wagerCents = VideoPokerMoney.WagerCents(coinsWagered);
+            var wagerCents = VideoPokerMoney.WagerCents(coinsWagered, handCount);
             if (BalanceCents < wagerCents) throw new VideoPokerInsufficientCreditsException(BalanceCents, wagerCents);
             userId = requestedUserId;
             startIdempotencyKey = idempotencyKey;
             roundId = VideoPokerFirestoreStore.CreateLookupKey($"{requestedUserId}\n{idempotencyKey}");
-            round = VideoPokerRoundEngine.Deal(shuffledDeck, coinsWagered);
+            round = VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered);
             BalanceCents -= wagerCents;
             LedgerEntryCount++;
             EventCount++;
@@ -183,13 +246,13 @@ public sealed class VideoPokerContractTests
                 throw new VideoPokerRoundNotFoundException();
             if (round.Status == VideoPokerRoundStatus.Completed)
             {
-                if (!round.Draw!.HeldCardPositions.Positions.SequenceEqual(heldPositions.Positions))
+                if (!round.HeldCardPositions!.Positions.SequenceEqual(heldPositions.Positions))
                     throw new VideoPokerRoundConflictException("changed holds");
                 return Task.FromResult(new VideoPokerStoreResult(roundId!, round, BalanceCents));
             }
 
             round = VideoPokerRoundEngine.Draw(round, heldPositions);
-            var payoutCents = checked(round.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents);
+            var payoutCents = checked(round.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
             BalanceCents += payoutCents;
             EventCount++;
             if (payoutCents > 0) LedgerEntryCount++;

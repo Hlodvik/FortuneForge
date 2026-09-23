@@ -11,59 +11,94 @@ public enum VideoPokerRoundStatus
 
 public sealed record VideoPokerRound(
     VideoPokerDeal InitialDeal,
-    ImmutableArray<PlayingCard> RemainingDeck,
+    ImmutableArray<ImmutableArray<PlayingCard>> RemainingDecks,
     int CoinsWagered,
+    int HandCount,
     VideoPokerRoundStatus Status,
-    VideoPokerDraw? Draw,
-    VideoPokerHandResult? Result);
+    VideoPokerHeldCardPositions? HeldCardPositions,
+    ImmutableArray<VideoPokerDraw> Draws,
+    ImmutableArray<VideoPokerHandResult> Results)
+{
+    // Keep the original single-hand API available to older callers and persisted schema readers.
+    public ImmutableArray<PlayingCard> RemainingDeck => RemainingDecks[0];
+    public VideoPokerDraw? Draw => Draws.IsDefaultOrEmpty ? null : Draws[0];
+    public VideoPokerHandResult? Result => Results.IsDefaultOrEmpty ? null : Results[0];
+}
 
 public static class VideoPokerRoundEngine
 {
     public static VideoPokerRound Deal(IReadOnlyList<PlayingCard> orderedDeck, int coinsWagered)
+        => Deal([orderedDeck], coinsWagered);
+
+    public static VideoPokerRound Deal(
+        IReadOnlyList<IReadOnlyList<PlayingCard>> orderedDecks,
+        int coinsWagered)
     {
-        ArgumentNullException.ThrowIfNull(orderedDeck);
+        ArgumentNullException.ThrowIfNull(orderedDecks);
         ValidateWager(coinsWagered);
-        ValidateStandardDeck(orderedDeck);
+        ValidateHandCount(orderedDecks.Count);
+        foreach (var deck in orderedDecks)
+        {
+            ArgumentNullException.ThrowIfNull(deck);
+            ValidateStandardDeck(deck);
+        }
+
+        var initialDeal = new VideoPokerDeal(orderedDecks[0].Take(VideoPokerDeal.CardCount));
+        var initialCards = initialDeal.Cards.ToHashSet();
+        var remainingDecks = orderedDecks
+            .Select(deck => deck.Where(card => !initialCards.Contains(card)).ToImmutableArray())
+            .ToImmutableArray();
+        if (remainingDecks.Any(deck => deck.Length != StandardDeck.Create().Count - VideoPokerDeal.CardCount))
+            throw new ArgumentException("Every Video Poker replacement deck must contain the shared dealt cards exactly once.", nameof(orderedDecks));
 
         return new VideoPokerRound(
-            new VideoPokerDeal(orderedDeck.Take(VideoPokerDeal.CardCount)),
-            [.. orderedDeck.Skip(VideoPokerDeal.CardCount)],
+            initialDeal,
+            remainingDecks,
             coinsWagered,
+            orderedDecks.Count,
             VideoPokerRoundStatus.AwaitingDraw,
-            Draw: null,
-            Result: null);
+            HeldCardPositions: null,
+            Draws: [],
+            Results: []);
     }
 
     public static VideoPokerRound Draw(VideoPokerRound round, VideoPokerHeldCardPositions heldCardPositions)
     {
         ArgumentNullException.ThrowIfNull(round);
         ArgumentNullException.ThrowIfNull(heldCardPositions);
-        if (round.Status != VideoPokerRoundStatus.AwaitingDraw || round.Draw is not null)
+        if (round.Status != VideoPokerRoundStatus.AwaitingDraw || !round.Draws.IsDefaultOrEmpty)
             throw new InvalidOperationException("This Video Poker round has already been drawn.");
 
         var held = heldCardPositions.Positions.ToHashSet();
-        var finalCards = round.InitialDeal.Cards.ToArray();
-        var nextCardIndex = 0;
-        for (var index = 0; index < finalCards.Length; index++)
+        var cardsDrawn = VideoPokerDeal.CardCount - held.Count;
+        var draws = ImmutableArray.CreateBuilder<VideoPokerDraw>(round.HandCount);
+        var results = ImmutableArray.CreateBuilder<VideoPokerHandResult>(round.HandCount);
+        foreach (var replacementDeck in round.RemainingDecks)
         {
-            if (held.Contains((VideoPokerCardPosition)index)) continue;
+            var finalCards = round.InitialDeal.Cards.ToArray();
+            var nextCardIndex = 0;
+            for (var index = 0; index < finalCards.Length; index++)
+            {
+                if (held.Contains((VideoPokerCardPosition)index)) continue;
 
-            finalCards[index] = round.RemainingDeck[nextCardIndex++];
+                finalCards[index] = replacementDeck[nextCardIndex++];
+            }
+
+            var finalHand = new VideoPokerDeal(finalCards);
+            draws.Add(new VideoPokerDraw(round.InitialDeal, heldCardPositions, finalHand));
+            results.Add(new VideoPokerHandResult(
+                finalHand,
+                VideoPokerHandEvaluator.Evaluate(finalHand),
+                FullPayJacksOrBetterPaytable.Evaluate(finalHand, round.CoinsWagered)));
         }
-
-        var finalHand = new VideoPokerDeal(finalCards);
-        var draw = new VideoPokerDraw(round.InitialDeal, heldCardPositions, finalHand);
-        var result = new VideoPokerHandResult(
-            finalHand,
-            VideoPokerHandEvaluator.Evaluate(finalHand),
-            FullPayJacksOrBetterPaytable.Evaluate(finalHand, round.CoinsWagered));
 
         return round with
         {
-            RemainingDeck = [.. round.RemainingDeck.Skip(nextCardIndex)],
+            RemainingDecks = [.. round.RemainingDecks.Select(deck => deck.RemoveRange(0, cardsDrawn))],
             Status = VideoPokerRoundStatus.Completed,
-            Draw = draw,
-            Result = result,
+            HeldCardPositions = heldCardPositions,
+            Draws = draws.MoveToImmutable(),
+            Results = results.MoveToImmutable(),
         };
     }
 
@@ -71,6 +106,12 @@ public static class VideoPokerRoundEngine
     {
         if (coinsWagered is < 1 or > 5)
             throw new ArgumentOutOfRangeException(nameof(coinsWagered), "Wager from one through five coins.");
+    }
+
+    private static void ValidateHandCount(int handCount)
+    {
+        if (handCount is not (1 or 3 or 5))
+            throw new ArgumentOutOfRangeException(nameof(handCount), "Choose one, three, or five hands.");
     }
 
     private static void ValidateStandardDeck(IReadOnlyList<PlayingCard> orderedDeck)

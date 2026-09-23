@@ -26,20 +26,23 @@ app.MapGet("/", () => Results.Ok(new
 }));
 
 var api = app.MapGroup("/api/games/video-poker");
-api.MapGet("/status", () => Results.Ok(new VideoPokerStatusResponse(true, 1, 5, 1, playerBalance)));
+api.MapGet("/status", () => Results.Ok(new VideoPokerStatusResponse(true, 1, 5, 1, playerBalance, [1, 3, 5])));
 api.MapPost("/rounds", (CreateVideoPokerRoundRequest request) =>
 {
-    if (request.CoinsWagered is < 1 or > 5)
+    if (request.CoinsWagered is < 1 or > 5 || request.HandCount is not (1 or 3 or 5))
         return InvalidWager();
 
     lock (balanceGate)
     {
-        if (playerBalance < request.CoinsWagered)
+        var wager = checked(request.CoinsWagered * request.HandCount);
+        if (playerBalance < wager)
             return Results.BadRequest(new VideoPokerErrorResponse("video-poker-insufficient-balance", "There are not enough local credits to place that wager."));
 
         var id = Guid.NewGuid();
-        var round = VideoPokerRoundEngine.Deal(CreateShuffledDeck(), request.CoinsWagered);
-        playerBalance -= request.CoinsWagered;
+        var round = VideoPokerRoundEngine.Deal(
+            Enumerable.Range(0, request.HandCount).Select(_ => (IReadOnlyList<PlayingCard>)CreateShuffledDeck()).ToArray(),
+            request.CoinsWagered);
+        playerBalance -= wager;
         var session = new VideoPokerSession(round);
         rounds[id] = session;
         return Results.Created($"/api/games/video-poker/rounds/{id}", ToResponse(id, session.Round, playerBalance));
@@ -60,7 +63,7 @@ api.MapPost("/rounds/{roundId:guid}/draw", (Guid roundId, DrawVideoPokerRoundReq
         {
             var holds = new VideoPokerHeldCardPositions(request.HeldPositions.Select(position => (VideoPokerCardPosition)position));
             session.Round = VideoPokerRoundEngine.Draw(session.Round, holds);
-            var creditsWon = session.Round.Result!.PaytableOutcome.CreditsWon;
+            var creditsWon = session.Round.Results.Sum(result => result.PaytableOutcome.CreditsWon);
             long balance;
             lock (balanceGate)
             {
@@ -102,13 +105,17 @@ static VideoPokerRoundResponse ToResponse(Guid roundId, VideoPokerRound round, l
     roundId,
     balance,
     round.CoinsWagered,
-    round.CoinsWagered,
+    round.HandCount,
+    round.CoinsWagered * round.HandCount,
     round.Status == VideoPokerRoundStatus.AwaitingDraw ? "awaiting-draw" : "completed",
     round.InitialDeal.Cards.Select(ToCard).ToArray(),
-    round.Draw?.HeldCardPositions.Positions.Select(position => (int)position).ToArray() ?? [],
+    round.HeldCardPositions?.Positions.Select(position => (int)position).ToArray() ?? [],
     round.Result?.FinalHand.Cards.Select(ToCard).ToArray(),
     round.Result is null ? null : HandRankName(round.Result.HandRank),
-    round.Result?.PaytableOutcome.CreditsWon);
+    round.Results.IsDefaultOrEmpty ? null : round.Results.Sum(result => result.PaytableOutcome.CreditsWon),
+    round.Results.IsDefaultOrEmpty ? null : round.Results.Select(result => (IReadOnlyList<VideoPokerCardResponse>)result.FinalHand.Cards.Select(ToCard).ToArray()).ToArray(),
+    round.Results.IsDefaultOrEmpty ? null : round.Results.Select(result => HandRankName(result.HandRank)).ToArray(),
+    round.Results.IsDefaultOrEmpty ? null : round.Results.Select(result => result.PaytableOutcome.CreditsWon).ToArray());
 
 static VideoPokerCardResponse ToCard(PlayingCard card) => new(CardRankName(card.Rank), CardSuitName(card.Suit));
 static string CardRankName(CardRank rank) => rank switch
@@ -156,19 +163,23 @@ public sealed class VideoPokerSession(VideoPokerRound round)
     public VideoPokerRound Round { get; set; } = round;
 }
 
-public sealed record CreateVideoPokerRoundRequest(int CoinsWagered);
+public sealed record CreateVideoPokerRoundRequest(int CoinsWagered, int HandCount = 1);
 public sealed record DrawVideoPokerRoundRequest(int[]? HeldPositions);
-public sealed record VideoPokerStatusResponse(bool Available, int MinimumCoinsWagered, int MaximumCoinsWagered, decimal CoinValue, long Balance);
+public sealed record VideoPokerStatusResponse(bool Available, int MinimumCoinsWagered, int MaximumCoinsWagered, decimal CoinValue, long Balance, IReadOnlyList<int> HandCounts);
 public sealed record VideoPokerCardResponse(string Rank, string Suit);
 public sealed record VideoPokerRoundResponse(
     Guid RoundId,
     long Balance,
     int CoinsWagered,
+    int HandCount,
     long Wager,
     string Phase,
     IReadOnlyList<VideoPokerCardResponse> InitialCards,
     IReadOnlyList<int> HeldPositions,
     IReadOnlyList<VideoPokerCardResponse>? FinalCards,
     string? HandRank,
-    int? Payout);
+    int? Payout,
+    IReadOnlyList<IReadOnlyList<VideoPokerCardResponse>>? FinalHands,
+    IReadOnlyList<string>? HandRanks,
+    IReadOnlyList<int>? HandPayouts);
 public sealed record VideoPokerErrorResponse(string Code, string Message);

@@ -7,6 +7,7 @@ export {
   type VideoPokerCardRank,
   type VideoPokerCardSuit,
   type VideoPokerGateway,
+  type VideoPokerHandCount,
   type VideoPokerHandRank,
   type VideoPokerPhase,
   type VideoPokerRound,

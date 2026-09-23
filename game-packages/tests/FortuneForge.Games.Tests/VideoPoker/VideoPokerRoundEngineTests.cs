@@ -6,6 +6,44 @@ namespace FortuneForge.Games.Tests.VideoPoker;
 public sealed class VideoPokerRoundEngineTests
 {
     [Fact]
+    public void MultiHandDrawSharesInitialCardsAndUsesIndependentReplacementDecks()
+    {
+        var firstDeck = StandardDeck.Create().ToArray();
+        var secondDeck = firstDeck.Reverse().ToArray();
+        var thirdDeck = firstDeck.Skip(13).Concat(firstDeck.Take(13)).ToArray();
+        var round = VideoPokerRoundEngine.Deal([firstDeck, secondDeck, thirdDeck], coinsWagered: 2);
+
+        var completed = VideoPokerRoundEngine.Draw(
+            round,
+            new VideoPokerHeldCardPositions([VideoPokerCardPosition.First, VideoPokerCardPosition.Third]));
+
+        Assert.Equal(3, completed.HandCount);
+        Assert.Equal(3, completed.Results.Length);
+        Assert.All(completed.Results, result =>
+        {
+            Assert.Equal(round.InitialDeal.Cards[0], result.FinalHand.Cards[0]);
+            Assert.Equal(round.InitialDeal.Cards[2], result.FinalHand.Cards[2]);
+            Assert.Equal(VideoPokerDeal.CardCount, result.FinalHand.Cards.Distinct().Count());
+        });
+        Assert.Equal(3, completed.Results
+            .Select(result => string.Join(',', result.FinalHand.Cards.Select(card => $"{card.Rank}-{card.Suit}")))
+            .Distinct()
+            .Count());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(2)]
+    [InlineData(4)]
+    [InlineData(6)]
+    public void DealRejectsUnsupportedHandCounts(int handCount)
+    {
+        var decks = Enumerable.Range(0, handCount).Select(_ => (IReadOnlyList<PlayingCard>)StandardDeck.Create()).ToArray();
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => VideoPokerRoundEngine.Deal(decks, coinsWagered: 1));
+    }
+
+    [Fact]
     public void DealUsesTheSuppliedOrderedDeckDeterministically()
     {
         var deck = StandardDeck.Create();

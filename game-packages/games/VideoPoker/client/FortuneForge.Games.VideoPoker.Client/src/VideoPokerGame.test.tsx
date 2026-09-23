@@ -7,12 +7,12 @@ import { VideoPokerGatewayError, type VideoPokerGateway, type VideoPokerRound, t
 
 const status: VideoPokerStatus = { available: true, minimumCoinsWagered: 1, maximumCoinsWagered: 5, coinValue: 1, balance: 100 }
 const awaitingRound: VideoPokerRound = {
-  roundId: 'round-7', balance: 100, coinsWagered: 3, wager: 3, phase: 'awaiting-draw',
+  roundId: 'round-7', balance: 100, coinsWagered: 3, handCount: 1, wager: 3, phase: 'awaiting-draw',
   initialCards: [
     { rank: 'ace', suit: 'clubs' }, { rank: 'two', suit: 'diamonds' }, { rank: 'three', suit: 'hearts' },
     { rank: 'four', suit: 'spades' }, { rank: 'five', suit: 'clubs' },
   ],
-  heldPositions: [], finalCards: null, handRank: null, payout: null,
+  heldPositions: [], finalCards: null, handRank: null, payout: null, finalHands: null, handRanks: null, handPayouts: null,
 }
 
 afterEach(() => { cleanup(); sessionStorage.clear() })
@@ -52,7 +52,7 @@ describe('VideoPokerGame', () => {
 
   it('deals five cards, toggles holds, and sends zero-based positions when drawing', async () => {
     const user = userEvent.setup()
-    const completedRound: VideoPokerRound = { ...awaitingRound, phase: 'completed', heldPositions: [0, 2], finalCards: awaitingRound.initialCards, handRank: 'straight', payout: 12 }
+    const completedRound: VideoPokerRound = { ...awaitingRound, phase: 'completed', heldPositions: [0, 2], finalCards: awaitingRound.initialCards, handRank: 'straight', payout: 12, finalHands: [awaitingRound.initialCards], handRanks: ['straight'], handPayouts: [12] }
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(awaitingRound), draw: vi.fn().mockResolvedValue(completedRound) })
     render(<VideoPokerGame gateway={gateway} />)
 
@@ -66,8 +66,8 @@ describe('VideoPokerGame', () => {
 
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     expect(gateway.draw).toHaveBeenCalledWith('round-7', [0, 2], expect.objectContaining({ idempotencyKey: expect.stringMatching(/^video-poker-draw-/) }))
-    await screen.findByText('Straight')
-    screen.getByText('R12.00 won')
+    await screen.findByText('Straight', { selector: '.ff-video-poker__completed-hand strong' })
+    screen.getByText('R12.00 total won')
   })
 
   it('shows busy feedback while a deal is pending and disables repeated deals', async () => {
@@ -84,6 +84,34 @@ describe('VideoPokerGame', () => {
 
     resolveRound?.(awaitingRound)
     await screen.findByRole('button', { name: 'Draw' })
+  })
+
+  it('selects five hands and presents each independently settled result', async () => {
+    const user = userEvent.setup()
+    const fiveHands = Array.from({ length: 5 }, () => awaitingRound.initialCards)
+    const completedRound: VideoPokerRound = {
+      ...awaitingRound,
+      handCount: 5,
+      wager: 15,
+      phase: 'completed',
+      finalCards: awaitingRound.initialCards,
+      handRank: 'straight',
+      payout: 24,
+      finalHands: fiveHands,
+      handRanks: ['straight', 'pair', 'no-win', 'two-pair', 'flush'],
+      handPayouts: [12, 3, 0, 6, 3],
+    }
+    const createRound = vi.fn().mockResolvedValue({ ...awaitingRound, handCount: 5, wager: 15 })
+    const draw = vi.fn().mockResolvedValue(completedRound)
+    render(<VideoPokerGame gateway={fakeGateway({ createRound, draw })} />)
+
+    await user.click(await screen.findByRole('button', { name: '5' }))
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(createRound).toHaveBeenCalledWith(1, expect.objectContaining({ handCount: 5 }))
+    await user.click(screen.getByRole('button', { name: 'Draw' }))
+
+    expect(await screen.findByText('Hand 5')).toBeTruthy()
+    expect(screen.getByText('R24.00 total won')).toBeTruthy()
   })
 
   it('shows a service error when the table status cannot load', async () => {
@@ -129,7 +157,7 @@ describe('VideoPokerGame', () => {
 
   it('locks the held cards after a failed draw and retries the original draw request', async () => {
     const user = userEvent.setup()
-    const completedRound: VideoPokerRound = { ...awaitingRound, phase: 'completed', heldPositions: [0], finalCards: awaitingRound.initialCards, handRank: 'pair', payout: 3 }
+    const completedRound: VideoPokerRound = { ...awaitingRound, phase: 'completed', heldPositions: [0], finalCards: awaitingRound.initialCards, handRank: 'pair', payout: 3, finalHands: [awaitingRound.initialCards], handRanks: ['pair'], handPayouts: [3] }
     const draw = vi.fn().mockRejectedValueOnce(new VideoPokerGatewayError('Connection interrupted.')).mockResolvedValueOnce(completedRound)
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(awaitingRound), draw })
     render(<VideoPokerGame gateway={gateway} />)

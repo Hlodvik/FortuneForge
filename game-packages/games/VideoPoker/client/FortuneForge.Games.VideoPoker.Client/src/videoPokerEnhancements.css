@@ -6,3 +6,18 @@
 .ff-video-poker__paytable--round { width: min(100%, 34rem); margin: auto; }
 .ff-video-poker__paytable tr.is-winning-row { background: #5f4a1f; color: #fff0a3; box-shadow: inset .25rem 0 #ffe178; }
 .ff-video-poker__paytable tr.is-winning-row th::after { content: "  WIN"; color: #ffe178; font-size: .58rem; }
+.ff-video-poker__hand-count { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .4rem; max-width: 32rem; margin: 0 auto; padding: .65rem; border: 1px solid #f9d99155; border-radius: .7rem; }
+.ff-video-poker__hand-count legend { padding: 0 .35rem; color: #f7d99a; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
+.ff-video-poker__hand-count button { min-width: 3.25rem; min-height: 2.4rem; border: 1px solid #f9d99166; border-radius: .5rem; background: #26142b; color: #f7d99a; font-weight: 900; cursor: pointer; }
+.ff-video-poker__hand-count button[aria-pressed="true"] { border-color: #fff0a3; background: #725525; color: #fff; box-shadow: 0 0 0 .15rem #ffe17833; }
+.ff-video-poker__hand-count small { flex-basis: 100%; color: #d9cab8; text-align: center; line-height: 1.35; }
+.ff-video-poker__total-wager { margin: 0; color: #d9cab8; text-align: center; font-size: .72rem; }
+.ff-video-poker__total-wager strong { color: #fff0a3; }
+.ff-video-poker__completed-hands { display: grid; gap: .75rem; width: 100%; }
+.ff-video-poker__completed-hand { padding: .65rem; border: 1px solid #f9d99144; border-radius: .75rem; background: #130d18aa; }
+.ff-video-poker__completed-hand > header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .6rem; margin-bottom: .55rem; color: #d9cab8; font-size: .72rem; }
+.ff-video-poker__completed-hand > header strong { color: #fff0a3; text-align: center; }
+.ff-video-poker__completed-hand > header em { color: #bdebc1; font-style: normal; font-weight: 900; }
+.ff-video-poker__completed-hand .ff-video-poker__cards { gap: clamp(.2rem, 1vw, .7rem); }
+.ff-video-poker__completed-hand .ff-video-poker__card { max-width: 8.25rem; }
+@media (min-width: 900px) { .ff-video-poker__completed-hands:has(.ff-video-poker__completed-hand:nth-child(3)) { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

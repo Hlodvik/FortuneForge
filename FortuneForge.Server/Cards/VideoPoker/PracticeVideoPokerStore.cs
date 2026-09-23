@@ -14,22 +14,23 @@ internal sealed class PracticeVideoPokerStore : IVideoPokerStore
     private readonly Dictionary<string, long> balances = [];
 
     public Task<VideoPokerStoreResult> StartAsync(string userId, string idempotencyKey, int coinsWagered,
-        IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken)
+        int handCount, IReadOnlyList<IReadOnlyList<PlayingCard>> shuffledDecks, DateTimeOffset nowUtc, CancellationToken cancellationToken)
     {
         lock (sync)
         {
             if (starts.TryGetValue((userId, idempotencyKey), out var existingId))
             {
                 var existing = rounds[existingId];
-                if (existing.Round.CoinsWagered != coinsWagered) throw new VideoPokerRoundConflictException("Practice deal conflict.");
+                if (existing.Round.CoinsWagered != coinsWagered || existing.Round.HandCount != handCount)
+                    throw new VideoPokerRoundConflictException("Practice deal conflict.");
                 return Task.FromResult(Result(existing));
             }
 
-            var wager = VideoPokerMoney.WagerCents(coinsWagered);
+            var wager = VideoPokerMoney.WagerCents(coinsWagered, handCount);
             var balance = Balance(userId);
             if (balance < wager) throw new VideoPokerInsufficientCreditsException(balance, wager);
             var id = Id("video-poker", userId, idempotencyKey);
-            var stored = new StoredRound(id, userId, idempotencyKey, VideoPokerRoundEngine.Deal(shuffledDeck, coinsWagered));
+            var stored = new StoredRound(id, userId, idempotencyKey, VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered));
             balances[userId] = balance - wager;
             rounds[id] = stored;
             starts[(userId, idempotencyKey)] = id;
@@ -51,7 +52,7 @@ internal sealed class PracticeVideoPokerStore : IVideoPokerStore
             if (!rounds.TryGetValue(roundId, out var stored) || stored.UserId != userId) throw new VideoPokerRoundNotFoundException();
             if (stored.Round.Status == VideoPokerRoundStatus.Completed)
             {
-                if (!stored.Round.Draw!.HeldCardPositions.Positions.SequenceEqual(heldPositions.Positions))
+                if (!stored.Round.HeldCardPositions!.Positions.SequenceEqual(heldPositions.Positions))
                     throw new VideoPokerRoundConflictException("Practice draw conflict.");
                 return Task.FromResult(Result(stored));
             }
@@ -59,7 +60,8 @@ internal sealed class PracticeVideoPokerStore : IVideoPokerStore
             var completed = VideoPokerRoundEngine.Draw(stored.Round, heldPositions);
             stored = stored with { Round = completed };
             rounds[roundId] = stored;
-            balances[userId] = checked(Balance(userId) + completed.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents);
+            balances[userId] = checked(Balance(userId) +
+                completed.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
             return Task.FromResult(Result(stored));
         }
     }

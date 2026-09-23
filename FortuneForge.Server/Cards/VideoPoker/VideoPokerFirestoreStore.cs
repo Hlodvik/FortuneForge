@@ -17,13 +17,14 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
         string userId,
         string idempotencyKey,
         int coinsWagered,
-        IReadOnlyList<PlayingCard> shuffledDeck,
+        int handCount,
+        IReadOnlyList<IReadOnlyList<PlayingCard>> shuffledDecks,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(shuffledDeck);
+        ArgumentNullException.ThrowIfNull(shuffledDecks);
         var roundId = CreateLookupKey($"{userId}\n{idempotencyKey}");
-        var wagerCents = VideoPokerMoney.WagerCents(coinsWagered);
+        var wagerCents = VideoPokerMoney.WagerCents(coinsWagered, handCount);
         var roundReference = RoundDocument(roundId);
         var balanceReference = BalanceDocument(userId);
         var wagerReference = BalanceTransactionDocument($"video-poker-{roundId}-wager");
@@ -41,7 +42,7 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             if (roundSnapshot.Exists)
             {
                 var existing = ReadRound(roundSnapshot);
-                if (existing.UserId != userId || existing.Round.CoinsWagered != coinsWagered)
+                if (existing.UserId != userId || existing.Round.CoinsWagered != coinsWagered || existing.Round.HandCount != handCount)
                     throw new VideoPokerRoundConflictException("This Idempotency-Key was already used with a different Video Poker request.");
                 if (!snapshots[2].Exists || !snapshots[3].Exists)
                     throw new InvalidOperationException("A recorded Video Poker round is missing its deal ledger.");
@@ -52,7 +53,7 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             if (balanceCents < wagerCents)
                 throw new VideoPokerInsufficientCreditsException(balanceCents, wagerCents);
 
-            var round = VideoPokerRoundEngine.Deal(shuffledDeck, coinsWagered);
+            var round = VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered);
             var remainingCents = checked(balanceCents - wagerCents);
             transaction.Create(roundReference, RoundData(roundId, userId, round, idempotencyKey, nowUtc));
             transaction.Set(balanceReference, BalanceUpdate(remainingCents, nowUtc), SetOptions.MergeAll);
@@ -105,12 +106,12 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             var balanceCents = ReadBalanceCents(snapshots[1]);
             if (stored.Round.Status == VideoPokerRoundStatus.Completed)
             {
-                var completedHolds = stored.Round.Draw!.HeldCardPositions.Positions;
+                var completedHolds = stored.Round.HeldCardPositions!.Positions;
                 if (!completedHolds.SequenceEqual(heldPositions.Positions))
                     throw new VideoPokerRoundConflictException("This Video Poker round was already drawn with different held cards.");
                 if (!snapshots[3].Exists)
                     throw new InvalidOperationException("A completed Video Poker round is missing its draw event.");
-                var creditsWon = stored.Round.Result!.PaytableOutcome.CreditsWon;
+                var creditsWon = stored.Round.Results.Sum(result => result.PaytableOutcome.CreditsWon);
                 if ((creditsWon > 0) != snapshots[2].Exists)
                     throw new InvalidOperationException("A completed Video Poker round is missing its payout ledger.");
                 return new VideoPokerStoreResult(stored.RoundId, stored.Round, balanceCents);
@@ -119,7 +120,7 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
                 throw new InvalidOperationException("A Video Poker draw ledger already exists without a completed round.");
 
             var completed = VideoPokerRoundEngine.Draw(stored.Round, heldPositions);
-            var payoutCents = checked(completed.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents);
+            var payoutCents = checked(completed.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
             var finalBalanceCents = checked(balanceCents + payoutCents);
             transaction.Update(roundReference, CompletedRoundData(completed, idempotencyKey, nowUtc));
             transaction.Create(drawnEventReference, RoundEventData(roundId, userId, "draw", idempotencyKey, nowUtc));
@@ -154,12 +155,16 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
         ["roundId"] = roundId,
         ["userId"] = userId,
         ["coinsWagered"] = (long)round.CoinsWagered,
-        ["deck"] = round.InitialDeal.Cards.Concat(round.RemainingDeck).Select(CardCode.Format).ToArray(),
+        ["handCount"] = (long)round.HandCount,
+        ["decks"] = round.RemainingDecks
+            .SelectMany(deck => round.InitialDeal.Cards.Concat(deck))
+            .Select(CardCode.Format)
+            .ToArray(),
         ["status"] = "awaiting-draw",
         ["startIdempotencyKey"] = idempotencyKey,
         ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
         ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-        ["schemaVersion"] = 1L,
+        ["schemaVersion"] = 2L,
     };
 
     private static Dictionary<string, object> CompletedRoundData(
@@ -168,10 +173,14 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
         DateTimeOffset nowUtc) => new()
     {
         ["status"] = "completed",
-        ["heldPositions"] = round.Draw!.HeldCardPositions.Positions.Select(position => (long)position).ToArray(),
+        ["heldPositions"] = round.HeldCardPositions!.Positions.Select(position => (long)position).ToArray(),
         ["drawIdempotencyKey"] = idempotencyKey,
-        ["payoutCents"] = checked(round.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents),
-        ["handRank"] = VideoPokerService.HandRankName(round.Result.HandRank),
+        ["payoutCents"] = checked(round.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents),
+        ["handRank"] = VideoPokerService.HandRankName(round.Result!.HandRank),
+        ["handRanks"] = round.Results.Select(result => VideoPokerService.HandRankName(result.HandRank)).ToArray(),
+        ["handPayoutCents"] = round.Results
+            .Select(result => checked((long)result.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents))
+            .ToArray(),
         ["updatedAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
     };
 
@@ -224,15 +233,30 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             !snapshot.TryGetValue<string>("userId", out var userId) || string.IsNullOrWhiteSpace(userId) ||
             !snapshot.TryGetValue<long>("coinsWagered", out var rawCoins) || rawCoins is < VideoPokerMoney.MinimumCoinsWagered or > VideoPokerMoney.MaximumCoinsWagered ||
             !snapshot.TryGetValue<string>("status", out var status) || status is not ("awaiting-draw" or "completed") ||
-            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
+            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion is not (1 or 2))
         {
             throw new InvalidOperationException("The Video Poker round is corrupt.");
         }
-        var deck = ReadStringArray(snapshot, "deck").Select(CardCode.Parse).ToArray();
-        if (deck.Length != StandardDeck.Create().Count || !deck.ToHashSet().SetEquals(StandardDeck.Create()))
-            throw new InvalidOperationException("The Video Poker round deck is corrupt.");
+        IReadOnlyList<IReadOnlyList<PlayingCard>> decks;
+        if (schemaVersion == 1)
+        {
+            decks = [ReadDeck(snapshot, "deck")];
+        }
+        else
+        {
+            if (!snapshot.TryGetValue<long>("handCount", out var rawHandCount) || rawHandCount is not (1 or 3 or 5))
+                throw new InvalidOperationException("The Video Poker hand count is corrupt.");
+            var flatDeck = ReadStringArray(snapshot, "decks").Select(CardCode.Parse).ToArray();
+            if (flatDeck.Length != StandardDeck.Create().Count * rawHandCount)
+                throw new InvalidOperationException("The Video Poker replacement decks are corrupt.");
+            decks = Enumerable.Range(0, checked((int)rawHandCount))
+                .Select(index => (IReadOnlyList<PlayingCard>)flatDeck.Skip(index * StandardDeck.Create().Count).Take(StandardDeck.Create().Count).ToArray())
+                .ToArray();
+            if (decks.Any(deck => !deck.ToHashSet().SetEquals(StandardDeck.Create())))
+                throw new InvalidOperationException("The Video Poker replacement decks are corrupt.");
+        }
 
-        var dealt = VideoPokerRoundEngine.Deal(deck, checked((int)rawCoins));
+        var dealt = VideoPokerRoundEngine.Deal(decks, checked((int)rawCoins));
         if (status == "awaiting-draw") return new StoredRound(roundId, userId, dealt);
 
         var holds = new VideoPokerHeldCardPositions(ReadLongArray(snapshot, "heldPositions").Select(position =>
@@ -240,14 +264,33 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
                 ? (VideoPokerCardPosition)position
                 : throw new InvalidOperationException("The Video Poker held cards are corrupt.")));
         var completed = VideoPokerRoundEngine.Draw(dealt, holds);
-        var expectedPayoutCents = checked(completed.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents);
+        var expectedPayoutCents = checked(completed.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
         if (!snapshot.TryGetValue<long>("payoutCents", out var storedPayoutCents) || storedPayoutCents != expectedPayoutCents ||
-            !snapshot.TryGetValue<string>("handRank", out var storedHandRank) || storedHandRank != VideoPokerService.HandRankName(completed.Result.HandRank) ||
+            !snapshot.TryGetValue<string>("handRank", out var storedHandRank) || storedHandRank != VideoPokerService.HandRankName(completed.Result!.HandRank) ||
             !snapshot.TryGetValue<string>("drawIdempotencyKey", out var drawIdempotencyKey) || string.IsNullOrWhiteSpace(drawIdempotencyKey))
         {
             throw new InvalidOperationException("The completed Video Poker round is corrupt.");
         }
+        if (schemaVersion == 2)
+        {
+            var storedRanks = ReadStringArray(snapshot, "handRanks");
+            var expectedRanks = completed.Results.Select(result => VideoPokerService.HandRankName(result.HandRank)).ToArray();
+            var storedPayouts = ReadLongArray(snapshot, "handPayoutCents");
+            var expectedPayouts = completed.Results
+                .Select(result => checked((long)result.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents))
+                .ToArray();
+            if (!storedRanks.SequenceEqual(expectedRanks) || !storedPayouts.SequenceEqual(expectedPayouts))
+                throw new InvalidOperationException("The completed Video Poker hand results are corrupt.");
+        }
         return new StoredRound(roundId, userId, completed);
+    }
+
+    private static IReadOnlyList<PlayingCard> ReadDeck(DocumentSnapshot snapshot, string field)
+    {
+        var deck = ReadStringArray(snapshot, field).Select(CardCode.Parse).ToArray();
+        if (deck.Length != StandardDeck.Create().Count || !deck.ToHashSet().SetEquals(StandardDeck.Create()))
+            throw new InvalidOperationException("The Video Poker round deck is corrupt.");
+        return deck;
     }
 
     private static long ReadBalanceCents(DocumentSnapshot snapshot) => checked(

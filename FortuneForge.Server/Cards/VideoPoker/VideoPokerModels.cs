@@ -5,7 +5,7 @@ using FortuneForge.Server.Accounts.Models;
 
 namespace FortuneForge.Server.Cards.VideoPoker;
 
-public sealed record CreateVideoPokerRoundRequest(int CoinsWagered);
+public sealed record CreateVideoPokerRoundRequest(int CoinsWagered, int HandCount = 1);
 
 public sealed record DrawVideoPokerRoundRequest(IReadOnlyList<int>? HeldPositions);
 
@@ -14,7 +14,8 @@ public sealed record VideoPokerStatusResponse(
     int MinimumCoinsWagered,
     int MaximumCoinsWagered,
     decimal CoinValue,
-    decimal Balance);
+    decimal Balance,
+    IReadOnlyList<int>? HandCounts = null);
 
 public sealed record VideoPokerCardResponse(string Rank, string Suit);
 
@@ -22,13 +23,17 @@ public sealed record VideoPokerRoundResponse(
     string RoundId,
     decimal Balance,
     int CoinsWagered,
+    int HandCount,
     decimal Wager,
     string Phase,
     IReadOnlyList<VideoPokerCardResponse> InitialCards,
     IReadOnlyList<int> HeldPositions,
     IReadOnlyList<VideoPokerCardResponse>? FinalCards,
     string? HandRank,
-    decimal? Payout);
+    decimal? Payout,
+    IReadOnlyList<IReadOnlyList<VideoPokerCardResponse>>? FinalHands,
+    IReadOnlyList<string>? HandRanks,
+    IReadOnlyList<decimal>? HandPayouts);
 
 public sealed record VideoPokerErrorResponse(string Code, string Message);
 
@@ -51,7 +56,7 @@ internal static class VideoPokerMoney
     public const int MaximumCoinsWagered = 5;
     public const long CoinValueCents = RandMoney.CentsPerRand;
 
-    public static long WagerCents(int coinsWagered)
+    public static long WagerCents(int coinsWagered, int handCount = 1)
     {
         if (coinsWagered is < MinimumCoinsWagered or > MaximumCoinsWagered)
         {
@@ -60,7 +65,10 @@ internal static class VideoPokerMoney
                 $"Choose a Video Poker wager from {MinimumCoinsWagered} through {MaximumCoinsWagered} coins.");
         }
 
-        return checked(coinsWagered * CoinValueCents);
+        if (handCount is not (1 or 3 or 5))
+            throw new ArgumentOutOfRangeException(nameof(handCount), "Choose one, three, or five hands.");
+
+        return checked(coinsWagered * handCount * CoinValueCents);
     }
 
     public static decimal ToRand(long cents) => RandMoney.CentsToRand(cents);
@@ -72,7 +80,8 @@ internal interface IVideoPokerStore
         string userId,
         string idempotencyKey,
         int coinsWagered,
-        IReadOnlyList<PlayingCard> shuffledDeck,
+        int handCount,
+        IReadOnlyList<IReadOnlyList<PlayingCard>> shuffledDecks,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken);
 
@@ -105,12 +114,14 @@ internal sealed class VideoPokerService(
     {
         ArgumentNullException.ThrowIfNull(request);
         ValidateIdempotencyKey(idempotencyKey);
-        VideoPokerMoney.WagerCents(request.CoinsWagered);
+        VideoPokerMoney.WagerCents(request.CoinsWagered, request.HandCount);
+        var shuffledDecks = Enumerable.Range(0, request.HandCount).Select(_ => createShuffledDeck()).ToArray();
         var result = await store.StartAsync(
             userId,
             idempotencyKey,
             request.CoinsWagered,
-            createShuffledDeck(),
+            request.HandCount,
+            shuffledDecks,
             timeProvider.GetUtcNow(),
             cancellationToken);
         return ToResponse(result);
@@ -158,22 +169,29 @@ internal sealed class VideoPokerService(
     {
         var round = result.Round;
         var completed = round.Status == VideoPokerRoundStatus.Completed;
-        var payoutCents = completed
-            ? checked(round.Result!.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents)
-            : 0;
+        var handPayouts = completed
+            ? round.Results.Select(result => VideoPokerMoney.ToRand(checked(result.PaytableOutcome.CreditsWon * VideoPokerMoney.CoinValueCents))).ToArray()
+            : null;
+        var payout = handPayouts?.Sum();
         return new VideoPokerRoundResponse(
             RoundId: result.RoundId,
             Balance: VideoPokerMoney.ToRand(result.BalanceCents),
             CoinsWagered: round.CoinsWagered,
-            Wager: VideoPokerMoney.ToRand(VideoPokerMoney.WagerCents(round.CoinsWagered)),
+            HandCount: round.HandCount,
+            Wager: VideoPokerMoney.ToRand(VideoPokerMoney.WagerCents(round.CoinsWagered, round.HandCount)),
             Phase: completed ? "completed" : "awaiting-draw",
             InitialCards: round.InitialDeal.Cards.Select(ToCard).ToArray(),
             HeldPositions: completed
-                ? round.Draw!.HeldCardPositions.Positions.Select(position => (int)position).ToArray()
+                ? round.HeldCardPositions!.Positions.Select(position => (int)position).ToArray()
                 : [],
             FinalCards: completed ? round.Result!.FinalHand.Cards.Select(ToCard).ToArray() : null,
             HandRank: completed ? HandRankName(round.Result!.HandRank) : null,
-            Payout: completed ? VideoPokerMoney.ToRand(payoutCents) : null);
+            Payout: payout,
+            FinalHands: completed
+                ? round.Results.Select(result => (IReadOnlyList<VideoPokerCardResponse>)result.FinalHand.Cards.Select(ToCard).ToArray()).ToArray()
+                : null,
+            HandRanks: completed ? round.Results.Select(result => HandRankName(result.HandRank)).ToArray() : null,
+            HandPayouts: handPayouts);
     }
 
     internal static void ValidateIdempotencyKey(string idempotencyKey)

@@ -28,7 +28,8 @@ public sealed class VideoPokerController(
                 VideoPokerMoney.MinimumCoinsWagered,
                 VideoPokerMoney.MaximumCoinsWagered,
                 VideoPokerMoney.ToRand(VideoPokerMoney.CoinValueCents),
-                IsPractice ? VideoPokerMoney.ToRand(PracticeVideoPokerStore.StartingBalanceCents) : account.Balances.SlotsCredits));
+                IsPractice ? VideoPokerMoney.ToRand(PracticeVideoPokerStore.StartingBalanceCents) : account.Balances.SlotsCredits,
+                [1, 3, 5]));
     }
 
     [HttpPost("rounds")]

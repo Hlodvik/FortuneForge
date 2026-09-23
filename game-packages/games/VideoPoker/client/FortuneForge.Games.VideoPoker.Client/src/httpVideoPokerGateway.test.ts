@@ -6,6 +6,7 @@ const awaitingRound = {
   roundId: 'round-7',
   balance: 100,
   coinsWagered: 3,
+  handCount: 1,
   wager: 3,
   phase: 'awaiting-draw',
   initialCards: [
@@ -19,6 +20,9 @@ const awaitingRound = {
   finalCards: null,
   handRank: null,
   payout: null,
+  finalHands: null,
+  handRanks: null,
+  handPayouts: null,
 }
 
 afterEach(() => vi.unstubAllGlobals())
@@ -56,8 +60,19 @@ describe('HttpVideoPokerGateway', () => {
         'content-type': 'application/json',
         'Idempotency-Key': expect.stringMatching(/^video-poker-deal-[A-Za-z0-9]+$/),
       }),
-      body: JSON.stringify({ coinsWagered: 3 }),
+      body: JSON.stringify({ coinsWagered: 3, handCount: 1 }),
       signal: undefined,
+    }))
+  })
+
+  it('posts an explicitly selected multi-hand count', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ ...awaitingRound, handCount: 5, wager: 15 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await new HttpVideoPokerGateway().createRound(3, { handCount: 5 })
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/games/video-poker/rounds', expect.objectContaining({
+      body: JSON.stringify({ coinsWagered: 3, handCount: 5 }),
     }))
   })
 
@@ -80,6 +95,9 @@ describe('HttpVideoPokerGateway', () => {
       finalCards: awaitingRound.initialCards,
       handRank: 'straight',
       payout: 12,
+      finalHands: [awaitingRound.initialCards],
+      handRanks: ['straight'],
+      handPayouts: [12],
     }
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse(completedRound))
     vi.stubGlobal('fetch', fetchMock)

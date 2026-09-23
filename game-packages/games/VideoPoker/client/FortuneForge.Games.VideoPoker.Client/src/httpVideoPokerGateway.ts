@@ -3,6 +3,7 @@ import {
   type VideoPokerCard,
   type VideoPokerCardPosition,
   type VideoPokerGateway,
+  type VideoPokerHandCount,
   type VideoPokerHandRank,
   type VideoPokerRound,
   type VideoPokerRequestOptions,
@@ -29,7 +30,7 @@ export class HttpVideoPokerGateway implements VideoPokerGateway {
   createRound(coinsWagered: number, options: VideoPokerRequestOptions = {}) {
     return this.request(
       '/rounds',
-      jsonPost({ coinsWagered }, options.signal, options.idempotencyKey ?? createIdempotencyKey('video-poker-deal')),
+      jsonPost({ coinsWagered, handCount: options.handCount ?? 1 }, options.signal, options.idempotencyKey ?? createIdempotencyKey('video-poker-deal')),
       isRound,
     )
   }
@@ -80,6 +81,7 @@ function isStatus(value: unknown): value is VideoPokerStatus {
     isWager(value.maximumCoinsWagered) &&
     isMoney(value.coinValue) && value.coinValue > 0 &&
     isMoney(value.balance) && value.balance >= 0 &&
+    (value.handCounts === undefined || isHandCounts(value.handCounts)) &&
     value.minimumCoinsWagered <= value.maximumCoinsWagered
 }
 
@@ -88,6 +90,7 @@ function isRound(value: unknown): value is VideoPokerRound {
     typeof value.roundId === 'string' && value.roundId.length > 0 &&
     isMoney(value.balance) &&
     isWager(value.coinsWagered) &&
+    isHandCount(value.handCount) &&
     isMoney(value.wager) && value.wager > 0 &&
     isPhase(value.phase) &&
     isFiveCards(value.initialCards) &&
@@ -95,13 +98,17 @@ function isRound(value: unknown): value is VideoPokerRound {
     (value.finalCards === null || isFiveCards(value.finalCards)) &&
     (value.handRank === null || isHandRank(value.handRank)) &&
     (value.payout === null || (isMoney(value.payout) && value.payout >= 0)) &&
+    (value.finalHands === null || (Array.isArray(value.finalHands) && value.finalHands.length === value.handCount && value.finalHands.every(isFiveCards))) &&
+    (value.handRanks === null || (Array.isArray(value.handRanks) && value.handRanks.length === value.handCount && value.handRanks.every(isHandRank))) &&
+    (value.handPayouts === null || (Array.isArray(value.handPayouts) && value.handPayouts.length === value.handCount && value.handPayouts.every(payout => isMoney(payout) && payout >= 0))) &&
     isRoundStateConsistent(value)
 }
 
 function isRoundStateConsistent(value: Record<string, unknown>): boolean {
   return value.phase === 'awaiting-draw'
-    ? value.finalCards === null && value.handRank === null && value.payout === null
-    : value.finalCards !== null && value.handRank !== null && value.payout !== null
+    ? value.finalCards === null && value.handRank === null && value.payout === null && value.finalHands === null && value.handRanks === null && value.handPayouts === null
+    : value.finalCards !== null && value.handRank !== null && value.payout !== null && value.finalHands !== null && value.handRanks !== null &&
+      Array.isArray(value.handPayouts) && value.handPayouts.reduce<number>((sum, payout) => sum + Number(payout), 0) === value.payout
 }
 
 function isFiveCards(value: unknown): value is readonly VideoPokerCard[] {
@@ -123,6 +130,14 @@ function isPosition(value: unknown): value is VideoPokerCardPosition {
 
 function isWager(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5
+}
+
+function isHandCount(value: unknown): value is VideoPokerHandCount {
+  return value === 1 || value === 3 || value === 5
+}
+
+function isHandCounts(value: unknown): value is readonly VideoPokerHandCount[] {
+  return Array.isArray(value) && value.length > 0 && value.every(isHandCount)
 }
 
 function isMoney(value: unknown): value is number {

@@ -9,20 +9,27 @@ const fail = (message) => {
   process.exitCode = 1
 }
 
-const serverProject = read('FortuneForge.Server/FortuneForge.Server.csproj')
-const binaryGameReferences = [...serverProject.matchAll(/<PackageReference Include="(FortuneForge\.Games\.[^"]+)"/g)]
-if (binaryGameReferences.length > 0) {
-  fail(`Server still consumes external game packages: ${binaryGameReferences.map((match) => match[1]).join(', ')}`)
-}
+const applicationProjects = [
+  'FortuneForge.Server/FortuneForge.Server.csproj',
+  'FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj',
+]
+const sourceProjectPaths = new Set()
+for (const applicationProject of applicationProjects) {
+  const projectContents = read(applicationProject)
+  const binaryGameReferences = [...projectContents.matchAll(/<PackageReference Include="(FortuneForge\.Games\.[^"]+)"/g)]
+  if (binaryGameReferences.length > 0) {
+    fail(`${applicationProject} still consumes external game packages: ${binaryGameReferences.map((match) => match[1]).join(', ')}`)
+  }
 
-const sourceProjectReferences = [...serverProject.matchAll(/<ProjectReference Include="([^"]*FortuneForge\.Games\.[^"]+\.csproj)"/g)]
-if (sourceProjectReferences.length === 0) fail('Server has no game source project references.')
-for (const [, projectPath] of sourceProjectReferences) {
-  const normalizedPath = projectPath.replaceAll('\\', '/')
-  if (!existsSync(resolve(root, 'FortuneForge.Server', normalizedPath))) {
-    fail(`Missing game source project: ${projectPath}`)
+  const sourceProjectReferences = [...projectContents.matchAll(/<ProjectReference Include="([^"]*FortuneForge\.Games\.[^"]+\.csproj)"/g)]
+  for (const [, projectPath] of sourceProjectReferences) {
+    const normalizedPath = projectPath.replaceAll('\\', '/')
+    const resolvedProject = resolve(root, dirname(applicationProject), normalizedPath)
+    sourceProjectPaths.add(resolvedProject)
+    if (!existsSync(resolvedProject)) fail(`Missing game source project: ${projectPath}`)
   }
 }
+if (sourceProjectPaths.size === 0) fail('Application has no game source project references.')
 
 const rootPackage = JSON.parse(read('package.json'))
 const clientPackage = JSON.parse(read('fortuneforge.client/package.json'))
@@ -58,4 +65,4 @@ for (const oldFeed of ['packages/client', 'packages/games']) {
 }
 
 if (process.exitCode) process.exit(process.exitCode)
-console.log(`Verified ${sourceProjectReferences.length} server game projects and ${clientGameDependencies.length} client game workspaces are owned by this repository.`)
+console.log(`Verified ${sourceProjectPaths.size} server game projects and ${clientGameDependencies.length} client game workspaces are owned by this repository.`)

@@ -37,6 +37,21 @@ describe('card game route integration', () => {
     expect(librarySource).not.toContain('requestBlackjackStatus')
   })
 
+  it('uses the host-owned in-game shell instead of card-game brand headers', () => {
+    const blackjack = source('./blackjack/BlackjackPage.tsx')
+    const blackjackTable = source('./blackjack/BlackjackTablePage.tsx')
+    const holdem = source('./texasHoldem/TexasHoldemPage.tsx')
+    const creditHoldem = source('./texasHoldem/CreditTexasHoldemPage.tsx')
+    const solitaire = source('./solitaire/CompetitiveSolitairePage.tsx')
+
+    for (const page of [blackjack, blackjackTable, holdem, creditHoldem, solitaire]) {
+      expect(page).toContain('InGameShell')
+      expect(page).not.toContain('CardRoomNavigation')
+    }
+    expect(holdem).not.toContain('<header className="holdem-header"')
+    expect(blackjack).not.toContain('<header className="blackjack-header"')
+  })
+
   it('provides card-specific page titles', () => {
     expect(pageTitleForPath('/cards/blackjack')).toBe('Blackjack Table — Fortune Forge')
     expect(pageTitleForPath('/demo/cards/blackjack')).toBe('Blackjack Demo — Fortune Forge')

@@ -293,11 +293,33 @@ export const NORDIC_LEGENDS_SOUNDS = createThemedSlotSounds('nordic-legends-audi
   bonus: ['five-jewel', 'premium-win'], five: ['five-casino-win', 'five-jewel'], premium: ['five-casino-win'],
 })
 
-export const WUKONG_TREASURES_SOUNDS = createThemedSlotSounds('wukong-treasures-audio-v1', {
-  ambienceSource: asianDragonSource, ambienceVolume: 0.06,
-  leverSource: leverCoinSource, leverVolume: 0.3,
-  bonus: ['five-jewel', 'premium-win'], five: ['five-twinkle', 'five-jewel'], premium: ['five-jewel'],
-})
+export const WUKONG_TREASURES_SOUNDS: SlotSoundSet = {
+  ...DEFAULT_SLOT_SOUNDS,
+  id: 'wukong-treasures-audio-v2',
+  cues: {
+    ...DEFAULT_SLOT_SOUNDS.cues,
+    ambience: { source: asianDragonSource, baseVolume: 0.06, category: 'effect', loop: true },
+    'lever-pull': { source: reelSpinSource, baseVolume: 0.12, category: 'effect' },
+    'reel-spin': { source: reelSpinSource, baseVolume: 0.11, category: 'effect', loop: true },
+    'reel-stop': { source: noWinWaterDropSource, baseVolume: 0.15, category: 'effect' },
+    'low-win': { source: fiveJewelSource, baseVolume: 0.21, category: 'result' },
+    'premium-win': { source: fiveTwinkleSource, baseVolume: 0.28, category: 'result' },
+    'five-casino-win': { source: fiveJewelSource, baseVolume: 0.32, category: 'result' },
+    'five-jewel': { source: fiveJewelSource, baseVolume: 0.29, category: 'result' },
+    'five-twinkle': { source: fiveTwinkleSource, baseVolume: 0.27, category: 'result' },
+    'soft-miss': { source: noWinWaterDropSource, baseVolume: 0.13, category: 'result' },
+  },
+  events: {
+    ...DEFAULT_SLOT_SOUNDS.events,
+    results: {
+      bonus: ['five-twinkle', 'five-jewel'],
+      five: ['five-jewel', 'five-twinkle'],
+      'no-win': ['soft-miss'],
+      premium: ['five-twinkle'],
+      'single-three': ['low-win'],
+    },
+  },
+}
 
 export const RAINBOW_REALM_SOUNDS = createThemedSlotSounds('rainbow-realm-audio-v1', {
   ambienceSource: carnivalLightsSource, ambienceVolume: 0.05,

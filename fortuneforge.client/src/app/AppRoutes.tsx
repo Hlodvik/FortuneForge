@@ -63,7 +63,7 @@ export function AppRoutes({
   else if (pathname === '/demo/cards') route = <DemoCardLibraryPage demoMode />
   else if (pathname === '/demo/cards/blackjack') route = <DemoBlackjackPage demoMode />
   else if (pathname === '/demo/cards/blackjack/bot-practice') route = <DemoBlackjackBotPracticePage />
-  else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage demoMode returnHref="/demo/cards" />
+  else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage />
   else if (pathname === '/demo/cards/texas-holdem/bot-practice') route = <DemoTexasHoldemBotPracticePage />
   else if (pathname === '/demo/cards/solitaire/bot-practice') route = <DemoSolitaireBotPracticePage />
   else if (pathname === '/slots') route = <AuthenticatedSlotsLibraryRoute />

@@ -5,7 +5,7 @@ type SpinButtonProps = {
   isSpinning?: boolean
   isStopRequested?: boolean
   onSpin: () => void
-  variant?: 'default' | 'pirate-helm'
+  variant?: 'default' | 'pirate-helm' | 'wukong-rune'
 }
 
 export function SpinButton({
@@ -25,7 +25,7 @@ export function SpinButton({
 
   return (
     <button
-      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'pirate-helm' ? ' spin-button--pirate-helm' : ''}`}
+      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'pirate-helm' ? ' spin-button--pirate-helm' : ''}${variant === 'wukong-rune' ? ' spin-button--wukong-rune' : ''}`}
       type="button"
       onClick={handleClick}
       disabled={disabled && !isActive}
@@ -51,6 +51,12 @@ export function SpinButton({
               <circle className="spin-button__helm-inner-rim" cx="256" cy="256" r="146" />
               <circle className="spin-button__helm-hub" cx="256" cy="256" r="58" />
               <circle className="spin-button__helm-boss" cx="256" cy="256" r="18" />
+            </g>
+          ) : variant === 'wukong-rune' ? (
+            <g className="spin-button__wukong-glyph">
+              <circle className="spin-button__wukong-ring" cx="256" cy="256" r="176" />
+              <path className="spin-button__wukong-cloud" d="M133 293c-26 0-47-18-47-41 0-22 19-40 43-41 8-35 41-61 81-61 31 0 59 16 73 40 9-5 20-8 32-8 34 0 62 25 62 56 0 3 0 6-1 9 29 4 51 26 51 53 0 30-27 55-61 55H153c-33 0-60-25-60-55 0-3 0-5 1-7h39Z" />
+              <path className="spin-button__wukong-arrow" d="M173 270c7-52 52-91 106-91 30 0 58 12 78 32l18-22v72h-77l24-24c-12-10-27-16-43-16-31 0-57 21-65 49h-41Z" />
             </g>
           ) : (
             <path

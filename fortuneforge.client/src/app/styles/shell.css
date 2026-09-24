@@ -6,6 +6,37 @@
   isolation: isolate;
 }
 
+body.ff-game-active,
+body.ff-game-active .app-shell--game,
+body.ff-game-active .slots-page__play-guide {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+body.ff-game-active input,
+body.ff-game-active textarea,
+body.ff-game-active [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+body.ff-game-active img {
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+@media (min-width: 721px) {
+  html.ff-game-active,
+  body.ff-game-active,
+  body.ff-game-active #root,
+  body.ff-game-active .app-shell--game {
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
 .app-shell::before {
   position: fixed;
   z-index: 0;

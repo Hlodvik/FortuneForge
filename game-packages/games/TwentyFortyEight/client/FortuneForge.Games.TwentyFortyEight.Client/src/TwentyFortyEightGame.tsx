@@ -3,14 +3,14 @@ import { TwentyFortyEightGatewayError } from './httpTwentyFortyEightGateway'
 import type { TwentyFortyEightDirection, TwentyFortyEightGameState, TwentyFortyEightGateway } from './contracts'
 import { directionLabel, planTileMotion, tileClass, tileLabel, type TileMotion } from './twentyFortyEightHelpers'
 
-export type TwentyFortyEightGameProps = Readonly<{ gateway: TwentyFortyEightGateway; backHref?: string; playerName?: string; tableLabel?: string }>
+export type TwentyFortyEightGameProps = Readonly<{ gateway: TwentyFortyEightGateway; backHref?: string; playerName?: string; tableLabel?: string; embedded?: boolean }>
 
 const directions: readonly TwentyFortyEightDirection[] = ['up', 'left', 'down', 'right']
 const tileMotionDuration = 180
 const bestScoreKey = 'fortuneforge:2048:best-score'
 const swipeThreshold = 28
 
-export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local free play' }: TwentyFortyEightGameProps) {
+export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local free play', embedded = false }: TwentyFortyEightGameProps) {
   const [game, setGame] = useState<TwentyFortyEightGameState | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -45,6 +45,7 @@ export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Pl
 
   const move = useCallback((direction: TwentyFortyEightDirection) => {
     if (!game || busy) return
+    prime2048Audio()
     void (async () => {
       setBusy(true)
       setError(null)
@@ -53,6 +54,7 @@ export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Pl
       try {
         const nextGame = await gateway.move(game.gameId, direction)
         const motion = nextGame.lastEvent === 'no-move' ? [] : planTileMotion(game.tiles, game.size, direction)
+        if (nextGame.lastEvent !== 'no-move') play2048Effect(direction, nextGame.scoreGained > 0)
         setGame(nextGame)
         setTileMotion(motion)
         setRevealingTiles([...new Set(motion.map(tile => tile.to))])
@@ -95,8 +97,8 @@ export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Pl
     move(Math.abs(horizontal) > Math.abs(vertical) ? (horizontal > 0 ? 'right' : 'left') : (vertical > 0 ? 'down' : 'up'))
   }
 
-  return <div className="ff-2048-page">
-    <header className="ff-2048-header"><a className="ff-2048-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-2048-games" href={backHref}>Other games</a><div className="ff-2048-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>
+  return <div className={`ff-2048-page${embedded ? ' ff-2048-page--embedded' : ''}`}>
+    {!embedded && <header className="ff-2048-header"><a className="ff-2048-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-2048-games" href={backHref}>Other games</a><div className="ff-2048-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>}
     <main className="ff-2048-main">
       <section className="ff-2048-title"><div><small>Number combo game</small><h1>2048</h1><p>Slide matching tiles together until you reach the golden 2048.</p></div><div className="ff-2048-actions"><button type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'New game'}</button><button type="button" onClick={undo} disabled={busy || !game?.canUndo}>Undo</button></div></section>
       {game ? <div className="ff-2048-gameplay">
@@ -117,6 +119,43 @@ function wait(milliseconds: number): Promise<void> { return new Promise(resolve 
 function readBestScore(): number {
   if (typeof window === 'undefined') return 0
   try { const value = Number(window.localStorage.getItem(bestScoreKey)); return Number.isSafeInteger(value) && value > 0 ? value : 0 } catch { return 0 }
+}
+
+let gameAudioContext: AudioContext | null = null
+
+function prime2048Audio(): void {
+  if (typeof window === 'undefined') return
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextConstructor) return
+  gameAudioContext ??= new AudioContextConstructor()
+  if (gameAudioContext.state === 'suspended') void gameAudioContext.resume()
+}
+
+function play2048Effect(direction: TwentyFortyEightDirection, merged: boolean): void {
+  const context = gameAudioContext
+  if (!context) return
+  const now = context.currentTime
+  const directionFrequency = { up: 310, right: 350, down: 240, left: 275 }[direction]
+  playTone(context, directionFrequency, directionFrequency * 1.16, now, .055, .035)
+  if (merged) {
+    playTone(context, 520, 720, now + .045, .11, .055)
+    playTone(context, 780, 940, now + .075, .09, .03)
+  }
+}
+
+function playTone(context: AudioContext, startFrequency: number, endFrequency: number, start: number, duration: number, volume: number): void {
+  const oscillator = context.createOscillator()
+  const gain = context.createGain()
+  oscillator.type = 'sine'
+  oscillator.frequency.setValueAtTime(startFrequency, start)
+  oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration)
+  gain.gain.setValueAtTime(.0001, start)
+  gain.gain.exponentialRampToValueAtTime(volume, start + .008)
+  gain.gain.exponentialRampToValueAtTime(.0001, start + duration)
+  oscillator.connect(gain).connect(context.destination)
+  oscillator.start(start)
+  oscillator.stop(start + duration + .01)
 }
 function tilePosition(index: number, size: number): CSSProperties { return { gridColumnStart: (index % size) + 1, gridRowStart: Math.floor(index / size) + 1 } }
 function motionPosition(tile: TileMotion, size: number): CSSProperties {

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { InGameShell } from '../../../components/InGameShell'
 import {
   commandHoldemBotPractice,
   getHoldemBotPractice,
@@ -42,9 +43,9 @@ export function TexasHoldemBotPracticePage() {
   }
 
   return (
-    <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
-      <header className="practice-bot-header"><a href="/demo/cards">← Card room</a><span>Texas Hold’em</span></header>
-      <main className="practice-bot-main">
+    <InGameShell title="Texas Hold’em" theme="cards" bodyClassName="practice-bot-shell-body">
+      <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
+        <main className="practice-bot-main">
         <section className="practice-bot-hero"><p>Fortune Forge</p><h1>Texas Hold’em</h1><span>Visible table action · private hole cards protected</span></section>
         {controller.message && <div className="practice-bot-error" role="alert">{controller.message}</div>}
         {controller.state.kind === 'loading' && <div className="practice-bot-panel" role="status">Opening the table…</div>}
@@ -97,8 +98,9 @@ export function TexasHoldemBotPracticePage() {
             </ol>
           </section>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </InGameShell>
   )
 }
 

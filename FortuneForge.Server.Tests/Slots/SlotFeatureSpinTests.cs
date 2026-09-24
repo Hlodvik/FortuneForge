@@ -71,6 +71,21 @@ public sealed class SlotFeatureSpinTests
     }
 
     [Fact]
+    public void Spin_WhenMonkeyPawRushIsActive_AddsSeveralPawsToEverySpin()
+    {
+        var service = CreateService(new QueuedRandomIndexSource());
+
+        var result = service.Spin(
+            "classic-demo-v1",
+            100,
+            "player",
+            specialBoostApplied: false,
+            freeSpinFeatureMode: "paw");
+
+        Assert.InRange(result.MonkeyPawCount, 2, 5);
+    }
+
+    [Fact]
     public void Spin_WhenThreeBananasLandVertically_PaysThreeTimesWager()
     {
         var random = new QueuedRandomIndexSource(0, 1, 1, 99, 0, 0, 0, 99);

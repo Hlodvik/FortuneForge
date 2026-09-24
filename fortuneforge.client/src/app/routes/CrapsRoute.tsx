@@ -1,8 +1,8 @@
 import { CrapsGame, HttpCrapsGateway } from '@fortuneforge/games-craps'
 import '@fortuneforge/games-craps/styles.css'
 import { useMemo } from 'react'
+import { InGameShell } from '../../components/InGameShell'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
-import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 
 export function AuthenticatedCrapsRoute() {
@@ -13,5 +13,7 @@ export function AuthenticatedCrapsRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Craps…" errorTitle="Craps could not be opened." onRetry={reload} />
   }
 
-  return <><GameAmbientMusic game="craps" /><CrapsGame gateway={gateway} playerName={account.playerName} tableLabel="Craps" backHref="/games" /></>
+  return <InGameShell account={account} title="Craps" theme="casino" className="player-page">
+    <CrapsGame gateway={gateway} />
+  </InGameShell>
 }

@@ -28,7 +28,7 @@ describe('AsteroidsCompetitionPage', () => {
     expect(markup).toContain('Competition arena')
     expect(markup.indexOf('Asteroids leaderboard')).toBeLessThan(markup.indexOf('Choose your flight'))
     expect(markup).toContain('asteroids-competition-page__lobby-grid')
-    expect(markup).toMatch(/^<div class="asteroids-competition-page"><header/)
+    expect(markup).toMatch(/^<div class="asteroids-competition-page"><main/)
     expect(markup).toContain('<main class="asteroids-competition-page__content">')
   })
 

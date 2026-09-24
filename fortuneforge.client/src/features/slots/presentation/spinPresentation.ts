@@ -86,8 +86,8 @@ export function getSlotOutcomePresentation({
 }: SlotOutcomePresentationInput): SlotOutcomePresentation {
   if (demoAvailabilityMessage !== null) {
     return {
-      label: 'Demo unavailable',
-      title: 'The demo table is offline',
+      label: 'Game unavailable',
+      title: 'The game service is offline',
       detail: demoAvailabilityMessage,
       nextAction: 'Reload after the service is restored.',
       significance: 'standard',
@@ -205,9 +205,9 @@ export function getSlotOutcomePresentation({
   }
 
   return {
-    label: 'Ready to play',
-    title: `${formatOutcomeRand(activeWager)} wager ready`,
-    detail: 'Paying symbols and active features are explained after every spin.',
+    label: 'Wager selected',
+    title: `${formatOutcomeRand(activeWager)} wager`,
+    detail: 'Paying symbols and active features are explained after each result.',
     nextAction: 'Press Spin when you are ready.',
     significance: 'standard',
     tone: 'neutral',

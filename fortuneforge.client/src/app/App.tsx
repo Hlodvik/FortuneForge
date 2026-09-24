@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import slotBackgroundVideoMp4 from '../assets/slots/backgrounds/background-clouds-animated.mp4'
 import slotBackgroundVideoWebm from '../assets/slots/backgrounds/background-clouds-animated.webm'
 import { findSlotRoute } from '../games/slots'
@@ -13,6 +13,11 @@ export default function App() {
   const isGoogleChrome =
     /\bChrome\//.test(userAgent) && !/\b(?:Edg|OPR)\//.test(userAgent)
   const slotRoute = findSlotRoute(pathname)
+  const isPlayableGameRoute = slotRoute !== null || (
+    pathname.startsWith('/games/') ||
+    pathname.startsWith('/cards/') ||
+    pathname.startsWith('/demo/cards/')
+  )
   const usesThemeSpecificSlotBackdrop =
     slotRoute?.shellBackdrop === 'theme'
   const shouldRenderDefaultShellVideo =
@@ -20,6 +25,7 @@ export default function App() {
   const appShellClassName = [
     'app-shell',
     pathname === '/' ? 'app-shell--landing' : '',
+    isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
     pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
       ? 'app-shell--card-room'
@@ -45,6 +51,23 @@ export default function App() {
   )
 
   usePageTitle(pathname)
+
+  useEffect(() => {
+    if (!isPlayableGameRoute) return undefined
+
+    document.documentElement.classList.add('ff-game-active')
+    document.body.classList.add('ff-game-active')
+    const preventNativeImageDrag = (event: DragEvent) => {
+      if (event.target instanceof HTMLImageElement) event.preventDefault()
+    }
+    document.addEventListener('dragstart', preventNativeImageDrag, true)
+
+    return () => {
+      document.documentElement.classList.remove('ff-game-active')
+      document.body.classList.remove('ff-game-active')
+      document.removeEventListener('dragstart', preventNativeImageDrag, true)
+    }
+  }, [isPlayableGameRoute])
 
   return (
     <div className={appShellClassName}>

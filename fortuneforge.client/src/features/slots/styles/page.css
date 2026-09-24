@@ -74,16 +74,6 @@
   backdrop-filter: blur(0.9rem) saturate(1.08);
 }
 
-.slots-page__brand {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-width: 0;
-  border-radius: 0.35rem;
-  text-decoration: none;
-  transition: filter 150ms ease, transform 150ms ease;
-}
-
 .slots-page__brand-cluster {
   display: flex;
   min-width: 0;
@@ -132,38 +122,22 @@
   gap: clamp(0.45rem, 1.4vw, 1rem);
 }
 
-.slots-page__brand:hover {
-  filter: brightness(1.16);
-  transform: translateY(-1px);
+.slots-page__navigation .player-shell-header__brand {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: inherit;
+  font-size: clamp(0.82rem, 1.45vw, 1.15rem);
 }
 
-.slots-page__brand:focus-visible {
-  outline: 2px solid #fff8ff;
-  outline-offset: 0.35rem;
+.slots-page__navigation .player-shell-header__spark {
+  width: clamp(1.7rem, 2.6vw, 2rem);
 }
 
-.slots-page__other-games {
+.slots-page__navigation .player-shell-header__games {
+  display: inline-flex;
   flex: 0 0 auto;
-  padding: 0.45rem 0.68rem;
-  border: 1px solid rgb(53 231 255 / 34%);
-  border-radius: 999px;
-  color: #d9d1ef;
-  font: 800 0.7rem/1 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
-  letter-spacing: 0.04em;
-  text-decoration: none;
+  align-items: center;
   text-transform: uppercase;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
-}
-
-.slots-page__other-games:hover {
-  border-color: rgb(255 211 95 / 58%);
-  background: rgb(255 211 95 / 10%);
-  color: #fff1bd;
-}
-
-.slots-page__other-games:focus-visible {
-  outline: 2px solid #fff8ff;
-  outline-offset: 0.2rem;
 }
 
 .slots-page__brand-actions {
@@ -198,22 +172,6 @@
   transition: box-shadow 150ms ease, filter 150ms ease, transform 150ms ease;
 }
 
-.slots-page__demo-badge {
-  display: inline-flex;
-  min-height: 2.25rem;
-  align-items: center;
-  padding: 0.4rem 0.72rem;
-  border: 1px solid rgb(255 198 61 / 54%);
-  border-radius: 999px;
-  background: rgb(47 15 80 / 86%);
-  color: #fff2a8;
-  font-size: 0.66rem;
-  font-weight: 950;
-  letter-spacing: 0.06em;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
 .slots-page__purchase-credits-coin {
   width: 1.35rem;
   height: 1.35rem;
@@ -229,22 +187,17 @@
   transform: translateY(-1px);
 }
 
+.slots-page__purchase-credits--static:hover {
+  filter: none;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 9%),
+    0 0 0.9rem rgb(255 198 61 / 22%);
+  transform: none;
+}
+
 .slots-page__purchase-credits:focus-visible {
   outline: 2px solid #fff8ff;
   outline-offset: 3px;
-}
-
-.slots-page__brand-name {
-  background: linear-gradient(90deg, #35e7ff 0%, #fff8ff 38%, #ef3dff 72%, #ffc63d 100%);
-  background-clip: text;
-  color: transparent;
-  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
-  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1;
-  text-shadow: 0 0 1.2rem rgb(53 231 255 / 20%);
-  text-transform: uppercase;
 }
 
 @media (max-width: 720px) {
@@ -271,9 +224,6 @@
     font-size: clamp(0.66rem, 2.6vw, 0.86rem);
   }
 
-  .slots-page__brand-name {
-    font-size: clamp(0.9rem, 3.6vw, 1.2rem);
-  }
 }
 
 @media (max-width: 430px) {
@@ -283,11 +233,13 @@
 }
 
 .slots-page__help-button {
-  display: grid;
+  display: inline-flex;
   flex: 0 0 auto;
   width: 2.15rem;
   height: 2.15rem;
-  place-items: center;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
   padding: 0;
   border: 1px solid rgb(255 198 61 / 62%);
   border-radius: 50%;
@@ -330,6 +282,7 @@
     gap: 0.32rem;
     padding-inline: 0.6rem 0.72rem;
     border-radius: 999px;
+    white-space: nowrap;
   }
 
   .slots-page__help-button-label {

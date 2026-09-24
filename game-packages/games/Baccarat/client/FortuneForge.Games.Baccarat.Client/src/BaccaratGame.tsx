@@ -10,6 +10,7 @@ import {
 import { HttpBaccaratGateway } from './httpBaccaratGateway'
 import './baccarat.css'
 import './baccaratRoad.css'
+import './baccaratViewport.css'
 
 export type BaccaratGameProps = Readonly<{
   gateway?: BaccaratGateway

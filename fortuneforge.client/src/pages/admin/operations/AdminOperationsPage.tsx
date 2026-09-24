@@ -62,7 +62,7 @@ export function AdminOperationsDashboardView({ dashboard }: { dashboard: Operati
       <div className="operations-grid"><Metric label="Completed purchases" value={`${credits(overview.funding.completedPurchaseCredits)} · ${overview.funding.completedPurchases}`} /><Metric label="Completed withdrawals" value={`${credits(overview.funding.completedWithdrawalCredits)} · ${overview.funding.completedWithdrawals}`} /></div>
     </section>
     <section className="operations-bots" aria-labelledby="bots-title">
-      <SectionHeading id="bots-title" title="Synthetic bot telemetry" note={dashboard.bots.financialTreatment} />
+      <SectionHeading id="bots-title" title="Simulated-player telemetry" note={dashboard.bots.financialTreatment} />
       <div className="operations-grid">{dashboard.bots.games.map((game) => <Metric key={game.game} label={label(game.game)} value={`${game.activeLeases} active · ${game.completedTurns} completed turns`} meta={game.enabled ? 'Enabled' : 'Disabled'} />)}</div>
     </section>
     <section aria-labelledby="integrity-title">

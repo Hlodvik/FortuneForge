@@ -1,7 +1,5 @@
 import type { SlotSymbolId } from '../types/slots'
 
-export type SlotCollectionFillImages = readonly [string, ...string[]]
-
 export type SlotCollectionDefinition = {
   id: string
   label: string
@@ -11,7 +9,6 @@ export type SlotCollectionDefinition = {
   /** Plain-language outcome shown when players inspect this collection. */
   rewardDescription?: string
   containerImage?: string
-  containerFillImages?: SlotCollectionFillImages
 }
 
 export type SlotCollectionPresentation =
@@ -67,7 +64,6 @@ export type SlotSpecialRoundFeature = {
   activeModes: Readonly<Record<string, string>>
   earnStyle?: SlotSpecialRoundEarnStyle
   earnHint?: string
-  showStatusPanel?: boolean
 }
 
 export type SlotFeatureSet = {

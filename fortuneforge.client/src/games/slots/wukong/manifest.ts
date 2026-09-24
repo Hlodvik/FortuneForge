@@ -15,10 +15,22 @@ const WUKONG_FEATURES: SlotFeatureSet = {
     ariaLabel: 'Power seal collections',
     presentation: 'celestial-orbit',
     entries: [
-      { id: 'sync', label: 'Synced reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Extra rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Monkey paw', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40 },
+      {
+        id: 'sync', label: 'Synced reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40,
+        rewardDescription: 'Complete this orbit to launch 10 Celestial Quests where one reel mirrors another.',
+      },
+      {
+        id: 'rows', label: 'Extra rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40,
+        rewardDescription: 'Complete this orbit to launch 10 Celestial Quests with two extra rows on every reel.',
+      },
+      {
+        id: 'paw', label: 'Monkey paw rush', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40,
+        rewardDescription: 'Complete this orbit to launch 10 Celestial Quests that add 2–5 monkey paws to every spin.',
+      },
+      {
+        id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40,
+        rewardDescription: 'Complete this orbit to launch 10 Celestial Quests with a full prize-multiplier column.',
+      },
     ],
   },
   moneyGrab: {
@@ -36,7 +48,7 @@ const WUKONG_FEATURES: SlotFeatureSet = {
     activeModes: {
       sync: 'Mirror Nimbus · one reel mirrors another',
       rows: 'Skyward Path · two extra rows open',
-      paw: 'Monkey Paw Rush · stronger grabs appear',
+      paw: 'Monkey Paw Rush · 2–5 extra paws appear',
       rand: 'Fortune Cloud · a prize column appears',
     },
   },
@@ -52,7 +64,7 @@ const WUKONG_HELP: SlotHelpDefinition = {
     {
       badge: 'PAW',
       title: 'Monkey paw money grab',
-      body: 'A monkey paw anywhere on screen grabs every Rand multiplier coin showing in the window. Two paws are much rarer and double the grabbed amount. Three bananas in a row, column, or diagonal pay 3× the wager.',
+      body: 'Monkey paws are part of the normal symbol mix. One paw anywhere on screen grabs every Rand multiplier coin showing in the window; two or more paws double the grabbed amount. The Monkey Paw Rush collection adds 2–5 paws to every Celestial Quest spin. Three bananas in a row, column, or diagonal pay 3× the wager.',
     },
     {
       badge: 'SEAL',

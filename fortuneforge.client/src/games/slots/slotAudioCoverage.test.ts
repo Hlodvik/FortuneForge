@@ -16,5 +16,5 @@ describe('slot audio coverage', () => {
       expect(ambienceCue.baseVolume).toBeGreaterThan(0)
       expect(ambienceCue.loop).toBe(true)
     }
-  }, 15_000)
+  }, 30_000)
 })

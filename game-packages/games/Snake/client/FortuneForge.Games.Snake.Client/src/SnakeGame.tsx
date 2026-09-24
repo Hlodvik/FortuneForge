@@ -165,9 +165,9 @@ export function SnakeGame({ gateway }: SnakeGameProps) {
           </div>
           {(!started || gameEnded || paused) && <div className="ff-snake-overlay">
             <small>{paused ? 'Run paused' : gameEnded ? (game.phase === 'won' ? 'Board cleared' : 'Run ended') : 'Snake is ready'}</small>
-            <strong>{paused ? 'Take a breath' : gameEnded ? (game.phase === 'won' ? 'You win!' : 'Snake crashed') : 'Choose a direction'}</strong>
+            <strong>{paused ? 'Take a breath' : gameEnded ? (game.phase === 'won' ? 'You win!' : 'Snake crashed') : 'Play'}</strong>
             <span>{paused ? 'Press P, Start, or Resume when you are ready.' : gameEnded ? game.message : 'Swipe, use a controller, arrow keys, WASD, or the controls.'}</span>
-            <button type="button" onClick={() => paused ? setPaused(false) : gameEnded ? newGame() : turn(game.direction)} disabled={busy}>{paused ? 'Resume' : gameEnded ? 'Play again' : 'Start moving'}</button>
+            <button type="button" onClick={() => paused ? setPaused(false) : gameEnded ? newGame() : turn(game.direction)} disabled={busy}>{paused ? 'Resume' : gameEnded ? 'Play again' : 'Play'}</button>
           </div>}
         </div>
       </section>

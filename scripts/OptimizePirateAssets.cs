@@ -38,11 +38,8 @@ public static class OptimizePirateAssets
 
         foreach (var gemType in new[] { "emerald", "lapis", "ruby", "topaz" })
         {
-            foreach (var level in new[] { "empty", "level-1", "level-2", "level-3", "level-4" })
-            {
-                var relativePath = Path.Combine("chests", gemType, level + ".png");
-                Resize(Path.Combine(assetRoot, relativePath), Path.Combine(outputRoot, relativePath), 384);
-            }
+            var relativePath = Path.Combine("chests", gemType, "empty.png");
+            Resize(Path.Combine(assetRoot, relativePath), Path.Combine(outputRoot, relativePath), 384);
         }
     }
 

@@ -4,8 +4,9 @@ import { betLabel, pocketColor } from './rouletteHelpers'
 import rouletteSpinWheel from './assets/roulette-spin-wheel-v2.png?no-inline'
 import './roulette.css'
 import './rouletteEnhancements.css'
+import './rouletteViewport.css'
 
-export type RouletteGameProps = Readonly<{ gateway: RouletteGateway; backHref?: string; playerName?: string; tableLabel?: string }>
+export type RouletteGameProps = Readonly<{ gateway: RouletteGateway }>
 
 const betOptions: readonly { kind: RouletteBetKind; label: string; count: number }[] = [
   { kind: 'straight', label: 'Straight-up', count: 1 }, { kind: 'split', label: 'Split', count: 2 },
@@ -19,7 +20,7 @@ const betOptions: readonly { kind: RouletteBetKind; label: string; count: number
 const minimumSpinMilliseconds = 1100
 const europeanWheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26] as const
 
-export function RouletteGame({ gateway, backHref = '/games', playerName = 'Player', tableLabel = 'Free-play table' }: RouletteGameProps) {
+export function RouletteGame({ gateway }: RouletteGameProps) {
   const [status, setStatus] = useState<RouletteStatus | null>(null)
   const [round, setRound] = useState<RouletteRound | null>(null)
   const [kind, setKind] = useState<RouletteBetKind>('straight')
@@ -143,13 +144,6 @@ export function RouletteGame({ gateway, backHref = '/games', playerName = 'Playe
 
   return (
     <div className="ff-roulette-page">
-      <header className="ff-roulette-header">
-        <nav aria-label="Game navigation">
-          <a className="ff-roulette-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a>
-          <a className="ff-roulette-games" href={backHref}>Other games</a>
-        </nav>
-        <div className="ff-roulette-account"><strong>{playerName}</strong><span>{tableLabel}</span></div>
-      </header>
       {tips && <Tips closeRef={closeRef} onClose={closeTips} />}
       <main className="ff-roulette-main">
         <section className="ff-roulette-title">

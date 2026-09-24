@@ -1,4 +1,4 @@
-.flappy-free-run-page { min-height: 100vh; background: radial-gradient(circle at 50% -18%, #28658a, #071724 58%); color: #f5f9ff; }
+.flappy-free-run-page { height: 100%; min-height: 0; background: radial-gradient(circle at 50% -18%, #28658a, #071724 58%); color: #f5f9ff; }
 .flappy-free-run-page__content { box-sizing: border-box; margin: 0 auto; max-width: 66rem; padding: clamp(1rem, 3vw, 2rem) 1rem 3rem; }
 .flappy-free-run-page__lobby, .flappy-free-run-page__run, .flappy-free-run-page__result { border: 1px solid #73c8dc80; border-radius: 1.1rem; background: rgb(6 21 34 / 88%); box-shadow: 0 1rem 3rem rgb(0 0 0 / 24%); padding: clamp(1rem, 3vw, 1.6rem); }
 .flappy-free-run-page__lobby { max-width: 43rem; margin: min(12vh, 6rem) auto 0; }
@@ -6,6 +6,10 @@
 .flappy-free-run-page h1, .flappy-free-run-page h2 { margin-top: 0; }
 .flappy-free-run-page h1 { font-size: clamp(3rem, 11vw, 6rem); line-height: .9; margin-bottom: 1rem; }
 .flappy-free-run-page__lobby p { color: #c3d5e4; max-width: 39rem; }
+.flappy-free-run-page__lobby-preview { position: relative; width: min(100%, 28rem); margin: 1rem auto 0; overflow: hidden; aspect-ratio: 4 / 3; border: 1px solid #77dce766; border-radius: .9rem; background: #091a2b; box-shadow: inset 0 0 1.5rem #0007; }
+.flappy-free-run-page__lobby-preview svg { display: block; width: 100%; height: 100%; }
+.flappy-free-run-page__lobby-action { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .65rem; background: rgb(4 16 27 / 48%); backdrop-filter: blur(1px); }
+.flappy-free-run-page__lobby-action small { color: #d9f9ff; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 2px .4rem #071724; }
 .flappy-free-run-page button { border: 1px solid #ffdf81; border-radius: .7rem; background: #ffd05a; color: #17202a; cursor: pointer; font: inherit; font-weight: 800; min-height: 2.8rem; padding: .65rem 1rem; }
 .flappy-free-run-page button:hover:not(:disabled) { background: #ffe28a; }
 .flappy-free-run-page button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
@@ -27,3 +31,71 @@
 .flappy-free-run-page .ff-flappy-bird-eye { fill: #fffdf2; stroke: #26323a; stroke-width: 1.5; }
 .flappy-free-run-page .ff-flappy-bird-pupil { fill: #15222a; }
 @media (max-width: 600px) { .flappy-free-run-page__content { padding-inline: .75rem; }.flappy-free-run-page__run { border: 0; border-radius: 0; padding: 0; background: transparent; box-shadow: none; }.flappy-free-run-page__secondary { margin: .65rem 0 0; display: block; } }
+
+@media (min-width: 721px) {
+  .flappy-free-run-page {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .flappy-free-run-page__content {
+    width: 100%;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+.flappy-free-run-page--active {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.flappy-free-run-page--active .flappy-free-run-page__content {
+  display: grid;
+  width: 100%;
+  min-height: 0;
+  padding-block: .55rem;
+  overflow: hidden;
+}
+
+.flappy-free-run-page--active .flappy-free-run-page__run {
+  display: grid;
+  width: min(100%, 58rem);
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  align-self: center;
+}
+
+.flappy-free-run-page--active .ff-flappy-stats { margin: 0 0 .35rem; }
+.flappy-free-run-page--active .flappy-free-run-page__instruction { margin-bottom: .4rem; }
+.flappy-free-run-page--active .flappy-free-run-page__playfield-slot {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  container-type: size;
+}
+.flappy-free-run-page--active .ff-flappy-playfield {
+  width: min(100cqw, 133.333cqh);
+  height: auto;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: 4 / 3;
+}
+
+@media (max-width: 600px) {
+  .flappy-free-run-page--active .flappy-free-run-page__content { padding: .4rem .75rem; }
+  .flappy-free-run-page--active .flappy-free-run-page__instruction { font-size: .72rem; }
+  .flappy-free-run-page--active .ff-flappy-playfield {
+    margin-left: 0;
+    border-radius: .8rem;
+  }
+}

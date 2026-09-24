@@ -11,7 +11,7 @@ The actionable consolidation backlog from this audit is closed. The professional
 - Arcade and puzzle work added touch/controller-equivalent controls, pause/retry flows, persistent bests, accessible narration, progression feedback, and broader tests. Asteroids now adds a deterministic hunter enemy from wave two onward in both live and replay simulation.
 - Every slot now exposes its named feature, trigger, persistent progress, rules, status, controls, reduced-motion/audio behavior, and keyboard focus states. Six real-browser visual baselines cover idle, rules, feature, win, error, and narrow-mobile states.
 - Slot math now analyzes all 20 catalog entries during deployment. Each profile passes a deterministic 250,000-paid-spin release check for configured RTP, hit rate, sub-100% return, and majority bankroll depletion. Game-level payout calibration applies consistently to both line and feature-token awards.
-- Current automated release coverage is 413 shared game-engine tests, 441 server tests, 168 game-client tests, 240 host-client tests, six browser visual tests, the 38-route/20-slot inventory guard, and the production smoke that exercises all routes plus every slot demo spin.
+- Current automated release coverage is 413 shared game-engine tests, 442 server tests, 169 game-client tests, 250 host-client tests, 27 browser interaction/viewport/visual checks, the 38-route/20-slot inventory guard, and the production smoke that exercises all routes plus every slot demo spin.
 
 The detailed game notes below record the baseline that drove this work. They are retained as audit history, not as an active TODO list.
 

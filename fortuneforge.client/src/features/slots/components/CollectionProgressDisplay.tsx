@@ -12,7 +12,6 @@ type CollectionProgressDisplayProps = {
   isImpacting: boolean
   itemLabel: string
   containerImage?: string
-  containerFillImages?: readonly string[]
   displayCount?: number
   isCelebrating?: boolean
   presentation: SlotCollectionPresentation
@@ -35,24 +34,6 @@ const pileLayout = [
 
 const orbitSteps = Array.from({ length: 10 }, (_, index) => index)
 
-function selectCollectionContainerImage(
-  emptyImage: string | undefined,
-  fillImages: readonly string[] | undefined,
-  count: number,
-  requiredCount: number,
-): string | undefined {
-  if (!fillImages?.length || count <= 0) return emptyImage
-
-  const safeRequiredCount = Math.max(1, requiredCount)
-  const progressRatio = Math.min(1, count / safeRequiredCount)
-  const levelIndex = Math.min(
-    fillImages.length - 1,
-    Math.max(0, Math.ceil(progressRatio * fillImages.length) - 1),
-  )
-
-  return fillImages[levelIndex] ?? emptyImage
-}
-
 export function CollectionProgressDisplay({
   collection,
   definition,
@@ -60,7 +41,6 @@ export function CollectionProgressDisplay({
   isImpacting,
   itemLabel,
   containerImage,
-  containerFillImages,
   displayCount,
   isCelebrating = false,
   presentation,
@@ -69,12 +49,6 @@ export function CollectionProgressDisplay({
 }: CollectionProgressDisplayProps) {
   const visualCount = displayCount ?? collection.count
   const progress = Math.min(100, visualCount / collection.requiredCount * 100)
-  const selectedContainerImage = selectCollectionContainerImage(
-    containerImage,
-    containerFillImages,
-    visualCount,
-    collection.requiredCount,
-  )
   const visiblePieceCount = visualCount === 0
     ? 0
     : Math.max(1, Math.ceil(progress / 10))
@@ -129,9 +103,20 @@ export function CollectionProgressDisplay({
             </span>
             <img className="slots-page__collection-garnish" src={image} alt="" />
           </>
-        ) : presentation === 'gem-hoard' && selectedContainerImage ? (
+        ) : presentation === 'gem-hoard' && containerImage ? (
           <span className={`slots-page__treasure-chest${isImpacting ? ' slots-page__treasure-chest--impact' : ''}`}>
-            <img className="slots-page__treasure-chest-art" src={selectedContainerImage} alt="" />
+            <img className="slots-page__treasure-chest-art" src={containerImage} alt="" draggable={false} />
+            <span className="slots-page__treasure-chest-gems">
+              {orbitSteps.map((index) => (
+                <img
+                  className={index < visiblePieceCount ? 'is-visible' : ''}
+                  key={index}
+                  src={image}
+                  alt=""
+                  draggable={false}
+                />
+              ))}
+            </span>
           </span>
         ) : presentation === 'gem-hoard' ? (
           <>
@@ -196,7 +181,7 @@ export function CollectionProgressDisplay({
       </span>
 
       <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
-        <span className="slots-page__collection-tooltip-kicker">Treasure reward</span>
+        <span className="slots-page__collection-tooltip-kicker">Collection reward</span>
         <strong>{collectionName}</strong>
         <span className="slots-page__collection-tooltip-copy">Land {collectible} anywhere on the reels to bank them.</span>
         <span className="slots-page__collection-tooltip-progress"><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</span>

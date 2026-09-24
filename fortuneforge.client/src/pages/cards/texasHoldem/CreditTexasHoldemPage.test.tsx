@@ -59,6 +59,7 @@ describe('credit Texas Hold’em v2 composition', () => {
     expect(pageSource).not.toContain('holdemEngine')
     expect(pageSource).not.toContain('botPracticeApi')
     expect(pageSource).not.toContain('optimistic')
+    expect(pageSource).not.toMatch(/\bbots?\b/i)
     expect(apiSource).not.toContain('/slots')
     expect(apiSource).not.toMatch(/dismissCredit|claimCredit|buyInCredits/)
   })

@@ -2,3 +2,99 @@
 
 .practice-bot-table__outcome,
 .practice-bot-panel > .ff-card-outcome { margin: 0 auto 1rem; }
+.practice-bot-page { user-select: none; -webkit-user-select: none; }
+.practice-bot-page img { -webkit-user-drag: none; }
+
+/* Practice tables share one compact shell so the active table and its action
+   row never push the browser document beyond a desktop viewport. Long event
+   trails scroll inside their own region. */
+@media (min-width: 601px) {
+  .practice-bot-page {
+    display: grid;
+    height: 100dvh;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .practice-bot-header { min-height: 3.25rem; padding-block: .55rem; }
+  .practice-bot-main {
+    display: flex;
+    width: min(1120px, calc(100% - 1rem));
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    padding: .35rem 0 .45rem;
+  }
+  .practice-bot-hero {
+    display: flex;
+    min-height: 2.9rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    gap: .65rem;
+    margin: 0;
+  }
+  .practice-bot-hero h1 { margin: 0; font-size: clamp(1.75rem, 4.5dvh, 2.75rem); }
+  .practice-bot-hero > span { color: #b8cbc5; font-size: .66rem; }
+  .practice-bot-table {
+    --ff-card-width: clamp(2.2rem, 5.5dvh, 3.1rem);
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    margin: .25rem auto 0;
+    padding: .55rem;
+  }
+  .practice-bot-table__status { margin-bottom: .4rem; }
+  .practice-bot-cards { min-height: calc(var(--ff-card-width) / .704); }
+  .practice-bot-player-grid { gap: .4rem; }
+  .practice-bot-player { padding: .42rem; }
+  .practice-bot-player h3 { font-size: .75rem; }
+  .practice-bot-player__meta { font-size: .66rem; }
+  .practice-bot-actions { min-height: 2.5rem; margin: .4rem 0; }
+  .practice-bot-actions button { min-height: 2.35rem; padding: .4rem .75rem; }
+  .practice-bot-event-list { max-height: min(10dvh, 4.25rem); margin-top: .3rem; overflow: auto; }
+
+  .practice-bot-page.solitaire-page .practice-bot-table {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  .practice-bot-page.solitaire-page .practice-bot-table > p { display: none; }
+  .practice-bot-page.solitaire-page .practice-bot-solitaire-opponents { margin-block: .2rem .35rem; }
+  .practice-bot-page.solitaire-page .solitaire-board { height: 100%; min-height: 0; }
+}
+
+@media (max-width: 600px) {
+  .practice-bot-header {
+    min-height: 3.1rem;
+    align-items: center;
+    flex-direction: row;
+    padding: .55rem .65rem;
+  }
+  .practice-bot-main { padding: .45rem 0 1.5rem; }
+  .practice-bot-hero { min-height: 3.25rem; margin-bottom: .35rem; }
+  .practice-bot-hero p { display: none; }
+  .practice-bot-hero h1 { margin: 0; font-size: clamp(1.7rem, 9vw, 2.35rem); }
+  .practice-bot-hero > span { display: block; font-size: .6rem; }
+  .practice-bot-table { --ff-card-width: clamp(2rem, 10vw, 2.65rem); margin-block: .25rem; }
+  .practice-bot-table__status { margin-bottom: .35rem; font-size: .7rem; }
+  .practice-bot-player-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+  .practice-bot-player { min-width: 0; padding: .35rem .2rem; }
+  .practice-bot-player h3 { overflow: hidden; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+  .practice-bot-player__meta { align-items: center; flex-direction: column; gap: .12rem; font-size: .56rem; }
+  .practice-bot-cards { min-height: calc(var(--ff-card-width) / .704); gap: .12rem; }
+  .practice-bot-actions { margin: .4rem 0; }
+  .practice-bot-actions button { min-height: 2.3rem; padding: .4rem .55rem; }
+  .practice-bot-event-list { max-height: 4rem; margin-top: .3rem; }
+}
+
+.practice-bot-shell-body > .practice-bot-page {
+  height: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 601px) {
+  .practice-bot-shell-body > .practice-bot-page {
+    grid-template-rows: minmax(0, 1fr);
+  }
+}

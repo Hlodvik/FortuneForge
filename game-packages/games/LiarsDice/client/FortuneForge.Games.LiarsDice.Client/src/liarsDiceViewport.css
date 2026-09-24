@@ -1,0 +1,66 @@
+/* The table is the product: compress ornamental whitespace before shrinking
+   or hiding playable controls. */
+@media (min-width: 701px) {
+  .ff-liars-page { height: 100%; min-height: 0; overflow: hidden; padding-bottom: .5rem; }
+  .ff-liars-title { padding: .65rem 0 .5rem; }
+  .ff-liars-title h1 { font-size: clamp(2rem, 5vh, 3.1rem); }
+  .ff-liars-status { margin-bottom: .45rem; }
+  .ff-liars-status > div { min-height: 4rem; padding: .45rem .7rem; }
+  .ff-liars-table { gap: .55rem; padding: .6rem; }
+  .ff-liars-player { padding: .45rem .6rem; }
+  .ff-liars-bid-board { min-height: 8rem; padding: .55rem; }
+  .ff-liars-hand-section { margin-top: .45rem; padding: .55rem; }
+  .ff-liars-hand-section .ff-liars-hand { min-height: 6rem; margin-top: .35rem; }
+  .ff-liars-dice-stage { height: 6rem; }
+  .ff-liars-actions { margin-top: .45rem; }
+  .ff-liars-action-card { padding: .5rem; }
+}
+
+@media (max-width: 700px) {
+  .ff-liars-page { min-height: 100%; padding-bottom: .25rem; }
+  .ff-liars-main { width: min(100% - .7rem, 82rem); }
+  .ff-liars-title { flex-direction: row; align-items: center; gap: .35rem; padding: .35rem 0; }
+  .ff-liars-title small,
+  .ff-liars-start label { display: none; }
+  .ff-liars-title h1 { margin: 0; font-size: 1.65rem; white-space: nowrap; }
+  .ff-liars-start { width: auto; margin-left: auto; }
+  .ff-liars-start select,
+  .ff-liars-start button { min-height: 2rem; padding-inline: .4rem; font-size: .65rem; }
+  .ff-liars-status { grid-template-columns: 1fr 1fr; gap: .25rem; margin-bottom: .3rem; }
+  .ff-liars-status > div { min-height: 2.55rem; padding: .3rem .45rem; }
+  .ff-liars-current { min-height: 3.2rem !important; }
+  .ff-liars-status strong { font-size: .85rem; }
+  .ff-liars-current strong { font-size: .66rem; line-height: 1.15; }
+  .ff-liars-table { grid-template-columns: 1.55fr minmax(6.5rem, .85fr); gap: .3rem; padding: .35rem; }
+  .ff-liars-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem; }
+  .ff-liars-player { gap: .25rem; padding: .3rem; }
+  .ff-liars-player strong { font-size: .62rem; }
+  .ff-liars-player small { font-size: .5rem; }
+  .ff-liars-dice-count { min-width: 1.75rem; font-size: .85rem; }
+  .ff-liars-bid-board { min-height: 5.8rem; gap: .15rem; padding: .3rem; }
+  .ff-liars-bid-board strong { font-size: .9rem; }
+  .ff-liars-bid-die { width: 2rem; height: 2rem; margin-top: .1rem; font-size: 1rem; }
+  .ff-liars-hand-section { margin-top: .3rem; padding: .35rem; }
+  .ff-liars-section-heading { align-items: center; flex-direction: row; }
+  .ff-liars-section-heading h2 { margin: 0; font-size: .9rem; }
+  .ff-liars-section-heading > span { font-size: .55rem; text-align: right; }
+  .ff-liars-hand-section .ff-liars-hand { min-height: 4.6rem; margin-top: .2rem; }
+  .ff-liars-dice-stage { --ff-die-frame-size: clamp(4rem, 18vw, 5rem); height: 4.6rem; }
+  .ff-liars-actions { margin-top: .3rem; }
+  .ff-liars-action-card { padding: .35rem; }
+  .ff-liars-controls { flex-wrap: nowrap; gap: .25rem; margin-top: .2rem; }
+  .ff-liars-controls label { min-width: 0; }
+  .ff-liars-controls input,
+  .ff-liars-controls select,
+  .ff-liars-controls button { min-width: 0; min-height: 2rem; padding-inline: .35rem; }
+}
+
+/* Share the compact ivory-die treatment with Craps and Sic Bo. */
+.ff-liars-dice-stage { --ff-die-frame-size: clamp(4.8rem, 8vw, 5.8rem); height: 5.4rem; }
+.ff-liars-dice-stage .ff-die-throw-sprite { filter: grayscale(1) contrast(1.7); }
+.ff-liars-hand-section .ff-liars-hand { min-height: 5.4rem; }
+
+@media (max-width: 700px) {
+  .ff-liars-dice-stage { --ff-die-frame-size: 4rem; height: 4.2rem; }
+  .ff-liars-hand-section .ff-liars-hand { min-height: 4.2rem; }
+}

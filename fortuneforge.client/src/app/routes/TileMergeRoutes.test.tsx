@@ -21,6 +21,10 @@ describe('tile merge routes', () => {
     expect(routes).toContain("pathname === '/games/drop-merge'")
     expect(twentyFortyEightRoute).toContain("HttpTwentyFortyEightGateway('/api/games/2048', fetchWithAccountSession)")
     expect(dropMergeRoute).toContain("HttpDropMergeGateway('/api/games/drop-merge', fetchWithAccountSession)")
+    expect(twentyFortyEightRoute).toContain('<InGameShell account={account} title="2048"')
+    expect(dropMergeRoute).toContain('<InGameShell account={account} title="Drop Merge"')
+    expect(twentyFortyEightRoute).not.toContain('GameAmbientMusic')
+    expect(dropMergeRoute).not.toContain('GameAmbientMusic')
   })
 
   it('keeps both routes behind the authenticated loading state', () => {

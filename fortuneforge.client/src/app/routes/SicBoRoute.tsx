@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HttpSicBoGateway, SicBoGame } from '@fortuneforge/games-sic-bo'
 import '@fortuneforge/games-sic-bo/styles.css'
-import { PlayerHeader } from '../../components/PlayerHeader'
+import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
-import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeBanner } from './PracticeModeBanner'
+import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedSicBoRoute() {
@@ -29,10 +28,7 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <div className="player-page">
-    <GameAmbientMusic game="sic-bo" />
-    <PlayerHeader account={account} />
-    <PracticeModeBanner enabled={practiceMode} path="/games/sic-bo" />
+  return <InGameShell account={account} title="Sic Bo" theme="casino" className="player-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/sic-bo" />}>
     <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
-  </div>
+  </InGameShell>
 }

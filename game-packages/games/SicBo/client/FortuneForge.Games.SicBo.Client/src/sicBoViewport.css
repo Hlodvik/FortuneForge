@@ -1,0 +1,71 @@
+/* Keep the complete betting builder and slip inside the host viewport. */
+@media (min-width: 761px) {
+  .ff-sic-bo { padding: clamp(.65rem, 1.5vh, 1rem); }
+  .ff-sic-bo h1 { font-size: clamp(2.1rem, 5vh, 3.25rem); }
+  .ff-sic-bo__limits { margin: .55rem 0; }
+  .ff-sic-bo__builder { padding: .75rem; }
+  .ff-sic-bo__section-heading { margin-bottom: .55rem; }
+  .ff-sic-bo__bet-guide { margin-bottom: .55rem; }
+  .ff-sic-bo__quick { margin: .65rem 0; }
+  .ff-sic-bo__quick button { min-height: 3.4rem; }
+  .ff-sic-bo__configured { padding-top: .65rem; }
+  .ff-sic-bo__slip { padding: .75rem; }
+}
+
+@media (max-width: 760px) {
+  .ff-sic-bo { max-width: none; min-height: 0; padding: .35rem; }
+  .ff-sic-bo__header { align-items: center; flex-direction: row; }
+  .ff-sic-bo__eyebrow,
+  .ff-sic-bo__account span,
+  .ff-sic-bo__account small { display: none; }
+  .ff-sic-bo h1 { font-size: 1.85rem; }
+  .ff-sic-bo__account { min-width: 0; align-items: end; }
+  .ff-sic-bo__account strong { font-size: .9rem; }
+  .ff-sic-bo__limits { flex-wrap: nowrap; gap: .2rem; margin: .25rem 0; overflow: hidden; }
+  .ff-sic-bo__limits span { padding: .18rem .3rem; font-size: .58rem; white-space: nowrap; }
+  .ff-sic-bo__layout { gap: .35rem; }
+  .ff-sic-bo__builder,
+  .ff-sic-bo__slip { padding: .45rem; border-radius: .65rem; }
+  .ff-sic-bo__section-heading { align-items: center; margin-bottom: .3rem; }
+  .ff-sic-bo__section-heading p { display: none; }
+  .ff-sic-bo__bet-guide { margin-bottom: .35rem; }
+  .ff-sic-bo__bet-guide summary { padding: .38rem .5rem; }
+  .ff-sic-bo__stake { max-width: none; display: grid; grid-template-columns: auto 5.5rem; align-items: center; }
+  .ff-sic-bo__stake input { padding: .35rem .45rem; }
+  .ff-sic-bo__stake small { display: none; }
+  .ff-sic-bo__quick { margin: .35rem 0; }
+  .ff-sic-bo__quick > div { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .2rem; }
+  .ff-sic-bo__quick button { min-height: 2.75rem; padding: .28rem .18rem; font-size: .66rem; }
+  .ff-sic-bo__quick button small { display: none; }
+  .ff-sic-bo__configured { grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr) auto; gap: .3rem; padding-top: .35rem; }
+  .ff-sic-bo__configured label { gap: .15rem; font-size: .65rem; }
+  .ff-sic-bo__configured select { padding: .35rem .3rem; }
+  .ff-sic-bo__configured .ff-sic-bo__secondary { align-self: end; padding: .45rem .55rem; white-space: nowrap; }
+  .ff-sic-bo__slip .ff-sic-bo__section-heading { margin-bottom: .15rem; }
+  .ff-sic-bo__empty { padding: .2rem 0; font-size: .7rem; }
+  .ff-sic-bo__slip dl { display: grid; grid-template-columns: 1fr 1fr; gap: .35rem; margin: .25rem 0; }
+  .ff-sic-bo__slip dl div { padding: .25rem 0; font-size: .7rem; }
+  .ff-sic-bo__primary { padding: .5rem; }
+}
+
+/* Casino-table hierarchy inspired by modern electronic Sic Bo terminals. */
+.ff-sic-bo {
+  --ink: #fff7df;
+  --muted: #cbbda3;
+  --line: rgb(255 218 137 / .25);
+  --felt: #17362f;
+  --deep: #100d12;
+  --gold: #ffd26d;
+  --coral: #ff7267;
+  border: 1px solid #ffd26d40;
+  background: radial-gradient(circle at 18% 0, #6d241d 0, transparent 24rem), linear-gradient(135deg, #171018, #12362f 72%);
+  box-shadow: 0 1.25rem 3rem #0008, inset 0 0 0 1px #fff1;
+}
+.ff-sic-bo__builder, .ff-sic-bo__slip, .ff-sic-bo__result { border-color: #ffd26d38; background: #071612cc; box-shadow: inset 0 1px #fff1, 0 .75rem 1.5rem #0004; }
+.ff-sic-bo__quick button { border: 1px solid #ffd26d4a; background: linear-gradient(145deg, #23594e, #102c28); box-shadow: inset 0 1px #ffffff18; }
+.ff-sic-bo__quick button:not(:disabled):hover { border-color: #ffd26d; background: #347367; transform: translateY(-1px); }
+.ff-sic-bo input, .ff-sic-bo select { border-color: #eac77852; background: #050e0d; }
+.ff-sic-bo__secondary { background: linear-gradient(#fff7dc, #d7c8a0); color: #152b27; }
+.ff-sic-bo__primary:not(:disabled) { background: linear-gradient(90deg, #ffd56f, #ff9b59); box-shadow: 0 .35rem .8rem #0007, 0 0 1rem #ffca6030; }
+.ff-sic-bo__die { width: clamp(2.8rem, 6vw, 3.6rem); border-radius: .55rem; background: #fffdf4; }
+.ff-sic-bo__die i { width: .52rem; background: #090909; }

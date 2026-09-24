@@ -4,6 +4,17 @@ import { logoutAccount } from '../features/account/services/accountsApi'
 import { ForgeCreditAmount } from './ForgeCreditAmount'
 
 export function PlayerHeader({ account }: { account: AccountSummary }) {
+  return (
+    <header className="player-shell-header">
+      <a className="player-shell-header__brand" href="/home" aria-label="Fortune Forge home">
+        <span className="player-shell-header__spark" aria-hidden="true">✦</span><strong>Fortune Forge</strong>
+      </a>
+      <PlayerAccountMenus account={account} />
+    </header>
+  )
+}
+
+export function PlayerAccountMenus({ account }: { account: AccountSummary }) {
   const [loggingOut, setLoggingOut] = useState(false)
 
   async function logout() {
@@ -13,10 +24,6 @@ export function PlayerHeader({ account }: { account: AccountSummary }) {
   }
 
   return (
-    <header className="player-shell-header">
-      <a className="player-shell-header__brand" href="/home" aria-label="Fortune Forge home">
-        <span className="player-shell-header__spark" aria-hidden="true">✦</span><strong>Fortune Forge</strong>
-      </a>
       <div className="player-shell-header__menus">
         <details className="player-shell-menu player-shell-menu--balance">
           <summary><ForgeCreditAmount amount={account.balances.slotsCredits} /></summary>
@@ -41,6 +48,5 @@ export function PlayerHeader({ account }: { account: AccountSummary }) {
           </nav>
         </details>
       </div>
-    </header>
   )
 }

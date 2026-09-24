@@ -109,12 +109,9 @@ public sealed partial class SpinService
     {
         if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
         {
-            return random.Next(6) switch
-            {
-                0 => 2,
-                1 => 1,
-                _ => 0
-            };
+            // Monkey Paw Rush is a visible feature transformation, not a small
+            // probability bump: every free spin receives a paw-heavy mix.
+            return random.Next(4) + 2;
         }
 
         if (random.Next(777) == 0)

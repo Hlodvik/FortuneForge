@@ -13,7 +13,9 @@ describe('Hearts route integration', () => {
     expect(routesSource).toContain("import('./routes/HeartsRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/cards/hearts')")
     expect(routeSource).toContain("new HttpHeartsGateway('/api/games/hearts')")
+    expect(routeSource).toContain('<InGameShell account={account} title="Hearts" theme="cards"')
     expect(routeSource).toContain('<HeartsGame')
+    expect(source('../../../../game-packages/games/Hearts/client/FortuneForge.Games.Hearts.Client/src/HeartsGame.tsx')).not.toContain('ff-hearts-header')
   })
 })
 

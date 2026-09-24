@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GameOutcomeBanner, type GameOutcomeTone } from '../../../components/GameOutcomeBanner'
+import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
@@ -154,18 +155,18 @@ export function BlackjackPage({
   const roundOutcome = game?.status === 'completed' ? getRoundOutcome(game) : null
 
   return (
-    <div className="blackjack-page" onClickCapture={onCardAudioClick}>
-      <header className="blackjack-header">
-        <a href={demoMode ? '/demo/cards' : '/cards'} aria-label="Back to card games">← Card room</a>
-        <div>
-          <span>{demoMode ? 'Demo table' : 'Fortune table'}</span>
-          <strong>{balance === null ? 'Balance loading' : `R${balance.toFixed(2)}`}</strong>
-        </div>
-      </header>
-
-      <main className="blackjack-main">
+    <InGameShell
+      account={account && balance !== null
+        ? { ...account, balances: { ...account.balances, slotsCredits: balance } }
+        : account}
+      title="Blackjack"
+      theme="cards"
+      bodyClassName="blackjack-shell-body"
+    >
+      <div className="blackjack-page blackjack-demo-page" onClickCapture={onCardAudioClick}>
+        <main className="blackjack-main">
         <section className="blackjack-title" aria-labelledby="blackjack-title">
-          <p>Fortune Forge presents</p>
+          <p>{demoMode ? 'Demo table' : 'Fortune table'} · {balance === null ? 'Balance loading' : `R${balance.toFixed(2)}`}</p>
           <h1 id="blackjack-title">Blackjack</h1>
           <span>Dealer stands on all 17s · Blackjack pays 3:2 · No split or insurance</span>
         </section>
@@ -262,8 +263,9 @@ export function BlackjackPage({
           <span>Double is available only on your first two cards</span>
           <span>All cards and outcomes come from the Fortune Forge API</span>
         </aside>
-      </main>
-    </div>
+        </main>
+      </div>
+    </InGameShell>
   )
 }
 

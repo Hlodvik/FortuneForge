@@ -9,6 +9,7 @@ import {
 import type { AccountSummary } from '../../features/account/services/accountsApi'
 import { HttpArcadeCompetitionGateway } from '../../games/arcade/arcadeCompetitionApi'
 import { GameAmbientMusic } from '../../features/audio/GameAmbientMusic'
+import { InGameShell } from '../../components/InGameShell'
 import { AsteroidsCompetitionPage } from '../../pages/games/asteroids/AsteroidsCompetitionPage'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 import { synchronizeAsteroidsRouteAccount } from './asteroidsRouteAccount'
@@ -53,5 +54,8 @@ function AsteroidsCompetitionSession({ initialAccount }: Readonly<{ initialAccou
     }
   }, [])
 
-  return <><GameAmbientMusic game="asteroids" /><AsteroidsCompetitionPage account={currentAccount} gateway={gateway} onPaidAccountRefresh={refreshAccount} /></>
+  return <InGameShell account={currentAccount} title="Asteroids" theme="arcade">
+    <GameAmbientMusic game="asteroids" />
+    <AsteroidsCompetitionPage account={currentAccount} gateway={gateway} onPaidAccountRefresh={refreshAccount} />
+  </InGameShell>
 }

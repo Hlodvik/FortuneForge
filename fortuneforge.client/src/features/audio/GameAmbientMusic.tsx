@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AMBIENT_GAME_MUSIC, type AmbientGameId } from './ambientGameMusic'
 import './GameAmbientMusic.css'
 
-const MUTE_KEY = 'fortune-forge.ambient-game-music-muted'
+// A versioned key gives existing browsers the corrected sound-on default once,
+// while still respecting every choice made after this release.
+const MUTE_KEY = 'fortune-forge.ambient-game-music-muted.v2'
 
 export function GameAmbientMusic({ game }: Readonly<{ game: AmbientGameId }>) {
   const { source, volume } = AMBIENT_GAME_MUSIC[game]

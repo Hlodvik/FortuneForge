@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HttpKenoGateway, KenoGame } from '@fortuneforge/games-keno'
 import '@fortuneforge/games-keno/styles.css'
-import { PlayerHeader } from '../../components/PlayerHeader'
+import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
@@ -23,8 +23,7 @@ function KenoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <div className="player-page">
-    <PlayerHeader account={account} />
+  return <InGameShell account={account} title="Keno" theme="casino" className="player-page">
     <KenoGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />
-  </div>
+  </InGameShell>
 }

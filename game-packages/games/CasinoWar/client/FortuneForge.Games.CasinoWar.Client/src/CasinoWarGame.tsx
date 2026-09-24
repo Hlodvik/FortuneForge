@@ -9,6 +9,7 @@ import {
 } from './contracts'
 import { HttpCasinoWarGateway } from './httpCasinoWarGateway'
 import './casinoWar.css'
+import './casinoWarViewport.css'
 
 export type CasinoWarGameProps = Readonly<{
   gateway?: CasinoWarGateway

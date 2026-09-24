@@ -2,11 +2,11 @@ import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
+import { InGameNavExits } from '../../components/InGameNavbar'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
 import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
-import { SlotFeatureStatus } from './components/SlotFeatureStatus'
 import { SlotMachine } from './components/SlotMachine'
 import { SlotPlayGuide } from './components/SlotPlayGuide'
 import { SlotSymbol } from './components/SlotSymbol'
@@ -35,10 +35,11 @@ export function SlotsPageView(controller: SlotsPageController) {
     closeSettings,
     creditTileRef,
     displayedReels,
+    balanceActionHref,
+    balanceRecoveryHref,
+    balanceRecoveryLabel,
     demoAvailability,
     demoAvailabilityMessage,
-    demoMode,
-    demoStartingBalance,
     energyBalance,
     energyFlyover,
     energyImpactKey,
@@ -119,9 +120,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     : null
   const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
-  const completedChestImage = completedCollection?.containerFillImages?.[
-    (completedCollection.containerFillImages?.length ?? 1) - 1
-  ] ?? completedCollection?.containerImage ?? collectionFeature?.containerImage
+  const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
+  const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
   const topbarStyle = cabinetTheme.topbar
     ? ({
         '--slot-topbar-background': cabinetTheme.topbar.background,
@@ -158,6 +158,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     freeSpinsRemaining,
     useFreeGameForNextSpin,
   })
+  const showOutcomeBanner = hasCompletedSpin || isSpinning || spinError !== null ||
+    demoAvailabilityMessage !== null || !canAffordSelectedWager || useFreeGameForNextSpin
 
   return (
     <div
@@ -168,24 +170,13 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-special-round={specialRound?.id}
       data-special-earn-style={specialRound?.earnStyle}
     >
-      <header className="slots-page__topbar">
+      <header className="slots-page__topbar" data-game-navbar>
         <div className="slots-page__brand-cluster">
-          <nav className="slots-page__navigation" aria-label="Game navigation">
-            <a
-              className="slots-page__brand"
-              href="/"
-              aria-label="Return to the Fortune Forge landing page"
-            >
-              <span className="slots-page__brand-name">Fortune Forge</span>
-            </a>
-            <a
-              className="slots-page__other-games"
-              href={demoMode ? '/demo' : '/games'}
-              onClick={() => setIsAutoSpinning(false)}
-            >
-              Other games
-            </a>
-          </nav>
+          <InGameNavExits
+            authenticated={balanceActionHref !== null}
+            className="slots-page__navigation"
+            onNavigate={() => setIsAutoSpinning(false)}
+          />
           <div className="slots-page__game-identity">
             <span>{cabinetTheme.eyebrow}</span>
             <h1>{cabinetTheme.title}</h1>
@@ -193,19 +184,19 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
         </div>
         <span className="slots-page__brand-actions">
-            {demoMode ? (
-              <a
-                className="slots-page__demo-badge"
-                href="/demo"
-                onClick={() => setIsAutoSpinning(false)}
+            {balanceActionHref === null ? (
+              <span
+                className="slots-page__purchase-credits slots-page__purchase-credits--static"
+                aria-label={`Balance: ${formatRand(balance)}`}
               >
-                Demo · {formatRand(demoStartingBalance)} start
-              </a>
+                <ForgeCoin className="slots-page__purchase-credits-coin" />
+                <span>{formatRand(balance)}</span>
+              </span>
             ) : (
               <>
                 <a
                   className="slots-page__purchase-credits"
-                  href="/home/rand"
+                  href={balanceActionHref}
                   aria-label={`Balance: ${formatRand(balance)}. Open recharge.`}
                   onClick={() => setIsAutoSpinning(false)}
                 >
@@ -265,7 +256,6 @@ export function SlotsPageView(controller: SlotsPageController) {
                     itemLabel={collectionFeature.itemLabel ?? 'seals'}
                     key={collection.sealId}
                     containerImage={seal.containerImage ?? collectionFeature.containerImage}
-                    containerFillImages={seal.containerFillImages}
                     displayCount={
                       isSpecialGameActive && heldCompletedCollectionId === collection.sealId
                         ? collection.requiredCount
@@ -381,7 +371,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               className="slots-page__balance slots-page__control-tile"
               aria-label={`Balance: ${formatRand(balance)}`}
             >
-              <span className="slots-page__balance-label">{demoMode ? 'Demo balance' : 'Balance'}</span>
+              <span className="slots-page__balance-label">Balance</span>
               <span className="slots-page__balance-line">
                 <span className="slots-page__balance-value">{formatRand(balance)}</span>
               </span>
@@ -398,7 +388,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
                     onSpin={handleSpinButtonClick}
-                    variant={isPiratesFortune ? 'pirate-helm' : 'default'}
+                    variant={isPiratesFortune ? 'pirate-helm' : isWukong ? 'wukong-rune' : 'default'}
                   />
                   {showFreeSpinBadge && !specialControlsActive && (
                     <span
@@ -480,17 +470,6 @@ export function SlotsPageView(controller: SlotsPageController) {
             <span><kbd>M</kbd> Mute</span>
             <span><kbd>?</kbd> Rules</span>
           </div>
-          {specialRound?.showStatusPanel !== false && specialRound && (
-            <SlotFeatureStatus
-              collections={collectionFeature}
-              collectionStates={visibleSealCollections}
-              freeSpinsRemaining={freeSpinsRemaining}
-              help={help}
-              isActive={isSpecialGameActive}
-              label={specialRoundLabel ?? specialRound.title}
-              specialRound={specialRound}
-            />
-          )}
         </div>
         </div>
       </main>
@@ -674,15 +653,17 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      <footer
-        className={`slots-page__footer${spinError || demoAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
-      >
-        <GameOutcomeBanner
-          key={lastSpinOutcomeKey}
-          className="slots-page__outcome"
-          {...slotOutcome}
-        />
-      </footer>
+      {showOutcomeBanner && (
+        <footer
+          className={`slots-page__footer${spinError || demoAvailability === 'unavailable' ? ' slots-page__footer--error' : ''}`}
+        >
+          <GameOutcomeBanner
+            key={lastSpinOutcomeKey}
+            className="slots-page__outcome"
+            {...slotOutcome}
+          />
+        </footer>
+      )}
 
       <AudioSettingsDialog
         isOpen={isSettingsOpen}
@@ -706,7 +687,8 @@ export function SlotsPageView(controller: SlotsPageController) {
         closeButtonRef={reloadPromptCloseButtonRef}
         selectedWager={selectedWager}
         balance={balance}
-        demoMode={demoMode}
+        recoveryHref={balanceRecoveryHref}
+        recoveryLabel={balanceRecoveryLabel}
         onClose={() => setIsReloadPromptOpen(false)}
       />
 

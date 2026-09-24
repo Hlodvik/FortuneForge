@@ -9,8 +9,6 @@ export function App() {
   return (
     <CrapsGame
       gateway={gateway}
-      playerName="Local Player"
-      tableLabel="Practice table"
       tableArtworkUrl={tableArtworkUrl}
       isYourTurn={!isAnotherPlayersTurn}
       activePlayerName="Maya"

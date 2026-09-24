@@ -9,6 +9,7 @@ import '../dropMergeTimer.css'
 import '../dropMergeTimedColumns.css'
 import '../dropMergePalette.css'
 import '../dropMergeInteraction.css'
+import '../dropMergeViewport.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Drop Merge preview root was not found.')

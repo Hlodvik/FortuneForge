@@ -6,7 +6,8 @@ type InsufficientBalanceDialogProps = {
   closeButtonRef: RefObject<HTMLButtonElement | null>
   selectedWager: number
   balance: number
-  demoMode?: boolean
+  recoveryHref: string
+  recoveryLabel: string
   onClose: () => void
 }
 
@@ -15,7 +16,8 @@ export function InsufficientBalanceDialog({
   closeButtonRef,
   selectedWager,
   balance,
-  demoMode = false,
+  recoveryHref,
+  recoveryLabel,
   onClose,
 }: InsufficientBalanceDialogProps) {
   if (!isOpen) return null
@@ -56,9 +58,7 @@ export function InsufficientBalanceDialog({
           <button className="reload-prompt__primary" type="button" onClick={() => onClose()}>
             Choose another wager
           </button>
-          {demoMode
-            ? <a href={window.location.pathname}>Restart R10,000 demo</a>
-            : <a href="/home/rand">Add Rand</a>}
+          <a href={recoveryHref}>{recoveryLabel}</a>
         </div>
       </section>
     </div>

@@ -12,6 +12,7 @@ import { HttpVideoPokerGateway } from './httpVideoPokerGateway'
 import './videoPoker.css'
 import './videoPokerPaytable.css'
 import './videoPokerEnhancements.css'
+import './videoPokerViewport.css'
 
 export type VideoPokerGameProps = Readonly<{
   gateway?: VideoPokerGateway

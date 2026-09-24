@@ -3,14 +3,18 @@
 .ff-hearts-trick.is-revealing{border-color:#efc373aa;background:radial-gradient(circle at center,#74402a66,transparent 65%),#210a16b8;box-shadow:inset 0 0 1.5rem #e5b86225}.ff-hearts-trick.is-revealing .ff-hearts-trick-heading strong{color:#ffe4a8}.ff-hearts-trick.is-revealing .ff-hearts-trick-card{animation:ff-hearts-trick-reveal .18s ease-out both}.ff-hearts-trick.is-revealing .ff-hearts-trick-card:nth-child(2){animation-delay:.05s}.ff-hearts-trick.is-revealing .ff-hearts-trick-card:nth-child(3){animation-delay:.1s}.ff-hearts-trick.is-revealing .ff-hearts-trick-card:nth-child(4){animation-delay:.15s}@keyframes ff-hearts-trick-reveal{from{opacity:0;transform:translateY(.5rem) scale(.96)}to{opacity:1;transform:none}}
 
 /* Compact table view: keep the current decision, cards, and trick together on a desktop viewport. */
+.ff-hearts-page { user-select: none; -webkit-user-select: none; }
+.ff-hearts-page img { -webkit-user-drag: none; }
+
 @media (min-width: 761px) {
-  .ff-hearts-page { height: 100svh; min-height: 0; overflow: hidden; padding-bottom: 0; }
+  .ff-hearts-page { height: 100dvh; min-height: 0; overflow: hidden; padding-bottom: 0; }
   .ff-hearts-header { min-height: 3.5rem; padding-block: .5rem; }
-  .ff-hearts-main { display: grid; height: calc(100svh - 3.5rem); min-height: 0; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: .45rem; overflow: hidden; padding: .35rem 0 .45rem; }
+  .ff-hearts-main { display: grid; height: calc(100dvh - 3.5rem); min-height: 0; grid-template-rows: auto auto minmax(0, 1fr) auto auto; gap: .45rem; overflow: hidden; padding: .35rem 0 .45rem; }
   .ff-hearts-title { min-height: 3.1rem; align-items: center; padding: 0 .25rem; }
   .ff-hearts-title h1 { font-size: clamp(2rem, 4.8svh, 3rem); }
   .ff-hearts-start { padding: .28rem .35rem; border: 1px solid #e9c6852b; border-radius: .6rem; background: #2c0d1db3; }
   .ff-hearts-scoreboard { margin: 0; gap: .4rem; }
+  .ff-hearts-round { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
   .ff-hearts-score { min-height: 3.65rem; padding: .48rem .6rem; border-radius: .58rem; }
   .ff-hearts-score strong { font-size: 1.45rem; }
   .ff-hearts-score span { font-size: .56rem; }
@@ -46,6 +50,7 @@
   .ff-hearts-table-head { padding-block: .35rem; }
   .ff-hearts-players { padding: .35rem; }
   .ff-hearts-player { padding-block: .32rem; }
+  .ff-hearts-players { display: none; }
   .ff-hearts-hand-section { padding-block: .42rem; }
   .ff-hearts-hand { margin-top: .32rem; }
   .ff-hearts-card { width: clamp(2.45rem, 4.6vw, 3.3rem); height: clamp(3.45rem, 6.3vw, 4.7rem); }
@@ -66,6 +71,61 @@
 .ff-hearts-trajectory__rounds>div{display:grid;grid-template-columns:2.7rem repeat(4,3.3rem);gap:.25rem;align-items:center;min-width:max-content}.ff-hearts-trajectory__rounds small{color:#c9aab0;font-size:.56rem;font-weight:900}.ff-hearts-trajectory__rounds span{position:relative;overflow:hidden;padding:.24rem .3rem;border-radius:.3rem;background:linear-gradient(90deg,#b36f39 var(--hearts-score-progress),#190b14 var(--hearts-score-progress));color:#fff0dd;font-size:.55rem;font-weight:800;text-align:center}
 @keyframes ff-hearts-pass-pulse{from{transform:translateX(-50%) rotate(-12deg) scale(.94)}to{transform:translateX(-50%) rotate(12deg) scale(1.05)}}
 @keyframes ff-hearts-pass-across{from{transform:translateX(-58%) scale(.94)}to{transform:translateX(-42%) scale(1.04)}}
-@media(min-width:761px){.ff-hearts-main{grid-template-rows:auto auto minmax(0,1fr) auto auto auto}.ff-hearts-table{grid-template-rows:auto auto auto minmax(0,1fr)}.ff-hearts-trajectory{margin:0;padding:.4rem .62rem}.ff-hearts-trajectory__heading{display:none}.ff-hearts-trajectory__rounds{padding:0}.ff-hearts-pass-guide{padding-block:.2rem}}
+@media(min-width:761px){.ff-hearts-main{grid-template-rows:auto auto minmax(0,1fr) auto auto auto auto}.ff-hearts-table{grid-template-rows:auto auto auto minmax(0,1fr)}.ff-hearts-trajectory{margin:0;padding:.4rem .62rem}.ff-hearts-trajectory__heading{display:none}.ff-hearts-trajectory__rounds{padding:0}.ff-hearts-pass-guide{padding-block:.2rem}}
 @media(max-width:560px){.ff-hearts-start{flex-wrap:wrap}.ff-hearts-start label{min-width:2.8rem}.ff-hearts-pass-guide{grid-template-columns:repeat(2,1fr);padding-block:.45rem}.ff-hearts-trajectory__heading{align-items:start;flex-direction:column}.ff-hearts-trajectory__rounds>div{grid-template-columns:2.7rem repeat(4,3rem)}}
 @media(prefers-reduced-motion:reduce){.ff-hearts-pass-guide b{animation:none}.ff-hearts-trick.is-revealing .ff-hearts-trick-card{animation:none}}
+
+/* On phones the decision surface comes first: score, current trick, all
+   thirteen cards, then the primary action. Historical detail remains below
+   that first viewport and the hand stays fully visible without horizontal
+   scrolling. */
+@media(max-width:760px){
+  .ff-hearts-page{padding-bottom:1rem}
+  .ff-hearts-header{min-height:3.1rem;padding-block:.45rem}
+  .ff-hearts-main{width:min(100% - .7rem,86rem)}
+  .ff-hearts-title{min-height:3.35rem;padding:.28rem 0;align-items:center}
+  .ff-hearts-title>div:first-child{display:none}
+  .ff-hearts-start{display:grid;width:100%;grid-template-columns:auto minmax(2.8rem,1fr) auto minmax(2.8rem,1fr) auto;gap:.22rem}
+  .ff-hearts-start label{min-width:0;font-size:.56rem}
+  .ff-hearts-start select,.ff-hearts-start button{min-height:2.15rem;padding-inline:.35rem;font-size:.65rem}
+  .ff-hearts-scoreboard{grid-template-columns:repeat(4,minmax(0,1fr));gap:.22rem;margin:0 0 .28rem}
+  .ff-hearts-score{min-height:2.7rem;gap:.05rem;padding:.3rem .22rem;text-align:center}
+  .ff-hearts-score small{font-size:.52rem}
+  .ff-hearts-score strong{font-size:1.1rem}
+  .ff-hearts-score span{font-size:.46rem}
+  .ff-hearts-round{display:none}
+  .ff-hearts-table{display:grid;grid-template-rows:auto auto minmax(0,1fr);border-radius:.65rem}
+  .ff-hearts-table-head{padding:.38rem .5rem;font-size:.58rem}
+  .ff-hearts-players{display:none}
+  .ff-hearts-pass-guide{grid-template-columns:repeat(4,minmax(0,1fr));gap:.2rem;padding:.2rem .35rem}
+  .ff-hearts-pass-guide span{padding:.18rem .08rem;font-size:.48rem}
+  .ff-hearts-pass-guide b{width:1.45rem;font-size:.9rem}
+  .ff-hearts-trick{min-height:5.25rem;margin:.15rem .35rem .35rem;padding:.4rem}
+  .ff-hearts-trick-cards{min-height:3.45rem;gap:.2rem;padding-top:.25rem}
+  .ff-hearts-trick-card .ff-hearts-card-face{width:2.15rem;height:2.9rem;min-width:0;min-height:0;font-size:.82rem}
+  .ff-hearts-trick-card .ff-hearts-card-face b{font-size:1rem}
+  .ff-hearts-hand-section{margin-top:.3rem;padding:.42rem .35rem}
+  .ff-hearts-section-heading{min-height:1.75rem;align-items:center;flex-direction:row;gap:.35rem}
+  .ff-hearts-section-heading h2{margin:0;font-size:.9rem}
+  .ff-hearts-section-heading small{font-size:.48rem}
+  .ff-hearts-section-heading>span{font-size:.55rem;text-align:right}
+  .ff-hearts-hand{flex-wrap:nowrap;gap:0;margin-top:.3rem;padding-inline:.1rem}
+  .ff-hearts-card{width:clamp(1.9rem,8.7vw,2.2rem);height:clamp(2.75rem,12.4vw,3.15rem);flex:0 0 auto}
+  .ff-hearts-card+.ff-hearts-card{margin-left:-.52rem}
+  .ff-hearts-card>.ff-hearts-card-face{min-width:0;min-height:0;font-size:.8rem}
+  .ff-hearts-card>.ff-hearts-card-face b{font-size:1rem}
+  .ff-hearts-help{display:none}
+  .ff-hearts-actions{min-height:2.5rem;margin-top:.28rem}
+  .ff-hearts-primary,.ff-hearts-secondary{min-height:2.3rem}
+  .ff-hearts-history{margin-top:.45rem}
+}
+
+/* Fortune Forge supplies the global navigation around this package surface. */
+.hearts-shell-body > .ff-hearts-page {
+  height: 100%;
+  min-height: 0;
+}
+
+@media(min-width:761px){
+  .hearts-shell-body > .ff-hearts-page .ff-hearts-main { height: 100%; }
+}

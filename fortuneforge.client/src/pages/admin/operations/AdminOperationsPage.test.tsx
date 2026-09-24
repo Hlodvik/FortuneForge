@@ -42,6 +42,6 @@ describe('admin operations route', () => {
     expect(markup).toContain("Real-human pool Hold&#x27;em fees")
     expect(markup).toContain('R10,00')
     expect(markup).toContain('net R-5,00')
-    expect(markup).toContain('Synthetic bot telemetry')
+    expect(markup).toContain('Simulated-player telemetry')
   })
 })

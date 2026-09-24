@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { KenoGatewayError, type KenoGateway, type KenoRound, type KenoStatus } from './contracts'
 import { HttpKenoGateway } from './httpKenoGateway'
 import './keno.css'
+import './kenoViewport.css'
 
 export type KenoGameProps = Readonly<{ gateway?: KenoGateway; playerId?: string; initialSelection?: readonly number[]; onBalanceChange?: (balance: number) => void }>
 

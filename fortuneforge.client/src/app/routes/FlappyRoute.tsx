@@ -5,6 +5,7 @@ import { HttpArcadeCompetitionGateway } from '../../games/arcade/arcadeCompetiti
 import { FlappyFreeRunPage } from '../../pages/games/flappy/FlappyFreeRunPage'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 import { fetchWithAccountSession } from '../../features/account/services/accountsApi'
+import { InGameShell } from '../../components/InGameShell'
 
 export function AuthenticatedFlappyRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/flappy')
@@ -12,5 +13,8 @@ export function AuthenticatedFlappyRoute() {
   if (isLoading || account === null) {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Flappy…" errorTitle="Flappy could not be opened." onRetry={reload} />
   }
-  return <><GameAmbientMusic game="flappy" /><FlappyFreeRunPage account={account} gateway={gateway} /></>
+  return <InGameShell account={account} title="Flappy" theme="arcade">
+    <GameAmbientMusic game="flappy" />
+    <FlappyFreeRunPage account={account} gateway={gateway} />
+  </InGameShell>
 }

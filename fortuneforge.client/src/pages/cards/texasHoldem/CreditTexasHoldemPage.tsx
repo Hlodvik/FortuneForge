@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
+import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
@@ -28,7 +29,6 @@ import {
   type CreditHoldemTableRule,
   type PendingCreditHoldemMutation,
 } from '../../../games/cards/texasHoldem/creditHoldemApi'
-import { CardRoomNavigation } from '../CardRoomNavigation'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import './texasHoldem.css'
 
@@ -127,23 +127,17 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
     }
   }, [pending, refresh])
 
-  const navigation = (
-    <CardRoomNavigation
-      playerName={account.playerName}
-      balanceCredits={balanceCredits}
-      onBalanceChange={setBalanceCredits}
-    />
-  )
-  if (availability.kind === 'loading') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Opening the table…" body="Connecting to the dealer." /></div>
-  if (availability.kind === 'disabled') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div>
-  if (availability.kind === 'error') return <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>{navigation}<StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div>
+  const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
+  if (availability.kind === 'loading') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body"><div className="credit-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Opening the table…" body="Connecting to the dealer." /></div></InGameShell>
+  if (availability.kind === 'disabled') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body"><div className="credit-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div></InGameShell>
+  if (availability.kind === 'error') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body"><div className="credit-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div></InGameShell>
 
   const { status, session } = availability
   const tableRules = status.tableRules?.length ? status.tableRules : [legacyRule(status)]
   const selectedRule = tableRules.find((rule) => rule.id === selectedRuleId) ?? tableRules[0]
   return (
-    <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>
-      {navigation}
+    <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body">
+      <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>
       {requestError && (
         <div className="credit-holdem-error" role="alert">
           <span>{requestError}</span>
@@ -215,7 +209,8 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
           />
         )}
       </main>
-    </div>
+      </div>
+    </InGameShell>
   )
 }
 
@@ -226,7 +221,7 @@ function QueueView({ session, busy, leave }: {
     <section className="credit-holdem-lobby">
       <span className="credit-holdem-kicker">Finding your table</span>
       <h1>Seat {session.position} in line</h1>
-      <p>No credits are committed while you wait. Open seats are offered to real players first, then bots fill the table after a brief wait.</p>
+      <p>No credits are committed while you wait. The dealer fills open seats automatically and starts the hand as soon as the table is ready.</p>
       <div className="credit-holdem-queue-seats">
         {Array.from({ length: 5 }, (_, index) => {
           const seat = session.players[index]

@@ -30,6 +30,18 @@ describe('app shell slot media isolation', () => {
     expect(shellStyles).toContain('.app-shell > .asteroids-competition-page,')
   })
 
+  it('marks playable routes without constraining game libraries or account pages', () => {
+    expect(renderApp('/slots/pirates-fortune/demo')).toContain('app-shell--game')
+    expect(renderApp('/games/keno')).toContain('app-shell--game')
+    expect(renderApp('/cards/blackjack')).toContain('app-shell--game')
+    expect(renderApp('/demo/cards/blackjack')).toContain('app-shell--game')
+
+    expect(renderApp('/games')).not.toContain('app-shell--game')
+    expect(renderApp('/cards')).not.toContain('app-shell--game')
+    expect(renderApp('/demo/cards')).not.toContain('app-shell--game')
+    expect(renderApp('/home')).not.toContain('app-shell--game')
+  })
+
 })
 
 function renderApp(pathname: string): string {

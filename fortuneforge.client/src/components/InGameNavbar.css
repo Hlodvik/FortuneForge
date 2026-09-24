@@ -1,0 +1,74 @@
+.in-game-navbar {
+  min-height: 3.75rem;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
+}
+
+.in-game-navbar__exits {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: .7rem;
+}
+
+.in-game-navbar__title {
+  overflow: hidden;
+  color: #f8f2df;
+  font-size: .78rem;
+  letter-spacing: .08em;
+  text-align: center;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.in-game-navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
+
+.in-game-navbar--arcade {
+  border-bottom-color: rgb(53 231 255 / 32%);
+  background: linear-gradient(105deg, rgb(5 22 55 / 98%), rgb(35 8 68 / 97%));
+}
+
+.in-game-navbar--casino {
+  border-bottom-color: rgb(234 198 105 / 34%);
+  background: linear-gradient(105deg, rgb(4 45 39 / 98%), rgb(32 15 50 / 97%));
+}
+
+.in-game-navbar--cards {
+  border-bottom-color: rgb(220 163 102 / 34%);
+  background: linear-gradient(105deg, rgb(48 9 27 / 98%), rgb(18 30 61 / 97%));
+}
+
+.in-game-navbar--slots {
+  border-bottom-color: rgb(255 211 95 / 34%);
+}
+
+@media (max-width: 720px) {
+  .in-game-navbar {
+    min-height: 3.35rem;
+    gap: .4rem;
+    padding: .35rem .5rem;
+  }
+
+  .in-game-navbar .player-shell-header__games { display: inline-flex; }
+  .in-game-navbar__title { display: none; }
+  .in-game-navbar__exits { gap: .4rem; }
+  .in-game-navbar .player-shell-header__brand strong { display: none; }
+  .in-game-navbar .player-shell-header__spark { width: 1.85rem; }
+  .in-game-navbar .player-shell-header__games { padding: .5rem .58rem; font-size: .62rem; }
+}
+
+@media (max-width: 420px) {
+  .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto; }
+  .in-game-navbar__actions { display: none; }
+}
+
+@media (max-height: 500px) {
+  .in-game-navbar { min-height: 2.8rem; padding-block: .22rem; }
+  .in-game-navbar .player-shell-header__spark { width: 1.7rem; }
+  .in-game-navbar .forge-credit-amount { min-height: 1.9rem; }
+  .in-game-navbar .player-shell-menu--more > summary { width: 2.15rem; }
+}

@@ -23,11 +23,34 @@ const reelRows = [
   ['6', '7', 'ACE', 'POWER'],
 ]
 
+const slotDemoPaths = [
+  '/slots/wukong/demo',
+  '/slots/rainbow-realm/demo',
+  '/slots/pirates-fortune/demo',
+  '/slots/gods-of-olympus/demo',
+  '/slots/reel-riches/demo',
+  '/slots/high-noon-fortune/demo',
+  '/slots/royal-draw/demo',
+  '/slots/arcane-archives/demo',
+  '/slots/cosmic-fortune/demo',
+  '/slots/dino-dominion/demo',
+  '/slots/neon-nights/demo',
+  '/slots/jungle-jackpot/demo',
+  '/slots/ocean-odyssey/demo',
+  '/slots/samurai-fortune/demo',
+  '/slots/candy-carnival/demo',
+  '/slots/phantom-manor/demo',
+  '/slots/nordic-legends/demo',
+  '/slots/desert-treasures/demo',
+  '/slots/robot-revolution/demo',
+  '/slots/dragon-hoard/demo',
+] as const
+
 test.beforeEach(async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' })
 })
 
-test('idle cabinet and persistent feature path', async ({ page }) => {
+test('idle cabinet', async ({ page }) => {
   await mockDemoApi(page)
   await openStableSlot(page, '/slots/reel-riches/demo')
 
@@ -59,7 +82,7 @@ test('feature transition with deterministic free spins', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
   await page.getByRole('button', { name: 'Spin the reels' }).click()
   await featureGate.startedPromise
-  await expect(page.locator('[data-feature-state="active"]')).toBeVisible()
+  await expect(page.locator('.slots-page__special-game-tally')).toBeVisible()
 
   await expect(page.locator('.slots-page__stage')).toHaveScreenshot('active-olympian-feature.png')
   featureGate.release()
@@ -99,10 +122,129 @@ test('narrow mobile cabinet remains playable', async ({ page }) => {
   await expect(page.locator('.slots-page')).toHaveScreenshot('narrow-mobile-samurai.png')
 })
 
+test('every slot cabinet fits a desktop viewport without document scrolling', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await mockDemoApi(page)
+
+  for (const path of slotDemoPaths) {
+    await openStableSlot(page, path)
+    await expect(page.locator('[data-game-navbar]'), path).toHaveCount(1)
+    await expect(page.getByRole('link', { name: 'Fortune Forge home' }), path).toHaveAttribute('href', '/')
+    await expect(page.getByRole('link', { name: 'Other Games' }), path).toHaveAttribute('href', '/demo')
+    const metrics = await page.evaluate(() => {
+      const machine = document.querySelector('.slot-game-frame')?.getBoundingClientRect()
+      const spin = document.querySelector('.spin-button')?.getBoundingClientRect()
+      window.scrollTo(0, 9999)
+      return {
+        documentHeight: document.documentElement.scrollHeight,
+        documentWidth: document.documentElement.scrollWidth,
+        machineBottom: machine?.bottom ?? Number.POSITIVE_INFINITY,
+        machineTop: machine?.top ?? Number.NEGATIVE_INFINITY,
+        scrollY: window.scrollY,
+        spinBottom: spin?.bottom ?? Number.POSITIVE_INFINITY,
+        spinTop: spin?.top ?? Number.NEGATIVE_INFINITY,
+        viewportHeight: window.innerHeight,
+        viewportWidth: window.innerWidth,
+      }
+    })
+
+    expect(metrics, path).toMatchObject({ scrollY: 0 })
+    expect(metrics.documentHeight, path).toBeLessThanOrEqual(metrics.viewportHeight + 1)
+    expect(metrics.documentWidth, path).toBeLessThanOrEqual(metrics.viewportWidth + 1)
+    expect(metrics.machineTop, path).toBeGreaterThanOrEqual(0)
+    expect(metrics.machineBottom, path).toBeLessThanOrEqual(metrics.viewportHeight)
+    expect(metrics.spinTop, path).toBeGreaterThanOrEqual(0)
+    expect(metrics.spinBottom, path).toBeLessThanOrEqual(metrics.viewportHeight)
+  }
+})
+
+test('every mobile slot keeps the complete playable cabinet in the first viewport', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockDemoApi(page)
+
+  for (const path of slotDemoPaths) {
+    await openStableSlot(page, path)
+    const playableBottom = await page.evaluate(() => {
+      const playbar = document.querySelector('.slots-page__playbar')?.getBoundingClientRect()
+      return playbar?.bottom ?? Number.POSITIVE_INFINITY
+    })
+    expect(playableBottom, path).toBeLessThanOrEqual(844)
+  }
+})
+
+test('Pirates controls, chest hints, and interaction guards stay intact', async ({ page }) => {
+  await page.setViewportSize({ width: 1366, height: 768 })
+  await mockDemoApi(page)
+  await openStableSlot(page, '/slots/pirates-fortune/demo')
+
+  await expect(page.locator('.slots-page__balance-label')).toHaveText('Balance')
+  await expect(page.getByText('Demo balance', { exact: true })).toHaveCount(0)
+
+  const chests = page.locator('.slots-page__seal-collection')
+  const chestTops = await chests.locator('.slots-page__treasure-chest').evaluateAll((elements) => (
+    elements.map((element) => Math.round(element.getBoundingClientRect().top))
+  ))
+  expect(new Set(chestTops).size).toBe(1)
+
+  await chests.nth(1).hover()
+  const tooltip = chests.nth(1).locator('.slots-page__collection-tooltip')
+  await expect(tooltip).toBeVisible()
+  const tooltipBox = await tooltip.boundingBox()
+  expect(tooltipBox?.y ?? -1).toBeGreaterThanOrEqual(0)
+  expect((tooltipBox?.y ?? 9999) + (tooltipBox?.height ?? 9999)).toBeLessThanOrEqual(768)
+
+  const helpButton = page.getByRole('button', { name: 'How to win' })
+  const helpContainment = await helpButton.evaluate((button) => {
+    const buttonBox = button.getBoundingClientRect()
+    return Array.from(button.children).every((child) => {
+      const childBox = child.getBoundingClientRect()
+      return childBox.top >= buttonBox.top && childBox.bottom <= buttonBox.bottom
+    })
+  })
+  expect(helpContainment).toBe(true)
+
+  const wheel = await page.locator('.spin-button--pirate-helm').evaluate((button) => {
+    const buttonBox = button.getBoundingClientRect()
+    const iconBox = button.querySelector('.spin-button__icon')?.getBoundingClientRect()
+    const style = getComputedStyle(button)
+    return {
+      backgroundImage: style.backgroundImage,
+      borderWidth: style.borderTopWidth,
+      iconRatio: iconBox ? iconBox.width / buttonBox.width : 0,
+    }
+  })
+  expect(wheel.backgroundImage).toBe('none')
+  expect(wheel.borderWidth).toBe('0px')
+  expect(wheel.iconRatio).toBeGreaterThan(0.9)
+
+  expect(await page.locator('.slots-page__special-round').count()).toBe(0)
+  expect(await page.locator('body').evaluate((body) => getComputedStyle(body).userSelect)).toBe('none')
+  expect(await page.locator('.slots-page__treasure-chest-art').first().getAttribute('draggable')).toBe('false')
+  const nativeDragAllowed = await page.locator('.slot-symbol__image').first().evaluate((image) => (
+    image.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true }))
+  ))
+  expect(nativeDragAllowed).toBe(false)
+})
+
+test('legacy saved mute state no longer makes a slot launch muted', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localStorage.setItem('fortune-forge.audio-preferences', JSON.stringify({ mode: 'muted', volume: 20 }))
+    window.localStorage.removeItem('fortune-forge.audio-preferences.v2')
+  })
+  await mockDemoApi(page)
+  await openStableSlot(page, '/slots/pirates-fortune/demo')
+  await page.getByRole('button', { name: 'Open settings' }).click()
+
+  await expect(page.getByRole('button', { name: /Mute Turn off all game audio/i })).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: /Mute all but result sounds/i })).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.locator('.audio-settings__volume-heading output')).toHaveText('20%')
+})
+
 async function openStableSlot(page: Page, path: string) {
   await page.goto(path)
   await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
-  await page.waitForLoadState('networkidle')
   await page.evaluate(async () => {
     await document.fonts.ready
     const images = Array.from(document.images)

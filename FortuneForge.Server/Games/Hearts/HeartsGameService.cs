@@ -68,7 +68,7 @@ public sealed class HeartsGameService
     private void ApplyHumanAction(HeartsSession session, HeartsCommand command)
     {
         if (session.State.Round.Phase == HeartsPhase.Playing && session.State.Round.Turn != HumanSeat)
-            throw new HeartsRuleException($"It is {session.State.Round.Turn}'s turn. The bots are still moving.");
+            throw new HeartsRuleException($"It is {session.State.Round.Turn}'s turn. Your opponents are still moving.");
         var completedBefore = session.State.Round.CompletedTricks.Count;
         var transition = HeartsMatchEngine.Apply(session.State, command);
         session.State = transition.State;

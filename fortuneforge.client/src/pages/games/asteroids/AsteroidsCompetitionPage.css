@@ -1,5 +1,6 @@
 .asteroids-competition-page {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   background: radial-gradient(circle at top, #182b4f, #091222 58%);
   color: #f5f7ff;
 }
@@ -94,4 +95,116 @@
 @media (max-width: 42rem) {
   .asteroids-competition-page__content { padding: 1rem .75rem 2rem; }
   .asteroids-competition-page__lobby-grid { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 721px) {
+  .asteroids-competition-page {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr);
+    overflow: hidden;
+  }
+
+  .asteroids-competition-page__content {
+    width: 100%;
+    min-height: 0;
+    overflow: auto;
+  }
+}
+
+.asteroids-competition-page--active {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.asteroids-competition-page--active .asteroids-competition-page__content {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  align-content: stretch;
+  padding: .4rem .75rem;
+  overflow: hidden;
+}
+
+.asteroids-competition-page--active .asteroids-competition-page__run {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay {
+  display: grid;
+  width: min(100%, 60rem);
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  margin: auto;
+  overflow: hidden;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-head { grid-row: 1; }
+.asteroids-competition-page--active .ff-asteroids-replay-stats { grid-row: 2; }
+.asteroids-competition-page--active .ff-asteroids-replay-canvas-wrap { grid-row: 3; }
+.asteroids-competition-page--active .ff-asteroids-replay-message { grid-row: 4; }
+.asteroids-competition-page--active .ff-asteroids-replay-controls { grid-row: 5; }
+
+.asteroids-competition-page--active .ff-asteroids-replay-canvas-wrap {
+  display: grid;
+  min-height: 0;
+  place-items: center;
+  overflow: hidden;
+  container-type: size;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-canvas {
+  width: min(100cqw, 133.333cqh);
+  height: auto;
+  min-height: 0;
+  max-width: none;
+  max-height: none;
+}
+
+@media (max-width: 520px), (max-height: 620px) {
+  .asteroids-competition-page--active .ff-asteroids-replay { padding: .5rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-head { padding: .25rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-head p { display: none; }
+  .asteroids-competition-page--active .ff-asteroids-replay h2 { font-size: 1.35rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: .3rem;
+    margin-bottom: .35rem;
+  }
+  .asteroids-competition-page--active .ff-asteroids-replay-stats > div {
+    min-height: 2.75rem;
+    padding: .35rem .4rem;
+  }
+  .asteroids-competition-page--active .ff-asteroids-replay-controls {
+    grid-template-columns: repeat(4, 1fr);
+    gap: .3rem;
+  }
+  .asteroids-competition-page--active .ff-asteroids-replay-control {
+    min-height: 3rem;
+    padding-inline: .2rem;
+  }
+  .asteroids-competition-page--active .ff-asteroids-replay-control span { display: none; }
+  .asteroids-competition-page--active .ff-asteroids-replay-message { margin: .25rem 0 !important; }
+}
+
+@media (max-height: 500px) {
+  .asteroids-competition-page--active .ff-asteroids-replay-head,
+  .asteroids-competition-page--active .ff-asteroids-replay-message { display: none; }
+  .asteroids-competition-page--active .ff-asteroids-replay-stats > div { min-height: 2.3rem; }
 }

@@ -1,0 +1,26 @@
+/* Keep the table above the host's decorative backdrop and present the game as
+   a compact live table instead of a stack of overlapping panels. */
+.ff-craps-page { position: relative; z-index: 1; height: 100%; }
+.ff-craps-table__felt { padding-block: clamp(1rem, 2.4vh, 1.4rem); }
+.ff-craps-table__felt:has(> .ff-craps-coach) { grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
+.ff-craps-table__felt::after { inset-block: clamp(1.1rem, 2.6vh, 1.55rem); }
+.ff-craps-turn { min-height: 2.6rem; margin-bottom: .35rem; padding-block: .35rem; }
+.ff-craps-point-row > span:not(.ff-craps-puck) { min-height: clamp(2.5rem, 5vh, 3.25rem); }
+.ff-craps-center { grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 17rem) minmax(12rem, 1fr); padding-block: .35rem; }
+.ff-craps-dice { max-width: 17rem; }
+.ff-craps-dice__stage { --ff-die-frame-size: clamp(5.6rem, 11vw, 7rem); height: clamp(4.8rem, 9vw, 6rem); }
+.ff-craps-dice__stage .ff-die-throw-sprite { filter: grayscale(1) contrast(1.7); }
+.ff-craps-pass-line { min-height: 2.8rem; }
+.ff-craps-controls { min-height: 3.55rem; }
+
+@media (max-width: 760px) {
+  .ff-craps-table__felt { padding: .65rem .55rem; border-radius: 1.15rem; }
+  .ff-craps-table__felt::after { inset: .75rem .65rem; }
+  .ff-craps-turn { min-height: 2.45rem; }
+  .ff-craps-center { grid-template-columns: minmax(0, 1.25fr) minmax(7rem, .75fr); }
+  .ff-craps-dice { width: 8rem; }
+  .ff-craps-dice__stage { --ff-die-frame-size: 4.6rem; height: 4.2rem; }
+  .ff-craps-pass-line { min-height: 2.45rem; font-size: .86rem; }
+  .ff-craps-pass-line strong { font-size: .72rem; }
+  .ff-craps-coach { padding: .4rem .55rem; }
+}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
+import { InGameShell } from '../../../components/InGameShell'
 import {
   cancelSolitaireQueue,
   claimSolitaireResult,
@@ -48,7 +49,6 @@ import {
   type SolitaireResultSession,
   type SolitaireSession,
 } from '../../../games/cards/solitaire/solitaireTypes'
-import { CardRoomNavigation } from '../CardRoomNavigation'
 import './solitaire.css'
 
 export type CompetitiveSolitairePageProps = Readonly<{
@@ -575,12 +575,13 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   }
 
   return (
-    <div className="solitaire-page" onClickCapture={onCardAudioClick}>
-      <CardRoomNavigation
-        playerName={account.playerName}
-        balanceCredits={balanceCredits}
-        onBalanceChange={setBalanceCredits}
-      />
+    <InGameShell
+      account={{ ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }}
+      title="Competitive Solitaire"
+      theme="cards"
+      bodyClassName="solitaire-shell-body"
+    >
+      <div className="solitaire-page" onClickCapture={onCardAudioClick}>
       {requestError && (
         <div className="solitaire-request-error" role="alert">
           <span>{requestError}</span>
@@ -637,8 +638,9 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
           setFreeSubmissionError(null)
         }}
         onRefresh={refresh}
-      />
-    </div>
+        />
+      </div>
+    </InGameShell>
   )
 }
 

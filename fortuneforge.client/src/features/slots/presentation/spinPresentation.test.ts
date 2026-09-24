@@ -118,7 +118,7 @@ describe('spin presentation', () => {
   })
 
   it('does not call a new screen a loss before the player has spun', () => {
-    expect(getSlotOutcomePresentation(outcomeInput()).label).toBe('Ready to play')
+    expect(getSlotOutcomePresentation(outcomeInput()).label).toBe('Wager selected')
 
     const outcome = getSlotOutcomePresentation({
       ...outcomeInput(),

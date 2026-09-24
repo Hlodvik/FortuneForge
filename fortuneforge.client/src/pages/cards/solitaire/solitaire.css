@@ -5,7 +5,10 @@
     radial-gradient(circle at 50% 8%, rgb(81 230 196 / 16%), transparent 30rem),
     linear-gradient(155deg, #071b22, #031014 58%, #02090c);
   color: #eaf8f4;
+  user-select: none;
+  -webkit-user-select: none;
 }
+.solitaire-page img { -webkit-user-drag: none; }
 .solitaire-page .card-room-header { border-bottom-color: rgb(231 201 121 / 18%); background: rgb(2 25 20 / 94%); }
 
 .solitaire-header {
@@ -1195,6 +1198,16 @@ button.solitaire-pile,
   }
 }
 
+@media (min-width: 761px) {
+  .solitaire-shell-body > .solitaire-page:not(.practice-bot-page) { height: 100%; }
+}
+
+/* The host shell supplies the sole global navbar and the viewport boundary. */
+.solitaire-shell-body > .solitaire-page {
+  height: 100%;
+  min-height: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .solitaire-page *,
   .solitaire-page *::before,
@@ -1210,4 +1223,89 @@ button.solitaire-pile,
   .solitaire-card-button.is-hinted {
     animation: none;
   }
+}
+
+/* Keep the live/free board in the flexible viewport row. The card buttons
+   remain pointer-draggable; only their surrounding layout is constrained. */
+@media (min-width: 761px) {
+  .solitaire-page:not(.practice-bot-page) {
+    display: flex;
+    height: 100dvh;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .solitaire-page:not(.practice-bot-page) > .solitaire-main {
+    width: min(100% - 1rem, 78rem);
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: .35rem 0 .45rem;
+  }
+
+  .solitaire-page:not(.practice-bot-page) .solitaire-match {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+
+  .solitaire-page:not(.practice-bot-page) .solitaire-board {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .solitaire-page:not(.practice-bot-page) .solitaire-match__controls {
+    min-height: 3.5rem;
+    padding: .45rem .65rem;
+  }
+
+  .solitaire-page:not(.practice-bot-page) > .solitaire-state {
+    min-height: 0;
+    flex: 1 1 auto;
+    margin-block: .5rem;
+  }
+
+  .solitaire-page:not(.practice-bot-page) > .solitaire-request-error {
+    flex: 0 0 auto;
+    margin-block: .35rem 0;
+  }
+
+  .solitaire-page:not(.practice-bot-page) .solitaire-integrity-warning {
+    position: absolute;
+    z-index: 45;
+    top: 4rem;
+    right: 1rem;
+    left: 1rem;
+    margin: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .solitaire-match__controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .3rem;
+    padding: .4rem;
+  }
+
+  .solitaire-match__controls button {
+    min-width: 0;
+    min-height: 2.5rem;
+    padding-inline: .25rem;
+    font-size: .65rem;
+  }
+
+  .practice-bot-page.solitaire-page .practice-bot-hero,
+  .practice-bot-page.solitaire-page .practice-bot-table > p { display: none; }
+  .practice-bot-page.solitaire-page .practice-bot-main { padding-top: .35rem; }
+  .practice-bot-page.solitaire-page .practice-bot-table { margin-block: .25rem; }
+  .practice-bot-page.solitaire-page .practice-bot-table__status { margin-bottom: .25rem; }
+  .practice-bot-page.solitaire-page .practice-bot-solitaire-opponents { margin-block: .25rem; }
+  .practice-bot-page.solitaire-page .solitaire-board {
+    height: clamp(26rem, calc(100dvh - 10.5rem), 42rem);
+  }
+}
+
+@media (min-width: 761px) {
+  .solitaire-shell-body > .solitaire-page:not(.practice-bot-page) { height: 100%; }
 }

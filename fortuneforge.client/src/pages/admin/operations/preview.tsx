@@ -28,7 +28,7 @@ const dashboard: OperationsDashboard = {
   },
   integrity: { fromUtc: now, toUtc: now, complete: true, limitations: [], checks: [
     { id: 'money', status: 'pass', summary: 'Gaming monetary values must be non-negative.', recordsChecked: 525, findings: 0 },
-    { id: 'bots', status: 'pass', summary: 'Bot practice is account-neutral and excluded from every financial source and formula.', recordsChecked: 129, findings: 0 },
+    { id: 'bots', status: 'pass', summary: 'Simulated practice is account-neutral and excluded from every financial source and formula.', recordsChecked: 129, findings: 0 },
   ] },
   matches: { nextCursor: null, items: [
     { matchId: 'f37a9a', game: 'blackjack', status: 'completed', playerCount: 1, startedAtUtc: now, completedAtUtc: now, wageredCredits: 25, paidCredits: 50, houseNetCredits: -25 },

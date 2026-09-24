@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { InGameShell } from '../../../components/InGameShell'
 import {
   commandBlackjackBotPractice,
   getBlackjackBotPractice,
@@ -41,12 +42,9 @@ export function BlackjackBotPracticePage() {
   }
 
   return (
-    <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
-      <header className="practice-bot-header">
-        <a href="/demo/cards">← Card room</a>
-        <span>Blackjack</span>
-      </header>
-      <main className="practice-bot-main">
+    <InGameShell title="Blackjack" theme="cards" bodyClassName="practice-bot-shell-body">
+      <div className="practice-bot-page" onClickCapture={onCardAudioClick}>
+        <main className="practice-bot-main">
         <section className="practice-bot-hero">
           <p>Fortune Forge</p>
           <h1>Blackjack Table</h1>
@@ -120,8 +118,9 @@ export function BlackjackBotPracticePage() {
             <EventList events={table.events} />
           </section>
         )}
-      </main>
-    </div>
+        </main>
+      </div>
+    </InGameShell>
   )
 }
 

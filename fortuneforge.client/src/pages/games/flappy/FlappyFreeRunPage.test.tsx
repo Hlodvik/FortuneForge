@@ -26,6 +26,7 @@ describe('Flappy free-run lobby', () => {
     expect(markup).toContain('Space or left click/tap to flap.')
     expect(markup).toContain('Every flight is securely recorded to your account')
     expect(markup).toContain('Free play does not enter the jackpot')
+    expect(markup).toContain('flappy-free-run-page__lobby-preview')
   })
 
   it('returns keyboard focus to the playfield when the on-screen start button is used', () => {

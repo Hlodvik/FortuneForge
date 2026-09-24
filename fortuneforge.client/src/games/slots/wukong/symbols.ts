@@ -11,10 +11,9 @@ import immortalityPeachSymbol from '../../../assets/slots/symbols/wukong/optimiz
 import immortalityPeachAnimatedSymbol from '../../../assets/slots/symbols/wukong/immortality-peach-animated.gif'
 import jadeDragonPearlSymbol from '../../../assets/slots/symbols/wukong/optimized/jade-dragon-pearl.png'
 import jadeDragonPearlAnimatedSymbol from '../../../assets/slots/symbols/wukong/jade-dragon-pearl-animated.gif'
-import nimbusCloudSymbol from '../../../assets/slots/symbols/wukong/optimized/nimbus-cloud.png'
-import nimbusCloudAnimatedSymbol from '../../../assets/slots/symbols/wukong/nimbus-cloud-animated.gif'
 import nimbusCloudPlatformAnimatedSymbol from '../../../assets/slots/symbols/wukong/nimbus-cloud-platform-animated.webp'
 import nimbusCloudPlatformSymbol from '../../../assets/slots/symbols/wukong/optimized/nimbus-cloud-platform.png'
+import celestialHammerSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-hammer.png'
 import celestialBananaBunchSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-banana-bunch.png'
 import randValueTokenSymbol from '../../../assets/slots/symbols/wukong/optimized/rand-value-token.png'
 import wukongMonkeyPawSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-monkey-paw.png'
@@ -68,7 +67,7 @@ const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
 export const WUKONG_SYMBOLS: SlotSymbolSet = {
   id: 'wukong-treasures-v3',
   definitions: {
-    '2': { id: '2', label: 'Nimbus cloud', image: nimbusCloudSymbol, animatedImage: nimbusCloudAnimatedSymbol },
+    '2': { id: '2', label: 'Celestial hammer', image: celestialHammerSymbol, animatedImage: celestialHammerSymbol },
     '3': { id: '3', label: 'Immortality peach', image: immortalityPeachSymbol, animatedImage: immortalityPeachAnimatedSymbol },
     '4': { id: '4', label: 'Celestial gourd', image: celestialGourdSymbol, animatedImage: celestialGourdAnimatedSymbol },
     '5': { id: '5', label: 'Jade dragon pearl', image: jadeDragonPearlSymbol, animatedImage: jadeDragonPearlAnimatedSymbol },
@@ -92,7 +91,7 @@ export const WUKONG_SYMBOLS: SlotSymbolSet = {
     { symbol: 'POWER', firstLabel: '3–4', firstValue: '2× +1 point', secondLabel: '5', secondValue: '4× +2 points' },
     { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: '+1 energy' },
     { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },
-    { symbol: 'PAW', firstLabel: 'Any', firstValue: 'grabs R coins', secondLabel: '2 paws', secondValue: 'double' },
+    { symbol: 'PAW', firstLabel: 'Base game', firstValue: 'grabs R coins', secondLabel: 'Paw quest', secondValue: 'adds 2–5 paws' },
     { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 sync spins' },
     { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 +2 row spins' },
     { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 paw spins' },

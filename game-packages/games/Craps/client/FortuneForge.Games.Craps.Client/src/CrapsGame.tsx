@@ -3,12 +3,10 @@ import { CrapsGatewayError, type CrapsExtraBetKind, type CrapsExtraBetRequest, t
 import { DiceThrow } from './DiceThrow'
 import './craps.css'
 import './crapsEnhancements.css'
+import './crapsViewport.css'
 
 export type CrapsGameProps = Readonly<{
   gateway: CrapsGateway
-  backHref?: string
-  playerName?: string
-  tableLabel?: string
   tableArtworkUrl?: string
   isYourTurn?: boolean
   activePlayerName?: string
@@ -19,9 +17,6 @@ const pointNumbers = [4, 5, 6, 8, 9, 10] as const
 
 export function CrapsGame({
   gateway,
-  backHref,
-  playerName = 'Player',
-  tableLabel = 'Free-play table',
   tableArtworkUrl,
   isYourTurn = true,
   activePlayerName = 'Another player',
@@ -145,20 +140,6 @@ export function CrapsGame({
 
   return (
     <div className="ff-craps-page">
-      <header className="ff-craps-header">
-        <nav className="ff-craps-header__navigation" aria-label="Game navigation">
-          <a className="ff-craps-header__brand" href={backHref ?? '/'} aria-label="Fortune Forge home">
-            <span className="ff-craps-header__spark" aria-hidden="true">✦</span>
-            <strong>Fortune Forge</strong>
-          </a>
-          <a className="ff-craps-header__other-games" href={backHref ?? '/games'}>Other games</a>
-        </nav>
-        <div className="ff-craps-header__account">
-          <strong>{playerName}</strong>
-          <span>{tableLabel}</span>
-        </div>
-      </header>
-
       {tipsOpen && <CrapsTipsDialog closeButtonRef={tipsCloseRef} onClose={closeTips} />}
 
       <main className="ff-craps-main">
@@ -172,7 +153,7 @@ export function CrapsGame({
         <section className="ff-craps-table" aria-label="Craps table" style={tableStyle}>
           <div className="ff-craps-table__felt">
             <div className={`ff-craps-turn ${isYourTurn ? 'is-yours' : 'is-waiting'}`} aria-live="polite">
-              <span>{isYourTurn ? 'Your turn · You are the shooter' : `${activePlayerName} is the shooter`}</span>
+              <span>{isYourTurn ? 'Table 1 · Your turn · You are the shooter' : `Table 1 · ${activePlayerName} is the shooter`}</span>
               <strong>{turnInstruction(round, isBusy, isYourTurn)}</strong>
             </div>
 
@@ -382,7 +363,7 @@ function CrapsTipsDialog({
             <h3>Who does what?</h3>
             <dl>
               <dt>Shooter</dt><dd>The player rolling the dice. The shooter keeps rolling until a seven-out, then the dice pass clockwise.</dd>
-              <dt>Other players</dt><dd>They bet on or against the shooter. Bots would fill these player positions in Fortune Forge.</dd>
+              <dt>Other players</dt><dd>They bet on or against the shooter. Open seats can be filled by simulated players.</dd>
               <dt>Table crew</dt><dd>The stickperson calls the roll, dealers handle bets, and the boxperson supervises. Fortune Forge software performs these house roles.</dd>
             </dl>
           </article>

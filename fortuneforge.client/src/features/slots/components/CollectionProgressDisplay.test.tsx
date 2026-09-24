@@ -21,22 +21,21 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).not.toContain('slots-page__collection-piece')
   })
 
-  it('selects cumulative Pirate chest art from the collection progress', () => {
-    const fillImages = Array.from({ length: 4 }, (_, index) => `/ruby-level-${index + 1}.png`)
+  it('fills the transparent Pirate chest with cumulative gem pieces', () => {
     const cases = [
-      [0, '/ruby-empty.png'],
-      [1, '/ruby-level-1.png'],
-      [3, '/ruby-level-1.png'],
-      [4, '/ruby-level-2.png'],
-      [7, '/ruby-level-2.png'],
-      [8, '/ruby-level-3.png'],
-      [11, '/ruby-level-3.png'],
-      [12, '/ruby-level-4.png'],
-      [15, '/ruby-level-4.png'],
-      [30, '/ruby-level-4.png'],
+      [0, 0],
+      [1, 1],
+      [3, 2],
+      [4, 3],
+      [7, 5],
+      [8, 6],
+      [11, 8],
+      [12, 8],
+      [15, 10],
+      [30, 10],
     ] as const
 
-    for (const [count, expectedImage] of cases) {
+    for (const [count, expectedVisibleGems] of cases) {
       const markup = renderToStaticMarkup(
         <CollectionProgressDisplay
           collection={{ sealId: 'sync', count, averageWagerPoints: 50, requiredCount: 15 }}
@@ -45,14 +44,14 @@ describe('CollectionProgressDisplay', () => {
           isImpacting
           itemLabel="gems"
           containerImage="/ruby-empty.png"
-          containerFillImages={fillImages}
           presentation="gem-hoard"
         />,
       )
 
       expect(markup).toContain('slots-page__treasure-chest--impact')
-      expect(markup).toContain(`src="${expectedImage}"`)
-      expect(markup).not.toContain('slots-page__treasure-chest-piece')
+      expect(markup).toContain('src="/ruby-empty.png"')
+      expect(markup.match(/class="is-visible"/g) ?? []).toHaveLength(expectedVisibleGems)
+      expect(markup).toContain('draggable="false"')
     }
   })
 
@@ -76,7 +75,7 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).not.toContain('slots-page__collection-count')
     expect(markup).toContain('aria-valuenow="9"')
     expect(markup).not.toContain('title=')
-    expect(markup).toContain('Treasure reward')
+    expect(markup).toContain('Collection reward')
     expect(markup).toContain('Land Ruby gems anywhere on the reels to bank them.')
     expect(markup).toContain('Fill this chest to launch 10 free games.')
     expect(markup).toContain('During every free game, one reel is copied to match the winning setup.')
@@ -93,7 +92,6 @@ describe('CollectionProgressDisplay', () => {
         isImpacting={false}
         itemLabel="gems"
         containerImage="/ruby-empty.png"
-        containerFillImages={Array.from({ length: 4 }, (_, index) => `/ruby-level-${index + 1}.png`)}
         displayCount={15}
         presentation="gem-hoard"
         showCount={false}
@@ -102,7 +100,8 @@ describe('CollectionProgressDisplay', () => {
     )
 
     expect(markup).toContain('slots-page__seal-collection--celebrating')
-    expect(markup).toContain('src="/ruby-level-4.png"')
+    expect(markup).toContain('src="/ruby-empty.png"')
+    expect(markup.match(/class="is-visible"/g)).toHaveLength(10)
     expect(markup).toContain('3 gems banked')
     expect(markup).toContain('aria-valuenow="3"')
   })

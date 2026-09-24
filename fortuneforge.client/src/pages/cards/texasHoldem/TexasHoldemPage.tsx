@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
+import { InGameShell } from '../../../components/InGameShell'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import { freshCardSeed } from '../../../games/cards/shared/cards'
@@ -15,8 +16,6 @@ import './texasHoldem.css'
 
 export type TexasHoldemPageProps = Readonly<{
   playerName?: string
-  returnHref?: string
-  demoMode?: boolean
 }>
 
 type HandHistoryItem = Readonly<{
@@ -34,7 +33,6 @@ const stageLabels = {
 
 export function TexasHoldemPage({
   playerName = 'You',
-  returnHref = '/demo/cards',
 }: TexasHoldemPageProps) {
   const [game, setGame] = useState<HoldemGame>(() => createHoldemGame({ seed: freshCardSeed() }))
   const [handNumber, setHandNumber] = useState(1)
@@ -74,13 +72,9 @@ export function TexasHoldemPage({
     : null
 
   return (
-    <div className="holdem-page" onClickCapture={onCardAudioClick}>
-      <header className="holdem-header">
-        <a className="holdem-brand" href="/" aria-label="Fortune Forge home">
-          <span aria-hidden="true">♠</span>
-          <span><small>Fortune Forge</small><strong>Texas Hold&apos;em</strong></span>
-        </a>
-        <div className="holdem-header__actions">
+    <InGameShell title="Texas Hold’em" theme="cards" bodyClassName="holdem-shell-body">
+      <div className="holdem-page" onClickCapture={onCardAudioClick}>
+        <div className="holdem-toolbar" aria-label="Texas Hold’em table tools">
           <span className="holdem-practice-badge">Practice chips · no account wagering</span>
           <button type="button" onClick={() => setShowRules((value) => !value)} aria-expanded={showRules}>
             How to play
@@ -88,9 +82,7 @@ export function TexasHoldemPage({
           <button type="button" onClick={() => setShowHistory((value) => !value)} aria-expanded={showHistory}>
             Hand history
           </button>
-          <a href={returnHref}>Card room</a>
         </div>
-      </header>
 
       <main className="holdem-main">
         <section className="holdem-table-shell" aria-label="Heads-up Texas Hold'em table">
@@ -206,7 +198,8 @@ export function TexasHoldemPage({
         <span>Account-neutral practice table</span>
         <span>Chips reset automatically if either stack falls below the big blind.</span>
       </footer>
-    </div>
+      </div>
+    </InGameShell>
   )
 }
 

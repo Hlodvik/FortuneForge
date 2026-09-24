@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { AsteroidsReplayPlay, maximumReplayCommands, maximumReplaySteps } from '@fortuneforge/games-asteroids'
 import type { AsteroidsReplayDisplayResult, AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
 import '@fortuneforge/games-asteroids/styles.css'
-import { PlayerHeader } from '../../../components/PlayerHeader'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { ArcadeCompetitionLeaderboard } from '../../../games/arcade/ArcadeCompetitionLeaderboard'
 import {
@@ -253,7 +252,6 @@ export function AsteroidsCompetitionPage({
 
   return (
     <div className={`asteroids-competition-page${isActiveLayout ? ' asteroids-competition-page--active' : ''}`}>
-      <PlayerHeader account={account} />
       <main className="asteroids-competition-page__content">
         {!isActiveLayout && (
           <header className="asteroids-competition-page__intro">

@@ -169,6 +169,7 @@
 @media (max-height: 540px) {
   .ff-horse-flight__header p { display: none; }
   .ff-horse-flight { padding-block: 0.35rem; }
+  .ff-horse-flight__field { width: min(100%, calc((100dvh - 9rem) * 1.7778)); }
 }
 
 @media (hover: hover) and (pointer: fine) {

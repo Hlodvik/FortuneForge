@@ -1,5 +1,5 @@
 .ff-craps-page {
-  height: 100svh;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
   background:
@@ -11,28 +11,6 @@
 .ff-craps-page *, .ff-craps-page *::before, .ff-craps-page *::after { box-sizing: border-box; }
 .ff-craps-page button, .ff-craps-page input { font: inherit; }
 
-.ff-craps-header {
-  display: flex;
-  height: 3.5rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: .55rem max(.75rem, calc((100vw - 78rem) / 2));
-  border-bottom: 1px solid rgb(231 201 121 / 18%);
-  background: linear-gradient(105deg, rgb(2 23 18 / 97%), rgb(15 48 34 / 96%));
-  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
-}
-
-.ff-craps-header__navigation { display: flex; align-items: center; gap: .55rem; }
-.ff-craps-header__brand, .ff-craps-header__other-games { display: inline-flex; align-items: center; color: #fff7d6; text-decoration: none; }
-.ff-craps-header__brand { gap: .5rem; margin-right: .35rem; font-size: .9rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
-.ff-craps-header__brand strong { background: linear-gradient(90deg, #c7ffe5, #fff8d9 42%, #ffd86a 78%, #8fe0b7); background-clip: text; color: transparent; }
-.ff-craps-header__spark { display: grid; width: 1.9rem; aspect-ratio: 1; place-items: center; border: 1px solid rgb(255 214 100 / 68%); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fffbea, #ffd464 27%, #2a9768 70%, #073c2b); box-shadow: 0 0 1rem rgb(111 224 167 / 25%), inset 0 0 0 2px rgb(4 51 36 / 48%); color: #103e2e; font-size: .85rem; text-shadow: 0 1px #fff8d8; }
-.ff-craps-header__other-games { min-height: 2.25rem; padding-inline: .8rem; border: 1px solid rgb(225 205 136 / 25%); border-radius: 999px; color: #bdd1c7; font-size: .7rem; font-weight: 800; }
-.ff-craps-header__other-games:hover, .ff-craps-header__other-games:focus-visible { border-color: #f4d579; color: #fff7d6; outline: none; }
-.ff-craps-header__account { display: grid; min-width: 9rem; justify-items: end; gap: .08rem; padding: .38rem .7rem; border: 1px solid rgb(225 205 136 / 26%); border-radius: 999px; background: rgb(2 37 27 / 78%); box-shadow: 0 .3rem .8rem rgb(0 8 5 / 32%); }
-.ff-craps-header__account strong { color: #fffbe9; font-size: .82rem; }
-.ff-craps-header__account span { color: #9cb7aa; font-size: .55rem; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
 .ff-craps-tips-button { min-height: 2.35rem; border: 1px solid rgb(229 205 136 / 42%); border-radius: 999px; padding: .45rem .9rem; background: rgb(5 47 35 / 88%); color: #f6e3a6; font-size: .72rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
 .ff-craps-tips-button:hover, .ff-craps-tips-button[aria-expanded="true"] { border-color: #ffe273; background: rgb(92 70 10 / 88%); color: #fff7d6; }
 
@@ -55,7 +33,7 @@
 .ff-craps-tips aside strong { flex: 0 0 auto; color: #ffe273; }
 .ff-craps-tips aside span { color: #d7cba6; font-size: .74rem; line-height: 1.4; }
 
-.ff-craps-main { display: grid; width: min(100% - 1rem, 78rem); height: calc(100svh - 3.5rem); min-height: 0; grid-template-rows: auto minmax(0, 1fr); gap: .45rem; margin-inline: auto; overflow: hidden; padding: .35rem 0 .45rem; }
+.ff-craps-main { display: grid; width: min(100% - 1rem, 78rem); height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); gap: .45rem; margin-inline: auto; overflow: hidden; padding: .35rem 0 .45rem; }
 .ff-craps-title { display: flex; min-height: 3rem; align-items: center; justify-content: space-between; padding-inline: .5rem; }
 .ff-craps-title h1 { margin: 0; color: #fff7d6; font: 700 clamp(2.25rem, 5svh, 3.25rem)/.9 Georgia, serif; letter-spacing: -.055em; text-shadow: 0 .6rem 1.4rem rgb(0 0 0 / 55%); }
 
@@ -150,14 +128,6 @@
 
 @media (max-width: 760px) {
   .ff-craps-main { width: min(100% - .35rem, 78rem); padding-block: .25rem; }
-  .ff-craps-header { padding-inline: .55rem; }
-  .ff-craps-header__navigation { gap: .3rem; }
-  .ff-craps-header__brand { margin-right: 0; font-size: .74rem; }
-  .ff-craps-header__spark { width: 1.7rem; }
-  .ff-craps-header__other-games { min-height: 2rem; padding-inline: .55rem; font-size: .62rem; }
-  .ff-craps-header__account { min-width: 0; padding: .34rem .55rem; }
-  .ff-craps-header__account strong { max-width: 7rem; overflow: hidden; font-size: .72rem; text-overflow: ellipsis; white-space: nowrap; }
-  .ff-craps-header__account span { display: none; }
   .ff-craps-tips-button { min-height: 2.15rem; padding-inline: .65rem; }
   .ff-craps-tips__grid { grid-template-columns: 1fr; }
   .ff-craps-tips article:first-child { grid-row: auto; }
@@ -189,7 +159,6 @@
 }
 
 @media (max-width: 520px) {
-  .ff-craps-header__brand strong { display: none; }
   .ff-craps-chip-row { display: none; }
 }
 

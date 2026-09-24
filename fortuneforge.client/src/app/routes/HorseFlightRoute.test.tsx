@@ -13,6 +13,7 @@ describe('Horse Flight route integration', () => {
     expect(routesSource).toContain("import('./routes/HorseFlightRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/horse-flight')")
     expect(routeSource).toContain("new HttpHorseFlightGateway('/api/games/horse-flight', fetchWithAccountSession)")
+    expect(routeSource).not.toContain('GameAmbientMusic')
   })
 })
 

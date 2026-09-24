@@ -1,0 +1,44 @@
+/* The host supplies account chrome above this package. Keep the road, table,
+   wager and primary action inside the remaining viewport. */
+@media (min-width: 561px) {
+  .ff-baccarat { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: clamp(.65rem, 1.6vh, 1rem); }
+  .ff-baccarat__header { margin-bottom: .55rem; }
+  .ff-baccarat h1 { font-size: clamp(2.1rem, 5vh, 3.2rem); }
+  .ff-baccarat__table { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: .7rem 1rem; }
+  .ff-baccarat__betting,
+  .ff-baccarat__settled { height: 100%; min-height: 0; gap: .55rem; }
+  .ff-baccarat__table-mark > span { width: 2.7rem; font-size: 1.35rem; }
+  .ff-baccarat h2 { margin: .3rem 0 .15rem; font-size: 1.45rem; }
+  .ff-baccarat__bet { min-height: 3.7rem; }
+}
+
+@media (max-width: 560px) {
+  .ff-baccarat { min-height: 0; padding: .45rem; }
+  .ff-baccarat__header { align-items: center; margin-bottom: .4rem; }
+  .ff-baccarat__eyebrow { display: none; }
+  .ff-baccarat h1 { font-size: 2.15rem; }
+  .ff-baccarat__table { min-height: 0; padding: .5rem; border-radius: .8rem; }
+  .ff-baccarat__road { gap: .3rem; margin-bottom: .45rem; padding: .35rem; }
+  .ff-baccarat__big-road > div { grid-template: repeat(6, .72rem) / repeat(12, .72rem); gap: .06rem; padding: .2rem; background-size: .78rem .78rem; }
+  .ff-baccarat__big-road i { width: .62rem; height: .62rem; border-width: 1px; }
+  .ff-baccarat__shoe small,
+  .ff-baccarat__road-stats { display: none; }
+  .ff-baccarat__betting,
+  .ff-baccarat__settled { min-height: 0; gap: .45rem; }
+  .ff-baccarat__table-mark > span { display: none; }
+  .ff-baccarat h2 { margin: 0; font-size: 1.25rem; }
+  .ff-baccarat__table-mark p { font-size: .72rem; line-height: 1.25; }
+  .ff-baccarat__bet { min-height: 3.5rem; }
+  .ff-baccarat__stake { grid-template-columns: auto minmax(0, 1fr); align-items: center; width: 100%; }
+  .ff-baccarat__stake input { padding: .45rem .55rem; }
+  .ff-baccarat__stake small { grid-column: 1 / -1; }
+  .ff-baccarat__primary { min-height: 2.55rem; padding-block: .45rem; }
+}
+
+@media (max-height: 760px) and (min-width: 561px) {
+  .ff-baccarat__header { margin-bottom: .35rem; }
+  .ff-baccarat__table-mark > span { display: none; }
+  .ff-baccarat__betting { gap: .35rem; }
+  .ff-baccarat__bet { min-height: 3.25rem; }
+  .ff-baccarat__primary { min-height: 2.5rem; padding-block: .4rem; }
+}

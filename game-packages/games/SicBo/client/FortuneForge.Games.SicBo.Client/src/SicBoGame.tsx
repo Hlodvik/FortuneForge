@@ -3,6 +3,7 @@ import { SicBoGatewayError, type SicBoBetKind, type SicBoBetRequest, type SicBoG
 import { HttpSicBoGateway } from './httpSicBoGateway'
 import './sicBo.css'
 import './sicBoGuide.css'
+import './sicBoViewport.css'
 
 export type SicBoGameProps = Readonly<{
   gateway?: SicBoGateway

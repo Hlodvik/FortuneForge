@@ -32,7 +32,7 @@ This was a functional and product audit, not certification. Slot simulations are
 ### What is consolidated and healthy
 
 - `FortuneForge-consolidated/main` is the deployed application source and matches `origin/main` at `2b408ef` before this report.
-- The previous Discord image generator and Discord PNGs are gone from the deployed repository.
+- Unrelated legacy image-generator assets are gone from the deployed repository.
 - The remote has only `main` and the older `refactor/feature-organization` branch. Local salvage branches remain as recovery points and do not affect deployment.
 - All application restore/build/test/deploy steps run from the consolidated checkout.
 

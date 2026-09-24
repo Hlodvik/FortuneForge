@@ -136,6 +136,9 @@ export function useSlotsPageController({
   experienceSet,
   onSpinStateChange,
 }: SlotsPageProps) {
+  const balanceActionHref = demoMode ? null : '/home/rand'
+  const balanceRecoveryHref = demoMode ? window.location.pathname : '/home/rand'
+  const balanceRecoveryLabel = demoMode ? 'Reset balance' : 'Add Rand'
   // This hook coordinates gameplay. Presentation assets and tunable rules enter
   // through this single composed set rather than direct file imports.
   const {
@@ -264,8 +267,8 @@ export function useSlotsPageController({
   const demoAvailabilityMessage = !demoMode || demoAvailability === 'available'
     ? null
     : demoAvailability === 'checking'
-      ? 'Checking demo service availability…'
-      : 'Demo service unavailable — Spin is disabled. Reload after the API is restored.'
+      ? 'Checking game service availability…'
+      : 'Game service unavailable — Spin is disabled. Reload after the service is restored.'
   const selectedWagerPoints = wagerOptions[wagerIndex] ?? wagerOptions[0] ?? 0
   const selectedWagerRand = slotPointsToRand(selectedWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
@@ -446,6 +449,20 @@ export function useSlotsPageController({
     isSpinning,
     mascotPhase,
   ])
+
+  useEffect(() => {
+    // Ask for ambience as soon as the cabinet opens. Browsers that permit
+    // autoplay start immediately; restrictive browsers retry on the player's
+    // first interaction instead of waiting specifically for Spin.
+    startLoop(soundSet.events.ambience)
+    const unlockAudio = () => startLoop(soundSet.events.ambience)
+    window.addEventListener('pointerdown', unlockAudio, { once: true })
+    window.addEventListener('keydown', unlockAudio, { once: true })
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio)
+      window.removeEventListener('keydown', unlockAudio)
+    }
+  }, [soundSet.events.ambience, startLoop])
 
   useEffect(() => {
     if (isSpecialGameActive) {
@@ -1737,6 +1754,9 @@ export function useSlotsPageController({
   }
 
   return {
+    balanceActionHref,
+    balanceRecoveryHref,
+    balanceRecoveryLabel,
     activeWagerDisplay,
     audioPreferences,
     balance,

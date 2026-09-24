@@ -1,0 +1,23 @@
+/* The host backdrop is a sibling layer; keep the complete felt and controls
+   above it.  The wheel art remains decorative while the betting board is the
+   primary interaction surface. */
+.ff-roulette-page { position: relative; z-index: 1; }
+.ff-roulette-wheel {
+  background: radial-gradient(circle at center, rgb(43 5 20 / 84%) 0 29%, transparent 29.5%), linear-gradient(145deg, #2b0918, #12040b);
+}
+.ff-roulette-wheel-art { z-index: 0; width: min(94%, 18rem); max-height: 94%; opacity: .92; }
+.ff-roulette-pocket { width: clamp(4rem, 7vw, 5.75rem); border-width: .25rem; }
+.number { color: #fff; text-shadow: 0 1px 2px #000; }
+.number.red { background: #b5223f; }
+.number.black { background: #181a20; }
+.number.zero { background: #087c50; }
+.outside-grid button { background: #6c1633; }
+
+@media (max-width: 680px) {
+  .ff-roulette-wheel { min-height: 8rem; }
+  .ff-roulette-wheel-art { width: min(92%, 9.5rem); }
+  .ff-roulette-pocket { width: 3.65rem; }
+  .ff-roulette-table { grid-template-columns: .85fr 1.35fr; }
+  .number-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: repeat(6, minmax(1.15rem, 1fr)); }
+  .outside-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

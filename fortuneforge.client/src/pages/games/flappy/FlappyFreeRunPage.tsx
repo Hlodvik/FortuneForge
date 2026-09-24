@@ -12,7 +12,6 @@ import {
   type FlappyReplaySessionView,
 } from '@fortuneforge/games-flappy'
 import '@fortuneforge/games-flappy/styles.css'
-import { PlayerHeader } from '../../../components/PlayerHeader'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   ArcadeCompetitionRequestError,
@@ -140,8 +139,9 @@ export function FlappyFreeRunPage({ account, gateway }: FlappyFreeRunPageProps) 
     setPhase('lobby')
   }
 
-  return <div className="flappy-free-run-page">
-    <PlayerHeader account={account} />
+  const isActiveLayout = phase === 'playing' && activeRun !== null
+
+  return <div className={`flappy-free-run-page${isActiveLayout ? ' flappy-free-run-page--active' : ''}`}>
     <main className="flappy-free-run-page__content">
       {(phase === 'lobby' || phase === 'starting') && <section className="flappy-free-run-page__lobby">
         <p className="flappy-free-run-page__eyebrow">Classic arcade</p>
@@ -149,9 +149,37 @@ export function FlappyFreeRunPage({ account, gateway }: FlappyFreeRunPageProps) 
         <p>Thread the flier through the openings. Every flight is securely recorded to your account.</p>
         <p><strong>Space or left click/tap to flap.</strong> Gravity never stops pulling downward.</p>
         <p>Free play does not enter the jackpot.</p>
-        <button disabled={phase === 'starting' || pending !== null} onClick={() => void beginRun()} type="button">
-          {phase === 'starting' ? 'Preparing recorded flight…' : 'Start flight'}
-        </button>
+        <div className="flappy-free-run-page__lobby-preview">
+          <svg aria-hidden="true" viewBox="0 0 800 600">
+            <defs>
+              <linearGradient id="flappy-sky" x2="0" y2="1"><stop stopColor="#2d7a9e" /><stop offset=".56" stopColor="#174462" /><stop offset="1" stopColor="#091a2b" /></linearGradient>
+              <linearGradient id="flappy-ground" x2="0" y2="1"><stop stopColor="#c99b4a" /><stop offset="1" stopColor="#5c3519" /></linearGradient>
+              <linearGradient id="flappy-bird" x2="0" y2="1"><stop stopColor="#ffe89a" /><stop offset="1" stopColor="#f39d32" /></linearGradient>
+            </defs>
+            <rect width="800" height="600" fill="url(#flappy-sky)" />
+            <circle className="ff-flappy-sun" cx="640" cy="105" r="54" />
+            <g className="ff-flappy-pipe">
+              <rect className="ff-flappy-pipe-shaft" x="565" y="0" width="82" height="205" />
+              <rect className="ff-flappy-pipe-rim" x="557" y="189" width="98" height="16" />
+              <rect className="ff-flappy-pipe-shaft" x="565" y="365" width="82" height="235" />
+              <rect className="ff-flappy-pipe-rim" x="557" y="365" width="98" height="16" />
+            </g>
+            <rect className="ff-flappy-ground" x="0" y="582" width="800" height="18" />
+            <g className="ff-flappy-bird-art" transform="translate(295 285)">
+              <ellipse className="ff-flappy-bird-wing" cx="-5" cy="5" rx="10" ry="6" />
+              <ellipse className="ff-flappy-bird-body" rx="14" ry="11" />
+              <path className="ff-flappy-bird-beak" d="M12 -2 23 2 12 7Z" />
+              <circle className="ff-flappy-bird-eye" cx="5" cy="-4" r="3.4" />
+              <circle className="ff-flappy-bird-pupil" cx="6" cy="-4" r="1.35" />
+            </g>
+          </svg>
+          <div className="flappy-free-run-page__lobby-action">
+            <small>Ready to fly</small>
+            <button disabled={phase === 'starting' || pending !== null} onClick={() => void beginRun()} type="button">
+              {phase === 'starting' ? 'Preparing recorded flight…' : 'Start flight'}
+            </button>
+          </div>
+        </div>
       </section>}
 
       {phase === 'playing' && activeRun !== null && <FlappyReplayPlay key={activeRun.runId} run={activeRun} onComplete={completeRun} />}
@@ -231,15 +259,16 @@ function FlappyReplayPlay({ run, onComplete }: Readonly<{ run: FlappyFreeRun; on
   return <section className="flappy-free-run-page__run" aria-label="Recorded Flappy flight">
     <div className="ff-flappy-stats" aria-live="polite"><span>Score <strong>{game.score}</strong></span><span>Best <strong>{game.bestScore}</strong></span><span>Level <strong>{flappyLevel(game.score)}</strong></span></div>
     <p className="flappy-free-run-page__instruction"><strong>Space or left click/tap to flap.</strong> Each press gives one upward flap.</p>
-    <section
-      aria-label="Flappy playfield"
-      className="ff-flappy-playfield"
-      onClick={onPlayfieldClick}
-      onContextMenu={event => event.preventDefault()}
-      onKeyDown={onKeyDown}
-      ref={playfield}
-      tabIndex={0}
-    >
+    <div className="flappy-free-run-page__playfield-slot">
+      <section
+        aria-label="Flappy playfield"
+        className="ff-flappy-playfield"
+        onClick={onPlayfieldClick}
+        onContextMenu={event => event.preventDefault()}
+        onKeyDown={onKeyDown}
+        ref={playfield}
+        tabIndex={0}
+      >
       <svg aria-label="Flier and obstacles" role="img" viewBox={`0 0 ${game.width} ${game.height}`}>
         <defs>
           <linearGradient id="flappy-sky" x2="0" y2="1"><stop stopColor="#2d7a9e" /><stop offset=".56" stopColor="#174462" /><stop offset="1" stopColor="#091a2b" /></linearGradient>
@@ -267,7 +296,8 @@ function FlappyReplayPlay({ run, onComplete }: Readonly<{ run: FlappyFreeRun; on
       </svg>
       {!started && <div className="ff-flappy-overlay"><small>Ready to fly</small><strong>Flap to begin</strong><button onClick={(event) => { event.stopPropagation(); playfield.current?.focus(); requestFlap() }} type="button">Start flight</button></div>}
       {view.status === 'failed' && <div className="ff-flappy-overlay"><small>Flight unavailable</small><strong>{view.error ?? 'The replay limit was reached.'}</strong></div>}
-    </section>
+      </section>
+    </div>
   </section>
 }
 

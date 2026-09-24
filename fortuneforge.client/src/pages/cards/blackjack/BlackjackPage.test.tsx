@@ -12,6 +12,8 @@ describe('BlackjackPage', () => {
     expect(markup).toContain('Blackjack pays 3:2')
     expect(markup).toContain('No split or insurance')
     expect(markup).toContain('All cards and outcomes come from the Fortune Forge API')
+    expect(markup).toContain('data-game-navbar="true"')
+    expect(markup).not.toContain('blackjack-header')
     expect(markup).toContain('disabled=""')
     expect(markup).toContain('Checking the table…')
   })

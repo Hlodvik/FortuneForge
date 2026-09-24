@@ -4,3 +4,9 @@ export function PracticeModeBanner({ enabled, path }: Readonly<{ enabled: boolea
     <a href={enabled ? path : `${path}?mode=practice`}>{enabled ? 'Return to account play' : 'Switch to safe practice'}</a>
   </aside>
 }
+
+export function PracticeModeNavAction({ enabled, path }: Readonly<{ enabled: boolean; path: string }>) {
+  return <a className="player-shell-header__games" href={enabled ? path : `${path}?mode=practice`}>
+    {enabled ? 'Practice active' : 'Try practice'}
+  </a>
+}

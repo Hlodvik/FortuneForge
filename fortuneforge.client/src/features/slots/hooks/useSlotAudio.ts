@@ -11,19 +11,26 @@ export type AudioPreferences = {
   volume: number
 }
 
-const AUDIO_PREFERENCES_KEY = 'fortune-forge.audio-preferences'
+// Version the preference key so browsers that inherited the old muted-by-default
+// setting get the corrected sound-on default once. Choices made in this version
+// continue to persist normally.
+const AUDIO_PREFERENCES_KEY = 'fortune-forge.audio-preferences.v2'
+const LEGACY_AUDIO_PREFERENCES_KEY = 'fortune-forge.audio-preferences'
 const DEFAULT_AUDIO_PREFERENCES: AudioPreferences = { mode: 'all', volume: 65 }
 
 function loadAudioPreferences(): AudioPreferences {
   try {
+    const savedV2 = window.localStorage.getItem(AUDIO_PREFERENCES_KEY)
     const savedPreferences = JSON.parse(
-      window.localStorage.getItem(AUDIO_PREFERENCES_KEY) ?? 'null',
+      savedV2 ?? window.localStorage.getItem(LEGACY_AUDIO_PREFERENCES_KEY) ?? 'null',
     ) as Partial<AudioPreferences> | null
     const savedMode = savedPreferences?.mode
     const savedVolume = savedPreferences?.volume
 
     return {
-      mode: savedMode === 'muted' || savedMode === 'results-only' ? savedMode : 'all',
+      mode: savedV2 !== null && (savedMode === 'muted' || savedMode === 'results-only')
+        ? savedMode
+        : 'all',
       volume: typeof savedVolume === 'number'
         ? Math.min(100, Math.max(0, Math.round(savedVolume)))
         : DEFAULT_AUDIO_PREFERENCES.volume,

@@ -166,11 +166,16 @@ test('every mobile slot keeps the complete playable cabinet in the first viewpor
 
   for (const path of slotDemoPaths) {
     await openStableSlot(page, path)
-    const playableBottom = await page.evaluate(() => {
+    const metrics = await page.evaluate(() => {
       const playbar = document.querySelector('.slots-page__playbar')?.getBoundingClientRect()
-      return playbar?.bottom ?? Number.POSITIVE_INFINITY
+      return {
+        documentWidth: document.documentElement.scrollWidth,
+        playableBottom: playbar?.bottom ?? Number.POSITIVE_INFINITY,
+        viewportWidth: window.innerWidth,
+      }
     })
-    expect(playableBottom, path).toBeLessThanOrEqual(844)
+    expect(metrics.playableBottom, path).toBeLessThanOrEqual(844)
+    expect(metrics.documentWidth, path).toBeLessThanOrEqual(metrics.viewportWidth + 1)
   }
 })
 
@@ -187,6 +192,32 @@ test('Pirates controls, chest hints, and interaction guards stay intact', async 
     elements.map((element) => Math.round(element.getBoundingClientRect().top))
   ))
   expect(new Set(chestTops).size).toBe(1)
+
+  const chestLabels = await chests.locator('.slots-page__seal-title').evaluateAll((labels) => (
+    labels.map((label) => {
+      const style = getComputedStyle(label)
+      return {
+        horizontalOverflow: label.scrollWidth - label.clientWidth,
+        overflow: style.overflow,
+        textOverflow: style.textOverflow,
+        verticalOverflow: label.scrollHeight - label.clientHeight,
+      }
+    })
+  ))
+  for (const label of chestLabels) {
+    expect(label.horizontalOverflow).toBeLessThanOrEqual(1)
+    expect(label.verticalOverflow).toBeLessThanOrEqual(1)
+    expect(label.overflow).toBe('visible')
+    expect(label.textOverflow).toBe('clip')
+  }
+
+  const navStyles = await page.getByRole('link', { name: 'Other Games' }).evaluate((link) => {
+    const style = getComputedStyle(link)
+    return { color: style.color, textDecoration: style.textDecorationLine }
+  })
+  expect(navStyles.color).not.toBe('rgb(0, 0, 238)')
+  expect(navStyles.color).not.toBe('rgb(85, 26, 139)')
+  expect(navStyles.textDecoration).toBe('none')
 
   await chests.nth(1).hover()
   const tooltip = chests.nth(1).locator('.slots-page__collection-tooltip')

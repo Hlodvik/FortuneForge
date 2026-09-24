@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { AccountSummary } from '../features/account/services/accountsApi'
 import { logoutAccount } from '../features/account/services/accountsApi'
 import { ForgeCreditAmount } from './ForgeCreditAmount'
+import './InGameNavbar.css'
 
 export function PlayerHeader({ account }: { account: AccountSummary }) {
   return (

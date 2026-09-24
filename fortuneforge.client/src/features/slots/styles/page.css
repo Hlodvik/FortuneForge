@@ -230,6 +230,10 @@
   .slots-page__game-identity {
     display: none;
   }
+
+  .slots-page__purchase-credits {
+    display: none;
+  }
 }
 
 .slots-page__help-button {

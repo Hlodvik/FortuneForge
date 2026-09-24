@@ -13,12 +13,12 @@
 }
 
 html {
-  min-width: 20rem;
+  min-width: 0;
   background: #160b2d;
 }
 
 body {
-  min-width: 20rem;
+  min-width: 0;
   min-height: 100vh;
   margin: 0;
 }

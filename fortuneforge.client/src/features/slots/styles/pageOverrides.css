@@ -2789,6 +2789,13 @@
   color: #fff1c5;
 }
 
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-title {
+  overflow: visible;
+  min-height: 1.1em;
+  line-height: 1.1;
+  text-overflow: clip;
+}
+
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__spin-controls .spin-button:hover:not(:disabled),
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__spin-controls .spin-button:focus-visible {
   background: transparent;

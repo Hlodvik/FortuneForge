@@ -82,6 +82,29 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).toContain('tabindex="0"')
   })
 
+  it('uses compact cabinet copy without replacing the full accessible collection label', () => {
+    const markup = renderToStaticMarkup(
+      <CollectionProgressDisplay
+        collection={{ sealId: 'paw', count: 4, averageWagerPoints: 50, requiredCount: 15 }}
+        definition={{
+          id: 'paw',
+          label: 'Stronger purse hauls',
+          displayLabel: 'Purse Hauls',
+          shortLabel: 'Orange',
+          symbol: 'SEAL_PAW',
+          requiredCount: 15,
+        }}
+        image="/orange.png"
+        isImpacting={false}
+        itemLabel="gems"
+        presentation="gem-hoard"
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Stronger purse hauls:')
+    expect(markup).toContain('aria-hidden="true">Purse Hauls</strong>')
+  })
+
   it('keeps a completed chest visually full while showing special-game gems separately', () => {
     const markup = renderToStaticMarkup(
       <CollectionProgressDisplay

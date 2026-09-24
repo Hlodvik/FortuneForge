@@ -17,22 +17,22 @@ const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
     completionDialog: true,
     entries: [
       {
-        id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15,
+        id: 'sync', label: 'Matching reel', displayLabel: 'Match Reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15,
         rewardDescription: 'Fill this chest to launch 10 free games. During every free game, one reel is copied to match the winning setup.',
         containerImage: ruby.empty,
       },
       {
-        id: 'rows', label: 'Extra rows', shortLabel: 'Lapis', symbol: 'SEAL_ROWS', requiredCount: 15,
+        id: 'rows', label: 'Extra rows', displayLabel: 'Extra Rows', shortLabel: 'Lapis', symbol: 'SEAL_ROWS', requiredCount: 15,
         rewardDescription: 'Fill this chest to launch 10 free games. During every free game, two extra reel rows open for more winning ways.',
         containerImage: lapis.empty,
       },
       {
-        id: 'paw', label: 'Stronger purse hauls', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 15,
+        id: 'paw', label: 'Stronger purse hauls', displayLabel: 'Purse Hauls', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 15,
         rewardDescription: 'Fill this chest to launch 10 free games. During every free game, Doubloon Purse hauls become stronger.',
         containerImage: topaz.empty,
       },
       {
-        id: 'rand', label: 'Prize multiplier column', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 15,
+        id: 'rand', label: 'Prize multiplier column', displayLabel: 'Multiplier', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 15,
         rewardDescription: 'Fill this chest to launch 10 free games. During every free game, a prize multiplier column appears.',
         containerImage: emerald.empty,
       },

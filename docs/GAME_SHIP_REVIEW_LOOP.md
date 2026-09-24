@@ -17,10 +17,9 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **None — the loop has not started**
-- Current phase: complete, integrate, test, and deploy the existing prompt backlog
-- Proposed first game after backlog completion: **Pirates' Fortune**
-- Start gate: the owner confirms the review loop should begin
+- Active game: **Pirates' Fortune**
+- Current phase: deployment and owner hands-on review
+- Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
 
 ## Review queue
@@ -29,7 +28,7 @@ The order puts games with specific reported failures first, then completes the r
 
 | Order | Game | Category | State |
 | ---: | --- | --- | --- |
-| 1 | Pirates' Fortune | Slot | Queued (proposed first) |
+| 1 | Pirates' Fortune | Slot | Active — owner review pending |
 | 2 | Wukong's Journey to the West | Slot | Queued |
 | 3 | Keno | Casino | Queued |
 | 4 | Fortune Blackjack | Card | Queued |

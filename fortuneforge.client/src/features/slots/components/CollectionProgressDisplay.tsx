@@ -166,7 +166,9 @@ export function CollectionProgressDisplay({
       </span>
 
       <span className="slots-page__seal-details">
-        <strong className="slots-page__seal-title">{definition.label}</strong>
+        <strong className="slots-page__seal-title" aria-hidden={definition.displayLabel ? true : undefined}>
+          {definition.displayLabel ?? definition.label}
+        </strong>
         {showCount && (
           <span className="slots-page__collection-count" aria-hidden="true">
             <b>{collection.count}</b>

@@ -3,6 +3,8 @@ import type { SlotSymbolId } from '../types/slots'
 export type SlotCollectionDefinition = {
   id: string
   label: string
+  /** Compact cabinet copy; the full label remains available to assistive tech and help surfaces. */
+  displayLabel?: string
   shortLabel: string
   symbol: SlotSymbolId
   requiredCount: number

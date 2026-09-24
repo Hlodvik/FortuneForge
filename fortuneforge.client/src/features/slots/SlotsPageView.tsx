@@ -121,7 +121,9 @@ export function SlotsPageView(controller: SlotsPageController) {
   const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
-  const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
+  const completedChestImage = completedCollection?.containerFillImages?.[
+    (completedCollection.containerFillImages?.length ?? 1) - 1
+  ] ?? completedCollection?.containerImage ?? collectionFeature?.containerImage
   const topbarStyle = cabinetTheme.topbar
     ? ({
         '--slot-topbar-background': cabinetTheme.topbar.background,
@@ -256,6 +258,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     itemLabel={collectionFeature.itemLabel ?? 'seals'}
                     key={collection.sealId}
                     containerImage={seal.containerImage ?? collectionFeature.containerImage}
+                    containerFillImages={seal.containerFillImages}
                     displayCount={
                       isSpecialGameActive && heldCompletedCollectionId === collection.sealId
                         ? collection.requiredCount

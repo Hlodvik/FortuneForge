@@ -53,7 +53,7 @@ public sealed partial class SpinService
 
         if (profile.UsesDirectValueTokens)
         {
-            InjectSymbols(reels, RollMonkeyPawCount(freeSpinFeatureMode), () => MonkeyPawSymbolId);
+            InjectSymbols(reels, RollMonkeyPawCount(game.Id, freeSpinFeatureMode), () => MonkeyPawSymbolId);
         }
         else if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
         {
@@ -105,13 +105,25 @@ public sealed partial class SpinService
         };
     }
 
-    private int RollMonkeyPawCount(string? freeSpinFeatureMode)
+    private int RollMonkeyPawCount(string gameId, string? freeSpinFeatureMode)
     {
         if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
         {
-            // Monkey Paw Rush is a visible feature transformation, not a small
-            // probability bump: every free spin receives a paw-heavy mix.
-            return random.Next(4) + 2;
+            if (string.Equals(gameId, SlotSpecialRoundProfiles.ClassicGameId, StringComparison.Ordinal))
+            {
+                // Wukong's Monkey Paw Rush is a visible feature transformation,
+                // not a small probability bump: every free spin is paw-heavy.
+                return random.Next(4) + 2;
+            }
+
+            // Other themes reuse this internal mode for their own collection
+            // feature and retain the math profile they were calibrated against.
+            return random.Next(6) switch
+            {
+                0 => 2,
+                1 => 1,
+                _ => 0
+            };
         }
 
         if (random.Next(777) == 0)

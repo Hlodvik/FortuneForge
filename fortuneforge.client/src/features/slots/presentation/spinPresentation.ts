@@ -185,9 +185,9 @@ export function getSlotOutcomePresentation({
     }
     return {
       label: 'No line win',
-      title: 'The reels are ready for the next spin',
+      title: 'No win this spin',
       detail: `This ${formatOutcomeRand(activeWager)} spin did not land a paying line.`,
-      nextAction: 'Spin again or adjust your wager.',
+      nextAction: 'Spin again or adjust wager.',
       significance: 'standard',
       tone: 'neutral',
     }

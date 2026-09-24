@@ -16,19 +16,19 @@ const WUKONG_FEATURES: SlotFeatureSet = {
     presentation: 'celestial-orbit',
     entries: [
       {
-        id: 'sync', label: 'Synced reels', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40,
+        id: 'sync', label: 'Synced reels', displayLabel: 'Mirror Reel', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40,
         rewardDescription: 'Complete this orbit to launch 10 Celestial Quests where one reel mirrors another.',
       },
       {
-        id: 'rows', label: 'Extra rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40,
+        id: 'rows', label: 'Extra rows', displayLabel: '+2 Rows', shortLabel: '+2 rows', symbol: 'SEAL_ROWS', requiredCount: 40,
         rewardDescription: 'Complete this orbit to launch 10 Celestial Quests with two extra rows on every reel.',
       },
       {
-        id: 'paw', label: 'Monkey paw rush', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40,
+        id: 'paw', label: 'Monkey paw rush', displayLabel: 'Paw Rush', shortLabel: 'Paws', symbol: 'SEAL_PAW', requiredCount: 40,
         rewardDescription: 'Complete this orbit to launch 10 Celestial Quests that add 2–5 monkey paws to every spin.',
       },
       {
-        id: 'rand', label: 'Rand column', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40,
+        id: 'rand', label: 'Rand column', displayLabel: 'Rand Reel', shortLabel: 'Rand', symbol: 'SEAL_RAND', requiredCount: 40,
         rewardDescription: 'Complete this orbit to launch 10 Celestial Quests with a full prize-multiplier column.',
       },
     ],
@@ -42,7 +42,7 @@ const WUKONG_FEATURES: SlotFeatureSet = {
   specialRound: {
     id: 'wukong-celestial-quest',
     title: 'Celestial Quest',
-    earnLabel: 'Land 3 FREE GAME clouds for 5 quests, or complete a 40-seal orbit for 10 enhanced quests.',
+    earnLabel: 'Land 3 FREE GAME symbols for 5 quests, or complete a 40-seal orbit for 10 enhanced quests.',
     earnStyle: 'orbit',
     earnHint: 'Each seal circles its matching power. Complete one 40-seal orbit to unlock that power for ten Celestial Quests.',
     activeModes: {
@@ -79,7 +79,7 @@ export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = {
   cabinet: WUKONG_CABINET_THEME,
   features: WUKONG_FEATURES,
   help: WUKONG_HELP,
-  shellBackdrop: 'default-clouds',
+  shellBackdrop: 'theme',
   symbols: WUKONG_SYMBOLS,
   mascot: null,
   sounds: WUKONG_TREASURES_SOUNDS,

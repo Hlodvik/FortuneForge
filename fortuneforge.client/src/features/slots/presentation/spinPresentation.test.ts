@@ -126,7 +126,7 @@ describe('spin presentation', () => {
     })
     expect(outcome).toMatchObject({
       label: 'No line win',
-      title: 'The reels are ready for the next spin',
+      title: 'No win this spin',
     })
   })
 })

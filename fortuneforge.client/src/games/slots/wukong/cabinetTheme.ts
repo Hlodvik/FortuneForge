@@ -13,6 +13,8 @@ export const WUKONG_CABINET_THEME: SlotCabinetTheme = {
   emblemImage: wukongMedallion,
   accentImage: wukongPowerSeal,
   backdropImage: neonJewelCloudsGold,
+  visualsBackdropImage: neonJewelCloudsGold,
+  pageBackdropImage: neonJewelCloudsGold,
   palette: {
     shellTop: '#8f1830',
     shellBottom: '#240716',

@@ -452,17 +452,18 @@ export function useSlotsPageController({
 
   useEffect(() => {
     // Ask for ambience as soon as the cabinet opens. Browsers that permit
-    // autoplay start immediately; restrictive browsers retry on the player's
-    // first interaction instead of waiting specifically for Spin.
+    // autoplay start immediately; restrictive browsers retry on any trusted
+    // interaction. Listeners remain available because a click made while the
+    // player has muted effects must not consume the only unlock attempt.
     startLoop(soundSet.events.ambience)
     const unlockAudio = () => startLoop(soundSet.events.ambience)
-    window.addEventListener('pointerdown', unlockAudio, { once: true })
-    window.addEventListener('keydown', unlockAudio, { once: true })
+    window.addEventListener('pointerdown', unlockAudio)
+    window.addEventListener('keydown', unlockAudio)
     return () => {
       window.removeEventListener('pointerdown', unlockAudio)
       window.removeEventListener('keydown', unlockAudio)
     }
-  }, [soundSet.events.ambience, startLoop])
+  }, [audioPreferences.mode, soundSet.events.ambience, startLoop])
 
   useEffect(() => {
     if (isSpecialGameActive) {

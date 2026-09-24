@@ -17,4 +17,16 @@ describe('SpinButton', () => {
     expect(markup).toContain('aria-label="Stop the spin"')
     expect(markup).toContain('>Stop</strong>')
   })
+
+  it('uses Wukong\'s staff and cloud crest instead of a generic refresh arrow', () => {
+    const markup = renderToStaticMarkup(
+      <SpinButton variant="wukong-rune" onSpin={() => undefined} />,
+    )
+
+    expect(markup).toContain('spin-button--wukong-rune')
+    expect(markup).toContain('spin-button__wukong-staff')
+    expect(markup).toContain('spin-button__wukong-cloud--top')
+    expect(markup).toContain('spin-button__wukong-cloud--bottom')
+    expect(markup).not.toContain('spin-button__wukong-arrow')
+  })
 })

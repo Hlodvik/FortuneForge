@@ -14,7 +14,7 @@ export type SlotRouteDefinition = Readonly<{
 export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
   {
     id: 'wukong-journey-to-the-west', title: "Wukong's Journey to the West", shortTitle: "Wukong's Journey",
-    playPath: '/slots/wukong', demoPath: '/slots/wukong/demo', serverGameIds: ['classic-demo-v1'], shellBackdrop: 'default-clouds',
+    playPath: '/slots/wukong', demoPath: '/slots/wukong/demo', serverGameIds: ['classic-demo-v1'], shellBackdrop: 'theme',
     load: () => import('./wukong/manifest').then((module) => module.WUKONG_SLOT_GAME),
   },
   {

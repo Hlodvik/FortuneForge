@@ -296,6 +296,17 @@ export function SlotsPageView(controller: SlotsPageController) {
                     className="slots-page__energy-fill"
                     style={{ width: `${Math.min(100, energyBalance / energyMeterCapacity * 100)}%` }}
                   />
+                  {isWukong && (
+                    <span className="slots-page__energy-milestones">
+                      {[25, 50, 75, 100].map((milestone) => (
+                        <i
+                          className={energyBalance / energyMeterCapacity * 100 >= milestone ? 'is-lit' : ''}
+                          key={milestone}
+                          style={{ '--energy-milestone': `${milestone}%` } as CSSProperties}
+                        />
+                      ))}
+                    </span>
+                  )}
                 </span>
                 <strong>{creditFormatter.format(energyBalance)}/{energyMeterCapacity}</strong>
               </span>
@@ -499,12 +510,18 @@ export function SlotsPageView(controller: SlotsPageController) {
             {completedChestImage && (
               <img className="slots-page__collection-award-chest" src={completedChestImage} alt="" aria-hidden="true" />
             )}
-            <span className="slots-page__collection-award-kicker">Treasure chest filled</span>
+            <span className="slots-page__collection-award-kicker">
+              {isPiratesFortune ? 'Treasure chest filled' : isWukong ? 'Celestial seal awakened' : 'Collection complete'}
+            </span>
             <h2 id="collection-award-title">{completedCollection?.label ?? 'Gem collection'} complete</h2>
             <p>
               {collectionAwardPresentation.freeSpins} {specialRound?.title ?? 'free game'}
               {collectionAwardPresentation.freeSpins === 1 ? ' is' : 's are'} now loaded.
-              {' '}The chest stays full while any new gems are banked for the next run.
+              {' '}{isPiratesFortune
+                ? 'The chest stays full while any new gems are banked for the next run.'
+                : isWukong
+                  ? 'The seal stays awakened while matching seals are banked for the next quest.'
+                  : 'New collection pieces are banked for the next run.'}
             </p>
             {completedFeatureDetail && (
               <p>Every free game: {completedFeatureDetail}.</p>

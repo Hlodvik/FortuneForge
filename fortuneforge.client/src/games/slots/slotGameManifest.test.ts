@@ -478,9 +478,23 @@ describe('slot game manifests', () => {
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.POWER?.label).toContain('Nimbus')
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).toBe('Celestial hammer')
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).not.toContain('Nimbus')
+    expect(Object.values(WUKONG_SLOT_GAME.experience.symbols.definitions)
+      .filter((definition) => definition.label.toLowerCase().includes('nimbus')),
+    ).toHaveLength(1)
     expect(collections?.every((collection) => collection.rewardDescription)).toBe(true)
+    expect(collections?.map((collection) => collection.displayLabel)).toEqual([
+      'Mirror Reel',
+      '+2 Rows',
+      'Paw Rush',
+      'Rand Reel',
+    ])
     expect(WUKONG_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
+    expect(WUKONG_SLOT_GAME.experience.features.specialRound?.earnLabel).toContain('FREE GAME symbols')
+    expect(WUKONG_SLOT_GAME.experience.features.specialRound?.earnLabel).not.toContain('FREE GAME clouds')
     expect(WUKONG_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
+    expect(WUKONG_SLOT_GAME.experience.shellBackdrop).toBe('theme')
+    expect(WUKONG_SLOT_GAME.experience.cabinet.pageBackdropImage).toBeTruthy()
+    expect(WUKONG_SLOT_GAME.experience.cabinet.visualsBackdropImage).toBeTruthy()
 
     const rainbowCollections = RAINBOW_REALM_SLOT_GAME.experience.features.collections
     expect(rainbowCollections?.ariaLabel).toBe('Orchard charm collections')

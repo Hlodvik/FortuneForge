@@ -23,6 +23,13 @@ import pirateSeagullWinSource from '../../../assets/slots/audio/pirate-seagull-w
 import pirateBeachWavesSource from '../../../assets/slots/audio/pirate-wave-ambience.flac'
 import reelSpinSource from '../../../assets/slots/audio/reel-spin.ogg'
 import reelStopSource from '../../../assets/slots/audio/reel-stop.wav'
+import wukongCelestialChimeSource from '../../../assets/slots/audio/wukong-celestial-chime.wav'
+import wukongCloudRushSource from '../../../assets/slots/audio/wukong-cloud-rush.wav'
+import wukongGongWinSource from '../../../assets/slots/audio/wukong-gong-win.wav'
+import wukongSoftStepSource from '../../../assets/slots/audio/wukong-soft-step.wav'
+import wukongStaffWhooshSource from '../../../assets/slots/audio/wukong-staff-whoosh.wav'
+import wukongTempleBellSource from '../../../assets/slots/audio/wukong-temple-bell.wav'
+import wukongWoodblockSource from '../../../assets/slots/audio/wukong-woodblock.wav'
 
 export type AudioCategory = 'effect' | 'result'
 export type SlotSoundCueId =
@@ -295,19 +302,19 @@ export const NORDIC_LEGENDS_SOUNDS = createThemedSlotSounds('nordic-legends-audi
 
 export const WUKONG_TREASURES_SOUNDS: SlotSoundSet = {
   ...DEFAULT_SLOT_SOUNDS,
-  id: 'wukong-treasures-audio-v2',
+  id: 'wukong-treasures-audio-v3',
   cues: {
     ...DEFAULT_SLOT_SOUNDS.cues,
     ambience: { source: asianDragonSource, baseVolume: 0.06, category: 'effect', loop: true },
-    'lever-pull': { source: reelSpinSource, baseVolume: 0.12, category: 'effect' },
-    'reel-spin': { source: reelSpinSource, baseVolume: 0.11, category: 'effect', loop: true },
-    'reel-stop': { source: noWinWaterDropSource, baseVolume: 0.15, category: 'effect' },
-    'low-win': { source: fiveJewelSource, baseVolume: 0.21, category: 'result' },
-    'premium-win': { source: fiveTwinkleSource, baseVolume: 0.28, category: 'result' },
-    'five-casino-win': { source: fiveJewelSource, baseVolume: 0.32, category: 'result' },
-    'five-jewel': { source: fiveJewelSource, baseVolume: 0.29, category: 'result' },
-    'five-twinkle': { source: fiveTwinkleSource, baseVolume: 0.27, category: 'result' },
-    'soft-miss': { source: noWinWaterDropSource, baseVolume: 0.13, category: 'result' },
+    'lever-pull': { source: wukongStaffWhooshSource, baseVolume: 0.24, category: 'effect' },
+    'reel-spin': { source: wukongCloudRushSource, baseVolume: 0.1, category: 'effect', loop: true },
+    'reel-stop': { source: wukongWoodblockSource, baseVolume: 0.2, category: 'effect' },
+    'low-win': { source: wukongTempleBellSource, baseVolume: 0.23, category: 'result' },
+    'premium-win': { source: wukongGongWinSource, baseVolume: 0.27, category: 'result' },
+    'five-casino-win': { source: wukongGongWinSource, baseVolume: 0.3, category: 'result' },
+    'five-jewel': { source: wukongCelestialChimeSource, baseVolume: 0.26, category: 'result' },
+    'five-twinkle': { source: wukongCelestialChimeSource, baseVolume: 0.24, category: 'result' },
+    'soft-miss': { source: wukongSoftStepSource, baseVolume: 0.1, category: 'result' },
   },
   events: {
     ...DEFAULT_SLOT_SOUNDS.events,

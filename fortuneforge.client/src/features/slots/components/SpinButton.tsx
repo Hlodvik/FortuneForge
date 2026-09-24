@@ -54,9 +54,14 @@ export function SpinButton({
             </g>
           ) : variant === 'wukong-rune' ? (
             <g className="spin-button__wukong-glyph">
-              <circle className="spin-button__wukong-ring" cx="256" cy="256" r="176" />
-              <path className="spin-button__wukong-cloud" d="M133 293c-26 0-47-18-47-41 0-22 19-40 43-41 8-35 41-61 81-61 31 0 59 16 73 40 9-5 20-8 32-8 34 0 62 25 62 56 0 3 0 6-1 9 29 4 51 26 51 53 0 30-27 55-61 55H153c-33 0-60-25-60-55 0-3 0-5 1-7h39Z" />
-              <path className="spin-button__wukong-arrow" d="M173 270c7-52 52-91 106-91 30 0 58 12 78 32l18-22v72h-77l24-24c-12-10-27-16-43-16-31 0-57 21-65 49h-41Z" />
+              <path className="spin-button__wukong-cloud spin-button__wukong-cloud--top" d="M96 160c17-28 43-42 77-42 16-25 43-40 75-40 41 0 74 25 83 60 38-3 70 15 85 47-28-10-54-9-79 2-24 10-50 12-76 5-28-8-55-8-82 0-31 9-59 4-83-14Z" />
+              <g className="spin-button__wukong-staff" transform="rotate(-34 256 256)">
+                <rect x="224" y="74" width="64" height="364" rx="28" />
+                <rect className="spin-button__wukong-staff-cap" x="214" y="62" width="84" height="82" rx="30" />
+                <rect className="spin-button__wukong-staff-cap" x="214" y="368" width="84" height="82" rx="30" />
+                <path className="spin-button__wukong-staff-detail" d="M233 162h46M233 350h46" />
+              </g>
+              <path className="spin-button__wukong-cloud spin-button__wukong-cloud--bottom" d="M88 346c26-27 57-38 94-31 19-23 45-35 77-35 35 0 65 16 82 44 33-4 61 9 83 39-30-7-57-3-82 11-25 14-53 17-83 8-27-8-54-7-81 4-35 15-65 8-90-20Z" />
             </g>
           ) : (
             <path

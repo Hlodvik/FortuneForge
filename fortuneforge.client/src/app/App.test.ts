@@ -8,7 +8,7 @@ afterEach(() => vi.unstubAllGlobals())
 
 describe('app shell slot media isolation', () => {
   it('mounts the cloud video only for a slot route that requests it', () => {
-    expect(renderApp('/slots/wukong')).toContain('app-shell__background-video')
+    expect(renderApp('/slots/wukong')).not.toContain('app-shell__background-video')
     expect(renderApp('/slots/rainbow-realm')).not.toContain('app-shell__background-video')
     expect(renderApp('/cards/texas-holdem')).not.toContain('app-shell__background-video')
     expect(renderApp('/account')).not.toContain('app-shell__background-video')

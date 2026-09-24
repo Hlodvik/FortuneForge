@@ -21,6 +21,33 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).not.toContain('slots-page__collection-piece')
   })
 
+  it('puts the Wukong seal effect in both the focus hint and visible tooltip', () => {
+    const reward = 'Complete this orbit to launch 10 Celestial Quests that add 2–5 monkey paws to every spin.'
+    const markup = renderToStaticMarkup(
+      <CollectionProgressDisplay
+        collection={{ sealId: 'paw', count: 17, averageWagerPoints: 50, requiredCount: 40 }}
+        definition={{
+          id: 'paw',
+          label: 'Monkey paw rush',
+          displayLabel: 'Paw Rush',
+          shortLabel: 'Paws',
+          symbol: 'SEAL_PAW',
+          requiredCount: 40,
+          rewardDescription: reward,
+        }}
+        image="/paw-seal.png"
+        isImpacting={false}
+        itemLabel="seals"
+        presentation="celestial-orbit"
+      />,
+    )
+
+    expect(markup).toContain('aria-label="Monkey paw rush:')
+    expect(markup).toContain('17 of 40 collected')
+    expect(markup.match(/add 2–5 monkey paws to every spin/g)).toHaveLength(2)
+    expect(markup).toContain('aria-hidden="true">Paw Rush</strong>')
+  })
+
   it('fills the transparent Pirate chest with cumulative gem pieces', () => {
     const cases = [
       [0, 0],

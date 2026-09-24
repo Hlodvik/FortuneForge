@@ -144,22 +144,22 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   }, [])
 
   const startLoop = useCallback((cueId: SlotSoundCueId) => {
-    if (loopsRef.current.has(cueId)) {
-      return
-    }
-
     const cue = soundSet.cues[cueId]
     if (!isCueAllowed(cue)) {
       return
     }
 
-    const audio = new Audio(cue.source)
+    const existingAudio = loopsRef.current.get(cueId)
+    const audio = existingAudio ?? new Audio(cue.source)
     audio.loop = cue.loop ?? true
     audio.volume = cue.baseVolume * preferencesRef.current.volume / 100
-    loopsRef.current.set(cueId, audio)
+    if (existingAudio === undefined) {
+      loopsRef.current.set(cueId, audio)
+    }
     void audio.play().catch(() => {
-      // Do not let a rejected promise from an older loop remove its replacement.
-      if (loopsRef.current.get(cueId) === audio) {
+      // Keep the same element available until this rejection settles so a
+      // trusted interaction can retry play() instead of racing a replacement.
+      if (loopsRef.current.get(cueId) === audio && audio.paused) {
         loopsRef.current.delete(cueId)
       }
     })

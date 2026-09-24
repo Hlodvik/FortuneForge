@@ -179,6 +179,81 @@ test('every mobile slot keeps the complete playable cabinet in the first viewpor
   }
 })
 
+test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', async ({ page }) => {
+  test.setTimeout(90_000)
+  await mockDemoApi(page, { kind: 'loss' })
+
+  for (const viewport of [
+    { width: 1280, height: 720 },
+    { width: 1366, height: 768 },
+    { width: 1440, height: 900 },
+  ]) {
+    await page.setViewportSize(viewport)
+    await openStableSlot(page, '/slots/wukong/demo')
+    await expect(page.locator('.app-shell__background-video')).toHaveCount(0)
+
+    const idleMetrics = await page.evaluate(() => {
+      const frame = document.querySelector('.slot-game-frame')?.getBoundingClientRect()
+      const reels = document.querySelector('.slot-machine__reels')?.getBoundingClientRect()
+      const energy = document.querySelector('.slots-page__energy-meter')?.getBoundingClientRect()
+      const spin = document.querySelector('.spin-button')?.getBoundingClientRect()
+      const spinIcon = document.querySelector('.spin-button__icon')?.getBoundingClientRect()
+      const spinLabel = document.querySelector('.spin-button__label')?.getBoundingClientRect()
+      const stage = document.querySelector('.slots-page__stage')?.getBoundingClientRect()
+      const orbitBottoms = Array.from(document.querySelectorAll('.slots-page__collection-orbit'))
+        .map((element) => element.getBoundingClientRect().bottom)
+      return {
+        energyTop: energy?.top ?? Number.NEGATIVE_INFINITY,
+        frameLeftInset: frame && reels ? reels.left - frame.left : Number.POSITIVE_INFINITY,
+        frameRightInset: frame && reels ? frame.right - reels.right : Number.NEGATIVE_INFINITY,
+        iconBottom: spinIcon?.bottom ?? Number.POSITIVE_INFINITY,
+        labelTop: spinLabel?.top ?? Number.NEGATIVE_INFINITY,
+        maxOrbitBottom: Math.max(...orbitBottoms),
+        spinWidth: spin?.width ?? 0,
+        stageWidth: stage?.width ?? 0,
+      }
+    })
+
+    expect(Math.abs(idleMetrics.frameLeftInset - idleMetrics.frameRightInset), JSON.stringify(viewport))
+      .toBeLessThanOrEqual(1)
+    expect(idleMetrics.maxOrbitBottom, JSON.stringify(viewport)).toBeLessThanOrEqual(idleMetrics.energyTop)
+    expect(idleMetrics.spinWidth, JSON.stringify(viewport)).toBeGreaterThanOrEqual(88)
+    expect(idleMetrics.iconBottom, JSON.stringify(viewport)).toBeLessThanOrEqual(idleMetrics.labelTop + 1)
+    expect(idleMetrics.stageWidth, JSON.stringify(viewport)).toBeGreaterThanOrEqual(540)
+
+    const meterLabels = await page.locator('.slots-page__seal-title').evaluateAll((labels) => (
+      labels.map((label) => label.scrollWidth - label.clientWidth)
+    ))
+    expect(Math.max(...meterLabels), JSON.stringify(viewport)).toBeLessThanOrEqual(1)
+
+    const pawMeter = page.locator('.slots-page__seal-collection--paw')
+    await pawMeter.hover()
+    const pawTooltip = pawMeter.locator('.slots-page__collection-tooltip')
+    await expect(pawTooltip).toContainText('add 2–5 monkey paws to every spin')
+    const tooltipBox = await pawTooltip.boundingBox()
+    expect(tooltipBox?.y ?? -1, JSON.stringify(viewport)).toBeGreaterThanOrEqual(0)
+    expect((tooltipBox?.y ?? 9999) + (tooltipBox?.height ?? 9999), JSON.stringify(viewport))
+      .toBeLessThanOrEqual(viewport.height)
+
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(page.locator('.slots-page__footer')).toBeVisible()
+    await expect(page.getByText('No win this spin', { exact: true })).toBeVisible()
+    const settledMetrics = await page.evaluate(() => {
+      const outcome = document.querySelector('.slots-page__outcome')?.getBoundingClientRect()
+      const stage = document.querySelector('.slots-page__stage')?.getBoundingClientRect()
+      return {
+        documentHeight: document.documentElement.scrollHeight,
+        outcomeWidth: outcome?.width ?? Number.POSITIVE_INFINITY,
+        stageWidth: stage?.width ?? 0,
+        viewportHeight: window.innerHeight,
+      }
+    })
+    expect(settledMetrics.outcomeWidth, JSON.stringify(viewport)).toBeLessThanOrEqual(settledMetrics.stageWidth + 1)
+    expect(settledMetrics.documentHeight, JSON.stringify(viewport))
+      .toBeLessThanOrEqual(settledMetrics.viewportHeight + 1)
+  }
+})
+
 test('Pirates controls, chest hints, and interaction guards stay intact', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   await mockDemoApi(page)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PIRATES_FORTUNE_SOUNDS } from './soundSets'
+import { PIRATES_FORTUNE_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
 
 const pirateEventCueIds = [
   PIRATES_FORTUNE_SOUNDS.events.ambience,
@@ -54,5 +54,27 @@ describe('Pirates\' Fortune sound set', () => {
       .every((cueId) => !PIRATES_FORTUNE_SOUNDS.cues[cueId].source.includes('pirate-')),
     ).toBe(true)
     expect(pirateCueSources.some((source) => source.includes('pirate-helm-spin'))).toBe(true)
+  })
+})
+
+describe('Wukong sound set', () => {
+  it('uses an original Wukong effects palette around its music bed', () => {
+    const resultCueIds = Object.values(WUKONG_TREASURES_SOUNDS.events.results).flat()
+    const effectCueIds = [
+      WUKONG_TREASURES_SOUNDS.events.leverPull,
+      WUKONG_TREASURES_SOUNDS.events.reelSpin,
+      WUKONG_TREASURES_SOUNDS.events.reelStop,
+      ...resultCueIds,
+    ]
+    const effectSources = effectCueIds.map((cueId) => WUKONG_TREASURES_SOUNDS.cues[cueId].source)
+
+    expect(WUKONG_TREASURES_SOUNDS.events.ambience).toBe('ambience')
+    expect(WUKONG_TREASURES_SOUNDS.cues.ambience.source).toContain('asian-dragon')
+    expect(effectSources.every((source) => source.includes('wukong-'))).toBe(true)
+    expect(WUKONG_TREASURES_SOUNDS.cues['lever-pull'].source)
+      .not.toBe(WUKONG_TREASURES_SOUNDS.cues['reel-spin'].source)
+    expect(WUKONG_TREASURES_SOUNDS.cues['reel-stop'].source)
+      .not.toBe(WUKONG_TREASURES_SOUNDS.cues['soft-miss'].source)
+    expect(WUKONG_TREASURES_SOUNDS.events.results['no-win']).toEqual(['soft-miss'])
   })
 })

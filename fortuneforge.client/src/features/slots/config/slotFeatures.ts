@@ -1,7 +1,5 @@
 import type { SlotSymbolId } from '../types/slots'
 
-export type SlotCollectionFillImages = readonly [string, ...string[]]
-
 export type SlotCollectionDefinition = {
   id: string
   label: string
@@ -13,8 +11,6 @@ export type SlotCollectionDefinition = {
   /** Plain-language outcome shown when players inspect this collection. */
   rewardDescription?: string
   containerImage?: string
-  /** Authored container states, ordered from the first collected item through full. */
-  containerFillImages?: SlotCollectionFillImages
 }
 
 export type SlotCollectionPresentation =

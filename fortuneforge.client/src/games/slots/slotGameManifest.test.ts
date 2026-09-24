@@ -325,16 +325,7 @@ describe('slot game manifests', () => {
       expect.stringContaining('/chests/topaz/empty.png'),
       expect.stringContaining('/chests/emerald/empty.png'),
     ])
-    expect(collections?.entries.map((collection) =>
-      collection.containerFillImages?.map((image) => image.match(/\/chests\/([^?]+)/)?.[1]),
-    )).toEqual([
-      ['ruby/level-1.png', 'ruby/level-2.png', 'ruby/level-3.png', 'ruby/level-4.png'],
-      ['lapis/level-1.png', 'lapis/level-2.png', 'lapis/level-3.png', 'lapis/level-4.png'],
-      ['topaz/level-1.png', 'topaz/level-2.png', 'topaz/level-3.png', 'topaz/level-4.png'],
-      ['emerald/level-1.png', 'emerald/level-2.png', 'emerald/level-3.png', 'emerald/level-4.png'],
-    ])
-    expect(collections?.entries.every((collection) => collection.containerFillImages?.length === 4)).toBe(true)
-    expect(existsSync(new URL('../../assets/slots/games/pirates-fortune/optimized/chests/ruby/level-1.png', import.meta.url))).toBe(true)
+    expect(existsSync(new URL('../../assets/slots/games/pirates-fortune/optimized/chests/ruby/level-1.png', import.meta.url))).toBe(false)
     expect(collections?.entries.every((collection) => collection.requiredCount === 15)).toBe(true)
     expect(existsSync(new URL('../../assets/slots/games/pirates-fortune/chests', import.meta.url))).toBe(false)
     expect(moneyGrab?.collectorSymbol).toBe('PAW')

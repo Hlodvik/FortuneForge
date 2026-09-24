@@ -68,7 +68,13 @@ public static class SlotSpecialRoundProfiles
     private static readonly IReadOnlyDictionary<string, SlotSpecialRoundProfile> Profiles =
         new Dictionary<string, SlotSpecialRoundProfile>(StringComparer.Ordinal)
         {
-            [ClassicGameId] = new(ClassicGameId, 3, 5, 40, 10),
+            [ClassicGameId] = new(
+                ClassicGameId,
+                3,
+                5,
+                40,
+                10,
+                PayoutMultiplier: 0.894m),
             [RainbowRealmGameId] = new(
                 RainbowRealmGameId,
                 3,

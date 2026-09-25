@@ -72,11 +72,13 @@ describe('KenoGame', () => {
     render(<KenoGame gateway={gateway} initialSelection={[15, 3, 7]} />)
 
     await screen.findByText('Keno ready')
+    expect(screen.getByRole('region', { name: 'Keno ticket' }).className).not.toContain('ff-keno__board--has-round')
 
     await user.click(screen.getByRole('button', { name: 'Draw Keno' }))
 
     expect(gateway.createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] } }, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^keno-/) }))
     await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(screen.getByRole('region', { name: 'Keno ticket' }).className).toContain('ff-keno__board--has-round')
     expect(screen.getByRole('button', { name: 'Repeat this ticket' })).toBeTruthy()
     expect(screen.getByText('2 hits', { selector: '.ff-keno__result strong' })).toBeTruthy()
     expect(screen.getByText('2 of 3 picks hit.')).toBeTruthy()

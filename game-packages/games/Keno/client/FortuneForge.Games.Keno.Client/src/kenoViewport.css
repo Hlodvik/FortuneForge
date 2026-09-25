@@ -23,8 +23,63 @@
 
 @media (min-width: 541px) {
   .ff-keno { display: grid; height: 100%; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
-  .ff-keno__board { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto minmax(0, 1fr) auto auto; overflow: hidden; }
+  .ff-keno__board {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    grid-template-areas:
+      "tools"
+      "controls"
+      "ticket"
+      "numbers"
+      "play"
+      "odds";
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+    overflow: hidden;
+  }
+  .ff-keno__ticket-tools { grid-area: tools; }
+  .ff-keno__controls { grid-area: controls; }
+  .ff-keno__ticket-strip { grid-area: ticket; }
+  .ff-keno__grid { grid-area: numbers; }
+  .ff-keno__play { grid-area: play; }
+  .ff-keno__odds { grid-area: odds; }
   .ff-keno__grid { min-height: 0; }
+
+  /* Results sit beside the ticket on desktop so the live board, draw tray and
+     repeat control all remain readable without creating page scroll. */
+  .ff-keno__board--has-round {
+    grid-template-areas:
+      "tools tools"
+      "controls controls"
+      "ticket ticket"
+      "numbers result"
+      "play result";
+    grid-template-columns: minmax(0, 1.55fr) minmax(18rem, .65fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    column-gap: .75rem;
+  }
+  .ff-keno__board--has-round .ff-keno__result {
+    grid-area: result;
+    align-self: stretch;
+    min-height: 0;
+    margin-top: 0;
+    padding: .65rem;
+    gap: .35rem;
+    overflow: hidden;
+  }
+  .ff-keno__board--has-round .ff-keno__result strong { font-size: 1.65rem; }
+  .ff-keno__board--has-round .ff-keno__draw-tray {
+    display: grid;
+    width: 100%;
+    max-width: 15rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .25rem;
+  }
+  .ff-keno__board--has-round .ff-keno__draw-tray span { width: 2rem; font-size: .7rem; }
+  .ff-keno__board--has-round .ff-keno__result p { font-size: .72rem; line-height: 1.25; }
+  .ff-keno__board--has-round .ff-keno__legend { gap: .25rem; }
+  .ff-keno__board--has-round .ff-keno__repeat { min-height: 2.2rem; padding: .35rem .6rem; }
+  .ff-keno__board--has-round .ff-keno__odds { display: none; }
 }
 
 @media (max-width: 540px) {

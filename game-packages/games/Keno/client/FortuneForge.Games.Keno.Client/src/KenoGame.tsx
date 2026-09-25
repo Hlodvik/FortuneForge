@@ -173,7 +173,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       </div>
     </header>
 
-    <section className="ff-keno__board" aria-label="Keno ticket">
+    <section className={`ff-keno__board${round ? ' ff-keno__board--has-round' : ''}`} aria-label="Keno ticket">
       <section className="ff-keno__ticket-tools" aria-label="Ticket tools">
         <div>
           <span className="ff-keno__label">Quick Pick</span>

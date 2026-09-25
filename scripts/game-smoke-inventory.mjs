@@ -1,5 +1,5 @@
 export const slotSmokeInventory = [
-  ['wukong', 'classic-demo-v1'],
+  ['wukong', 'wukong-journey-v1'],
   ['rainbow-realm', 'rainbow-realm-fruits-v1'],
   ['pirates-fortune', 'pirates-fortune-v1'],
   ['gods-of-olympus', 'gods-of-olympus-v1'],

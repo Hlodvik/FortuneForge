@@ -28,7 +28,8 @@ public sealed partial class FirestoreAccountStore
         database.Collection("slotSpinResults").Document(spinId.ToString("N"));
 
     private DocumentReference SlotSpinGuardDocument(string userId, string gameId) =>
-        database.Collection("slotSpinGuards").Document($"{userId}_{CreateLookupKey(gameId)}");
+        database.Collection("slotSpinGuards").Document(
+            $"{userId}_{CreateLookupKey(StorageGameId(gameId))}");
 
     private DocumentReference EmailKeyDocument(string email) =>
         database.Collection("accountEmailKeys").Document(CreateLookupKey(email));

@@ -2300,30 +2300,6 @@
   --special-round-ink: #240b12;
 }
 
-.spin-button--wukong-rune .spin-button__icon,
-.spin-button--wukong-rune:not(.spin-button--active) .spin-button__icon {
-  width: 76%;
-  height: 76%;
-  transform: translateY(-7%);
-}
-
-.spin-button__wukong-ring {
-  fill: none;
-  stroke: #ffe491;
-  stroke-width: 20;
-}
-
-.spin-button__wukong-cloud {
-  fill: rgb(255 235 157 / 22%);
-  stroke: #ffe491;
-  stroke-width: 10;
-}
-
-.spin-button__wukong-arrow {
-  fill: #fff8ce;
-  filter: drop-shadow(0 0 0.24rem rgb(255 222 103 / 72%));
-}
-
 .slots-page[data-special-round='rainbow-orchard-rush'] {
   --special-round-accent: #ffdf58;
   --special-round-deep: #8b308d;
@@ -3597,61 +3573,38 @@
 }
 
 .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--wukong-rune {
-  width: clamp(5.75rem, 8.6vw, 6.6rem);
-  border: 0.18rem solid #f2c44e;
+  width: clamp(5.4rem, 8vw, 6.1rem);
+  border: 0.13rem solid #f2c85b;
   background:
-    radial-gradient(circle at 36% 26%, rgb(255 247 197 / 32%), transparent 22%),
-    radial-gradient(circle, #167f72 0 52%, #8e2532 53% 72%, #3b0b1d 73% 100%);
+    radial-gradient(circle at 35% 24%, rgb(255 246 190 / 22%), transparent 30%),
+    linear-gradient(145deg, #7b2133, #3d0b20 58%, #123f3d);
   box-shadow:
-    inset 0 0 0 0.13rem rgb(255 233 141 / 38%),
-    inset 0 -0.55rem 0.8rem rgb(29 4 16 / 52%),
-    0 0 0 1px rgb(255 245 191 / 34%),
-    0 0.48rem 0.9rem rgb(0 0 0 / 46%),
-    0 0 1rem rgb(246 201 86 / 38%);
+    inset 0 0 0 0.1rem rgb(255 234 145 / 20%),
+    inset 0 -0.4rem 0.65rem rgb(25 3 14 / 40%),
+    0 0.38rem 0.72rem rgb(0 0 0 / 42%);
 }
 
 .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--wukong-rune:hover:not(:disabled),
 .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--wukong-rune:focus-visible {
   background:
-    radial-gradient(circle at 36% 26%, rgb(255 251 220 / 46%), transparent 24%),
-    radial-gradient(circle, #1a9987 0 52%, #ad3039 53% 72%, #4a1025 73% 100%);
+    radial-gradient(circle at 35% 24%, rgb(255 251 216 / 34%), transparent 32%),
+    linear-gradient(145deg, #92293b, #501029 58%, #18534e);
+  box-shadow:
+    inset 0 0 0 0.1rem rgb(255 239 167 / 30%),
+    inset 0 -0.4rem 0.65rem rgb(25 3 14 / 34%),
+    0 0.38rem 0.72rem rgb(0 0 0 / 42%),
+    0 0 0.7rem rgb(242 200 91 / 28%);
 }
 
 .spin-button--wukong-rune .spin-button__icon,
 .spin-button--wukong-rune:not(.spin-button--active) .spin-button__icon {
-  width: 86%;
-  height: 78%;
-  transform: translateY(-10%);
+  width: 82%;
+  height: 76%;
+  transform: translateY(-9%);
 }
 
-.spin-button__wukong-cloud {
-  fill: #ffe58c;
-  stroke: #7a2919;
-  stroke-width: 8;
-  opacity: 0.92;
-}
-
-.spin-button__wukong-cloud--top {
-  opacity: 0.58;
-}
-
-.spin-button__wukong-staff > rect {
-  fill: #d44932;
-  stroke: #fff0a5;
-  stroke-width: 10;
-}
-
-.spin-button__wukong-staff .spin-button__wukong-staff-cap {
-  fill: #f2bd3f;
-  stroke: #6c2017;
-  stroke-width: 9;
-}
-
-.spin-button__wukong-staff-detail {
-  fill: none;
-  stroke: #6c2017;
-  stroke-linecap: round;
-  stroke-width: 12;
+.spin-button__wukong-staff-image {
+  filter: drop-shadow(0 0.16rem 0.16rem rgb(18 2 10 / 62%));
 }
 
 .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .spin-button__label {

@@ -6,7 +6,6 @@ import wukongSuccessClap25 from '../../../assets/slots/games/wukong/mascot/wukon
 import wukongSuccessClap50 from '../../../assets/slots/games/wukong/mascot/wukong-success-clap-50.png'
 import wukongSuccessClap75 from '../../../assets/slots/games/wukong/mascot/wukong-success-clap-75.png'
 import wukongSuccessOpen from '../../../assets/slots/games/wukong/mascot/wukong-success-open.png'
-import wukongNimbusAnimated from '../../../assets/slots/symbols/wukong/nimbus-cloud-platform-animated.webp'
 import wukongNimbusStatic from '../../../assets/slots/symbols/wukong/nimbus-cloud-platform.png'
 import type { MascotSet } from '../shared/mascot/mascotTypes'
 
@@ -16,7 +15,7 @@ export const WUKONG_MASCOT: MascotSet = {
   assets: {
     platform: {
       kind: 'cloud',
-      animated: wukongNimbusAnimated,
+      animated: wukongNimbusStatic,
       reducedMotion: wukongNimbusStatic,
     },
     idle: wukongIdle,

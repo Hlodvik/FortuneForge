@@ -1,28 +1,18 @@
 import celestialLightningBoltSymbol from '../../../assets/slots/symbols/optimized/celestial-lightning-bolt.png'
-import freeGameAnimatedSymbol from '../../../assets/slots/symbols/free-game-animated.gif'
-import freeGameSymbol from '../../../assets/slots/symbols/optimized/free-game.png'
-import celestialGourdSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-gourd.png'
-import celestialGourdAnimatedSymbol from '../../../assets/slots/symbols/wukong/celestial-gourd-animated.gif'
-import celestialStaffSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-staff.png'
-import celestialStaffAnimatedSymbol from '../../../assets/slots/symbols/wukong/celestial-staff-animated.gif'
-import goldenCircletSymbol from '../../../assets/slots/symbols/wukong/optimized/golden-circlet.png'
-import goldenCircletAnimatedSymbol from '../../../assets/slots/symbols/wukong/golden-circlet-animated.gif'
-import immortalityPeachSymbol from '../../../assets/slots/symbols/wukong/optimized/immortality-peach.png'
-import immortalityPeachAnimatedSymbol from '../../../assets/slots/symbols/wukong/immortality-peach-animated.gif'
-import jadeDragonPearlSymbol from '../../../assets/slots/symbols/wukong/optimized/jade-dragon-pearl.png'
-import jadeDragonPearlAnimatedSymbol from '../../../assets/slots/symbols/wukong/jade-dragon-pearl-animated.gif'
-import nimbusCloudPlatformAnimatedSymbol from '../../../assets/slots/symbols/wukong/nimbus-cloud-platform-animated.webp'
-import nimbusCloudPlatformSymbol from '../../../assets/slots/symbols/wukong/optimized/nimbus-cloud-platform.png'
-import celestialHammerSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-hammer.png'
-import celestialBananaBunchSymbol from '../../../assets/slots/symbols/wukong/optimized/celestial-banana-bunch.png'
-import randValueTokenSymbol from '../../../assets/slots/symbols/wukong/optimized/rand-value-token.png'
-import wukongMonkeyPawSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-monkey-paw.png'
-import wukongMedallionSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-medallion.png'
-import wukongMedallionAnimatedSymbol from '../../../assets/slots/symbols/wukong/wukong-medallion-animated.gif'
-import wukongPowerSealSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-power-seal.png'
-import wukongPowerSealBlueSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-power-seal-blue.png'
-import wukongPowerSealJadeSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-power-seal-jade.png'
-import wukongPowerSealOrangeSymbol from '../../../assets/slots/symbols/wukong/optimized/wukong-power-seal-orange.png'
+import celestialGourdSymbol from '../../../assets/slots/symbols/wukong/celestial-gourd.png'
+import celestialStaffSymbol from '../../../assets/slots/symbols/wukong/celestial-staff.png'
+import goldenCircletSymbol from '../../../assets/slots/symbols/wukong/golden-circlet.png'
+import immortalityPeachSymbol from '../../../assets/slots/symbols/wukong/immortality-peach.png'
+import jadeDragonPearlSymbol from '../../../assets/slots/symbols/wukong/jade-dragon-pearl.png'
+import nimbusCloudPlatformSymbol from '../../../assets/slots/symbols/wukong/nimbus-cloud-platform.png'
+import celestialBananaBunchSymbol from '../../../assets/slots/symbols/wukong/celestial-banana-bunch.png'
+import randValueTokenSymbol from '../../../assets/slots/symbols/wukong/rand-value-token.png'
+import wukongMonkeyPawSymbol from '../../../assets/slots/symbols/wukong/wukong-monkey-paw.png'
+import wukongMedallionSymbol from '../../../assets/slots/symbols/wukong/wukong-medallion.png'
+import wukongPowerSealSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal.png'
+import wukongPowerSealBlueSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-blue.png'
+import wukongPowerSealJadeSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-jade.png'
+import wukongPowerSealOrangeSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-orange.png'
 import type {
   SlotSymbolDefinition,
   SlotSymbolSet,
@@ -67,15 +57,14 @@ const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
 export const WUKONG_SYMBOLS: SlotSymbolSet = {
   id: 'wukong-treasures-v3',
   definitions: {
-    '2': { id: '2', label: 'Celestial hammer', image: celestialHammerSymbol, animatedImage: celestialHammerSymbol },
-    '3': { id: '3', label: 'Immortality peach', image: immortalityPeachSymbol, animatedImage: immortalityPeachAnimatedSymbol },
-    '4': { id: '4', label: 'Celestial gourd', image: celestialGourdSymbol, animatedImage: celestialGourdAnimatedSymbol },
-    '5': { id: '5', label: 'Jade dragon pearl', image: jadeDragonPearlSymbol, animatedImage: jadeDragonPearlAnimatedSymbol },
-    '6': { id: '6', label: 'Golden circlet', image: goldenCircletSymbol, animatedImage: goldenCircletAnimatedSymbol },
-    '7': { id: '7', label: 'Celestial staff', image: celestialStaffSymbol, animatedImage: celestialStaffAnimatedSymbol },
-    ACE: { id: 'ACE', label: 'Wukong medallion', image: wukongMedallionSymbol, animatedImage: wukongMedallionAnimatedSymbol },
-    FREE: { id: 'FREE', label: 'Free game', image: freeGameSymbol, animatedImage: freeGameAnimatedSymbol },
-    POWER: { id: 'POWER', label: 'Nimbus power surge', image: nimbusCloudPlatformSymbol, animatedImage: nimbusCloudPlatformAnimatedSymbol },
+    '2': { id: '2', label: 'Staff strike', image: celestialStaffSymbol, animatedImage: celestialStaffSymbol },
+    '3': { id: '3', label: 'Immortality peach', image: immortalityPeachSymbol, animatedImage: immortalityPeachSymbol },
+    '4': { id: '4', label: 'Celestial gourd', image: celestialGourdSymbol, animatedImage: celestialGourdSymbol },
+    '5': { id: '5', label: 'Jade dragon pearl', image: jadeDragonPearlSymbol, animatedImage: jadeDragonPearlSymbol },
+    '6': { id: '6', label: 'Golden circlet', image: goldenCircletSymbol, animatedImage: goldenCircletSymbol },
+    '7': { id: '7', label: 'Celestial staff', image: celestialStaffSymbol, animatedImage: celestialStaffSymbol },
+    ACE: { id: 'ACE', label: 'Wukong medallion', image: wukongMedallionSymbol, animatedImage: wukongMedallionSymbol },
+    POWER: { id: 'POWER', label: 'Nimbus power surge', image: nimbusCloudPlatformSymbol, animatedImage: nimbusCloudPlatformSymbol },
     BOLT: { id: 'BOLT', label: 'Energy bolt', image: celestialLightningBoltSymbol, animatedImage: celestialLightningBoltSymbol },
     ...WUKONG_FEATURE_SYMBOL_DEFINITIONS,
   },
@@ -87,7 +76,6 @@ export const WUKONG_SYMBOLS: SlotSymbolSet = {
     { symbol: '6', firstLabel: '3–4', firstValue: '2×', secondLabel: '5', secondValue: '8×' },
     { symbol: '7', firstLabel: '3–4', firstValue: '3×', secondLabel: '5', secondValue: '11×' },
     { symbol: 'ACE', firstLabel: '3–4', firstValue: '5×', secondLabel: '5', secondValue: '18×' },
-    { symbol: 'FREE', firstLabel: '3+', firstValue: 'anywhere', secondLabel: 'Award', secondValue: '5 free games' },
     { symbol: 'POWER', firstLabel: '3–4', firstValue: '2× +1 point', secondLabel: '5', secondValue: '4× +2 points' },
     { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: '+1 energy' },
     { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },

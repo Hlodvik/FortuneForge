@@ -67,7 +67,7 @@ export async function requestDemoAvailability(gameId: string, signal?: AbortSign
   )
 
   if (response.status !== 204) {
-    throw new Error(`Demo service availability check failed with status ${response.status}.`)
+    throw new Error(`Game service availability check failed with status ${response.status}.`)
   }
 }
 
@@ -105,7 +105,7 @@ export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinRes
   if (!response.ok) {
     const problem = (await response.json().catch(() => null)) as SpinProblem | null
     throw new SpinRequestError(
-      problem?.error ?? problem?.detail ?? `Demo spin request failed with status ${response.status}.`,
+      problem?.error ?? problem?.detail ?? `Spin request failed with status ${response.status}.`,
       response.status,
       problem,
     )
@@ -113,7 +113,7 @@ export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinRes
 
   const result = (await response.json()) as unknown
   if (!isSpinResult(result)) {
-    throw new Error('The demo spin server returned an invalid reel result.')
+    throw new Error('The spin server returned an invalid reel result.')
   }
 
   return result

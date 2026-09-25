@@ -109,7 +109,7 @@ public sealed partial class SpinService
     {
         if (SlotSpecialRoundProfiles.HasFeatureMode(freeSpinFeatureMode, PawBoostFeatureMode))
         {
-            if (string.Equals(gameId, SlotSpecialRoundProfiles.ClassicGameId, StringComparison.Ordinal))
+            if (string.Equals(gameId, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal))
             {
                 // Wukong's Monkey Paw Rush is a visible feature transformation,
                 // not a small probability bump: every free spin is paw-heavy.

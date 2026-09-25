@@ -158,8 +158,9 @@ export function SlotsPageView(controller: SlotsPageController) {
     freeSpinsRemaining,
     useFreeGameForNextSpin,
   })
-  const showOutcomeBanner = hasCompletedSpin || isSpinning || spinError !== null ||
-    demoAvailabilityMessage !== null || !canAffordSelectedWager || useFreeGameForNextSpin
+  // Moving reels and the Spin/Stop control already communicate an ordinary
+  // spin. Reserve this extra panel for wins, features, and actionable errors.
+  const showOutcomeBanner = slotOutcome.tone !== 'neutral'
 
   return (
     <div

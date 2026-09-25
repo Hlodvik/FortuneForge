@@ -42,7 +42,7 @@ const WUKONG_FEATURES: SlotFeatureSet = {
   specialRound: {
     id: 'wukong-celestial-quest',
     title: 'Celestial Quest',
-    earnLabel: 'Land 3 FREE GAME symbols for 5 quests, or complete a 40-seal orbit for 10 enhanced quests.',
+    earnLabel: 'Complete a 40-seal orbit to launch 10 enhanced Celestial Quests.',
     earnStyle: 'orbit',
     earnHint: 'Each seal circles its matching power. Complete one 40-seal orbit to unlock that power for ten Celestial Quests.',
     activeModes: {
@@ -56,10 +56,6 @@ const WUKONG_FEATURES: SlotFeatureSet = {
 
 const WUKONG_HELP: SlotHelpDefinition = {
   paylineCount: 23,
-  freeGames: {
-    requiredSymbols: 3,
-    awardedSpins: 5,
-  },
   extraSections: [
     {
       badge: 'PAW',
@@ -69,7 +65,7 @@ const WUKONG_HELP: SlotHelpDefinition = {
     {
       badge: 'SEAL',
       title: 'Power seal collections',
-      body: 'Sync, Rows, Paw, and Rand seals collect from anywhere visible. A completed 40-seal collection awards ten free spins tied to that collection’s average wager. Energy at 25%, 50%, and 75% improves seal odds; a full energy meter boosts the payout by 1.5×, resets, and finishes the nearest seal track.',
+      body: 'Sync, Rows, Paw, and Rand seals collect from anywhere visible. A completed 40-seal collection awards ten Celestial Quest spins tied to that collection’s average wager. Energy at 25%, 50%, and 75% improves seal odds; a full energy meter boosts the payout by 1.5×, resets, and finishes the nearest seal track.',
     },
   ],
 }
@@ -83,7 +79,15 @@ export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = {
   symbols: WUKONG_SYMBOLS,
   mascot: null,
   sounds: WUKONG_TREASURES_SOUNDS,
-  rules: createSlotRulesSet('classic-demo-v1'),
+  rules: createSlotRulesSet('wukong-journey-v1', {
+    initialReels: [
+      ['2', '3', '4', 'BOLT'],
+      ['3', '4', '5', '6'],
+      ['4', '5', '6', '7'],
+      ['5', '6', '7', 'ACE'],
+      ['PAW', '7', 'ACE', 'POWER'],
+    ],
+  }),
 }
 
 export const WUKONG_SLOT_GAME = defineSlotGame({

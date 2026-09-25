@@ -35,7 +35,7 @@ public sealed record SlotSpecialRoundProgress(
 
 public static class SlotSpecialRoundProfiles
 {
-    public const string ClassicGameId = "classic-demo-v1";
+    public const string WukongGameId = "wukong-journey-v1";
     public const string RainbowRealmGameId = "rainbow-realm-fruits-v1";
     public const string CosmicFortuneGameId = "cosmic-fortune-v1";
     public const string HighNoonFortuneGameId = "high-noon-fortune-v1";
@@ -68,8 +68,8 @@ public static class SlotSpecialRoundProfiles
     private static readonly IReadOnlyDictionary<string, SlotSpecialRoundProfile> Profiles =
         new Dictionary<string, SlotSpecialRoundProfile>(StringComparer.Ordinal)
         {
-            [ClassicGameId] = new(
-                ClassicGameId,
+            [WukongGameId] = new(
+                WukongGameId,
                 3,
                 5,
                 40,

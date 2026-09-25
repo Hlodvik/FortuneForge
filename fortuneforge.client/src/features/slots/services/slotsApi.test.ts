@@ -25,7 +25,7 @@ describe('demo slot API', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 503 })))
 
     await expect(requestDemoAvailability('missing-game')).rejects.toThrow(
-      'Demo service availability check failed with status 503.',
+      'Game service availability check failed with status 503.',
     )
   })
 
@@ -35,15 +35,15 @@ describe('demo slot API', () => {
       headers: { 'Content-Type': 'text/html' },
     })))
 
-    await expect(requestDemoAvailability('classic-demo-v1')).rejects.toThrow(
-      'Demo service availability check failed with status 200.',
+    await expect(requestDemoAvailability('wukong-journey-v1')).rejects.toThrow(
+      'Game service availability check failed with status 200.',
     )
   })
 
   it('omits account credentials and accepts a non-persistent balance result', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
       spinId: 'c80e3ebc-e113-4bb8-9134-690b4db42083',
-      gameId: 'classic-demo-v1',
+      gameId: 'wukong-journey-v1',
       reelSetId: 'classic-reels-v4',
       symbolSetId: 'wukong-treasures-v3',
       paytableId: 'classic-paytable-v4',
@@ -79,7 +79,7 @@ describe('demo slot API', () => {
     vi.stubGlobal('fetch', fetchMock)
 
     const result = await requestDemoSpin({
-      gameId: 'classic-demo-v1',
+      gameId: 'wukong-journey-v1',
       wagerPoints: 50,
       useFreeSpin: false,
       freeSpinsRemaining: 0,

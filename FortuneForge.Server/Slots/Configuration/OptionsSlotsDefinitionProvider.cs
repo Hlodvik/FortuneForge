@@ -17,7 +17,7 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         }
 
         var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
-            string.Equals(game.Id, SlotSpecialRoundProfiles.ClassicGameId, StringComparison.Ordinal));
+            string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
         return prototype is null ? null : ClonePrototype(prototype, profile);
     }
 

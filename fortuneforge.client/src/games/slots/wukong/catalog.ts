@@ -1,4 +1,4 @@
-import wukongMedallion from '../../../assets/slots/symbols/wukong/optimized/wukong-medallion.png'
+import wukongMedallion from '../../../assets/slots/symbols/wukong/wukong-medallion.png'
 import type { SlotGameCatalogDefinition } from '../shared/slotGameManifest'
 
 export const WUKONG_CATALOG: SlotGameCatalogDefinition = {

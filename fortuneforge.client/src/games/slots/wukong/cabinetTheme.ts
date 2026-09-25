@@ -1,6 +1,6 @@
 import neonJewelCloudsGold from '../../../assets/slots/backgrounds/optimized/neon-jewel-clouds-gold.png'
-import wukongMedallion from '../../../assets/slots/symbols/wukong/optimized/wukong-medallion.png'
-import wukongPowerSeal from '../../../assets/slots/symbols/wukong/optimized/wukong-power-seal.png'
+import wukongMedallion from '../../../assets/slots/symbols/wukong/wukong-medallion.png'
+import wukongPowerSeal from '../../../assets/slots/symbols/wukong/wukong-power-seal.png'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 
 export const WUKONG_CABINET_THEME: SlotCabinetTheme = {

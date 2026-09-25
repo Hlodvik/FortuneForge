@@ -173,7 +173,7 @@ public sealed class SlotSpecialRoundProfilesTests
 
     private static GameDefinition Prototype() => new()
     {
-        Id = SlotSpecialRoundProfiles.ClassicGameId,
+        Id = SlotSpecialRoundProfiles.WukongGameId,
         Layout = new GameLayoutDefinition { ReelCount = 5, VisibleRows = 4, PaylineCount = 23 },
         Symbols = new GameSymbolRules { SymbolSetId = "symbols", WildSymbolId = "ACE" },
         Matching = new GameMatchingRules(),

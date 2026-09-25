@@ -146,6 +146,28 @@ describe('slot presentation timing', () => {
     vi.useRealTimers()
   })
 
+  it('honors a smaller per-game travel strip', () => {
+    vi.useFakeTimers()
+    installAnimationWindow()
+    const frames: string[][] = []
+    const animation = startSpinAnimation({
+      reelCount: 1,
+      rowsPerReel: 4,
+      symbolIds: ['2', '3'],
+      travelRows: 4,
+      displayFrame: (_, symbols) => frames.push([...symbols]),
+      reducedMotion: false,
+      setReelMotion: () => undefined,
+    })
+
+    expect(frames[0]).toHaveLength(8)
+    expect(animation.travelRows).toBe(4)
+
+    cancelSpinAnimation(animation)
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
   it('keeps the worst-case normal reveal-to-settle budget below 1.4 seconds', () => {
     const reelSettleBudget = getLatestReelSettleBudgetMs(5, 1, false)
     const worstCaseBudget =

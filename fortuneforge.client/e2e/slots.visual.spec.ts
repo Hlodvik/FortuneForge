@@ -13,6 +13,7 @@ type SpinKind = 'bonus' | 'loss' | 'win'
 type DemoApiOptions = {
   kind?: SpinKind
   onFreeSpinRequest?: () => Promise<void>
+  onSpinRequest?: () => Promise<void>
 }
 
 const reelRows = [
@@ -191,6 +192,8 @@ test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', 
     await page.setViewportSize(viewport)
     await openStableSlot(page, '/slots/wukong/demo')
     await expect(page.locator('.app-shell__background-video')).toHaveCount(0)
+    await expect(page.locator('[data-symbol="FREE"]')).toHaveCount(0)
+    await expect(page.locator('[data-symbol="PAW"]')).toHaveCount(1)
 
     const idleMetrics = await page.evaluate(() => {
       const frame = document.querySelector('.slot-game-frame')?.getBoundingClientRect()
@@ -236,21 +239,37 @@ test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', 
       .toBeLessThanOrEqual(viewport.height)
 
     await page.getByRole('button', { name: 'Spin the reels' }).click()
-    await expect(page.locator('.slots-page__footer')).toBeVisible()
-    await expect(page.getByText('No win this spin', { exact: true })).toBeVisible()
+    await expect(page.locator('.slots-page__footer')).toHaveCount(0)
     const settledMetrics = await page.evaluate(() => {
-      const outcome = document.querySelector('.slots-page__outcome')?.getBoundingClientRect()
-      const stage = document.querySelector('.slots-page__stage')?.getBoundingClientRect()
       return {
         documentHeight: document.documentElement.scrollHeight,
-        outcomeWidth: outcome?.width ?? Number.POSITIVE_INFINITY,
-        stageWidth: stage?.width ?? 0,
         viewportHeight: window.innerHeight,
       }
     })
-    expect(settledMetrics.outcomeWidth, JSON.stringify(viewport)).toBeLessThanOrEqual(settledMetrics.stageWidth + 1)
     expect(settledMetrics.documentHeight, JSON.stringify(viewport))
       .toBeLessThanOrEqual(settledMetrics.viewportHeight + 1)
+  }
+})
+
+test('ordinary Wukong and Pirates spins do not mount a status panel', async ({ page }) => {
+  let spinGate = deferred()
+  await mockDemoApi(page, {
+    onSpinRequest: async () => {
+      spinGate.started()
+      await spinGate.releasePromise
+    },
+  })
+
+  for (const path of ['/slots/wukong/demo', '/slots/pirates-fortune/demo']) {
+    await openStableSlot(page, path)
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await spinGate.startedPromise
+    await expect(page.getByRole('button', { name: 'Stop the spin' })).toBeVisible()
+    await expect(page.locator('.slots-page__footer')).toHaveCount(0)
+    spinGate.release()
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+    await expect(page.locator('.slots-page__footer')).toHaveCount(0)
+    spinGate = deferred()
   }
 })
 
@@ -376,6 +395,9 @@ async function mockDemoApi(page: Page, options: DemoApiOptions = {}) {
   })
   await page.route('**/api/slots/demo/spins', async (route) => {
     const request = route.request().postDataJSON() as SpinRequest
+    if (options.onSpinRequest) {
+      await options.onSpinRequest()
+    }
     if (request.useFreeSpin && options.onFreeSpinRequest) {
       await options.onFreeSpinRequest()
     }

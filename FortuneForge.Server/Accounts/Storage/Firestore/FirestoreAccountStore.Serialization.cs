@@ -45,7 +45,14 @@ public sealed partial class FirestoreAccountStore
     };
 
     private static string GameCurrencyId(string currencyId, string gameId) =>
-        $"{currencyId}:{gameId.Replace('/', '_')}";
+        $"{currencyId}:{StorageGameId(gameId).Replace('/', '_')}";
+
+    // Keep the renamed production game on its existing Firestore balance keys
+    // so the testers' seal progress and feature balances survive the cleanup.
+    private static string StorageGameId(string gameId) =>
+        string.Equals(gameId, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal)
+            ? LegacyWukongGameId
+            : gameId;
 
     private static Dictionary<string, object> CurrencyData(
         string currencyId,

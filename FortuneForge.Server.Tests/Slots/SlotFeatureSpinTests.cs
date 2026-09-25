@@ -20,7 +20,7 @@ public sealed class SlotFeatureSpinTests
                 roll));
         var sharedTotal = Enumerable.Range(0, 100)
             .Sum(roll => SpinService.GetMoneySymbolCountForRoll(
-                SlotSpecialRoundProfiles.ClassicGameId,
+                SlotSpecialRoundProfiles.WukongGameId,
                 roll));
 
         Assert.Equal(104, sharedTotal);
@@ -34,7 +34,7 @@ public sealed class SlotFeatureSpinTests
         var sharedTotal = Enumerable.Range(0, 100)
             .SelectMany(appearanceRoll => Enumerable.Range(0, 25)
                 .Select(extraSealRoll => SpinService.GetSealCountForRoll(
-                    SlotSpecialRoundProfiles.ClassicGameId,
+                    SlotSpecialRoundProfiles.WukongGameId,
                     0,
                     appearanceRoll,
                     extraSealRoll)))
@@ -62,7 +62,7 @@ public sealed class SlotFeatureSpinTests
         var random = new QueuedRandomIndexSource(20, 0, 80, 1, 0, 0, 0, 99);
         var service = CreateService(random);
 
-        var result = service.Spin("classic-demo-v1", 100, "player", specialBoostApplied: false);
+        var result = service.Spin("wukong-journey-v1", 100, "player", specialBoostApplied: false);
 
         Assert.Equal(1, result.MonkeyPawCount);
         Assert.Equal(200, result.MoneyGrabPoints);
@@ -76,7 +76,7 @@ public sealed class SlotFeatureSpinTests
         var service = CreateService(new QueuedRandomIndexSource());
 
         var result = service.Spin(
-            "classic-demo-v1",
+            "wukong-journey-v1",
             100,
             "player",
             specialBoostApplied: false,
@@ -91,7 +91,7 @@ public sealed class SlotFeatureSpinTests
         var random = new QueuedRandomIndexSource(0, 1, 1, 99, 0, 0, 0, 99);
         var service = CreateService(random);
 
-        var result = service.Spin("classic-demo-v1", 100, "player", specialBoostApplied: false);
+        var result = service.Spin("wukong-journey-v1", 100, "player", specialBoostApplied: false);
 
         Assert.Equal(300, result.BananaBonusPoints);
         Assert.Equal(300, result.Payout.TotalPoints);
@@ -105,7 +105,7 @@ public sealed class SlotFeatureSpinTests
         var service = CreateService(random);
 
         var result = service.Spin(
-            "classic-demo-v1",
+            "wukong-journey-v1",
             100,
             "player",
             specialBoostApplied: false,
@@ -120,7 +120,7 @@ public sealed class SlotFeatureSpinTests
         var service = CreateService(new QueuedRandomIndexSource());
 
         var result = service.Spin(
-            "classic-demo-v1",
+            "wukong-journey-v1",
             100,
             "player",
             specialBoostApplied: false);
@@ -135,7 +135,7 @@ public sealed class SlotFeatureSpinTests
         var service = CreateService(random);
 
         var result = service.Spin(
-            "classic-demo-v1",
+            "wukong-journey-v1",
             100,
             "player",
             specialBoostApplied: false,
@@ -149,10 +149,10 @@ public sealed class SlotFeatureSpinTests
     public void Spin_WhenSealModeCannotProduceFiveMatch_DoesNotRunFiveMatchPity()
     {
         var service = CreateService(new QueuedRandomIndexSource());
-        _ = service.Spin("classic-demo-v1", 100, "player", specialBoostApplied: false);
+        _ = service.Spin("wukong-journey-v1", 100, "player", specialBoostApplied: false);
 
         var result = service.Spin(
-            "classic-demo-v1",
+            "wukong-journey-v1",
             100,
             "player",
             specialBoostApplied: false,
@@ -204,7 +204,7 @@ public sealed class SlotFeatureSpinTests
 
         private static readonly GameDefinition Game = new()
         {
-            Id = "classic-demo-v1",
+            Id = "wukong-journey-v1",
             Layout = new GameLayoutDefinition
             {
                 ReelCount = 5,

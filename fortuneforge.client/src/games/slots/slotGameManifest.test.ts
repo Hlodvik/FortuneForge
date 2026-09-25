@@ -459,8 +459,9 @@ describe('slot game manifests', () => {
     expect(markup).not.toContain('aria-label="Valid five-symbol payline 22"')
   })
 
-  it('gives Rainbow Realm a complete fruit-specific feature set and wicker basket collector', () => {
+  it('gives Wukong a complete celestial feature set without duplicate Nimbus symbols', () => {
     const collections = WUKONG_SLOT_GAME.experience.features.collections?.entries
+    expect(WUKONG_SLOT_GAME.experience.rules.gameId).toBe('wukong-journey-v1')
     expect(collections).toHaveLength(4)
     expect(collections?.map((collection) => collection.label)).toEqual([
       'Synced reels',
@@ -476,7 +477,10 @@ describe('slot game manifests', () => {
     )
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.POWER?.label.toLowerCase()).not.toContain('hammer')
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.POWER?.label).toContain('Nimbus')
-    expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).toBe('Celestial hammer')
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).toBe('Staff strike')
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.image).toBe(
+      WUKONG_SLOT_GAME.experience.symbols.definitions['7']?.image,
+    )
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).not.toContain('Nimbus')
     expect(Object.values(WUKONG_SLOT_GAME.experience.symbols.definitions)
       .filter((definition) => definition.label.toLowerCase().includes('nimbus')),
@@ -489,8 +493,12 @@ describe('slot game manifests', () => {
       'Rand Reel',
     ])
     expect(WUKONG_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
-    expect(WUKONG_SLOT_GAME.experience.features.specialRound?.earnLabel).toContain('FREE GAME symbols')
-    expect(WUKONG_SLOT_GAME.experience.features.specialRound?.earnLabel).not.toContain('FREE GAME clouds')
+    expect(WUKONG_SLOT_GAME.experience.symbols.definitions.FREE).toBeUndefined()
+    expect(WUKONG_SLOT_GAME.experience.symbols.guideEntries.map((entry) => entry.symbol)).not.toContain('FREE')
+    expect(WUKONG_SLOT_GAME.experience.rules.initialReels.flat()).not.toContain('FREE')
+    expect(WUKONG_SLOT_GAME.experience.rules.initialReels.flat()).toContain('PAW')
+    expect(WUKONG_SLOT_GAME.experience.help.freeGames).toBeUndefined()
+    expect(WUKONG_SLOT_GAME.experience.features.specialRound?.earnLabel).not.toContain('FREE GAME')
     expect(WUKONG_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
     expect(WUKONG_SLOT_GAME.experience.shellBackdrop).toBe('theme')
     expect(WUKONG_SLOT_GAME.experience.cabinet.pageBackdropImage).toBeTruthy()

@@ -160,6 +160,9 @@ export function useSlotsPageController({
     pointValueInCents,
     wagerOptions,
   } = rules
+  const isWukongGame = cabinetTheme.id === 'wukong-celestial-arcade-v1'
+  const reelTravelRowCount = isWukongGame ? 4 : 8
+  const baseSpinSpeedMultiplier = isWukongGame ? 1.2 : 1
   const defaultSealCollections = useMemo<SlotSealCollection[]>(
     () => featureSet.collections?.entries.map((collection) => ({
       sealId: collection.id,
@@ -1395,7 +1398,8 @@ export function useSlotsPageController({
         )
       },
       reducedMotion: prefersReducedMotionRef.current,
-      speedMultiplier: isFastAutoSpin ? autoSpinSpeedMultiplier : 1,
+      speedMultiplier: isFastAutoSpin ? autoSpinSpeedMultiplier : baseSpinSpeedMultiplier,
+      travelRows: reelTravelRowCount,
     })
     activeSpinAnimationRef.current = animation
     const stopReelsWithCadence = async (
@@ -1422,7 +1426,7 @@ export function useSlotsPageController({
         quickSettleAfterStopMs: manualStopSettleDurationMs,
         settleAfterLastReelMs:
           reelLandingSettleDurationMs /
-          (isFastAutoSpin ? autoSpinSpeedMultiplier : 1),
+          (isFastAutoSpin ? autoSpinSpeedMultiplier : baseSpinSpeedMultiplier),
         shouldSnapToTarget: () => prefersReducedMotionRef.current,
         snapToTarget: settleWithoutMotion,
         targetReels,
@@ -1744,7 +1748,14 @@ export function useSlotsPageController({
 
   function reelStripStyle(reelIndex: number) {
     const symbolRowCount = Math.max(1, displayedReels[reelIndex]?.length ?? 4)
-    const visibleRowCount = symbolRowCount > 8 ? symbolRowCount - 8 : symbolRowCount
+    const currentMotion = reelMotion[reelIndex]
+    const isMoving =
+      currentMotion === 'accelerating' ||
+      currentMotion === 'spinning' ||
+      currentMotion === 'braking'
+    const visibleRowCount = isMoving && symbolRowCount > reelTravelRowCount
+      ? symbolRowCount - reelTravelRowCount
+      : symbolRowCount
     const stripHeight = symbolRowCount / Math.max(1, visibleRowCount) * 100
     const travel = -Math.max(0, symbolRowCount - visibleRowCount) / symbolRowCount * 100
     return {

@@ -826,3 +826,30 @@
     inset 0 0 0 1px rgb(45 7 19 / 78%),
     inset 0 0.32rem 0.56rem rgb(0 0 0 / 46%);
 }
+
+/* Wukong's source art is deliberately detailed. During motion, keep the
+   compositor working on transforms only instead of repainting blurred and
+   filtered symbols on every frame. */
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1']
+  :is(.slot-reel__symbols--accelerating, .slot-reel__symbols--spinning, .slot-reel__symbols--braking) {
+  filter: none !important;
+  will-change: transform;
+}
+
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1']
+  :is(.slot-reel__symbols--accelerating, .slot-reel__symbols--spinning, .slot-reel__symbols--braking)
+  .slot-symbol::before {
+  display: none;
+}
+
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1']
+  :is(.slot-reel__symbols--accelerating, .slot-reel__symbols--spinning, .slot-reel__symbols--braking)
+  .slot-symbol__image {
+  filter: none;
+}
+
+/* Both low and high staff symbols use the correct weapon, but opposite poses
+   keep their payout tiers visually distinct. */
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slot-symbol--2 .slot-symbol__image {
+  transform: rotate(90deg) scale(0.84);
+}

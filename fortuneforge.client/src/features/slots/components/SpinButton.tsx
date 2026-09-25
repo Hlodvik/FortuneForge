@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import wukongStaff from '../../../assets/slots/symbols/wukong/celestial-staff.png'
 
 type SpinButtonProps = {
   disabled?: boolean
@@ -53,16 +54,15 @@ export function SpinButton({
               <circle className="spin-button__helm-boss" cx="256" cy="256" r="18" />
             </g>
           ) : variant === 'wukong-rune' ? (
-            <g className="spin-button__wukong-glyph">
-              <path className="spin-button__wukong-cloud spin-button__wukong-cloud--top" d="M96 160c17-28 43-42 77-42 16-25 43-40 75-40 41 0 74 25 83 60 38-3 70 15 85 47-28-10-54-9-79 2-24 10-50 12-76 5-28-8-55-8-82 0-31 9-59 4-83-14Z" />
-              <g className="spin-button__wukong-staff" transform="rotate(-34 256 256)">
-                <rect x="224" y="74" width="64" height="364" rx="28" />
-                <rect className="spin-button__wukong-staff-cap" x="214" y="62" width="84" height="82" rx="30" />
-                <rect className="spin-button__wukong-staff-cap" x="214" y="368" width="84" height="82" rx="30" />
-                <path className="spin-button__wukong-staff-detail" d="M233 162h46M233 350h46" />
-              </g>
-              <path className="spin-button__wukong-cloud spin-button__wukong-cloud--bottom" d="M88 346c26-27 57-38 94-31 19-23 45-35 77-35 35 0 65 16 82 44 33-4 61 9 83 39-30-7-57-3-82 11-25 14-53 17-83 8-27-8-54-7-81 4-35 15-65 8-90-20Z" />
-            </g>
+            <image
+              className="spin-button__wukong-staff-image"
+              href={wukongStaff}
+              x="56"
+              y="56"
+              width="400"
+              height="400"
+              preserveAspectRatio="xMidYMid meet"
+            />
           ) : (
             <path
               className="spin-button__arrow-icon"

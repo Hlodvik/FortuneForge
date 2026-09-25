@@ -23,6 +23,7 @@ type StartSpinAnimationOptions = {
   setReelMotion: (reelIndex: number, state: ReelMotionState) => void
   speedMultiplier?: number
   symbolIds: readonly SlotSymbolId[]
+  travelRows?: number
 }
 
 type StopReelAnimationOptions = {
@@ -58,13 +59,13 @@ export type SpinAnimation = {
   readonly speedMultiplier: number
   readonly startTimers: number[]
   readonly symbolIds: readonly SlotSymbolId[]
+  readonly travelRows: number
   finished: boolean
   quickStopStartedAt: number | null
   spinStartedAt: number
 }
 
-const spinTravelRows = 8
-const brakingTravelRows = 8
+const defaultTravelRows = 8
 export const reelLandingSettleDurationMs = 110
 
 export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnimation {
@@ -73,6 +74,7 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
   const reducedMotion = options.reducedMotion
     ?? window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const speedMultiplier = Math.max(1, options.speedMultiplier ?? 1)
+  const travelRows = Math.max(1, Math.floor(options.travelRows ?? defaultTravelRows))
   const symbolIds: readonly SlotSymbolId[] = options.symbolIds.length > 0
     ? [...options.symbolIds]
     : ['2']
@@ -86,6 +88,7 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
     speedMultiplier,
     startTimers: [],
     symbolIds,
+    travelRows,
     finished: false,
     quickStopStartedAt: null,
     spinStartedAt: performance.now(),
@@ -103,7 +106,7 @@ export function startSpinAnimation(options: StartSpinAnimationOptions): SpinAnim
       buildFrame(
         animation.symbolIds,
         animation.frameOffsets[reelIndex],
-        rowsPerReel + spinTravelRows,
+        rowsPerReel + travelRows,
       ),
     )
     animation.startTimers.push(window.setTimeout(() => {
@@ -265,7 +268,7 @@ export async function stopReelAnimation(
     ...buildFrame(
       animation.symbolIds,
       animation.frameOffsets[options.reelIndex],
-      brakingTravelRows,
+      animation.travelRows,
     ),
     ...options.targetSymbols,
   ]

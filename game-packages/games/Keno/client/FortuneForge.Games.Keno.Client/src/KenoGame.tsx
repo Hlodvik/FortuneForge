@@ -9,10 +9,11 @@ export type KenoGameProps = Readonly<{ gateway?: KenoGateway; playerId?: string;
 
 const maximumSelections = 10
 const kenoNumbers = Array.from({ length: 80 }, (_, index) => index + 1)
-const quickPickCounts = [1, 3, 5, 7, 10] as const
 const revealBeatMilliseconds = 110
 const firstRevealBeatMilliseconds = 55
 const finishCueDelaySeconds = .14
+const boardClearDelayMilliseconds = 900
+const boardClearDurationMilliseconds = 550
 const defaultGateway = new HttpKenoGateway()
 type StoredPendingDraw = Readonly<{ idempotencyKey: string; numbers: readonly number[]; wager: number }>
 
@@ -22,6 +23,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   const [wager, setWager] = useState(1)
   const [round, setRound] = useState<KenoRound | null>(null)
   const [revealedCount, setRevealedCount] = useState(0)
+  const [boardResetting, setBoardResetting] = useState(false)
+  const [boardCleared, setBoardCleared] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tableUnavailable, setTableUnavailable] = useState(false)
@@ -76,6 +79,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       setWager(nextRound.wager)
       revealStartedAt.current = nowMilliseconds()
       completedAudioRound.current = null
+      setBoardResetting(false)
+      setBoardCleared(false)
       setRound(nextRound)
       setRevealedCount(0)
       setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
@@ -96,7 +101,15 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
         completedAudioRound.current = round.roundId
         playRoundCompleteEffect(pickAudioContext, round.net > 0, finishCueDelaySeconds)
       }
-      return undefined
+      const beginReset = window.setTimeout(() => setBoardResetting(true), boardClearDelayMilliseconds)
+      const finishReset = window.setTimeout(() => {
+        setBoardResetting(false)
+        setBoardCleared(true)
+      }, boardClearDelayMilliseconds + boardClearDurationMilliseconds)
+      return () => {
+        window.clearTimeout(beginReset)
+        window.clearTimeout(finishReset)
+      }
     }
 
     const startedAt = revealStartedAt.current ??= nowMilliseconds()
@@ -108,9 +121,10 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
   const isFull = selectedNumbers.length === maximumSelections
   const isRevealing = round !== null && revealedCount < round.draw.numbers.length
-  const isLocked = busy || isRevealing || recovery !== 'ready'
+  const isSettling = round !== null && !isRevealing && !boardCleared
+  const isLocked = busy || isRevealing || isSettling || recovery !== 'ready'
   const canPlay = !isLocked && status?.available === true && selectedNumbers.length > 0 && status.balance >= wager
-  const drawnNumbers = round ? new Set(round.draw.numbers.slice(0, revealedCount)) : null
+  const drawnNumbers = round && !boardCleared ? new Set(round.draw.numbers.slice(0, revealedCount)) : null
   const ticketNumbers = round ? new Set(round.ticket.numbers) : null
   const prizeTiers = useMemo(() => status?.paytable
     .filter(tier => tier.spots === selectedNumbers.length)
@@ -123,6 +137,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     stopDrawAudio(drawAudioSource)
     revealStartedAt.current = null
     completedAudioRound.current = null
+    setBoardResetting(false)
+    setBoardCleared(false)
     clearPendingDraw(playerId)
     setRound(null)
     setRevealedCount(0)
@@ -149,13 +165,6 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     setStatusLoadAttempt(attempt => attempt + 1)
   }
 
-  const quickPick = (count: number) => {
-    if (isLocked) return
-    playPickEffect(pickAudioContext, 'add')
-    resetRound()
-    setSelectedNumbers(randomTicket(count))
-  }
-
   const chooseWager = (value: number) => {
     if (isLocked || !status || value < status.minimumWager || value > status.maximumWager) return
     resetRound()
@@ -174,6 +183,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     stopDrawAudio(drawAudioSource)
     setRound(null)
     setRevealedCount(0)
+    setBoardResetting(false)
+    setBoardCleared(false)
     completedAudioRound.current = null
     void prepareDrawAudio(pickAudioContext, drawAudioBuffer, drawAudioLoad)
     const idempotencyKey = roundRequestKey.current ??= createRequestKey()
@@ -185,6 +196,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
         setSelectedNumbers([...nextRound.ticket.numbers])
         setWager(nextRound.wager)
         revealStartedAt.current = await playDrawAudio(pickAudioContext, drawAudioBuffer, drawAudioLoad, drawAudioSource)
+        setBoardResetting(false)
+        setBoardCleared(false)
         setRound(nextRound)
         setRevealedCount(0)
         setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
@@ -202,33 +215,17 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     </header>
 
     <section className={`ff-keno__board${round ? ' ff-keno__board--has-round' : ''}`} aria-label="Keno ticket">
-      <section className="ff-keno__ticket-tools" aria-label="Ticket tools">
-        <div>
-          <span className="ff-keno__label">Quick Pick</span>
-          <div className="ff-keno__quick-picks">
-            {quickPickCounts.map(count => <button key={count} type="button" disabled={isLocked || status?.available !== true} onClick={() => quickPick(count)} aria-label={`Quick pick ${count} ${count === 1 ? 'number' : 'numbers'}`}>{count}</button>)}
-          </div>
-        </div>
-        <label className="ff-keno__wager">Wager
-          <select aria-label="Keno wager" value={wager} disabled={isLocked || !status?.available} onChange={event => chooseWager(Number(event.target.value))}>
-            {wagerOptions.map(value => <option key={value} value={value}>{formatMoney(value)}</option>)}
-          </select>
-          <small>Balance {formatMoney(status?.balance ?? 0)}</small>
-        </label>
-      </section>
-
       <div className="ff-keno__controls">
         <p aria-live="polite">{selectedNumbers.length} of {maximumSelections} numbers selected{selectedNumbers.length === 0 ? ' — select at least one to enable draw.' : ''}</p>
         <button type="button" onClick={clearSelection} disabled={isLocked || selectedNumbers.length === 0}>Clear selection</button>
       </div>
-      {selectedNumbers.length > 0 && <div className="ff-keno__ticket-strip" aria-label="Current Keno ticket">{selectedNumbers.map(number => <span key={number}>{number}</span>)}</div>}
 
-      <div className="ff-keno__grid" role="group" aria-label="Keno number selection">
+      <div className={`ff-keno__grid${round && !boardCleared ? ' is-drawing' : ''}${boardResetting ? ' is-resetting' : ''}${boardCleared ? ' is-ready' : ''}`} role="group" aria-label="Keno number selection">
         {kenoNumbers.map(number => {
           const isSelected = selectedNumbers.includes(number)
           const isDrawn = drawnNumbers?.has(number) ?? false
           const isHit = isDrawn && (ticketNumbers?.has(number) ?? false)
-          const isMissed = round !== null && !isRevealing && !isDrawn && (ticketNumbers?.has(number) ?? false)
+          const isMissed = round !== null && !isRevealing && !boardCleared && !isDrawn && (ticketNumbers?.has(number) ?? false)
           const classes = [isSelected ? 'is-selected' : '', isDrawn ? 'is-drawn' : '', isHit ? 'is-hit' : '', isMissed ? 'is-missed' : ''].filter(Boolean).join(' ')
           const resultLabel = isHit ? ', hit' : isMissed ? ', missed' : isDrawn ? ', drawn' : ''
           return <button
@@ -242,7 +239,15 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
         })}
       </div>
 
-      <button className="ff-keno__play" type="button" disabled={!canPlay} onClick={() => startRound(selectedNumbers)}>{busy ? 'Starting draw…' : isRevealing ? `Revealing ${revealedCount} of 20…` : 'Draw'}</button>
+      <section className="ff-keno__draw-controls" aria-label="Keno draw controls">
+        <label className="ff-keno__wager">Wager per draw
+          <select aria-label="Keno wager" value={wager} disabled={isLocked || !status?.available} onChange={event => chooseWager(Number(event.target.value))}>
+            {wagerOptions.map(value => <option key={value} value={value}>{formatMoney(value)}</option>)}
+          </select>
+          <small>Balance {formatMoney(status?.balance ?? 0)}</small>
+        </label>
+        <button className="ff-keno__play" type="button" disabled={!canPlay} onClick={() => startRound(selectedNumbers)}>{busy ? 'Starting draw…' : isRevealing ? `Revealing ${revealedCount} of 20…` : round ? 'Draw again' : 'Draw'}</button>
+      </section>
       {recovery === 'recovering' && <p className="ff-keno__state" role="status">Restoring your pending Keno draw…</p>}
       {recovery === 'failed' && <button className="ff-keno__play" type="button" onClick={() => setRecoveryAttempt(value => value + 1)}>Retry restoration</button>}
       {!status && error && !tableUnavailable && <button className="ff-keno__play" type="button" onClick={retryStatus}>Retry connection</button>}
@@ -297,24 +302,6 @@ function readPendingDraw(playerId: string): StoredPendingDraw | null {
 function isKenoNumber(value: unknown): value is number { return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 80 }
 function storePendingDraw(playerId: string | undefined, draw: StoredPendingDraw) { if (!playerId) return; try { sessionStorage.setItem(pendingDrawKey(playerId), JSON.stringify(draw)) } catch { /* session storage is optional */ } }
 function clearPendingDraw(playerId: string | undefined) { if (!playerId) return; try { sessionStorage.removeItem(pendingDrawKey(playerId)) } catch { /* session storage is optional */ } }
-
-function randomTicket(count: number): number[] {
-  const pool = [...kenoNumbers]
-  for (let index = pool.length - 1; index > 0; index--) {
-    const target = randomIndex(index + 1)
-    ;[pool[index], pool[target]] = [pool[target]!, pool[index]!]
-  }
-  return pool.slice(0, Math.min(maximumSelections, Math.max(1, count))).sort((left, right) => left - right)
-}
-
-function randomIndex(length: number): number {
-  if (typeof crypto?.getRandomValues === 'function') {
-    const sample = new Uint32Array(1)
-    crypto.getRandomValues(sample)
-    return sample[0]! % length
-  }
-  return Math.floor(Math.random() * length)
-}
 
 function formatMoney(value: number): string { return `R${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
 

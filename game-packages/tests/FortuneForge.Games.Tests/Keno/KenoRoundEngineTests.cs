@@ -54,14 +54,13 @@ public sealed class KenoRoundEngineTests
     }
 
     [Theory]
-    [InlineData(1, 1, 4)]
-    [InlineData(5, 2, 2)]
-    [InlineData(5, 4, 8)]
-    [InlineData(10, 0, 0)]
-    [InlineData(10, 3, 1)]
-    [InlineData(10, 5, 4)]
-    [InlineData(10, 10, 100_000)]
-    [InlineData(8, 2, 0)]
+    [InlineData(5, 2, 0)]
+    [InlineData(5, 4, 15)]
+    [InlineData(10, 0, 5)]
+    [InlineData(10, 3, 0)]
+    [InlineData(10, 5, 2)]
+    [InlineData(10, 10, 200_000)]
+    [InlineData(8, 3, 0)]
     public void StandardPaytableReturnsThePublishedMultiplier(int spots, int hits, int expectedMultiplier)
     {
         var ticket = new KenoTicket(Enumerable.Range(1, spots));
@@ -69,32 +68,50 @@ public sealed class KenoRoundEngineTests
         var outcome = StandardKenoPaytable.Instance.Evaluate(ticket, hits);
 
         Assert.Equal(StandardKenoPaytable.Id, outcome.PaytableId);
-        Assert.Equal(expectedMultiplier, outcome.Value);
+        Assert.Equal((decimal)expectedMultiplier, outcome.Value);
     }
 
     [Fact]
-    public void StandardPaytableKeepsReturnRateAndBlankStreaksInThePublishedRange()
+    public void OneSpotUsesThePublishedFractionalMultiplier()
+    {
+        var outcome = StandardKenoPaytable.Instance.Evaluate(new KenoTicket([1]), 1);
+
+        Assert.Equal(2.5m, outcome.Value);
+    }
+
+    [Fact]
+    public void StandardPaytableMatchesAConventionalLotteryKenoRiskProfile()
     {
         for (var spots = KenoTicket.MinimumNumbers; spots <= KenoTicket.MaximumNumbers; spots++)
         {
             var probabilities = Enumerable.Range(0, spots + 1)
                 .ToDictionary(hits => hits, hits => ProbabilityOfHits(spots, hits));
             var tiers = StandardKenoPaytable.Tiers.Where(tier => tier.Spots == spots).ToArray();
-            var returnRate = tiers.Sum(tier => probabilities[tier.Hits] * tier.Multiplier);
+            var returnRate = tiers.Sum(tier => probabilities[tier.Hits] * (double)tier.Multiplier);
             var paidRoundRate = tiers.Sum(tier => probabilities[tier.Hits]);
 
-            Assert.InRange(returnRate, 0.89, 1.00);
-            Assert.InRange(paidRoundRate, 0.25, 1.00);
-            Assert.InRange(Math.Pow(1 - paidRoundRate, 20), 0, 0.004);
+            Assert.InRange(returnRate, 0.62, 0.67);
+            Assert.InRange(paidRoundRate, 0.06, 0.26);
         }
+
+        var tenSpotProbabilities = Enumerable.Range(0, 11)
+            .ToDictionary(hits => hits, hits => ProbabilityOfHits(10, hits));
+        var tenSpotPaidRate = StandardKenoPaytable.Tiers
+            .Where(tier => tier.Spots == 10)
+            .Sum(tier => tenSpotProbabilities[tier.Hits]);
+
+        Assert.InRange(1 / tenSpotPaidRate, 9.05, 9.06);
+        Assert.InRange(1 / tenSpotProbabilities[10], 8_911_710, 8_911_712);
     }
 
     [Fact]
     public void LegacyPaytableRemainsAvailableForPreviouslySettledRounds()
     {
+        Assert.True(StandardKenoPaytable.Supports(StandardKenoPaytable.PriorId));
         Assert.True(StandardKenoPaytable.Supports(StandardKenoPaytable.LegacyId));
-        Assert.Equal(5, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 10, 0));
-        Assert.Equal(2, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 1, 1));
+        Assert.Equal(1m, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.PriorId, 10, 3));
+        Assert.Equal(5m, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 10, 0));
+        Assert.Equal(2m, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 1, 1));
     }
 
     private static double ProbabilityOfHits(int spots, int hits) =>

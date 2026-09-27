@@ -5,7 +5,7 @@ import { HttpKenoGateway } from './httpKenoGateway'
 const request: KenoRoundRequest = { ticket: { numbers: [3, 7, 15] }, wager: 5 }
 const status = {
   available: true, minimumWager: 1, maximumWager: 20, wagerIncrement: 1, balance: 1_000, mode: 'credit-keno',
-  paytable: [{ spots: 3, hits: 2, multiplier: 2 }],
+  paytable: [{ spots: 1, hits: 1, multiplier: 2.5 }, { spots: 3, hits: 2, multiplier: 2 }],
 }
 const round = {
   roundId: 'keno-11', balance: 1_005, phase: 'completed', ticket: request.ticket,

@@ -6,7 +6,7 @@ namespace FortuneForge.Server.Numbers.Keno;
 
 public sealed record KenoTicketRequest(IReadOnlyList<int>? Numbers);
 public sealed record CreateKenoRoundRequest(KenoTicketRequest? Ticket, decimal Wager);
-public sealed record KenoPrizeTierResponse(int Spots, int Hits, int Multiplier);
+public sealed record KenoPrizeTierResponse(int Spots, int Hits, decimal Multiplier);
 public sealed record KenoStatusResponse(bool Available, decimal MinimumWager, decimal MaximumWager, decimal WagerIncrement, decimal Balance, string Mode, IReadOnlyList<KenoPrizeTierResponse> Paytable);
 public sealed record KenoTicketResponse(IReadOnlyList<int> Numbers);
 public sealed record KenoDrawResponse(IReadOnlyList<int> Numbers);
@@ -38,6 +38,14 @@ internal static class KenoMoney
     }
 
     public static decimal ToRand(long cents) => RandMoney.CentsToRand(cents);
+
+    public static long PayoutCents(long wagerCents, decimal multiplier)
+    {
+        var cents = checked(wagerCents * multiplier);
+        if (cents != decimal.Truncate(cents))
+            throw new InvalidOperationException("A Keno payout cannot include a fraction of a cent.");
+        return checked((long)cents);
+    }
 }
 
 internal interface IKenoStore

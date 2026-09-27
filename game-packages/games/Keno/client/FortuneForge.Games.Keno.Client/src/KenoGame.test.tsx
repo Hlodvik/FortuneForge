@@ -41,7 +41,7 @@ describe('KenoGame', () => {
 
     await user.click(screen.getByRole('button', { name: 'Number 18' }))
     await user.click(screen.getByRole('button', { name: 'Number 18' }))
-    await user.click(screen.getByRole('button', { name: 'Quick pick 10 numbers' }))
+    await user.click(screen.getByRole('button', { name: 'Number 42' }))
     await user.click(screen.getByRole('button', { name: 'Clear selection' }))
 
     expect(audio.createOscillator).toHaveBeenCalledTimes(8)
@@ -138,7 +138,7 @@ describe('KenoGame', () => {
     const wagerSelect = await screen.findByRole('combobox', { name: 'Keno wager' })
     await user.selectOptions(wagerSelect, '5')
     expect(screen.getByRole('table', { name: '3-spot Keno payouts' })).toBeTruthy()
-    expect(screen.getByText('R75.00')).toBeTruthy()
+    expect(screen.getByText('R135.00')).toBeTruthy()
     expect(screen.getByText(/R5.00 ticket · balance R1,000.00/)).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     expect(createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] }, wager: 5 }, expect.anything())
@@ -156,15 +156,15 @@ describe('KenoGame', () => {
     expect(result.className).not.toContain('is-win')
   })
 
-  it('builds a full quick-pick ticket and shows its actual prizes', async () => {
-    const user = userEvent.setup()
-    render(<KenoGame gateway={fakeGateway()} />)
+  it('shows a full selected ticket on the board without duplicate ticket or quick-pick controls', async () => {
+    render(<KenoGame gateway={fakeGateway()} initialSelection={[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]} />)
     await screen.findByRole('combobox', { name: 'Keno wager' })
-    await user.click(screen.getByRole('button', { name: 'Quick pick 10 numbers' }))
     expect(screen.getByText(/10 of 10 numbers selected/)).toBeTruthy()
     expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(10)
+    expect(screen.queryByText('Quick Pick')).toBeNull()
+    expect(screen.queryByLabelText('Current Keno ticket')).toBeNull()
     expect(screen.getByRole('table', { name: '10-spot Keno payouts' })).toBeTruthy()
-    expect(screen.getByText('R100,000.00')).toBeTruthy()
+    expect(screen.getByText('R200,000.00')).toBeTruthy()
   })
 
   it('reveals the draw in stages and locks ticket changes until it is complete', async () => {
@@ -190,23 +190,38 @@ describe('KenoGame', () => {
     await screen.findByText('Round result', {}, { timeout: 5_000 })
     expect(screen.queryByRole('button', { name: 'Repeat this ticket' })).toBeNull()
     expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3)
-    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    const drawAgain = screen.getByRole('button', { name: 'Draw again' }) as HTMLButtonElement
+    await waitFor(() => expect(drawAgain.disabled).toBe(false), { timeout: 3_000 })
+    await user.click(drawAgain)
     expect(createRound).toHaveBeenCalledTimes(2)
     expect(createRound.mock.calls[1]?.[0]).toEqual({ ticket: { numbers: [3, 7, 15] }, wager: 1 })
     expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).not.toBe(createRound.mock.calls[0]?.[1]?.idempotencyKey)
+  })
+
+  it('clears drawn states after a completed round while keeping the ticket selected', async () => {
+    const user = userEvent.setup()
+    render(<KenoGame gateway={fakeGateway()} initialSelection={[3, 7, 15]} />)
+    await screen.findByRole('combobox', { name: 'Keno wager' })
+    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(screen.getByRole('button', { name: 'Number 3, hit' })).toBeTruthy()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Number 3' }).getAttribute('aria-pressed')).toBe('true'), { timeout: 3_000 })
+    expect(screen.queryByRole('button', { name: 'Number 3, hit' })).toBeNull()
+    expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Draw again' })).toBeTruthy()
   })
 })
 
 const availableStatus: KenoStatus = {
   available: true, minimumWager: 1, maximumWager: 20, wagerIncrement: 1, balance: 1_000, mode: 'credit-keno',
   paytable: [
-    { spots: 1, hits: 1, multiplier: 4 },
-    { spots: 3, hits: 1, multiplier: 1 }, { spots: 3, hits: 2, multiplier: 2 }, { spots: 3, hits: 3, multiplier: 15 },
-    { spots: 10, hits: 3, multiplier: 1 }, { spots: 10, hits: 4, multiplier: 2 },
-    { spots: 10, hits: 5, multiplier: 4 }, { spots: 10, hits: 6, multiplier: 8 },
-    { spots: 10, hits: 7, multiplier: 20 }, { spots: 10, hits: 8, multiplier: 100 },
-    { spots: 10, hits: 9, multiplier: 500 },
-    { spots: 10, hits: 10, multiplier: 100_000 },
+    { spots: 1, hits: 1, multiplier: 2.5 },
+    { spots: 3, hits: 2, multiplier: 2 }, { spots: 3, hits: 3, multiplier: 27 },
+    { spots: 10, hits: 0, multiplier: 5 }, { spots: 10, hits: 5, multiplier: 2 },
+    { spots: 10, hits: 6, multiplier: 10 }, { spots: 10, hits: 7, multiplier: 55 },
+    { spots: 10, hits: 8, multiplier: 500 }, { spots: 10, hits: 9, multiplier: 4_500 },
+    { spots: 10, hits: 10, multiplier: 200_000 },
   ],
 }
 

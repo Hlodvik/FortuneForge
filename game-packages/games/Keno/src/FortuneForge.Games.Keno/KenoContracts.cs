@@ -48,9 +48,9 @@ public sealed record KenoDraw
     public ImmutableArray<int> Numbers { get; }
 }
 
-public sealed record KenoPaytableOutcome(string PaytableId, int Value);
+public sealed record KenoPaytableOutcome(string PaytableId, decimal Value);
 
-public sealed record KenoPrizeTier(int Spots, int Hits, int Multiplier);
+public sealed record KenoPrizeTier(int Spots, int Hits, decimal Multiplier);
 
 /// <summary>Provides a game-specific outcome without prescribing payout economics.</summary>
 public interface IKenoPaytable

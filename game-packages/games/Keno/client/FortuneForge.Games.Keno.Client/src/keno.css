@@ -38,20 +38,7 @@
   box-shadow: 0 1.5rem 4rem #0009;
 }
 
-.ff-keno__ticket-tools {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: .8rem;
-  border: 1px solid #f0d08a33;
-  border-radius: .8rem;
-  background: #090f17a3;
-}
-
-.ff-keno__quick-picks { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .4rem; }
-.ff-keno__quick-picks button, .ff-keno__controls button {
+.ff-keno__controls button {
   min-height: 2.55rem;
   border: 1px solid #e7c98088;
   border-radius: .6rem;
@@ -62,10 +49,10 @@
   cursor: pointer;
 }
 
-.ff-keno__quick-picks button { min-width: 2.65rem; }
+.ff-keno__draw-controls { display: flex; align-items: end; justify-content: center; gap: .75rem; margin-top: 1rem; }
 .ff-keno__wager {
   display: grid;
-  min-width: 10rem;
+  min-width: 9rem;
   gap: .25rem;
   color: #e3c689;
   font-size: .7rem;
@@ -88,20 +75,8 @@
 .ff-keno__wager small { color: #d7fffb; font-size: .7rem; letter-spacing: 0; text-transform: none; }
 .ff-keno__controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
 .ff-keno__controls p { margin: 0; color: #efe2d0; }
-.ff-keno__ticket-strip { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .8rem; }
-.ff-keno__ticket-strip span {
-  display: grid;
-  width: 2rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 999px;
-  background: #efd17f;
-  color: #321320;
-  font-size: .76rem;
-  font-weight: 900;
-}
 
-.ff-keno__grid { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(.3rem, 1vw, .6rem); }
+.ff-keno__grid { position: relative; display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(.3rem, 1vw, .6rem); }
 .ff-keno__grid button {
   min-width: 0;
   min-height: 2.5rem;
@@ -116,16 +91,38 @@
 }
 
 .ff-keno__grid button:hover:not(:disabled) { transform: translateY(-2px); background: #254b40; }
-.ff-keno__grid button.is-selected { border-color: #fff0ab; background: linear-gradient(145deg, #f8dc8c, #b9672d); box-shadow: 0 .2rem .7rem #0008; color: #321320; }
+.ff-keno__grid button.is-selected { border-color: #fff0ab; background: linear-gradient(145deg, #f8dc8c, #b9672d); box-shadow: 0 .2rem .7rem #0008; color: #321320; font-size: 1.02em; }
+.ff-keno__grid.is-drawing button:disabled { opacity: 1; }
+.ff-keno__grid.is-drawing button.is-selected { z-index: 1; color: #fffbd6; font-size: 1.18em; text-shadow: 0 1px 1px #49200f, 0 0 .5rem #fff0a8; transform: scale(1.08); }
 .ff-keno__grid button.is-drawn { border-color: #d7b66f; background: #493816; color: #fff3ca; }
-.ff-keno__grid button.is-hit { border-color: #d2ffab; background: linear-gradient(145deg, #cff091, #3e9c60); box-shadow: 0 0 .95rem #a7e97480; color: #09251b; }
+.ff-keno__grid button.is-hit { border-color: #e6ffc3; background: linear-gradient(145deg, #dfff9e, #35b963 68%, #16733c); box-shadow: 0 0 1.15rem #a7e974a6; color: #052c18; text-shadow: none; }
 .ff-keno__grid button.is-missed { border-color: #c7706b; background: #4a1f2b; color: #ffd8d2; }
+.ff-keno__grid.is-resetting::after {
+  content: "BOARD READY";
+  position: absolute;
+  z-index: 4;
+  inset: 38% 24%;
+  display: grid;
+  place-items: center;
+  border: 1px solid #9ff8efb8;
+  border-radius: 999px;
+  background: #071719e8;
+  box-shadow: 0 0 2rem #58e4da8c;
+  color: #d7fffb;
+  font-size: clamp(.72rem, 1.5vw, 1rem);
+  font-weight: 950;
+  letter-spacing: .14em;
+  pointer-events: none;
+  animation: ff-keno-board-sweep .55s ease both;
+}
+.ff-keno__grid.is-resetting button { animation: ff-keno-board-clear .55s ease both; }
+.ff-keno__grid.is-ready button.is-selected { animation: ff-keno-ticket-ready .42s ease-out both; }
 
 .ff-keno__play {
   display: block;
   min-width: 10rem;
   min-height: 3rem;
-  margin: 1.25rem auto 0;
+  margin: 0;
   border: 1px solid #fff0ad;
   border-radius: .6rem;
   padding: .55rem .8rem;
@@ -188,9 +185,25 @@
   62% { opacity: 1; transform: scale(1.12) rotate(1deg); }
   100% { opacity: 1; transform: scale(1) rotate(0); }
 }
+@keyframes ff-keno-board-sweep {
+  0% { opacity: 0; transform: translateY(-35%) scale(.92); }
+  35% { opacity: 1; transform: translateY(0) scale(1); }
+  78% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(30%) scale(.97); }
+}
+@keyframes ff-keno-board-clear {
+  0%, 35% { filter: brightness(1); }
+  62% { filter: brightness(1.55); transform: scale(.97); }
+  100% { filter: brightness(1); transform: scale(1); }
+}
+@keyframes ff-keno-ticket-ready {
+  0% { transform: scale(.9); }
+  60% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
 
 @media (max-width: 720px) {
-  .ff-keno__ticket-tools, .ff-keno__odds { grid-template-columns: 1fr; align-items: stretch; flex-direction: column; }
+  .ff-keno__odds { grid-template-columns: 1fr; align-items: stretch; }
 }
 
 @media (max-width: 540px) {
@@ -200,12 +213,14 @@
   .ff-keno__grid button { min-height: 2.7rem; }
   .ff-keno__controls { align-items: flex-start; flex-direction: column; }
   .ff-keno__controls button { width: 100%; }
-  .ff-keno__quick-picks { display: grid; grid-template-columns: repeat(5, 1fr); }
-  .ff-keno__quick-picks button { min-width: 0; }
+  .ff-keno__draw-controls { align-items: stretch; }
+  .ff-keno__draw-controls > * { flex: 1; }
   .ff-keno__odds { padding-inline: .15rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ff-keno__grid button { transition: none; }
-  .ff-keno__draw-tray span, .ff-keno__result strong.is-win { animation: none; }
+  .ff-keno__draw-tray span, .ff-keno__result strong.is-win,
+  .ff-keno__grid.is-resetting::after, .ff-keno__grid.is-resetting button,
+  .ff-keno__grid.is-ready button.is-selected { animation: none; }
 }

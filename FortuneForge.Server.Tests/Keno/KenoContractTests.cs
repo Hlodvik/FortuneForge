@@ -63,6 +63,24 @@ public sealed class KenoContractTests
     }
 
     [Fact]
+    public async Task Service_SettlesThePublishedFractionalOneSpotPrizeInCents()
+    {
+        var store = new InMemoryKenoStore();
+        var service = new KenoService(store, TimeProvider.System, () => new KenoDraw([1, .. Enumerable.Range(21, 19)]));
+
+        var round = await service.StartAsync(
+            "player-1",
+            new CreateKenoRoundRequest(new KenoTicketRequest([1]), 1m),
+            "keno-start-one-spot",
+            CancellationToken.None);
+
+        Assert.Equal(2.5m, round.Payout);
+        Assert.Equal(1.5m, round.Net);
+        Assert.Equal(1_001.5m, round.Balance);
+        Assert.Equal(100_150, store.BalanceCents);
+    }
+
+    [Fact]
     public async Task Service_RejectsInvalidOrChangedIdempotentTickets()
     {
         var store = new InMemoryKenoStore();
@@ -90,7 +108,7 @@ public sealed class KenoContractTests
             }
             if (BalanceCents < wagerCents) throw new KenoInsufficientCreditsException(BalanceCents, wagerCents);
             var played = KenoRoundEngine.Play(ticket, draw, StandardKenoPaytable.Instance);
-            var payoutCents = wagerCents * (played.Result.PaytableOutcome?.Value ?? 0);
+            var payoutCents = KenoMoney.PayoutCents(wagerCents, played.Result.PaytableOutcome?.Value ?? 0);
             BalanceCents = BalanceCents - wagerCents + payoutCents;
             round = new KenoStoreRound(new string('e', 64), userId, ticket, draw, played.Result.HitCount, wagerCents, payoutCents, StandardKenoPaytable.Id);
             idempotencyKey = key;

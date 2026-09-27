@@ -44,7 +44,7 @@ internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
 
             var played = KenoRoundEngine.Play(ticket, draw, StandardKenoPaytable.Instance);
             var outcome = played.Result.PaytableOutcome ?? throw new InvalidOperationException("The Keno paytable did not resolve the round.");
-            var payoutCents = checked(wagerCents * outcome.Value);
+            var payoutCents = KenoMoney.PayoutCents(wagerCents, outcome.Value);
             var balanceAfterWager = checked(balance - wagerCents);
             var finalBalance = checked(balanceAfterWager + payoutCents);
             var stored = new KenoStoreRound(roundId, userId, ticket, draw, played.Result.HitCount, wagerCents, payoutCents, outcome.PaytableId);
@@ -96,7 +96,7 @@ internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
         var draw = new KenoDraw(ReadNumbers(snapshot, "draw"));
         var played = KenoRoundEngine.Play(ticket, draw);
         var multiplier = StandardKenoPaytable.MultiplierFor(paytableId, ticket.Numbers.Length, played.Result.HitCount);
-        var calculatedPayout = checked(KenoMoney.ToWagerCents(KenoMoney.ToRand(wagerCents)) * multiplier);
+        var calculatedPayout = KenoMoney.PayoutCents(KenoMoney.ToWagerCents(KenoMoney.ToRand(wagerCents)), multiplier);
         if (storedHits != played.Result.HitCount || payoutCents != calculatedPayout)
             throw new InvalidOperationException("The Keno round result is corrupt.");
         return new KenoStoreRound(id, userId, ticket, draw, checked((int)storedHits), wagerCents, payoutCents, paytableId);

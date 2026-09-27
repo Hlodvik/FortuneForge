@@ -52,7 +52,7 @@ function isPaytable(value: unknown): value is KenoStatus['paytable'] {
   return Array.isArray(value) && value.length > 0 && value.every(tier => isRecord(tier) &&
     typeof tier.spots === 'number' && Number.isInteger(tier.spots) && tier.spots >= 1 && tier.spots <= 10 &&
     typeof tier.hits === 'number' && Number.isInteger(tier.hits) && tier.hits >= 0 && tier.hits <= tier.spots &&
-    typeof tier.multiplier === 'number' && Number.isInteger(tier.multiplier) && tier.multiplier > 0)
+    typeof tier.multiplier === 'number' && Number.isFinite(tier.multiplier) && tier.multiplier > 0)
 }
 
 function isTicket(value: unknown): value is KenoTicket {

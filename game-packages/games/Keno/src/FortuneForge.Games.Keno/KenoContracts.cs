@@ -50,6 +50,8 @@ public sealed record KenoDraw
 
 public sealed record KenoPaytableOutcome(string PaytableId, int Value);
 
+public sealed record KenoPrizeTier(int Spots, int Hits, int Multiplier);
+
 /// <summary>Provides a game-specific outcome without prescribing payout economics.</summary>
 public interface IKenoPaytable
 {

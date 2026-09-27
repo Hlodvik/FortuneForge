@@ -52,4 +52,21 @@ public sealed class KenoRoundEngineTests
 
         Assert.Equal(4, round.Result.HitCount);
     }
+
+    [Theory]
+    [InlineData(1, 1, 2)]
+    [InlineData(5, 4, 18)]
+    [InlineData(10, 0, 5)]
+    [InlineData(10, 5, 2)]
+    [InlineData(10, 10, 100_000)]
+    [InlineData(8, 3, 0)]
+    public void StandardPaytableReturnsThePublishedMultiplier(int spots, int hits, int expectedMultiplier)
+    {
+        var ticket = new KenoTicket(Enumerable.Range(1, spots));
+
+        var outcome = StandardKenoPaytable.Instance.Evaluate(ticket, hits);
+
+        Assert.Equal(StandardKenoPaytable.Id, outcome.PaytableId);
+        Assert.Equal(expectedMultiplier, outcome.Value);
+    }
 }

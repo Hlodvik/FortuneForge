@@ -4,13 +4,10 @@
 .ff-keno__header { margin-bottom: .55rem; }
 .ff-keno h1 { font-size: clamp(2.25rem, 5.5vh, 3.55rem); }
 .ff-keno__header p { font-size: .82rem; }
-.ff-keno__status-row { margin-top: .35rem; }
 .ff-keno__board { padding: clamp(.55rem, 1.4vh, .85rem); }
 .ff-keno__ticket-tools { margin-bottom: .5rem; padding: .45rem .6rem; }
-.ff-keno__quick-picks,
-.ff-keno__ticket-actions { gap: .3rem; margin-top: .25rem; }
+.ff-keno__quick-picks { gap: .3rem; margin-top: .25rem; }
 .ff-keno__quick-picks button,
-.ff-keno__ticket-actions button,
 .ff-keno__controls button { min-height: 2rem; padding: .3rem .55rem; }
 .ff-keno__controls { margin-bottom: .45rem; }
 .ff-keno__grid { gap: clamp(.18rem, .55vh, .32rem); }
@@ -45,8 +42,8 @@
   .ff-keno__odds { grid-area: odds; }
   .ff-keno__grid { min-height: 0; }
 
-  /* Results sit beside the ticket on desktop so the live board, draw tray and
-     repeat control all remain readable without creating page scroll. */
+  /* Results sit beside the ticket on desktop so the live board and draw tray
+     remain readable without creating page scroll. */
   .ff-keno__board--has-round {
     grid-template-areas:
       "tools tools"
@@ -77,8 +74,6 @@
   }
   .ff-keno__board--has-round .ff-keno__draw-tray span { width: 2rem; font-size: .7rem; }
   .ff-keno__board--has-round .ff-keno__result p { font-size: .72rem; line-height: 1.25; }
-  .ff-keno__board--has-round .ff-keno__legend { gap: .25rem; }
-  .ff-keno__board--has-round .ff-keno__repeat { min-height: 2.2rem; padding: .35rem .6rem; }
   .ff-keno__board--has-round .ff-keno__odds { display: none; }
 }
 
@@ -86,16 +81,15 @@
   .ff-keno { padding: .35rem; }
   .ff-keno__header { margin-bottom: .35rem; }
   .ff-keno__eyebrow,
-  .ff-keno__header p,
-  .ff-keno__status-row span { display: none; }
+  .ff-keno__header p { display: none; }
   .ff-keno h1 { margin: 0; font-size: 1.8rem; }
-  .ff-keno__status-row { margin-top: .15rem; }
   .ff-keno__board { padding: .42rem; }
   .ff-keno__ticket-tools { flex-direction: row; align-items: center; margin-bottom: .35rem; padding: .3rem; }
+  .ff-keno__wager { min-width: 7.25rem; }
+  .ff-keno__wager select { min-height: 1.75rem; padding-block: .15rem; }
+  .ff-keno__wager small { font-size: .62rem; }
   .ff-keno__quick-picks { display: grid; grid-template-columns: repeat(5, 1fr); }
-  .ff-keno__quick-picks button,
-  .ff-keno__ticket-actions button { min-height: 1.75rem; padding: .15rem .3rem; font-size: .68rem; }
-  .ff-keno__ticket-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .ff-keno__quick-picks button { min-height: 1.75rem; padding: .15rem .3rem; font-size: .68rem; }
   .ff-keno__controls { flex-direction: row; align-items: center; margin-bottom: .3rem; font-size: .7rem; }
   .ff-keno__controls button { width: auto; min-height: 1.75rem; }
   .ff-keno__grid { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: .12rem; }
@@ -120,8 +114,6 @@
 .ff-keno__grid button:hover:not(:disabled) { background: #175657; box-shadow: 0 0 .75rem #58e4da45; }
 .ff-keno__grid button.is-selected { border-color: #fff2a8; background: radial-gradient(circle at 35% 28%, #fff4b4, #e09a2e 62%, #9a541d); box-shadow: 0 0 0 2px #ffd36d35, 0 .25rem .65rem #0008; }
 .ff-keno__play:not(:disabled) { background: linear-gradient(90deg, #62efe0, #ffd36d); color: #071719; box-shadow: 0 .45rem 1rem #0007, 0 0 1.1rem #58e4da2e; }
-.ff-keno__status-row small { color: var(--keno-cyan); }
-
 @media (max-width: 540px) {
   .ff-keno__grid button { border-radius: .38rem; }
   .ff-keno__board { border-radius: .8rem; }

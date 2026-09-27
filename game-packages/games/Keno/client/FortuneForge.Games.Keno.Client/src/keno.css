@@ -30,10 +30,6 @@
 }
 
 .ff-keno__header p { margin: 0; color: #ded3c8; }
-.ff-keno__status-row { display: flex; flex-wrap: wrap; gap: .45rem 1rem; margin-top: .7rem; }
-.ff-keno__status-row small { color: #f8dda2; font-weight: 800; }
-.ff-keno__status-row span { color: #b9c8c3; font-size: .78rem; }
-
 .ff-keno__board {
   padding: clamp(1rem, 3vw, 2.3rem);
   border: 1px solid #f2d38f55;
@@ -54,8 +50,8 @@
   background: #090f17a3;
 }
 
-.ff-keno__quick-picks, .ff-keno__ticket-actions { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .4rem; }
-.ff-keno__quick-picks button, .ff-keno__ticket-actions button, .ff-keno__controls button, .ff-keno__repeat {
+.ff-keno__quick-picks { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .4rem; }
+.ff-keno__quick-picks button, .ff-keno__controls button {
   min-height: 2.55rem;
   border: 1px solid #e7c98088;
   border-radius: .6rem;
@@ -67,6 +63,29 @@
 }
 
 .ff-keno__quick-picks button { min-width: 2.65rem; }
+.ff-keno__wager {
+  display: grid;
+  min-width: 10rem;
+  gap: .25rem;
+  color: #e3c689;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.ff-keno__wager select {
+  min-height: 2.55rem;
+  border: 1px solid #58e4da7d;
+  border-radius: .6rem;
+  padding: .35rem 2rem .35rem .7rem;
+  background: #0a171b;
+  color: #fff5e6;
+  font: inherit;
+  font-size: .9rem;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.ff-keno__wager small { color: #d7fffb; font-size: .7rem; letter-spacing: 0; text-transform: none; }
 .ff-keno__controls { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: .75rem; }
 .ff-keno__controls p { margin: 0; color: #efe2d0; }
 .ff-keno__ticket-strip { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .8rem; }
@@ -120,8 +139,16 @@
 .ff-keno__state { text-align: center; color: #ded3c8; }
 .ff-keno__result { display: grid; justify-items: center; gap: .55rem; margin-top: 1.25rem; padding: 1rem; border: 1px solid #f1d28c55; border-radius: .75rem; background: #09151ab5; text-align: center; }
 .ff-keno__result strong { color: #ffe29a; font-family: Georgia, serif; font-size: 2rem; }
+.ff-keno__result strong.is-win {
+  color: #fff3a8;
+  font-size: clamp(2rem, 5vw, 3.35rem);
+  text-shadow: 0 0 .35rem #fff5b5, 0 0 1.2rem #ffd36d, 0 0 2.2rem #58e4da8f;
+  animation: ff-keno-win-in .7s cubic-bezier(.18, .89, .32, 1.45) both;
+}
+.ff-keno__result strong.is-loss { color: #cbd7d4; font-size: 1.65rem; }
 .ff-keno__result p { margin: 0; color: #ded3c8; }
 .ff-keno__result-summary b { color: #fff1bb; }
+.ff-keno__settlement { color: #d7fffb !important; font-weight: 800; }
 .ff-keno__draw-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: .38rem; max-width: 36rem; min-height: 2.45rem; }
 .ff-keno__draw-tray span {
   display: grid;
@@ -137,13 +164,6 @@
   animation: ff-keno-ball-in .18s ease-out both;
 }
 .ff-keno__draw-tray span.is-hit { border-color: #d2ffab; background: #3e9c60; color: #09251b; }
-.ff-keno__legend { display: flex; flex-wrap: wrap; justify-content: center; gap: .45rem; }
-.ff-keno__legend span { padding: .23rem .48rem; border: 1px solid; border-radius: 999px; font-size: .67rem; font-weight: 850; }
-.ff-keno__legend .is-hit { border-color: #d2ffab; background: #3e9c60; color: #09251b; }
-.ff-keno__legend .is-drawn { border-color: #d7b66f; background: #493816; color: #fff3ca; }
-.ff-keno__legend .is-missed { border-color: #c7706b; background: #4a1f2b; color: #ffd8d2; }
-.ff-keno__repeat { margin-top: .2rem; background: #fff1ab; color: #30111d; }
-
 .ff-keno__odds {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 1.3fr);
@@ -162,10 +182,14 @@
 .ff-keno button:focus-visible { outline: 3px solid #fff0a6; outline-offset: .18rem; }
 
 @keyframes ff-keno-ball-in { from { opacity: 0; transform: scale(.65); } }
+@keyframes ff-keno-win-in {
+  0% { opacity: 0; transform: scale(.65) rotate(-2deg); }
+  62% { opacity: 1; transform: scale(1.12) rotate(1deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
 
 @media (max-width: 720px) {
   .ff-keno__ticket-tools, .ff-keno__odds { grid-template-columns: 1fr; align-items: stretch; flex-direction: column; }
-  .ff-keno__ticket-actions button { flex: 1; }
 }
 
 @media (max-width: 540px) {
@@ -182,5 +206,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ff-keno__grid button { transition: none; }
-  .ff-keno__draw-tray span { animation: none; }
+  .ff-keno__draw-tray span, .ff-keno__result strong.is-win { animation: none; }
 }

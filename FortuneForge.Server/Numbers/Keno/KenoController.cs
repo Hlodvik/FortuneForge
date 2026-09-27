@@ -17,7 +17,16 @@ public sealed class KenoController(FirestoreDb database, AccountService accountS
     {
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AccountAsync(cancellationToken);
-        return account is null ? Unauthorized(new KenoErrorResponse("keno-authentication-required", "Sign in to play Keno.")) : Ok(new KenoStatusResponse(true, account.Balances.SlotsCredits, "free-play-keno"));
+        return account is null
+            ? Unauthorized(new KenoErrorResponse("keno-authentication-required", "Sign in to play Keno."))
+            : Ok(new KenoStatusResponse(
+                true,
+                KenoMoney.ToRand(KenoMoney.MinimumWagerCents),
+                KenoMoney.ToRand(KenoMoney.MaximumWagerCents),
+                KenoMoney.ToRand(KenoMoney.WagerIncrementCents),
+                account.Balances.SlotsCredits,
+                "credit-keno",
+                KenoService.Paytable()));
     }
 
     [HttpPost("rounds")]
@@ -53,6 +62,7 @@ internal static class KenoHttp
     public static ActionResult FromException(ControllerBase controller, Exception exception, ILogger logger) => exception switch
     {
         KenoRoundNotFoundException => controller.NotFound(new KenoErrorResponse("keno-round-not-found", exception.Message)),
+        KenoInsufficientCreditsException => controller.Conflict(new KenoErrorResponse("insufficient-slot-credits", exception.Message)),
         KenoRoundConflictException => controller.Conflict(new KenoErrorResponse("keno-round-conflict", exception.Message)),
         ArgumentException => controller.BadRequest(new KenoErrorResponse("keno-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),

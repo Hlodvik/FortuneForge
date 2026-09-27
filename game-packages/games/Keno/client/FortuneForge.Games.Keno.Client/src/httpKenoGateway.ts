@@ -12,10 +12,10 @@ export class HttpKenoGateway implements KenoGateway {
   getStatus(signal?: AbortSignal) { return this.request('/status', { signal }, isStatus) }
 
   createRound(request: KenoRoundRequest, options: KenoRequestOptions = {}) {
-    if (!isTicket(request.ticket))
+    if (!isTicket(request.ticket) || !isPositiveMoney(request.wager))
       throw new KenoGatewayError('The Keno ticket is invalid.', 'keno-invalid-ticket')
 
-    return this.request('/rounds', jsonPost(request, options.signal, options.idempotencyKey ?? createIdempotencyKey()), value => isRound(value, request.ticket))
+    return this.request('/rounds', jsonPost(request, options.signal, options.idempotencyKey ?? createIdempotencyKey()), value => isRound(value, request))
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
@@ -35,13 +35,24 @@ function jsonPost(body: object, signal: AbortSignal | undefined, idempotencyKey:
 }
 
 function isStatus(value: unknown): value is KenoStatus {
-  return isRecord(value) && typeof value.available === 'boolean' && isNonNegativeFinite(value.balance) && typeof value.mode === 'string' && value.mode.trim().length > 0
+  return isRecord(value) && typeof value.available === 'boolean' &&
+    isPositiveMoney(value.minimumWager) && isPositiveMoney(value.maximumWager) && value.maximumWager >= value.minimumWager &&
+    isPositiveMoney(value.wagerIncrement) && isNonNegativeFinite(value.balance) &&
+    typeof value.mode === 'string' && value.mode.trim().length > 0 && isPaytable(value.paytable)
 }
 
-function isRound(value: unknown, ticket: KenoTicket): value is KenoRound {
-  return isRecord(value) && isNonBlankString(value.roundId) && isNonNegativeFinite(value.balance) && value.phase === 'completed' && isTicket(value.ticket) && sameNumbers(value.ticket.numbers, ticket.numbers) &&
+function isRound(value: unknown, request: KenoRoundRequest): value is KenoRound {
+  return isRecord(value) && isNonBlankString(value.roundId) && isNonNegativeFinite(value.balance) && value.phase === 'completed' && isTicket(value.ticket) && sameNumbers(value.ticket.numbers, request.ticket.numbers) &&
     isDraw(value.draw) && isHitCount(value.hitCount, value.ticket, value.draw) &&
-    (value.outcome === null || typeof value.outcome === 'string')
+    isPositiveMoney(value.wager) && value.wager === request.wager && isNonNegativeFinite(value.payout) && typeof value.net === 'number' && Number.isFinite(value.net) &&
+    Math.abs(value.net - (value.payout - value.wager)) < 0.001 && typeof value.outcome === 'string'
+}
+
+function isPaytable(value: unknown): value is KenoStatus['paytable'] {
+  return Array.isArray(value) && value.length > 0 && value.every(tier => isRecord(tier) &&
+    typeof tier.spots === 'number' && Number.isInteger(tier.spots) && tier.spots >= 1 && tier.spots <= 10 &&
+    typeof tier.hits === 'number' && Number.isInteger(tier.hits) && tier.hits >= 0 && tier.hits <= tier.spots &&
+    typeof tier.multiplier === 'number' && Number.isInteger(tier.multiplier) && tier.multiplier > 0)
 }
 
 function isTicket(value: unknown): value is KenoTicket {
@@ -72,6 +83,7 @@ function isKenoNumber(value: unknown): value is number {
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null }
 function isNonBlankString(value: unknown): value is string { return typeof value === 'string' && value.trim().length > 0 }
 function isNonNegativeFinite(value: unknown): value is number { return typeof value === 'number' && Number.isFinite(value) && value >= 0 }
+function isPositiveMoney(value: unknown): value is number { return isNonNegativeFinite(value) && value > 0 }
 function isError(value: unknown): value is { code: string; message: string } { return isRecord(value) && typeof value.code === 'string' && typeof value.message === 'string' }
 function createIdempotencyKey(): string {
   const random = typeof crypto?.randomUUID === 'function'

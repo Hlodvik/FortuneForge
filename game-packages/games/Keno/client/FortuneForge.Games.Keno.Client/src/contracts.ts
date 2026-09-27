@@ -1,6 +1,7 @@
 export type KenoTicket = Readonly<{ numbers: readonly number[] }>
 export type KenoDraw = Readonly<{ numbers: readonly number[] }>
-export type KenoRoundRequest = Readonly<{ ticket: KenoTicket }>
+export type KenoPrizeTier = Readonly<{ spots: number; hits: number; multiplier: number }>
+export type KenoRoundRequest = Readonly<{ ticket: KenoTicket; wager: number }>
 export type KenoRound = Readonly<{
   roundId: string
   balance: number
@@ -8,7 +9,10 @@ export type KenoRound = Readonly<{
   ticket: KenoTicket
   draw: KenoDraw
   hitCount: number
-  outcome: string | null
+  wager: number
+  payout: number
+  net: number
+  outcome: string
 }>
 export type KenoRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string }>
 
@@ -17,7 +21,15 @@ export interface KenoGateway {
   createRound(request: KenoRoundRequest, options?: KenoRequestOptions): Promise<KenoRound>
 }
 
-export type KenoStatus = Readonly<{ available: boolean; balance: number; mode: string }>
+export type KenoStatus = Readonly<{
+  available: boolean
+  minimumWager: number
+  maximumWager: number
+  wagerIncrement: number
+  balance: number
+  mode: string
+  paytable: readonly KenoPrizeTier[]
+}>
 
 export class KenoGatewayError extends Error {
   readonly code: string

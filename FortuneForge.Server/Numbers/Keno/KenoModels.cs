@@ -5,21 +5,44 @@ using FortuneForge.Server.Accounts.Models;
 namespace FortuneForge.Server.Numbers.Keno;
 
 public sealed record KenoTicketRequest(IReadOnlyList<int>? Numbers);
-public sealed record CreateKenoRoundRequest(KenoTicketRequest? Ticket);
-public sealed record KenoStatusResponse(bool Available, decimal Balance, string Mode);
+public sealed record CreateKenoRoundRequest(KenoTicketRequest? Ticket, decimal Wager);
+public sealed record KenoPrizeTierResponse(int Spots, int Hits, int Multiplier);
+public sealed record KenoStatusResponse(bool Available, decimal MinimumWager, decimal MaximumWager, decimal WagerIncrement, decimal Balance, string Mode, IReadOnlyList<KenoPrizeTierResponse> Paytable);
 public sealed record KenoTicketResponse(IReadOnlyList<int> Numbers);
 public sealed record KenoDrawResponse(IReadOnlyList<int> Numbers);
-public sealed record KenoRoundResponse(string RoundId, decimal Balance, string Phase, KenoTicketResponse Ticket, KenoDrawResponse Draw, int HitCount, string Outcome);
+public sealed record KenoRoundResponse(string RoundId, decimal Balance, string Phase, KenoTicketResponse Ticket, KenoDrawResponse Draw, int HitCount, decimal Wager, decimal Payout, decimal Net, string Outcome);
 public sealed record KenoErrorResponse(string Code, string Message);
 
-internal sealed record KenoStoreRound(string RoundId, string UserId, KenoTicket Ticket, KenoDraw Draw, int HitCount);
+internal sealed record KenoStoreRound(string RoundId, string UserId, KenoTicket Ticket, KenoDraw Draw, int HitCount, long WagerCents, long PayoutCents, string PaytableId);
 internal sealed record KenoStoreResult(KenoStoreRound Round, long BalanceCents);
 internal sealed class KenoRoundNotFoundException() : Exception("Keno round not found.");
 internal sealed class KenoRoundConflictException(string message) : Exception(message);
+internal sealed class KenoInsufficientCreditsException(long availableCents, long requiredCents)
+    : Exception($"This account has R{RandMoney.CentsToRand(availableCents):0.00}, but the Keno wager requires R{RandMoney.CentsToRand(requiredCents):0.00}.");
+
+internal static class KenoMoney
+{
+    public const long MinimumWagerCents = 100;
+    public const long MaximumWagerCents = 2_000;
+    public const long WagerIncrementCents = 100;
+
+    public static long ToWagerCents(decimal wager)
+    {
+        var cents = checked(wager * RandMoney.CentsPerRand);
+        if (cents != decimal.Truncate(cents))
+            throw new ArgumentOutOfRangeException(nameof(wager), "A Keno wager cannot include a fraction of a cent.");
+        var value = checked((long)cents);
+        if (value < MinimumWagerCents || value > MaximumWagerCents || value % WagerIncrementCents != 0)
+            throw new ArgumentOutOfRangeException(nameof(wager), "Choose a whole-rand Keno wager from R1.00 through R20.00.");
+        return value;
+    }
+
+    public static decimal ToRand(long cents) => RandMoney.CentsToRand(cents);
+}
 
 internal interface IKenoStore
 {
-    Task<KenoStoreResult> StartAsync(string userId, string idempotencyKey, KenoTicket ticket, KenoDraw draw, DateTimeOffset nowUtc, CancellationToken cancellationToken);
+    Task<KenoStoreResult> StartAsync(string userId, string idempotencyKey, KenoTicket ticket, long wagerCents, KenoDraw draw, DateTimeOffset nowUtc, CancellationToken cancellationToken);
     Task<KenoStoreResult?> GetAsync(string userId, string roundId, CancellationToken cancellationToken);
 }
 
@@ -32,7 +55,8 @@ internal sealed class KenoService(IKenoStore store, TimeProvider timeProvider, F
         ArgumentNullException.ThrowIfNull(request);
         ValidateKey(idempotencyKey);
         var ticket = new KenoTicket(request.Ticket?.Numbers ?? throw new ArgumentException("Choose from one through ten Keno numbers.", nameof(request)));
-        return ToResponse(await store.StartAsync(userId, idempotencyKey, ticket, createDraw(), timeProvider.GetUtcNow(), cancellationToken));
+        var wagerCents = KenoMoney.ToWagerCents(request.Wager);
+        return ToResponse(await store.StartAsync(userId, idempotencyKey, ticket, wagerCents, createDraw(), timeProvider.GetUtcNow(), cancellationToken));
     }
 
     public async Task<KenoRoundResponse> GetAsync(string userId, string roundId, CancellationToken cancellationToken)
@@ -44,8 +68,24 @@ internal sealed class KenoService(IKenoStore store, TimeProvider timeProvider, F
     internal static KenoRoundResponse ToResponse(KenoStoreResult result)
     {
         var round = result.Round;
-        return new KenoRoundResponse(round.RoundId, RandMoney.CentsToRand(result.BalanceCents), "completed", new KenoTicketResponse(round.Ticket.Numbers), new KenoDrawResponse(round.Draw.Numbers), round.HitCount, $"{round.HitCount} {(round.HitCount == 1 ? "hit" : "hits")}");
+        var wager = KenoMoney.ToRand(round.WagerCents);
+        var payout = KenoMoney.ToRand(round.PayoutCents);
+        return new KenoRoundResponse(
+            round.RoundId,
+            RandMoney.CentsToRand(result.BalanceCents),
+            "completed",
+            new KenoTicketResponse(round.Ticket.Numbers),
+            new KenoDrawResponse(round.Draw.Numbers),
+            round.HitCount,
+            wager,
+            payout,
+            payout - wager,
+            round.PayoutCents > 0 ? $"R{payout:0.00} return" : "No win");
     }
+
+    internal static IReadOnlyList<KenoPrizeTierResponse> Paytable() => StandardKenoPaytable.Tiers
+        .Select(tier => new KenoPrizeTierResponse(tier.Spots, tier.Hits, tier.Multiplier))
+        .ToArray();
 
     private static KenoDraw CreateDraw()
     {

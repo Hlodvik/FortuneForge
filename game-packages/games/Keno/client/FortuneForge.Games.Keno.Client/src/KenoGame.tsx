@@ -324,18 +324,13 @@ function playPickEffect(contextRef: { current: AudioContext | null }, action: 'a
   if (context.state === 'suspended') void context.resume().catch(() => undefined)
 
   const now = context.currentTime
-  const duration = action === 'add' ? .095 : .075
-  const oscillator = context.createOscillator()
-  const gain = context.createGain()
-  oscillator.type = 'sine'
-  oscillator.frequency.setValueAtTime(action === 'add' ? 155 : 120, now)
-  oscillator.frequency.exponentialRampToValueAtTime(action === 'add' ? 82 : 68, now + duration)
-  gain.gain.setValueAtTime(.0001, now)
-  gain.gain.exponentialRampToValueAtTime(action === 'add' ? .032 : .024, now + .007)
-  gain.gain.exponentialRampToValueAtTime(.0001, now + duration)
-  oscillator.connect(gain).connect(context.destination)
-  oscillator.start(now)
-  oscillator.stop(now + duration + .01)
+  if (action === 'add') {
+    playKenoTone(context, 235, 125, now, .09, .04, 'sine')
+    playKenoTone(context, 520, 300, now + .002, .045, .012, 'triangle')
+  } else {
+    playKenoTone(context, 190, 105, now, .075, .032, 'sine')
+    playKenoTone(context, 390, 245, now + .002, .04, .009, 'triangle')
+  }
 }
 
 function getKenoAudioContext(contextRef: { current: AudioContext | null }): AudioContext | null {

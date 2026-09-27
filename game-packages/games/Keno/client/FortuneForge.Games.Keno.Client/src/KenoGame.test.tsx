@@ -44,11 +44,11 @@ describe('KenoGame', () => {
     await user.click(screen.getByRole('button', { name: 'Quick pick 10 numbers' }))
     await user.click(screen.getByRole('button', { name: 'Clear selection' }))
 
-    expect(audio.createOscillator).toHaveBeenCalledTimes(4)
-    expect(audio.start).toHaveBeenCalledTimes(4)
-    expect(audio.stop).toHaveBeenCalledTimes(4)
-    expect(audio.peakGain).toHaveBeenCalledWith(.032, 1.007)
-    expect(audio.peakGain).toHaveBeenCalledWith(.024, 1.007)
+    expect(audio.createOscillator).toHaveBeenCalledTimes(8)
+    expect(audio.start).toHaveBeenCalledTimes(8)
+    expect(audio.stop).toHaveBeenCalledTimes(8)
+    expect(audio.peakGain).toHaveBeenCalledWith(.04, 1.008)
+    expect(audio.peakGain).toHaveBeenCalledWith(.032, 1.008)
   })
 
   it('prevents selecting more than ten numbers', async () => {

@@ -26,6 +26,13 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
   const roundRequestKey = useRef<string | null>(null)
+  const pickAudioContext = useRef<AudioContext | null>(null)
+
+  useEffect(() => () => {
+    const context = pickAudioContext.current
+    pickAudioContext.current = null
+    if (context && context.state !== 'closed') void context.close()
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -98,6 +105,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   }
 
   const toggleNumber = (number: number) => {
+    playPickEffect(pickAudioContext, selectedNumbers.includes(number) ? 'remove' : 'add')
     resetRound()
     setSelectedNumbers(current => current.includes(number)
       ? current.filter(selected => selected !== number)
@@ -105,6 +113,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   }
 
   const clearSelection = () => {
+    playPickEffect(pickAudioContext, 'remove')
     resetRound()
     setSelectedNumbers([])
   }
@@ -117,6 +126,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
   const quickPick = (count: number) => {
     if (isLocked) return
+    playPickEffect(pickAudioContext, 'add')
     resetRound()
     setSelectedNumbers(randomTicket(count))
   }
@@ -278,3 +288,27 @@ function randomIndex(length: number): number {
 }
 
 function formatMoney(value: number): string { return `R${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
+
+function playPickEffect(contextRef: { current: AudioContext | null }, action: 'add' | 'remove'): void {
+  if (typeof window === 'undefined') return
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextConstructor) return
+
+  const context = contextRef.current ??= new AudioContextConstructor()
+  if (context.state === 'suspended') void context.resume()
+
+  const now = context.currentTime
+  const duration = action === 'add' ? .095 : .075
+  const oscillator = context.createOscillator()
+  const gain = context.createGain()
+  oscillator.type = 'sine'
+  oscillator.frequency.setValueAtTime(action === 'add' ? 155 : 120, now)
+  oscillator.frequency.exponentialRampToValueAtTime(action === 'add' ? 82 : 68, now + duration)
+  gain.gain.setValueAtTime(.0001, now)
+  gain.gain.exponentialRampToValueAtTime(action === 'add' ? .032 : .024, now + .007)
+  gain.gain.exponentialRampToValueAtTime(.0001, now + duration)
+  oscillator.connect(gain).connect(context.destination)
+  oscillator.start(now)
+  oscillator.stop(now + duration + .01)
+}

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KenoGame } from './KenoGame'
 import { KenoGatewayError, type KenoGateway, type KenoRound, type KenoStatus } from './contracts'
 
-afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear() })
+afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.unstubAllGlobals() })
 
 describe('KenoGame', () => {
   it('retries an unavailable table connection without requiring a page refresh', async () => {
@@ -31,6 +31,24 @@ describe('KenoGame', () => {
     expect(screen.getByRole('button', { name: 'Number 18' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByText(/1 of 10 numbers selected/)).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Draw' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('plays one quiet synthesized effect for each ticket-selection action', async () => {
+    const user = userEvent.setup()
+    const audio = installAudioContextMock()
+    render(<KenoGame gateway={fakeGateway()} />)
+    await screen.findByRole('combobox', { name: 'Keno wager' })
+
+    await user.click(screen.getByRole('button', { name: 'Number 18' }))
+    await user.click(screen.getByRole('button', { name: 'Number 18' }))
+    await user.click(screen.getByRole('button', { name: 'Quick pick 10 numbers' }))
+    await user.click(screen.getByRole('button', { name: 'Clear selection' }))
+
+    expect(audio.createOscillator).toHaveBeenCalledTimes(4)
+    expect(audio.start).toHaveBeenCalledTimes(4)
+    expect(audio.stop).toHaveBeenCalledTimes(4)
+    expect(audio.peakGain).toHaveBeenCalledWith(.032, 1.007)
+    expect(audio.peakGain).toHaveBeenCalledWith(.024, 1.007)
   })
 
   it('prevents selecting more than ten numbers', async () => {
@@ -184,4 +202,28 @@ const completedRound: KenoRound = {
 
 function fakeGateway(overrides: Partial<KenoGateway> = {}): KenoGateway {
   return { getStatus: vi.fn().mockResolvedValue(availableStatus), createRound: vi.fn().mockResolvedValue(completedRound), ...overrides }
+}
+
+function installAudioContextMock() {
+  const start = vi.fn()
+  const stop = vi.fn()
+  const peakGain = vi.fn()
+  const createOscillator = vi.fn(() => ({
+    type: 'sine',
+    frequency: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() },
+    connect: vi.fn(destination => destination),
+    start,
+    stop,
+  }))
+  const createGain = vi.fn(() => ({
+    gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: peakGain },
+    connect: vi.fn(destination => destination),
+  }))
+  const audio = {
+    state: 'running', currentTime: 1, destination: {}, createOscillator, createGain,
+    resume: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined), start, stop, peakGain,
+  }
+  function AudioContextMock() { return audio }
+  vi.stubGlobal('AudioContext', AudioContextMock)
+  return audio
 }

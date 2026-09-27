@@ -97,6 +97,7 @@ describe('KenoGame', () => {
     expect((screen.getByRole('button', { name: 'Draw' }) as HTMLButtonElement).disabled).toBe(true)
     expect(gateway.createRound).not.toHaveBeenCalled()
     expect(screen.getByText(/select at least one to enable draw/i)).toBeTruthy()
+    expect(screen.queryByText('Choose a ticket size')).toBeNull()
   })
 
   it('presents gateway failures accessibly', async () => {

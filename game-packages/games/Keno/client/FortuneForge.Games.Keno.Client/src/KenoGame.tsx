@@ -260,7 +260,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       <section className="ff-keno__odds" aria-label="Keno prize table">
         <div>
           <span className="ff-keno__label">Prize table</span>
-          <h2>{selectedNumbers.length === 0 ? 'Choose a ticket size' : `${selectedNumbers.length}-spot payouts`}</h2>
+          {selectedNumbers.length > 0 && <h2>{selectedNumbers.length}-spot payouts</h2>}
           <p>{formatMoney(wager)} ticket · balance {formatMoney(status?.balance ?? 0)}</p>
         </div>
         {prizeTiers.length > 0 && <div className="ff-keno__odds-grid" role="table" aria-label={`${selectedNumbers.length}-spot Keno payouts`}>

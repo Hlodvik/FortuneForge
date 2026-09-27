@@ -77,6 +77,35 @@
   .ff-keno__board--has-round .ff-keno__odds { display: none; }
 }
 
+/* On a full desktop ticket, the payout table belongs beside the number field.
+   Keeping it in the vertical flow forced the fixed-height game shell to make
+   the grid rows overlap one another at ordinary laptop viewport heights. */
+@media (min-width: 721px) {
+  .ff-keno__board:not(.ff-keno__board--has-round) {
+    grid-template-areas:
+      "tools tools"
+      "controls odds"
+      "ticket odds"
+      "numbers odds"
+      "play odds";
+    grid-template-columns: minmax(0, 1.75fr) minmax(17rem, .72fr);
+    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    column-gap: .75rem;
+  }
+  .ff-keno__board:not(.ff-keno__board--has-round) .ff-keno__odds {
+    grid-area: odds;
+    align-self: stretch;
+    min-height: 0;
+    margin: 0;
+    padding: .65rem .7rem;
+    border-top: 0;
+    border-left: 1px solid #f1d28c44;
+    grid-template-columns: 1fr;
+    align-content: start;
+    overflow: hidden;
+  }
+}
+
 @media (max-width: 540px) {
   .ff-keno { padding: .35rem; }
   .ff-keno__header { margin-bottom: .35rem; }

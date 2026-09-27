@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { KenoGame } from './KenoGame'
@@ -157,13 +157,16 @@ describe('KenoGame', () => {
 
   it('reveals the draw in stages and locks ticket changes until it is complete', async () => {
     const user = userEvent.setup()
+    const audio = installAudioContextMock()
     render(<KenoGame gateway={fakeGateway()} initialSelection={[3, 7, 15]} />)
     await screen.findByRole('combobox', { name: 'Keno wager' })
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     expect(await screen.findByText('Drawing live')).toBeTruthy()
+    expect(audio.drawStart).toHaveBeenCalledTimes(1)
     expect((screen.getByRole('button', { name: /^Number 3$/ }) as HTMLButtonElement).disabled).toBe(true)
     await screen.findByText('Round result', {}, { timeout: 5_000 })
     expect(screen.getByText('R2.00 WIN', { selector: '.ff-keno__result strong' })).toBeTruthy()
+    await waitFor(() => expect(audio.start).toHaveBeenCalledTimes(2))
   })
 
   it('keeps the completed ticket selected for the next draw without a redundant repeat button', async () => {
@@ -207,6 +210,8 @@ function fakeGateway(overrides: Partial<KenoGateway> = {}): KenoGateway {
 function installAudioContextMock() {
   const start = vi.fn()
   const stop = vi.fn()
+  const drawStart = vi.fn()
+  const drawStop = vi.fn()
   const peakGain = vi.fn()
   const createOscillator = vi.fn(() => ({
     type: 'sine',
@@ -219,11 +224,14 @@ function installAudioContextMock() {
     gain: { setValueAtTime: vi.fn(), exponentialRampToValueAtTime: peakGain },
     connect: vi.fn(destination => destination),
   }))
+  const createBufferSource = vi.fn(() => ({ buffer: null, connect: vi.fn(destination => destination), start: drawStart, stop: drawStop }))
   const audio = {
-    state: 'running', currentTime: 1, destination: {}, createOscillator, createGain,
-    resume: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined), start, stop, peakGain,
+    state: 'running', currentTime: 1, destination: {}, createOscillator, createGain, createBufferSource,
+    decodeAudioData: vi.fn().mockResolvedValue({}), resume: vi.fn().mockResolvedValue(undefined), close: vi.fn().mockResolvedValue(undefined),
+    start, stop, peakGain, drawStart, drawStop,
   }
   function AudioContextMock() { return audio }
   vi.stubGlobal('AudioContext', AudioContextMock)
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(8)) }))
   return audio
 }

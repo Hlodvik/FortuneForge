@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { KenoGatewayError, type KenoGateway, type KenoRound, type KenoStatus } from './contracts'
 import { HttpKenoGateway } from './httpKenoGateway'
+import drawTumbleUrl from './assets/keno-draw-tumble.wav?url'
 import './keno.css'
 import './kenoViewport.css'
 
@@ -9,7 +10,9 @@ export type KenoGameProps = Readonly<{ gateway?: KenoGateway; playerId?: string;
 const maximumSelections = 10
 const kenoNumbers = Array.from({ length: 80 }, (_, index) => index + 1)
 const quickPickCounts = [1, 3, 5, 7, 10] as const
-const revealDelayMilliseconds = 110
+const revealBeatMilliseconds = 110
+const firstRevealBeatMilliseconds = 55
+const finishCueDelaySeconds = .14
 const defaultGateway = new HttpKenoGateway()
 type StoredPendingDraw = Readonly<{ idempotencyKey: string; numbers: readonly number[]; wager: number }>
 
@@ -27,8 +30,14 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
   const roundRequestKey = useRef<string | null>(null)
   const pickAudioContext = useRef<AudioContext | null>(null)
+  const drawAudioBuffer = useRef<AudioBuffer | null>(null)
+  const drawAudioLoad = useRef<Promise<AudioBuffer | null> | null>(null)
+  const drawAudioSource = useRef<AudioBufferSourceNode | null>(null)
+  const revealStartedAt = useRef<number | null>(null)
+  const completedAudioRound = useRef<string | null>(null)
 
   useEffect(() => () => {
+    stopDrawAudio(drawAudioSource)
     const context = pickAudioContext.current
     pickAudioContext.current = null
     if (context && context.state !== 'closed') void context.close()
@@ -65,6 +74,8 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       clearPendingDraw(playerId)
       setSelectedNumbers([...nextRound.ticket.numbers])
       setWager(nextRound.wager)
+      revealStartedAt.current = nowMilliseconds()
+      completedAudioRound.current = null
       setRound(nextRound)
       setRevealedCount(0)
       setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
@@ -79,8 +90,19 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
   }, [gateway, onBalanceChange, playerId, recoveryAttempt])
 
   useEffect(() => {
-    if (round === null || revealedCount >= round.draw.numbers.length) return undefined
-    const timer = window.setTimeout(() => setRevealedCount(count => count + 1), revealDelayMilliseconds)
+    if (round === null) return undefined
+    if (revealedCount >= round.draw.numbers.length) {
+      if (completedAudioRound.current !== round.roundId) {
+        completedAudioRound.current = round.roundId
+        playRoundCompleteEffect(pickAudioContext, round.payout > 0, finishCueDelaySeconds)
+      }
+      return undefined
+    }
+
+    const startedAt = revealStartedAt.current ??= nowMilliseconds()
+    const targetBeat = startedAt + firstRevealBeatMilliseconds + (revealedCount * revealBeatMilliseconds)
+    const delay = Math.max(0, targetBeat - nowMilliseconds())
+    const timer = window.setTimeout(() => setRevealedCount(count => Math.min(count + 1, round.draw.numbers.length)), delay)
     return () => window.clearTimeout(timer)
   }, [revealedCount, round])
 
@@ -98,6 +120,9 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
   const resetRound = () => {
     roundRequestKey.current = null
+    stopDrawAudio(drawAudioSource)
+    revealStartedAt.current = null
+    completedAudioRound.current = null
     clearPendingDraw(playerId)
     setRound(null)
     setRevealedCount(0)
@@ -146,16 +171,20 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
     setBusy(true)
     setError(null)
+    stopDrawAudio(drawAudioSource)
     setRound(null)
     setRevealedCount(0)
+    completedAudioRound.current = null
+    void prepareDrawAudio(pickAudioContext, drawAudioBuffer, drawAudioLoad)
     const idempotencyKey = roundRequestKey.current ??= createRequestKey()
     storePendingDraw(playerId, { idempotencyKey, numbers, wager: stake })
     void gateway.createRound({ ticket: { numbers }, wager: stake }, { idempotencyKey })
-      .then(nextRound => {
+      .then(async nextRound => {
         roundRequestKey.current = null
         clearPendingDraw(playerId)
         setSelectedNumbers([...nextRound.ticket.numbers])
         setWager(nextRound.wager)
+        revealStartedAt.current = await playDrawAudio(pickAudioContext, drawAudioBuffer, drawAudioLoad, drawAudioSource)
         setRound(nextRound)
         setRevealedCount(0)
         setStatus(current => current ? { ...current, balance: nextRound.balance } : current)
@@ -290,13 +319,9 @@ function randomIndex(length: number): number {
 function formatMoney(value: number): string { return `R${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
 
 function playPickEffect(contextRef: { current: AudioContext | null }, action: 'add' | 'remove'): void {
-  if (typeof window === 'undefined') return
-  const AudioContextConstructor = window.AudioContext
-    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-  if (!AudioContextConstructor) return
-
-  const context = contextRef.current ??= new AudioContextConstructor()
-  if (context.state === 'suspended') void context.resume()
+  const context = getKenoAudioContext(contextRef)
+  if (!context) return
+  if (context.state === 'suspended') void context.resume().catch(() => undefined)
 
   const now = context.currentTime
   const duration = action === 'add' ? .095 : .075
@@ -312,3 +337,98 @@ function playPickEffect(contextRef: { current: AudioContext | null }, action: 'a
   oscillator.start(now)
   oscillator.stop(now + duration + .01)
 }
+
+function getKenoAudioContext(contextRef: { current: AudioContext | null }): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  const AudioContextConstructor = window.AudioContext
+    ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!AudioContextConstructor) return null
+  return contextRef.current ??= new AudioContextConstructor()
+}
+
+function prepareDrawAudio(
+  contextRef: { current: AudioContext | null },
+  bufferRef: { current: AudioBuffer | null },
+  loadRef: { current: Promise<AudioBuffer | null> | null },
+): Promise<AudioBuffer | null> {
+  if (bufferRef.current) return Promise.resolve(bufferRef.current)
+  if (loadRef.current) return loadRef.current
+  const context = getKenoAudioContext(contextRef)
+  if (!context) return Promise.resolve(null)
+  if (context.state === 'suspended') void context.resume().catch(() => undefined)
+
+  const request = fetch(drawTumbleUrl)
+    .then(response => {
+      if (!response.ok) throw new Error('Keno draw audio could not be loaded.')
+      return response.arrayBuffer()
+    })
+    .then(data => context.decodeAudioData(data.slice(0)))
+    .then(buffer => {
+      bufferRef.current = buffer
+      return buffer
+    })
+    .catch(() => {
+      if (loadRef.current === request) loadRef.current = null
+      return null
+    })
+  loadRef.current = request
+  return request
+}
+
+async function playDrawAudio(
+  contextRef: { current: AudioContext | null },
+  bufferRef: { current: AudioBuffer | null },
+  loadRef: { current: Promise<AudioBuffer | null> | null },
+  sourceRef: { current: AudioBufferSourceNode | null },
+): Promise<number> {
+  const context = getKenoAudioContext(contextRef)
+  if (!context) return nowMilliseconds()
+  if (context.state === 'suspended') await context.resume().catch(() => undefined)
+  const buffer = bufferRef.current ?? await prepareDrawAudio(contextRef, bufferRef, loadRef)
+  if (!buffer) return nowMilliseconds()
+
+  stopDrawAudio(sourceRef)
+  const source = context.createBufferSource()
+  source.buffer = buffer
+  source.connect(context.destination)
+  sourceRef.current = source
+  const startedAt = nowMilliseconds()
+  source.start(context.currentTime)
+  return startedAt
+}
+
+function stopDrawAudio(sourceRef: { current: AudioBufferSourceNode | null }): void {
+  const source = sourceRef.current
+  sourceRef.current = null
+  if (!source) return
+  try { source.stop() } catch { /* an ended one-shot source is already stopped */ }
+}
+
+function playRoundCompleteEffect(contextRef: { current: AudioContext | null }, won: boolean, delay: number): void {
+  const context = getKenoAudioContext(contextRef)
+  if (!context) return
+  if (context.state === 'suspended') void context.resume().catch(() => undefined)
+  const start = context.currentTime + delay
+  if (won) {
+    playKenoTone(context, 480, 650, start, .13, .038, 'triangle')
+    playKenoTone(context, 690, 940, start + .065, .16, .032, 'sine')
+  } else {
+    playKenoTone(context, 230, 145, start, .12, .026, 'sine')
+  }
+}
+
+function playKenoTone(context: AudioContext, startFrequency: number, endFrequency: number, start: number, duration: number, volume: number, type: OscillatorType): void {
+  const oscillator = context.createOscillator()
+  const gain = context.createGain()
+  oscillator.type = type
+  oscillator.frequency.setValueAtTime(startFrequency, start)
+  oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration)
+  gain.gain.setValueAtTime(.0001, start)
+  gain.gain.exponentialRampToValueAtTime(volume, start + .008)
+  gain.gain.exponentialRampToValueAtTime(.0001, start + duration)
+  oscillator.connect(gain).connect(context.destination)
+  oscillator.start(start)
+  oscillator.stop(start + duration + .01)
+}
+
+function nowMilliseconds(): number { return typeof performance === 'undefined' ? Date.now() : performance.now() }

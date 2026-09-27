@@ -138,11 +138,22 @@ describe('KenoGame', () => {
     const wagerSelect = await screen.findByRole('combobox', { name: 'Keno wager' })
     await user.selectOptions(wagerSelect, '5')
     expect(screen.getByRole('table', { name: '3-spot Keno payouts' })).toBeTruthy()
-    expect(screen.getByText('R135.00')).toBeTruthy()
+    expect(screen.getByText('R75.00')).toBeTruthy()
     expect(screen.getByText(/R5.00 ticket · balance R1,000.00/)).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     expect(createRound).toHaveBeenCalledWith({ ticket: { numbers: [3, 7, 15] }, wager: 5 }, expect.anything())
     expect(await screen.findByText('R10.00 WIN', {}, { timeout: 5_000 })).toBeTruthy()
+  })
+
+  it('describes a stake return without presenting it as a win', async () => {
+    const user = userEvent.setup()
+    const returnedRound = { ...completedRound, payout: 1, net: 0, balance: 1_000 }
+    render(<KenoGame gateway={fakeGateway({ createRound: vi.fn().mockResolvedValue(returnedRound) })} initialSelection={[3, 7, 15]} />)
+    await screen.findByRole('combobox', { name: 'Keno wager' })
+    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    const result = await screen.findByText('R1.00 RETURNED', {}, { timeout: 5_000 })
+    expect(result.className).toContain('is-return')
+    expect(result.className).not.toContain('is-win')
   })
 
   it('builds a full quick-pick ticket and shows its actual prizes', async () => {
@@ -189,11 +200,12 @@ describe('KenoGame', () => {
 const availableStatus: KenoStatus = {
   available: true, minimumWager: 1, maximumWager: 20, wagerIncrement: 1, balance: 1_000, mode: 'credit-keno',
   paytable: [
-    { spots: 1, hits: 1, multiplier: 2 },
-    { spots: 3, hits: 2, multiplier: 2 }, { spots: 3, hits: 3, multiplier: 27 },
-    { spots: 10, hits: 0, multiplier: 5 }, { spots: 10, hits: 5, multiplier: 2 },
-    { spots: 10, hits: 6, multiplier: 10 }, { spots: 10, hits: 7, multiplier: 50 },
-    { spots: 10, hits: 8, multiplier: 500 }, { spots: 10, hits: 9, multiplier: 5_000 },
+    { spots: 1, hits: 1, multiplier: 4 },
+    { spots: 3, hits: 1, multiplier: 1 }, { spots: 3, hits: 2, multiplier: 2 }, { spots: 3, hits: 3, multiplier: 15 },
+    { spots: 10, hits: 3, multiplier: 1 }, { spots: 10, hits: 4, multiplier: 2 },
+    { spots: 10, hits: 5, multiplier: 4 }, { spots: 10, hits: 6, multiplier: 8 },
+    { spots: 10, hits: 7, multiplier: 20 }, { spots: 10, hits: 8, multiplier: 100 },
+    { spots: 10, hits: 9, multiplier: 500 },
     { spots: 10, hits: 10, multiplier: 100_000 },
   ],
 }

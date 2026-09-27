@@ -54,12 +54,14 @@ public sealed class KenoRoundEngineTests
     }
 
     [Theory]
-    [InlineData(1, 1, 2)]
-    [InlineData(5, 4, 18)]
-    [InlineData(10, 0, 5)]
-    [InlineData(10, 5, 2)]
+    [InlineData(1, 1, 4)]
+    [InlineData(5, 2, 2)]
+    [InlineData(5, 4, 8)]
+    [InlineData(10, 0, 0)]
+    [InlineData(10, 3, 1)]
+    [InlineData(10, 5, 4)]
     [InlineData(10, 10, 100_000)]
-    [InlineData(8, 3, 0)]
+    [InlineData(8, 2, 0)]
     public void StandardPaytableReturnsThePublishedMultiplier(int spots, int hits, int expectedMultiplier)
     {
         var ticket = new KenoTicket(Enumerable.Range(1, spots));
@@ -68,5 +70,44 @@ public sealed class KenoRoundEngineTests
 
         Assert.Equal(StandardKenoPaytable.Id, outcome.PaytableId);
         Assert.Equal(expectedMultiplier, outcome.Value);
+    }
+
+    [Fact]
+    public void StandardPaytableKeepsReturnRateAndBlankStreaksInThePublishedRange()
+    {
+        for (var spots = KenoTicket.MinimumNumbers; spots <= KenoTicket.MaximumNumbers; spots++)
+        {
+            var probabilities = Enumerable.Range(0, spots + 1)
+                .ToDictionary(hits => hits, hits => ProbabilityOfHits(spots, hits));
+            var tiers = StandardKenoPaytable.Tiers.Where(tier => tier.Spots == spots).ToArray();
+            var returnRate = tiers.Sum(tier => probabilities[tier.Hits] * tier.Multiplier);
+            var paidRoundRate = tiers.Sum(tier => probabilities[tier.Hits]);
+
+            Assert.InRange(returnRate, 0.89, 1.00);
+            Assert.InRange(paidRoundRate, 0.25, 1.00);
+            Assert.InRange(Math.Pow(1 - paidRoundRate, 20), 0, 0.004);
+        }
+    }
+
+    [Fact]
+    public void LegacyPaytableRemainsAvailableForPreviouslySettledRounds()
+    {
+        Assert.True(StandardKenoPaytable.Supports(StandardKenoPaytable.LegacyId));
+        Assert.Equal(5, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 10, 0));
+        Assert.Equal(2, StandardKenoPaytable.MultiplierFor(StandardKenoPaytable.LegacyId, 1, 1));
+    }
+
+    private static double ProbabilityOfHits(int spots, int hits) =>
+        Choose(spots, hits) * Choose(KenoTicket.MaximumNumber - spots, KenoDraw.DrawCount - hits) /
+        Choose(KenoTicket.MaximumNumber, KenoDraw.DrawCount);
+
+    private static double Choose(int count, int selected)
+    {
+        if (selected < 0 || selected > count) return 0;
+        selected = Math.Min(selected, count - selected);
+        var result = 1d;
+        for (var index = 1; index <= selected; index++)
+            result = result * (count - selected + index) / index;
+        return result;
     }
 }

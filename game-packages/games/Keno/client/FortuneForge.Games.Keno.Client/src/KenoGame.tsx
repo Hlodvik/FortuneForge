@@ -94,7 +94,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
     if (revealedCount >= round.draw.numbers.length) {
       if (completedAudioRound.current !== round.roundId) {
         completedAudioRound.current = round.roundId
-        playRoundCompleteEffect(pickAudioContext, round.payout > 0, finishCueDelaySeconds)
+        playRoundCompleteEffect(pickAudioContext, round.net > 0, finishCueDelaySeconds)
       }
       return undefined
     }
@@ -249,7 +249,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
 
       {round && <section className="ff-keno__result" aria-live="polite">
         <span>{isRevealing ? 'Drawing live' : 'Round result'}</span>
-        <strong className={!isRevealing ? round.payout > 0 ? 'is-win' : 'is-loss' : undefined}>{isRevealing ? `${revealedCount} / 20 balls` : round.payout > 0 ? `${formatMoney(round.payout)} WIN` : 'No win'}</strong>
+        <strong className={!isRevealing ? round.net > 0 ? 'is-win' : round.payout === round.wager ? 'is-return' : 'is-loss' : undefined}>{isRevealing ? `${revealedCount} / 20 balls` : round.net > 0 ? `${formatMoney(round.payout)} WIN` : round.payout === round.wager ? `${formatMoney(round.payout)} RETURNED` : 'No win'}</strong>
         <div className="ff-keno__draw-tray" aria-label="Revealed Keno balls">{round.draw.numbers.slice(0, revealedCount).map(number => <span key={number} className={ticketNumbers?.has(number) ? 'is-hit' : undefined}>{number}</span>)}</div>
         {!isRevealing && <p className="ff-keno__result-summary"><b>{round.hitCount} of {round.ticket.numbers.length} picks hit.</b></p>}
         {!isRevealing && <p aria-label="Keno draw">Draw: {round.draw.numbers.join(', ')}</p>}

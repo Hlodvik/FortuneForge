@@ -89,13 +89,14 @@ internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
             !snapshot.TryGetValue<long>("hitCount", out var storedHits) ||
             !snapshot.TryGetValue<long>("wagerCents", out var wagerCents) ||
             !snapshot.TryGetValue<long>("payoutCents", out var payoutCents) ||
-            !snapshot.TryGetValue<string>("paytableId", out var paytableId) || paytableId != StandardKenoPaytable.Id ||
+            !snapshot.TryGetValue<string>("paytableId", out var paytableId) || !StandardKenoPaytable.Supports(paytableId) ||
             !snapshot.TryGetValue<long>("schemaVersion", out var version) || version != 2)
             throw new InvalidOperationException("The Keno round is corrupt.");
         var ticket = new KenoTicket(ReadNumbers(snapshot, "ticket"));
         var draw = new KenoDraw(ReadNumbers(snapshot, "draw"));
-        var played = KenoRoundEngine.Play(ticket, draw, StandardKenoPaytable.Instance);
-        var calculatedPayout = checked(KenoMoney.ToWagerCents(KenoMoney.ToRand(wagerCents)) * (played.Result.PaytableOutcome?.Value ?? 0));
+        var played = KenoRoundEngine.Play(ticket, draw);
+        var multiplier = StandardKenoPaytable.MultiplierFor(paytableId, ticket.Numbers.Length, played.Result.HitCount);
+        var calculatedPayout = checked(KenoMoney.ToWagerCents(KenoMoney.ToRand(wagerCents)) * multiplier);
         if (storedHits != played.Result.HitCount || payoutCents != calculatedPayout)
             throw new InvalidOperationException("The Keno round result is corrupt.");
         return new KenoStoreRound(id, userId, ticket, draw, checked((int)storedHits), wagerCents, payoutCents, paytableId);

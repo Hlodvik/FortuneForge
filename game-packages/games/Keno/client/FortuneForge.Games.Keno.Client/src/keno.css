@@ -145,6 +145,7 @@
   text-shadow: 0 0 .35rem #fff5b5, 0 0 1.2rem #ffd36d, 0 0 2.2rem #58e4da8f;
   animation: ff-keno-win-in .7s cubic-bezier(.18, .89, .32, 1.45) both;
 }
+.ff-keno__result strong.is-return { color: #9ff8ef; font-size: 1.8rem; text-shadow: 0 0 .8rem #58e4da55; }
 .ff-keno__result strong.is-loss { color: #cbd7d4; font-size: 1.65rem; }
 .ff-keno__result p { margin: 0; color: #ded3c8; }
 .ff-keno__result-summary b { color: #fff1bb; }

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BlackjackTablePreview } from './BlackjackTablePage'
+import '../../../index.css'
 
 const root = document.getElementById('root')
 if (root === null) throw new Error('Blackjack preview root is missing.')

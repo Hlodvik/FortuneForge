@@ -71,9 +71,10 @@ public static class SlotSpecialRoundProfiles
             [WukongGameId] = new(
                 WukongGameId,
                 3,
-                5,
+                0,
                 40,
                 10,
+                BaseReelSetId: WukongBaseReelSet.Id,
                 PayoutMultiplier: 0.946m),
             [RainbowRealmGameId] = new(
                 RainbowRealmGameId,

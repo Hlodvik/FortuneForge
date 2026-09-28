@@ -11,9 +11,15 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     {
         var configured = options.Value.GameDefinitions
             .SingleOrDefault(game => string.Equals(game.Id, id, StringComparison.Ordinal));
-        if (configured is not null || !SlotSpecialRoundProfiles.TryGet(id, out var profile))
+        if (configured is not null)
         {
-            return configured;
+            return SlotSpecialRoundProfiles.TryGet(id, out var configuredProfile)
+                ? ClonePrototype(configured, configuredProfile)
+                : configured;
+        }
+        if (!SlotSpecialRoundProfiles.TryGet(id, out var profile))
+        {
+            return null;
         }
 
         var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
@@ -24,10 +30,25 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     public SymbolSetDefinition? GetSymbolSet(string id) =>
         options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
 
-    public ReelSetDefinition? GetReelSet(string id) =>
-        string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal)
-            ? PiratesFortuneBaseReelSet.Definition
-            : options.Value.ReelSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
+    public ReelSetDefinition? GetReelSet(string id)
+    {
+        if (string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal))
+        {
+            return PiratesFortuneBaseReelSet.Definition;
+        }
+        if (string.Equals(id, WukongBaseReelSet.Id, StringComparison.Ordinal))
+        {
+            var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
+                string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
+            var source = prototype is null
+                ? null
+                : options.Value.ReelSets.SingleOrDefault(set =>
+                    string.Equals(set.Id, prototype.Math.ReelSetId, StringComparison.Ordinal));
+            return source is null ? null : WukongBaseReelSet.Create(source);
+        }
+
+        return options.Value.ReelSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
+    }
 
     public PaytableDefinition? GetPaytable(string id) =>
         options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
@@ -53,7 +74,9 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
             Matching = source.Matching,
             Math = CloneMath(source.Math, profile, paylineIndexes),
             Wagering = source.Wagering,
-            FreeGames = source.FreeGames is null ? null : profile.Configure(source.FreeGames),
+            FreeGames = source.FreeGames is null || profile.ScatterAwardedSpins <= 0
+                ? null
+                : profile.Configure(source.FreeGames),
             SpecialPoints = source.SpecialPoints,
             Energy = profile.UsesEnergy ? source.Energy : null,
             Paylines = paylineIndexes is null

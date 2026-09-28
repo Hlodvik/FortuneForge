@@ -158,6 +158,45 @@ public sealed class SlotSpecialRoundProfilesTests
     }
 
     [Fact]
+    public void OptionsProvider_SeparatesWukongFromTheSharedScatterReels()
+    {
+        var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
+        {
+            GameDefinitions = [Prototype()],
+            ReelSets =
+            [
+                new ReelSetDefinition
+                {
+                    Id = "reels",
+                    SymbolSetId = "symbols",
+                    Reels = Enumerable.Range(0, 5)
+                        .Select(_ => new List<string> { "FREE", "2", "FREE", "3", "FREE" })
+                        .ToList()
+                }
+            ]
+        }));
+
+        var wukong = Assert.IsType<GameDefinition>(
+            provider.GetGame(SlotSpecialRoundProfiles.WukongGameId));
+        var wukongReels = Assert.IsType<ReelSetDefinition>(
+            provider.GetReelSet(wukong.Math.ReelSetId));
+        var rainbow = Assert.IsType<GameDefinition>(
+            provider.GetGame(SlotSpecialRoundProfiles.RainbowRealmGameId));
+
+        Assert.Null(wukong.FreeGames);
+        Assert.Equal(WukongBaseReelSet.Id, wukong.Math.ReelSetId);
+        Assert.DoesNotContain("FREE", wukongReels.Reels.SelectMany(reel => reel));
+        Assert.All(wukongReels.Reels, reel =>
+        {
+            Assert.Single(reel, symbol => symbol == "5");
+            Assert.Single(reel, symbol => symbol == "6");
+            Assert.Single(reel, symbol => symbol == "7");
+        });
+        Assert.Equal("reels", rainbow.Math.ReelSetId);
+        Assert.Equal(5, rainbow.FreeGames?.AwardedSpins);
+    }
+
+    [Fact]
     public void PiratesBaseReelSet_IsDistinctFromTheClassicBaseAndContainsOnlyBaseSymbols()
     {
         var reels = PiratesFortuneBaseReelSet.Definition;

@@ -67,11 +67,31 @@ public sealed class ManagedPlayerSeparationTests
         Assert.All(profiles, profile =>
         {
             Assert.StartsWith("managed-", profile.UserId, StringComparison.Ordinal);
-            Assert.Matches("^[A-Za-z]+[0-9]{2}$", profile.PlayerName);
+            Assert.Matches("^[A-Za-z0-9 _-]{3,24}$", profile.PlayerName);
             Assert.Contains(ManagedPlayerGames.Blackjack, profile.SupportedGames);
             Assert.InRange(profile.SkillLevel, 2, 4);
             Assert.Equal(Now, profile.CreatedAtUtc);
         });
+    }
+
+    [Fact]
+    public void IdentityFactory_supports_distinct_human_username_styles()
+    {
+        var names = Enumerable.Range(0, ManagedPlayerIdentityFactory.PlayerNameStyleCount)
+            .Select(style => ManagedPlayerIdentityFactory.CreatePlayerName((ulong)style))
+            .ToArray();
+
+        Assert.Equal(ManagedPlayerIdentityFactory.PlayerNameStyleCount,
+            names.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.Contains(names, name => name.Contains(' '));
+        Assert.Contains(names, name => name.Contains('_'));
+        Assert.Contains(names, name => name.Contains('-'));
+        Assert.Contains(names, name => char.IsDigit(name[0]));
+        Assert.Contains(names, name => !name.Any(char.IsDigit));
+        Assert.Contains(names, name => name.All(character =>
+            char.IsLower(character) || char.IsDigit(character)));
+        Assert.DoesNotContain(names, name =>
+            System.Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z]+[0-9]{2}$"));
     }
 
     private sealed class RecordingGenerator : IManagedPlayerProfileGenerator

@@ -3,6 +3,9 @@
     "firestore": {
       "port": 8796
     },
+    "ui": {
+      "enabled": false
+    },
     "singleProjectMode": false
   }
 }

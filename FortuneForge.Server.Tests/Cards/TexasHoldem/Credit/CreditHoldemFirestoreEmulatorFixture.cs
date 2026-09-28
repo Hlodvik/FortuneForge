@@ -52,7 +52,7 @@ public sealed class CreditHoldemFirestoreEmulatorFixture : IAsyncLifetime
         start.ArgumentList.Add("--only");
         start.ArgumentList.Add("firestore");
         start.ArgumentList.Add("--project");
-        start.ArgumentList.Add("demo-fortuneforge-holdem-tests");
+        start.ArgumentList.Add($"demo-fortuneforge-holdem-tests-{Guid.NewGuid():N}");
         start.ArgumentList.Add("--config");
         start.ArgumentList.Add(configuration);
         process = new Process { StartInfo = start, EnableRaisingEvents = true };

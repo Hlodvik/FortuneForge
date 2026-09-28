@@ -44,7 +44,7 @@ public sealed class BlackjackTableFirestoreEmulatorFixture : IAsyncLifetime
         start.ArgumentList.Add("--only");
         start.ArgumentList.Add("firestore");
         start.ArgumentList.Add("--project");
-        start.ArgumentList.Add("demo-fortuneforge-blackjack-table-tests");
+        start.ArgumentList.Add($"demo-fortuneforge-blackjack-table-tests-{Guid.NewGuid():N}");
         start.ArgumentList.Add("--config");
         start.ArgumentList.Add(configuration);
         process = new Process { StartInfo = start, EnableRaisingEvents = true };

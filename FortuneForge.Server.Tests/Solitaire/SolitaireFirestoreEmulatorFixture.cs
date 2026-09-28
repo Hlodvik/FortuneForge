@@ -54,7 +54,7 @@ public sealed class SolitaireFirestoreEmulatorFixture : IAsyncLifetime
         start.ArgumentList.Add("--only");
         start.ArgumentList.Add("firestore");
         start.ArgumentList.Add("--project");
-        start.ArgumentList.Add("demo-fortuneforge-solitaire-tests");
+        start.ArgumentList.Add($"demo-fortuneforge-solitaire-tests-{Guid.NewGuid():N}");
         start.ArgumentList.Add("--config");
         start.ArgumentList.Add(configuration);
         process = new Process { StartInfo = start, EnableRaisingEvents = true };

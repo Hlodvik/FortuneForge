@@ -1,10 +1,7 @@
 [CmdletBinding()]
 param(
     [ValidateSet('all', 'api', 'hosting')]
-    [string]$Target = 'all',
-
-    # Opt-in only: skip the 250,000-spin SlotMath analysis during API deployment validation.
-    [switch]$SkipSlotMath
+    [string]$Target = 'all'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,19 +40,7 @@ if ($Target -in @('all', 'hosting')) {
 }
 
 if ($Target -in @('all', 'api')) {
-    Write-Host "`nValidating and deploying the Cloud Run API..." -ForegroundColor Yellow
-    if ($SkipSlotMath) {
-        Write-Host 'Skipping the 250,000-spin SlotMath analysis because -SkipSlotMath was specified.' -ForegroundColor Yellow
-    }
-    else {
-        Invoke-Checked `
-            -Executable 'dotnet' `
-            -Arguments @(
-                'run', '--project', (Join-Path $repoRoot 'tools\FortuneForge.SlotMath\FortuneForge.SlotMath.csproj'),
-                '--configuration', 'Release', '--', '250000'
-            ) `
-            -WorkingDirectory $repoRoot
-    }
+    Write-Host "`nBuilding and deploying the Cloud Run API..." -ForegroundColor Yellow
     Invoke-Checked `
         -Executable 'dotnet' `
         -Arguments @('build', $serverProject, '--configuration', 'Release') `

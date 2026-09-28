@@ -1,0 +1,46 @@
+name: fortuneforge-slot-math
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "FortuneForge.Server/Slots/**"
+      - "FortuneForge.Server/Configuration/SlotServicesConfiguration.cs"
+      - "FortuneForge.Server/appsettings.json"
+      - "tools/FortuneForge.SlotMath/**"
+      - ".github/workflows/slot-math.yml"
+  pull_request:
+    paths:
+      - "FortuneForge.Server/Slots/**"
+      - "FortuneForge.Server/Configuration/SlotServicesConfiguration.cs"
+      - "FortuneForge.Server/appsettings.json"
+      - "tools/FortuneForge.SlotMath/**"
+      - ".github/workflows/slot-math.yml"
+  schedule:
+    - cron: "17 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+
+      - name: Restore slot-math dependencies
+        run: dotnet restore tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj
+
+      - name: Analyze 250,000 paid spins per slot
+        run: npm run verify:slot-math

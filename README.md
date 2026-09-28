@@ -39,6 +39,28 @@ dotnet test game-packages/FortuneForge.Games.slnx --configuration Release
 
 Open the Vite address shown by `local:web` (normally `http://localhost:5173`). Stop the Firestore emulator to discard the local database. To reset it while it is running, use Firebase's emulator UI/API or stop it and remove its local emulator data if you have configured export storage.
 
+## Release verification and deployment
+
+Verify a completed code change before deploying it:
+
+```powershell
+npm run verify:release
+```
+
+When slot logic or slot configuration changed, also run the statistical release analysis:
+
+```powershell
+npm run verify:slot-math
+```
+
+Slot math also runs in its own CI workflow when relevant slot files change and on a weekly schedule. It is deliberately separate from deployment so publishing an already-verified card-game, UI, or infrastructure change does not rerun millions of simulated spins.
+
+After verification passes, publish the tested commit and run the production smoke with:
+
+```powershell
+npm run deploy
+```
+
 ## Game releases
 
 Hearts, Liar's Dice, Roulette, and Craps are authenticated free-play games. Their first release uses no-credit tables while richer multiplayer and persistence work continues.

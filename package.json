@@ -37,6 +37,8 @@
     "test": "npm run games:test && npm run web:test",
     "lint": "npm run web:lint",
     "build": "npm run games:build && npm run web:build",
+    "verify:release": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/verify-release.ps1",
+    "verify:slot-math": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
     "analyze:slots": "dotnet run --project ./tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj --configuration Release -- 250000",
     "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1",
     "deploy:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/deploy.ps1 -Target api",

@@ -22,27 +22,27 @@ export const slotSmokeInventory = [
 ]
 
 export const nonSlotSmokeInventory = [
-  { smokePath: '/demo/cards/blackjack', catalogPath: '/cards/blackjack' },
-  { smokePath: '/demo/cards/texas-holdem', catalogPath: '/cards/texas-holdem' },
-  { smokePath: '/demo/cards/solitaire/bot-practice', catalogPath: '/cards/solitaire' },
-  { smokePath: '/games/video-poker' },
-  { smokePath: '/games/baccarat' },
-  { smokePath: '/games/casino-war' },
-  { smokePath: '/cards/hearts' },
   { smokePath: '/games/keno' },
-  { smokePath: '/games/sic-bo' },
+  { smokePath: '/demo/cards/blackjack', catalogPath: '/cards/blackjack' },
+  { smokePath: '/games/casino-war' },
+  { smokePath: '/games/baccarat' },
+  { smokePath: '/games/video-poker' },
   { smokePath: '/games/roulette' },
   { smokePath: '/games/craps' },
   { smokePath: '/games/liars-dice' },
-  { smokePath: '/games/asteroids' },
+  { smokePath: '/games/sic-bo' },
+  { smokePath: '/demo/cards/texas-holdem', catalogPath: '/cards/texas-holdem' },
   { smokePath: '/games/flappy' },
-  { smokePath: '/games/horse-flight' },
-  { smokePath: '/games/2048' },
+  { smokePath: '/games/asteroids' },
   { smokePath: '/games/drop-merge' },
+  { smokePath: '/games/2048' },
   { smokePath: '/games/snake' },
+  { smokePath: '/games/horse-flight' },
+  { smokePath: '/demo/cards/solitaire/bot-practice', catalogPath: '/cards/solitaire' },
+  { smokePath: '/cards/hearts' },
 ]
 
 export const gameSmokeRoutes = [
-  ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
   ...nonSlotSmokeInventory.map(({ smokePath }) => smokePath),
+  ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
 ]

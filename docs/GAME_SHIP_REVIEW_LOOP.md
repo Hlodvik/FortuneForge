@@ -17,19 +17,19 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **Keno**
-- Current phase: owner hands-on review (verified locally; deployment awaits approval)
+- Active game: **Fortune Blackjack**
+- Current phase: professional comparison, code inspection, and obvious-fix pass before owner review
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
 
 ## Review queue
 
-The order puts games with specific reported failures first, then completes the remaining catalog. Reordering the queue does not itself advance the active game.
+All non-slot games come first. The slot catalog follows, with Wukong and Pirates deferred to the end. Reordering the queue does not itself advance the active game.
 
 | Order | Game | Category | State |
 | ---: | --- | --- | --- |
-| 1 | Keno | Casino | Active — owner review pending |
-| 2 | Fortune Blackjack | Card | Queued |
+| 1 | Keno | Casino | Shippable — owner approved and deployed |
+| 2 | Fortune Blackjack | Card | Active — pre-review audit |
 | 3 | Casino War | Card/table | Queued |
 | 4 | Baccarat | Card/table | Queued |
 | 5 | Video Poker | Card | Queued |

@@ -251,7 +251,7 @@ export function BlackjackTableContent(props: ContentProps) {
     const seats = Array.from({ length: status.tableCapacity }, (_, index) => session.players[index] ?? null)
     return (
       <main className="blackjack-main blackjack-lobby">
-        <section className="blackjack-title"><p>Queue position {session.position}</p><h1>Your seat is coming up</h1><span>Up to five people can join; the table starts with three occupied seats.</span></section>
+        <section className="blackjack-title"><p>Queue position {session.position}</p><h1>Your seat is coming up</h1></section>
         <div className="blackjack-queue-seats">
           {seats.map((seat, index) => <div className={seat ? 'is-filled' : ''} key={seat?.seatId ?? index}><strong>{seat?.displayName ?? 'Open seat'}</strong><small>Seat {(seat?.seat ?? index) + 1}</small></div>)}
         </div>

@@ -91,9 +91,9 @@
 }
 
 .ff-keno__grid button:hover:not(:disabled) { transform: translateY(-2px); background: #254b40; }
-.ff-keno__grid button.is-selected { border-color: #fff0ab; background: linear-gradient(145deg, #f8dc8c, #b9672d); box-shadow: 0 .2rem .7rem #0008; color: #321320; font-size: 1.02em; }
+.ff-keno__grid button.is-selected { border-color: #fff0ab; background: linear-gradient(145deg, #fff2a9, #d68527); box-shadow: 0 .2rem .7rem #0008; color: #2b0b13; font-size: clamp(.92rem, 1.6vw, 1.1rem); font-weight: 950; }
 .ff-keno__grid.is-drawing button:disabled { opacity: 1; }
-.ff-keno__grid.is-drawing button.is-selected { z-index: 1; color: #fffbd6; font-size: 1.18em; text-shadow: 0 1px 1px #49200f, 0 0 .5rem #fff0a8; transform: scale(1.08); }
+.ff-keno__grid.is-drawing button.is-selected { z-index: 1; color: #fffde4; font-size: clamp(1rem, 2vw, 1.28rem); text-shadow: 0 1px 1px #49200f, 0 0 .65rem #fff0a8; transform: scale(1.08); }
 .ff-keno__grid button.is-drawn { border-color: #d7b66f; background: #493816; color: #fff3ca; }
 .ff-keno__grid button.is-hit { border-color: #e6ffc3; background: linear-gradient(145deg, #dfff9e, #35b963 68%, #16733c); box-shadow: 0 0 1.15rem #a7e974a6; color: #052c18; text-shadow: none; }
 .ff-keno__grid button.is-missed { border-color: #c7706b; background: #4a1f2b; color: #ffd8d2; }
@@ -147,21 +147,6 @@
 .ff-keno__result p { margin: 0; color: #ded3c8; }
 .ff-keno__result-summary b { color: #fff1bb; }
 .ff-keno__settlement { color: #d7fffb !important; font-weight: 800; }
-.ff-keno__draw-tray { display: flex; flex-wrap: wrap; justify-content: center; gap: .38rem; max-width: 36rem; min-height: 2.45rem; }
-.ff-keno__draw-tray span {
-  display: grid;
-  width: 2.35rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 1px solid #d7b66f;
-  border-radius: 999px;
-  background: #493816;
-  color: #fff3ca;
-  font-size: .78rem;
-  font-weight: 900;
-  animation: ff-keno-ball-in .18s ease-out both;
-}
-.ff-keno__draw-tray span.is-hit { border-color: #d2ffab; background: #3e9c60; color: #09251b; }
 .ff-keno__odds {
   display: grid;
   grid-template-columns: minmax(12rem, 1fr) minmax(16rem, 1.3fr);
@@ -179,7 +164,6 @@
 .ff-keno button:disabled { cursor: not-allowed; opacity: .5; }
 .ff-keno button:focus-visible { outline: 3px solid #fff0a6; outline-offset: .18rem; }
 
-@keyframes ff-keno-ball-in { from { opacity: 0; transform: scale(.65); } }
 @keyframes ff-keno-win-in {
   0% { opacity: 0; transform: scale(.65) rotate(-2deg); }
   62% { opacity: 1; transform: scale(1.12) rotate(1deg); }
@@ -220,7 +204,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ff-keno__grid button { transition: none; }
-  .ff-keno__draw-tray span, .ff-keno__result strong.is-win,
+  .ff-keno__result strong.is-win,
   .ff-keno__grid.is-resetting::after, .ff-keno__grid.is-resetting button,
   .ff-keno__grid.is-ready button.is-selected { animation: none; }
 }

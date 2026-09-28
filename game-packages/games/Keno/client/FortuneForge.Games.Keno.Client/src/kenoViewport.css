@@ -57,14 +57,6 @@
     overflow: hidden;
   }
   .ff-keno__board--has-round .ff-keno__result strong { font-size: 1.65rem; }
-  .ff-keno__board--has-round .ff-keno__draw-tray {
-    display: grid;
-    width: 100%;
-    max-width: 15rem;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: .25rem;
-  }
-  .ff-keno__board--has-round .ff-keno__draw-tray span { width: 2rem; font-size: .7rem; }
   .ff-keno__board--has-round .ff-keno__result p { font-size: .72rem; line-height: 1.25; }
   .ff-keno__board--has-round .ff-keno__odds { display: none; }
 }

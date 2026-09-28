@@ -87,7 +87,8 @@ describe('KenoGame', () => {
     expect(screen.getByRole('button', { name: 'Number 3, hit' }).className).toContain('is-hit')
     expect(screen.getByRole('button', { name: 'Number 15, missed' }).className).toContain('is-missed')
     expect(screen.getByRole('button', { name: 'Number 21, drawn' }).className).toContain('is-drawn')
-    expect(screen.getByLabelText('Keno draw').textContent).toContain('Draw: 3, 7, 21')
+    expect(screen.queryByLabelText('Revealed Keno balls')).toBeNull()
+    expect(screen.queryByLabelText('Keno draw')).toBeNull()
   })
 
   it('keeps the draw action disabled until at least one number is selected', async () => {

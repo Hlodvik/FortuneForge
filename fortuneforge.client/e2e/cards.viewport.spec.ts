@@ -47,6 +47,23 @@ test('Blackjack preserves table geometry between betting and active play', async
   expect(bounds.handRight).toBeLessThanOrEqual(bounds.boxRight + 1)
 })
 
+test('Blackjack review table controls change the visible round state', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await openPreview(page, '/src/pages/cards/blackjack/preview.html')
+
+  const currentSeat = page.getByRole('article').filter({ hasText: 'Tian' })
+  await expect(currentSeat.getByLabel('Hand total 11')).toBeVisible()
+  await expect(page.getByText('60s turn limit')).toBeVisible()
+  await page.getByRole('button', { name: 'Hit', exact: true }).click()
+  await expect(currentSeat.getByLabel('Hand total 17')).toBeVisible()
+  await page.getByRole('button', { name: 'Stand', exact: true }).click()
+  await expect(page.getByRole('button', { name: /Set wager/ })).toBeVisible()
+  await page.getByRole('button', { name: /Set wager/ }).click()
+  await expect(currentSeat.getByLabel('Hand total 11')).toBeVisible()
+  await page.getByRole('button', { name: 'Leave table', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Rejoin table', exact: true })).toBeVisible()
+})
+
 test('Blackjack demo keeps its deal controls in a short phone viewport', async ({ page }) => {
   await page.route('**/api/cards/blackjack/demo/status', (route) => route.fulfill({ json: blackjackStatus }))
   await page.setViewportSize({ width: 1280, height: 720 })

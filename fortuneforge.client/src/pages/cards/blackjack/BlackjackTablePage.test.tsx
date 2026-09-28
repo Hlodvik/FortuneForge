@@ -37,6 +37,9 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('disabled="">Surrender</button>')
     expect(markup).toContain('Open seat')
     expect(markup).toContain('Leave table')
+    expect(markup).toContain('60s turn limit')
+    expect(markup).toContain('2 missed turns releases your seat')
+    expect(markup).toContain("Ada&#x27;s turn · 10s")
     expect(markup).not.toMatch(/\bbot\b|skill|seed|actor/i)
   })
 

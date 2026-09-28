@@ -258,7 +258,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
-        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
+        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
         {roundOutcome && <GameOutcomeBanner className="blackjack-table__outcome" {...roundOutcome} />}
         <div className="blackjack-playfield">
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
@@ -441,16 +441,105 @@ function tableStatus(table: BlackjackTable, now: number): string {
   }
   if (table.phase === 'active') {
     const active = table.seats.find((seat) => seat.seat === table.activeSeat)
-    return active?.isCurrentPlayer ? `${active.displayName}'s turn` : `${active?.displayName ?? 'Next player'} is thinking`
+    return active?.isCurrentPlayer
+      ? `${active.displayName}'s turn · ${countdown(table.actionDeadlineAtUtc, now)}`
+      : `${active?.displayName ?? 'Next player'} is thinking`
   }
   return 'Round complete'
 }
 
 export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | 'betting' }) {
-  const preview = previewTable()
+  const [phase, setPhase] = useState<'active' | 'betting'>(mode)
+  const [wager, setWager] = useState(10)
+  const [cards, setCards] = useState<BlackjackTableHand['cards']>(() => previewStartingCards)
+  const [secondsRemaining, setSecondsRemaining] = useState(previewStatus.actionDeadlineSeconds)
+  const [leftTable, setLeftTable] = useState(false)
+  const [lastAction, setLastAction] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (phase !== 'active' || leftTable || secondsRemaining <= 0) return
+    const timer = window.setTimeout(() => setSecondsRemaining((value) => value - 1), 1_000)
+    return () => window.clearTimeout(timer)
+  }, [leftTable, phase, secondsRemaining])
+
+  useEffect(() => {
+    if (phase !== 'active' || secondsRemaining > 0) return
+    setLastAction('Timed out · stood automatically')
+    setPhase('betting')
+  }, [phase, secondsRemaining])
+
+  const preview = previewTable(cards, wager, lastAction)
   const seats = new Map(preview.seats.map((seat) => [seat.seat, seat]))
   const visualSeats = centeredSeatNumbers(5, preview.seats.find((seat) => seat.isCurrentPlayer)?.seat)
-  return <div className="blackjack-page blackjack-preview"><section className="blackjack-table" data-phase={mode}><div className="blackjack-table__round"><span>Blackjack</span><strong>{mode === 'betting' ? 'Choose your next wager' : 'Blackjack pays 3:2'}</strong></div><div className="blackjack-rules-strip"><span>1 deck</span><span>Dealer stands on all 17s</span><span>Blackjack 3:2</span><span>Double allowed</span></div><div className="blackjack-playfield"><div className="blackjack-dealer"><Hand label="Dealer" hand={preview.dealer} scope="preview-dealer" /></div><div className="blackjack-semicircle">{visualSeats.map((seatNumber, visualPosition) => <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seats.get(seatNumber)?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seatNumber}>{seats.has(seatNumber) ? <Seat seat={seats.get(seatNumber)!} active={mode === 'active' && seatNumber === 0} timer={mode === 'active' && seatNumber === 0 ? '48s' : null} /> : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}</div>)}</div></div><div className="blackjack-actions">{mode === 'betting' ? <><WagerInput status={previewStatus} wager={10} busy={false} onChange={() => undefined} /><button className="blackjack-primary" type="button">Set wager · R10.00</button></> : <><button type="button">Hit</button><button type="button">Stand</button><button type="button" disabled>Double</button><button type="button" disabled>Split</button><button type="button" disabled>Surrender</button></>}<button className="blackjack-leave" type="button">Leave table</button></div></section></div>
+  const beginRound = () => {
+    setCards(previewStartingCards)
+    setSecondsRemaining(previewStatus.actionDeadlineSeconds)
+    setLastAction(null)
+    setLeftTable(false)
+    setPhase('active')
+  }
+  const act = (action: 'hit' | 'stand' | 'double') => {
+    if (phase !== 'active' || leftTable) return
+    if (action === 'hit') {
+      setCards((current) => [...current, previewHitCards[Math.min(current.length - 2, previewHitCards.length - 1)]])
+      setSecondsRemaining(previewStatus.actionDeadlineSeconds)
+      setLastAction('Hit accepted')
+      return
+    }
+    setLastAction(action === 'double' ? 'Doubled and stood' : 'Stood')
+    setPhase('betting')
+  }
+  const leaveTable = () => {
+    setLeftTable(true)
+    setLastAction('Seat released')
+  }
+  const active = phase === 'active' && !leftTable
+
+  return (
+    <div className="blackjack-page blackjack-preview">
+      <section className="blackjack-table" data-phase={phase}>
+        <div className="blackjack-table__round">
+          <span>Blackjack</span>
+          <strong>{leftTable ? 'Seat released' : phase === 'betting' ? lastAction ?? 'Choose your next wager' : `Your turn · ${secondsRemaining}s`}</strong>
+        </div>
+        <div className="blackjack-rules-strip">
+          <span>1 deck</span><span>Dealer stands on all 17s</span><span>Blackjack 3:2</span>
+          <span>{previewStatus.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>Double allowed</span>
+        </div>
+        <div className="blackjack-playfield">
+          <div className="blackjack-dealer"><Hand label="Dealer" hand={preview.dealer} scope="preview-dealer" /></div>
+          <div className="blackjack-semicircle">
+            {visualSeats.map((seatNumber, visualPosition) => (
+              <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seats.get(seatNumber)?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seatNumber}>
+                {seats.has(seatNumber)
+                  ? <Seat seat={seats.get(seatNumber)!} active={active && seatNumber === 0} timer={active && seatNumber === 0 ? `${secondsRemaining}s` : null} />
+                  : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="blackjack-actions">
+          {leftTable ? (
+            <button className="blackjack-primary" type="button" onClick={beginRound}>Rejoin table</button>
+          ) : phase === 'betting' ? (
+            <>
+              <WagerInput status={previewStatus} wager={wager} busy={false} onChange={setWager} />
+              <button className="blackjack-primary" type="button" onClick={beginRound}>Set wager · R{wager.toFixed(2)}</button>
+            </>
+          ) : (
+            <>
+              <button type="button" onClick={() => act('hit')}>Hit</button>
+              <button type="button" onClick={() => act('stand')}>Stand</button>
+              <button type="button" disabled={cards.length !== 2} onClick={() => act('double')}>Double</button>
+              <button type="button" disabled>Split</button>
+              <button type="button" disabled>Surrender</button>
+            </>
+          )}
+          {!leftTable && <button className="blackjack-leave" type="button" onClick={leaveTable}>Leave table</button>}
+        </div>
+      </section>
+    </div>
+  )
 }
 
 function centeredSeatNumbers(capacity: number, currentSeat?: number): number[] {
@@ -463,17 +552,46 @@ function centeredSeatNumbers(capacity: number, currentSeat?: number): number[] {
 
 const previewStatus: BlackjackTableStatus = { available: true, minimumWager: .5, maximumWager: 100, wagerIncrement: .5, minimumStartOccupancy: 3, tableCapacity: 5, humanGraceSeconds: 5, actionDeadlineSeconds: 60, dealerRule: 'Dealer stands on all 17s', blackjackPayout: '3:2', doubleAllowed: true, splitAllowed: false, insuranceAllowed: false }
 
-function previewTable(): BlackjackTable {
+const previewStartingCards: BlackjackTableHand['cards'] = [
+  { rank: '8', suit: 'spades', hidden: false },
+  { rank: '3', suit: 'hearts', hidden: false },
+]
+
+const previewHitCards: BlackjackTableHand['cards'] = [
+  { rank: '6', suit: 'clubs', hidden: false },
+  { rank: '2', suit: 'diamonds', hidden: false },
+  { rank: '4', suit: 'hearts', hidden: false },
+]
+
+function previewTable(cards: BlackjackTableHand['cards'], wager: number, lastAction: string | null): BlackjackTable {
   const hand = (cards: BlackjackTableHand['cards'], score: number, blackjack = false): BlackjackTableHand => ({ cards, score, soft: blackjack, blackjack, bust: false })
   return {
     tableId: 'preview', phase: 'active', round: 7,
     dealer: hand([{ rank: '9', suit: 'clubs', hidden: false }, { hidden: true }], 9),
     seats: [
-      { seatId: 'you', displayName: 'Tian', seat: 0, status: 'blackjack', wager: 10, totalWager: 10, payout: 25, outcome: 'player-blackjack', hand: hand([{ rank: 'A', suit: 'spades', hidden: false }, { rank: 'K', suit: 'hearts', hidden: false }], 21, true), isCurrentPlayer: true },
+      { seatId: 'you', displayName: 'Tian', seat: 0, status: 'playing', wager, totalWager: wager, payout: 0, outcome: null, lastAction, hand: hand(cards, previewHandScore(cards)), isCurrentPlayer: true },
       { seatId: 'mina', displayName: 'Mina', seat: 1, status: 'stood', wager: 5, totalWager: 5, payout: 0, hand: hand([{ rank: '2', suit: 'diamonds', hidden: false }, { rank: '3', suit: 'clubs', hidden: false }, { rank: '2', suit: 'hearts', hidden: false }, { rank: '4', suit: 'spades', hidden: false }, { rank: '3', suit: 'diamonds', hidden: false }, { rank: '3', suit: 'hearts', hidden: false }], 17), isCurrentPlayer: false },
       { seatId: 'leo', displayName: 'Leo', seat: 2, status: 'playing', wager: 5, totalWager: 5, payout: 0, hand: hand([{ rank: '8', suit: 'hearts', hidden: false }, { rank: '8', suit: 'spades', hidden: false }], 16), isCurrentPlayer: false },
     ], activeSeat: 0, legalActions: [], createdAtUtc: '', updatedAtUtc: '', actionDeadlineAtUtc: null, wagerDeadlineAtUtc: null, transition: null, nextTransitionAtUtc: null, remainingActionMilliseconds: 0, remainingWagerMilliseconds: 0, remainingTransitionMilliseconds: 0,
   }
+}
+
+function previewHandScore(cards: BlackjackTableHand['cards']): number {
+  let aces = 0
+  let score = cards.reduce((total, card) => {
+    if (card.hidden || card.rank === undefined) return total
+    if (card.rank === 'A') {
+      aces += 1
+      return total + 11
+    }
+    const numeric = Number(card.rank)
+    return total + (Number.isFinite(numeric) ? numeric : 10)
+  }, 0)
+  while (score > 21 && aces > 0) {
+    score -= 10
+    aces -= 1
+  }
+  return score
 }
 
 function validWager(value: number, status: BlackjackTableStatus): boolean {

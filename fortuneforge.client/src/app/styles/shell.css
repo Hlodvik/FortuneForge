@@ -102,6 +102,7 @@ body.ff-game-active img {
   display: none;
 }
 
+.app-shell > .in-game-shell,
 .app-shell > .landing-page,
 .app-shell > .account-page,
 .app-shell > .player-page,

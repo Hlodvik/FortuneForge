@@ -62,9 +62,10 @@ describe('card game route integration', () => {
     expect(pageTitleForPath('/demo/cards/solitaire/bot-practice')).toBe('Solitaire Race — Fortune Forge')
   })
 
-  it('keeps every card table above the shared cloud backdrop', () => {
+  it('keeps the shared game shell and legacy card roots above the app backdrop', () => {
     const shellSource = source('../../app/styles/shell.css')
 
+    expect(shellSource).toContain('.app-shell > .in-game-shell,')
     expect(shellSource).toContain('.app-shell > .blackjack-page,')
     expect(shellSource).toContain('.app-shell > .credit-holdem-page,')
     expect(shellSource).toContain('.app-shell > .holdem-page,')

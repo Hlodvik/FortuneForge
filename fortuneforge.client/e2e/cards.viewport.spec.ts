@@ -68,6 +68,7 @@ test('Blackjack demo keeps its deal controls in a short phone viewport', async (
   await page.route('**/api/cards/blackjack/demo/status', (route) => route.fulfill({ json: blackjackStatus }))
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto('/demo/cards/blackjack')
+  await expect(page.locator('.in-game-shell')).toHaveCSS('z-index', '1')
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(720)
   await expect(page.locator('.blackjack-controls')).toBeInViewport()
 

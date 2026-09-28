@@ -1,5 +1,7 @@
 using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Blackjack.Table;
+using FortuneForge.Server.Bots;
+using FortuneForge.Server.Cards.Bots;
 using Google.Cloud.Firestore;
 using System.Text.Json;
 using Xunit;
@@ -194,7 +196,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
     }
 
     [Fact]
-    public async Task DurableBoundariesFillEmptySeatsBeforeReplacingABotAtFullCapacity()
+    public async Task DurableBoundariesKeepOneSeatOpenAndReplaceManagedPlayersForNewHumans()
     {
         var (database, store, suffix) = CreateStore();
         var users = new[]
@@ -219,17 +221,18 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
         await store.JoinAsync(users[2], "FifthSeat", 0, Key("boundary-five"), Start.AddSeconds(11), default);
         await FinishRound(store, database, tableId, Start.AddSeconds(12), "round-two");
         table = await ReadTableAsync(database, tableId);
-        Assert.Equal(5, table.Players.Count);
-        Assert.Equal(4, table.Players.Single(player => player.ActorId == users[2]).Seat);
-        Assert.Equal(2, table.Players.Count(player => player.IsBot));
+        Assert.Equal(4, table.Players.Count);
+        Assert.Equal(3, table.Players.Count(player => !player.IsBot));
+        Assert.Single(table.Players, player => player.IsBot);
+        Assert.Contains(table.Players, player => player.ActorId == users[2]);
 
         await ReadyUntilActive(store, database, tableId, users, Start.AddSeconds(13), "third");
         await store.JoinAsync(users[3], "Replacement", 0, Key("boundary-replace"), Start.AddSeconds(14), default);
         await FinishRound(store, database, tableId, Start.AddSeconds(15), "round-three");
         table = await ReadTableAsync(database, tableId);
-        Assert.Equal(5, table.Players.Count);
+        Assert.Equal(4, table.Players.Count);
         Assert.Equal(4, table.Players.Count(player => !player.IsBot));
-        Assert.Single(table.Players, player => player.IsBot);
+        Assert.DoesNotContain(table.Players, player => player.IsBot);
         Assert.Contains(table.Players, player => player.ActorId == users[3]);
     }
 
@@ -238,8 +241,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
     [InlineData(2, 3, 1)]
     [InlineData(3, 3, 0)]
     [InlineData(4, 4, 0)]
-    [InlineData(5, 5, 0)]
-    public async Task DurableGraceStartUsesThreeAsMinimumAndFiveAsCapacity(
+    public async Task DurableGraceStartUsesThreeAsMinimumAndReservesOneSeat(
         int humanCount,
         int occupiedCount,
         int botCount)
@@ -258,6 +260,32 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
         Assert.Equal(occupiedCount, table.Players.Count);
         Assert.Equal(humanCount, table.Players.Count(player => !player.IsBot));
         Assert.Equal(botCount, table.Players.Count(player => player.IsBot));
+    }
+
+    [Fact]
+    public async Task ADataStoreCohortOfFiveHumansUsesTwoTablesWithAReservedSeatOnEach()
+    {
+        var (database, store, suffix) = CreateStore();
+        var users = Enumerable.Range(0, 5).Select(index => $"cohort-{index}-{suffix}").ToArray();
+        foreach (var user in users)
+        {
+            await SeedBalanceAsync(database, user, 5_000);
+            await store.JoinAsync(user, user, 0, Key($"cohort-join-{user}"), Start, default);
+        }
+
+        var sessions = await Task.WhenAll(users.Select(user =>
+            store.GetSessionAsync(user, Start.AddSeconds(6), default)));
+        var tables = sessions
+            .Select(result => Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session).Table)
+            .GroupBy(table => table.TableId, StringComparer.Ordinal)
+            .Select(group => group.First())
+            .ToArray();
+
+        Assert.Equal(2, tables.Length);
+        Assert.All(tables, table => Assert.InRange(
+            table.Seats.Count,
+            BlackjackTableEngine.MinimumStartOccupancy,
+            BlackjackTableEngine.MaximumOccupiedSeats));
     }
 
     [Fact]
@@ -307,7 +335,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
     }
 
     [Fact]
-    public async Task ConcurrentFiveHumanPollAndJoinReplaysStayInOneBoundedShard()
+    public async Task ConcurrentFiveHumanPollAndJoinReplaysStayInBoundedReservedSeatShards()
     {
         var (database, store, suffix) = CreateStore();
         var stores = Enumerable.Range(0, 8)
@@ -331,8 +359,12 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
                 Start.AddSeconds(6),
                 default)));
         var sessions = polls.Select(result => Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session)).ToArray();
-        var tableId = Assert.Single(sessions.Select(session => session.Table.TableId).Distinct(StringComparer.Ordinal));
-        Assert.All(sessions, session => Assert.Equal(5, session.Table.Seats.Count));
+        var tableIds = sessions.Select(session => session.Table.TableId).Distinct(StringComparer.Ordinal).ToArray();
+        Assert.Equal(2, tableIds.Length);
+        Assert.All(sessions, session => Assert.InRange(
+            session.Table.Seats.Count,
+            BlackjackTableEngine.MinimumStartOccupancy,
+            BlackjackTableEngine.MaximumOccupiedSeats));
 
         var replays = await Task.WhenAll(Enumerable.Range(0, 8).Select(index =>
             stores[index % stores.Length].JoinAsync(
@@ -343,20 +375,116 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
                 Start.AddSeconds(7),
                 default)));
         Assert.All(replays, result =>
-            Assert.Equal(tableId, Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session).Table.TableId));
+            Assert.Equal(
+                sessions[0].Table.TableId,
+                Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session).Table.TableId));
 
         var shards = (await database.Collection("blackjackTableState").GetSnapshotAsync()).Documents;
-        var shard = Assert.Single(shards);
-        Assert.Equal(5, Field<long>(shard, "humanCount"));
-        Assert.Equal(1, Field<long>(shard, "tableCount"));
-        Assert.Equal(0, Field<long>(shard, "queuedTicketCount"));
-        Assert.InRange(Field<string>(shard, "stateJson").Length, 1, 64_000);
-        Assert.False(shard.ContainsField("guards"));
+        Assert.Equal(2, shards.Count);
+        Assert.Equal(5, shards.Sum(shard => Field<long>(shard, "humanCount")));
+        Assert.Equal(2, shards.Sum(shard => Field<long>(shard, "tableCount")));
+        Assert.All(shards, shard =>
+        {
+            Assert.Equal(0, Field<long>(shard, "queuedTicketCount"));
+            Assert.InRange(Field<string>(shard, "stateJson").Length, 1, 64_000);
+            Assert.False(shard.ContainsField("guards"));
+        });
         foreach (var user in users)
         {
             Assert.Equal(5_000, await ReadBalanceAsync(database, user));
             Assert.Empty(await LedgerAsync(database, user));
         }
+    }
+
+    [Fact]
+    public async Task ManagedSeatsPersistAsFullProfilesAndRecordNormalMatchHistory()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var database = new FirestoreDbBuilder
+        {
+            ProjectId = $"demo-fortuneforge-managed-profiles-{suffix}",
+            Endpoint = fixture.Endpoint,
+            ChannelCredentials = Grpc.Core.ChannelCredentials.Insecure,
+            EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
+        }.Build();
+        var profileStore = ManagedPlayerQueuer(database);
+        var store = new FirestoreBlackjackTableStore(
+            database, () => DoubleDeck().ToArray(), () => 123UL, profileStore);
+        var user = $"profile-host-{suffix}";
+        await SeedBalanceAsync(database, user, 20_000);
+        await store.JoinAsync(user, "ProfileHost", 0, Key("profile-host-join"), Start, default);
+        var session = Assert.IsType<BlackjackTablePlaySessionResponse>(
+            (await store.GetSessionAsync(user, Start.AddSeconds(6), default)).Session);
+
+        var profiles = (await database.Collection("users")
+            .WhereEqualTo("authProvider", "managed-game-player")
+            .GetSnapshotAsync()).Documents;
+        Assert.Equal(2, profiles.Count);
+        foreach (var profile in profiles)
+        {
+            Assert.Equal("active", Field<string>(profile, "status"));
+            Assert.Equal("player", Field<string>(profile, "role"));
+            Assert.False(Field<bool>(profile, "deactivated"));
+            Assert.NotEmpty(Field<string>(profile, "playerName"));
+            Assert.NotEmpty(Field<string>(profile, "normalizedPlayerName"));
+            Assert.True((await database.Collection("userSlotStatistics").Document(profile.Id).GetSnapshotAsync()).Exists);
+            foreach (var currency in new[] { "slotsCredits", "freeGames", "specialPoints", "energy" })
+            {
+                Assert.True((await database.Collection("userBalances")
+                    .Document($"{profile.Id}_{currency}").GetSnapshotAsync()).Exists);
+            }
+        }
+        Assert.Equal(2, (await database.Collection("managedPlayerAssignments").GetSnapshotAsync()).Count);
+
+        await ReadyUntilActive(store, database, session.Table.TableId, [user], Start.AddSeconds(7), "profiles");
+        await FinishRound(store, database, session.Table.TableId, Start.AddSeconds(8), "profiles");
+
+        var managedResults = (await database.Collection("cardGameResults")
+            .WhereEqualTo("financialClassification", "managed-player-virtual-v1")
+            .GetSnapshotAsync()).Documents;
+        Assert.Equal(2, managedResults.Count);
+        Assert.All(managedResults, result => Assert.Contains(
+            profiles, profile => profile.Id == Field<string>(result, "userId")));
+        foreach (var profile in profiles)
+        {
+            var updated = await profile.Reference.GetSnapshotAsync();
+            Assert.Equal(1, Field<long>(updated, "cardMatchesPlayed"));
+        }
+    }
+
+    [Fact]
+    public async Task ManagedProfileQueuerReusesAvailabilityAcrossGamesBeforeGeneratingAnotherProfile()
+    {
+        var suffix = Guid.NewGuid().ToString("N");
+        var database = new FirestoreDbBuilder
+        {
+            ProjectId = $"demo-fortuneforge-managed-queue-{suffix}",
+            Endpoint = fixture.Endpoint,
+            ChannelCredentials = Grpc.Core.ChannelCredentials.Insecure,
+            EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
+        }.Build();
+        var store = ManagedPlayerQueuer(database);
+        var blackjack = await store.ReserveAsync(
+            CardBotGames.Blackjack, "blackjack-table", 8, [], Start, default);
+        var holdem = await store.ReserveAsync(
+            CardBotGames.TexasHoldem, "holdem-table", 1, [], Start, default);
+
+        Assert.Equal(9, blackjack.Select(profile => profile.UserId)
+            .Concat(holdem.Select(profile => profile.UserId))
+            .Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(9, (await database.Collection("users")
+            .WhereEqualTo("authProvider", "managed-game-player")
+            .GetSnapshotAsync()).Count);
+
+        var released = blackjack[0];
+        await store.ReleaseAsync("blackjack-table", [released.UserId], Start.AddMinutes(1), default);
+        var reused = Assert.Single(await store.ReserveAsync(
+            CardBotGames.TexasHoldem, "holdem-table-two", 1, [], Start.AddMinutes(2), default));
+
+        Assert.Equal(released.UserId, reused.UserId);
+        Assert.Equal(9, (await database.Collection("users")
+            .WhereEqualTo("authProvider", "managed-game-player")
+            .GetSnapshotAsync()).Count);
     }
 
     private (FirestoreDb Database, FirestoreBlackjackTableStore Store, string Suffix) CreateStore(
@@ -373,6 +501,25 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
         return (database, deck is null
             ? new FirestoreBlackjackTableStore(database)
             : new FirestoreBlackjackTableStore(database, () => deck.ToArray(), () => 123UL), suffix);
+    }
+
+    private static ConfiguredBotDirectory ManagedDirectory() => new(new BotDirectoryOptions
+    {
+        Profiles = Enumerable.Range(1, 8).Select(index => new BotProfileOptions
+        {
+            Id = $"managed-test-{index}",
+            DisplayName = $"TablePlayer{index}",
+            SkillLevel = 2 + index % 3,
+            SupportedGames = [CardBotGames.Blackjack, CardBotGames.TexasHoldem]
+        }).ToList()
+    });
+
+    private static ManagedPlayerQueuer ManagedPlayerQueuer(FirestoreDb database)
+    {
+        var profiles = new FirestoreManagedPlayerProfileRepository(database);
+        var assignments = new FirestoreManagedPlayerAssignmentStore(database);
+        var generator = new ManagedPlayerProfileGenerator(profiles);
+        return new ManagedPlayerQueuer(ManagedDirectory(), generator, profiles, assignments);
     }
 
     private static Task SeedBalanceAsync(FirestoreDb database, string userId, long cents) =>

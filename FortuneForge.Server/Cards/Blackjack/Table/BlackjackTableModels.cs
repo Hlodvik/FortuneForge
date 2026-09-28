@@ -199,13 +199,17 @@ internal sealed record BlackjackTableResultEntry(
     int RoundNumber,
     long WagerCents,
     long PayoutCents,
+    bool IsManagedPlayer,
     DateTime CompletedAtUtc);
+
+internal sealed record BlackjackManagedPlayerRelease(string ProfileId, string AssignmentId);
 
 internal sealed class BlackjackTableJournal
 {
     public List<BlackjackTableLedgerEntry> Ledger { get; } = [];
     public List<BlackjackTableRevenueEntry> Revenue { get; } = [];
     public List<BlackjackTableResultEntry> Results { get; } = [];
+    public List<BlackjackManagedPlayerRelease> ManagedPlayerReleases { get; } = [];
 }
 
 internal sealed class BlackjackTableInsufficientCreditsException(long availableCents, long requiredCents)

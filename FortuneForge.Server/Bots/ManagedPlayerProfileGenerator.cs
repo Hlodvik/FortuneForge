@@ -1,0 +1,26 @@
+namespace FortuneForge.Server.Bots;
+
+internal sealed class ManagedPlayerProfileGenerator(
+    IManagedPlayerProfileRepository profiles) : IManagedPlayerProfileGenerator
+{
+    private const int MaximumGenerationAttempts = 20;
+
+    public Task<bool> EnsurePersistedAsync(
+        ManagedPlayerProfile profile,
+        CancellationToken cancellationToken) =>
+        profiles.EnsurePersistedAsync(profile, cancellationToken);
+
+    public async Task<ManagedPlayerProfile> GenerateAsync(
+        string gameId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; attempt < MaximumGenerationAttempts; attempt++)
+        {
+            var profile = ManagedPlayerIdentityFactory.Create(gameId, nowUtc);
+            if (await profiles.TryCreateAsync(profile, cancellationToken)) return profile;
+        }
+
+        throw new InvalidOperationException("A unique managed player profile could not be generated.");
+    }
+}

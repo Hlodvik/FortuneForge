@@ -34,6 +34,8 @@ public sealed record BotProfile(
 
 public interface IBotDirectory
 {
+    IReadOnlyList<BotProfile> Profiles { get; }
+
     IReadOnlyList<BotProfile> Select(
         string gameId,
         ulong selectionSeed,
@@ -44,6 +46,8 @@ public interface IBotDirectory
 public sealed class ConfiguredBotDirectory : IBotDirectory
 {
     private readonly IReadOnlyList<BotProfile> profiles;
+
+    public IReadOnlyList<BotProfile> Profiles => profiles;
 
     public ConfiguredBotDirectory(BotDirectoryOptions options)
     {

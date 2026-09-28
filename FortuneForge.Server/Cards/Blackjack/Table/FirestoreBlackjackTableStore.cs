@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -13,20 +14,25 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private static readonly TimeSpan GuardRetention = TimeSpan.FromDays(7);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
-    private readonly BlackjackTableCoordinator coordinator;
+    private readonly Func<IReadOnlyList<string>>? deckFactory;
+    private readonly Func<ulong>? seedFactory;
+    private readonly IManagedPlayerQueuer? managedPlayerQueuer;
     private readonly string leaseOwner = $"blackjack-table-worker-{Guid.NewGuid():N}";
 
-    public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null)
+    public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null, null)
     {
     }
 
     internal FirestoreBlackjackTableStore(
         FirestoreDb database,
         Func<IReadOnlyList<string>>? deckFactory,
-        Func<ulong>? seedFactory)
+        Func<ulong>? seedFactory,
+        IManagedPlayerQueuer? managedPlayerQueuer = null)
     {
         this.database = database;
-        coordinator = new(deckFactory, seedFactory);
+        this.deckFactory = deckFactory;
+        this.seedFactory = seedFactory;
+        this.managedPlayerQueuer = managedPlayerQueuer;
     }
 
     public async Task<BlackjackTableStoreResult> GetSessionAsync(
@@ -47,7 +53,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             userId,
             null,
             false,
-            (state, balances) => coordinator.Get(state, balances, userId, nowUtc),
+            (coordinator, state, balances) => coordinator.Get(state, balances, userId, nowUtc),
             nowUtc,
             cancellationToken);
     }
@@ -74,6 +80,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         }
 
         BlackjackTableCoordinatorResult Command(
+            BlackjackTableCoordinator coordinator,
             BlackjackTableLobbyState state,
             IDictionary<string, long> balances) =>
             coordinator.Join(
@@ -154,7 +161,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (state, balances) => coordinator.Cancel(
+            (coordinator, state, balances) => coordinator.Cancel(
                 state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -170,7 +177,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (state, balances) => coordinator.Wager(
+            (coordinator, state, balances) => coordinator.Wager(
                 state, balances, userId, tableId, wagerCents, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -186,7 +193,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (state, balances) => coordinator.Action(
+            (coordinator, state, balances) => coordinator.Action(
                 state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -201,7 +208,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (state, balances) => coordinator.Leave(
+            (coordinator, state, balances) => coordinator.Leave(
                 state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -278,7 +285,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private async Task<BlackjackTableStoreResult> ExecuteResolvedAsync(
         string userId,
         string idempotencyKey,
-        Func<BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -294,7 +301,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         string userId,
         string? idempotencyKey,
         bool requireAcceptingShard,
-        Func<BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -326,89 +333,191 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         string userId,
         string? idempotencyKey,
         bool requireAcceptingShard,
-        Func<BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        await RunTransactionAsync(async transaction =>
+        CancellationToken cancellationToken)
+    {
+        var reservations = new List<BlackjackReservedManagedPlayer>();
+        while (true)
         {
-            var stateReference = StateDocument(stateId);
-            var sessionReference = SessionDocument(userId);
-            var guardReference = string.IsNullOrEmpty(idempotencyKey)
-                ? null
-                : GuardDocument(userId, idempotencyKey);
-            var initialReads = new List<Task<DocumentSnapshot>>
+            try
             {
-                transaction.GetSnapshotAsync(stateReference, cancellationToken),
-                transaction.GetSnapshotAsync(sessionReference, cancellationToken)
-            };
-            if (guardReference is not null)
-                initialReads.Add(transaction.GetSnapshotAsync(guardReference, cancellationToken));
-            var snapshots = await Task.WhenAll(initialReads);
-            var routedStateId = ReadString(snapshots[1], "stateId");
-            if (!string.IsNullOrEmpty(routedStateId) && routedStateId != stateId)
-                throw new BlackjackTableShardChangedException(routedStateId);
+                var execution = await RunTransactionAsync(async transaction =>
+                {
+                    var supply = new BlackjackManagedPlayerSupply(
+                        reservations,
+                        generateWhenEmpty: managedPlayerQueuer is null);
+                    var coordinator = new BlackjackTableCoordinator(deckFactory, seedFactory, supply);
+                    var stateReference = StateDocument(stateId);
+                    var sessionReference = SessionDocument(userId);
+                    var guardReference = string.IsNullOrEmpty(idempotencyKey)
+                        ? null
+                        : GuardDocument(userId, idempotencyKey);
+                    var initialReads = new List<Task<DocumentSnapshot>>
+                    {
+                        transaction.GetSnapshotAsync(stateReference, cancellationToken),
+                        transaction.GetSnapshotAsync(sessionReference, cancellationToken)
+                    };
+                    if (guardReference is not null)
+                        initialReads.Add(transaction.GetSnapshotAsync(guardReference, cancellationToken));
+                    var snapshots = await Task.WhenAll(initialReads);
+                    var routedStateId = ReadString(snapshots[1], "stateId");
+                    if (!string.IsNullOrEmpty(routedStateId) && routedStateId != stateId)
+                        throw new BlackjackTableShardChangedException(routedStateId);
 
-            var state = ReadState(snapshots[0]);
-            var durableBefore = DurableStateJson(state);
-            var guardSnapshot = guardReference is null ? null : snapshots[2];
-            var guardKey = string.IsNullOrEmpty(idempotencyKey) ? null : GuardKey(userId, idempotencyKey);
-            if (guardSnapshot?.Exists == true && guardKey is not null)
-                state.Guards[guardKey] = ReadGuard(guardSnapshot);
-            if (requireAcceptingShard && guardSnapshot?.Exists != true && !CanAcceptHuman(state))
-                throw new BlackjackTableShardUnavailableException();
+                    var state = ReadState(snapshots[0]);
+                    var durableBefore = DurableStateJson(state);
+                    var guardSnapshot = guardReference is null ? null : snapshots[2];
+                    var guardKey = string.IsNullOrEmpty(idempotencyKey) ? null : GuardKey(userId, idempotencyKey);
+                    if (guardSnapshot?.Exists == true && guardKey is not null)
+                        state.Guards[guardKey] = ReadGuard(guardSnapshot);
+                    if (requireAcceptingShard && guardSnapshot?.Exists != true && !CanAcceptHuman(state))
+                        throw new BlackjackTableShardUnavailableException();
 
-            var prior = StateReferences.Capture(state, userId);
-            var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
-            var result = command(state, loaded.Current);
-            var commandGuard = guardKey is not null && state.Guards.TryGetValue(guardKey, out var value)
-                ? value
-                : null;
-            Normalize(state);
-            state.Guards.Clear();
-            var durableAfter = DurableStateJson(state);
-            WriteMutation(
-                transaction,
-                stateId,
-                state,
-                prior,
-                loaded,
-                result.Journal,
-                commandGuard,
-                guardReference,
-                durableBefore != durableAfter,
-                nowUtc);
-            return result.Store;
-        }, cancellationToken);
+                    var prior = StateReferences.Capture(state, userId);
+                    var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
+                    var result = command(coordinator, state, loaded.Current);
+                    var commandGuard = guardKey is not null && state.Guards.TryGetValue(guardKey, out var value)
+                        ? value
+                        : null;
+                    Normalize(state);
+                    state.Guards.Clear();
+                    var durableAfter = DurableStateJson(state);
+                    WriteMutation(
+                        transaction,
+                        stateId,
+                        state,
+                        prior,
+                        loaded,
+                        result.Journal,
+                        commandGuard,
+                        guardReference,
+                        durableBefore != durableAfter,
+                        nowUtc);
+                    return CaptureManagedExecution(result.Store, state, result.Journal);
+                }, cancellationToken);
+                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
+                return execution.Value;
+            }
+            catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
+            {
+                var profiles = await managedPlayerQueuer.ReserveAsync(
+                    "blackjack",
+                    required.AssignmentId,
+                    required.Count,
+                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
+                    nowUtc,
+                    cancellationToken);
+                reservations.AddRange(profiles.Select(profile =>
+                    new BlackjackReservedManagedPlayer(profile, required.AssignmentId)));
+            }
+        }
+    }
 
     private async Task SweepShardAsync(
         string stateId,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        await RunTransactionAsync(async transaction =>
+        CancellationToken cancellationToken)
+    {
+        var reservations = new List<BlackjackReservedManagedPlayer>();
+        while (true)
         {
-            var stateReference = StateDocument(stateId);
-            var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
-            if (!stateSnapshot.Exists) return false;
-            var state = ReadState(stateSnapshot);
-            var durableBefore = DurableStateJson(state);
-            var prior = StateReferences.Capture(state, null);
-            var loaded = await ReadBalancesAsync(transaction, state, null, cancellationToken);
-            var journal = coordinator.Sweep(state, loaded.Current, nowUtc);
-            Normalize(state);
-            state.Guards.Clear();
-            WriteMutation(
-                transaction,
-                stateId,
-                state,
-                prior,
-                loaded,
-                journal,
-                null,
-                null,
-                durableBefore != DurableStateJson(state),
-                nowUtc);
-            return true;
-        }, cancellationToken);
+            try
+            {
+                var execution = await RunTransactionAsync(async transaction =>
+                {
+                    var supply = new BlackjackManagedPlayerSupply(
+                        reservations,
+                        generateWhenEmpty: managedPlayerQueuer is null);
+                    var coordinator = new BlackjackTableCoordinator(deckFactory, seedFactory, supply);
+                    var stateReference = StateDocument(stateId);
+                    var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
+                    if (!stateSnapshot.Exists)
+                        return CaptureManagedExecution(false, new BlackjackTableLobbyState(), new BlackjackTableJournal());
+                    var state = ReadState(stateSnapshot);
+                    var durableBefore = DurableStateJson(state);
+                    var prior = StateReferences.Capture(state, null);
+                    var loaded = await ReadBalancesAsync(transaction, state, null, cancellationToken);
+                    var journal = coordinator.Sweep(state, loaded.Current, nowUtc);
+                    Normalize(state);
+                    state.Guards.Clear();
+                    WriteMutation(
+                        transaction,
+                        stateId,
+                        state,
+                        prior,
+                        loaded,
+                        journal,
+                        null,
+                        null,
+                        durableBefore != DurableStateJson(state),
+                        nowUtc);
+                    return CaptureManagedExecution(true, state, journal);
+                }, cancellationToken);
+                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
+                return;
+            }
+            catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
+            {
+                var profiles = await managedPlayerQueuer.ReserveAsync(
+                    "blackjack",
+                    required.AssignmentId,
+                    required.Count,
+                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
+                    nowUtc,
+                    cancellationToken);
+                reservations.AddRange(profiles.Select(profile =>
+                    new BlackjackReservedManagedPlayer(profile, required.AssignmentId)));
+            }
+        }
+    }
+
+    private async Task FinalizeManagedPlayersAsync<T>(
+        ManagedExecution<T> execution,
+        IReadOnlyCollection<BlackjackReservedManagedPlayer> reservations,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        if (managedPlayerQueuer is null) return;
+        foreach (var (assignmentId, profileIds) in execution.ActiveAssignments)
+        {
+            await managedPlayerQueuer.HeartbeatAsync(
+                "blackjack", assignmentId, profileIds, nowUtc, cancellationToken);
+        }
+
+        var releases = execution.Releases
+            .Concat(reservations
+                .Where(reservation => !execution.ActiveAssignments
+                    .GetValueOrDefault(reservation.AssignmentId, [])
+                    .Contains(reservation.Profile.UserId, StringComparer.Ordinal))
+                .Select(reservation => new BlackjackManagedPlayerRelease(
+                    reservation.Profile.UserId, reservation.AssignmentId)))
+            .DistinctBy(value => $"{value.AssignmentId}\n{value.ProfileId}", StringComparer.Ordinal)
+            .GroupBy(value => value.AssignmentId, StringComparer.Ordinal);
+        foreach (var group in releases)
+        {
+            await managedPlayerQueuer.ReleaseAsync(
+                group.Key,
+                group.Select(value => value.ProfileId).ToArray(),
+                nowUtc,
+                cancellationToken);
+        }
+    }
+
+    private static ManagedExecution<T> CaptureManagedExecution<T>(
+        T value,
+        BlackjackTableLobbyState state,
+        BlackjackTableJournal journal) => new(
+        value,
+        state.Tables.Values.ToDictionary(
+            table => table.TableId,
+            table => (IReadOnlyCollection<string>)table.Players
+                .Where(player => player.IsBot)
+                .Select(player => player.ActorId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
+            StringComparer.Ordinal),
+        journal.ManagedPlayerReleases.ToArray());
 
     private async Task<LoadedBalances> ReadBalancesAsync(
         Transaction transaction,
@@ -537,7 +646,20 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         foreach (var entry in journal.Revenue)
             transaction.Create(RevenueDocument(entry.RoundId), RevenueData(entry));
         foreach (var result in journal.Results)
+        {
             transaction.Create(CardGameResultDocument(result.ResultId), CardGameResultData(result));
+            if (result.IsManagedPlayer)
+            {
+                transaction.Set(ManagedProfileDocument(result.UserId), new Dictionary<string, object>
+                {
+                    ["cardMatchesPlayed"] = FieldValue.Increment(1),
+                    ["cardWins"] = FieldValue.Increment(result.PayoutCents > result.WagerCents ? 1 : 0),
+                    ["cardLosses"] = FieldValue.Increment(result.PayoutCents < result.WagerCents ? 1 : 0),
+                    ["cardPushes"] = FieldValue.Increment(result.PayoutCents == result.WagerCents ? 1 : 0),
+                    ["updatedAt"] = Timestamp.FromDateTime(result.CompletedAtUtc)
+                }, SetOptions.MergeAll);
+            }
+        }
         if (guardReference is not null && commandGuard is not null)
         {
             transaction.Set(guardReference, new Dictionary<string, object>
@@ -626,7 +748,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     }
 
     private static bool CanAcceptHuman(BlackjackTableLobbyState state) =>
-        state.Tables.Count <= 1 && ActiveHumanCount(state) < BlackjackTableEngine.Capacity;
+        state.Tables.Count <= 1 && ActiveHumanCount(state) < BlackjackTableEngine.MaximumOccupiedSeats;
 
     private static int ActiveHumanCount(BlackjackTableLobbyState state) => state.Sessions.Count(pair =>
         pair.Value.Kind is BlackjackTableSessionKinds.Queue or BlackjackTableSessionKinds.Table);
@@ -686,6 +808,8 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         database.Collection("blackjackTableRoundRevenue").Document(BlackjackTableIds.Hash(id));
     private DocumentReference CardGameResultDocument(string resultId) =>
         database.Collection("cardGameResults").Document(resultId);
+    private DocumentReference ManagedProfileDocument(string userId) =>
+        database.Collection("users").Document(userId);
 
     private static BlackjackTableLobbyState ReadState(DocumentSnapshot snapshot)
     {
@@ -752,13 +876,15 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ["userHash"] = BlackjackTableIds.Hash(entry.UserId),
         ["userGameHash"] = BlackjackTableIds.Hash($"{entry.UserId}\nblackjack\ncredit-table"),
         ["claimStatus"] = "completed",
-        ["settlementStatus"] = "paid",
+        ["settlementStatus"] = entry.IsManagedPlayer ? "recorded" : "paid",
         ["wagerCents"] = entry.WagerCents,
         ["payoutCents"] = entry.PayoutCents,
         ["netCents"] = checked(entry.PayoutCents - entry.WagerCents),
         ["completedAt"] = Timestamp.FromDateTime(entry.CompletedAtUtc),
         ["seenAt"] = null!,
-        ["financialClassification"] = "real-human-dealer-counterparty-v1",
+        ["financialClassification"] = entry.IsManagedPlayer
+            ? "managed-player-virtual-v1"
+            : "real-human-dealer-counterparty-v1",
         ["schemaVersion"] = 1L
     };
 
@@ -802,6 +928,11 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private sealed record LoadedBalances(
         Dictionary<string, long> Current,
         Dictionary<string, long> Original);
+
+    private sealed record ManagedExecution<T>(
+        T Value,
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>> ActiveAssignments,
+        IReadOnlyCollection<BlackjackManagedPlayerRelease> Releases);
 
     private sealed record StateReferences(
         IReadOnlySet<string> TableIds,

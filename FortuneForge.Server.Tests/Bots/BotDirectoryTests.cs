@@ -52,6 +52,25 @@ public sealed class BotDirectoryTests
         Assert.Throws<InvalidOperationException>(() => new ConfiguredBotDirectory(duplicate));
     }
 
+    [Fact]
+    public void Generator_creates_unique_profile_shaped_human_style_identities()
+    {
+        var now = new DateTime(2026, 9, 28, 12, 0, 0, DateTimeKind.Utc);
+        var profiles = Enumerable.Range(0, 64)
+            .Select(_ => ManagedPlayerIdentityFactory.Create(CardBotGames.Blackjack, now))
+            .ToArray();
+
+        Assert.Equal(64, profiles.Select(profile => profile.UserId).Distinct(StringComparer.Ordinal).Count());
+        Assert.All(profiles, profile =>
+        {
+            Assert.StartsWith("managed-", profile.UserId, StringComparison.Ordinal);
+            Assert.Matches("^[A-Za-z]+[0-9]{2}$", profile.PlayerName);
+            Assert.Contains(CardBotGames.Blackjack, profile.SupportedGames);
+            Assert.InRange(profile.SkillLevel, 2, 4);
+            Assert.Equal(now, profile.CreatedAtUtc);
+        });
+    }
+
     private static ConfiguredBotDirectory Directory() => new(Options());
 
     private static BotDirectoryOptions Options() => new()

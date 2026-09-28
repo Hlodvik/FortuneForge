@@ -1,4 +1,5 @@
 using Google.Cloud.Firestore;
+using FortuneForge.Server.Bots;
 
 namespace FortuneForge.Server.Cards.Blackjack.Table;
 
@@ -7,7 +8,11 @@ public static class BlackjackTableConfiguration
     public static IServiceCollection AddBlackjackTables(this IServiceCollection services)
     {
         services.AddSingleton<IBlackjackTableStore>(provider =>
-            new FirestoreBlackjackTableStore(provider.GetRequiredService<FirestoreDb>()));
+            new FirestoreBlackjackTableStore(
+                provider.GetRequiredService<FirestoreDb>(),
+                null,
+                null,
+                provider.GetRequiredService<IManagedPlayerQueuer>()));
         services.AddSingleton<BlackjackTableService>();
         services.AddHostedService<BlackjackTableWorker>();
         return services;

@@ -6,14 +6,18 @@ public static class BlackjackTableEngine
 {
     public const int MinimumStartOccupancy = 3;
     public const int Capacity = 5;
+    public const int MaximumOccupiedSeats = Capacity - 1;
+    public const int DisconnectedTableRounds = 10;
+    public const int FirstPopulationChangeAfterRounds = 10;
+    public const int PopulationChangeIntervalRounds = 5;
     public static readonly TimeSpan HumanGrace = TimeSpan.FromSeconds(5);
     public static readonly TimeSpan ActionDuration = TimeSpan.FromMinutes(1);
     public static readonly TimeSpan WagerDuration = TimeSpan.FromMinutes(1);
     public static readonly TimeSpan WagerAdjustmentDuration = TimeSpan.FromMilliseconds(800);
     public static readonly TimeSpan ActionSettleDuration = TimeSpan.FromMilliseconds(650);
     public static readonly TimeSpan DealerCardDuration = TimeSpan.FromMilliseconds(700);
-    public static readonly TimeSpan MinimumTurnPause = TimeSpan.FromMilliseconds(850);
-    public static readonly TimeSpan MaximumTurnPause = TimeSpan.FromMilliseconds(1_450);
+    public static readonly TimeSpan MinimumTurnPause = TimeSpan.FromMilliseconds(1_500);
+    public static readonly TimeSpan MaximumTurnPause = TimeSpan.FromMilliseconds(5_500);
 
     public static void Deal(BlackjackTableState table, IReadOnlyList<string> deck, ulong roundSeed, DateTime nowUtc)
     {
@@ -21,8 +25,8 @@ public static class BlackjackTableEngine
             throw new BlackjackTableConflictException("This Blackjack table is closed.");
         if (table.Players.Count is < 1 or > Capacity)
             throw new InvalidOperationException("A Blackjack table must contain one through five occupied seats.");
-        if (!table.Players.Any(player => !player.IsBot && player.NextWagerCents > 0))
-            throw new BlackjackTableConflictException("At least one seated person must choose a wager before the round starts.");
+        if (!table.Players.Any(player => player.NextWagerCents > 0))
+            throw new BlackjackTableConflictException("At least one seated player must have a wager before the round starts.");
         ValidateDeck(deck);
 
         table.RoundNumber = checked(table.RoundNumber + 1);

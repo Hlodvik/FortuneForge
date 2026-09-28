@@ -1,0 +1,196 @@
+using System.Security.Cryptography;
+using System.Text;
+using Google.Cloud.Firestore;
+
+namespace FortuneForge.Server.Bots;
+
+internal sealed class FirestoreManagedPlayerProfileRepository(
+    FirestoreDb database) : IManagedPlayerProfileRepository
+{
+    private static readonly string[] CurrencyIds =
+        ["slotsCredits", "freeGames", "specialPoints", "energy"];
+
+    public Task<bool> EnsurePersistedAsync(
+        ManagedPlayerProfile profile,
+        CancellationToken cancellationToken) =>
+        database.RunTransactionAsync(async transaction =>
+        {
+            var userReference = User(profile.UserId);
+            var nameReference = PlayerNameKey(profile.PlayerName);
+            var snapshots = await Task.WhenAll(
+                transaction.GetSnapshotAsync(userReference, cancellationToken),
+                transaction.GetSnapshotAsync(nameReference, cancellationToken));
+            var user = snapshots[0];
+            var name = snapshots[1];
+
+            if (name.Exists && ReadString(name, "userId") != profile.UserId) return false;
+            if (user.Exists &&
+                !string.Equals(ReadString(user, "playerName"), profile.PlayerName,
+                    StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            if (user.Exists)
+            {
+                transaction.Set(userReference, new Dictionary<string, object>
+                {
+                    ["skillLevel"] = profile.SkillLevel,
+                    ["supportedGames"] = profile.SupportedGames.ToArray(),
+                    ["updatedAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc)
+                }, SetOptions.MergeAll);
+            }
+            else
+            {
+                transaction.Create(userReference, UserData(profile));
+                EnsureSupportingProfileDocuments(transaction, profile);
+            }
+            if (!name.Exists)
+                transaction.Create(nameReference, KeyData(profile.UserId, profile.CreatedAtUtc));
+            return true;
+        }, cancellationToken: cancellationToken);
+
+    public Task<bool> TryCreateAsync(
+        ManagedPlayerProfile profile,
+        CancellationToken cancellationToken) =>
+        database.RunTransactionAsync(async transaction =>
+        {
+            var userReference = User(profile.UserId);
+            var nameReference = PlayerNameKey(profile.PlayerName);
+            var snapshots = await Task.WhenAll(
+                transaction.GetSnapshotAsync(userReference, cancellationToken),
+                transaction.GetSnapshotAsync(nameReference, cancellationToken));
+            if (snapshots.Any(snapshot => snapshot.Exists)) return false;
+
+            transaction.Create(userReference, UserData(profile));
+            transaction.Create(nameReference, KeyData(profile.UserId, profile.CreatedAtUtc));
+            EnsureSupportingProfileDocuments(transaction, profile);
+            return true;
+        }, cancellationToken: cancellationToken);
+
+    public async Task<IReadOnlyList<ManagedPlayerProfile>> ListSupportingAsync(
+        string gameId,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var snapshot = await database.Collection("users")
+            .WhereEqualTo("authProvider", "managed-game-player")
+            .Limit(limit)
+            .GetSnapshotAsync(cancellationToken);
+        return snapshot.Documents
+            .Select(ReadProfile)
+            .Where(profile => profile.SupportedGames.Contains(gameId))
+            .ToArray();
+    }
+
+    public Task MarkLastActiveAsync(
+        string profileId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        User(profileId).SetAsync(new Dictionary<string, object>
+        {
+            ["lastActiveAt"] = Timestamp.FromDateTime(nowUtc),
+            ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+        }, SetOptions.MergeAll, cancellationToken);
+
+    private void EnsureSupportingProfileDocuments(
+        Transaction transaction,
+        ManagedPlayerProfile profile)
+    {
+        transaction.Set(
+            Statistics(profile.UserId),
+            StatisticsData(profile.UserId, profile.CreatedAtUtc),
+            SetOptions.MergeAll);
+        foreach (var currencyId in CurrencyIds)
+        {
+            transaction.Set(
+                Balance(profile.UserId, currencyId),
+                BalanceData(profile.UserId, currencyId, profile.CreatedAtUtc),
+                SetOptions.MergeAll);
+        }
+    }
+
+    private static ManagedPlayerProfile ReadProfile(DocumentSnapshot snapshot)
+    {
+        var games = snapshot.TryGetValue<List<object>>("supportedGames", out var values)
+            ? values.Select(value => value.ToString() ?? string.Empty).Where(value => value.Length > 0)
+            : [];
+        return new(
+            snapshot.Id,
+            ReadString(snapshot, "playerName"),
+            checked((int)ReadLong(snapshot, "skillLevel", 3)),
+            games.ToHashSet(StringComparer.OrdinalIgnoreCase),
+            ReadTimestamp(snapshot, "createdAt"));
+    }
+
+    private static Dictionary<string, object> UserData(ManagedPlayerProfile profile) => new()
+    {
+        ["userId"] = profile.UserId,
+        ["playerName"] = profile.PlayerName,
+        ["normalizedPlayerName"] = profile.PlayerName.Trim().ToUpperInvariant(),
+        ["email"] = $"{profile.UserId}@managed.fortuneforge.invalid",
+        ["passwordHash"] = string.Empty,
+        ["status"] = "active",
+        ["deactivated"] = false,
+        ["authProvider"] = "managed-game-player",
+        ["firebaseUid"] = string.Empty,
+        ["emailVerified"] = true,
+        ["role"] = "player",
+        ["skillLevel"] = profile.SkillLevel,
+        ["supportedGames"] = profile.SupportedGames.ToArray(),
+        ["accountSchemaVersion"] = 7L,
+        ["createdAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc),
+        ["updatedAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc)
+    };
+
+    private static Dictionary<string, object> StatisticsData(string userId, DateTime createdAtUtc) => new()
+    {
+        ["userId"] = userId,
+        ["spinsPlayed"] = 0L,
+        ["wins"] = 0L,
+        ["losses"] = 0L,
+        ["creditsWagered"] = 0L,
+        ["creditsWon"] = 0L,
+        ["netCredits"] = 0L,
+        ["createdAt"] = Timestamp.FromDateTime(createdAtUtc),
+        ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
+    };
+
+    private static Dictionary<string, object> BalanceData(
+        string userId,
+        string currencyId,
+        DateTime createdAtUtc) => new()
+    {
+        ["userId"] = userId,
+        ["currencyId"] = currencyId,
+        ["available"] = 0L,
+        ["reserved"] = 0L,
+        ["version"] = 1L,
+        ["createdAt"] = Timestamp.FromDateTime(createdAtUtc),
+        ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
+    };
+
+    private static Dictionary<string, object> KeyData(string userId, DateTime nowUtc) => new()
+    {
+        ["userId"] = userId,
+        ["createdAt"] = Timestamp.FromDateTime(nowUtc)
+    };
+
+    private DocumentReference User(string userId) => database.Collection("users").Document(userId);
+    private DocumentReference Statistics(string userId) =>
+        database.Collection("userSlotStatistics").Document(userId);
+    private DocumentReference PlayerNameKey(string playerName) =>
+        database.Collection("accountPlayerNameKeys")
+            .Document(Hash(playerName.Trim().ToUpperInvariant()));
+    private DocumentReference Balance(string userId, string currencyId) =>
+        database.Collection("userBalances").Document($"{userId}_{currencyId}");
+
+    private static string Hash(string value) => Convert.ToHexStringLower(
+        SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    private static string ReadString(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<string>(field, out var value) ? value : string.Empty;
+    private static long ReadLong(DocumentSnapshot snapshot, string field, long fallback = 0) =>
+        snapshot.Exists && snapshot.TryGetValue<long>(field, out var value) ? value : fallback;
+    private static DateTime ReadTimestamp(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<Timestamp>(field, out var value)
+            ? value.ToDateTime()
+            : DateTime.UnixEpoch;
+}

@@ -31,6 +31,9 @@ public sealed class BlackjackTableState
     public DateTime? NextTransitionAtUtc { get; set; }
     public int DealerVisibleCardCount { get; set; }
     public bool RoundAccountingSettled { get; set; } = true;
+    public int RoundsRemainingWithoutHuman { get; set; }
+    public int? NextPopulationChangeRound { get; set; }
+    public bool NextPopulationChangeAddsPlayer { get; set; } = true;
 }
 
 public sealed class BlackjackTablePlayer
@@ -55,6 +58,7 @@ public sealed class BlackjackTablePlayer
     public long SessionWagerCents { get; set; }
     public long SessionPayoutCents { get; set; }
     public int SessionRoundsPlayed { get; set; }
+    public int JoinedRound { get; set; }
     public int ConsecutiveMissedRounds { get; set; }
     public int ConsecutiveMissedActionRounds { get; set; }
     public int LastMissedActionRound { get; set; }

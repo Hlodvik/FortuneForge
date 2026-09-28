@@ -74,7 +74,7 @@ public static class SlotSpecialRoundProfiles
                 5,
                 40,
                 10,
-                PayoutMultiplier: 0.894m),
+                PayoutMultiplier: 0.946m),
             [RainbowRealmGameId] = new(
                 RainbowRealmGameId,
                 3,

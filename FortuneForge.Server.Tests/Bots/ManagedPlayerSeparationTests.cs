@@ -1,5 +1,4 @@
 using FortuneForge.Server.Bots;
-using FortuneForge.Server.Cards.Bots;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Bots;
@@ -15,13 +14,12 @@ public sealed class ManagedPlayerSeparationTests
         var generator = new RecordingGenerator();
         var assignments = new RecordingAssignmentStore();
         var queuer = new ManagedPlayerQueuer(
-            new SingleProfileDirectory(), generator, new EmptyProfileRepository(), assignments);
+            generator, new ExistingProfileRepository(), assignments);
 
         var profile = Assert.Single(await queuer.ReserveAsync(
-            CardBotGames.Blackjack, "table-1", 1, [], Now, default));
+            ManagedPlayerGames.Blackjack, "table-1", 1, [], Now, default));
 
         Assert.Equal("managed-seed-player", profile.UserId);
-        Assert.Equal(1, generator.EnsureCalls);
         Assert.Equal(0, generator.GenerateCalls);
         Assert.Equal(["managed-seed-player"], assignments.ReservationAttempts);
     }
@@ -32,10 +30,10 @@ public sealed class ManagedPlayerSeparationTests
         var generator = new RecordingGenerator();
         var assignments = new RecordingAssignmentStore("managed-seed-player");
         var queuer = new ManagedPlayerQueuer(
-            new SingleProfileDirectory(), generator, new EmptyProfileRepository(), assignments);
+            generator, new ExistingProfileRepository(), assignments);
 
         var profile = Assert.Single(await queuer.ReserveAsync(
-            CardBotGames.Blackjack, "table-2", 1, [], Now, default));
+            ManagedPlayerGames.Blackjack, "table-2", 1, [], Now, default));
 
         Assert.Equal("managed-generated-player", profile.UserId);
         Assert.Equal(1, generator.GenerateCalls);
@@ -50,43 +48,35 @@ public sealed class ManagedPlayerSeparationTests
         var repository = new CollisionOnceProfileRepository();
         var generator = new ManagedPlayerProfileGenerator(repository);
 
-        var profile = await generator.GenerateAsync(CardBotGames.Blackjack, Now, default);
+        var profile = await generator.GenerateAsync(ManagedPlayerGames.Blackjack, Now, default);
 
         Assert.Equal(2, repository.CreateCalls);
         Assert.StartsWith("managed-", profile.UserId, StringComparison.Ordinal);
-        Assert.Contains(CardBotGames.Blackjack, profile.SupportedGames);
+        Assert.Contains(ManagedPlayerGames.Blackjack, profile.SupportedGames);
     }
 
-    private sealed class SingleProfileDirectory : IBotDirectory
+    [Fact]
+    public void IdentityFactory_creates_unique_profile_shaped_human_style_identities()
     {
-        public IReadOnlyList<BotProfile> Profiles { get; } =
-        [
-            new(
-                "seed-player",
-                "SeedPlayer",
-                3,
-                new HashSet<string>([CardBotGames.Blackjack], StringComparer.OrdinalIgnoreCase))
-        ];
+        var profiles = Enumerable.Range(0, 64)
+            .Select(_ => ManagedPlayerIdentityFactory.Create(ManagedPlayerGames.Blackjack, Now))
+            .ToArray();
 
-        public IReadOnlyList<BotProfile> Select(
-            string gameId,
-            ulong selectionSeed,
-            int count,
-            int? preferredSkillLevel = null) => Profiles.Take(count).ToArray();
+        Assert.Equal(64, profiles.Select(profile => profile.UserId)
+            .Distinct(StringComparer.Ordinal).Count());
+        Assert.All(profiles, profile =>
+        {
+            Assert.StartsWith("managed-", profile.UserId, StringComparison.Ordinal);
+            Assert.Matches("^[A-Za-z]+[0-9]{2}$", profile.PlayerName);
+            Assert.Contains(ManagedPlayerGames.Blackjack, profile.SupportedGames);
+            Assert.InRange(profile.SkillLevel, 2, 4);
+            Assert.Equal(Now, profile.CreatedAtUtc);
+        });
     }
 
     private sealed class RecordingGenerator : IManagedPlayerProfileGenerator
     {
-        public int EnsureCalls { get; private set; }
         public int GenerateCalls { get; private set; }
-
-        public Task<bool> EnsurePersistedAsync(
-            ManagedPlayerProfile profile,
-            CancellationToken cancellationToken)
-        {
-            EnsureCalls++;
-            return Task.FromResult(true);
-        }
 
         public Task<ManagedPlayerProfile> GenerateAsync(
             string gameId,
@@ -103,11 +93,8 @@ public sealed class ManagedPlayerSeparationTests
         }
     }
 
-    private sealed class EmptyProfileRepository : IManagedPlayerProfileRepository
+    private sealed class ExistingProfileRepository : IManagedPlayerProfileRepository
     {
-        public Task<bool> EnsurePersistedAsync(
-            ManagedPlayerProfile profile,
-            CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> TryCreateAsync(
             ManagedPlayerProfile profile,
             CancellationToken cancellationToken) => Task.FromResult(true);
@@ -115,7 +102,14 @@ public sealed class ManagedPlayerSeparationTests
             string gameId,
             int limit,
             CancellationToken cancellationToken) =>
-            Task.FromResult<IReadOnlyList<ManagedPlayerProfile>>([]);
+            Task.FromResult<IReadOnlyList<ManagedPlayerProfile>>([
+                new(
+                    "managed-seed-player",
+                    "SeedPlayer",
+                    3,
+                    new HashSet<string>([ManagedPlayerGames.Blackjack], StringComparer.OrdinalIgnoreCase),
+                    Now)
+            ]);
         public Task MarkLastActiveAsync(
             string profileId,
             DateTime nowUtc,
@@ -126,9 +120,6 @@ public sealed class ManagedPlayerSeparationTests
     {
         public int CreateCalls { get; private set; }
 
-        public Task<bool> EnsurePersistedAsync(
-            ManagedPlayerProfile profile,
-            CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> TryCreateAsync(
             ManagedPlayerProfile profile,
             CancellationToken cancellationToken) => Task.FromResult(++CreateCalls > 1);

@@ -38,7 +38,7 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/games/2048' },
   { smokePath: '/games/snake' },
   { smokePath: '/games/horse-flight' },
-  { smokePath: '/demo/cards/solitaire/bot-practice', catalogPath: '/cards/solitaire' },
+  { smokePath: '/cards/solitaire' },
   { smokePath: '/cards/hearts' },
 ]
 

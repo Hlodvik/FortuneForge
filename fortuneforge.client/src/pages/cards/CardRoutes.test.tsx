@@ -16,12 +16,6 @@ describe('card game route integration', () => {
     expect(renderRoute('/cards/texas-holdem')).toContain('Opening Fortune Forge…')
   })
 
-  it('lazy-loads all account-neutral bot-practice labs under demo-only paths', () => {
-    expect(renderRoute('/demo/cards/blackjack/bot-practice')).toContain('Opening Fortune Forge…')
-    expect(renderRoute('/demo/cards/texas-holdem/bot-practice')).toContain('Opening Fortune Forge…')
-    expect(renderRoute('/demo/cards/solitaire/bot-practice')).toContain('Opening Fortune Forge…')
-  })
-
   it('lazy-loads gated Blackjack and competitive Solitaire wrappers', () => {
     expect(renderRoute('/cards/blackjack')).toContain('Opening Fortune Forge…')
     expect(renderRoute('/cards/solitaire')).toContain('Opening Fortune Forge…')
@@ -57,9 +51,6 @@ describe('card game route integration', () => {
     expect(pageTitleForPath('/demo/cards/blackjack')).toBe('Blackjack Demo — Fortune Forge')
     expect(pageTitleForPath('/cards/texas-holdem')).toBe('Texas Hold’em Table — Fortune Forge')
     expect(pageTitleForPath('/cards/solitaire')).toBe('Competitive Solitaire — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/blackjack/bot-practice')).toBe('Blackjack Table — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/texas-holdem/bot-practice')).toBe('Texas Hold’em Table — Fortune Forge')
-    expect(pageTitleForPath('/demo/cards/solitaire/bot-practice')).toBe('Solitaire Race — Fortune Forge')
   })
 
   it('keeps the shared game shell and legacy card roots above the app backdrop', () => {
@@ -89,7 +80,6 @@ describe('card game route integration', () => {
     expect(markup).not.toContain('href="/demo/cards/blackjack"')
     expect(markup).not.toContain('href="/demo/cards/texas-holdem"')
     expect(markup).not.toContain('href="/demo/cards/solitaire"')
-    expect(markup).not.toContain('bot-practice')
   })
 
   it('links all three authoritative credit games when their server gates are open', () => {
@@ -105,7 +95,6 @@ describe('card game route integration', () => {
     expect(markup).toContain('href="/cards/texas-holdem"')
     expect(markup).toContain('href="/cards/solitaire"')
     expect(markup).not.toContain('Credit play available')
-    expect(markup).not.toContain('bot-practice')
   })
 
   it('keeps unavailable cards non-interactive without rendering bottom action buttons', () => {

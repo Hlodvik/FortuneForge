@@ -9,12 +9,24 @@ internal sealed record ManagedPlayerProfile(
     IReadOnlySet<string> SupportedGames,
     DateTime CreatedAtUtc);
 
+internal static class ManagedPlayerProfileSchema
+{
+    public const string AuthenticationProvider = "managed-game-player";
+    public const string BotTag = "bot";
+    public const string ProfileTagsField = "profileTags";
+}
+
+internal static class ManagedPlayerGames
+{
+    public const string Blackjack = "blackjack";
+    public const string Solitaire = "solitaire";
+    public const string TexasHoldem = "texas-holdem";
+    public static readonly IReadOnlyList<string> All =
+        [Blackjack, Solitaire, TexasHoldem];
+}
+
 internal interface IManagedPlayerProfileGenerator
 {
-    Task<bool> EnsurePersistedAsync(
-        ManagedPlayerProfile profile,
-        CancellationToken cancellationToken);
-
     Task<ManagedPlayerProfile> GenerateAsync(
         string gameId,
         DateTime nowUtc,
@@ -23,10 +35,6 @@ internal interface IManagedPlayerProfileGenerator
 
 internal interface IManagedPlayerProfileRepository
 {
-    Task<bool> EnsurePersistedAsync(
-        ManagedPlayerProfile profile,
-        CancellationToken cancellationToken);
-
     Task<bool> TryCreateAsync(
         ManagedPlayerProfile profile,
         CancellationToken cancellationToken);
@@ -112,7 +120,7 @@ internal static class ManagedPlayerIdentityFactory
             $"managed-{Guid.NewGuid():N}",
             $"{first}{last}{suffix}",
             2 + (int)((seed >> 24) % 3),
-            new HashSet<string>([gameId], StringComparer.OrdinalIgnoreCase),
+            new HashSet<string>(ManagedPlayerGames.All.Append(gameId), StringComparer.OrdinalIgnoreCase),
             nowUtc);
     }
 }

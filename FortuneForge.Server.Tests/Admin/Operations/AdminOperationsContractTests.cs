@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
 using FortuneForge.Server.Admin.Operations;
-using FortuneForge.Server.Cards.Bots;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -254,7 +253,6 @@ public sealed class AdminOperationsContractTests
                 MaximumRangeDays = 31,
                 MaximumDocumentsPerCollection = 100
             }))
-            .AddSingleton(Options.Create(new CardBotPlatformOptions()))
             .AddSingleton<AdminOperationsService>()
             .AddSingleton<TimeProvider>(new FixedTimeProvider(NowUtc))
             .BuildServiceProvider();

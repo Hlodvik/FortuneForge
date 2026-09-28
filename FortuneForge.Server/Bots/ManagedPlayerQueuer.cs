@@ -4,7 +4,6 @@ using System.Text;
 namespace FortuneForge.Server.Bots;
 
 internal sealed class ManagedPlayerQueuer(
-    IBotDirectory directory,
     IManagedPlayerProfileGenerator generator,
     IManagedPlayerProfileRepository profiles,
     IManagedPlayerAssignmentStore assignments) : IManagedPlayerQueuer
@@ -21,33 +20,21 @@ internal sealed class ManagedPlayerQueuer(
     {
         if (count <= 0) return [];
         var excluded = excludedProfileIds.ToHashSet(StringComparer.Ordinal);
-        var candidates = directory.Profiles
-            .Where(profile => profile.Supports(gameId))
-            .Select(profile => (Profile: FromConfigured(profile, nowUtc), MustEnsure: true))
-            .ToList();
-        candidates.AddRange((await profiles.ListSupportingAsync(
-                gameId, CandidateLimit, cancellationToken))
-            .Select(profile => (Profile: profile, MustEnsure: false)));
+        var candidates = await profiles.ListSupportingAsync(
+            gameId, CandidateLimit, cancellationToken);
 
         var selected = new List<ManagedPlayerProfile>(count);
         foreach (var candidate in candidates
-                     .Where(candidate => !excluded.Contains(candidate.Profile.UserId))
-                     .DistinctBy(candidate => candidate.Profile.UserId, StringComparer.Ordinal)
+                     .Where(candidate => !excluded.Contains(candidate.UserId))
+                     .DistinctBy(candidate => candidate.UserId, StringComparer.Ordinal)
                      .OrderBy(candidate => StableRank(
-                         gameId, assignmentId, candidate.Profile.UserId)))
+                         gameId, assignmentId, candidate.UserId)))
         {
             if (!await assignments.TryReserveAsync(
-                    candidate.Profile.UserId, gameId, assignmentId, nowUtc, cancellationToken))
+                    candidate.UserId, gameId, assignmentId, nowUtc, cancellationToken))
                 continue;
-            if (candidate.MustEnsure &&
-                !await generator.EnsurePersistedAsync(candidate.Profile, cancellationToken))
-            {
-                await assignments.ReleaseAsync(
-                    candidate.Profile.UserId, assignmentId, cancellationToken);
-                continue;
-            }
-            selected.Add(candidate.Profile);
-            excluded.Add(candidate.Profile.UserId);
+            selected.Add(candidate);
+            excluded.Add(candidate.UserId);
             if (selected.Count == count) return selected;
         }
 
@@ -90,13 +77,6 @@ internal sealed class ManagedPlayerQueuer(
                 await profiles.MarkLastActiveAsync(profileId, nowUtc, cancellationToken);
         }
     }
-
-    private static ManagedPlayerProfile FromConfigured(BotProfile profile, DateTime nowUtc) => new(
-        $"managed-{profile.Id}",
-        profile.DisplayName,
-        profile.SkillLevel,
-        profile.SupportedGames,
-        nowUtc);
 
     private static string StableRank(string gameId, string assignmentId, string userId) =>
         Convert.ToHexStringLower(SHA256.HashData(

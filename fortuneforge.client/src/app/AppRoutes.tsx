@@ -5,10 +5,7 @@ const LandingPage = lazy(() => import('../pages/landing/LandingPage').then((modu
 const DemoSlotsLibraryPage = lazy(() => import('../pages/slots/SlotsLibraryPage').then((module) => ({ default: module.DemoSlotsLibraryPage })))
 const DemoCardLibraryPage = lazy(() => import('../pages/cards/CardGameLibraryPage').then((module) => ({ default: module.CardGameLibraryPage })))
 const DemoBlackjackPage = lazy(() => import('../pages/cards/blackjack/BlackjackPage').then((module) => ({ default: module.BlackjackPage })))
-const DemoBlackjackBotPracticePage = lazy(() => import('../pages/cards/blackjack/BlackjackBotPracticePage').then((module) => ({ default: module.BlackjackBotPracticePage })))
 const DemoTexasHoldemPage = lazy(() => import('../pages/cards/texasHoldem/TexasHoldemPage').then((module) => ({ default: module.TexasHoldemPage })))
-const DemoTexasHoldemBotPracticePage = lazy(() => import('../pages/cards/texasHoldem/TexasHoldemBotPracticePage').then((module) => ({ default: module.TexasHoldemBotPracticePage })))
-const DemoSolitaireBotPracticePage = lazy(() => import('../pages/cards/solitaire/SolitaireBotPracticePage').then((module) => ({ default: module.SolitaireBotPracticePage })))
 const AuthenticatedSlotsLibraryRoute = lazy(() => import('./routes/SlotsLibraryRoute').then((module) => ({ default: module.AuthenticatedSlotsLibraryRoute })))
 const AuthenticatedCardLibraryRoute = lazy(() => import('./routes/CardLibraryRoute').then((module) => ({ default: module.AuthenticatedCardLibraryRoute })))
 const AuthenticatedGameHubRoute = lazy(() => import('./routes/GameHubRoute').then((module) => ({ default: module.AuthenticatedGameHubRoute })))
@@ -62,10 +59,7 @@ export function AppRoutes({
   else if (pathname === '/demo') route = <DemoSlotsLibraryPage />
   else if (pathname === '/demo/cards') route = <DemoCardLibraryPage demoMode />
   else if (pathname === '/demo/cards/blackjack') route = <DemoBlackjackPage demoMode />
-  else if (pathname === '/demo/cards/blackjack/bot-practice') route = <DemoBlackjackBotPracticePage />
   else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage />
-  else if (pathname === '/demo/cards/texas-holdem/bot-practice') route = <DemoTexasHoldemBotPracticePage />
-  else if (pathname === '/demo/cards/solitaire/bot-practice') route = <DemoSolitaireBotPracticePage />
   else if (pathname === '/slots') route = <AuthenticatedSlotsLibraryRoute />
   else if (pathname === '/cards') route = <AuthenticatedCardLibraryRoute />
   else if (pathname === '/games') route = <AuthenticatedGameHubRoute />

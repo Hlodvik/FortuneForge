@@ -16,7 +16,11 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
         database.RunTransactionAsync(async transaction =>
         {
             var reference = Assignment(profileId);
-            var assignment = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            var snapshots = await Task.WhenAll(
+                transaction.GetSnapshotAsync(reference, cancellationToken),
+                transaction.GetSnapshotAsync(User(profileId), cancellationToken));
+            var assignment = snapshots[0];
+            if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(snapshots[1])) return false;
             if (assignment.Exists &&
                 ReadString(assignment, "assignmentId") != assignmentId &&
                 ReadTimestamp(assignment, "leaseUntil") > nowUtc)
@@ -37,7 +41,11 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
         await database.RunTransactionAsync(async transaction =>
         {
             var reference = Assignment(profileId);
-            var snapshot = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            var snapshots = await Task.WhenAll(
+                transaction.GetSnapshotAsync(reference, cancellationToken),
+                transaction.GetSnapshotAsync(User(profileId), cancellationToken));
+            var snapshot = snapshots[0];
+            if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(snapshots[1])) return false;
             if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId) return false;
             transaction.Set(reference, AssignmentData(
                 profileId, gameId, assignmentId, nowUtc), SetOptions.MergeAll);
@@ -52,7 +60,11 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
         database.RunTransactionAsync(async transaction =>
         {
             var reference = Assignment(profileId);
-            var snapshot = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            var snapshots = await Task.WhenAll(
+                transaction.GetSnapshotAsync(reference, cancellationToken),
+                transaction.GetSnapshotAsync(User(profileId), cancellationToken));
+            var snapshot = snapshots[0];
+            if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(snapshots[1])) return false;
             if (!snapshot.Exists || ReadString(snapshot, "assignmentId") != assignmentId) return false;
             transaction.Delete(reference);
             return true;
@@ -75,6 +87,8 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
 
     private DocumentReference Assignment(string userId) =>
         database.Collection("managedPlayerAssignments").Document(userId);
+    private DocumentReference User(string userId) =>
+        database.Collection("users").Document(userId);
     private static string ReadString(DocumentSnapshot snapshot, string field) =>
         snapshot.Exists && snapshot.TryGetValue<string>(field, out var value) ? value : string.Empty;
     private static DateTime ReadTimestamp(DocumentSnapshot snapshot, string field) =>

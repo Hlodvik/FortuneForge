@@ -1,15 +1,12 @@
-using FortuneForge.Server.Cards.Bots;
 using Microsoft.Extensions.Options;
 
 namespace FortuneForge.Server.Admin.Operations;
 
 internal sealed class AdminOperationsService(
     IAdminOperationsStore store,
-    IOptions<AdminOperationsOptions> adminOptions,
-    IOptions<CardBotPlatformOptions> botOptions)
+    IOptions<AdminOperationsOptions> adminOptions)
 {
     private readonly AdminOperationsOptions options = adminOptions.Value;
-    private readonly CardBotPlatformOptions bots = botOptions.Value;
 
     public AdminOperationsRange ValidateRange(DateTimeOffset? from, DateTimeOffset? to, DateTime nowUtc)
     {
@@ -143,7 +140,7 @@ internal sealed class AdminOperationsService(
             new AdminOperationsIntegrityCheck(
                 "bot-financial-isolation",
                 "pass",
-                "Bot practice is account-neutral and is excluded from every financial source and formula.",
+                "Managed game profiles are excluded from every real-player financial source and formula.",
                 snapshot.BotLeases.Count,
                 0)
         }.Concat(snapshot.SourceFindings.Select(static finding => new AdminOperationsIntegrityCheck(
@@ -163,15 +160,15 @@ internal sealed class AdminOperationsService(
         var snapshot = await store.ReadAsync(range, cancellationToken);
         var games = new[]
         {
-            BotTelemetry("blackjack", bots.Blackjack.Enabled, snapshot.BotLeases, nowUtc),
-            BotTelemetry("solitaire", bots.Solitaire.Enabled, snapshot.BotLeases, nowUtc),
-            BotTelemetry("texas-holdem", bots.TexasHoldem.Enabled, snapshot.BotLeases, nowUtc)
+            BotTelemetry("blackjack", true, snapshot.BotLeases, nowUtc),
+            BotTelemetry("solitaire", false, snapshot.BotLeases, nowUtc),
+            BotTelemetry("texas-holdem", false, snapshot.BotLeases, nowUtc)
         };
         return new(
             range.FromUtc,
             range.ToUtc,
             games,
-            "Synthetic bot play is nonfinancial and excluded from balances, ledgers, revenue, expense, liability, and house P&L.");
+            "Managed-player game activity is excluded from real-player revenue, expense, liability, and house P&L.");
     }
 
     private AdminOperationsPage<T> Page<T>(

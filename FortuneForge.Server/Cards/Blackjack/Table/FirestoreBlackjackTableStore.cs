@@ -402,7 +402,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
             {
                 var profiles = await managedPlayerQueuer.ReserveAsync(
-                    "blackjack",
+                    ManagedPlayerGames.Blackjack,
                     required.AssignmentId,
                     required.Count,
                     required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
@@ -460,7 +460,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
             {
                 var profiles = await managedPlayerQueuer.ReserveAsync(
-                    "blackjack",
+                    ManagedPlayerGames.Blackjack,
                     required.AssignmentId,
                     required.Count,
                     required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
@@ -482,7 +482,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         foreach (var (assignmentId, profileIds) in execution.ActiveAssignments)
         {
             await managedPlayerQueuer.HeartbeatAsync(
-                "blackjack", assignmentId, profileIds, nowUtc, cancellationToken);
+                ManagedPlayerGames.Blackjack, assignmentId, profileIds, nowUtc, cancellationToken);
         }
 
         var releases = execution.Releases

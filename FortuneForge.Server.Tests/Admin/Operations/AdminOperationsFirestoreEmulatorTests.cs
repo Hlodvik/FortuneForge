@@ -32,7 +32,7 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             database.Collection("slotCreditWithdrawals").Document($"admin-withdrawal-{suffix}"),
             database.Collection("solitaireQueuePartitions").Document($"admin-queue-{suffix}"),
             database.Collection("solitaireMatches").Document($"admin-match-{suffix}"),
-            database.Collection("cardBotTurnLeases").Document($"admin-bot-lease-{suffix}"),
+            database.Collection("managedPlayerAssignments").Document($"admin-managed-assignment-{suffix}"),
             database.Collection("creditHoldemMatchRevenue").Document($"admin-holdem-valid-{suffix}"),
             database.Collection("creditHoldemMatchRevenue").Document($"admin-holdem-formula-poison-{suffix}"),
             database.Collection("creditHoldemMatchRevenue").Document($"admin-holdem-bot-poison-{suffix}"),
@@ -106,11 +106,13 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             }),
             documents[7].SetAsync(new Dictionary<string, object>
             {
-                ["game"] = "blackjack",
-                ["updatedAt"] = Timestamp.FromDateTime(now.AddMinutes(-1)),
-                ["expiresAt"] = Timestamp.FromDateTime(now.AddMinutes(1)),
-                ["ownerId"] = "must-not-leak",
-                ["token"] = "must-not-leak"
+                ["gameId"] = "blackjack",
+                ["profileId"] = "must-not-leak",
+                ["assignmentId"] = "must-not-leak",
+                ["reservedAt"] = Timestamp.FromDateTime(now.AddMinutes(-1)),
+                ["heartbeatAt"] = Timestamp.FromDateTime(now.AddMinutes(-1)),
+                ["leaseUntil"] = Timestamp.FromDateTime(now.AddMinutes(29)),
+                ["schemaVersion"] = 1L
             }),
             documents[8].SetAsync(CreditHoldemRevenue(now.AddSeconds(-45), 4_000L, 3_600L, 400L, 0L)),
             documents[9].SetAsync(CreditHoldemRevenue(now.AddSeconds(-40), 4_000L, 3_600L, 350L, 0L)),

@@ -28,7 +28,7 @@ internal sealed class FirestoreAdminOperationsStore(
             ReadRangeAsync("slotCreditWithdrawals", "statusUpdatedAt", range, cancellationToken),
             ReadRangeAsync("solitaireQueuePartitions", "updatedAt", range, cancellationToken),
             ReadRangeAsync("solitaireMatches", "startedAt", range, cancellationToken),
-            ReadRangeAsync("cardBotTurnLeases", "updatedAt", range, cancellationToken),
+            ReadRangeAsync("managedPlayerAssignments", "heartbeatAt", range, cancellationToken),
             ReadRangeAsync("creditHoldemMatchRevenue", "recognizedAt", range, cancellationToken),
             ReadRangeAsync("blackjackTableRoundRevenue", "recognizedAt", range, cancellationToken));
 
@@ -108,10 +108,10 @@ internal sealed class FirestoreAdminOperationsStore(
 
         var leases = reads[7].Documents.Select(document => new AdminOperationsBotLeaseRecord(
                 OpaqueId("bot-lease", document.Id),
-                SafeGame(String(document, "game")),
-                TimestampUtc(document, "updatedAt"),
-                TimestampUtc(document, "expiresAt"),
-                document.ContainsField("completedAt")))
+                SafeGame(String(document, "gameId")),
+                TimestampUtc(document, "heartbeatAt"),
+                TimestampUtc(document, "leaseUntil"),
+                false))
             .ToArray();
 
         var sourceFindings = new[]

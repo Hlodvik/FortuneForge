@@ -5,11 +5,6 @@ internal sealed class ManagedPlayerProfileGenerator(
 {
     private const int MaximumGenerationAttempts = 20;
 
-    public Task<bool> EnsurePersistedAsync(
-        ManagedPlayerProfile profile,
-        CancellationToken cancellationToken) =>
-        profiles.EnsurePersistedAsync(profile, cancellationToken);
-
     public async Task<ManagedPlayerProfile> GenerateAsync(
         string gameId,
         DateTime nowUtc,

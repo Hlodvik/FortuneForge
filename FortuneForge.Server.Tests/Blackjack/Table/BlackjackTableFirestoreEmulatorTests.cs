@@ -1,7 +1,6 @@
 using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Bots;
-using FortuneForge.Server.Cards.Bots;
 using Google.Cloud.Firestore;
 using System.Text.Json;
 using Xunit;
@@ -427,6 +426,10 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
             Assert.False(Field<bool>(profile, "deactivated"));
             Assert.NotEmpty(Field<string>(profile, "playerName"));
             Assert.NotEmpty(Field<string>(profile, "normalizedPlayerName"));
+            Assert.Contains(
+                ManagedPlayerProfileSchema.BotTag,
+                profile.GetValue<List<object>>(ManagedPlayerProfileSchema.ProfileTagsField)
+                    .Select(value => value.ToString()));
             Assert.True((await database.Collection("userSlotStatistics").Document(profile.Id).GetSnapshotAsync()).Exists);
             foreach (var currency in new[] { "slotsCredits", "freeGames", "specialPoints", "energy" })
             {
@@ -465,9 +468,9 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
         }.Build();
         var store = ManagedPlayerQueuer(database);
         var blackjack = await store.ReserveAsync(
-            CardBotGames.Blackjack, "blackjack-table", 8, [], Start, default);
+            ManagedPlayerGames.Blackjack, "blackjack-table", 8, [], Start, default);
         var holdem = await store.ReserveAsync(
-            CardBotGames.TexasHoldem, "holdem-table", 1, [], Start, default);
+            ManagedPlayerGames.TexasHoldem, "holdem-table", 1, [], Start, default);
 
         Assert.Equal(9, blackjack.Select(profile => profile.UserId)
             .Concat(holdem.Select(profile => profile.UserId))
@@ -479,7 +482,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
         var released = blackjack[0];
         await store.ReleaseAsync("blackjack-table", [released.UserId], Start.AddMinutes(1), default);
         var reused = Assert.Single(await store.ReserveAsync(
-            CardBotGames.TexasHoldem, "holdem-table-two", 1, [], Start.AddMinutes(2), default));
+            ManagedPlayerGames.TexasHoldem, "holdem-table-two", 1, [], Start.AddMinutes(2), default));
 
         Assert.Equal(released.UserId, reused.UserId);
         Assert.Equal(9, (await database.Collection("users")
@@ -503,23 +506,12 @@ public sealed class BlackjackTableFirestoreEmulatorTests : IClassFixture<Blackja
             : new FirestoreBlackjackTableStore(database, () => deck.ToArray(), () => 123UL), suffix);
     }
 
-    private static ConfiguredBotDirectory ManagedDirectory() => new(new BotDirectoryOptions
-    {
-        Profiles = Enumerable.Range(1, 8).Select(index => new BotProfileOptions
-        {
-            Id = $"managed-test-{index}",
-            DisplayName = $"TablePlayer{index}",
-            SkillLevel = 2 + index % 3,
-            SupportedGames = [CardBotGames.Blackjack, CardBotGames.TexasHoldem]
-        }).ToList()
-    });
-
     private static ManagedPlayerQueuer ManagedPlayerQueuer(FirestoreDb database)
     {
         var profiles = new FirestoreManagedPlayerProfileRepository(database);
         var assignments = new FirestoreManagedPlayerAssignmentStore(database);
         var generator = new ManagedPlayerProfileGenerator(profiles);
-        return new ManagedPlayerQueuer(ManagedDirectory(), generator, profiles, assignments);
+        return new ManagedPlayerQueuer(generator, profiles, assignments);
     }
 
     private static Task SeedBalanceAsync(FirestoreDb database, string userId, long cents) =>

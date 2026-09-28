@@ -10,44 +10,6 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
     private static readonly string[] CurrencyIds =
         ["slotsCredits", "freeGames", "specialPoints", "energy"];
 
-    public Task<bool> EnsurePersistedAsync(
-        ManagedPlayerProfile profile,
-        CancellationToken cancellationToken) =>
-        database.RunTransactionAsync(async transaction =>
-        {
-            var userReference = User(profile.UserId);
-            var nameReference = PlayerNameKey(profile.PlayerName);
-            var snapshots = await Task.WhenAll(
-                transaction.GetSnapshotAsync(userReference, cancellationToken),
-                transaction.GetSnapshotAsync(nameReference, cancellationToken));
-            var user = snapshots[0];
-            var name = snapshots[1];
-
-            if (name.Exists && ReadString(name, "userId") != profile.UserId) return false;
-            if (user.Exists &&
-                !string.Equals(ReadString(user, "playerName"), profile.PlayerName,
-                    StringComparison.OrdinalIgnoreCase))
-                return false;
-
-            if (user.Exists)
-            {
-                transaction.Set(userReference, new Dictionary<string, object>
-                {
-                    ["skillLevel"] = profile.SkillLevel,
-                    ["supportedGames"] = profile.SupportedGames.ToArray(),
-                    ["updatedAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc)
-                }, SetOptions.MergeAll);
-            }
-            else
-            {
-                transaction.Create(userReference, UserData(profile));
-                EnsureSupportingProfileDocuments(transaction, profile);
-            }
-            if (!name.Exists)
-                transaction.Create(nameReference, KeyData(profile.UserId, profile.CreatedAtUtc));
-            return true;
-        }, cancellationToken: cancellationToken);
-
     public Task<bool> TryCreateAsync(
         ManagedPlayerProfile profile,
         CancellationToken cancellationToken) =>
@@ -72,10 +34,13 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
         CancellationToken cancellationToken)
     {
         var snapshot = await database.Collection("users")
-            .WhereEqualTo("authProvider", "managed-game-player")
+            .WhereArrayContains(
+                ManagedPlayerProfileSchema.ProfileTagsField,
+                ManagedPlayerProfileSchema.BotTag)
             .Limit(limit)
             .GetSnapshotAsync(cancellationToken);
         return snapshot.Documents
+            .Where(IsManagedPlayer)
             .Select(ReadProfile)
             .Where(profile => profile.SupportedGames.Contains(gameId))
             .ToArray();
@@ -84,12 +49,18 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
     public Task MarkLastActiveAsync(
         string profileId,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        User(profileId).SetAsync(new Dictionary<string, object>
+        CancellationToken cancellationToken) => database.RunTransactionAsync(async transaction =>
         {
-            ["lastActiveAt"] = Timestamp.FromDateTime(nowUtc),
-            ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
-        }, SetOptions.MergeAll, cancellationToken);
+            var reference = User(profileId);
+            var profile = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            if (!IsManagedPlayer(profile)) return false;
+            transaction.Set(reference, new Dictionary<string, object>
+            {
+                ["lastActiveAt"] = Timestamp.FromDateTime(nowUtc),
+                ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+            }, SetOptions.MergeAll);
+            return true;
+        }, cancellationToken: cancellationToken);
 
     private void EnsureSupportingProfileDocuments(
         Transaction transaction,
@@ -130,7 +101,8 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
         ["passwordHash"] = string.Empty,
         ["status"] = "active",
         ["deactivated"] = false,
-        ["authProvider"] = "managed-game-player",
+        ["authProvider"] = ManagedPlayerProfileSchema.AuthenticationProvider,
+        [ManagedPlayerProfileSchema.ProfileTagsField] = new[] { ManagedPlayerProfileSchema.BotTag },
         ["firebaseUid"] = string.Empty,
         ["emailVerified"] = true,
         ["role"] = "player",
@@ -187,6 +159,13 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
         SHA256.HashData(Encoding.UTF8.GetBytes(value)));
     private static string ReadString(DocumentSnapshot snapshot, string field) =>
         snapshot.Exists && snapshot.TryGetValue<string>(field, out var value) ? value : string.Empty;
+    internal static bool IsManagedPlayer(DocumentSnapshot snapshot) =>
+        snapshot.Exists &&
+        ReadString(snapshot, "authProvider") == ManagedPlayerProfileSchema.AuthenticationProvider &&
+        snapshot.TryGetValue<List<object>>(
+            ManagedPlayerProfileSchema.ProfileTagsField, out var tags) &&
+        tags.Any(value => string.Equals(
+            value?.ToString(), ManagedPlayerProfileSchema.BotTag, StringComparison.Ordinal));
     private static long ReadLong(DocumentSnapshot snapshot, string field, long fallback = 0) =>
         snapshot.Exists && snapshot.TryGetValue<long>(field, out var value) ? value : fallback;
     private static DateTime ReadTimestamp(DocumentSnapshot snapshot, string field) =>

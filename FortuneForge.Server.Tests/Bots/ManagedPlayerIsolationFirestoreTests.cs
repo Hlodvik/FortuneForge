@@ -5,9 +5,9 @@ using Xunit;
 
 namespace FortuneForge.Server.Tests.Bots;
 
+[Collection("Blackjack table Firestore emulator")]
 public sealed class ManagedPlayerIsolationFirestoreTests(
     BlackjackTableFirestoreEmulatorFixture fixture)
-    : IClassFixture<BlackjackTableFirestoreEmulatorFixture>
 {
     private static readonly DateTime Now =
         new(2026, 9, 28, 18, 0, 0, DateTimeKind.Utc);

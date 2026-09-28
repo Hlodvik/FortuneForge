@@ -5,6 +5,10 @@ using Xunit;
 
 namespace FortuneForge.Server.Tests.Blackjack.Table;
 
+[CollectionDefinition("Blackjack table Firestore emulator", DisableParallelization = true)]
+public sealed class BlackjackTableFirestoreEmulatorCollection
+    : ICollectionFixture<BlackjackTableFirestoreEmulatorFixture>;
+
 public sealed class BlackjackTableFirestoreEmulatorFixture : IAsyncLifetime
 {
     private const int Port = 8796;

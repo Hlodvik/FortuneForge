@@ -47,7 +47,7 @@ internal sealed class BlackjackTableCoordinator(
         var target = state.Tables.Values
             .Where(table => table.Phase != BlackjackTablePhases.Closed &&
                 table.Players.Count(player => !player.IsBot) < BlackjackTableEngine.MaximumOccupiedSeats &&
-                (table.Players.Count < BlackjackTableEngine.MaximumOccupiedSeats || table.Players.Any(player => player.IsBot)))
+                (table.Players.Count < BlackjackTableEngine.Capacity || table.Players.Any(player => player.IsBot)))
             .OrderBy(table => table.CreatedAtUtc)
             .ThenBy(table => table.TableId, StringComparer.Ordinal)
             .FirstOrDefault();
@@ -72,8 +72,24 @@ internal sealed class BlackjackTableCoordinator(
             target.WagerDeadlineAtUtc = nowUtc.Add(BlackjackTableEngine.WagerDuration);
             AdmitQueuedHumansAtBoundary(state, target, journal);
             target.RoundsRemainingWithoutHuman = 0;
-            target.Version = checked(target.Version + 1);
             target.UpdatedAtUtc = nowUtc;
+            StartIfReady(target, nowUtc);
+        }
+        else if (target is not null && target.Players.Count < BlackjackTableEngine.Capacity)
+        {
+            var seat = NextOpenSeatAfterPlayers(target);
+            var joining = Human(ticket, seat, target.RoundNumber);
+            joining.Status = "joining-next-round";
+            target.Players.Add(joining);
+            MarkTicketMatched(state, ticket);
+            state.Sessions[userId] = new(BlackjackTableSessionKinds.Table, null, target.TableId);
+            ScheduleGracefulBotDeparture(target);
+            target.RoundsRemainingWithoutHuman = 0;
+            target.UpdatedAtUtc = nowUtc;
+        }
+        else if (target is not null)
+        {
+            ScheduleGracefulBotDeparture(target);
         }
         Advance(state, balances, journal, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
@@ -274,6 +290,7 @@ internal sealed class BlackjackTableCoordinator(
             if (table.Phase is BlackjackTablePhases.Active or BlackjackTablePhases.Insurance or BlackjackTablePhases.Dealer)
                 BlackjackTableEngine.AdvanceAutomatedTurns(table, nowUtc);
             if (table.Phase == "settlement") CompleteSettlement(state, balances, journal, table, nowUtc);
+            AdvanceBotWagerTurns(table, nowUtc);
             if (table.Phase == BlackjackTablePhases.Betting && table.Transition == "wager-lock" &&
                 table.NextTransitionAtUtc is { } readyAt && nowUtc >= readyAt)
             {
@@ -306,8 +323,14 @@ internal sealed class BlackjackTableCoordinator(
             if (eligible.Length == 0 || nowUtc < eligible[0].GraceEndsAtUtc) return;
             var selected = eligible.Take(BlackjackTableEngine.MaximumOccupiedSeats).ToArray();
             var tableId = BlackjackTableIds.Hash(string.Join("\n", selected.Select(ticket => ticket.TicketId)));
-            var startingOccupancy = Math.Max(BlackjackTableEngine.MinimumStartOccupancy, selected.Length);
-            var startingSeats = RandomizedInitialSeats(startingOccupancy, createSeed());
+            var initialSeed = createSeed();
+            var minimumOccupancy = Math.Max(
+                BlackjackTableEngine.MinimumStartOccupancy,
+                Math.Min(BlackjackTableEngine.MaximumOccupiedSeats, selected.Length));
+            var startingOccupancy = Math.Min(
+                BlackjackTableEngine.MaximumOccupiedSeats,
+                minimumOccupancy + (initialSeed % 2 == 0 ? 1 : 0));
+            var startingSeats = RandomizedInitialSeats(startingOccupancy, initialSeed);
             var players = selected.Select((ticket, index) => Human(ticket, startingSeats[index], 0)).ToList();
             var table = new BlackjackTableState
             {
@@ -320,7 +343,7 @@ internal sealed class BlackjackTableCoordinator(
                 RoundNumber = 0,
                 WagerDeadlineAtUtc = nowUtc.Add(BlackjackTableEngine.WagerDuration)
             };
-            EnsureMinimumOccupancy(table, nowUtc);
+            EnsureOccupancy(table, startingOccupancy, nowUtc);
             state.Tables[tableId] = table;
             foreach (var ticket in selected)
             {
@@ -385,6 +408,7 @@ internal sealed class BlackjackTableCoordinator(
             player.SessionWagerCents = checked(player.SessionWagerCents + committed);
             player.SessionPayoutCents = checked(player.SessionPayoutCents + player.PayoutCents);
             player.SessionRoundsPlayed = checked(player.SessionRoundsPlayed + 1);
+            if (player.IsBot) UpdateBotWagerHabit(player, committed);
             if (!player.IsBot)
             {
                 humanCount++;
@@ -430,6 +454,13 @@ internal sealed class BlackjackTableCoordinator(
             table.Players.Remove(player);
             state.Sessions[player.ActorId] = new(BlackjackTableSessionKinds.Idle, null, null);
         }
+        foreach (var player in table.Players.Where(player => player.IsBot &&
+                     (player.BotDepartureAfterRound is { } departureRound && departureRound <= table.RoundNumber ||
+                      nowUtc - player.SessionStartedAtUtc >= TimeSpan.FromHours(1))).ToArray())
+        {
+            table.Players.Remove(player);
+            ReleaseManagedPlayer(table, player, journal);
+        }
         table.Phase = BlackjackTablePhases.Betting;
         table.ActiveSeat = null;
         table.PendingSeat = null;
@@ -458,8 +489,8 @@ internal sealed class BlackjackTableCoordinator(
         EnsureMinimumOccupancy(table, nowUtc);
         foreach (var player in table.Players)
         {
-            player.NextWagerCents = player.IsBot ? VirtualBotWager() : 0;
-            player.Status = player.IsBot ? "ready" : "awaiting-wager";
+            player.NextWagerCents = 0;
+            player.Status = player.IsBot ? "waiting-to-wager" : "awaiting-wager";
         }
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
@@ -479,22 +510,17 @@ internal sealed class BlackjackTableCoordinator(
             .ToArray();
         foreach (var ticket in waiting)
         {
-            if (table.Players.Count < BlackjackTableEngine.MaximumOccupiedSeats)
+            if (table.Players.Count < BlackjackTableEngine.Capacity)
             {
-                var emptySeat = ClosestOpenSeatOnDealerLeft(table);
+                var emptySeat = NextOpenSeatAfterPlayers(table);
                 table.Players.Add(Human(ticket, emptySeat, table.RoundNumber));
+                if (table.Players.Count == BlackjackTableEngine.Capacity)
+                    ScheduleGracefulBotDeparture(table);
             }
             else
             {
-                var bot = table.Players.Where(player => player.IsBot).OrderBy(player => player.Seat).FirstOrDefault();
-                if (bot is null)
-                {
-                    ReplaceTicket(state, ticket with { TargetTableId = null, EligibleAfterRound = 0 });
-                    continue;
-                }
-                table.Players.Remove(bot);
-                ReleaseManagedPlayer(table, bot, journal);
-                table.Players.Add(Human(ticket, bot.Seat, table.RoundNumber));
+                ScheduleGracefulBotDeparture(table);
+                break;
             }
             MarkTicketMatched(state, ticket);
             state.Sessions[ticket.UserId] = new(BlackjackTableSessionKinds.Table, null, table.TableId);
@@ -508,6 +534,11 @@ internal sealed class BlackjackTableCoordinator(
         bool adjustmentElapsed = false)
     {
         if (table.Phase != BlackjackTablePhases.Betting) return;
+        if (table.Players.Any(player => player.IsBot && player.NextWagerCents == 0))
+        {
+            ScheduleNextBotWager(table, nowUtc);
+            return;
+        }
         var humans = table.Players.Where(player => !player.IsBot).ToArray();
         if (!deadlineReached && humans.Any(player => player.NextWagerCents == 0)) return;
         if (humans.Length > 0 && humans.All(player => player.NextWagerCents == 0)) return;
@@ -518,14 +549,15 @@ internal sealed class BlackjackTableCoordinator(
             table.NextTransitionAtUtc = nowUtc.Add(BlackjackTableEngine.WagerAdjustmentDuration);
             return;
         }
-        foreach (var bot in table.Players.Where(player => player.IsBot && player.NextWagerCents == 0))
-            bot.NextWagerCents = VirtualBotWager();
         BlackjackTableEngine.Deal(table, createDeck(), createSeed(), nowUtc);
     }
 
     private void EnsureMinimumOccupancy(BlackjackTableState table, DateTime nowUtc)
+        => EnsureOccupancy(table, BlackjackTableEngine.MinimumStartOccupancy, nowUtc);
+
+    private void EnsureOccupancy(BlackjackTableState table, int occupancy, DateTime nowUtc)
     {
-        var botCount = Math.Max(0, BlackjackTableEngine.MinimumStartOccupancy - table.Players.Count);
+        var botCount = Math.Max(0, occupancy - table.Players.Count);
         for (var index = 0; index < botCount && table.Players.Count < BlackjackTableEngine.MaximumOccupiedSeats; index++)
             AddManagedPlayer(table, nowUtc);
     }
@@ -590,8 +622,10 @@ internal sealed class BlackjackTableCoordinator(
             SessionId = $"managed-session-{Guid.NewGuid():N}",
             SessionStartedAtUtc = nowUtc,
             JoinedRound = table.RoundNumber,
-            NextWagerCents = VirtualBotWager(),
-            Status = "ready"
+            NextWagerCents = 0,
+            BotBaseWagerCents = InitialBotWager(profile.UserId),
+            BotWagerChangeChanceBasisPoints = BotWagerChangeChance(profile.UserId),
+            Status = "waiting-to-wager"
         });
     }
 
@@ -615,14 +649,40 @@ internal sealed class BlackjackTableCoordinator(
         if (occupiedSeats is < 1 or > BlackjackTableEngine.Capacity)
             throw new ArgumentOutOfRangeException(nameof(occupiedSeats));
 
-        return Enumerable.Range(0, occupiedSeats)
-            .OrderBy(seat => BlackjackTableIds.Hash($"{seed:x16}\n{seat}"), StringComparer.Ordinal)
+        var offset = checked((int)(((seed % (ulong)BlackjackTableEngine.Capacity) * 2UL + 4UL)
+            % (ulong)BlackjackTableEngine.Capacity));
+        var direction = (seed & 2UL) == 0 ? 1 : BlackjackTableEngine.Capacity - 1;
+        return Enumerable.Range(0, BlackjackTableEngine.Capacity)
+            .Select(index => (offset + index * direction) % BlackjackTableEngine.Capacity)
+            .Take(occupiedSeats)
             .ToArray();
     }
 
     private static int ClosestOpenSeatOnDealerLeft(BlackjackTableState table) =>
         Enumerable.Range(0, BlackjackTableEngine.Capacity)
             .First(seat => table.Players.All(player => player.Seat != seat));
+
+    private static int NextOpenSeatAfterPlayers(BlackjackTableState table)
+    {
+        var start = table.Players.Count == 0
+            ? 0
+            : (table.Players.OrderBy(player => player.JoinedRound).ThenBy(player => player.Seat).Last().Seat + 1)
+              % BlackjackTableEngine.Capacity;
+        return Enumerable.Range(0, BlackjackTableEngine.Capacity)
+            .Select(offset => (start + offset) % BlackjackTableEngine.Capacity)
+            .First(seat => table.Players.All(player => player.Seat != seat));
+    }
+
+    private static void ScheduleGracefulBotDeparture(BlackjackTableState table)
+    {
+        var departing = table.Players
+            .Where(player => player.IsBot && player.BotDepartureAfterRound is null)
+            .OrderBy(player => player.SessionStartedAtUtc)
+            .ThenBy(player => player.Seat)
+            .FirstOrDefault();
+        if (departing is not null)
+            departing.BotDepartureAfterRound = checked(table.RoundNumber + RandomNumberGenerator.GetInt32(1, 4));
+    }
 
     private static BlackjackTablePlayer Human(BlackjackTableTicket ticket, int seat, int joinedRound) => new()
     {
@@ -714,9 +774,102 @@ internal sealed class BlackjackTableCoordinator(
     private static long Balance(IDictionary<string, long> balances, string userId) =>
         balances.TryGetValue(userId, out var value) ? value : 0;
 
-    private static long VirtualBotWager() =>
-        BlackjackMoney.MinimumWagerCents +
-        RandomNumberGenerator.GetInt32(0, 9) * BlackjackMoney.WagerIncrementCents;
+    internal static long InitialBotWager(string actorId)
+    {
+        var options = new[] { 50L, 100L, 150L, 200L, 250L, 300L, 400L, 500L, 750L, 1_000L, 1_500L };
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"blackjack-wager\n{actorId}"));
+        return options[hash[0] % options.Length];
+    }
+
+    internal static int BotWagerChangeChance(string actorId)
+    {
+        var options = new[] { 600, 1_200, 2_200, 3_400 };
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"blackjack-tempo\n{actorId}"));
+        return options[hash[0] % options.Length];
+    }
+
+    internal static void UpdateBotWagerHabit(BlackjackTablePlayer player, long committed)
+    {
+        var net = checked(player.PayoutCents - committed);
+        player.BotLastNetCents = net;
+        if (net > 0)
+        {
+            player.BotConsecutiveWins = checked(player.BotConsecutiveWins + 1);
+            player.BotConsecutiveLosses = 0;
+        }
+        else if (net < 0)
+        {
+            player.BotConsecutiveLosses = checked(player.BotConsecutiveLosses + 1);
+            player.BotConsecutiveWins = 0;
+        }
+        else
+        {
+            player.BotConsecutiveWins = 0;
+            player.BotConsecutiveLosses = 0;
+        }
+
+        var wager = player.BotBaseWagerCents > 0 ? player.BotBaseWagerCents : InitialBotWager(player.ActorId);
+        var increment = BlackjackMoney.WagerIncrementCents;
+        var bigWin = net >= Math.Max(increment, checked(committed + committed / 2));
+        if (bigWin)
+        {
+            wager = checked(wager + RandomNumberGenerator.GetInt32(1, 5) * increment);
+        }
+        else if (player.BotConsecutiveLosses >= 3)
+        {
+            wager = checked(wager - RandomNumberGenerator.GetInt32(1, 4) * increment);
+        }
+        else if (RandomNumberGenerator.GetInt32(0, 10_000) < player.BotWagerChangeChanceBasisPoints)
+        {
+            var direction = player.BotConsecutiveWins > 0 ? 1 : player.BotConsecutiveLosses > 0 ? -1 : RandomNumberGenerator.GetInt32(0, 2) * 2 - 1;
+            wager = checked(wager + direction * RandomNumberGenerator.GetInt32(1, 3) * increment);
+        }
+        player.BotBaseWagerCents = Math.Clamp(wager, BlackjackMoney.MinimumWagerCents, BlackjackMoney.MaximumWagerCents);
+    }
+
+    private void AdvanceBotWagerTurns(BlackjackTableState table, DateTime nowUtc)
+    {
+        if (table.Phase != BlackjackTablePhases.Betting ||
+            table.Transition != "bot-wager" ||
+            table.NextTransitionAtUtc is not { } readyAt || nowUtc < readyAt)
+            return;
+
+        var player = table.PendingSeat is { } seat
+            ? table.Players.SingleOrDefault(value => value.IsBot && value.Seat == seat)
+            : null;
+        if (player is not null && player.NextWagerCents == 0)
+        {
+            player.NextWagerCents = player.BotBaseWagerCents > 0
+                ? player.BotBaseWagerCents
+                : InitialBotWager(player.ActorId);
+            player.Status = "ready";
+        }
+        table.PendingSeat = null;
+        table.Transition = null;
+        table.NextTransitionAtUtc = null;
+        table.UpdatedAtUtc = readyAt;
+        if (!ScheduleNextBotWager(table, readyAt))
+            StartIfReady(table, readyAt);
+    }
+
+    private static bool ScheduleNextBotWager(BlackjackTableState table, DateTime nowUtc)
+    {
+        if (table.Phase != BlackjackTablePhases.Betting) return false;
+        if (table.Transition == "bot-wager") return true;
+        if (table.Transition is not null) return false;
+        var next = table.Players
+            .Where(player => player.IsBot && player.NextWagerCents == 0)
+            .OrderBy(player => player.Seat)
+            .FirstOrDefault();
+        if (next is null) return false;
+
+        next.Status = "considering-wager";
+        table.PendingSeat = next.Seat;
+        table.Transition = "bot-wager";
+        table.NextTransitionAtUtc = nowUtc.AddMilliseconds(RandomNumberGenerator.GetInt32(700, 1_801));
+        table.UpdatedAtUtc = nowUtc;
+        return true;
+    }
 
     private static string GuardKey(string userId, string idempotencyKey) =>
         BlackjackTableIds.Hash($"{userId}\n{idempotencyKey}");

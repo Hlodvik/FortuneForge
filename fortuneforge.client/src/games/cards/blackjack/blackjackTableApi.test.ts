@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   getBlackjackTableSession,
+  getBlackjackTableSnapshot,
   getBlackjackTableHistory,
   getBlackjackTableStatus,
   joinBlackjackTableQueue,
@@ -67,6 +68,17 @@ describe('Blackjack table API boundary', () => {
       kind: 'table',
       table: { legalActions: ['hit', 'stand'] },
     })
+  })
+
+  it('reads a live table snapshot with the authoritative balance', async () => {
+    const fetchMock = successfulFetch({ session: tableSession, balanceCredits: 87.5 })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(getBlackjackTableSnapshot()).resolves.toMatchObject({
+      session: { kind: 'table' },
+      balanceCredits: 87.5,
+    })
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/cards/blackjack/table/snapshot')
   })
 
   it('accepts split-hand and insurance projections with the expanded legal actions', async () => {

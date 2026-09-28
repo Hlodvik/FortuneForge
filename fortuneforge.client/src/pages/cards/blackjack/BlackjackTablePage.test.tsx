@@ -5,17 +5,17 @@ import type { BlackjackTableStatus } from '../../../games/cards/blackjack/blackj
 import { BlackjackTableContent } from './BlackjackTablePage'
 
 describe('Blackjack table composition', () => {
-  it('renders a free five-seat lobby', () => {
+  it('renders a clean live-table lobby', () => {
     const markup = render({
       kind: 'ready',
       status,
       session: { contractVersion: 'cards.blackjack.table.v2', kind: 'idle', version: 0 },
     })
 
-    expect(markup).toContain('Free to join')
-    expect(markup).toContain('5 seats')
+    expect(markup).not.toContain('Free to join')
+    expect(markup).not.toContain('Dealer stands')
     expect(markup).toContain('Join live table')
-    expect(markup).not.toContain('Join for R')
+    expect(markup).not.toContain('Choose your wager at the table')
   })
 
   it('renders ordinary seats and enables only server legal actions', () => {
@@ -39,6 +39,7 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('Leave table')
     expect(markup).toContain('60s turn limit')
     expect(markup).toContain('2 missed turns releases your seat')
+    expect(markup).not.toContain('Strategy help')
     expect(markup).toContain("Ada&#x27;s turn · 10s")
     expect(markup).not.toMatch(/\bbot\b|skill|seed|actor/i)
   })
@@ -55,7 +56,7 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('>Leave table</button>')
   })
 
-  it('clears the completed deal before showing next-round wager controls', () => {
+  it('keeps the completed deal visible while showing next-round wager controls', () => {
     const markup = render({
       kind: 'ready',
       status,
@@ -70,16 +71,23 @@ describe('Blackjack table composition', () => {
             ...seat,
             outcome: 'player-win',
             payout: 10,
-          } : seat),
+          } : {
+            ...seat,
+            outcome: 'dealer-blackjack',
+            status: 'completed',
+          }),
         },
       },
     })
 
-    expect(markup).toContain('blackjack-dealer__idle')
-    expect(markup).not.toContain('ff-card-slot')
+    expect(markup).toContain('ff-card-slot')
     expect(markup).toContain('Round wager')
+    expect(markup).toContain('blackjack-wager-action')
+    expect(markup).toContain('blackjack-balance-bubble')
     expect(markup).toContain('Round won')
     expect(markup).toContain('You won R10.00')
+    expect(markup).toContain('>Lost</small>')
+    expect(markup).not.toContain('Dealer Blackjack')
     expect(markup).toContain('Choose your next wager when you are ready.')
   })
 
@@ -141,6 +149,7 @@ function render(availability: Parameters<typeof BlackjackTableContent>[0]['avail
   return renderToStaticMarkup(createElement(BlackjackTableContent, {
     availability,
     balanceCredits: 100,
+    balanceChange: null,
     wager: 5,
     busy: false,
     pending: null,

@@ -201,6 +201,13 @@ export async function getBlackjackTableSession(signal?: AbortSignal): Promise<Bl
   return readResponse(response, isBlackjackTableSession, 'Blackjack table session')
 }
 
+export async function getBlackjackTableSnapshot(signal?: AbortSignal): Promise<BlackjackTableMutationResponse> {
+  const response = await fetchWithAccountSession(`${basePath}/snapshot`, {
+    method: 'GET', cache: 'no-store', signal,
+  })
+  return readResponse(response, isBlackjackTableMutation, 'Blackjack table snapshot')
+}
+
 export async function getBlackjackTableHistory(
   limit = 20,
   signal?: AbortSignal,

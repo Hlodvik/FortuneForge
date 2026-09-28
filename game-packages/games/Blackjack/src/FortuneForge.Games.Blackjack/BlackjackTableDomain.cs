@@ -62,6 +62,12 @@ public sealed class BlackjackTablePlayer
     public int ConsecutiveMissedRounds { get; set; }
     public int ConsecutiveMissedActionRounds { get; set; }
     public int LastMissedActionRound { get; set; }
+    public long BotBaseWagerCents { get; set; }
+    public int BotWagerChangeChanceBasisPoints { get; set; }
+    public int BotConsecutiveWins { get; set; }
+    public int BotConsecutiveLosses { get; set; }
+    public long BotLastNetCents { get; set; }
+    public int? BotDepartureAfterRound { get; set; }
     public BlackjackTableSecondaryHand? SecondaryHand { get; set; }
     public int ActiveHandIndex { get; set; }
     public long InsuranceWagerCents { get; set; }

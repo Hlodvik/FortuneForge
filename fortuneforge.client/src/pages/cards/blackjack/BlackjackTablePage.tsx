@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { GameOutcomeBanner, type GameOutcomeTone } from '../../../components/GameOutcomeBanner'
 import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   BlackjackTableRequestError,
   cancelBlackjackTableQueue,
-  getBlackjackTableSession,
+  getBlackjackTableSnapshot,
   getBlackjackTableStatus,
   isUncertainBlackjackTableFailure,
   joinBlackjackTableQueue,
@@ -45,17 +45,27 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [busy, setBusy] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [balanceChange, setBalanceChange] = useState<{ amount: number; id: number } | null>(null)
+  const balanceRef = useRef(balanceCredits)
   const onCardAudioClick = useCardAudioClick()
+
+  const applyBalance = useCallback((next: number) => {
+    const amount = Number((next - balanceRef.current).toFixed(2))
+    balanceRef.current = next
+    setBalanceCredits(next)
+    if (amount !== 0) setBalanceChange({ amount, id: Date.now() })
+  }, [])
 
   const load = useCallback(async (quiet = false, signal?: AbortSignal) => {
     if (!quiet) setAvailability({ kind: 'loading' })
     try {
-      const [status, session] = await Promise.all([
+      const [status, snapshot] = await Promise.all([
         getBlackjackTableStatus(signal),
-        getBlackjackTableSession(signal),
+        getBlackjackTableSnapshot(signal),
       ])
       setWager((current) => validWager(current, status) ? current : status.minimumWager)
-      setAvailability({ kind: 'ready', status, session })
+      setAvailability({ kind: 'ready', status, session: snapshot.session })
+      applyBalance(snapshot.balanceCredits)
       setPending(null)
       setRequestError(null)
     } catch (error) {
@@ -67,17 +77,18 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
       }
       if (!quiet) setAvailability({ kind: 'error', message: 'The Blackjack table could not be reached. No wager was accepted.' })
     }
-  }, [])
+  }, [applyBalance])
 
   const refreshSession = useCallback(async () => {
     try {
-      const session = await getBlackjackTableSession()
-      setAvailability((current) => current.kind === 'ready' ? { ...current, session } : current)
+      const snapshot = await getBlackjackTableSnapshot()
+      setAvailability((current) => current.kind === 'ready' ? { ...current, session: snapshot.session } : current)
+      applyBalance(snapshot.balanceCredits)
       setPending(null)
     } catch {
       // Retain the latest server snapshot until a later poll succeeds.
     }
-  }, [])
+  }, [applyBalance])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -121,9 +132,12 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
     setRequestError(null)
     setBusy(true)
     try {
-      const mutation = await request(active.idempotencyKey)
+      const [mutation] = await Promise.all([
+        request(active.idempotencyKey),
+        fingerprint.startsWith('join:') ? new Promise((resolve) => window.setTimeout(resolve, 1_000)) : Promise.resolve(),
+      ])
       setAvailability((current) => current.kind === 'ready' ? { ...current, session: mutation.session } : current)
-      setBalanceCredits(mutation.balanceCredits)
+      applyBalance(mutation.balanceCredits)
       setPending(null)
     } catch (error) {
       if (error instanceof BlackjackTableRequestError && error.code === 'blackjack-table-state-conflict') {
@@ -163,7 +177,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
   return (
-    <InGameShell account={navbarAccount} title="Blackjack" theme="cards" bodyClassName="blackjack-shell-body">
+    <InGameShell account={navbarAccount} title="Blackjack" theme="cards" className="blackjack-game-shell" bodyClassName="blackjack-shell-body">
       <div className="blackjack-page blackjack-table-page" onClickCapture={onCardAudioClick}>
       {requestError && (
         <div className="blackjack-error" role="alert">
@@ -174,6 +188,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
       <BlackjackTableContent
         availability={availability}
         balanceCredits={balanceCredits}
+        balanceChange={balanceChange}
         wager={wager}
         busy={busy}
         pending={pending}
@@ -194,6 +209,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
 type ContentProps = Readonly<{
   availability: Availability
   balanceCredits: number
+  balanceChange: { amount: number; id: number } | null
   wager: number
   busy: boolean
   pending: PendingBlackjackTableMutation | null
@@ -216,13 +232,18 @@ export function BlackjackTableContent(props: ContentProps) {
   if (session.kind === 'idle') {
     const fingerprint = `join:${session.version}`
     const retrying = props.pending?.fingerprint === fingerprint
+    if (props.busy && retrying) return (
+      <main className="blackjack-main blackjack-lobby blackjack-finding" role="status">
+        <span className="blackjack-finding__spinner" aria-hidden="true" />
+        <section className="blackjack-title"><h1>Finding table…</h1><span>Checking live tables for an open seat</span></section>
+      </main>
+    )
     return (
       <main className="blackjack-main blackjack-lobby">
-        <section className="blackjack-title"><p>Free to join</p><h1>Blackjack</h1><span>{status.dealerRule} · Blackjack pays {status.blackjackPayout} · {status.tableCapacity} seats</span></section>
+        <section className="blackjack-title"><h1>Blackjack</h1></section>
         <button className="blackjack-primary" type="button" disabled={props.busy || (props.pending !== null && !retrying)} onClick={props.onJoin}>
           {props.busy ? 'Finding a seat…' : retrying ? 'Retry same request' : 'Join live table'}
         </button>
-        <p>Choose your wager at the table before every round. Joining never moves your balance.</p>
       </main>
     )
   }
@@ -242,7 +263,6 @@ export function BlackjackTableContent(props: ContentProps) {
 }
 
 function TablePanel(props: ContentProps & { status: BlackjackTableStatus; session: BlackjackTablePlaySession }) {
-  const [showStrategy, setShowStrategy] = useState(false)
   const { table } = props.session
   const current = table.seats.find((seat) => seat.isCurrentPlayer)
   const betting = table.phase === 'betting'
@@ -253,16 +273,19 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
   const roundOutcome = getRoundOutcome(current, betting)
-  const recommendedAction = showStrategy && activeRound ? basicStrategyAction(current, table) : null
   return (
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
-        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span><button type="button" aria-pressed={showStrategy} onClick={() => setShowStrategy(value => !value)}>Strategy help {showStrategy ? 'on' : 'off'}</button></div>
+        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span></div>
         {roundOutcome && <GameOutcomeBanner className="blackjack-table__outcome" {...roundOutcome} />}
         <div className="blackjack-playfield">
+          <div className="blackjack-balance-bubble" aria-live="polite">
+            <small>Balance</small><strong>R{props.balanceCredits.toFixed(2)}</strong>
+            {props.balanceChange && <span className={props.balanceChange.amount > 0 ? 'is-positive' : 'is-negative'} key={props.balanceChange.id}>{props.balanceChange.amount > 0 ? '+' : '−'}R{Math.abs(props.balanceChange.amount).toFixed(2)}</span>}
+          </div>
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
-            {betting ? <strong className="blackjack-dealer__idle">Dealer</strong> : <Hand label="Dealer" hand={table.dealer} scope="dealer" />}
+            <Hand label="Dealer" hand={table.dealer} scope="dealer" />
           </div>
           <div className="blackjack-semicircle" aria-label="Player seats">
             {visualSeats.map((seatNumber, visualPosition) => {
@@ -278,7 +301,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
               return (
                 <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seat?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seat?.seatId ?? seatNumber}>
                   {seat
-                    ? <Seat seat={seat} active={active} showCards={!betting} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} />
+                    ? <Seat seat={seat} active={active} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} />
                     : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
                 </div>
               )
@@ -289,9 +312,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
           {betting && (
             <>
               <WagerInput status={props.status} wager={props.wager} busy={props.busy} onChange={props.onWagerChange} />
-              <button className="blackjack-primary" type="button" disabled={props.busy || !validWager(props.wager, props.status)} onClick={() => props.onWager(props.session)}>
-                {current?.wager ? `Update wager to R${props.wager.toFixed(2)}` : `Set wager · R${props.wager.toFixed(2)}`}
-              </button>
+              <div className="blackjack-wager-action"><time dateTime={`PT${countdown(table.wagerDeadlineAtUtc, props.now)}`}>{countdown(table.wagerDeadlineAtUtc, props.now)}</time><button className="blackjack-primary" type="button" disabled={props.busy || !validWager(props.wager, props.status)} onClick={() => props.onWager(props.session)}>{current?.wager ? `Update wager · R${props.wager.toFixed(2)}` : `Set wager · R${props.wager.toFixed(2)}`}</button></div>
             </>
           )}
           {insuranceRound && (['insurance', 'decline-insurance'] as const).map((action) => (
@@ -300,8 +321,8 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
             </button>
           ))}
           {activeRound && (['hit', 'stand', 'double', 'split', 'surrender'] as const).map((action) => (
-            <button type="button" className={recommendedAction === action ? 'is-recommended' : ''} key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
-              {formatLabel(action)}{recommendedAction === action ? ' · suggested' : ''}
+            <button type="button" key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
+              {formatLabel(action)}
             </button>
           ))}
           <button className="blackjack-leave" type="button" disabled={props.busy} onClick={() => props.onLeave(props.session)}>Leave table</button>
@@ -329,7 +350,7 @@ function getRoundOutcome(
     || seat.outcome === 'player-win'
   const returned = seat.payout > 0 && !winning
   return {
-    label: winning ? 'Round won' : returned ? 'Round pushed' : 'Round complete',
+    label: winning ? 'Round won' : returned ? 'Push' : 'No win',
     title: winning
       ? `You won R${seat.payout.toFixed(2)}`
       : returned
@@ -341,10 +362,11 @@ function getRoundOutcome(
   }
 }
 
-function Seat({ seat, active, showCards = true, timer = null }: { seat: BlackjackTableSeat; active: boolean; showCards?: boolean; timer?: string | null }) {
+function Seat({ seat, active, timer = null }: { seat: BlackjackTableSeat; active: boolean; timer?: string | null }) {
   const winning = seat.payout > seat.totalWager || seat.outcome === 'player-blackjack' || seat.outcome === 'player-win'
   const hands = playerHands(seat)
   const status = seatStatus(seat, hands)
+  const net = seat.payout - seat.totalWager
   return (
     <article className={`blackjack-seat${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winning ? ' is-winner' : ''}`}>
       <div className="blackjack-seat__name">
@@ -352,7 +374,7 @@ function Seat({ seat, active, showCards = true, timer = null }: { seat: Blackjac
         <small>{status}</small>
         {timer && <time className="blackjack-seat__timer" dateTime={`PT${timer}`}>{timer}</time>}
       </div>
-      {showCards && <div className={`blackjack-seat__hands${hands.length > 1 ? ' has-split' : ''}`}>
+      <div className={`blackjack-seat__hands${hands.length > 1 ? ' has-split' : ''}`}>
         {hands.map((playerHand) => (
           <div className={playerHand.active ? 'is-active-hand' : ''} key={`${seat.seatId}-${playerHand.handNumber}`}>
             <Hand
@@ -363,11 +385,11 @@ function Seat({ seat, active, showCards = true, timer = null }: { seat: Blackjac
             />
           </div>
         ))}
-      </div>}
+      </div>
       <div className="blackjack-seat__money">
         <span>R{seat.totalWager.toFixed(2)}</span>
         {(seat.insuranceWager ?? 0) > 0 && <span className="blackjack-seat__insurance">Insurance R{seat.insuranceWager?.toFixed(2)}</span>}
-        {seat.payout > 0 && <strong>+R{seat.payout.toFixed(2)}</strong>}
+        {seat.totalWager > 0 && seat.outcome && <strong className={net >= 0 ? 'is-positive' : 'is-negative'}>{net >= 0 ? '+' : '−'}R{Math.abs(net).toFixed(2)}</strong>}
       </div>
     </article>
   )
@@ -391,26 +413,23 @@ function playerHands(seat: BlackjackTableSeat): readonly BlackjackTablePlayerHan
 function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlayerHand[]): string {
   const activeHand = hands.find((hand) => hand.active)
   const value = activeHand?.lastAction ?? activeHand?.status ?? seat.outcome ?? seat.lastAction ?? seat.status
-  return formatLabel(value)
+  const publicStatuses: Record<string, string> = {
+    'dealer-blackjack': 'Lost',
+    'dealer-win': 'Lost',
+    'player-bust': 'Bust',
+    'player-blackjack': 'Blackjack',
+    'player-win': 'Won',
+    push: 'Push',
+    'joining-next-round': 'Joins next round',
+    'considering-wager': 'Choosing wager',
+    'waiting-to-wager': 'Waiting to wager',
+  }
+  return publicStatuses[value] ?? formatLabel(value)
 }
 
 function WagerInput({ status, wager, busy, onChange }: { status: BlackjackTableStatus; wager: number; busy: boolean; onChange: (value: number) => void }) {
   const bump = (direction: -1 | 1) => onChange(Math.min(status.maximumWager, Math.max(status.minimumWager, wager + direction * status.wagerIncrement)))
   return <div className="blackjack-wager-wrap"><div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span>Round wager</span><input inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button></div><div className="blackjack-chip-shortcuts" aria-label="Quick chip values">{[1, 5, 10, 25, 50].filter(value => value >= status.minimumWager && value <= status.maximumWager).map(value => <button type="button" className={wager === value ? 'is-selected' : ''} disabled={busy} onClick={() => onChange(value)} key={value}>R{value}</button>)}</div></div>
-}
-
-function basicStrategyAction(seat: BlackjackTableSeat | undefined, table: BlackjackTable): BlackjackTableAction | null {
-  if (!seat || seat.seat !== table.activeSeat) return null
-  const hand = seat.hands?.find(item => item.active)?.hand ?? seat.hand
-  const score = hand.score
-  if (score === null) return null
-  if ((score === 10 || score === 11) && table.legalActions.includes('double')) return 'double'
-  const dealerRank = table.dealer.cards.find(card => !card.hidden)?.rank
-  const numericDealerRank = Number(dealerRank)
-  const dealerValue = dealerRank === 'A' ? 11 : Number.isFinite(numericDealerRank) ? Math.min(10, numericDealerRank) : 10
-  if (score >= 17) return table.legalActions.includes('stand') ? 'stand' : null
-  if (score <= 11) return table.legalActions.includes('hit') ? 'hit' : null
-  return dealerValue >= 2 && dealerValue <= 6 && table.legalActions.includes('stand') ? 'stand' : table.legalActions.includes('hit') ? 'hit' : null
 }
 
 function Hand({ label, hand, scope, compact = false }: { label: string; hand: BlackjackTableHand; scope: string; compact?: boolean }) {
@@ -433,7 +452,11 @@ function tableStatus(table: BlackjackTable, now: number): string {
   if (table.transition === 'dealer-settle') return 'Settling the round…'
   if (table.transition === 'action-settle') return 'Action accepted…'
   if (table.transition === 'turn-pause') return 'Next player is thinking…'
-  if (table.phase === 'betting') return `Choose a wager · ${countdown(table.wagerDeadlineAtUtc, now)}`
+  if (table.transition === 'bot-wager') {
+    const player = table.seats.find((seat) => seat.status === 'considering-wager')
+    return `${player?.displayName ?? 'Next player'} is choosing a wager…`
+  }
+  if (table.phase === 'betting') return 'Place your bets'
   if (table.phase === 'dealer') return 'Dealer plays'
   if (table.phase === 'insurance') {
     const active = table.seats.find((seat) => seat.seat === table.activeSeat)
@@ -445,7 +468,7 @@ function tableStatus(table: BlackjackTable, now: number): string {
       ? `${active.displayName}'s turn · ${countdown(table.actionDeadlineAtUtc, now)}`
       : `${active?.displayName ?? 'Next player'} is thinking`
   }
-  return 'Round complete'
+  return 'Table paused'
 }
 
 export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | 'betting' }) {

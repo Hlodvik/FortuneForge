@@ -94,6 +94,28 @@ public sealed class ManagedPlayerSeparationTests
             System.Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z]+[0-9]{2}$"));
     }
 
+    [Fact]
+    public void AvailabilityPolicyStaggersRestAndEnforcesUsageLimits()
+    {
+        var sleeping = Enumerable.Range(0, 1_000)
+            .Select(index => $"managed-sleep-{index}")
+            .First(profileId => ManagedPlayerAvailabilityPolicy.IsSleeping(profileId, Now));
+        var awake = Enumerable.Range(0, 1_000)
+            .Select(index => $"managed-awake-{index}")
+            .First(profileId => !ManagedPlayerAvailabilityPolicy.IsSleeping(profileId, Now));
+
+        Assert.False(ManagedPlayerAvailabilityPolicy.IsAvailable(
+            sleeping, Now, Now.AddHours(-1), 0, DateTime.UnixEpoch));
+        Assert.True(ManagedPlayerAvailabilityPolicy.IsAvailable(
+            awake, Now, Now.AddHours(-1), 0, DateTime.UnixEpoch));
+        Assert.False(ManagedPlayerAvailabilityPolicy.IsAvailable(
+            awake, Now, Now.AddHours(-1), 7_200, DateTime.UnixEpoch));
+        Assert.False(ManagedPlayerAvailabilityPolicy.IsAvailable(
+            awake, Now, Now.AddHours(-9), 0, Now.AddMinutes(1)));
+        Assert.True(ManagedPlayerAvailabilityPolicy.IsAvailable(
+            awake, Now, Now.AddHours(-9), 7_200, DateTime.UnixEpoch));
+    }
+
     private sealed class RecordingGenerator : IManagedPlayerProfileGenerator
     {
         public int GenerateCalls { get; private set; }
@@ -182,6 +204,7 @@ public sealed class ManagedPlayerSeparationTests
         public Task<bool> ReleaseAsync(
             string profileId,
             string assignmentId,
+            DateTime nowUtc,
             CancellationToken cancellationToken) => Task.FromResult(true);
     }
 }

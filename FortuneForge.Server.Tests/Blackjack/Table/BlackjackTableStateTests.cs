@@ -15,7 +15,7 @@ public sealed class BlackjackTableStateTests
     [InlineData(2, 3, 1)]
     [InlineData(3, 3, 0)]
     [InlineData(4, 4, 0)]
-    public async Task FreeGraceStartReservesOneSeatForANewHumanAndOnlyFillsToThree(
+    public async Task FreeGraceStartReservesOneSeatForANewHumanAndFillsTheConfiguredMinimum(
         int humans,
         int occupied,
         int bots)
@@ -38,6 +38,23 @@ public sealed class BlackjackTableStateTests
         Assert.Equal(humans, table.Players.Count(player => !player.IsBot));
         Assert.Equal(bots, table.Players.Count(player => player.IsBot));
         Assert.Empty(store.Ledger);
+    }
+
+    [Fact]
+    public async Task SingleHumanTablesVaryBetweenThreeAndFourStartingPlayers()
+    {
+        var occupancies = new List<int>();
+        foreach (var seed in new[] { 2UL, 3UL })
+        {
+            var store = Store(seed: seed);
+            store.SetBalance("human", 10_000);
+            await store.JoinAsync("human", "SoloJoin", 0, Key($"variable-{seed}"), Start, default);
+            var session = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.GetSessionAsync(
+                "human", Start.AddSeconds(6), default)).Session);
+            occupancies.Add(store.TableForTest(session.Table.TableId).Players.Count);
+        }
+
+        Assert.Equal(new[] { 4, 3 }, occupancies);
     }
 
     [Fact]
@@ -161,8 +178,8 @@ public sealed class BlackjackTableStateTests
         var play = await JoinAtTable(store, "human", "SteadyFox");
         await store.WagerAsync(
             "human", play.Table.TableId, 100, play.Version, Key("timer-wager"), Start.AddSeconds(7), default);
-        var startedAt = Start.AddSeconds(8);
-        var started = await StartRound(store, "human", startedAt);
+        var started = await StartRound(store, "human", Start.AddSeconds(8));
+        var startedAt = started.Table.UpdatedAtUtc;
         var humanSeat = started.Table.Seats.Single(seat => seat.IsCurrentPlayer).Seat;
 
         Assert.Equal(humanSeat, started.Table.ActiveSeat);
@@ -210,18 +227,20 @@ public sealed class BlackjackTableStateTests
         Assert.Equal(1, player.ConsecutiveMissedActionRounds);
         Assert.False(player.LeavingAfterRound);
 
+        var secondWagerAt = firstBetting.Table.UpdatedAtUtc.AddMilliseconds(100);
         var secondWager = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.WagerAsync(
             "human", play.Table.TableId, 100, firstBetting.Version, Key("timeout-wager-two"),
-            Start.AddSeconds(100), default)).Session);
-        var second = await StartRound(store, "human", Start.AddSeconds(101));
+            secondWagerAt, default)).Session);
+        var second = await StartRound(store, "human", secondWagerAt.AddSeconds(1));
         Assert.True(second.Version > secondWager.Version);
         await store.GetSessionAsync("human", second.Table.ActionDeadlineAtUtc!.Value, default);
         Assert.True(player.LeavingAfterRound);
         Assert.Equal(2, player.ConsecutiveMissedActionRounds);
 
-        for (var step = 0; step < 30 && store.StateForTest.Tables.ContainsKey(play.Table.TableId); step++)
-            await store.SweepAsync(Start.AddSeconds(165 + step * 2), default);
-        var idle = await store.GetSessionAsync("human", Start.AddMinutes(4), default);
+        var settlementSweepAt = second.Table.ActionDeadlineAtUtc!.Value.AddSeconds(10);
+        for (var step = 0; step < 60 && store.StateForTest.Tables.ContainsKey(play.Table.TableId); step++)
+            await store.SweepAsync(settlementSweepAt.AddSeconds(step * 6), default);
+        var idle = await store.GetSessionAsync("human", settlementSweepAt.AddMinutes(10), default);
         Assert.IsType<BlackjackTableIdleSessionResponse>(idle.Session);
         Assert.True(!store.StateForTest.Tables.TryGetValue(play.Table.TableId, out var remaining) ||
                     remaining.Players.All(value => value.ActorId != "human"));
@@ -372,6 +391,50 @@ public sealed class BlackjackTableStateTests
         Assert.Equal("blackjack", result.Game);
         Assert.Equal("credit-table", result.Mode);
         Assert.Equal(play.Table.TableId, result.TableId);
+    }
+
+    [Fact]
+    public async Task ManagedPlayersChooseWagersOneSeatAtATime()
+    {
+        var store = Store();
+        store.SetBalance("human", 2_000);
+        var play = await JoinAtTable(store, "human", "WagerWatcher");
+        var table = store.TableForTest(play.Table.TableId);
+        var bots = table.Players.Where(player => player.IsBot).OrderBy(player => player.Seat).ToArray();
+
+        Assert.All(bots, bot => Assert.Equal(0, bot.NextWagerCents));
+        Assert.Single(bots, bot => bot.Status == "considering-wager");
+        await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
+
+        Assert.Single(bots, bot => bot.NextWagerCents > 0);
+        Assert.Single(bots, bot => bot.Status == "considering-wager");
+        await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
+        Assert.All(bots, bot => Assert.True(bot.NextWagerCents > 0));
+    }
+
+    [Fact]
+    public void ManagedPlayerWagersHaveDistinctHabitsAndReactToResults()
+    {
+        var startingWagers = Enumerable.Range(0, 40)
+            .Select(index => BlackjackTableCoordinator.InitialBotWager($"managed-{index}"))
+            .Distinct()
+            .ToArray();
+        var changeRates = Enumerable.Range(0, 40)
+            .Select(index => BlackjackTableCoordinator.BotWagerChangeChance($"managed-{index}"))
+            .Distinct()
+            .ToArray();
+        Assert.True(startingWagers.Length >= 6);
+        Assert.Equal(4, changeRates.Length);
+
+        var winner = ManagedWagerPlayer("managed-winner", 500);
+        winner.PayoutCents = 1_500;
+        BlackjackTableCoordinator.UpdateBotWagerHabit(winner, 500);
+        Assert.True(winner.BotBaseWagerCents > 500);
+
+        var losingStreak = ManagedWagerPlayer("managed-loser", 1_000);
+        losingStreak.BotConsecutiveLosses = 2;
+        BlackjackTableCoordinator.UpdateBotWagerHabit(losingStreak, 500);
+        Assert.True(losingStreak.BotBaseWagerCents < 1_000);
     }
 
     [Fact]
@@ -737,8 +800,17 @@ public sealed class BlackjackTableStateTests
     private static async Task<BlackjackTablePlaySessionResponse> StartRound(
         InMemoryBlackjackTableStore store,
         string userId,
-        DateTime now) => Assert.IsType<BlackjackTablePlaySessionResponse>((await store.GetSessionAsync(
-            userId, now, default)).Session);
+        DateTime now)
+    {
+        BlackjackTablePlaySessionResponse? session = null;
+        for (var step = 0; step < 12; step++)
+        {
+            session = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.GetSessionAsync(
+                userId, now.AddMilliseconds(step * 500), default)).Session);
+            if (session.Table.Phase != BlackjackTablePhases.Betting) return session;
+        }
+        throw new Xunit.Sdk.XunitException($"Blackjack round did not leave the wager phase: updated={session?.Table.UpdatedAtUtc:o}, next={session?.Table.NextTransitionAtUtc:o}, transition={session?.Table.Transition}, seats={string.Join(',', session?.Table.Seats.Select(seat => $"{seat.DisplayName}:{seat.Wager}:{seat.Status}") ?? [])}.");
+    }
 
     private static InMemoryBlackjackTableStore Store(
         IReadOnlyList<string>? deck = null,
@@ -746,6 +818,20 @@ public sealed class BlackjackTableStateTests
         new(() => (deck ?? DoubleDeck()).ToArray(), () => seed);
 
     private static string Key(string value) => value.PadRight(16, 'x');
+
+    private static BlackjackTablePlayer ManagedWagerPlayer(string actorId, long baseWager) => new()
+    {
+        ActorId = actorId,
+        PublicSeatId = $"seat-{actorId}",
+        DisplayName = actorId,
+        IsBot = true,
+        BotSkillLevel = 3,
+        Seat = 0,
+        SessionId = $"session-{actorId}",
+        SessionStartedAtUtc = Start,
+        BotBaseWagerCents = baseWager,
+        BotWagerChangeChanceBasisPoints = 600
+    };
 
     private static IReadOnlyList<string> NaturalDeck() => DeckWithPrefix(
         "A|spades", "2|clubs", "3|clubs", "9|hearts",

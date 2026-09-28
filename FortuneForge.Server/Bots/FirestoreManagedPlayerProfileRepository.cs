@@ -108,6 +108,9 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
         ["role"] = "player",
         ["skillLevel"] = profile.SkillLevel,
         ["supportedGames"] = profile.SupportedGames.ToArray(),
+        ["managedPlayWindowStartedAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc),
+        ["managedPlaySecondsInWindow"] = 0L,
+        ["managedNextAvailableAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc),
         ["accountSchemaVersion"] = 7L,
         ["createdAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc),
         ["updatedAt"] = Timestamp.FromDateTime(profile.CreatedAtUtc)

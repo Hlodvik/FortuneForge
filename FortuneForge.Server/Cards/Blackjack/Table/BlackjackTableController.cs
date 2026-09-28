@@ -36,6 +36,17 @@ public sealed class BlackjackTableController(
         catch (Exception exception) { return BlackjackTableHttp.FromException(this, exception, logger); }
     }
 
+    [HttpGet("snapshot")]
+    [EnableRateLimiting(RateLimitPolicies.BlackjackTableReads)]
+    public async Task<ActionResult> Snapshot(CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to play Blackjack table mode." });
+        if (Disabled() is { } unavailable) return unavailable;
+        try { return Ok(ToMutation(await Service.GetSessionAsync(account.UserId, cancellationToken))); }
+        catch (Exception exception) { return BlackjackTableHttp.FromException(this, exception, logger); }
+    }
+
     [HttpGet("history")]
     [EnableRateLimiting(RateLimitPolicies.BlackjackTableReads)]
     public async Task<ActionResult> History(

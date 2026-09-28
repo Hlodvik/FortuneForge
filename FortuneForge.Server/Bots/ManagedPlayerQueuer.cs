@@ -73,7 +73,7 @@ internal sealed class ManagedPlayerQueuer(
     {
         foreach (var profileId in profileIds.Distinct(StringComparer.Ordinal))
         {
-            if (await assignments.ReleaseAsync(profileId, assignmentId, cancellationToken))
+            if (await assignments.ReleaseAsync(profileId, assignmentId, nowUtc, cancellationToken))
                 await profiles.MarkLastActiveAsync(profileId, nowUtc, cancellationToken);
         }
     }

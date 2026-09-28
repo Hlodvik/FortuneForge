@@ -13,6 +13,7 @@ internal sealed class ManagedPlayerProfileGenerator(
         for (var attempt = 0; attempt < MaximumGenerationAttempts; attempt++)
         {
             var profile = ManagedPlayerIdentityFactory.Create(gameId, nowUtc);
+            if (ManagedPlayerAvailabilityPolicy.IsSleeping(profile.UserId, nowUtc)) continue;
             if (await profiles.TryCreateAsync(profile, cancellationToken)) return profile;
         }
 

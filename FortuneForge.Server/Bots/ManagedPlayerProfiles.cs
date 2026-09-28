@@ -69,7 +69,54 @@ internal interface IManagedPlayerAssignmentStore
     Task<bool> ReleaseAsync(
         string profileId,
         string assignmentId,
+        DateTime nowUtc,
         CancellationToken cancellationToken);
+}
+
+internal static class ManagedPlayerAvailabilityPolicy
+{
+    private static readonly TimeSpan UsageWindow = TimeSpan.FromHours(8);
+    private static readonly TimeSpan MaximumUsagePerWindow = TimeSpan.FromHours(2);
+
+    public static bool IsAvailable(
+        string profileId,
+        DateTime nowUtc,
+        DateTime windowStartedAtUtc,
+        long activeSecondsInWindow,
+        DateTime nextAvailableAtUtc)
+    {
+        if (nextAvailableAtUtc > nowUtc || IsSleeping(profileId, nowUtc)) return false;
+        var used = nowUtc - windowStartedAtUtc >= UsageWindow ? 0 : activeSecondsInWindow;
+        return used < MaximumUsagePerWindow.TotalSeconds;
+    }
+
+    internal static bool IsSleeping(string profileId, DateTime nowUtc)
+    {
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"managed-schedule\n{profileId}"));
+        var nightOwl = hash[0] % 4 == 0;
+        var durationHours = 6 + hash[1] % 4;
+        var startHourSouthAfrica = nightOwl
+            ? 6 + hash[2] % 4
+            : 21 + hash[2] % 4;
+        var southAfricaTime = nowUtc.AddHours(2);
+        var hour = southAfricaTime.Hour + southAfricaTime.Minute / 60d;
+        var elapsed = (hour - startHourSouthAfrica + 24) % 24;
+        return elapsed < durationHours;
+    }
+
+    internal static DateTime WindowStart(DateTime nowUtc, DateTime stored) =>
+        stored == DateTime.UnixEpoch || nowUtc - stored >= UsageWindow ? nowUtc : stored;
+
+    internal static long ActiveSeconds(DateTime nowUtc, DateTime windowStart, long stored, DateTime reservedAt) =>
+        nowUtc - windowStart >= UsageWindow
+            ? Math.Clamp((long)(nowUtc - reservedAt).TotalSeconds, 0, 3_600)
+            : checked(stored + Math.Clamp((long)(nowUtc - reservedAt).TotalSeconds, 0, 3_600));
+
+    internal static DateTime NextAvailable(string profileId, DateTime nowUtc)
+    {
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"managed-break\n{profileId}\n{nowUtc:yyyyMMddHH}"));
+        return nowUtc.AddMinutes(15 + hash[0] % 21);
+    }
 }
 
 internal interface IManagedPlayerQueuer

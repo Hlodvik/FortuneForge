@@ -268,7 +268,13 @@ public static class BlackjackTableEngine
         }
 
         dealt++;
-        table.Transition = dealt >= cardsPerPass * 2 ? "initial-deal-complete" : "initial-deal";
+        if (dealt >= cardsPerPass * 2)
+        {
+            table.Phase = BlackjackTablePhases.Active;
+            FinishInitialDeal(table, participants, nowUtc);
+            return;
+        }
+        table.Transition = "initial-deal";
         table.NextTransitionAtUtc = nowUtc.Add(InitialCardDuration);
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;

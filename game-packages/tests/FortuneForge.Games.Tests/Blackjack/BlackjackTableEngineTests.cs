@@ -79,7 +79,6 @@ public sealed class BlackjackTableEngineTests
 
         Assert.Equal(2, table.Players[0].Cards.Count);
         Assert.Equal(2, table.DealerCards.Count);
-        BlackjackTableEngine.AdvanceAutomatedTurns(table, now.Add(BlackjackTableEngine.InitialCardDuration));
         Assert.NotEqual(BlackjackTablePhases.Dealing, table.Phase);
     }
 

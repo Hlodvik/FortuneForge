@@ -6,6 +6,7 @@ import {
   getBlackjackTableStatus,
   joinBlackjackTableQueue,
   postBlackjackTableAction,
+  sitOutBlackjackTableRound,
   stableBlackjackTableMutation,
   type BlackjackTableMutationResponse,
 } from './blackjackTableApi'
@@ -47,6 +48,18 @@ describe('Blackjack table API boundary', () => {
     expect(path).toBe('/api/cards/blackjack/table/tables/table-public-1/actions')
     expect(JSON.parse(String(init.body))).toEqual({ type: 'stand', expectedVersion: 8 })
     expect(String(init.body)).not.toMatch(/score|payout|deck|hidden|balance/i)
+  })
+
+  it('sits out one round with only the table version', async () => {
+    const fetchMock = successfulFetch(idleMutation)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await sitOutBlackjackTableRound('table-public-1', 8, 'blackjack_sit_out_1')
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(path).toBe('/api/cards/blackjack/table/tables/table-public-1/sit-out')
+    expect(init.method).toBe('POST')
+    expect(JSON.parse(String(init.body))).toEqual({ expectedVersion: 8 })
   })
 
   it('reads paid signed history without a claim command', async () => {

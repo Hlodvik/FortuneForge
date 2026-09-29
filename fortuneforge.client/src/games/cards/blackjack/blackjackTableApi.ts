@@ -262,6 +262,19 @@ export function postBlackjackTableWager(
   )
 }
 
+export function sitOutBlackjackTableRound(
+  tableId: string,
+  expectedVersion: number,
+  idempotencyKey: string,
+): Promise<BlackjackTableMutationResponse> {
+  return mutationRequest(
+    `/tables/${encodeURIComponent(tableId)}/sit-out`,
+    'POST',
+    { expectedVersion },
+    idempotencyKey,
+  )
+}
+
 export function postBlackjackTableAction(
   tableId: string,
   type: BlackjackTableAction,

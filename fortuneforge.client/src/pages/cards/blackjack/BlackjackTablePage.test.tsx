@@ -18,6 +18,51 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('Choose your wager at the table')
   })
 
+  it('keeps the finding screen while a queue ticket waits for a table', () => {
+    const markup = render({
+      kind: 'ready',
+      status,
+      session: {
+        contractVersion: 'cards.blackjack.table.v2',
+        kind: 'queue',
+        version: 1,
+        ticketId: 'ticket-1',
+        position: 2,
+        joinedAtUtc: '2026-08-15T12:00:00Z',
+        humanGraceEndsAtUtc: '2026-08-15T12:00:05Z',
+        players: [],
+      },
+    })
+
+    expect(markup).toContain('Finding table…')
+    expect(markup).not.toContain('Checking live tables')
+    expect(markup).not.toContain('Queue position')
+    expect(markup).not.toContain('Your seat is coming up')
+  })
+
+  it('centers the joining state in an arriving player seat without waiting copy', () => {
+    const markup = render({
+      kind: 'ready',
+      status,
+      session: {
+        ...tableSession,
+        table: {
+          ...tableSession.table,
+          phase: 'betting',
+          seats: tableSession.table.seats.map((seat) => seat.isCurrentPlayer ? {
+            ...seat,
+            status: 'joining-next-round',
+            hand: { ...seat.hand, cards: [], score: null },
+          } : seat),
+        },
+      },
+    })
+
+    expect(markup).toContain('class="blackjack-seat__joining">Joining next round</span>')
+    expect(markup).not.toContain('>Waiting</span>')
+    expect(markup).not.toContain('>Joins next round</small>')
+  })
+
   it('renders ordinary seats and enables only server legal actions', () => {
     const markup = render({ kind: 'ready', status, session: tableSession })
 
@@ -41,7 +86,8 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('Table rules')
     expect(markup).not.toContain('missed turns release')
     expect(markup).not.toContain('Strategy help')
-    expect(markup).toContain("Ada&#x27;s turn · 10s")
+    expect(markup).not.toContain('Next player is thinking')
+    expect(markup).not.toContain('Round 1')
     expect(markup).not.toContain('>Playing</small>')
     expect(markup).not.toMatch(/\bbot\b|skill|seed|actor/i)
   })
@@ -86,10 +132,10 @@ describe('Blackjack table composition', () => {
 
     expect(markup).not.toContain('ff-card-slot')
     expect(markup).toContain('Dealer')
-    expect(markup).toContain('Your wager')
     expect(markup).toContain('Wager amount')
     expect(markup).toContain('Min R0.50 · Max R100.00')
     expect(markup).toContain('>Wager</button>')
+    expect(markup).toContain('>Sit out</button>')
     expect(markup).toContain('>20s</time>')
     expect(markup).not.toContain('Quick chip values')
     expect(markup).toContain('blackjack-balance-bubble')
@@ -144,6 +190,7 @@ describe('Blackjack table composition', () => {
     })
 
     expect(markup).toContain('Next round 5')
+    expect(markup).toContain('class="blackjack-next-round"')
     expect(markup).not.toContain('Wager amount')
     expect(markup).not.toContain('ff-card-slot')
   })
@@ -205,6 +252,7 @@ function render(availability: Parameters<typeof BlackjackTableContent>[0]['avail
     onJoin: vi.fn(),
     onCancel: vi.fn(),
     onWager: vi.fn(),
+    onSitOut: vi.fn(),
     onAction: vi.fn(),
     onLeave: vi.fn(),
     onRefresh: vi.fn(),

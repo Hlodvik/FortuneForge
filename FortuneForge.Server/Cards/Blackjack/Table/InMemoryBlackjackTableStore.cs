@@ -76,6 +76,16 @@ internal sealed class InMemoryBlackjackTableStore(
         Execute(() => coordinator.Wager(
             state, balances, userId, tableId, wagerCents, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
+    public Task<BlackjackTableStoreResult> SitOutAsync(
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        Execute(() => coordinator.SitOut(
+            state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
+
     public Task<BlackjackTableStoreResult> ActionAsync(
         string userId,
         string tableId,

@@ -77,6 +77,20 @@ internal sealed class BlackjackTableService(IBlackjackTableStore store)
             cancellationToken);
     }
 
+    public Task<BlackjackTableStoreResult> SitOutAsync(
+        string userId,
+        string tableId,
+        BlackjackTableVersionRequest request,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        ValidateIdentifier(tableId, "table");
+        ValidateExpectedVersion(request.ExpectedVersion);
+        ValidateIdempotencyKey(idempotencyKey);
+        return store.SitOutAsync(
+            userId, tableId, request.ExpectedVersion, idempotencyKey, DateTime.UtcNow, cancellationToken);
+    }
+
     public Task<BlackjackTableStoreResult> LeaveAsync(
         string userId,
         string tableId,

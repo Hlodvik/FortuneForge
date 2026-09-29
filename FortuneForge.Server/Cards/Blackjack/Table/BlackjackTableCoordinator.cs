@@ -174,6 +174,43 @@ internal sealed class BlackjackTableCoordinator(
         return Result(state, balances, userId, nowUtc, journal);
     }
 
+    public BlackjackTableCoordinatorResult SitOut(
+        BlackjackTableLobbyState state,
+        IDictionary<string, long> balances,
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc)
+    {
+        var journal = new BlackjackTableJournal();
+        Advance(state, balances, journal, nowUtc);
+        var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (Replay(state, userId, idempotencyKey, "sit-out", tableId, detail))
+            return Result(state, balances, userId, nowUtc, journal);
+        var table = OwnedTable(state, userId, tableId);
+        var player = table.Players.Single(value => value.ActorId == userId);
+        if (table.Phase != BlackjackTablePhases.Betting ||
+            table.Transition != "human-wager" ||
+            table.ActiveSeat != player.Seat ||
+            table.Version != expectedVersion)
+            throw new BlackjackTableConflictException("The Blackjack table changed or is not accepting a sit-out request.");
+
+        player.NextWagerCents = 0;
+        player.ConsecutiveMissedRounds = 0;
+        player.Status = "sitting-out";
+        table.ActiveSeat = null;
+        table.PendingSeat = null;
+        table.WagerDeadlineAtUtc = null;
+        table.Transition = null;
+        table.NextTransitionAtUtc = null;
+        table.Version = checked(table.Version + 1);
+        table.UpdatedAtUtc = nowUtc;
+        state.Guards[GuardKey(userId, idempotencyKey)] = new("sit-out", tableId, detail, nowUtc);
+        StartIfReady(table, nowUtc);
+        return Result(state, balances, userId, nowUtc, journal);
+    }
+
     public BlackjackTableCoordinatorResult Action(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,

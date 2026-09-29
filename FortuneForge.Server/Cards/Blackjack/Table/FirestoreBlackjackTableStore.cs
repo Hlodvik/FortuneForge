@@ -183,6 +183,21 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             nowUtc,
             cancellationToken);
 
+    public Task<BlackjackTableStoreResult> SitOutAsync(
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.SitOut(
+                state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
     public Task<BlackjackTableStoreResult> ActionAsync(
         string userId,
         string tableId,

@@ -134,6 +134,25 @@ public sealed class BlackjackTableStateTests
     }
 
     [Fact]
+    public async Task ExplicitSitOutKeepsTheSeatAndDoesNotCountAsInactivity()
+    {
+        var store = Store();
+        store.SetBalance("human", 10_000);
+        var play = await JoinAtTable(store, "human", "QuietRound");
+
+        var result = await store.SitOutAsync(
+            "human", play.Table.TableId, play.Version, Key("sit-out"), Start.AddSeconds(7), default);
+        var session = Assert.IsType<BlackjackTablePlaySessionResponse>(result.Session);
+        var player = store.TableForTest(play.Table.TableId).Players.Single(value => value.ActorId == "human");
+
+        Assert.Contains(session.Table.Seats, seat => seat.IsCurrentPlayer);
+        Assert.Equal("sitting-out", player.Status);
+        Assert.Equal(0, player.ConsecutiveMissedRounds);
+        Assert.Equal(10_000, store.Balance("human"));
+        Assert.Empty(store.Ledger);
+    }
+
+    [Fact]
     public async Task ActionsAndDealerCardsAdvanceOneDurableStepAtATime()
     {
         var store = Store(DoubleDeck());

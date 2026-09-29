@@ -28,6 +28,13 @@ internal interface IBlackjackTableStore
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken);
+    Task<BlackjackTableStoreResult> SitOutAsync(
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
     Task<BlackjackTableStoreResult> ActionAsync(
         string userId,
         string tableId,

@@ -147,6 +147,25 @@ public sealed class BlackjackTableController(
         catch (Exception exception) { return BlackjackTableHttp.FromException(this, exception, logger); }
     }
 
+    [HttpPost("tables/{tableId}/sit-out")]
+    [EnableRateLimiting(RateLimitPolicies.BlackjackTableWrites)]
+    public async Task<ActionResult> SitOut(
+        string tableId,
+        BlackjackTableVersionRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to sit out a Blackjack round." });
+        if (Disabled() is { } unavailable) return unavailable;
+        try
+        {
+            return Ok(ToMutation(await Service.SitOutAsync(
+                account.UserId, tableId, request, idempotencyKey ?? string.Empty, cancellationToken)));
+        }
+        catch (Exception exception) { return BlackjackTableHttp.FromException(this, exception, logger); }
+    }
+
     [HttpPost("tables/{tableId}/leave")]
     [EnableRateLimiting(RateLimitPolicies.BlackjackTableWrites)]
     public async Task<ActionResult> Leave(

@@ -57,7 +57,6 @@ test('Blackjack review table controls change the visible round state', async ({ 
 
   const currentSeat = page.getByRole('article').filter({ hasText: 'Tian' })
   await expect(currentSeat.getByLabel('Hand total 11')).toBeVisible()
-  await expect(page.getByText('60s turn limit')).toBeVisible()
   await page.getByRole('button', { name: 'Hit', exact: true }).click()
   await expect(currentSeat.getByLabel('Hand total 17')).toBeVisible()
   await page.getByRole('button', { name: 'Stand', exact: true }).click()

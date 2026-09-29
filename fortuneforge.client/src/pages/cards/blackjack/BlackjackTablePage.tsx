@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref } from 'react'
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
@@ -183,7 +183,14 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
   return (
-    <InGameShell account={navbarAccount} title="Blackjack" theme="cards" className="blackjack-game-shell" bodyClassName="blackjack-shell-body">
+    <InGameShell
+      account={navbarAccount}
+      title="Blackjack"
+      theme="cards"
+      actions={availability.kind === 'ready' ? <BlackjackHowToPlay status={availability.status} /> : undefined}
+      className="blackjack-game-shell"
+      bodyClassName="blackjack-shell-body"
+    >
       <div className="blackjack-page blackjack-table-page" onClickCapture={onCardAudioClick}>
       {requestError && (
         <div className="blackjack-error" role="alert">
@@ -354,7 +361,6 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase} ref={tableRef}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
-        <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span></div>
         <div className="blackjack-playfield">
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
             <Hand label="Dealer" hand={betting ? emptyHand : table.dealer} scope="dealer" />
@@ -407,6 +413,64 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
         </div>
       </section>
     </main>
+  )
+}
+
+export function BlackjackHowToPlay({ status, defaultOpen = false }: { status: BlackjackTableStatus; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const panelId = useId()
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    const closeOutside = (event: PointerEvent) => {
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    document.addEventListener('pointerdown', closeOutside)
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape)
+      document.removeEventListener('pointerdown', closeOutside)
+    }
+  }, [open])
+
+  return (
+    <div className="blackjack-help" ref={containerRef}>
+      <button
+        className="blackjack-help__button"
+        type="button"
+        aria-label="How to play Blackjack"
+        aria-expanded={open}
+        aria-controls={panelId}
+        title="How to play"
+        onClick={() => setOpen((value) => !value)}
+      >?</button>
+      {open && (
+        <section className="blackjack-help__panel" id={panelId} role="dialog" aria-label="How to play Blackjack">
+          <header><div><small>Blackjack guide</small><h2>How to play</h2></div><button type="button" aria-label="Close how to play" onClick={() => setOpen(false)}>×</button></header>
+          <p>Beat the dealer by getting closer to 21 without going over. Number cards use their face value, face cards count as 10, and an ace counts as 1 or 11.</p>
+          <div className="blackjack-help__actions">
+            <span><strong>Hit</strong> Take another card.</span>
+            <span><strong>Stand</strong> Keep your hand.</span>
+            {status.doubleAllowed && <span><strong>Double</strong> Double the wager, take one card, then stand.</span>}
+            {status.splitAllowed && <span><strong>Split</strong> Separate a matching pair into two hands.</span>}
+            <span><strong>Surrender</strong> End the hand and recover half the opening wager.</span>
+          </div>
+          <dl className="blackjack-help__rules">
+            <div><dt>Deck</dt><dd>{status.deckCount ?? 1}</dd></div>
+            <div><dt>Dealer</dt><dd>{status.dealerRule}</dd></div>
+            <div><dt>Blackjack</dt><dd>Pays {status.blackjackPayout}</dd></div>
+            <div><dt>Turn</dt><dd>{status.actionDeadlineSeconds} seconds</dd></div>
+            <div><dt>Inactive</dt><dd>Two missed turns release your seat</dd></div>
+            <div><dt>Double</dt><dd>{status.doubleAllowed ? 'Allowed' : 'Not available'}</dd></div>
+            <div><dt>Split</dt><dd>{status.splitAllowed ? 'Allowed' : 'Not available'}</dd></div>
+          </dl>
+        </section>
+      )}
+    </div>
   )
 }
 
@@ -577,10 +641,6 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
         <div className="blackjack-table__round">
           <span>Blackjack</span>
           <strong>{leftTable ? 'Seat released' : phase === 'betting' ? lastAction ?? 'Choose your next wager' : `Your turn · ${secondsRemaining}s`}</strong>
-        </div>
-        <div className="blackjack-rules-strip">
-          <span>1 deck</span><span>Dealer stands on all 17s</span><span>Blackjack 3:2</span>
-          <span>{previewStatus.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>Double allowed</span>
         </div>
         <div className="blackjack-playfield">
           <div className="blackjack-dealer"><Hand label="Dealer" hand={phase === 'betting' ? emptyHand : preview.dealer} scope="preview-dealer" /></div>

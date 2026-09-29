@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { BlackjackTableStatus } from '../../../games/cards/blackjack/blackjackTableApi'
-import { BlackjackTableContent } from './BlackjackTablePage'
+import { BlackjackHowToPlay, BlackjackTableContent } from './BlackjackTablePage'
 
 describe('Blackjack table composition', () => {
   it('renders a clean live-table lobby', () => {
@@ -37,8 +37,9 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('disabled="">Surrender</button>')
     expect(markup).toContain('Open seat')
     expect(markup).toContain('Leave table')
-    expect(markup).toContain('60s turn limit')
-    expect(markup).toContain('2 missed turns releases your seat')
+    expect(markup).not.toContain('60s turn limit')
+    expect(markup).not.toContain('Table rules')
+    expect(markup).not.toContain('missed turns release')
     expect(markup).not.toContain('Strategy help')
     expect(markup).toContain("Ada&#x27;s turn · 10s")
     expect(markup).not.toMatch(/\bbot\b|skill|seed|actor/i)
@@ -145,6 +146,21 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('Insurance R2.50')
     expect(markup.match(/blackjack-seat__timer/g)).toHaveLength(1)
     expect(markup).toContain('>Surrender</button>')
+  })
+
+  it('moves table rules into the how-to-play control', () => {
+    const closed = renderToStaticMarkup(createElement(BlackjackHowToPlay, { status }))
+    const open = renderToStaticMarkup(createElement(BlackjackHowToPlay, { status, defaultOpen: true }))
+
+    expect(closed).toContain('aria-label="How to play Blackjack"')
+    expect(closed).toContain('title="How to play"')
+    expect(closed).not.toContain('Dealer stands on all 17s')
+    expect(open).toContain('How to play')
+    expect(open).toContain('Dealer stands on all 17s')
+    expect(open).toContain('60 seconds')
+    expect(open).toContain('Two missed turns release your seat')
+    expect(open).toContain('<dt>Double</dt><dd>Allowed</dd>')
+    expect(open).toContain('<dt>Split</dt><dd>Not available</dd>')
   })
 })
 

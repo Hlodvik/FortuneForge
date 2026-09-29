@@ -404,12 +404,19 @@ public sealed class BlackjackTableStateTests
 
         Assert.All(bots, bot => Assert.Equal(0, bot.NextWagerCents));
         Assert.Single(bots, bot => bot.Status == "considering-wager");
+        Assert.Empty(table.DealerCards);
+        Assert.All(table.Players, player => Assert.Empty(player.Cards));
         await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
 
         Assert.Single(bots, bot => bot.NextWagerCents > 0);
         Assert.Single(bots, bot => bot.Status == "considering-wager");
+        Assert.Empty(table.DealerCards);
+        Assert.All(table.Players, player => Assert.Empty(player.Cards));
         await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
         Assert.All(bots, bot => Assert.True(bot.NextWagerCents > 0));
+        Assert.Equal(BlackjackTablePhases.Betting, table.Phase);
+        Assert.Empty(table.DealerCards);
+        Assert.All(table.Players, player => Assert.Empty(player.Cards));
     }
 
     [Fact]
@@ -454,6 +461,14 @@ public sealed class BlackjackTableStateTests
         Assert.Single(store.Revenue);
         Assert.Equal(BlackjackTablePhases.Betting, settled.Table.Phase);
         Assert.Equal("table", settled.Kind);
+        Assert.Empty(settled.Table.Dealer.Cards);
+        Assert.All(settled.Table.Seats, seat =>
+        {
+            Assert.Empty(seat.Hand.Cards);
+            Assert.Equal(0m, seat.TotalWager);
+            Assert.Equal(0m, seat.Payout);
+            Assert.Null(seat.Outcome);
+        });
 
         var history = Assert.Single(await store.GetHistoryAsync("human", 20, default));
         Assert.Equal((1m, 2.50m, 1.50m), (history.WagerCredits, history.PayoutCredits, history.NetCredits));

@@ -33,9 +33,13 @@ test('Blackjack preserves table geometry between betting and active play', async
     await openPreview(page, `/src/pages/cards/blackjack/preview.html?mode=${mode}`)
     heights.push(await page.locator('.blackjack-playfield').evaluate((element) =>
       element.getBoundingClientRect().height))
+    if (mode === 'betting') {
+      await expect(page.locator('.ff-card-slot')).toHaveCount(0)
+    }
   }
 
   expect(Math.abs(heights[0] - heights[1])).toBeLessThan(1)
+  await openPreview(page, '/src/pages/cards/blackjack/preview.html?mode=active')
   const opponent = page.locator('.blackjack-seat').filter({ hasText: 'Mina' })
   expect(await opponent.locator('.ff-card-slot').count()).toBe(6)
   const bounds = await opponent.evaluate((seat) => {

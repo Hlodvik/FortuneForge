@@ -56,7 +56,7 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('>Leave table</button>')
   })
 
-  it('keeps the completed deal visible while showing next-round wager controls', () => {
+  it('clears the completed deal while everybody places the next-round wager', () => {
     const markup = render({
       kind: 'ready',
       status,
@@ -80,18 +80,20 @@ describe('Blackjack table composition', () => {
       },
     })
 
-    expect(markup).toContain('ff-card-slot')
+    expect(markup).not.toContain('ff-card-slot')
+    expect(markup).toContain('Dealer')
+    expect(markup).toContain('Place your bets')
     expect(markup).toContain('Round wager')
     expect(markup).toContain('blackjack-wager-action')
     expect(markup).toContain('blackjack-balance-bubble')
-    expect(markup).toContain('Round won')
-    expect(markup).toContain('You won R10.00')
-    expect(markup).toContain('>Lost</small>')
+    expect(markup).toMatch(/blackjack-actions[\s\S]*blackjack-balance-bubble[\s\S]*Round wager/)
+    expect(markup).not.toContain('Round won')
+    expect(markup).not.toContain('You won R10.00')
+    expect(markup).not.toContain('>Lost</small>')
     expect(markup).not.toContain('Dealer Blackjack')
-    expect(markup).toContain('Choose your next wager when you are ready.')
   })
 
-  it('summarizes a settled winning round before the next wager', () => {
+  it('keeps a settled win out of the next betting phase and does not open an outcome panel', () => {
     const markup = render({
       kind: 'ready',
       status,
@@ -111,9 +113,10 @@ describe('Blackjack table composition', () => {
       },
     })
 
-    expect(markup).toContain('Round won')
-    expect(markup).toContain('You won R12.50')
-    expect(markup).toContain('Choose your next wager when you are ready.')
+    expect(markup).not.toContain('+R7.50')
+    expect(markup).not.toContain('ff-card-slot')
+    expect(markup).not.toContain('Round won')
+    expect(markup).not.toContain('You won R12.50')
   })
 
   it('renders server-projected split hands and only the current player timer', () => {

@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { GameOutcomeBanner, type GameOutcomeTone } from '../../../components/GameOutcomeBanner'
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
@@ -37,6 +36,13 @@ type Availability =
   | Readonly<{ kind: 'disabled'; message: string }>
   | Readonly<{ kind: 'error'; message: string }>
 
+type BalanceChange = Readonly<{ amount: number; id: number }>
+type PayoutFlight = Readonly<{ amount: number; id: number; startX: number; startY: number; travelX: number; travelY: number }>
+type PayoutFlightStyle = CSSProperties & {
+  '--blackjack-flight-x': string
+  '--blackjack-flight-y': string
+}
+
 export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [availability, setAvailability] = useState<Availability>({ kind: 'loading' })
   const [balanceCredits, setBalanceCredits] = useState(account.balances.slotsCredits)
@@ -45,7 +51,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [busy, setBusy] = useState(false)
   const [requestError, setRequestError] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
-  const [balanceChange, setBalanceChange] = useState<{ amount: number; id: number } | null>(null)
+  const [balanceChange, setBalanceChange] = useState<BalanceChange | null>(null)
   const balanceRef = useRef(balanceCredits)
   const onCardAudioClick = useCardAudioClick()
 
@@ -209,7 +215,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
 type ContentProps = Readonly<{
   availability: Availability
   balanceCredits: number
-  balanceChange: { amount: number; id: number } | null
+  balanceChange: BalanceChange | null
   wager: number
   busy: boolean
   pending: PendingBlackjackTableMutation | null
@@ -272,20 +278,86 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const seatsByNumber = new Map(table.seats.map((seat) => [seat.seat, seat]))
   const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
-  const roundOutcome = getRoundOutcome(current, betting)
+  const tableRef = useRef<HTMLElement>(null)
+  const currentSeatRef = useRef<HTMLElement>(null)
+  const balanceBubbleRef = useRef<HTMLDivElement>(null)
+  const displayedBalanceRef = useRef(props.balanceCredits)
+  const [displayedBalance, setDisplayedBalance] = useState(props.balanceCredits)
+  const [payoutFlight, setPayoutFlight] = useState<PayoutFlight | null>(null)
+
+  useEffect(() => {
+    const target = props.balanceCredits
+    const start = displayedBalanceRef.current
+    if (Math.abs(target - start) < .005) return
+
+    let animationFrame = 0
+    let delayTimer = 0
+    const duration = props.balanceChange?.amount && props.balanceChange.amount > 0 ? 650 : 420
+    const delay = props.balanceChange?.amount && props.balanceChange.amount > 0 ? 1_050 : 0
+    const begin = () => {
+      const startedAt = performance.now()
+      const tick = (time: number) => {
+        const progress = Math.min(1, (time - startedAt) / duration)
+        const eased = 1 - (1 - progress) ** 3
+        const next = Number((start + (target - start) * eased).toFixed(2))
+        displayedBalanceRef.current = next
+        setDisplayedBalance(next)
+        if (progress < 1) animationFrame = window.requestAnimationFrame(tick)
+      }
+      animationFrame = window.requestAnimationFrame(tick)
+    }
+    delayTimer = window.setTimeout(begin, delay)
+    return () => {
+      window.clearTimeout(delayTimer)
+      window.cancelAnimationFrame(animationFrame)
+    }
+  }, [props.balanceCredits, props.balanceChange])
+
+  useEffect(() => {
+    if (!props.balanceChange || props.balanceChange.amount <= 0) {
+      setPayoutFlight(null)
+      return
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const tableBounds = tableRef.current?.getBoundingClientRect()
+      const seatBounds = currentSeatRef.current?.getBoundingClientRect()
+      const balanceBounds = balanceBubbleRef.current?.getBoundingClientRect()
+      if (!tableBounds || !seatBounds || !balanceBounds) return
+      const startX = seatBounds.left + seatBounds.width / 2 - tableBounds.left
+      const startY = seatBounds.top + seatBounds.height * .82 - tableBounds.top
+      const endX = balanceBounds.left + balanceBounds.width / 2 - tableBounds.left
+      const endY = balanceBounds.top + balanceBounds.height / 2 - tableBounds.top
+      setPayoutFlight({
+        amount: props.balanceChange!.amount,
+        id: props.balanceChange!.id,
+        startX,
+        startY,
+        travelX: endX - startX,
+        travelY: endY - startY,
+      })
+    })
+    const clearTimer = window.setTimeout(() => setPayoutFlight(null), 1_450)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(clearTimer)
+    }
+  }, [props.balanceChange])
+
+  const payoutFlightStyle = payoutFlight ? {
+    left: payoutFlight.startX,
+    top: payoutFlight.startY,
+    '--blackjack-flight-x': `${payoutFlight.travelX}px`,
+    '--blackjack-flight-y': `${payoutFlight.travelY}px`,
+  } as PayoutFlightStyle : undefined
   return (
     <main className="blackjack-main blackjack-game">
-      <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase}>
+      <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase} ref={tableRef}>
         <div className="blackjack-table__round"><span>Round {Math.max(1, table.round)}</span><strong>{tableStatus(table, props.now)}</strong></div>
         <div className="blackjack-rules-strip" aria-label="Table rules"><span>{props.status.deckCount ?? 1} deck</span><span>{props.status.dealerRule}</span><span>Blackjack {props.status.blackjackPayout}</span><span>{props.status.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>{props.status.splitAllowed ? 'Split allowed' : 'No splitting'}</span><span>{props.status.doubleAllowed ? 'Double allowed' : 'No doubling'}</span></div>
-        {roundOutcome && <GameOutcomeBanner className="blackjack-table__outcome" {...roundOutcome} />}
         <div className="blackjack-playfield">
-          <div className="blackjack-balance-bubble" aria-live="polite">
-            <small>Balance</small><strong>R{props.balanceCredits.toFixed(2)}</strong>
-            {props.balanceChange && <span className={props.balanceChange.amount > 0 ? 'is-positive' : 'is-negative'} key={props.balanceChange.id}>{props.balanceChange.amount > 0 ? '+' : '−'}R{Math.abs(props.balanceChange.amount).toFixed(2)}</span>}
-          </div>
           <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
-            <Hand label="Dealer" hand={table.dealer} scope="dealer" />
+            <Hand label="Dealer" hand={betting ? emptyHand : table.dealer} scope="dealer" />
           </div>
           <div className="blackjack-semicircle" aria-label="Player seats">
             {visualSeats.map((seatNumber, visualPosition) => {
@@ -301,14 +373,20 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
               return (
                 <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seat?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seat?.seatId ?? seatNumber}>
                   {seat
-                    ? <Seat seat={seat} active={active} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} />
+                    ? <Seat seat={seat} active={active} betting={betting} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} seatRef={seat.isCurrentPlayer ? currentSeatRef : undefined} />
                     : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
                 </div>
               )
             })}
           </div>
         </div>
+        {payoutFlight && <span className="blackjack-payout-flight" key={payoutFlight.id} style={payoutFlightStyle}>+R{payoutFlight.amount.toFixed(2)}</span>}
         <div className="blackjack-actions" aria-label="Blackjack controls">
+          <div className="blackjack-balance-bubble" aria-label={`Balance R${props.balanceCredits.toFixed(2)}`} aria-live="polite" ref={balanceBubbleRef}>
+            <small>Balance</small><strong>R{displayedBalance.toFixed(2)}</strong>
+            {props.balanceChange && props.balanceChange.amount < 0 && <span className="blackjack-balance-debit" key={props.balanceChange.id}>−R{Math.abs(props.balanceChange.amount).toFixed(2)}</span>}
+            {props.balanceChange && props.balanceChange.amount > 0 && <i className="blackjack-balance-impact" key={props.balanceChange.id} aria-hidden="true" />}
+          </div>
           {betting && (
             <>
               <WagerInput status={props.status} wager={props.wager} busy={props.busy} onChange={props.onWagerChange} />
@@ -332,43 +410,14 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   )
 }
 
-function getRoundOutcome(
-  seat: BlackjackTableSeat | undefined,
-  betting: boolean,
-): {
-  detail: string
-  label: string
-  nextAction: string
-  title: string
-  tone: GameOutcomeTone
-} | null {
-  if (!betting || !seat || (!seat.outcome && seat.payout <= 0)) return null
-
-  const outcome = seat.outcome ? formatLabel(seat.outcome) : 'Round settled'
-  const winning = seat.payout > seat.totalWager
-    || seat.outcome === 'player-blackjack'
-    || seat.outcome === 'player-win'
-  const returned = seat.payout > 0 && !winning
-  return {
-    label: winning ? 'Round won' : returned ? 'Push' : 'No win',
-    title: winning
-      ? `You won R${seat.payout.toFixed(2)}`
-      : returned
-        ? `R${seat.payout.toFixed(2)} returned`
-        : 'Your wager did not win this round',
-    detail: `${outcome}. The table is ready for the next wager.`,
-    nextAction: 'Choose your next wager when you are ready.',
-    tone: winning ? 'win' : returned ? 'neutral' : 'loss',
-  }
-}
-
-function Seat({ seat, active, timer = null }: { seat: BlackjackTableSeat; active: boolean; timer?: string | null }) {
-  const winning = seat.payout > seat.totalWager || seat.outcome === 'player-blackjack' || seat.outcome === 'player-win'
-  const hands = playerHands(seat)
-  const status = seatStatus(seat, hands)
+function Seat({ seat, active, betting = false, timer = null, seatRef }: { seat: BlackjackTableSeat; active: boolean; betting?: boolean; timer?: string | null; seatRef?: Ref<HTMLElement> }) {
+  const winning = !betting && (seat.payout > seat.totalWager || seat.outcome === 'player-blackjack' || seat.outcome === 'player-win')
+  const hands = betting ? [] : playerHands(seat)
+  const status = seatStatus(seat, hands, betting)
   const net = seat.payout - seat.totalWager
+  const displayedWager = betting ? seat.wager : seat.totalWager
   return (
-    <article className={`blackjack-seat${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winning ? ' is-winner' : ''}`}>
+    <article className={`blackjack-seat${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winning ? ' is-winner' : ''}`} ref={seatRef}>
       <div className="blackjack-seat__name">
         <strong>{seat.displayName}</strong>
         <small>{status}</small>
@@ -387,13 +436,15 @@ function Seat({ seat, active, timer = null }: { seat: BlackjackTableSeat; active
         ))}
       </div>
       <div className="blackjack-seat__money">
-        <span>R{seat.totalWager.toFixed(2)}</span>
-        {(seat.insuranceWager ?? 0) > 0 && <span className="blackjack-seat__insurance">Insurance R{seat.insuranceWager?.toFixed(2)}</span>}
-        {seat.totalWager > 0 && seat.outcome && <strong className={net >= 0 ? 'is-positive' : 'is-negative'}>{net >= 0 ? '+' : '−'}R{Math.abs(net).toFixed(2)}</strong>}
+        <span>R{displayedWager.toFixed(2)}</span>
+        {!betting && (seat.insuranceWager ?? 0) > 0 && <span className="blackjack-seat__insurance">Insurance R{seat.insuranceWager?.toFixed(2)}</span>}
+        {!betting && seat.totalWager > 0 && seat.outcome && <strong className={net >= 0 ? 'is-positive' : 'is-negative'}>{net >= 0 ? '+' : '−'}R{Math.abs(net).toFixed(2)}</strong>}
       </div>
     </article>
   )
 }
+
+const emptyHand: BlackjackTableHand = { cards: [], score: null, soft: false, blackjack: false, bust: false }
 
 function playerHands(seat: BlackjackTableSeat): readonly BlackjackTablePlayerHand[] {
   if (seat.hands && seat.hands.length > 0) return seat.hands
@@ -410,9 +461,11 @@ function playerHands(seat: BlackjackTableSeat): readonly BlackjackTablePlayerHan
   }]
 }
 
-function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlayerHand[]): string {
+function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlayerHand[], betting = false): string {
   const activeHand = hands.find((hand) => hand.active)
-  const value = activeHand?.lastAction ?? activeHand?.status ?? seat.outcome ?? seat.lastAction ?? seat.status
+  const value = betting
+    ? seat.status
+    : activeHand?.lastAction ?? activeHand?.status ?? seat.outcome ?? seat.lastAction ?? seat.status
   const publicStatuses: Record<string, string> = {
     'dealer-blackjack': 'Lost',
     'dealer-win': 'Lost',
@@ -530,18 +583,21 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
           <span>{previewStatus.actionDeadlineSeconds}s turn limit</span><span>2 missed turns releases your seat</span><span>Double allowed</span>
         </div>
         <div className="blackjack-playfield">
-          <div className="blackjack-dealer"><Hand label="Dealer" hand={preview.dealer} scope="preview-dealer" /></div>
+          <div className="blackjack-dealer"><Hand label="Dealer" hand={phase === 'betting' ? emptyHand : preview.dealer} scope="preview-dealer" /></div>
           <div className="blackjack-semicircle">
             {visualSeats.map((seatNumber, visualPosition) => (
               <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seats.get(seatNumber)?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seatNumber}>
                 {seats.has(seatNumber)
-                  ? <Seat seat={seats.get(seatNumber)!} active={active && seatNumber === 0} timer={active && seatNumber === 0 ? `${secondsRemaining}s` : null} />
+                  ? <Seat seat={seats.get(seatNumber)!} active={active && seatNumber === 0} betting={phase === 'betting'} timer={active && seatNumber === 0 ? `${secondsRemaining}s` : null} />
                   : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
               </div>
             ))}
           </div>
         </div>
         <div className="blackjack-actions">
+          <div className="blackjack-balance-bubble" aria-label="Balance R100.00">
+            <small>Balance</small><strong>R100.00</strong>
+          </div>
           {leftTable ? (
             <button className="blackjack-primary" type="button" onClick={beginRound}>Rejoin table</button>
           ) : phase === 'betting' ? (

@@ -487,6 +487,7 @@ internal sealed class BlackjackTableCoordinator(
             }
         }
         EnsureMinimumOccupancy(table, nowUtc);
+        BlackjackTableEngine.PrepareForBetting(table);
         foreach (var player in table.Players)
         {
             player.NextWagerCents = 0;

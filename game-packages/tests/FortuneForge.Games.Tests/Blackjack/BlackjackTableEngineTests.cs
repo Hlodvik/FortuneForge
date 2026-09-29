@@ -38,6 +38,50 @@ public sealed class BlackjackTableEngineTests
         Assert.DoesNotContain(tableProperties, value => value.Contains("Revenue", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void PrepareForBettingClearsEveryPreviousRoundArtifactButKeepsNextWagers()
+    {
+        var table = Table();
+        BlackjackTableEngine.Deal(table, Deck(), 42, Start);
+        var player = table.Players[0];
+        player.NextWagerCents = 750;
+        player.PayoutCents = 1_250;
+        player.Outcome = BlackjackOutcomes.PlayerWin;
+        player.LastAction = BlackjackActions.Stand;
+        player.InsuranceWagerCents = 100;
+        player.InsurancePayoutCents = 300;
+        player.InsuranceAccepted = true;
+        player.SecondaryHand = new BlackjackTableSecondaryHand
+        {
+            Cards = ["A|spades"],
+            WagerCents = 500,
+            TotalWagerCents = 500,
+            Status = "completed",
+            Outcome = BlackjackOutcomes.PlayerWin,
+            LastAction = BlackjackActions.Stand
+        };
+
+        BlackjackTableEngine.PrepareForBetting(table);
+
+        Assert.Empty(table.Deck);
+        Assert.Empty(table.DealerCards);
+        Assert.Equal(0, table.DealerVisibleCardCount);
+        Assert.All(table.Players, seated =>
+        {
+            Assert.Empty(seated.Cards);
+            Assert.Equal(0, seated.WagerCents);
+            Assert.Equal(0, seated.TotalWagerCents);
+            Assert.Equal(0, seated.PayoutCents);
+            Assert.Null(seated.Outcome);
+            Assert.Null(seated.LastAction);
+            Assert.Null(seated.SecondaryHand);
+            Assert.Equal(0, seated.InsuranceWagerCents);
+            Assert.Equal(0, seated.InsurancePayoutCents);
+            Assert.Null(seated.InsuranceAccepted);
+        });
+        Assert.Equal(750, player.NextWagerCents);
+    }
+
     private static BlackjackTableState Table() => new()
     {
         TableId = "table-1",

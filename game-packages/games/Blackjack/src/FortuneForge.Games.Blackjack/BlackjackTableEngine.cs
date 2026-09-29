@@ -19,6 +19,28 @@ public static class BlackjackTableEngine
     public static readonly TimeSpan MinimumTurnPause = TimeSpan.FromMilliseconds(1_500);
     public static readonly TimeSpan MaximumTurnPause = TimeSpan.FromMilliseconds(5_500);
 
+    public static void PrepareForBetting(BlackjackTableState table)
+    {
+        table.Deck = [];
+        table.NextCardIndex = 0;
+        table.DealerCards = [];
+        table.DealerVisibleCardCount = 0;
+        foreach (var player in table.Players)
+        {
+            player.Cards = [];
+            player.WagerCents = 0;
+            player.TotalWagerCents = 0;
+            player.PayoutCents = 0;
+            player.Outcome = null;
+            player.LastAction = null;
+            player.SecondaryHand = null;
+            player.ActiveHandIndex = 0;
+            player.InsuranceWagerCents = 0;
+            player.InsurancePayoutCents = 0;
+            player.InsuranceAccepted = null;
+        }
+    }
+
     public static void Deal(BlackjackTableState table, IReadOnlyList<string> deck, ulong roundSeed, DateTime nowUtc)
     {
         if (table.Phase == BlackjackTablePhases.Closed)

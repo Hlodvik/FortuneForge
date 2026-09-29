@@ -43,10 +43,13 @@
 .blackjack-title span, .blackjack-lobby p, .blackjack-balance { color: #9fb9ad; font-size: .82rem; }
 .blackjack-finding__spinner { width: 3.1rem; aspect-ratio: 1; border: .28rem solid rgb(255 239 175 / 18%); border-top-color: #ffe486; border-radius: 50%; animation: blackjack-spin .8s linear infinite; box-shadow: 0 0 2rem rgb(255 214 91 / 20%); }
 
-.blackjack-primary, .blackjack-secondary, .blackjack-actions button, .blackjack-error button, .blackjack-wager button, .blackjack-state button { min-height: 2.8rem; border: 1px solid rgb(229 205 136 / 44%); border-radius: .75rem; padding: .65rem 1rem; background: linear-gradient(160deg, #174e3d, #082b22); box-shadow: inset 0 1px rgb(255 255 255 / 8%), 0 .35rem .75rem rgb(0 0 0 / 18%); color: #fff0ba; font: 800 .84rem/1 Candara, "Segoe UI", sans-serif; letter-spacing: .025em; cursor: pointer; transition: border-color .16s, background .16s, box-shadow .16s, transform .12s; }
+.blackjack-primary, .blackjack-secondary, .blackjack-leave, .blackjack-actions button, .blackjack-error button, .blackjack-wager button, .blackjack-state button { min-height: 2.8rem; border: 1px solid rgb(229 205 136 / 44%); border-radius: .75rem; padding: .65rem 1rem; background: linear-gradient(160deg, #174e3d, #082b22); box-shadow: inset 0 1px rgb(255 255 255 / 8%), 0 .35rem .75rem rgb(0 0 0 / 18%); color: #fff0ba; font: 800 .84rem/1 Candara, "Segoe UI", sans-serif; letter-spacing: .025em; cursor: pointer; transition: border-color .16s, background .16s, box-shadow .16s, transform .12s; }
 .blackjack-primary { min-width: 11rem; border-color: rgb(255 229 142 / 72%); background: linear-gradient(160deg, #f5df91, #c5962d); color: #14251f; }
 .blackjack-actions button:not(:disabled):hover { border-color: #ffe58f; background: linear-gradient(160deg, #20664f, #0b382b); box-shadow: inset 0 1px rgb(255 255 255 / 10%), 0 .4rem 1rem rgb(0 0 0 / 28%); }
-.blackjack-secondary, .blackjack-leave { background: rgb(2 28 21 / 72%) !important; color: #e6d6aa !important; }
+.blackjack-secondary { background: rgb(2 28 21 / 72%) !important; color: #e6d6aa !important; }
+.blackjack-leave { border-color: rgb(221 192 112 / 38%); border-radius: 999px; background: linear-gradient(160deg, rgb(18 62 48 / 94%), rgb(3 31 24 / 96%)); box-shadow: inset 0 1px rgb(255 255 255 / 9%), inset 0 0 0 1px rgb(0 0 0 / 18%), 0 .4rem 1rem rgb(0 12 8 / 32%); color: #e9dbb5; font: 900 .7rem/1 Rockwell, "Palatino Linotype", Georgia, serif; letter-spacing: .075em; text-transform: uppercase; }
+.blackjack-leave:hover:not(:disabled) { border-color: rgb(255 222 132 / 72%); background: linear-gradient(160deg, rgb(28 83 64 / 98%), rgb(5 42 32 / 98%)); box-shadow: inset 0 1px rgb(255 255 255 / 12%), 0 .45rem 1.15rem rgb(0 12 8 / 42%), 0 0 .8rem rgb(221 185 93 / 12%); color: #fff0c1; }
+.blackjack-leave:active:not(:disabled) { transform: translateY(1px) scale(.98); }
 button:disabled, input:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .45; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid #fff0a9; outline-offset: .2rem; }
 

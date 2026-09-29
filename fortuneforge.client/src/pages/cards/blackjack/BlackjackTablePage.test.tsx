@@ -71,7 +71,7 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('Mina')
     expect(markup).toContain('class="blackjack-seat__timer"')
     expect(markup).toContain('>10s</time>')
-    expect(markup).toContain('blackjack-seat-slot--3 is-current-slot')
+    expect(markup).toContain('blackjack-seat-slot--5 is-current-slot')
     expect(markup).toContain('class="blackjack-hand"')
     expect(markup).toContain('blackjack-seat is-current is-active')
     expect(markup).toContain('>Hit</button>')

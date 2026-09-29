@@ -290,7 +290,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const insuranceRound = table.phase === 'insurance'
   const transition = table.transition !== null
   const seatsByNumber = new Map(table.seats.map((seat) => [seat.seat, seat]))
-  const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
+  const visualSeats = clockwiseSeatNumbers(props.status.tableCapacity)
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
   const tableRef = useRef<HTMLElement>(null)
   const currentSeatRef = useRef<HTMLElement>(null)
@@ -604,7 +604,7 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
 
   const preview = previewTable(cards, wager, lastAction)
   const seats = new Map(preview.seats.map((seat) => [seat.seat, seat]))
-  const visualSeats = centeredSeatNumbers(5, preview.seats.find((seat) => seat.isCurrentPlayer)?.seat)
+  const visualSeats = clockwiseSeatNumbers(5)
   const beginRound = () => {
     setCards(previewStartingCards)
     setSecondsRemaining(previewStatus.actionDeadlineSeconds)
@@ -674,12 +674,8 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
   )
 }
 
-function centeredSeatNumbers(capacity: number, currentSeat?: number): number[] {
-  const center = Math.floor(capacity / 2)
-  const anchor = currentSeat ?? center
-  return Array.from({ length: capacity }, (_, visualPosition) => (
-    anchor + visualPosition - center + capacity
-  ) % capacity)
+function clockwiseSeatNumbers(capacity: number): number[] {
+  return Array.from({ length: capacity }, (_, visualPosition) => capacity - visualPosition - 1)
 }
 
 const previewStatus: BlackjackTableStatus = { available: true, minimumWager: .5, maximumWager: 100, wagerIncrement: .5, minimumStartOccupancy: 3, tableCapacity: 5, humanGraceSeconds: 5, actionDeadlineSeconds: 60, dealerRule: 'Dealer stands on all 17s', blackjackPayout: '3:2', doubleAllowed: true, splitAllowed: false, insuranceAllowed: false }

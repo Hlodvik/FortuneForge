@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Bots.Blackjack;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -173,7 +174,7 @@ public sealed class BlackjackTableController(
         BlackjackMoney.ToRand(BlackjackMoney.MinimumWagerCents),
         BlackjackMoney.ToRand(BlackjackMoney.MaximumWagerCents),
         BlackjackMoney.ToRand(BlackjackMoney.WagerIncrementCents),
-        BlackjackTableEngine.MinimumStartOccupancy,
+        BlackjackManagedTablePolicy.MinimumStartOccupancy,
         BlackjackTableEngine.Capacity,
         checked((int)BlackjackTableEngine.HumanGrace.TotalSeconds),
         checked((int)BlackjackTableEngine.ActionDuration.TotalSeconds),

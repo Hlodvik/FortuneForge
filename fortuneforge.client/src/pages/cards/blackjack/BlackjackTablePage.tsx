@@ -279,6 +279,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const { table } = props.session
   const current = table.seats.find((seat) => seat.isCurrentPlayer)
   const betting = table.phase === 'betting'
+  const currentWagerTurn = betting && table.transition === 'human-wager' && current?.seat === table.activeSeat
   const activeRound = table.phase === 'active'
   const insuranceRound = table.phase === 'insurance'
   const transition = table.transition !== null
@@ -379,7 +380,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
               return (
                 <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seat?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seat?.seatId ?? seatNumber}>
                   {seat
-                    ? <Seat seat={seat} active={active} betting={betting} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} seatRef={seat.isCurrentPlayer ? currentSeatRef : undefined} />
+                    ? <Seat seat={seat} active={active} betting={betting} actionFlash={table.transition === 'action-settle' && active} timer={showTimer ? countdown(table.actionDeadlineAtUtc, props.now) : null} seatRef={seat.isCurrentPlayer ? currentSeatRef : undefined} />
                     : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
                 </div>
               )
@@ -393,12 +394,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
             {props.balanceChange && props.balanceChange.amount < 0 && <span className="blackjack-balance-debit" key={props.balanceChange.id}>−R{Math.abs(props.balanceChange.amount).toFixed(2)}</span>}
             {props.balanceChange && props.balanceChange.amount > 0 && <i className="blackjack-balance-impact" key={props.balanceChange.id} aria-hidden="true" />}
           </div>
-          {betting && (
-            <>
-              <WagerInput status={props.status} wager={props.wager} busy={props.busy} onChange={props.onWagerChange} />
-              <div className="blackjack-wager-action"><time dateTime={`PT${countdown(table.wagerDeadlineAtUtc, props.now)}`}>{countdown(table.wagerDeadlineAtUtc, props.now)}</time><button className="blackjack-primary" type="button" disabled={props.busy || !validWager(props.wager, props.status)} onClick={() => props.onWager(props.session)}>{current?.wager ? `Update wager · R${props.wager.toFixed(2)}` : `Set wager · R${props.wager.toFixed(2)}`}</button></div>
-            </>
-          )}
+          {currentWagerTurn && <WagerInput status={props.status} wager={props.wager} busy={props.busy} timer={countdown(table.wagerDeadlineAtUtc, props.now)} onChange={props.onWagerChange} onSubmit={() => props.onWager(props.session)} />}
           {insuranceRound && (['insurance', 'decline-insurance'] as const).map((action) => (
             <button type="button" key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
               {action === 'decline-insurance' ? 'No insurance' : 'Take insurance'}
@@ -474,17 +470,17 @@ export function BlackjackHowToPlay({ status, defaultOpen = false }: { status: Bl
   )
 }
 
-function Seat({ seat, active, betting = false, timer = null, seatRef }: { seat: BlackjackTableSeat; active: boolean; betting?: boolean; timer?: string | null; seatRef?: Ref<HTMLElement> }) {
+function Seat({ seat, active, betting = false, actionFlash = false, timer = null, seatRef }: { seat: BlackjackTableSeat; active: boolean; betting?: boolean; actionFlash?: boolean; timer?: string | null; seatRef?: Ref<HTMLElement> }) {
   const winning = !betting && (seat.payout > seat.totalWager || seat.outcome === 'player-blackjack' || seat.outcome === 'player-win')
   const hands = betting ? [] : playerHands(seat)
-  const status = seatStatus(seat, hands, betting)
+  const status = seatStatus(seat, hands, betting, actionFlash)
   const net = seat.payout - seat.totalWager
   const displayedWager = betting ? seat.wager : seat.totalWager
   return (
     <article className={`blackjack-seat${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winning ? ' is-winner' : ''}`} ref={seatRef}>
       <div className="blackjack-seat__name">
         <strong>{seat.displayName}</strong>
-        <small>{status}</small>
+        {status && <small className={actionFlash ? 'blackjack-seat__action-flash' : ''}>{status}</small>}
         {timer && <time className="blackjack-seat__timer" dateTime={`PT${timer}`}>{timer}</time>}
       </div>
       <div className={`blackjack-seat__hands${hands.length > 1 ? ' has-split' : ''}`}>
@@ -525,11 +521,10 @@ function playerHands(seat: BlackjackTableSeat): readonly BlackjackTablePlayerHan
   }]
 }
 
-function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlayerHand[], betting = false): string {
+function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlayerHand[], betting = false, actionFlash = false): string {
   const activeHand = hands.find((hand) => hand.active)
-  const value = betting
-    ? seat.status
-    : activeHand?.lastAction ?? activeHand?.status ?? seat.outcome ?? seat.lastAction ?? seat.status
+  if (actionFlash) return formatLabel(activeHand?.lastAction ?? seat.lastAction ?? '')
+  const value = betting ? seat.status : seat.outcome ?? activeHand?.outcome ?? activeHand?.status ?? seat.status
   const publicStatuses: Record<string, string> = {
     'dealer-blackjack': 'Lost',
     'dealer-win': 'Lost',
@@ -539,14 +534,15 @@ function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlay
     push: 'Push',
     'joining-next-round': 'Joins next round',
     'considering-wager': 'Choosing wager',
-    'waiting-to-wager': 'Waiting to wager',
+    'choosing-wager': 'Choose wager',
   }
+  if (value === 'playing' || value === 'ready' || value === 'waiting' || value === 'waiting-to-wager' || value === 'awaiting-wager' || value === 'stood' || value === 'completed' || value === 'sitting-out') return ''
   return publicStatuses[value] ?? formatLabel(value)
 }
 
-function WagerInput({ status, wager, busy, onChange }: { status: BlackjackTableStatus; wager: number; busy: boolean; onChange: (value: number) => void }) {
+function WagerInput({ status, wager, busy, timer, onChange, onSubmit }: { status: BlackjackTableStatus; wager: number; busy: boolean; timer: string; onChange: (value: number) => void; onSubmit: () => void }) {
   const bump = (direction: -1 | 1) => onChange(Math.min(status.maximumWager, Math.max(status.minimumWager, wager + direction * status.wagerIncrement)))
-  return <div className="blackjack-wager-wrap"><div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span>Round wager</span><input inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button></div><div className="blackjack-chip-shortcuts" aria-label="Quick chip values">{[1, 5, 10, 25, 50].filter(value => value >= status.minimumWager && value <= status.maximumWager).map(value => <button type="button" className={wager === value ? 'is-selected' : ''} disabled={busy} onClick={() => onChange(value)} key={value}>R{value}</button>)}</div></div>
+  return <div className="blackjack-wager-wrap"><div className="blackjack-wager-heading"><span>Wager</span><small>Min R{status.minimumWager.toFixed(2)} · Max R{status.maximumWager.toFixed(2)}</small></div><div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" aria-label="Decrease wager" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span aria-hidden="true">R</span><input aria-label="Wager amount" inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" aria-label="Increase wager" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button><button className="blackjack-wager-submit" type="button" disabled={busy || !validWager(wager, status)} onClick={onSubmit}>Wager</button><time dateTime={`PT${timer}`}>{timer}</time></div></div>
 }
 
 function Hand({ label, hand, scope, compact = false }: { label: string; hand: BlackjackTableHand; scope: string; compact?: boolean }) {
@@ -564,14 +560,22 @@ function Hand({ label, hand, scope, compact = false }: { label: string; hand: Bl
 }
 
 function tableStatus(table: BlackjackTable, now: number): string {
+  if (table.transition === 'next-round-countdown') return `Next round ${Math.ceil(Math.max(0, Date.parse(table.nextTransitionAtUtc ?? '') - now) / 1_000)}`
+  if (table.transition === 'settlement-display') return 'Payouts'
+  if (table.transition === 'initial-deal' || table.transition === 'initial-deal-complete' || table.phase === 'dealing') return 'Dealing'
+  if (table.transition === 'wager-lock') return 'Bets closed'
+  if (table.transition === 'human-wager') {
+    const player = table.seats.find((seat) => seat.seat === table.activeSeat)
+    return player?.isCurrentPlayer ? 'Your wager' : `${player?.displayName ?? 'Next player'}'s wager`
+  }
   if (table.transition === 'dealer-reveal') return 'Dealer reveals the hole card…'
   if (table.transition === 'dealer-draw') return 'Dealer draws…'
   if (table.transition === 'dealer-settle') return 'Settling the round…'
   if (table.transition === 'action-settle') return 'Action accepted…'
   if (table.transition === 'turn-pause') return 'Next player is thinking…'
-  if (table.transition === 'bot-wager') {
-    const player = table.seats.find((seat) => seat.status === 'considering-wager')
-    return `${player?.displayName ?? 'Next player'} is choosing a wager…`
+  if (table.transition === 'managed-wager') {
+    const player = table.seats.find((seat) => seat.seat === table.activeSeat)
+    return `${player?.displayName ?? 'Next player'}'s wager`
   }
   if (table.phase === 'betting') return 'Place your bets'
   if (table.phase === 'dealer') return 'Dealer plays'
@@ -662,8 +666,7 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
             <button className="blackjack-primary" type="button" onClick={beginRound}>Rejoin table</button>
           ) : phase === 'betting' ? (
             <>
-              <WagerInput status={previewStatus} wager={wager} busy={false} onChange={setWager} />
-              <button className="blackjack-primary" type="button" onClick={beginRound}>Set wager · R{wager.toFixed(2)}</button>
+              <WagerInput status={previewStatus} wager={wager} busy={false} timer="20s" onChange={setWager} onSubmit={beginRound} />
             </>
           ) : (
             <>

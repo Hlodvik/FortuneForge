@@ -1,4 +1,5 @@
 using FortuneForge.Games.Blackjack;
+using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.Cards;
 using Xunit;
 
@@ -36,6 +37,50 @@ public sealed class BlackjackTableEngineTests
         Assert.DoesNotContain(playerProperties, value => value.Contains("Balance", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(tableProperties, value => value.Contains("Ledger", StringComparison.OrdinalIgnoreCase));
         Assert.DoesNotContain(tableProperties, value => value.Contains("Revenue", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void PackageDefinesNoAutomatedPlayerConcepts()
+    {
+        var packageTypes = typeof(BlackjackModule).Assembly.GetTypes()
+            .Where(type => type.Namespace == typeof(BlackjackModule).Namespace)
+            .ToArray();
+        var domainProperties = packageTypes.SelectMany(type => type.GetProperties()).ToArray();
+
+        Assert.DoesNotContain(packageTypes, type =>
+            type.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            type.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(domainProperties, property =>
+            property.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            property.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+        Assert.False(BlackjackModule.Descriptor.Capabilities.HasFlag(GameCapability.Bots));
+    }
+
+    [Fact]
+    public void BeginDealRevealsExactlyOneOpeningCardPerTransition()
+    {
+        var table = Table();
+        BlackjackTableEngine.BeginDeal(table, Deck(), 42, Start);
+
+        Assert.Equal(BlackjackTablePhases.Dealing, table.Phase);
+        Assert.Empty(table.Players[0].Cards);
+        Assert.Empty(table.DealerCards);
+
+        var now = Start;
+        var priorCount = 0;
+        for (var step = 0; step < 4; step++)
+        {
+            now = now.Add(BlackjackTableEngine.InitialCardDuration);
+            BlackjackTableEngine.AdvanceAutomatedTurns(table, now);
+            var currentCount = table.Players.Sum(player => player.Cards.Count) + table.DealerCards.Count;
+            Assert.Equal(priorCount + 1, currentCount);
+            priorCount = currentCount;
+        }
+
+        Assert.Equal(2, table.Players[0].Cards.Count);
+        Assert.Equal(2, table.DealerCards.Count);
+        BlackjackTableEngine.AdvanceAutomatedTurns(table, now.Add(BlackjackTableEngine.InitialCardDuration));
+        Assert.NotEqual(BlackjackTablePhases.Dealing, table.Phase);
     }
 
     [Fact]
@@ -89,19 +134,17 @@ public sealed class BlackjackTableEngineTests
         UpdatedAtUtc = Start,
         Players =
         [
-            Player("human", 0, false, null, 500),
-            Player("bot-1", 1, true, 2, 0),
-            Player("bot-2", 2, true, 3, 0),
+            Player("human", 0, 500),
+            Player("managed-1", 1, 0),
+            Player("managed-2", 2, 0),
         ],
     };
 
-    private static BlackjackTablePlayer Player(string actor, int seat, bool bot, int? skill, long wager) => new()
+    private static BlackjackTablePlayer Player(string actor, int seat, long wager) => new()
     {
         ActorId = actor,
         PublicSeatId = $"seat-{seat}",
         DisplayName = actor,
-        IsBot = bot,
-        BotSkillLevel = skill,
         Seat = seat,
         SessionId = $"session-{seat}",
         SessionStartedAtUtc = Start,

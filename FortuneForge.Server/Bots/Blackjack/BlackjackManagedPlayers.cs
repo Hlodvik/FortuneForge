@@ -1,6 +1,4 @@
-using FortuneForge.Server.Bots;
-
-namespace FortuneForge.Server.Cards.Blackjack.Table;
+namespace FortuneForge.Server.Bots.Blackjack;
 
 internal sealed class BlackjackManagedPlayerSupplyRequiredException(
     string assignmentId,

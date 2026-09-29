@@ -1,4 +1,3 @@
-using FortuneForge.Games.Blackjack;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.Solitaire;
 using FortuneForge.Games.TexasHoldem;
@@ -19,21 +18,6 @@ public sealed class GameBotRuntimeTests
 
         Assert.Equal(first, second);
         Assert.Equal(5, first.Select(value => value.DisplayName).Distinct(StringComparer.Ordinal).Count());
-    }
-
-    [Fact]
-    public void BlackjackAgentReturnsOnlyLegalActions()
-    {
-        var observation = new BlackjackBotObservation(
-            ["10|clubs", "6|hearts"],
-            "10|spades",
-            [BlackjackActions.Hit, BlackjackActions.Stand]);
-
-        foreach (var skill in new[] { 2, 3, 4 })
-        {
-            var action = new BlackjackBotAgent().Choose(observation, skill, 123, 7, Options);
-            Assert.Contains(action, observation.LegalActions);
-        }
     }
 
     [Fact]

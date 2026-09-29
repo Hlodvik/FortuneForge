@@ -4,20 +4,16 @@ namespace FortuneForge.Games.Blackjack;
 
 public static class BlackjackTableEngine
 {
-    public const int MinimumStartOccupancy = 3;
     public const int Capacity = 5;
-    public const int MaximumOccupiedSeats = Capacity - 1;
-    public const int DisconnectedTableRounds = 10;
-    public const int FirstPopulationChangeAfterRounds = 10;
-    public const int PopulationChangeIntervalRounds = 5;
     public static readonly TimeSpan HumanGrace = TimeSpan.FromSeconds(5);
     public static readonly TimeSpan ActionDuration = TimeSpan.FromMinutes(1);
-    public static readonly TimeSpan WagerDuration = TimeSpan.FromMinutes(1);
+    public static readonly TimeSpan WagerDuration = TimeSpan.FromSeconds(20);
+    public static readonly TimeSpan NextRoundCountdownDuration = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan SettlementDisplayDuration = TimeSpan.FromMilliseconds(1_850);
     public static readonly TimeSpan WagerAdjustmentDuration = TimeSpan.FromMilliseconds(800);
     public static readonly TimeSpan ActionSettleDuration = TimeSpan.FromMilliseconds(650);
+    public static readonly TimeSpan InitialCardDuration = TimeSpan.FromMilliseconds(425);
     public static readonly TimeSpan DealerCardDuration = TimeSpan.FromMilliseconds(700);
-    public static readonly TimeSpan MinimumTurnPause = TimeSpan.FromMilliseconds(1_500);
-    public static readonly TimeSpan MaximumTurnPause = TimeSpan.FromMilliseconds(5_500);
 
     public static void PrepareForBetting(BlackjackTableState table)
     {
@@ -43,6 +39,28 @@ public static class BlackjackTableEngine
 
     public static void Deal(BlackjackTableState table, IReadOnlyList<string> deck, ulong roundSeed, DateTime nowUtc)
     {
+        BeginRound(table, deck, roundSeed, nowUtc);
+        var participants = Participants(table);
+        for (var pass = 0; pass < 2; pass++)
+        {
+            foreach (var player in participants) player.Cards.Add(Draw(table));
+            table.DealerCards.Add(Draw(table));
+        }
+        FinishInitialDeal(table, participants, nowUtc);
+    }
+
+    public static void BeginDeal(BlackjackTableState table, IReadOnlyList<string> deck, ulong roundSeed, DateTime nowUtc)
+    {
+        BeginRound(table, deck, roundSeed, nowUtc);
+        table.Phase = BlackjackTablePhases.Dealing;
+        table.Transition = "initial-deal";
+        table.NextTransitionAtUtc = nowUtc.Add(InitialCardDuration);
+        table.Version = checked(table.Version + 1);
+        table.UpdatedAtUtc = nowUtc;
+    }
+
+    private static void BeginRound(BlackjackTableState table, IReadOnlyList<string> deck, ulong roundSeed, DateTime nowUtc)
+    {
         if (table.Phase == BlackjackTablePhases.Closed)
             throw new BlackjackTableConflictException("This Blackjack table is closed.");
         if (table.Players.Count is < 1 or > Capacity)
@@ -63,7 +81,6 @@ public static class BlackjackTableEngine
         ClearTurn(table);
         table.UpdatedAtUtc = nowUtc;
 
-        var participants = table.Players.Where(player => player.NextWagerCents > 0).OrderBy(player => player.Seat).ToArray();
         foreach (var player in table.Players.OrderBy(player => player.Seat))
         {
             player.Cards = [];
@@ -82,14 +99,18 @@ public static class BlackjackTableEngine
             player.InsuranceAccepted = null;
         }
 
-        for (var pass = 0; pass < 2; pass++)
-        {
-            foreach (var player in participants) player.Cards.Add(Draw(table));
-            table.DealerCards.Add(Draw(table));
-        }
-        table.DealerVisibleCardCount = 1;
-        table.Version = checked(table.Version + 1);
+    }
 
+    private static void FinishInitialDeal(
+        BlackjackTableState table,
+        IReadOnlyList<BlackjackTablePlayer> participants,
+        DateTime nowUtc)
+    {
+        table.DealerVisibleCardCount = Math.Min(1, table.DealerCards.Count);
+        table.Transition = null;
+        table.NextTransitionAtUtc = null;
+        table.Version = checked(table.Version + 1);
+        table.UpdatedAtUtc = nowUtc;
         if (BlackjackRules.ParseCard(table.DealerCards[0]).Rank == "A")
         {
             table.Phase = BlackjackTablePhases.Insurance;
@@ -179,6 +200,11 @@ public static class BlackjackTableEngine
 
     public static void AdvanceAutomatedTurns(BlackjackTableState table, DateTime nowUtc)
     {
+        if (table.Phase == BlackjackTablePhases.Dealing)
+        {
+            AdvanceInitialDeal(table, nowUtc);
+            return;
+        }
         if (table.Phase == BlackjackTablePhases.Dealer)
         {
             AdvanceDealer(table, nowUtc);
@@ -212,33 +238,40 @@ public static class BlackjackTableEngine
             else BeginDealer(table, nowUtc);
             return;
         }
-        if (table.ActionDeadlineAtUtc is { } deadline && nowUtc < deadline) return;
+        // Player decisions and inactivity policy belong to the host coordinator. The game
+        // package advances only deterministic table transitions and dealer behavior.
+    }
 
-        if (table.Phase == BlackjackTablePhases.Insurance)
+    private static void AdvanceInitialDeal(BlackjackTableState table, DateTime nowUtc)
+    {
+        if (table.NextTransitionAtUtc is { } deadline && nowUtc < deadline) return;
+        var participants = Participants(table);
+        if (participants.Count == 0)
+            throw new InvalidOperationException("A Blackjack deal must have at least one participating player.");
+
+        var cardsPerPass = participants.Count + 1;
+        var dealt = participants.Sum(player => player.Cards.Count) + table.DealerCards.Count;
+        if (table.Transition == "initial-deal-complete" || dealt >= cardsPerPass * 2)
         {
-            ApplyInsuranceCore(table, current, BlackjackActions.DeclineInsurance, nowUtc);
+            table.Phase = BlackjackTablePhases.Active;
+            FinishInitialDeal(table, participants, nowUtc);
             return;
         }
-        if (current.IsBot)
+
+        var position = dealt % cardsPerPass;
+        if (position < participants.Count)
+            participants[position].Cards.Add(Draw(table));
+        else
         {
-            var action = new BlackjackBotAgent().Choose(
-                new BlackjackBotObservation(ActiveCards(current), table.DealerCards[0], CoreLegalActions(current)),
-                current.BotSkillLevel!.Value,
-                table.RoundSeed,
-                table.Version,
-                new CardBotGameOptions());
-            ApplyActionCore(table, current, action, nowUtc);
-            return;
+            table.DealerCards.Add(Draw(table));
+            table.DealerVisibleCardCount = Math.Min(1, table.DealerCards.Count);
         }
-        if (current.LastMissedActionRound != table.RoundNumber)
-        {
-            current.ConsecutiveMissedActionRounds = current.LastMissedActionRound == table.RoundNumber - 1
-                ? checked(current.ConsecutiveMissedActionRounds + 1)
-                : 1;
-            current.LastMissedActionRound = table.RoundNumber;
-        }
-        if (current.ConsecutiveMissedActionRounds >= 2) current.LeavingAfterRound = true;
-        ApplyActionCore(table, current, BlackjackActions.Stand, nowUtc);
+
+        dealt++;
+        table.Transition = dealt >= cardsPerPass * 2 ? "initial-deal-complete" : "initial-deal";
+        table.NextTransitionAtUtc = nowUtc.Add(InitialCardDuration);
+        table.Version = checked(table.Version + 1);
+        table.UpdatedAtUtc = nowUtc;
     }
 
     private static void ApplyInsuranceCore(BlackjackTableState table, BlackjackTablePlayer player, string action, DateTime nowUtc)
@@ -248,7 +281,7 @@ public static class BlackjackTableEngine
         player.LastAction = action;
         var next = Participants(table).Where(value => value.InsuranceAccepted is null && value.Seat > player.Seat)
             .OrderBy(value => value.Seat).FirstOrDefault();
-        ScheduleNext(table, next, nowUtc);
+        ScheduleNext(table, player, next, nowUtc);
     }
 
     private static void ApplyActionCore(BlackjackTableState table, BlackjackTablePlayer player, string action, DateTime nowUtc)
@@ -292,7 +325,7 @@ public static class BlackjackTableEngine
             default:
                 throw new BlackjackTableIllegalActionException("Choose hit, stand, double, split, or surrender.");
         }
-        ScheduleNext(table, NextPlayingHand(table, player), nowUtc);
+        ScheduleNext(table, player, NextPlayingHand(table, player), nowUtc);
     }
 
     private static void Split(BlackjackTablePlayer player, BlackjackTableState table)
@@ -335,9 +368,13 @@ public static class BlackjackTableEngine
             .OrderBy(value => value.Seat).FirstOrDefault();
     }
 
-    private static void ScheduleNext(BlackjackTableState table, BlackjackTablePlayer? next, DateTime nowUtc)
+    private static void ScheduleNext(
+        BlackjackTableState table,
+        BlackjackTablePlayer actor,
+        BlackjackTablePlayer? next,
+        DateTime nowUtc)
     {
-        table.ActiveSeat = null;
+        table.ActiveSeat = actor.Seat;
         table.ActionDeadlineAtUtc = null;
         table.PendingSeat = next?.Seat;
         table.Transition = "action-settle";
@@ -350,19 +387,9 @@ public static class BlackjackTableEngine
     {
         table.ActiveSeat = player.Seat;
         table.PendingSeat = null;
-        if (player.IsBot || player.LeavingAfterRound)
-        {
-            var delay = TurnPause(table, player.Seat);
-            table.Transition = "turn-pause";
-            table.NextTransitionAtUtc = nowUtc.Add(delay);
-            table.ActionDeadlineAtUtc = table.NextTransitionAtUtc;
-        }
-        else
-        {
-            table.Transition = null;
-            table.NextTransitionAtUtc = null;
-            table.ActionDeadlineAtUtc = nowUtc.Add(ActionDuration);
-        }
+        table.Transition = null;
+        table.NextTransitionAtUtc = null;
+        table.ActionDeadlineAtUtc = nowUtc.Add(ActionDuration);
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
     }
@@ -473,9 +500,6 @@ public static class BlackjackTableEngine
         _ => 0
     };
 
-    private static IReadOnlyList<string> CoreLegalActions(BlackjackTablePlayer player) => ActiveCards(player).Count == 2
-        ? [BlackjackActions.Hit, BlackjackActions.Stand, BlackjackActions.Double]
-        : [BlackjackActions.Hit, BlackjackActions.Stand];
     private static IReadOnlyList<BlackjackTablePlayer> Participants(BlackjackTableState table) =>
         table.Players.Where(player => player.WagerCents > 0).OrderBy(player => player.Seat).ToArray();
     private static bool HasPlayingHand(BlackjackTablePlayer player) =>
@@ -516,12 +540,6 @@ public static class BlackjackTableEngine
         table.Transition = null;
         table.NextTransitionAtUtc = null;
         table.ActionDeadlineAtUtc = null;
-    }
-    private static TimeSpan TurnPause(BlackjackTableState table, int seat)
-    {
-        var range = checked((int)(MaximumTurnPause - MinimumTurnPause).TotalMilliseconds + 1);
-        var mixed = table.RoundSeed ^ ((ulong)(uint)table.Version << 32) ^ (uint)seat;
-        return MinimumTurnPause.Add(TimeSpan.FromMilliseconds((long)(mixed % (ulong)range)));
     }
     private static string Draw(BlackjackTableState table)
     {

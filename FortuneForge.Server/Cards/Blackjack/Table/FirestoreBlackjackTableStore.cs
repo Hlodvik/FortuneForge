@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
+using FortuneForge.Server.Bots.Blackjack;
 using Grpc.Core;
 
 namespace FortuneForge.Server.Cards.Blackjack.Table;
@@ -512,7 +513,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         state.Tables.Values.ToDictionary(
             table => table.TableId,
             table => (IReadOnlyCollection<string>)table.Players
-                .Where(player => player.IsBot)
+                .Where(BlackjackManagedSeat.IsManaged)
                 .Select(player => player.ActorId)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray(),
@@ -528,7 +529,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         var users = state.Sessions.Keys
             .Concat(state.Tickets.Select(ticket => ticket.UserId))
             .Concat(state.Tables.Values.SelectMany(table =>
-                table.Players.Where(player => !player.IsBot).Select(player => player.ActorId)))
+                table.Players.Where(player => !BlackjackManagedSeat.IsManaged(player)).Select(player => player.ActorId)))
             .Append(requestedUserId ?? string.Empty)
             .Where(value => !string.IsNullOrEmpty(value))
             .Distinct(StringComparer.Ordinal)
@@ -748,7 +749,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     }
 
     private static bool CanAcceptHuman(BlackjackTableLobbyState state) =>
-        state.Tables.Count <= 1 && ActiveHumanCount(state) < BlackjackTableEngine.MaximumOccupiedSeats;
+        state.Tables.Count <= 1 && ActiveHumanCount(state) < BlackjackManagedTablePolicy.MaximumOccupiedSeats;
 
     private static int ActiveHumanCount(BlackjackTableLobbyState state) => state.Sessions.Count(pair =>
         pair.Value.Kind is BlackjackTableSessionKinds.Queue or BlackjackTableSessionKinds.Table);

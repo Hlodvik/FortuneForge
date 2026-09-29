@@ -15,7 +15,7 @@ public static class BlackjackModule
             "0.4.0",
             "/cards/blackjack",
             "/api/cards/blackjack/table",
-            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.Bots | GameCapability.History);
+            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.History);
         descriptor.Validate();
         return descriptor;
     }

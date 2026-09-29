@@ -3,6 +3,7 @@ namespace FortuneForge.Games.Blackjack;
 public static class BlackjackTablePhases
 {
     public const string Betting = "betting";
+    public const string Dealing = "dealing";
     public const string Insurance = "insurance";
     public const string Active = "active";
     public const string Dealer = "dealer";
@@ -31,9 +32,7 @@ public sealed class BlackjackTableState
     public DateTime? NextTransitionAtUtc { get; set; }
     public int DealerVisibleCardCount { get; set; }
     public bool RoundAccountingSettled { get; set; } = true;
-    public int RoundsRemainingWithoutHuman { get; set; }
-    public int? NextPopulationChangeRound { get; set; }
-    public bool NextPopulationChangeAddsPlayer { get; set; } = true;
+    public Dictionary<string, string> HostMetadata { get; init; } = new(StringComparer.Ordinal);
 }
 
 public sealed class BlackjackTablePlayer
@@ -41,8 +40,6 @@ public sealed class BlackjackTablePlayer
     public required string ActorId { get; init; }
     public required string PublicSeatId { get; init; }
     public required string DisplayName { get; init; }
-    public required bool IsBot { get; init; }
-    public required int? BotSkillLevel { get; init; }
     public required int Seat { get; init; }
     public required string SessionId { get; init; }
     public required DateTime SessionStartedAtUtc { get; init; }
@@ -62,12 +59,7 @@ public sealed class BlackjackTablePlayer
     public int ConsecutiveMissedRounds { get; set; }
     public int ConsecutiveMissedActionRounds { get; set; }
     public int LastMissedActionRound { get; set; }
-    public long BotBaseWagerCents { get; set; }
-    public int BotWagerChangeChanceBasisPoints { get; set; }
-    public int BotConsecutiveWins { get; set; }
-    public int BotConsecutiveLosses { get; set; }
-    public long BotLastNetCents { get; set; }
-    public int? BotDepartureAfterRound { get; set; }
+    public Dictionary<string, string> HostMetadata { get; init; } = new(StringComparer.Ordinal);
     public BlackjackTableSecondaryHand? SecondaryHand { get; set; }
     public int ActiveHandIndex { get; set; }
     public long InsuranceWagerCents { get; set; }

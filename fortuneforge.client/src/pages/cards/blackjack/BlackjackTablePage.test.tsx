@@ -42,6 +42,7 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('missed turns release')
     expect(markup).not.toContain('Strategy help')
     expect(markup).toContain("Ada&#x27;s turn · 10s")
+    expect(markup).not.toContain('>Playing</small>')
     expect(markup).not.toMatch(/\bbot\b|skill|seed|actor/i)
   })
 
@@ -66,8 +67,10 @@ describe('Blackjack table composition', () => {
         table: {
           ...tableSession.table,
           phase: 'betting',
-          activeSeat: null,
+          activeSeat: 0,
           legalActions: [],
+          transition: 'human-wager',
+          wagerDeadlineAtUtc: '2026-08-15T12:00:40Z',
           seats: tableSession.table.seats.map((seat) => seat.isCurrentPlayer ? {
             ...seat,
             outcome: 'player-win',
@@ -83,11 +86,14 @@ describe('Blackjack table composition', () => {
 
     expect(markup).not.toContain('ff-card-slot')
     expect(markup).toContain('Dealer')
-    expect(markup).toContain('Place your bets')
-    expect(markup).toContain('Round wager')
-    expect(markup).toContain('blackjack-wager-action')
+    expect(markup).toContain('Your wager')
+    expect(markup).toContain('Wager amount')
+    expect(markup).toContain('Min R0.50 · Max R100.00')
+    expect(markup).toContain('>Wager</button>')
+    expect(markup).toContain('>20s</time>')
+    expect(markup).not.toContain('Quick chip values')
     expect(markup).toContain('blackjack-balance-bubble')
-    expect(markup).toMatch(/blackjack-actions[\s\S]*blackjack-balance-bubble[\s\S]*Round wager/)
+    expect(markup).toMatch(/blackjack-actions[\s\S]*blackjack-balance-bubble[\s\S]*Wager amount/)
     expect(markup).not.toContain('Round won')
     expect(markup).not.toContain('You won R10.00')
     expect(markup).not.toContain('>Lost</small>')
@@ -118,6 +124,28 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('ff-card-slot')
     expect(markup).not.toContain('Round won')
     expect(markup).not.toContain('You won R12.50')
+  })
+
+  it('shows the cleared board countdown before wager turns begin', () => {
+    const markup = render({
+      kind: 'ready',
+      status,
+      session: {
+        ...tableSession,
+        table: {
+          ...tableSession.table,
+          phase: 'betting',
+          activeSeat: null,
+          legalActions: [],
+          transition: 'next-round-countdown',
+          nextTransitionAtUtc: '2026-08-15T12:00:25Z',
+        },
+      },
+    })
+
+    expect(markup).toContain('Next round 5')
+    expect(markup).not.toContain('Wager amount')
+    expect(markup).not.toContain('ff-card-slot')
   })
 
   it('renders server-projected split hands and only the current player timer', () => {

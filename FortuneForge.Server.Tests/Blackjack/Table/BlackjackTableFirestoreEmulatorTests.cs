@@ -1,5 +1,6 @@
 using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Blackjack.Table;
+using FortuneForge.Server.Bots.Blackjack;
 using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using System.Text.Json;
@@ -216,10 +217,10 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         Assert.InRange(table.Players.Count, 4, 5);
         Assert.InRange(table.Players.Single(player => player.ActorId == users[1]).Seat, 0, 4);
         Assert.Equal(table.Players.Count, table.Players.Select(player => player.Seat).Distinct().Count());
-        Assert.Equal(2, table.Players.Count(player => !player.IsBot));
-        Assert.InRange(table.Players.Count(player => player.IsBot), 2, 3);
+        Assert.Equal(2, table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)));
+        Assert.InRange(table.Players.Count(BlackjackManagedSeat.IsManaged), 2, 3);
         if (table.Players.Count == BlackjackTableEngine.Capacity)
-            Assert.Contains(table.Players, player => player.IsBot && player.BotDepartureAfterRound is not null);
+            Assert.Contains(table.Players, player => BlackjackManagedSeat.IsManaged(player) && BlackjackManagedSeat.DepartureRound(player) is not null);
 
         await ReadyUntilActive(store, database, tableId, users, table.UpdatedAtUtc.AddMilliseconds(100), "second");
         table = await ReadTableAsync(database, tableId);
@@ -244,11 +245,11 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             table = await ReadTableAsync(database, tableId);
         }
         table = await ReadTableAsync(database, tableId);
-        Assert.InRange(table.Players.Count, 4, 5);
-        Assert.Equal(3, table.Players.Count(player => !player.IsBot));
-        Assert.InRange(table.Players.Count(player => player.IsBot), 1, 2);
+        Assert.InRange(table.Players.Count, 3, 5);
+        Assert.Equal(3, table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)));
+        Assert.InRange(table.Players.Count(BlackjackManagedSeat.IsManaged), 0, 2);
         Assert.Contains(table.Players, player => player.ActorId == users[2]);
-        Assert.All(table.Players.Where(player => player.IsBot), player => Assert.NotNull(player.BotDepartureAfterRound));
+        Assert.All(table.Players.Where(BlackjackManagedSeat.IsManaged), player => Assert.NotNull(BlackjackManagedSeat.DepartureRound(player)));
 
         await store.JoinAsync(
             users[3], "Replacement", 0, Key("boundary-replace"),
@@ -256,7 +257,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         table = await ReadTableAsync(database, tableId);
 
         for (var round = 0; round < 8 &&
-             (table.Players.Count(player => !player.IsBot) < 4 || table.Players.Any(player => player.IsBot)); round++)
+             (table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)) < 4 || table.Players.Any(BlackjackManagedSeat.IsManaged)); round++)
         {
             var readyAt = table.UpdatedAtUtc.AddMilliseconds(100);
             await ReadyUntilActive(store, database, tableId, users, readyAt, $"grace-{round}");
@@ -271,8 +272,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         }
 
         Assert.Equal(4, table.Players.Count);
-        Assert.Equal(4, table.Players.Count(player => !player.IsBot));
-        Assert.DoesNotContain(table.Players, player => player.IsBot);
+        Assert.Equal(4, table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)));
+        Assert.DoesNotContain(table.Players, BlackjackManagedSeat.IsManaged);
     }
 
     [Theory]
@@ -297,8 +298,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             (await store.GetSessionAsync($"seat-0-{suffix}", Start.AddSeconds(6), default)).Session);
         var table = await ReadTableAsync(database, session.Table.TableId);
         Assert.InRange(table.Players.Count, minimumOccupiedCount, maximumOccupiedCount);
-        Assert.Equal(humanCount, table.Players.Count(player => !player.IsBot));
-        Assert.Equal(table.Players.Count - humanCount, table.Players.Count(player => player.IsBot));
+        Assert.Equal(humanCount, table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)));
+        Assert.Equal(table.Players.Count - humanCount, table.Players.Count(BlackjackManagedSeat.IsManaged));
     }
 
     [Fact]
@@ -323,8 +324,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         Assert.Equal(2, tables.Length);
         Assert.All(tables, table => Assert.InRange(
             table.Seats.Count,
-            BlackjackTableEngine.MinimumStartOccupancy,
-            BlackjackTableEngine.MaximumOccupiedSeats));
+            BlackjackManagedTablePolicy.MinimumStartOccupancy,
+            BlackjackManagedTablePolicy.MaximumOccupiedSeats));
     }
 
     [Fact]
@@ -402,8 +403,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         Assert.Equal(2, tableIds.Length);
         Assert.All(sessions, session => Assert.InRange(
             session.Table.Seats.Count,
-            BlackjackTableEngine.MinimumStartOccupancy,
-            BlackjackTableEngine.MaximumOccupiedSeats));
+            BlackjackManagedTablePolicy.MinimumStartOccupancy,
+            BlackjackManagedTablePolicy.MaximumOccupiedSeats));
 
         var replays = await Task.WhenAll(Enumerable.Range(0, 8).Select(index =>
             stores[index % stores.Length].JoinAsync(
@@ -589,29 +590,28 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         DateTime nowUtc,
         string keyPrefix)
     {
-        for (var attempt = 0; attempt < 40; attempt++)
+        for (var attempt = 0; attempt < 120; attempt++)
         {
             var table = await ReadTableAsync(database, tableId);
             if (table.Phase == BlackjackTablePhases.Active) return;
+            var stepTime = nowUtc.AddSeconds(attempt * 2 + 1);
+            var observer = table.Players.First(player => !BlackjackManagedSeat.IsManaged(player)).ActorId;
             if (table.Phase == BlackjackTablePhases.Dealer)
             {
-                var observer = table.Players.First(player => !player.IsBot).ActorId;
-                await store.GetSessionAsync(observer, nowUtc.AddSeconds(attempt * 2 + 1), default);
+                await store.GetSessionAsync(observer, stepTime, default);
                 continue;
             }
             if (table.Phase == BlackjackTablePhases.Insurance)
             {
                 if (table.Transition is not null || table.ActiveSeat is null)
                 {
-                    var observer = table.Players.First(player => !player.IsBot).ActorId;
-                    await store.GetSessionAsync(observer, nowUtc.AddSeconds(attempt * 2 + 1), default);
+                    await store.GetSessionAsync(observer, stepTime, default);
                     continue;
                 }
                 var active = table.Players.Single(player => player.Seat == table.ActiveSeat);
-                if (active.IsBot)
+                if (BlackjackManagedSeat.IsManaged(active))
                 {
-                    var observer = table.Players.First(player => !player.IsBot).ActorId;
-                    await store.GetSessionAsync(observer, nowUtc.AddSeconds(attempt * 2 + 1), default);
+                    await store.GetSessionAsync(observer, stepTime, default);
                 }
                 else
                 {
@@ -622,35 +622,33 @@ public sealed class BlackjackTableFirestoreEmulatorTests
                         BlackjackActions.DeclineInsurance,
                         table.Version,
                         Key($"{keyPrefix}-insurance-{attempt}"),
-                        nowUtc.AddSeconds(attempt * 2 + 1),
+                        stepTime,
                         default);
                 }
                 continue;
             }
-            Assert.Equal(BlackjackTablePhases.Betting, table.Phase);
-            foreach (var player in table.Players.Where(player => !player.IsBot && player.NextWagerCents == 0).ToArray())
+            if (table.Phase == BlackjackTablePhases.Dealing || table.Phase == "settlement")
             {
-                Assert.Contains(player.ActorId, knownUsers);
-                table = await ReadTableAsync(database, tableId);
-                if (table.Phase != BlackjackTablePhases.Betting) break;
-                var current = table.Players.Single(value => value.ActorId == player.ActorId);
-                if (current.NextWagerCents != 0) continue;
+                await store.GetSessionAsync(observer, stepTime, default);
+                continue;
+            }
+            Assert.Equal(BlackjackTablePhases.Betting, table.Phase);
+            if (table.Transition == "human-wager" && table.ActiveSeat is { } wagerSeat)
+            {
+                var current = table.Players.Single(value => value.Seat == wagerSeat);
+                Assert.False(BlackjackManagedSeat.IsManaged(current));
+                Assert.Contains(current.ActorId, knownUsers);
                 await store.WagerAsync(
-                    player.ActorId,
+                    current.ActorId,
                     tableId,
                     100,
                     table.Version,
-                    Key($"{keyPrefix}-{attempt}-{Array.IndexOf(knownUsers.ToArray(), player.ActorId)}"),
-                    nowUtc.AddSeconds(attempt * 2),
+                    Key($"{keyPrefix}-{attempt}-{Array.IndexOf(knownUsers.ToArray(), current.ActorId)}"),
+                    stepTime,
                     default);
+                continue;
             }
-            table = await ReadTableAsync(database, tableId);
-            if (table.Phase == BlackjackTablePhases.Betting &&
-                table.Players.Where(player => !player.IsBot).All(player => player.NextWagerCents > 0))
-            {
-                var observer = table.Players.First(player => !player.IsBot).ActorId;
-                await store.GetSessionAsync(observer, nowUtc.AddSeconds(attempt * 2 + 1), default);
-            }
+            await store.GetSessionAsync(observer, stepTime, default);
         }
         Assert.Equal(BlackjackTablePhases.Active, (await ReadTableAsync(database, tableId)).Phase);
     }
@@ -672,7 +670,8 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             var active = table.ActiveSeat is { } seat
                 ? table.Players.Single(value => value.Seat == seat)
                 : null;
-            if (table.Phase == BlackjackTablePhases.Active && active is { IsBot: false } && table.Transition is null)
+            if (table.Phase == BlackjackTablePhases.Active && active is not null &&
+                !BlackjackManagedSeat.IsManaged(active) && table.Transition is null)
             {
                 await store.ActionAsync(
                     active.ActorId,
@@ -685,7 +684,7 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             }
             else
             {
-                var observer = table.Players.First(player => !player.IsBot).ActorId;
+                var observer = table.Players.First(player => !BlackjackManagedSeat.IsManaged(player)).ActorId;
                 await store.GetSessionAsync(observer, stepTime, default);
             }
         }

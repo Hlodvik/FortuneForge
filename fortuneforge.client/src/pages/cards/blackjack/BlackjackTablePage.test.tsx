@@ -69,9 +69,10 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('>Ada</strong>')
     expect(markup).not.toContain('>You</strong>')
     expect(markup).toContain('Mina')
-    expect(markup).toContain('class="blackjack-seat__timer"')
+    expect(markup).toContain('class="blackjack-action-timer"')
     expect(markup).toContain('>10s</time>')
-    expect(markup).toContain('blackjack-seat-slot--5 is-current-slot')
+    expect(markup).toContain('blackjack-seat-slot--3 is-current-slot')
+    expect(markup).toContain('--blackjack-dealer-x:40%')
     expect(markup).toContain('class="blackjack-hand"')
     expect(markup).toContain('blackjack-seat is-current is-active')
     expect(markup).toContain('>Hit</button>')
@@ -195,7 +196,7 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('ff-card-slot')
   })
 
-  it('renders server-projected split hands and only the current player timer', () => {
+  it('renders server-projected split hands and keeps the current player timer by the controls', () => {
     const splitHand = tableSession.table.seats[0].hand
     const splitSession = {
       ...tableSession,
@@ -219,8 +220,28 @@ describe('Blackjack table composition', () => {
     expect(markup).toContain('Hand 1')
     expect(markup).toContain('Hand 2')
     expect(markup).toContain('Insurance R2.50')
-    expect(markup.match(/blackjack-seat__timer/g)).toHaveLength(1)
+    expect(markup).not.toContain('blackjack-seat__timer')
+    expect(markup.match(/blackjack-action-timer/g)).toHaveLength(1)
     expect(markup).toContain('>Surrender</button>')
+  })
+
+  it('shows a larger seat timer when another player owns the turn', () => {
+    const markup = render({
+      kind: 'ready',
+      status,
+      session: {
+        ...tableSession,
+        table: {
+          ...tableSession.table,
+          activeSeat: 1,
+          legalActions: [],
+        },
+      },
+    })
+
+    expect(markup).toContain('class="blackjack-seat__timer"')
+    expect(markup).not.toContain('class="blackjack-action-timer"')
+    expect(markup).toContain('>10s</time>')
   })
 
   it('moves table rules into the how-to-play control', () => {

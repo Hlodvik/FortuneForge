@@ -51,9 +51,9 @@ export function PlayingCard({
         <b>{rank}</b>
         <i>{symbol}</i>
       </span>
-      <span className="ff-playing-card__center" aria-hidden="true">
-        <i>{symbol}</i>
+      <span className={`ff-playing-card__center${card.rank >= 11 ? ' ff-playing-card__center--court' : ''}`} aria-hidden="true">
         {card.rank >= 11 && <b>{rank}</b>}
+        <i>{symbol}</i>
       </span>
       <span className="ff-playing-card__corner ff-playing-card__corner--bottom" aria-hidden="true">
         <b>{rank}</b>

@@ -45,6 +45,9 @@ type PayoutFlightStyle = CSSProperties & {
   '--blackjack-flight-x': string
   '--blackjack-flight-y': string
 }
+type DealerPositionStyle = CSSProperties & {
+  '--blackjack-dealer-x': string
+}
 
 export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [availability, setAvailability] = useState<Availability>({ kind: 'loading' })
@@ -56,6 +59,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   const [now, setNow] = useState(() => Date.now())
   const [balanceChange, setBalanceChange] = useState<BalanceChange | null>(null)
   const balanceRef = useRef(balanceCredits)
+  const refreshInFlightRef = useRef<Promise<void> | null>(null)
   const onCardAudioClick = useCardAudioClick()
 
   const applyBalance = useCallback((next: number) => {
@@ -88,15 +92,22 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
     }
   }, [applyBalance])
 
-  const refreshSession = useCallback(async () => {
-    try {
-      const snapshot = await getBlackjackTableSnapshot()
-      setAvailability((current) => current.kind === 'ready' ? { ...current, session: snapshot.session } : current)
-      applyBalance(snapshot.balanceCredits)
-      setPending(null)
-    } catch {
-      // Retain the latest server snapshot until a later poll succeeds.
-    }
+  const refreshSession = useCallback(() => {
+    if (refreshInFlightRef.current) return refreshInFlightRef.current
+    const refresh = (async () => {
+      try {
+        const snapshot = await getBlackjackTableSnapshot()
+        setAvailability((current) => current.kind === 'ready' ? { ...current, session: snapshot.session } : current)
+        applyBalance(snapshot.balanceCredits)
+        setPending(null)
+      } catch {
+        // Retain the latest server snapshot until a later poll succeeds.
+      } finally {
+        refreshInFlightRef.current = null
+      }
+    })()
+    refreshInFlightRef.current = refresh
+    return refresh
   }, [applyBalance])
 
   useEffect(() => {
@@ -110,13 +121,20 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
       || (availability.session.kind !== 'queue' && availability.session.kind !== 'table')
       || busy || pending !== null) return
     const table = availability.session.kind === 'table' ? availability.session.table : null
-    const interval = table?.phase === 'dealing' ? 120 : table?.transition || table?.phase === 'dealer' ? 350 : 1_250
+    const interval = table?.phase === 'dealing' ? 55 : table?.transition || table?.phase === 'dealer' ? 250 : 1_250
+    let stopped = false
+    let timer = 0
+    const poll = async () => {
+      await refreshSession()
+      if (!stopped) timer = window.setTimeout(poll, interval)
+    }
     const refresh = () => void refreshSession()
-    const timer = window.setInterval(refresh, interval)
+    timer = window.setTimeout(poll, interval)
     window.addEventListener('focus', refresh)
     window.addEventListener('online', refresh)
     return () => {
-      window.clearInterval(timer)
+      stopped = true
+      window.clearTimeout(timer)
       window.removeEventListener('focus', refresh)
       window.removeEventListener('online', refresh)
     }
@@ -290,7 +308,8 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const insuranceRound = table.phase === 'insurance'
   const transition = table.transition !== null
   const seatsByNumber = new Map(table.seats.map((seat) => [seat.seat, seat]))
-  const visualSeats = clockwiseSeatNumbers(props.status.tableCapacity)
+  const visualSeats = centeredSeatNumbers(props.status.tableCapacity, current?.seat)
+  const dealerStyle = { '--blackjack-dealer-x': `${dealerPositionPercent(visualSeats)}%` } as DealerPositionStyle
   const dealerActive = table.transition?.startsWith('dealer-') ?? false
   const tableRef = useRef<HTMLElement>(null)
   const currentSeatRef = useRef<HTMLElement>(null)
@@ -302,14 +321,29 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
     total + (seat.hands?.reduce((handTotal, hand) => handTotal + hand.hand.cards.length, 0) ?? seat.hand.cards.length)
   ), 0)
   const priorDealtCardCount = useRef(dealtCardCount)
+  const stage = tableAudioStage(table)
+  const priorStage = useRef(stage)
   const nextRoundCountdown = table.transition === 'next-round-countdown'
     ? Math.ceil(Math.max(0, Date.parse(table.nextTransitionAtUtc ?? '') - props.now) / 1_000)
     : null
+  const currentActionTimer = (
+    current?.seat === table.activeSeat
+    && (activeRound || insuranceRound)
+    && !transition
+    && table.actionDeadlineAtUtc
+  ) ? countdown(table.actionDeadlineAtUtc, props.now) : null
 
   useEffect(() => {
     if (dealtCardCount > priorDealtCardCount.current) playCardAudio('deal')
     priorDealtCardCount.current = dealtCardCount
   }, [dealtCardCount])
+
+  useEffect(() => {
+    if (stage !== priorStage.current && document.visibilityState === 'visible') {
+      playCardAudio(stageAudioCue(stage))
+    }
+    priorStage.current = stage
+  }, [stage])
 
   useEffect(() => {
     const target = props.balanceCredits
@@ -386,7 +420,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
     <main className="blackjack-main blackjack-game">
       <section className="blackjack-table" aria-label="Live Blackjack table" data-phase={table.phase} ref={tableRef}>
         <div className="blackjack-playfield">
-          <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`}>
+          <div className={`blackjack-dealer${dealerActive ? ' is-active' : ''}`} style={dealerStyle}>
             <Hand label="Dealer" hand={betting ? emptyHand : table.dealer} scope="dealer" />
           </div>
           <div className="blackjack-semicircle" aria-label="Player seats">
@@ -394,7 +428,8 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
               const seat = seatsByNumber.get(seatNumber)
               const active = seat?.seat === table.activeSeat
               const showTimer = Boolean(
-                seat?.isCurrentPlayer
+                seat
+                && !seat.isCurrentPlayer
                 && active
                 && (activeRound || insuranceRound)
                 && !transition
@@ -429,6 +464,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
               {formatLabel(action)}
             </button>
           ))}
+          {currentActionTimer && <time className="blackjack-action-timer" dateTime={`PT${currentActionTimer}`}>{currentActionTimer}</time>}
         </div>
         <button className="blackjack-leave blackjack-leave--corner" type="button" disabled={props.busy} onClick={() => props.onLeave(props.session)}>Leave table</button>
       </section>
@@ -604,7 +640,8 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
 
   const preview = previewTable(cards, wager, lastAction)
   const seats = new Map(preview.seats.map((seat) => [seat.seat, seat]))
-  const visualSeats = clockwiseSeatNumbers(5)
+  const visualSeats = centeredSeatNumbers(5, 0)
+  const dealerStyle = { '--blackjack-dealer-x': `${dealerPositionPercent(visualSeats)}%` } as DealerPositionStyle
   const beginRound = () => {
     setCards(previewStartingCards)
     setSecondsRemaining(previewStatus.actionDeadlineSeconds)
@@ -637,12 +674,12 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
           <strong>{leftTable ? 'Seat released' : phase === 'betting' ? lastAction ?? 'Choose your next wager' : `Your turn · ${secondsRemaining}s`}</strong>
         </div>
         <div className="blackjack-playfield">
-          <div className="blackjack-dealer"><Hand label="Dealer" hand={phase === 'betting' ? emptyHand : preview.dealer} scope="preview-dealer" /></div>
+          <div className="blackjack-dealer" style={dealerStyle}><Hand label="Dealer" hand={phase === 'betting' ? emptyHand : preview.dealer} scope="preview-dealer" /></div>
           <div className="blackjack-semicircle">
             {visualSeats.map((seatNumber, visualPosition) => (
               <div className={`blackjack-seat-slot blackjack-seat-slot--${visualPosition + 1}${seats.get(seatNumber)?.isCurrentPlayer ? ' is-current-slot' : ''}`} key={seatNumber}>
                 {seats.has(seatNumber)
-                  ? <Seat seat={seats.get(seatNumber)!} active={active && seatNumber === 0} betting={phase === 'betting'} timer={active && seatNumber === 0 ? `${secondsRemaining}s` : null} />
+                  ? <Seat seat={seats.get(seatNumber)!} active={active && seatNumber === 0} betting={phase === 'betting'} />
                   : <div className="blackjack-seat blackjack-seat--open"><strong>Open seat</strong><small>Joins next round</small></div>}
               </div>
             ))}
@@ -665,6 +702,7 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
               <button type="button" disabled={cards.length !== 2} onClick={() => act('double')}>Double</button>
               <button type="button" disabled>Split</button>
               <button type="button" disabled>Surrender</button>
+              <time className="blackjack-action-timer" dateTime={`PT${secondsRemaining}S`}>{secondsRemaining}s</time>
             </>
           )}
           {!leftTable && <button className="blackjack-leave" type="button" onClick={leaveTable}>Leave table</button>}
@@ -674,8 +712,38 @@ export function BlackjackTablePreview({ mode = 'active' }: { mode?: 'active' | '
   )
 }
 
-function clockwiseSeatNumbers(capacity: number): number[] {
-  return Array.from({ length: capacity }, (_, visualPosition) => capacity - visualPosition - 1)
+function centeredSeatNumbers(capacity: number, currentSeat?: number): number[] {
+  const center = Math.floor(capacity / 2)
+  const anchor = currentSeat ?? center
+  return Array.from({ length: capacity }, (_, visualPosition) => (
+    (anchor + visualPosition - center + capacity) % capacity
+  ))
+}
+
+function dealerPositionPercent(visualSeats: readonly number[]): number {
+  const highestSeatPosition = visualSeats.indexOf(visualSeats.length - 1)
+  if (highestSeatPosition < 0 || highestSeatPosition === visualSeats.length - 1) return 50
+  return ((highestSeatPosition + 1) / visualSeats.length) * 100
+}
+
+type BlackjackAudioStage = 'countdown' | 'wagering' | 'dealing' | 'players' | 'dealer' | 'settlement' | 'idle'
+
+function tableAudioStage(table: BlackjackTable): BlackjackAudioStage {
+  if (table.transition === 'next-round-countdown') return 'countdown'
+  if (table.phase === 'betting') return 'wagering'
+  if (table.phase === 'dealing') return 'dealing'
+  if (table.phase === 'insurance' || table.phase === 'active') return 'players'
+  if (table.phase === 'dealer') return 'dealer'
+  if (table.phase === 'settlement' || table.phase === 'settled') return 'settlement'
+  return 'idle'
+}
+
+function stageAudioCue(stage: BlackjackAudioStage): 'shuffle' | 'move' | 'chip' | 'collect' | 'click' {
+  if (stage === 'countdown') return 'click'
+  if (stage === 'wagering') return 'chip'
+  if (stage === 'dealing') return 'shuffle'
+  if (stage === 'settlement') return 'collect'
+  return 'move'
 }
 
 const previewStatus: BlackjackTableStatus = { available: true, minimumWager: .5, maximumWager: 100, wagerIncrement: .5, minimumStartOccupancy: 3, tableCapacity: 5, humanGraceSeconds: 5, actionDeadlineSeconds: 60, dealerRule: 'Dealer stands on all 17s', blackjackPayout: '3:2', doubleAllowed: true, splitAllowed: false, insuranceAllowed: false }

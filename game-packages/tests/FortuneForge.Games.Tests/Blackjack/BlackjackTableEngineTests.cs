@@ -83,6 +83,37 @@ public sealed class BlackjackTableEngineTests
     }
 
     [Fact]
+    public void OpeningCardsReachEveryPlayerAndDealerOneAtATimeInTableOrder()
+    {
+        var table = Table();
+        foreach (var player in table.Players) player.NextWagerCents = 500;
+        BlackjackTableEngine.BeginDeal(table, Deck(), 42, Start);
+
+        var expected = new[]
+        {
+            new[] { 1, 0, 0, 0 },
+            new[] { 1, 1, 0, 0 },
+            new[] { 1, 1, 1, 0 },
+            new[] { 1, 1, 1, 1 },
+            new[] { 2, 1, 1, 1 },
+            new[] { 2, 2, 1, 1 },
+            new[] { 2, 2, 2, 1 },
+            new[] { 2, 2, 2, 2 },
+        };
+
+        var now = Start;
+        foreach (var counts in expected)
+        {
+            now = now.Add(BlackjackTableEngine.InitialCardDuration);
+            BlackjackTableEngine.AdvanceAutomatedTurns(table, now);
+            Assert.Equal(counts[..3], table.Players.Select(player => player.Cards.Count).ToArray());
+            Assert.Equal(counts[3], table.DealerCards.Count);
+        }
+
+        Assert.NotEqual(BlackjackTablePhases.Dealing, table.Phase);
+    }
+
+    [Fact]
     public void PrepareForBettingClearsEveryPreviousRoundArtifactButKeepsNextWagers()
     {
         var table = Table();

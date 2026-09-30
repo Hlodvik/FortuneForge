@@ -12,7 +12,7 @@ public static class BlackjackTableEngine
     public static readonly TimeSpan SettlementDisplayDuration = TimeSpan.FromMilliseconds(1_850);
     public static readonly TimeSpan WagerAdjustmentDuration = TimeSpan.FromMilliseconds(800);
     public static readonly TimeSpan ActionSettleDuration = TimeSpan.FromMilliseconds(650);
-    public static readonly TimeSpan InitialCardDuration = TimeSpan.FromMilliseconds(236);
+    public static readonly TimeSpan InitialCardDuration = TimeSpan.FromMilliseconds(160);
     public static readonly TimeSpan DealerCardDuration = TimeSpan.FromMilliseconds(700);
 
     public static void PrepareForBetting(BlackjackTableState table)

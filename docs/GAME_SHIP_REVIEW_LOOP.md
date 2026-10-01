@@ -17,8 +17,8 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **Fortune Blackjack**
-- Current phase: obvious-fix pass complete locally; awaiting owner review before deployment or advancement
+- Active game: **Casino War**
+- Current phase: professional comparison and obvious-fix pass
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
 
@@ -29,8 +29,8 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | Order | Game | Category | State |
 | ---: | --- | --- | --- |
 | 1 | Keno | Casino | Shippable — owner approved and deployed |
-| 2 | Fortune Blackjack | Card | Active — first owner review |
-| 3 | Casino War | Card/table | Queued |
+| 2 | Fortune Blackjack | Card | Shippable — owner directed advancement and deployed |
+| 3 | Casino War | Card/table | Active — professional comparison and obvious-fix pass |
 | 4 | Baccarat | Card/table | Queued |
 | 5 | Video Poker | Card | Queued |
 | 6 | Roulette | Casino | Queued |

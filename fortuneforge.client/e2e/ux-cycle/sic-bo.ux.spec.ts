@@ -532,7 +532,7 @@ function stake(page: Page) { return page.getByRole('textbox', { name: 'Stake', e
 function cell(page: Page, label: string) { return page.getByRole('button', { name: 'Add ' + label + ' bet', exact: true }) }
 function panelButton(page: Page, panel: 'Slip' | 'Rules' | 'History') { return page.getByRole('button', { name: panel === 'Slip' ? /^Slip \d+$/ : panel, exact: panel !== 'Slip' }) }
 async function ready(page: Page, mode: Mode = 'account') {
-  await page.goto('http://127.0.0.1:4187/games/sic-bo' + (mode === 'practice' ? '?mode=practice' : ''))
+  await page.goto('/games/sic-bo' + (mode === 'practice' ? '?mode=practice' : ''))
   await expect(stake(page)).toBeEnabled()
   await expect(primary(page)).toHaveText('Roll dice')
   await expect(page.locator('.ff-sic-bo__cell')).toHaveCount(52)

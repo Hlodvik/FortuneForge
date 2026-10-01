@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { CasinoWarGame } from './CasinoWarGame'
@@ -50,6 +50,19 @@ describe('CasinoWarGame', () => {
     expect(screen.queryByRole('dialog', { name: 'How to play Casino War' })).toBeNull()
   })
 
+  it('closes the rules with Escape and returns focus to the help control', async () => {
+    const user = userEvent.setup()
+    render(<CasinoWarGame gateway={fakeGateway()} />)
+
+    const help = await screen.findByRole('button', { name: 'How to play Casino War' })
+    await user.click(help)
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close rules' }))
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog', { name: 'How to play Casino War' })).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(help))
+  })
+
   it('retries an unavailable table connection without requiring a page refresh', async () => {
     const user = userEvent.setup()
     const getStatus = vi.fn().mockRejectedValueOnce(new Error('Offline.')).mockResolvedValueOnce(status)
@@ -82,6 +95,34 @@ describe('CasinoWarGame', () => {
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
+  it('keeps a cleared wager blank and prevents an invalid deal', async () => {
+    const user = userEvent.setup()
+    render(<CasinoWarGame gateway={fakeGateway()} />)
+
+    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
+    await user.clear(primary)
+
+    expect((primary as HTMLInputElement).value).toBe('')
+    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('prevents wagers and tie decisions that the current balance cannot cover', async () => {
+    const user = userEvent.setup()
+    const lowBalanceStatus = { ...status, balance: 5 }
+    const gateway = fakeGateway({ getStatus: vi.fn().mockResolvedValue(lowBalanceStatus), createRound: vi.fn().mockResolvedValue({ ...awaitingTieRound, balance: 5 }) })
+    render(<CasinoWarGame gateway={gateway} />)
+
+    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
+    await user.clear(primary)
+    await user.type(primary, '6')
+    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
+
+    await user.clear(primary)
+    await user.type(primary, '1')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect((await screen.findByRole('button', { name: 'Go to War' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
   it('submits both stakes, renders an immediate win, and shows the optional Tie settlement', async () => {
     const user = userEvent.setup()
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(immediateRound) })
@@ -100,6 +141,23 @@ describe('CasinoWarGame', () => {
     expect(await screen.findByLabelText('ace of clubs')).toBeTruthy()
     expect(await screen.findByText(/Tie bet -R2.00/)).toBeTruthy()
     expect(screen.getByText('+R8.00')).toBeTruthy()
+  })
+
+  it('updates the displayed balance only after the cards reveal and retains it for the next wager', async () => {
+    const user = userEvent.setup()
+    const onBalanceChange = vi.fn()
+    render(<CasinoWarGame gateway={fakeGateway({ createRound: vi.fn().mockResolvedValue(immediateRound) })} onBalanceChange={onBalanceChange} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Deal' }))
+    expect(screen.getByText('R1,000.00')).toBeTruthy()
+    expect(onBalanceChange).not.toHaveBeenCalled()
+
+    await screen.findByText('You win')
+    await waitFor(() => expect(screen.getByText('R1,008.00')).toBeTruthy())
+    expect(onBalanceChange).toHaveBeenCalledWith(1_008)
+
+    await user.click(screen.getByRole('button', { name: 'Change bet' }))
+    expect(screen.getByText('R1,008.00')).toBeTruthy()
   })
 
   it('renders an opening tie and sends the surrender decision', async () => {

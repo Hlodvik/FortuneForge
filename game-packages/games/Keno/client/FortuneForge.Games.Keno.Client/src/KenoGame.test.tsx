@@ -8,12 +8,62 @@ import { KenoGatewayError, type KenoGateway, type KenoRound, type KenoStatus } f
 afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.unstubAllGlobals() })
 
 describe('KenoGame', () => {
+  it('adjusts supported wagers without dropping non-preset values or exceeding the limits', async () => {
+    const user = userEvent.setup()
+    const customStatus = { ...availableStatus, minimumWager: 30, maximumWager: 55, wagerIncrement: 10 }
+    render(<KenoGame gateway={fakeGateway({ getStatus: vi.fn().mockResolvedValue(customStatus) })} />)
+    const wager = await screen.findByRole('combobox', { name: 'Keno wager' }) as HTMLSelectElement
+    await waitFor(() => expect(wager.value).toBe('30'))
+    expect((screen.getByRole('button', { name: 'Decrease Keno wager' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Increase Keno wager' }))
+    expect(wager.value).toBe('40')
+    await user.click(screen.getByRole('button', { name: 'Increase Keno wager' }))
+    expect(wager.value).toBe('50')
+    expect((screen.getByRole('button', { name: 'Increase Keno wager' }) as HTMLButtonElement).disabled).toBe(true)
+    expect([...wager.options].map(option => option.value)).toEqual(['30', '50'])
+  })
+
+  it('restores mute and prevents selection sound until explicitly unmuted', async () => {
+    localStorage.setItem('fortuneforge:keno:muted', 'true')
+    const user = userEvent.setup()
+    const audio = installAudioContextMock()
+    render(<KenoGame gateway={fakeGateway()} />)
+    await screen.findByRole('combobox', { name: 'Keno wager' })
+    const mute = screen.getByRole('button', { name: 'Mute Keno sound' })
+    expect(mute.getAttribute('aria-pressed')).toBe('true')
+    await user.click(screen.getByRole('button', { name: 'Number 18' }))
+    expect(audio.start).not.toHaveBeenCalled()
+    await user.click(mute)
+    await user.click(screen.getByRole('button', { name: 'Number 18' }))
+    expect(audio.start).toHaveBeenCalledTimes(2)
+    expect(localStorage.getItem('fortuneforge:keno:muted')).toBe('false')
+  })
+
+  it('stops the draw soundtrack immediately when muted and keeps settlement silent', async () => {
+    const user = userEvent.setup()
+    const audio = installAudioContextMock()
+    render(<KenoGame gateway={fakeGateway()} initialSelection={[3, 7, 15]} />)
+    await screen.findByRole('combobox', { name: 'Keno wager' })
+    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    await screen.findByText('Drawing live')
+    expect(audio.drawStart).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Mute Keno sound' }))
+    expect(audio.drawStop).toHaveBeenCalledTimes(1)
+    await screen.findByText('Round result', {}, { timeout: 5_000 })
+    expect(audio.start).not.toHaveBeenCalled()
+  })
+
   it('retries an unavailable table connection without requiring a page refresh', async () => {
     const user = userEvent.setup()
     const getStatus = vi.fn().mockRejectedValueOnce(new Error('Offline.')).mockResolvedValueOnce(availableStatus)
     render(<KenoGame gateway={fakeGateway({ getStatus })} />)
-    await user.click(await screen.findByRole('button', { name: 'Retry connection' }))
+    const retry = await screen.findByRole('button', { name: 'Retry connection' })
+    expect(screen.queryByRole('combobox', { name: 'Keno wager' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Keno number selection' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Keno prize table' })).toBeNull()
+    await user.click(retry)
     expect(await screen.findByRole('combobox', { name: 'Keno wager' })).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Keno number selection' })).toBeTruthy()
     expect(getStatus).toHaveBeenCalledTimes(2)
   })
 

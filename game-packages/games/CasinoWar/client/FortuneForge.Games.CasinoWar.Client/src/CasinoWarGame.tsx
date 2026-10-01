@@ -37,13 +37,18 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
   const [revealStage, setRevealStage] = useState(0)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [lastBalance, setLastBalance] = useState<number | null>(null)
   const openingRequestKey = useRef<string | null>(null)
   const decisionRequestKey = useRef<string | null>(null)
   const pendingOpeningStakes = useRef<Readonly<{ primaryStake: number; tieStake: number }> | null>(null)
   const pendingDecision = useRef<CasinoWarDecision | null>(null)
+  const rulesTrigger = useRef<HTMLButtonElement>(null)
+  const rulesDialog = useRef<HTMLElement>(null)
+  const rulesClose = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     if (!round) { setRevealStage(0); return }
+    if (round.phase === 'completed' && round.decision === 'surrender') { setRevealStage(2); return }
     const hasWarCards = round.phase === 'completed' && (round.playerWarCard || round.dealerWarCard)
     setRevealStage(hasWarCards ? 2 : 0)
     const targets = hasWarCards ? [3, 4] : [1, 2]
@@ -55,7 +60,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     const controller = new AbortController()
     void gateway.getStatus(controller.signal).then(nextStatus => {
       setStatus(nextStatus)
-      setPrimaryStake(nextStatus.minimumPrimaryStake)
+      setPrimaryStake(current => current >= nextStatus.minimumPrimaryStake && current <= nextStatus.maximumPrimaryStake && isIncrementAligned(current, nextStatus.minimumPrimaryStake, nextStatus.stakeIncrement) ? current : nextStatus.minimumPrimaryStake)
       setTableUnavailable(!nextStatus.available)
       setError(nextStatus.available ? null : 'This table is temporarily unavailable. Please choose another game.')
     }).catch(reason => {
@@ -70,6 +75,10 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   useEffect(() => {
     const pendingAction = playerId ? readPendingAction(playerId) : null
     if (pendingAction) {
+      if (pendingAction.operation === 'opening') {
+        setPrimaryStake(pendingAction.primaryStake)
+        setTieStake(pendingAction.tieStake)
+      }
       const controller = new AbortController()
       setRecovery('recovering')
       const request = pendingAction.operation === 'opening'
@@ -80,8 +89,8 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
         if (nextRound.phase === 'awaiting-tie-decision') storeRoundId(playerId, nextRound.roundId)
         else clearStoredRoundId(playerId)
         setRound(nextRound)
-        onBalanceChange?.(nextRound.balance)
         setRecovery('ready')
+        setError(null)
       }).catch(reason => {
         if (reason instanceof DOMException && reason.name === 'AbortError') return
         setRecovery('failed')
@@ -100,11 +109,13 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
       if (nextRound.phase === 'awaiting-tie-decision') setRound(nextRound)
       else clearStoredRoundId(playerId)
       setRecovery('ready')
+      setError(null)
     }).catch(reason => {
       if (reason instanceof DOMException && reason.name === 'AbortError') return
       if (reason instanceof CasinoWarGatewayError && reason.status === 404) {
         clearStoredRoundId(playerId)
         setRecovery('ready')
+        setError(null)
         return
       }
       setRecovery('failed')
@@ -113,11 +124,46 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     return () => controller.abort()
   }, [gateway, onBalanceChange, playerId, recoveryAttempt])
 
-  const balance = round?.balance ?? status?.balance ?? null
+  useEffect(() => {
+    if (!round) return
+    setPrimaryStake(round.primaryStake)
+    setTieStake(round.tieStake)
+  }, [round])
+
+  const balance = round?.balance ?? lastBalance ?? status?.balance ?? null
+  const displayedBalance = lastBalance ?? status?.balance ?? null
+  const hasWarCards = Boolean(round?.playerWarCard || round?.dealerWarCard)
+  const revealed = round !== null && revealStage >= (hasWarCards ? 4 : 2)
+  useEffect(() => {
+    if (!round || !revealed) return
+    setLastBalance(round.balance)
+    onBalanceChange?.(round.balance)
+  }, [onBalanceChange, revealed, round])
+
+  useEffect(() => {
+    if (!rulesOpen) return
+    rulesClose.current?.focus()
+    const closeRules = (returnFocus: boolean) => {
+      setRulesOpen(false)
+      if (returnFocus) window.requestAnimationFrame(() => rulesTrigger.current?.focus())
+    }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') closeRules(true) }
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rulesDialog.current?.contains(event.target as Node) && event.target !== rulesTrigger.current) closeRules(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => {
+      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('pointerdown', onPointerDown)
+    }
+  }, [rulesOpen])
+
   const primaryIsValid = status !== null && primaryStake >= status.minimumPrimaryStake &&
     primaryStake <= status.maximumPrimaryStake && isIncrementAligned(primaryStake, status.minimumPrimaryStake, status.stakeIncrement)
   const tieIsValid = status !== null && tieStake >= 0 && tieStake <= status.maximumTieStake && Number.isFinite(tieStake) &&
     (tieStake === 0 || isIncrementAligned(tieStake, 0, status.stakeIncrement))
+  const stakesAffordable = balance !== null && primaryStake + tieStake <= balance
 
   const act = async (operation: () => Promise<void>) => {
     setBusy(true)
@@ -126,7 +172,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   }
 
   const deal = () => {
-    if (!status?.available || busy || recovery !== 'ready' || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid))) return
+    if (!status?.available || busy || recovery !== 'ready' || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid || !stakesAffordable))) return
     const idempotencyKey = openingRequestKey.current ??= createRequestKey('opening')
     const stakes = pendingOpeningStakes.current ?? { primaryStake, tieStake }
     pendingOpeningStakes.current = stakes
@@ -138,12 +184,12 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
       clearPendingAction(playerId)
       if (nextRound.phase === 'awaiting-tie-decision') storeRoundId(playerId, nextRound.roundId)
       setRound(nextRound)
-      onBalanceChange?.(nextRound.balance)
     })
   }
 
   const decide = (decision: CasinoWarDecision) => {
     if (!round || round.phase !== 'awaiting-tie-decision' || busy) return
+    if (decision === 'go-to-war' && pendingDecision.current === null && round.primaryStake > round.balance) return
     if (pendingDecision.current && pendingDecision.current !== decision) {
       setError(`Your ${humanize(pendingDecision.current)} decision is still pending. Retry that decision so the table can return the original result.`)
       return
@@ -158,7 +204,6 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
       clearPendingAction(playerId)
       clearStoredRoundId(playerId)
       setRound(nextRound)
-      onBalanceChange?.(nextRound.balance)
     })
   }
 
@@ -175,7 +220,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   }
 
   const rebet = () => {
-    if (!round || round.phase !== 'completed' || busy || recovery !== 'ready' || !status?.available) return
+    if (!round || round.phase !== 'completed' || busy || recovery !== 'ready' || !status?.available || round.primaryStake + round.tieStake > round.balance) return
     const stakes = { primaryStake: round.primaryStake, tieStake: round.tieStake }
     setPrimaryStake(stakes.primaryStake)
     setTieStake(stakes.tieStake)
@@ -191,7 +236,6 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
       clearPendingAction(playerId)
       if (nextRound.phase === 'awaiting-tie-decision') storeRoundId(playerId, nextRound.roundId)
       setRound(nextRound)
-      onBalanceChange?.(nextRound.balance)
     })
   }
 
@@ -205,7 +249,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     <main className="ff-casino-war" aria-busy={busy}>
       <section className="ff-casino-war__table" aria-label="Casino War table">
         <div className="ff-casino-war__table-top">
-          <button className="ff-casino-war__help" type="button" aria-label="How to play Casino War" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>?</button>
+          <button className="ff-casino-war__help" ref={rulesTrigger} type="button" aria-label="How to play Casino War" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>?</button>
         </div>
 
         <section className="ff-casino-war__arena" aria-live="polite">
@@ -215,24 +259,24 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
         </section>
 
         <section className="ff-casino-war__controls">
-          <div className="ff-casino-war__balance"><span>Balance</span><strong>{balance === null ? '—' : formatMoney(balance, currencySymbol)}</strong></div>
+          <div className="ff-casino-war__balance"><span>Balance</span><strong>{displayedBalance === null ? '—' : formatMoney(displayedBalance, currencySymbol)}</strong></div>
           {!round && <>
-            <StakeControl label="Main bet" value={primaryStake} min={status?.minimumPrimaryStake} max={status?.maximumPrimaryStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} onChange={setPrimaryStake} currencySymbol={currencySymbol} />
-            <StakeControl label="Tie bet" value={tieStake} min={0} max={status?.maximumTieStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} onChange={setTieStake} currencySymbol={currencySymbol} optional />
-            <button className="ff-casino-war__primary ff-casino-war__deal" disabled={busy || recovery !== 'ready' || !status?.available || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid))} onClick={deal}>{busy ? 'Dealing…' : pendingOpeningStakes.current ? 'Retry' : 'Deal'}</button>
+            <StakeControl label="Main bet" value={primaryStake} min={status?.minimumPrimaryStake} max={status?.maximumPrimaryStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} invalid={!primaryIsValid} onChange={setPrimaryStake} currencySymbol={currencySymbol} />
+            <StakeControl label="Tie bet" value={tieStake} min={0} max={status?.maximumTieStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} invalid={!tieIsValid} onChange={setTieStake} currencySymbol={currencySymbol} optional />
+            <button className="ff-casino-war__primary ff-casino-war__deal" disabled={busy || recovery !== 'ready' || !status?.available || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid || !stakesAffordable))} onClick={deal}>{busy ? 'Dealing…' : pendingOpeningStakes.current ? 'Retry' : 'Deal'}</button>
           </>}
           {round?.phase === 'awaiting-tie-decision' && revealStage >= 2 && <div className="ff-casino-war__decision" aria-label="Tie decision">
             <button className="ff-casino-war__secondary" aria-label={pendingDecision.current === 'surrender' ? 'Retry Surrender' : 'Surrender'} disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'surrender')} onClick={() => decide('surrender')}><span>{pendingDecision.current === 'surrender' ? 'Retry' : 'Surrender'}</span><small>Return {formatMoney(round.primaryStake / 2, currencySymbol)}</small></button>
-            <button className="ff-casino-war__primary" aria-label={pendingDecision.current === 'go-to-war' ? 'Retry Go to War' : 'Go to War'} disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'go-to-war')} onClick={() => decide('go-to-war')}><span>{busy ? 'Resolving…' : pendingDecision.current === 'go-to-war' ? 'Retry War' : 'Go to War'}</span><small>Add {formatMoney(round.primaryStake, currencySymbol)}</small></button>
+            <button className="ff-casino-war__primary" aria-label={pendingDecision.current === 'go-to-war' ? 'Retry Go to War' : 'Go to War'} disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'go-to-war') || (pendingDecision.current === null && round.primaryStake > round.balance)} onClick={() => decide('go-to-war')}><span>{busy ? 'Resolving…' : pendingDecision.current === 'go-to-war' ? 'Retry War' : 'Go to War'}</span><small>Add {formatMoney(round.primaryStake, currencySymbol)}</small></button>
           </div>}
-          {round?.phase === 'completed' && revealStage >= ((round.playerWarCard || round.dealerWarCard) ? 4 : 2) && <div className="ff-casino-war__round-actions"><button className="ff-casino-war__secondary" disabled={busy} onClick={reset}>Change bet</button><button className="ff-casino-war__primary" disabled={busy} onClick={rebet}>Deal again</button></div>}
+          {round?.phase === 'completed' && revealStage >= ((round.playerWarCard || round.dealerWarCard) ? 4 : 2) && <div className="ff-casino-war__round-actions"><button className="ff-casino-war__secondary" disabled={busy} onClick={reset}>Change bet</button><button className="ff-casino-war__primary" disabled={busy || !status?.available || recovery !== 'ready' || round.primaryStake + round.tieStake > round.balance} onClick={rebet}>Deal again</button></div>}
           {recovery === 'recovering' && <span className="ff-casino-war__loading" role="status">Restoring…</span>}
           {recovery === 'failed' && <button className="ff-casino-war__secondary" type="button" onClick={() => setRecoveryAttempt(value => value + 1)}>Retry restoration</button>}
           {!status && error && !tableUnavailable && <button className="ff-casino-war__secondary" type="button" onClick={retryStatus}>Retry connection</button>}
         </section>
 
-        {rulesOpen && <section className="ff-casino-war__rules-dialog" role="dialog" aria-modal="true" aria-label="How to play Casino War">
-          <button type="button" className="ff-casino-war__rules-close" aria-label="Close rules" onClick={() => setRulesOpen(false)}>×</button>
+        {rulesOpen && <section className="ff-casino-war__rules-dialog" ref={rulesDialog} role="dialog" aria-modal="true" aria-label="How to play Casino War">
+          <button type="button" className="ff-casino-war__rules-close" ref={rulesClose} aria-label="Close rules" onClick={() => { setRulesOpen(false); window.requestAnimationFrame(() => rulesTrigger.current?.focus()) }}>×</button>
           <h2>How to play</h2>
           <dl>
             <div><dt>Main bet</dt><dd>Highest card wins and pays 1:1. Ace is high; suits do not matter.</dd></div>
@@ -248,11 +292,13 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   )
 }
 
-function StakeControl({ label, value, min = 0, max = Number.MAX_SAFE_INTEGER, step = 1, disabled, onChange, currencySymbol, optional = false }: Readonly<{ label: string; value: number; min?: number; max?: number; step?: number; disabled: boolean; onChange: (value: number) => void; currencySymbol: string; optional?: boolean }>) {
+function StakeControl({ label, value, min = 0, max = Number.MAX_SAFE_INTEGER, step = 1, disabled, invalid, onChange, currencySymbol, optional = false }: Readonly<{ label: string; value: number; min?: number; max?: number; step?: number; disabled: boolean; invalid: boolean; onChange: (value: number) => void; currencySymbol: string; optional?: boolean }>) {
+  const [draft, setDraft] = useState(Number.isFinite(value) ? String(value) : '')
+  useEffect(() => { setDraft(Number.isFinite(value) ? String(value) : '') }, [value])
   const change = (next: number) => onChange(Math.min(max, Math.max(min, roundStake(next))))
   return <div className="ff-casino-war__stake">
     <span>{label}{optional && <small>Optional</small>}</span>
-    <div><button type="button" aria-label={`Decrease ${label}`} disabled={disabled || value <= min} onClick={() => change(value - step)}>−</button><label><span>{currencySymbol}</span><input aria-label={label} type="number" value={value} min={min} max={max} step={step} disabled={disabled} onChange={event => onChange(Number(event.target.value))} /></label><button type="button" aria-label={`Increase ${label}`} disabled={disabled || value >= max} onClick={() => change(value + step)}>+</button></div>
+    <div><button type="button" aria-label={`Decrease ${label}`} disabled={disabled || !Number.isFinite(value) || value <= min} onClick={() => change(value - step)}>−</button><label><span>{currencySymbol}</span><input aria-label={label} type="number" value={draft} min={min} max={max} step={step} disabled={disabled} aria-invalid={draft !== '' && invalid} onChange={event => { setDraft(event.target.value); onChange(event.target.value === '' ? Number.NaN : Number(event.target.value)) }} /></label><button type="button" aria-label={`Increase ${label}`} disabled={disabled || !Number.isFinite(value) || value >= max} onClick={() => change(value + step)}>+</button></div>
   </div>
 }
 

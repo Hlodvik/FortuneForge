@@ -18,9 +18,10 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 ## Current state
 
 - Active game: **Casino War**
-- Current phase: owner hands-on review
+- Current phase: **paused at the owner's direction while the UX batch branch is audited game by game against `main`**
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
+- Resume point: Casino War owner hands-on review; the audit does not advance or replace this loop
 
 ## Review queue
 

@@ -98,7 +98,7 @@
 .ff-keno__grid button.is-hit { border-color: #e6ffc3; background: linear-gradient(145deg, #dfff9e, #35b963 68%, #16733c); box-shadow: 0 0 1.15rem #a7e974a6; color: #052c18; text-shadow: none; }
 .ff-keno__grid button.is-missed { border-color: #c7706b; background: #4a1f2b; color: #ffd8d2; }
 .ff-keno__grid.is-resetting::after {
-  content: "BOARD READY";
+  content: "";
   position: absolute;
   z-index: 4;
   inset: 38% 24%;

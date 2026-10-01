@@ -317,6 +317,16 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   const displayedBalanceRef = useRef(props.balanceCredits)
   const [displayedBalance, setDisplayedBalance] = useState(props.balanceCredits)
   const [payoutFlight, setPayoutFlight] = useState<PayoutFlight | null>(null)
+  const [reducedMotion, setReducedMotion] = useState(() => typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false))
+  useEffect(() => {
+    const query = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    if (!query) return
+    const update = () => setReducedMotion(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
+  const blocked = (fingerprint: string) => props.busy || (props.pending !== null && props.pending.fingerprint !== fingerprint)
+  const actionBlocked = (action: BlackjackTableAction) => blocked(`action:${table.tableId}:${action}:${props.session.version}`)
   const dealtCardCount = table.dealer.cards.length + table.seats.reduce((total, seat) => (
     total + (seat.hands?.reduce((handTotal, hand) => handTotal + hand.hand.cards.length, 0) ?? seat.hand.cards.length)
   ), 0)
@@ -334,7 +344,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
   ) ? countdown(table.actionDeadlineAtUtc, props.now) : null
 
   useEffect(() => {
-    if (dealtCardCount > priorDealtCardCount.current) playCardAudio('deal')
+    if (dealtCardCount > priorDealtCardCount.current && document.visibilityState === 'visible') playCardAudio('deal')
     priorDealtCardCount.current = dealtCardCount
   }, [dealtCardCount])
 
@@ -352,12 +362,12 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
 
     let animationFrame = 0
     let delayTimer = 0
-    const duration = props.balanceChange?.amount && props.balanceChange.amount > 0 ? 650 : 420
-    const delay = props.balanceChange?.amount && props.balanceChange.amount > 0 ? 1_400 : 0
+    const duration = reducedMotion ? 0 : props.balanceChange?.amount && props.balanceChange.amount > 0 ? 650 : 420
+    const delay = reducedMotion ? 0 : props.balanceChange?.amount && props.balanceChange.amount > 0 ? 1_400 : 0
     const begin = () => {
       const startedAt = performance.now()
       const tick = (time: number) => {
-        const progress = Math.min(1, (time - startedAt) / duration)
+        const progress = duration === 0 ? 1 : Math.min(1, (time - startedAt) / duration)
         const eased = 1 - (1 - progress) ** 3
         const next = Number((start + (target - start) * eased).toFixed(2))
         displayedBalanceRef.current = next
@@ -371,7 +381,7 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
       window.clearTimeout(delayTimer)
       window.cancelAnimationFrame(animationFrame)
     }
-  }, [props.balanceCredits, props.balanceChange])
+  }, [props.balanceCredits, props.balanceChange, reducedMotion])
 
   useEffect(() => {
     if (!props.balanceChange || props.balanceChange.amount <= 0) {
@@ -446,27 +456,27 @@ function TablePanel(props: ContentProps & { status: BlackjackTableStatus; sessio
           </div>
         </div>
         {nextRoundCountdown !== null && <div className="blackjack-next-round" role="status">Next round {nextRoundCountdown}</div>}
-        {payoutFlight && <span className="blackjack-payout-flight" key={payoutFlight.id} style={payoutFlightStyle}>+R{payoutFlight.amount.toFixed(2)}</span>}
+        {payoutFlight && <span className={`blackjack-payout-flight${reducedMotion ? ' is-still' : ''}`} key={payoutFlight.id} style={reducedMotion ? undefined : payoutFlightStyle}>+R{payoutFlight.amount.toFixed(2)}</span>}
         <div className="blackjack-actions" aria-label="Blackjack controls">
           <div className="blackjack-balance-bubble" aria-label={`Balance R${props.balanceCredits.toFixed(2)}`} aria-live="polite" ref={balanceBubbleRef}>
             <small>Balance</small><strong>R{displayedBalance.toFixed(2)}</strong>
             {props.balanceChange && props.balanceChange.amount < 0 && <span className="blackjack-balance-debit" key={props.balanceChange.id}>−R{Math.abs(props.balanceChange.amount).toFixed(2)}</span>}
             {props.balanceChange && props.balanceChange.amount > 0 && <i className="blackjack-balance-impact" key={props.balanceChange.id} aria-hidden="true" />}
           </div>
-          {currentWagerTurn && <WagerInput status={props.status} wager={props.wager} busy={props.busy} timer={countdown(table.wagerDeadlineAtUtc, props.now)} onChange={props.onWagerChange} onSubmit={() => props.onWager(props.session)} onSitOut={() => props.onSitOut(props.session)} />}
+          {currentWagerTurn && <WagerInput status={props.status} balance={props.balanceCredits} wager={props.wager} busy={props.busy} locked={props.pending !== null} canSubmit={!blocked(`wager:${table.tableId}:${props.wager}:${props.session.version}`)} canSitOut={!blocked(`sit-out:${table.tableId}:${props.session.version}`)} timer={countdown(table.wagerDeadlineAtUtc, props.now)} onChange={props.onWagerChange} onSubmit={() => props.onWager(props.session)} onSitOut={() => props.onSitOut(props.session)} />}
           {insuranceRound && (['insurance', 'decline-insurance'] as const).map((action) => (
-            <button type="button" key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
+            <button type="button" key={action} disabled={actionBlocked(action) || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
               {action === 'decline-insurance' ? 'No insurance' : 'Take insurance'}
             </button>
           ))}
           {activeRound && (['hit', 'stand', 'double', 'split', 'surrender'] as const).map((action) => (
-            <button type="button" key={action} disabled={props.busy || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
+            <button type="button" key={action} disabled={actionBlocked(action) || transition || !table.legalActions.includes(action)} onClick={() => props.onAction(props.session, action)}>
               {formatLabel(action)}
             </button>
           ))}
-          {currentActionTimer && <time className="blackjack-action-timer" dateTime={`PT${currentActionTimer}`}>{currentActionTimer}</time>}
+          {currentActionTimer && <time className="blackjack-action-timer" aria-label={`Time remaining ${currentActionTimer}`} dateTime={`PT${currentActionTimer.toUpperCase()}`}>{currentActionTimer}</time>}
         </div>
-        <button className="blackjack-leave blackjack-leave--corner" type="button" disabled={props.busy} onClick={() => props.onLeave(props.session)}>Leave table</button>
+        <button className="blackjack-leave blackjack-leave--corner" type="button" disabled={blocked(`leave:${table.tableId}:${props.session.version}`)} onClick={() => props.onLeave(props.session)}>Leave table</button>
       </section>
     </main>
   )
@@ -476,11 +486,21 @@ export function BlackjackHowToPlay({ status, defaultOpen = false }: { status: Bl
   const [open, setOpen] = useState(defaultOpen)
   const panelId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const close = () => {
+    setOpen(false)
+    triggerRef.current?.focus()
+  }
 
   useEffect(() => {
     if (!open) return
+    closeRef.current?.focus()
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') {
+        setOpen(false)
+        if (containerRef.current?.contains(document.activeElement)) triggerRef.current?.focus()
+      }
     }
     const closeOutside = (event: PointerEvent) => {
       if (!containerRef.current?.contains(event.target as Node)) setOpen(false)
@@ -502,18 +522,19 @@ export function BlackjackHowToPlay({ status, defaultOpen = false }: { status: Bl
         aria-expanded={open}
         aria-controls={panelId}
         title="How to play"
+        ref={triggerRef}
         onClick={() => setOpen((value) => !value)}
       >?</button>
       {open && (
         <section className="blackjack-help__panel" id={panelId} role="dialog" aria-label="How to play Blackjack">
-          <header><div><small>Blackjack guide</small><h2>How to play</h2></div><button type="button" aria-label="Close how to play" onClick={() => setOpen(false)}>×</button></header>
+          <header><div><small>Blackjack guide</small><h2>How to play</h2></div><button type="button" aria-label="Close how to play" ref={closeRef} onClick={close}>×</button></header>
           <p>Beat the dealer by getting closer to 21 without going over. Number cards use their face value, face cards count as 10, and an ace counts as 1 or 11.</p>
           <div className="blackjack-help__actions">
             <span><strong>Hit</strong> Take another card.</span>
             <span><strong>Stand</strong> Keep your hand.</span>
             {status.doubleAllowed && <span><strong>Double</strong> Double the wager, take one card, then stand.</span>}
             {status.splitAllowed && <span><strong>Split</strong> Separate a matching pair into two hands.</span>}
-            <span><strong>Surrender</strong> End the hand and recover half the opening wager.</span>
+            {status.surrenderAllowed !== false && <span><strong>Surrender</strong> End the hand and recover half the opening wager.</span>}
           </div>
           <dl className="blackjack-help__rules">
             <div><dt>Deck</dt><dd>{status.deckCount ?? 1}</dd></div>
@@ -542,7 +563,7 @@ function Seat({ seat, active, betting = false, actionFlash = false, timer = null
       <div className="blackjack-seat__name">
         <strong>{seat.displayName}</strong>
         {status && <small className={actionFlash ? 'blackjack-seat__action-flash' : ''}>{status}</small>}
-        {timer && <time className="blackjack-seat__timer" dateTime={`PT${timer}`}>{timer}</time>}
+        {timer && <time className="blackjack-seat__timer" aria-label={`Time remaining ${timer}`} dateTime={`PT${timer.toUpperCase()}`}>{timer}</time>}
       </div>
       <div className={`blackjack-seat__hands${hands.length > 1 ? ' has-split' : ''}`}>
         {hands.map((playerHand) => (
@@ -599,14 +620,33 @@ function seatStatus(seat: BlackjackTableSeat, hands: readonly BlackjackTablePlay
   return publicStatuses[value] ?? formatLabel(value)
 }
 
-function WagerInput({ status, wager, busy, timer, onChange, onSubmit, onSitOut }: { status: BlackjackTableStatus; wager: number; busy: boolean; timer: string; onChange: (value: number) => void; onSubmit: () => void; onSitOut?: () => void }) {
-  const bump = (direction: -1 | 1) => onChange(Math.min(status.maximumWager, Math.max(status.minimumWager, wager + direction * status.wagerIncrement)))
-  return <div className="blackjack-wager-wrap"><div className="blackjack-wager-heading"><span>Wager</span><small>Min R{status.minimumWager.toFixed(2)} · Max R{status.maximumWager.toFixed(2)}</small></div><div className="blackjack-wager" role="group" aria-label="Round wager"><button type="button" aria-label="Decrease wager" disabled={busy || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button><label><span aria-hidden="true">R</span><input aria-label="Wager amount" inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={wager} disabled={busy} onChange={(event) => onChange(Number(event.target.value))} /></label><button type="button" aria-label="Increase wager" disabled={busy || wager >= status.maximumWager} onClick={() => bump(1)}>+</button><button className="blackjack-wager-submit" type="button" disabled={busy || !validWager(wager, status)} onClick={onSubmit}>Wager</button>{onSitOut && <button className="blackjack-wager-sit-out" type="button" disabled={busy} onClick={onSitOut}>Sit out</button>}<time dateTime={`PT${timer}`}>{timer}</time></div></div>
+function WagerInput({ status, balance = status.maximumWager, wager, busy, locked = false, canSubmit = true, canSitOut = true, timer, onChange, onSubmit, onSitOut }: { status: BlackjackTableStatus; balance?: number; wager: number; busy: boolean; locked?: boolean; canSubmit?: boolean; canSitOut?: boolean; timer: string; onChange: (value: number) => void; onSubmit: () => void; onSitOut?: () => void }) {
+  const [draft, setDraft] = useState(String(wager))
+  useEffect(() => { if (Number.isFinite(wager)) setDraft(String(wager)) }, [wager])
+  const maximum = Number((status.minimumWager + Math.floor((Math.min(status.maximumWager, balance) - status.minimumWager) / status.wagerIncrement + 1e-6) * status.wagerIncrement).toFixed(2))
+  const disabled = busy || locked
+  const submitDisabled = busy || !canSubmit || !validWager(wager, status) || wager > balance
+  const bump = (direction: -1 | 1) => {
+    const steps = (wager - status.minimumWager) / status.wagerIncrement
+    const nextSteps = Number.isFinite(steps) ? direction > 0 ? Math.floor(steps + 1e-6) + 1 : Math.ceil(steps - 1e-6) - 1 : 0
+    onChange(Number(Math.min(maximum, Math.max(status.minimumWager, status.minimumWager + nextSteps * status.wagerIncrement)).toFixed(2)))
+  }
+  return <div className="blackjack-wager-wrap">
+    <div className="blackjack-wager-heading"><span>Wager</span><small>Min R{status.minimumWager.toFixed(2)} · Max R{status.maximumWager.toFixed(2)}</small></div>
+    <div className="blackjack-wager" role="group" aria-label="Round wager">
+      <button type="button" aria-label="Decrease wager" disabled={disabled || maximum < status.minimumWager || wager <= status.minimumWager} onClick={() => bump(-1)}>−</button>
+      <label><span aria-hidden="true">R</span><input aria-label="Wager amount" inputMode="decimal" type="number" min={status.minimumWager} max={status.maximumWager} step={status.wagerIncrement} value={draft} disabled={disabled} aria-invalid={draft !== '' && (!validWager(wager, status) || wager > balance)} onChange={(event) => { setDraft(event.target.value); onChange(event.target.value === '' ? NaN : Number(event.target.value)) }} onKeyDown={(event) => { if (event.key === 'Enter' && !submitDisabled) { event.preventDefault(); onSubmit() } }} /></label>
+      <button type="button" aria-label="Increase wager" disabled={disabled || maximum < status.minimumWager || wager >= maximum} onClick={() => bump(1)}>+</button>
+      <button className="blackjack-wager-submit" type="button" disabled={submitDisabled} onClick={onSubmit}>Wager</button>
+      {onSitOut && <button className="blackjack-wager-sit-out" type="button" disabled={busy || !canSitOut} onClick={onSitOut}>Sit out</button>}
+      <time aria-label={`Time remaining ${timer}`} dateTime={`PT${timer.toUpperCase()}`}>{timer}</time>
+    </div>
+  </div>
 }
 
 function Hand({ label, hand, scope, compact = false }: { label: string; hand: BlackjackTableHand; scope: string; compact?: boolean }) {
   return (
-    <div className={`blackjack-hand${compact ? ' blackjack-hand--compact' : ''}`}>
+    <div className={`blackjack-hand${compact ? ' blackjack-hand--compact' : ''}`} style={{ '--blackjack-fan-width': 1.6 + (compact ? .4 : .75) * Math.max(0, hand.cards.length - 1) } as CSSProperties}>
       {(label || hand.score !== null) && <div className="blackjack-hand__heading">{label && <h2>{label}</h2>}{hand.score !== null && <span aria-label={`${label || 'Hand'} total ${hand.score}`}>{hand.score}</span>}</div>}
       <div className="blackjack-hand__cards">
         {hand.cards.map((card, index) => {

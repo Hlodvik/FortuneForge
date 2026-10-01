@@ -383,10 +383,25 @@
 }
 
 @media (max-width: 720px) {
-  .ff-casino-war { height: auto; min-height: calc(100dvh - 2.8rem); overflow: visible; padding: .35rem; }
-  .ff-casino-war__table { min-height: calc(100dvh - 3.5rem); border-width: .35rem; border-radius: 2rem 2rem 1.5rem 1.5rem; }
-  .ff-casino-war__table::before { inset: 10% 4% 32%; }
-  .ff-casino-war__arena { min-height: 27rem; padding-inline: .4rem; }
+  :where(.in-game-shell__body) > .ff-casino-war { height: 100%; min-height: 0; overflow: hidden; }
+  .ff-casino-war { height: 100dvh; min-height: 0; overflow: hidden; padding: .35rem; }
+  :where(.in-game-shell__body) > .ff-casino-war { height: 100%; }
+  .ff-casino-war__table { height: 100%; min-height: 0; border-width: .35rem; border-radius: 2rem 2rem 1.5rem 1.5rem; }
+  .ff-casino-war__table::before { inset: 10% 4% 28%; }
+  .ff-casino-war__help { width: 2.75rem; min-height: 2.75rem; }
+  .ff-casino-war__arena {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(5rem, auto) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: .35rem;
+    padding-inline: .4rem;
+  }
+  .ff-casino-war__seat--dealer { grid-column: 1; }
+  .ff-casino-war__crest,
+  .ff-casino-war__callout { grid-column: 2; grid-row: 1; }
+  .ff-casino-war__seat--you { grid-column: 3; }
+  .ff-casino-war__callout { min-width: min(9rem, 34vw); padding-inline: .6rem; }
+  .ff-casino-war__callout strong { font-size: clamp(1rem, 3.5vh, 1.5rem); }
   .ff-casino-war__controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 .35rem .35rem; padding: .55rem; }
   .ff-casino-war__balance { min-width: 0; border-right: 0; }
   .ff-casino-war__deal { min-width: 0; height: 100%; }
@@ -396,7 +411,7 @@
   .ff-casino-war__round-actions button { min-width: 0; padding-inline: .4rem; }
   .ff-casino-war__stake label { min-width: 0; flex: 1; }
   .ff-casino-war__stake input { width: 3rem; }
-  .ff-casino-war__stake button { width: 2.1rem; }
+  .ff-casino-war__stake button { width: 2.1rem; min-height: 2.75rem; }
 }
 
 @media (min-width: 721px) {
@@ -408,6 +423,83 @@
   .ff-casino-war__table-top { min-height: 1.8rem; }
   .ff-casino-war__controls { min-height: 4.65rem; margin-bottom: .4rem; padding-block: .45rem; }
   .ff-casino-war__hand { min-height: 6rem; }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  :where(.in-game-shell__body) > .ff-casino-war {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .ff-casino-war {
+    min-height: 0;
+    overflow: hidden;
+    padding: .2rem;
+  }
+
+  :where(.in-game-shell__body) > .ff-casino-war { height: 100%; }
+
+  .ff-casino-war__table {
+    height: 100%;
+    min-height: 0;
+    border-width: .25rem;
+    border-radius: 2rem 2rem 1.1rem 1.1rem;
+    grid-template-rows: 1.4rem minmax(0, 1fr) auto;
+  }
+
+  .ff-casino-war__table::before { inset: 8% 5% 28%; }
+  .ff-casino-war__table-top { min-height: 0; padding: 0; }
+  .ff-casino-war__help { top: .2rem; right: .45rem; width: 2.75rem; min-height: 2.75rem; }
+
+  .ff-casino-war__arena {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr) minmax(8rem, auto) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: .45rem;
+    padding: .1rem 2.7rem .2rem .5rem;
+  }
+
+  .ff-casino-war__seat { gap: .1rem; }
+  .ff-casino-war__seat--dealer { grid-column: 1; }
+  .ff-casino-war__crest,
+  .ff-casino-war__callout { grid-column: 2; grid-row: 1; }
+  .ff-casino-war__seat--you { grid-column: 3; }
+  .ff-casino-war__seat > strong { font-size: .9rem; }
+  .ff-casino-war__hand { min-width: 3.5rem; min-height: 4.8rem; }
+  .ff-casino-war__card { width: clamp(3rem, 13vh, 3.8rem); border-width: 2px; border-radius: .4rem; }
+  .ff-casino-war__card--back span { width: 1.8rem; font-size: .72rem; }
+  .ff-casino-war__corner { top: .2rem; left: .22rem; font-size: .75rem; }
+  .ff-casino-war__corner--reverse { inset: auto .22rem .2rem auto; }
+  .ff-casino-war__suit { font-size: 1.6rem; }
+  .ff-casino-war__callout { min-width: 8rem; max-width: 11rem; padding: .35rem .65rem; }
+  .ff-casino-war__callout strong { font-size: 1.05rem; }
+
+  .ff-casino-war__controls {
+    display: flex;
+    min-height: 4.25rem;
+    gap: .35rem;
+    margin: 0 .3rem .25rem;
+    padding: .35rem;
+    border-radius: .8rem;
+  }
+
+  .ff-casino-war__balance { min-width: 5.7rem; padding: .25rem .4rem; }
+  .ff-casino-war__balance strong { font-size: .82rem; }
+  .ff-casino-war__stake { min-width: 0; }
+  .ff-casino-war__stake > span { font-size: .52rem; }
+  .ff-casino-war__stake > div { border-radius: .55rem; }
+  .ff-casino-war__stake button { width: 2rem; min-height: 2.75rem; }
+  .ff-casino-war__stake label { min-width: 3.6rem; }
+  .ff-casino-war__stake input { width: 2.5rem; font-size: .85rem; }
+  .ff-casino-war__primary,
+  .ff-casino-war__secondary { min-height: 2.75rem; padding: .35rem .75rem; }
+  .ff-casino-war__deal { min-width: 5rem; }
+  .ff-casino-war__decision,
+  .ff-casino-war__round-actions { display: flex; grid-column: auto; gap: .35rem; }
+  .ff-casino-war__decision button,
+  .ff-casino-war__round-actions button { min-width: 7.4rem; }
+  .ff-casino-war__error { right: .5rem; bottom: 4.9rem; max-width: 18rem; padding: .45rem .65rem; font-size: .7rem; }
+  .ff-casino-war__rules-dialog { max-height: calc(100% - 1rem); overflow-y: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

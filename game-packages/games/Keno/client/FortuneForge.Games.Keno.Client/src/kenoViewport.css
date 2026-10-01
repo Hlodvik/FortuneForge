@@ -1,126 +1,109 @@
-/* Number cells use a controlled row height rather than a width-derived square
-   so wide screens do not turn the eight-row board into a page-length wall. */
-.ff-keno { min-height: 0; padding: clamp(.55rem, 1.5vh, .9rem) clamp(.65rem, 2vw, 1.35rem); }
-.ff-keno__header { margin-bottom: .55rem; }
-.ff-keno h1 { font-size: clamp(2.25rem, 5.5vh, 3.55rem); }
-.ff-keno__header p { font-size: .82rem; }
-.ff-keno__board { padding: clamp(.55rem, 1.4vh, .85rem); }
-.ff-keno__controls button { min-height: 2rem; padding: .3rem .55rem; }
-.ff-keno__controls { margin-bottom: .45rem; }
-.ff-keno__grid { gap: clamp(.18rem, .55vh, .32rem); }
-.ff-keno__grid button { min-height: clamp(2rem, 4.2vh, 2.45rem); height: clamp(2rem, 4.2vh, 2.45rem); aspect-ratio: auto; border-radius: .42rem; }
-.ff-keno__draw-controls { margin-top: .65rem; }
-.ff-keno__play { min-height: 2.55rem; }
-.ff-keno__odds { gap: .7rem; margin-top: .55rem; padding: .55rem .7rem 0; }
-.ff-keno__odds p { font-size: .7rem; line-height: 1.25; }
-.ff-keno__odds-grid { gap: .16rem; }
-.ff-keno__odds-grid > div { padding: .2rem .45rem; font-size: .68rem; }
-
-@media (min-width: 541px) {
-  .ff-keno { display: grid; height: 100%; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
-  .ff-keno__board {
-    display: grid;
-    height: 100%;
-    min-height: 0;
-    grid-template-areas:
-      "controls"
-      "numbers"
-      "draw"
-      "odds";
-    grid-template-rows: auto minmax(0, 1fr) auto auto;
-    overflow: hidden;
-  }
-  .ff-keno__controls { grid-area: controls; }
-  .ff-keno__grid { grid-area: numbers; }
-  .ff-keno__draw-controls { grid-area: draw; }
-  .ff-keno__odds { grid-area: odds; }
-  .ff-keno__grid { min-height: 0; }
-
-  /* Results sit beside the ticket on desktop so the live board and draw tray
-     remain readable without creating page scroll. */
-  .ff-keno__board--has-round {
-    grid-template-areas:
-      "controls controls"
-      "numbers result"
-      "draw result";
-    grid-template-columns: minmax(0, 1.55fr) minmax(18rem, .65fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    column-gap: .75rem;
-  }
-  .ff-keno__board--has-round .ff-keno__result {
-    grid-area: result;
-    align-self: stretch;
-    min-height: 0;
-    margin-top: 0;
-    padding: .65rem;
-    gap: .35rem;
-    overflow: hidden;
-  }
-  .ff-keno__board--has-round .ff-keno__result strong { font-size: 1.65rem; }
-  .ff-keno__board--has-round .ff-keno__result p { font-size: .72rem; line-height: 1.25; }
-  .ff-keno__board--has-round .ff-keno__odds { display: none; }
-}
-
-/* On a full desktop ticket, the payout table belongs beside the number field.
-   Keeping it in the vertical flow forced the fixed-height game shell to make
-   the grid rows overlap one another at ordinary laptop viewport heights. */
-@media (min-width: 721px) {
-  .ff-keno__board:not(.ff-keno__board--has-round) {
-    grid-template-areas:
-      "controls odds"
-      "numbers odds"
-      "draw odds";
-    grid-template-columns: minmax(0, 1.75fr) minmax(17rem, .72fr);
-    grid-template-rows: auto minmax(0, 1fr) auto;
-    column-gap: .75rem;
-  }
-  .ff-keno__board:not(.ff-keno__board--has-round) .ff-keno__odds {
-    grid-area: odds;
-    align-self: stretch;
-    min-height: 0;
-    margin: 0;
-    padding: .65rem .7rem;
-    border-top: 0;
-    border-left: 1px solid #f1d28c44;
-    grid-template-columns: 1fr;
-    align-content: start;
-    overflow: hidden;
-  }
-}
-
-@media (max-width: 540px) {
-  .ff-keno { padding: .35rem; }
-  .ff-keno__header { margin-bottom: .35rem; }
-  .ff-keno__eyebrow,
-  .ff-keno__header p { display: none; }
-  .ff-keno h1 { margin: 0; font-size: 1.8rem; }
-  .ff-keno__board { padding: .42rem; }
-  .ff-keno__wager { min-width: 7.25rem; }
-  .ff-keno__wager select { min-height: 1.75rem; padding-block: .15rem; }
-  .ff-keno__wager small { font-size: .62rem; }
-  .ff-keno__controls { flex-direction: row; align-items: center; margin-bottom: .3rem; font-size: .7rem; }
-  .ff-keno__controls button { width: auto; min-height: 1.75rem; }
-  .ff-keno__grid { grid-template-columns: repeat(10, minmax(0, 1fr)); gap: .12rem; }
-  .ff-keno__grid button { min-height: 1.8rem; height: 1.8rem; padding: 0; font-size: .68rem; }
-  .ff-keno__draw-controls { margin-top: .4rem; }
-  .ff-keno__play { min-height: 2.35rem; }
-  .ff-keno__odds { grid-template-columns: 1fr; margin-top: .35rem; padding: .35rem .15rem 0; }
-  .ff-keno__odds p { display: none; }
-}
-
-/* Contemporary keno-terminal treatment: the ticket is the visual focus and
-   every selected/drawn state remains distinguishable without relying on hover. */
+/* A stable ticket and prize rail: starting a draw never moves the number field. */
 .ff-keno {
   --keno-cyan: #58e4da;
   --keno-gold: #ffd36d;
+  min-height: 0;
+  padding: clamp(.55rem, 1.5vh, .9rem) clamp(.65rem, 2vw, 1.35rem);
   background: radial-gradient(circle at 18% 0, #183d59 0, transparent 30rem), radial-gradient(circle at 92% 80%, #183b31 0, transparent 28rem), linear-gradient(145deg, #080d1d, #101027 70%);
 }
-.ff-keno__board { border-color: #58e4da55; background: linear-gradient(145deg, #12172bea, #092a29f2); box-shadow: 0 1.25rem 3rem #0009, inset 0 0 0 1px #ffffff0a; }
-.ff-keno__grid button { border-color: #75d8d244; border-radius: 999px; background: radial-gradient(circle at 35% 28%, #20313d, #0a141d 70%); color: #f4fbff; box-shadow: inset 0 1px #ffffff12; }
+.ff-keno__header { margin-bottom: .55rem; }
+.ff-keno__eyebrow, .ff-keno__header p { display: none; }
+.ff-keno h1 { font-size: clamp(2.25rem, 5.5vh, 3.55rem); }
+.ff-keno__board { padding: clamp(.55rem, 1.4vh, .85rem); border-color: #58e4da55; background: linear-gradient(145deg, #12172bea, #092a29f2); box-shadow: 0 1.25rem 3rem #0009, inset 0 0 0 1px #ffffff0a; }
+.ff-keno__controls { gap: .4rem; margin-bottom: .45rem; }
+.ff-keno__controls p { flex: 1; }
+.ff-keno__controls button { min-height: 2.15rem; padding: .3rem .55rem; }
+.ff-keno__controls .ff-keno__sound { display: grid; place-items: center; width: 2.2rem; padding: .35rem; }
+.ff-keno__grid { gap: clamp(.2rem, .6vh, .4rem); user-select: none; }
+.ff-keno__grid button { min-height: clamp(2rem, 4.2vh, 2.45rem); height: clamp(2rem, 4.2vh, 2.45rem); aspect-ratio: auto; border-color: #75d8d244; border-radius: .55rem; background: radial-gradient(circle at 35% 28%, #20313d, #0a141d 70%); color: #f4fbff; box-shadow: inset 0 1px #ffffff12; }
 .ff-keno__grid button:hover:not(:disabled) { background: #175657; box-shadow: 0 0 .75rem #58e4da45; }
-.ff-keno__grid button.is-selected { border-color: #fff2a8; background: radial-gradient(circle at 35% 28%, #fff4b4, #e09a2e 62%, #9a541d); box-shadow: 0 0 0 2px #ffd36d35, 0 .25rem .65rem #0008; }
+.ff-keno__grid button.is-selected { border-color: #fff2a8; background: radial-gradient(circle at 35% 28%, #fff4b4, #e09a2e 62%, #9a541d); color: #2b0b13; box-shadow: 0 0 0 2px #ffd36d35, 0 .25rem .65rem #0008; }
+/* Result states follow selected styling so hits can never become gold selections. */
+.ff-keno__grid button.is-drawn { border-color: #d7b66f; background: #493816; color: #fff3ca; }
+.ff-keno__grid button.is-hit { border-color: #e6ffc3; background: linear-gradient(145deg, #dfff9e, #35b963 68%, #16733c); color: #052c18; box-shadow: inset 0 0 0 2px #dfff9e, 0 0 .8rem #a7e97480; }
+.ff-keno__grid button.is-missed { border-color: #c7706b; background: #4a1f2b; color: #ffd8d2; box-shadow: inset 0 0 0 1px #c7706b; }
+.ff-keno__grid.is-drawing button.is-hit, .ff-keno__grid.is-drawing button.is-missed { text-shadow: none; }
+.ff-keno__grid.is-drawing button.is-hit { color: #052c18; }
+.ff-keno__grid.is-drawing button.is-missed { color: #ffd8d2; }
+.ff-keno__draw-controls { margin-top: .65rem; gap: .6rem; }
+.ff-keno__wager-adjust { display: flex; min-width: 0; align-items: stretch; }
+.ff-keno__wager-adjust select { min-width: 0; width: 6.5rem; border-radius: 0; text-align: center; padding: .35rem .25rem; }
+.ff-keno__wager-adjust button { min-width: 2.5rem; border: 1px solid #58e4da7d; border-radius: .6rem 0 0 .6rem; background: #0a171b; color: #d7fffb; font-size: 1.2rem; cursor: pointer; }
+.ff-keno__wager-adjust button:last-child { border-radius: 0 .6rem .6rem 0; }
+.ff-keno__play { min-height: 2.55rem; }
 .ff-keno__play:not(:disabled) { background: linear-gradient(90deg, #62efe0, #ffd36d); color: #071719; box-shadow: 0 .45rem 1rem #0007, 0 0 1.1rem #58e4da2e; }
-@media (max-width: 540px) {
-  .ff-keno__grid button { border-radius: .38rem; }
-  .ff-keno__board { border-radius: .8rem; }
+.ff-keno__feedback { min-width: 0; }
+.ff-keno__result { gap: .5rem; margin: 0 0 .75rem; padding: .9rem .6rem; }
+.ff-keno__result strong { max-width: 100%; overflow-wrap: anywhere; font-size: clamp(1.6rem, 2.7vw, 2.5rem); }
+.ff-keno__result strong.is-win { font-size: clamp(1.8rem, 3vw, 2.75rem); }
+.ff-keno__result p { margin: 0; font-size: .75rem; line-height: 1.3; }
+.ff-keno__odds { grid-template-columns: 1fr; gap: .7rem; margin: 0; padding: .6rem; border-top: 0; }
+.ff-keno__odds h2 { margin: .2rem 0; }
+.ff-keno__odds p { margin: 0; font-size: .75rem; line-height: 1.25; }
+.ff-keno__odds-grid { gap: .35rem; }
+.ff-keno__odds-grid > div { padding: .45rem .55rem; font-size: .8rem; border: 1px solid transparent; border-radius: .4rem; }
+.ff-keno__odds-grid > div.is-achieved { border-color: #b8f995; background: #1e4d35; box-shadow: inset .2rem 0 #b8f995; }
+.ff-keno__odds-grid > div.is-achieved strong { color: #e6ffc3; }
+@media (min-width: 721px), (min-width: 541px) and (max-height: 540px) {
+  .ff-keno { display: grid; height: 100%; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; }
+  .ff-keno__board { display: grid; height: 100%; min-height: 0; grid-template-areas: "controls feedback" "numbers feedback" "draw feedback"; grid-template-columns: minmax(0, 1.75fr) minmax(16rem, .72fr); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: .85rem; overflow: hidden; }
+  .ff-keno__controls { grid-area: controls; }
+  .ff-keno__grid { grid-area: numbers; min-height: 0; }
+  .ff-keno__draw-controls { grid-area: draw; }
+  .ff-keno__feedback { grid-area: feedback; min-height: 0; padding-left: .75rem; border-left: 1px solid #58e4da33; overflow: auto; }
+  .ff-keno__state, .ff-keno__board > .ff-keno__play { grid-area: draw; align-self: start; z-index: 2; }
 }
+@media (max-width: 720px) and (min-height: 541px), (max-width: 540px) {
+  .ff-keno { padding: .4rem; }
+  .ff-keno__header { margin-bottom: .4rem; }
+  .ff-keno h1 { margin: 0; font-size: 1.8rem; }
+  .ff-keno__board { padding: .5rem; border-radius: .8rem; }
+  .ff-keno__controls { font-size: .72rem; }
+  .ff-keno__controls button { width: auto; min-height: 2rem; }
+  .ff-keno__feedback { margin-top: .65rem; border-top: 1px solid #58e4da33; padding-top: .65rem; }
+  .ff-keno__odds-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 540px) {
+  .ff-keno__controls { flex-direction: row; align-items: center; gap: .3rem; }
+  .ff-keno__controls p { max-width: 10rem; }
+  .ff-keno__grid { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .2rem; }
+  .ff-keno__grid button { min-height: clamp(1.8rem, 5svh, 2.6rem); height: clamp(1.8rem, 5svh, 2.6rem); padding: 0; font-size: .8rem; }
+  .ff-keno__grid button.is-selected, .ff-keno__grid.is-drawing button.is-selected { font-size: .9rem; }
+  .ff-keno__grid.is-drawing button.is-selected { transform: none; }
+  .ff-keno__wager { min-width: 0; }
+  .ff-keno__wager-adjust select { width: 4.5rem; font-size: .8rem; min-height: 2.35rem; }
+  .ff-keno__wager-adjust button { min-width: 2rem; }
+  .ff-keno__wager small { font-size: .65rem; }
+  .ff-keno__draw-controls { align-items: end; margin-top: .5rem; }
+  .ff-keno__draw-controls > * { flex: initial; }
+  .ff-keno__play { flex: 1; min-width: 0; min-height: 2.65rem; }
+}
+@media (min-width: 541px) and (max-height: 540px) {
+  .ff-keno { padding: .3rem .4rem; }
+  .ff-keno__header { margin-bottom: .3rem; }
+  .ff-keno h1 { margin: 0; font-size: 1.4rem; }
+  .ff-keno__board { padding: .35rem; column-gap: .45rem; grid-template-columns: minmax(0, 1fr) minmax(10rem, .45fr); }
+  .ff-keno__controls { gap: .25rem; font-size: .7rem; }
+  .ff-keno__controls button { min-height: 1.6rem; font-size: .7rem; }
+  .ff-keno__grid { grid-template-rows: repeat(8, minmax(0, 1fr)); gap: .15rem; }
+  .ff-keno__grid button { height: 100%; min-height: 0; padding: 0; font-size: .72rem; }
+  .ff-keno__grid button.is-selected, .ff-keno__grid.is-drawing button.is-selected { font-size: .8rem; transform: none; }
+  .ff-keno__draw-controls { margin-top: .3rem; }
+  .ff-keno__wager { gap: .15rem; }
+  .ff-keno__wager-adjust select { min-height: 1.8rem; }
+  .ff-keno__play { min-height: 2rem; padding: .3rem .5rem; }
+  .ff-keno__feedback { padding-left: .4rem; }
+  .ff-keno__result { padding: .45rem; }
+  .ff-keno__result strong, .ff-keno__result strong.is-win { font-size: 1.5rem; }
+  .ff-keno__odds { padding: .35rem; gap: .35rem; }
+  .ff-keno__odds-grid > div { padding: .3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-keno__grid button:hover:not(:disabled), .ff-keno__grid.is-drawing button.is-selected { transform: none; }
+}
+
+.ff-keno[data-connection-failed="true"] { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.ff-keno__board.ff-keno__connection { display: flex; height: auto; min-height: 0; flex-direction: column; align-self: start; gap: .75rem; padding: 1rem; }
+.ff-keno__connection .ff-keno__error { margin: 0; font-size: .85rem; }
+.ff-keno__connection .ff-keno__play { align-self: start; min-height: 2.75rem; flex: none; }

@@ -1,394 +1,138 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { CrapsGatewayError, type CrapsExtraBetKind, type CrapsExtraBetRequest, type CrapsGateway, type CrapsRound, type CrapsStatus } from './contracts'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import type { CrapsExtraBetRequest, CrapsGateway, CrapsRound } from './contracts'
 import { DiceThrow } from './DiceThrow'
+import { availableChipValues, extraBetLabel, extraBetOptions, oddsCopy, pointNumbers, resultLabel, rollResultLabel, roundTotals, validStake } from './crapsPresentation'
+import { useCrapsTable } from './useCrapsTable'
 import './craps.css'
 import './crapsEnhancements.css'
 import './crapsViewport.css'
 
 export type CrapsGameProps = Readonly<{
-  gateway: CrapsGateway
-  tableArtworkUrl?: string
-  isYourTurn?: boolean
-  activePlayerName?: string
-  onRoundChange?: (round: CrapsRound | null) => void
+  gateway: CrapsGateway; playerId?: string; showTitle?: boolean; tableArtworkUrl?: string
+  isYourTurn?: boolean; activePlayerName?: string; onRoundChange?: (round: CrapsRound | null) => void
 }>
+type Panel = 'tips' | 'history' | 'bets' | 'odds' | null
+const money = (value: number) => 'R' + value.toFixed(2)
+const chip = (value: number) => 'R' + Number(value.toFixed(2))
 
-const pointNumbers = [4, 5, 6, 8, 9, 10] as const
+export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl, isYourTurn = true, activePlayerName = 'Another player', onRoundChange }: CrapsGameProps) {
+  const table = useCrapsTable(gateway, playerId, isYourTurn, onRoundChange)
+  const { status, round, busy, motion, pendingRound, error, recovery } = table
+  const [stake, setStake] = useState('10')
+  const [extraStake, setExtraStake] = useState('5')
+  const [oddsStake, setOddsStake] = useState('10')
+  const [selectedExtras, setSelectedExtras] = useState<readonly CrapsExtraBetRequest['kind'][]>([])
+  const [draftExtras, setDraftExtras] = useState<readonly CrapsExtraBetRequest[] | null>(null)
+  const [panel, setPanel] = useState<Panel>(null)
+  const trigger = useRef<HTMLButtonElement | null>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const primary = useRef<HTMLButtonElement>(null)
+  const returnFocus = useRef(false)
+  const disabled = busy || !status?.available || !isYourTurn || recovery !== 'ready'
+  const extras = draftExtras ?? selectedExtras.map(kind => ({ kind, stake: Number(extraStake) }))
+  const draftValid = stake.trim() !== '' && validStake(Number(stake), status) && extras.every(bet => validStake(bet.stake, status))
+  const oddsValid = oddsStake.trim() !== '' && validStake(Number(oddsStake), status)
+  const totals = round ? roundTotals(round) : null
+  const diceRound = pendingRound ?? round
+  const dice = diceRound?.lastOutcome
+  const hasOdds = round?.extraBets?.some(bet => bet.kind === 'odds' && !bet.resolved)
+  const canOdds = round?.phase === 'point' && !!gateway.placeOdds && !hasOdds
+  const repeatExtras = round?.extraBets?.filter(bet => bet.kind !== 'odds').map(bet => ({ kind: bet.kind as CrapsExtraBetRequest['kind'], stake: bet.stake })) ?? []
+  const repeatValid = !!round && validStake(round.stake, status) && repeatExtras.every(bet => validStake(bet.stake, status))
+  const tableStyle = useMemo(() => tableArtworkUrl ? { '--ff-craps-table-art': 'url(' + tableArtworkUrl + ')' } as CSSProperties : undefined, [tableArtworkUrl])
+  useEffect(() => { if (!busy && returnFocus.current) { if (!disabled && document.activeElement === document.body) primary.current?.focus(); returnFocus.current = false } }, [busy, disabled])
+  function close() { setPanel(null); requestAnimationFrame(() => trigger.current?.focus()) }
+  function open(next: Panel, button: HTMLButtonElement) { trigger.current = button; setPanel(value => value === next ? null : next) }
+  useEffect(() => { if (!panel) return; closeButton.current?.focus(); const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setPanel(null); trigger.current?.focus() } }; document.addEventListener('keydown', escape); return () => document.removeEventListener('keydown', escape) }, [panel])
+  useEffect(() => { setPanel(null) }, [gateway, playerId])
+  useEffect(() => { if (panel === 'odds' && !canOdds) { setPanel(null); requestAnimationFrame(() => primary.current?.focus()) } }, [panel, canOdds])
+  function edit() { if (round) { setStake(String(round.stake)); const first = repeatExtras[0]; setSelectedExtras([...new Set(repeatExtras.map(bet => bet.kind))]); setDraftExtras(repeatExtras); if (first) setExtraStake(repeatExtras.every(bet => bet.stake === first.stake) ? String(first.stake) : '') }; table.clear(); primary.current?.focus() }
+  const invalidDraft = !round && !!status?.available && !draftValid
+  const limitCopy = status ? money(status.minimumStake) + '–' + money(status.maximumStake) + ' · steps ' + money(status.stakeIncrement) : ''
+  const result = motion !== 'idle' ? 'Dice rolling…' : !isYourTurn ? activePlayerName + ' is the shooter' : !status ? 'Checking table…' : !status.available ? 'Table unavailable' : resultLabel(round)
 
-export function CrapsGame({
-  gateway,
-  tableArtworkUrl,
-  isYourTurn = true,
-  activePlayerName = 'Another player',
-  onRoundChange,
-}: CrapsGameProps) {
-  const [status, setStatus] = useState<CrapsStatus | null>(null)
-  const [round, setRound] = useState<CrapsRound | null>(null)
-  const [pendingRound, setPendingRound] = useState<CrapsRound | null>(null)
-  const [stake, setStake] = useState(10)
-  const [isBusy, setIsBusy] = useState(false)
-  const [diceMotion, setDiceMotion] = useState<'idle' | 'rolling' | 'settling'>('idle')
-  const [error, setError] = useState<string | null>(null)
-  const [statusRevision, setStatusRevision] = useState(0)
-  const [tipsOpen, setTipsOpen] = useState(false)
-  const [coachOpen, setCoachOpen] = useState(readCoachPreference)
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [extraStake, setExtraStake] = useState(5)
-  const [selectedExtras, setSelectedExtras] = useState<readonly Exclude<CrapsExtraBetKind, 'odds'>[]>([])
-  const [oddsStake, setOddsStake] = useState(10)
-  const tipsButtonRef = useRef<HTMLButtonElement>(null)
-  const tipsCloseRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    const controller = new AbortController()
-    setStatus(null)
-    setError(null)
-    void gateway.getStatus(controller.signal)
-      .then((nextStatus) => {
-        setStatus(nextStatus)
-        setStake((value) => clampStake(value, nextStatus))
-      })
-      .catch((reason: unknown) => {
-        if (!(reason instanceof DOMException && reason.name === 'AbortError')) {
-          setError(messageForError(reason))
-        }
-      })
-    return () => controller.abort()
-  }, [gateway, statusRevision])
-
-  const publishRound = useCallback((nextRound: CrapsRound | null) => {
-    setRound(nextRound)
-    onRoundChange?.(nextRound)
-  }, [onRoundChange])
-
-  const startRound = useCallback(async () => {
-    if (!status?.available || isBusy || !isYourTurn) return
-    setIsBusy(true)
-    setError(null)
-    try {
-      const extraBets: CrapsExtraBetRequest[] = selectedExtras.map(kind => ({ kind, stake: clampStake(extraStake, status) }))
-      publishRound(await gateway.startRound(clampStake(stake, status), undefined, extraBets))
-    } catch (reason) {
-      setError(messageForError(reason))
-    } finally {
-      setIsBusy(false)
-    }
-  }, [extraStake, gateway, isBusy, isYourTurn, publishRound, selectedExtras, stake, status])
-
-  const placeOdds = useCallback(async () => {
-    if (!round || round.phase !== 'point' || !gateway.placeOdds || isBusy || !status) return
-    setIsBusy(true)
-    setError(null)
-    try { publishRound(await gateway.placeOdds(round.roundId, clampStake(oddsStake, status))) }
-    catch (reason) { setError(messageForError(reason)) }
-    finally { setIsBusy(false) }
-  }, [gateway, isBusy, oddsStake, publishRound, round, status])
-
-  const roll = useCallback(async () => {
-    if (!round || round.phase === 'resolved' || isBusy || !isYourTurn) return
-    setIsBusy(true)
-    setDiceMotion('rolling')
-    setError(null)
-    try {
-      const nextRound = await gateway.roll(round.roundId)
-      setPendingRound(nextRound)
-      setDiceMotion('settling')
-      await diceSettleDelay()
-      publishRound(nextRound)
-      setPendingRound(null)
-    } catch (reason) {
-      setError(messageForError(reason))
-    } finally {
-      setDiceMotion('idle')
-      setIsBusy(false)
-    }
-  }, [gateway, isBusy, isYourTurn, publishRound, round])
-
-  const clearRound = useCallback(() => {
-    if (isBusy) return
-    publishRound(null)
-    setError(null)
-  }, [isBusy, publishRound])
-
-  const closeTips = useCallback(() => {
-    setTipsOpen(false)
-    window.requestAnimationFrame(() => tipsButtonRef.current?.focus())
-  }, [])
-
-  useEffect(() => {
-    if (!tipsOpen) return
-    tipsCloseRef.current?.focus()
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeTips()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [closeTips, tipsOpen])
-
-  const tableStyle = useMemo(() => tableArtworkUrl
-    ? ({ '--ff-craps-table-art': `url(${tableArtworkUrl})` }) as CSSProperties
-    : undefined, [tableArtworkUrl])
-  const serviceReady = status?.available === true
-  const isDiceInMotion = diceMotion !== 'idle'
-  const message = isDiceInMotion
-    ? 'Dice are rolling…'
-    : isYourTurn
-    ? tableMessage(round, serviceReady)
-    : `${activePlayerName} is the shooter. Your turn comes after the dice pass.`
-  const lastOutcome = round?.lastOutcome ?? null
-  const diceOutcome = (pendingRound ?? round)?.lastOutcome ?? null
-
-  return (
-    <div className="ff-craps-page">
-      {tipsOpen && <CrapsTipsDialog closeButtonRef={tipsCloseRef} onClose={closeTips} />}
-
-      <main className="ff-craps-main">
-        <section className="ff-craps-title" aria-labelledby="ff-craps-title">
-          <h1 id="ff-craps-title">Craps</h1>
-          <button className="ff-craps-tips-button" type="button" aria-expanded={tipsOpen} onClick={() => setTipsOpen(true)} ref={tipsButtonRef}>
-            Tips
-          </button>
-        </section>
-
-        <section className="ff-craps-table" aria-label="Craps table" style={tableStyle}>
-          <div className="ff-craps-table__felt">
-            <div className={`ff-craps-turn ${isYourTurn ? 'is-yours' : 'is-waiting'}`} aria-live="polite">
-              <span>{isYourTurn ? 'Table 1 · Your turn · You are the shooter' : `Table 1 · ${activePlayerName} is the shooter`}</span>
-              <strong>{turnInstruction(round, isBusy, isYourTurn)}</strong>
-            </div>
-
-            <div className="ff-craps-point-row" aria-label="Point numbers">
-              <span className={`ff-craps-puck ${round?.phase === 'point' ? 'is-on' : ''}`}>
-                {round?.phase === 'point' ? 'ON' : 'OFF'}
-              </span>
-              {pointNumbers.map((number) => (
-                <span className={round?.point === number ? 'is-point' : ''} key={number}>
-                  <small>Point</small>{number}
-                </span>
-              ))}
-            </div>
-
-            {coachOpen && <aside className="ff-craps-coach" aria-label="Beginner coach"><div><small>Beginner coach</small><strong>{coachMessage(round)}</strong></div><button type="button" onClick={() => { setCoachOpen(false); writeCoachPreference() }}>Dismiss</button></aside>}
-
-            <div className="ff-craps-center">
-              <div className="ff-craps-callout" aria-live="polite">
-                <small>{isDiceInMotion ? 'Dice rolling' : phaseLabel(round)}</small>
-                <strong>{message}</strong>
-                {!isDiceInMotion && lastOutcome?.totalReturn !== null && lastOutcome?.totalReturn !== undefined && (
-                  <span>Return R{lastOutcome.totalReturn.toFixed(2)}</span>
-                )}
-              </div>
-
-              <div className="ff-craps-dice">
-                <DiceThrow
-                  className="ff-craps-dice__stage"
-                  values={[diceOutcome?.first ?? null, diceOutcome?.second ?? null]}
-                  rollKey={(pendingRound ?? round)?.rolls.at(-1)?.rollNumber ?? 'ready'}
-                  rolling={diceMotion === 'rolling'}
-                  label={isDiceInMotion ? 'Dice rolling' : lastOutcome ? `Latest roll: ${lastOutcome.first} and ${lastOutcome.second}` : 'Two dice ready to roll'}
-                />
-                <span className="ff-craps-dice__total">
-                  {isDiceInMotion ? 'Dice rolling…' : lastOutcome ? `Total ${lastOutcome.total}` : 'Dice ready'}
-                </span>
-              </div>
-
-              <div className="ff-craps-rolls" aria-label="Roll history">
-                {round?.rolls.length
-                  ? round.rolls.slice(-6).map((item) => (
-                    <span key={item.rollNumber} title={rollResultLabel(item.result)}>
-                      <small>#{item.rollNumber}</small>{item.first} + {item.second} = <b>{item.total}</b>
-                    </span>
-                  ))
-                  : <span className="ff-craps-rolls__empty">Your roll history will appear here.</span>}
-              </div>
-            </div>
-
-            <div className={`ff-craps-pass-line ${round ? 'has-bet' : ''}`}>
-              <span>PASS LINE</span>
-              <strong>{round ? `R${round.stake.toFixed(2)} · Even money — R${(round.stake * 2).toFixed(2)} total return` : 'Even money (1:1)'}</strong>
-            </div>
-            {(round?.extraBets?.length ?? 0) > 0 && <div className="ff-craps-extra-bets" aria-label="Extra bets">{round!.extraBets!.map((bet, index) => <span className={bet.resolved ? bet.won ? 'is-win' : 'is-loss' : ''} key={`${bet.kind}-${index}`}><b>{extraBetLabel(bet.kind)}</b> R{bet.stake.toFixed(2)}{bet.resolved ? ` · ${bet.won ? `returned R${bet.totalReturn?.toFixed(2)}` : 'lost'}` : ' · working'}</span>)}</div>}
+  return <div className="ff-craps-page"><main className="ff-craps-main">
+    <header className="ff-craps-title">
+      {showTitle && <h1>Craps</h1>}
+      <div className="ff-craps-summary" aria-label="Hand totals">
+        <span>Bet <b>{money(totals?.stake ?? (draftValid ? Number(stake) + extras.reduce((sum, bet) => sum + bet.stake, 0) : 0))}</b></span>
+        <span>{round?.phase === 'resolved' ? 'Total return' : 'Returned'} <b>{totals ? money(totals.returned) : '—'}</b></span>
+      </div>
+      <nav aria-label="Craps details">{(['bets', 'history', 'tips'] as const).map(value => <button type="button" aria-expanded={panel === value} aria-controls="ff-craps-details" onClick={event => open(value, event.currentTarget)} key={value}>{value === 'bets' ? 'Bets' : value === 'history' ? 'Rolls' : 'Tips'}</button>)}</nav>
+    </header>
+    <section className="ff-craps-table" aria-label="Craps table" style={tableStyle}>
+      <div className="ff-craps-table__felt">
+        <div className="ff-craps-point-row" aria-label={round?.phase === 'point' ? 'Point ' + round.point + ' is on' : 'Point is off'}>
+          <span className="ff-craps-puck">OFF</span>
+          {pointNumbers.map(number => <span className={round?.phase === 'point' && round.point === number ? 'is-point' : ''} key={number}>{round?.phase === 'point' && round.point === number && <b className="ff-craps-puck is-on">ON</b>}<strong>{number}</strong></span>)}
+        </div>
+        <div className="ff-craps-center">
+          <div className={'ff-craps-callout ' + (round?.phase === 'resolved' ? totals!.net! > 0 ? 'is-win' : totals!.net! < 0 ? 'is-loss' : '' : '')} role="status" aria-live="polite">
+            <strong>{result}</strong>
+            {motion === 'idle' && round?.phase === 'resolved' && totals?.net !== null && <span>Net {totals!.net! > 0 ? '+' : totals!.net! < 0 ? '−' : ''}{money(Math.abs(totals!.net!))}</span>}
           </div>
-
-          <div className="ff-craps-controls">
-            {!round ? (
-              <>
-                <label>
-                  <span>Pass Line bet</span>
-                  <span className="ff-craps-stake-input">
-                    <b>R</b>
-                    <input
-                      aria-label="Pass Line bet in Rand"
-                      type="number"
-                      min={status?.minimumStake ?? 1}
-                      max={status?.maximumStake ?? 100}
-                      step={status?.stakeIncrement ?? 1}
-                      value={stake}
-                      disabled={!serviceReady || isBusy || !isYourTurn}
-                      onChange={(event) => setStake(Number(event.target.value))}
-                    />
-                  </span>
-                </label>
-                <div className="ff-craps-chip-row" aria-label="Quick stake choices">
-                  {[5, 10, 25, 50].map((value) => (
-                    <button
-                      className={stake === value ? 'is-selected' : ''}
-                      type="button"
-                      disabled={!serviceReady || isBusy || !isYourTurn}
-                      onClick={() => setStake(value)}
-                      key={value}
-                    >R{value}</button>
-                  ))}
-                </div>
-                <button className="ff-craps-advanced-toggle" type="button" aria-expanded={advancedOpen} onClick={() => setAdvancedOpen(value => !value)}>Common one-roll bets {advancedOpen ? '−' : '+'}</button>
-                {advancedOpen && <section className="ff-craps-advanced" aria-label="Proposition bets"><p>These resolve on the very next roll. Field pays 1:1 (2 and 12 pay 2:1), Any Seven pays 4:1, and Any Craps pays 7:1.</p><label><span>Each extra bet</span><input type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={extraStake} onChange={event => setExtraStake(Number(event.target.value))} /></label><div>{(['field', 'any-seven', 'any-craps'] as const).map(kind => <button type="button" className={selectedExtras.includes(kind) ? 'is-selected' : ''} onClick={() => setSelectedExtras(current => current.includes(kind) ? current.filter(value => value !== kind) : [...current, kind])} key={kind}>{extraBetLabel(kind)}</button>)}</div></section>}
-                <button
-                  className="ff-craps-primary"
-                  type="button"
-                  disabled={!serviceReady || isBusy || !isYourTurn}
-                  onClick={() => void startRound()}
-                >{isBusy ? 'Placing bet…' : `Bet R${stake} on Pass Line`}</button>
-              </>
-            ) : round.phase === 'resolved' ? (
-              <button className="ff-craps-primary" type="button" disabled={isBusy || !isYourTurn} onClick={clearRound}>
-                New Pass Line bet
-              </button>
-            ) : (
-              <>{round.phase === 'point' && gateway.placeOdds && !round.extraBets?.some(bet => bet.kind === 'odds' && !bet.resolved) && <section className="ff-craps-odds"><p><b>Back the point with true odds</b><span>{oddsCopy(round.point)}</span></p><input aria-label="Pass Line odds stake" type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={oddsStake} onChange={event => setOddsStake(Number(event.target.value))} /><button type="button" disabled={isBusy} onClick={() => void placeOdds()}>Add odds</button></section>}<button className="ff-craps-primary ff-craps-primary--roll" type="button" disabled={isBusy || !isYourTurn} onClick={() => void roll()}>
-                {isBusy ? 'Dice out…' : round.phase === 'come-out' ? 'Roll the come-out' : `Roll for point ${round.point}`}
-              </button></>
-            )}
+          <div className="ff-craps-dice">
+            <DiceThrow className="ff-craps-dice__stage" values={[dice?.first ?? null, dice?.second ?? null]} rollKey={diceRound ? diceRound.roundId + ':' + (diceRound.rolls.at(-1)?.rollNumber ?? 'ready') : 'ready'} rolling={motion === 'rolling'} label={motion !== 'idle' ? 'Dice rolling' : dice ? 'Latest roll: ' + dice.first + ' and ' + dice.second + ', total ' + dice.total : 'Two dice ready to roll'} />
+            <span className="ff-craps-dice__total">{motion !== 'idle' ? 'Rolling' : dice ? dice.total : '—'}</span>
           </div>
-        </section>
-
-        {error && (
-          <div className="ff-craps-error" role="alert">
-            <strong>{error}</strong>
-            {!serviceReady && (
-              <button type="button" onClick={() => setStatusRevision((value) => value + 1)}>Check again</button>
-            )}
-          </div>
-        )}
-
-      </main>
+          <div className="ff-craps-rolls" aria-label="Recent roll totals">{round?.rolls.slice(-4).map(item => <span key={item.rollNumber} title={'Roll ' + item.rollNumber + ': ' + item.first + ' + ' + item.second + ' = ' + item.total}><small>#{item.rollNumber}</small><b>{item.total}</b></span>)}</div>
+        </div>
+        <div className="ff-craps-propositions" aria-label="One-roll bets">
+          {extraBetOptions.map(option => {
+            const placed = round?.extraBets?.filter(bet => bet.kind === option.kind) ?? []
+            const amount = placed.reduce((sum, bet) => sum + bet.stake, 0)
+            const returned = placed.reduce((sum, bet) => sum + (bet.totalReturn ?? 0), 0)
+            const selected = !round && selectedExtras.includes(option.kind)
+            const state = placed.length ? placed.some(bet => !bet.resolved) ? 'is-working' : returned > 0 ? 'is-win' : 'is-loss' : selected ? 'is-selected' : ''
+            return <button className={'ff-craps-proposition ' + state} type="button" key={option.kind} disabled={!!round || disabled} aria-pressed={!!round ? placed.some(bet => !bet.resolved) : selected} aria-label={option.label + (round ? amount ? ': ' + money(amount) + (placed.every(bet => bet.resolved) ? ', returned ' + money(returned) : ', working') : ', no bet' : ', ' + option.coverageText + ', pays ' + option.payout)} onClick={() => { setSelectedExtras(values => values.includes(option.kind) ? values.filter(kind => kind !== option.kind) : [...values, option.kind]); if (draftExtras) setDraftExtras(values => values!.some(bet => bet.kind === option.kind) ? values!.filter(bet => bet.kind !== option.kind) : [...values!, { kind: option.kind, stake: Number(extraStake) || 5 }]) }}>
+              <strong>{option.label}</strong><small>{option.coverageText}</small>
+              {(selected || amount > 0 && placed.some(bet => !bet.resolved)) && <b className="ff-craps-bet-marker">{chip(round ? amount : extras.filter(bet => bet.kind === option.kind).reduce((sum, bet) => sum + bet.stake, 0))}</b>}
+              {placed.length > 0 && placed.every(bet => bet.resolved) && <span>{returned > 0 ? 'Returned ' + money(returned) : 'Lost'}</span>}
+            </button>
+          })}
+        </div>
+        <div className={'ff-craps-pass-line ' + (round && round.phase !== 'resolved' ? 'has-bet' : '')}>
+          <strong>PASS LINE</strong><span>{round ? round.phase === 'resolved' ? 'Returned ' + money(round.lastOutcome?.totalReturn ?? 0) : money(round.stake) : 'Pays 1:1'}</span>
+          {hasOdds && <b>Odds {money(round!.extraBets!.filter(bet => bet.kind === 'odds' && !bet.resolved).reduce((sum, bet) => sum + bet.stake, 0))}</b>}
+        </div>
+      </div>
+      <div className="ff-craps-controls">
+        {!round ? <>
+          <label className="ff-craps-stake-label">Pass Line<span className="ff-craps-stake-input"><b>R</b><input aria-label="Pass Line bet in Rand" type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={stake} disabled={disabled} aria-invalid={!!status && !validStake(Number(stake), status)} onChange={event => setStake(event.target.value)} /></span></label>
+          <label className="ff-craps-extra-label">Each one-roll<span className="ff-craps-stake-input"><b>R</b><input aria-label="Each one-roll bet in Rand" type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={extraStake} placeholder={draftExtras?.length ? 'Mixed' : undefined} disabled={disabled} aria-invalid={extras.some(bet => !validStake(bet.stake, status))} onChange={event => { setExtraStake(event.target.value); if (draftExtras) setDraftExtras(values => values!.map(bet => ({ ...bet, stake: Number(event.target.value) }))) }} /></span></label>
+          <div className="ff-craps-chip-row" aria-label="Quick Pass Line stakes">{availableChipValues(status).map(value => <button type="button" disabled={disabled} aria-pressed={Number(stake) === value} onClick={() => setStake(String(value))} key={value}>R{value}</button>)}</div>
+        </> : <div className="ff-craps-hand-actions">
+          {round.phase === 'resolved' ? <><button type="button" disabled={disabled} onClick={edit}>Edit bet</button></> : <><span>Working <b>{money(totals!.workingStake)}</b></span>{canOdds && <button type="button" disabled={disabled} aria-expanded={panel === 'odds'} onClick={event => open('odds', event.currentTarget)}>Add odds</button>}</>}
+        </div>}
+        <button className="ff-craps-primary" ref={primary} type="button" disabled={disabled || (!round && !draftValid) || (round?.phase === 'resolved' && !repeatValid)} onClick={event => { returnFocus.current = document.activeElement === event.currentTarget || event.detail === 0; setPanel(null); if (!round) table.start(Number(stake), extras); else if (round.phase === 'resolved') table.start(round.stake, repeatExtras); else table.roll() }}>
+          {busy ? motion === 'idle' ? 'Checking…' : 'Rolling…' : !isYourTurn ? 'Waiting' : !round ? 'Bet R' + (Number(stake) || 0) + ' on Pass Line' : round.phase === 'resolved' ? 'Repeat ' + chip(round.stake + repeatExtras.reduce((sum, bet) => sum + bet.stake, 0)) : round.phase === 'come-out' ? 'Roll come-out' : 'Roll point ' + round.point}
+        </button>
+      </div>
+    </section>
+    <div className="ff-craps-notice" role={error ? 'alert' : undefined}>
+      <span>{error ?? (invalidDraft ? 'Enter a valid bet: ' + limitCopy : '')}</span>
+      {(recovery === 'failed' || !status || status && !status.available) && !busy && <button type="button" onClick={table.retry}>Check again</button>}
     </div>
-  )
+    {panel && <section className="ff-craps-details" id="ff-craps-details" role="dialog" aria-label={panel === 'tips' ? 'Craps tips' : panel === 'history' ? 'Roll history' : panel === 'odds' ? 'Pass Line odds' : 'Hand bets'}>
+      <header><h2>{panel === 'tips' ? 'Craps tips' : panel === 'history' ? 'Roll history' : panel === 'odds' ? 'Pass Line odds' : 'Hand bets'}</h2><button type="button" aria-label="Close Craps details" ref={closeButton} onClick={close}>×</button></header>
+      <div className="ff-craps-details__body">
+        {panel === 'tips' ? <><h3>Pass Line</h3><p>On the come-out, 7 or 11 wins; 2, 3 or 12 loses. Any other total sets the point. Make that point before 7 to win. Pays 1:1.</p><h3>One-roll bets</h3>{extraBetOptions.map(option => <p key={option.kind}><b>{option.label}</b> · {option.coverageText}. Pays {option.payout}.</p>)}<h3>Pass odds</h3><p>Add once after a point is set. Pays 2:1 on 4 or 10, 3:2 on 5 or 9, and 6:5 on 6 or 8. Odds settle with the Pass Line. Repeat includes Pass Line and one-roll bets; add odds again after a point is set.</p><p>Returns include the original bet. {limitCopy}</p></> : panel === 'history' ? round?.rolls.length ? <ol>{round.rolls.map(item => <li key={item.rollNumber}><b>#{item.rollNumber}</b><span>{item.first} + {item.second} = <strong>{item.total}</strong></span><small>{rollResultLabel(item.result)}</small></li>)}</ol> : <p>No rolls in this hand.</p> : panel === 'odds' ? <form onSubmit={event => { event.preventDefault(); if (!disabled && oddsValid) table.placeOdds(Number(oddsStake)) }}><p>Point {round?.point} · {oddsCopy(round?.point ?? null)}</p><label>Odds bet <input aria-label="Pass Line odds stake" type="number" min={status?.minimumStake ?? 1} max={status?.maximumStake ?? 100} step={status?.stakeIncrement ?? 1} value={oddsStake} disabled={disabled} aria-invalid={!oddsValid} onChange={event => setOddsStake(event.target.value)} /></label><small>{limitCopy}</small><button type="submit" disabled={disabled || !oddsValid}>Place odds</button></form> : round ? <><div className="ff-craps-bet-entry"><b>Pass Line</b><span>{money(round.stake)}</span><small>{round.phase === 'resolved' ? 'Returned ' + money(round.lastOutcome?.totalReturn ?? 0) : 'Working'}</small></div>{round.extraBets?.map((bet, index) => <div className="ff-craps-bet-entry" key={index}><b>{extraBetLabel(bet.kind)}</b><span>{money(bet.stake)}</span><small>{bet.resolved ? 'Returned ' + money(bet.totalReturn ?? 0) : 'Working'}</small></div>)}<p>Total bet {money(totals!.stake)} · Returned {money(totals!.returned)}</p></> : <><p>Pass Line {money(Number(stake) || 0)}</p>{draftExtras && new Set(draftExtras.map(bet => bet.stake)).size > 1 && <p>Amounts differ. Entering a one-roll stake changes each bet.</p>}{extras.map((bet, index) => <p key={index}>{extraBetLabel(bet.kind)} {money(bet.stake || 0)}</p>)}</>}
+      </div>
+    </section>}
+  </main></div>
 }
 
-function clampStake(value: number, status: CrapsStatus): number {
-  if (!Number.isFinite(value)) return status.minimumStake
-  const steps = Math.round((value - status.minimumStake) / status.stakeIncrement)
-  const snapped = status.minimumStake + steps * status.stakeIncrement
-  return Math.min(status.maximumStake, Math.max(status.minimumStake, snapped))
-}
-
-function diceSettleDelay(): Promise<void> {
-  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  return new Promise((resolve) => window.setTimeout(resolve, reducedMotion ? 0 : 780))
-}
-
-function phaseLabel(round: CrapsRound | null): string {
-  if (!round) return 'Table open'
-  if (round.phase === 'come-out') return 'Come-out roll'
-  if (round.phase === 'point') return `Point is ${round.point}`
-  return 'Round complete'
-}
-
+/** Retained for package consumers; the table uses compact resultLabel copy. */
 export function tableMessage(round: CrapsRound | null, serviceReady: boolean): string {
   if (!round) return serviceReady ? 'Place a Pass Line bet before the come-out roll.' : 'Checking the table…'
   const result = round.lastOutcome?.result
   if (!result) return 'Come-out roll ready. A 7 or 11 wins the Pass Line.'
   switch (result) {
-    case 'natural-win': return `Natural ${round.lastOutcome?.total}. Pass Line wins!`
-    case 'craps-loss': return `Craps ${round.lastOutcome?.total}. Pass Line loses.`
-    case 'point-established': return `Point is ${round.point}. Roll it again before a 7.`
-    case 'point-hit': return `Point ${round.point} made. Pass Line wins!`
+    case 'natural-win': return 'Natural ' + round.lastOutcome?.total + '. Pass Line wins!'
+    case 'craps-loss': return 'Craps ' + round.lastOutcome?.total + '. Pass Line loses.'
+    case 'point-established': return 'Point is ' + round.point + '. Roll it again before a 7.'
+    case 'point-hit': return 'Point ' + round.point + ' made. Pass Line wins!'
     case 'seven-out': return 'Seven-out. Pass Line loses and the dice pass.'
-    case 'no-decision': return `${round.lastOutcome?.total}, no decision. Point remains ${round.point}.`
+    case 'no-decision': return round.lastOutcome?.total + ', no decision. Point remains ' + round.point + '.'
   }
-}
-
-function turnInstruction(round: CrapsRound | null, isBusy: boolean, isYourTurn: boolean): string {
-  if (!isYourTurn) return 'Watch the shooter. Your controls unlock when the dice pass.'
-  if (isBusy) return 'Dice are out. Please wait for the result.'
-  if (!round) return 'Betting is open. Place your Pass Line bet.'
-  if (round.phase === 'resolved') return 'The hand is over. Start a new Pass Line bet.'
-  if (round.phase === 'come-out') return 'You are the shooter. Roll the come-out.'
-  return `You are the shooter. Make point ${round.point} before a 7.`
-}
-
-function rollResultLabel(result: CrapsRound['rolls'][number]['result']): string {
-  switch (result) {
-    case 'natural-win': return 'Natural'
-    case 'craps-loss': return 'Craps'
-    case 'point-established': return 'Point established'
-    case 'point-hit': return 'Point made'
-    case 'seven-out': return 'Seven-out'
-    case 'no-decision': return 'No decision'
-    default: return 'Roll'
-  }
-}
-
-function messageForError(reason: unknown): string {
-  if (reason instanceof CrapsGatewayError) return reason.message
-  return 'The Craps table is unavailable. Your Pass Line bet was not placed.'
-}
-
-function coachMessage(round: CrapsRound | null): string { return !round ? 'Start with Pass Line. Add one-roll bets only if you want more action.' : round.phase === 'come-out' ? 'A 7 or 11 wins now; 2, 3, or 12 loses. Any other number becomes the point.' : round.phase === 'point' ? `The puck is ON ${round.point}. Repeat ${round.point} before a 7; odds now pay without a house edge.` : 'The hand is settled. Review each return, then begin a new come-out.' }
-function extraBetLabel(kind: CrapsExtraBetKind): string { return kind === 'field' ? 'Field' : kind === 'any-seven' ? 'Any Seven' : kind === 'any-craps' ? 'Any Craps' : 'Pass Odds' }
-function oddsCopy(point: number | null): string { return point === 4 || point === 10 ? 'Pays 2:1' : point === 5 || point === 9 ? 'Pays 3:2' : 'Pays 6:5' }
-function readCoachPreference(): boolean { try { return localStorage.getItem('fortuneforge:craps:coach-dismissed') !== 'true' } catch { return true } }
-function writeCoachPreference(): void { try { localStorage.setItem('fortuneforge:craps:coach-dismissed', 'true') } catch { /* optional storage */ } }
-
-function CrapsTipsDialog({
-  closeButtonRef,
-  onClose,
-}: {
-  closeButtonRef: RefObject<HTMLButtonElement | null>
-  onClose: () => void
-}) {
-  return (
-    <div className="ff-craps-tips-overlay">
-      <section className="ff-craps-tips" role="dialog" aria-modal="true" aria-labelledby="ff-craps-tips-title">
-        <header>
-          <div>
-            <small>Table guide</small>
-            <h2 id="ff-craps-tips-title">Craps tips &amp; lingo</h2>
-          </div>
-          <button type="button" aria-label="Close Craps tips" onClick={onClose} ref={closeButtonRef}>×</button>
-        </header>
-
-        <div className="ff-craps-tips__grid">
-          <article>
-            <h3>Who does what?</h3>
-            <dl>
-              <dt>Shooter</dt><dd>The player rolling the dice. The shooter keeps rolling until a seven-out, then the dice pass clockwise.</dd>
-              <dt>Other players</dt><dd>They bet on or against the shooter. Open seats can be filled by simulated players.</dd>
-              <dt>Table crew</dt><dd>The stickperson calls the roll, dealers handle bets, and the boxperson supervises. Fortune Forge software performs these house roles.</dd>
-            </dl>
-          </article>
-
-          <article>
-            <h3>Pass Line basics</h3>
-            <ol>
-              <li>Place a Pass Line bet before the come-out roll.</li>
-              <li>A natural (7 or 11) wins. Craps (2, 3, or 12) loses.</li>
-              <li>Any other total establishes the point: 4, 5, 6, 8, 9, or 10.</li>
-              <li>Roll the point again before a 7 to win. A 7 first is a seven-out.</li>
-            </ol>
-          </article>
-
-          <article>
-            <h3>Useful terms</h3>
-            <dl>
-              <dt>Come-out</dt><dd>The first roll of a new hand.</dd>
-              <dt>Point</dt><dd>The number the shooter must repeat before rolling 7.</dd>
-              <dt>Even money</dt><dd>A 1:1 payout. A R10 win returns the R10 bet plus R10 winnings.</dd>
-              <dt>Seven-out</dt><dd>A 7 rolled after a point is set. The hand ends and the dice pass.</dd>
-            </dl>
-          </article>
-        </div>
-      </section>
-    </div>
-  )
 }

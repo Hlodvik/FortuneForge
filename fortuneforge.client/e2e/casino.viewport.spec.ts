@@ -84,6 +84,7 @@ async function mockCasinoApi(page: Page): Promise<void> {
     else if (path === '/api/games/liars-dice/matches') body = {
       matchId: 'viewport-match', phase: 'bidding', roundNumber: 1, currentPlayerId: 'you', currentBid: null,
       currentBidderId: null, totalDice: 20, hand: [1, 2, 3, 4, 5], outcome: null, winner: null,
+      opponentsThinking: false,
       players: [
         { id: 'you', displayName: 'You', diceCount: 5, active: true, isHuman: true },
         { id: 'bot-1', displayName: 'Riley', diceCount: 5, active: true, isHuman: false },

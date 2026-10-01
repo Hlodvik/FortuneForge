@@ -1,26 +1,70 @@
-/* Keep the table above the host's decorative backdrop and present the game as
-   a compact live table instead of a stack of overlapping panels. */
-.ff-craps-page { position: relative; z-index: 1; height: 100%; }
-.ff-craps-table__felt { padding-block: clamp(1rem, 2.4vh, 1.4rem); }
-.ff-craps-table__felt:has(> .ff-craps-coach) { grid-template-rows: auto auto auto minmax(0, 1fr) auto; }
-.ff-craps-table__felt::after { inset-block: clamp(1.1rem, 2.6vh, 1.55rem); }
-.ff-craps-turn { min-height: 2.6rem; margin-bottom: .35rem; padding-block: .35rem; }
-.ff-craps-point-row > span:not(.ff-craps-puck) { min-height: clamp(2.5rem, 5vh, 3.25rem); }
-.ff-craps-center { grid-template-columns: minmax(12rem, 1fr) minmax(12rem, 17rem) minmax(12rem, 1fr); padding-block: .35rem; }
-.ff-craps-dice { max-width: 17rem; }
-.ff-craps-dice__stage { --ff-die-frame-size: clamp(5.6rem, 11vw, 7rem); height: clamp(4.8rem, 9vw, 6rem); }
-.ff-craps-dice__stage .ff-die-throw-sprite { filter: grayscale(1) contrast(1.7); }
-.ff-craps-pass-line { min-height: 2.8rem; }
-.ff-craps-controls { min-height: 3.55rem; }
-
-@media (max-width: 760px) {
-  .ff-craps-table__felt { padding: .65rem .55rem; border-radius: 1.15rem; }
-  .ff-craps-table__felt::after { inset: .75rem .65rem; }
-  .ff-craps-turn { min-height: 2.45rem; }
-  .ff-craps-center { grid-template-columns: minmax(0, 1.25fr) minmax(7rem, .75fr); }
-  .ff-craps-dice { width: 8rem; }
-  .ff-craps-dice__stage { --ff-die-frame-size: 4.6rem; height: 4.2rem; }
-  .ff-craps-pass-line { min-height: 2.45rem; font-size: .86rem; }
-  .ff-craps-pass-line strong { font-size: .72rem; }
-  .ff-craps-coach { padding: .4rem .55rem; }
+@media(max-width:900px) { .ff-craps-controls { grid-template-columns:94px 94px minmax(0,1fr) 180px; gap:8px; padding:8px 12px; } .ff-craps-chip-row { gap:5px; } .ff-craps-chip-row button { width:34px; height:34px; font-size:9px; } .ff-craps-proposition { padding-right:52px; } .ff-craps-proposition strong { font-size:17px; } }
+@media(max-width:700px) {
+  .ff-craps-main { width:calc(100% - 6px); grid-template-rows:36px minmax(0,1fr) 38px; padding:3px 0; gap:3px; }
+  .ff-craps-title { gap:5px; padding:0 4px; } .ff-craps-title h1 { font-size:20px; }
+  .ff-craps-summary { gap:10px; font-size:10px; } .ff-craps-summary span { display:grid; gap:1px; } .ff-craps-summary b { font-size:13px; }
+  .ff-craps-title nav { gap:3px; } .ff-craps-title button { min-height:32px; padding:4px 8px; font-size:11px; }
+  .ff-craps-table { border-radius:12px; grid-template-rows:minmax(0,1fr) 110px; }
+  .ff-craps-table__felt { grid-template-rows:54px minmax(0,1fr) 80px 38px; padding:16px 10px 9px; gap:9px; }
+  .ff-craps-point-row { grid-template-columns:30px repeat(6,minmax(0,1fr)); gap:3px; } .ff-craps-point-row > span:not(.ff-craps-puck) { font-size:24px; }
+  .ff-craps-puck { width:28px; border-width:2px; font-size:8px; } .ff-craps-puck.is-on { width:25px; right:1px; top:-9px; }
+  .ff-craps-center { grid-template-columns:minmax(0,1fr) minmax(100px,46%); gap:5px; }
+  .ff-craps-callout { gap:8px; } .ff-craps-callout strong { font-size:17px; } .ff-craps-callout > span { font-size:12px; }
+  .ff-craps-dice__stage { --ff-die-frame-size:95px; height:126px; } .ff-craps-dice__total { min-height:24px; width:30px; font-size:14px; }
+  .ff-craps-rolls { display:none; }
+  .ff-craps-propositions { grid-template-columns:1.35fr 1fr 1fr; gap:4px; }
+  .ff-craps-proposition { justify-content:flex-start; padding:6px 3px 34px; gap:4px; }
+  .ff-craps-proposition strong { font-size:15px; } .ff-craps-proposition small { font-size:8px; letter-spacing:0; } .ff-craps-proposition > span { position:absolute; bottom:3px; font-size:9px; }
+  .ff-craps-bet-marker { width:31px; height:31px; border-width:3px; right:50%; top:auto; bottom:3px; translate:50% 0; font-size:8px; }
+  .ff-craps-proposition.is-win .ff-craps-bet-marker, .ff-craps-proposition.is-loss .ff-craps-bet-marker { right:4px; top:22px; bottom:auto; translate:0 0; }
+  .ff-craps-proposition.is-win, .ff-craps-proposition.is-loss { align-items:flex-start; padding-right:36px; } .ff-craps-proposition.is-win > span, .ff-craps-proposition.is-loss > span { left:4px; }
+  .ff-craps-pass-line { font-size:17px; gap:12px; } .ff-craps-pass-line span, .ff-craps-pass-line b { font-size:11px; }
+  .ff-craps-controls { grid-template-columns:86px 86px minmax(0,1fr); grid-template-rows:53px 33px; gap:4px 8px; padding:8px; align-items:center; }
+  .ff-craps-controls label { gap:3px; font-size:10px; } .ff-craps-stake-input { min-height:36px; } .ff-craps-stake-input input { padding-block:5px; font-size:14px; }
+  .ff-craps-primary { grid-column:3; grid-row:1 / 3; min-height:80px; width:100%; padding:6px; font-size:14px; }
+  .ff-craps-chip-row { grid-column:1 / 3; grid-row:2; gap:4px; justify-content:space-between; } .ff-craps-chip-row button { width:28px; height:28px; border-width:2px; font-size:8px; }
+  .ff-craps-hand-actions { grid-column:1 / 3; grid-row:1 / 3; flex-wrap:wrap; justify-content:center; } .ff-craps-hand-actions > span { font-size:11px; text-align:center; }
+  .ff-craps-notice { font-size:11px; padding:0 4px; gap:5px; }
+  .ff-craps-details { inset:43px 5px 160px auto; width:calc(100% - 10px); }
 }
+@media(max-height:600px) and (min-width:701px) { .ff-craps-table__felt { grid-template-rows:46px minmax(0,1fr) 64px 34px; gap:6px; padding:12px; } .ff-craps-dice__stage { --ff-die-frame-size:100px; height:106px; } .ff-craps-table { grid-template-rows:minmax(0,1fr) 78px; } .ff-craps-proposition strong { font-size:16px; } .ff-craps-proposition small { font-size:9px; } .ff-craps-primary { min-height:48px; } .ff-craps-details { bottom:120px; } }
+@media(max-height:450px) {
+  .ff-craps-main { grid-template-rows:28px minmax(0,1fr) 24px; gap:2px; padding:2px 0; }
+  .ff-craps-title button { min-height:26px; padding:3px 8px; } .ff-craps-summary span { display:flex; gap:5px; } .ff-craps-summary b { font-size:12px; }
+  .ff-craps-table { grid-template-rows:minmax(0,1fr) 52px; }
+  .ff-craps-table__felt { grid-template-rows:32px minmax(0,1fr) 42px 28px; gap:4px; padding:7px 10px 5px; }
+  .ff-craps-point-row { grid-template-columns:26px repeat(6,minmax(0,1fr)); } .ff-craps-point-row > span:not(.ff-craps-puck) { font-size:21px; }
+  .ff-craps-puck { width:24px; } .ff-craps-puck.is-on { width:22px; top:-5px; }
+  .ff-craps-center { grid-template-columns:minmax(0,1fr) minmax(100px,34%) minmax(70px,20%); gap:5px; }
+  .ff-craps-callout strong { font-size:15px; } .ff-craps-callout { gap:3px; } .ff-craps-callout > span { font-size:11px; }
+  .ff-craps-dice__stage { --ff-die-frame-size:66px; height:54px; } .ff-craps-dice__total { width:26px; min-height:19px; font-size:12px; }
+  .ff-craps-rolls { display:flex; gap:3px; } .ff-craps-rolls > span { width:27px; padding:2px; } .ff-craps-rolls b { font-size:12px; } .ff-craps-rolls small { font-size:8px; }
+  .ff-craps-propositions { grid-template-columns:1.5fr 1fr 1fr; }
+  .ff-craps-proposition { align-items:center; justify-content:center; gap:2px; padding:3px 44px 3px 3px; } .ff-craps-proposition strong { font-size:13px; } .ff-craps-proposition small { font-size:8px; } .ff-craps-proposition > span { display:none; }
+  .ff-craps-bet-marker { right:6px; top:50%; bottom:auto; translate:0 -50%; width:30px; height:30px; font-size:8px; }
+  .ff-craps-proposition.is-win .ff-craps-bet-marker, .ff-craps-proposition.is-loss .ff-craps-bet-marker { right:6px; top:50%; translate:0 -50%; } .ff-craps-proposition.is-win, .ff-craps-proposition.is-loss { align-items:center; padding-right:44px; }
+  .ff-craps-pass-line { font-size:15px; }
+  .ff-craps-controls { grid-template-columns:90px 90px minmax(0,1fr) minmax(120px,180px); grid-template-rows:1fr; padding:4px 8px; gap:8px; }
+  .ff-craps-controls label { font-size:9px; gap:1px; } .ff-craps-stake-input { min-height:27px; } .ff-craps-stake-input input { padding:3px; font-size:12px; }
+  .ff-craps-chip-row { display:none; } .ff-craps-primary { grid-column:4; grid-row:1; min-height:40px; font-size:13px; padding:4px 8px; }
+  .ff-craps-hand-actions { grid-column:1 / 4; grid-row:1; flex-wrap:nowrap; } .ff-craps-hand-actions button { min-height:34px; }
+  .ff-craps-notice { font-size:10px; } .ff-craps-notice button { min-height:22px; }
+  .ff-craps-details { inset:34px 5px 84px auto; grid-template-rows:34px minmax(0,1fr); } .ff-craps-details header button { width:28px; height:28px; } .ff-craps-details h2 { font-size:16px; }
+}
+@media(max-width:540px) and (max-height:450px) { .ff-craps-center { grid-template-columns:minmax(0,1fr) minmax(100px,42%); } .ff-craps-rolls { display:none; } .ff-craps-controls { grid-template-columns:80px 80px minmax(0,1fr) 130px; gap:5px; } .ff-craps-summary { gap:7px; } .ff-craps-title nav { gap:2px; } .ff-craps-title button { padding-inline:6px; } }
+
+/* Size the retained sprite stage to the actual centre, including compact screens. */
+.ff-craps-center { container-type:size; }
+.ff-craps-dice { height:100%; grid-template-rows:minmax(0,1fr) 26px; align-content:stretch; }
+.ff-craps-dice__stage { --ff-die-frame-size:clamp(38px,calc(100cqh - 26px),130px); height:100%; }
+@media(max-width:700px) { .ff-craps-dice__stage { --ff-die-frame-size:clamp(38px,calc(100cqh - 26px),95px); } }
+@media(max-height:450px) { .ff-craps-dice { grid-template-rows:minmax(0,1fr) 19px; } .ff-craps-dice__stage { --ff-die-frame-size:clamp(24px,calc(100cqh - 19px),66px); } }
+
+.ff-craps-proposition { min-height:0; }
+.ff-craps-dice { grid-template-rows:minmax(0,1fr) 28px; }
+.ff-craps-dice__stage { width:min(100%,calc((100cqh - 28px) * 2.90909)); height:auto; aspect-ratio:32 / 11; align-self:center; }
+@media(max-width:700px) { .ff-craps-dice { grid-template-rows:minmax(0,1fr) 26px; } .ff-craps-dice__stage { width:min(100%,calc((100cqh - 26px) * 2.90909)); } .ff-craps-proposition strong { font-size:13px; white-space:nowrap; } .ff-craps-proposition { padding:6px 3px 34px; gap:3px; } .ff-craps-proposition.is-win,.ff-craps-proposition.is-loss { align-items:center; padding-right:3px; } .ff-craps-proposition.is-win .ff-craps-bet-marker,.ff-craps-proposition.is-loss .ff-craps-bet-marker { width:27px; height:27px; top:auto; right:50%; bottom:15px; translate:50% 0; } .ff-craps-proposition.is-win > span,.ff-craps-proposition.is-loss > span { left:0; width:100%; text-align:center; } }
+@media(max-width:700px) and (min-height:650px) { .ff-craps-center { grid-template-columns:minmax(0,1fr); grid-template-rows:auto minmax(0,1fr); } .ff-craps-callout { max-width:none; } .ff-craps-callout strong { font-size:20px; } .ff-craps-dice { width:min(100%,320px); height:min(100%,150px); justify-self:center; align-self:center; } .ff-craps-dice__stage { width:100%; max-height:100%; } }
+@media(max-height:450px) { .ff-craps-table__felt { grid-template-rows:26px minmax(0,1fr) 34px 22px; gap:3px; padding-block:6px 4px; } .ff-craps-center { container-type:size; } .ff-craps-dice { grid-template-rows:minmax(0,1fr); grid-template-columns:minmax(0,1fr) 26px; gap:3px; } .ff-craps-dice__stage { width:min(100%,calc(100cqh * 2.90909)); } .ff-craps-dice__total { align-self:center; min-height:19px; } .ff-craps-proposition,.ff-craps-proposition.is-win,.ff-craps-proposition.is-loss { padding:3px 40px 3px 3px; } .ff-craps-proposition.is-win .ff-craps-bet-marker,.ff-craps-proposition.is-loss .ff-craps-bet-marker { right:5px; top:50%; bottom:auto; translate:0 -50%; } }
+
+@media(max-height:450px) { .ff-craps-primary { height:44px; min-height:44px; line-height:15px; padding:4px 5px; } }

@@ -49,6 +49,7 @@ export type CrapsRound = Readonly<{
 
 export interface CrapsGateway {
   getStatus(signal?: AbortSignal): Promise<CrapsStatus>
+  getRound?(roundId: string, signal?: AbortSignal): Promise<CrapsRound>
   startRound(stake: number, signal?: AbortSignal, extraBets?: readonly CrapsExtraBetRequest[]): Promise<CrapsRound>
   roll(roundId: string, signal?: AbortSignal): Promise<CrapsRound>
   placeOdds?(roundId: string, stake: number, signal?: AbortSignal): Promise<CrapsRound>

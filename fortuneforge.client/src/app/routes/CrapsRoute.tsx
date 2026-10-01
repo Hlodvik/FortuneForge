@@ -14,6 +14,6 @@ export function AuthenticatedCrapsRoute() {
   }
 
   return <InGameShell account={account} title="Craps" theme="casino" className="player-page">
-    <CrapsGame gateway={gateway} />
+    <CrapsGame key={account.userId} playerId={account.userId} gateway={gateway} showTitle={false} />
   </InGameShell>
 }

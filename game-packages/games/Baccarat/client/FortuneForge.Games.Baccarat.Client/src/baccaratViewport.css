@@ -1,44 +1,57 @@
-/* The host supplies account chrome above this package. Keep the road, table,
-   wager and primary action inside the remaining viewport. */
-@media (min-width: 561px) {
-  .ff-baccarat { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: clamp(.65rem, 1.6vh, 1rem); }
-  .ff-baccarat__header { margin-bottom: .55rem; }
-  .ff-baccarat h1 { font-size: clamp(2.1rem, 5vh, 3.2rem); }
-  .ff-baccarat__table { display: grid; height: 100%; min-height: 0; grid-template-rows: auto minmax(0, 1fr); overflow: hidden; padding: .7rem 1rem; }
-  .ff-baccarat__betting,
-  .ff-baccarat__settled { height: 100%; min-height: 0; gap: .55rem; }
-  .ff-baccarat__table-mark > span { width: 2.7rem; font-size: 1.35rem; }
-  .ff-baccarat h2 { margin: .3rem 0 .15rem; font-size: 1.45rem; }
-  .ff-baccarat__bet { min-height: 3.7rem; }
+@media (max-width: 680px) {
+  .ff-baccarat { padding: .4rem; gap: .3rem; }
+  .ff-baccarat h1 { font-size: 1.4rem; }
+  .ff-baccarat__account { padding-inline: .5rem; gap: .3rem; }
+  .ff-baccarat__account strong { font-size: .8rem; }
+  .ff-baccarat__table { grid-template-rows: 2.2rem minmax(0, 1fr) 9rem 3.6rem; padding: .5rem; gap: .35rem; border-radius: .9rem; }
+  .ff-baccarat__hands { gap: .4rem; }
+  .ff-baccarat__hand { padding: .35rem; border-radius: .7rem; }
+  .ff-baccarat__hand-title { font-size: .8rem; }
+  .ff-baccarat__hand-title strong { width: 1.7rem; font-size: 1.15rem; }
+  .ff-baccarat__round-head { gap: .35rem; }
+  .ff-baccarat__round-head span { font-size: .85rem; }
+  .ff-baccarat__round-head strong { font-size: 1.4rem; }
+  .ff-baccarat__round-head small { font-size: .55rem; }
+  .ff-baccarat__bet { flex-direction: column; min-height: 2.9rem; gap: .1rem; padding: .25rem; }
+  .ff-baccarat__bet strong { font-size: .85rem; }
+  .ff-baccarat__bet span { font-size: .55rem; }
+  .ff-baccarat__rail { padding: .4rem; gap: .4rem; }
+  .ff-baccarat__bet-sides { gap: .4rem; }
+  .ff-baccarat__wager-row { gap: .5rem; }
+  .ff-baccarat__primary { min-width: 5.5rem; padding-inline: .65rem; }
+  .ff-baccarat__stake small { font-size: .5rem; }
+  .ff-baccarat__round-actions { gap: .4rem; }
+  .ff-baccarat__round-actions > button { min-width: 0; padding-inline: .55rem; }
+  .ff-baccarat__inline-road .ff-baccarat__road { grid-template-columns: minmax(0, 1fr) auto; gap: .3rem; }
+  .ff-baccarat__inline-road .ff-baccarat__big-road, .ff-baccarat__inline-road .ff-baccarat__road-stats, .ff-baccarat__inline-road .ff-baccarat__shoe small { display: none; }
+  .ff-baccarat__inline-road .ff-baccarat__road ol { display: flex; min-height: .9rem; gap: .15rem; }
+  .ff-baccarat__inline-road .ff-baccarat__road li { flex: 0 0 .9rem; width: .9rem; font-size: .45rem; }
 }
-
-@media (max-width: 560px) {
-  .ff-baccarat { min-height: 0; padding: .45rem; }
-  .ff-baccarat__header { align-items: center; margin-bottom: .4rem; }
-  .ff-baccarat__eyebrow { display: none; }
-  .ff-baccarat h1 { font-size: 2.15rem; }
-  .ff-baccarat__table { min-height: 0; padding: .5rem; border-radius: .8rem; }
-  .ff-baccarat__road { gap: .3rem; margin-bottom: .45rem; padding: .35rem; }
-  .ff-baccarat__big-road > div { grid-template: repeat(6, .72rem) / repeat(12, .72rem); gap: .06rem; padding: .2rem; background-size: .78rem .78rem; }
-  .ff-baccarat__big-road i { width: .62rem; height: .62rem; border-width: 1px; }
-  .ff-baccarat__shoe small,
-  .ff-baccarat__road-stats { display: none; }
-  .ff-baccarat__betting,
-  .ff-baccarat__settled { min-height: 0; gap: .45rem; }
-  .ff-baccarat__table-mark > span { display: none; }
-  .ff-baccarat h2 { margin: 0; font-size: 1.25rem; }
-  .ff-baccarat__table-mark p { font-size: .72rem; line-height: 1.25; }
-  .ff-baccarat__bet { min-height: 3.5rem; }
-  .ff-baccarat__stake { grid-template-columns: auto minmax(0, 1fr); align-items: center; width: 100%; }
-  .ff-baccarat__stake input { padding: .45rem .55rem; }
-  .ff-baccarat__stake small { grid-column: 1 / -1; }
-  .ff-baccarat__primary { min-height: 2.55rem; padding-block: .45rem; }
+@media (max-width: 680px) and (min-height: 700px) and (orientation: portrait) {
+  .ff-baccarat__hands { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  .ff-baccarat__hand { padding: .5rem .7rem; container-type: size; }
+  .ff-baccarat__card-slot { width: min(29cqw, 7rem, calc((100cqh - 2.2rem) * 5 / 7)); }
 }
-
-@media (max-height: 760px) and (min-width: 561px) {
-  .ff-baccarat__header { margin-bottom: .35rem; }
-  .ff-baccarat__table-mark > span { display: none; }
-  .ff-baccarat__betting { gap: .35rem; }
-  .ff-baccarat__bet { min-height: 3.25rem; }
-  .ff-baccarat__primary { min-height: 2.5rem; padding-block: .4rem; }
+@media (max-height: 500px) and (orientation: landscape) {
+  .ff-baccarat { padding: .25rem .4rem; gap: .2rem; }
+  .ff-baccarat__table { grid-template-rows: 1.7rem minmax(0, 1fr) 5rem; padding: .35rem; gap: .2rem; }
+  .ff-baccarat__inline-road { display: none; }
+  .ff-baccarat__hand { padding: .25rem; grid-template-rows: 1.7rem minmax(0, 1fr); container-type: size; }
+  .ff-baccarat__hand-title { font-size: .7rem; }
+  .ff-baccarat__hand-title strong { width: 1.5rem; font-size: 1rem; }
+  .ff-baccarat__card-slot { width: min(3.3rem, calc((100cqh - 1.7rem) * 5 / 7)); }
+  .ff-baccarat__corner { font-size: .8rem; }
+  .ff-baccarat__suit { font-size: 1.6rem; }
+  .ff-baccarat__round-head span { font-size: .75rem; }
+  .ff-baccarat__round-head strong { font-size: 1.25rem; }
+  .ff-baccarat__rail:has(.ff-baccarat__bet-sides) { grid-template-columns: minmax(0, 1fr) minmax(13.5rem, .8fr); gap: .7rem; padding: .25rem .5rem; }
+  .ff-baccarat__bet-sides { gap: .3rem; }
+  .ff-baccarat__bet { min-height: 2.9rem; flex-direction: column; gap: .1rem; }
+  .ff-baccarat__bet strong { font-size: .8rem; }
+  .ff-baccarat__bet span { font-size: .5rem; }
+  .ff-baccarat__stake label { font-size: .5rem; }
+  .ff-baccarat__stake small { font-size: .45rem; }
+  .ff-baccarat__wager-row { gap: .5rem; }
+  .ff-baccarat__wager-row .ff-baccarat__primary { min-width: 4.5rem; }
+  .ff-baccarat__ticket { font-size: .7rem; }
 }

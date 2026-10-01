@@ -1,1 +1,81 @@
-*{box-sizing:border-box}.ff-baccarat{min-height:100%;padding:clamp(1rem,3vw,3rem);color:#fff4e0;background:radial-gradient(circle at 52% -12%,#b08437 0,transparent 26rem),radial-gradient(circle at 0 100%,#183f56 0,transparent 34rem),linear-gradient(145deg,#120a1c,#050c13 75%);font-family:Inter,ui-sans-serif,system-ui,sans-serif}.ff-baccarat button,.ff-baccarat input{font:inherit}.ff-baccarat__header,.ff-baccarat__table,.ff-baccarat__error{width:min(100%,68rem);margin-inline:auto}.ff-baccarat__header{display:flex;align-items:end;justify-content:space-between;gap:1rem;margin-bottom:1.2rem}.ff-baccarat__eyebrow,.ff-baccarat__account span,.ff-baccarat__account small,.ff-baccarat__round-head span,.ff-baccarat__settlement span{color:#dbc28f;font-size:.66rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.ff-baccarat h1,.ff-baccarat h2,.ff-baccarat__round-head strong{font-family:Georgia,serif}.ff-baccarat h1{margin:.17rem 0 0;font-size:clamp(2.5rem,7vw,4.8rem);line-height:.84;letter-spacing:-.06em;text-shadow:0 .4rem 1rem #0009}.ff-baccarat__account{display:grid;justify-items:end;gap:.15rem;padding:.65rem .85rem;border:1px solid #f7d8954d;border-radius:.75rem;background:#0a121cbb}.ff-baccarat__account strong{font-size:1.05rem}.ff-baccarat__account small{color:#a9d5bd;font-size:.54rem}.ff-baccarat__table{min-height:32rem;padding:clamp(1rem,3.5vw,2.5rem);border:1px solid #f2d38f55;border-radius:1.4rem;background:linear-gradient(135deg,#103e34e8,#0b1820f4);box-shadow:0 1.5rem 4rem #0009,inset 0 0 4rem #f5cd7111}.ff-baccarat__betting{display:grid;min-height:27rem;place-content:center;justify-items:center;gap:1rem;text-align:center}.ff-baccarat__table-mark{max-width:29rem}.ff-baccarat__table-mark>span{display:grid;width:4rem;aspect-ratio:1;place-items:center;margin:auto;border:1px solid #ffe2a75e;border-radius:50%;background:linear-gradient(145deg,#f4d47b,#ae6328);color:#17372a;font-size:2rem;box-shadow:0 .5rem 1.4rem #0007}.ff-baccarat h2{margin:.75rem 0 .35rem;font-size:2rem}.ff-baccarat__table-mark p{margin:0;color:#d9d4c5;line-height:1.55}.ff-baccarat__bet-sides{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.55rem;width:min(100%,38rem)}.ff-baccarat__bet{display:grid;min-height:4.8rem;gap:.3rem;border:1px solid #f5daa062;border-radius:.75rem;background:#0a1720bb;color:#fff4e0;cursor:pointer}.ff-baccarat__bet strong{font-family:Georgia,serif;font-size:1.15rem}.ff-baccarat__bet span{color:#d5c090;font-size:.6rem;font-weight:850}.ff-baccarat__bet.is-selected{border-color:#fff1ac;background:linear-gradient(145deg,#ad7330,#754020);box-shadow:0 0 0 .18rem #f5c55c4d;color:#fffced}.ff-baccarat__stake{display:grid;gap:.3rem;color:#e5cf9f;font-size:.7rem;font-weight:900;letter-spacing:.1em;text-align:left;text-transform:uppercase}.ff-baccarat__stake input{min-width:15rem;border:1px solid #f5d68d76;border-radius:.55rem;padding:.63rem .75rem;background:#081119;color:#fff5e5;font-weight:800}.ff-baccarat__stake small{max-width:15rem;color:#c7c2af;font-size:.57rem;letter-spacing:normal;text-transform:none}.ff-baccarat__primary{min-height:2.9rem;border:1px solid #fff1ad;border-radius:.65rem;padding:.65rem 1.4rem;background:linear-gradient(#fff1ad,#d99b36);box-shadow:0 .45rem .8rem #0006;color:#30131b;font-weight:950;letter-spacing:.04em;cursor:pointer}.ff-baccarat__primary:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}.ff-baccarat__settled{display:grid;min-height:27rem;align-content:center;gap:clamp(.8rem,2vw,1.4rem)}.ff-baccarat__round-head{display:flex;align-items:end;justify-content:space-between;gap:1rem}.ff-baccarat__round-head strong{color:#ffe49c;font-size:clamp(1.7rem,5vw,3.2rem);line-height:.9}.ff-baccarat__hand{padding:.8rem;border:1px solid #f3d59635;border-radius:.85rem;background:#07161bb5}.ff-baccarat__hand.is-winner{border-color:#fff0a4;box-shadow:inset 0 0 1.5rem #f7c24d1f}.ff-baccarat__hand-title{display:flex;justify-content:space-between;gap:1rem;margin-bottom:.55rem;color:#dcc993;font-size:.67rem;font-weight:900;letter-spacing:.1em;text-transform:uppercase}.ff-baccarat__hand-title strong{color:#fff6e5}.ff-baccarat__cards{display:flex;gap:.5rem}.ff-baccarat__card{position:relative;display:grid;width:clamp(4.6rem,12vw,7rem);aspect-ratio:5/7;place-items:center;overflow:hidden;border:3px solid #eee3ca;border-radius:.55rem;background:linear-gradient(135deg,#fff,#f3e9d4);box-shadow:0 .45rem .9rem #0008;color:#142126;font-family:Georgia,serif}.ff-baccarat__card::after{position:absolute;inset:.24rem;border:1px solid #2d373f42;border-radius:.25rem;content:""}.ff-baccarat__card.is-red{color:#a71e36}.ff-baccarat__corner{position:absolute;z-index:1;top:.34rem;left:.38rem;display:grid;font-size:clamp(.9rem,2.4vw,1.8rem);font-weight:800;line-height:.78;text-align:center}.ff-baccarat__corner small{font-size:.7em}.ff-baccarat__corner--reverse{top:auto;right:.38rem;bottom:.34rem;left:auto;transform:rotate(180deg)}.ff-baccarat__suit{font-size:clamp(2rem,6vw,5rem);line-height:1}.ff-baccarat__settlement{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}.ff-baccarat__settlement>div{display:grid;gap:.2rem;padding:.55rem;border:1px solid #ecd18e35;border-radius:.55rem;background:#0711179c}.ff-baccarat__settlement strong{color:#fff5e5;font-size:.78rem}.ff-baccarat__settlement .is-win{color:#b9f0ba}.ff-baccarat__settlement .is-loss{color:#ffbcaf}.ff-baccarat__settlement .is-push{color:#fee39a}.ff-baccarat__error{margin-top:1rem;padding:.8rem 1rem;border:1px solid #ff99996b;border-radius:.7rem;background:#611b29;color:#ffe1e1}.ff-baccarat button:disabled,.ff-baccarat input:disabled{cursor:not-allowed;opacity:.5}.ff-baccarat button:focus-visible,.ff-baccarat input:focus-visible{outline:3px solid #fff0a6;outline-offset:.18rem}@media(max-width:560px){.ff-baccarat{padding:1rem}.ff-baccarat__header{align-items:start}.ff-baccarat__account{padding:.45rem .6rem}.ff-baccarat__account strong{font-size:.8rem}.ff-baccarat__table{min-height:28rem;padding:1rem;border-radius:1rem}.ff-baccarat__bet-sides{gap:.3rem}.ff-baccarat__bet{min-height:4.3rem;padding:.35rem}.ff-baccarat__bet strong{font-size:1rem}.ff-baccarat__bet span{font-size:.52rem}.ff-baccarat__stake input{min-width:0;width:100%}.ff-baccarat__settlement{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ff-baccarat {
+  box-sizing: border-box; position: relative; height: 100dvh; min-height: 0;
+  display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .5rem; padding: .7rem;
+  color: #fff4e0; font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  background: radial-gradient(ellipse at 50% 20%, #235548, transparent 65%), linear-gradient(135deg, #1d1228, #071b23 80%);
+  user-select: none; -webkit-user-select: none;
+}
+.ff-baccarat[data-embedded="true"] { height: 100%; }
+.ff-baccarat *, .ff-baccarat *::before, .ff-baccarat *::after { box-sizing: border-box; }
+.ff-baccarat button, .ff-baccarat input { font: inherit; }
+.ff-baccarat__header, .ff-baccarat__table, .ff-baccarat__error { width: min(100%, 68rem); margin-inline: auto; }
+.ff-baccarat__header { display: flex; align-items: center; gap: .45rem; min-height: 2.75rem; }
+.ff-baccarat h1 { margin: 0; font: 800 2rem/1 Georgia, serif; }
+.ff-baccarat__account { display: flex; align-items: baseline; gap: .5rem; margin-left: auto; padding: .4rem .7rem; border: 1px solid #ffd77366; border-radius: 2rem; background: #061714e8; font-variant-numeric: tabular-nums; }
+.ff-baccarat__account span { color: #d1c396; font-size: .6rem; }
+.ff-baccarat__account strong { color: #fff0ad; font-size: .95rem; }
+.ff-baccarat__table { min-height: 0; display: grid; grid-template-rows: 2.5rem minmax(0, 1fr) 8.2rem 5.5rem; gap: .45rem; padding: .7rem; border: 2px solid #bb9552; border-radius: 1.4rem; background: radial-gradient(ellipse at 50% 30%, #1f5a49, #0b2b27 75%); box-shadow: inset 0 0 0 2px #30251b, inset 0 0 4rem #021714, 0 .7rem 2rem #0007; }
+.ff-baccarat__round-head { display: flex; align-items: center; justify-content: center; gap: .7rem; text-align: center; }
+.ff-baccarat__round-head small { color: #e6cf9e; font-size: .65rem; }
+.ff-baccarat__round-head span { color: #f1dec1; font: 800 1rem Georgia, serif; }
+.ff-baccarat__round-head strong { font: 800 1.9rem/1 Georgia, serif; font-variant-numeric: tabular-nums; }
+.ff-baccarat__hands { min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem; }
+.ff-baccarat__hand { min-height: 0; min-width: 0; container-type: inline-size; display: grid; grid-template-rows: 2.2rem minmax(0, 1fr); align-items: center; padding: .55rem; border: 1px solid #edcf8b33; border-radius: .9rem; background: linear-gradient(#051d1833, #051d1866); }
+.ff-baccarat__hand.is-winner { border-color: #ffe28c; box-shadow: inset 0 0 1.4rem #ebc45a22, 0 0 1rem #e5c96722; }
+.ff-baccarat__hand-title { display: flex; justify-content: space-between; align-items: center; gap: .3rem; color: #e6d3a4; font: 800 .9rem Georgia, serif; }
+.ff-baccarat__hand-title strong { display: grid; place-items: center; width: 2rem; aspect-ratio: 1; border: 1px solid #e6d3a455; border-radius: 50%; color: #fff2c3; font: 800 1.3rem/1 Georgia, serif; }
+.ff-baccarat__hand.is-winner .ff-baccarat__hand-title strong { color: #b9f0ba; border-color: #b9f0ba; box-shadow: 0 0 .6rem #b9f0ba33; }
+.ff-baccarat__cards { display: flex; align-items: center; justify-content: center; gap: .3rem; min-height: 0; }
+.ff-baccarat__card-slot { width: clamp(2.4rem, 29cqw, 7rem); aspect-ratio: 5/7; flex: 0 0 auto; }
+.ff-baccarat__card { position: relative; display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; border: 2px solid #eee3ca; border-radius: .45rem; background: linear-gradient(135deg, #fff, #f3e9d4); box-shadow: .2rem .35rem .7rem #0006; color: #142126; font-family: Georgia, serif; animation: ff-baccarat-card-deal .28s ease-out both; }
+.ff-baccarat__card::after { position: absolute; inset: .18rem; border: 1px solid #2d373f42; border-radius: .25rem; content: ""; }
+.ff-baccarat__card.is-red { color: #a71e36; }
+.ff-baccarat__card--back { color: #d8c184; background: repeating-linear-gradient(45deg, #1a3542 0 5px, #142732 5px 7px); font-size: clamp(.7rem, 6cqw, 1.4rem); animation: none; }
+.ff-baccarat__card--back::after { border-color: #d8c18466; }
+.ff-baccarat__corner { position: absolute; z-index: 1; top: .25rem; left: .25rem; display: grid; font-size: clamp(.65rem, 7cqw, 1.5rem); font-weight: 800; line-height: .8; text-align: center; }
+.ff-baccarat__corner small { font-size: .7em; }
+.ff-baccarat__corner--reverse { top: auto; right: .25rem; bottom: .25rem; left: auto; transform: rotate(180deg); }
+.ff-baccarat__suit { font-size: clamp(1.1rem, 14cqw, 3.2rem); line-height: 1; }
+.ff-baccarat__rail { min-height: 0; display: grid; align-content: center; justify-items: center; gap: .5rem; padding: .5rem .65rem; border: 1px solid #f2d38f35; border-radius: .85rem; background: #041e1be8; }
+.ff-baccarat__bet-sides { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; width: 100%; }
+.ff-baccarat__bet { display: flex; align-items: center; justify-content: center; gap: .5rem; min-width: 0; min-height: 3rem; border: 1px solid #e3c68966; border-radius: .6rem; background: #092720; color: #fff4e0; cursor: pointer; }
+.ff-baccarat__bet strong { font: 800 1rem Georgia, serif; }
+.ff-baccarat__bet span { color: #d5c090; font-size: .65rem; }
+.ff-baccarat__bet.is-player { border-color: #78b3f080; background: #112d3b; }
+.ff-baccarat__bet.is-banker { border-color: #e8788580; background: #3a212a; }
+.ff-baccarat__bet.is-tie { border-color: #92d2a080; background: #153425; }
+.ff-baccarat__bet.is-selected { outline: 2px solid #ffe28c; outline-offset: 1px; box-shadow: inset 0 0 1.2rem #e5c96735; }
+.ff-baccarat__wager-row { display: flex; align-items: center; justify-content: center; width: min(100%, 32rem); gap: .8rem; }
+.ff-baccarat__stake { min-width: 0; display: grid; gap: .15rem; flex: 1; }
+.ff-baccarat__stake label { color: #e3c689; font-weight: 800; font-size: .6rem; }
+.ff-baccarat__stake small { color: #bac9b9; font-size: .55rem; }
+.ff-baccarat__stake-edit { display: flex; align-items: stretch; min-width: 0; border: 1px solid #dcb96366; border-radius: .6rem; background: #020e0c; }
+.ff-baccarat__stake-edit input { min-width: 0; width: 100%; border: 0; padding: .25rem; background: transparent; color: #fff1bc; font-weight: 800; text-align: center; appearance: textfield; -moz-appearance: textfield; }
+.ff-baccarat__stake-edit input::-webkit-inner-spin-button, .ff-baccarat__stake-edit input::-webkit-outer-spin-button { appearance: none; margin: 0; }
+.ff-baccarat__stake-edit input[aria-invalid="true"] { color: #ffbcaf; }
+.ff-baccarat__stake-edit button { flex: 0 0 2.75rem; min-height: 2.75rem; border: 0; border-radius: .5rem; background: transparent; color: #ffe0a0; cursor: pointer; font-weight: 800; }
+.ff-baccarat__primary, .ff-baccarat__secondary { min-height: 2.75rem; border-radius: .65rem; padding: .5rem 1rem; font-size: .82rem; font-weight: 800; cursor: pointer; }
+.ff-baccarat__primary { min-width: 7.5rem; border: 1px solid #fff1ad; background: linear-gradient(#fff1ad, #d99b36); color: #30131b; box-shadow: 0 .3rem .7rem #0005; }
+.ff-baccarat__secondary { border: 1px solid #e7c98088; background: #0c2922; color: #fff4e0; }
+.ff-baccarat button:hover:not(:disabled) { filter: brightness(1.12); }
+.ff-baccarat button:not(:disabled):active { transform: translateY(1px); }
+.ff-baccarat button:disabled, .ff-baccarat input:disabled { cursor: not-allowed; opacity: .5; }
+.ff-baccarat button:focus-visible, .ff-baccarat input:focus-visible { outline: 2px solid #fff0a6; outline-offset: .12rem; }
+.ff-baccarat__ticket { color: #f3ddb1; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.ff-baccarat__round-actions, .ff-baccarat__recovery { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .6rem; }
+.ff-baccarat__recovery > span { color: #e8d6b1; font-size: .75rem; }
+.ff-baccarat .is-win { color: #b9f0ba; }
+.ff-baccarat .is-loss { color: #ffbcaf; }
+.ff-baccarat .is-push { color: #fee39a; }
+.ff-baccarat__info > button { min-width: 2.75rem; padding-inline: .6rem; }
+.ff-baccarat__info-panel { position: fixed; z-index: 30; top: 7rem; right: max(.5rem, calc((100vw - 68rem) / 2)); width: min(32rem, calc(100vw - 1rem)); max-height: calc(100dvh - 8rem); overflow-y: auto; overscroll-behavior: contain; padding: .9rem; border: 1px solid #ffd77388; border-radius: .8rem; background: #05271ff7; box-shadow: 0 1rem 3rem #0009; color: #e2d8cd; user-select: text; }
+.ff-baccarat__info-panel > button { float: right; min-width: 2.75rem; padding: .35rem; margin-left: .5rem; }
+.ff-baccarat__info-panel h2 { margin: .3rem 0 .8rem; color: #ffe4a0; font: 800 1.2rem Georgia, serif; }
+.ff-baccarat__info-panel p { font-size: .8rem; line-height: 1.5; }
+.ff-baccarat__settlement { clear: both; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0; }
+.ff-baccarat__settlement > div { display: grid; gap: .25rem; padding: .6rem; border: 1px solid #ecd18e35; border-radius: .6rem; }
+.ff-baccarat__settlement dt { color: #cfbf93; font-size: .65rem; }
+.ff-baccarat__settlement dd { margin: 0; font-size: .85rem; font-weight: 800; }
+.ff-baccarat__error { margin-block: 0; max-height: 4.5rem; overflow: auto; padding: .5rem .7rem; border: 1px solid #ff99996b; border-radius: .7rem; background: #611b29; color: #ffe1e1; font-size: .75rem; }
+@keyframes ff-baccarat-card-deal { from { opacity: 0; transform: translateY(-.5rem) rotate(-2deg); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ff-baccarat__card { animation: none; } .ff-baccarat button:not(:disabled):active { transform: none; } }

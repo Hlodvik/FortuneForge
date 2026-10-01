@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, configure, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BaccaratGame } from './BaccaratGame'
@@ -14,7 +14,8 @@ const settledRound: BaccaratRound = {
   disposition: 'win', profit: 9.5, totalReturn: 19.5,
 }
 
-afterEach(() => { cleanup(); sessionStorage.clear() })
+configure({ asyncUtilTimeout: 2_500 })
+afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear() })
 
 describe('BaccaratGame', () => {
   it('retries an unavailable table connection without requiring a page refresh', async () => {

@@ -29,6 +29,6 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
   }, [])
 
   return <InGameShell account={account} title="Baccarat" theme="casino" className="player-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/baccarat" />}>
-    <BaccaratGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
+    <BaccaratGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} />
   </InGameShell>
 }

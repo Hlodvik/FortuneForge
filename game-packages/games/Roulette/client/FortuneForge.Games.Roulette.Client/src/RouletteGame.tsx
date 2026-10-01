@@ -1,210 +1,118 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
-import { RouletteGatewayError, type RouletteBet, type RouletteBetKind, type RouletteGateway, type RouletteRound, type RouletteStatus } from './contracts'
-import { betLabel, pocketColor } from './rouletteHelpers'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import type { RouletteBet, RouletteBetKind, RouletteGateway } from './contracts'
+import { pocketColor } from './rouletteHelpers'
+import { availableChipValues, betOptions, coveredPockets, formatBetLabel, legalSelection, makeBet, neighborPockets, validStake } from './roulettePresentation'
+import { useRouletteTable } from './useRouletteTable'
 import rouletteSpinWheel from './assets/roulette-spin-wheel-v2.png?no-inline'
 import './roulette.css'
 import './rouletteEnhancements.css'
 import './rouletteViewport.css'
+import './rouletteProfessionalTheme.css'
 
-export type RouletteGameProps = Readonly<{ gateway: RouletteGateway }>
+export type RouletteGameProps = Readonly<{ gateway: RouletteGateway; playerId?: string; showTitle?: boolean }>
+type Panel = 'bets' | 'options' | 'history' | 'neighbors' | 'tips'
+const money = (value: number) => 'R' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const outside: readonly RouletteBetKind[] = ['low', 'even', 'red', 'black', 'odd', 'high']
 
-const betOptions: readonly { kind: RouletteBetKind; label: string; count: number }[] = [
-  { kind: 'straight', label: 'Straight-up', count: 1 }, { kind: 'split', label: 'Split', count: 2 },
-  { kind: 'street', label: 'Street', count: 3 }, { kind: 'corner', label: 'Corner', count: 4 },
-  { kind: 'six-line', label: 'Six-line', count: 6 }, { kind: 'column', label: 'Column', count: 1 },
-  { kind: 'dozen', label: 'Dozen', count: 1 }, { kind: 'red', label: 'Red', count: 0 },
-  { kind: 'black', label: 'Black', count: 0 }, { kind: 'even', label: 'Even', count: 0 },
-  { kind: 'odd', label: 'Odd', count: 0 }, { kind: 'low', label: '1–18', count: 0 },
-  { kind: 'high', label: '19–36', count: 0 },
-]
-const minimumSpinMilliseconds = 1100
-const europeanWheelOrder = [0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26] as const
-
-export function RouletteGame({ gateway }: RouletteGameProps) {
-  const [status, setStatus] = useState<RouletteStatus | null>(null)
-  const [round, setRound] = useState<RouletteRound | null>(null)
+export function RouletteGame({ gateway, playerId, showTitle = true }: RouletteGameProps) {
+  const table = useRouletteTable(gateway, playerId)
+  const { round, status, busy, spinning, error, recovery } = table
   const [kind, setKind] = useState<RouletteBetKind>('straight')
-  const [numbers, setNumbers] = useState<number[]>([17])
-  const [stake, setStake] = useState(10)
-  const [busy, setBusy] = useState(false)
-  const [spinning, setSpinning] = useState(false)
-  const [spinTarget, setSpinTarget] = useState<number | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [tips, setTips] = useState(false)
-  const [lastBets, setLastBets] = useState<readonly RouletteBet[]>([])
-  const [history, setHistory] = useState<readonly number[]>(readRouletteHistory)
+  const [numbers, setNumbers] = useState<readonly number[]>([17])
+  const [stake, setStake] = useState(1)
+  const [panel, setPanel] = useState<Panel | null>(null)
   const [neighborPocket, setNeighborPocket] = useState(17)
   const [neighborDepth, setNeighborDepth] = useState(1)
-  const closeRef = useRef<HTMLButtonElement>(null)
-  const tipsRef = useRef<HTMLButtonElement>(null)
-
+  const trigger = useRef<HTMLElement | null>(null)
+  const panelRef = useRef<HTMLElement>(null)
+  const kindRef = useRef<HTMLSelectElement>(null)
+  const wasBusy = useRef(busy)
+  const previouslySettled = useRef(false)
+  useEffect(() => { if (status) setStake(current => validStake(current, status, status.maximumStake) ? current : status.minimumStake) }, [status])
   useEffect(() => {
-    const controller = new AbortController()
-    void gateway.getStatus(controller.signal).then(value => {
-      setStatus(value)
-      setStake(Math.max(1, value.minimumStake))
-    }).catch((reason: unknown) => {
-      if (!(reason instanceof DOMException && reason.name === 'AbortError')) setError(messageForError(reason))
-    })
-    return () => controller.abort()
-  }, [gateway])
-
-  const act = useCallback(async (operation: () => Promise<RouletteRound>) => {
-    setBusy(true)
-    setError(null)
-    try { setRound(await operation()) } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
-  }, [])
-  const openRound = () => void act(() => gateway.openRound())
-  const addBet = () => {
-    if (!round) return
-    void act(() => gateway.placeBet(round.roundId, {
-      kind,
-      number: kind === 'straight' || kind === 'column' || kind === 'dozen' ? numbers[0] ?? 1 : null,
-      numbers: kind === 'straight' || kind === 'column' || kind === 'dozen' ? [] : numbers,
-      stake,
-    }))
-  }
-  const removeBet = (index: number) => { if (round) void act(() => gateway.removeBet(round.roundId, index)) }
-  const clearBets = () => { if (round) void act(() => gateway.clearBets(round.roundId)) }
-  const undoBet = () => { const bet = round?.bets.at(-1); if (round && bet) void act(() => gateway.removeBet(round.roundId, bet.betIndex)) }
-  const placeMany = (mode: 'repeat' | 'double' | 'neighbors') => {
-    if (busy) return
-    void (async () => {
-      setBusy(true)
-      setError(null)
-      try {
-        let target = mode === 'repeat' ? await gateway.openRound() : round
-        if (!target) return
-        const source = mode === 'neighbors'
-          ? neighborPockets(neighborPocket, neighborDepth).map(number => ({ kind: 'straight' as const, number, numbers: [] as number[], stake }))
-          : (mode === 'repeat' ? lastBets : target.bets).map(bet => ({ kind: bet.kind, number: bet.number, numbers: bet.numbers, stake: bet.stake }))
-        for (const bet of source) target = await gateway.placeBet(target.roundId, bet)
-        setRound(target)
-      } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
-    })()
-  }
-  const spin = () => {
-    if (!round || busy) return
-    void (async () => {
-      setBusy(true)
-      setSpinning(true)
-      setError(null)
-      const startedAt = performance.now()
-      try {
-        const nextRound = await gateway.spin(round.roundId)
-        setLastBets(round.bets)
-        setSpinTarget(nextRound.winningPocket)
-        const remaining = minimumSpinMilliseconds - (performance.now() - startedAt)
-        if (remaining > 0) await new Promise<void>(resolve => window.setTimeout(resolve, remaining))
-        setRound(nextRound)
-      } catch (reason) {
-        setError(messageForError(reason))
-        setSpinTarget(null)
-      } finally {
-        setSpinning(false)
-        setBusy(false)
-      }
-    })()
-  }
-  const newRound = () => { setRound(null); setError(null); setSpinTarget(null) }
-  const chooseKind = (nextKind: RouletteBetKind) => {
-    setKind(nextKind)
-    const option = betOptions.find(item => item.kind === nextKind)!
-    setNumbers(option.count > 1 ? [] : option.count === 1 ? [nextKind === 'straight' ? 17 : 1] : [])
-  }
-  const chooseNumber = (value: number) => {
-    if (kind === 'straight') setNumbers([value])
-    else if (kind === 'column' || kind === 'dozen') setNumbers([Math.max(1, Math.min(3, value))])
-    else setNumbers(toggleNumber(numbers, value))
-  }
-  const closeTips = () => { setTips(false); window.requestAnimationFrame(() => tipsRef.current?.focus()) }
+    if (!panel) return
+    panelRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+    const listener = (event: KeyboardEvent) => { if (event.key === 'Escape') { event.preventDefault(); closePanel() } }
+    document.addEventListener('keydown', listener)
+    return () => document.removeEventListener('keydown', listener)
+  }, [panel])
   useEffect(() => {
-    if (!tips) return
-    closeRef.current?.focus()
-    const handler = (event: KeyboardEvent) => { if (event.key === 'Escape') closeTips() }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [tips])
+    if (wasBusy.current && !busy && round && document.activeElement === document.body) kindRef.current?.focus()
+    wasBusy.current = busy
+  }, [busy, round])
 
-  useEffect(() => {
-    if (round?.phase !== 'settled' || round.winningPocket === null) return
-    setHistory(current => {
-      const next = [round.winningPocket!, ...current].slice(0, 20)
-      try { localStorage.setItem('fortuneforge:roulette:history', JSON.stringify(next)) } catch { /* optional storage */ }
-      return next
-    })
-  }, [round?.phase, round?.roundId, round?.winningPocket])
-
-  const result = round?.winningPocket
-  const ballPocket = spinning ? spinTarget ?? 0 : result
-  const ballStyle = { '--roulette-ball-angle': `${wheelAngle(ballPocket ?? 0)}deg` } as CSSProperties
-  const ready = status?.available === true
-  const selectedLabel = betLabel(kind, numbers[0] ?? null)
+  const blocked = busy || recovery !== 'ready' || status?.available !== true
   const locked = round?.phase === 'settled'
+  const balance = round?.balance ?? status?.startingBalance ?? 0
+  const bets = round?.bets ?? []
+  const total = bets.reduce((sum, bet) => sum + bet.stake, 0)
+  const totalReturn = round?.settlements.reduce((sum, item) => sum + item.totalReturn, 0) ?? 0
+  const selection = legalSelection(kind, numbers)
+  const request = selection ? makeBet(kind, numbers, stake || 1) : null
+  const selectedPockets = request ? coveredPockets(request) : numbers
+  const label = request ? formatBetLabel(request) : betOptions.find(option => option.kind === kind)!.label + ' · ' + numbers.join(', ')
+  const selectedOption = betOptions.find(option => option.kind === kind)!
+  const canAdd = !blocked && !locked && !!round && selection && validStake(stake, status, balance)
+  const neighbors = neighborPockets(neighborPocket, neighborDepth)
+  const canBatch = (source: readonly RouletteBet[]) => source.length > 0 && !!status && source.every(bet => validStake(bet.stake, status, status.startingBalance)) && source.reduce((sum, bet) => sum + bet.stake, 0) <= status.startingBalance
+  const marker = (test: (bet: RouletteBet) => boolean) => bets.filter(test).reduce((sum, bet) => sum + bet.stake, 0)
+  const result = !spinning && locked ? round.winningPocket : null
+  const resultLabel = spinning ? 'Spinning…' : result !== null ? result + ' · ' + pocketColor(result) : 'Place bets, then spin'
+  const openPanel = (next: Panel) => { if (!panel || !panelRef.current?.contains(document.activeElement)) trigger.current = document.activeElement as HTMLElement; setPanel(current => current === next ? null : next) }
+  function closePanel() { setPanel(null); window.requestAnimationFrame(() => trigger.current?.focus()) }
+  function chooseKind(next: RouletteBetKind) { setKind(next); setNumbers(next === 'straight' ? [numbers[0] ?? 17] : next === 'column' || next === 'dozen' ? [1] : []) }
+  function chooseNumber(value: number) {
+    if (!['split', 'street', 'corner', 'six-line'].includes(kind)) { setKind('straight'); setNumbers([value]); return }
+    setNumbers(current => current.includes(value) ? current.filter(number => number !== value) : [...(current.length >= selectedOption.count ? [] : current), value].sort((a, b) => a - b))
+  }
+  function start(repeat = false) { previouslySettled.current = !!locked; closePanel(); table.open(repeat ? bets : []); }
+  useEffect(() => { if (previouslySettled.current && !busy && round?.phase === 'open') { previouslySettled.current = false; kindRef.current?.focus() } }, [busy, round?.phase])
+  const selectionHint = !selection ? numbers.length !== selectedOption.count ? 'Choose ' + selectedOption.count + ' pockets · ' + numbers.length + ' selected' : 'Choose adjoining pockets for a ' + selectedOption.label.toLowerCase() : !validStake(stake, status, balance) && status ? 'Chip must be ' + money(status.minimumStake) + '–' + money(Math.min(status.maximumStake, balance)) + ' in steps of ' + money(status.stakeIncrement) : label + ' · ' + selectedOption.payout
 
-  return (
-    <div className="ff-roulette-page">
-      {tips && <Tips closeRef={closeRef} onClose={closeTips} />}
-      <main className="ff-roulette-main">
-        <section className="ff-roulette-title">
-          <div><small>Single-zero table · Balance R{(round?.balance ?? status?.startingBalance ?? 0).toFixed(2)}</small><h1>Roulette</h1></div>
-          <div className="ff-roulette-title-actions">{history.length > 0 && <><div className="ff-roulette-history" aria-label="Recent winning numbers"><small>Recent</small>{history.slice(0, 8).map((value, index) => <span className={pocketColor(value)} key={`${value}-${index}`}>{value}</span>)}</div><RouletteStats history={history} /></>}<button ref={tipsRef} className="ff-roulette-tips" onClick={() => setTips(true)} aria-expanded={tips}>Tips</button></div>
-        </section>
-        <section className="ff-roulette-table" aria-label="Roulette table">
-          <div className="ff-roulette-wheel" aria-live="polite">
-            <img className={`ff-roulette-wheel-art${spinning ? ' spinning' : ''}`} src={rouletteSpinWheel} alt="" aria-hidden="true" />
-            {(spinning || result !== null && result !== undefined) && <div className={`ff-roulette-ball-track${spinning ? ' spinning' : ' settled'}`} style={ballStyle} aria-hidden="true"><span className="ff-roulette-ball" /></div>}
-            <div className={`ff-roulette-pocket ${result === null || result === undefined ? 'idle' : pocketColor(result)}`}>{result ?? '—'}</div>
-            <span>WINNING POCKET</span>
-            <strong>{result === null || result === undefined ? 'Place bets, then spin' : `${result} · ${pocketColor(result)}`}</strong>
-          </div>
-          <div className="ff-roulette-board">
-            <button className={`number zero ${kind === 'straight' && numbers[0] === 0 ? 'selected' : ''}`} disabled={busy || locked} onClick={() => { setKind('straight'); setNumbers([0]) }}>0</button>
-            <div className="number-grid">{Array.from({ length: 36 }, (_, index) => index + 1).map(value => <button key={value} className={`number ${pocketColor(value)} ${kind === 'straight' && numbers.includes(value) ? 'selected' : ''}`} disabled={busy || locked} onClick={() => chooseNumber(value)}>{value}</button>)}</div>
-            <div className="outside-grid">{betOptions.filter(item => item.count === 0).map(item => <button key={item.kind} className={kind === item.kind ? 'selected' : ''} disabled={busy || locked} onClick={() => chooseKind(item.kind)}>{item.label}</button>)}</div>
-          </div>
-          <div className="ff-roulette-controls">
-            <label>Bet type<select value={kind} onChange={event => chooseKind(event.target.value as RouletteBetKind)} disabled={busy || locked}>{betOptions.map(item => <option key={item.kind} value={item.kind}>{item.label}</option>)}</select></label>
-            <label>Chip<select value={stake} onChange={event => setStake(Number(event.target.value))} disabled={busy || locked}>{[1, 5, 10, 25, 50].map(value => <option key={value} value={value}>R{value}</option>)}</select></label>
-            {(kind === 'column' || kind === 'dozen') && <div className="scalar-options" aria-label={`${kind} selection`}>{[1, 2, 3].map(value => <button type="button" className={numbers[0] === value ? 'selected' : ''} disabled={locked} onClick={() => setNumbers([value])} key={value}>{kind === 'column' ? `Column ${value}` : `Dozen ${value}`}</button>)}</div>}
-            {round?.phase === 'open' && <div className="ff-roulette-racetrack"><small>Racetrack neighbors</small><div><select aria-label="Neighbor center" value={neighborPocket} onChange={event => setNeighborPocket(Number(event.target.value))}>{europeanWheelOrder.map(value => <option key={value} value={value}>{value}</option>)}</select><select aria-label="Neighbors each side" value={neighborDepth} onChange={event => setNeighborDepth(Number(event.target.value))}><option value="1">1 each side</option><option value="2">2 each side</option></select><button type="button" disabled={busy || stake * (neighborDepth * 2 + 1) > round.balance} onClick={() => placeMany('neighbors')}>Add</button></div></div>}
-            <div className="bet-summary"><small>New chip</small><strong>{selectedLabel}</strong><span>R{stake.toFixed(2)} · {payoutFor(kind)}</span></div>
-            {!round ? <>{lastBets.length > 0 && <button className="primary" disabled={busy || !ready || lastBets.reduce((sum, bet) => sum + bet.stake, 0) > (status?.startingBalance ?? 0)} onClick={() => placeMany('repeat')}>Repeat last bets</button>}<button className="primary" disabled={busy || !ready} onClick={openRound}>Open table</button></> : locked ? <><button className="primary" disabled={busy || lastBets.reduce((sum, bet) => sum + bet.stake, 0) > round.balance} onClick={() => { newRound(); window.setTimeout(() => placeMany('repeat'), 0) }}>Repeat bets</button><button className="primary" onClick={newRound}>New round</button></> : <><div className="ff-roulette-bet-tools"><button type="button" disabled={busy || round.bets.length === 0} onClick={undoBet}>Undo</button><button type="button" disabled={busy || round.bets.length === 0 || round.bets.reduce((sum, bet) => sum + bet.stake, 0) > round.balance} onClick={() => placeMany('double')}>Double</button></div><button className="primary" disabled={busy || stake > round.balance || !validSelection(kind, numbers)} onClick={addBet}>Add chip</button><button className="primary spin" disabled={busy || round.bets.length === 0} onClick={spin}>{spinning ? 'Spinning…' : 'Spin the wheel'}</button></>}
-          </div>
-          <div className="ff-roulette-bets" aria-label="Active bets">
-            {round?.phase === 'open' && round.bets.length > 0 && <>
-              <div className="bets-heading"><strong>Active chips ({round.bets.length})</strong><button type="button" onClick={clearBets} disabled={busy}>Clear all</button></div>
-              {round.bets.map(bet => <div className="active-bet" key={bet.betIndex}><span className={`mini-chip ${pocketColor(bet.numbers[0] ?? 1)}`}>R{bet.stake}</span><strong>{betLabel(bet.kind, bet.number)}{bet.numbers.length > 1 ? ` · ${bet.numbers.join(', ')}` : ''}</strong><button type="button" onClick={() => removeBet(bet.betIndex)} disabled={busy} aria-label={`Remove ${betLabel(bet.kind, bet.number)} bet`}>Remove</button></div>)}
-            </>}
-          </div>
-        </section>
-        {round?.phase === 'settled' && <div className="settlement-list" aria-live="polite"><strong>Settlement</strong>{round.settlements.map((settlement, index) => { const bet = round.bets[index]; return <span key={index}>{betLabel(settlement.kind, bet?.number ?? null)}: {settlement.won ? `won R${settlement.totalReturn.toFixed(2)} total return` : 'lost'}</span> })}</div>}
-        {error && <p className="ff-roulette-error" role="alert">{error}</p>}
-      </main>
-    </div>
-  )
-}
+  return <main className="ff-roulette-page ff-roulette-main" aria-label="Roulette" aria-busy={busy}>
+    {showTitle && <h1 className="ff-roulette-visually-hidden">Roulette</h1>}
+    <header className="ff-roulette-title">
+      <div className="ff-roulette-balance"><small>Table balance</small><strong>{money(balance)}</strong><span>Bet {money(total)}</span></div>
+      <div className="ff-roulette-result" aria-live="polite" aria-atomic="true"><span className={'ff-roulette-pocket ' + (result === null ? 'idle' : pocketColor(result))}>{result ?? '—'}</span><div><strong>{resultLabel}</strong><span>{locked && !spinning ? money(totalReturn) + ' total return' : 'Single-zero table'}</span></div></div>
+      <div className="ff-roulette-title-actions"><button onClick={() => openPanel('bets')} aria-label={locked ? 'Roulette settlement' : 'Roulette active bets'} aria-expanded={panel === 'bets'}>Bets <b>{bets.length}</b></button><button onClick={() => openPanel('options')} aria-label="Roulette options" aria-expanded={panel !== null && panel !== 'bets'}>More</button></div>
+    </header>
+    <section className={'ff-roulette-table' + (spinning ? ' is-spinning' : '')} aria-label="Roulette table">
+      <aside className="ff-roulette-wheel" aria-hidden="true"><div className="ff-roulette-wheel-image"><img className={'ff-roulette-wheel-art' + (spinning ? ' spinning' : '')} src={rouletteSpinWheel} alt="" draggable={false} /><span className={'ff-roulette-wheel-center ' + (result === null ? 'idle' : pocketColor(result))}>{result ?? '—'}</span>{spinning && <span className="ff-roulette-moving-ball" />}</div><div className="ff-roulette-recent">{table.history.slice(0, 6).map(entry => <span className={pocketColor(entry.pocket)} key={entry.roundId}>{entry.pocket}</span>)}</div></aside>
+      <div className="ff-roulette-board">
+        {renderPocket(0)}
+        <div className="number-grid">{Array.from({ length: 36 }, (_, index) => renderPocket(index + 1))}</div>
+        <div className="column-bets">{[1, 2, 3].map(value => renderArea('column', '2:1', value))}</div>
+        <div className="dozen-bets">{[1, 2, 3].map(value => renderArea('dozen', value === 1 ? '1st 12' : value === 2 ? '2nd 12' : '3rd 12', value))}</div>
+        <div className="outside-grid">{outside.map(value => renderArea(value, betOptions.find(option => option.kind === value)!.label))}</div>
+      </div>
+      {panel && <section className="ff-roulette-panel" ref={panelRef} role="dialog" aria-modal="false" aria-label={panel === 'bets' ? locked ? 'Roulette settlement' : 'Roulette active bets' : 'Roulette options'}>
+        <header><h2>{panel === 'bets' ? locked ? 'Settlement' : 'Active bets' : panel === 'neighbors' ? 'Neighbours' : panel === 'history' ? 'Recent spins' : panel === 'tips' ? 'Table guide' : 'Table options'}</h2><button aria-label="Close Roulette panel" onClick={closePanel}>×</button></header>
+        <div className="ff-roulette-panel-content">
+          {panel !== 'bets' && <nav aria-label="Roulette information"><button aria-pressed={panel === 'neighbors'} onClick={() => setPanel('neighbors')}>Neighbours</button><button aria-pressed={panel === 'history'} onClick={() => setPanel('history')}>History</button><button aria-pressed={panel === 'tips'} onClick={() => setPanel('tips')}>Tips</button></nav>}
+          {panel === 'options' && <p>Single-zero table · Chip {status ? money(status.minimumStake) + '–' + money(status.maximumStake) : '—'}</p>}
+          {panel === 'bets' && <>{!bets.length ? <p>No chips on the table.</p> : <><div className="ff-roulette-panel-summary"><strong>{money(total)} bet</strong>{locked ? <strong>{money(totalReturn)} total return</strong> : <button disabled={blocked} onClick={table.clear}>Clear all</button>}</div><ol className="ff-roulette-bets">{bets.map((bet, index) => <li key={bet.betIndex}><span className="mini-chip">R{bet.stake}</span><div><strong>{formatBetLabel(bet)}</strong>{locked && <span>{round.settlements[index]?.won ? money(round.settlements[index].totalReturn) + ' total return' : 'No return'}</span>}</div>{!locked && <button disabled={blocked} onClick={() => table.remove(bet.betIndex)} aria-label={'Remove ' + formatBetLabel(bet) + ' chip ' + (index + 1)}>Remove</button>}</li>)}</ol></>}</>}
+          {panel === 'neighbors' && <div className="ff-roulette-racetrack"><label>Centre<select value={neighborPocket} disabled={blocked || locked} onChange={event => setNeighborPocket(Number(event.target.value))}>{Array.from({length:37},(_,value) => <option key={value} value={value}>{value}</option>)}</select></label><label>Each side<select value={neighborDepth} disabled={blocked || locked} onChange={event => setNeighborDepth(Number(event.target.value))}><option value={1}>1 neighbour</option><option value={2}>2 neighbours</option></select></label><div className="ff-roulette-neighbor-preview">{neighbors.map(value => <span key={value} className={pocketColor(value)}>{value}</span>)}</div><strong>{neighbors.length} chips · {money(stake * neighbors.length)}</strong><button className="primary" disabled={blocked || locked || !round || !validStake(stake, status, balance) || stake * neighbors.length > balance} onClick={() => table.add(neighbors.map(number => makeBet('straight', [number], stake)))}>Add neighbours</button></div>}
+          {panel === 'history' && <>{!table.history.length ? <p>No spins on this table yet.</p> : <><div className="ff-roulette-history" aria-label="Recent winning numbers">{table.history.map(entry => <span key={entry.roundId} className={pocketColor(entry.pocket)}>{entry.pocket}</span>)}</div><dl className="ff-roulette-stats">{(['red','black','green'] as const).map(color => <div key={color}><dt>{color === 'green' ? 'Zero' : color === 'red' ? 'Red' : 'Black'}</dt><dd>{table.history.filter(entry => pocketColor(entry.pocket) === color).length}</dd></div>)}</dl><p>Last {table.history.length} spins for this account on this device. Past results do not change the odds.</p></>}</>}
+          {panel === 'tips' && <div className="ff-roulette-tips"><h3>Inside bets</h3><p>Choose a bet type, select adjoining pockets, then add a chip. Split covers two, street three, corner four, and six-line six. Numbers can overlap; each chip settles independently.</p><dl>{betOptions.map(option => <div key={option.kind}><dt>{option.label}</dt><dd>{option.payout}</dd></div>)}</dl><h3>Zero &amp; table balance</h3><p>Zero is green and loses outside bets. No 00 is offered. Each new practice table starts with {money(status?.startingBalance ?? 1000)}; its balance is separate from your account wallet.</p><p>Remove chips or clear all before spinning. Neighbours places separate straight-up chips around the European wheel.</p></div>}
+        </div>
+      </section>}
+    </section>
+    <section className="ff-roulette-controls" aria-label="Roulette controls">
+      <div className="ff-roulette-selection"><label><span className="ff-roulette-visually-hidden">Bet type</span><select ref={kindRef} aria-label="Bet type" value={kind} onChange={event => chooseKind(event.target.value as RouletteBetKind)} disabled={blocked || locked}>{betOptions.map(option => <option key={option.kind} value={option.kind}>{option.label}</option>)}</select></label><label><span className="ff-roulette-visually-hidden">Chip</span><select aria-label="Chip" value={stake} onChange={event => setStake(Number(event.target.value))} disabled={blocked || locked}>{availableChipValues(status).map(value => <option key={value} value={value}>{money(value)}</option>)}</select></label><button className="ff-roulette-undo" aria-label="Undo last chip" disabled={blocked || locked || !bets.length} onClick={() => table.remove(bets.at(-1)!.betIndex)}>Undo</button><button disabled={blocked || locked || !bets.length || total > balance || !bets.every(bet => validStake(bet.stake, status, balance))} onClick={() => table.add(bets)}>Double</button></div>
+      <div className="ff-roulette-actions">{!round ? <><button className="primary" disabled={blocked} onClick={() => start()}>Open table</button><button className="primary spin" disabled>Spin</button></> : locked ? <><button className="primary" disabled={blocked} onClick={() => start()}>New round</button><button className="primary spin" disabled={blocked || !canBatch(bets)} onClick={() => start(true)}>Repeat bets</button></> : <><button className="primary" disabled={!canAdd} onClick={() => table.add([makeBet(kind, numbers, stake)])}>Add chip</button><button className="primary spin" disabled={blocked || !bets.length} onClick={() => { closePanel(); table.spin() }}>{spinning ? 'Spinning…' : 'Spin'}</button></>}</div>
+      <div className={'ff-roulette-notice' + (error ? ' error' : '')} role={error ? 'alert' : 'status'} aria-live="polite"><span>{error ?? (busy && !spinning ? 'Opening table…' : spinning ? 'Bets closed' : selectionHint)}</span>{(error && (!status || recovery === 'failed' || !status.available)) && <button disabled={busy} onClick={table.retry}>{recovery === 'failed' ? 'Retry restoration' : 'Retry'}</button>}</div>
+    </section>
+  </main>
 
-function toggleNumber(values: number[], value: number) { return values.includes(value) ? values.filter(item => item !== value) : [...values, value].sort((a, b) => a - b) }
-function wheelAngle(pocket: number) { return -90 + ((europeanWheelOrder.indexOf(pocket as typeof europeanWheelOrder[number]) * 360) / europeanWheelOrder.length) }
-function validSelection(kind: RouletteBetKind, values: number[]) { const count = betOptions.find(item => item.kind === kind)?.count ?? 0; return count === 0 || values.length === count }
-function payoutFor(kind: RouletteBetKind) { return ({ straight: '35:1', split: '17:1', street: '11:1', corner: '8:1', 'six-line': '5:1', column: '2:1', dozen: '2:1', red: '1:1', black: '1:1', even: '1:1', odd: '1:1', low: '1:1', high: '1:1' } as const)[kind] }
-function messageForError(reason: unknown) { return reason instanceof RouletteGatewayError ? reason.message : 'The Roulette table is unavailable.' }
-function readRouletteHistory(): readonly number[] { try { const value = JSON.parse(localStorage.getItem('fortuneforge:roulette:history') ?? '[]'); return Array.isArray(value) ? value.filter(pocket => Number.isInteger(pocket) && pocket >= 0 && pocket <= 36).slice(0, 20) : [] } catch { return [] } }
-function neighborPockets(center: number, depth: number): number[] { const index = europeanWheelOrder.indexOf(center as typeof europeanWheelOrder[number]); return Array.from({ length: depth * 2 + 1 }, (_, offset) => europeanWheelOrder[(index - depth + offset + europeanWheelOrder.length) % europeanWheelOrder.length]!) }
-
-function RouletteStats({ history }: Readonly<{ history: readonly number[] }>) {
-  const nonZero = history.filter(value => value !== 0)
-  const red = nonZero.filter(value => pocketColor(value) === 'red').length
-  const black = nonZero.length - red
-  const even = nonZero.filter(value => value % 2 === 0).length
-  const low = nonZero.filter(value => value <= 18).length
-  const frequencies = new Map<number, number>()
-  history.forEach(value => frequencies.set(value, (frequencies.get(value) ?? 0) + 1))
-  const hot = [...frequencies].sort((left, right) => right[1] - left[1] || history.indexOf(left[0]) - history.indexOf(right[0]))[0]
-  return <details className="ff-roulette-stats"><summary>Stats · {history.length}</summary><div><span>Red / black <b>{red} / {black}</b></span><span>Even / odd <b>{even} / {nonZero.length - even}</b></span><span>Low / high <b>{low} / {nonZero.length - low}</b></span><span>Zero <b>{history.length - nonZero.length}</b></span>{hot && <span>Most frequent <b>{hot[0]} × {hot[1]}</b></span>}</div><small>Last {history.length} spins on this device. Past results do not change the odds.</small></details>
-}
-
-function Tips({ closeRef, onClose }: { closeRef: RefObject<HTMLButtonElement | null>; onClose: () => void }) {
-  return <div className="ff-roulette-overlay"><section className="ff-roulette-tips-dialog" role="dialog" aria-modal="true" aria-labelledby="roulette-tips-title"><header><div><small>Table guide</small><h2 id="roulette-tips-title">Roulette tips</h2></div><button ref={closeRef} onClick={onClose} aria-label="Close Roulette tips">×</button></header><div className="tips-grid"><article><h3>Inside bets</h3><p>Straight-up pays 35:1, split 17:1, street 11:1, corner 8:1, and six-line 5:1. Select the bet type, choose its pockets, then add each chip.</p></article><article><h3>Outside bets</h3><p>Columns and dozens pay 2:1. Red, Black, Even, Odd, 1–18, and 19–36 pay 1:1. Bets can overlap and every chip settles independently.</p></article><article><h3>Zero &amp; controls</h3><p>Zero is green and loses outside bets. This is a single-zero table, so American 00 is not offered. Remove individual chips or clear all before spinning.</p></article></div></section></div>
+  function renderPocket(value: number) {
+    const amount = marker(bet => bet.kind === 'straight' ? bet.number === value : ['split','street','corner','six-line'].includes(bet.kind) && bet.numbers.includes(value))
+    const winning = result === value
+    const preview = !locked && !spinning && selectedPockets.includes(value)
+    return <button key={value} type="button" className={'number ' + pocketColor(value) + (value === 0 ? ' zero' : '') + (preview ? ' selected' : '') + (winning ? ' winning' : '') + (amount > 0 ? ' has-chip' : '')} style={value ? { '--street': Math.ceil(value/3), '--column': (value - 1) % 3 + 1 } as CSSProperties : undefined} disabled={blocked || locked} onClick={() => chooseNumber(value)} aria-pressed={preview} aria-label={'Pocket ' + value + ', ' + pocketColor(value) + (amount ? ', ' + money(amount) + ' covering chips' : '') + (winning ? ', winning pocket' : '')} data-pocket={value}><span>{value}</span>{amount > 0 && <small className="felt-chip" aria-hidden="true">{amount}</small>}</button>
+  }
+  function renderArea(areaKind: RouletteBetKind, text: string, value?: number) {
+    const amount = marker(bet => bet.kind === areaKind && (value === undefined || bet.number === value))
+    const selected = !locked && !spinning && kind === areaKind && (value === undefined || numbers[0] === value)
+    return <button key={areaKind + (value ?? '')} type="button" className={areaKind + (selected ? ' selected' : '') + (locked && result !== null && coveredPockets(makeBet(areaKind, value === undefined ? [] : [value], 1)).includes(result) ? ' won-area' : '')} style={value ? { '--area': value } as CSSProperties : undefined} aria-label={areaKind === 'column' ? 'Column ' + value + ', 2 to 1' : text} aria-pressed={selected} disabled={blocked || locked} onClick={() => { setKind(areaKind); setNumbers(value === undefined ? [] : [value]) }}>{text}{amount > 0 && <small className="felt-chip" aria-hidden="true">{amount}</small>}</button>
+  }
 }

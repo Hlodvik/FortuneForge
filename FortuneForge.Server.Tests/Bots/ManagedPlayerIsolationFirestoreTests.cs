@@ -78,6 +78,42 @@ public sealed class ManagedPlayerIsolationFirestoreTests(
             .Document(legacyId).GetSnapshotAsync()).Exists);
     }
 
+    [Fact]
+    public async Task ProfileRepositoryAtomicallyRejectsNearDuplicateNamesButAllowsReorderedNames()
+    {
+        var database = Database("managed-name-boundary");
+        var profiles = new FirestoreManagedPlayerProfileRepository(database);
+        var supportedGames = new HashSet<string>([ManagedPlayerGames.Blackjack], StringComparer.OrdinalIgnoreCase);
+
+        Assert.True(await profiles.TryCreateAsync(new(
+            "managed-name-source",
+            "velvetnoise",
+            3,
+            supportedGames,
+            Now), default));
+        Assert.False(await profiles.TryCreateAsync(new(
+            "managed-name-near-copy",
+            "6velvetnoise",
+            3,
+            supportedGames,
+            Now.AddSeconds(1)), default));
+        Assert.True(await profiles.TryCreateAsync(new(
+            "managed-name-reordered",
+            "edtaddletell",
+            3,
+            supportedGames,
+            Now.AddSeconds(2)), default));
+        Assert.True(await profiles.TryCreateAsync(new(
+            "managed-name-other-order",
+            "tedraddles",
+            3,
+            supportedGames,
+            Now.AddSeconds(3)), default));
+
+        Assert.False((await database.Collection("users")
+            .Document("managed-name-near-copy").GetSnapshotAsync()).Exists);
+    }
+
     private FirestoreDb Database(string purpose) => new FirestoreDbBuilder
     {
         ProjectId = $"demo-fortuneforge-{purpose}-{Guid.NewGuid():N}",

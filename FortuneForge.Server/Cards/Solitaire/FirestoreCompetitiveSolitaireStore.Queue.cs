@@ -121,6 +121,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         null)
                     {
                         PartitionKey = partitionKey,
+                        SeatsFilled = true,
                         DrawCount = drawCount
                     };
                 }

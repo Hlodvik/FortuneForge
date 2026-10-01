@@ -7,6 +7,6 @@
   "packageVersion": "0.4.1",
   "clientRoute": "/cards/texas-holdem",
   "apiBasePath": "/api/cards/texas-holdem/credit",
-  "capabilities": ["credits", "multiplayer", "bots", "history"],
+  "capabilities": ["credits", "multiplayer", "history"],
   "migrationState": "package-backed"
 }

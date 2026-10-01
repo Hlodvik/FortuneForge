@@ -10,23 +10,44 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
     private static readonly string[] CurrencyIds =
         ["slotsCredits", "freeGames", "specialPoints", "energy"];
 
-    public Task<bool> TryCreateAsync(
+    public async Task<bool> TryCreateAsync(
         ManagedPlayerProfile profile,
-        CancellationToken cancellationToken) =>
-        database.RunTransactionAsync(async transaction =>
+        CancellationToken cancellationToken)
+    {
+        var legacyProfiles = await database.Collection("users")
+            .WhereArrayContains(
+                ManagedPlayerProfileSchema.ProfileTagsField,
+                ManagedPlayerProfileSchema.BotTag)
+            .GetSnapshotAsync(cancellationToken);
+        var legacyNames = legacyProfiles.Documents
+            .Where(IsManagedPlayer)
+            .Select(snapshot => ReadString(snapshot, "playerName"))
+            .Where(name => name.Length > 0)
+            .ToArray();
+
+        return await database.RunTransactionAsync(async transaction =>
         {
             var userReference = User(profile.UserId);
             var nameReference = PlayerNameKey(profile.PlayerName);
+            var registryReference = ManagedPlayerNameRegistry();
             var snapshots = await Task.WhenAll(
                 transaction.GetSnapshotAsync(userReference, cancellationToken),
-                transaction.GetSnapshotAsync(nameReference, cancellationToken));
-            if (snapshots.Any(snapshot => snapshot.Exists)) return false;
+                transaction.GetSnapshotAsync(nameReference, cancellationToken),
+                transaction.GetSnapshotAsync(registryReference, cancellationToken));
+            if (snapshots[0].Exists || snapshots[1].Exists) return false;
+
+            var registeredNames = RegistryNames(snapshots[2]);
+            var knownNames = legacyNames.Concat(registeredNames).ToArray();
+            if (!ManagedPlayerNamePolicy.IsDistinct(profile.PlayerName, knownNames)) return false;
 
             transaction.Create(userReference, UserData(profile));
             transaction.Create(nameReference, KeyData(profile.UserId, profile.CreatedAtUtc));
+            transaction.Set(registryReference, NameRegistryData(
+                knownNames.Append(profile.PlayerName), profile.CreatedAtUtc), SetOptions.MergeAll);
             EnsureSupportingProfileDocuments(transaction, profile);
             return true;
         }, cancellationToken: cancellationToken);
+    }
 
     public async Task<IReadOnlyList<ManagedPlayerProfile>> ListSupportingAsync(
         string gameId,
@@ -152,6 +173,8 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
     private DocumentReference User(string userId) => database.Collection("users").Document(userId);
     private DocumentReference Statistics(string userId) =>
         database.Collection("userSlotStatistics").Document(userId);
+    private DocumentReference ManagedPlayerNameRegistry() =>
+        database.Collection("managedPlayerInfrastructure").Document("nameRegistry");
     private DocumentReference PlayerNameKey(string playerName) =>
         database.Collection("accountPlayerNameKeys")
             .Document(Hash(playerName.Trim().ToUpperInvariant()));
@@ -175,4 +198,20 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
         snapshot.Exists && snapshot.TryGetValue<Timestamp>(field, out var value)
             ? value.ToDateTime()
             : DateTime.UnixEpoch;
+    private static IReadOnlyList<string> RegistryNames(DocumentSnapshot snapshot) =>
+        snapshot.Exists && snapshot.TryGetValue<List<object>>("normalizedNames", out var values)
+            ? values.Select(value => value?.ToString() ?? string.Empty)
+                .Where(value => value.Length > 0).ToArray()
+            : [];
+    private static Dictionary<string, object> NameRegistryData(
+        IEnumerable<string> names,
+        DateTime nowUtc) => new()
+    {
+        ["normalizedNames"] = names.Select(ManagedPlayerNamePolicy.Normalize)
+            .Where(name => name.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray(),
+        ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+    };
 }

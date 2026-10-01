@@ -7,6 +7,6 @@
   "packageVersion": "0.1.1",
   "clientRoute": "/cards/hearts",
   "apiBasePath": "/api/games/hearts",
-  "capabilities": ["free-play", "multiplayer", "bots"],
+  "capabilities": ["free-play", "multiplayer"],
   "migrationState": "rules-pilot"
 }

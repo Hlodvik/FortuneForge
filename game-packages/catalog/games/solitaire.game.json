@@ -7,6 +7,6 @@
   "packageVersion": "0.4.1",
   "clientRoute": "/cards/solitaire",
   "apiBasePath": "/api/solitaire",
-  "capabilities": ["credits", "free-play", "multiplayer", "bots", "history"],
+  "capabilities": ["credits", "free-play", "multiplayer", "history"],
   "migrationState": "package-backed"
 }

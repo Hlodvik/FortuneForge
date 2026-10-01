@@ -53,7 +53,6 @@ public sealed class BlackjackTableEngineTests
         Assert.DoesNotContain(domainProperties, property =>
             property.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
             property.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
-        Assert.False(BlackjackModule.Descriptor.Capabilities.HasFlag(GameCapability.Bots));
     }
 
     [Fact]

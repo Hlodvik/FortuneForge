@@ -121,46 +121,32 @@ public sealed class CreditHoldemEngineTests
     }
 
     [Fact]
-    public void HiddenServerSkillAssignmentSupportsExactlyLevelsTwoThreeAndFour()
+    public void GamePackageContainsNoManagedPlayerConcepts()
     {
-        var ticket = new CreditHoldemTicket(
-            "ticket-human",
-            "user-human",
-            $"seat_{Guid.NewGuid():N}",
-            "Alice",
-            "test",
-            "queued",
-            1,
-            Start,
-            Start,
-            null);
-
-        var observed = Enumerable.Range(1, 24)
-            .SelectMany(seed => CreditHoldemEngine.Deal(
-                "match", [ticket], 3, "test", (ulong)seed,
-                new Dictionary<string, long> { [ticket.UserId] = 5_000 }, Start).Players)
-            .Where(player => player.IsBot)
-            .Select(player => player.BotSkillLevel!.Value)
-            .Distinct()
-            .Order()
-            .ToArray();
-
-        Assert.Equal([2, 3, 4], observed);
+        var assembly = typeof(TexasHoldemModule).Assembly;
+        Assert.DoesNotContain(assembly.GetTypes(), type =>
+            type.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            type.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(assembly.GetTypes().SelectMany(type => type.GetProperties()), property =>
+            property.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            property.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
     public void StandardTableCapsHumanAndSyntheticStacksAtOneHundredCredits()
     {
-        var ticket = new CreditHoldemTicket(
-            "ticket-cap", "user-cap", $"seat_{Guid.NewGuid():N}", "Alice", "test",
-            "queued", 1, Start, Start, null, CreditHoldemTableRules.StandardId);
+        CreditHoldemSeatAssignment[] seats =
+        [
+            new("user-cap", $"seat_{Guid.NewGuid():N}", "Alice", true, 0, 30_340_125),
+            new("player-1", $"seat_{Guid.NewGuid():N}", "Maya", false, 1, 5_000),
+            new("player-2", $"seat_{Guid.NewGuid():N}", "Noah", false, 2, 5_000)
+        ];
         var match = CreditHoldemEngine.Deal(
-            "match-cap", [ticket], 3, "test", 88,
-            new Dictionary<string, long> { [ticket.UserId] = 30_340_125 }, Start,
+            "match-cap", seats, "test", 88, Start,
             CreditHoldemTableRules.StandardId);
 
         Assert.All(match.Players, player => Assert.InRange(player.StartingStack, 1, 10_000));
-        Assert.Equal(10_000, match.Players.Single(player => !player.IsBot).StartingStack);
+        Assert.Equal(10_000, match.Players.Single(player => player.IsAccountBacked).StartingStack);
     }
 
     [Theory]
@@ -250,20 +236,15 @@ public sealed class CreditHoldemEngineTests
 
     private static CreditHoldemMatch Deal(int players)
     {
-        var tickets = Enumerable.Range(0, players).Select(index => new CreditHoldemTicket(
-            $"ticket-{index}",
+        var seats = Enumerable.Range(0, Math.Max(players, CreditHoldemMoney.MinimumStartPlayers))
+            .Select(index => new CreditHoldemSeatAssignment(
             $"user-{index}",
             $"seat_{Guid.NewGuid():N}",
             $"Player{index + 1}",
-            "test",
-            "queued",
-            1,
-            Start,
-            Start,
-            null)).ToArray();
-        var balances = tickets.ToDictionary(ticket => ticket.UserId, _ => 5_000L, StringComparer.Ordinal);
+            true,
+            index,
+            5_000)).ToArray();
         return CreditHoldemEngine.Deal(
-            "match", tickets, Math.Max(players, CreditHoldemMoney.MinimumStartPlayers),
-            "test", 12345, balances, Start);
+            "match", seats, "test", 12345, Start);
     }
 }

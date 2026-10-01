@@ -170,8 +170,8 @@ internal sealed record SolitaireMatch(
     string? WinnerUserId)
 {
     public string PartitionKey { get; init; } = string.Empty;
-    public DateTime? BotFillEligibleAtUtc { get; init; }
-    public bool BotsFilled { get; init; }
+    public DateTime? SeatFillEligibleAtUtc { get; init; }
+    public bool SeatsFilled { get; init; }
     public int DrawCount { get; init; } = 3;
 }
 
@@ -190,8 +190,8 @@ internal sealed record SolitairePlayerState(
 {
     public DateTime StartedAtUtc { get; init; }
     public DateTime DeadlineAtUtc { get; init; }
-    public bool IsSynthetic { get; init; }
-    public int? SyntheticSkill { get; init; }
+    public bool IsAccountBacked { get; init; } = true;
+    public Dictionary<string, string> HostMetadata { get; init; } = new(StringComparer.Ordinal);
     public long PauseUsedMilliseconds { get; init; }
     public DateTime? PausedAtUtc { get; init; }
     public IReadOnlyList<SolitaireGameState> UndoHistory { get; init; } = [];

@@ -1,34 +1,28 @@
-using FortuneForge.Games.Cards;
-
 namespace FortuneForge.Games.TexasHoldem;
 
 internal static class CreditHoldemEngine
 {
     public static readonly TimeSpan HumanGrace = TimeSpan.FromSeconds(5);
     public static readonly TimeSpan ActionDuration = TimeSpan.FromSeconds(30);
-    public static readonly TimeSpan BotActionDelay = TimeSpan.FromMilliseconds(900);
-    public static readonly TimeSpan FastBotActionDelay = TimeSpan.FromMilliseconds(240);
     public static readonly TimeSpan MatchDuration = TimeSpan.FromMinutes(15);
 
     public static CreditHoldemMatch Deal(
         string matchId,
-        IReadOnlyList<CreditHoldemTicket> humans,
-        int occupiedSeats,
+        IReadOnlyList<CreditHoldemSeatAssignment> seats,
         string partitionKey,
         ulong seed,
-        IReadOnlyDictionary<string, long> balances,
         DateTime nowUtc,
         string tableRuleId = CreditHoldemTableRules.StandardId)
     {
-        if (humans.Count < 1) throw new InvalidOperationException("A credit table requires a real person.");
-        if (occupiedSeats is < CreditHoldemMoney.MinimumStartPlayers or > CreditHoldemMoney.MaximumSeats ||
-            occupiedSeats < humans.Count)
-            throw new ArgumentOutOfRangeException(nameof(occupiedSeats));
+        if (seats.Count is < CreditHoldemMoney.MinimumStartPlayers or > CreditHoldemMoney.MaximumSeats)
+            throw new ArgumentOutOfRangeException(nameof(seats));
+        if (!seats.Any(seat => seat.IsAccountBacked))
+            throw new InvalidOperationException("A credit table requires an account-backed player.");
+        if (seats.Select(seat => seat.Seat).Distinct().Count() != seats.Count)
+            throw new ArgumentException("Hold'em seat assignments must be unique.", nameof(seats));
 
         var rule = CreditHoldemTableRules.Resolve(tableRuleId);
-        var descriptors = humans.Select((ticket, index) => HumanDescriptor(ticket, index, balances, rule)).ToList();
-        AddBots(descriptors, seed, occupiedSeats - descriptors.Count);
-        return CreateHand(matchId, partitionKey, descriptors, seed, 0, 1, 1, nowUtc, rule.Id);
+        return CreateHand(matchId, partitionKey, seats, seed, 0, 1, 1, nowUtc, rule.Id);
     }
 
     public static CreditHoldemMatch? StartNextHand(
@@ -45,32 +39,37 @@ internal static class CreditHoldemEngine
         var descriptors = prior.Players
             .Where(player => !prior.LeavingActorIds.Contains(player.ActorId))
             .OrderBy(player => player.Seat)
-            .Select(player => player.IsBot
-                ? new SeatDescriptor(player.ActorId, player.PublicSeatId, player.DisplayName, true, player.Seat, 0)
-                : ReturningHumanDescriptor(player, balances, rule))
-            .Where(descriptor => descriptor.IsBot || descriptor.Stack >= rule.BigBlindCents)
+            .Select(player => player.IsAccountBacked
+                ? ReturningAccountSeat(player, balances, rule)
+                : new CreditHoldemSeatAssignment(
+                    player.ActorId,
+                    player.PublicSeatId,
+                    player.DisplayName,
+                    false,
+                    player.Seat,
+                    player.StartingStack,
+                    player.HostMetadata))
+            .Where(descriptor => !descriptor.IsAccountBacked || descriptor.Stack >= rule.BigBlindCents)
             .ToList();
 
         foreach (var ticket in prior.PendingTakeovers.OrderBy(ticket => ticket.JoinedAtUtc).ThenBy(ticket => ticket.TicketId, StringComparer.Ordinal))
         {
             if (!balances.TryGetValue(ticket.UserId, out var balance) || balance < rule.BigBlindCents) continue;
-            var human = HumanDescriptor(ticket, descriptors.Count, balances, rule);
+            var accountSeat = AccountSeat(ticket, descriptors.Count, balances, rule);
             var openSeat = Enumerable.Range(0, CreditHoldemMoney.MaximumSeats)
                 .FirstOrDefault(seat => descriptors.All(value => value.Seat != seat));
             if (descriptors.Count < CreditHoldemMoney.MaximumSeats)
-                descriptors.Add(human with { Seat = openSeat });
+                descriptors.Add(accountSeat with { Seat = openSeat });
             else
             {
-                var replace = descriptors.FindLastIndex(value => value.IsBot);
-                if (replace >= 0) descriptors[replace] = human with { Seat = descriptors[replace].Seat };
+                var replace = descriptors.FindLastIndex(value => !value.IsAccountBacked);
+                if (replace >= 0) descriptors[replace] = accountSeat with { Seat = descriptors[replace].Seat };
             }
         }
 
-        var humans = descriptors.Where(value => !value.IsBot).ToArray();
-        if (humans.Length < minimumHumans) return null;
+        var accountSeats = descriptors.Where(value => value.IsAccountBacked).ToArray();
+        if (accountSeats.Length < minimumHumans || descriptors.Count < CreditHoldemMoney.MinimumStartPlayers) return null;
         descriptors = descriptors.OrderBy(value => value.Seat).ToList();
-        while (descriptors.Count < CreditHoldemMoney.MinimumStartPlayers)
-            AddBots(descriptors, seed, 1);
         var dealerSeat = NextOccupiedSeat(descriptors, prior.DealerSeat);
         return CreateHand(
             prior.MatchId,
@@ -176,7 +175,7 @@ internal static class CreditHoldemEngine
         return player.CommittedHand - before;
     }
 
-    public static bool AdvanceAutomatedTurn(CreditHoldemMatch match, DateTime nowUtc)
+    public static bool AdvanceExpiredTurn(CreditHoldemMatch match, DateTime nowUtc)
     {
         if (match.Status != "active") return false;
         if (nowUtc >= match.MatchDeadlineAtUtc)
@@ -186,37 +185,16 @@ internal static class CreditHoldemEngine
         }
         var current = match.Players.Single(player => player.Seat == match.ActiveSeat);
         if (match.ActionDeadlineAtUtc is { } deadline && nowUtc < deadline) return false;
-        if (current.IsBot)
-        {
-            var decision = new TexasHoldemBotAgent().Choose(
-                new TexasHoldemBotObservation(
-                    current.HoleCards,
-                    match.Community,
-                    Pot(match),
-                    Math.Max(0, match.CurrentBet - current.CommittedRound),
-                    current.Stack,
-                    match.CurrentBet + match.MinimumRaise,
-                    current.CommittedRound + current.Stack,
-                    LegalActions(match, current)),
-                current.BotSkillLevel!.Value,
-                match.DealSeed,
-                match.Version,
-                new CardBotGameOptions());
-            _ = ApplyAction(match, current.ActorId, decision.Action, decision.RaiseTo, nowUtc);
-        }
-        else
-        {
-            var automatic = match.CurrentBet == current.CommittedRound
-                ? CreditHoldemActions.Check
-                : CreditHoldemActions.Fold;
-            _ = ApplyAction(match, current.ActorId, automatic, null, nowUtc);
-        }
+        var automatic = match.CurrentBet == current.CommittedRound
+            ? CreditHoldemActions.Check
+            : CreditHoldemActions.Fold;
+        _ = ApplyAction(match, current.ActorId, automatic, null, nowUtc);
         return true;
     }
 
     public static void Leave(CreditHoldemMatch match, string actorId, DateTime nowUtc)
     {
-        var player = match.Players.SingleOrDefault(value => value.ActorId == actorId && !value.IsBot)
+        var player = match.Players.SingleOrDefault(value => value.ActorId == actorId && value.IsAccountBacked)
             ?? throw new CreditHoldemNotFoundException("This player does not have a seat at the table.");
         match.LeavingActorIds.Add(actorId);
         if (match.Status == "active" && player.Status is "active" or "all-in")
@@ -236,7 +214,7 @@ internal static class CreditHoldemEngine
             player.CanRaise = false;
             match.Version = checked(match.Version + 1);
             match.UpdatedAtUtc = nowUtc;
-            if (AllHumansFolded(match)) ForceComplete(match, nowUtc, incrementVersion: false);
+            if (AllAccountPlayersFolded(match)) ForceComplete(match, nowUtc, incrementVersion: false);
             else if (match.Players.Count(value => value.Status != "folded") == 1) AwardUncontested(match, nowUtc);
             else if (wasActive) Progress(match, nowUtc);
         }
@@ -265,7 +243,7 @@ internal static class CreditHoldemEngine
         match.HumanPayoutCents = settlement.HumanPayoutCents;
         match.HouseNetCents = settlement.HouseNetCents;
         match.HumanPayoutsCents = settlement.HumanPayoutsCents.ToDictionary(StringComparer.Ordinal);
-        foreach (var player in match.Players.Where(value => !value.IsBot))
+        foreach (var player in match.Players.Where(value => value.IsAccountBacked))
         {
             var payout = settlement.HumanPayoutsCents.GetValueOrDefault(player.ActorId);
             player.AccountPayoutCents = payout;
@@ -276,7 +254,7 @@ internal static class CreditHoldemEngine
 
     public static CreditHoldemFinancialSettlement CalculateHumanSettlement(CreditHoldemMatch match)
     {
-        var payouts = match.Players.Where(value => !value.IsBot)
+        var payouts = match.Players.Where(value => value.IsAccountBacked)
             .ToDictionary(value => value.ActorId, _ => 0L, StringComparer.Ordinal);
         var levels = match.Players.Select(value => value.CommittedHand).Where(value => value > 0).Distinct().Order().ToArray();
         var previous = 0;
@@ -286,17 +264,17 @@ internal static class CreditHoldemEngine
             var contributors = match.Players.Where(value => value.CommittedHand >= level).ToArray();
             var segment = level - previous;
             previous = level;
-            var humanPot = checked((long)segment * contributors.Count(value => !value.IsBot));
-            committed = checked(committed + humanPot);
-            if (humanPot == 0) continue;
+            var accountPot = checked((long)segment * contributors.Count(value => value.IsAccountBacked));
+            committed = checked(committed + accountPot);
+            if (accountPot == 0) continue;
             var eligible = contributors.Where(value => value.Status != "folded").ToArray();
             if (eligible.Length == 0) continue;
             var winners = Winners(match, eligible);
-            var share = humanPot / winners.Length;
-            var remainder = humanPot % winners.Length;
+            var share = accountPot / winners.Length;
+            var remainder = accountPot % winners.Length;
             for (var index = 0; index < winners.Length; index++)
             {
-                if (winners[index].IsBot) continue;
+                if (!winners[index].IsAccountBacked) continue;
                 payouts[winners[index].ActorId] = checked(
                     payouts[winners[index].ActorId] + share + (index < remainder ? 1 : 0));
             }
@@ -308,7 +286,7 @@ internal static class CreditHoldemEngine
     private static CreditHoldemMatch CreateHand(
         string matchId,
         string partitionKey,
-        IReadOnlyList<SeatDescriptor> descriptors,
+        IReadOnlyList<CreditHoldemSeatAssignment> descriptors,
         ulong seed,
         int dealerSeat,
         int version,
@@ -318,33 +296,20 @@ internal static class CreditHoldemEngine
     {
         var rule = CreditHoldemTableRules.Resolve(tableRuleId);
         var deck = TexasHoldemRules.CreateDeck(seed);
-        var humanAverage = checked((int)Math.Round(descriptors.Where(value => !value.IsBot).Average(value => value.Stack)));
-        var stackRandom = new DeterministicBotRandom(seed, "credit-holdem-bot-stacks-v2");
-        var skillRandom = new DeterministicBotRandom(seed, "credit-holdem-bot-skills-v2");
-        var firstSkillOffset = skillRandom.Next(3);
-        var botIndex = 0;
         var players = descriptors.Select(descriptor =>
         {
-            var stack = descriptor.Stack;
-            int? skill = null;
-            if (descriptor.IsBot)
-            {
-                var minimum = checked((int)Math.Ceiling(humanAverage * 0.9m));
-                var maximum = checked((int)Math.Floor(humanAverage * 1.1m));
-                stack = Math.Min(rule.MaximumStackCents,
-                    minimum + stackRandom.Next(Math.Max(1, maximum - minimum + 1)));
-                skill = CardBotSkillLevels.Poor + (firstSkillOffset + botIndex++) % 3;
-            }
             return new CreditHoldemPlayer
             {
                 ActorId = descriptor.ActorId,
                 PublicSeatId = descriptor.PublicSeatId,
                 DisplayName = descriptor.DisplayName,
-                IsBot = descriptor.IsBot,
-                BotSkillLevel = skill,
+                IsAccountBacked = descriptor.IsAccountBacked,
+                HostMetadata = descriptor.HostMetadata is null
+                    ? new(StringComparer.Ordinal)
+                    : new(descriptor.HostMetadata, StringComparer.Ordinal),
                 Seat = descriptor.Seat,
-                StartingStack = stack,
-                Stack = stack,
+                StartingStack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
+                Stack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
                 HoleCards = []
             };
         }).OrderBy(value => value.Seat).ToList();
@@ -395,7 +360,7 @@ internal static class CreditHoldemEngine
 
     private static void Progress(CreditHoldemMatch match, DateTime nowUtc)
     {
-        if (AllHumansFolded(match))
+        if (AllAccountPlayersFolded(match))
         {
             ForceComplete(match, nowUtc, incrementVersion: false);
             return;
@@ -489,8 +454,8 @@ internal static class CreditHoldemEngine
         .Where(value => value.Status == "active")
         .All(value => value.HasActed && value.CommittedRound == match.CurrentBet);
 
-    private static bool AllHumansFolded(CreditHoldemMatch match) => match.Players
-        .Where(value => !value.IsBot)
+    private static bool AllAccountPlayersFolded(CreditHoldemMatch match) => match.Players
+        .Where(value => value.IsAccountBacked)
         .All(value => value.Status == "folded");
 
     private static int NextActive(CreditHoldemMatch match, int afterSeat)
@@ -532,13 +497,10 @@ internal static class CreditHoldemEngine
 
     private static void SetActionDeadline(CreditHoldemMatch match, DateTime nowUtc)
     {
-        var active = match.Players.Single(value => value.Seat == match.ActiveSeat);
-        match.ActionDeadlineAtUtc = nowUtc.Add(active.IsBot
-            ? AllHumansFolded(match) ? FastBotActionDelay : BotActionDelay
-            : ActionDuration);
+        match.ActionDeadlineAtUtc = nowUtc.Add(ActionDuration);
     }
 
-    private static SeatDescriptor HumanDescriptor(
+    private static CreditHoldemSeatAssignment AccountSeat(
         CreditHoldemTicket ticket,
         int seat,
         IReadOnlyDictionary<string, long> balances,
@@ -546,10 +508,10 @@ internal static class CreditHoldemEngine
     {
         var stack = CreditHoldemMoney.StackFromBalance(
             balances.GetValueOrDefault(ticket.UserId), rule.MaximumStackCents);
-        return new(ticket.UserId, ticket.PublicSeatId, ticket.DisplayName, false, seat, stack);
+        return new(ticket.UserId, ticket.PublicSeatId, ticket.DisplayName, true, seat, stack);
     }
 
-    private static SeatDescriptor ReturningHumanDescriptor(
+    private static CreditHoldemSeatAssignment ReturningAccountSeat(
         CreditHoldemPlayer player,
         IReadOnlyDictionary<string, long> balances,
         CreditHoldemTableRule rule)
@@ -558,31 +520,13 @@ internal static class CreditHoldemEngine
             player.ActorId,
             player.PublicSeatId,
             player.DisplayName,
-            false,
+            true,
             player.Seat,
             CreditHoldemMoney.StackFromBalance(
                 balances.GetValueOrDefault(player.ActorId), rule.MaximumStackCents));
     }
 
-    private static void AddBots(List<SeatDescriptor> descriptors, ulong seed, int count)
-    {
-        if (count <= 0) return;
-        var identities = new BotIdentityFactory().Create(seed + (ulong)descriptors.Count, count, CardBotSkillLevels.Average);
-        foreach (var identity in identities)
-        {
-            var seat = Enumerable.Range(0, CreditHoldemMoney.MaximumSeats)
-                .First(value => descriptors.All(existing => existing.Seat != value));
-            descriptors.Add(new(
-                $"bot:{identity.SeatId}",
-                $"seat_{Guid.NewGuid():N}",
-                identity.DisplayName,
-                true,
-                seat,
-                0));
-        }
-    }
-
-    private static int NextOccupiedSeat(IReadOnlyList<SeatDescriptor> descriptors, int afterSeat)
+    private static int NextOccupiedSeat(IReadOnlyList<CreditHoldemSeatAssignment> descriptors, int afterSeat)
     {
         for (var offset = 1; offset <= CreditHoldemMoney.MaximumSeats; offset++)
         {
@@ -591,12 +535,4 @@ internal static class CreditHoldemEngine
         }
         return descriptors[0].Seat;
     }
-
-    private sealed record SeatDescriptor(
-        string ActorId,
-        string PublicSeatId,
-        string DisplayName,
-        bool IsBot,
-        int Seat,
-        int Stack);
 }

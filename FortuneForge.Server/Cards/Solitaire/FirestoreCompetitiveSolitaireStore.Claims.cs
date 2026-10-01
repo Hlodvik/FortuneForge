@@ -40,7 +40,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var match = ReadMatch(snapshots[1]);
                 var player = ReadPlayer(snapshots[2], match);
                 if (match.Status != SettledMatchStatus ||
-                    player.IsSynthetic ||
+                    !player.IsAccountBacked ||
                     player.MatchId != matchId ||
                     ReadString(snapshots[3], "settlementStatus") != "claimable")
                 {

@@ -37,8 +37,8 @@ public sealed class CreditHoldemStoreTests
         var match = store.MatchForTest(session.Table.MatchId);
 
         Assert.Equal(3, match.Players.Count);
-        Assert.Single(match.Players, player => !player.IsBot);
-        Assert.Equal(2, match.Players.Count(player => player.IsBot));
+        Assert.Single(match.Players, player => player.IsAccountBacked);
+        Assert.Equal(2, match.Players.Count(player => !player.IsAccountBacked));
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class CreditHoldemStoreTests
         var table = match.Table;
         var internalMatch = store.MatchForTest(table.MatchId);
         var actor = internalMatch.Players.Single(player => player.Seat == table.ActiveSeat);
-        Assert.False(actor.IsBot);
+        Assert.True(actor.IsAccountBacked);
         var actorView = Assert.IsType<CreditHoldemMatchSessionResponse>(
             (await store.GetSessionAsync(actor.ActorId, Start.AddSeconds(6), default)).Session);
         var publicActor = actorView.Table.Seats.Single(seat => seat.IsCurrentPlayer);

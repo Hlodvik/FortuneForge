@@ -18,7 +18,7 @@
     "capabilities": {
       "type": "array",
       "uniqueItems": true,
-      "items": { "enum": ["credits", "free-play", "multiplayer", "bots", "history"] }
+      "items": { "enum": ["credits", "free-play", "multiplayer", "history"] }
     },
     "migrationState": { "enum": ["catalog-only", "rules-pilot", "package-backed"] }
   }

@@ -1,6 +1,6 @@
 # Fortune Forge Liar's Dice client
 
-Reusable React UI for exact-face Liar's Dice. The local preview runs one human player against three deterministic bots, with visible personal dice, bid raising, challenges, dice elimination, and next-round progression.
+Reusable React UI for exact-face Liar's Dice. The host supplies the ordinary player profiles; the client handles visible personal dice, bid raising, challenges, dice elimination, and next-round progression.
 
 ```powershell
 npm install

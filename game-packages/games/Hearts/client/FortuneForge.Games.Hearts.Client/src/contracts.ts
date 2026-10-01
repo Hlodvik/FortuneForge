@@ -4,7 +4,7 @@ export type HeartsSeat = 'north' | 'east' | 'south' | 'west'
 export type HeartsDifficulty = 'relaxed' | 'standard' | 'sharp'
 
 export type HeartsCard = Readonly<{ code: string; rank: string; suit: string; label: string }>
-export type HeartsPlayer = Readonly<{ seat: HeartsSeat; handCount: number; roundScore: number; matchScore: number; hasPassed: boolean }>
+export type HeartsPlayer = Readonly<{ seat: HeartsSeat; displayName: string; handCount: number; roundScore: number; matchScore: number; hasPassed: boolean }>
 export type HeartsTrickPlay = Readonly<{ seat: HeartsSeat; card: HeartsCard }>
 export type HeartsTrick = Readonly<{ leader: HeartsSeat; plays: readonly HeartsTrickPlay[] }>
 export type HeartsRecentTrick = Readonly<{ number: number; leader: HeartsSeat; winner: HeartsSeat; points: number; plays: readonly HeartsTrickPlay[] }>
@@ -21,7 +21,7 @@ export type HeartsMatch = Readonly<{
   turn: HeartsSeat
   humanSeat: HeartsSeat
   yourTurn: boolean
-  botsThinking: boolean
+  opponentsThinking: boolean
   heartsBroken: boolean
   submittedPasses: readonly HeartsSeat[]
   players: readonly HeartsPlayer[]

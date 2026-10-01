@@ -15,7 +15,7 @@ public sealed record HeartsMatchResponse(
     string Turn,
     string HumanSeat,
     bool YourTurn,
-    bool BotsThinking,
+    bool OpponentsThinking,
     bool HeartsBroken,
     IReadOnlyList<string> SubmittedPasses,
     IReadOnlyList<HeartsPlayerResponse> Players,
@@ -29,7 +29,7 @@ public sealed record HeartsMatchResponse(
     string Difficulty,
     string? Winner,
     string Message);
-public sealed record HeartsPlayerResponse(string Seat, int HandCount, int RoundScore, int MatchScore, bool HasPassed);
+public sealed record HeartsPlayerResponse(string Seat, string DisplayName, int HandCount, int RoundScore, int MatchScore, bool HasPassed);
 public sealed record HeartsCardResponse(string Code, string Rank, string Suit, string Label);
 public sealed record HeartsTrickResponse(string Leader, IReadOnlyList<HeartsTrickPlayResponse> Plays);
 public sealed record HeartsTrickPlayResponse(string Seat, HeartsCardResponse Card);

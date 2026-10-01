@@ -21,7 +21,7 @@ public sealed class HeartsController(
         if (Disabled() is { } unavailable) return unavailable;
         return await AccountAsync(cancellationToken) is null
             ? Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."))
-            : Ok(new HeartsStatusResponse(true, HeartsMatchEngine.DefaultTargetScore, "free-play-bots"));
+            : Ok(new HeartsStatusResponse(true, HeartsMatchEngine.DefaultTargetScore, "free-play"));
     }
 
     [HttpPost("matches")]
@@ -31,7 +31,10 @@ public sealed class HeartsController(
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AccountAsync(cancellationToken);
         if (account is null) return Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."));
-        return Execute(() => games.Start(account.UserId, request ?? new(null, null, null)));
+        return await ExecuteAsync(() => games.StartAsync(
+            account.UserId,
+            request ?? new(null, null, null),
+            cancellationToken));
     }
 
     [HttpGet("matches/{matchId:guid}")]
@@ -41,41 +44,45 @@ public sealed class HeartsController(
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AccountAsync(cancellationToken);
         if (account is null) return Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."));
-        return Execute(() => games.Get(account.UserId, matchId));
+        return await ExecuteAsync(() => games.GetAsync(account.UserId, matchId, cancellationToken));
     }
 
     [HttpPost("matches/{matchId:guid}/pass")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Pass(Guid matchId, PassHeartsRequest request, CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => Execute(() => games.Pass(account.UserId, matchId, request.Cards ?? [])));
+        await WithAccount(cancellationToken, account => ExecuteAsync(() => games.PassAsync(
+            account.UserId, matchId, request.Cards ?? [], cancellationToken)));
 
     [HttpPost("matches/{matchId:guid}/card")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Card(Guid matchId, PlayHeartsCardRequest request, CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => Execute(() => games.PlayCard(account.UserId, matchId, request.Card ?? string.Empty)));
+        await WithAccount(cancellationToken, account => ExecuteAsync(() => games.PlayCardAsync(
+            account.UserId, matchId, request.Card ?? string.Empty, cancellationToken)));
 
     [HttpPost("matches/{matchId:guid}/advance")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Advance(Guid matchId, CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => Execute(() => games.Advance(account.UserId, matchId)));
+        await WithAccount(cancellationToken, account => ExecuteAsync(() => games.AdvanceAsync(
+            account.UserId, matchId, cancellationToken)));
 
     [HttpPost("matches/{matchId:guid}/next-round")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> NextRound(Guid matchId, NextHeartsRoundRequest? request, CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => Execute(() => games.NextRound(account.UserId, matchId, request?.Seed)));
+        await WithAccount(cancellationToken, account => ExecuteAsync(() => games.NextRoundAsync(
+            account.UserId, matchId, request?.Seed, cancellationToken)));
 
-    private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, ActionResult> action)
+    private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AccountAsync(cancellationToken);
         return account is null
             ? Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."))
-            : action(account);
+            : await action(account);
     }
 
-    private ActionResult Execute(Func<HeartsMatchResponse> action)
+    private async Task<ActionResult> ExecuteAsync(Func<Task<HeartsMatchResponse>> action)
     {
-        try { return Ok(action()); }
+        try { return Ok(await action()); }
         catch (HeartsAccessException exception) { return NotFound(new HeartsErrorResponse("hearts-match-not-found", exception.Message)); }
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or HeartsRuleException)
         { return BadRequest(new HeartsErrorResponse("hearts-invalid-action", exception.Message)); }

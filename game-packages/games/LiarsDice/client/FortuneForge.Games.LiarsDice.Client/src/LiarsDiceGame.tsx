@@ -18,6 +18,7 @@ export function LiarsDiceGame({ gateway }: LiarsDiceGameProps) {
   const [turnSeconds, setTurnSeconds] = useState(20)
   const [roundHistory, setRoundHistory] = useState<readonly { round: number; text: string }[]>([])
   const recordedRound = useRef(0)
+  const opponentPollInFlight = useRef(false)
 
   const publish = useCallback((next: LiarsDiceMatch) => { setMatch(next); setError(null) }, [])
   const run = useCallback(async (action: () => Promise<LiarsDiceMatch>) => { if (busy) return; setBusy(true); setError(null); try { publish(await action()) } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) } }, [busy, publish])
@@ -38,6 +39,24 @@ export function LiarsDiceGame({ gateway }: LiarsDiceGameProps) {
       setBusy(false)
     }
   }, [busy, publish])
+
+  useEffect(() => {
+    if (!match?.opponentsThinking) return
+    const timer = window.setTimeout(() => {
+      if (busy || opponentPollInFlight.current) return
+      opponentPollInFlight.current = true
+      setBusy(true)
+      setError(null)
+      void gateway.advance(match.matchId)
+        .then(publish)
+        .catch((reason: unknown) => setError(messageForError(reason)))
+        .finally(() => {
+          opponentPollInFlight.current = false
+          setBusy(false)
+        })
+    }, 200)
+    return () => window.clearTimeout(timer)
+  }, [busy, gateway, match, publish])
 
   useEffect(() => {
     if (!match || match.phase !== 'bidding') return
@@ -83,7 +102,7 @@ export function LiarsDiceGame({ gateway }: LiarsDiceGameProps) {
       {match ? <>
         <section className="ff-liars-status" aria-live="polite"><div><small>Round {match.roundNumber}</small><strong>{phaseLabel(match)}</strong></div><div className="ff-liars-current"><small>{match.winner ? `${playerLabel(match, match.winner)} wins` : yourTurn ? `Your turn · ${turnSeconds}s` : `${playerLabel(match, match.currentPlayerId)} is acting · ${turnSeconds}s`}</small><strong>{match.message}</strong></div><div><small>Dice in play</small><strong>{match.totalDice}</strong></div></section>
 
-        <section className="ff-liars-table" aria-label="Liar's Dice table"><div className="ff-liars-players">{match.players.map(player => <div className={`ff-liars-player ${player.id === match.currentPlayerId ? 'is-turn' : ''} ${player.isHuman ? 'is-human' : ''} ${!player.active ? 'is-out' : ''}`} key={player.id}><div><strong>{player.displayName}</strong><small>{player.isHuman ? 'You' : player.active ? botTell(player.id, match.roundNumber) : 'Eliminated'}</small></div><span className="ff-liars-dice-count">{player.diceCount}<small>dice</small></span></div>)}</div><div className="ff-liars-bid-board"><small>Current bid</small><strong>{bidLabel(match.currentBid)}</strong>{match.currentBidderId && <span>by {playerLabel(match, match.currentBidderId)}</span>}<div className="ff-liars-bid-die" aria-hidden="true">{match.currentBid?.face ?? '?'}</div>{bidProbability !== null && <div className="ff-liars-probability"><small>Estimated chance bid is true</small><b>{Math.round(bidProbability * 100)}%</b><span>Uses your dice plus 1-in-6 odds for every hidden die.</span></div>}</div></section>
+        <section className="ff-liars-table" aria-label="Liar's Dice table"><div className="ff-liars-players">{match.players.map(player => <div className={`ff-liars-player ${player.id === match.currentPlayerId ? 'is-turn' : ''} ${player.isHuman ? 'is-human' : ''} ${!player.active ? 'is-out' : ''}`} key={player.id}><div><strong>{player.displayName}</strong><small>{player.isHuman ? 'You' : player.active ? opponentTell(player.id, match.roundNumber) : 'Eliminated'}</small></div><span className="ff-liars-dice-count">{player.diceCount}<small>dice</small></span></div>)}</div><div className="ff-liars-bid-board"><small>Current bid</small><strong>{bidLabel(match.currentBid)}</strong>{match.currentBidderId && <span>by {playerLabel(match, match.currentBidderId)}</span>}<div className="ff-liars-bid-die" aria-hidden="true">{match.currentBid?.face ?? '?'}</div>{bidProbability !== null && <div className="ff-liars-probability"><small>Estimated chance bid is true</small><b>{Math.round(bidProbability * 100)}%</b><span>Uses your dice plus 1-in-6 odds for every hidden die.</span></div>}</div></section>
 
         <section className="ff-liars-hand-section" aria-labelledby="your-dice-title"><div className="ff-liars-section-heading"><div><small>Your dice</small><h2 id="your-dice-title">{match.hand.length ? `${match.hand.length} dice in your cup` : 'You are out of dice'}</h2></div><span>{match.hand.length ? 'Only you can see these dice.' : 'Watch the remaining players.'}</span></div><div className="ff-liars-hand">{match.hand.length > 0 && <DiceThrow className="ff-liars-dice-stage" values={match.hand} rollKey={`${match.matchId}-${match.roundNumber}`} rolling={rollingHand} label={`Your hidden dice show ${match.hand.join(', ')}`} />}</div></section>
 
@@ -101,7 +120,8 @@ export function LiarsDiceGame({ gateway }: LiarsDiceGameProps) {
 function phaseLabel(match: LiarsDiceMatch): string { return match.winner ? 'Match complete' : match.phase === 'bidding' ? 'Bidding' : 'Challenge resolved' }
 function messageForError(reason: unknown): string { return reason instanceof LiarsDiceGatewayError ? reason.message : "The Liar's Dice table is unavailable. Start a new local match." }
 function diceSettleDelay(): Promise<void> { const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches; return new Promise(resolve => window.setTimeout(resolve, reducedMotion ? 0 : 890)) }
-function botTell(id: string, round: number): string { const tells: Record<string, readonly string[]> = { 'bot-1': ['Patient counter', 'Watching the table'], 'bot-2': ['Bold raiser', 'Pressing the bid'], 'bot-3': ['Cautious reader', 'Hiding a tell'] }; const options = tells[id] ?? ['Waiting']; return options[round % options.length]! }
+function opponentTell(id: string, round: number): string { const tells = ['Patient counter', 'Watching the table', 'Bold raiser', 'Pressing the bid', 'Cautious reader', 'Hiding a tell'] as const; return tells[(stableTextValue(id) + round) % tells.length]! }
+function stableTextValue(value: string): number { return Array.from(value).reduce((total, character) => (total * 31 + character.charCodeAt(0)) >>> 0, 0) }
 function probabilityBidIsTrue(totalDice: number, hand: readonly number[], quantity: number, face: number): number {
   const known = hand.filter(value => value === face).length
   const needed = Math.max(0, quantity - known)

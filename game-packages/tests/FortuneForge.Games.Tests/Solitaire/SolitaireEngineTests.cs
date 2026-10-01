@@ -6,6 +6,18 @@ namespace FortuneForge.Games.Tests;
 public sealed class SolitaireEngineTests
 {
     [Fact]
+    public void GamePackageContainsNoManagedPlayerConcepts()
+    {
+        var assembly = typeof(SolitaireModule).Assembly;
+        Assert.DoesNotContain(assembly.GetTypes(), type =>
+            type.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            type.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(assembly.GetTypes().SelectMany(type => type.GetProperties()), property =>
+            property.Name.Contains("Bot", StringComparison.OrdinalIgnoreCase) ||
+            property.Name.Contains("Managed", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void DealPreservesTheExistingFrozenMulberry32Sequence()
     {
         var game = SolitaireEngine.CreateGame(1);

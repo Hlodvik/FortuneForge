@@ -13,6 +13,8 @@ internal sealed class BlackjackTableCoordinator(
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
+    private static readonly TimeSpan MinimumManagedWagerPause = TimeSpan.FromMilliseconds(700);
+    private static readonly TimeSpan MaximumManagedWagerPause = TimeSpan.FromMilliseconds(1_800);
     private readonly Func<IReadOnlyList<string>> createDeck = deckFactory ?? BlackjackRules.CreateShuffledDeck;
     private readonly Func<ulong> createSeed = seedFactory ??
         (() => BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))));
@@ -371,22 +373,30 @@ internal sealed class BlackjackTableCoordinator(
 
         if (BlackjackManagedSeat.IsManaged(player))
         {
-            if (table.Transition is null)
+            // Migrate any live table that still carries the former shared, publicly visible pause.
+            if (table.Transition == "turn-pause")
             {
-                var delay = ManagedTurnPause(table, player.Seat);
-                table.Transition = "turn-pause";
-                table.NextTransitionAtUtc = nowUtc.Add(delay);
-                table.ActionDeadlineAtUtc = table.NextTransitionAtUtc;
+                table.Transition = null;
+                table.NextTransitionAtUtc = null;
+                table.ActionDeadlineAtUtc = null;
+            }
+            if (table.Transition is not null) return;
+
+            var decisionAt = BlackjackManagedSeat.ActionReadyAt(player);
+            if (decisionAt is null)
+            {
+                BlackjackManagedSeat.SetActionReadyAt(player, nowUtc.Add(ManagedPause(
+                    MinimumManagedTurnPause,
+                    MaximumManagedTurnPause)));
+                // A managed player's internal thinking clock is never projected as a table timer.
+                table.ActionDeadlineAtUtc = null;
                 table.Version = checked(table.Version + 1);
                 table.UpdatedAtUtc = nowUtc;
                 return;
             }
-            if (table.Transition != "turn-pause" ||
-                table.NextTransitionAtUtc is not { } decisionAt || nowUtc < decisionAt)
-                return;
-            // LegalActions rejects transitions, so clear the host-owned thinking pause before deciding.
-            table.Transition = null;
-            table.NextTransitionAtUtc = null;
+            table.ActionDeadlineAtUtc = null;
+            if (nowUtc < decisionAt) return;
+            BlackjackManagedSeat.ClearActionReadyAt(player);
             var available = BlackjackTableEngine.LegalActions(table, player);
             var action = BlackjackManagedActionPolicy.Choose(table, player, available);
             BlackjackTableEngine.ApplyAction(table, player.ActorId, action, nowUtc);
@@ -413,11 +423,10 @@ internal sealed class BlackjackTableCoordinator(
         if (releaseAfterRound) player.LeavingAfterRound = true;
     }
 
-    private static TimeSpan ManagedTurnPause(BlackjackTableState table, int seat)
+    private static TimeSpan ManagedPause(TimeSpan minimum, TimeSpan maximum)
     {
-        var range = checked((int)(MaximumManagedTurnPause - MinimumManagedTurnPause).TotalMilliseconds + 1);
-        var mixed = table.RoundSeed ^ ((ulong)(uint)table.Version << 32) ^ (uint)seat;
-        return MinimumManagedTurnPause.Add(TimeSpan.FromMilliseconds((long)(mixed % (ulong)range)));
+        var range = checked((int)(maximum - minimum).TotalMilliseconds + 1);
+        return minimum.Add(TimeSpan.FromMilliseconds(RandomNumberGenerator.GetInt32(range)));
     }
 
     private void StartNewTables(
@@ -973,14 +982,27 @@ internal sealed class BlackjackTableCoordinator(
     private void AdvanceManagedWagerTurns(BlackjackTableState table, DateTime nowUtc)
     {
         if (table.Phase != BlackjackTablePhases.Betting ||
-            table.Transition != "managed-wager" ||
-            table.NextTransitionAtUtc is not { } readyAt || nowUtc < readyAt)
+            table.Transition != "managed-wager")
             return;
 
         var player = table.PendingSeat is { } seat
             ? table.Players.SingleOrDefault(value => BlackjackManagedSeat.IsManaged(value) && value.Seat == seat)
             : null;
-        if (player is not null && player.NextWagerCents == 0)
+        if (player is null) return;
+        var readyAt = BlackjackManagedSeat.WagerReadyAt(player);
+        if (readyAt is null)
+        {
+            readyAt = nowUtc.Add(ManagedPause(MinimumManagedWagerPause, MaximumManagedWagerPause));
+            BlackjackManagedSeat.SetWagerReadyAt(player, readyAt.Value);
+            table.NextTransitionAtUtc = null;
+            table.WagerDeadlineAtUtc = null;
+            table.Version = checked(table.Version + 1);
+            table.UpdatedAtUtc = nowUtc;
+            return;
+        }
+        var effectiveReadyAt = readyAt.Value;
+        if (nowUtc < effectiveReadyAt) return;
+        if (player.NextWagerCents == 0)
         {
             var baseWager = BlackjackManagedSeat.BaseWager(player);
             player.NextWagerCents = baseWager > 0
@@ -988,13 +1010,14 @@ internal sealed class BlackjackTableCoordinator(
                 : InitialManagedWager(player.ActorId);
             player.Status = "ready";
         }
+        BlackjackManagedSeat.ClearWagerReadyAt(player);
         table.PendingSeat = null;
         table.ActiveSeat = null;
         table.WagerDeadlineAtUtc = null;
         table.Transition = null;
         table.NextTransitionAtUtc = null;
-        table.UpdatedAtUtc = readyAt;
-        StartIfReady(table, readyAt);
+        table.UpdatedAtUtc = effectiveReadyAt;
+        StartIfReady(table, effectiveReadyAt);
     }
 
     private static bool ScheduleNextWagerTurn(BlackjackTableState table, DateTime nowUtc)
@@ -1014,9 +1037,14 @@ internal sealed class BlackjackTableCoordinator(
         table.PendingSeat = next.Seat;
         table.WagerDeadlineAtUtc = nowUtc.Add(BlackjackTableEngine.WagerDuration);
         table.Transition = managed ? "managed-wager" : "human-wager";
-        table.NextTransitionAtUtc = managed
-            ? nowUtc.AddMilliseconds(RandomNumberGenerator.GetInt32(700, 1_801))
-            : null;
+        table.NextTransitionAtUtc = null;
+        if (managed)
+        {
+            BlackjackManagedSeat.SetWagerReadyAt(next, nowUtc.Add(ManagedPause(
+                MinimumManagedWagerPause,
+                MaximumManagedWagerPause)));
+            table.WagerDeadlineAtUtc = null;
+        }
         table.UpdatedAtUtc = nowUtc;
         return true;
     }

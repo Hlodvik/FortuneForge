@@ -65,10 +65,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     {
                         var candidate = ReadMatch(activeSnapshot);
                         if (candidate.Status == PlayingMatchStatus &&
-                            !candidate.BotsFilled &&
+                            !candidate.SeatsFilled &&
                             !candidate.PlayerIds.Contains(userId, StringComparer.Ordinal) &&
                             candidate.PlayerIds.Count < candidate.PlayerCount &&
-                            (candidate.BotFillEligibleAtUtc is null || nowUtc < candidate.BotFillEligibleAtUtc))
+                            (candidate.SeatFillEligibleAtUtc is null || nowUtc < candidate.SeatFillEligibleAtUtc))
                         {
                             acceptingMatch = candidate;
                         }
@@ -134,7 +134,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         DisplayNames = [.. acceptingMatch.DisplayNames, displayName],
                         TicketIds = [.. acceptingMatch.TicketIds, ticketId],
                         JoinedAtUtc = [.. acceptingMatch.JoinedAtUtc, nowUtc],
-                        BotsFilled = realPlayerCount == playerCount
+                        SeatsFilled = realPlayerCount == playerCount
                     };
                     matchedTicket = matchedTicket with { MatchId = match.MatchId };
                 }
@@ -189,7 +189,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     ["playerCount"] = playerCount,
                     ["buyInCents"] = buyInCents,
                     ["drawCount"] = drawCount,
-                    ["activeMatchId"] = match.BotsFilled ? string.Empty : match.MatchId,
+                    ["activeMatchId"] = match.SeatsFilled ? string.Empty : match.MatchId,
                     ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
                 }, SetOptions.MergeAll);
                 return true;

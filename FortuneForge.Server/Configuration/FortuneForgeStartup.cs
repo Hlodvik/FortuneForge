@@ -9,6 +9,8 @@ using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.Games.TwentyFortyEight;
 using FortuneForge.Server.Bots;
+using FortuneForge.Server.Bots.Hearts;
+using FortuneForge.Server.Bots.LiarsDice;
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Cards.VideoPoker;
 using FortuneForge.Server.Cards.Baccarat;
@@ -37,6 +39,8 @@ public static class FortuneForgeStartup
         builder.Services.AddPayments(builder.Configuration);
         builder.Services.AddSlotServices(builder.Configuration);
         builder.Services.AddManagedPlayers();
+        builder.Services.AddHeartsManagedPlayers();
+        builder.Services.AddLiarsDiceManagedPlayers();
         builder.Services.AddCreditHoldem(builder.Configuration);
         builder.Services.AddBlackjackTables();
         builder.Services.AddAdminOperations(builder.Configuration);

@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Google.Cloud.Firestore;
+using FortuneForge.Server.Bots;
+using FortuneForge.Server.Bots.Solitaire;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -35,7 +37,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 }
                 var playerIndex = IndexOfPlayer(graph.Match, userId);
                 var player = graph.Players[playerIndex];
-                if (player.IsSynthetic)
+                if (!player.IsAccountBacked)
                 {
                     throw new SolitaireNotFoundException("The Solitaire match was not found.");
                 }
@@ -203,11 +205,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var players = graph.Players.ToArray();
                 players[playerIndex] = updated;
                 var match = graph.Match;
-                if (terminal && options.AllowSingleHumanBotFill && match.BotFillEligibleAtUtc is null)
+                if (terminal && options.AllowSingleHumanBotFill && match.SeatFillEligibleAtUtc is null)
                 {
                     match = match with
                     {
-                        BotFillEligibleAtUtc = nowUtc.Add(SolitaireCompetitionRules.LateHumanClaimWindow)
+                        SeatFillEligibleAtUtc = nowUtc.Add(SolitaireCompetitionRules.LateHumanClaimWindow)
                     };
                 }
 
@@ -301,7 +303,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 }
                 var playerIndex = IndexOfPlayer(graph.Match, userId);
                 var player = graph.Players[playerIndex];
-                if (player.IsSynthetic)
+                if (!player.IsAccountBacked)
                 {
                     throw new SolitaireNotFoundException("The Solitaire match was not found.");
                 }
@@ -327,11 +329,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var players = graph.Players.ToArray();
                 players[playerIndex] = updated;
                 var match = graph.Match;
-                if (options.AllowSingleHumanBotFill && match.BotFillEligibleAtUtc is null)
+                if (options.AllowSingleHumanBotFill && match.SeatFillEligibleAtUtc is null)
                 {
                     match = match with
                     {
-                        BotFillEligibleAtUtc = nowUtc.Add(SolitaireCompetitionRules.LateHumanClaimWindow)
+                        SeatFillEligibleAtUtc = nowUtc.Add(SolitaireCompetitionRules.LateHumanClaimWindow)
                     };
                 }
                 transaction.Create(
@@ -399,7 +401,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 }
                 var match = ReadMatch(snapshots[1]);
                 var player = ReadPlayer(snapshots[2], match);
-                if (player.IsSynthetic)
+                if (!player.IsAccountBacked)
                 {
                     throw new SolitaireNotFoundException("The Solitaire result was not found.");
                 }
@@ -447,9 +449,19 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        await RunTransactionAsync(
-            async transaction =>
-            {
+        var preflightSnapshot = await MatchDocument(matchId).GetSnapshotAsync(cancellationToken);
+        if (!preflightSnapshot.Exists)
+            throw new SolitaireNotFoundException("The Solitaire match was not found.");
+        var preflightMatch = ReadMatch(preflightSnapshot);
+        var managedProfiles = await ManagedProfilesAsync(
+            preflightMatch,
+            nowUtc,
+            cancellationToken);
+        try
+        {
+            await RunTransactionAsync(
+                async transaction =>
+                {
                 var graph = await ReadMatchGraphAsync(transaction, matchId, cancellationToken);
                 var match = graph.Match;
                 if (match.Status != PlayingMatchStatus)
@@ -459,7 +471,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
 
                 var players = graph.Players.Select(player =>
                 {
-                    if (player.IsSynthetic || player.Status != SolitairePlayerStatuses.Playing)
+                    if (!player.IsAccountBacked || player.Status != SolitairePlayerStatuses.Playing)
                     {
                         return player;
                     }
@@ -470,7 +482,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 }).ToList();
 
                 foreach (var player in players.Where(player =>
-                    !player.IsSynthetic &&
+                    player.IsAccountBacked &&
                     IsTerminal(player) &&
                     graph.Players.First(original => original.UserId == player.UserId).Status ==
                         SolitairePlayerStatuses.Playing))
@@ -505,66 +517,48 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     return true;
                 }
                 var firstCompletion = players
-                    .Where(player => !player.IsSynthetic && IsTerminal(player))
+                    .Where(player => player.IsAccountBacked && IsTerminal(player))
                     .Select(player => player.CompletedAtUtc)
                     .Where(value => value is not null)
                     .Min();
-                if (match.BotFillEligibleAtUtc is null && firstCompletion is { } completed)
+                if (match.SeatFillEligibleAtUtc is null && firstCompletion is { } completed)
                 {
                     match = match with
                     {
-                        BotFillEligibleAtUtc = completed.Add(
+                        SeatFillEligibleAtUtc = completed.Add(
                             SolitaireCompetitionRules.LateHumanClaimWindow)
                     };
                 }
 
-                if (!match.BotsFilled &&
-                    match.BotFillEligibleAtUtc is { } eligibleAt &&
+                if (!match.SeatsFilled &&
+                    match.SeatFillEligibleAtUtc is { } eligibleAt &&
                     nowUtc >= eligibleAt)
                 {
                     var occupiedSeats = players.Select(player => player.Seat).ToHashSet();
+                    var profileIndex = 0;
                     for (var seat = 1; seat <= match.PlayerCount; seat++)
                     {
                         if (occupiedSeats.Contains(seat)) continue;
-                        var skill = CompetitiveSolitaireBotSimulation.Skill(seat);
-                        var elapsed = CompetitiveSolitaireBotSimulation.ElapsedMilliseconds(
-                            match.DealSeed,
+                        if (profileIndex >= managedProfiles.Count)
+                            throw new InvalidOperationException("The managed-player queuer did not supply enough Solitaire profiles.");
+                        players.Add(FortuneForge.Server.Bots.Solitaire.SolitaireManagedPlayerPolicy.Complete(
+                            match,
                             seat,
-                            skill);
-                        var syntheticId = SyntheticPlayerId(match.MatchId, seat);
-                        players.Add(new SolitairePlayerState(
-                            match.MatchId,
-                            syntheticId,
-                            CompetitiveSolitaireBotSimulation.DisplayName(seat),
-                            seat,
-                            SolitairePlayerStatuses.Finished,
-                            CompetitiveSolitaireBotSimulation.Play(
-                                match.DealSeed,
-                                match.DrawCount,
-                                seat,
-                                skill),
-                            1,
-                            elapsed,
-                            eligibleAt,
-                            0,
-                            false)
-                        {
-                            StartedAtUtc = match.StartedAtUtc,
-                            DeadlineAtUtc = eligibleAt,
-                            IsSynthetic = true,
-                            SyntheticSkill = skill
-                        });
+                            managedProfiles[profileIndex++],
+                            eligibleAt));
                     }
                     var ordered = players.OrderBy(player => player.Seat).ToArray();
                     match = match with
                     {
                         PlayerIds = ordered.Select(player => player.UserId).ToArray(),
                         DisplayNames = ordered.Select(player => player.DisplayName).ToArray(),
-                        TicketIds = ordered.Select(player => player.IsSynthetic ? string.Empty :
-                            match.TicketIds[PlayerIndex(match.PlayerIds, player.UserId)]).ToArray(),
-                        JoinedAtUtc = ordered.Select(player => player.IsSynthetic ? eligibleAt :
-                            match.JoinedAtUtc[PlayerIndex(match.PlayerIds, player.UserId)]).ToArray(),
-                        BotsFilled = true
+                        TicketIds = ordered.Select(player => player.IsAccountBacked
+                            ? match.TicketIds[PlayerIndex(match.PlayerIds, player.UserId)]
+                            : string.Empty).ToArray(),
+                        JoinedAtUtc = ordered.Select(player => player.IsAccountBacked
+                            ? match.JoinedAtUtc[PlayerIndex(match.PlayerIds, player.UserId)]
+                            : eligibleAt).ToArray(),
+                        SeatsFilled = true
                     };
                     ClearActivePartition(transaction, graph.PartitionSnapshot, match, nowUtc);
                 }
@@ -595,9 +589,43 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 }
                 transaction.Update(MatchDocument(match.MatchId), MatchData(match));
                 return true;
-            },
-            cancellationToken: cancellationToken);
+                },
+                cancellationToken: cancellationToken);
+        }
+        finally
+        {
+            if (managedPlayerQueuer is not null && managedProfiles.Count > 0)
+            {
+                await managedPlayerQueuer.ReleaseAsync(
+                    ManagedAssignmentId(preflightMatch.MatchId),
+                    managedProfiles.Select(profile => profile.UserId).ToArray(),
+                    nowUtc,
+                    cancellationToken);
+            }
+        }
     }
+
+    private Task<IReadOnlyList<ManagedPlayerProfile>> ManagedProfilesAsync(
+        SolitaireMatch match,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        if (!options.AllowSingleHumanBotFill || match.SeatsFilled ||
+            match.SeatFillEligibleAtUtc is not { } eligibleAt || nowUtc < eligibleAt)
+            return Task.FromResult<IReadOnlyList<ManagedPlayerProfile>>([]);
+        var count = Math.Max(0, match.PlayerCount - match.PlayerIds.Count);
+        return managedPlayerQueuer is null
+            ? Task.FromResult(SolitaireManagedPlayerPolicy.CreateLocalProfiles(count, nowUtc))
+            : managedPlayerQueuer.ReserveAsync(
+                ManagedPlayerGames.Solitaire,
+                ManagedAssignmentId(match.MatchId),
+                count,
+                match.PlayerIds,
+                nowUtc,
+                cancellationToken);
+    }
+
+    private static string ManagedAssignmentId(string matchId) => $"solitaire:{matchId}";
 
     private async Task<MatchGraph> ReadMatchGraphAsync(
         Transaction transaction,
@@ -627,7 +655,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         }
         var realPlayerIds = playerSnapshots
             .Select(snapshot => ReadPlayer(snapshot, match))
-            .Where(player => !player.IsSynthetic)
+            .Where(player => player.IsAccountBacked)
             .Select(player => player.UserId)
             .ToArray();
         var balanceSnapshots = await Task.WhenAll(realPlayerIds.Select(userId =>
@@ -656,7 +684,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
     {
         _ = balanceSnapshots;
         var standings = SolitaireCompetitionRules.Rank(players);
-        var realPlayers = standings.Where(player => !player.IsSynthetic).ToArray();
+        var realPlayers = standings.Where(player => player.IsAccountBacked).ToArray();
         var winner = realPlayers.FirstOrDefault()
             ?? throw new InvalidOperationException("A Solitaire match cannot settle without a real player.");
 
@@ -667,7 +695,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 PlayerDocument(match.MatchId, player.UserId),
                 PlayerData(player with { PayoutCents = payout }),
                 SetOptions.Overwrite);
-            if (!player.IsSynthetic && !player.Acknowledged)
+            if (player.IsAccountBacked && !player.Acknowledged)
             {
                 transaction.Set(
                     SessionDocument(player.UserId),
@@ -679,11 +707,18 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         completedAtUtc),
                     SetOptions.MergeAll);
             }
-            if (!player.IsSynthetic)
+            if (player.IsAccountBacked)
             {
                 transaction.Set(
                     CardGameResultDocument(match.MatchId, player.UserId),
                     ClaimableResultData(match, player, payout, completedAtUtc),
+                    SetOptions.MergeAll);
+            }
+            else
+            {
+                transaction.Set(
+                    CardGameResultDocument(match.MatchId, player.UserId),
+                    ManagedResultData(match, player, completedAtUtc),
                     SetOptions.MergeAll);
             }
         }
@@ -759,8 +794,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
     private bool CanSettle(
         SolitaireMatch match,
         IReadOnlyList<SolitairePlayerState> players) =>
-        (!options.AllowSingleHumanBotFill || match.BotsFilled) &&
-        players.Where(player => !player.IsSynthetic).All(IsTerminal);
+        (!options.AllowSingleHumanBotFill || match.SeatsFilled) &&
+        players.Where(player => player.IsAccountBacked).All(IsTerminal);
 
     private static DateTime PlayerDeadline(SolitaireMatch match, SolitairePlayerState player) =>
         player.DeadlineAtUtc == DateTime.UnixEpoch ? match.DeadlineAtUtc : player.DeadlineAtUtc;
@@ -878,9 +913,6 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             CompletedAtUtc = deadlineAtUtc,
             Game = player.Game with { Message = "Time expired" }
         };
-
-    private static string SyntheticPlayerId(string matchId, int seat) =>
-        $"__solitaire_internal__:{matchId}:{seat}";
 
     private void ClearActivePartition(
         Transaction transaction,

@@ -1,6 +1,6 @@
 # Hearts local web adapter
 
-Developer-only ASP.NET host for the reusable Hearts client. It runs one human North seat against three deterministic bots, including standard pass rotation, and delegates all rules and scoring to `HeartsMatchEngine`.
+Developer-only ASP.NET shell for the reusable Hearts client. Multiplayer identity, matchmaking, and automated participants belong to the application host rather than the game package.
 
 Run it alongside the client with:
 

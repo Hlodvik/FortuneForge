@@ -1,3 +1,5 @@
+using FortuneForge.Server.Bots.TexasHoldem;
+
 namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
 internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = false) : ICreditHoldemStore
@@ -28,6 +30,20 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
     internal int LedgerCount { get { lock (gate) return ledgerIds.Count; } }
     internal int RevenueCount { get { lock (gate) return revenueIds.Count; } }
     internal CreditHoldemMatch MatchForTest(string matchId) { lock (gate) return matches[matchId]; }
+
+    public Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        lock (gate)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            foreach (var match in matches.Values.Where(match => match.Status == "active"))
+            {
+                _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
+                SettleOnce(match, nowUtc);
+            }
+            return Task.CompletedTask;
+        }
+    }
 
     public Task<CreditHoldemStoreResult> GetSessionAsync(
         string userId,
@@ -143,7 +159,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             var detail = $"{action}:{request.ExpectedVersion}:{request.RaiseTo?.ToString() ?? string.Empty}";
             if (Replay(userId, idempotencyKey, "action", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
             var match = MatchForUser(matchId, userId);
-            _ = CreditHoldemEngine.AdvanceAutomatedTurn(match, nowUtc);
+            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
             SettleOnce(match, nowUtc);
             if (match.Status != "active" || match.Version != request.ExpectedVersion)
                 throw new CreditHoldemConflictException("The Hold'em table changed. Reconnect before acting.");
@@ -155,7 +171,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             if (committed != required) throw new InvalidOperationException("The Hold'em commitment changed during validation.");
             DebitCommitment(match, player, committed, $"action-v{request.ExpectedVersion}", idempotencyKey, nowUtc);
             guards[Guard(userId, idempotencyKey)] = ("action", matchId, detail);
-            _ = CreditHoldemEngine.AdvanceAutomatedTurn(match, nowUtc);
+            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
             SettleOnce(match, nowUtc);
             return Task.FromResult(Project(userId, nowUtc));
         }
@@ -179,14 +195,13 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             SettleOnce(prior, nowUtc);
             if (prior.Status != "completed" || prior.Version != expectedVersion || !prior.AccountingSettled)
                 throw new CreditHoldemConflictException("The hand changed or is not ready for the next deal.");
-            var balanceMap = prior.Players.Where(value => !value.IsBot)
+            var balanceMap = prior.Players.Where(value => value.IsAccountBacked)
                 .Concat(prior.PendingTakeovers.Select(ticket => new CreditHoldemPlayer
                 {
                     ActorId = ticket.UserId,
                     PublicSeatId = ticket.PublicSeatId,
                     DisplayName = ticket.DisplayName,
-                    IsBot = false,
-                    BotSkillLevel = null,
+                    IsAccountBacked = true,
                     Seat = 0,
                     StartingStack = 0,
                     HoleCards = []
@@ -202,10 +217,10 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             matches[matchId] = next;
             foreach (var ticket in prior.PendingTakeovers)
                 tickets[ticket.TicketId] = ticket with { Status = "matched", Version = checked(ticket.Version + 1) };
-            foreach (var human in next.Players.Where(value => !value.IsBot))
+            foreach (var human in next.Players.Where(value => value.IsAccountBacked))
                 sessions[human.ActorId] = new(CreditHoldemSessionKinds.Match, null, matchId);
             WriteActiveHistory(next);
-            if (next.Players.Count(value => !value.IsBot) < CreditHoldemMoney.MaximumSeats)
+            if (next.Players.Count(value => value.IsAccountBacked) < CreditHoldemMoney.MaximumSeats)
                 activeMatchIds[next.PartitionKey] = matchId;
             else activeMatchIds.Remove(next.PartitionKey);
             guards[Guard(userId, idempotencyKey)] = ("next-hand", matchId, detail);
@@ -227,14 +242,14 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (Replay(userId, idempotencyKey, "leave", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
             var match = MatchForUser(matchId, userId);
-            _ = CreditHoldemEngine.AdvanceAutomatedTurn(match, nowUtc);
+            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
             SettleOnce(match, nowUtc);
             if (match.Version != expectedVersion)
                 throw new CreditHoldemConflictException("The Hold'em table changed. Reconnect before leaving.");
             CreditHoldemEngine.Leave(match, userId, nowUtc);
             SettleOnce(match, nowUtc);
             sessions[userId] = new(CreditHoldemSessionKinds.Idle, null, null);
-            if (match.Players.Where(value => !value.IsBot).All(value => match.LeavingActorIds.Contains(value.ActorId)))
+            if (match.Players.Where(value => value.IsAccountBacked).All(value => match.LeavingActorIds.Contains(value.ActorId)))
                 activeMatchIds.Remove(match.PartitionKey);
             guards[Guard(userId, idempotencyKey)] = ("leave", matchId, detail);
             return Task.FromResult(Project(userId, nowUtc));
@@ -286,14 +301,14 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             else if (ticket.MatchId is { } pendingMatchId)
             {
                 var pending = matches[pendingMatchId];
-                _ = CreditHoldemEngine.AdvanceAutomatedTurn(pending, nowUtc);
+                _ = TexasHoldemManagedPlayers.AdvanceIfDue(pending, nowUtc);
                 SettleOnce(pending, nowUtc);
             }
         }
         if (sessions.TryGetValue(userId, out session) && session.MatchId is { } matchId)
         {
             var match = matches[matchId];
-            _ = CreditHoldemEngine.AdvanceAutomatedTurn(match, nowUtc);
+            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
             SettleOnce(match, nowUtc);
         }
     }
@@ -312,9 +327,12 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
         var balancesForHand = selected.ToDictionary(value => value.UserId, value => balances.GetValueOrDefault(value.UserId), StringComparer.Ordinal);
         if (balancesForHand.Values.Any(value => value < rule.BigBlindCents)) return;
         var matchId = CreditHoldemIds.Hash($"{partitionKey}\n{string.Join("\n", selected.Select(value => value.TicketId))}");
-        var occupied = Math.Max(CreditHoldemMoney.MinimumStartPlayers, selected.Length);
+        var profiles = TexasHoldemManagedPlayers.CreateLocalProfiles(
+            CreditHoldemMoney.MinimumStartPlayers - selected.Length,
+            nowUtc);
+        var seats = TexasHoldemManagedPlayers.BuildSeats(selected, profiles, balancesForHand, seed, rule);
         var match = CreditHoldemEngine.Deal(
-            matchId, selected, occupied, partitionKey, seed, balancesForHand, nowUtc, rule.Id);
+            matchId, seats, partitionKey, seed, nowUtc, rule.Id);
         ApplyBlindCommitments(match, "initial-deal", nowUtc);
         matches.Add(matchId, match);
         foreach (var ticket in selected)
@@ -330,7 +348,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
 
     private void ApplyBlindCommitments(CreditHoldemMatch match, string sourceKey, DateTime nowUtc)
     {
-        foreach (var human in match.Players.Where(value => !value.IsBot && value.CommittedHand > 0))
+        foreach (var human in match.Players.Where(value => value.IsAccountBacked && value.CommittedHand > 0))
         {
             var available = balances.GetValueOrDefault(human.ActorId);
             if (available < human.CommittedHand)
@@ -347,7 +365,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
         string sourceKey,
         DateTime nowUtc)
     {
-        if (cents <= 0 || player.IsBot) return;
+        if (cents <= 0 || !player.IsAccountBacked) return;
         var before = balances.GetValueOrDefault(player.ActorId);
         var after = checked(before - cents);
         if (after < 0) throw new CreditHoldemInsufficientCreditsException(before, cents);
@@ -370,9 +388,9 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
         }
         revenueIds.Add($"{match.MatchId}-hand-{match.HandNumber}");
         WriteCompletedHistory(match, settlement);
-        foreach (var human in match.Players.Where(value => !value.IsBot && !match.LeavingActorIds.Contains(value.ActorId)))
+        foreach (var human in match.Players.Where(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)))
             sessions[human.ActorId] = new(CreditHoldemSessionKinds.Result, null, match.MatchId);
-        if (match.Players.Count(value => !value.IsBot && !match.LeavingActorIds.Contains(value.ActorId)) < CreditHoldemMoney.MaximumSeats)
+        if (match.Players.Count(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)) < CreditHoldemMoney.MaximumSeats)
             activeMatchIds[match.PartitionKey] = match.MatchId;
         else activeMatchIds.Remove(match.PartitionKey);
     }
@@ -386,7 +404,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
 
     private void WriteActiveHistory(CreditHoldemMatch match)
     {
-        foreach (var human in match.Players.Where(value => !value.IsBot))
+        foreach (var human in match.Players.Where(value => value.IsAccountBacked))
         {
             var eventId = CreditHoldemIds.Hash($"{human.ActorId}\n{match.MatchId}\n{match.HandNumber}");
             history[eventId] = new CreditHoldemHistoryRecord(
@@ -397,7 +415,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
 
     private void WriteCompletedHistory(CreditHoldemMatch match, CreditHoldemFinancialSettlement settlement)
     {
-        foreach (var human in match.Players.Where(value => !value.IsBot))
+        foreach (var human in match.Players.Where(value => value.IsAccountBacked))
         {
             var eventId = CreditHoldemIds.Hash($"{human.ActorId}\n{match.MatchId}\n{match.HandNumber}");
             history[eventId] = new CreditHoldemHistoryRecord(
@@ -468,7 +486,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
     };
 
     private static bool CanAcceptTakeover(CreditHoldemMatch match) =>
-        match.Players.Count(value => !value.IsBot && !match.LeavingActorIds.Contains(value.ActorId)) +
+        match.Players.Count(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)) +
         match.PendingTakeovers.Count < CreditHoldemMoney.MaximumSeats;
     private static string Guard(string userId, string key) => $"{userId}\n{key}";
     private static ulong NewSeed() => BitConverter.ToUInt64(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8));

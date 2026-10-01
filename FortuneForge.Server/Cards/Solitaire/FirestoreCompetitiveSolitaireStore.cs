@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -18,13 +19,16 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
     private readonly CompetitiveSolitaireOptions options;
+    private readonly IManagedPlayerQueuer? managedPlayerQueuer;
 
     public FirestoreCompetitiveSolitaireStore(
         FirestoreDb database,
-        CompetitiveSolitaireOptions? options = null)
+        CompetitiveSolitaireOptions? options = null,
+        IManagedPlayerQueuer? managedPlayerQueuer = null)
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
+        this.managedPlayerQueuer = managedPlayerQueuer;
     }
 
     private async Task<T> RunTransactionAsync<T>(
@@ -145,10 +149,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             : Timestamp.FromDateTime(match.CompletedAtUtc.Value),
         ["winnerUserId"] = match.WinnerUserId ?? string.Empty,
         ["partitionKey"] = match.PartitionKey,
-        ["botFillEligibleAt"] = match.BotFillEligibleAtUtc is null
+        ["botFillEligibleAt"] = match.SeatFillEligibleAtUtc is null
             ? string.Empty
-            : Timestamp.FromDateTime(match.BotFillEligibleAtUtc.Value),
-        ["botsFilled"] = match.BotsFilled,
+            : Timestamp.FromDateTime(match.SeatFillEligibleAtUtc.Value),
+        ["botsFilled"] = match.SeatsFilled,
         ["drawCount"] = match.DrawCount,
         ["schemaVersion"] = 3L
     };
@@ -172,8 +176,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         ["acknowledged"] = player.Acknowledged,
         ["startedAt"] = Timestamp.FromDateTime(player.StartedAtUtc),
         ["deadlineAt"] = Timestamp.FromDateTime(player.DeadlineAtUtc),
-        ["isSynthetic"] = player.IsSynthetic,
-        ["syntheticSkill"] = player.SyntheticSkill ?? 0,
+        ["isSynthetic"] = !player.IsAccountBacked,
+        ["syntheticSkill"] = FortuneForge.Server.Bots.Solitaire.SolitaireManagedPlayerPolicy.Skill(player),
         ["pauseUsedMilliseconds"] = player.PauseUsedMilliseconds,
         ["pausedAt"] = player.PausedAtUtc is null
             ? string.Empty
@@ -258,6 +262,30 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         return data;
     }
 
+    private static Dictionary<string, object> ManagedResultData(
+        SolitaireMatch match,
+        SolitairePlayerState player,
+        DateTime completedAtUtc) => new()
+    {
+        ["resultId"] = CreateLookupKey($"solitaire\n{match.MatchId}\n{player.UserId}"),
+        ["game"] = "solitaire",
+        ["mode"] = "competitive",
+        ["matchId"] = match.MatchId,
+        ["userId"] = player.UserId,
+        ["currencyId"] = SlotsCreditsCurrencyId,
+        ["claimStatus"] = "completed",
+        ["settlementStatus"] = "recorded",
+        ["playerStatus"] = player.Status,
+        ["score"] = (long)player.Game.Score,
+        ["moves"] = (long)player.Game.Moves,
+        ["elapsedMilliseconds"] = player.ElapsedMilliseconds ?? 0L,
+        ["buyInCents"] = 0L,
+        ["payoutCents"] = 0L,
+        ["completedAt"] = Timestamp.FromDateTime(completedAtUtc),
+        ["financialClassification"] = "managed-player-virtual-v1",
+        ["schemaVersion"] = 1L
+    };
+
     private static SolitaireTicket ReadTicket(DocumentSnapshot snapshot) => new(
         ReadString(snapshot, "ticketId"),
         ReadString(snapshot, "userId"),
@@ -277,7 +305,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         var completed = ReadOptionalTimestamp(snapshot, "completedAt");
         var playerCount = checked((int)ReadLong(snapshot, "playerCount"));
         var playerIds = ReadStringArray(snapshot, "playerIds");
-        var botsFilled = snapshot.Exists && snapshot.TryGetValue<bool>("botsFilled", out var storedBotsFilled)
+        var seatsFilled = snapshot.Exists && snapshot.TryGetValue<bool>("botsFilled", out var storedBotsFilled)
             ? storedBotsFilled
             : playerIds.Count >= playerCount;
         return new SolitaireMatch(
@@ -299,8 +327,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             EmptyToNull(ReadString(snapshot, "winnerUserId")))
         {
             PartitionKey = ReadString(snapshot, "partitionKey"),
-            BotFillEligibleAtUtc = ReadOptionalTimestamp(snapshot, "botFillEligibleAt"),
-            BotsFilled = botsFilled,
+            SeatFillEligibleAtUtc = ReadOptionalTimestamp(snapshot, "botFillEligibleAt"),
+            SeatsFilled = seatsFilled,
             DrawCount = checked((int)ReadLong(snapshot, "drawCount", 3))
         };
     }
@@ -321,7 +349,6 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             : JsonSerializer.Deserialize<SolitaireIntegrityWarning[]>(warningJson, JsonOptions)
                 ?? Array.Empty<SolitaireIntegrityWarning>();
         var elapsed = ReadLong(snapshot, "elapsedMilliseconds", -1);
-        var syntheticSkill = ReadLong(snapshot, "syntheticSkill");
         var startedAt = ReadOptionalTimestamp(snapshot, "startedAt") ?? match.StartedAtUtc;
         var deadlineAt = ReadOptionalTimestamp(snapshot, "deadlineAt") ?? match.DeadlineAtUtc;
         return new SolitairePlayerState(
@@ -339,10 +366,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         {
             StartedAtUtc = startedAt,
             DeadlineAtUtc = deadlineAt,
-            IsSynthetic = ReadBool(snapshot, "isSynthetic"),
-            SyntheticSkill = syntheticSkill > 0
-                ? checked((int)syntheticSkill)
-                : null,
+            IsAccountBacked = !ReadBool(snapshot, "isSynthetic"),
             PauseUsedMilliseconds = ReadLong(snapshot, "pauseUsedMilliseconds"),
             PausedAtUtc = ReadOptionalTimestamp(snapshot, "pausedAt"),
             UndoHistory = undoHistory,

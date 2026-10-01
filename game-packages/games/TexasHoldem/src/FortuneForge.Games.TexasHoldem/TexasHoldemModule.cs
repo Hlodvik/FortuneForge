@@ -15,7 +15,7 @@ public static class TexasHoldemModule
             "0.4.0",
             "/cards/texas-holdem",
             "/api/cards/texas-holdem/credit",
-            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.Bots | GameCapability.History);
+            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.History);
         descriptor.Validate();
         return descriptor;
     }

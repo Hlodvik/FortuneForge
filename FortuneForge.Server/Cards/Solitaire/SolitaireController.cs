@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -18,6 +19,7 @@ public sealed class SolitaireController(
     AccountService accountService,
     IConfiguration configuration,
     FirestoreSolitaireFreeRunService freeRunService,
+    IServiceProvider services,
     ILogger<SolitaireController> logger) : ControllerBase
 {
     [HttpPost("free/runs")]
@@ -267,10 +269,13 @@ public sealed class SolitaireController(
     }
 
     private CompetitiveSolitaireService Service() =>
-        new(new FirestoreCompetitiveSolitaireStore(database, new CompetitiveSolitaireOptions
-        {
-            AllowSingleHumanBotFill = IsSingleHumanBotFillEnabled(configuration)
-        }));
+        new(new FirestoreCompetitiveSolitaireStore(
+            database,
+            new CompetitiveSolitaireOptions
+            {
+                AllowSingleHumanBotFill = IsSingleHumanBotFillEnabled(configuration)
+            },
+            services.GetRequiredService<IManagedPlayerQueuer>()));
 
     private ActionResult FreeRunHttp(Exception exception) => exception switch
     {

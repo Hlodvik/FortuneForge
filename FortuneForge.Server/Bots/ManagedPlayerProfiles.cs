@@ -19,10 +19,12 @@ internal static class ManagedPlayerProfileSchema
 internal static class ManagedPlayerGames
 {
     public const string Blackjack = "blackjack";
+    public const string Hearts = "hearts";
+    public const string LiarsDice = "liars-dice";
     public const string Solitaire = "solitaire";
     public const string TexasHoldem = "texas-holdem";
     public static readonly IReadOnlyList<string> All =
-        [Blackjack, Solitaire, TexasHoldem];
+        [Blackjack, Hearts, LiarsDice, Solitaire, TexasHoldem];
 }
 
 internal interface IManagedPlayerProfileGenerator

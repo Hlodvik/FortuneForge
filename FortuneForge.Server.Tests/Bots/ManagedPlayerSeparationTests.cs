@@ -94,6 +94,34 @@ public sealed class ManagedPlayerSeparationTests
             System.Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z]+[0-9]{2}$"));
     }
 
+    [Theory]
+    [InlineData("velvetnoise", "6velvetnoise")]
+    [InlineData("Velvet-Noise", "velvet_noise")]
+    [InlineData("abcdefghij", "abcdefghik")]
+    public void NamePolicyRejectsOrderSensitiveMatchesAtOrAboveNinetyPercent(
+        string candidate,
+        string existing)
+    {
+        Assert.False(ManagedPlayerNamePolicy.IsDistinct(candidate, [existing]));
+    }
+
+    [Fact]
+    public void NamePolicyAllowsNamesWhoseCharactersAppearInAQuiteDifferentOrder()
+    {
+        Assert.True(ManagedPlayerNamePolicy.IsDistinct("edtaddletell", ["tedraddles"]));
+    }
+
+    [Fact]
+    public void DecisionRandomnessIsDeterministicInsideTheServerOwnedAdapterBoundary()
+    {
+        var first = new DeterministicManagedPlayerRandom(42, "test-stream");
+        var second = new DeterministicManagedPlayerRandom(42, "test-stream");
+
+        Assert.Equal(
+            Enumerable.Range(0, 8).Select(_ => first.Next(1_000)),
+            Enumerable.Range(0, 8).Select(_ => second.Next(1_000)));
+    }
+
     [Fact]
     public void AvailabilityPolicyStaggersRestAndEnforcesUsageLimits()
     {

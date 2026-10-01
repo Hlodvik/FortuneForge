@@ -1,5 +1,4 @@
 using FortuneForge.Games.Blackjack;
-using FortuneForge.Games.Cards;
 
 namespace FortuneForge.Server.Bots.Blackjack;
 
@@ -17,9 +16,9 @@ internal static class BlackjackManagedActionPolicy
             return BlackjackActions.DeclineInsurance;
 
         var skillLevel = BlackjackManagedSeat.SkillLevel(player);
-        CardBotSkillLevels.Validate(skillLevel);
-        var random = new DeterministicBotRandom(table.RoundSeed, $"blackjack:{table.Version}:{skillLevel}");
-        if (skillLevel == CardBotSkillLevels.Poor)
+        ManagedPlayerSkillLevels.Validate(skillLevel);
+        var random = new DeterministicManagedPlayerRandom(table.RoundSeed, $"blackjack:{table.Version}:{skillLevel}");
+        if (skillLevel == ManagedPlayerSkillLevels.Poor)
         {
             if (legalActions.Contains(BlackjackActions.Hit) && random.NextDouble() < 0.72)
                 return BlackjackActions.Hit;
@@ -27,10 +26,10 @@ internal static class BlackjackManagedActionPolicy
         }
 
         var preferred = BasicStrategy(table, player, legalActions);
-        var options = new CardBotGameOptions();
-        var errorRate = skillLevel == CardBotSkillLevels.Average
-            ? options.ThreeStarErrorRate
-            : options.FourStarImperfectionRate;
+        var options = new ManagedPlayerDecisionOptions();
+        var errorRate = skillLevel == ManagedPlayerSkillLevels.Average
+            ? options.AverageErrorRate
+            : options.StrongImperfectionRate;
         if (random.NextDouble() < errorRate)
             return random.Choose(legalActions);
         return legalActions.Contains(preferred)

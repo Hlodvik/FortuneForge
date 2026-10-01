@@ -1,6 +1,6 @@
 # Fortune Forge Hearts client
 
-Reusable React UI for Hearts. The local preview runs one human North seat against three deterministic bots, including standard pass rotation, legal play, hearts-breaking, scoring, shooting the moon, and low-score match completion.
+Reusable React UI for Hearts. The host supplies four ordinary player profiles while the package handles standard pass rotation, legal play, hearts-breaking, scoring, shooting the moon, and low-score match completion.
 
 ```powershell
 npm install

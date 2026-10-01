@@ -172,8 +172,12 @@ public sealed class BlackjackTableStateTests
         Assert.Equal("action-settle", tooSoon.Table.Transition);
         var next = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.GetSessionAsync(
             "human", Start.AddSeconds(8).AddMilliseconds(700), default)).Session);
-        Assert.Equal("turn-pause", next.Table.Transition);
-        Assert.NotNull(next.Table.NextTransitionAtUtc);
+        Assert.Null(next.Table.Transition);
+        Assert.Null(next.Table.NextTransitionAtUtc);
+        Assert.Null(next.Table.ActionDeadlineAtUtc);
+        var managedTurn = store.TableForTest(play.Table.TableId).Players.Single(player =>
+            player.Seat == next.Table.ActiveSeat && BlackjackManagedSeat.IsManaged(player));
+        Assert.NotNull(BlackjackManagedSeat.ActionReadyAt(managedTurn));
 
         var dealerSnapshots = new List<int>();
         var now = Start.AddSeconds(10);
@@ -419,18 +423,26 @@ public sealed class BlackjackTableStateTests
 
         Assert.All(bots, bot => Assert.Equal(0, bot.NextWagerCents));
         Assert.Equal("human-wager", table.Transition);
-        Assert.IsType<BlackjackTablePlaySessionResponse>((await store.WagerAsync(
+        var wagerSession = Assert.IsType<BlackjackTablePlaySessionResponse>((await store.WagerAsync(
             "human", play.Table.TableId, 100, play.Version, Key("watcher-wager"), Start.AddSeconds(7), default)).Session);
         Assert.Single(bots, bot => bot.Status == "considering-wager");
+        Assert.Null(wagerSession.Table.NextTransitionAtUtc);
+        Assert.Null(wagerSession.Table.WagerDeadlineAtUtc);
         Assert.Empty(table.DealerCards);
         Assert.All(table.Players, player => Assert.Empty(player.Cards));
-        await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
+        var firstBot = bots.Single(bot => bot.Status == "considering-wager");
+        var firstReadyAt = Assert.IsType<DateTime>(BlackjackManagedSeat.WagerReadyAt(firstBot));
+        await store.SweepAsync(firstReadyAt, default);
 
         Assert.Single(bots, bot => bot.NextWagerCents > 0);
         Assert.Single(bots, bot => bot.Status == "considering-wager");
+        Assert.Null(BlackjackManagedSeat.WagerReadyAt(firstBot));
+        var secondBot = bots.Single(bot => bot.Status == "considering-wager");
+        var secondReadyAt = Assert.IsType<DateTime>(BlackjackManagedSeat.WagerReadyAt(secondBot));
+        Assert.True(secondReadyAt > firstReadyAt);
         Assert.Empty(table.DealerCards);
         Assert.All(table.Players, player => Assert.Empty(player.Cards));
-        await store.SweepAsync(table.NextTransitionAtUtc!.Value, default);
+        await store.SweepAsync(secondReadyAt, default);
         Assert.All(bots, bot => Assert.True(bot.NextWagerCents > 0));
         Assert.Equal(BlackjackTablePhases.Betting, table.Phase);
         Assert.Empty(table.DealerCards);

@@ -387,11 +387,6 @@ function CrapsTipsDialog({
               <dt>Seven-out</dt><dd>A 7 rolled after a point is set. The hand ends and the dice pass.</dd>
             </dl>
           </article>
-
-          <aside>
-            <strong>Preview scope</strong>
-            <span>This build currently models one shooter and one Pass Line bet. A full table will need multiple bettors, shooter rotation, additional bets, and bot player strategies.</span>
-          </aside>
         </div>
       </section>
     </div>

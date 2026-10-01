@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using FortuneForge.Games.Cards;
 using FortuneForge.Games.Dice;
 
 namespace FortuneForge.Games.LiarsDice;
@@ -14,7 +13,9 @@ public static class LiarsDiceMatchEngine
         int dicePerPlayer = DefaultDicePerPlayer,
         LiarsDiceVariant variant = LiarsDiceVariant.ExactFace)
     {
-        var players = (playerIds ?? ["you", "bot-1", "bot-2", "bot-3"]).ToImmutableArray();
+        if (playerIds is null)
+            throw new ArgumentNullException(nameof(playerIds), "The host must supply the table participants.");
+        var players = playerIds.ToImmutableArray();
         ValidatePlayers(players, dicePerPlayer);
         var counts = players.ToImmutableDictionary(player => player, _ => dicePerPlayer, StringComparer.Ordinal);
         return new LiarsDiceMatchState(
@@ -72,66 +73,6 @@ public static class LiarsDiceMatchEngine
             Round = StartRound(active, state.DiceCounts, seed, state.Round.Variant, starter),
             LastOutcome = null,
         };
-    }
-
-    public static LiarsDiceMatchTransition AdvanceBotTurn(
-        LiarsDiceMatchState state,
-        IReadOnlySet<string> botIds,
-        LiarsDiceBotAgent bot,
-        int skillLevel,
-        ulong seed,
-        int version,
-        CardBotGameOptions options)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(botIds);
-        ArgumentNullException.ThrowIfNull(bot);
-        ArgumentNullException.ThrowIfNull(options);
-        if (!botIds.Contains(state.CurrentPlayerId))
-            throw new LiarsDiceRuleException("It is not a Liar's Dice bot's turn.");
-
-        var observation = new LiarsDiceBotObservation(
-            state.CurrentPlayerId,
-            state.Round.Hands[state.CurrentPlayerId],
-            state.Round.CurrentBid,
-            state.Round.CurrentBidderId,
-            state.Round.Hands.Values.Sum(hand => hand.Length),
-            state.Round.TurnOrder);
-        var decision = bot.ChooseDecision(observation, skillLevel, seed, version, options);
-        LiarsDiceCommand command = decision.Challenge
-            ? new ChallengeLiarsDiceBid(state.CurrentPlayerId)
-            : new PlaceLiarsDiceBid(state.CurrentPlayerId, decision.Bid!);
-        return Apply(state, command);
-    }
-
-    public static LiarsDiceMatchState AdvanceBotsUntilHuman(
-        LiarsDiceMatchState state,
-        IReadOnlySet<string> botIds,
-        LiarsDiceBotAgent bot,
-        int skillLevel,
-        ulong seed,
-        CardBotGameOptions options,
-        string humanId = "you",
-        int maximumActions = 256)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentNullException.ThrowIfNull(botIds);
-        ArgumentNullException.ThrowIfNull(bot);
-        ArgumentNullException.ThrowIfNull(options);
-        if (maximumActions <= 0)
-            throw new ArgumentOutOfRangeException(nameof(maximumActions));
-
-        var current = state;
-        for (var action = 0; action < maximumActions; action++)
-        {
-            if (current.Winner is not null || string.Equals(current.CurrentPlayerId, humanId, StringComparison.Ordinal))
-                return current;
-            current = AdvanceBotTurn(current, botIds, bot, skillLevel, seed, action, options).State;
-            if (current.Round.Phase == LiarsDiceRoundPhase.Resolved)
-                return current;
-        }
-
-        throw new LiarsDiceRuleException("The Liar's Dice bot turn budget was exhausted before reaching the human player.");
     }
 
     private static LiarsDiceRoundState StartRound(

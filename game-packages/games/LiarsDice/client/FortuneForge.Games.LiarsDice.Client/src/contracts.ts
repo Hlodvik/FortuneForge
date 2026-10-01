@@ -3,7 +3,7 @@ export type LiarsDiceBid = Readonly<{ quantity: number; face: number }>
 export type LiarsDicePlayer = Readonly<{ id: string; displayName: string; diceCount: number; active: boolean; isHuman: boolean }>
 export type LiarsDiceOutcome = Readonly<{ challengerId: string; bidderId: string; loserId: string; quantity: number; face: number; matchingDice: number; callType?: 'liar' | 'spot-on' }>
 export type LiarsDiceStatus = Readonly<{ available: boolean; startingDicePerPlayer: number; mode: string }>
-export type LiarsDiceMatch = Readonly<{ matchId: string; phase: LiarsDicePhase; roundNumber: number; currentPlayerId: string; currentBid: LiarsDiceBid | null; currentBidderId: string | null; totalDice: number; hand: readonly number[]; players: readonly LiarsDicePlayer[]; outcome: LiarsDiceOutcome | null; winner: string | null; message: string }>
+export type LiarsDiceMatch = Readonly<{ matchId: string; phase: LiarsDicePhase; roundNumber: number; currentPlayerId: string; currentBid: LiarsDiceBid | null; currentBidderId: string | null; totalDice: number; hand: readonly number[]; players: readonly LiarsDicePlayer[]; outcome: LiarsDiceOutcome | null; winner: string | null; opponentsThinking: boolean; message: string }>
 
 export interface LiarsDiceGateway {
   getStatus(signal?: AbortSignal): Promise<LiarsDiceStatus>

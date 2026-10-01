@@ -781,7 +781,11 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 table.ActionDeadlineAtUtc,
                 table.WagerDeadlineAtUtc,
                 table.NextTransitionAtUtc
-            }))
+            }.Concat(table.Players.SelectMany(player => new DateTime?[]
+            {
+                BlackjackManagedSeat.ActionReadyAt(player),
+                BlackjackManagedSeat.WagerReadyAt(player)
+            }))))
             .Where(value => value is not null)
             .Select(value => value!.Value)
             .ToArray();

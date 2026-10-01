@@ -106,7 +106,6 @@ public sealed class GameCatalogManifestTests
             "credits" => GameCapability.Credits,
             "free-play" => GameCapability.FreePlay,
             "multiplayer" => GameCapability.Multiplayer,
-            "bots" => GameCapability.Bots,
             "history" => GameCapability.History,
             _ => throw new InvalidDataException($"Unknown game capability '{capability}'."),
         }));

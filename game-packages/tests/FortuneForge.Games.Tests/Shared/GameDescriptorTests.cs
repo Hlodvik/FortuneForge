@@ -14,7 +14,7 @@ public sealed class GameDescriptorTests
             "0.1.0",
             "/cards/texas-holdem",
             "/api/cards/texas-holdem/credit",
-            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.Bots | GameCapability.History);
+            GameCapability.Credits | GameCapability.Multiplayer | GameCapability.History);
 
         descriptor.Validate();
     }

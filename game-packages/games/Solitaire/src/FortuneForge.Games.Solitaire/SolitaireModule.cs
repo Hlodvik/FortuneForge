@@ -15,7 +15,7 @@ public static class SolitaireModule
             "0.4.0",
             "/cards/solitaire",
             "/api/solitaire",
-            GameCapability.Credits | GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.Bots | GameCapability.History);
+            GameCapability.Credits | GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.History);
         descriptor.Validate();
         return descriptor;
     }

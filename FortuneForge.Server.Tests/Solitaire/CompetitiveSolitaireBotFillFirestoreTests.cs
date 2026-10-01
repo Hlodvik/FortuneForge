@@ -479,7 +479,13 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
             (await store.GetSessionAsync(submittedUser, Start.AddMinutes(4), default)).Session);
         Assert.True(settled.CanClaim);
         Assert.Equal(9_500, await ReadBalanceAsync(database, submittedUser));
-        var claimable = Assert.Single(await CardGameResultsAsync(database, started.MatchId));
+        var matchResults = await CardGameResultsAsync(database, started.MatchId);
+        Assert.Equal(4, matchResults.Count);
+        Assert.Equal(3, matchResults.Count(result =>
+            result.ContainsField("financialClassification") &&
+            Field<string>(result, "financialClassification") == "managed-player-virtual-v1"));
+        var claimable = Assert.Single(matchResults, result =>
+            Field<string>(result, "userId") == submittedUser);
         Assert.Equal("claimable", Field<string>(claimable, "settlementStatus"));
         Assert.Equal(500, Field<long>(claimable, "payoutCents"));
 
@@ -492,7 +498,9 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
         Assert.All(claims, claim => Assert.IsType<SolitaireIdleSessionResponse>(claim.Session));
         Assert.Equal(10_000, await ReadBalanceAsync(database, submittedUser));
         Assert.Equal(SolitaireClaimStatuses.Completed,
-            Field<string>(Assert.Single(await CardGameResultsAsync(database, started.MatchId)), "claimStatus"));
+            Field<string>(Assert.Single(
+                await CardGameResultsAsync(database, started.MatchId),
+                result => Field<string>(result, "userId") == submittedUser), "claimStatus"));
 
         var integrityUser = $"integrity-{suffix}";
         await SeedBalanceAsync(database, integrityUser, 10_000);

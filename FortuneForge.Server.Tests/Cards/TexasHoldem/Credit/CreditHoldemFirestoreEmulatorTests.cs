@@ -1,4 +1,6 @@
 using System.Text.Json;
+using FortuneForge.Server.Bots;
+using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
@@ -45,7 +47,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var match = await StartMatchAsync(store, first, second);
         var internalMatch = await ReadMatchAsync(database, match.Table.MatchId);
         var actor = internalMatch.Players.Single(player => player.Seat == match.Table.ActiveSeat);
-        Assert.False(actor.IsBot);
+        Assert.True(actor.IsAccountBacked);
         var actorView = Assert.IsType<CreditHoldemMatchSessionResponse>(
             (await store.GetSessionAsync(actor.ActorId, Start.AddSeconds(6), default)).Session);
         var publicActor = actorView.Table.Seats.Single(seat => seat.IsCurrentPlayer);
@@ -208,6 +210,115 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         Assert.Equal(JsonValueKind.Object, payouts.ValueKind);
     }
 
+    [Fact]
+    public async Task ProductionStore_ManagedSeatsUseMatchScopedLeaseAndReleaseWhenLastAccountLeaves()
+    {
+        var queuer = new RecordingManagedPlayerQueuer();
+        var (database, _, suffix) = CreateStore();
+        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var user = $"managed-{suffix}";
+        await SeedBalanceAsync(database, user, 10_000);
+
+        _ = await store.JoinAsync(user, "Alice", 0, "managed-join-1", 701, Start, default);
+        var session = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync(user, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        var assignmentId = $"texas-holdem:{session.Table.MatchId}";
+
+        var reservation = Assert.Single(queuer.Reservations);
+        Assert.Equal((ManagedPlayerGames.TexasHoldem, assignmentId, 2),
+            (reservation.GameId, reservation.AssignmentId, reservation.Count));
+        var heartbeat = Assert.Single(queuer.Heartbeats);
+        Assert.Equal(assignmentId, heartbeat.AssignmentId);
+        Assert.Equal(2, heartbeat.ProfileIds.Count);
+
+        _ = await store.LeaveAsync(
+            user,
+            session.Table.MatchId,
+            session.Version,
+            "managed-leave-1",
+            Start.Add(CreditHoldemEngine.HumanGrace).AddMilliseconds(100),
+            default);
+
+        var release = Assert.Single(queuer.Releases);
+        Assert.Equal(assignmentId, release.AssignmentId);
+        Assert.Equal(heartbeat.ProfileIds.Order(), release.ProfileIds.Order());
+    }
+
+    [Fact]
+    public async Task ProductionStore_SweepAdvancesPrivateManagedTurnsWithoutSessionPolling()
+    {
+        var queuer = new RecordingManagedPlayerQueuer();
+        var (database, _, suffix) = CreateStore();
+        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var user = $"worker-{suffix}";
+        await SeedBalanceAsync(database, user, 10_000);
+        _ = await store.JoinAsync(user, "Alice", 0, "worker-join-1", 801, Start, default);
+        var session = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync(user, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        var match = await ReadMatchAsync(database, session.Table.MatchId);
+        var active = match.Players.First(TexasHoldemManagedPlayers.IsManaged);
+        match.ActiveSeat = active.Seat;
+        match.UpdatedAtUtc = Start.Add(CreditHoldemEngine.HumanGrace);
+        match.ActionDeadlineAtUtc = match.UpdatedAtUtc.Add(CreditHoldemEngine.ActionDuration);
+        var dueAt = TexasHoldemManagedPlayers.PrivateActionDueAt(match, active);
+        await database.Collection("creditHoldemMatches").Document(match.MatchId).SetAsync(
+            new Dictionary<string, object>
+            {
+                ["matchJson"] = JsonSerializer.Serialize(
+                    match, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                ["nextDeadlineAt"] = Timestamp.FromDateTime(dueAt)
+            }, SetOptions.MergeAll);
+
+        await store.SweepAsync(dueAt.AddMilliseconds(1), default);
+        match = await ReadMatchAsync(database, session.Table.MatchId);
+
+        Assert.Contains(match.ActionLog, entry => entry.PublicSeatId == active.PublicSeatId);
+        Assert.True(queuer.Heartbeats.Count >= 1);
+    }
+
+    [Fact]
+    public async Task ProductionStore_ReleasesOnlyManagedSeatReplacedByQueuedAccount()
+    {
+        var queuer = new RecordingManagedPlayerQueuer();
+        var (database, _, suffix) = CreateStore();
+        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var first = $"replace-a-{suffix}";
+        var second = $"replace-b-{suffix}";
+        var third = $"replace-c-{suffix}";
+        var fourth = $"replace-d-{suffix}";
+        await SeedPlayersAsync(database, first, second, third, fourth);
+        _ = await store.JoinAsync(first, "Alice", 0, "replace-first", 901, Start, default);
+        var started = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync(first, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        var before = await ReadMatchAsync(database, started.Table.MatchId);
+        var managedBefore = before.Players.Where(TexasHoldemManagedPlayers.IsManaged)
+            .Select(player => player.ActorId).ToHashSet(StringComparer.Ordinal);
+        _ = await store.JoinAsync(
+            second, "Bruno", 0, "replace-second", 902, Start.AddSeconds(6), default);
+        _ = await store.JoinAsync(
+            third, "Casey", 0, "replace-third", 903, Start.AddSeconds(6), default);
+        _ = await store.JoinAsync(
+            fourth, "Devon", 0, "replace-fourth", 904, Start.AddSeconds(6), default);
+        var completed = Assert.IsType<CreditHoldemResultSessionResponse>(
+            (await store.GetSessionAsync(first, before.MatchDeadlineAtUtc.AddMilliseconds(1), default)).Session);
+
+        _ = await store.NextHandAsync(
+            first,
+            completed.MatchId,
+            completed.Version,
+            "replace-next-hand",
+            905,
+            before.MatchDeadlineAtUtc.AddSeconds(1),
+            default);
+
+        var release = Assert.Single(queuer.Releases);
+        var removed = Assert.Single(release.ProfileIds);
+        Assert.Contains(removed, managedBefore);
+        var next = await ReadMatchAsync(database, completed.MatchId);
+        Assert.DoesNotContain(next.Players, player => player.ActorId == removed);
+        Assert.Contains(next.Players, player => player.ActorId == second && player.IsAccountBacked);
+    }
+
     private static async Task<CreditHoldemMatchSessionResponse> StartMatchAsync(
         FirestoreCreditHoldemStore store, string first, string second)
     {
@@ -265,4 +376,50 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     private static T Field<T>(DocumentSnapshot snapshot, string field) => snapshot.GetValue<T>(field);
+
+    private sealed class RecordingManagedPlayerQueuer : IManagedPlayerQueuer
+    {
+        public List<(string GameId, string AssignmentId, int Count)> Reservations { get; } = [];
+        public List<(string GameId, string AssignmentId, IReadOnlyList<string> ProfileIds)> Heartbeats { get; } = [];
+        public List<(string AssignmentId, IReadOnlyList<string> ProfileIds)> Releases { get; } = [];
+
+        public Task<IReadOnlyList<ManagedPlayerProfile>> ReserveAsync(
+            string gameId,
+            string assignmentId,
+            int count,
+            IReadOnlyCollection<string> excludedProfileIds,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            Reservations.Add((gameId, assignmentId, count));
+            return Task.FromResult<IReadOnlyList<ManagedPlayerProfile>>(
+                Enumerable.Range(0, count).Select(index => new ManagedPlayerProfile(
+                    $"managed-holdem-{index}",
+                    $"Player {index}",
+                    ManagedPlayerSkillLevels.Average,
+                    new HashSet<string>([ManagedPlayerGames.TexasHoldem], StringComparer.Ordinal),
+                    nowUtc)).ToArray());
+        }
+
+        public Task HeartbeatAsync(
+            string gameId,
+            string assignmentId,
+            IReadOnlyCollection<string> profileIds,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            Heartbeats.Add((gameId, assignmentId, profileIds.Order(StringComparer.Ordinal).ToArray()));
+            return Task.CompletedTask;
+        }
+
+        public Task ReleaseAsync(
+            string assignmentId,
+            IReadOnlyCollection<string> profileIds,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            Releases.Add((assignmentId, profileIds.Order(StringComparer.Ordinal).ToArray()));
+            return Task.CompletedTask;
+        }
+    }
 }

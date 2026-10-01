@@ -74,14 +74,4 @@ public sealed record LiarsDiceMatchTransition(
     LiarsDiceChallengeOutcome? Outcome,
     string Message);
 
-public sealed record LiarsDiceBotObservation(
-    string PlayerId,
-    ImmutableArray<DieValue> Hand,
-    LiarsDiceBid? CurrentBid,
-    string? CurrentBidderId,
-    int TotalDiceInPlay,
-    ImmutableArray<string> TurnOrder);
-
-public sealed record LiarsDiceBotDecision(bool Challenge, LiarsDiceBid? Bid);
-
 public sealed class LiarsDiceRuleException(string message) : InvalidOperationException(message);

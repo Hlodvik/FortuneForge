@@ -15,7 +15,7 @@ public static class HeartsModule
             "0.1.1",
             "/cards/hearts",
             "/api/games/hearts",
-            GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.Bots);
+            GameCapability.FreePlay | GameCapability.Multiplayer);
         descriptor.Validate();
         return descriptor;
     }

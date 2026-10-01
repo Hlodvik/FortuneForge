@@ -1,6 +1,6 @@
 # Liar's Dice local web adapter
 
-Developer-only ASP.NET host for the reusable Liar's Dice client. It runs one human player against three deterministic bots, delegates exact-face bidding and challenges to `LiarsDiceMatchEngine`, and removes one die from the losing player after each challenge.
+Developer-only ASP.NET shell for the reusable Liar's Dice client. Multiplayer identity, matchmaking, and automated participants belong to the application host rather than the game package.
 
 Run it alongside the client with:
 

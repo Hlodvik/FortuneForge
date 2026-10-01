@@ -228,8 +228,8 @@ internal sealed class CreditHoldemPlayer
     public required string ActorId { get; init; }
     public required string PublicSeatId { get; init; }
     public required string DisplayName { get; init; }
-    public required bool IsBot { get; init; }
-    public required int? BotSkillLevel { get; init; }
+    public required bool IsAccountBacked { get; init; }
+    public Dictionary<string, string> HostMetadata { get; init; } = new(StringComparer.Ordinal);
     public required int Seat { get; init; }
     public required int StartingStack { get; init; }
     public required List<string> HoleCards { get; init; }
@@ -246,6 +246,15 @@ internal sealed class CreditHoldemPlayer
     public int WonHandChips { get; set; }
     public long AccountPayoutCents { get; set; }
 }
+
+internal sealed record CreditHoldemSeatAssignment(
+    string ActorId,
+    string PublicSeatId,
+    string DisplayName,
+    bool IsAccountBacked,
+    int Seat,
+    int Stack,
+    IReadOnlyDictionary<string, string>? HostMetadata = null);
 
 internal sealed record CreditHoldemFinancialSettlement(
     long HumanCommittedCents,

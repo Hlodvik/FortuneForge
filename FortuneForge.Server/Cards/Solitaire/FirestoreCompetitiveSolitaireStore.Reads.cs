@@ -295,7 +295,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
     }
 
     private static string PublicPlayerId(SolitaireMatch match, SolitairePlayerState player) =>
-        player.IsSynthetic ? $"competitor-{player.Seat}" : player.UserId;
+        player.IsAccountBacked ? player.UserId : $"competitor-{player.Seat}";
 
     private static DateTime JoinedAt(SolitaireMatch match, SolitairePlayerState player)
     {

@@ -45,6 +45,8 @@ internal interface ICreditHoldemStore
         DateTime nowUtc,
         CancellationToken cancellationToken);
 
+    Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken);
+
     Task<CreditHoldemHistoryResponse> HistoryAsync(
         string userId,
         int limit,
@@ -143,6 +145,9 @@ internal static class CreditHoldemProjection
             maximumRaiseTo > match.CurrentBet && maximumRaiseTo < minimumRaiseTo
                 ? maximumRaiseTo
                 : (int?)null;
+        var viewerActionDeadline = match.ActiveSeat == viewer.Seat
+            ? match.ActionDeadlineAtUtc
+            : null;
         var winners = match.Players.Where(player => player.WonHandChips > 0).OrderBy(player => player.Seat).ToArray();
         var rule = CreditHoldemTableRules.Resolve(match.TableRuleId);
         return new CreditHoldemTableResponse(
@@ -164,8 +169,8 @@ internal static class CreditHoldemProjection
             winners.Sum(player => player.WonHandChips),
             match.StartedAtUtc,
             match.MatchDeadlineAtUtc,
-            match.ActionDeadlineAtUtc,
-            match.ActionDeadlineAtUtc is { } deadline
+            viewerActionDeadline,
+            viewerActionDeadline is { } deadline
                 ? Math.Max(0, (long)(deadline - nowUtc).TotalMilliseconds)
                 : 0,
             rule.Public,

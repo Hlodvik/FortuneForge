@@ -19,7 +19,6 @@ public enum GameCapability
     Credits = 1 << 0,
     FreePlay = 1 << 1,
     Multiplayer = 1 << 2,
-    Bots = 1 << 3,
     History = 1 << 4,
 }
 

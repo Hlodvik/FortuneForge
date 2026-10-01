@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client'
 import { LiarsDiceGame } from '../LiarsDiceGame'
 import { HttpLiarsDiceGateway } from '../httpLiarsDiceGateway'
 import '../liarsDice.css'
+import '../liarsDiceViewport.css'
+import './preview.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error("Liar's Dice preview root was not found.")

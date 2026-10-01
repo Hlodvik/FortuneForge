@@ -16,6 +16,6 @@ export function AuthenticatedLiarsDiceRoute() {
 
   return <InGameShell account={account} title="Liar’s Dice" theme="casino" className="player-page">
     <GameAmbientMusic game="liars-dice" />
-    <LiarsDiceGame gateway={gateway} />
+    <LiarsDiceGame key={account.userId} gateway={gateway} playerId={account.userId} showTitle={false} />
   </InGameShell>
 }

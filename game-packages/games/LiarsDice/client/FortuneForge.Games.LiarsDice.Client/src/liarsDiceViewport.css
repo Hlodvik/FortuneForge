@@ -1,66 +1,23 @@
-/* The table is the product: compress ornamental whitespace before shrinking
-   or hiding playable controls. */
-@media (min-width: 701px) {
-  .ff-liars-page { height: 100%; min-height: 0; overflow: hidden; padding-bottom: .5rem; }
-  .ff-liars-title { padding: .65rem 0 .5rem; }
-  .ff-liars-title h1 { font-size: clamp(2rem, 5vh, 3.1rem); }
-  .ff-liars-status { margin-bottom: .45rem; }
-  .ff-liars-status > div { min-height: 4rem; padding: .45rem .7rem; }
-  .ff-liars-table { gap: .55rem; padding: .6rem; }
-  .ff-liars-player { padding: .45rem .6rem; }
-  .ff-liars-bid-board { min-height: 8rem; padding: .55rem; }
-  .ff-liars-hand-section { margin-top: .45rem; padding: .55rem; }
-  .ff-liars-hand-section .ff-liars-hand { min-height: 6rem; margin-top: .35rem; }
-  .ff-liars-dice-stage { height: 6rem; }
-  .ff-liars-actions { margin-top: .45rem; }
-  .ff-liars-action-card { padding: .5rem; }
+@media(max-width:900px) {
+.ff-liars-actions { grid-template-columns:minmax(0,1fr); grid-template-rows:52px 48px 18px; gap:3px; padding:8px 16px; }.ff-liars-table { grid-template-rows:minmax(0,1fr) 136px; }.ff-liars-draft { justify-content:center; gap:15px; }.ff-liars-bid-hint { grid-column:1; }.ff-liars-action-buttons button { min-height:44px; }.ff-liars-details { bottom:190px; }
+}
+@media(max-width:700px) {
+.ff-liars-main { width:calc(100% - 6px); padding:3px 0; grid-template-rows:32px minmax(0,1fr) 32px; gap:3px; }.ff-liars-title { padding:0 4px; gap:4px; }.ff-liars-title h1 { font-size:18px; }.ff-liars-round { font-size:11px; }.ff-liars-title nav { gap:3px; }.ff-liars-title button { min-height:28px; font-size:11px; padding:3px 8px; }
+.ff-liars-table { border-radius:13px; grid-template-rows:minmax(0,1fr) 149px; }.ff-liars-felt { padding:12px 10px 7px; grid-template-rows:100px minmax(0,1fr) 120px; gap:7px; }.ff-liars-players { grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; }.ff-liars-player { padding:4px 7px; grid-template-columns:8px minmax(0,1fr) 26px; gap:0 5px; grid-template-rows:1fr 13px; border-radius:8px; }.ff-liars-player strong { font-size:11px; }.ff-liars-player small { font-size:10px; }.ff-liars-dice-count { font-size:19px; }.ff-liars-seat-dot { width:7px; height:7px; }
+.ff-liars-bid-board { grid-template-rows:18px minmax(0,1fr) 37px; gap:2px; }.ff-liars-bid-heading { font-size:11px; }.ff-liars-result { font-size:13px; }.ff-liars-bid-value { gap:15px; }.ff-liars-bid-value > strong { font-size:42px; }.ff-liars-bid-value .ff-liars-pip-die { width:44px; padding:7px; }
+.ff-liars-hand-section { grid-template-rows:27px minmax(0,1fr); padding:3px 6px; }.ff-liars-hand-section strong { font-size:11px; }
+.ff-liars-actions { grid-template-rows:61px 48px 18px; padding:7px; gap:3px; }.ff-liars-quantity input { width:35px; font-size:15px; }.ff-liars-quantity button { width:28px; }.ff-liars-draft { gap:5px; }.ff-liars-faces { gap:2px; }.ff-liars-faces button { padding:2px; }.ff-liars-faces .ff-liars-pip-die { width:29px; padding:5px; }.ff-liars-action-buttons { gap:5px; }.ff-liars-action-buttons button { font-size:13px; padding:5px; min-height:44px; }.ff-liars-bid-hint { font-size:11px; }.ff-liars-notice { padding:0 4px; font-size:10px; line-height:1.2; }.ff-liars-details { inset:38px 4px 200px auto; width:calc(100% - 8px); }
+}
+@media(max-width:350px) { .ff-liars-faces .ff-liars-pip-die { width:26px; padding:4px; }.ff-liars-faces { gap:1px; }.ff-liars-draft { gap:3px; }.ff-liars-quantity input { width:31px; }.ff-liars-quantity button { width:24px; }.ff-liars-quantity > div { gap:1px; }.ff-liars-title button { padding-inline:6px; }.ff-liars-felt { grid-template-rows:88px minmax(0,1fr) 90px; gap:4px; padding:8px; }.ff-liars-bid-value > strong { font-size:33px; }.ff-liars-bid-value .ff-liars-pip-die { width:36px; padding:6px; }.ff-liars-result { font-size:11px; }.ff-liars-bid-board { grid-template-rows:16px minmax(0,1fr) 30px; } }
+@media(max-height:450px) {
+.ff-liars-main { grid-template-rows:28px minmax(0,1fr) 24px; padding:2px 0; gap:2px; }.ff-liars-table { grid-template-rows:minmax(0,1fr) 62px; }.ff-liars-felt { grid-template-columns:150px minmax(0,1fr) minmax(160px,30%); grid-template-rows:minmax(0,1fr); padding:7px; gap:8px; }.ff-liars-players { grid-template-columns:1fr; gap:2px; }.ff-liars-player { grid-template-rows:1fr; padding:3px 5px; grid-template-columns:7px minmax(0,1fr) 24px; }.ff-liars-player small { display:none; }.ff-liars-player strong { font-size:10px; }.ff-liars-dice-count { font-size:16px; }.ff-liars-hand-section { grid-template-rows:26px minmax(0,1fr); padding:3px; }.ff-liars-hand-section header { gap:2px; }.ff-liars-hand-section strong { font-size:9px; }.ff-liars-hand-section button { font-size:9px; padding:2px 4px; }.ff-liars-bid-board { grid-template-rows:17px minmax(0,1fr) 30px; }.ff-liars-bid-value > strong { font-size:35px; }.ff-liars-bid-value .ff-liars-pip-die { width:37px; padding:6px; }.ff-liars-result { font-size:11px; }
+.ff-liars-actions { grid-template-columns:minmax(0,1fr) minmax(205px,40%); grid-template-rows:minmax(0,1fr) 13px; padding:3px 6px; gap:0 8px; }.ff-liars-draft { gap:5px; justify-content:start; }.ff-liars-quantity { gap:0; }.ff-liars-quantity > span { display:none; }.ff-liars-quantity button { width:23px; min-height:34px; font-size:16px; }.ff-liars-quantity input { width:32px; font-size:13px; }.ff-liars-faces { gap:1px; }.ff-liars-faces button { min-height:34px; padding:1px; }.ff-liars-faces .ff-liars-pip-die { width:27px; padding:4px; }.ff-liars-action-buttons { gap:3px; }.ff-liars-action-buttons button { min-height:40px; font-size:10px; padding:3px; }.ff-liars-bid-hint { grid-column:1 / 3; font-size:9px; }.ff-liars-details { inset:32px 4px 103px auto; grid-template-rows:32px minmax(0,1fr); }.ff-liars-details header button { min-height:26px; height:26px; }.ff-liars-details h2 { font-size:16px; }.ff-liars-title button { min-height:25px; font-size:10px; padding:3px 7px; }.ff-liars-notice { font-size:10px; }
+}
+@media(max-height:450px) and (max-width:600px) {
+.ff-liars-felt { grid-template-columns:115px minmax(0,1fr) 160px; gap:5px; }.ff-liars-actions { grid-template-columns:minmax(0,1fr) 202px; gap:0 4px; }.ff-liars-faces .ff-liars-pip-die { width:23px; padding:3px; }.ff-liars-quantity input { width:27px; }.ff-liars-quantity button { width:21px; }.ff-liars-draft { gap:3px; }.ff-liars-faces button { padding:1px; }
 }
 
-@media (max-width: 700px) {
-  .ff-liars-page { min-height: 100%; padding-bottom: .25rem; }
-  .ff-liars-main { width: min(100% - .7rem, 82rem); }
-  .ff-liars-title { flex-direction: row; align-items: center; gap: .35rem; padding: .35rem 0; }
-  .ff-liars-title small,
-  .ff-liars-start label { display: none; }
-  .ff-liars-title h1 { margin: 0; font-size: 1.65rem; white-space: nowrap; }
-  .ff-liars-start { width: auto; margin-left: auto; }
-  .ff-liars-start select,
-  .ff-liars-start button { min-height: 2rem; padding-inline: .4rem; font-size: .65rem; }
-  .ff-liars-status { grid-template-columns: 1fr 1fr; gap: .25rem; margin-bottom: .3rem; }
-  .ff-liars-status > div { min-height: 2.55rem; padding: .3rem .45rem; }
-  .ff-liars-current { min-height: 3.2rem !important; }
-  .ff-liars-status strong { font-size: .85rem; }
-  .ff-liars-current strong { font-size: .66rem; line-height: 1.15; }
-  .ff-liars-table { grid-template-columns: 1.55fr minmax(6.5rem, .85fr); gap: .3rem; padding: .35rem; }
-  .ff-liars-players { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .25rem; }
-  .ff-liars-player { gap: .25rem; padding: .3rem; }
-  .ff-liars-player strong { font-size: .62rem; }
-  .ff-liars-player small { font-size: .5rem; }
-  .ff-liars-dice-count { min-width: 1.75rem; font-size: .85rem; }
-  .ff-liars-bid-board { min-height: 5.8rem; gap: .15rem; padding: .3rem; }
-  .ff-liars-bid-board strong { font-size: .9rem; }
-  .ff-liars-bid-die { width: 2rem; height: 2rem; margin-top: .1rem; font-size: 1rem; }
-  .ff-liars-hand-section { margin-top: .3rem; padding: .35rem; }
-  .ff-liars-section-heading { align-items: center; flex-direction: row; }
-  .ff-liars-section-heading h2 { margin: 0; font-size: .9rem; }
-  .ff-liars-section-heading > span { font-size: .55rem; text-align: right; }
-  .ff-liars-hand-section .ff-liars-hand { min-height: 4.6rem; margin-top: .2rem; }
-  .ff-liars-dice-stage { --ff-die-frame-size: clamp(4rem, 18vw, 5rem); height: 4.6rem; }
-  .ff-liars-actions { margin-top: .3rem; }
-  .ff-liars-action-card { padding: .35rem; }
-  .ff-liars-controls { flex-wrap: nowrap; gap: .25rem; margin-top: .2rem; }
-  .ff-liars-controls label { min-width: 0; }
-  .ff-liars-controls input,
-  .ff-liars-controls select,
-  .ff-liars-controls button { min-width: 0; min-height: 2rem; padding-inline: .35rem; }
-}
+@media(max-width:700px) { .ff-liars-main { grid-template-rows:32px minmax(0,1fr) 40px; } .ff-liars-notice { padding-left:90px; } }
+@media(max-height:450px) { .ff-liars-main { grid-template-rows:28px minmax(0,1fr) 32px; } }
 
-/* Share the compact ivory-die treatment with Craps and Sic Bo. */
-.ff-liars-dice-stage { --ff-die-frame-size: clamp(4.8rem, 8vw, 5.8rem); height: 5.4rem; }
-.ff-liars-dice-stage .ff-die-throw-sprite { filter: grayscale(1) contrast(1.7); }
-.ff-liars-hand-section .ff-liars-hand { min-height: 5.4rem; }
-
-@media (max-width: 700px) {
-  .ff-liars-dice-stage { --ff-die-frame-size: 4rem; height: 4.2rem; }
-  .ff-liars-hand-section .ff-liars-hand { min-height: 4.2rem; }
-}
+@media(max-width:700px) { .ff-liars-page.has-match .ff-liars-title h1 { display:none; } }

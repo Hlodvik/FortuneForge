@@ -7,6 +7,7 @@ export type LiarsDiceMatch = Readonly<{ matchId: string; phase: LiarsDicePhase; 
 
 export interface LiarsDiceGateway {
   getStatus(signal?: AbortSignal): Promise<LiarsDiceStatus>
+  getMatch?(matchId: string, signal?: AbortSignal): Promise<LiarsDiceMatch>
   startMatch(options: { dicePerPlayer: number; seed?: number }, signal?: AbortSignal): Promise<LiarsDiceMatch>
   bid(matchId: string, bid: { quantity: number; face: number }, signal?: AbortSignal): Promise<LiarsDiceMatch>
   challenge(matchId: string, signal?: AbortSignal): Promise<LiarsDiceMatch>

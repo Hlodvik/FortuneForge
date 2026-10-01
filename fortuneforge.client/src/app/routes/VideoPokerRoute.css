@@ -1,0 +1,3 @@
+@media (max-height: 500px) and (min-width: 500px) and (max-width: 579px) {
+  .video-poker-page > .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto auto; }
+}

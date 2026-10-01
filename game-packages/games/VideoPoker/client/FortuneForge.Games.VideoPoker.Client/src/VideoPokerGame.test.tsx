@@ -14,6 +14,10 @@ const awaitingRound: VideoPokerRound = {
   ],
   heldPositions: [], finalCards: null, handRank: null, payout: null, finalHands: null, handRanks: null, handPayouts: null,
 }
+const settledRound: VideoPokerRound = {
+  ...awaitingRound, balance: 112, phase: 'completed', finalCards: awaitingRound.initialCards,
+  handRank: 'straight', payout: 12, finalHands: [awaitingRound.initialCards], handRanks: ['straight'], handPayouts: [12],
+}
 
 afterEach(() => { cleanup(); sessionStorage.clear() })
 
@@ -58,8 +62,10 @@ describe('VideoPokerGame', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect(gateway.createRound).toHaveBeenCalledWith(1, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^video-poker-deal-/) }))
+    await screen.findByRole('button', { name: 'Draw' })
     expect(screen.getAllByRole('button', { name: /^Hold / })).toHaveLength(5)
 
+    await screen.findByRole('button', { name: 'Draw' })
     await user.click(screen.getByRole('button', { name: 'Hold ace of clubs' }))
     await user.click(screen.getByRole('button', { name: 'Hold three of hearts' }))
     expect(screen.getByRole('button', { name: 'Release ace of clubs' }).getAttribute('aria-pressed')).toBe('true')
@@ -108,10 +114,10 @@ describe('VideoPokerGame', () => {
     await user.click(await screen.findByRole('button', { name: '5' }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     expect(createRound).toHaveBeenCalledWith(1, expect.objectContaining({ handCount: 5 }))
-    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    await user.click(await screen.findByRole('button', { name: 'Draw' }))
 
-    expect(await screen.findByText('Hand 5')).toBeTruthy()
-    expect(screen.getByText('R24.00 total won')).toBeTruthy()
+    expect(await screen.findByText('R24.00 total won')).toBeTruthy()
+    expect(screen.getByText('Hand 5')).toBeTruthy()
   })
 
   it('shows a service error when the table status cannot load', async () => {
@@ -119,7 +125,8 @@ describe('VideoPokerGame', () => {
     render(<VideoPokerGame gateway={gateway} />)
 
     expect((await screen.findByRole('alert')).textContent).toContain('Table is closed.')
-    await waitFor(() => expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true))
+    expect(screen.queryByRole('button', { name: 'Deal' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Retry connection' })).toBeTruthy()
   })
 
   it('restores a recorded unfinished hand for the same player', async () => {
@@ -131,6 +138,97 @@ describe('VideoPokerGame', () => {
     expect(getRound).toHaveBeenCalledWith('round-7', expect.any(AbortSignal))
   })
 
+  it('clamps an obsolete restored five-coin wager to the current maximum before the next deal', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('fortuneforge:video-poker:round:player-7', 'round-7')
+    const getStatus = vi.fn().mockResolvedValue({ ...status, minimumCoinsWagered: 2, maximumCoinsWagered: 4 })
+    const getRound = vi.fn().mockResolvedValue({ ...settledRound, coinsWagered: 5, wager: 5, payout: 20, handPayouts: [20] })
+    const createRound = vi.fn().mockResolvedValue({ ...awaitingRound, coinsWagered: 4, wager: 4 })
+    render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, getRound, createRound })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'New Hand' }))
+
+    const wager = screen.getByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
+    expect(wager.value).toBe('4')
+    expect(screen.getByText('Wager R4.00')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(getRound).toHaveBeenCalledTimes(1)
+
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(createRound).toHaveBeenCalledWith(4, expect.objectContaining({ handCount: 1 }))
+  })
+
+  it('focuses connection recovery when New Hand removes a restored result without table status', async () => {
+    const user = userEvent.setup()
+    sessionStorage.setItem('fortuneforge:video-poker:round:player-7', 'round-7')
+    const getStatus = vi.fn().mockRejectedValue(new VideoPokerGatewayError('Connection lost.'))
+    render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, getRound: vi.fn().mockResolvedValue(settledRound) })} />)
+
+    const newHand = await screen.findByRole('button', { name: 'New Hand' })
+    newHand.focus()
+    expect(document.activeElement).toBe(newHand)
+    await user.click(newHand)
+
+    const retry = screen.getByRole('button', { name: 'Retry connection' })
+    expect(screen.queryByRole('combobox', { name: 'Coin wager' })).toBeNull()
+    await waitFor(() => expect(document.activeElement).toBe(retry))
+  })
+
+  it('allows a lower wager and a new deal key after the host definitively rejects insufficient credits', async () => {
+    const user = userEvent.setup()
+    const getStatus = vi.fn().mockResolvedValueOnce(status).mockResolvedValueOnce({ ...status, balance: 3 })
+    const createRound = vi.fn()
+      .mockRejectedValueOnce(new VideoPokerGatewayError('Not enough credits.', 'insufficient-slot-credits', 409))
+      .mockResolvedValueOnce({ ...awaitingRound, coinsWagered: 2, wager: 2, balance: 1 })
+    render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, createRound })} />)
+
+    const wager = await screen.findByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
+    await user.selectOptions(wager, '5')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    await screen.findByText('R3.00', { selector: '.ff-video-poker__balance strong' })
+
+    expect(getStatus).toHaveBeenCalledTimes(2)
+    expect(wager.disabled).toBe(false)
+    expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
+    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
+    const rejectedKey = createRound.mock.calls[0]?.[1]?.idempotencyKey
+    expect(rejectedKey).toMatch(/^video-poker-deal-/)
+
+    await user.selectOptions(wager, '2')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    await screen.findByRole('button', { name: 'Draw' })
+
+    expect(createRound).toHaveBeenNthCalledWith(2, 2, expect.objectContaining({ handCount: 1 }))
+    expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).toMatch(/^video-poker-deal-/)
+    expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).not.toBe(rejectedKey)
+  })
+
+  it('unlocks an edited wager after a restored pending deal is definitively rejected by the host', async () => {
+    const user = userEvent.setup()
+    const rejectedKey = 'video-poker-deal-recovery-rejected-0001'
+    sessionStorage.setItem('fortuneforge:video-poker:pending:player-7', JSON.stringify({ operation: 'deal', idempotencyKey: rejectedKey, coinsWagered: 5, handCount: 1 }))
+    const getStatus = vi.fn().mockResolvedValueOnce(status).mockResolvedValueOnce({ ...status, balance: 3 })
+    const createRound = vi.fn()
+      .mockRejectedValueOnce(new VideoPokerGatewayError('Not enough credits.', 'insufficient-slot-credits', 409))
+      .mockResolvedValueOnce({ ...awaitingRound, coinsWagered: 2, wager: 2, balance: 1 })
+    render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, createRound })} />)
+
+    await screen.findByText('R3.00', { selector: '.ff-video-poker__balance strong' })
+    const wager = screen.getByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
+    expect(wager.disabled).toBe(false)
+    expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Retry restoration' })).toBeNull()
+    expect(createRound).toHaveBeenNthCalledWith(1, 5, expect.objectContaining({ idempotencyKey: rejectedKey, handCount: 1, signal: expect.any(AbortSignal) }))
+
+    await user.selectOptions(wager, '2')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    await screen.findByRole('button', { name: 'Draw' })
+
+    expect(createRound).toHaveBeenNthCalledWith(2, 2, expect.objectContaining({ handCount: 1 }))
+    expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).toMatch(/^video-poker-deal-/)
+    expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).not.toBe(rejectedKey)
+  })
+
   it('replays the exact player-scoped pending deal after a reload', async () => {
     sessionStorage.setItem('fortuneforge:video-poker:pending:player-7', JSON.stringify({ operation: 'deal', idempotencyKey: 'video-poker-deal-recovery-0001', coinsWagered: 3 }))
     const createRound = vi.fn().mockResolvedValue(awaitingRound)
@@ -140,9 +238,46 @@ describe('VideoPokerGame', () => {
     expect(createRound).toHaveBeenCalledWith(3, expect.objectContaining({ idempotencyKey: 'video-poker-deal-recovery-0001', signal: expect.any(AbortSignal) }))
   })
 
-  it('reuses the original deal key when a failed request is retried', async () => {
+  it('does not replay recovery when only the balance callback changes and notifies the latest callback after draw', async () => {
     const user = userEvent.setup()
-    const createRound = vi.fn().mockRejectedValueOnce(new VideoPokerGatewayError('Connection lost.')).mockResolvedValueOnce(awaitingRound)
+    sessionStorage.setItem('fortuneforge:video-poker:pending:player-7', JSON.stringify({ operation: 'deal', idempotencyKey: 'video-poker-deal-recovery-0001', coinsWagered: 3, handCount: 1 }))
+    const createRound = vi.fn().mockResolvedValue(awaitingRound)
+    const getRound = vi.fn().mockResolvedValue(awaitingRound)
+    const getStatus = vi.fn().mockResolvedValue(status)
+    const draw = vi.fn().mockResolvedValue(settledRound)
+    const gateway = fakeGateway({ createRound, getRound, getStatus, draw })
+    const initialCallback = vi.fn()
+    const latestCallback = vi.fn()
+    const { rerender } = render(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={initialCallback} />)
+
+    await screen.findByRole('button', { name: 'Draw' })
+    await waitFor(() => expect(initialCallback).toHaveBeenCalledWith(100))
+    expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
+    expect(sessionStorage.getItem('fortuneforge:video-poker:round:player-7')).toBe('round-7')
+
+    rerender(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={latestCallback} />)
+
+    expect(createRound).toHaveBeenCalledTimes(1)
+    expect(getRound).not.toHaveBeenCalled()
+    expect(getStatus).toHaveBeenCalledTimes(1)
+    expect(latestCallback).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Draw' }))
+    await screen.findByRole('button', { name: 'New Hand' })
+
+    expect(initialCallback).toHaveBeenCalledTimes(1)
+    expect(latestCallback).toHaveBeenCalledTimes(1)
+    expect(latestCallback).toHaveBeenCalledWith(112)
+    expect(getRound).not.toHaveBeenCalled()
+    expect(createRound).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['a network failure', new VideoPokerGatewayError('Connection lost.')],
+    ['a host round conflict', new VideoPokerGatewayError('An unfinished hand already exists.', 'video-poker-round-conflict', 409)],
+    ['a server failure with a rejection-like code', new VideoPokerGatewayError('Request outcome unknown.', 'insufficient-slot-credits', 500)],
+  ])('reuses the original deal key after %s', async (_description, reason) => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockRejectedValueOnce(reason).mockResolvedValueOnce(awaitingRound)
     const gateway = fakeGateway({ createRound })
     render(<VideoPokerGame gateway={gateway} />)
 
@@ -163,6 +298,7 @@ describe('VideoPokerGame', () => {
     render(<VideoPokerGame gateway={gateway} />)
 
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
+    await screen.findByRole('button', { name: 'Draw' })
     await user.click(screen.getByRole('button', { name: 'Hold ace of clubs' }))
     await user.click(screen.getByRole('button', { name: 'Draw' }))
     expect((await screen.findByRole('alert')).textContent).toContain('Connection interrupted.')

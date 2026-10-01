@@ -1,46 +1,73 @@
-/* The host account header consumes the first strip of the viewport. Compact
-   the idle console so the complete machine remains visible below it. */
-@media (min-width: 561px) {
-  .ff-video-poker { min-height: 0; padding: clamp(.65rem, 1.5vh, 1rem); }
-  .ff-video-poker__header { margin-bottom: .55rem; }
-  .ff-video-poker h1 { font-size: clamp(2.1rem, 5vh, 3.2rem); }
-  .ff-video-poker__console { min-height: 0; padding: clamp(.7rem, 1.6vh, 1rem); }
-  .ff-video-poker__welcome,
-  .ff-video-poker__round { min-height: 0; gap: .65rem; }
-  .ff-video-poker__intro > span { width: 2.8rem; font-size: 1.35rem; }
-  .ff-video-poker h2 { margin: .35rem 0 .15rem; font-size: 1.5rem; }
+@media (max-width: 1099px), (max-height: 620px) {
+  .ff-video-poker__screen { grid-template-columns: minmax(0, 1fr); }
+  .ff-video-poker__inline-paytable { display: none; }
+}
+@media (max-width: 680px) and (min-height: 501px) {
+  .ff-video-poker__board[data-count="3"], .ff-video-poker__board[data-count="5"] { grid-template-columns: minmax(0, 1fr); }
+  .ff-video-poker__board[data-count="3"] { grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .ff-video-poker__board[data-count="5"] { grid-template-rows: repeat(5, minmax(0, 1fr)); }
+}
+@media (max-width: 440px) {
+  .ff-video-poker { padding: .35rem; gap: .3rem; }
+  .ff-video-poker__header { gap: .25rem; }
+  .ff-video-poker__header > .ff-video-poker__info > button { padding: .35rem .5rem; font-size: .75rem; }
+  .ff-video-poker__balance strong { font-size: .82rem; }
+  .ff-video-poker__console { padding: .3rem; gap: .3rem; }
+  .ff-video-poker__settings { gap: .5rem; }
+  .ff-video-poker__settings select { width: 8.4rem; min-width: 0; font-size: .78rem; }
+  .ff-video-poker__hand-count > div { gap: .2rem; }
+  .ff-video-poker__hand-count button { padding: .35rem .5rem; }
+  .ff-video-poker__bet-controls > button, .ff-video-poker__round-actions > button, .ff-video-poker__round-actions > .ff-video-poker__info > button { padding: .4rem .55rem; font-size: .78rem; }
+  .ff-video-poker__bet-controls .ff-video-poker__primary { min-width: 0; }
+}
+@media (max-height: 500px) and (min-width: 500px) {
+  .ff-video-poker { padding: .25rem; gap: .25rem; }
+  .ff-video-poker__console { grid-template-rows: 1.4rem minmax(0, 1fr) 4.8rem; padding: .3rem; gap: .25rem; }
+  .ff-video-poker__board[data-count="3"], .ff-video-poker__board[data-count="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .ff-video-poker__board[data-count="3"] { grid-template-rows: minmax(0, 1fr); }
+  .ff-video-poker__board[data-count="5"] { grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  .ff-video-poker__rail { grid-template-rows: minmax(0, 1fr) 1rem; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .2rem .5rem; }
+  .ff-video-poker__settings { justify-content: center; gap: .4rem; }
+  .ff-video-poker__ticket { text-align: center; grid-column: 1 / -1; grid-row: 2; }
+  .ff-video-poker__bet-controls, .ff-video-poker__round-actions { grid-column: 2; grid-row: 1; align-self: end; }
+  .ff-video-poker__recovery { grid-row: 1; grid-column: 1 / -1; }
+  .ff-video-poker__settings select { font-size: .78rem; }
+  .ff-video-poker__bet-controls { gap: .3rem; }
+  .ff-video-poker__bet-controls > button { padding: .35rem .5rem; font-size: .78rem; }
+  .ff-video-poker__error { max-height: 2.6rem; font-size: .72rem; padding: .2rem .4rem; }
+  .ff-video-poker__info-panel { top: 5.5rem; max-height: calc(100dvh - 6rem); }
 }
 
-@media (max-width: 560px) {
-  .ff-video-poker { min-height: 0; padding: .45rem; }
-  .ff-video-poker__header { align-items: center; margin-bottom: .4rem; }
-  .ff-video-poker__eyebrow { display: none; }
-  .ff-video-poker h1 { font-size: 2rem; }
-  .ff-video-poker__console { min-height: 0; padding: .65rem; }
-  .ff-video-poker__welcome,
-  .ff-video-poker__round { min-height: 0; gap: .55rem; }
-  .ff-video-poker__intro > span { display: none; }
-  .ff-video-poker h2 { margin: 0 0 .15rem; font-size: 1.35rem; }
-  .ff-video-poker__intro p { font-size: .75rem; line-height: 1.3; }
+@media (max-width: 360px) and (min-height: 501px) {
+  .ff-video-poker__board[data-count="5"] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__completed-hand { grid-template-rows: 2rem minmax(0, 1fr); padding: .15rem; }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__completed-hand header { display: grid; grid-template-columns: 1fr auto; grid-template-rows: 1rem 1rem; font-size: .65rem; line-height: 1rem; gap: 0; }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__completed-hand header strong { grid-row: 2; grid-column: 1 / -1; margin: 0; }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__completed-hand header em { grid-column: 2; grid-row: 1; }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__card-slot { width: min(18cqw, calc((100cqh - 2.2rem) * .714)); }
+  .ff-video-poker__board[data-count="5"] .ff-video-poker__corner--reverse { display: none; }
 }
 
-/* Purpose-built video-poker cabinet styling: illuminated paytable, crisp
-   physical controls, and a blue screen that gives dealt cards priority. */
-.ff-video-poker {
-  --vp-cyan: #62e7ff;
-  --vp-gold: #ffd56f;
-  background: radial-gradient(circle at 50% -20%, #174c78 0, transparent 31rem), linear-gradient(145deg, #071226, #040710 75%);
+@media (max-width: 440px) { .ff-video-poker__bet-controls, .ff-video-poker__round-actions { grid-template-columns: .7fr 1.4fr 5.7rem; } .ff-video-poker__bet-controls button, .ff-video-poker__round-actions button { font-size: .74rem; padding: .35rem .3rem; } }
+
+@media (max-height: 500px) and (min-width: 500px) and (max-width: 579px) {
+  .ff-video-poker__settings select { width: 5.5rem; min-width: 0; }
+  .ff-video-poker__hand-count > div { gap: 2px; }
+  .ff-video-poker__hand-count button { width: 44px; padding: .3rem; }
+  .ff-video-poker__bet-controls { grid-template-columns: 44px minmax(0, 1fr) 5rem; }
+  .ff-video-poker__round-actions { grid-template-columns: 1fr 1fr 5rem; }
+  .ff-video-poker__bet-controls button, .ff-video-poker__round-actions button { padding: .3rem; font-size: .7rem; }
 }
-.ff-video-poker__balance { border-color: #62e7ff66; background: #030a16e8; }
-.ff-video-poker__console { position: relative; overflow: hidden; border: 2px solid #4dcbe07a; border-radius: 1rem; background: radial-gradient(circle at 50% 35%, #123a5c 0, #081a32 48%, #050a16 100%); box-shadow: 0 1rem 3rem #000b, inset 0 0 0 4px #020610, inset 0 0 3rem #30cde818; }
-.ff-video-poker__console::before { position: absolute; inset: .4rem; border: 1px solid #62e7ff24; border-radius: .65rem; content: ''; pointer-events: none; }
-.ff-video-poker__welcome, .ff-video-poker__round { position: relative; z-index: 1; }
-.ff-video-poker__intro > span { border-color: #62e7ff99; background: radial-gradient(circle at 32% 25%, #bdf8ff, #27a7cd 48%, #123968); color: #03101c; }
-.ff-video-poker__paytable { border-color: #62e7ff66; background: #020812d9; }
-.ff-video-poker__paytable summary { color: var(--vp-cyan); }
-.ff-video-poker__wager select { border-color: #62e7ff88; background: #020814; }
-.ff-video-poker__hand-count { border-color: #62e7ff55; background: #02091499; }
-.ff-video-poker__hand-count button { border-color: #62e7ff66; background: #0a2440; color: #c9f8ff; }
-.ff-video-poker__hand-count button[aria-pressed='true'] { border-color: #fff2a8; background: linear-gradient(#d99b31, #89501e); box-shadow: 0 0 1rem #ffd56f45; }
-.ff-video-poker__bet-controls button { border-color: #62e7ff66; background: #0a2440; color: #c9f8ff; }
-.ff-video-poker__primary { min-width: 9rem; background: linear-gradient(#fff0a5, #da9a31); box-shadow: 0 .45rem .8rem #0008, 0 0 1rem #ffd56f35; }
+
+@media (max-height: 340px) and (min-width: 500px) {
+  .ff-video-poker__console { position: relative; grid-template-rows: 0 minmax(0, 1fr) 4.8rem; }
+  .ff-video-poker__screen { grid-row: 2; }
+  .ff-video-poker__rail { grid-row: 3; }
+  .ff-video-poker__round-head { position: absolute; pointer-events: none; left: .6rem; bottom: 1.85rem; height: 1.4rem; width: calc(50% - 1.2rem); justify-content: start; font-size: .78rem; }
+}
+
+@media (max-height: 340px) and (min-width: 500px) {
+  .ff-video-poker__completed-hand { padding: .15rem; grid-template-rows: 1rem minmax(0, 1fr); }
+  .ff-video-poker__completed-hand header { font-size: .62rem; gap: .2rem; line-height: 1rem; }
+  .ff-video-poker__completed-hand .ff-video-poker__card-slot { width: min(18cqw, calc((100cqh - 1.2rem) * .714)); }
+}

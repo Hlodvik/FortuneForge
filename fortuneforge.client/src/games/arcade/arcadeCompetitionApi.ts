@@ -217,14 +217,17 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
   }
 
   async startFreeFlappyRun(idempotencyKey: string, signal?: AbortSignal): Promise<FlappyFreeRun> {
-    if (idempotencyKey.trim().length === 0) throw new Error('An idempotency key is required.')
+    if (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(idempotencyKey)) {
+      throw new Error('The Flappy start request key is invalid.')
+    }
     const response = await this.fetcher('/api/arcade-competitions/flappy/free/runs', {
       method: 'POST',
       headers: { 'Idempotency-Key': idempotencyKey },
       cache: 'no-store',
       signal,
     })
-    return this.readResponse(response, isFlappyFreeRun)
+    const result = await this.readResponse(response, isFlappyFreeRun)
+    return { runId: result.runId, seed: result.seed, startedAtUtc: result.startedAtUtc, wasReplay: result.wasReplay }
   }
 
   async completeFreeFlappyReplay(
@@ -232,19 +235,22 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     replay: FlappyReplayPayload,
     signal?: AbortSignal,
   ): Promise<FlappyReplayCompletion> {
+    if (!isFlappyRunId(runId)) throw new Error('The Flappy run id is invalid.')
+    if (!isFlappyReplayPayload(replay)) throw new Error('The Flappy replay input is invalid.')
     const response = await this.fetcher(
       `/api/arcade-competitions/flappy/free/runs/${encodeURIComponent(runId)}/replay`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(replay),
+        // Scores, identity and seeds are derived by the server, never posted from presentation state.
+        body: JSON.stringify({ totalTicks: replay.totalTicks, flapTicks: [...replay.flapTicks] }),
         cache: 'no-store',
         signal,
       },
     )
     const result = await this.readResponse(response, isFlappyReplayCompletion)
     if (result.runId !== runId) throw new Error('The server returned an invalid arcade competition response.')
-    return result
+    return { runId: result.runId, score: result.score, terminal: result.terminal, wasReplay: result.wasReplay }
   }
 
   private async readResponse<T>(response: Response, validator: (value: unknown) => value is T): Promise<T> {
@@ -312,21 +318,43 @@ function isAsteroidsFreeRun(value: unknown): value is AsteroidsFreeRun {
 }
 
 function isFlappyFreeRun(value: unknown): value is FlappyFreeRun {
-  return isRecord(value)
-    && isRunId(value.runId)
+  return isRecord(value) && !Array.isArray(value)
+    && isFlappyRunId(value.runId)
     && isNonNegativeInteger(value.seed)
     && value.seed > 0
     && value.seed <= 0xffff_ffff
-    && isUtcTimestamp(value.startedAtUtc)
+    && isFlappyUtcTimestamp(value.startedAtUtc)
     && typeof value.wasReplay === 'boolean'
 }
 
 function isFlappyReplayCompletion(value: unknown): value is FlappyReplayCompletion {
-  return isRecord(value)
-    && isRunId(value.runId)
+  return isRecord(value) && !Array.isArray(value)
+    && isFlappyRunId(value.runId)
     && isNonNegativeInteger(value.score)
     && (value.terminal === 'obstacle-collision' || value.terminal === 'ground-collision' || value.terminal === 'ceiling-collision')
     && typeof value.wasReplay === 'boolean'
+}
+
+function isFlappyRunId(value: unknown): value is string {
+  return typeof value === 'string' && /^flappy_free_[0-9a-f]{64}$/.test(value)
+}
+
+function isFlappyUtcTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,7})?(?:Z|\+00:00)$/.test(value)) return false
+  const timestamp = Date.parse(value)
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 19) === value.slice(0, 19)
+}
+
+function isFlappyReplayPayload(value: unknown): value is FlappyReplayPayload {
+  if (!isRecord(value) || Array.isArray(value) || !Number.isInteger(value.totalTicks) ||
+    typeof value.totalTicks !== 'number' || value.totalTicks < 1 || value.totalTicks > 9_000 ||
+    !Array.isArray(value.flapTicks) || value.flapTicks.length > 1_500) return false
+  let previous = -1
+  for (const tick of value.flapTicks) {
+    if (!Number.isInteger(tick) || tick < 0 || tick >= value.totalTicks || tick <= previous) return false
+    previous = tick
+  }
+  return true
 }
 
 function isPlacements(value: unknown): value is readonly ArcadeCompetitionPlacement[] {

@@ -35,12 +35,14 @@ const dropMerge = {
 
 const routes: readonly ArcadeRoute[] = [
   { name: 'Asteroids', path: '/games/asteroids', start: 'Casual run', board: '.ff-asteroids-replay-canvas', controls: '.ff-asteroids-replay-controls' },
-  { name: 'Flappy', path: '/games/flappy', start: 'Start flight', board: '.ff-flappy-playfield', controls: '.ff-flappy-overlay button' },
+  { name: 'Flappy', path: '/games/flappy', start: 'Start flight', board: '.flappy-course', controls: '.flappy-controls' },
   { name: 'Horse Flight', path: '/games/horse-flight', start: 'Start run', board: '.ff-horse-flight__field', controls: '.ff-horse-flight__touch-controls' },
   { name: 'Snake', path: '/games/snake', start: 'Play', board: '.ff-snake-board-wrap', controls: '.ff-snake-controls' },
   { name: '2048', path: '/games/2048', board: '.ff-2048-board-wrap', controls: '.ff-2048-controls' },
   { name: 'Drop Merge', path: '/games/drop-merge', board: '.ff-drop-merge-board-shell', controls: '.ff-drop-merge-column-board' },
 ]
+const selectedRoutes = routes.filter(route => !process.env.FORTUNEFORGE_VIEWPORT_GAME || route.name === process.env.FORTUNEFORGE_VIEWPORT_GAME)
+if (selectedRoutes.length === 0) throw new Error('Unknown arcade game requested for viewport verification.')
 
 for (const viewport of [
   { width: 1440, height: 900, desktop: true },
@@ -53,7 +55,7 @@ for (const viewport of [
     await page.setViewportSize(viewport)
     await mockArcadeApi(page)
 
-    for (const route of routes) {
+    for (const route of selectedRoutes) {
       await test.step(route.name, async () => {
         await page.goto(route.path)
         const gameNavbar = page.locator('[data-game-navbar]')
@@ -61,8 +63,9 @@ for (const viewport of [
         await expect(gameNavbar.getByRole('link', { name: 'Fortune Forge home' })).toHaveAttribute('href', '/home')
         await expect(gameNavbar.getByRole('link', { name: 'Other Games' })).toHaveAttribute('href', '/games')
         await expect(gameNavbar.locator('summary[aria-label="Account menu"]')).toBeVisible()
-        if (route.name === 'Flappy') await expect(page.locator('.flappy-free-run-page__lobby-preview')).toBeVisible()
+        if (route.name === 'Flappy') await expect(page.locator('.flappy-panel--lobby')).toBeVisible()
         if (route.start) await page.getByRole('button', { name: route.start, exact: true }).click()
+        if (route.name === 'Flappy') await page.getByRole('button', { name: 'Pause', exact: true }).click()
         if (route.name === 'Drop Merge') {
           await expect(page.getByRole('button', { name: 'New run', exact: true })).toBeVisible()
           await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible()
@@ -132,7 +135,7 @@ async function mockArcadeApi(page: Page): Promise<void> {
     else if (path === '/api/games/horse-flight/status') body = { available: true, tickMilliseconds: 20, balance: 1000, mode: 'test' }
     else if (path === '/api/games/horse-flight/runs' && method === 'POST') body = { runId: 'horse-test', seed: 123456, tickMilliseconds: 20 }
     else if (path === '/api/arcade-competitions/asteroids/free/runs' && method === 'POST') body = { runId: 'asteroids-test-01', seedHex: '0123456789abcdef', startedAtUtc: '2026-01-01T00:00:00Z', wasReplay: false }
-    else if (path === '/api/arcade-competitions/flappy/free/runs' && method === 'POST') body = { runId: 'flappy-test-run-01', seed: 123456, startedAtUtc: '2026-01-01T00:00:00Z', wasReplay: false }
+    else if (path === '/api/arcade-competitions/flappy/free/runs' && method === 'POST') body = { runId: 'flappy_free_' + '01'.repeat(32), seed: 123456, startedAtUtc: '2026-01-01T00:00:00Z', wasReplay: false }
     else {
       await route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'test-unavailable', message: 'Not needed for viewport testing.' }) })
       return

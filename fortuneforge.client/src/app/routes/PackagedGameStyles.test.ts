@@ -7,7 +7,6 @@ const packagedGameEntryPoints = [
   ['./CasinoWarRoute.tsx', '@fortuneforge/games-casino-war'],
   ['./CrapsRoute.tsx', '@fortuneforge/games-craps'],
   ['./DropMergeRoute.tsx', '@fortuneforge/games-drop-merge'],
-  ['../../pages/games/flappy/FlappyFreeRunPage.tsx', '@fortuneforge/games-flappy'],
   ['./HeartsRoute.tsx', '@fortuneforge/games-hearts'],
   ['./HorseFlightRoute.tsx', '@fortuneforge/games-horse-flight'],
   ['./KenoRoute.tsx', '@fortuneforge/games-keno'],
@@ -20,6 +19,13 @@ const packagedGameEntryPoints = [
 ] as const
 
 describe('packaged game styles', () => {
+  it('the host-owned recorded Flappy view loads its scoped styles without the standalone sample globals', () => {
+    const source = readFileSync(new URL('../../pages/games/flappy/FlappyFreeRunPage.tsx', import.meta.url), 'utf8')
+    expect(source).toContain("import './FlappyFreeRunPage.css'")
+    expect(source).not.toContain("import '@fortuneforge/games-flappy/styles.css'")
+    const styles = readFileSync(new URL('../../pages/games/flappy/FlappyFreeRunPage.css', import.meta.url), 'utf8')
+    expect(styles).not.toMatch(/(?:^|\n)\s*(?:body\b|:root\b|\*\s*\{|button\s*\{|a\s*\{)/)
+  })
   it.each(packagedGameEntryPoints)('%s imports the package stylesheet', (relativePath, packageName) => {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')
 

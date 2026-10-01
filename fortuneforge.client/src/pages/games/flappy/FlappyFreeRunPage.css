@@ -1,101 +1,85 @@
-.flappy-free-run-page { height: 100%; min-height: 0; background: radial-gradient(circle at 50% -18%, #28658a, #071724 58%); color: #f5f9ff; }
-.flappy-free-run-page__content { box-sizing: border-box; margin: 0 auto; max-width: 66rem; padding: clamp(1rem, 3vw, 2rem) 1rem 3rem; }
-.flappy-free-run-page__lobby, .flappy-free-run-page__run, .flappy-free-run-page__result { border: 1px solid #73c8dc80; border-radius: 1.1rem; background: rgb(6 21 34 / 88%); box-shadow: 0 1rem 3rem rgb(0 0 0 / 24%); padding: clamp(1rem, 3vw, 1.6rem); }
-.flappy-free-run-page__lobby { max-width: 43rem; margin: min(12vh, 6rem) auto 0; }
-.flappy-free-run-page__eyebrow { color: #77dce7; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
-.flappy-free-run-page h1, .flappy-free-run-page h2 { margin-top: 0; }
-.flappy-free-run-page h1 { font-size: clamp(3rem, 11vw, 6rem); line-height: .9; margin-bottom: 1rem; }
-.flappy-free-run-page__lobby p { color: #c3d5e4; max-width: 39rem; }
-.flappy-free-run-page__lobby-preview { position: relative; width: min(100%, 28rem); margin: 1rem auto 0; overflow: hidden; aspect-ratio: 4 / 3; border: 1px solid #77dce766; border-radius: .9rem; background: #091a2b; box-shadow: inset 0 0 1.5rem #0007; }
-.flappy-free-run-page__lobby-preview svg { display: block; width: 100%; height: 100%; }
-.flappy-free-run-page__lobby-action { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: .65rem; background: rgb(4 16 27 / 48%); backdrop-filter: blur(1px); }
-.flappy-free-run-page__lobby-action small { color: #d9f9ff; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; text-shadow: 0 2px .4rem #071724; }
-.flappy-free-run-page button { border: 1px solid #ffdf81; border-radius: .7rem; background: #ffd05a; color: #17202a; cursor: pointer; font: inherit; font-weight: 800; min-height: 2.8rem; padding: .65rem 1rem; }
-.flappy-free-run-page button:hover:not(:disabled) { background: #ffe28a; }
-.flappy-free-run-page button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
-.flappy-free-run-page button:disabled { cursor: wait; opacity: .65; }
-.flappy-free-run-page__run { margin: 0 auto; max-width: 58rem; }
-.flappy-free-run-page__instruction { color: #c3d5e4; margin: 0 0 .7rem; }.flappy-free-run-page__instruction strong { color: #fff; }
-.flappy-free-run-page__result { margin: min(12vh, 6rem) auto 0; max-width: 38rem; }.flappy-free-run-page__secondary { margin-left: .65rem; background: #27455a; border-color: #8db5c8; color: #fff; }
-.flappy-free-run-page__error { border-left: 4px solid #ff9393; color: #ffd2d2; margin: 1rem auto 0; max-width: 43rem; padding-left: .75rem; }
-.flappy-free-run-page .ff-flappy-sun { fill: #ffe39a; opacity: .8; filter: drop-shadow(0 0 1.2rem #ffd56b88); }
-.flappy-free-run-page .ff-flappy-cloud { fill: #d6f1f3; opacity: .18; }
-.flappy-free-run-page .ff-flappy-cloud--far { opacity: .1; }
-.flappy-free-run-page .ff-flappy-pipe .ff-flappy-pipe-shaft { fill: #3a9e73; stroke: #bff5d6; stroke-width: 3; }
-.flappy-free-run-page .ff-flappy-pipe .ff-flappy-pipe-rim { fill: #58c98d; stroke: #d9ffe7; stroke-width: 3; }
-.flappy-free-run-page .ff-flappy-ground { fill: url(#flappy-ground); stroke: #f5cc76; stroke-width: 2; }
-.flappy-free-run-page .ff-flappy-bird-art { filter: drop-shadow(.2rem .35rem .3rem #0008); }
-.flappy-free-run-page .ff-flappy-bird-body { fill: url(#flappy-bird); stroke: #fff2bc; stroke-width: 3; }
-.flappy-free-run-page .ff-flappy-bird-wing { fill: #df7228; stroke: #ffd583; stroke-width: 2; }
-.flappy-free-run-page .ff-flappy-bird-beak { fill: #ef5d35; stroke: #fff0b1; stroke-width: 1.5; }
-.flappy-free-run-page .ff-flappy-bird-eye { fill: #fffdf2; stroke: #26323a; stroke-width: 1.5; }
-.flappy-free-run-page .ff-flappy-bird-pupil { fill: #15222a; }
-@media (max-width: 600px) { .flappy-free-run-page__content { padding-inline: .75rem; }.flappy-free-run-page__run { border: 0; border-radius: 0; padding: 0; background: transparent; box-shadow: none; }.flappy-free-run-page__secondary { margin: .65rem 0 0; display: block; } }
-
-@media (min-width: 721px) {
-  .flappy-free-run-page {
-    display: grid;
-    height: 100%;
-    min-height: 0;
-    grid-template-rows: minmax(0, 1fr);
-    overflow: hidden;
-  }
-
-  .flappy-free-run-page__content {
-    width: 100%;
-    min-height: 0;
-    overflow: auto;
-  }
-}
-
-.flappy-free-run-page--active {
-  display: grid;
-  height: 100%;
-  min-height: 0;
-  grid-template-rows: minmax(0, 1fr);
-  overflow: hidden;
-}
-
-.flappy-free-run-page--active .flappy-free-run-page__content {
-  display: grid;
-  width: 100%;
-  min-height: 0;
-  padding-block: .55rem;
-  overflow: hidden;
-}
-
-.flappy-free-run-page--active .flappy-free-run-page__run {
-  display: grid;
-  width: min(100%, 58rem);
-  height: 100%;
-  min-height: 0;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  align-self: center;
-}
-
-.flappy-free-run-page--active .ff-flappy-stats { margin: 0 0 .35rem; }
-.flappy-free-run-page--active .flappy-free-run-page__instruction { margin-bottom: .4rem; }
-.flappy-free-run-page--active .flappy-free-run-page__playfield-slot {
-  display: grid;
-  min-height: 0;
-  place-items: center;
-  overflow: hidden;
-  container-type: size;
-}
-.flappy-free-run-page--active .ff-flappy-playfield {
-  width: min(100cqw, 133.333cqh);
-  height: auto;
-  min-height: 0;
-  max-width: none;
-  max-height: none;
-  aspect-ratio: 4 / 3;
-}
-
+.flappy-free-run-page { --flappy-gold: #ffdc7c; display: grid; grid-template-rows: 54px minmax(0, 1fr) 94px; height: 100%; min-height: 0; width: 100%; padding: 0 clamp(8px, 2vw, 24px) 14px; gap: 8px; overflow: hidden; color: #f6fbff; background: radial-gradient(ellipse at 50% 20%, #205577, #091c2b 76%); box-sizing: border-box; }
+.flappy-free-run-page * { box-sizing: border-box; }
+.flappy-free-run-page button, .flappy-dialog button { min-height: 40px; border: 1px solid #ffd97d; border-radius: 10px; padding: 8px 18px; color: #152b37; background: linear-gradient(#ffe59b, #eebc4e); font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
+.flappy-free-run-page button:hover:not(:disabled), .flappy-dialog button:hover { filter: brightness(1.1); }
+.flappy-free-run-page button:focus-visible, .flappy-dialog button:focus-visible, .flappy-dialog-body:focus-visible { outline: 3px solid white; outline-offset: 2px; }
+.flappy-free-run-page button:disabled { opacity: .45; cursor: default; }
+.flappy-hud { display: flex; align-items: center; gap: 18px; width: min(100%, 1000px); justify-self: center; }
+.flappy-hud-score { display: flex; align-items: baseline; gap: 10px; }
+.flappy-hud-score span { font-size: 13px; color: #c1dbe6; }
+.flappy-hud-score strong { font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1; }
+.flappy-hud-context { display: flex; gap: 18px; color: #aecbd9; font-size: 12px; }
+.flappy-hud-context b { color: #fff; margin-left: 4px; }
+.flappy-hud-actions { margin-left: auto; display: flex; gap: 8px; }
+.flappy-hud-actions button, .flappy-free-run-page button.flappy-secondary { color: #e9f6fa; background: #183d50; border-color: #80b6c577; font-size: 12px; padding: 6px 12px; }
+.flappy-stage { min-height: 0; min-width: 0; display: grid; place-items: center; container-type: size; }
+.flappy-course { width: min(100cqw, 133.333cqh); aspect-ratio: 4 / 3; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid #8de6de88; box-shadow: 0 16px 42px #0005, 0 0 0 4px #09263388; user-select: none; -webkit-user-select: none; touch-action: none; outline: none; background: #235374; }
+.flappy-course:focus-visible { outline: 3px solid #ffe298; outline-offset: 3px; }
+.flappy-course svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+.flappy-scene-sun { fill: #ffe8b5; opacity: .65; }
+.flappy-scene-clouds { fill: #dceef3; opacity: .16; }
+.flappy-scene-hills { fill: #163f50; opacity: .6; }
+.flappy-scene-pipe rect { stroke: #c5f2d4; stroke-width: 3; }
+.flappy-scene-pipe .flappy-scene-rim { fill: #65be8c; }
+.flappy-scene-ground { stroke: #e9c56f; stroke-width: 2; }
+.flappy-scene-bird { filter: drop-shadow(1px 2px 2px #0007); }
+.flappy-scene-body { stroke: #fff2bc; stroke-width: 2; }
+.flappy-scene-wing { fill: #cf792b; stroke: #ffd583; stroke-width: 1.5; }
+.flappy-scene-beak { fill: #ef7948; stroke: #fff0b1; stroke-width: 1; }
+.flappy-scene-eye { fill: #fffef4; stroke: #26323a; stroke-width: 1; }
+.flappy-scene-bird.is-collided { filter: drop-shadow(0 0 3px #ffd47b); }
+.flappy-panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 18px; text-align: center; background: linear-gradient(#0b203559, #0b2035c9); }
+.flappy-panel h1, .flappy-panel h2, .flappy-panel p { margin: 0; }
+.flappy-panel h1 { font-size: clamp(32px, 5vw, 62px); line-height: 1; letter-spacing: -.03em; }
+.flappy-panel h2 { font-size: clamp(20px, 3vw, 34px); line-height: 1.1; }
+.flappy-panel p { font-size: 13px; line-height: 1.4; color: #d2e4ec; }
+.flappy-panel-mode { color: #ffda8f; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
+.flappy-panel .flappy-result-score { font-size: clamp(32px, 6vw, 64px); line-height: 1; color: #ffdf8b; font-weight: 900; font-variant-numeric: tabular-nums; }
+.flappy-panel--result, .flappy-panel--submitting, .flappy-panel--submit-failed { background: linear-gradient(#07192750, #071927bc); }
+.flappy-controls { width: min(100%, 1000px); justify-self: center; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 52px minmax(0, 1fr); gap: 8px 16px; padding-bottom: 2px; }
+.flappy-controls > div { display: flex; flex-direction: column; justify-content: center; gap: 4px; }
+.flappy-controls span { font-size: 13px; font-weight: 700; }
+.flappy-controls small { color: #a8c8d9; font-size: 11px; }
+.flappy-controls .flappy-flap { min-width: 130px; grid-row: 1; grid-column: 2; }
+.flappy-flap span { margin-left: 14px; font-size: 20px; }
+.flappy-notice { grid-column: 1 / -1; color: #d5e7ee; font-size: 12px; line-height: 1.2; margin: 0; }
+.flappy-notice[role="alert"] { color: #ffd6bf; }
+.flappy-dialog { padding: 0; width: min(500px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 1px solid #a4d7de; border-radius: 14px; background: #0f2e40; color: #f1fbff; overflow: hidden; box-shadow: 0 14px 48px #0009; }
+.flappy-dialog[open] { display: flex; flex-direction: column; }
+.flappy-dialog::backdrop { background: #020f20bb; }
+.flappy-dialog header { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #75a3b877; }
+.flappy-dialog h2 { margin: 0; font-size: 20px; }
+.flappy-dialog header button { width: 40px; padding: 0; font-size: 22px; }
+.flappy-dialog-body { min-height: 0; overflow: auto; padding: 4px 18px 18px; font-size: 14px; line-height: 1.55; overscroll-behavior: contain; }
 @media (max-width: 600px) {
-  .flappy-free-run-page--active .flappy-free-run-page__content { padding: .4rem .75rem; }
-  .flappy-free-run-page--active .flappy-free-run-page__instruction { font-size: .72rem; }
-  .flappy-free-run-page--active .ff-flappy-playfield {
-    margin-left: 0;
-    border-radius: .8rem;
-  }
+  .flappy-free-run-page { grid-template-rows: 50px minmax(0, 1fr) 92px; padding-bottom: 48px; gap: 8px; }
+  .flappy-hud { gap: 10px; }
+  .flappy-hud-context { gap: 8px; font-size: 11px; }
+  .flappy-hud-score span { font-size: 11px; }
+  .flappy-hud-score strong { font-size: 25px; }
+  .flappy-hud-actions { gap: 5px; }
+  .flappy-hud-actions button { padding: 6px 10px; }
+  .flappy-course { border-radius: 12px; }
+  .flappy-controls .flappy-flap { min-width: 100px; }
+  .flappy-panel { gap: 8px; padding: 12px; }
+  .flappy-panel p { font-size: 12px; }
 }
+@media (max-height: 450px) and (min-width: 450px) {
+  .flappy-shell .game-ambient-toggle { left: auto; right: 12px; bottom: 12px; }
+  .flappy-free-run-page { grid-template-columns: minmax(0, 1fr) 148px; grid-template-rows: 42px minmax(0, 1fr); padding: 0 10px 10px; gap: 6px 10px; }
+  .flappy-hud { grid-column: 1 / -1; }
+  .flappy-stage { grid-row: 2; grid-column: 1; }
+  .flappy-controls { grid-row: 2; grid-column: 2; display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 12px; padding: 4px 0 38px; }
+  .flappy-controls .flappy-flap { min-height: 48px; order: -1; }
+  .flappy-controls span { font-size: 11px; }
+  .flappy-controls small { font-size: 10px; }
+  .flappy-notice { font-size: 10px; min-height: 36px; }
+  .flappy-panel { gap: 5px; padding: 8px; }
+  .flappy-panel h1 { font-size: 28px; }
+  .flappy-panel h2 { font-size: 18px; }
+  .flappy-panel p { font-size: 10px; }
+  .flappy-panel button { min-height: 34px; font-size: 11px; padding: 6px 12px; }
+  .flappy-panel-mode { font-size: 9px; }
+  .flappy-panel .flappy-result-score { font-size: 30px; }
+}
+@media (prefers-reduced-motion: reduce) { .flappy-free-run-page *, .flappy-dialog * { scroll-behavior: auto; } }

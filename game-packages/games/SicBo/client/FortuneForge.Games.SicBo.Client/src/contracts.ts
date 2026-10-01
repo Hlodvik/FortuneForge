@@ -45,6 +45,7 @@ export type SicBoRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKe
 
 export interface SicBoGateway {
   getStatus(signal?: AbortSignal): Promise<SicBoStatus>
+  getRound(roundId: string, signal?: AbortSignal): Promise<SicBoRound>
   createRound(bets: readonly SicBoBetRequest[], options?: SicBoRequestOptions): Promise<SicBoRound>
 }
 

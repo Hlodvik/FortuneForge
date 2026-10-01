@@ -1,0 +1,7 @@
+.sic-bo-page .in-game-shell__body { overflow: hidden; }
+@media (max-height: 450px) and (max-width: 700px) {
+  .sic-bo-page .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto auto; }
+}
+@media (max-height: 450px) and (max-width: 420px) {
+  .sic-bo-page .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto; }
+}

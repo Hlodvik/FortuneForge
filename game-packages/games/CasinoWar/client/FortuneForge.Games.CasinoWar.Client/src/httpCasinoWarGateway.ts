@@ -19,7 +19,7 @@ export class HttpCasinoWarGateway implements CasinoWarGateway {
 
   constructor(basePath = '/api/games/casino-war', requestFn: typeof fetch = fetch) {
     this.basePath = basePath.replace(/\/$/, '')
-    this.requestFn = requestFn
+    this.requestFn = (input, init) => requestFn(input, init)
   }
 
   getStatus(signal?: AbortSignal) {

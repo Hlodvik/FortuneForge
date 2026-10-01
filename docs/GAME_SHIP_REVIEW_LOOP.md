@@ -18,7 +18,7 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 ## Current state
 
 - Active game: **Casino War**
-- Current phase: professional comparison and obvious-fix pass
+- Current phase: owner hands-on review
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
 
@@ -30,7 +30,7 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | ---: | --- | --- | --- |
 | 1 | Keno | Casino | Shippable — owner approved and deployed |
 | 2 | Fortune Blackjack | Card | Shippable — owner directed advancement and deployed |
-| 3 | Casino War | Card/table | Active — professional comparison and obvious-fix pass |
+| 3 | Casino War | Card/table | Active — owner hands-on review |
 | 4 | Baccarat | Card/table | Queued |
 | 5 | Video Poker | Card | Queued |
 | 6 | Roulette | Casino | Queued |

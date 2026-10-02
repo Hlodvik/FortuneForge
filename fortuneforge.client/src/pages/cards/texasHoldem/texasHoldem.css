@@ -1291,6 +1291,485 @@
   .credit-holdem-player.is-winner { animation: none; box-shadow: 0 0 0 0.24rem #fff1ad; }
 }
 
+/* Professional cash-table presentation. The table remains Fortune Forge;
+   the visual hierarchy follows modern six-max poker clients. */
+.credit-holdem-page {
+  height: 100%;
+  grid-template-rows: minmax(0, 1fr);
+  background:
+    radial-gradient(circle at 50% 20%, rgb(34 91 79 / 28%), transparent 42rem),
+    linear-gradient(160deg, #071713, #020806 72%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.credit-holdem-page .credit-holdem-main {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: clamp(.35rem, .9vw, .75rem);
+}
+
+.credit-holdem-match,
+.credit-holdem-result {
+  position: relative;
+  height: 100%;
+  grid-template-rows: minmax(0, 1fr) auto;
+  border: 0;
+  border-radius: 1.35rem;
+  background: #020907;
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 48%);
+}
+
+.credit-holdem-result { grid-template-rows: minmax(0, 1fr) auto; }
+
+.credit-holdem-table {
+  --ff-card-width: clamp(2.7rem, min(4.6vw, 7.2dvh), 4.4rem);
+  position: relative;
+  display: block;
+  height: 100%;
+  min-height: 25rem;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1.35rem 1.35rem 0 0;
+  background:
+    radial-gradient(ellipse at 50% 52%, rgb(18 62 52 / 50%), transparent 48%),
+    linear-gradient(155deg, #071812, #010604 76%);
+}
+
+.credit-holdem-table::before {
+  position: absolute;
+  z-index: 0;
+  inset: clamp(.6rem, 1.6vw, 1.35rem);
+  border: clamp(.6rem, 1vw, .95rem) solid #281b13;
+  border-radius: 50% / 39%;
+  background:
+    radial-gradient(ellipse at 50% 49%, rgb(55 151 116 / 32%), transparent 46%),
+    repeating-linear-gradient(112deg, rgb(255 255 255 / .018) 0 1px, transparent 1px 8px),
+    linear-gradient(145deg, #12614e 0%, #0a473b 55%, #063129 100%);
+  box-shadow:
+    0 0 0 .16rem #9c713c,
+    0 0 0 .28rem #120d09,
+    inset 0 0 0 .08rem rgb(245 205 122 / 42%),
+    inset 0 0 5rem rgb(0 0 0 / 34%),
+    0 1.6rem 3rem rgb(0 0 0 / 52%);
+  content: '';
+}
+
+.credit-holdem-table::after {
+  position: absolute;
+  z-index: 1;
+  top: 51%;
+  left: 50%;
+  color: rgb(235 211 148 / 8%);
+  content: 'FF';
+  font: 800 clamp(3rem, 8vw, 7.5rem)/1 Georgia, serif;
+  letter-spacing: -.08em;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.credit-holdem-table-meta {
+  position: absolute;
+  z-index: 4;
+  top: clamp(1.8rem, 4vw, 3.35rem);
+  left: clamp(2.5rem, 7vw, 6rem);
+  display: grid;
+  gap: .16rem;
+  color: #d5e4df;
+  font-size: .58rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-table-meta span { color: #78988e; font-size: .48rem; font-weight: 850; letter-spacing: .14em; }
+.credit-holdem-table-meta strong { font-size: .68rem; font-variant-numeric: tabular-nums; }
+
+.credit-holdem-primary-info {
+  position: absolute;
+  z-index: 4;
+  top: 33%;
+  left: 50%;
+  display: block;
+  transform: translateX(-50%);
+}
+
+.credit-holdem-primary-info > div {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: .45rem;
+  padding: .3rem .7rem;
+  border: 1px solid rgb(255 237 178 / 26%);
+  border-radius: 999px;
+  background: rgb(2 20 16 / 82%);
+  box-shadow: 0 .3rem .7rem rgb(0 0 0 / 26%);
+}
+
+.credit-holdem-primary-info span { color: #82a99d; font-size: .46rem; }
+.credit-holdem-primary-info strong { color: #fff0b8; font: 800 .82rem/1 ui-sans-serif, system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+
+.credit-holdem-community {
+  position: absolute;
+  z-index: 4;
+  top: 42%;
+  left: 50%;
+  display: flex;
+  min-height: 0;
+  gap: clamp(.16rem, .42vw, .34rem);
+  transform: translate(-50%, -50%);
+}
+
+.credit-holdem-card-empty {
+  width: var(--ff-card-width);
+  border-color: rgb(222 241 234 / 12%);
+  border-radius: .42rem;
+  background: rgb(1 28 22 / 15%);
+  color: rgb(223 242 235 / 8%);
+}
+
+.credit-holdem-seat-ring { position: absolute; z-index: 3; inset: 0; min-height: 0; }
+
+.credit-holdem-player,
+.credit-holdem-open-seat {
+  position: absolute;
+  box-sizing: border-box;
+  width: clamp(9rem, 14.5vw, 13rem);
+  min-width: 0;
+}
+
+.credit-holdem-player {
+  display: grid;
+  gap: 0;
+  padding: .36rem .45rem .3rem;
+  border: 1px solid rgb(204 231 221 / 18%);
+  border-radius: .62rem;
+  background: linear-gradient(180deg, rgb(5 27 23 / 96%), rgb(2 16 14 / 98%));
+  box-shadow: 0 .65rem 1.3rem rgb(0 0 0 / 38%);
+  transition: border-color 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.credit-holdem-player.seat-pos-0,
+.credit-holdem-open-seat.seat-pos-0 { z-index: 5; bottom: 4%; left: 50%; transform: translateX(-50%); }
+.credit-holdem-player.seat-pos-1,
+.credit-holdem-open-seat.seat-pos-1 { bottom: 22%; left: 3.2%; }
+.credit-holdem-player.seat-pos-2,
+.credit-holdem-open-seat.seat-pos-2 { top: 13%; left: 14%; }
+.credit-holdem-player.seat-pos-3,
+.credit-holdem-open-seat.seat-pos-3 { top: 13%; right: 14%; }
+.credit-holdem-player.seat-pos-4,
+.credit-holdem-open-seat.seat-pos-4 { right: 3.2%; bottom: 22%; }
+
+.credit-holdem-player.is-current {
+  width: clamp(10rem, 16vw, 14.5rem);
+  border-color: rgb(102 218 180 / 62%);
+  background: linear-gradient(180deg, rgb(10 62 50 / 98%), rgb(3 32 27 / 98%));
+  box-shadow: 0 0 0 .08rem rgb(69 173 141 / 28%), 0 .75rem 1.5rem rgb(0 0 0 / 48%);
+}
+
+.credit-holdem-player.is-active {
+  border-color: #e9c865;
+  box-shadow: 0 0 0 .1rem rgb(244 205 94 / 22%), 0 0 1.35rem rgb(244 205 94 / 24%);
+}
+
+.credit-holdem-player.is-winner { border-color: #fff1ad; }
+
+.credit-holdem-seat-cards {
+  position: absolute;
+  z-index: -1;
+  bottom: calc(100% - .18rem);
+  left: 50%;
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  filter: drop-shadow(0 .45rem .35rem rgb(0 0 0 / 32%));
+  transform: translateX(-50%);
+}
+
+.credit-holdem-seat-cards .ff-card-slot { width: calc(var(--ff-card-width) * .64); margin-right: -.18rem; }
+.credit-holdem-player.is-current .credit-holdem-seat-cards .ff-card-slot { width: calc(var(--ff-card-width) * .78); }
+.credit-holdem-player.seat-pos-2 .credit-holdem-seat-cards,
+.credit-holdem-player.seat-pos-3 .credit-holdem-seat-cards {
+  top: calc(100% - .18rem);
+  bottom: auto;
+}
+.credit-holdem-player.seat-pos-2 .credit-holdem-action-state,
+.credit-holdem-player.seat-pos-3 .credit-holdem-action-state { top: calc(100% + var(--ff-card-width) * .92); }
+
+.credit-holdem-player__name {
+  display: grid;
+  min-height: 2.2rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .42rem;
+}
+
+.credit-holdem-player__name > span {
+  width: 1.8rem;
+  background: linear-gradient(145deg, #276c5b, #123b33);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 9%);
+  color: #ffe9a2;
+  font-size: .58rem;
+}
+
+.credit-holdem-player__name strong { color: #f6faf8; font-size: clamp(.68rem, 1vw, .83rem); font-weight: 850; }
+.credit-holdem-player__name small { color: #a9c3ba; font-size: .61rem; font-variant-numeric: tabular-nums; }
+.credit-holdem-player__name i { width: 1.25rem; background: #f2d377; font-size: .52rem; }
+
+.credit-holdem-action-state {
+  position: absolute;
+  top: calc(100% + .26rem);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+  color: #f7df91;
+  font-size: .52rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.credit-holdem-action-state strong {
+  padding: .17rem .4rem;
+  background: rgb(0 15 12 / 82%);
+  color: #a9dccb;
+  font-weight: 850;
+}
+
+.credit-holdem-action-state span {
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  padding: .16rem .38rem;
+  border-radius: 999px;
+  background: #c8502f;
+  color: white;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.credit-holdem-action-state span::before { width: .38rem; aspect-ratio: 1; border-radius: 50%; background: #f6d98e; content: ''; }
+
+.credit-holdem-open-seat {
+  display: grid;
+  height: 2.8rem;
+  place-items: center;
+  border: 1px dashed rgb(210 231 223 / 16%);
+  border-radius: .65rem;
+  background: rgb(0 19 15 / 28%);
+  color: rgb(202 225 216 / 42%);
+  font-size: .55rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.credit-holdem-win {
+  inset: auto 0 calc(100% + calc(var(--ff-card-width) * .95));
+  color: #fff0a8;
+  font: 900 1rem/1 ui-sans-serif, system-ui, sans-serif;
+  text-shadow: 0 0 1rem #f0bd25;
+}
+
+.credit-holdem-actions,
+.credit-holdem-result__controls {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  min-height: 4.65rem;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .48rem;
+  padding: .65rem .85rem;
+  border-top: 1px solid rgb(215 235 227 / 10%);
+  background: linear-gradient(180deg, rgb(5 27 23 / 98%), rgb(2 13 11 / 99%));
+}
+
+.credit-holdem-actions button,
+.credit-holdem-result__controls button,
+.credit-holdem-lobby button {
+  min-height: 2.75rem;
+  border: 1px solid rgb(214 234 226 / 14%);
+  border-radius: .52rem;
+  background: linear-gradient(180deg, #31534b, #1a342e);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 .3rem .65rem rgb(0 0 0 / 22%);
+  color: #f5faf8;
+  font-size: .73rem;
+  font-weight: 900;
+  letter-spacing: .015em;
+}
+
+.credit-holdem-actions .credit-holdem-action { width: clamp(7rem, 11vw, 10rem); }
+.credit-holdem-actions .credit-holdem-action small { display: block; color: inherit; font-size: .56rem; font-weight: 700; }
+.credit-holdem-action--fold { background: linear-gradient(180deg, #4c5351, #292f2d) !important; }
+.credit-holdem-action--call { border-color: rgb(85 199 160 / 38%) !important; background: linear-gradient(180deg, #238b6e, #12604d) !important; }
+.credit-holdem-primary,
+.credit-holdem-action--raise { border-color: rgb(246 195 84 / 45%) !important; background: linear-gradient(180deg, #e49e31, #b8611e) !important; color: #1c1306 !important; }
+
+.credit-holdem-leave {
+  order: -2;
+  min-height: 2.15rem !important;
+  margin-right: auto;
+  padding-inline: .7rem !important;
+  border-color: rgb(214 234 226 / 10%) !important;
+  background: transparent !important;
+  color: #91aaa2 !important;
+  font-size: .58rem !important;
+}
+
+.credit-holdem-raise-control {
+  width: min(28rem, 42vw);
+  grid-template-columns: minmax(7rem, .7fr) minmax(8rem, 1fr);
+  align-items: center;
+  gap: .28rem .6rem;
+  padding: .35rem .5rem;
+  border-color: rgb(230 201 117 / 20%);
+  background: rgb(4 26 22 / 82%);
+}
+
+.credit-holdem-raise-control > label { grid-column: 1; }
+.credit-holdem-raise-control > input { grid-column: 1; }
+.credit-holdem-raise-control > div:not(.credit-holdem-raise-shortcuts) { grid-column: 2; grid-row: 1 / span 2; }
+.credit-holdem-raise-shortcuts { grid-column: 1 / -1; }
+.credit-holdem-raise-shortcuts button { min-height: 1.7rem !important; padding: .25rem .5rem !important; color: #b9ccc6; font-size: .54rem !important; }
+
+.credit-holdem-turn-clock {
+  position: static;
+  order: -1;
+  min-width: 3rem;
+  justify-items: center;
+  border-color: rgb(238 199 91 / 32%);
+  border-radius: 999px;
+  background: rgb(5 24 20 / 94%);
+}
+
+.credit-holdem-turn-clock span { font-size: .42rem; }
+.credit-holdem-turn-clock strong { font-size: .9rem; font-variant-numeric: tabular-nums; }
+
+.credit-holdem-hand-history {
+  position: absolute;
+  z-index: 9;
+  top: .85rem;
+  right: .9rem;
+  width: min(17rem, 34vw);
+  margin: 0;
+  padding: .35rem .5rem;
+  border-color: rgb(221 239 232 / 12%);
+  background: rgb(2 18 15 / 84%);
+  backdrop-filter: blur(.5rem);
+}
+
+.credit-holdem-hand-history summary { color: #91aba3; font-size: .52rem; text-align: right; }
+
+.credit-holdem-result__outcome {
+  position: absolute;
+  z-index: 10;
+  top: 49%;
+  left: 50%;
+  margin: 0;
+  color: #edf7f3;
+  pointer-events: none;
+  text-align: center;
+  text-shadow: 0 .22rem .5rem rgb(0 0 0 / 80%);
+  transform: translate(-50%, -50%);
+}
+
+.credit-holdem-result__outcome strong { font-size: clamp(1.35rem, 3vw, 2.5rem); font-weight: 950; }
+.credit-holdem-result__outcome.is-win { color: #ffe17d; text-shadow: 0 0 1.5rem rgb(246 194 55 / 62%); }
+
+.credit-holdem-lobby {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  gap: .8rem;
+  padding: clamp(1rem, 3vw, 2.2rem);
+  overflow: auto;
+  border: 0;
+  border-radius: 1.2rem;
+  background:
+    radial-gradient(ellipse at 50% 42%, rgb(25 112 84 / 30%), transparent 29rem),
+    linear-gradient(155deg, #08231d, #020b09 72%);
+  box-shadow: inset 0 0 0 1px rgb(221 239 232 / 10%);
+}
+
+.credit-holdem-lobby h1 { font: 800 clamp(2rem, 5vw, 3.5rem)/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.045em; }
+.credit-holdem-rule-grid label { border-radius: .65rem; background: linear-gradient(180deg, rgb(15 57 48 / 92%), rgb(5 31 26 / 96%)); }
+.credit-holdem-rule-grid label.is-selected { border-color: #e6bd57; box-shadow: 0 0 0 1px rgb(230 189 87 / 22%), 0 .7rem 1.5rem rgb(0 0 0 / 25%); }
+.credit-holdem-rule-grid strong { font: 850 .88rem/1.1 ui-sans-serif, system-ui, sans-serif; }
+
+.credit-holdem-finding__mark {
+  display: grid;
+  width: 5.4rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 1px solid rgb(234 202 117 / 30%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #1a6653, #082c25 70%);
+  box-shadow: 0 0 0 .5rem rgb(22 108 84 / 10%), 0 0 2.5rem rgb(53 185 143 / 17%);
+  color: #f2d778;
+  font: 2rem/1 Georgia, serif;
+  animation: credit-holdem-find 1.6s ease-in-out infinite;
+}
+
+.credit-holdem-finding h1 { font-size: clamp(1.6rem, 4vw, 2.6rem); }
+
+@keyframes credit-holdem-find {
+  50% { box-shadow: 0 0 0 .8rem rgb(22 108 84 / 5%), 0 0 3.5rem rgb(53 185 143 / 28%); transform: scale(1.035); }
+}
+
+.credit-holdem-preview { width: 100%; height: 100%; min-height: 0; }
+.credit-holdem-preview .credit-holdem-main { width: 100%; height: 100%; padding: .65rem; }
+.credit-holdem-preview .credit-holdem-table { min-height: 100%; border-radius: 1.35rem; }
+
+@media (max-width: 820px) {
+  .credit-holdem-page { height: 100%; min-height: 0; overflow: hidden; }
+  .credit-holdem-page .credit-holdem-main { height: 100%; min-height: 0; padding: .25rem; }
+  .credit-holdem-match,
+  .credit-holdem-result { height: 100%; min-height: 0; }
+  .credit-holdem-table { --ff-card-width: clamp(2.25rem, 9vw, 3.3rem); min-height: 0; }
+  .credit-holdem-player,
+  .credit-holdem-open-seat { width: min(9.4rem, 39vw); }
+  .credit-holdem-player.is-current { width: min(10.4rem, 44vw); }
+  .credit-holdem-player.seat-pos-1,
+  .credit-holdem-open-seat.seat-pos-1 { bottom: 24%; left: 1%; }
+  .credit-holdem-player.seat-pos-2,
+  .credit-holdem-open-seat.seat-pos-2 { top: 15%; left: 3%; }
+  .credit-holdem-player.seat-pos-3,
+  .credit-holdem-open-seat.seat-pos-3 { top: 15%; right: 3%; }
+  .credit-holdem-player.seat-pos-4,
+  .credit-holdem-open-seat.seat-pos-4 { right: 1%; bottom: 24%; }
+  .credit-holdem-community { top: 43%; }
+  .credit-holdem-primary-info { top: 34%; }
+  .credit-holdem-table-meta { top: 1.5rem; left: 2rem; }
+  .credit-holdem-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .credit-holdem-actions .credit-holdem-action { width: auto; }
+  .credit-holdem-raise-control { width: auto; grid-column: 1 / -1; grid-template-columns: 1fr; }
+  .credit-holdem-raise-control > label,
+  .credit-holdem-raise-control > input,
+  .credit-holdem-raise-control > div:not(.credit-holdem-raise-shortcuts),
+  .credit-holdem-raise-shortcuts { grid-column: 1; grid-row: auto; }
+  .credit-holdem-leave { grid-column: 1 / -1; margin-right: 0; }
+  .credit-holdem-turn-clock { order: 0; }
+  .credit-holdem-hand-history { width: auto; max-width: 12rem; }
+}
+
+@media (max-height: 700px) and (min-width: 821px) {
+  .credit-holdem-table { --ff-card-width: clamp(2.35rem, 5.9dvh, 3.35rem); }
+  .credit-holdem-player,
+  .credit-holdem-open-seat { width: clamp(8.5rem, 13vw, 11rem); }
+  .credit-holdem-player.is-current { width: clamp(9.5rem, 14vw, 12rem); }
+  .credit-holdem-player.seat-pos-2,
+  .credit-holdem-open-seat.seat-pos-2,
+  .credit-holdem-player.seat-pos-3,
+  .credit-holdem-open-seat.seat-pos-3 { top: 15%; }
+  .credit-holdem-actions,
+  .credit-holdem-result__controls { min-height: 4rem; padding-block: .42rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .credit-holdem-finding__mark { animation: none; }
+}
+
 /* Heads-up practice table viewport contract. The felt consumes the flexible
    row; secondary rules/history open above it instead of increasing page
    height. Credit Hold'em has its own constrained shell above. */

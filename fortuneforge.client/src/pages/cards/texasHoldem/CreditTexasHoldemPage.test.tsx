@@ -16,10 +16,11 @@ describe('credit Texas Hold’em v2 composition', () => {
 
     expect(markup).toContain('seat-pos-0 is-current')
     expect(markup).toContain('seat-pos-2')
-    expect(markup).toContain('Round R1.00')
+    expect(markup).toContain('R1.00')
+    expect(markup).toContain('credit-holdem-open-seat seat-pos-1')
     expect(markup).toContain('raise')
     expect(markup).toContain('Pot')
-    expect(markup).toContain('Current bet')
+    expect(markup).toContain('R0.50 / R1.00')
     expect(markup).not.toMatch(/buy.?in|refund|claim|skill|seed|actor/i)
   })
 

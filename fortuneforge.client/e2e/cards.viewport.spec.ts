@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 const previews = [
   { name: 'Blackjack', path: '/src/pages/cards/blackjack/preview.html', actions: '.blackjack-actions' },
-  { name: 'Texas Hold’em', path: '/src/pages/cards/texasHoldem/preview.html', actions: '.holdem-controls' },
+  { name: 'Texas Hold’em', path: '/src/pages/cards/texasHoldem/preview.html?mode=credit', actions: '.credit-holdem-actions' },
   { name: 'Solitaire', path: '/src/pages/cards/solitaire/preview.html', actions: '.solitaire-match__controls' },
 ] as const
 

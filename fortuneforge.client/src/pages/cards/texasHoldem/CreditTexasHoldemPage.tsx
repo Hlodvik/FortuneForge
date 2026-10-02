@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import { InGameShell } from '../../../components/InGameShell'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
@@ -147,9 +146,8 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
       <main className="credit-holdem-main">
         {session.kind === 'idle' && (
           <section className="credit-holdem-lobby">
-            <span className="credit-holdem-kicker">Choose a table · 3–5 seats</span>
+            <span className="credit-holdem-kicker">Cash tables · 5 seats</span>
             <h1>Texas Hold’em</h1>
-            <p>Joining is free. Every table uses standard automatic blinds; choose the stakes and the most credits that can sit on the felt.</p>
             <div className="credit-holdem-rule-grid" role="radiogroup" aria-label="Table stakes">
               {tableRules.map((rule) => <label className={rule.id === selectedRule.id ? 'is-selected' : ''} key={rule.id}>
                 <input type="radio" name="holdem-table" value={rule.id} checked={rule.id === selectedRule.id}
@@ -218,10 +216,9 @@ function QueueView({ session, busy, leave }: {
   session: CreditHoldemQueueSession; busy: boolean; leave: () => void
 }) {
   return (
-    <section className="credit-holdem-lobby">
-      <span className="credit-holdem-kicker">Finding your table</span>
-      <h1>Seat {session.position} in line</h1>
-      <p>No credits are committed while you wait. The dealer fills open seats automatically and starts the hand as soon as the table is ready.</p>
+    <section className="credit-holdem-lobby credit-holdem-finding">
+      <div className="credit-holdem-finding__mark" aria-hidden="true"><span>♠</span></div>
+      <h1>Finding table</h1>
       <div className="credit-holdem-queue-seats">
         {Array.from({ length: 5 }, (_, index) => {
           const seat = session.players[index]
@@ -231,7 +228,7 @@ function QueueView({ session, busy, leave }: {
           </div>
         })}
       </div>
-      <button type="button" disabled={busy} onClick={leave}>Leave queue</button>
+      <button type="button" disabled={busy} onClick={leave}>Cancel</button>
     </section>
   )
 }
@@ -245,28 +242,19 @@ function ResultView({ session, busy, next, leave }: {
   const collected = session.humanPayoutCredits
   const handName = session.finalTable.seats.find((seat) => seat.isCurrentPlayer)?.handName
   const sharedPot = !wonHand && collected > 0
+  const outcome = wonHand
+    ? `+R${chips(collected)}`
+    : sharedPot
+      ? `R${chips(collected)} returned`
+      : handName ?? 'Hand complete'
   return (
     <section className="credit-holdem-result">
       <CreditHoldemTableSurface table={session.finalTable} revealDelay={130} />
-      <GameOutcomeBanner
-        className="credit-holdem-result__outcome"
-        label={wonHand ? 'Hand won' : sharedPot ? 'Hand settled' : 'Hand complete'}
-        title={wonHand
-          ? `You took R${chips(collected)}`
-          : sharedPot
-            ? `R${chips(collected)} returned to your stack`
-            : 'The dealer has settled this hand'}
-        detail={handName
-          ? `Your final hand: ${handName}.`
-          : 'The final table shows every revealed hand and payout.'}
-        nextAction="Deal the next hand, or leave the table."
-        significance={wonHand && collected >= Math.max(1, session.humanCommittedCredits * 2)
-          ? 'major'
-          : 'standard'}
-        tone={wonHand ? 'win' : sharedPot ? 'neutral' : 'loss'}
-      />
+      <div className={`credit-holdem-result__outcome${wonHand ? ' is-win' : ''}`} role="status">
+        <strong>{outcome}</strong>
+      </div>
       <div className="credit-holdem-result__controls">
-        <button className="credit-holdem-primary" type="button" disabled={busy} onClick={next}>Deal next hand</button>
+        <button className="credit-holdem-primary" type="button" disabled={busy} onClick={next}>Next hand</button>
         <button type="button" disabled={busy} onClick={leave}>Leave table</button>
       </div>
     </section>
@@ -298,11 +286,11 @@ function TableView({ table, version, busy, act, leave }: {
   return (
     <section className="credit-holdem-match" data-version={version}>
       <CreditHoldemTableSurface table={table} revealDelay={260} />
-      {table.status === 'active' && <div className="credit-holdem-turn-clock" role="timer"><span>{viewer?.seat === table.activeSeat ? 'Your action' : 'Active player'}</span><strong>{secondsRemaining}s</strong></div>}
       <div className="credit-holdem-actions">
-        {table.legalActions.includes('fold') && <button type="button" disabled={busy} onClick={() => act('fold')}>Fold</button>}
-        {table.legalActions.includes('check') && <button type="button" disabled={busy} onClick={() => act('check')}>Check</button>}
-        {table.legalActions.includes('call') && <button type="button" disabled={busy} onClick={() => act('call')}>Call R{chips(callAmount)}</button>}
+        {table.status === 'active' && viewer?.seat === table.activeSeat && <div className="credit-holdem-turn-clock" role="timer"><span>Action</span><strong>{secondsRemaining}</strong></div>}
+        {table.legalActions.includes('fold') && <button className="credit-holdem-action credit-holdem-action--fold" type="button" disabled={busy} onClick={() => act('fold')}>Fold</button>}
+        {table.legalActions.includes('check') && <button className="credit-holdem-action credit-holdem-action--call" type="button" disabled={busy} onClick={() => act('check')}>Check</button>}
+        {table.legalActions.includes('call') && <button className="credit-holdem-action credit-holdem-action--call" type="button" disabled={busy} onClick={() => act('call')}>Call <small>R{chips(callAmount)}</small></button>}
         {table.legalActions.includes('raise') && <div className="credit-holdem-raise-control">
           <label><span>Raise to</span><strong>R{chips(raiseTo)}</strong></label>
           <input type="range" min={defaultRaise} max={table.maximumRaiseTo} step={raiseStep} value={raiseTo}
@@ -310,16 +298,16 @@ function TableView({ table, version, busy, act, leave }: {
           <div>
             <button type="button" disabled={busy || raiseTo <= defaultRaise}
               onClick={() => changeRaise(raiseTo - raiseStep)}>−</button>
-            <button className="credit-holdem-primary" type="button" disabled={busy}
+            <button className="credit-holdem-primary credit-holdem-action--raise" type="button" disabled={busy}
               onClick={() => act('raise', raiseTo)}>Raise R{chips(raiseTo)}</button>
             <button type="button" disabled={busy || raiseTo >= table.maximumRaiseTo}
               onClick={() => changeRaise(raiseTo + raiseStep)}>+</button>
           </div>
           <div className="credit-holdem-raise-shortcuts" aria-label="Raise shortcuts"><button type="button" onClick={() => changeRaise(halfPot)}>½ pot</button><button type="button" onClick={() => changeRaise(fullPot)}>Pot</button><button type="button" onClick={() => changeRaise(table.maximumRaiseTo)}>All in</button></div>
         </div>}
-        <button className="credit-holdem-leave" type="button" disabled={busy} onClick={leave}>Leave after hand</button>
+        <button className="credit-holdem-leave" type="button" disabled={busy} onClick={leave}>Leave</button>
       </div>
-      <details className="credit-holdem-hand-history"><summary>Hand action trail · {table.actionLog?.length ?? 0}</summary><ol>{table.actionLog?.map(entry => <li key={entry.sequence}><b>{entry.displayName}</b><span>{entry.street} · {entry.action}{entry.amount > 0 ? ` R${chips(entry.amount)}` : ''}</span></li>) ?? table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)} committed{seat.status === 'all-in' ? ' · eligible pots tracked separately' : ''}</span></li>)}</ol>{table.seats.some(seat => seat.status === 'all-in') && <p>All-in players can win only the main/side-pot layers their committed chips cover.</p>}</details>
+      <details className="credit-holdem-hand-history"><summary>History</summary><ol>{table.actionLog?.map(entry => <li key={entry.sequence}><b>{entry.displayName}</b><span>{entry.action}{entry.amount > 0 ? ` · R${chips(entry.amount)}` : ''}</span></li>) ?? table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)}</span></li>)}</ol></details>
     </section>
   )
 }
@@ -335,11 +323,15 @@ export function CreditHoldemTableSurface({ table, revealDelay }: { table: Credit
   }, [revealDelay, table.communityCards.length, visibleCards])
 
   const orderedSeats = useMemo(() => arrangeSeats(table.seats), [table.seats])
+  const occupiedPositions = new Set(orderedSeats.map(({ position }) => position))
   return (
     <div className="credit-holdem-table" aria-label="Texas Hold’em table">
+      <div className="credit-holdem-table-meta">
+        <span>{table.tableRule?.name ?? 'Standard'}</span>
+        <strong>R{(table.tableRule?.smallBlindCredits ?? 0.5).toFixed(2)} / R{(table.tableRule?.bigBlindCredits ?? 1).toFixed(2)}</strong>
+      </div>
       <div className="credit-holdem-primary-info">
         <div><span>Pot</span><strong>R{chips(table.pot)}</strong></div>
-        <div><span>Current bet</span><strong>R{chips(table.currentBet)}</strong></div>
       </div>
       <div className="credit-holdem-community" aria-label="Community cards">
         {Array.from({ length: 5 }, (_, index) => (
@@ -359,6 +351,9 @@ export function CreditHoldemTableSurface({ table, revealDelay }: { table: Credit
             winningAmount={table.winningSeatIds.includes(seat.seatId) ? table.winningAmount : 0}
           />
         ))}
+        {Array.from({ length: 5 }, (_, position) => position)
+          .filter((position) => !occupiedPositions.has(position))
+          .map((position) => <div className={`credit-holdem-open-seat seat-pos-${position}`} key={position}><span>Open</span></div>)}
       </div>
     </div>
   )
@@ -370,17 +365,17 @@ function SeatView({ seat, position, dealer, active, winner, winningAmount }: {
 }) {
   return (
     <article className={`credit-holdem-player seat-pos-${position}${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winner ? ' is-winner' : ''}`}>
+      <div className="credit-holdem-seat-cards">
+        {seat.holeCards.map((card, index) => <CardSlot card={card} index={index} scope={seat.seatId} key={index} />)}
+      </div>
       <div className="credit-holdem-player__name">
         <span>{initials(seat.displayName)}</span>
         <div><strong>{seat.displayName}</strong><small>R{chips(seat.stack)}</small></div>
         {dealer && <i title="Dealer">D</i>}
       </div>
-      <div className="credit-holdem-seat-cards">
-        {seat.holeCards.map((card, index) => <CardSlot card={card} index={index} scope={seat.seatId} key={index} />)}
-      </div>
       <div className="credit-holdem-action-state">
         <strong>{seat.lastAction ?? (active ? 'Thinking…' : seat.status)}</strong>
-        <span>Round R{chips(seat.committedRound)}</span>
+        {seat.committedRound > 0 && <span>R{chips(seat.committedRound)}</span>}
       </div>
       {winner && <div className="credit-holdem-win">+R{chips(winningAmount)}</div>}
     </article>
@@ -427,9 +422,11 @@ function legacyRule(status: CreditHoldemStatus): CreditHoldemTableRule {
 
 /** Deterministic actual-table fixture for the 3:2 library thumbnail capture. */
 export function CreditTexasHoldemPreview() {
-  return <div className="credit-holdem-page credit-holdem-preview"><main className="credit-holdem-main">
-    <CreditHoldemTableSurface table={previewTable} revealDelay={0} />
-  </main></div>
+  return <InGameShell title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body">
+    <div className="credit-holdem-page credit-holdem-preview"><main className="credit-holdem-main">
+      <TableView table={previewTable} version={1} busy={false} act={() => undefined} leave={() => undefined} />
+    </main></div>
+  </InGameShell>
 }
 
 const previewCards = (cards: Array<[string, 'clubs' | 'diamonds' | 'hearts' | 'spades']>): CreditHoldemCard[] =>
@@ -448,5 +445,5 @@ const previewTable: CreditHoldemTable = {
   seats: [previewSeat(0, 'RiverMoss', true), previewSeat(1, 'NightOwl84'), previewSeat(2, 'LuckyNova'), previewSeat(3, 'CardinalSky')],
   legalActions: ['fold', 'call', 'raise'], winningSeatIds: [], winningAmount: 0,
   startedAtUtc: '2026-08-16T00:00:00Z', matchDeadlineAtUtc: '2026-08-16T01:00:00Z',
-  actionDeadlineAtUtc: '2026-08-16T00:00:25Z', remainingActionMilliseconds: 25000,
+  actionDeadlineAtUtc: null, remainingActionMilliseconds: 25000,
 }

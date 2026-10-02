@@ -1,0 +1,80 @@
+<Solution>
+  <Folder Name="/games/Blackjack/">
+    <Project Path="Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
+  </Folder>
+  <Folder Name="/games/Baccarat/">
+    <Project Path="Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
+    <Project Path="Baccarat/samples/FortuneForge.Games.Baccarat.Web/FortuneForge.Games.Baccarat.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/CasinoWar/">
+    <Project Path="CasinoWar/src/FortuneForge.Games.CasinoWar/FortuneForge.Games.CasinoWar.csproj" />
+    <Project Path="CasinoWar/samples/FortuneForge.Games.CasinoWar.Web/FortuneForge.Games.CasinoWar.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/SicBo/">
+    <Project Path="SicBo/src/FortuneForge.Games.SicBo/FortuneForge.Games.SicBo.csproj" />
+    <Project Path="SicBo/samples/FortuneForge.Games.SicBo.Web/FortuneForge.Games.SicBo.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Craps/">
+    <Project Path="Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
+    <Project Path="Craps/samples/FortuneForge.Games.Craps.Console/FortuneForge.Games.Craps.Console.csproj" />
+    <Project Path="Craps/samples/FortuneForge.Games.Craps.Web/FortuneForge.Games.Craps.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Hearts/">
+    <Project Path="Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
+    <Project Path="Hearts/samples/FortuneForge.Games.Hearts.Web/FortuneForge.Games.Hearts.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/LiarsDice/">
+    <Project Path="LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
+    <Project Path="LiarsDice/samples/FortuneForge.Games.LiarsDice.Web/FortuneForge.Games.LiarsDice.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Roulette/">
+    <Project Path="Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
+    <Project Path="Roulette/samples/FortuneForge.Games.Roulette.Web/FortuneForge.Games.Roulette.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Solitaire/">
+    <Project Path="Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj" />
+  </Folder>
+  <Folder Name="/games/TexasHoldem/">
+    <Project Path="TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
+  </Folder>
+  <Folder Name="/games/TwentyFortyEight/">
+    <Project Path="TwentyFortyEight/src/FortuneForge.Games.TwentyFortyEight/FortuneForge.Games.TwentyFortyEight.csproj" />
+    <Project Path="TwentyFortyEight/samples/FortuneForge.Games.TwentyFortyEight.Web/FortuneForge.Games.TwentyFortyEight.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/DropMerge/">
+    <Project Path="DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
+    <Project Path="DropMerge/samples/FortuneForge.Games.DropMerge.Web/FortuneForge.Games.DropMerge.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Flappy/">
+    <Project Path="Flappy/samples/FortuneForge.Games.Flappy.Web/FortuneForge.Games.Flappy.Web.csproj" />
+    <Project Path="Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
+  </Folder>
+  <Folder Name="/games/HorseFlight/">
+    <Project Path="HorseFlight/src/FortuneForge.Games.HorseFlight/FortuneForge.Games.HorseFlight.csproj" />
+  </Folder>
+  <Folder Name="/games/Snake/">
+    <Project Path="Snake/src/FortuneForge.Games.Snake/FortuneForge.Games.Snake.csproj" />
+    <Project Path="Snake/samples/FortuneForge.Games.Snake.Web/FortuneForge.Games.Snake.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Asteroids/">
+    <Project Path="Asteroids/src/FortuneForge.Games.Asteroids/FortuneForge.Games.Asteroids.csproj" />
+    <Project Path="Asteroids/samples/FortuneForge.Games.Asteroids.Web/FortuneForge.Games.Asteroids.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/VideoPoker/">
+    <Project Path="VideoPoker/src/FortuneForge.Games.VideoPoker/FortuneForge.Games.VideoPoker.csproj" />
+    <Project Path="VideoPoker/samples/FortuneForge.Games.VideoPoker.Web/FortuneForge.Games.VideoPoker.Web.csproj" />
+  </Folder>
+  <Folder Name="/games/Keno/">
+    <Project Path="Keno/src/FortuneForge.Games.Keno/FortuneForge.Games.Keno.csproj" />
+    <Project Path="Keno/samples/FortuneForge.Games.Keno.Web/FortuneForge.Games.Keno.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <Project Path="shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+    <Project Path="shared/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+    <Project Path="shared/FortuneForge.Games.TrickTaking/FortuneForge.Games.TrickTaking.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FortuneForge.Games.Tests/FortuneForge.Games.Tests.csproj" />
+  </Folder>
+</Solution>

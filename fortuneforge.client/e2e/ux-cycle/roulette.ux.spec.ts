@@ -1,8 +1,8 @@
 import { mkdir, copyFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
-import type { RouletteBet, RouletteRound, RouletteStatus } from '../../../game-packages/games/Roulette/client/FortuneForge.Games.Roulette.Client/src/contracts'
-import { coveredPockets, legalSelection } from '../../../game-packages/games/Roulette/client/FortuneForge.Games.Roulette.Client/src/roulettePresentation'
+import type { RouletteBet, RouletteRound, RouletteStatus } from '../../../games/Roulette/client/FortuneForge.Games.Roulette.Client/src/contracts'
+import { coveredPockets, legalSelection } from '../../../games/Roulette/client/FortuneForge.Games.Roulette.Client/src/roulettePresentation'
 
 const status: RouletteStatus = {available:true,minimumStake:1,maximumStake:100,stakeIncrement:1,startingBalance:1000,mode:'free-play-single-zero'}
 const player='roulette-ux-player'

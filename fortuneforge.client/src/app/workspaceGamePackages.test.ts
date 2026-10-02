@@ -30,7 +30,7 @@ describe('workspace game packages', () => {
 
     const workspaces = new Map<string, WorkspacePackage>()
     for (const workspacePath of rootPackage.workspaces ?? []) {
-      if (!workspacePath.startsWith('game-packages/')) continue
+      if (!workspacePath.startsWith('games/')) continue
 
       const packageJsonUrl = new URL(`${workspacePath}/package.json`, rootPackageUrl)
       expect(existsSync(fileURLToPath(packageJsonUrl)), `${workspacePath} is missing`).toBe(true)

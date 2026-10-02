@@ -6,8 +6,8 @@
 - `FortuneForge.Server/Accounts` owns authentication, profiles, account security, sessions, slot balances, and Firestore account persistence.
 - `FortuneForge.Server/Payments` owns checkout and withdrawal workflows, MerchantGateway integration, signed webhooks, reconciliation, and Firestore payment persistence.
 - `FortuneForge.Server/Slots` owns game definitions, reel generation, combination evaluation, payouts, bonuses, and spin orchestration.
-- `FortuneForge.Server/Cards` owns the public card API, authentication, Firestore adapters, matchmaking, and execution of credit settlement. Reusable rules, state machines, competition logic, and bot decisions live in source projects under `game-packages` and are referenced directly by the server.
-- `game-packages` contains the independently testable and packable .NET game engines, shared game primitives, client npm workspaces, package tests, and package catalog. It is source owned by this repository, not a copied binary feed.
+- `FortuneForge.Server/Cards` owns the public card API, authentication, Firestore adapters, matchmaking, and execution of credit settlement. Reusable rules, state machines, competition logic, and bot decisions live in source projects under `games` and are referenced directly by the server.
+- `games` contains the independently testable and packable .NET game engines, shared game primitives, client npm workspaces, package tests, and package catalog. It is source owned by this repository, not a copied binary feed.
 - `FortuneForge.Server.Tests` mirrors the payment and slot feature boundaries.
 - `fortuneforge.client/src/app` owns browser routing and shell composition; `features` owns account, payment, game-library, and slot workflows; `components` contains cross-feature presentation.
 - `tools/FortuneForge.SlotMath` is the deterministic slot-math analysis console, while `scripts` contains asset and deployment automation.
@@ -34,7 +34,7 @@ To verify the complete game-package boundary:
 npm run verify:game-source
 npm run games:check
 npm run games:test
-dotnet test game-packages/FortuneForge.Games.slnx --configuration Release
+dotnet test games/FortuneForge.Games.slnx --configuration Release
 ```
 
 Open the Vite address shown by `local:web` (normally `http://localhost:5173`). Stop the Firestore emulator to discard the local database. To reset it while it is running, use Firebase's emulator UI/API or stop it and remove its local emulator data if you have configured export storage.

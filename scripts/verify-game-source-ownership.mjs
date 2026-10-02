@@ -35,7 +35,7 @@ const rootPackage = JSON.parse(read('package.json'))
 const clientPackage = JSON.parse(read('fortuneforge.client/package.json'))
 const workspacePackages = new Map()
 for (const workspace of rootPackage.workspaces ?? []) {
-  if (!workspace.startsWith('game-packages/')) continue
+  if (!workspace.startsWith('games/')) continue
   const packagePath = resolve(root, workspace, 'package.json')
   if (!existsSync(packagePath)) {
     fail(`Missing game workspace package: ${workspace}`)

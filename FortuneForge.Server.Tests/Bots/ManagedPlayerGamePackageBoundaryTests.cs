@@ -15,7 +15,7 @@ public sealed partial class ManagedPlayerGamePackageBoundaryTests
         string packageName)
     {
         var packageRoot = Path.Combine(
-            RepositoryRoot(), "game-packages", "games", packageName);
+            RepositoryRoot(), "games", packageName);
         AssertPackageIsPlayerNeutral(packageRoot);
     }
 
@@ -23,7 +23,7 @@ public sealed partial class ManagedPlayerGamePackageBoundaryTests
     public void Shared_card_package_does_not_own_managed_player_runtime()
     {
         var packageRoot = Path.Combine(
-            RepositoryRoot(), "game-packages", "src", "FortuneForge.Games.Cards");
+            RepositoryRoot(), "games", "shared", "FortuneForge.Games.Cards");
         AssertPackageIsPlayerNeutral(packageRoot);
     }
 

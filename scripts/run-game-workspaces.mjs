@@ -13,7 +13,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const rootPackage = JSON.parse(readFileSync(resolve(repositoryRoot, 'package.json'), 'utf8'))
 const workspaces = rootPackage.workspaces ?? []
 
-for (const workspace of workspaces.filter((path) => path.startsWith('game-packages/'))) {
+for (const workspace of workspaces.filter((path) => path.startsWith('games/'))) {
   const packageJson = JSON.parse(readFileSync(resolve(repositoryRoot, workspace, 'package.json'), 'utf8'))
   if (!packageJson.scripts?.[task]) {
     console.log(`Skipping ${packageJson.name}: no ${task} script`)

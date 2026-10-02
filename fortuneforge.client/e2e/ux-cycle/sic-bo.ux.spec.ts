@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type Locator, type Page, type TestInfo } from '@playwright/test'
-import type { SicBoBetKind, SicBoBetRequest, SicBoRound, SicBoStatus } from '../../../game-packages/games/SicBo/client/FortuneForge.Games.SicBo.Client/src/contracts'
+import type { SicBoBetKind, SicBoBetRequest, SicBoRound, SicBoStatus } from '../../../games/SicBo/client/FortuneForge.Games.SicBo.Client/src/contracts'
 
 const player = 'sic-bo-ux-player'
 const viewports = [

@@ -6,9 +6,9 @@ Fortune Forge now owns the source for every reusable game package consumed by th
 
 ## Architecture
 
-- Server game engines live under `game-packages/games/<Game>/src` and are referenced with `.NET` `ProjectReference` entries.
-- Shared game primitives live under `game-packages/src`.
-- Deployed reusable clients live under `game-packages/games/<Game>/client` and are npm workspaces in the root lockfile.
+- Server game engines live under `games/<Game>/src` and are referenced with `.NET` `ProjectReference` entries.
+- Shared game primitives live under `games/src`.
+- Deployed reusable clients live under `games/<Game>/client` and are npm workspaces in the root lockfile.
 - Package tests and catalog descriptors live beside the package source.
 - `.nupkg` and `.tgz` files remain optional generated release artifacts; they are not committed application dependencies.
 

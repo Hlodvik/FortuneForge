@@ -38,7 +38,7 @@ This was a functional and product audit, not certification. Slot simulations are
 
 ### Game-source consolidation resolved
 
-- **Resolved — reproducible package source.** Reusable server engines and deployed client packages now live under `game-packages` in this repository. The server uses project references, the web application uses npm workspaces, and copied `.nupkg`/`.tgz` feeds have been removed.
+- **Resolved — reproducible package source.** Reusable server engines and deployed client packages now live under `games` in this repository. The server uses project references, the web application uses npm workspaces, and copied `.nupkg`/`.tgz` feeds have been removed.
 - **Resolved — package test baseline.** Roulette and Hearts metadata now agree with their manifests and tests. The retained package suite passes from the monorepo.
 - **Resolved — Drop Merge client coverage.** Drop Merge now has a runnable helper test suite, so every deployed client workspace has tests.
 - **Resolved — CI ownership guard.** CI verifies that server games use source projects, every client game dependency maps to an in-repository workspace, and obsolete copied-package feeds are absent.

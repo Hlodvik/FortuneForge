@@ -1,7 +1,7 @@
 import { mkdir, copyFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
-import type { CrapsExtraBet, CrapsExtraBetRequest, CrapsRollResult, CrapsRound, CrapsStatus } from '../../../game-packages/games/Craps/client/FortuneForge.Games.Craps.Client/src/contracts'
+import type { CrapsExtraBet, CrapsExtraBetRequest, CrapsRollResult, CrapsRound, CrapsStatus } from '../../../games/Craps/client/FortuneForge.Games.Craps.Client/src/contracts'
 const status: CrapsStatus = { available:true,minimumStake:1,maximumStake:100,stakeIncrement:1,mode:'free-play-pass-line' }
 const viewports=[{name:'desktop',width:1280,height:720},{name:'phone',width:390,height:844},{name:'short-phone',width:390,height:700},{name:'compact-phone',width:320,height:568},{name:'narrow-landscape',width:500,height:320},{name:'small-landscape',width:568,height:320},{name:'landscape',width:667,height:375},{name:'wide-landscape',width:852,height:393}]
 const action=(page:Page)=>page.locator('.ff-craps-primary')

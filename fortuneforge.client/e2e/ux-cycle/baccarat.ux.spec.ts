@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo, type Locator } from '@playwright/test'
-import type { BaccaratBetSide, BaccaratCard, BaccaratRound, BaccaratStatus } from '../../../game-packages/games/Baccarat/client/FortuneForge.Games.Baccarat.Client/src/contracts'
+import type { BaccaratBetSide, BaccaratCard, BaccaratRound, BaccaratStatus } from '../../../games/Baccarat/client/FortuneForge.Games.Baccarat.Client/src/contracts'
 import type { AccountSummary } from '../../src/features/account/services/accountsApi'
 
 const account: AccountSummary = {

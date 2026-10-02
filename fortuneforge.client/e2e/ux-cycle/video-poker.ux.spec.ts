@@ -1,7 +1,7 @@
 import { mkdir, copyFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type Page, type TestInfo, type Locator } from '@playwright/test'
-import type { VideoPokerCard, VideoPokerRound, VideoPokerStatus, VideoPokerHandCount, VideoPokerHandRank } from '../../../game-packages/games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client/src/contracts'
+import type { VideoPokerCard, VideoPokerRound, VideoPokerStatus, VideoPokerHandCount, VideoPokerHandRank } from '../../../games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client/src/contracts'
 
 const player = 'video-poker-ux-player:account'
 const pendingKey = 'fortuneforge:video-poker:pending:' + player

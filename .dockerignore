@@ -2,8 +2,8 @@
 !Dockerfile
 !NuGet.config
 !Directory.Build.props
-!game-packages/
-!game-packages/**
+!games/
+!games/**
 !FortuneForge.Server/
 !FortuneForge.Server/**
 !FortuneForge.ServiceDefaults/

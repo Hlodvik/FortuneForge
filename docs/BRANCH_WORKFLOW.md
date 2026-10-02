@@ -32,7 +32,7 @@ npm run web:lint
 npm run build
 
 dotnet build FortuneForge.slnx --configuration Release
-dotnet test game-packages/FortuneForge.Games.slnx --configuration Release
+dotnet test games/FortuneForge.Games.slnx --configuration Release
 firebase emulators:exec --only firestore --project demo-fortuneforge-ci-tests --config FortuneForge.Server.Tests/Cards/TexasHoldem/Credit/firebase-emulator.test.json "dotnet test FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj --configuration Release --no-build"
 ```
 

@@ -1,7 +1,7 @@
 import { mkdir, copyFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
-import type { LiarsDiceBid, LiarsDiceMatch, LiarsDicePlayer, LiarsDiceStatus } from '../../../game-packages/games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client/src/contracts'
+import type { LiarsDiceBid, LiarsDiceMatch, LiarsDicePlayer, LiarsDiceStatus } from '../../../games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client/src/contracts'
 
 const player = 'liars-dice-ux-player'
 const status: LiarsDiceStatus = { available: true, startingDicePerPlayer: 5, mode: 'free-play-bots' }

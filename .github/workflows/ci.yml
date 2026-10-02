@@ -35,16 +35,16 @@ jobs:
       - name: Restore .NET dependencies
         run: |
           dotnet restore FortuneForge.slnx
-          dotnet restore game-packages/FortuneForge.Games.slnx
+          dotnet restore games/FortuneForge.Games.slnx
           dotnet restore tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj
 
       - name: Build .NET
         run: |
           dotnet build FortuneForge.slnx --configuration Release --no-restore
-          dotnet build game-packages/FortuneForge.Games.slnx --configuration Release --no-restore
+          dotnet build games/FortuneForge.Games.slnx --configuration Release --no-restore
 
       - name: Test game packages
-        run: dotnet test game-packages/FortuneForge.Games.slnx --configuration Release --no-build
+        run: dotnet test games/FortuneForge.Games.slnx --configuration Release --no-build
 
       - name: Audit .NET dependencies
         run: |

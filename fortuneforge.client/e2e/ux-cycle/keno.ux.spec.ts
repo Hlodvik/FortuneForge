@@ -1,5 +1,5 @@
 import { expect, test, type Page, type TestInfo } from '@playwright/test'
-import type { KenoRound, KenoRoundRequest, KenoStatus } from '../../../game-packages/games/Keno/client/FortuneForge.Games.Keno.Client/src/contracts'
+import type { KenoRound, KenoRoundRequest, KenoStatus } from '../../../games/Keno/client/FortuneForge.Games.Keno.Client/src/contracts'
 import type { AccountSummary } from '../../src/features/account/services/accountsApi'
 
 const selectedNumbers = [3, 7, 15]

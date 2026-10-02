@@ -1,66 +1,66 @@
 <Solution>
   <Folder Name="/Games/Asteroids/">
-    <Project Path="game-packages/games/Asteroids/src/FortuneForge.Games.Asteroids/FortuneForge.Games.Asteroids.csproj" />
+    <Project Path="games/Asteroids/src/FortuneForge.Games.Asteroids/FortuneForge.Games.Asteroids.csproj" />
   </Folder>
   <Folder Name="/Games/Baccarat/">
-    <Project Path="game-packages/games/Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
+    <Project Path="games/Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
   </Folder>
   <Folder Name="/Games/Blackjack/">
-    <Project Path="game-packages/games/Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
+    <Project Path="games/Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
   </Folder>
   <Folder Name="/Games/Casino War/">
-    <Project Path="game-packages/games/CasinoWar/src/FortuneForge.Games.CasinoWar/FortuneForge.Games.CasinoWar.csproj" />
+    <Project Path="games/CasinoWar/src/FortuneForge.Games.CasinoWar/FortuneForge.Games.CasinoWar.csproj" />
   </Folder>
   <Folder Name="/Games/Craps/">
-    <Project Path="game-packages/games/Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
+    <Project Path="games/Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
   </Folder>
   <Folder Name="/Games/Drop Merge/">
-    <Project Path="game-packages/games/DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
+    <Project Path="games/DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
   </Folder>
   <Folder Name="/Games/Flappy/">
-    <Project Path="game-packages/games/Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
+    <Project Path="games/Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
   </Folder>
   <Folder Name="/Games/Hearts/">
-    <Project Path="game-packages/games/Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
+    <Project Path="games/Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
   </Folder>
   <Folder Name="/Games/Horse Flight/">
-    <Project Path="game-packages/games/HorseFlight/src/FortuneForge.Games.HorseFlight/FortuneForge.Games.HorseFlight.csproj" />
+    <Project Path="games/HorseFlight/src/FortuneForge.Games.HorseFlight/FortuneForge.Games.HorseFlight.csproj" />
   </Folder>
   <Folder Name="/Games/Keno/">
-    <Project Path="game-packages/games/Keno/src/FortuneForge.Games.Keno/FortuneForge.Games.Keno.csproj" />
+    <Project Path="games/Keno/src/FortuneForge.Games.Keno/FortuneForge.Games.Keno.csproj" />
   </Folder>
   <Folder Name="/Games/Liar's Dice/">
-    <Project Path="game-packages/games/LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
+    <Project Path="games/LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
   </Folder>
   <Folder Name="/Games/Roulette/">
-    <Project Path="game-packages/games/Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
+    <Project Path="games/Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
   </Folder>
   <Folder Name="/Games/Sic Bo/">
-    <Project Path="game-packages/games/SicBo/src/FortuneForge.Games.SicBo/FortuneForge.Games.SicBo.csproj" />
+    <Project Path="games/SicBo/src/FortuneForge.Games.SicBo/FortuneForge.Games.SicBo.csproj" />
   </Folder>
   <Folder Name="/Games/Snake/">
-    <Project Path="game-packages/games/Snake/src/FortuneForge.Games.Snake/FortuneForge.Games.Snake.csproj" />
+    <Project Path="games/Snake/src/FortuneForge.Games.Snake/FortuneForge.Games.Snake.csproj" />
   </Folder>
   <Folder Name="/Games/Solitaire/">
-    <Project Path="game-packages/games/Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj" />
+    <Project Path="games/Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj" />
   </Folder>
   <Folder Name="/Games/Texas Hold'em/">
-    <Project Path="game-packages/games/TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
+    <Project Path="games/TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
   </Folder>
   <Folder Name="/Games/2048/">
-    <Project Path="game-packages/games/TwentyFortyEight/src/FortuneForge.Games.TwentyFortyEight/FortuneForge.Games.TwentyFortyEight.csproj" />
+    <Project Path="games/TwentyFortyEight/src/FortuneForge.Games.TwentyFortyEight/FortuneForge.Games.TwentyFortyEight.csproj" />
   </Folder>
   <Folder Name="/Games/Video Poker/">
-    <Project Path="game-packages/games/VideoPoker/src/FortuneForge.Games.VideoPoker/FortuneForge.Games.VideoPoker.csproj" />
+    <Project Path="games/VideoPoker/src/FortuneForge.Games.VideoPoker/FortuneForge.Games.VideoPoker.csproj" />
   </Folder>
   <Folder Name="/Games/Shared/">
-    <Project Path="game-packages/src/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
-    <Project Path="game-packages/src/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
-    <Project Path="game-packages/src/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
-    <Project Path="game-packages/src/FortuneForge.Games.TrickTaking/FortuneForge.Games.TrickTaking.csproj" />
+    <Project Path="games/shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <Project Path="games/shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+    <Project Path="games/shared/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
+    <Project Path="games/shared/FortuneForge.Games.TrickTaking/FortuneForge.Games.TrickTaking.csproj" />
   </Folder>
   <Folder Name="/Games/Tests/">
-    <Project Path="game-packages/tests/FortuneForge.Games.Tests/FortuneForge.Games.Tests.csproj" />
+    <Project Path="games/tests/FortuneForge.Games.Tests/FortuneForge.Games.Tests.csproj" />
   </Folder>
   <Project Path="FortuneForge.AppHost/FortuneForge.AppHost.csproj" />
   <Project Path="fortuneforge.client/fortuneforge.client.esproj">

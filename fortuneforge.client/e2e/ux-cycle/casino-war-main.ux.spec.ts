@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test'
-import type { CasinoWarRound, CasinoWarStatus } from '../../../game-packages/games/CasinoWar/client/FortuneForge.Games.CasinoWar.Client/src/contracts'
+import type { CasinoWarRound, CasinoWarStatus } from '../../../games/CasinoWar/client/FortuneForge.Games.CasinoWar.Client/src/contracts'
 import type { AccountSummary } from '../../src/features/account/services/accountsApi'
 
 const account: AccountSummary = {

@@ -3,7 +3,7 @@ WORKDIR /src
 
 COPY NuGet.config ./
 COPY Directory.Build.props ./
-COPY game-packages/ game-packages/
+COPY games/ games/
 COPY FortuneForge.Server/FortuneForge.Server.csproj FortuneForge.Server/
 COPY FortuneForge.ServiceDefaults/FortuneForge.ServiceDefaults.csproj FortuneForge.ServiceDefaults/
 RUN dotnet restore FortuneForge.Server/FortuneForge.Server.csproj

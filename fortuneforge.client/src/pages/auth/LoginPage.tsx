@@ -102,20 +102,25 @@ export function LoginPage() {
             Return to your account, check your fortune, and keep playing above the clouds.
           </p>
 
-          <form className="account-form" onSubmit={handleSubmit}>
-            <label>
+          <form className="account-form" autoComplete="on" onSubmit={handleSubmit}>
+            <label htmlFor="login-email">
               Email
               <input
+                id="login-email"
                 name="email"
                 type="email"
-                autoComplete="email"
+                autoComplete="username"
+                inputMode="email"
+                autoCapitalize="none"
+                spellCheck={false}
                 placeholder="you@example.com"
                 required
               />
             </label>
-            <label>
+            <label htmlFor="login-password">
               Password
               <input
+                id="login-password"
                 name="password"
                 type="password"
                 autoComplete="current-password"

@@ -29,6 +29,7 @@ import {
 } from '../../../games/cards/texasHoldem/creditHoldemApi'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import './texasHoldem.css'
+import './pokerClientHoldem.css'
 
 type Availability =
   | Readonly<{ kind: 'loading' }>
@@ -325,9 +326,10 @@ export function CreditHoldemTableSurface({ table, revealDelay }: { table: Credit
   return (
     <div className="credit-holdem-table" aria-label="Texas Hold’em table">
       <div className="credit-holdem-table-meta">
-        <span>{table.tableRule?.name ?? 'Standard'}</span>
+        <span>{table.tableRule?.name ?? 'Standard'} · No Limit</span>
         <strong>R{(table.tableRule?.smallBlindCredits ?? 0.5).toFixed(2)} / R{(table.tableRule?.bigBlindCredits ?? 1).toFixed(2)}</strong>
       </div>
+      <div className="credit-holdem-street" aria-live="polite">{table.street}</div>
       <div className="credit-holdem-primary-info">
         <div><span>Pot</span><strong>R{chips(table.pot)}</strong></div>
       </div>
@@ -337,6 +339,7 @@ export function CreditHoldemTableSurface({ table, revealDelay }: { table: Credit
             index={index} scope={`${table.matchId}-board`} key={index} />
         ))}
       </div>
+      <div className="credit-holdem-table__brand" aria-hidden="true">Fortune Forge</div>
       <div className="credit-holdem-seat-ring">
         {orderedSeats.map(({ seat, position }) => (
           <SeatView
@@ -361,6 +364,10 @@ function SeatView({ seat, position, dealer, active, winner, winningAmount }: {
   seat: CreditHoldemSeat; position: number; dealer: boolean; active: boolean
   winner: boolean; winningAmount: number
 }) {
+  const actionLabel = seat.lastAction
+    ?? (seat.status === 'folded' || seat.status === 'all-in' || seat.status === 'sitting-out'
+      ? seat.status
+      : null)
   return (
     <article className={`credit-holdem-player seat-pos-${position}${seat.isCurrentPlayer ? ' is-current' : ''}${active ? ' is-active' : ''}${winner ? ' is-winner' : ''}`}>
       <div className="credit-holdem-seat-cards">
@@ -372,7 +379,7 @@ function SeatView({ seat, position, dealer, active, winner, winningAmount }: {
         {dealer && <i title="Dealer">D</i>}
       </div>
       <div className="credit-holdem-action-state">
-        <strong>{seat.lastAction ?? (active ? 'Thinking…' : seat.status)}</strong>
+        {actionLabel && <strong>{actionLabel}</strong>}
         {seat.committedRound > 0 && <span>R{chips(seat.committedRound)}</span>}
       </div>
       {winner && <div className="credit-holdem-win">+R{chips(winningAmount)}</div>}

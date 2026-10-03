@@ -19,7 +19,6 @@ import {
   type CreditHoldemAction,
   type CreditHoldemCard,
   type CreditHoldemMutationResponse,
-  type CreditHoldemQueueSession,
   type CreditHoldemResultSession,
   type CreditHoldemSeat,
   type CreditHoldemSession,
@@ -90,7 +89,8 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   const table = currentSession?.kind === 'match' ? currentSession.table
     : currentSession?.kind === 'result' ? currentSession.finalTable : null
   const currentSeat = table?.seats.find((seat) => seat.isCurrentPlayer)
-  const waitingForTable = table?.status === 'active' && table.activeSeat !== currentSeat?.seat
+  const waitingForTable = currentSession?.kind === 'queue'
+    || (table?.status === 'active' && table.activeSeat !== currentSeat?.seat)
 
   useEffect(() => {
     if (!currentSession || busy) return
@@ -134,6 +134,12 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   const { status, session } = availability
   const tableRules = status.tableRules?.length ? status.tableRules : [legacyRule(status)]
   const selectedRule = tableRules.find((rule) => rule.id === selectedRuleId) ?? tableRules[0]
+  const joinFingerprint = session.kind === 'idle'
+    ? `join:${selectedRule.id}:${session.version}`
+    : null
+  const findingTable = joinFingerprint !== null
+    && busy
+    && pending?.fingerprint === joinFingerprint
   return (
     <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="credit-holdem-shell-body">
       <div className="credit-holdem-page" onClickCapture={onCardAudioClick}>
@@ -144,7 +150,8 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
         </div>
       )}
       <main className="credit-holdem-main">
-        {session.kind === 'idle' && (
+        {session.kind === 'idle' && findingTable && <FindingTableView busy={busy} />}
+        {session.kind === 'idle' && !findingTable && (
           <section className="credit-holdem-lobby">
             <span className="credit-holdem-kicker">Cash tables · 5 seats</span>
             <h1>Texas Hold’em</h1>
@@ -174,10 +181,9 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
           </section>
         )}
         {session.kind === 'queue' && (
-          <QueueView
-            session={session}
+          <FindingTableView
             busy={busy}
-            leave={() => void mutate(`leave-queue:${session.ticketId}:${session.version}`,
+            cancel={() => void mutate(`leave-queue:${session.ticketId}:${session.version}`,
               (key) => cancelCreditHoldemQueue(session.ticketId, session.version, key))}
           />
         )}
@@ -212,23 +218,15 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   )
 }
 
-function QueueView({ session, busy, leave }: {
-  session: CreditHoldemQueueSession; busy: boolean; leave: () => void
+export function FindingTableView({ busy, cancel }: {
+  busy: boolean
+  cancel?: () => void
 }) {
   return (
     <section className="credit-holdem-lobby credit-holdem-finding">
       <div className="credit-holdem-finding__mark" aria-hidden="true"><span>♠</span></div>
-      <h1>Finding table</h1>
-      <div className="credit-holdem-queue-seats">
-        {Array.from({ length: 5 }, (_, index) => {
-          const seat = session.players[index]
-          return <div className={seat ? 'is-filled' : ''} key={seat?.seatId ?? index}>
-            <span>{seat ? initials(seat.displayName) : '+'}</span>
-            <strong>{seat?.displayName ?? 'Open seat'}</strong>
-          </div>
-        })}
-      </div>
-      <button type="button" disabled={busy} onClick={leave}>Cancel</button>
+      <h1>Finding table…</h1>
+      {cancel && <button type="button" disabled={busy} onClick={cancel}>Cancel</button>}
     </section>
   )
 }

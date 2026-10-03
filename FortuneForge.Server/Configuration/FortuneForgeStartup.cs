@@ -16,6 +16,7 @@ using FortuneForge.Server.Cards.VideoPoker;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Dice.SicBo;
+using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -39,6 +40,7 @@ public static class FortuneForgeStartup
         builder.Services.AddPayments(builder.Configuration);
         builder.Services.AddSlotServices(builder.Configuration);
         builder.Services.AddManagedPlayers();
+        builder.Services.AddMultiplayerMatchmaking();
         builder.Services.AddHeartsManagedPlayers();
         builder.Services.AddLiarsDiceManagedPlayers();
         builder.Services.AddCreditHoldem(builder.Configuration);

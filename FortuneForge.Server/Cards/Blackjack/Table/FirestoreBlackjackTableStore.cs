@@ -2,6 +2,7 @@ using System.Text.Json;
 using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Bots.Blackjack;
+using FortuneForge.Server.Matchmaking;
 using Grpc.Core;
 
 namespace FortuneForge.Server.Cards.Blackjack.Table;
@@ -17,7 +18,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private readonly FirestoreDb database;
     private readonly Func<IReadOnlyList<string>>? deckFactory;
     private readonly Func<ulong>? seedFactory;
-    private readonly IManagedPlayerQueuer? managedPlayerQueuer;
+    private readonly IMultiplayerMatchmaker matchmaking;
     private readonly string leaseOwner = $"blackjack-table-worker-{Guid.NewGuid():N}";
 
     public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null, null)
@@ -28,12 +29,12 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         FirestoreDb database,
         Func<IReadOnlyList<string>>? deckFactory,
         Func<ulong>? seedFactory,
-        IManagedPlayerQueuer? managedPlayerQueuer = null)
+        IMultiplayerMatchmaker? multiplayerMatchmaker = null)
     {
         this.database = database;
         this.deckFactory = deckFactory;
         this.seedFactory = seedFactory;
-        this.managedPlayerQueuer = managedPlayerQueuer;
+        matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     }
 
     public async Task<BlackjackTableStoreResult> GetSessionAsync(
@@ -360,10 +361,9 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             {
                 var execution = await RunTransactionAsync(async transaction =>
                 {
-                    var supply = new BlackjackManagedPlayerSupply(
-                        reservations,
-                        generateWhenEmpty: managedPlayerQueuer is null);
-                    var coordinator = new BlackjackTableCoordinator(deckFactory, seedFactory, supply);
+                    var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
+                    var coordinator = new BlackjackTableCoordinator(
+                        deckFactory, seedFactory, supply, matchmaking);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -415,9 +415,9 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
                 return execution.Value;
             }
-            catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
+            catch (BlackjackManagedPlayerSupplyRequiredException required)
             {
-                var profiles = await managedPlayerQueuer.ReserveAsync(
+                var profiles = await matchmaking.ReserveManagedPlayersAsync(
                     ManagedPlayerGames.Blackjack,
                     required.AssignmentId,
                     required.Count,
@@ -442,10 +442,9 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             {
                 var execution = await RunTransactionAsync(async transaction =>
                 {
-                    var supply = new BlackjackManagedPlayerSupply(
-                        reservations,
-                        generateWhenEmpty: managedPlayerQueuer is null);
-                    var coordinator = new BlackjackTableCoordinator(deckFactory, seedFactory, supply);
+                    var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
+                    var coordinator = new BlackjackTableCoordinator(
+                        deckFactory, seedFactory, supply, matchmaking);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -473,9 +472,9 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
                 return;
             }
-            catch (BlackjackManagedPlayerSupplyRequiredException required) when (managedPlayerQueuer is not null)
+            catch (BlackjackManagedPlayerSupplyRequiredException required)
             {
-                var profiles = await managedPlayerQueuer.ReserveAsync(
+                var profiles = await matchmaking.ReserveManagedPlayersAsync(
                     ManagedPlayerGames.Blackjack,
                     required.AssignmentId,
                     required.Count,
@@ -494,10 +493,9 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        if (managedPlayerQueuer is null) return;
         foreach (var (assignmentId, profileIds) in execution.ActiveAssignments)
         {
-            await managedPlayerQueuer.HeartbeatAsync(
+            await matchmaking.HeartbeatManagedPlayersAsync(
                 ManagedPlayerGames.Blackjack, assignmentId, profileIds, nowUtc, cancellationToken);
         }
 
@@ -512,7 +510,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             .GroupBy(value => value.AssignmentId, StringComparer.Ordinal);
         foreach (var group in releases)
         {
-            await managedPlayerQueuer.ReleaseAsync(
+            await matchmaking.ReleaseManagedPlayersAsync(
                 group.Key,
                 group.Select(value => value.ProfileId).ToArray(),
                 nowUtc,

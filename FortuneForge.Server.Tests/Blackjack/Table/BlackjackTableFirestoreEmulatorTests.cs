@@ -2,6 +2,7 @@ using FortuneForge.Server.Cards.Blackjack;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Bots.Blackjack;
 using FortuneForge.Server.Bots;
+using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 using System.Text.Json;
 using Xunit;
@@ -449,7 +450,10 @@ public sealed class BlackjackTableFirestoreEmulatorTests
         }.Build();
         var profileStore = ManagedPlayerQueuer(database);
         var store = new FirestoreBlackjackTableStore(
-            database, () => DoubleDeck().ToArray(), () => 123UL, profileStore);
+            database,
+            () => DoubleDeck().ToArray(),
+            () => 123UL,
+            new MultiplayerMatchmaker(profileStore));
         var user = $"profile-host-{suffix}";
         await SeedBalanceAsync(database, user, 20_000);
         await store.JoinAsync(user, "ProfileHost", 0, Key("profile-host-join"), Start, default);

@@ -1,6 +1,6 @@
 using Google.Cloud.Firestore;
 using Microsoft.Extensions.Options;
-using FortuneForge.Server.Bots;
+using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
@@ -16,7 +16,7 @@ public static class CreditHoldemConfiguration
             new FirestoreCreditHoldemStore(
                 provider.GetRequiredService<FirestoreDb>(),
                 provider.GetRequiredService<IOptions<CreditHoldemOptions>>().Value.AllowSingleHumanBotFill,
-                provider.GetRequiredService<IManagedPlayerQueuer>()));
+                provider.GetRequiredService<IMultiplayerMatchmaker>()));
         services.AddSingleton<CreditHoldemService>();
         services.AddHostedService<CreditHoldemWorker>();
         return services;

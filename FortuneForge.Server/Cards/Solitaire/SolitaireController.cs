@@ -1,7 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
-using FortuneForge.Server.Bots;
+using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -275,7 +275,7 @@ public sealed class SolitaireController(
             {
                 AllowSingleHumanBotFill = IsSingleHumanBotFillEnabled(configuration)
             },
-            services.GetRequiredService<IManagedPlayerQueuer>()));
+            services.GetRequiredService<IMultiplayerMatchmaker>()));
 
     private ActionResult FreeRunHttp(Exception exception) => exception switch
     {

@@ -3,9 +3,9 @@
 import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { CreditHoldemTable } from '../../../games/cards/texasHoldem/creditHoldemApi'
-import { CreditHoldemTableSurface, CreditTexasHoldemPreview } from './CreditTexasHoldemPage'
+import { CreditHoldemTableSurface, CreditTexasHoldemPreview, FindingTableView } from './CreditTexasHoldemPage'
 
 describe('credit Texas Hold’em v2 composition', () => {
   it('lays out the current human at the front and exposes per-seat action state', () => {
@@ -49,6 +49,21 @@ describe('credit Texas Hold’em v2 composition', () => {
     expect(first).toBe(second)
     expect(first).toContain('credit-holdem-preview')
     expect(first).toContain('RiverMoss')
+  })
+
+  it('uses the same clean finding-table state as the live Blackjack flow', () => {
+    const joining = renderToStaticMarkup(createElement(FindingTableView, { busy: true }))
+    const queued = renderToStaticMarkup(createElement(FindingTableView, {
+      busy: false,
+      cancel: vi.fn(),
+    }))
+
+    expect(joining).toContain('Finding table…')
+    expect(joining).not.toContain('Cancel')
+    expect(joining).not.toContain('Open seat')
+    expect(queued).toContain('Finding table…')
+    expect(queued).toContain('Cancel')
+    expect(queued).not.toContain('Queue position')
   })
 
   it('keeps server-validated credit play isolated from practice engines and local optimism', () => {

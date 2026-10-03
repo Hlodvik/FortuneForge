@@ -2,6 +2,7 @@ using System.Text.Json;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
+using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -215,7 +216,8 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     {
         var queuer = new RecordingManagedPlayerQueuer();
         var (database, _, suffix) = CreateStore();
-        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var store = new FirestoreCreditHoldemStore(
+            database, allowSingleHumanBotFill: true, new MultiplayerMatchmaker(queuer));
         var user = $"managed-{suffix}";
         await SeedBalanceAsync(database, user, 10_000);
 
@@ -245,11 +247,36 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
+    public async Task ProductionStore_UsesEveryQueuedHumanBeforeRequestingManagedSeats()
+    {
+        var queuer = new RecordingManagedPlayerQueuer();
+        var (database, _, suffix) = CreateStore();
+        var store = new FirestoreCreditHoldemStore(
+            database, allowSingleHumanBotFill: true, new MultiplayerMatchmaker(queuer));
+        var first = $"queue-first-{suffix}";
+        var second = $"queue-second-{suffix}";
+        var third = $"queue-third-{suffix}";
+        await SeedPlayersAsync(database, first, second, third);
+
+        _ = await store.JoinAsync(first, "Alice", 0, "queue-human-first", 711, Start, default);
+        _ = await store.JoinAsync(second, "Bruno", 0, "queue-human-second", 712, Start.AddMilliseconds(1), default);
+        _ = await store.JoinAsync(third, "Casey", 0, "queue-human-third", 713, Start.AddMilliseconds(2), default);
+        var session = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync(first, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        var match = await ReadMatchAsync(database, session.Table.MatchId);
+
+        Assert.Equal(3, match.Players.Count);
+        Assert.All(match.Players, player => Assert.True(player.IsAccountBacked));
+        Assert.Empty(queuer.Reservations);
+    }
+
+    [Fact]
     public async Task ProductionStore_SweepAdvancesPrivateManagedTurnsWithoutSessionPolling()
     {
         var queuer = new RecordingManagedPlayerQueuer();
         var (database, _, suffix) = CreateStore();
-        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var store = new FirestoreCreditHoldemStore(
+            database, allowSingleHumanBotFill: true, new MultiplayerMatchmaker(queuer));
         var user = $"worker-{suffix}";
         await SeedBalanceAsync(database, user, 10_000);
         _ = await store.JoinAsync(user, "Alice", 0, "worker-join-1", 801, Start, default);
@@ -281,7 +308,8 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     {
         var queuer = new RecordingManagedPlayerQueuer();
         var (database, _, suffix) = CreateStore();
-        var store = new FirestoreCreditHoldemStore(database, allowSingleHumanBotFill: true, queuer);
+        var store = new FirestoreCreditHoldemStore(
+            database, allowSingleHumanBotFill: true, new MultiplayerMatchmaker(queuer));
         var first = $"replace-a-{suffix}";
         var second = $"replace-b-{suffix}";
         var third = $"replace-c-{suffix}";

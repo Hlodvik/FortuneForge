@@ -1,4 +1,5 @@
 using Google.Cloud.Firestore;
+using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -92,12 +93,20 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     DrawCount = drawCount
                 };
                 queuedTickets.Add(newTicket);
-                var createsMatch = queuedTickets.Count >= playerCount;
+                var queuePlan = matchmaking.PlanQueue(
+                    queuedTickets,
+                    new MultiplayerQueueRules(playerCount, playerCount),
+                    nowUtc,
+                    ticket => ticket.Status == QueueStatus,
+                    ticket => ticket.JoinedAtUtc,
+                    ticket => ticket.JoinedAtUtc,
+                    ticket => ticket.TicketId);
+                var createsMatch = queuePlan.IsReady;
                 SolitaireMatch? match = null;
                 IReadOnlyList<SolitaireTicket> selected = [];
                 if (createsMatch)
                 {
-                    selected = queuedTickets.Take(playerCount).ToArray();
+                    selected = queuePlan.HumanTickets;
                     var matchId = CreateLookupKey(
                         $"{partitionKey}\n{string.Join("\n", selected.Select(ticket => ticket.TicketId))}");
                     var poolCents = checked(playerCount * buyInCents);

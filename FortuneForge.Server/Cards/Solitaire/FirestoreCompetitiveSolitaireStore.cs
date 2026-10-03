@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Server.Bots;
+using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -19,16 +20,16 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
     private readonly CompetitiveSolitaireOptions options;
-    private readonly IManagedPlayerQueuer? managedPlayerQueuer;
+    private readonly IMultiplayerMatchmaker matchmaking;
 
     public FirestoreCompetitiveSolitaireStore(
         FirestoreDb database,
         CompetitiveSolitaireOptions? options = null,
-        IManagedPlayerQueuer? managedPlayerQueuer = null)
+        IMultiplayerMatchmaker? multiplayerMatchmaker = null)
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
-        this.managedPlayerQueuer = managedPlayerQueuer;
+        matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     }
 
     private async Task<T> RunTransactionAsync<T>(

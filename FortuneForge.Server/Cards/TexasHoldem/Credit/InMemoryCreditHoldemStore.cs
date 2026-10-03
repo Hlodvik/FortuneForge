@@ -1,8 +1,11 @@
 using FortuneForge.Server.Bots.TexasHoldem;
+using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
-internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = false) : ICreditHoldemStore
+internal sealed class InMemoryCreditHoldemStore(
+    bool allowSingleHumanBotFill = false,
+    IMultiplayerMatchmaker? multiplayerMatchmaker = null) : ICreditHoldemStore
 {
     private sealed record SessionPointer(string Kind, string? TicketId, string? MatchId);
     private readonly object gate = new();
@@ -16,6 +19,8 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
     private readonly HashSet<string> revenueIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CreditHoldemHistoryRecord> history = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> activeMatchIds = new(StringComparer.Ordinal);
+    private readonly IMultiplayerMatchmaker matchmaking =
+        multiplayerMatchmaker ?? new MultiplayerMatchmaker();
 
     internal void SetBalance(string userId, long cents)
     {
@@ -315,20 +320,23 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
 
     private void TryMatch(string partitionKey, ulong seed, DateTime nowUtc)
     {
-        var eligible = queue.Select(id => tickets[id])
-            .Where(value => value.Status == "queued" && value.PartitionKey == partitionKey)
-            .OrderBy(value => value.JoinedAtUtc)
-            .ThenBy(value => value.TicketId, StringComparer.Ordinal)
-            .ToArray();
-        var minimumHumans = allowSingleHumanBotFill ? 1 : 2;
-        if (eligible.Length < minimumHumans || nowUtc < eligible[0].GraceEndsAtUtc) return;
-        var selected = eligible.Take(CreditHoldemMoney.MaximumSeats).ToArray();
+        var selected = matchmaking.PlanQueue(
+            queue.Select(id => tickets[id]),
+            new MultiplayerQueueRules(
+                allowSingleHumanBotFill ? 1 : 2,
+                CreditHoldemMoney.MaximumSeats),
+            nowUtc,
+            value => value.Status == "queued" && value.PartitionKey == partitionKey,
+            value => value.JoinedAtUtc,
+            value => value.GraceEndsAtUtc,
+            value => value.TicketId).HumanTickets;
+        if (selected.Count == 0) return;
         var rule = CreditHoldemTableRules.Resolve(selected[0].TableRuleId);
         var balancesForHand = selected.ToDictionary(value => value.UserId, value => balances.GetValueOrDefault(value.UserId), StringComparer.Ordinal);
         if (balancesForHand.Values.Any(value => value < rule.BigBlindCents)) return;
         var matchId = CreditHoldemIds.Hash($"{partitionKey}\n{string.Join("\n", selected.Select(value => value.TicketId))}");
         var profiles = TexasHoldemManagedPlayers.CreateLocalProfiles(
-            CreditHoldemMoney.MinimumStartPlayers - selected.Length,
+            CreditHoldemMoney.MinimumStartPlayers - selected.Count,
             nowUtc);
         var seats = TexasHoldemManagedPlayers.BuildSeats(selected, profiles, balancesForHand, seed, rule);
         var match = CreditHoldemEngine.Deal(
@@ -342,7 +350,7 @@ internal sealed class InMemoryCreditHoldemStore(bool allowSingleHumanBotFill = f
             queue.Remove(ticket.TicketId);
         }
         WriteActiveHistory(match);
-        if (selected.Length < CreditHoldemMoney.MaximumSeats) activeMatchIds[partitionKey] = matchId;
+        if (selected.Count < CreditHoldemMoney.MaximumSeats) activeMatchIds[partitionKey] = matchId;
         else activeMatchIds.Remove(partitionKey);
     }
 

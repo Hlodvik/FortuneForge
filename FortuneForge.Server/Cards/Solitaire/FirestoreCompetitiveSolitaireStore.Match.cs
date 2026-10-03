@@ -594,9 +594,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         }
         finally
         {
-            if (managedPlayerQueuer is not null && managedProfiles.Count > 0)
+            if (managedProfiles.Count > 0)
             {
-                await managedPlayerQueuer.ReleaseAsync(
+                await matchmaking.ReleaseManagedPlayersAsync(
                     ManagedAssignmentId(preflightMatch.MatchId),
                     managedProfiles.Select(profile => profile.UserId).ToArray(),
                     nowUtc,
@@ -614,15 +614,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             match.SeatFillEligibleAtUtc is not { } eligibleAt || nowUtc < eligibleAt)
             return Task.FromResult<IReadOnlyList<ManagedPlayerProfile>>([]);
         var count = Math.Max(0, match.PlayerCount - match.PlayerIds.Count);
-        return managedPlayerQueuer is null
-            ? Task.FromResult(SolitaireManagedPlayerPolicy.CreateLocalProfiles(count, nowUtc))
-            : managedPlayerQueuer.ReserveAsync(
-                ManagedPlayerGames.Solitaire,
-                ManagedAssignmentId(match.MatchId),
-                count,
-                match.PlayerIds,
-                nowUtc,
-                cancellationToken);
+        return matchmaking.ReserveManagedPlayersAsync(
+            ManagedPlayerGames.Solitaire,
+            ManagedAssignmentId(match.MatchId),
+            count,
+            match.PlayerIds,
+            nowUtc,
+            cancellationToken,
+            SolitaireManagedPlayerPolicy.CreateLocalProfiles);
     }
 
     private static string ManagedAssignmentId(string matchId) => $"solitaire:{matchId}";

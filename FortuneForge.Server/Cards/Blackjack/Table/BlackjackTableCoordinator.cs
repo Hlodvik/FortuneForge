@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using FortuneForge.Server.Bots.Blackjack;
+using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Cards.Blackjack.Table;
 
@@ -9,7 +10,8 @@ internal sealed record BlackjackTableCoordinatorResult(BlackjackTableStoreResult
 internal sealed class BlackjackTableCoordinator(
     Func<IReadOnlyList<string>>? deckFactory = null,
     Func<ulong>? seedFactory = null,
-    BlackjackManagedPlayerSupply? managedPlayerSupply = null)
+    BlackjackManagedPlayerSupply? managedPlayerSupply = null,
+    IMultiplayerMatchmaker? multiplayerMatchmaker = null)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -19,6 +21,8 @@ internal sealed class BlackjackTableCoordinator(
     private readonly Func<ulong> createSeed = seedFactory ??
         (() => BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))));
     private readonly BlackjackManagedPlayerSupply managedPlayers = managedPlayerSupply ?? new(generateWhenEmpty: true);
+    private readonly IMultiplayerMatchmaker matchmaking =
+        multiplayerMatchmaker ?? new MultiplayerMatchmaker();
 
     public BlackjackTableCoordinatorResult Get(
         BlackjackTableLobbyState state,
@@ -49,13 +53,13 @@ internal sealed class BlackjackTableCoordinator(
         var current = BlackjackTableProjection.Session(state, userId, nowUtc);
         if (current.Kind != BlackjackTableSessionKinds.Idle || current.Version != expectedVersion)
             throw new BlackjackTableConflictException("The Blackjack table session changed. Reconnect before joining.");
-        var target = state.Tables.Values
-            .Where(table => table.Phase != BlackjackTablePhases.Closed &&
+        var target = matchmaking.FindLiveTable(
+            state.Tables.Values,
+            table => table.Phase != BlackjackTablePhases.Closed &&
                 table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)) < BlackjackManagedTablePolicy.MaximumOccupiedSeats &&
-                (table.Players.Count < BlackjackTableEngine.Capacity || table.Players.Any(BlackjackManagedSeat.IsManaged)))
-            .OrderBy(table => table.CreatedAtUtc)
-            .ThenBy(table => table.TableId, StringComparer.Ordinal)
-            .FirstOrDefault();
+                (table.Players.Count < BlackjackTableEngine.Capacity || table.Players.Any(BlackjackManagedSeat.IsManaged)),
+            table => table.CreatedAtUtc,
+            table => table.TableId);
         var ticket = new BlackjackTableTicket(
             ticketId,
             userId,
@@ -437,13 +441,17 @@ internal sealed class BlackjackTableCoordinator(
     {
         while (true)
         {
-            var eligible = state.Tickets
-                .Where(ticket => ticket.Status == "queued" && ticket.TargetTableId is null)
-                .OrderBy(ticket => ticket.JoinedAtUtc)
-                .ThenBy(ticket => ticket.TicketId, StringComparer.Ordinal)
-                .ToArray();
-            if (eligible.Length == 0 || nowUtc < eligible[0].GraceEndsAtUtc) return;
-            var selected = eligible.Take(BlackjackManagedTablePolicy.MaximumOccupiedSeats).ToArray();
+            var selected = matchmaking.PlanQueue(
+                state.Tickets,
+                new MultiplayerQueueRules(
+                    1,
+                    BlackjackManagedTablePolicy.MaximumOccupiedSeats),
+                nowUtc,
+                ticket => ticket.Status == "queued" && ticket.TargetTableId is null,
+                ticket => ticket.JoinedAtUtc,
+                ticket => ticket.GraceEndsAtUtc,
+                ticket => ticket.TicketId).HumanTickets.ToArray();
+            if (selected.Length == 0) return;
             var tableId = BlackjackTableIds.Hash(string.Join("\n", selected.Select(ticket => ticket.TicketId)));
             var initialSeed = createSeed();
             var minimumOccupancy = Math.Max(

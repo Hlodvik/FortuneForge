@@ -100,6 +100,25 @@ export type FlappyFreeRunGateway = Readonly<{
   completeFreeFlappyReplay: (runId: string, replay: FlappyReplayPayload, signal?: AbortSignal) => Promise<FlappyReplayCompletion>
 }>
 
+export type FlappyPaidAttempt = Readonly<{
+  attemptId: string
+  gameId: 'flappy'
+  period: ArcadeCompetitionPaidPeriod
+  startsAtUtc: string
+  endsAtUtc: string
+  entryFeeCents: number
+  wasReplay: boolean
+  runId: string
+  seed: number
+}>
+
+export type FlappyPaidCompetitionGateway = Readonly<{
+  startFlappyAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal) => Promise<FlappyPaidAttempt>
+  completeFlappyReplay: (period: ArcadeCompetitionPaidPeriod, runId: string, replay: FlappyReplayPayload, signal?: AbortSignal) => Promise<FlappyReplayCompletion>
+}>
+
+export type FlappyCompetitionGateway = ArcadeCompetitionGateway & FlappyFreeRunGateway & FlappyPaidCompetitionGateway
+
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
 type CompetitionProblem = Readonly<{ code?: string }>
@@ -117,7 +136,7 @@ export class ArcadeCompetitionRequestError extends Error {
 }
 
 /** A read-only HTTP boundary. Supply a fake gateway to the component in tests. */
-export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, AsteroidsPaidCompetitionGateway, AsteroidsFreeRunGateway, FlappyFreeRunGateway {
+export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, AsteroidsPaidCompetitionGateway, AsteroidsFreeRunGateway, FlappyFreeRunGateway, FlappyPaidCompetitionGateway {
   private readonly fetcher: Fetcher
 
   constructor(fetcher: Fetcher = fetch) {
@@ -253,6 +272,43 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     return { runId: result.runId, score: result.score, terminal: result.terminal, wasReplay: result.wasReplay }
   }
 
+  async startFlappyAttempt(
+    period: ArcadeCompetitionPaidPeriod,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<FlappyPaidAttempt> {
+    if (typeof idempotencyKey !== 'string' || !/^[A-Za-z0-9_-]{16,128}$/.test(idempotencyKey)) {
+      throw new Error('The Flappy start request key is invalid.')
+    }
+    const response = await this.fetcher(`/api/arcade-competitions/flappy/${period}/attempts`, {
+      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, cache: 'no-store', signal,
+    })
+    const result = await this.readResponse(response, isFlappyPaidAttempt)
+    if (result.period !== period) throw new Error('The server returned an invalid arcade competition response.')
+    return result
+  }
+
+  async completeFlappyReplay(
+    period: ArcadeCompetitionPaidPeriod,
+    runId: string,
+    replay: FlappyReplayPayload,
+    signal?: AbortSignal,
+  ): Promise<FlappyReplayCompletion> {
+    if (!isFlappyPaidRunId(runId)) throw new Error('The Flappy run id is invalid.')
+    if (!isFlappyReplayPayload(replay)) throw new Error('The Flappy replay input is invalid.')
+    const response = await this.fetcher(
+      `/api/arcade-competitions/flappy/${period}/runs/${encodeURIComponent(runId)}/replay`,
+      {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ totalTicks: replay.totalTicks, flapTicks: [...replay.flapTicks] }),
+        cache: 'no-store', signal,
+      },
+    )
+    const result = await this.readResponse(response, isFlappyReplayCompletion)
+    if (result.runId !== runId) throw new Error('The server returned an invalid arcade competition response.')
+    return result
+  }
+
   private async readResponse<T>(response: Response, validator: (value: unknown) => value is T): Promise<T> {
     const value = await response.json().catch(() => null) as unknown
     if (!response.ok) {
@@ -327,9 +383,22 @@ function isFlappyFreeRun(value: unknown): value is FlappyFreeRun {
     && typeof value.wasReplay === 'boolean'
 }
 
+function isFlappyPaidAttempt(value: unknown): value is FlappyPaidAttempt {
+  return isRecord(value) && !Array.isArray(value)
+    && value.gameId === 'flappy'
+    && isPaidPeriod(value.period)
+    && isNonBlankString(value.attemptId)
+    && isFlappyUtcTimestamp(value.startsAtUtc)
+    && isFlappyUtcTimestamp(value.endsAtUtc)
+    && isNonNegativeInteger(value.entryFeeCents)
+    && typeof value.wasReplay === 'boolean'
+    && isFlappyPaidRunId(value.runId)
+    && isNonNegativeInteger(value.seed) && value.seed > 0 && value.seed <= 0xffff_ffff
+}
+
 function isFlappyReplayCompletion(value: unknown): value is FlappyReplayCompletion {
   return isRecord(value) && !Array.isArray(value)
-    && isFlappyRunId(value.runId)
+    && (isFlappyRunId(value.runId) || isFlappyPaidRunId(value.runId))
     && isNonNegativeInteger(value.score)
     && (value.terminal === 'obstacle-collision' || value.terminal === 'ground-collision' || value.terminal === 'ceiling-collision')
     && typeof value.wasReplay === 'boolean'
@@ -337,6 +406,10 @@ function isFlappyReplayCompletion(value: unknown): value is FlappyReplayCompleti
 
 function isFlappyRunId(value: unknown): value is string {
   return typeof value === 'string' && /^flappy_free_[0-9a-f]{64}$/.test(value)
+}
+
+function isFlappyPaidRunId(value: unknown): value is string {
+  return typeof value === 'string' && /^flappy_[0-9a-f]{64}$/.test(value)
 }
 
 function isFlappyUtcTimestamp(value: unknown): value is string {

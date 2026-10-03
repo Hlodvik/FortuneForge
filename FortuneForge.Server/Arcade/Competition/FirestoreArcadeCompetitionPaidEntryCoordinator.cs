@@ -1,5 +1,7 @@
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Arcade.Asteroids;
+using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Games.Flappy;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.Text;
@@ -10,7 +12,7 @@ namespace FortuneForge.Server.Arcade.Competition;
 /// Unregistered internal admission boundary. It atomically debits an entry and starts an attempt;
 /// settlement, refunds, and payouts deliberately belong to separate future work.
 /// </summary>
-internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCompetitionPaidEntryCoordinator
+internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCompetitionPaidEntryCoordinator, IArcadeCompetitionFlappyPaidEntryCoordinator
 {
     private const string SlotsCreditsCurrencyId = "slotsCredits";
     private const string AvailableFractionalCentsField = "availableFractionalCents";
@@ -33,7 +35,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
     public async Task<ArcadeCompetitionPaidEntryResult> StartPaidAttemptAsync(
         ArcadeCompetitionPaidEntryRequest request,
         CancellationToken cancellationToken) =>
-        (await StartAsync(request, null, cancellationToken)).Entry;
+        (await StartAsync(request, null, null, cancellationToken)).Entry;
 
     public async Task<ArcadeCompetitionAsteroidsPaidEntryResult> StartAsteroidsPaidAttemptAsync(
         ArcadeCompetitionPaidEntryRequest request,
@@ -41,11 +43,24 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(proposedRun);
-        var outcome = await StartAsync(request, proposedRun, cancellationToken);
+        var outcome = await StartAsync(request, proposedRun, null, cancellationToken);
         return new ArcadeCompetitionAsteroidsPaidEntryResult(
             outcome.Entry.Attempt,
             outcome.Entry.WasAlreadyRecorded,
             outcome.Run ?? throw new InvalidOperationException("An Asteroids paid entry did not produce a run."));
+    }
+
+    public async Task<ArcadeCompetitionFlappyPaidEntryResult> StartFlappyPaidAttemptAsync(
+        ArcadeCompetitionPaidEntryRequest request,
+        FlappyPaidRunIdentity proposedRun,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(proposedRun);
+        var outcome = await StartAsync(request, null, proposedRun, cancellationToken);
+        return new ArcadeCompetitionFlappyPaidEntryResult(
+            outcome.Entry.Attempt,
+            outcome.Entry.WasAlreadyRecorded,
+            outcome.FlappyRun ?? throw new InvalidOperationException("A Flappy paid entry did not produce a run."));
     }
 
     public Task<AsteroidsReplayCompletionResult> CompleteAsteroidsReplayAsync(
@@ -105,9 +120,68 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         }, cancellationToken: cancellationToken);
     }
 
+    public Task<FlappyPaidReplayCompletionResult> CompleteFlappyReplayAsync(
+        FlappyPaidReplayCompletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var attemptDocumentId = FlappyAttemptDocumentIdFromRunId(request.RunId);
+        return database.RunTransactionAsync(async transaction =>
+        {
+            var competitionReference = CompetitionDocument(request.Competition);
+            var settlementReference = SettlementDocument(request.Competition);
+            var runReference = database.Collection("flappyRuns").Document(attemptDocumentId);
+            var first = await Task.WhenAll(
+                transaction.GetSnapshotAsync(competitionReference, cancellationToken),
+                transaction.GetSnapshotAsync(settlementReference, cancellationToken),
+                transaction.GetSnapshotAsync(runReference, cancellationToken));
+            if (!first[0].Exists) throw new InvalidOperationException("The paid competition is missing.");
+            VerifyCompetition(first[0], request.Competition);
+            VerifySettlementIsAcceptingEntries(first[1], request.Competition);
+            var run = ReadFlappyRunForCompletion(first[2], request);
+            var attemptReference = database.Collection(ArcadeCompetitionFirestoreDocuments.AttemptsCollection).Document(attemptDocumentId);
+            var attemptSnapshot = await transaction.GetSnapshotAsync(attemptReference, cancellationToken);
+            var canonical = FirestoreFlappyFreeRunService.CanonicalizeReplay(request.Replay);
+            var digest = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+            if (run.Status == "completed")
+            {
+                if (run.ReplayCanonical != canonical || run.ReplayDigest != digest)
+                    throw new InvalidOperationException("This Flappy run was already completed with a different replay.");
+                var completedAttempt = ReadCompletedAttempt(attemptSnapshot, request.Competition);
+                if (completedAttempt.AttemptId != run.Attempt.AttemptId ||
+                    completedAttempt.PlayerId != run.Attempt.PlayerId ||
+                    completedAttempt.Score != run.Score ||
+                    completedAttempt.CompletedAtUtc != run.CompletedAtUtc)
+                {
+                    throw new InvalidOperationException("The completed Flappy run does not match its competition attempt.");
+                }
+                return new FlappyPaidReplayCompletionResult(completedAttempt, run.Score, run.Terminal, true);
+            }
+            if (run.Status != "started" || !attemptSnapshot.Exists)
+                throw new InvalidOperationException("The Flappy run is not available for completion.");
+            var attempt = ReadAttempt(attemptSnapshot, request.Competition);
+            if (attempt.PlayerId != request.AuthenticatedPlayerId || attempt.AttemptId != run.Attempt.AttemptId)
+                throw new InvalidOperationException("The Flappy run does not match its competition attempt.");
+            var result = FlappyReplayEvaluator.Evaluate(run.Run.Seed, request.Replay);
+            if (result.Snapshot.Phase == FlappyPhase.Playing) throw new ArgumentException("Flappy replay must reach a terminal state.", nameof(request));
+            var terminal = FirestoreFlappyFreeRunService.TerminalName(result.Snapshot.Phase);
+            var completed = attempt.Complete(new ArcadeCompetitionAttemptCompletion(
+                attempt.AttemptId, request.Competition, request.AuthenticatedPlayerId, result.Snapshot.Score, request.CompletedAtUtc));
+            transaction.Set(runReference, new Dictionary<string, object>
+            {
+                ["status"] = "completed", ["replayCanonical"] = canonical, ["replayDigest"] = digest,
+                ["score"] = (long)result.Snapshot.Score, ["terminal"] = terminal,
+                ["completedAt"] = Timestamp.FromDateTime(request.CompletedAtUtc.UtcDateTime),
+            }, SetOptions.MergeAll);
+            transaction.Set(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(completed));
+            return new FlappyPaidReplayCompletionResult(completed, result.Snapshot.Score, terminal, false);
+        }, cancellationToken: cancellationToken);
+    }
+
     private Task<PaidEntryOutcome> StartAsync(
         ArcadeCompetitionPaidEntryRequest request,
         AsteroidsRunIdentity? proposedRun,
+        FlappyPaidRunIdentity? proposedFlappyRun,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -125,9 +199,15 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         var attemptReference = AttemptDocument(requested);
         var balanceReference = BalanceDocument(request.AuthenticatedPlayerId);
         var entryReference = BalanceTransactionDocument($"arcade-competition-{requested.DocumentId}-entry");
-        var runReference = proposedRun is null ? null : AsteroidsRunDocument(requested);
+        if (proposedRun is not null && proposedFlappyRun is not null)
+            throw new ArgumentException("A paid entry cannot create more than one game run.");
+        var runReference = proposedRun is not null ? AsteroidsRunDocument(requested)
+            : proposedFlappyRun is not null ? FlappyRunDocument(requested)
+            : null;
         if (proposedRun is not null && proposedRun.RunId != AsteroidsRunId(requested))
             throw new ArgumentException("The Asteroids run id must be deterministic for its competition attempt.", nameof(proposedRun));
+        if (proposedFlappyRun is not null && proposedFlappyRun.RunId != FlappyRunId(requested))
+            throw new ArgumentException("The Flappy run id must be deterministic for its competition attempt.", nameof(proposedFlappyRun));
 
         return database.RunTransactionAsync(async transaction =>
         {
@@ -160,13 +240,15 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 VerifyEntryLedger(entrySnapshot, request.AuthenticatedPlayerId, entryFeeCents, request.AttemptId);
                 var existingRun = proposedRun is null ? null : ReadAsteroidsRun(
                     runSnapshot ?? throw new InvalidOperationException("An Asteroids run snapshot is missing."), existing);
-                return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(existing, WasAlreadyRecorded: true), existingRun);
+                var existingFlappyRun = proposedFlappyRun is null ? null : ReadFlappyRun(
+                    runSnapshot ?? throw new InvalidOperationException("A Flappy run snapshot is missing."), existing);
+                return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(existing, WasAlreadyRecorded: true), existingRun, existingFlappyRun);
             }
 
             if (entrySnapshot.Exists)
                 throw new InvalidOperationException("An arcade competition entry ledger record already exists without its attempt.");
             if (runSnapshot is { Exists: true })
-                throw new InvalidOperationException("An Asteroids run already exists without its competition attempt.");
+                throw new InvalidOperationException("A game run already exists without its competition attempt.");
             var availableCents = ReadBalanceCents(balanceSnapshot, request.AuthenticatedPlayerId);
             if (availableCents < entryFeeCents)
                 throw new ArcadeCompetitionInsufficientCreditsException(availableCents, entryFeeCents);
@@ -184,12 +266,18 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 request.EnteredAtUtc));
             transaction.Create(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(requested));
             AsteroidsRunRecord? createdRun = null;
+            FlappyPaidRunRecord? createdFlappyRun = null;
             if (proposedRun is not null && runReference is not null)
             {
                 createdRun = new AsteroidsRunRecord(proposedRun, requested);
                 transaction.Create(runReference, AsteroidsRunData(createdRun));
             }
-            return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(requested, WasAlreadyRecorded: false), createdRun);
+            if (proposedFlappyRun is not null && runReference is not null)
+            {
+                createdFlappyRun = new FlappyPaidRunRecord(proposedFlappyRun, requested);
+                transaction.Create(runReference, FlappyRunData(createdFlappyRun));
+            }
+            return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(requested, WasAlreadyRecorded: false), createdRun, createdFlappyRun);
         }, cancellationToken: cancellationToken);
     }
 
@@ -211,6 +299,9 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
 
     private DocumentReference AsteroidsRunDocument(ArcadeCompetitionAttemptRecord attempt) =>
         database.Collection("asteroidsRuns").Document(attempt.DocumentId);
+
+    private DocumentReference FlappyRunDocument(ArcadeCompetitionAttemptRecord attempt) =>
+        database.Collection("flappyRuns").Document(attempt.DocumentId);
 
     private static Dictionary<string, object> BalanceUpdate(long cents, DateTimeOffset updatedAtUtc) => new()
     {
@@ -242,6 +333,23 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
     {
         ["runId"] = run.Run.RunId,
         ["seedHex"] = run.Run.Seed.ToString("x16"),
+        ["status"] = "started",
+        ["attemptId"] = run.Attempt.AttemptId,
+        ["attemptDocumentId"] = run.Attempt.DocumentId,
+        ["competitionId"] = run.Attempt.Competition.DocumentId,
+        ["gameId"] = run.Attempt.Competition.GameId,
+        ["playerId"] = run.Attempt.PlayerId,
+        ["entryFeeCents"] = run.Attempt.EntryFeeCents,
+        ["enteredAt"] = Timestamp.FromDateTime(run.Attempt.EnteredAtUtc.UtcDateTime),
+        ["startsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.StartsAtUtc.UtcDateTime),
+        ["endsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.EndsAtUtc.UtcDateTime),
+        ["schemaVersion"] = 1L,
+    };
+
+    private static Dictionary<string, object> FlappyRunData(FlappyPaidRunRecord run) => new()
+    {
+        ["runId"] = run.Run.RunId,
+        ["seed"] = (long)run.Run.Seed,
         ["status"] = "started",
         ["attemptId"] = run.Attempt.AttemptId,
         ["attemptDocumentId"] = run.Attempt.DocumentId,
@@ -379,6 +487,25 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         }
     }
 
+    private static FlappyPaidRunRecord ReadFlappyRun(DocumentSnapshot snapshot, ArcadeCompetitionAttemptRecord attempt)
+    {
+        if (!snapshot.Exists ||
+            !snapshot.TryGetValue<string>("runId", out var runId) || runId != FlappyRunId(attempt) ||
+            !snapshot.TryGetValue<long>("seed", out var seed) || seed is < 1 or > uint.MaxValue ||
+            !snapshot.TryGetValue<string>("attemptId", out var attemptId) || attemptId != attempt.AttemptId ||
+            !snapshot.TryGetValue<string>("attemptDocumentId", out var documentId) || documentId != attempt.DocumentId ||
+            !snapshot.TryGetValue<string>("competitionId", out var competitionId) || competitionId != attempt.Competition.DocumentId ||
+            !snapshot.TryGetValue<string>("gameId", out var gameId) || gameId != attempt.Competition.GameId ||
+            !snapshot.TryGetValue<string>("playerId", out var playerId) || playerId != attempt.PlayerId ||
+            !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != attempt.Competition.StartsAtUtc ||
+            !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != attempt.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
+        {
+            throw new InvalidOperationException("A recorded Flappy run does not match its paid competition attempt.");
+        }
+        return new FlappyPaidRunRecord(new FlappyPaidRunIdentity(runId, (uint)seed), attempt);
+    }
+
     private static StoredRun ReadRunForCompletion(DocumentSnapshot snapshot, AsteroidsReplayCompletionRequest request)
     {
         if (!snapshot.Exists || !snapshot.TryGetValue<string>("runId", out var runId) || runId != request.RunId ||
@@ -417,6 +544,45 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         return new StoredRun(identity, attempt, status, canonical, digest, score, terminal, completedAt);
     }
 
+    private static StoredFlappyRun ReadFlappyRunForCompletion(DocumentSnapshot snapshot, FlappyPaidReplayCompletionRequest request)
+    {
+        if (!snapshot.Exists || !snapshot.TryGetValue<string>("runId", out var runId) || runId != request.RunId ||
+            !snapshot.TryGetValue<long>("seed", out var seed) || seed is < 1 or > uint.MaxValue ||
+            !snapshot.TryGetValue<string>("attemptId", out var attemptId) ||
+            !snapshot.TryGetValue<string>("attemptDocumentId", out var attemptDocumentId) ||
+            !snapshot.TryGetValue<string>("competitionId", out var competitionId) || competitionId != request.Competition.DocumentId ||
+            !snapshot.TryGetValue<string>("gameId", out var gameId) || gameId != request.Competition.GameId ||
+            !snapshot.TryGetValue<string>("playerId", out var playerId) || playerId != request.AuthenticatedPlayerId ||
+            !snapshot.TryGetValue<long>("entryFeeCents", out var entryFee) || entryFee <= 0 ||
+            !snapshot.TryGetValue<Timestamp>("enteredAt", out var enteredAt) ||
+            !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != request.Competition.StartsAtUtc ||
+            !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != request.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<string>("status", out var status))
+            throw new InvalidOperationException("A stored Flappy run is invalid.");
+        ArcadeCompetitionAttemptRecord attempt;
+        try
+        {
+            var started = new ArcadeCompetitionAttemptStart(attemptId, request.Competition, playerId, entryFee, new DateTimeOffset(enteredAt.ToDateTime()));
+            attempt = ArcadeCompetitionAttemptRecord.Start(started);
+        }
+        catch { throw new InvalidOperationException("A stored Flappy run is invalid."); }
+        if (attempt.DocumentId != attemptDocumentId) throw new InvalidOperationException("A stored Flappy run is invalid.");
+        var identity = new FlappyPaidRunIdentity(runId, (uint)seed);
+        var canonical = snapshot.TryGetValue<string>("replayCanonical", out var storedCanonical) ? storedCanonical : string.Empty;
+        var digest = snapshot.TryGetValue<string>("replayDigest", out var storedDigest) ? storedDigest : string.Empty;
+        var score = snapshot.TryGetValue<long>("score", out var storedScore) ? storedScore : 0L;
+        var terminal = snapshot.TryGetValue<string>("terminal", out var storedTerminal) ? storedTerminal : string.Empty;
+        var completedAt = snapshot.TryGetValue<Timestamp>("completedAt", out var storedCompletedAt)
+            ? new DateTimeOffset(storedCompletedAt.ToDateTime())
+            : (DateTimeOffset?)null;
+        if (status == "completed" && (string.IsNullOrWhiteSpace(canonical) || !DigestHexPattern.IsMatch(digest) || score < 0 ||
+            terminal is not ("obstacle-collision" or "ground-collision" or "ceiling-collision") || completedAt is null))
+            throw new InvalidOperationException("A completed Flappy run is invalid.");
+        if (status != "started" && status != "completed")
+            throw new InvalidOperationException("A stored Flappy run is invalid.");
+        return new StoredFlappyRun(identity, attempt, status, canonical, digest, score, terminal, completedAt);
+    }
+
     private static string CanonicalReplay(AsteroidsReplay replay)
     {
         return AsteroidsReplayEvaluator.CanonicalizeReplay(replay);
@@ -431,10 +597,22 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         return runId[prefix.Length..];
     }
 
+    private static string FlappyAttemptDocumentIdFromRunId(string runId)
+    {
+        const string prefix = "flappy_";
+        if (string.IsNullOrWhiteSpace(runId) || !runId.StartsWith(prefix, StringComparison.Ordinal) || runId.Length != prefix.Length + 64 ||
+            !runId[prefix.Length..].All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f'))
+            throw new ArgumentException("Flappy run id is invalid.", nameof(runId));
+        return runId[prefix.Length..];
+    }
+
     internal static string AsteroidsRunId(ArcadeCompetitionAttemptRecord attempt) => $"asteroids_{attempt.DocumentId}";
 
-    private sealed record PaidEntryOutcome(ArcadeCompetitionPaidEntryResult Entry, AsteroidsRunRecord? Run);
+    internal static string FlappyRunId(ArcadeCompetitionAttemptRecord attempt) => $"flappy_{attempt.DocumentId}";
+
+    private sealed record PaidEntryOutcome(ArcadeCompetitionPaidEntryResult Entry, AsteroidsRunRecord? Run, FlappyPaidRunRecord? FlappyRun);
     private sealed record StoredRun(AsteroidsRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt, string Status, string ReplayCanonical, string ReplayDigest, long Score, AsteroidsTerminalState Terminal, DateTimeOffset? CompletedAtUtc);
+    private sealed record StoredFlappyRun(FlappyPaidRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt, string Status, string ReplayCanonical, string ReplayDigest, long Score, string Terminal, DateTimeOffset? CompletedAtUtc);
 }
 
 internal sealed record ArcadeCompetitionPaidEntryRequest(
@@ -458,6 +636,11 @@ internal sealed record ArcadeCompetitionAsteroidsPaidEntryResult(
 internal sealed record AsteroidsReplayCompletionRequest(string RunId, ArcadeCompetitionIdentity Competition, string AuthenticatedPlayerId, AsteroidsReplay Replay, DateTimeOffset CompletedAtUtc);
 internal sealed record AsteroidsReplayCompletionResult(ArcadeCompetitionAttemptRecord Attempt, long Score, AsteroidsTerminalState Terminal, bool WasAlreadyCompleted);
 
+internal sealed record FlappyPaidRunRecord(FlappyPaidRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt);
+internal sealed record ArcadeCompetitionFlappyPaidEntryResult(ArcadeCompetitionAttemptRecord Attempt, bool WasAlreadyRecorded, FlappyPaidRunRecord Run);
+internal sealed record FlappyPaidReplayCompletionRequest(string RunId, ArcadeCompetitionIdentity Competition, string AuthenticatedPlayerId, FlappyReplay Replay, DateTimeOffset CompletedAtUtc);
+internal sealed record FlappyPaidReplayCompletionResult(ArcadeCompetitionAttemptRecord Attempt, long Score, string Terminal, bool WasAlreadyCompleted);
+
 internal interface IArcadeCompetitionPaidEntryCoordinator
 {
     Task<ArcadeCompetitionPaidEntryResult> StartPaidAttemptAsync(
@@ -468,6 +651,15 @@ internal interface IArcadeCompetitionPaidEntryCoordinator
         AsteroidsRunIdentity proposedRun,
         CancellationToken cancellationToken);
     Task<AsteroidsReplayCompletionResult> CompleteAsteroidsReplayAsync(AsteroidsReplayCompletionRequest request, CancellationToken cancellationToken);
+}
+
+internal interface IArcadeCompetitionFlappyPaidEntryCoordinator
+{
+    Task<ArcadeCompetitionFlappyPaidEntryResult> StartFlappyPaidAttemptAsync(
+        ArcadeCompetitionPaidEntryRequest request,
+        FlappyPaidRunIdentity proposedRun,
+        CancellationToken cancellationToken);
+    Task<FlappyPaidReplayCompletionResult> CompleteFlappyReplayAsync(FlappyPaidReplayCompletionRequest request, CancellationToken cancellationToken);
 }
 
 internal sealed class ArcadeCompetitionInsufficientCreditsException(long availableCents, long requiredCents) : Exception(

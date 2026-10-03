@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { FlappyReplaySession } from '@fortuneforge/games-flappy'
 import { clearFlappyRecovery, readFlappyRecovery, recoveryKey, restoreFlight, writeFlappyRecovery, type FlappyRecovery } from './flappyRecovery'
 const userId = 'pilot-one', runId = 'flappy_free_' + 'ab'.repeat(32)
-const run = { runId, seed: 17, startedAtUtc: '2026-10-01T00:00:00Z', wasReplay: false }
+const run = { runId, seed: 17, wasReplay: false, mode: 'free' as const }
 const store = (value: unknown) => sessionStorage.setItem(recoveryKey(userId), JSON.stringify(value))
-const flight: FlappyRecovery = { kind: 'flight', run, cursor: { totalTicks: 10, flapTicks: [0] } }
+const flight = { kind: 'flight', run, cursor: { totalTicks: 10, flapTicks: [0] } } satisfies FlappyRecovery
 function terminal() {
   const session = new FlappyReplaySession(runId, 17); session.advanceFrame(true)
   while (session.view.status === 'running') session.advanceFrame()
@@ -39,7 +39,7 @@ describe('account-scoped Flappy recovery', () => {
   })
   it('reads the prior start receipt without creating new intent', () => {
     sessionStorage.setItem(`fortuneforge:flappy:start:${userId}`, JSON.stringify({ idempotencyKey: 'flappy-legacy-start-key' }))
-    expect(readFlappyRecovery(userId).recovery).toEqual({ kind: 'start', idempotencyKey: 'flappy-legacy-start-key' })
+    expect(readFlappyRecovery(userId).recovery).toEqual({ kind: 'start', idempotencyKey: 'flappy-legacy-start-key', mode: 'free' })
   })
   it('reads prior exact pending replay without inventing an issued seed/course', () => {
     const ended = terminal(); sessionStorage.setItem(`fortuneforge:flappy:pending:${userId}`, JSON.stringify({ runId, ...ended }))
@@ -51,7 +51,7 @@ describe('account-scoped Flappy recovery', () => {
     expect(clearFlappyRecovery(userId)).toBeNull(); expect(readFlappyRecovery(userId).recovery).toBeNull(); expect(sessionStorage.getItem(recoveryKey('pilot-two'))).toBe('other')
   })
   it.each([null, [], {}, { kind: 'start', idempotencyKey: 'short' }, { kind: 'unknown' }, { ...flight, run: { ...run, seed: 0 } },
-    { ...flight, run: { ...run, runId: 'other' } }, { ...flight, run: { ...run, startedAtUtc: 'invalid' } }])('locks malformed saved value %j without deleting it', value => {
+    { ...flight, run: { ...run, runId: 'other' } }, { ...flight, run: { ...run, mode: 'monthly' } }])('locks malformed saved value %j without deleting it', value => {
     store(value); const raw = sessionStorage.getItem(recoveryKey(userId)); expect(readFlappyRecovery(userId).error).not.toBeNull()
     expect(sessionStorage.getItem(recoveryKey(userId))).toBe(raw)
   })

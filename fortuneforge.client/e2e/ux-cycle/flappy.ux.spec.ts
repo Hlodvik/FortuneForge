@@ -210,7 +210,7 @@ test.describe('Recorded Flappy browser surface', () => {
     await button(page, 'Start flight').click()
     await expect(phase(page)).toHaveAttribute('data-phase', 'start-failed')
     const saved = await stored(page)
-    expect(saved).toEqual({ kind: 'start', idempotencyKey: h.writes[0].key })
+    expect(saved).toEqual({ kind: 'start', idempotencyKey: h.writes[0].key, mode: 'free' })
     await capture(page, 'start-interrupted')
     await reloadPausedClock(page)
     await expect(phase(page)).toHaveAttribute('data-phase', 'start-failed')

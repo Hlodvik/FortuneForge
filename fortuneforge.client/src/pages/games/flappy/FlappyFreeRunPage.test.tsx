@@ -10,13 +10,15 @@ import { recoveryKey } from './flappyRecovery'
 
 const runId = 'flappy_free_' + 'ab'.repeat(32)
 const run: FlappyFreeRun = { runId, seed: 17, startedAtUtc: '2026-10-01T00:00:00Z', wasReplay: false }
+const paidRunId = 'flappy_' + 'cd'.repeat(32)
+const paidRun = { attemptId: 'paid-attempt-1', gameId: 'flappy' as const, period: 'daily' as const, startsAtUtc: '2026-10-01T00:00:00Z', endsAtUtc: '2026-10-02T00:00:00Z', entryFeeCents: 100, wasReplay: false, runId: paidRunId, seed: 19 }
 const account: AccountSummary = { userId: 'pilot-one', playerName: 'Pilot', email: 'pilot@example.test', role: 'Player', createdAtUtc: run.startedAtUtc,
   balances: { slotsCredits: 100, freeGames: 0 }, slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 } }
-const gateway = { startFreeFlappyRun: vi.fn(), completeFreeFlappyReplay: vi.fn() }
+const gateway = { startFreeFlappyRun: vi.fn(), completeFreeFlappyReplay: vi.fn(), startFlappyAttempt: vi.fn(), completeFlappyReplay: vi.fn(), getLeaderboard: vi.fn() }
 let root: Root | null, host: HTMLDivElement
 function deferred<T>() { let resolve!: (value: T) => void, reject!: (reason: unknown) => void; const promise = new Promise<T>((a, b) => { resolve = a; reject = b }); return { promise, resolve, reject } }
 async function flush() { await act(async () => { for (let i = 0; i < 8; i++) await Promise.resolve() }) }
-async function mount(owner = account) { root = createRoot(host); await act(async () => root!.render(<StrictMode><FlappyFreeRunPage account={owner} gateway={gateway} /></StrictMode>)); await flush() }
+async function mount(owner = account, onPaidAccountRefresh?: () => void | Promise<void>) { root = createRoot(host); await act(async () => root!.render(<StrictMode><FlappyFreeRunPage account={owner} gateway={gateway} onPaidAccountRefresh={onPaidAccountRefresh} /></StrictMode>)); await flush() }
 async function time(ms: number) { await act(async () => vi.advanceTimersByTimeAsync(ms)); await flush() }
 function button(name: string) { const b = [...host.querySelectorAll<HTMLButtonElement>('button')].find(b => (b.getAttribute('aria-label') ?? b.textContent?.trim()) === name); if (!b) throw new Error(`Missing ${name}: ${host.textContent}`); return b }
 async function click(name: string, double = false) { await act(async () => { button(name).focus(); button(name).click(); if (double) button(name).click() }); await flush() }
@@ -41,6 +43,9 @@ beforeEach(() => {
   sessionStorage.clear(); localStorage.clear(); host = document.createElement('div'); document.body.append(host); root = null
   gateway.startFreeFlappyRun.mockReset().mockResolvedValue(run)
   gateway.completeFreeFlappyReplay.mockReset().mockResolvedValue({ runId, score: 0, terminal: 'ground-collision', wasReplay: false })
+  gateway.startFlappyAttempt.mockReset().mockResolvedValue(paidRun)
+  gateway.completeFlappyReplay.mockReset().mockResolvedValue({ runId: paidRunId, score: 0, terminal: 'ground-collision', wasReplay: false })
+  gateway.getLeaderboard.mockReset().mockResolvedValue({ gameId: 'flappy', period: 'all-time', leaderboard: [] })
 })
 afterEach(async () => { if (root) await act(async () => root!.unmount()); host.remove(); vi.restoreAllMocks(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
@@ -54,9 +59,16 @@ describe('recorded Flappy flight intent and recovery', () => {
     expect(gateway.startFreeFlappyRun).toHaveBeenCalledTimes(1); expect(phase()).toBe('playing'); expect(document.activeElement).toBe(course())
     expect(saved().cursor).toEqual({ totalTicks: 1, flapTicks: [0] }); expect(tick()).toBe(1)
   })
+  it('enters the daily R1 pool, submits its verified replay there and refreshes the debited balance', async () => {
+    const refresh = vi.fn(); await mount(account, refresh); await click('Start daily flight'); await time(2000)
+    expect(gateway.startFlappyAttempt).toHaveBeenCalledWith('daily', expect.any(String), expect.any(AbortSignal))
+    expect(gateway.startFreeFlappyRun).not.toHaveBeenCalled()
+    expect(gateway.completeFlappyReplay).toHaveBeenCalledWith('daily', paidRunId, expect.objectContaining({ totalTicks: expect.any(Number), flapTicks: expect.any(Array) }), expect.any(AbortSignal))
+    expect(refresh).toHaveBeenCalledTimes(2)
+  })
   it('saves the exact start key before its transport and passes an abort signal', async () => {
     gateway.startFreeFlappyRun.mockImplementation((key: string, signal: AbortSignal) => {
-      expect(saved()).toEqual({ kind: 'start', idempotencyKey: key }); expect(signal.aborted).toBe(false); return Promise.resolve(run)
+      expect(saved()).toEqual({ kind: 'start', idempotencyKey: key, mode: 'free' }); expect(signal.aborted).toBe(false); return Promise.resolve(run)
     }); await mount(); await click('Start flight'); expect(gateway.startFreeFlappyRun).toHaveBeenCalledTimes(1)
   })
   it('blocks new starts before transport when storage cannot retain a key', async () => {

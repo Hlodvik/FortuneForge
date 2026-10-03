@@ -1,5 +1,8 @@
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Arcade.Asteroids;
+using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Games.Flappy;
+using System.Collections.Immutable;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -15,6 +18,37 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
     public FirestoreArcadeCompetitionPaidEntryCoordinatorTests(SolitaireFirestoreEmulatorFixture fixture)
     {
         this.fixture = fixture;
+    }
+
+    [Fact]
+    public async Task FlappyPaidEntryDebitsCreatesAndCompletesAnAuthoritativeLeaderboardAttemptAtomically()
+    {
+        var (database, coordinator) = CreateCoordinator();
+        await SeedBalanceAsync(database, "flappy-player", 200);
+        var competition = new ArcadeCompetitionIdentity("flappy", ArcadeCompetitionWindowKind.Daily, Start, Start.AddDays(1));
+        var request = new ArcadeCompetitionPaidEntryRequest("flappy-attempt-1", competition, "flappy-player", 100, Start.AddMinutes(1));
+        var attempt = ArcadeCompetitionAttemptRecord.Start(new ArcadeCompetitionAttemptStart(
+            request.AttemptId, request.Competition, request.AuthenticatedPlayerId, request.EntryFeeCents, request.EnteredAtUtc));
+        var run = new FlappyPaidRunIdentity(FirestoreArcadeCompetitionPaidEntryCoordinator.FlappyRunId(attempt), 17);
+        var replay = new FlappyReplay(36, ImmutableArray<int>.Empty);
+
+        var started = await coordinator.StartFlappyPaidAttemptAsync(request, run, default);
+        var completed = await coordinator.CompleteFlappyReplayAsync(new FlappyPaidReplayCompletionRequest(
+            run.RunId, competition, "flappy-player", replay, Start.AddMinutes(3)), default);
+        var retry = await coordinator.CompleteFlappyReplayAsync(new FlappyPaidReplayCompletionRequest(
+            run.RunId, competition, "flappy-player", replay, Start.AddMinutes(4)), default);
+
+        Assert.False(started.WasAlreadyRecorded);
+        Assert.Equal(100, await ReadBalanceCentsAsync(database, "flappy-player"));
+        Assert.Equal("ground-collision", completed.Terminal);
+        Assert.False(completed.WasAlreadyCompleted);
+        Assert.True(retry.WasAlreadyCompleted);
+        var storedRun = Assert.Single((await database.Collection("flappyRuns").GetSnapshotAsync()).Documents);
+        Assert.Equal("completed", Field<string>(storedRun, "status"));
+        Assert.Equal(17L, Field<long>(storedRun, "seed"));
+        var storedAttempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
+        Assert.Equal("completed", Field<string>(storedAttempt, "status"));
+        Assert.Equal(completed.Score, Field<long>(storedAttempt, "score"));
     }
 
     [Fact]

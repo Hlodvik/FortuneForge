@@ -70,11 +70,12 @@ public sealed class ArcadeCompetitionController : ControllerBase
         [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
         [FromServices] AccountService accountService,
         [FromServices] ArcadeCompetitionAsteroidsPaidEntryService paidEntryService,
+        [FromServices] ArcadeCompetitionFlappyPaidEntryService flappyPaidEntryService,
         CancellationToken cancellationToken)
     {
         if (!options.Value.AllowedGameIds.Contains(gameId, StringComparer.Ordinal))
             return NotFound(new ArcadeCompetitionApiError("arcade-competition-game-not-found"));
-        if (!string.Equals(gameId, "asteroids", StringComparison.Ordinal))
+        if (gameId is not ("asteroids" or "flappy"))
             return NotFound(new ArcadeCompetitionApiError("arcade-competition-game-not-found"));
         if (period == "all-time")
             return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-not-startable"));
@@ -91,22 +92,35 @@ public sealed class ArcadeCompetitionController : ControllerBase
 
         try
         {
-            var result = await paidEntryService.StartAttemptAsync(
-                idempotencyKey,
-                account.UserId,
-                windowKind,
-                cancellationToken);
-            var attempt = result.Attempt;
+            if (gameId == "flappy")
+            {
+                var result = await flappyPaidEntryService.StartAttemptAsync(
+                    idempotencyKey, account.UserId, windowKind, cancellationToken);
+                var attempt = result.Attempt;
+                return Ok(new FlappyPaidAttemptResponse(
+                    attempt.AttemptId,
+                    PeriodName(attempt.Competition.WindowKind),
+                    attempt.Competition.StartsAtUtc,
+                    attempt.Competition.EndsAtUtc,
+                    attempt.EntryFeeCents,
+                    result.WasAlreadyRecorded,
+                    result.Run.Run.RunId,
+                    result.Run.Run.Seed));
+            }
+
+            var asteroids = await paidEntryService.StartAttemptAsync(
+                idempotencyKey, account.UserId, windowKind, cancellationToken);
+            var asteroidAttempt = asteroids.Attempt;
             return Ok(new ArcadeCompetitionPaidAttemptResponse(
-                attempt.AttemptId,
-                attempt.Competition.GameId,
-                PeriodName(attempt.Competition.WindowKind),
-                attempt.Competition.StartsAtUtc,
-                attempt.Competition.EndsAtUtc,
-                attempt.EntryFeeCents,
-                result.WasAlreadyRecorded,
-                result.Run.Run.RunId,
-                result.Run.Run.Seed.ToString("x16")));
+                asteroidAttempt.AttemptId,
+                asteroidAttempt.Competition.GameId,
+                PeriodName(asteroidAttempt.Competition.WindowKind),
+                asteroidAttempt.Competition.StartsAtUtc,
+                asteroidAttempt.Competition.EndsAtUtc,
+                asteroidAttempt.EntryFeeCents,
+                asteroids.WasAlreadyRecorded,
+                asteroids.Run.Run.RunId,
+                asteroids.Run.Run.Seed.ToString("x16")));
         }
         catch (Exception exception) { return PaidEntryFailure(exception); }
     }
@@ -251,6 +265,34 @@ public sealed class ArcadeCompetitionController : ControllerBase
         catch (Exception exception) { return FlappyFreeRunFailure(exception); }
     }
 
+    [HttpPost("flappy/{period}/runs/{runId}/replay")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<IActionResult> CompletePaidFlappyReplay(
+        string period,
+        string runId,
+        [FromBody] FlappyReplayInputRequest? request,
+        [FromServices] AccountService accountService,
+        [FromServices] ArcadeCompetitionFlappyPaidEntryService flappyService,
+        CancellationToken cancellationToken)
+    {
+        if (period == "all-time") return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-not-startable"));
+        if (!TryParsePeriod(period, out var windowKind))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-invalid"));
+        if (!TryCreateFlappyReplay(request, out var replay))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-flappy-replay-invalid"));
+        var account = (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
+        if (account is null)
+            return Unauthorized(new ArcadeCompetitionApiError("arcade-competition-authentication-required"));
+        try
+        {
+            var result = await flappyService.CompleteAttemptAsync(
+                runId, account.UserId, windowKind, replay, cancellationToken);
+            return Ok(new FlappyReplayCompletionResponse(
+                runId, result.Score, result.Terminal, result.WasAlreadyCompleted));
+        }
+        catch (Exception exception) { return FlappyPaidReplayFailure(exception); }
+    }
+
     private static bool TryParsePeriod(string value, out ArcadeCompetitionWindowKind kind)
     {
         switch (value)
@@ -356,6 +398,20 @@ public sealed class ArcadeCompetitionController : ControllerBase
         },
     };
 
+    internal static IActionResult FlappyPaidReplayFailure(Exception exception) => exception switch
+    {
+        ArcadeCompetitionSettlementCompletedException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-competition-settlement-closed")),
+        ArgumentException => new BadRequestObjectResult(
+            new ArcadeCompetitionApiError("arcade-flappy-replay-invalid")),
+        InvalidOperationException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-flappy-run-conflict")),
+        _ => new ObjectResult(new ArcadeCompetitionApiError("arcade-flappy-replay-failed"))
+        {
+            StatusCode = StatusCodes.Status500InternalServerError
+        },
+    };
+
     private static bool TryCreateReplay(AsteroidsReplayInputRequest? request, out AsteroidsReplay replay)
     {
         replay = null!;
@@ -404,6 +460,18 @@ public sealed record AsteroidsReplayCompletionResponse(string RunId, long Score,
 public sealed record AsteroidsFreeRunStartResponse(string RunId, string SeedHex, DateTimeOffset StartedAtUtc, bool WasReplay);
 public sealed record FlappyReplayInputRequest(int TotalTicks, IReadOnlyList<int>? FlapTicks);
 public sealed record FlappyFreeRunStartResponse(string RunId, uint Seed, DateTimeOffset StartedAtUtc, bool WasReplay);
+public sealed record FlappyPaidAttemptResponse(
+    string AttemptId,
+    string Period,
+    DateTimeOffset StartsAtUtc,
+    DateTimeOffset EndsAtUtc,
+    long EntryFeeCents,
+    bool WasReplay,
+    string RunId,
+    uint Seed)
+{
+    public string GameId => "flappy";
+}
 public sealed record FlappyReplayCompletionResponse(string RunId, long Score, string Terminal, bool WasReplay);
 public sealed record ArcadeCompetitionPlacementResponse(int Position, string PlayerId, long Score);
 public sealed record ArcadeCompetitionRefundResponse(string PlayerId, long AmountCents);

@@ -174,6 +174,8 @@
 }
 .flappy-panel p { color: #fff9d6; font-size: 15px; font-weight: 900; text-shadow: 0 2px 2px rgb(0 0 0 / 65%); text-transform: uppercase; }
 .flappy-panel-mode { color: #fff; font-size: 12px; font-weight: 900; letter-spacing: .18em; text-shadow: 0 2px 2px rgb(0 0 0 / 60%); text-transform: uppercase; }
+.flappy-entry-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.flappy-entry-choices button { min-width: 128px; }
 .flappy-panel .flappy-result-score { color: #fff; font-family: Impact, "Arial Black", sans-serif; font-size: clamp(42px, 10cqh, 84px); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .flappy-panel--result,
 .flappy-panel--submitting,
@@ -240,6 +242,24 @@
 .flappy-dialog h2 { margin: 0; color: #fff2a8; font-size: 22px; text-transform: uppercase; }
 .flappy-dialog header button { width: 40px; min-height: 40px; padding: 0; font-size: 22px; }
 .flappy-dialog-body { min-height: 0; overflow: auto; padding: 4px 18px 18px; font-size: 14px; line-height: 1.55; overscroll-behavior: contain; }
+.flappy-dialog .arcade-leaderboard__heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.flappy-dialog .arcade-leaderboard__periods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.flappy-dialog .arcade-leaderboard__period { min-height: 38px; padding: 5px 8px; border-width: 2px; border-radius: 9px; font-size: 11px; }
+.flappy-dialog .arcade-leaderboard__period--active { color: #17343b; background: linear-gradient(#fff18a, #eabf34); }
+.flappy-dialog .arcade-leaderboard__panel { margin-top: 14px; }
+.flappy-dialog .arcade-leaderboard__dates { margin: 0 0 9px; color: #d8f6f4; font-size: 12px; }
+.flappy-dialog .arcade-leaderboard__summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 0; }
+.flappy-dialog .arcade-leaderboard__summary div { display: grid; gap: 2px; padding: 8px; border: 1px solid rgb(229 211 92 / 32%); border-radius: 8px; background: rgb(3 28 34 / 42%); }
+.flappy-dialog .arcade-leaderboard__summary dt { color: #a9d5d5; font-size: 10px; text-transform: uppercase; }
+.flappy-dialog .arcade-leaderboard__summary dd { margin: 0; color: #fff5b0; font-weight: 900; }
+.flappy-dialog .arcade-leaderboard__rows { display: grid; gap: 5px; margin: 12px 0 0; padding: 0; list-style: none; }
+.flappy-dialog .arcade-leaderboard__row { display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; padding: 7px 9px; border-radius: 7px; background: rgb(3 28 34 / 55%); }
+.flappy-dialog .arcade-leaderboard__position,
+.flappy-dialog .arcade-leaderboard__score { color: #fff09a; font-weight: 900; }
+.flappy-dialog .arcade-leaderboard__state { color: #d8f6f4; }
+.flappy-dialog .arcade-leaderboard__history { display: flex; gap: 7px; margin-top: 10px; }
+.flappy-dialog .arcade-leaderboard__history button,
+.flappy-dialog .arcade-leaderboard__retry { min-height: 34px; padding: 5px 10px; font-size: 10px; }
 
 @media (max-width: 720px) {
   .flappy-shell > .in-game-shell__body { overflow: hidden; }
@@ -254,6 +274,8 @@
   .flappy-panel h2 { font-size: clamp(31px, 8cqh, 54px); }
   .flappy-panel p { font-size: 12px; }
   .flappy-panel-mode { font-size: 9px; }
+  .flappy-entry-choices { gap: 7px; }
+  .flappy-entry-choices button { min-width: 100px; padding-inline: 12px; }
   .flappy-notice { position: absolute; right: 10px; bottom: 78px; left: 10px; max-width: none; padding: 8px; border-radius: 8px; background: rgb(8 30 37 / 85%); text-align: center; }
 }
 
@@ -271,6 +293,7 @@
   .flappy-panel h2 { font-size: clamp(28px, 12cqh, 42px); }
   .flappy-panel p { font-size: 10px; }
   .flappy-panel button { min-height: 34px; padding: 5px 14px; font-size: 11px; }
+  .flappy-entry-choices { gap: 5px; }
   .flappy-result-board { width: min(280px, 72%); padding: 6px; }
 }
 

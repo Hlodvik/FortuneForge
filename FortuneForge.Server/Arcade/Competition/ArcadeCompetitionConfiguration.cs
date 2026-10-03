@@ -7,7 +7,7 @@ namespace FortuneForge.Server.Arcade.Competition;
 
 public sealed record ArcadeCompetitionApiOptions
 {
-    public IReadOnlyList<string> AllowedGameIds { get; init; } = ["asteroids"];
+    public IReadOnlyList<string> AllowedGameIds { get; init; } = ["asteroids", "flappy"];
     public int AllTimeMaximumPlaces { get; init; } = 100;
 }
 
@@ -24,12 +24,18 @@ public static class ArcadeCompetitionConfiguration
             new FirestoreArcadeCompetitionPaidEntryCoordinator(
                 provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>(),
                 provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
+        services.AddSingleton<IArcadeCompetitionFlappyPaidEntryCoordinator>(provider =>
+            (IArcadeCompetitionFlappyPaidEntryCoordinator)provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>());
         services.AddSingleton<ArcadeCompetitionPaidEntryService>(provider => new ArcadeCompetitionPaidEntryService(
             provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>(),
             provider.GetRequiredService<TimeProvider>(),
             provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
         services.AddSingleton<ArcadeCompetitionAsteroidsPaidEntryService>(provider => new ArcadeCompetitionAsteroidsPaidEntryService(
             provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>(),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
+        services.AddSingleton<ArcadeCompetitionFlappyPaidEntryService>(provider => new ArcadeCompetitionFlappyPaidEntryService(
+            provider.GetRequiredService<IArcadeCompetitionFlappyPaidEntryCoordinator>(),
             provider.GetRequiredService<TimeProvider>(),
             provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
         services.AddSingleton<TimeProvider>(TimeProvider.System);

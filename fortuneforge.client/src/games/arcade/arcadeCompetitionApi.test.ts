@@ -137,6 +137,38 @@ describe('Flappy authenticated free-run transport', () => {
   })
 })
 
+describe('Flappy paid competition transport', () => {
+  const paidRunId = 'flappy_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+
+  it('starts the selected R1 pool with an idempotency key and server seed', async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse({
+      attemptId: 'flappy-attempt-1', gameId: 'flappy', period: 'daily',
+      startsAtUtc: '2026-09-06T22:00:00+00:00', endsAtUtc: '2026-09-07T22:00:00+00:00',
+      entryFeeCents: 100, wasReplay: false, runId: paidRunId, seed: 17,
+    }))
+    const gateway = new HttpArcadeCompetitionGateway(fetcher)
+
+    const result = await gateway.startFlappyAttempt('daily', 'flappy-paid-0123456789')
+
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/arcade-competitions/flappy/daily/attempts')
+    expect(new Headers(init.headers).get('Idempotency-Key')).toBe('flappy-paid-0123456789')
+    expect(result.seed).toBe(17)
+  })
+
+  it('submits only canonical flap timing to the selected pool', async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse({ runId: paidRunId, score: 4, terminal: 'ground-collision', wasReplay: false }))
+    const gateway = new HttpArcadeCompetitionGateway(fetcher)
+
+    await gateway.completeFlappyReplay('weekly', paidRunId, flappyReplay)
+
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(`/api/arcade-competitions/flappy/weekly/runs/${paidRunId}/replay`)
+    expect(JSON.parse(String(init.body))).toEqual(flappyReplay)
+    expect(String(init.body)).not.toMatch(/score|user|seed|time/i)
+  })
+})
+
 function jsonResponse(value: unknown): Response {
   return new Response(JSON.stringify(value), { status: 200, headers: { 'Content-Type': 'application/json' } })
 }

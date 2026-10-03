@@ -1,20 +1,26 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { startFlappySimulation } from '@fortuneforge/games-flappy'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
-import type { FlappyFreeRunGateway } from '../../../games/arcade/arcadeCompetitionApi'
+import { ArcadeCompetitionLeaderboard } from '../../../games/arcade/ArcadeCompetitionLeaderboard'
+import type { FlappyCompetitionGateway } from '../../../games/arcade/arcadeCompetitionApi'
+import type { FlappyEntryMode } from './flappyRecovery'
 import { playFlappySound } from './flappyAudio'
 import { FlappyFlightScene } from './FlappyFlightScene'
 import { useRecordedFlappy } from './useRecordedFlappy'
 import './FlappyFreeRunPage.css'
 
-export type FlappyFreeRunPageProps = Readonly<{ account: AccountSummary; gateway: FlappyFreeRunGateway }>
+export type FlappyFreeRunPageProps = Readonly<{
+  account: AccountSummary
+  gateway: FlappyCompetitionGateway
+  onPaidAccountRefresh?: () => void | Promise<void>
+}>
 const preview = startFlappySimulation(17)
 export function FlappyFreeRunPage(props: FlappyFreeRunPageProps) { return <RecordedFlight key={props.account.userId} {...props} /> }
 
-function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
-  const flight = useRecordedFlappy(account.userId, gateway)
+function RecordedFlight({ account, gateway, onPaidAccountRefresh }: FlappyFreeRunPageProps) {
+  const flight = useRecordedFlappy(account.userId, gateway, onPaidAccountRefresh)
   const course = useRef<HTMLDivElement>(null)
-  const [panel, setPanel] = useState<'rules' | 'discard' | null>(null)
+  const [panel, setPanel] = useState<'rules' | 'discard' | 'scores' | null>(null)
   const [reducedMotion, setReducedMotion] = useState(false)
   const priorScore = useRef(0)
   const priorGamePhase = useRef(gamePhase(preview.phase))
@@ -31,8 +37,8 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
   const active = flight.phase === 'playing', resumable = flight.phase === 'paused'
   const busy = flight.phase === 'starting' || flight.phase === 'submitting'
   const focusFlap = () => { course.current?.focus({ preventScroll: true }); playFlappySound('flap'); flight.flap() }
-  const beginFlight = () => { playFlappySound('flap'); void flight.start() }
-  const openPanel = (next: 'rules' | 'discard') => { flight.pause(); setPanel(next) }
+  const beginFlight = (mode: FlappyEntryMode) => { playFlappySound('flap'); void flight.start(mode) }
+  const openPanel = (next: 'rules' | 'discard' | 'scores') => { flight.pause(); setPanel(next) }
   useEffect(() => {
     if (game.score > priorScore.current) playFlappySound('score')
     priorScore.current = game.score
@@ -59,14 +65,15 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
         {(active || resumable) && <div className="flappy-score" aria-label={`Score ${game.score}`}>{game.score}</div>}
         <div className="flappy-course-actions">
           {active && <button type="button" aria-label="Pause" onClick={flight.pause}>Ⅱ</button>}
+          <button type="button" aria-label="Rankings" onClick={() => openPanel('scores')}>★</button>
           <button type="button" aria-label="Rules" onClick={() => openPanel('rules')}>?</button>
         </div>
         {!active && <section className={`flappy-panel flappy-panel--${flight.phase}`} aria-live={busy ? 'polite' : 'off'}>
-          {(flight.phase === 'lobby' || flight.phase === 'starting') && <><span className="flappy-panel-mode">Fortune Forge Arcade</span><h1>Flappy</h1><p>Tap to fly</p><button type="button" aria-label={busy ? 'Preparing flight…' : 'Start flight'} disabled={busy} onClick={beginFlight}>{busy ? 'Loading…' : 'Start'}</button></>}
+          {(flight.phase === 'lobby' || flight.phase === 'starting') && <><span className="flappy-panel-mode">Fortune Forge Arcade</span><h1>Flappy</h1><p>Tap to fly</p><div className="flappy-entry-choices"><button type="button" aria-label={busy ? 'Preparing flight…' : 'Start daily flight'} disabled={busy} onClick={() => beginFlight('daily')}>{busy ? 'Loading…' : 'Daily · R1'}</button><button type="button" aria-label="Start weekly flight" disabled={busy} onClick={() => beginFlight('weekly')}>Weekly · R1</button><button className="flappy-secondary" type="button" aria-label="Start flight" disabled={busy} onClick={() => beginFlight('free')}>Casual</button></div></>}
           {resumable && <><h2>Paused</h2><button type="button" aria-label="Resume flight" onClick={() => flight.resume()}>Resume</button><button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>New flight</button></>}
           {flight.phase === 'start-failed' && <><h2>Couldn’t start</h2><button type="button" aria-label="Retry flight start" onClick={flight.retry}>Retry</button></>}
           {(flight.phase === 'submitting' || flight.phase === 'submit-failed') && <><h2>Game over</h2><p className="flappy-result-score">{score}</p><p>{busy ? 'Saving…' : 'Save interrupted'}</p>{!busy && <button type="button" aria-label="Retry recording" onClick={flight.retry}>Retry save</button>}{!busy && <button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>Clear</button>}</>}
-          {flight.phase === 'result' && <><h2>Game over</h2><div className="flappy-result-board"><span>Score<strong className="flappy-result-score" aria-label={`Official score ${score}`}>{score}</strong></span><span>Best<strong>{flight.sessionBest ?? score}</strong></span></div><button type="button" onClick={beginFlight}>Fly again</button></>}
+          {flight.phase === 'result' && <><h2>Game over</h2><div className="flappy-result-board"><span>Score<strong className="flappy-result-score" aria-label={`Official score ${score}`}>{score}</strong></span><span>Best<strong>{flight.sessionBest ?? score}</strong></span></div><button type="button" onClick={() => beginFlight(flight.resultMode)}>Fly again</button></>}
           {flight.phase === 'failed' && <><h2>Game over</h2><button type="button" onClick={flight.discard}>New flight</button></>}
           {flight.phase === 'unavailable' && <><h2>Saved flight unavailable</h2><button type="button" onClick={() => openPanel('discard')}>Clear saved flight</button></>}
         </section>}
@@ -79,8 +86,8 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
         onPointerDown={event => { if (event.button === 0 && event.isPrimary) { event.preventDefault(); focusFlap() } }}
         onClick={event => { if (event.detail === 0) focusFlap() }}><span aria-hidden="true">▲</span> Flap</button>
     </footer>
-    {panel !== null && <FlappyDialog title={panel === 'rules' ? 'Flappy rules' : 'Clear this flight?'} onClose={() => setPanel(null)}>
-      {panel === 'rules' ? <><p>Tap the course, press Space, or use the Flap button.</p><p>Pass through each opening. A pipe, the ceiling, or the ground ends the flight.</p><p>The course speeds up as your score rises. Leaving the window pauses the game.</p></> : <><p>{flight.phase === 'submit-failed' ? 'This score may already be saved. Clearing removes the local retry.' : 'This unfinished flight will be removed.'}</p><button type="button" onClick={() => { flight.discard(); setPanel(null) }}>Clear flight</button></>}
+    {panel !== null && <FlappyDialog title={panel === 'rules' ? 'Flappy rules' : panel === 'scores' ? 'Rankings' : 'Clear this flight?'} onClose={() => setPanel(null)}>
+      {panel === 'scores' ? <ArcadeCompetitionLeaderboard key={flight.result?.runId ?? 'flappy'} gameId="flappy" gateway={gateway} /> : panel === 'rules' ? <><p>Tap the course, press Space, or use the Flap button.</p><p>Pass through each opening. A pipe, the ceiling, or the ground ends the flight.</p><p>The course speeds up as your score rises. Leaving the window pauses the game.</p></> : <><p>{flight.phase === 'submit-failed' ? 'This score may already be saved. Clearing removes the local retry.' : 'This unfinished flight will be removed.'}</p><button type="button" onClick={() => { flight.discard(); setPanel(null) }}>Clear flight</button></>}
     </FlappyDialog>}
   </main>
 }

@@ -91,13 +91,13 @@ public sealed class ArcadeCompetitionControllerTests
         var controller = Create();
 
         var unknownGame = Assert.IsType<NotFoundObjectResult>(await controller.StartAttempt(
-            "other-arcade", "daily", "attempt-1", null!, null!, default));
+            "other-arcade", "daily", "attempt-1", null!, null!, null!, default));
         var allTime = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "all-time", "attempt-1", null!, null!, default));
+            "asteroids", "all-time", "attempt-1", null!, null!, null!, default));
         var badPeriod = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "monthly", "attempt-1", null!, null!, default));
+            "asteroids", "monthly", "attempt-1", null!, null!, null!, default));
         var missingKey = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "daily", " ", null!, null!, default));
+            "asteroids", "daily", " ", null!, null!, null!, default));
 
         Assert.Equal("arcade-competition-game-not-found", ErrorCode(unknownGame));
         Assert.Equal("arcade-competition-period-not-startable", ErrorCode(allTime));
@@ -116,6 +116,7 @@ public sealed class ArcadeCompetitionControllerTests
         Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
             .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
         Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionAsteroidsPaidEntryService");
+        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
         Assert.DoesNotContain(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionPaidEntryService");
         Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "balance" or "time" or "window");
     }
@@ -237,6 +238,21 @@ public sealed class ArcadeCompetitionControllerTests
             Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
         });
         Assert.Equal(new[] { "TotalTicks", "FlapTicks" }, typeof(FlappyReplayInputRequest).GetProperties().Select(property => property.Name));
+    }
+
+    [Fact]
+    public void FlappyPaidReplayRouteIsAuthenticatedRateLimitedAndAcceptsReplayInputOnly()
+    {
+        var complete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompletePaidFlappyReplay))
+            ?? throw new InvalidOperationException("Flappy paid completion action is missing.");
+
+        Assert.Equal("flappy/{period}/runs/{runId}/replay", complete.GetCustomAttributes(typeof(HttpPostAttribute), false)
+            .Cast<HttpPostAttribute>().Single().Template);
+        Assert.Equal(RateLimitPolicies.SlotSpins, complete.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
+            .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
+        Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
+        Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
+        Assert.DoesNotContain(complete.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
     }
 
     [Theory]

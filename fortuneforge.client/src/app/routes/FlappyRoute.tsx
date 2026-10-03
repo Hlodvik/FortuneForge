@@ -13,6 +13,6 @@ export function AuthenticatedFlappyRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Flappy…" errorTitle="Flappy could not be opened." onRetry={reload} />
   }
   return <InGameShell account={account} title="Flappy" theme="arcade" className="flappy-shell">
-    <FlappyFreeRunPage account={account} gateway={gateway} />
+    <FlappyFreeRunPage account={account} gateway={gateway} onPaidAccountRefresh={reload} />
   </InGameShell>
 }

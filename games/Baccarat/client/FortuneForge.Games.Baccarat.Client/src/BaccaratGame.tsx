@@ -204,8 +204,8 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         <p>The roads summarize completed hands. Session shoe estimates use cards shown on this device until server shoe data arrives.</p>
       </InfoPanel>
     </header>
-    <section className="ff-baccarat__table" aria-label="Baccarat table">
-      <div className="ff-baccarat__round-head" role="status">{completed && <>
+    <section className="ff-baccarat__table" data-bet-side={betSide} aria-label="Baccarat table">
+      <div className="ff-baccarat__round-head" role="status">{!round && <span className="ff-baccarat__place-bets">Place your bets</span>}{completed && <>
         {round.endedOnNatural && <small>Natural</small>}
         <span>{outcomeLabel(round.outcome)}</span>
         <strong className={'is-' + round.disposition}>{formatSignedMoney(round.profit, currencySymbol)}</strong>
@@ -226,7 +226,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
             <BetButton side="banker" current={betSide} label="Banker" payout="0.95:1" disabled={stakeLocked} onSelect={setBetSide} />
           </div>
           <div className="ff-baccarat__wager-row">
-            <StakeField value={stake} min={status?.minimumStake} max={status?.maximumStake} limit={balance ?? undefined} step={status?.stakeIncrement} disabled={stakeLocked} invalid={!stakeIsValid || !stakeAffordable} onChange={setStake} hint={status ? 'Min ' + formatMoney(status.minimumStake, currencySymbol) + ' · Max ' + formatMoney(status.maximumStake, currencySymbol) : undefined} />
+            <StakeField value={stake} min={status?.minimumStake} max={status?.maximumStake} limit={balance ?? undefined} step={status?.stakeIncrement} disabled={stakeLocked} invalid={!stakeIsValid || !stakeAffordable} onChange={setStake} currencySymbol={currencySymbol} hint={status ? 'Min ' + formatMoney(status.minimumStake, currencySymbol) + ' · Max ' + formatMoney(status.maximumStake, currencySymbol) : undefined} />
             <button className="ff-baccarat__primary" disabled={busy || recovery !== 'ready' || !status?.available || (!pendingBet.current && (!stakeIsValid || !stakeAffordable))} onClick={deal}>{busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'}</button>
           </div>
         </> : <>
@@ -247,7 +247,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   </main>
 }
 
-function StakeField({ value, min = 0, max, limit, step = 1, disabled, invalid, onChange, hint }: Readonly<{ value: number; min?: number; max?: number; limit?: number; step?: number; disabled: boolean; invalid: boolean; onChange: (value: number) => void; hint?: string }>) {
+function StakeField({ value, min = 0, max, limit, step = 1, disabled, invalid, onChange, currencySymbol, hint }: Readonly<{ value: number; min?: number; max?: number; limit?: number; step?: number; disabled: boolean; invalid: boolean; onChange: (value: number) => void; currencySymbol: string; hint?: string }>) {
   const id = useId()
   const [draft, setDraft] = useState(String(value))
   useEffect(() => { if (Number.isFinite(value)) setDraft(String(value)) }, [value])
@@ -262,7 +262,7 @@ function StakeField({ value, min = 0, max, limit, step = 1, disabled, invalid, o
     <label htmlFor={id}>Stake</label>
     <div className="ff-baccarat__stake-edit">
       <button type="button" aria-label="Decrease Baccarat stake" disabled={disabled || maximum < min || value <= min} onClick={() => bump(-1)}>−</button>
-      <input id={id} aria-label="Stake" type="number" inputMode="decimal" value={draft} min={min} max={max} step={step} disabled={disabled} aria-invalid={draft !== '' && invalid} onChange={event => { setDraft(event.target.value); onChange(event.target.value === '' ? NaN : Number(event.target.value)) }} />
+      <span className="ff-baccarat__currency" aria-hidden="true">{currencySymbol}</span><input id={id} aria-label="Stake" type="number" inputMode="decimal" value={draft} min={min} max={max} step={step} disabled={disabled} aria-invalid={draft !== '' && invalid} onChange={event => { setDraft(event.target.value); onChange(event.target.value === '' ? NaN : Number(event.target.value)) }} />
       <button type="button" aria-label="Increase Baccarat stake" disabled={disabled || maximum < min || value >= maximum} onClick={() => bump(1)}>+</button>
     </div>
     {hint && <small>{hint}</small>}
@@ -296,7 +296,7 @@ function Hand({ label, cards, count, total, winner }: Readonly<{ label: string; 
   return <section className={'ff-baccarat__hand' + (winner ? ' is-winner' : '')} aria-label={label + ' hand' + (total === null ? '' : ', total ' + total)}>
     <div className="ff-baccarat__hand-title"><span>{label}</span><strong aria-label={total === null ? label + ' total pending' : label + ' total ' + total}>{total === null ? '—' : total}</strong></div>
     <div className="ff-baccarat__cards">{[0, 1, 2].map(index => <div key={index} className="ff-baccarat__card-slot">
-      {index < count && cards[index] ? <CardFace card={cards[index]} /> : index < 2 ? <div className="ff-baccarat__card ff-baccarat__card--back" aria-hidden="true">FF</div> : null}
+      {index < count && cards[index] ? <CardFace card={cards[index]} /> : cards.length > 0 && index < 2 ? <div className="ff-baccarat__card ff-baccarat__card--back" aria-hidden="true">FF</div> : null}
     </div>)}</div>
   </section>
 }

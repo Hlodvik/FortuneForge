@@ -17,11 +17,11 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **Casino War**
-- Current phase: **paused at the owner's direction while the UX batch branch is audited game by game against `main`**
+- Active game: **Baccarat**
+- Current phase: **professional reference selection and implementation review**
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
-- Resume point: Casino War owner hands-on review; the audit does not advance or replace this loop
+- Resume point: Baccarat professional comparison, followed by obvious functional and visual fixes
 
 ## Review queue
 
@@ -31,8 +31,8 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | ---: | --- | --- | --- |
 | 1 | Keno | Casino | Shippable — owner approved and deployed |
 | 2 | Fortune Blackjack | Card | Shippable — owner directed advancement and deployed |
-| 3 | Casino War | Card/table | Active — owner hands-on review |
-| 4 | Baccarat | Card/table | Queued |
+| 3 | Casino War | Card/table | Shippable — owner marked complete |
+| 4 | Baccarat | Card/table | Active — professional reference comparison |
 | 5 | Video Poker | Card | Queued |
 | 6 | Roulette | Casino | Queued |
 | 7 | Craps | Casino | Queued |

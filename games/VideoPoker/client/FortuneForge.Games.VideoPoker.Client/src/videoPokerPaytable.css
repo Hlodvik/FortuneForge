@@ -1,9 +1,21 @@
-.ff-video-poker__inline-paytable { min-height: 0; overflow: auto; }
-.ff-video-poker__paytable h2 { margin: 0 0 .6rem; font-size: .92rem; color: #f5d381; }
-.ff-video-poker__paytable h2 small { display: block; color: #b8cfdd; font-size: .75rem; font-weight: 500; margin-top: .25rem; }
-.ff-video-poker__paytable table { width: 100%; border-collapse: collapse; font-size: .73rem; line-height: 1.2; }
-.ff-video-poker__paytable th, .ff-video-poker__paytable td { padding: .5rem .25rem; text-align: left; border-bottom: 1px solid #365066; }
-.ff-video-poker__paytable thead th { color: #a9c2d2; font-weight: 500; font-size: .65rem; }
-.ff-video-poker__paytable td { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.ff-video-poker__paytable tbody th { font-weight: 550; }
-.ff-video-poker__paytable .is-winning-row { color: #ffda83; background: #b5903a2b; }
+.ff-video-poker__inline-paytable { min-height: 0; overflow: hidden; border: 1px solid #c79d46; border-radius: .42rem; background: linear-gradient(180deg, #063894, #031e67); box-shadow: inset 0 0 1.3rem #0005, 0 .2rem .6rem #0005; }
+.ff-video-poker__paytable { height: 100%; }
+.ff-video-poker__paytable h2 { display: flex; align-items: baseline; justify-content: center; gap: .7rem; margin: 0; padding: .16rem .45rem; border-bottom: 1px solid #d0a84f80; background: linear-gradient(90deg, #071d5d, #164f9f 50%, #071d5d); color: #ffe37c; font: 900 .86rem Georgia, serif; letter-spacing: .055em; text-align: center; text-transform: uppercase; text-shadow: 0 2px 2px #000; }
+.ff-video-poker__paytable h2 small { color: #d9e7ff; font: 750 .57rem 'Avenir Next', 'Trebuchet MS', sans-serif; letter-spacing: .07em; }
+.ff-video-poker__paytable table { width: 100%; height: calc(100% - 1.4rem); border-collapse: collapse; table-layout: fixed; color: #f4f7ff; font-size: .66rem; line-height: 1; }
+.ff-video-poker__paytable th, .ff-video-poker__paytable td { padding: .06rem .35rem; border-right: 1px solid #79a4d14a; border-bottom: 1px solid #79a4d138; text-align: center; font-variant-numeric: tabular-nums; }
+.ff-video-poker__paytable th:last-child, .ff-video-poker__paytable td:last-child { border-right: 0; }
+.ff-video-poker__paytable thead th { background: #021947c9; color: #c5dbfb; font-size: .58rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.ff-video-poker__paytable thead th:first-child { width: 39%; text-align: left; }
+.ff-video-poker__paytable tbody th { color: #fff6c6; font-weight: 850; text-align: left; text-transform: uppercase; }
+.ff-video-poker__paytable td { font-weight: 850; }
+.ff-video-poker__paytable .is-selected-column { background: #f4ca5c22; color: #ffe681; box-shadow: inset 1px 0 #f6ce6380, inset -1px 0 #f6ce6380; }
+.ff-video-poker__paytable thead .is-selected-column { background: #a87413; color: #fff8cc; }
+.ff-video-poker__paytable .is-winning-row { background: #e8b93e42; color: #fff2a1; }
+.ff-video-poker__paytable .is-winning-row th { color: #fff19b; text-shadow: 0 0 .4rem #ffc62a; }
+.ff-video-poker__selected-return { display: none; }
+
+.ff-video-poker__info-panel .ff-video-poker__paytable h2 { display: block; padding: 0 0 .6rem; border: 0; background: none; color: #f5d381; font-size: .95rem; text-align: left; }
+.ff-video-poker__info-panel .ff-video-poker__paytable h2 small { display: block; margin-top: .25rem; color: #b8cfdd; font-size: .68rem; }
+.ff-video-poker__info-panel .ff-video-poker__paytable table { height: auto; font-size: .68rem; }
+.ff-video-poker__info-panel .ff-video-poker__paytable th, .ff-video-poker__info-panel .ff-video-poker__paytable td { padding: .44rem .18rem; }

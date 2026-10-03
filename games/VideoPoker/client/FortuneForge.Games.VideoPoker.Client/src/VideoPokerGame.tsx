@@ -263,7 +263,15 @@ function CardFace({ card, animate = false }: Readonly<{ card: VideoPokerCard; an
 function CardBack() { return <div className="ff-video-poker__card ff-video-poker__card--back" aria-hidden="true">FF</div> }
 function Paytable({ coins, round }: Readonly<{ coins: number; round: VideoPokerRound | null }>) {
   const wins = round?.handRanks?.filter((_, index) => round.handPayouts![index]! > 0).map(rank => handLabel(rank, 1)) ?? []
-  return <section className="ff-video-poker__paytable"><h2>Jacks or Better <small>9/6 · {coins} {coins === 1 ? 'coin' : 'coins'}</small></h2><table aria-label="Jacks or Better paytable"><thead><tr><th scope="col">Hand</th><th scope="col">Coins returned</th></tr></thead><tbody>{paytableRows(coins).map(row => <tr className={wins.some(hand => hand === row.hand) ? 'is-winning-row' : ''} key={row.hand}><th scope="row">{row.hand}</th><td>{row.payout.toLocaleString()} {row.payout === 1 ? 'coin' : 'coins'}</td></tr>)}</tbody></table></section>
+  const columns = [1, 2, 3, 4, 5] as const
+  const rowsByCoin = columns.map(value => paytableRows(value))
+  return <section className="ff-video-poker__paytable"><h2>Jacks or Better <small>9/6 paytable · {coins} {coins === 1 ? 'coin' : 'coins'} selected</small></h2><table aria-label="Jacks or Better paytable"><thead><tr><th scope="col">Winning hand</th>{columns.map(value => <th className={value === coins ? 'is-selected-column' : ''} scope="col" key={value}>{value}</th>)}</tr></thead><tbody>{rowsByCoin[0]!.map((row, rowIndex) => {
+    const selected = rowsByCoin[coins - 1]?.[rowIndex] ?? row
+    return <tr className={wins.some(hand => hand === row.hand) ? 'is-winning-row' : ''} key={row.hand}><th aria-label={row.hand} scope="row">{row.hand}<span className="ff-video-poker__selected-return">{selected.payout.toLocaleString()} {selected.payout === 1 ? 'coin' : 'coins'}</span></th>{columns.map((value, columnIndex) => {
+      const payout = rowsByCoin[columnIndex]![rowIndex]!.payout
+      return <td aria-label={`${payout.toLocaleString()} ${payout === 1 ? 'coin' : 'coins'}`} className={value === coins ? 'is-selected-column' : ''} key={value}>{payout.toLocaleString()}</td>
+    })}</tr>
+  })}</tbody></table></section>
 }
 function InfoPanel({ label, trigger, children, active, onChange }: Readonly<{ label: string; trigger: string; children: ReactNode; active: string | null; onChange: (label: string | null) => void }>) {
   const open = active === label, id = useId()

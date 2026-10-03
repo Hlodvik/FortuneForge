@@ -1,11 +1,6 @@
 @media (max-width: 1099px), (max-height: 620px) {
-  .ff-video-poker__screen { grid-template-columns: minmax(0, 1fr); }
+  .ff-video-poker__screen { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
   .ff-video-poker__inline-paytable { display: none; }
-}
-@media (max-width: 680px) and (min-height: 501px) {
-  .ff-video-poker__board[data-count="3"], .ff-video-poker__board[data-count="5"] { grid-template-columns: minmax(0, 1fr); }
-  .ff-video-poker__board[data-count="3"] { grid-template-rows: repeat(3, minmax(0, 1fr)); }
-  .ff-video-poker__board[data-count="5"] { grid-template-rows: repeat(5, minmax(0, 1fr)); }
 }
 @media (max-width: 440px) {
   .ff-video-poker { padding: .35rem; gap: .3rem; }
@@ -36,6 +31,7 @@
   .ff-video-poker__bet-controls > button { padding: .35rem .5rem; font-size: .78rem; }
   .ff-video-poker__error { max-height: 2.6rem; font-size: .72rem; padding: .2rem .4rem; }
   .ff-video-poker__info-panel { top: 5.5rem; max-height: calc(100dvh - 6rem); }
+  .ff-video-poker__card-button.is-held .ff-video-poker__card, .ff-video-poker__card-slot.is-held .ff-video-poker__card { transform: none; }
 }
 
 @media (max-width: 360px) and (min-height: 501px) {
@@ -60,10 +56,11 @@
 }
 
 @media (max-height: 340px) and (min-width: 500px) {
-  .ff-video-poker__console { position: relative; grid-template-rows: 0 minmax(0, 1fr) 4.8rem; }
+  .ff-video-poker__console { position: relative; grid-template-rows: 0 minmax(0, 1fr) 3.2rem; }
   .ff-video-poker__screen { grid-row: 2; }
-  .ff-video-poker__rail { grid-row: 3; }
-  .ff-video-poker__round-head { position: absolute; pointer-events: none; left: .6rem; bottom: 1.85rem; height: 1.4rem; width: calc(50% - 1.2rem); justify-content: start; font-size: .78rem; }
+  .ff-video-poker__rail { grid-row: 3; grid-template-rows: 44px; padding: .18rem .35rem; }
+  .ff-video-poker__ticket { display: none; }
+  .ff-video-poker__round-head { position: absolute; pointer-events: none; left: .6rem; bottom: .85rem; height: 1.4rem; width: calc(50% - 1.2rem); justify-content: start; font-size: .78rem; }
 }
 
 @media (max-height: 340px) and (min-width: 500px) {

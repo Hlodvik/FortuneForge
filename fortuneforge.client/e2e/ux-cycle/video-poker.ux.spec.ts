@@ -394,7 +394,7 @@ test('Video Poker definitive no-round rejection refreshes wallet and lets the pl
 
 test('Video Poker touch emulation keeps card holds, draw and repeat within the first viewport',async({browser},info)=>{
   const viewport={width:390,height:844}
-  const context=await browser.newContext({viewport,hasTouch:true,isMobile:true,baseURL:'http://127.0.0.1:4187',serviceWorkers:'block',reducedMotion:'reduce'})
+  const context=await browser.newContext({viewport,hasTouch:true,isMobile:true,baseURL:'http://127.0.0.1:4177',serviceWorkers:'block',reducedMotion:'reduce'})
   const page=await context.newPage()
   try {
     await mockPoker(page)

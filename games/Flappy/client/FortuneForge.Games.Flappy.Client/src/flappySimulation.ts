@@ -9,7 +9,7 @@ export type FlappySimulationState = Readonly<{
 
 export const FlappyRules = {
   defaultWidth: 800, defaultHeight: 600, tickMilliseconds: 20, birdX: 200, birdRadius: 12,
-  gravityPerTick: 0.45, flapVelocity: -7.5, obstacleWidth: 70, scoresPerLevel: 5,
+  gravityPerTick: 0.45, flapVelocity: -7, obstacleWidth: 70, scoresPerLevel: 5,
 } as const
 
 const initialObstacleCount = 3, initialObstacleLead = 120, obstacleSpacing = 260

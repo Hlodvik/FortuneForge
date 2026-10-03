@@ -10,7 +10,7 @@ public static class FlappyEngine
     public const double BirdX = 200;
     public const double BirdRadius = 12;
     public const double GravityPerTick = 0.45;
-    public const double FlapVelocity = -7.5;
+    public const double FlapVelocity = -7;
     public const double ObstacleWidth = 70;
     public const int ScoresPerLevel = 5;
 

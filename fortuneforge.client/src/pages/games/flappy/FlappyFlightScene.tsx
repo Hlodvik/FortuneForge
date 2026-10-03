@@ -5,6 +5,7 @@ import { FlappyRules, type FlappySimulationState } from '@fortuneforge/games-fla
 export function FlappyFlightScene({ game, reducedMotion }: { game: FlappySimulationState; reducedMotion: boolean }) {
   const id = useId().replaceAll(':', '')
   const rotation = reducedMotion ? 0 : Math.max(-20, Math.min(55, game.birdVelocity * 4.5))
+  const wingRotation = reducedMotion ? 4 : [-18, 4, 20][Math.floor(game.tick / 5) % 3]
   return <svg aria-label="Flier and obstacles" role="img" preserveAspectRatio="xMinYMid slice" viewBox={`0 0 ${game.width} ${game.height}`}>
     <defs>
       <linearGradient id={`${id}-sky`} x2="0" y2="1"><stop stopColor="#41bad4" /><stop offset=".6" stopColor="#7bd4d7" /><stop offset="1" stopColor="#d8e8bd" /></linearGradient>
@@ -29,12 +30,17 @@ export function FlappyFlightScene({ game, reducedMotion }: { game: FlappySimulat
     <rect className="flappy-scene-ground" y={game.height - 17} width={game.width} height="17" fill={`url(#${id}-ground)`} />
     <rect y={game.height - 14} width={game.width} height="14" fill={`url(#${id}-ground-stripe)`} />
     <g className={`flappy-scene-bird${game.phase !== 'playing' ? ' is-collided' : ''}`} transform={`translate(${FlappyRules.birdX} ${game.birdY}) rotate(${rotation})`} data-bird-y={game.birdY} data-tick={game.tick} filter={`url(#${id}-shadow)`}>
-      <path className="flappy-scene-tail" d="M-18-5-35-13-31 1-35 14-17 7Z" />
-      <ellipse className="flappy-scene-body" rx={23} ry={17} fill={`url(#${id}-bird)`} />
-      <ellipse className="flappy-scene-wing" cx={-9} cy={6} rx={16} ry={11} />
-      <path className="flappy-scene-beak" d="M18-5 39 2 18 9Z" />
-      <circle className="flappy-scene-eye" cx={9} cy={-7} r={7} /><circle cx={11} cy={-7} r={2.8} fill="#15222a" />
-      <path className="flappy-scene-brow" d="M3-15Q11-19 17-13" />
+      <path className="flappy-scene-tail" d="M-17-5-30-13-28-2-33 7-17 9Z" />
+      <path className="flappy-scene-crest" d="M-9-17Q-4-29 2-18Q8-28 11-15Z" />
+      <path className="flappy-scene-body" d="M-22 0C-22-14-13-21 2-21 17-21 24-11 23 3 22 17 11 22-4 21-17 20-23 13-22 0Z" fill={`url(#${id}-bird)`} />
+      <ellipse className="flappy-scene-belly" cx={4} cy={10} rx={13} ry={9} />
+      <path className="flappy-scene-wing" d="M-19 1Q-9-7 4 1 1 9-5 15L-11 10-17 13Q-21 8-19 1Z" transform={`rotate(${wingRotation} -9 6)`} />
+      <path className="flappy-scene-beak flappy-scene-beak--top" d="M18-5 32 1 18 5Z" />
+      <path className="flappy-scene-beak flappy-scene-beak--bottom" d="M18 5 29 7 18 10Z" />
+      <circle className="flappy-scene-eye" cx={11} cy={-8} r={9} />
+      <circle className="flappy-scene-pupil" cx={14} cy={-7} r={4} />
+      <circle className="flappy-scene-eye-glint" cx={15} cy={-9} r={1.35} />
+      <path className="flappy-scene-brow" d="M3-17Q12-21 19-14" />
     </g>
   </svg>
 }

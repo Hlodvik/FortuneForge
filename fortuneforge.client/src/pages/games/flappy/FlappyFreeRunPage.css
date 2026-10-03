@@ -119,11 +119,17 @@
 .flappy-scene-pipe rect { stroke: #315611; stroke-width: 3; }
 .flappy-scene-pipe .flappy-scene-rim { stroke-width: 3; }
 .flappy-scene-ground { stroke: #4f7125; stroke-width: 2; }
-.flappy-scene-tail { fill: #e76f22; stroke: #9f3e17; stroke-width: 2; }
-.flappy-scene-body { stroke: #9c5714; stroke-width: 2.3; }
-.flappy-scene-wing { fill: #f38a21; stroke: #a84418; stroke-width: 2; }
-.flappy-scene-beak { fill: #f04f2e; stroke: #922319; stroke-width: 2; }
-.flappy-scene-eye { fill: #fff; stroke: #263238; stroke-width: 1.5; }
+.flappy-scene-tail { fill: #f09828; stroke: #743c18; stroke-width: 2.4; stroke-linejoin: round; }
+.flappy-scene-crest { fill: #ffd745; stroke: #743c18; stroke-width: 2.2; stroke-linejoin: round; }
+.flappy-scene-body { stroke: #743c18; stroke-width: 2.8; stroke-linejoin: round; }
+.flappy-scene-belly { fill: #fff0aa; opacity: .92; }
+.flappy-scene-wing { fill: #f49724; stroke: #743c18; stroke-width: 2.5; stroke-linejoin: round; transform-box: fill-box; transform-origin: center; }
+.flappy-scene-beak { stroke: #6f2e1e; stroke-width: 2.2; stroke-linejoin: round; }
+.flappy-scene-beak--top { fill: #f0522d; }
+.flappy-scene-beak--bottom { fill: #d93625; }
+.flappy-scene-eye { fill: #fff; stroke: #263238; stroke-width: 2; }
+.flappy-scene-pupil { fill: #1d2a2f; }
+.flappy-scene-eye-glint { fill: #fff; }
 .flappy-scene-brow { fill: none; stroke: #263238; stroke-width: 2.4; stroke-linecap: round; }
 .flappy-scene-bird.is-collided { filter: saturate(.7) drop-shadow(0 0 4px #fff098); }
 

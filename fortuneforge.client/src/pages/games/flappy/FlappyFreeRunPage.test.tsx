@@ -45,8 +45,8 @@ beforeEach(() => {
 afterEach(async () => { if (root) await act(async () => root!.unmount()); host.remove(); vi.restoreAllMocks(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('recorded Flappy flight intent and recovery', () => {
-  it('opens a compact free-practice lobby without a write or historical best claim', async () => {
-    await mount(); expect(phase()).toBe('lobby'); expect(host.textContent).toContain('Free play · no jackpot entry')
+  it('opens a compact arcade lobby without a write or historical best claim', async () => {
+    await mount(); expect(phase()).toBe('lobby'); expect(host.textContent).toContain('Flappy')
     expect(host.textContent).not.toMatch(/Every flight is securely|Session best/); expect(gateway.startFreeFlappyRun).not.toHaveBeenCalled()
   })
   it('one start intent prepares and begins the flight, prevents duplicate writes and focuses the course', async () => {
@@ -122,13 +122,13 @@ describe('recorded Flappy flight intent and recovery', () => {
     await time(20); expect(phase()).toBe('paused'); expect(tick()).toBe(2); await click('Resume flight'); expect(phase()).toBe('paused')
     spy.mockRestore(); await click('Resume flight'); await time(20); expect(saved().cursor.totalTicks).toBe(3)
   })
-  it('keeps the actual terminal scene while recording, then displays the service score and cause', async () => {
+  it('keeps the actual terminal scene while recording, then displays the service score', async () => {
     const response = deferred<{ runId: string; score: number; terminal: string; wasReplay: boolean }>(); gateway.completeFreeFlappyReplay.mockReturnValue(response.promise)
     await mount(); await click('Start flight'); await time(2000)
     expect(phase()).toBe('submitting'); const finalTick = tick(); expect(finalTick).toBeGreaterThan(1)
-    expect(host.querySelector('.flappy-scene-bird.is-collided')).not.toBeNull(); expect(host.textContent).toContain('Provisional score 0')
+    expect(host.querySelector('.flappy-scene-bird.is-collided')).not.toBeNull(); expect(host.querySelector('.flappy-result-score')?.textContent).toBe('0')
     await act(async () => response.resolve({ runId, score: 7, terminal: 'ground-collision', wasReplay: false })); await flush()
-    expect(phase()).toBe('result'); expect(host.textContent).toContain('Official score7'); expect(host.textContent).toContain('Bottom edge'); expect(tick()).toBe(finalTick)
+    expect(phase()).toBe('result'); expect(host.querySelector('.flappy-result-score')?.getAttribute('aria-label')).toBe('Official score 7'); expect(tick()).toBe(finalTick)
     expect(sessionStorage.getItem(recoveryKey(account.userId))).toBeNull()
   })
   it('stores the replay before completion transport and never sends local score metadata', async () => {
@@ -149,10 +149,10 @@ describe('recorded Flappy flight intent and recovery', () => {
     gateway.completeFreeFlappyReplay.mockRejectedValue(new ArcadeCompetitionRequestError(status, status === 409 ? 'arcade-flappy-free-run-conflict' : undefined))
     await mount(); await click('Start flight'); await time(2000); expect(phase()).toBe('submit-failed'); expect(saved().kind).toBe('submission'); expect(button('Retry recording').disabled).toBe(false)
   })
-  it('confirmed session best uses authoritative completions and survives a new flight in this mount', async () => {
+  it('shows the confirmed score as the session best and starts the next flight with a new key', async () => {
     gateway.completeFreeFlappyReplay.mockResolvedValue({ runId, score: 6, terminal: 'ground-collision', wasReplay: false })
-    await mount(); await click('Start flight'); await time(2000); expect(host.textContent).toContain('Session best 6')
-    await click('Fly again'); expect(phase()).toBe('playing'); await click('Pause'); expect(host.textContent).toContain('Session best 6')
+    await mount(); await click('Start flight'); await time(2000); expect(host.textContent).toContain('Best6')
+    await click('Fly again'); expect(phase()).toBe('playing'); await click('Pause')
     expect(gateway.startFreeFlappyRun.mock.calls[1][0]).not.toBe(gateway.startFreeFlappyRun.mock.calls[0][0])
   })
   it('aborts a pending start on unmount and ignores its late response/storage clearing', async () => {

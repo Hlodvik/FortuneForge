@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { flappyLevel, startFlappySimulation } from '@fortuneforge/games-flappy'
+import { startFlappySimulation } from '@fortuneforge/games-flappy'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import type { FlappyFreeRunGateway } from '../../../games/arcade/arcadeCompetitionApi'
+import { playFlappySound } from './flappyAudio'
 import { FlappyFlightScene } from './FlappyFlightScene'
 import { useRecordedFlappy } from './useRecordedFlappy'
 import './FlappyFreeRunPage.css'
@@ -15,6 +16,8 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
   const course = useRef<HTMLDivElement>(null)
   const [panel, setPanel] = useState<'rules' | 'discard' | null>(null)
   const [reducedMotion, setReducedMotion] = useState(false)
+  const priorScore = useRef(0)
+  const priorGamePhase = useRef(gamePhase(preview.phase))
   useEffect(() => {
     const media = matchMedia('(prefers-reduced-motion: reduce)')
     const update = () => setReducedMotion(media.matches)
@@ -27,20 +30,25 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
   const score = flight.result?.score ?? pending?.display.score ?? game.score
   const active = flight.phase === 'playing', resumable = flight.phase === 'paused'
   const busy = flight.phase === 'starting' || flight.phase === 'submitting'
-  const focusFlap = () => { course.current?.focus({ preventScroll: true }); flight.flap() }
+  const focusFlap = () => { course.current?.focus({ preventScroll: true }); playFlappySound('flap'); flight.flap() }
+  const beginFlight = () => { playFlappySound('flap'); void flight.start() }
   const openPanel = (next: 'rules' | 'discard') => { flight.pause(); setPanel(next) }
+  useEffect(() => {
+    if (game.score > priorScore.current) playFlappySound('score')
+    priorScore.current = game.score
+  }, [game.score])
+  useEffect(() => {
+    const next = gamePhase(game.phase)
+    if (priorGamePhase.current === 'playing' && next === 'collision') playFlappySound('collision')
+    priorGamePhase.current = next
+  }, [game.phase])
   return <main className="flappy-free-run-page" data-phase={flight.phase}>
-    <header className="flappy-hud">
-      <div className="flappy-hud-score"><span>{flight.phase === 'result' ? 'Official score' : 'Score'}</span><strong>{score}</strong></div>
-      <div className="flappy-hud-context">{flight.sessionBest !== null && !active && <span>Session best <b>{flight.sessionBest}</b></span>}<span>Level <b>{flappyLevel(game.score)}</b></span></div>
-      <div className="flappy-hud-actions">{active && <button type="button" onClick={flight.pause}>Pause</button>}<button type="button" onClick={() => openPanel('rules')}>Rules</button></div>
-    </header>
     <div className="flappy-stage">
       <div className="flappy-course" tabIndex={0} ref={course} aria-label="Flappy playfield" aria-describedby="flappy-input-hint"
         onContextMenu={event => event.preventDefault()} onDragStart={event => event.preventDefault()}
         onKeyDown={event => {
           if (event.target !== event.currentTarget) return
-          if (event.code === 'Space' && (active || resumable)) { event.preventDefault(); if (!event.repeat) flight.flap() }
+          if (event.code === 'Space' && (active || resumable)) { event.preventDefault(); if (!event.repeat) { playFlappySound('flap'); flight.flap() } }
           if (event.code === 'Escape' && active) { event.preventDefault(); flight.pause() }
         }}
         onPointerDown={event => {
@@ -48,31 +56,36 @@ function RecordedFlight({ account, gateway }: FlappyFreeRunPageProps) {
           event.preventDefault(); focusFlap()
         }}>
         <FlappyFlightScene game={game} reducedMotion={reducedMotion} />
+        {(active || resumable) && <div className="flappy-score" aria-label={`Score ${game.score}`}>{game.score}</div>}
+        <div className="flappy-course-actions">
+          {active && <button type="button" aria-label="Pause" onClick={flight.pause}>Ⅱ</button>}
+          <button type="button" aria-label="Rules" onClick={() => openPanel('rules')}>?</button>
+        </div>
         {!active && <section className={`flappy-panel flappy-panel--${flight.phase}`} aria-live={busy ? 'polite' : 'off'}>
-          {(flight.phase === 'lobby' || flight.phase === 'starting') && <><span className="flappy-panel-mode">Free flight</span><h1>Flappy</h1><p>One flap. One opening at a time.</p><button type="button" disabled={busy} onClick={() => void flight.start()}>{busy ? 'Preparing flight…' : 'Start flight'}</button></>}
-          {resumable && <><h2>Flight paused</h2><p>Resume when ready.</p><button type="button" onClick={() => flight.resume()}>Resume flight</button><button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>New flight</button></>}
-          {flight.phase === 'start-failed' && <><h2>Flight start interrupted</h2><p>Retry the same saved flight start.</p><button type="button" onClick={flight.retry}>Retry flight start</button></>}
-          {(flight.phase === 'submitting' || flight.phase === 'submit-failed') && <><h2>{busy ? 'Recording flight…' : 'Recording interrupted'}</h2><p>Provisional score <strong>{score}</strong> · {collisionLabel(pending?.display.phase)}</p>{!busy && <button type="button" onClick={flight.retry}>Retry recording</button>}{!busy && <button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>Clear saved flight</button>}</>}
-          {flight.phase === 'result' && <><h2>Flight recorded</h2><p className="flappy-result-score" aria-label={`Official score ${score}`}>{score}</p><p>{collisionLabel(flight.result?.terminal)}</p><button type="button" onClick={() => void flight.start()}>Fly again</button></>}
-          {flight.phase === 'failed' && <><h2>Flight ended</h2><p>This flight reached the recording limit.</p><button type="button" onClick={flight.discard}>New flight</button></>}
+          {(flight.phase === 'lobby' || flight.phase === 'starting') && <><span className="flappy-panel-mode">Fortune Forge Arcade</span><h1>Flappy</h1><p>Tap to fly</p><button type="button" aria-label={busy ? 'Preparing flight…' : 'Start flight'} disabled={busy} onClick={beginFlight}>{busy ? 'Loading…' : 'Start'}</button></>}
+          {resumable && <><h2>Paused</h2><button type="button" aria-label="Resume flight" onClick={() => flight.resume()}>Resume</button><button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>New flight</button></>}
+          {flight.phase === 'start-failed' && <><h2>Couldn’t start</h2><button type="button" aria-label="Retry flight start" onClick={flight.retry}>Retry</button></>}
+          {(flight.phase === 'submitting' || flight.phase === 'submit-failed') && <><h2>Game over</h2><p className="flappy-result-score">{score}</p><p>{busy ? 'Saving…' : 'Save interrupted'}</p>{!busy && <button type="button" aria-label="Retry recording" onClick={flight.retry}>Retry save</button>}{!busy && <button className="flappy-secondary" type="button" onClick={() => openPanel('discard')}>Clear</button>}</>}
+          {flight.phase === 'result' && <><h2>Game over</h2><div className="flappy-result-board"><span>Score<strong className="flappy-result-score" aria-label={`Official score ${score}`}>{score}</strong></span><span>Best<strong>{flight.sessionBest ?? score}</strong></span></div><button type="button" onClick={beginFlight}>Fly again</button></>}
+          {flight.phase === 'failed' && <><h2>Game over</h2><button type="button" onClick={flight.discard}>New flight</button></>}
           {flight.phase === 'unavailable' && <><h2>Saved flight unavailable</h2><button type="button" onClick={() => openPanel('discard')}>Clear saved flight</button></>}
         </section>}
       </div>
     </div>
     <footer className="flappy-controls">
-      <div><span id="flappy-input-hint">Space or tap to flap</span><small>Free play · no jackpot entry</small></div>
-      <p className="flappy-notice" role={flight.error ? 'alert' : 'status'}>{flight.error ?? (flight.phase === 'result' ? 'Saved to your account.' : flight.phase === 'failed' ? 'Flight not recorded.' : '\u00a0')}</p>
+      <span className="flappy-input-hint" id="flappy-input-hint">Tap or press Space</span>
+      {flight.error && <p className="flappy-notice" role="alert">{flight.error}</p>}
       <button className="flappy-flap" type="button" disabled={!active && !resumable} aria-label="Flap"
         onPointerDown={event => { if (event.button === 0 && event.isPrimary) { event.preventDefault(); focusFlap() } }}
-        onClick={event => { if (event.detail === 0) focusFlap() }}>Flap <span aria-hidden="true">↑</span></button>
+        onClick={event => { if (event.detail === 0) focusFlap() }}><span aria-hidden="true">▲</span> Flap</button>
     </footer>
     {panel !== null && <FlappyDialog title={panel === 'rules' ? 'Flappy rules' : 'Clear this flight?'} onClose={() => setPanel(null)}>
-      {panel === 'rules' ? <><p>Press Space, click the course or tap Flap. Each press gives one upward flap; holding Space does not repeat it.</p><p>Pass through the openings. Pipes, the ceiling and the bottom edge end the flight. Every five points increases the level.</p><p>Pause keeps the same course. Switching tabs or leaving the window pauses the flight; resume when ready. Reload restores a saved flight paused.</p><p>The service verifies the saved flap timing before confirming your score. Retry uses the same flight and input. The recording limit is three minutes of active flight or 1,500 flaps.</p><p>Free practice does not enter a jackpot or leaderboard and does not spend credits.</p></> : <><p>{flight.phase === 'submit-failed' ? 'This recording may already be saved by the service. Clearing removes your local retry data.' : 'Your unfinished flight and local flap timing will be removed.'}</p><button type="button" onClick={() => { flight.discard(); setPanel(null) }}>Clear flight</button></>}
+      {panel === 'rules' ? <><p>Tap the course, press Space, or use the Flap button.</p><p>Pass through each opening. A pipe, the ceiling, or the ground ends the flight.</p><p>The course speeds up as your score rises. Leaving the window pauses the game.</p></> : <><p>{flight.phase === 'submit-failed' ? 'This score may already be saved. Clearing removes the local retry.' : 'This unfinished flight will be removed.'}</p><button type="button" onClick={() => { flight.discard(); setPanel(null) }}>Clear flight</button></>}
     </FlappyDialog>}
   </main>
 }
 
-function collisionLabel(phase: string | undefined) { return phase === 'ground-collision' ? 'Bottom edge' : phase === 'ceiling-collision' ? 'Ceiling' : phase === 'obstacle-collision' ? 'Pipe collision' : 'Flight ended' }
+function gamePhase(phase: string): 'playing' | 'collision' { return phase === 'playing' ? 'playing' : 'collision' }
 
 function FlappyDialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const dialog = useRef<HTMLDialogElement>(null), close = useRef<HTMLButtonElement>(null)

@@ -1,85 +1,274 @@
-.flappy-free-run-page { --flappy-gold: #ffdc7c; display: grid; grid-template-rows: 54px minmax(0, 1fr) 94px; height: 100%; min-height: 0; width: 100%; padding: 0 clamp(8px, 2vw, 24px) 14px; gap: 8px; overflow: hidden; color: #f6fbff; background: radial-gradient(ellipse at 50% 20%, #205577, #091c2b 76%); box-sizing: border-box; }
-.flappy-free-run-page * { box-sizing: border-box; }
-.flappy-free-run-page button, .flappy-dialog button { min-height: 40px; border: 1px solid #ffd97d; border-radius: 10px; padding: 8px 18px; color: #152b37; background: linear-gradient(#ffe59b, #eebc4e); font: inherit; font-weight: 800; cursor: pointer; touch-action: manipulation; }
-.flappy-free-run-page button:hover:not(:disabled), .flappy-dialog button:hover { filter: brightness(1.1); }
-.flappy-free-run-page button:focus-visible, .flappy-dialog button:focus-visible, .flappy-dialog-body:focus-visible { outline: 3px solid white; outline-offset: 2px; }
-.flappy-free-run-page button:disabled { opacity: .45; cursor: default; }
-.flappy-hud { display: flex; align-items: center; gap: 18px; width: min(100%, 1000px); justify-self: center; }
-.flappy-hud-score { display: flex; align-items: baseline; gap: 10px; }
-.flappy-hud-score span { font-size: 13px; color: #c1dbe6; }
-.flappy-hud-score strong { font-size: 28px; font-variant-numeric: tabular-nums; line-height: 1; }
-.flappy-hud-context { display: flex; gap: 18px; color: #aecbd9; font-size: 12px; }
-.flappy-hud-context b { color: #fff; margin-left: 4px; }
-.flappy-hud-actions { margin-left: auto; display: flex; gap: 8px; }
-.flappy-hud-actions button, .flappy-free-run-page button.flappy-secondary { color: #e9f6fa; background: #183d50; border-color: #80b6c577; font-size: 12px; padding: 6px 12px; }
-.flappy-stage { min-height: 0; min-width: 0; display: grid; place-items: center; container-type: size; }
-.flappy-course { width: min(100cqw, 133.333cqh); aspect-ratio: 4 / 3; position: relative; border-radius: 16px; overflow: hidden; border: 1px solid #8de6de88; box-shadow: 0 16px 42px #0005, 0 0 0 4px #09263388; user-select: none; -webkit-user-select: none; touch-action: none; outline: none; background: #235374; }
-.flappy-course:focus-visible { outline: 3px solid #ffe298; outline-offset: 3px; }
-.flappy-course svg { width: 100%; height: 100%; display: block; pointer-events: none; }
-.flappy-scene-sun { fill: #ffe8b5; opacity: .65; }
-.flappy-scene-clouds { fill: #dceef3; opacity: .16; }
-.flappy-scene-hills { fill: #163f50; opacity: .6; }
-.flappy-scene-pipe rect { stroke: #c5f2d4; stroke-width: 3; }
-.flappy-scene-pipe .flappy-scene-rim { fill: #65be8c; }
-.flappy-scene-ground { stroke: #e9c56f; stroke-width: 2; }
-.flappy-scene-bird { filter: drop-shadow(1px 2px 2px #0007); }
-.flappy-scene-body { stroke: #fff2bc; stroke-width: 2; }
-.flappy-scene-wing { fill: #cf792b; stroke: #ffd583; stroke-width: 1.5; }
-.flappy-scene-beak { fill: #ef7948; stroke: #fff0b1; stroke-width: 1; }
-.flappy-scene-eye { fill: #fffef4; stroke: #26323a; stroke-width: 1; }
-.flappy-scene-bird.is-collided { filter: drop-shadow(0 0 3px #ffd47b); }
-.flappy-panel { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 18px; text-align: center; background: linear-gradient(#0b203559, #0b2035c9); }
-.flappy-panel h1, .flappy-panel h2, .flappy-panel p { margin: 0; }
-.flappy-panel h1 { font-size: clamp(32px, 5vw, 62px); line-height: 1; letter-spacing: -.03em; }
-.flappy-panel h2 { font-size: clamp(20px, 3vw, 34px); line-height: 1.1; }
-.flappy-panel p { font-size: 13px; line-height: 1.4; color: #d2e4ec; }
-.flappy-panel-mode { color: #ffda8f; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; font-weight: 800; }
-.flappy-panel .flappy-result-score { font-size: clamp(32px, 6vw, 64px); line-height: 1; color: #ffdf8b; font-weight: 900; font-variant-numeric: tabular-nums; }
-.flappy-panel--result, .flappy-panel--submitting, .flappy-panel--submit-failed { background: linear-gradient(#07192750, #071927bc); }
-.flappy-controls { width: min(100%, 1000px); justify-self: center; display: grid; grid-template-columns: 1fr auto; grid-template-rows: 52px minmax(0, 1fr); gap: 8px 16px; padding-bottom: 2px; }
-.flappy-controls > div { display: flex; flex-direction: column; justify-content: center; gap: 4px; }
-.flappy-controls span { font-size: 13px; font-weight: 700; }
-.flappy-controls small { color: #a8c8d9; font-size: 11px; }
-.flappy-controls .flappy-flap { min-width: 130px; grid-row: 1; grid-column: 2; }
-.flappy-flap span { margin-left: 14px; font-size: 20px; }
-.flappy-notice { grid-column: 1 / -1; color: #d5e7ee; font-size: 12px; line-height: 1.2; margin: 0; }
-.flappy-notice[role="alert"] { color: #ffd6bf; }
-.flappy-dialog { padding: 0; width: min(500px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); border: 1px solid #a4d7de; border-radius: 14px; background: #0f2e40; color: #f1fbff; overflow: hidden; box-shadow: 0 14px 48px #0009; }
+.flappy-shell > .in-game-navbar {
+  border-bottom-color: rgb(217 238 96 / 55%);
+  background: linear-gradient(90deg, #07384c, #105b68 52%, #183c32);
+}
+
+.flappy-shell > .in-game-shell__body {
+  overflow: hidden;
+  background: #092a35;
+}
+
+.flappy-free-run-page {
+  --flappy-ink: #18303a;
+  --flappy-cream: #fff6cb;
+  --flappy-gold: #ffd83d;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 76px;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 10px clamp(10px, 2vw, 26px) 12px;
+  overflow: hidden;
+  color: #fff;
+  background:
+    radial-gradient(circle at 50% -30%, rgb(52 185 199 / 35%), transparent 52%),
+    linear-gradient(180deg, #0c3945, #071e28);
+  box-sizing: border-box;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", Arial, sans-serif;
+}
+
+.flappy-free-run-page *,
+.flappy-dialog * { box-sizing: border-box; }
+
+.flappy-free-run-page button,
+.flappy-dialog button {
+  min-height: 42px;
+  border: 3px solid #17353b;
+  border-radius: 12px;
+  padding: 8px 22px;
+  color: var(--flappy-ink);
+  background: linear-gradient(180deg, #fff27a 0%, #ffd533 55%, #e9a61d 100%);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 70%), 0 4px 0 #8e5a19, 0 7px 13px rgb(0 0 0 / 25%);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.flappy-free-run-page button:hover:not(:disabled),
+.flappy-dialog button:hover { filter: brightness(1.08) saturate(1.05); }
+.flappy-free-run-page button:active:not(:disabled),
+.flappy-dialog button:active { translate: 0 3px; box-shadow: inset 0 2px 0 rgb(255 255 255 / 50%), 0 1px 0 #8e5a19; }
+.flappy-free-run-page button:focus-visible,
+.flappy-dialog button:focus-visible,
+.flappy-dialog-body:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.flappy-free-run-page button:disabled { opacity: .42; cursor: default; }
+
+.flappy-stage { display: grid; place-items: center; min-width: 0; min-height: 0; container-type: size; }
+.flappy-course {
+  position: relative;
+  width: min(100cqw, 133.333cqh);
+  max-width: 1180px;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 5px solid #172d32;
+  border-radius: 18px;
+  outline: none;
+  background: #58c6d3;
+  box-shadow: 0 0 0 3px #91b843, 0 0 0 7px #e0ed77, 0 18px 42px rgb(0 0 0 / 45%);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+.flappy-course:focus-visible { box-shadow: 0 0 0 4px #fff, 0 0 0 8px #ffdb45, 0 18px 42px rgb(0 0 0 / 45%); }
+.flappy-course svg { display: block; width: 100%; height: 100%; pointer-events: none; }
+
+.flappy-score {
+  position: absolute;
+  z-index: 3;
+  top: clamp(14px, 3%, 26px);
+  left: 50%;
+  translate: -50% 0;
+  color: #fff;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: clamp(34px, 7cqh, 72px);
+  line-height: 1;
+  letter-spacing: .02em;
+  -webkit-text-stroke: 3px #26383e;
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgb(0 0 0 / 28%);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+.flappy-course-actions { position: absolute; z-index: 5; top: 12px; right: 12px; display: flex; gap: 8px; }
+.flappy-course-actions button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-width: 2px;
+  border-radius: 50%;
+  color: #fff8d2;
+  background: rgb(20 52 58 / 72%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 25%), 0 3px 0 rgb(0 0 0 / 38%);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.flappy-scene-sun { fill: #fff3bd; opacity: .72; }
+.flappy-scene-clouds { fill: #efffff; opacity: .7; }
+.flappy-scene-hills--far { fill: #7ec78a; opacity: .72; }
+.flappy-scene-city { fill: #c7d8a9; opacity: .62; }
+.flappy-scene-hills { fill: #4f9f63; opacity: .92; }
+.flappy-scene-pipe rect { stroke: #315611; stroke-width: 3; }
+.flappy-scene-pipe .flappy-scene-rim { stroke-width: 3; }
+.flappy-scene-ground { stroke: #4f7125; stroke-width: 2; }
+.flappy-scene-tail { fill: #e76f22; stroke: #9f3e17; stroke-width: 2; }
+.flappy-scene-body { stroke: #9c5714; stroke-width: 2.3; }
+.flappy-scene-wing { fill: #f38a21; stroke: #a84418; stroke-width: 2; }
+.flappy-scene-beak { fill: #f04f2e; stroke: #922319; stroke-width: 2; }
+.flappy-scene-eye { fill: #fff; stroke: #263238; stroke-width: 1.5; }
+.flappy-scene-brow { fill: none; stroke: #263238; stroke-width: 2.4; stroke-linecap: round; }
+.flappy-scene-bird.is-collided { filter: saturate(.7) drop-shadow(0 0 4px #fff098); }
+
+.flappy-panel {
+  position: absolute;
+  z-index: 4;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px;
+  color: #fff;
+  text-align: center;
+  background: linear-gradient(180deg, rgb(13 65 77 / 10%), rgb(8 42 52 / 44%));
+}
+.flappy-panel h1,
+.flappy-panel h2,
+.flappy-panel p { margin: 0; }
+.flappy-panel h1 {
+  color: #fff4a8;
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: clamp(52px, 13cqh, 108px);
+  line-height: .88;
+  letter-spacing: .02em;
+  -webkit-text-stroke: 4px #27474b;
+  paint-order: stroke fill;
+  text-shadow: 0 6px 0 #ef8428, 0 10px 0 rgb(0 0 0 / 28%);
+  text-transform: uppercase;
+}
+.flappy-panel h2 {
+  color: var(--flappy-cream);
+  font-family: Impact, "Arial Black", sans-serif;
+  font-size: clamp(34px, 8cqh, 68px);
+  line-height: 1;
+  letter-spacing: .025em;
+  -webkit-text-stroke: 3px #27474b;
+  paint-order: stroke fill;
+  text-shadow: 0 4px 0 rgb(0 0 0 / 30%);
+  text-transform: uppercase;
+}
+.flappy-panel p { color: #fff9d6; font-size: 15px; font-weight: 900; text-shadow: 0 2px 2px rgb(0 0 0 / 65%); text-transform: uppercase; }
+.flappy-panel-mode { color: #fff; font-size: 12px; font-weight: 900; letter-spacing: .18em; text-shadow: 0 2px 2px rgb(0 0 0 / 60%); text-transform: uppercase; }
+.flappy-panel .flappy-result-score { color: #fff; font-family: Impact, "Arial Black", sans-serif; font-size: clamp(42px, 10cqh, 84px); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
+.flappy-panel--result,
+.flappy-panel--submitting,
+.flappy-panel--submit-failed { background: linear-gradient(180deg, rgb(8 43 52 / 20%), rgb(8 35 43 / 58%)); }
+.flappy-result-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(92px, 1fr));
+  gap: 4px;
+  width: min(310px, 82%);
+  border: 4px solid #805220;
+  border-radius: 12px;
+  padding: 10px;
+  color: #5c3b1b;
+  background: linear-gradient(#fff2a2, #edc963);
+  box-shadow: inset 0 0 0 3px #fff7c9, 0 6px 0 #4e331a, 0 10px 22px rgb(0 0 0 / 30%);
+}
+.flappy-result-board span { display: grid; gap: 1px; font-size: 11px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.flappy-result-board span + span { border-left: 2px solid rgb(114 75 24 / 30%); }
+.flappy-result-board strong { color: #25383b; font-family: Impact, "Arial Black", sans-serif; font-size: clamp(34px, 7cqh, 60px); line-height: 1; letter-spacing: 0; }
+
+.flappy-free-run-page button.flappy-secondary {
+  border-color: #1b3d43;
+  color: #eefeff;
+  background: #255d66;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 4px 0 #12343a;
+  font-size: 12px;
+}
+
+.flappy-controls {
+  display: grid;
+  grid-template-columns: 1fr minmax(190px, 270px) 1fr;
+  align-items: center;
+  width: min(100%, 1180px);
+  min-height: 0;
+  justify-self: center;
+}
+.flappy-input-hint { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.flappy-flap {
+  grid-column: 2;
+  width: 100%;
+  min-height: 58px !important;
+  border-radius: 999px !important;
+  font-size: 20px !important;
+  letter-spacing: .06em !important;
+}
+.flappy-flap span { display: inline-block; margin-right: 8px; color: #e25623; font-size: 24px; }
+.flappy-notice { grid-column: 3; justify-self: end; max-width: 260px; margin: 0; color: #fff4c1; font-size: 12px; font-weight: 700; line-height: 1.25; text-align: right; }
+.flappy-notice[role="alert"] { color: #ffd3b4; }
+
+.flappy-dialog {
+  width: min(480px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+  overflow: hidden;
+  border: 4px solid #e5d35c;
+  border-radius: 16px;
+  color: #effcff;
+  background: #123f49;
+  box-shadow: 0 18px 55px rgb(0 0 0 / 70%);
+}
 .flappy-dialog[open] { display: flex; flex-direction: column; }
-.flappy-dialog::backdrop { background: #020f20bb; }
-.flappy-dialog header { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #75a3b877; }
-.flappy-dialog h2 { margin: 0; font-size: 20px; }
-.flappy-dialog header button { width: 40px; padding: 0; font-size: 22px; }
+.flappy-dialog::backdrop { background: rgb(1 18 24 / 78%); }
+.flappy-dialog header { display: flex; flex: none; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid rgb(231 235 120 / 40%); }
+.flappy-dialog h2 { margin: 0; color: #fff2a8; font-size: 22px; text-transform: uppercase; }
+.flappy-dialog header button { width: 40px; min-height: 40px; padding: 0; font-size: 22px; }
 .flappy-dialog-body { min-height: 0; overflow: auto; padding: 4px 18px 18px; font-size: 14px; line-height: 1.55; overscroll-behavior: contain; }
-@media (max-width: 600px) {
-  .flappy-free-run-page { grid-template-rows: 50px minmax(0, 1fr) 92px; padding-bottom: 48px; gap: 8px; }
-  .flappy-hud { gap: 10px; }
-  .flappy-hud-context { gap: 8px; font-size: 11px; }
-  .flappy-hud-score span { font-size: 11px; }
-  .flappy-hud-score strong { font-size: 25px; }
-  .flappy-hud-actions { gap: 5px; }
-  .flappy-hud-actions button { padding: 6px 10px; }
-  .flappy-course { border-radius: 12px; }
-  .flappy-controls .flappy-flap { min-width: 100px; }
-  .flappy-panel { gap: 8px; padding: 12px; }
+
+@media (max-width: 720px) {
+  .flappy-shell > .in-game-shell__body { overflow: hidden; }
+  .flappy-free-run-page { grid-template-rows: minmax(0, 1fr) 70px; gap: 8px; padding: 8px 8px max(8px, env(safe-area-inset-bottom)); }
+  .flappy-course { width: min(100cqw, 76cqh); aspect-ratio: 3 / 4; border-width: 4px; border-radius: 14px; box-shadow: 0 0 0 3px #91b843, 0 0 0 6px #e0ed77, 0 14px 32px rgb(0 0 0 / 42%); }
+  .flappy-course-actions { top: 9px; right: 9px; gap: 6px; }
+  .flappy-course-actions button { width: 39px; min-height: 39px; }
+  .flappy-controls { grid-template-columns: 1fr minmax(174px, 230px) 1fr; }
+  .flappy-flap { min-height: 54px !important; font-size: 18px !important; }
+  .flappy-panel { gap: 9px; padding: 12px; }
+  .flappy-panel h1 { font-size: clamp(50px, 14cqh, 82px); }
+  .flappy-panel h2 { font-size: clamp(31px, 8cqh, 54px); }
   .flappy-panel p { font-size: 12px; }
-}
-@media (max-height: 450px) and (min-width: 450px) {
-  .flappy-shell .game-ambient-toggle { left: auto; right: 12px; bottom: 12px; }
-  .flappy-free-run-page { grid-template-columns: minmax(0, 1fr) 148px; grid-template-rows: 42px minmax(0, 1fr); padding: 0 10px 10px; gap: 6px 10px; }
-  .flappy-hud { grid-column: 1 / -1; }
-  .flappy-stage { grid-row: 2; grid-column: 1; }
-  .flappy-controls { grid-row: 2; grid-column: 2; display: flex; flex-direction: column; justify-content: center; align-items: stretch; gap: 12px; padding: 4px 0 38px; }
-  .flappy-controls .flappy-flap { min-height: 48px; order: -1; }
-  .flappy-controls span { font-size: 11px; }
-  .flappy-controls small { font-size: 10px; }
-  .flappy-notice { font-size: 10px; min-height: 36px; }
-  .flappy-panel { gap: 5px; padding: 8px; }
-  .flappy-panel h1 { font-size: 28px; }
-  .flappy-panel h2 { font-size: 18px; }
-  .flappy-panel p { font-size: 10px; }
-  .flappy-panel button { min-height: 34px; font-size: 11px; padding: 6px 12px; }
   .flappy-panel-mode { font-size: 9px; }
-  .flappy-panel .flappy-result-score { font-size: 30px; }
+  .flappy-notice { position: absolute; right: 10px; bottom: 78px; left: 10px; max-width: none; padding: 8px; border-radius: 8px; background: rgb(8 30 37 / 85%); text-align: center; }
 }
-@media (prefers-reduced-motion: reduce) { .flappy-free-run-page *, .flappy-dialog * { scroll-behavior: auto; } }
+
+@media (max-height: 500px) and (min-width: 500px) {
+  .flappy-free-run-page { grid-template-columns: minmax(0, 1fr) 150px; grid-template-rows: minmax(0, 1fr); gap: 12px; padding: 8px 10px 10px; }
+  .flappy-stage { grid-column: 1; }
+  .flappy-course { width: min(100cqw, 133.333cqh); aspect-ratio: 4 / 3; border-radius: 12px; }
+  .flappy-controls { grid-column: 2; display: flex; align-items: stretch; justify-content: center; width: 100%; }
+  .flappy-flap { min-width: 0; min-height: 74px !important; }
+  .flappy-notice { position: absolute; right: 8px; bottom: 8px; left: auto; width: 140px; }
+  .flappy-course-actions { top: 7px; right: 7px; }
+  .flappy-course-actions button { width: 34px; min-height: 34px; font-size: 14px; }
+  .flappy-panel { gap: 5px; padding: 8px; }
+  .flappy-panel h1 { font-size: clamp(42px, 17cqh, 66px); }
+  .flappy-panel h2 { font-size: clamp(28px, 12cqh, 42px); }
+  .flappy-panel p { font-size: 10px; }
+  .flappy-panel button { min-height: 34px; padding: 5px 14px; font-size: 11px; }
+  .flappy-result-board { width: min(280px, 72%); padding: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flappy-free-run-page *,
+  .flappy-dialog * { scroll-behavior: auto; }
+}

@@ -13,6 +13,7 @@ describe('Flappy route integration', () => {
     expect(routesSource).toContain("import('./routes/FlappyRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/flappy')")
     expect(routeSource).toContain('new HttpArcadeCompetitionGateway(fetchWithAccountSession)')
+    expect(routeSource).not.toContain('GameAmbientMusic')
   })
 })
 

@@ -70,7 +70,7 @@ async function capture(page: Page, name: string) {
   await mkdir(evidence, { recursive: true })
   await page.screenshot({ path: resolve(evidence, name + '.png'), animations: 'disabled' })
 }
-async function fits(page: Page, selectors = '.flappy-course,.flappy-hud,.flappy-free-run-page button') {
+async function fits(page: Page, selectors = '.flappy-course,.flappy-controls,.flappy-free-run-page button') {
   const problems = await page.evaluate(selectors => {
     const failures: string[] = []
     if (document.documentElement.scrollHeight > innerHeight + 1 || document.documentElement.scrollWidth > innerWidth + 1) failures.push('document overflow')
@@ -89,17 +89,14 @@ async function fits(page: Page, selectors = '.flappy-course,.flappy-hud,.flappy-
         if (/(hidden|clip|auto|scroll)/.test(style.overflowY) && (r.top < a.top - 1 || r.bottom > a.bottom + 1)) failures.push(`clipped vertically: ${name}`)
       }
     }
-    const music = document.querySelector('.game-ambient-toggle')?.getBoundingClientRect()
-    const course = document.querySelector('.flappy-course')?.getBoundingClientRect()
-    if (music && course && Math.min(music.right, course.right) - Math.max(music.left, course.left) > 1
-      && Math.min(music.bottom, course.bottom) - Math.max(music.top, course.top) > 1) failures.push('music control covers the course')
-    if (music && (music.left < -1 || music.top < -1 || music.right > innerWidth + 1 || music.bottom > innerHeight + 1)) failures.push('music control outside viewport')
     return [...new Set(failures)]
   }, selectors)
   expect(problems).toEqual([])
   const course = await page.locator('.flappy-course').boundingBox()
   expect(course).not.toBeNull()
-  expect(Math.abs(course!.width / course!.height - 4 / 3)).toBeLessThan(.01)
+  const viewport = page.viewportSize()!
+  const portraitMobile = viewport.width <= 720 && !(viewport.height <= 500 && viewport.width >= 500)
+  expect(Math.abs(course!.width / course!.height - (portraitMobile ? 3 / 4 : 4 / 3))).toBeLessThan(.01)
 }
 async function pose(page: Page) {
   return page.locator('.flappy-course svg').evaluate(element => element.outerHTML)
@@ -144,7 +141,7 @@ async function rules(page: Page, image: string) {
   const body = dialog.locator('.flappy-dialog-body')
   await body.focus(); await page.keyboard.press('End'); await page.clock.runFor(100)
   if (await body.evaluate(e => e.scrollHeight > e.clientHeight + 1)) await expect.poll(() => body.evaluate(e => e.scrollTop)).toBeGreaterThan(0)
-  await expect(dialog).toContainText('does not spend credits')
+  await expect(dialog).toContainText('Tap the course')
   await capture(page, image)
   await page.keyboard.press('Escape')
   await expect(dialog).toHaveCount(0)
@@ -157,7 +154,7 @@ test.describe('Recorded Flappy browser surface', () => {
     const h = await installApi(page)
     await open(page); await freezeClock(page)
     await expect(phase(page)).toHaveAttribute('data-phase', 'lobby')
-    await expect(page.locator('.flappy-hud-context')).not.toContainText('Session best')
+    await expect(page.locator('.game-ambient-toggle')).toHaveCount(0)
     await fits(page); const courseBox = await page.locator('.flappy-course').boundingBox()
     await capture(page, viewport.name + '-lobby')
     const startGate = deferred()
@@ -192,12 +189,12 @@ test.describe('Recorded Flappy browser surface', () => {
     expect(Object.keys(replay).sort()).toEqual(['flapTicks', 'totalTicks'])
     expect(replay.totalTicks).toBeGreaterThan(0); expect(replay.flapTicks).toEqual([0])
     await expect(page.locator('.flappy-scene-bird')).toHaveClass(/is-collided/)
-    await expect(page.locator('.flappy-panel')).toContainText('Provisional score 0')
+    await expect(page.locator('.flappy-result-score')).toHaveText('0')
     await fits(page); await capture(page, viewport.name + '-recording')
     h.reply = null; completionGate.release()
     await expect(phase(page)).toHaveAttribute('data-phase', 'result')
     await expect(page.locator('.flappy-result-score')).toHaveAttribute('aria-label', 'Official score 0')
-    await expect(page.locator('.flappy-hud-context')).toContainText('Session best 0')
+    await expect(page.locator('.flappy-result-board')).toContainText('Best0')
     await fits(page); await capture(page, viewport.name + '-result')
     const finalBox = await page.locator('.flappy-course').boundingBox()
     for (const field of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(courseBox![field] - finalBox![field]), `persistent course ${field}`).toBeLessThanOrEqual(1)
@@ -254,7 +251,7 @@ test.describe('Recorded Flappy browser surface', () => {
     await page.addInitScript(({ key, run, cursor }) => sessionStorage.setItem(key, JSON.stringify({ kind: 'flight', run, cursor })), { key: recoveryKey, run: runFixture(), cursor })
     await open(page); await freezeClock(page)
     await expect(phase(page)).toHaveAttribute('data-phase', 'paused')
-    await expect(page.locator('.flappy-hud-score')).toContainText('1')
+    await expect(page.locator('.flappy-score')).toContainText('1')
     await expect(page.locator('.flappy-scene-bird')).toHaveAttribute('data-tick', '230')
     await page.clock.runFor(2000); expect(h.writes).toEqual([])
     await fits(page); await capture(page, viewport.name + '-restored-course')
@@ -300,7 +297,7 @@ test.describe('Recorded Flappy browser surface', () => {
   })
 
   test('real browser touch on Flap and course each records a single primary input without page movement', async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, baseURL: 'http://127.0.0.1:4187', reducedMotion: 'reduce' })
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 1, baseURL: 'http://127.0.0.1:4191', reducedMotion: 'reduce' })
     const page = await context.newPage()
     try {
       await installApi(page); await open(page); await freezeClock(page); await begin(page)
@@ -391,13 +388,13 @@ test.describe('Recorded Flappy browser surface', () => {
     h.reply = () => ({ payload: { runId: runFixture(999).runId, score: 99, terminal: 'ground-collision', wasReplay: false } })
     await terminal(page); await expect(phase(page)).toHaveAttribute('data-phase', 'submit-failed')
     const saved = await stored(page), original = h.writes[1]
-    await expect(page.locator('.flappy-result-score')).toHaveCount(0)
+    await expect(page.locator('.flappy-result-score')).not.toHaveAttribute('aria-label', /Official score/)
     expect(saved.kind).toBe('submission')
     h.reply = null; h.resultScore = 4
     await button(page, 'Retry recording').click(); await expect(phase(page)).toHaveAttribute('data-phase', 'result')
     expect(h.writes[2]).toEqual(original)
     await expect(page.locator('.flappy-result-score')).toHaveAttribute('aria-label', 'Official score 4')
-    await expect(page.locator('.flappy-hud-context')).toContainText('Session best 4')
+    await expect(page.locator('.flappy-result-board')).toContainText('Best4')
     await capture(page, 'authoritative-score-after-retry')
   })
 
@@ -424,7 +421,7 @@ test.describe('Recorded Flappy browser surface', () => {
   test('reduced motion removes cosmetic tilt while the same replay frame and input remain intact', async ({ browser }) => {
     const frames: { y: string | null; transform: string | null; cursor: unknown }[] = []
     for (const reducedMotion of ['reduce', 'no-preference'] as const) {
-      const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4187', reducedMotion })
+      const context = await browser.newContext({ baseURL: 'http://127.0.0.1:4191', reducedMotion })
       const page = await context.newPage()
       try {
         await installApi(page); await open(page); await freezeClock(page); await begin(page)
@@ -436,18 +433,15 @@ test.describe('Recorded Flappy browser surface', () => {
     expect(frames[0].transform).toContain('rotate(0)'); expect(frames[1].transform).not.toContain('rotate(0)')
   })
 
-  test('the existing music preference toggles without adding flight input or service writes', async ({ page }) => {
+  test('Flappy uses effects without adding a background-music control', async ({ page }) => {
     const h = await installApi(page)
     await open(page); await freezeClock(page); await begin(page); await button(page, 'Pause').click()
     const cursor = (await stored(page)).cursor
-    const toggle = page.locator('.game-ambient-toggle')
-    await expect(toggle).toHaveAttribute('aria-pressed', 'true')
-    await toggle.click(); await expect(toggle).toHaveAttribute('aria-pressed', 'false')
-    expect(await page.locator('audio').evaluateAll(es => es.every(e => (e as HTMLAudioElement).muted))).toBe(true)
+    await expect(page.locator('.game-ambient-toggle')).toHaveCount(0)
+    await expect(page.locator('audio')).toHaveCount(0)
     await page.clock.runFor(1000)
     expect((await stored(page)).cursor).toEqual(cursor); expect(h.writes).toHaveLength(1)
-    await toggle.click(); await expect(toggle).toHaveAttribute('aria-pressed', 'true')
     await expect(phase(page)).toHaveAttribute('data-phase', 'paused')
-    await capture(page, 'music-control-preference')
+    await capture(page, 'effects-only-audio')
   })
 })

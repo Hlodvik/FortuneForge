@@ -137,7 +137,7 @@ public sealed class CreditHoldemStoreTests
     }
 
     [Fact]
-    public async Task MissingTheActionDeadlineReleasesTheHumanSeat()
+    public async Task FirstMissedHandAutoActsAndSecondConsecutiveMissedHandReleasesTheSeat()
     {
         var store = NewStore();
         var session = await StartMatch(store);
@@ -145,12 +145,31 @@ public sealed class CreditHoldemStoreTests
         var inactive = match.Players.Single(player => player.Seat == match.ActiveSeat);
         Assert.True(inactive.IsAccountBacked);
 
-        var timedOut = await store.GetSessionAsync(
+        var firstTimeout = await store.GetSessionAsync(
             inactive.ActorId, match.ActionDeadlineAtUtc!.Value, default);
 
-        Assert.IsType<CreditHoldemIdleSessionResponse>(timedOut.Session);
-        Assert.Contains(inactive.ActorId, match.LeavingActorIds);
-        Assert.Equal("folded", inactive.Status);
+        Assert.False(firstTimeout.Session is CreditHoldemIdleSessionResponse);
+        Assert.DoesNotContain(inactive.ActorId, match.LeavingActorIds);
+        Assert.Equal(1, inactive.ConsecutiveMissedActionHands);
+        Assert.Equal(match.HandNumber, inactive.LastMissedActionHand);
+
+        if (match.Status == "active") CreditHoldemEngine.ForceComplete(match, Start.AddMinutes(1));
+        _ = CreditHoldemEngine.ApplyFinancialSettlement(match);
+        var next = Assert.IsType<CreditHoldemMatch>(CreditHoldemEngine.StartNextHand(
+            match,
+            new Dictionary<string, long>(StringComparer.Ordinal) { ["u1"] = 10_000, ["u2"] = 10_000 },
+            77,
+            2,
+            Start.AddMinutes(2)));
+        var returning = next.Players.Single(player => player.ActorId == inactive.ActorId);
+        next.ActiveSeat = returning.Seat;
+        next.ActionDeadlineAtUtc = Start.AddMinutes(2).AddSeconds(30);
+
+        var secondTimeout = CreditHoldemTableCoordinator.AdvanceIfDue(next, next.ActionDeadlineAtUtc.Value);
+
+        Assert.Contains(inactive.ActorId, secondTimeout.ReleasedHumanActorIds);
+        Assert.Contains(inactive.ActorId, next.LeavingActorIds);
+        Assert.Equal(2, returning.ConsecutiveMissedActionHands);
     }
 
     [Fact]

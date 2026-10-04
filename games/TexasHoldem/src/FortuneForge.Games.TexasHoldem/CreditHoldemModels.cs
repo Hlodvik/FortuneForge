@@ -245,6 +245,8 @@ internal sealed class CreditHoldemPlayer
     public string? LastAction { get; set; }
     public int WonHandChips { get; set; }
     public long AccountPayoutCents { get; set; }
+    public int ConsecutiveMissedActionHands { get; set; }
+    public int LastMissedActionHand { get; set; }
 }
 
 internal sealed record CreditHoldemSeatAssignment(
@@ -254,7 +256,9 @@ internal sealed record CreditHoldemSeatAssignment(
     bool IsAccountBacked,
     int Seat,
     int Stack,
-    IReadOnlyDictionary<string, string>? HostMetadata = null);
+    IReadOnlyDictionary<string, string>? HostMetadata = null,
+    int ConsecutiveMissedActionHands = 0,
+    int LastMissedActionHand = 0);
 
 internal sealed record CreditHoldemFinancialSettlement(
     long HumanCommittedCents,

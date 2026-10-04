@@ -21,13 +21,13 @@
   background:
     radial-gradient(circle at 50% -25%, #234e9b 0, transparent 42%),
     linear-gradient(140deg, #06112b, #020716 70%);
-  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', sans-serif;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI Variable", sans-serif;
 }
 .ff-video-poker[data-embedded="true"] { height: 100%; }
 .ff-video-poker:has(> .ff-video-poker__error) { grid-template-rows: auto minmax(0, 1fr) auto; }
 .ff-video-poker__header, .ff-video-poker__console, .ff-video-poker__error { width: min(100%, 76rem); margin-inline: auto; }
 .ff-video-poker__header { display: flex; min-height: 44px; align-items: center; gap: .4rem; }
-.ff-video-poker__header h1 { margin: 0 auto 0 0; color: #ffe69b; font: 900 1.4rem Georgia, serif; letter-spacing: .04em; text-transform: uppercase; }
+.ff-video-poker__header h1 { margin: 0 auto 0 0; color: #ffe69b; font: 900 1.4rem Copperplate, "Arial Black", sans-serif; letter-spacing: .055em; text-transform: uppercase; }
 .ff-video-poker__balance { display: flex; min-width: 9.5rem; align-items: baseline; gap: .55rem; margin-right: auto; padding: .42rem .78rem; border: 1px solid #f0ca6970; border-radius: 999px; background: #06112cd9; box-shadow: inset 0 1px #ffffff12, 0 .25rem .8rem #0007; }
 .ff-video-poker__balance span { color: #bfcde1; font-size: .61rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
 .ff-video-poker__balance strong { color: #fff0ad; font-size: .96rem; font-variant-numeric: tabular-nums; }
@@ -35,7 +35,7 @@
 .ff-video-poker button { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .ff-video-poker button:disabled { cursor: default; opacity: .52; }
 .ff-video-poker button:focus-visible, .ff-video-poker select:focus-visible { outline: 3px solid #fff09a; outline-offset: 2px; }
-.ff-video-poker__primary, .ff-video-poker__secondary { min-width: 44px; min-height: 44px; padding: .45rem .85rem; border: 1px solid var(--vp-border); border-radius: .52rem; background: linear-gradient(#1e4c78, #0b294e); box-shadow: inset 0 1px #8fc6f233, 0 2px 0 #010817; color: #f3f8ff; font-weight: 850 !important; letter-spacing: .02em; }
+.ff-video-poker__primary, .ff-video-poker__secondary { min-width: 44px; min-height: 44px; padding: .45rem .85rem; border: 1px solid var(--vp-border); border-radius: .52rem; background: linear-gradient(#1e4c78, #0b294e); box-shadow: inset 0 1px #8fc6f233, 0 2px 0 #010817; color: #f3f8ff; font-family: Copperplate, "Arial Black", "Trebuchet MS", sans-serif !important; font-weight: 850 !important; letter-spacing: .035em; }
 .ff-video-poker__primary { border-color: #fff0a8; background: linear-gradient(#fff2a7, #e8b340 64%, #bd771a); box-shadow: inset 0 1px #fffbd8, 0 3px 0 #70400b, 0 .3rem .8rem #0008; color: #1b2450; text-transform: uppercase; }
 .ff-video-poker__secondary[aria-pressed="true"] { border-color: var(--vp-gold); background: linear-gradient(#735820, #3e2d10); box-shadow: inset 0 0 .8rem #ffd96f2e, 0 0 .55rem #ffd96f30; color: #fff0a2; }
 .ff-video-poker button:hover:not(:disabled) { filter: brightness(1.12); }
@@ -101,6 +101,8 @@
 .ff-video-poker__bet-controls, .ff-video-poker__round-actions, .ff-video-poker__recovery { display: flex; align-items: center; justify-content: center; gap: .4rem; }
 .ff-video-poker__ticket { color: #c8d5e5; font-size: .7rem; font-variant-numeric: tabular-nums; }
 .ff-video-poker__error { max-height: 4.5rem; margin: 0; overflow: auto; padding: .4rem .6rem; border: 1px solid #b37075; border-radius: .45rem; background: #571e30e8; color: #ffe2e3; font-size: .8rem; }
+.ff-video-poker__guide-steps { display: grid; gap: .55rem; padding-left: 1.3rem; font-size: .85rem; line-height: 1.45; }
+.ff-video-poker__info-panel h3 { margin: 1rem 0 .45rem; color: #ffe39a; font: 900 .82rem Copperplate, "Arial Black", sans-serif; letter-spacing: .04em; text-transform: uppercase; }
 .ff-video-poker__bet-controls, .ff-video-poker__round-actions { grid-row: 2; display: grid; width: min(100%, 23rem); min-width: 0; grid-template-columns: 1fr 1.6fr 6.4rem; }
 .ff-video-poker__round-actions > .ff-video-poker__primary { grid-row: 1; grid-column: 3; }
 .ff-video-poker__round-actions > .ff-video-poker__secondary { grid-row: 1; grid-column: 1; }

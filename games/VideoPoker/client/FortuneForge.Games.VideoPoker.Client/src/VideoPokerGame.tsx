@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { VideoPokerGatewayError, type VideoPokerCard, type VideoPokerCardPosition, type VideoPokerGateway, type VideoPokerHandCount, type VideoPokerRound, type VideoPokerStatus } from './contracts'
 import { HttpVideoPokerGateway } from './httpVideoPokerGateway'
 import { cardName, formatMoney, handLabel, paytableRows, recommendedHolds } from './videoPokerPresentation'
+import { playVideoPokerClick, playVideoPokerWin } from './videoPokerAudio'
 import './videoPoker.css'
 import './videoPokerPaytable.css'
 import './videoPokerEnhancements.css'
@@ -36,6 +37,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const pendingDraw = useRef<readonly VideoPokerCardPosition[] | null>(null)
   const statusRefreshBalance = useRef(false)
   const balanceCallback = useRef(onBalanceChange)
+  const announcedWin = useRef<string | null>(null)
   const gameRef = useRef<HTMLElement>(null)
   useEffect(() => { balanceCallback.current = onBalanceChange }, [onBalanceChange])
 
@@ -115,6 +117,10 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
     if (!round || !revealFinished) return
     clearPendingAction(playerId)
     if (round.phase === 'completed') { clearStoredRoundId(playerId); clearHolds(playerId) }
+    if (round.phase === 'completed' && round.payout! > 0 && announcedWin.current !== round.roundId) {
+      announcedWin.current = round.roundId
+      playVideoPokerWin(round.payout!)
+    }
     setLastBalance(round.balance)
     balanceCallback.current?.(round.balance)
     if (document.activeElement === document.body) gameRef.current?.querySelector<HTMLButtonElement>('.ff-video-poker__card-button:not(:disabled), .ff-video-poker__rail button:not(:disabled)')?.focus()
@@ -190,20 +196,21 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const paytable = <Paytable coins={shownCoins} round={completed ? round : null} />
   const visibleError = error ?? statusError
 
-  return <main className="ff-video-poker" ref={gameRef} data-embedded={!showTitle} aria-busy={busy || recovery === 'recovering' || (round !== null && !revealFinished)}>
+  return <main className="ff-video-poker" ref={gameRef} data-embedded={!showTitle} aria-busy={busy || recovery === 'recovering' || (round !== null && !revealFinished)} onClickCapture={(event) => {
+    if ((event.target as Element).closest('button, select')) playVideoPokerClick()
+  }}>
     <header className="ff-video-poker__header">
       {showTitle && <h1>Video Poker</h1>}
       <div className="ff-video-poker__balance"><span>Balance</span><strong>{displayedBalance === null ? '—' : formatMoney(displayedBalance, currencySymbol)}</strong></div>
       <InfoPanel label="Video Poker paytable" trigger="Paytable" active={activePanel} onChange={setActivePanel}>{paytable}</InfoPanel>
       <InfoPanel label="Video Poker basic guide" trigger="Guide" active={activePanel} onChange={setActivePanel}>
-        <h2>Basic holds</h2><button className="ff-video-poker__secondary" aria-pressed={strategyHelp} onClick={() => setStrategyHelp(value => !value)}>Strategy {strategyHelp ? 'On' : 'Off'}</button>
-        <p>This optional guide identifies made hands, pairs and high cards. It does not calculate optimal returns or select your holds.</p>
-        {strategyHelp && awaitingDraw && <p role="status">{recommendedHolds(round.initialCards).length ? 'Consider holding ' + recommendedHolds(round.initialCards).map(position => cardName(round.initialCards[position])).join(', ') + '.' : 'No simple hold found.'}</p>}
-      </InfoPanel>
-      <InfoPanel label="How to play Video Poker" trigger="?" active={activePanel} onChange={setActivePanel}>
-        <h2>Jacks or Better · 9/6</h2><p>Choose coins and hands, then Deal. Tap cards to hold them and Draw to replace the others. Use 1–5 while the cards are focused, or Tab and Space.</p>
-        <p>Each hand shares the deal and holds, then draws from its own shuffled deck. A pair of jacks or higher pays; lower pairs do not. The paytable shows coins returned per hand, including the 4,000-coin Royal Flush at five coins.</p>
+        <h2>How to play</h2>
+        <ol className="ff-video-poker__guide-steps"><li>Choose your coin wager and number of hands, then press Deal.</li><li>Tap the cards you want to keep. A held card stays in your final hand.</li><li>Press Draw once. Every card you did not hold is replaced.</li><li>Your final five cards win when they make a hand shown on the paytable. Jacks or Better means a pair of jacks, queens, kings, or aces.</li></ol>
+        <p>Hover or focus a hand name on the paytable for its exact card pattern.</p>
         {status && <p>One coin is {formatMoney(status.coinValue, currencySymbol)}. Total wager is coins × hands × coin value.</p>}
+        <h3>Hold suggestions</h3><button className="ff-video-poker__secondary" aria-pressed={strategyHelp} onClick={() => setStrategyHelp(value => !value)}>Strategy {strategyHelp ? 'On' : 'Off'}</button>
+        <p>This optional guide identifies made hands, pairs, and high cards. It does not calculate optimal returns or select your holds.</p>
+        {strategyHelp && awaitingDraw && <p role="status">{recommendedHolds(round.initialCards).length ? 'Consider holding ' + recommendedHolds(round.initialCards).map(position => cardName(round.initialCards[position])).join(', ') + '.' : 'No simple hold found.'}</p>}
       </InfoPanel>
     </header>
     <section className="ff-video-poker__console" aria-label="Video Poker game">
@@ -240,8 +247,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
         </> : <>
           <small className="ff-video-poker__ticket">{round.coinsWagered} {round.coinsWagered === 1 ? 'coin' : 'coins'} × {round.handCount} {round.handCount === 1 ? 'hand' : 'hands'} · {formatMoney(round.wager, currencySymbol)}</small>
           <div className="ff-video-poker__round-actions">{round.phase === 'awaiting-draw' ? <button className="ff-video-poker__primary" disabled={busy || !awaitingDraw || recovery !== 'ready'} onClick={draw}>{busy ? 'Drawing…' : !awaitingDraw ? 'Dealing…' : pendingDraw.current ? 'Retry Draw' : 'Draw'}</button> : !completed ? <button className="ff-video-poker__primary" disabled>Drawing…</button> : <>
-            {status?.available ? <button className="ff-video-poker__primary" disabled={busy || !counts.includes(round.handCount) || round.coinsWagered < status.minimumCoinsWagered || round.coinsWagered > status.maximumCoinsWagered || round.coinsWagered * round.handCount * status.coinValue > round.balance} onClick={() => deal(round.coinsWagered, round.handCount)}>Deal Again</button> : !status && statusError && !tableUnavailable ? <button className="ff-video-poker__primary" onClick={retryStatus}>Retry connection</button> : <button className="ff-video-poker__primary" disabled>Deal Again</button>}
-            <button className="ff-video-poker__secondary" onClick={newHand}>New Hand</button>
+            <button className="ff-video-poker__primary" onClick={newHand}>New Hand</button>
             <InfoPanel label="Video Poker round details" trigger="Details" active={activePanel} onChange={setActivePanel}><h2>Round details</h2><dl><div><dt>Wager</dt><dd>{formatMoney(round.wager, currencySymbol)}</dd></div><div><dt>Total return</dt><dd>{formatMoney(round.payout!, currencySymbol)}</dd></div><div><dt>Net</dt><dd>{formatMoney(round.payout! - round.wager, currencySymbol)}</dd></div></dl></InfoPanel>
           </>}</div>
           {!status && statusError && !tableUnavailable && round.phase === 'awaiting-draw' && <button className="ff-video-poker__secondary" onClick={retryStatus}>Retry connection</button>}
@@ -267,11 +273,23 @@ function Paytable({ coins, round }: Readonly<{ coins: number; round: VideoPokerR
   const rowsByCoin = columns.map(value => paytableRows(value))
   return <section className="ff-video-poker__paytable"><h2>Jacks or Better <small>9/6 paytable · {coins} {coins === 1 ? 'coin' : 'coins'} selected</small></h2><table aria-label="Jacks or Better paytable"><thead><tr><th scope="col">Winning hand</th>{columns.map(value => <th className={value === coins ? 'is-selected-column' : ''} scope="col" key={value}>{value}</th>)}</tr></thead><tbody>{rowsByCoin[0]!.map((row, rowIndex) => {
     const selected = rowsByCoin[coins - 1]?.[rowIndex] ?? row
-    return <tr className={wins.some(hand => hand === row.hand) ? 'is-winning-row' : ''} key={row.hand}><th aria-label={row.hand} scope="row">{row.hand}<span className="ff-video-poker__selected-return">{selected.payout.toLocaleString()} {selected.payout === 1 ? 'coin' : 'coins'}</span></th>{columns.map((value, columnIndex) => {
+    return <tr className={wins.some(hand => hand === row.hand) ? 'is-winning-row' : ''} key={row.hand}><th aria-label={row.hand} scope="row"><span className="ff-video-poker__hand-name" tabIndex={0}>{row.hand}<span role="tooltip">{handDescriptions[row.hand]}</span></span><span className="ff-video-poker__selected-return">{selected.payout.toLocaleString()} {selected.payout === 1 ? 'coin' : 'coins'}</span></th>{columns.map((value, columnIndex) => {
       const payout = rowsByCoin[columnIndex]![rowIndex]!.payout
       return <td aria-label={`${payout.toLocaleString()} ${payout === 1 ? 'coin' : 'coins'}`} className={value === coins ? 'is-selected-column' : ''} key={value}>{payout.toLocaleString()}</td>
     })}</tr>
   })}</tbody></table></section>
+}
+
+const handDescriptions: Readonly<Record<string, string>> = {
+  'Royal Flush': 'Ten, jack, queen, king, and ace, all in the same suit.',
+  'Straight Flush': 'Five consecutive cards, all in the same suit.',
+  'Four of a Kind': 'Four cards with the same rank.',
+  'Full House': 'Three cards of one rank plus a pair of another rank.',
+  Flush: 'Five cards in the same suit that are not consecutive.',
+  Straight: 'Five consecutive cards; suits may be mixed.',
+  'Three of a Kind': 'Three cards with the same rank.',
+  'Two Pair': 'Two different pairs in the same hand.',
+  'Jacks or Better': 'A pair of jacks, queens, kings, or aces.',
 }
 function InfoPanel({ label, trigger, children, active, onChange }: Readonly<{ label: string; trigger: string; children: ReactNode; active: string | null; onChange: (label: string | null) => void }>) {
   const open = active === label, id = useId()

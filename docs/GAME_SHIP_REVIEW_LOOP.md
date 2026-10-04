@@ -17,8 +17,8 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **Video Poker**
-- Current phase: **professional Game King reference pass and implementation review**
+- Active game: **Roulette**
+- Current phase: **professional reference comparison and obvious-fix pass**
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
 - Resume point: Video Poker professional comparison, followed by obvious functional and visual fixes
@@ -33,8 +33,8 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | 2 | Fortune Blackjack | Card | Shippable — owner directed advancement and deployed |
 | 3 | Casino War | Card/table | Shippable — owner marked complete |
 | 4 | Baccarat | Card/table | Paused — professional first pass complete; owner review deferred |
-| 5 | Video Poker | Card | Active — professional reference comparison |
-| 6 | Roulette | Casino | Queued |
+| 5 | Video Poker | Card | Shippable — owner directed advancement and deployed |
+| 6 | Roulette | Casino | Active — professional reference comparison |
 | 7 | Craps | Casino | Queued |
 | 8 | Liar's Dice | Casino | Queued |
 | 9 | Sic Bo | Casino | Queued |

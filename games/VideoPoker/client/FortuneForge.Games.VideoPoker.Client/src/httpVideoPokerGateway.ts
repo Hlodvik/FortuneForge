@@ -14,7 +14,7 @@ export class HttpVideoPokerGateway implements VideoPokerGateway {
   readonly basePath: string
   private readonly requestFn: typeof fetch
 
-  constructor(basePath = '/api/games/video-poker', requestFn: typeof fetch = fetch) {
+  constructor(basePath = '/api/games/video-poker', requestFn: typeof fetch = (...arguments_) => globalThis.fetch(...arguments_)) {
     this.basePath = basePath.replace(/\/$/, '')
     this.requestFn = requestFn
   }

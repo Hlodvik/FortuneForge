@@ -4,7 +4,7 @@ internal static class CreditHoldemEngine
 {
     public static readonly TimeSpan HumanGrace = TimeSpan.FromSeconds(5);
     public static readonly TimeSpan ActionDuration = TimeSpan.FromSeconds(30);
-    public static readonly TimeSpan MatchDuration = TimeSpan.FromMinutes(15);
+    public static readonly TimeSpan MatchDuration = TimeSpan.FromMinutes(5);
 
     public static CreditHoldemMatch Deal(
         string matchId,
@@ -159,6 +159,11 @@ internal static class CreditHoldemEngine
                 break;
         }
         player.LastAction = action;
+        if (player.IsAccountBacked)
+        {
+            player.ConsecutiveMissedActionHands = 0;
+            player.LastMissedActionHand = 0;
+        }
         match.ActionLog.Add(new CreditHoldemActionLogEntry(
             match.ActionLog.Count + 1,
             match.HandNumber,
@@ -310,7 +315,9 @@ internal static class CreditHoldemEngine
                 Seat = descriptor.Seat,
                 StartingStack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
                 Stack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
-                HoleCards = []
+                HoleCards = [],
+                ConsecutiveMissedActionHands = descriptor.ConsecutiveMissedActionHands,
+                LastMissedActionHand = descriptor.LastMissedActionHand
             };
         }).OrderBy(value => value.Seat).ToList();
 
@@ -523,7 +530,10 @@ internal static class CreditHoldemEngine
             true,
             player.Seat,
             CreditHoldemMoney.StackFromBalance(
-                balances.GetValueOrDefault(player.ActorId), rule.MaximumStackCents));
+                balances.GetValueOrDefault(player.ActorId), rule.MaximumStackCents),
+            player.HostMetadata,
+            player.ConsecutiveMissedActionHands,
+            player.LastMissedActionHand);
     }
 
     private static int NextOccupiedSeat(IReadOnlyList<CreditHoldemSeatAssignment> descriptors, int afterSeat)

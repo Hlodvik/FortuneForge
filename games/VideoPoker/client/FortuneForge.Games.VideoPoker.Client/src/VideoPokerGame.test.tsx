@@ -52,6 +52,11 @@ describe('VideoPokerGame', () => {
     expect(screen.getByRole('table', { name: 'Jacks or Better paytable' })).toBeTruthy()
     expect(screen.getByRole('cell', { name: '4,000 coins' })).toBeTruthy()
     expect(screen.getByRole('rowheader', { name: 'Jacks or Better' })).toBeTruthy()
+    expect(screen.getByText('A pair of jacks, queens, kings, or aces.')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: 'Video Poker basic guide' }))
+    expect(screen.getByText('Tap the cards you want to keep. A held card stays in your final hand.')).toBeTruthy()
+    expect(screen.getByText('Press Draw once. Every card you did not hold is replaced.')).toBeTruthy()
   })
 
   it('deals five cards, toggles holds, and sends zero-based positions when drawing', async () => {
@@ -74,6 +79,8 @@ describe('VideoPokerGame', () => {
     expect(gateway.draw).toHaveBeenCalledWith('round-7', [0, 2], expect.objectContaining({ idempotencyKey: expect.stringMatching(/^video-poker-draw-/) }))
     await screen.findByText('Straight', { selector: '.ff-video-poker__completed-hand strong' })
     screen.getByText('R12.00 total won')
+    expect(screen.getByRole('button', { name: 'New Hand' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Deal Again' })).toBeNull()
   })
 
   it('shows busy feedback while a deal is pending and disables repeated deals', async () => {

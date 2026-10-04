@@ -71,7 +71,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
-    public async Task ProductionStore_ActionDeadlineReleasesInactiveHumanSession()
+    public async Task ProductionStore_FirstActionDeadlineKeepsHumanForTheNextHand()
     {
         var (database, store, suffix) = CreateStore();
         var first = $"inactive-a-{suffix}";
@@ -84,11 +84,12 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var timedOut = await store.GetSessionAsync(
             inactive.ActorId, match.ActionDeadlineAtUtc!.Value, default);
 
-        Assert.IsType<CreditHoldemIdleSessionResponse>(timedOut.Session);
+        Assert.False(timedOut.Session is CreditHoldemIdleSessionResponse);
         match = await ReadMatchAsync(database, session.Table.MatchId);
-        Assert.Contains(inactive.ActorId, match.LeavingActorIds);
-        Assert.Equal("folded", match.Players.Single(player =>
-            player.ActorId == inactive.ActorId).Status);
+        Assert.DoesNotContain(inactive.ActorId, match.LeavingActorIds);
+        var persisted = match.Players.Single(player => player.ActorId == inactive.ActorId);
+        Assert.Equal(1, persisted.ConsecutiveMissedActionHands);
+        Assert.Equal(match.HandNumber, persisted.LastMissedActionHand);
     }
 
     [Fact]

@@ -29,8 +29,26 @@ internal static class CreditHoldemTableCoordinator
             if (match.ActionDeadlineAtUtc is not { } deadline || nowUtc < deadline)
                 return new(false, []);
 
-            CreditHoldemEngine.Leave(match, active.ActorId, nowUtc);
-            return new(true, [active.ActorId]);
+            if (active.LastMissedActionHand != match.HandNumber)
+            {
+                active.ConsecutiveMissedActionHands = active.LastMissedActionHand == match.HandNumber - 1
+                    ? checked(active.ConsecutiveMissedActionHands + 1)
+                    : 1;
+                active.LastMissedActionHand = match.HandNumber;
+            }
+
+            if (active.ConsecutiveMissedActionHands >= 2)
+            {
+                CreditHoldemEngine.Leave(match, active.ActorId, nowUtc);
+                return new(true, [active.ActorId]);
+            }
+
+            var missedHands = active.ConsecutiveMissedActionHands;
+            var missedHand = active.LastMissedActionHand;
+            CreditHoldemEngine.AdvanceExpiredTurn(match, nowUtc);
+            active.ConsecutiveMissedActionHands = missedHands;
+            active.LastMissedActionHand = missedHand;
+            return new(true, []);
         }
 
         if (match.Status != "completed" ||

@@ -137,6 +137,43 @@ public sealed class CreditHoldemStoreTests
     }
 
     [Fact]
+    public async Task MissingTheActionDeadlineReleasesTheHumanSeat()
+    {
+        var store = NewStore();
+        var session = await StartMatch(store);
+        var match = store.MatchForTest(session.Table.MatchId);
+        var inactive = match.Players.Single(player => player.Seat == match.ActiveSeat);
+        Assert.True(inactive.IsAccountBacked);
+
+        var timedOut = await store.GetSessionAsync(
+            inactive.ActorId, match.ActionDeadlineAtUtc!.Value, default);
+
+        Assert.IsType<CreditHoldemIdleSessionResponse>(timedOut.Session);
+        Assert.Contains(inactive.ActorId, match.LeavingActorIds);
+        Assert.Equal("folded", inactive.Status);
+    }
+
+    [Fact]
+    public async Task AbandonedCompletedHandReleasesEveryHumanSession()
+    {
+        var store = NewStore();
+        var session = await StartMatch(store);
+        var match = store.MatchForTest(session.Table.MatchId);
+        var completedAt = Start.AddSeconds(8);
+        CreditHoldemEngine.ForceComplete(match, completedAt);
+        Assert.IsType<CreditHoldemResultSessionResponse>(
+            (await store.GetSessionAsync("u1", completedAt, default)).Session);
+
+        var expiry = completedAt.Add(CreditHoldemTableCoordinator.ResultInactivityDuration);
+        Assert.IsType<CreditHoldemIdleSessionResponse>(
+            (await store.GetSessionAsync("u1", expiry, default)).Session);
+        Assert.IsType<CreditHoldemIdleSessionResponse>(
+            (await store.GetSessionAsync("u2", expiry, default)).Session);
+        Assert.All(match.Players.Where(player => player.IsAccountBacked),
+            player => Assert.Contains(player.ActorId, match.LeavingActorIds));
+    }
+
+    [Fact]
     public async Task LateHumanWaitsForBoundaryAndThenUsesAnOpenSeat()
     {
         var store = NewStore();

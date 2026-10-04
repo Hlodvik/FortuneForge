@@ -71,6 +71,27 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
+    public async Task ProductionStore_ActionDeadlineReleasesInactiveHumanSession()
+    {
+        var (database, store, suffix) = CreateStore();
+        var first = $"inactive-a-{suffix}";
+        var second = $"inactive-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var session = await StartMatchAsync(store, first, second);
+        var match = await ReadMatchAsync(database, session.Table.MatchId);
+        var inactive = match.Players.Single(player => player.Seat == match.ActiveSeat);
+
+        var timedOut = await store.GetSessionAsync(
+            inactive.ActorId, match.ActionDeadlineAtUtc!.Value, default);
+
+        Assert.IsType<CreditHoldemIdleSessionResponse>(timedOut.Session);
+        match = await ReadMatchAsync(database, session.Table.MatchId);
+        Assert.Contains(inactive.ActorId, match.LeavingActorIds);
+        Assert.Equal("folded", match.Players.Single(player =>
+            player.ActorId == inactive.ActorId).Status);
+    }
+
+    [Fact]
     public async Task ProductionStore_SettlesImmediatePayoutAndSignedHouseNetExactlyOnce()
     {
         var (database, store, suffix) = CreateStore();
@@ -96,6 +117,25 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
             Field<long>(revenue, "houseNetCents"));
         Assert.Equal("real-human-wager-v2", Field<string>(revenue, "financialClassification"));
         Assert.Equal(0, Field<long>(revenue, "botFinancialContributionCents"));
+    }
+
+    [Fact]
+    public async Task ProductionStore_AbandonedResultReleasesEveryHumanSession()
+    {
+        var (database, store, suffix) = CreateStore();
+        var first = $"result-timeout-a-{suffix}";
+        var second = $"result-timeout-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var match = await StartMatchAsync(store, first, second);
+        var completedAt = match.Table.MatchDeadlineAtUtc.AddSeconds(1);
+        Assert.IsType<CreditHoldemResultSessionResponse>(
+            (await store.GetSessionAsync(first, completedAt, default)).Session);
+
+        var expiry = completedAt.Add(CreditHoldemTableCoordinator.ResultInactivityDuration);
+        Assert.IsType<CreditHoldemIdleSessionResponse>(
+            (await store.GetSessionAsync(first, expiry, default)).Session);
+        Assert.IsType<CreditHoldemIdleSessionResponse>(
+            (await store.GetSessionAsync(second, expiry, default)).Session);
     }
 
     [Fact]

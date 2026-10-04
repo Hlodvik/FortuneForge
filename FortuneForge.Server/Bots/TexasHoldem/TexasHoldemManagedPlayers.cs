@@ -76,7 +76,7 @@ internal static class TexasHoldemManagedPlayers
     {
         if (match.Status != "active") return false;
         var player = match.Players.Single(value => value.Seat == match.ActiveSeat);
-        if (!IsManaged(player)) return CreditHoldemEngine.AdvanceExpiredTurn(match, nowUtc);
+        if (!IsManaged(player)) return false;
         if (nowUtc < PrivateActionDueAt(match, player)) return false;
         var decision = TexasHoldemManagedActionPolicy.Choose(match, player, Skill(player));
         _ = CreditHoldemEngine.ApplyAction(match, player.ActorId, decision.Action, decision.RaiseTo, nowUtc);

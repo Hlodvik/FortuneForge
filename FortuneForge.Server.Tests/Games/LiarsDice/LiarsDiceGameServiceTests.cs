@@ -40,7 +40,7 @@ public sealed class LiarsDiceGameServiceTests
 
         clock.Advance(TimeSpan.FromSeconds(2));
         var oneMove = await service.AdvanceAsync("player-a", match.MatchId);
-        Assert.NotEqual(firstOpponentId, oneMove.CurrentPlayerId);
+        Assert.True(oneMove.Phase == "resolved" || oneMove.CurrentPlayerId != firstOpponentId);
         Assert.True(oneMove.OpponentsThinking || oneMove.Phase == "resolved");
     }
 

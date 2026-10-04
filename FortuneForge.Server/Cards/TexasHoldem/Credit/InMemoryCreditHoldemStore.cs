@@ -41,10 +41,10 @@ internal sealed class InMemoryCreditHoldemStore(
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            foreach (var match in matches.Values.Where(match => match.Status == "active"))
+            foreach (var match in matches.Values.Where(match =>
+                         match.Status is "active" or "completed"))
             {
-                _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
-                SettleOnce(match, nowUtc);
+                AdvanceMatch(match, nowUtc);
             }
             return Task.CompletedTask;
         }
@@ -164,8 +164,7 @@ internal sealed class InMemoryCreditHoldemStore(
             var detail = $"{action}:{request.ExpectedVersion}:{request.RaiseTo?.ToString() ?? string.Empty}";
             if (Replay(userId, idempotencyKey, "action", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
             var match = MatchForUser(matchId, userId);
-            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
-            SettleOnce(match, nowUtc);
+            AdvanceMatch(match, nowUtc);
             if (match.Status != "active" || match.Version != request.ExpectedVersion)
                 throw new CreditHoldemConflictException("The Hold'em table changed. Reconnect before acting.");
             var player = match.Players.Single(value => value.ActorId == userId);
@@ -176,8 +175,7 @@ internal sealed class InMemoryCreditHoldemStore(
             if (committed != required) throw new InvalidOperationException("The Hold'em commitment changed during validation.");
             DebitCommitment(match, player, committed, $"action-v{request.ExpectedVersion}", idempotencyKey, nowUtc);
             guards[Guard(userId, idempotencyKey)] = ("action", matchId, detail);
-            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
-            SettleOnce(match, nowUtc);
+            AdvanceMatch(match, nowUtc);
             return Task.FromResult(Project(userId, nowUtc));
         }
     }
@@ -247,8 +245,7 @@ internal sealed class InMemoryCreditHoldemStore(
             var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (Replay(userId, idempotencyKey, "leave", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
             var match = MatchForUser(matchId, userId);
-            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
-            SettleOnce(match, nowUtc);
+            AdvanceMatch(match, nowUtc);
             if (match.Version != expectedVersion)
                 throw new CreditHoldemConflictException("The Hold'em table changed. Reconnect before leaving.");
             CreditHoldemEngine.Leave(match, userId, nowUtc);
@@ -306,16 +303,26 @@ internal sealed class InMemoryCreditHoldemStore(
             else if (ticket.MatchId is { } pendingMatchId)
             {
                 var pending = matches[pendingMatchId];
-                _ = TexasHoldemManagedPlayers.AdvanceIfDue(pending, nowUtc);
-                SettleOnce(pending, nowUtc);
+                AdvanceMatch(pending, nowUtc);
             }
         }
         if (sessions.TryGetValue(userId, out session) && session.MatchId is { } matchId)
         {
             var match = matches[matchId];
-            _ = TexasHoldemManagedPlayers.AdvanceIfDue(match, nowUtc);
-            SettleOnce(match, nowUtc);
+            AdvanceMatch(match, nowUtc);
         }
+    }
+
+    private void AdvanceMatch(CreditHoldemMatch match, DateTime nowUtc)
+    {
+        var advance = CreditHoldemTableCoordinator.AdvanceIfDue(match, nowUtc);
+        SettleOnce(match, nowUtc);
+        foreach (var actorId in advance.ReleasedHumanActorIds)
+            sessions[actorId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        if (advance.ReleasedHumanActorIds.Count > 0 &&
+            match.Players.Where(player => player.IsAccountBacked)
+                .All(player => match.LeavingActorIds.Contains(player.ActorId)))
+            activeMatchIds.Remove(match.PartitionKey);
     }
 
     private void TryMatch(string partitionKey, ulong seed, DateTime nowUtc)

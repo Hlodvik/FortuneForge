@@ -1,0 +1,43 @@
+.ff-roulette-physical-wheel {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  filter: drop-shadow(0 13px 9px #0007);
+}
+
+.ff-roulette-wheel-rotor,
+.ff-roulette-wheel-ball-track {
+  transform-box: view-box;
+  transform-origin: 0 0;
+}
+
+.ff-roulette-wheel-rotor {
+  transition: none;
+}
+
+.ff-roulette-physical-wheel.is-spinning .ff-roulette-wheel-rotor {
+  animation: ff-roulette-physical-rotor 2.3s linear infinite;
+}
+
+.ff-roulette-physical-wheel.is-spinning .ff-roulette-wheel-ball-track {
+  animation: ff-roulette-physical-ball 1.3s linear infinite;
+}
+
+@keyframes ff-roulette-physical-rotor {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ff-roulette-physical-ball {
+  to { transform: rotate(-360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-roulette-physical-wheel.is-spinning .ff-roulette-wheel-rotor,
+  .ff-roulette-physical-wheel.is-spinning .ff-roulette-wheel-ball-track {
+    animation: none;
+  }
+}

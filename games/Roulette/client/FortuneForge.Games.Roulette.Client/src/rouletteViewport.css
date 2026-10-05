@@ -1,6 +1,144 @@
-@media (max-width:900px) { .ff-roulette-main { grid-template-rows:56px minmax(0,1fr) 112px; padding:7px; gap:6px; }.ff-roulette-table { grid-template-columns:minmax(100px,.5fr) minmax(0,2fr); gap:8px; padding:8px; }.ff-roulette-board { grid-template-columns:32px minmax(0,1fr) 32px; grid-template-rows:minmax(0,1fr) 38px 38px; padding:5px; gap:2px; }.ff-roulette-board button { font-size:12px; }.ff-roulette-controls { gap:6px; padding:6px; }.ff-roulette-result strong { font-size:14px; } }
-@media (max-height:500px) and (min-width:500px) { .ff-roulette-main { grid-template-rows:42px minmax(0,1fr) 78px; padding:4px 7px; gap:4px; }.ff-roulette-table { grid-template-columns:1fr; padding:4px; border-radius:9px; }.ff-roulette-wheel { display:none; }.ff-roulette-board { grid-template-rows:minmax(0,1fr) 25px 25px; padding:3px; }.ff-roulette-controls { grid-template-columns:minmax(0,1fr) minmax(200px,.8fr); grid-template-rows:44px 20px; gap:2px 8px; padding:4px; }.ff-roulette-balance strong { font-size:14px; }.ff-roulette-balance small,.ff-roulette-balance>span { font-size:9px; }.ff-roulette-pocket { width:34px; height:34px; font-size:21px; }.ff-roulette-result { gap:5px; }.ff-roulette-result>div>span { font-size:10px; }.ff-roulette-title-actions button { min-height:36px; }.ff-roulette-board .felt-chip { bottom:1px; right:1px; height:15px; min-width:15px; font-size:8px; border-width:1px; }.ff-roulette-board button { font-size:11px; }.ff-roulette-selection { grid-template-columns:minmax(70px,1.2fr) minmax(62px,1fr) 44px 48px; gap:3px; }.ff-roulette-selection>button { padding:3px; font-size:10px; }.ff-roulette-selection select { font-size:11px; padding:3px; }.ff-roulette-notice { font-size:10px; } }
-@media (max-width:499px) { .ff-roulette-main { grid-template-rows:48px minmax(0,1fr) 112px; padding:5px; gap:5px; }.ff-roulette-title { gap:5px; }.ff-roulette-balance strong { font-size:14px; }.ff-roulette-balance small,.ff-roulette-balance>span { font-size:10px; }.ff-roulette-title-actions { gap:4px; }.ff-roulette-title-actions button { padding:4px 7px; font-size:11px; min-height:40px; }.ff-roulette-result { gap:4px; }.ff-roulette-pocket { width:38px; height:38px; font-size:22px; }.ff-roulette-result strong { font-size:12px; }.ff-roulette-result>div>span { font-size:9px; }.ff-roulette-result>div { max-width:84px; }.ff-roulette-wheel { display:none; }.ff-roulette-table { grid-template-columns:1fr; padding:5px; border-radius:11px; }.ff-roulette-board { grid-template-columns:44px 40px minmax(0,1fr); grid-template-rows:25px minmax(0,1fr) 25px; padding:4px; border-width:2px; gap:2px; }.ff-roulette-board .number.zero { grid-column:3; grid-row:1; font-size:18px; }.ff-roulette-board .number-grid { grid-column:3; grid-row:2; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(12,minmax(0,1fr)); gap:1px; }.ff-roulette-board .number-grid .number { grid-column:var(--column); grid-row:var(--street); }.ff-roulette-board .column-bets { grid-column:3; grid-row:3; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:1fr; gap:1px; }.ff-roulette-board .column-bets button { grid-column:var(--area); grid-row:1; }.ff-roulette-board .dozen-bets { grid-column:2; grid-row:2; grid-template-columns:1fr; grid-template-rows:repeat(3,minmax(0,1fr)); gap:1px; }.ff-roulette-board .outside-grid { grid-column:1; grid-row:2; grid-template-columns:1fr; grid-template-rows:repeat(6,minmax(0,1fr)); gap:1px; }.ff-roulette-board button { font-size:clamp(14px,2.3svh,20px); padding:2px; }.ff-roulette-board .outside-grid button,.ff-roulette-board .dozen-bets button { font-size:11px; }.ff-roulette-board .column-bets button { font-size:11px; }.ff-roulette-controls { grid-template-columns:1fr; grid-template-rows:38px 44px 18px; gap:3px; padding:3px; border-radius:8px; }.ff-roulette-selection { grid-template-columns:minmax(80px,1.3fr) minmax(72px,1fr) 44px 48px; gap:3px; }.ff-roulette-selection select { height:38px; font-size:12px; padding:3px; }.ff-roulette-selection>button { min-height:38px; padding:2px; font-size:10px; }.ff-roulette-actions { gap:5px; }.ff-roulette-actions .primary { font-size:13px; }.ff-roulette-notice { font-size:10px; }.ff-roulette-panel { inset:4px; width:auto; }.ff-roulette-panel-content { padding:7px; }.ff-roulette-panel>header { padding:4px 7px; }.ff-roulette-panel h2 { font-size:17px; } }
-@media (max-width:359px) { .ff-roulette-main { grid-template-rows:42px minmax(0,1fr) 110px; padding:4px; gap:4px; }.ff-roulette-result>div { display:grid; max-width:64px; }.ff-roulette-result strong { font-size:10px; }.ff-roulette-result>div>span { font-size:9px; }.ff-roulette-pocket { width:32px; height:32px; font-size:20px; }.ff-roulette-balance strong { font-size:14px; }.ff-roulette-board { grid-template-columns:38px 35px minmax(0,1fr); padding:3px; }.ff-roulette-board .number-grid button { font-size:13px; }.ff-roulette-board .felt-chip { bottom:1px; right:1px; min-width:15px; height:15px; font-size:8px; border-width:1px; }.ff-roulette-board .outside-grid button,.ff-roulette-board .dozen-bets button { font-size:10px; } }
 
-@media (min-width:500px) and (max-width:599px) and (max-height:500px) { .ff-roulette-board .number.has-chip>span { position:absolute; left:2px; top:50%; transform:translateY(-50%); }.ff-roulette-board .number .felt-chip { width:9px; min-width:9px; height:9px; padding:0; border:1px solid #fff0b3; font-size:0; bottom:4px; background:#d6ad67; } }
+/* Preserve the same betting geometry while adapting the table scene to the available viewport. */
+@media(min-width:901px) and (max-height:760px) {
+  .ff-roulette-table { padding:20px 30px 16px 10px; grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr); }
+  .ff-roulette-felt { gap:12px; padding:20px 18px; border-width:12px; }
+  .ff-roulette-wheel-image { width:min(100%,440px); }
+}
+@media(min-width:500px) and (max-width:900px) {
+  .ff-roulette-main { grid-template-rows:minmax(0,1fr) 86px 34px; }
+  .ff-roulette-table { grid-template-columns:minmax(120px,.55fr) minmax(0,1.3fr); padding:18px; gap:10px; }
+  .ff-roulette-felt { transform:none; gap:12px; padding:16px; border-width:6px; }
+  .ff-roulette-board { aspect-ratio:2.35; }
+  .ff-roulette-board button { font-size:15px; }
+  .ff-roulette-track { display:none; }
+  .ff-roulette-controls { grid-template-columns:minmax(0,1fr) minmax(200px,.8fr); grid-template-rows:48px 18px; gap:3px 10px; padding:7px 10px; }
+  .ff-roulette-chip-rack { display:none; }
+  .ff-roulette-selection { grid-template-columns:minmax(90px,1.2fr) minmax(70px,1fr) 40px 40px; gap:5px; }
+  .ff-roulette-title { padding:0 8px; gap:8px; }
+  .ff-roulette-balance { gap:4px; }.ff-roulette-balance small { display:none; }.ff-roulette-balance>span { margin-left:5px; }
+  .ff-roulette-result>div { gap:5px; }.ff-roulette-result strong { font-size:11px; }.ff-roulette-result>div>span { font-size:10px; }
+}
+@media(max-height:500px) and (min-width:500px) {
+  .ff-roulette-main { grid-template-rows:minmax(0,1fr) 74px 32px; }
+  .ff-roulette-table { grid-template-columns:1fr; padding:8px 20px; }
+  .ff-roulette-wheel,.ff-roulette-track { display:none; }
+  .ff-roulette-felt { height:100%; transform:none; display:block; border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; }
+  .ff-roulette-table { background:radial-gradient(ellipse at 50% 40%,#288964,#136746); }
+  .ff-roulette-board { height:100%; aspect-ratio:auto; grid-template-columns:30px minmax(0,1fr) 32px; grid-template-rows:minmax(0,1fr) 27px 27px; }
+  .ff-roulette-board button { font-size:clamp(12px,2vw,17px); }
+  .ff-roulette-board .number.zero { font-size:22px; }
+  .ff-roulette-board .felt-chip { width:16px; height:16px; border-width:2px; font-size:8px; bottom:1px; right:1px; }
+  .ff-roulette-controls { grid-template-columns:minmax(0,1fr) minmax(190px,.85fr); grid-template-rows:44px 16px; gap:1px 10px; padding:4px 8px; }
+  .ff-roulette-chip-rack { display:none; }
+  .ff-roulette-selection { grid-template-columns:minmax(70px,1.2fr) minmax(62px,1fr) 36px 36px; gap:3px; }
+  .ff-roulette-selection select { height:36px; font-size:11px; padding:3px; }
+  .ff-roulette-selection .rail-tool>span { width:29px; height:29px; font-size:23px; margin-bottom:0; }
+  .ff-roulette-selection .rail-tool:last-child>span { font-size:15px; }
+  .ff-roulette-selection>button { font-size:8px; }
+  .ff-roulette-controls .primary { font-size:12px; padding:4px; }
+  .ff-roulette-notice { font-size:10px; }
+  .ff-roulette-title { padding:0 7px; gap:6px; }.ff-roulette-balance { gap:4px; }
+  .ff-roulette-balance small { display:none; }.ff-roulette-balance strong { font-size:13px; }.ff-roulette-balance>span { margin-left:7px; font-size:11px; }
+  .ff-roulette-result>div { gap:5px; }.ff-roulette-result strong { font-size:11px; }.ff-roulette-result>div>span { font-size:10px; }
+  .ff-roulette-title-actions button { min-height:27px; padding:3px 7px; font-size:10px; }
+}
+@media(max-width:499px) {
+  .ff-roulette-main { grid-template-rows:minmax(0,1fr) 110px 45px; }
+  .ff-roulette-table { display:block; padding:14px 16px; background:radial-gradient(ellipse at 50% 35%,#2a8c62,#126745); }
+  .ff-roulette-wheel,.ff-roulette-track { display:none; }
+  .ff-roulette-felt { display:block; height:100%; transform:none; border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; }
+  .ff-roulette-board { height:100%; aspect-ratio:auto; grid-template-columns:44px 38px minmax(0,1fr); grid-template-rows:28px minmax(0,1fr) 28px; background:transparent; }
+  .ff-roulette-board .number.zero { grid-column:3; grid-row:1; border-radius:0; font-size:20px; }
+  .ff-roulette-board .number-grid { grid-column:3; grid-row:2; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:repeat(12,minmax(0,1fr)); }
+  .ff-roulette-board .number-grid .number { grid-column:var(--column); grid-row:var(--street); }
+  .ff-roulette-board .column-bets { grid-column:3; grid-row:3; grid-template-columns:repeat(3,minmax(0,1fr)); grid-template-rows:1fr; }
+  .ff-roulette-board .column-bets button { grid-column:var(--area); grid-row:1; font-size:12px; }
+  .ff-roulette-board .dozen-bets { grid-column:2; grid-row:2; grid-template-columns:1fr; grid-template-rows:repeat(3,minmax(0,1fr)); }
+  .ff-roulette-board .outside-grid { grid-column:1; grid-row:2; grid-template-columns:1fr; grid-template-rows:repeat(6,minmax(0,1fr)); }
+  .ff-roulette-board button { font-size:clamp(15px,2.4svh,21px); }
+  .ff-roulette-board .outside-grid button,.ff-roulette-board .dozen-bets button { font-size:11px; }
+  .ff-roulette-board .felt-chip { width:21px; height:21px; bottom:2px; right:2px; border-width:2px; font-size:9px; }
+  .ff-roulette-controls { grid-template-columns:1fr; grid-template-rows:36px 44px 16px; gap:3px; padding:4px 8px; }
+  .ff-roulette-chip-rack { display:none; }
+  .ff-roulette-selection { grid-template-columns:minmax(85px,1.3fr) minmax(72px,1fr) 44px 44px; gap:5px; }
+  .ff-roulette-selection select { height:34px; font-size:12px; padding:4px; }
+  .ff-roulette-selection .rail-tool>span { display:none; }
+  .ff-roulette-selection>button { border:1px solid #adbca45c; border-radius:4px; background:#1c3224; font-size:10px; }
+  .ff-roulette-actions { gap:7px; }
+  .ff-roulette-notice { font-size:10px; }
+  .ff-roulette-title { align-items:center; padding:0 8px; gap:4px; }
+  .ff-roulette-balance { display:grid; grid-template-columns:auto auto; gap:1px 4px; }
+  .ff-roulette-balance small { display:none; }.ff-roulette-balance strong { font-size:13px; }
+  .ff-roulette-balance>span { grid-column:1/-1; margin:0; font-size:10px; }
+  .ff-roulette-result { gap:4px; }.ff-roulette-pocket { width:23px; height:27px; font-size:15px; }
+  .ff-roulette-result>div { display:grid; gap:1px; }
+  .ff-roulette-result strong { font-size:10px; }.ff-roulette-result>div>span { font-size:9px; }
+  .ff-roulette-title-actions { gap:4px; }.ff-roulette-title-actions button { min-height:32px; padding:2px 7px; font-size:10px; }
+  .ff-roulette-panel { inset:4px; width:auto; }.ff-roulette-panel-content { padding:8px; }
+}
+@media(max-width:359px) {
+  .ff-roulette-main { grid-template-rows:minmax(0,1fr) 108px 44px; }
+  .ff-roulette-table { padding:10px; }
+  .ff-roulette-board { grid-template-columns:35px 33px minmax(0,1fr); grid-template-rows:23px minmax(0,1fr) 23px; }
+  .ff-roulette-board .number-grid button { font-size:14px; }
+  .ff-roulette-board .outside-grid button,.ff-roulette-board .dozen-bets button,.ff-roulette-board .column-bets button { font-size:10px; }
+  .ff-roulette-board .felt-chip { width:15px; height:15px; bottom:1px; right:1px; font-size:8px; }
+  .ff-roulette-selection { grid-template-columns:minmax(78px,1.2fr) minmax(68px,1fr) 38px 40px; gap:4px; }
+  .ff-roulette-title { padding:0 6px; }.ff-roulette-title-actions button { padding:2px 5px; }
+  .ff-roulette-result { max-width:125px; }.ff-roulette-result>div>span { font-size:8px; }
+}
+@media(min-width:500px) and (max-width:599px) and (max-height:500px) {
+  .ff-roulette-board .number.has-chip>span { position:absolute; left:2px; top:50%; transform:translateY(-50%); }
+  .ff-roulette-board .number .felt-chip { width:10px; height:10px; font-size:0; border-width:1px; bottom:3px; right:2px; }
+  .ff-roulette-result>div>span { display:none; }
+}
+
+@media(min-width:500px) and (max-width:900px) {
+ .ff-roulette-selection { grid-template-columns:minmax(90px,1fr) 40px 40px; }
+ .ff-roulette-actions { grid-template-columns:1fr 68px; }
+ .ff-roulette-actions .primary.spin { width:58px; height:58px; min-height:58px; }
+ .ff-roulette-spin-symbol { font-size:27px; }
+}
+@media(max-width:499px) {
+ .ff-roulette-main { grid-template-rows:minmax(0,1fr) 150px 44px; }
+ .ff-roulette-controls { grid-template-rows:34px 34px 44px 16px; gap:3px; }
+ .ff-roulette-selection { grid-template-columns:minmax(90px,1fr) 44px 44px; }
+ .ff-roulette-chip-rack { display:flex; grid-row:2; gap:9px; }
+ .ff-roulette-chip-rack .denomination { flex:0 0 30px; width:30px; min-width:30px; height:30px; padding:3px; }
+ .ff-roulette-chip-rack .denomination>span { font-size:11px; }
+ .ff-roulette-chip-rack .denomination[aria-pressed=true] { transform:translateY(-2px); outline-offset:1px; }
+ .ff-roulette-actions { grid-row:3; grid-template-columns:1fr 1fr; }
+ .ff-roulette-actions .primary.spin { width:100%; height:44px; min-height:44px; border-width:1px; border-radius:6px; font-size:12px; }
+ .ff-roulette-spin-symbol { display:inline-block; font-size:22px; vertical-align:middle; margin-right:6px; }
+ .ff-roulette-result.is-settled { position:static; min-width:0; padding:0; border:0; border-radius:0; background:none; box-shadow:none; }
+ .ff-roulette-result.is-settled .ff-roulette-pocket { width:23px; height:27px; font-size:15px; }
+ .ff-roulette-result.is-settled>div { gap:1px; }
+ .ff-roulette-result.is-settled strong { font-size:10px; }
+ .ff-roulette-result.is-settled>div>span { font-size:9px; }
+}
+@media(max-width:359px) {
+ .ff-roulette-selection { grid-template-columns:minmax(78px,1fr) 42px 42px; }
+ .ff-roulette-chip-rack { gap:7px; }
+ .ff-roulette-result.is-settled>div>span { font-size:8px; }
+}
+@media(max-height:500px) and (min-width:500px) {
+ .ff-roulette-main { grid-template-rows:minmax(0,1fr) 82px 32px; }
+ .ff-roulette-selection { grid-template-columns:minmax(72px,1fr) 36px 36px; }
+ .ff-roulette-controls { grid-template-rows:44px 27px; }
+ .ff-roulette-chip-rack { display:flex; grid-row:2; grid-column:1; gap:6px; }
+ .ff-roulette-chip-rack .denomination { flex:0 0 24px; width:24px; min-width:24px; height:24px; padding:3px; }
+ .ff-roulette-chip-rack .denomination>span { font-size:9px; }
+ .ff-roulette-chip-rack .denomination[aria-pressed=true] { transform:translateY(-1px); outline-width:1px; outline-offset:1px; }
+ .ff-roulette-actions { grid-row:1; grid-column:2; grid-template-columns:1fr 1fr; }
+ .ff-roulette-actions .primary.spin { width:100%; height:44px; min-height:44px; border-radius:6px; border-width:1px; font-size:12px; }
+ .ff-roulette-spin-symbol { display:inline-block; font-size:23px; vertical-align:middle; margin-right:5px; }
+ .ff-roulette-notice { grid-row:2; grid-column:2; font-size:9px; }
+ .ff-roulette-result.is-settled { position:static; min-width:0; padding:0; border:0; background:none; box-shadow:none; }
+ .ff-roulette-result.is-settled .ff-roulette-pocket { width:22px; height:24px; font-size:15px; }
+ .ff-roulette-result.is-settled>div { display:flex; gap:5px; }
+ .ff-roulette-result.is-settled strong { font-size:11px; }
+ .ff-roulette-result.is-settled>div>span { font-size:10px; }
+}
+
+@media(max-width:900px) { .ff-roulette-felt::before { opacity:.25; }.ff-roulette-felt::after { display:none; } }

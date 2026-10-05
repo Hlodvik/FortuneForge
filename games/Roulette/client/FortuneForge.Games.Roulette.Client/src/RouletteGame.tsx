@@ -3,11 +3,11 @@ import type { RouletteBet, RouletteBetKind, RouletteGateway } from './contracts'
 import { pocketColor } from './rouletteHelpers'
 import { availableChipValues, betOptions, coveredPockets, formatBetLabel, legalSelection, makeBet, neighborPockets, validStake } from './roulettePresentation'
 import { useRouletteTable } from './useRouletteTable'
-import rouletteSpinWheel from './assets/roulette-spin-wheel-v2.png?no-inline'
+import { RouletteWheel } from './RouletteWheel'
+import { RouletteRacetrack } from './RouletteRacetrack'
 import './roulette.css'
 import './rouletteEnhancements.css'
 import './rouletteViewport.css'
-import './rouletteProfessionalTheme.css'
 
 export type RouletteGameProps = Readonly<{ gateway: RouletteGateway; playerId?: string; showTitle?: boolean }>
 type Panel = 'bets' | 'options' | 'history' | 'neighbors' | 'tips'
@@ -49,7 +49,7 @@ export function RouletteGame({ gateway, playerId, showTitle = true }: RouletteGa
   const totalReturn = round?.settlements.reduce((sum, item) => sum + item.totalReturn, 0) ?? 0
   const selection = legalSelection(kind, numbers)
   const request = selection ? makeBet(kind, numbers, stake || 1) : null
-  const selectedPockets = request ? coveredPockets(request) : numbers
+  const selectedPockets = ['straight', 'split', 'street', 'corner', 'six-line'].includes(kind) ? request ? coveredPockets(request) : numbers : []
   const label = request ? formatBetLabel(request) : betOptions.find(option => option.kind === kind)!.label + ' · ' + numbers.join(', ')
   const selectedOption = betOptions.find(option => option.kind === kind)!
   const canAdd = !blocked && !locked && !!round && selection && validStake(stake, status, balance)
@@ -73,17 +73,20 @@ export function RouletteGame({ gateway, playerId, showTitle = true }: RouletteGa
     {showTitle && <h1 className="ff-roulette-visually-hidden">Roulette</h1>}
     <header className="ff-roulette-title">
       <div className="ff-roulette-balance"><small>Table balance</small><strong>{money(balance)}</strong><span>Bet {money(total)}</span></div>
-      <div className="ff-roulette-result" aria-live="polite" aria-atomic="true"><span className={'ff-roulette-pocket ' + (result === null ? 'idle' : pocketColor(result))}>{result ?? '—'}</span><div><strong>{resultLabel}</strong><span>{locked && !spinning ? money(totalReturn) + ' total return' : 'Single-zero table'}</span></div></div>
+      <div className={'ff-roulette-result' + (locked && !spinning ? ' is-settled' : '')} aria-live="polite" aria-atomic="true"><span className={'ff-roulette-pocket ' + (result === null ? 'idle' : pocketColor(result))}>{result ?? '—'}</span><div><strong>{resultLabel}</strong><span>{locked && !spinning ? money(totalReturn) + ' total return' : 'Single-zero table'}</span></div></div>
       <div className="ff-roulette-title-actions"><button onClick={() => openPanel('bets')} aria-label={locked ? 'Roulette settlement' : 'Roulette active bets'} aria-expanded={panel === 'bets'}>Bets <b>{bets.length}</b></button><button onClick={() => openPanel('options')} aria-label="Roulette options" aria-expanded={panel !== null && panel !== 'bets'}>More</button></div>
     </header>
     <section className={'ff-roulette-table' + (spinning ? ' is-spinning' : '')} aria-label="Roulette table">
-      <aside className="ff-roulette-wheel" aria-hidden="true"><div className="ff-roulette-wheel-image"><img className={'ff-roulette-wheel-art' + (spinning ? ' spinning' : '')} src={rouletteSpinWheel} alt="" draggable={false} /><span className={'ff-roulette-wheel-center ' + (result === null ? 'idle' : pocketColor(result))}>{result ?? '—'}</span>{spinning && <span className="ff-roulette-moving-ball" />}</div><div className="ff-roulette-recent">{table.history.slice(0, 6).map(entry => <span className={pocketColor(entry.pocket)} key={entry.roundId}>{entry.pocket}</span>)}</div></aside>
+      <aside className="ff-roulette-wheel" aria-hidden="true"><div className="ff-roulette-wheel-image"><RouletteWheel spinning={spinning} settledPocket={result} /></div><div className="ff-roulette-recent">{table.history.slice(0, 6).map(entry => <span className={pocketColor(entry.pocket)} key={entry.roundId}>{entry.pocket}</span>)}</div></aside>
+      <div className="ff-roulette-felt">
+      <button className="ff-roulette-track" type="button" aria-label="Roulette neighbours" onClick={() => openPanel('neighbors')}><RouletteRacetrack /></button>
       <div className="ff-roulette-board">
         {renderPocket(0)}
         <div className="number-grid">{Array.from({ length: 36 }, (_, index) => renderPocket(index + 1))}</div>
         <div className="column-bets">{[1, 2, 3].map(value => renderArea('column', '2:1', value))}</div>
         <div className="dozen-bets">{[1, 2, 3].map(value => renderArea('dozen', value === 1 ? '1st 12' : value === 2 ? '2nd 12' : '3rd 12', value))}</div>
         <div className="outside-grid">{outside.map(value => renderArea(value, betOptions.find(option => option.kind === value)!.label))}</div>
+      </div>
       </div>
       {panel && <section className="ff-roulette-panel" ref={panelRef} role="dialog" aria-modal="false" aria-label={panel === 'bets' ? locked ? 'Roulette settlement' : 'Roulette active bets' : 'Roulette options'}>
         <header><h2>{panel === 'bets' ? locked ? 'Settlement' : 'Active bets' : panel === 'neighbors' ? 'Neighbours' : panel === 'history' ? 'Recent spins' : panel === 'tips' ? 'Table guide' : 'Table options'}</h2><button aria-label="Close Roulette panel" onClick={closePanel}>×</button></header>
@@ -98,8 +101,9 @@ export function RouletteGame({ gateway, playerId, showTitle = true }: RouletteGa
       </section>}
     </section>
     <section className="ff-roulette-controls" aria-label="Roulette controls">
-      <div className="ff-roulette-selection"><label><span className="ff-roulette-visually-hidden">Bet type</span><select ref={kindRef} aria-label="Bet type" value={kind} onChange={event => chooseKind(event.target.value as RouletteBetKind)} disabled={blocked || locked}>{betOptions.map(option => <option key={option.kind} value={option.kind}>{option.label}</option>)}</select></label><label><span className="ff-roulette-visually-hidden">Chip</span><select aria-label="Chip" value={stake} onChange={event => setStake(Number(event.target.value))} disabled={blocked || locked}>{availableChipValues(status).map(value => <option key={value} value={value}>{money(value)}</option>)}</select></label><button className="ff-roulette-undo" aria-label="Undo last chip" disabled={blocked || locked || !bets.length} onClick={() => table.remove(bets.at(-1)!.betIndex)}>Undo</button><button disabled={blocked || locked || !bets.length || total > balance || !bets.every(bet => validStake(bet.stake, status, balance))} onClick={() => table.add(bets)}>Double</button></div>
-      <div className="ff-roulette-actions">{!round ? <><button className="primary" disabled={blocked} onClick={() => start()}>Open table</button><button className="primary spin" disabled>Spin</button></> : locked ? <><button className="primary" disabled={blocked} onClick={() => start()}>New round</button><button className="primary spin" disabled={blocked || !canBatch(bets)} onClick={() => start(true)}>Repeat bets</button></> : <><button className="primary" disabled={!canAdd} onClick={() => table.add([makeBet(kind, numbers, stake)])}>Add chip</button><button className="primary spin" disabled={blocked || !bets.length} onClick={() => { closePanel(); table.spin() }}>{spinning ? 'Spinning…' : 'Spin'}</button></>}</div>
+      <div className="ff-roulette-selection"><label><span className="ff-roulette-visually-hidden">Bet type</span><select ref={kindRef} aria-label="Bet type" value={kind} onChange={event => chooseKind(event.target.value as RouletteBetKind)} disabled={blocked || locked}>{betOptions.map(option => <option key={option.kind} value={option.kind}>{option.label}</option>)}</select></label><button className="ff-roulette-undo rail-tool" aria-label="Undo last chip" disabled={blocked || locked || !bets.length} onClick={() => table.remove(bets.at(-1)!.betIndex)}><span aria-hidden="true">↶</span>Undo</button><button className="rail-tool" disabled={blocked || locked || !bets.length || total > balance || !bets.every(bet => validStake(bet.stake, status, balance))} onClick={() => table.add(bets)}><span aria-hidden="true">2×</span>Double</button></div>
+      <div className="ff-roulette-chip-rack" role="group" aria-label="Chip denominations">{availableChipValues(status).map(value => <button type="button" key={value} aria-label={money(value) + ' chip'} aria-pressed={stake === value} disabled={blocked || locked} className={'denomination chip-' + (value <= 1 ? 'yellow' : value <= 5 ? 'red' : value <= 10 ? 'blue' : value <= 25 ? 'green' : 'black')} onClick={() => setStake(value)}><span>{value}</span></button>)}</div>
+      <div className="ff-roulette-actions">{!round ? <><button className="primary" disabled={blocked} onClick={() => start()}>Open table</button><button className="primary spin" disabled><span className="ff-roulette-spin-symbol" aria-hidden="true">⟳</span><span>Spin</span></button></> : locked ? <><button className="primary" disabled={blocked} onClick={() => start()}>New round</button><button className="primary spin" disabled={blocked || !canBatch(bets)} onClick={() => start(true)}><span className="ff-roulette-spin-symbol" aria-hidden="true">⟳</span><span>Repeat bets</span></button></> : <><button className="primary" disabled={!canAdd} onClick={() => table.add([makeBet(kind, numbers, stake)])}>Add chip</button><button className="primary spin" disabled={blocked || !bets.length} onClick={() => { closePanel(); table.spin() }}><span className="ff-roulette-spin-symbol" aria-hidden="true">⟳</span><span>{spinning ? 'Spinning…' : 'Spin'}</span></button></>}</div>
       <div className={'ff-roulette-notice' + (error ? ' error' : '')} role={error ? 'alert' : 'status'} aria-live="polite"><span>{error ?? (busy && !spinning ? 'Opening table…' : spinning ? 'Bets closed' : selectionHint)}</span>{(error && (!status || recovery === 'failed' || !status.available)) && <button disabled={busy} onClick={table.retry}>{recovery === 'failed' ? 'Retry restoration' : 'Retry'}</button>}</div>
     </section>
   </main>

@@ -34,8 +34,8 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
   const fresh=()=>{focusNext.current='stake';table.prepare(false)}
   const notice=table.error??(table.phase==='recovering'?'Restoring result…':table.phase==='loading'?'Connecting…':table.phase==='requesting'?'Rolling…':table.phase==='revealing'?'Revealing dice…':!table.unlocked&&!settled?'Table unavailable.':table.stakeValue===null?'Enter a valid stake.':table.slip.length===table.status?.maximumBetsPerRound?'Bet limit reached.':!table.canAdd&&table.unlocked?'Insufficient balance.':'')
   function resultFor(target:SicBoBetTarget){if(!settled||!table.round)return null;const selected=table.round.settlements.filter(b=>matches(target,b));return selected.length?selected.some(b=>b.won)?'win':'loss':null}
-  function cell(target:SicBoBetTarget){const amount=table.slip.filter(b=>matches(target,b)).reduce((sum,b)=>sum+b.stake,0);const result=resultFor(target);const face=target.face;const short=target.kind==='two-number-combination'?target.firstFace+' + '+target.secondFace:target.kind==='total'?String(target.total):target.label;return <button key={target.id} type="button" className={'ff-sic-bo__cell '+(amount?'has-bet ':'')+(result?'is-'+result:'')} disabled={disabled} aria-label={'Add '+target.label+' bet'} onClick={()=>table.add(target.id)} data-target={target.id} data-kind={target.kind} title={target.label+' · '+target.odds}>
-    {face?<Die face={face} small/>:<strong>{short}</strong>}
+  function cell(target:SicBoBetTarget){const amount=table.slip.filter(b=>matches(target,b)).reduce((sum,b)=>sum+b.stake,0);const result=resultFor(target);const short=target.kind==='total'?String(target.total):target.label;return <button key={target.id} type="button" className={'ff-sic-bo__cell '+(amount?'has-bet ':'')+(result?'is-'+result:'')} disabled={disabled} aria-label={'Add '+target.label+' bet'} onClick={()=>table.add(target.id)} data-target={target.id} data-kind={target.kind} title={target.label+' · '+target.coverageText+' · '+target.odds}>
+    <BetGlyph target={target} fallback={short}/>
     <small>{target.kind==='single-number'?'1 / 2 / 12:1':target.odds}</small>
     {amount>0&&<span className="ff-sic-bo__marker" aria-label={money(amount)+' staked'}>{compact(amount)}</span>}
     {result&&<span className="ff-sic-bo__result-mark" aria-label={result==='win'?'Winning bet':'Losing bet'}>{result==='win'?'✓':'×'}</span>}
@@ -45,7 +45,14 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
   return <main className={'ff-sic-bo is-'+table.phase} aria-busy={['requesting','revealing','recovering'].includes(table.phase)} onKeyDown={preventSelection}>
     <header className="ff-sic-bo__header">{showTitle&&<h1>Sic Bo</h1>}<nav aria-label="Table details"><button type="button" onClick={e=>open('slip',e)}>Slip <span>{table.slip.length}</span></button><button type="button" onClick={e=>open('history',e)}>History</button><button type="button" onClick={e=>open('rules',e)}>Rules</button></nav></header>
     <section className="ff-sic-bo__layout" aria-label="Sic Bo betting table">
-      <div className="ff-sic-bo__roll-area"><div className="ff-sic-bo__dice" role="img" aria-label={totalVisible?'Dice '+dice!.join(', '):table.round?'Dice revealing':'Dice tray'}>{[0,1,2].map(i=><Die key={i} face={dice&&i<count?dice[i]!:null} rolling={table.phase==='requesting'||table.phase==='revealing'&&i>=count}/>)}</div><div className="ff-sic-bo__roll-total" role="status">{totalVisible?<><strong>{showing!.total}</strong><span>{showing!.isTriple?'Triple':showing!.total<=10?'Small':'Big'}</span></>:<strong>—</strong>}</div><div className="ff-sic-bo__return">{settled&&<><span>Return <b>{money(table.round!.totalReturn)}</b></span><strong className={table.round!.profit>=0?'is-win':'is-loss'}>{table.round!.profit>0?'+':''}{money(table.round!.profit)} net</strong></>}</div></div>
+      <div className="ff-sic-bo__roll-area">
+        <div className="ff-sic-bo__stage-flare" aria-hidden="true"/>
+        <div className="ff-sic-bo__dice-plinth">
+          <div className="ff-sic-bo__dice" role="img" aria-label={totalVisible?'Dice '+dice!.join(', '):table.round?'Dice revealing':'Dice tray'}>{[0,1,2].map(i=><Die key={i} face={dice&&i<count?dice[i]!:null} rolling={table.phase==='requesting'||table.phase==='revealing'&&i>=count}/>)}</div>
+        </div>
+        <div className="ff-sic-bo__roll-total" role="status">{totalVisible?<><strong>{showing!.total}</strong><span>{showing!.isTriple?'Triple':showing!.total<=10?'Small':'Big'}</span></>:<strong>—</strong>}</div>
+        <div className="ff-sic-bo__return">{settled&&<><span>Return <b>{money(table.round!.totalReturn)}</b></span><strong className={table.round!.profit>=0?'is-win':'is-loss'}>{table.round!.profit>0?'+':''}{money(table.round!.profit)} net</strong></>}</div>
+      </div>
       <div className="ff-sic-bo__board">
         <div className="ff-sic-bo__board-left"><div className="ff-sic-bo__quick">{betTargets.filter(t=>['small','big','odd','even','any-triple'].includes(t.kind)).map(cell)}</div><div className="ff-sic-bo__faces">{(['single-number','specific-double','specific-triple'] as const).map(kind=><div className="ff-sic-bo__face-row" key={kind}><span>{kind==='single-number'?'Singles':kind==='specific-double'?'Doubles':'Triples'}</span>{targetsForKind(kind).map(cell)}</div>)}</div></div>
         <div className="ff-sic-bo__board-right"><div className="ff-sic-bo__totals" aria-label="Total bets">{targetsForKind('total').map(cell)}</div><div className="ff-sic-bo__combinations" aria-label="Two-number combination bets">{targetsForKind('two-number-combination').map(cell)}</div></div>
@@ -65,5 +72,10 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
 }
 const positions: Record<number,readonly number[]>={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}
 export function Die({face,small=false,rolling=false}:{face:number|null;small?:boolean;rolling?:boolean}){return <span className={'ff-sic-bo__die '+(small?'is-small ':'')+(rolling?'is-rolling':'')} aria-hidden="true">{face===null?<b>—</b>:positions[face]?.map(position=><i key={position} style={{gridRow:Math.floor(position/3)+1,gridColumn:position%3+1}}/>)}</span>}
+function BetGlyph({target,fallback}:{target:SicBoBetTarget;fallback:string}){
+  if(target.kind==='two-number-combination')return <span className="ff-sic-bo__bet-dice is-combination"><Die face={target.firstFace} small/><Die face={target.secondFace} small/></span>
+  if(target.face!==null){const count=target.kind==='specific-triple'?3:target.kind==='specific-double'?2:1;return <span className={'ff-sic-bo__bet-dice is-'+target.kind}>{Array.from({length:count},(_,index)=><Die face={target.face} small key={index}/>)}</span>}
+  return <strong>{fallback}</strong>
+}
 function matches(target:SicBoBetTarget,bet:{kind:string;face:number|null;total:number|null;firstFace:number|null;secondFace:number|null}){return target.kind===bet.kind&&target.face===bet.face&&target.total===bet.total&&target.firstFace===bet.firstFace&&target.secondFace===bet.secondFace}
 function compact(value:number){return value>=1000?(value/1000).toLocaleString('en-ZA',{maximumFractionDigits:2})+'k':String(value)}

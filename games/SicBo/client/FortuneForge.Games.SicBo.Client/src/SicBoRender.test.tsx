@@ -15,6 +15,10 @@ function coordinates(markup: string): string[] {
   })
 }
 
+function betCell(markup: string, target: string): string {
+  return markup.match(new RegExp(`<button[^>]*data-target="${target}"[\\s\\S]*?</button>`))?.[0] ?? ''
+}
+
 describe('Sic Bo server rendering', () => {
   it('renders the complete inert board without a browser, a request or a fabricated round', () => {
     const server = gateway()
@@ -44,6 +48,16 @@ describe('Sic Bo server rendering', () => {
     expect(markup).toMatch(/\$0[.,]00/)
     expect(markup).not.toMatch(/R0[.,]00/)
     expect(markup).not.toContain('three-dice-sic-bo')
+  })
+
+  it('draws the number of dice represented by each visual bet type', () => {
+    const markup = renderToStaticMarkup(<SicBoGame gateway={gateway()} />)
+    const diceCount = (target: string) => betCell(markup, target).match(/ff-sic-bo__die/g)?.length ?? 0
+
+    expect(diceCount('single-number-4')).toBe(1)
+    expect(diceCount('specific-double-4')).toBe(2)
+    expect(diceCount('specific-triple-4')).toBe(3)
+    expect(diceCount('two-number-combination-2-5')).toBe(2)
   })
 })
 

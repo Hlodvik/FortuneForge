@@ -13,11 +13,18 @@
   .ff-sic-bo__dice::after{left:-8px;right:-8px;bottom:-5px;height:8px}
   .ff-sic-bo__die{width:31px;padding:5px}
   .ff-sic-bo__face-row>span{writing-mode:vertical-rl;font-size:8px}
+  .ff-sic-bo__bet-dice{min-height:22px;gap:1px}
+  .ff-sic-bo__bet-dice .ff-sic-bo__die.is-small{width:20px;padding:3px}
+  .ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,.ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die{width:17px;padding:2px}
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die{width:14px;padding:2px}
 }
 
 @media(max-width:350px){
   .ff-sic-bo__dice{width:125px;height:40px;padding:5px 14px 8px;gap:4px}
   .ff-sic-bo__die{width:25px;padding:4px}
+  .ff-sic-bo__bet-dice .ff-sic-bo__die.is-small{width:17px;padding:2px}
+  .ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,.ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die{width:14px}
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die{width:11px;padding:1px}
 }
 
 @media(max-height:450px){
@@ -26,6 +33,10 @@
   .ff-sic-bo__dice::after{left:-6px;right:-6px;bottom:-4px;height:6px}
   .ff-sic-bo__die{width:22px;padding:3px;border-radius:4px}
   .ff-sic-bo__face-row>span{writing-mode:horizontal-tb;transform:none;font-size:7px}
+  .ff-sic-bo__bet-dice{min-height:17px;gap:1px}
+  .ff-sic-bo__bet-dice .ff-sic-bo__die.is-small{width:16px;padding:2px}
+  .ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,.ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die{width:14px;padding:2px}
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die{width:11px;padding:1px}
 }
 
 @media(max-height:450px) and (max-width:600px){

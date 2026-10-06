@@ -52,6 +52,7 @@ if ($Target -in @('all', 'api')) {
             '--source', $repoRoot,
             '--region', 'us-east4',
             '--project', 'fortuneforgegame',
+            '--max-instances', '1',
             '--quiet'
         ) `
         -WorkingDirectory $repoRoot

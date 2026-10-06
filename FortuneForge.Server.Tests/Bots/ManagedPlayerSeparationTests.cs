@@ -123,6 +123,78 @@ public sealed class ManagedPlayerSeparationTests
     }
 
     [Fact]
+    public void PopulationDirectorNeverAddsManagedPlayersWithoutAHuman()
+    {
+        var director = new ManagedTablePopulationDirector();
+
+        var decision = director.Observe(new(
+            ManagedPlayerGames.Roulette, "quiet-table", 8,
+            HumanPlayers: 0, ManagedPlayers: 1,
+            MinimumOccupancy: 1, MaximumOccupancy: 2));
+
+        Assert.True(decision.KeepTableOpen);
+        Assert.True(decision.BotOnly);
+        Assert.Equal(0, decision.ManagedArrivals);
+    }
+
+    [Fact]
+    public void PopulationDirectorLimitsBotOnlyTablesAcrossGames()
+    {
+        var director = new ManagedTablePopulationDirector();
+
+        var first = director.Observe(new(
+            ManagedPlayerGames.Blackjack, "one", 2, 0, 2, 1, 3));
+        var second = director.Observe(new(
+            ManagedPlayerGames.TexasHoldem, "two", 2, 0, 2, 1, 3));
+        var third = director.Observe(new(
+            ManagedPlayerGames.Roulette, "three", 2, 0, 1, 1, 2));
+
+        Assert.True(first.KeepTableOpen);
+        Assert.True(second.KeepTableOpen);
+        Assert.False(third.KeepTableOpen);
+    }
+
+    [Fact]
+    public void HumanRescueRearmsOrganicArrivalInsteadOfInstantlyReplacingABot()
+    {
+        var director = new ManagedTablePopulationDirector();
+        _ = director.Observe(new(
+            ManagedPlayerGames.Roulette, "rescued", 20, 0, 1, 1, 3));
+
+        var rescued = director.Observe(new(
+            ManagedPlayerGames.Roulette, "rescued", 20, 1, 1, 1, 3));
+
+        Assert.True(rescued.KeepTableOpen);
+        Assert.False(rescued.BotOnly);
+        Assert.Equal(0, rescued.ManagedArrivals);
+    }
+
+    [Fact]
+    public void PopulationDirectorFillsRequiredSeatsButDoesNotCoupleLaterArrivalsToDepartures()
+    {
+        var director = new ManagedTablePopulationDirector();
+        var initial = director.Observe(new(
+            ManagedPlayerGames.Blackjack, "active", 1, 1, 0, 3, 4));
+
+        Assert.Equal(2, initial.ManagedArrivals);
+
+        var settled = director.Observe(new(
+            ManagedPlayerGames.Blackjack, "active", 1, 1, 2, 3, 4));
+        Assert.Equal(0, settled.ManagedArrivals);
+
+        var afterDeparture = director.Observe(new(
+            ManagedPlayerGames.Blackjack, "active", 1, 1, 1, 3, 4));
+        Assert.Equal(0, afterDeparture.ManagedArrivals);
+
+        var laterArrivals = Enumerable.Range(2, 6)
+            .Select(round => director.Observe(new(
+                ManagedPlayerGames.Blackjack, "active", round, 1, 1, 3, 4)))
+            .Select(decision => decision.ManagedArrivals)
+            .ToArray();
+        Assert.Contains(1, laterArrivals);
+    }
+
+    [Fact]
     public void AvailabilityPolicyStaggersRestAndEnforcesUsageLimits()
     {
         var sleeping = Enumerable.Range(0, 1_000)
@@ -142,6 +214,26 @@ public sealed class ManagedPlayerSeparationTests
             awake, Now, Now.AddHours(-9), 0, Now.AddMinutes(1)));
         Assert.True(ManagedPlayerAvailabilityPolicy.IsAvailable(
             awake, Now, Now.AddHours(-9), 7_200, DateTime.UnixEpoch));
+    }
+
+    [Fact]
+    public void TableStayPolicy_assigns_each_profile_an_independent_four_to_twenty_round_session()
+    {
+        var departures = Enumerable.Range(0, 64)
+            .Select(index => ManagedPlayerTableStayPolicy.DepartureRound(
+                ManagedPlayerGames.Blackjack,
+                "table-1",
+                $"managed-player-{index}",
+                7))
+            .ToArray();
+
+        Assert.All(departures, departure => Assert.InRange(departure, 11, 27));
+        Assert.True(departures.Distinct().Count() > 1);
+        Assert.All(departures, departure =>
+        {
+            Assert.False(ManagedPlayerTableStayPolicy.ShouldLeave(departure - 1, departure));
+            Assert.True(ManagedPlayerTableStayPolicy.ShouldLeave(departure, departure));
+        });
     }
 
     private sealed class RecordingGenerator : IManagedPlayerProfileGenerator

@@ -19,9 +19,10 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private readonly Func<IReadOnlyList<string>>? deckFactory;
     private readonly Func<ulong>? seedFactory;
     private readonly IMultiplayerMatchmaker matchmaking;
+    private readonly IManagedTablePopulationDirector population;
     private readonly string leaseOwner = $"blackjack-table-worker-{Guid.NewGuid():N}";
 
-    public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null, null)
+    public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null, null, null)
     {
     }
 
@@ -29,12 +30,14 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         FirestoreDb database,
         Func<IReadOnlyList<string>>? deckFactory,
         Func<ulong>? seedFactory,
-        IMultiplayerMatchmaker? multiplayerMatchmaker = null)
+        IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+        IManagedTablePopulationDirector? managedPopulationDirector = null)
     {
         this.database = database;
         this.deckFactory = deckFactory;
         this.seedFactory = seedFactory;
         matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+        population = managedPopulationDirector ?? new ManagedTablePopulationDirector();
     }
 
     public async Task<BlackjackTableStoreResult> GetSessionAsync(
@@ -363,7 +366,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking);
+                        deckFactory, seedFactory, supply, matchmaking, population);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -444,7 +447,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking);
+                        deckFactory, seedFactory, supply, matchmaking, population);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)

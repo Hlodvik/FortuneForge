@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Security.Cryptography;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Matchmaking;
@@ -10,17 +11,21 @@ namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 internal sealed class FirestoreCreditHoldemStore(
     FirestoreDb database,
     bool allowSingleHumanBotFill = false,
-    IMultiplayerMatchmaker? multiplayerMatchmaker = null) : ICreditHoldemStore
+    IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+    IManagedTablePopulationDirector? managedPopulationDirector = null) : ICreditHoldemStore
 {
     private const string CurrencyId = "slotsCredits";
     private const string FractionField = "availableFractionalCents";
     private const int MaximumSweepBatch = 100;
     private static readonly TimeSpan ManagedLeaseHeartbeatInterval = TimeSpan.FromMinutes(5);
+    private static readonly TimeSpan AutomaticInterHandDelay = TimeSpan.FromSeconds(2);
     private static readonly DateTime DormantDeadlineUtc =
         new(9998, 1, 1, 0, 0, 0, DateTimeKind.Utc);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+    private readonly IManagedTablePopulationDirector population =
+        managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
     public async Task<CreditHoldemStoreResult> GetSessionAsync(
         string userId,
@@ -272,10 +277,22 @@ internal sealed class FirestoreCreditHoldemStore(
     {
         var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var beforeSnapshot = await MatchDocument(matchId).GetSnapshotAsync(cancellationToken);
-        var beforeManagedIds = beforeSnapshot.Exists
-            ? ReadMatch(beforeSnapshot).Players.Where(TexasHoldemManagedPlayers.IsManaged)
-                .Select(player => player.ActorId).ToArray()
-            : [];
+        var beforeMatch = beforeSnapshot.Exists ? ReadMatch(beforeSnapshot) : null;
+        var beforeManagedIds = beforeMatch?.Players.Where(TexasHoldemManagedPlayers.IsManaged)
+            .Select(player => player.ActorId).ToArray() ?? [];
+        if (beforeMatch is not null)
+            _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(beforeMatch);
+        var populationDecision = beforeMatch is null
+            ? new ManagedTablePopulationDecision(false, 0, false)
+            : PopulationDecision(beforeMatch, includePendingHumans: true);
+        var arrivalProfiles = beforeMatch is null || populationDecision.ManagedArrivals == 0
+            ? []
+            : await ManagedProfilesAsync(
+                matchId,
+                populationDecision.ManagedArrivals,
+                beforeMatch.Players.Select(player => player.ActorId).ToArray(),
+                nowUtc,
+                cancellationToken);
         await RunTransactionAsync(async transaction =>
         {
             var initial = await Task.WhenAll(
@@ -294,6 +311,8 @@ internal sealed class FirestoreCreditHoldemStore(
             if (prior.Status != "completed" || !prior.AccountingSettled || prior.Version != expectedVersion ||
                 ReadString(initial[2], "matchId") != matchId)
                 throw new CreditHoldemConflictException("The hand changed or is not ready for the next deal.");
+            _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(prior);
+            TexasHoldemManagedPlayers.AddPlayers(prior, arrivalProfiles);
             var balances = await ReadHumanBalancesAsync(transaction, prior, cancellationToken, includePending: true);
             var minimumHumans = allowSingleHumanBotFill ? 1 : 2;
             var next = CreditHoldemEngine.StartNextHand(prior, balances, seed, minimumHumans, nowUtc)
@@ -420,16 +439,7 @@ internal sealed class FirestoreCreditHoldemStore(
             return true;
         }, cancellationToken: cancellationToken);
         var after = ReadMatch(await MatchDocument(matchId).GetSnapshotAsync(cancellationToken));
-        if (after.Players.Where(player => player.IsAccountBacked)
-            .All(player => after.LeavingActorIds.Contains(player.ActorId)))
-        {
-            await matchmaking.ReleaseManagedPlayersAsync(
-                ManagedAssignmentId(matchId),
-                after.Players.Where(TexasHoldemManagedPlayers.IsManaged)
-                    .Select(player => player.ActorId).ToArray(),
-                nowUtc,
-                cancellationToken);
-        }
+        await MaintainManagedAssignmentsAsync(matchId, nowUtc, cancellationToken);
         return await ReadSessionAsync(userId, nowUtc, cancellationToken);
     }
 
@@ -463,6 +473,7 @@ internal sealed class FirestoreCreditHoldemStore(
 
     private async Task AdvanceMatchAsync(string matchId, DateTime nowUtc, CancellationToken cancellationToken)
     {
+        string[] releasedManagedIds = [];
         await RunTransactionAsync(async transaction =>
         {
             var snapshot = await transaction.GetSnapshotAsync(MatchDocument(matchId), cancellationToken);
@@ -473,6 +484,69 @@ internal sealed class FirestoreCreditHoldemStore(
             var priorStatus = match.Status;
             var priorSettlement = match.AccountingSettled;
             var advance = CreditHoldemTableCoordinator.AdvanceIfDue(match, nowUtc);
+            if (match.Status == "completed" && match.AccountingSettled &&
+                nowUtc >= (match.CompletedAtUtc ?? match.UpdatedAtUtc).Add(AutomaticInterHandDelay) &&
+                !match.Players.Any(player => player.IsAccountBacked &&
+                    !match.LeavingActorIds.Contains(player.ActorId)))
+            {
+                var managedBefore = match.Players.Where(TexasHoldemManagedPlayers.IsManaged)
+                    .Select(player => player.ActorId).ToArray();
+                _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(match);
+                var decision = PopulationDecision(match, includePendingHumans: true);
+                var balancesWithPending = await ReadHumanBalancesAsync(
+                    transaction, match, cancellationToken, includePending: true);
+                foreach (var actorId in advance.ReleasedHumanActorIds)
+                    transaction.Set(SessionDocument(actorId), SessionData(
+                        actorId, CreditHoldemSessionKinds.Idle, null, null, null, 0, nowUtc), SetOptions.MergeAll);
+                var minimumHumans = match.PendingTakeovers.Count > 0 ? 1 : 0;
+                var next = decision.KeepTableOpen
+                    ? CreditHoldemEngine.StartNextHand(
+                        match,
+                        balancesWithPending,
+                        BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))),
+                        minimumHumans,
+                        nowUtc)
+                    : null;
+                if (next is not null)
+                {
+                    WriteBlindCommitments(transaction, next, balancesWithPending, "automatic-next-hand", nowUtc);
+                    foreach (var ticket in match.PendingTakeovers)
+                        transaction.Set(TicketDocument(ticket.TicketId), TicketData(ticket with
+                        {
+                            Status = "matched",
+                            Version = checked(ticket.Version + 1)
+                        }));
+                    foreach (var human in next.Players.Where(player => player.IsAccountBacked))
+                        transaction.Set(SessionDocument(human.ActorId), SessionData(
+                            human.ActorId, CreditHoldemSessionKinds.Match, null, matchId, null,
+                            next.Version, nowUtc), SetOptions.MergeAll);
+                    transaction.Set(PartitionDocument(next.PartitionKey), new Dictionary<string, object>
+                    {
+                        ["activeMatchId"] = next.MatchId,
+                        ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+                    }, SetOptions.MergeAll);
+                    transaction.Set(MatchDocument(matchId), MatchData(next), SetOptions.MergeAll);
+                    WriteActiveHistory(transaction, next);
+                    var remaining = next.Players.Where(TexasHoldemManagedPlayers.IsManaged)
+                        .Select(player => player.ActorId).ToHashSet(StringComparer.Ordinal);
+                    releasedManagedIds = managedBefore.Where(id => !remaining.Contains(id)).ToArray();
+                    return true;
+                }
+
+                releasedManagedIds = managedBefore;
+                population.Close(ManagedPlayerGames.TexasHoldem, matchId);
+                transaction.Set(PartitionDocument(match.PartitionKey), new Dictionary<string, object>
+                {
+                    ["activeMatchId"] = string.Empty,
+                    ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+                }, SetOptions.MergeAll);
+                transaction.Set(MatchDocument(matchId), new Dictionary<string, object>
+                {
+                    ["nextDeadlineAt"] = Timestamp.FromDateTime(DormantDeadlineUtc),
+                    ["managedPlayersReleasedAt"] = Timestamp.FromDateTime(nowUtc)
+                }, SetOptions.MergeAll);
+                return true;
+            }
             if (match.Version == priorVersion && match.Status == priorStatus &&
                 match.AccountingSettled == priorSettlement)
                 return false;
@@ -482,6 +556,9 @@ internal sealed class FirestoreCreditHoldemStore(
                     actorId, CreditHoldemSessionKinds.Idle, null, null, null, 0, nowUtc), SetOptions.MergeAll);
             return true;
         }, cancellationToken: cancellationToken);
+        if (releasedManagedIds.Length > 0)
+            await matchmaking.ReleaseManagedPlayersAsync(
+                ManagedAssignmentId(matchId), releasedManagedIds, nowUtc, cancellationToken);
         await MaintainManagedAssignmentsAsync(matchId, nowUtc, cancellationToken);
     }
 
@@ -499,13 +576,26 @@ internal sealed class FirestoreCreditHoldemStore(
             player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId));
         if (!hasActiveAccount)
         {
-            await matchmaking.ReleaseManagedPlayersAsync(
-                ManagedAssignmentId(matchId), managedIds, nowUtc, cancellationToken);
-            await MatchDocument(matchId).SetAsync(new Dictionary<string, object>
+            var decision = PopulationDecision(match, includePendingHumans: true);
+            if (!decision.KeepTableOpen)
             {
-                ["nextDeadlineAt"] = Timestamp.FromDateTime(DormantDeadlineUtc),
-                ["managedPlayersReleasedAt"] = Timestamp.FromDateTime(nowUtc)
-            }, SetOptions.MergeAll, cancellationToken);
+                population.Close(ManagedPlayerGames.TexasHoldem, matchId);
+                await matchmaking.ReleaseManagedPlayersAsync(
+                    ManagedAssignmentId(matchId), managedIds, nowUtc, cancellationToken);
+                await MatchDocument(matchId).SetAsync(new Dictionary<string, object>
+                {
+                    ["nextDeadlineAt"] = Timestamp.FromDateTime(DormantDeadlineUtc),
+                    ["managedPlayersReleasedAt"] = Timestamp.FromDateTime(nowUtc)
+                }, SetOptions.MergeAll, cancellationToken);
+                return;
+            }
+
+            await matchmaking.HeartbeatManagedPlayersAsync(
+                ManagedPlayerGames.TexasHoldem,
+                ManagedAssignmentId(matchId),
+                managedIds,
+                nowUtc,
+                cancellationToken);
             return;
         }
 
@@ -665,7 +755,7 @@ internal sealed class FirestoreCreditHoldemStore(
                 ["activeMatchId"] = match.Players.Count(player =>
                     player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId)) <
                     CreditHoldemMoney.MaximumSeats && match.Players.Any(player =>
-                    player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId))
+                    !match.LeavingActorIds.Contains(player.ActorId))
                         ? match.MatchId
                         : string.Empty,
                 ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
@@ -691,13 +781,21 @@ internal sealed class FirestoreCreditHoldemStore(
         var rule = CreditHoldemTableRules.Resolve(selected[0].TableRuleId);
         if (balances.Values.Any(value => value < rule.BigBlindCents))
             throw new CreditHoldemConflictException("A queued player no longer has enough credits for the big blind.");
+        var populationDecision = population.Observe(new(
+            ManagedPlayerGames.TexasHoldem,
+            matchId,
+            1,
+            selected.Count,
+            0,
+            CreditHoldemMoney.MinimumStartPlayers,
+            CreditHoldemMoney.MaximumSeats - 1));
         var managedProfiles = await ManagedProfilesAsync(
             matchId,
-            CreditHoldemMoney.MinimumStartPlayers - selected.Count,
+            populationDecision.ManagedArrivals,
             selected.Select(value => value.UserId).ToArray(),
             nowUtc,
             cancellationToken);
-        var seats = TexasHoldemManagedPlayers.BuildSeats(selected, managedProfiles, balances, seed, rule);
+        var seats = TexasHoldemManagedPlayers.BuildSeats(selected, managedProfiles, balances, seed, rule, matchId);
         var match = CreditHoldemEngine.Deal(
             matchId, seats, partitionKey, seed, nowUtc, rule.Id);
         WriteBlindCommitments(transaction, match, balances, "initial-deal", nowUtc);
@@ -739,6 +837,28 @@ internal sealed class FirestoreCreditHoldemStore(
             nowUtc,
             cancellationToken,
             TexasHoldemManagedPlayers.CreateLocalProfiles);
+    }
+
+    private ManagedTablePopulationDecision PopulationDecision(
+        CreditHoldemMatch match,
+        bool includePendingHumans)
+    {
+        var humans = match.Players.Count(player =>
+            player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId));
+        var pendingHumans = includePendingHumans ? match.PendingTakeovers.Count : 0;
+        humans += pendingHumans;
+        var managed = match.Players.Count(TexasHoldemManagedPlayers.IsManaged);
+        managed = Math.Min(
+            managed,
+            Math.Max(0, CreditHoldemMoney.MaximumSeats - 1 - humans));
+        return population.Observe(new(
+            ManagedPlayerGames.TexasHoldem,
+            match.MatchId,
+            checked(match.HandNumber + 1),
+            humans,
+            managed,
+            CreditHoldemMoney.MinimumStartPlayers,
+            CreditHoldemMoney.MaximumSeats - 1));
     }
 
     private static string ManagedAssignmentId(string matchId) => $"texas-holdem:{matchId}";
@@ -951,11 +1071,15 @@ internal sealed class FirestoreCreditHoldemStore(
     {
         var managedIds = match.Players.Where(TexasHoldemManagedPlayers.IsManaged)
             .Select(player => player.ActorId).ToHashSet(StringComparer.Ordinal);
-        if (!match.Players.Any(player =>
-                player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId)))
+        var hasActiveHuman = match.Players.Any(player =>
+            player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId));
+        var hasManagedPlayers = managedIds.Count > 0;
+        if (!hasActiveHuman && !hasManagedPlayers && match.PendingTakeovers.Count == 0)
             return DormantDeadlineUtc;
         if (match.Status == "completed")
         {
+            if (!hasActiveHuman)
+                return (match.CompletedAtUtc ?? match.UpdatedAtUtc).Add(AutomaticInterHandDelay);
             var resultExpiry = (match.CompletedAtUtc ?? match.UpdatedAtUtc)
                 .Add(CreditHoldemTableCoordinator.ResultInactivityDuration);
             return managedIds.Count > 0

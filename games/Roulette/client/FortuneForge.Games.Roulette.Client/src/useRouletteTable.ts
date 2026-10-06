@@ -32,7 +32,8 @@ export function useRouletteTable(gateway: RouletteGateway, playerId?: string) {
     const acceptedScope = scope.current
     if (next.phase === 'settled' && next.winningPocket !== null) {
       setHistory(previous => {
-        const entries = previous.some(entry => entry.roundId === next.roundId) ? previous : [{ roundId: next.roundId, pocket: next.winningPocket! }, ...previous].slice(0, 20)
+        const historyId = next.roundNumber ? `${next.roundId}:${next.roundNumber}` : next.roundId
+        const entries = previous.some(entry => entry.roundId === historyId) ? previous : [{ roundId: historyId, pocket: next.winningPocket! }, ...previous].slice(0, 20)
         storeHistory(acceptedScope, entries)
         return entries
       })
@@ -76,6 +77,18 @@ export function useRouletteTable(gateway: RouletteGateway, playerId?: string) {
     })()
     return () => { alive.current = false; controller.abort(); request.current?.abort() }
   }, [gateway, playerId, attempt])
+
+  useEffect(() => {
+    if (!round?.players || recovery !== 'ready') return
+    const controller = new AbortController()
+    const refresh = window.setInterval(() => {
+      if (gate.current || !current.current) return
+      void gateway.getRound(current.current.roundId, controller.signal)
+        .then(next => accept(next, controller.signal))
+        .catch(() => { /* the normal recovery path handles the next player action */ })
+    }, 1_500)
+    return () => { window.clearInterval(refresh); controller.abort() }
+  }, [gateway, round?.roundId, round?.players, recovery])
 
   async function reconcile(id: string, signal: AbortSignal, reason: unknown, revealAt = 0) {
     failedId.current = id

@@ -47,7 +47,10 @@ public static class FortuneForgeStartup
         builder.Services.AddBlackjackTables();
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
-        builder.Services.AddSingleton<RouletteGameService>();
+        builder.Services.AddSingleton(provider => new RouletteGameService(
+            provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
+            provider.GetRequiredService<IManagedTablePopulationDirector>()));
+        builder.Services.AddHostedService<RouletteTableWorker>();
         builder.Services.AddSingleton<CrapsGameService>();
         builder.Services.AddSingleton<DropMergeGameService>();
         builder.Services.AddSingleton<LiarsDiceGameService>();

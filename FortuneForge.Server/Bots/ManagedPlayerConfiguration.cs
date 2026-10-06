@@ -14,6 +14,7 @@ public static class ManagedPlayerConfiguration
                 provider.GetRequiredService<FirestoreDb>()));
         services.AddSingleton<IManagedPlayerProfileGenerator, ManagedPlayerProfileGenerator>();
         services.AddSingleton<IManagedPlayerQueuer, ManagedPlayerQueuer>();
+        services.AddSingleton<IManagedTablePopulationDirector, ManagedTablePopulationDirector>();
         return services;
     }
 }

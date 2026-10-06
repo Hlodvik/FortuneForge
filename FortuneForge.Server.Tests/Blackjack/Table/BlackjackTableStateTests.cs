@@ -42,7 +42,7 @@ public sealed class BlackjackTableStateTests
     }
 
     [Fact]
-    public async Task SingleHumanTablesVaryBetweenThreeAndFourStartingPlayers()
+    public async Task SingleHumanTablesStartWithOnlyTheRequiredManagedCohort()
     {
         var occupancies = new List<int>();
         foreach (var seed in new[] { 2UL, 3UL })
@@ -55,7 +55,7 @@ public sealed class BlackjackTableStateTests
             occupancies.Add(store.TableForTest(session.Table.TableId).Players.Count);
         }
 
-        Assert.Equal(new[] { 4, 3 }, occupancies);
+        Assert.Equal(new[] { 3, 3 }, occupancies);
     }
 
     [Fact]
@@ -285,13 +285,12 @@ public sealed class BlackjackTableStateTests
         Assert.IsType<BlackjackTableIdleSessionResponse>(kicked.Session);
         Assert.DoesNotContain(table.Players, player => player.ActorId == "human");
         Assert.Equal(BlackjackTablePhases.Betting, table.Phase);
-        Assert.Equal(BlackjackManagedTablePolicy.DisconnectedTableRounds, BlackjackManagedTableState.RoundsRemainingWithoutHuman(table));
         Assert.All(table.Players, player => Assert.True(BlackjackManagedSeat.IsManaged(player)));
-        Assert.Equal(BlackjackManagedTablePolicy.MinimumStartOccupancy, table.Players.Count);
+        Assert.Equal(BlackjackManagedTablePolicy.MinimumStartOccupancy - 1, table.Players.Count);
     }
 
     [Fact]
-    public async Task ManagedPlayersContinueExactlyTenRoundsAfterTheLastHumanLeaves()
+    public async Task ManagedPlayersFinishTheirIndependentSessionsAfterTheLastHumanLeaves()
     {
         var store = Store();
         store.SetBalance("human", 2_000);
@@ -301,13 +300,13 @@ public sealed class BlackjackTableStateTests
             "human", play.Table.TableId, play.Version, Key("leave-before-rounds"),
             Start.AddSeconds(7), default);
         var table = store.TableForTest(play.Table.TableId);
-        Assert.Equal(BlackjackManagedTablePolicy.DisconnectedTableRounds, BlackjackManagedTableState.RoundsRemainingWithoutHuman(table));
+        Assert.All(table.Players, player => Assert.True(BlackjackManagedSeat.IsManaged(player)));
 
         for (var step = 1; step <= 400 && table.Phase != BlackjackTablePhases.Closed; step++)
             await store.SweepAsync(Start.AddSeconds(7 + step * 10), default);
 
         Assert.Equal(BlackjackTablePhases.Closed, table.Phase);
-        Assert.Equal(BlackjackManagedTablePolicy.DisconnectedTableRounds, table.RoundNumber);
+        Assert.InRange(table.RoundNumber, 4, 20);
     }
 
     [Fact]
@@ -349,48 +348,6 @@ public sealed class BlackjackTableStateTests
             Assert.Equal(BlackjackTableEngine.ActionDuration, table.ActionDeadlineAtUtc!.Value - Start);
             Assert.Null(table.Transition);
         }
-    }
-
-    [Fact]
-    public async Task PopulationAddsAfterTenHumanRoundsThenRemovesAnEarlierManagedPlayerFiveRoundsLater()
-    {
-        var store = Store(DoubleDeck());
-        store.SetBalance("human", 5_000);
-        var play = await JoinAtTable(store, "human", "LongSession");
-        var table = store.TableForTest(play.Table.TableId);
-        table.Players.Single(player => !BlackjackManagedSeat.IsManaged(player)).SessionRoundsPlayed = 9;
-
-        await store.WagerAsync(
-            "human", table.TableId, 100, play.Version, Key("population-wager-one"),
-            Start.AddSeconds(7), default);
-        var first = await StartRound(store, "human", Start.AddSeconds(8));
-        await store.ActionAsync(
-            "human", table.TableId, BlackjackActions.Stand, first.Version,
-            Key("population-stand-one"), Start.AddSeconds(8), default);
-        var firstBetting = await AdvanceUntilBetting(store, "human", Start.AddSeconds(10));
-
-        Assert.Equal(10, table.Players.Single(player => !BlackjackManagedSeat.IsManaged(player)).SessionRoundsPlayed);
-        Assert.Equal(BlackjackManagedTablePolicy.MaximumOccupiedSeats, table.Players.Count);
-        Assert.Equal(3, table.Players.Count(BlackjackManagedSeat.IsManaged));
-        var earliestProfile = table.Players.Where(BlackjackManagedSeat.IsManaged)
-            .OrderBy(player => player.SessionStartedAtUtc).ThenBy(player => player.ActorId, StringComparer.Ordinal)
-            .First().ActorId;
-
-        BlackjackManagedTableState.SetNextPopulationChangeRound(table, table.RoundNumber);
-        BlackjackManagedTableState.SetNextPopulationChangeAddsPlayer(table, false);
-        var secondWagerAt = firstBetting.Table.UpdatedAtUtc.AddMilliseconds(100);
-        await store.WagerAsync(
-            "human", table.TableId, 100, firstBetting.Version, Key("population-wager-two"),
-            secondWagerAt, default);
-        var second = await StartRound(store, "human", secondWagerAt.AddSeconds(1));
-        await store.ActionAsync(
-            "human", table.TableId, BlackjackActions.Stand, second.Version,
-            Key("population-stand-two"), secondWagerAt.AddSeconds(1), default);
-        await AdvanceUntilBetting(store, "human", secondWagerAt.AddSeconds(3));
-
-        Assert.Equal(BlackjackManagedTablePolicy.MinimumStartOccupancy, table.Players.Count);
-        Assert.Equal(2, table.Players.Count(BlackjackManagedSeat.IsManaged));
-        Assert.DoesNotContain(table.Players, player => player.ActorId == earliestProfile);
     }
 
     [Fact]

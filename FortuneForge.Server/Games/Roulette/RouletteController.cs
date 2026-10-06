@@ -19,7 +19,7 @@ public sealed class RouletteController(RouletteGameService games, AccountService
     [HttpPost("rounds")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Start(CancellationToken cancellationToken) =>
-        await WithAccount(cancellationToken, account => Execute(() => games.Start(account.UserId)));
+        await WithAccount(cancellationToken, account => Execute(() => games.Start(account.UserId, account.PlayerName)));
 
     [HttpGet("rounds/{roundId:guid}")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]

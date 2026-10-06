@@ -1,8 +1,11 @@
+using FortuneForge.Server.Bots;
+
 namespace FortuneForge.Server.Cards.Blackjack.Table;
 
 internal sealed class InMemoryBlackjackTableStore(
     Func<IReadOnlyList<string>>? deckFactory = null,
-    Func<ulong>? seedFactory = null) : IBlackjackTableStore
+    Func<ulong>? seedFactory = null,
+    IManagedTablePopulationDirector? managedPopulationDirector = null) : IBlackjackTableStore
 {
     private readonly object gate = new();
     private readonly BlackjackTableLobbyState state = new();
@@ -10,7 +13,10 @@ internal sealed class InMemoryBlackjackTableStore(
     private readonly Dictionary<string, BlackjackTableLedgerEntry> ledger = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BlackjackTableRevenueEntry> revenue = new(StringComparer.Ordinal);
     private readonly Dictionary<string, (BlackjackTableResultEntry Result, DateTime? SeenAtUtc)> history = new(StringComparer.Ordinal);
-    private readonly BlackjackTableCoordinator coordinator = new(deckFactory, seedFactory);
+    private readonly BlackjackTableCoordinator coordinator = new(
+        deckFactory,
+        seedFactory,
+        managedPopulationDirector: managedPopulationDirector);
 
     internal void SetBalance(string userId, long cents)
     {

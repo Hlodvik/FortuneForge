@@ -8,6 +8,7 @@ namespace FortuneForge.Server.Bots.TexasHoldem;
 internal static class TexasHoldemManagedPlayers
 {
     private const string SkillKey = "managed-skill";
+    private const string DepartureHandKey = "managed-departure-hand";
 
     public static IReadOnlyList<ManagedPlayerProfile> CreateLocalProfiles(int count, DateTime nowUtc) =>
         Enumerable.Range(0, Math.Max(0, count))
@@ -24,7 +25,8 @@ internal static class TexasHoldemManagedPlayers
         IReadOnlyList<ManagedPlayerProfile> managedProfiles,
         IReadOnlyDictionary<string, long> balances,
         ulong seed,
-        CreditHoldemTableRule rule)
+        CreditHoldemTableRule rule,
+        string? tableId = null)
     {
         var seats = accountTickets.Select((ticket, seat) => new CreditHoldemSeatAssignment(
             ticket.UserId,
@@ -56,10 +58,7 @@ internal static class TexasHoldemManagedPlayers
                 false,
                 seat,
                 stack,
-                new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    [SkillKey] = profile.SkillLevel.ToString(CultureInfo.InvariantCulture)
-                }));
+                Metadata(profile, tableId ?? accountTickets[0].PartitionKey, 1)));
         }
         return seats.OrderBy(value => value.Seat).ToArray();
     }
@@ -71,6 +70,54 @@ internal static class TexasHoldemManagedPlayers
         int.TryParse(stored, NumberStyles.Integer, CultureInfo.InvariantCulture, out var skill)
             ? skill
             : ManagedPlayerSkillLevels.Average;
+
+    public static IReadOnlyList<CreditHoldemPlayer> DepartingAfterCurrentHand(
+        CreditHoldemMatch match) =>
+        match.Players.Where(player => IsManaged(player) &&
+            DepartureHand(player) is { } departure &&
+            ManagedPlayerTableStayPolicy.ShouldLeave(match.HandNumber, departure)).ToArray();
+
+    public static IReadOnlyList<string> RemoveDepartingPlayers(CreditHoldemMatch match)
+    {
+        var departing = DepartingAfterCurrentHand(match);
+        foreach (var player in departing)
+            match.Players.Remove(player);
+        return departing.Select(player => player.ActorId).ToArray();
+    }
+
+    public static void AddPlayers(
+        CreditHoldemMatch match,
+        IReadOnlyList<ManagedPlayerProfile> arrivals)
+    {
+        if (arrivals.Count == 0) return;
+        var rule = CreditHoldemTableRules.Resolve(match.TableRuleId);
+        foreach (var profile in arrivals)
+        {
+            if (match.Players.Count >= CreditHoldemMoney.MaximumSeats - 1) break;
+            var seat = Enumerable.Range(0, CreditHoldemMoney.MaximumSeats)
+                .First(value => match.Players.All(existing => existing.Seat != value));
+            var averageStack = match.Players.Count == 0
+                ? rule.MaximumStackCents
+                : checked((int)Math.Round(match.Players.Average(player => player.Stack)));
+            var variance = StableRange((ulong)match.HandNumber, profile.UserId, -10, 11);
+            var stack = Math.Clamp(
+                checked(averageStack + (int)Math.Round(averageStack * (variance / 100m))),
+                rule.BigBlindCents,
+                rule.MaximumStackCents);
+            match.Players.Add(new CreditHoldemPlayer
+            {
+                ActorId = profile.UserId,
+                PublicSeatId = $"seat_{Guid.NewGuid():N}",
+                DisplayName = profile.PlayerName,
+                IsAccountBacked = false,
+                HostMetadata = Metadata(profile, match.MatchId, checked(match.HandNumber + 1)),
+                Seat = seat,
+                StartingStack = stack,
+                Stack = stack,
+                HoleCards = []
+            });
+        }
+    }
 
     public static bool AdvanceIfDue(CreditHoldemMatch match, DateTime nowUtc)
     {
@@ -90,6 +137,26 @@ internal static class TexasHoldemManagedPlayers
         var delay = 650 + BitConverter.ToUInt16(digest, 0) % 1_151;
         return match.UpdatedAtUtc.AddMilliseconds(delay);
     }
+
+    private static Dictionary<string, string> Metadata(
+        ManagedPlayerProfile profile,
+        string tableId,
+        int joinedHand) =>
+        new(StringComparer.Ordinal)
+        {
+            [SkillKey] = profile.SkillLevel.ToString(CultureInfo.InvariantCulture),
+            [DepartureHandKey] = ManagedPlayerTableStayPolicy.DepartureRound(
+                ManagedPlayerGames.TexasHoldem,
+                tableId,
+                profile.UserId,
+                joinedHand).ToString(CultureInfo.InvariantCulture)
+        };
+
+    private static int? DepartureHand(CreditHoldemPlayer player) =>
+        player.HostMetadata.TryGetValue(DepartureHandKey, out var stored) &&
+        int.TryParse(stored, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value)
+            ? value
+            : null;
 
     private static int StableRange(ulong seed, string actorId, int minimum, int maximumExclusive)
     {

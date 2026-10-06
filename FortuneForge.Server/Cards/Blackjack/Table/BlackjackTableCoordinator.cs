@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Cryptography;
+using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Blackjack;
 using FortuneForge.Server.Matchmaking;
 
@@ -11,7 +12,8 @@ internal sealed class BlackjackTableCoordinator(
     Func<IReadOnlyList<string>>? deckFactory = null,
     Func<ulong>? seedFactory = null,
     BlackjackManagedPlayerSupply? managedPlayerSupply = null,
-    IMultiplayerMatchmaker? multiplayerMatchmaker = null)
+    IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+    IManagedTablePopulationDirector? managedPopulationDirector = null)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -23,6 +25,8 @@ internal sealed class BlackjackTableCoordinator(
     private readonly BlackjackManagedPlayerSupply managedPlayers = managedPlayerSupply ?? new(generateWhenEmpty: true);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+    private readonly IManagedTablePopulationDirector population =
+        managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
     public BlackjackTableCoordinatorResult Get(
         BlackjackTableLobbyState state,
@@ -77,7 +81,6 @@ internal sealed class BlackjackTableCoordinator(
         if (target?.Phase == BlackjackTablePhases.Betting)
         {
             AdmitQueuedHumansAtBoundary(state, target, journal);
-            BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(target, 0);
             target.UpdatedAtUtc = nowUtc;
             StartIfReady(target, nowUtc);
         }
@@ -90,7 +93,6 @@ internal sealed class BlackjackTableCoordinator(
             MarkTicketMatched(state, ticket);
             state.Sessions[userId] = new(BlackjackTableSessionKinds.Table, null, target.TableId);
             ScheduleGracefulManagedDeparture(target);
-            BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(target, 0);
             target.UpdatedAtUtc = nowUtc;
         }
         else if (target is not null)
@@ -306,10 +308,8 @@ internal sealed class BlackjackTableCoordinator(
             table.Players.Remove(player);
             table.Version = checked(table.Version + 1);
             table.UpdatedAtUtc = nowUtc;
-            if (table.Players.All(BlackjackManagedSeat.IsManaged))
-                BeginDisconnectedContinuation(table);
-            EnsureMinimumOccupancy(table, nowUtc);
-            StartIfReady(table, nowUtc);
+            if (ApplyPopulationDecision(state, table, journal, nowUtc))
+                StartIfReady(table, nowUtc);
         }
         else
         {
@@ -454,13 +454,7 @@ internal sealed class BlackjackTableCoordinator(
             if (selected.Length == 0) return;
             var tableId = BlackjackTableIds.Hash(string.Join("\n", selected.Select(ticket => ticket.TicketId)));
             var initialSeed = createSeed();
-            var minimumOccupancy = Math.Max(
-                BlackjackManagedTablePolicy.MinimumStartOccupancy,
-                Math.Min(BlackjackManagedTablePolicy.MaximumOccupiedSeats, selected.Length));
-            var startingOccupancy = Math.Min(
-                BlackjackManagedTablePolicy.MaximumOccupiedSeats,
-                minimumOccupancy + (initialSeed % 2 == 0 ? 1 : 0));
-            var startingSeats = RandomizedInitialSeats(startingOccupancy, initialSeed);
+            var startingSeats = RandomizedInitialSeats(selected.Length, initialSeed);
             var players = selected.Select((ticket, index) => Human(ticket, startingSeats[index], 0)).ToList();
             var table = new BlackjackTableState
             {
@@ -473,7 +467,7 @@ internal sealed class BlackjackTableCoordinator(
                 RoundNumber = 0,
                 WagerDeadlineAtUtc = null
             };
-            EnsureOccupancy(table, startingOccupancy, nowUtc);
+            ApplyPopulationDecision(state, table, journal, nowUtc);
             state.Tables[tableId] = table;
             foreach (var ticket in selected)
             {
@@ -511,10 +505,7 @@ internal sealed class BlackjackTableCoordinator(
         table.Transition = null;
         table.NextTransitionAtUtc = null;
         if (table.Players.All(BlackjackManagedSeat.IsManaged))
-        {
-            BeginDisconnectedContinuation(table);
-            EnsureMinimumOccupancy(table, nowUtc);
-        }
+            _ = population.Observe(PopulationObservation(table));
         StartIfReady(table, nowUtc);
     }
 
@@ -620,26 +611,7 @@ internal sealed class BlackjackTableCoordinator(
         table.NextTransitionAtUtc = nowUtc.Add(BlackjackTableEngine.NextRoundCountdownDuration);
         table.WagerDeadlineAtUtc = null;
         AdmitQueuedHumansAtBoundary(state, table, journal);
-        if (table.Players.Any(player => !BlackjackManagedSeat.IsManaged(player)))
-        {
-            BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(table, 0);
-            ApplyPopulationChange(table, journal, nowUtc);
-        }
-        else
-        {
-            if (BlackjackManagedTableState.RoundsRemainingWithoutHuman(table) == 0)
-                BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(table, BlackjackManagedTablePolicy.DisconnectedTableRounds);
-            else
-                BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(
-                    table,
-                    BlackjackManagedTableState.RoundsRemainingWithoutHuman(table) - 1);
-            if (BlackjackManagedTableState.RoundsRemainingWithoutHuman(table) == 0)
-            {
-                CloseTable(state, table, journal);
-                return;
-            }
-        }
-        EnsureMinimumOccupancy(table, nowUtc);
+        if (!ApplyPopulationDecision(state, table, journal, nowUtc)) return;
         BlackjackTableEngine.PrepareForBetting(table);
         foreach (var player in table.Players)
         {
@@ -697,8 +669,6 @@ internal sealed class BlackjackTableCoordinator(
         if (table.Transition is "human-wager" or "managed-wager") return;
         if (ScheduleNextWagerTurn(table, nowUtc)) return;
         if (!table.Players.Any(player => player.NextWagerCents > 0)) return;
-        if (table.Players.All(BlackjackManagedSeat.IsManaged) &&
-            BlackjackManagedTableState.RoundsRemainingWithoutHuman(table) <= 0) return;
         if (!adjustmentElapsed)
         {
             table.ActiveSeat = null;
@@ -712,58 +682,32 @@ internal sealed class BlackjackTableCoordinator(
         BlackjackTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc);
     }
 
-    private void EnsureMinimumOccupancy(BlackjackTableState table, DateTime nowUtc)
-        => EnsureOccupancy(table, BlackjackManagedTablePolicy.MinimumStartOccupancy, nowUtc);
-
-    private void EnsureOccupancy(BlackjackTableState table, int occupancy, DateTime nowUtc)
-    {
-        var managedCount = Math.Max(0, occupancy - table.Players.Count);
-        for (var index = 0; index < managedCount && table.Players.Count < BlackjackManagedTablePolicy.MaximumOccupiedSeats; index++)
-            AddManagedPlayer(table, nowUtc);
-    }
-
-    private void ApplyPopulationChange(
+    private bool ApplyPopulationDecision(
+        BlackjackTableLobbyState state,
         BlackjackTableState table,
         BlackjackTableJournal journal,
         DateTime nowUtc)
     {
-        var longestHumanSession = table.Players
-            .Where(player => !BlackjackManagedSeat.IsManaged(player))
-            .Select(player => player.SessionRoundsPlayed)
-            .DefaultIfEmpty(0)
-            .Max();
-        if (BlackjackManagedTableState.NextPopulationChangeRound(table) is null)
+        var decision = population.Observe(PopulationObservation(table));
+        if (!decision.KeepTableOpen)
         {
-            if (longestHumanSession < BlackjackManagedTablePolicy.FirstPopulationChangeAfterRounds) return;
-            BlackjackManagedTableState.SetNextPopulationChangeRound(table, table.RoundNumber);
-            BlackjackManagedTableState.SetNextPopulationChangeAddsPlayer(table, true);
+            CloseTable(state, table, journal);
+            return false;
         }
-        if (table.RoundNumber < BlackjackManagedTableState.NextPopulationChangeRound(table)) return;
-
-        if (BlackjackManagedTableState.NextPopulationChangeAddsPlayer(table))
-        {
-            if (table.Players.Count < BlackjackManagedTablePolicy.MaximumOccupiedSeats)
-                AddManagedPlayer(table, nowUtc);
-            BlackjackManagedTableState.SetNextPopulationChangeAddsPlayer(table, false);
-        }
-        else
-        {
-            var departing = table.Players
-                .Where(BlackjackManagedSeat.IsManaged)
-                .OrderBy(player => player.SessionStartedAtUtc)
-                .ThenBy(player => player.ActorId, StringComparer.Ordinal)
-                .FirstOrDefault();
-            if (departing is not null && table.Players.Count > BlackjackManagedTablePolicy.MinimumStartOccupancy)
-            {
-                table.Players.Remove(departing);
-                ReleaseManagedPlayer(table, departing, journal);
-            }
-            BlackjackManagedTableState.SetNextPopulationChangeAddsPlayer(table, true);
-        }
-        BlackjackManagedTableState.SetNextPopulationChangeRound(
-            table,
-            checked(table.RoundNumber + BlackjackManagedTablePolicy.PopulationChangeIntervalRounds));
+        for (var index = 0; index < decision.ManagedArrivals; index++)
+            AddManagedPlayer(table, nowUtc);
+        return true;
     }
+
+    private static ManagedTablePopulationObservation PopulationObservation(BlackjackTableState table) => new(
+        ManagedPlayerGames.Blackjack,
+        table.TableId,
+        table.RoundNumber,
+        table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)),
+        table.Players.Count(BlackjackManagedSeat.IsManaged),
+        BlackjackManagedTablePolicy.MinimumStartOccupancy,
+        Math.Max(BlackjackManagedTablePolicy.MaximumOccupiedSeats, table.Players.Count),
+        table.Phase != BlackjackTablePhases.Closed);
 
     private void AddManagedPlayer(BlackjackTableState table, DateTime nowUtc)
     {
@@ -772,7 +716,7 @@ internal sealed class BlackjackTableCoordinator(
             table.TableId,
             table.Players.Where(BlackjackManagedSeat.IsManaged).Select(player => player.ActorId).ToArray(),
             nowUtc);
-        table.Players.Add(new BlackjackTablePlayer
+        var player = new BlackjackTablePlayer
         {
             ActorId = profile.UserId,
             PublicSeatId = $"seat_{Guid.NewGuid():N}",
@@ -787,13 +731,15 @@ internal sealed class BlackjackTableCoordinator(
                 InitialManagedWager(profile.UserId),
                 ManagedWagerChangeChance(profile.UserId)),
             Status = "waiting-to-wager"
-        });
-    }
-
-    private static void BeginDisconnectedContinuation(BlackjackTableState table)
-    {
-        if (BlackjackManagedTableState.RoundsRemainingWithoutHuman(table) == 0)
-            BlackjackManagedTableState.SetRoundsRemainingWithoutHuman(table, BlackjackManagedTablePolicy.DisconnectedTableRounds);
+        };
+        BlackjackManagedSeat.SetDepartureRound(
+            player,
+            ManagedPlayerTableStayPolicy.DepartureRound(
+                ManagedPlayerGames.Blackjack,
+                table.TableId,
+                profile.UserId,
+                table.RoundNumber));
+        table.Players.Add(player);
     }
 
     private static void ReleaseManagedPlayer(
@@ -837,12 +783,16 @@ internal sealed class BlackjackTableCoordinator(
     private static void ScheduleGracefulManagedDeparture(BlackjackTableState table)
     {
         var departing = table.Players
-            .Where(player => BlackjackManagedSeat.IsManaged(player) && BlackjackManagedSeat.DepartureRound(player) is null)
+            .Where(BlackjackManagedSeat.IsManaged)
             .OrderBy(player => player.SessionStartedAtUtc)
             .ThenBy(player => player.Seat)
             .FirstOrDefault();
-        if (departing is not null)
-            BlackjackManagedSeat.SetDepartureRound(departing, checked(table.RoundNumber + RandomNumberGenerator.GetInt32(1, 4)));
+        if (departing is null) return;
+
+        var gracefulDepartureRound = checked(table.RoundNumber + RandomNumberGenerator.GetInt32(1, 4));
+        var scheduledDepartureRound = BlackjackManagedSeat.DepartureRound(departing);
+        if (scheduledDepartureRound is null || gracefulDepartureRound < scheduledDepartureRound)
+            BlackjackManagedSeat.SetDepartureRound(departing, gracefulDepartureRound);
     }
 
     private static BlackjackTablePlayer Human(BlackjackTableTicket ticket, int seat, int joinedRound) => new()
@@ -858,11 +808,12 @@ internal sealed class BlackjackTableCoordinator(
         Status = "awaiting-wager"
     };
 
-    private static void CloseTable(
+    private void CloseTable(
         BlackjackTableLobbyState state,
         BlackjackTableState table,
         BlackjackTableJournal journal)
     {
+        population.Close(ManagedPlayerGames.Blackjack, table.TableId);
         table.Phase = BlackjackTablePhases.Closed;
         table.ActiveSeat = null;
         table.PendingSeat = null;

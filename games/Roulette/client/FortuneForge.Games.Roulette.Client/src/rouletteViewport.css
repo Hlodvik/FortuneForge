@@ -75,6 +75,8 @@
   .ff-roulette-result>div { display:grid; gap:1px; }
   .ff-roulette-result strong { font-size:10px; }.ff-roulette-result>div>span { font-size:9px; }
   .ff-roulette-title-actions { gap:4px; }.ff-roulette-title-actions button { min-height:32px; padding:2px 7px; font-size:10px; }
+  .ff-roulette-title-actions .ff-roulette-neighbors-mobile { display:inline-flex; align-items:center; }
+  .ff-roulette-player-count { display:none; }
   .ff-roulette-panel { inset:4px; width:auto; }.ff-roulette-panel-content { padding:8px; }
 }
 @media(max-width:359px) {
@@ -86,6 +88,7 @@
   .ff-roulette-board .felt-chip { width:15px; height:15px; bottom:1px; right:1px; font-size:8px; }
   .ff-roulette-selection { grid-template-columns:minmax(78px,1.2fr) minmax(68px,1fr) 38px 40px; gap:4px; }
   .ff-roulette-title { padding:0 6px; }.ff-roulette-title-actions button { padding:2px 5px; }
+  .ff-roulette-title-actions .ff-roulette-neighbors-mobile { font-size:9px; }
   .ff-roulette-result { max-width:125px; }.ff-roulette-result>div>span { font-size:8px; }
 }
 @media(min-width:500px) and (max-width:599px) and (max-height:500px) {

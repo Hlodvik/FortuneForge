@@ -21,10 +21,34 @@ internal static class ManagedPlayerGames
     public const string Blackjack = "blackjack";
     public const string Hearts = "hearts";
     public const string LiarsDice = "liars-dice";
+    public const string Roulette = "roulette";
     public const string Solitaire = "solitaire";
     public const string TexasHoldem = "texas-holdem";
     public static readonly IReadOnlyList<string> All =
-        [Blackjack, Hearts, LiarsDice, Solitaire, TexasHoldem];
+        [Blackjack, Hearts, LiarsDice, Roulette, Solitaire, TexasHoldem];
+}
+
+internal static class ManagedPlayerTableStayPolicy
+{
+    public const int MinimumRounds = 4;
+    public const int MaximumRounds = 20;
+
+    public static int DepartureRound(
+        string gameId,
+        string tableId,
+        string profileId,
+        int joinedRound)
+    {
+        if (joinedRound < 0) throw new ArgumentOutOfRangeException(nameof(joinedRound));
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+            $"managed-table-stay\n{gameId}\n{tableId}\n{profileId}\n{joinedRound}"));
+        var rounds = MinimumRounds + BitConverter.ToUInt16(hash, 0) %
+            (MaximumRounds - MinimumRounds + 1);
+        return checked(joinedRound + rounds);
+    }
+
+    public static bool ShouldLeave(int currentRound, int departureRound) =>
+        currentRound >= departureRound;
 }
 
 internal interface IManagedPlayerProfileGenerator

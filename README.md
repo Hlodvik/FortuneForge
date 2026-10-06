@@ -63,7 +63,7 @@ npm run deploy
 
 ## Game releases
 
-Hearts, Liar's Dice, Roulette, and Craps are authenticated free-play games. Their first release uses no-credit tables while richer multiplayer and persistence work continues.
+Hearts, Liar's Dice, Roulette, and Craps are authenticated free-play games. Roulette joins players to the oldest open shared no-credit table, creating a table only when no open table has room. Persistence and the remaining richer multiplayer flows are still in progress.
 
 ## MerchantGateway payment integration
 

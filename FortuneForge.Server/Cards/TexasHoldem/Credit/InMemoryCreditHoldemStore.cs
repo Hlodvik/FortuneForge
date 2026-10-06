@@ -1,3 +1,4 @@
+using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Matchmaking;
 
@@ -5,8 +6,10 @@ namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
 internal sealed class InMemoryCreditHoldemStore(
     bool allowSingleHumanBotFill = false,
-    IMultiplayerMatchmaker? multiplayerMatchmaker = null) : ICreditHoldemStore
+    IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+    IManagedTablePopulationDirector? managedPopulationDirector = null) : ICreditHoldemStore
 {
+    private static readonly TimeSpan AutomaticInterHandDelay = TimeSpan.FromSeconds(2);
     private sealed record SessionPointer(string Kind, string? TicketId, string? MatchId);
     private readonly object gate = new();
     private readonly Dictionary<string, SessionPointer> sessions = new(StringComparer.Ordinal);
@@ -21,6 +24,8 @@ internal sealed class InMemoryCreditHoldemStore(
     private readonly Dictionary<string, string> activeMatchIds = new(StringComparer.Ordinal);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+    private readonly IManagedTablePopulationDirector population =
+        managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
     internal void SetBalance(string userId, long cents)
     {
@@ -42,7 +47,7 @@ internal sealed class InMemoryCreditHoldemStore(
         {
             cancellationToken.ThrowIfCancellationRequested();
             foreach (var match in matches.Values.Where(match =>
-                         match.Status is "active" or "completed"))
+                         match.Status is "active" or "completed").ToArray())
             {
                 AdvanceMatch(match, nowUtc);
             }
@@ -198,6 +203,15 @@ internal sealed class InMemoryCreditHoldemStore(
             SettleOnce(prior, nowUtc);
             if (prior.Status != "completed" || prior.Version != expectedVersion || !prior.AccountingSettled)
                 throw new CreditHoldemConflictException("The hand changed or is not ready for the next deal.");
+            _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(prior);
+            var populationDecision = PopulationDecision(prior, includePendingHumans: true);
+            if (!populationDecision.KeepTableOpen)
+                throw new CreditHoldemConflictException("This Hold'em table has closed.");
+            TexasHoldemManagedPlayers.AddPlayers(
+                prior,
+                TexasHoldemManagedPlayers.CreateLocalProfiles(
+                    populationDecision.ManagedArrivals,
+                    nowUtc));
             var balanceMap = prior.Players.Where(value => value.IsAccountBacked)
                 .Concat(prior.PendingTakeovers.Select(ticket => new CreditHoldemPlayer
                 {
@@ -323,6 +337,55 @@ internal sealed class InMemoryCreditHoldemStore(
             match.Players.Where(player => player.IsAccountBacked)
                 .All(player => match.LeavingActorIds.Contains(player.ActorId)))
             activeMatchIds.Remove(match.PartitionKey);
+        TryStartAutomaticNextHand(match, nowUtc);
+    }
+
+    private void TryStartAutomaticNextHand(CreditHoldemMatch prior, DateTime nowUtc)
+    {
+        if (prior.Status != "completed" || !prior.AccountingSettled ||
+            nowUtc < (prior.CompletedAtUtc ?? prior.UpdatedAtUtc).Add(AutomaticInterHandDelay) ||
+            prior.Players.Any(player => player.IsAccountBacked &&
+                !prior.LeavingActorIds.Contains(player.ActorId)))
+            return;
+
+        _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(prior);
+        var decision = PopulationDecision(prior, includePendingHumans: true);
+        if (!decision.KeepTableOpen)
+        {
+            population.Close(ManagedPlayerGames.TexasHoldem, prior.MatchId);
+            activeMatchIds.Remove(prior.PartitionKey);
+            return;
+        }
+
+        TexasHoldemManagedPlayers.AddPlayers(
+            prior,
+            TexasHoldemManagedPlayers.CreateLocalProfiles(decision.ManagedArrivals, nowUtc));
+        var balanceMap = prior.PendingTakeovers
+            .Select(ticket => ticket.UserId)
+            .Distinct(StringComparer.Ordinal)
+            .ToDictionary(userId => userId, userId => balances.GetValueOrDefault(userId), StringComparer.Ordinal);
+        var minimumHumans = prior.PendingTakeovers.Count > 0 ? 1 : 0;
+        var next = CreditHoldemEngine.StartNextHand(
+            prior, balanceMap, NewSeed(), minimumHumans, nowUtc);
+        if (next is null)
+        {
+            population.Close(ManagedPlayerGames.TexasHoldem, prior.MatchId);
+            activeMatchIds.Remove(prior.PartitionKey);
+            return;
+        }
+
+        ApplyBlindCommitments(next, "automatic-next-hand", nowUtc);
+        matches[prior.MatchId] = next;
+        foreach (var ticket in prior.PendingTakeovers)
+            tickets[ticket.TicketId] = ticket with
+            {
+                Status = "matched",
+                Version = checked(ticket.Version + 1)
+            };
+        foreach (var human in next.Players.Where(player => player.IsAccountBacked))
+            sessions[human.ActorId] = new(CreditHoldemSessionKinds.Match, null, next.MatchId);
+        WriteActiveHistory(next);
+        activeMatchIds[next.PartitionKey] = next.MatchId;
     }
 
     private void TryMatch(string partitionKey, ulong seed, DateTime nowUtc)
@@ -342,10 +405,18 @@ internal sealed class InMemoryCreditHoldemStore(
         var balancesForHand = selected.ToDictionary(value => value.UserId, value => balances.GetValueOrDefault(value.UserId), StringComparer.Ordinal);
         if (balancesForHand.Values.Any(value => value < rule.BigBlindCents)) return;
         var matchId = CreditHoldemIds.Hash($"{partitionKey}\n{string.Join("\n", selected.Select(value => value.TicketId))}");
+        var populationDecision = population.Observe(new(
+            ManagedPlayerGames.TexasHoldem,
+            matchId,
+            1,
+            selected.Count,
+            0,
+            CreditHoldemMoney.MinimumStartPlayers,
+            CreditHoldemMoney.MaximumSeats - 1));
         var profiles = TexasHoldemManagedPlayers.CreateLocalProfiles(
-            CreditHoldemMoney.MinimumStartPlayers - selected.Count,
+            populationDecision.ManagedArrivals,
             nowUtc);
-        var seats = TexasHoldemManagedPlayers.BuildSeats(selected, profiles, balancesForHand, seed, rule);
+        var seats = TexasHoldemManagedPlayers.BuildSeats(selected, profiles, balancesForHand, seed, rule, matchId);
         var match = CreditHoldemEngine.Deal(
             matchId, seats, partitionKey, seed, nowUtc, rule.Id);
         ApplyBlindCommitments(match, "initial-deal", nowUtc);
@@ -503,6 +574,28 @@ internal sealed class InMemoryCreditHoldemStore(
     private static bool CanAcceptTakeover(CreditHoldemMatch match) =>
         match.Players.Count(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)) +
         match.PendingTakeovers.Count < CreditHoldemMoney.MaximumSeats;
+
+    private ManagedTablePopulationDecision PopulationDecision(
+        CreditHoldemMatch match,
+        bool includePendingHumans)
+    {
+        var humans = match.Players.Count(player =>
+            player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId));
+        var pendingHumans = includePendingHumans ? match.PendingTakeovers.Count : 0;
+        humans += pendingHumans;
+        var managed = match.Players.Count(TexasHoldemManagedPlayers.IsManaged);
+        managed = Math.Min(
+            managed,
+            Math.Max(0, CreditHoldemMoney.MaximumSeats - 1 - humans));
+        return population.Observe(new(
+            ManagedPlayerGames.TexasHoldem,
+            match.MatchId,
+            checked(match.HandNumber + 1),
+            humans,
+            managed,
+            CreditHoldemMoney.MinimumStartPlayers,
+            CreditHoldemMoney.MaximumSeats - 1));
+    }
     private static string Guard(string userId, string key) => $"{userId}\n{key}";
     private static ulong NewSeed() => BitConverter.ToUInt64(System.Security.Cryptography.RandomNumberGenerator.GetBytes(8));
 }

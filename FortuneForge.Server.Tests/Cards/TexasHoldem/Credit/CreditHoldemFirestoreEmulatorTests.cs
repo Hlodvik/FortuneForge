@@ -253,7 +253,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
-    public async Task ProductionStore_ManagedSeatsUseMatchScopedLeaseAndReleaseWhenLastAccountLeaves()
+    public async Task ProductionStore_ManagedSeatsRemainAfterLastAccountLeavesWithoutImmediateReplacement()
     {
         var queuer = new RecordingManagedPlayerQueuer();
         var (database, _, suffix) = CreateStore();
@@ -282,9 +282,10 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
             Start.Add(CreditHoldemEngine.HumanGrace).AddMilliseconds(100),
             default);
 
-        var release = Assert.Single(queuer.Releases);
-        Assert.Equal(assignmentId, release.AssignmentId);
-        Assert.Equal(heartbeat.ProfileIds.Order(), release.ProfileIds.Order());
+        Assert.Empty(queuer.Releases);
+        var stored = await ReadMatchAsync(database, session.Table.MatchId);
+        Assert.All(stored.Players.Where(TexasHoldemManagedPlayers.IsManaged),
+            player => Assert.Contains(player.ActorId, heartbeat.ProfileIds));
     }
 
     [Fact]

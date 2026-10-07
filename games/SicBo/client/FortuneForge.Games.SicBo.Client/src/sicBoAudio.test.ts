@@ -7,14 +7,15 @@ afterEach(() => {
 })
 
 describe('Sic Bo audio', () => {
-  it.each([['click', 2], ['roll', 16]] as const)('synthesizes a %s cue without loading cross-game assets', async (cue, expectedStrikes) => {
+  it.each([['click', 2], ['roll', 18], ['win', 10]] as const)('synthesizes a %s cue without loading cross-game assets', async (cue, expectedStrikes) => {
     const audio = installAudioContextMock()
     const { playSicBoSound } = await import('./sicBoAudio')
 
     playSicBoSound(cue)
 
     expect(audio.createOscillator).toHaveBeenCalledTimes(expectedStrikes)
-    expect(audio.createGain).toHaveBeenCalledTimes(expectedStrikes)
+    expect(audio.createGain).toHaveBeenCalledTimes(expectedStrikes + (cue === 'roll' ? 1 : 0))
+    expect(audio.createBufferSource).toHaveBeenCalledTimes(cue === 'roll' ? 1 : 0)
   })
 
   it('keeps gameplay functional when Web Audio is unavailable', async () => {
@@ -32,7 +33,10 @@ function installAudioContextMock() {
     type: 'sine', frequency, connect: vi.fn().mockReturnThis(), start: vi.fn(), stop: vi.fn(),
   }))
   const createGain = vi.fn(() => ({ gain: gainValue, connect: vi.fn().mockReturnValue(destination) }))
-  const audio = { state: 'running', currentTime: 1, destination, resume: vi.fn(), createOscillator, createGain }
+  const createBuffer = vi.fn(() => ({ getChannelData: vi.fn(() => new Float32Array(480)) }))
+  const createBufferSource = vi.fn(() => ({ connect: vi.fn().mockReturnThis(), start: vi.fn(), stop: vi.fn() }))
+  const createBiquadFilter = vi.fn(() => ({ type: 'lowpass', frequency, Q: { value: 0 }, connect: vi.fn().mockReturnThis() }))
+  const audio = { state: 'running', currentTime: 1, sampleRate: 800, destination, resume: vi.fn(), createOscillator, createGain, createBuffer, createBufferSource, createBiquadFilter }
   vi.stubGlobal('AudioContext', function AudioContextMock() { return audio })
   return audio
 }

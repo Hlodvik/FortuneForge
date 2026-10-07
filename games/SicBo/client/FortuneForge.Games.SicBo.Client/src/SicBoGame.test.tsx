@@ -41,7 +41,9 @@ describe('Sic Bo table',()=>{
     click('Rules');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
     click('Close table details');add('Small');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
     click('Roll dice');expect(playSicBoSound).toHaveBeenLastCalledWith('roll')
+    await screen.findByRole('button',{name:'New round'});expect(playSicBoSound).toHaveBeenLastCalledWith('win')
   })
+  it('does not celebrate a net-losing round',async()=>{render(<SicBoGame gateway={fakeGateway()}/>);await ready();add('Big');click('Roll dice');await screen.findByRole('button',{name:'New round'});expect(playSicBoSound).not.toHaveBeenCalledWith('win')})
   it.each(betTargets.map(t=>[t.label,t.id] as const))('submits canonical %s selection',async(label,id)=>{
     const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();add(label);click('Roll dice')
     await waitFor(()=>expect(gateway.createRound).toHaveBeenCalledTimes(1))

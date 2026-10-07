@@ -1,6 +1,6 @@
 type AudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }
 
-export type SicBoAudioCue = 'click' | 'roll'
+export type SicBoAudioCue = 'click' | 'roll' | 'win'
 
 let context: AudioContext | null = null
 
@@ -43,15 +43,40 @@ function click(audio: AudioContext) {
 
 function roll(audio: AudioContext) {
   const start = audio.currentTime
+  const duration = 0.56
+  const frameCount = Math.max(1, Math.floor(audio.sampleRate * duration))
+  const buffer = audio.createBuffer(1, frameCount, audio.sampleRate)
+  const channel = buffer.getChannelData(0)
+  for (let index = 0; index < frameCount; index += 1) {
+    const progress = index / frameCount
+    const envelope = Math.pow(1 - progress, 0.6)
+    const rattle = 0.42 + Math.abs(Math.sin(progress * Math.PI * 19)) * 0.58
+    channel[index] = (Math.random() * 2 - 1) * envelope * rattle
+  }
+  const source = audio.createBufferSource()
+  const filter = audio.createBiquadFilter()
+  const tumbleGain = audio.createGain()
+  filter.type = 'bandpass'
+  filter.frequency.setValueAtTime(520, start)
+  filter.frequency.exponentialRampToValueAtTime(260, start + duration)
+  filter.Q.value = 0.75
+  tumbleGain.gain.setValueAtTime(0.0001, start)
+  tumbleGain.gain.exponentialRampToValueAtTime(0.17, start + 0.018)
+  tumbleGain.gain.exponentialRampToValueAtTime(0.0001, start + duration)
+  source.connect(filter).connect(tumbleGain).connect(audio.destination)
+  source.start(start)
+  source.stop(start + duration)
+
   const impacts = [
-    [0, 138, 76, 0.052, 0.034],
-    [0.052, 108, 68, 0.045, 0.027],
-    [0.101, 162, 81, 0.05, 0.036],
-    [0.158, 119, 65, 0.044, 0.026],
-    [0.211, 151, 73, 0.052, 0.035],
-    [0.273, 105, 62, 0.046, 0.027],
-    [0.334, 143, 70, 0.058, 0.037],
-    [0.405, 91, 55, 0.07, 0.031],
+    [0, 138, 76, 0.06, 0.055],
+    [0.048, 108, 68, 0.052, 0.045],
+    [0.098, 162, 81, 0.06, 0.06],
+    [0.153, 119, 65, 0.052, 0.043],
+    [0.207, 151, 73, 0.064, 0.058],
+    [0.266, 105, 62, 0.055, 0.045],
+    [0.326, 143, 70, 0.068, 0.062],
+    [0.392, 91, 55, 0.078, 0.052],
+    [0.475, 176, 64, 0.09, 0.085],
   ] as const
 
   impacts.forEach(([offset, high, low, duration, volume], index) => {
@@ -60,9 +85,26 @@ function roll(audio: AudioContext) {
   })
 }
 
+function win(audio: AudioContext) {
+  const start = audio.currentTime + 0.02
+  const notes = [
+    [0, 523],
+    [0.075, 659],
+    [0.15, 784],
+    [0.235, 1047],
+  ] as const
+  notes.forEach(([offset, frequency]) => {
+    strike(audio, start + offset, frequency, frequency * 1.015, 0.23, 0.072, 'sine')
+    strike(audio, start + offset, frequency * 2, frequency * 2.02, 0.13, 0.022, 'triangle')
+  })
+  strike(audio, start + 0.34, 784, 790, 0.32, 0.052, 'sine')
+  strike(audio, start + 0.34, 1047, 1055, 0.34, 0.062, 'sine')
+}
+
 export function playSicBoSound(cue: SicBoAudioCue): void {
   const audio = audioContext()
   if (!audio) return
   if (cue === 'roll') roll(audio)
+  else if (cue === 'win') win(audio)
   else click(audio)
 }

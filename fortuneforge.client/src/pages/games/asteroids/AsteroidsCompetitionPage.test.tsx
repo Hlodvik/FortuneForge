@@ -14,20 +14,20 @@ import {
 } from './asteroidsCompetitionHelpers'
 
 describe('AsteroidsCompetitionPage', () => {
-  it('server-renders the initial lobby with leaderboard ahead of entry choices', () => {
+  it('server-renders an unstarted mode chooser without exposing a scoreboard in free play', () => {
     const markup = renderToStaticMarkup(createElement(AsteroidsCompetitionPage, {
       account: accountSummary,
       gateway: gateway,
     }))
 
-    expect(markup).toContain('Asteroids leaderboard')
-    expect(markup).toContain('Daily competition · R1')
-    expect(markup).toContain('Weekly competition · R1')
-    expect(markup).toContain('Casual run')
-    expect(markup).toContain('Casual runs are recorded to your account but do not enter the leaderboard.')
-    expect(markup).toContain('Competition arena')
-    expect(markup.indexOf('Asteroids leaderboard')).toBeLessThan(markup.indexOf('Choose your flight'))
-    expect(markup).toContain('asteroids-competition-page__lobby-grid')
+    expect(markup).toContain('Asteroid <span>Blaster</span>')
+    expect(markup).toContain('Free Play')
+    expect(markup).toContain('Ranked Play')
+    expect(markup).toContain('R1 entry')
+    expect(markup).not.toContain('leaderboard')
+    expect(markup).not.toContain('Daily · R1')
+    expect(markup).not.toContain('Weekly · R1')
+    expect(markup).toContain('asteroids-competition-page__mode-grid')
     expect(markup).toMatch(/^<div class="asteroids-competition-page"><main/)
     expect(markup).toContain('<main class="asteroids-competition-page__content">')
   })

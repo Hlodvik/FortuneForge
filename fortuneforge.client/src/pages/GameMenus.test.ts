@@ -91,7 +91,7 @@ describe('game category menus', () => {
     expect(markup).toContain('href="/games/flappy"')
     expect(markup).toContain('href="/games/baccarat"')
     expect(markup).toContain('href="/games/video-poker"')
-    expect(markup).toContain('Asteroids')
+    expect(markup).toContain('Asteroid Blaster')
     expect(markup).toContain('Flappy')
     expect(markup).toContain('Horse Flight')
     expect(markup).toContain('endless platform runner')
@@ -109,8 +109,8 @@ describe('game category menus', () => {
     expect(markup).not.toContain('In the forge')
   })
 
-  it('uses the Asteroids competition title', () => {
-    expect(pageTitleForPath('/games/asteroids')).toBe('Asteroids Competition — Fortune Forge')
+  it('uses the Asteroid Blaster title', () => {
+    expect(pageTitleForPath('/games/asteroids')).toBe('Asteroid Blaster — Fortune Forge')
     expect(pageTitleForPath('/games/2048')).toBe('2048 — Fortune Forge')
     expect(pageTitleForPath('/games/drop-merge')).toBe('Drop Merge — Fortune Forge')
     expect(pageTitleForPath('/games/baccarat')).toBe('Baccarat — Fortune Forge')

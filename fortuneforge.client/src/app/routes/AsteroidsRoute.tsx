@@ -20,7 +20,7 @@ export function AuthenticatedAsteroidsRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/asteroids')
 
   if (isLoading || account === null) {
-    return <AuthenticatedRouteState error={error} loadingLabel="Opening the Asteroids competition…" errorTitle="The Asteroids competition could not be opened." onRetry={reload} />
+    return <AuthenticatedRouteState error={error} loadingLabel="Opening Asteroid Blaster…" errorTitle="Asteroid Blaster could not be opened." onRetry={reload} />
   }
 
   return <AsteroidsCompetitionSession initialAccount={account} />
@@ -54,7 +54,7 @@ function AsteroidsCompetitionSession({ initialAccount }: Readonly<{ initialAccou
     }
   }, [])
 
-  return <InGameShell account={currentAccount} title="Asteroids" theme="arcade">
+  return <InGameShell account={currentAccount} className="asteroid-blaster-shell" title="Asteroid Blaster" theme="arcade">
     <GameAmbientMusic game="asteroids" />
     <AsteroidsCompetitionPage account={currentAccount} gateway={gateway} onPaidAccountRefresh={refreshAccount} />
   </InGameShell>

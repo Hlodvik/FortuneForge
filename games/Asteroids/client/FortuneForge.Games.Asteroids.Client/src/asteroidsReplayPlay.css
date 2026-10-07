@@ -10,6 +10,7 @@
   gap: .55rem;
   margin: auto;
   color: #f7fbff;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
 }
 
 .ff-asteroids-replay-stage {
@@ -79,8 +80,8 @@
 .ff-asteroids-replay h2 {
   margin: 0;
   color: #fff;
-  font: 900 clamp(1rem, 3.9cqw, 2.7rem)/.9 "Arial Black", Impact, sans-serif;
-  letter-spacing: .08em;
+  font: 900 clamp(.88rem, 3.45cqw, 2.4rem)/.9 "Cooper Black", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  letter-spacing: .035em;
 }
 
 .ff-asteroids-replay-clock {
@@ -154,8 +155,8 @@
 
 .ff-asteroids-replay-overlay strong {
   color: #fff;
-  font: 900 clamp(1.7rem, 7cqw, 4.8rem)/.92 "Arial Black", Impact, sans-serif;
-  letter-spacing: .08em;
+  font: 900 clamp(1.7rem, 7cqw, 4.8rem)/.92 "Cooper Black", "Arial Rounded MT Bold", sans-serif;
+  letter-spacing: .035em;
   text-shadow: 0 0 1rem #77e7ff66;
 }
 
@@ -216,7 +217,7 @@
   opacity: .42;
 }
 
-@media (hover: hover) and (pointer: fine) {
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
   .ff-asteroids-replay-controls { display: none; }
 }
 

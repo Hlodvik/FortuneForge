@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { AsteroidsEvent, AsteroidsGameState } from './contracts'
+import { playAsteroidsSound } from './asteroidsAudio'
 import { renderAsteroids, type AsteroidsImpact, type AsteroidsSpriteAtlases } from './asteroidsCanvasRenderer'
 import { formatScore } from './asteroidsHelpers'
 import { AsteroidsReplaySession, type AsteroidsHeldControl, type AsteroidsReplayDisplayResult, type AsteroidsReplayPayload, type AsteroidsReplaySessionView } from './asteroidsReplaySession'
@@ -51,8 +52,10 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
     canvas.width = game.width
     canvas.height = game.height
     const context = canvas.getContext('2d')
-    impactsRef.current = nextImpacts(impactsRef.current, previousRef.current, game)
+    const previous = previousRef.current
+    impactsRef.current = nextImpacts(impactsRef.current, previous, game)
     if (context !== null) renderAsteroids(context, game, atlases, impactsRef.current)
+    playFrameSounds(previous, game)
     previousRef.current = game
   }, [atlases, game])
 
@@ -98,11 +101,11 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
   const result = view.status === 'finished' ? localResult(view) : null
   const seconds = Math.ceil(view.remainingSteps * 0.033)
 
-  return <section className="ff-asteroids-replay" aria-label={modeLabel + ' Asteroids replay'}>
+  return <section className="ff-asteroids-replay" aria-label={modeLabel + ' Asteroid Blaster run'}>
     <div className="ff-asteroids-replay-stage">
-      <canvas ref={canvasRef} className="ff-asteroids-replay-canvas" aria-label="Asteroids deterministic replay playfield" />
+      <canvas ref={canvasRef} className="ff-asteroids-replay-canvas" aria-label="Asteroid Blaster playfield" />
       <header className="ff-asteroids-replay-head">
-        <div className="ff-asteroids-replay-title"><small>{modeLabel}</small><h2>Asteroids</h2></div>
+        <div className="ff-asteroids-replay-title"><small>{modeLabel}</small><h2>Asteroid Blaster</h2></div>
         <div className="ff-asteroids-replay-clock" aria-label={seconds + ' seconds remaining'}><small>Time</small><strong>{formatTime(seconds)}</strong></div>
       </header>
       <section className="ff-asteroids-replay-stats" aria-live="polite">
@@ -163,4 +166,13 @@ function nextImpacts(existing: readonly AsteroidsImpact[], previous: AsteroidsGa
   return [...active,
     ...game.asteroids.filter(asteroid => (before.get(asteroid.id)?.hitPoints ?? asteroid.hitPoints) > asteroid.hitPoints).map(asteroid => ({ x: asteroid.x, y: asteroid.y, startedTick: game.tick, kind: 'hit' as const })),
     ...previous.asteroids.filter(asteroid => !after.has(asteroid.id)).map(asteroid => ({ x: asteroid.x, y: asteroid.y, startedTick: game.tick, kind: 'destroyed' as const }))]
+}
+
+function playFrameSounds(previous: AsteroidsGameState | null, game: AsteroidsGameState): void {
+  if (previous === null || previous.gameId !== game.gameId || game.tick <= previous.tick) return
+  const previousBullets = new Set(previous.bullets.map(bullet => bullet.id))
+  const currentAsteroids = new Set(game.asteroids.map(asteroid => asteroid.id))
+  if (game.bullets.some(bullet => !previousBullets.has(bullet.id))) playAsteroidsSound('laser')
+  if (previous.asteroids.some(asteroid => !currentAsteroids.has(asteroid.id))) playAsteroidsSound('explosion')
+  if (game.ship.thrustTicks > 0) playAsteroidsSound('thrust')
 }

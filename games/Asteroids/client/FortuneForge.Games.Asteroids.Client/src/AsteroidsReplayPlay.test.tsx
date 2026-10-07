@@ -10,8 +10,9 @@ describe('AsteroidsReplayPlay', () => {
       modeLabel="Daily run"
       onComplete={() => { throw new Error('Static rendering must not complete a run.') }} />)
 
-    expect(html).toContain('aria-label="Daily run Asteroids replay"')
-    expect(html).toContain('aria-label="Asteroids deterministic replay playfield"')
+    expect(html).toContain('aria-label="Daily run Asteroid Blaster run"')
+    expect(html).toContain('aria-label="Asteroid Blaster playfield"')
+    expect(html).toContain('Asteroid Blaster')
     expect(html).toContain('aria-live="polite"')
     expect(html).toContain('aria-label="Touch controls"')
     expect(html).toContain('aria-label="Turn left"')

@@ -7,7 +7,7 @@ const pageTitles: Record<string, string> = {
   '/demo': 'Choose a Demo — Fortune Forge',
   '/cards': 'Choose a Card Game — Fortune Forge',
   '/games': 'Other Games — Fortune Forge',
-  '/games/asteroids': 'Asteroids Competition — Fortune Forge',
+  '/games/asteroids': 'Asteroid Blaster — Fortune Forge',
   '/games/2048': '2048 — Fortune Forge',
   '/games/drop-merge': 'Drop Merge — Fortune Forge',
   '/games/baccarat': 'Baccarat — Fortune Forge',

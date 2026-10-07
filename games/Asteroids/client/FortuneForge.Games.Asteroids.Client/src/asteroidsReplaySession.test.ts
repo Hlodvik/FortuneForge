@@ -43,6 +43,21 @@ describe('Asteroids replay session', () => {
     expect(session.view).toEqual(frozen)
   })
 
+  it('keeps firing while the fire control remains held', () => {
+    const session = new AsteroidsReplaySession(runId, seedHex)
+    session.setHeld('fire', true)
+    for (let frame = 0; frame < 20; frame += 1) session.advanceFrame()
+
+    expect(session.view.state.bullets.length).toBeGreaterThanOrEqual(2)
+    session.setHeld('fire', false)
+    session.advanceFrame()
+    const completion = finish(session)
+    expect(completion.replay.commands.slice(0, 2)).toEqual([
+      { step: 0, input: 8 },
+      { step: 20, input: 0 },
+    ])
+  })
+
   it('uses the exact 3,600-frame cap when the ship survives', () => {
     const session = new AsteroidsReplaySession(runId, seedHex)
     session.setHeld('right', true)

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AsteroidsGatewayError } from './httpAsteroidsGateway'
-import type { AsteroidsAction, AsteroidsGameState, AsteroidsGateway, AsteroidsLeaderboard } from './contracts'
+import type { AsteroidsAction, AsteroidsGameState, AsteroidsGateway } from './contracts'
+import { playAsteroidsSound } from './asteroidsAudio'
 import { renderAsteroids, type AsteroidsImpact, type AsteroidsSpriteAtlases } from './asteroidsCanvasRenderer'
 import { formatScore } from './asteroidsHelpers'
 import { loadAsteroidsSpriteAtlases } from './asteroidsSprites'
@@ -9,16 +10,13 @@ export type AsteroidsGameProps = Readonly<{ gateway: AsteroidsGateway; backHref?
 
 const heldControlIntervalMilliseconds = 35
 
-export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Arcade free play' }: AsteroidsGameProps) {
+export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGameProps) {
   const [status, setStatus] = useState<Awaited<ReturnType<AsteroidsGateway['getStatus']>> | null>(null)
   const [game, setGame] = useState<AsteroidsGameState | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [spriteAtlases, setSpriteAtlases] = useState<AsteroidsSpriteAtlases>({})
-  const [leaderboard, setLeaderboard] = useState<AsteroidsLeaderboard | null>(null)
-  const [submittingScore, setSubmittingScore] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const leaderboardRef = useRef<HTMLElement>(null)
   const tickInFlight = useRef(false)
   const actionInFlight = useRef(false)
   const gameRef = useRef<AsteroidsGameState | null>(null)
@@ -26,10 +24,10 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
   const heldControlTimerRef = useRef<number | null>(null)
   const heldRotationsRef = useRef(new Map<string, AsteroidsAction>())
   const heldThrustsRef = useRef(new Set<string>())
-  const lastHeldControlRef = useRef<'rotate' | 'thrust'>('thrust')
+  const heldFiresRef = useRef(new Set<string>())
+  const lastHeldControlRef = useRef<AsteroidsAction>('fire')
   const previousGameRef = useRef<AsteroidsGameState | null>(null)
   const impactsRef = useRef<readonly AsteroidsImpact[]>([])
-  const submittedRunRef = useRef<string | null>(null)
 
   gameRef.current = game
   busyRef.current = busy
@@ -62,32 +60,12 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
     canvas.width = game.width
     canvas.height = game.height
     const context = canvas.getContext('2d')
-    impactsRef.current = nextImpacts(impactsRef.current, previousGameRef.current, game)
+    const previous = previousGameRef.current
+    impactsRef.current = nextImpacts(impactsRef.current, previous, game)
     if (context) renderAsteroids(context, game, spriteAtlases, impactsRef.current)
+    playFrameSounds(previous, game)
     previousGameRef.current = game
   }, [game, spriteAtlases])
-
-  useEffect(() => {
-    if (!game || game.phase !== 'game-over') return
-    const runKey = `${game.gameId}:${game.tick}:${game.score}`
-    if (submittedRunRef.current === runKey) return
-    submittedRunRef.current = runKey
-    setSubmittingScore(true)
-    setLeaderboard(null)
-    void gateway.submitScore(game.gameId, playerName)
-      .then(setLeaderboard)
-      .catch(reason => setError(messageForError(reason)))
-      .finally(() => setSubmittingScore(false))
-  }, [game, gateway, playerName])
-
-  useEffect(() => {
-    if (game?.phase !== 'game-over' || !leaderboardRef.current) return
-    const frame = window.requestAnimationFrame(() => {
-      leaderboardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      leaderboardRef.current?.focus({ preventScroll: true })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [game?.gameId, game?.phase])
 
   const perform = useCallback((action: AsteroidsAction) => {
     const currentGame = gameRef.current
@@ -123,15 +101,15 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
     }
     const performHeldControl = () => {
       const rotation = Array.from(heldRotationsRef.current.values()).at(-1) ?? null
-      const thrusting = heldThrustsRef.current.size > 0
-      if (!rotation && !thrusting) return
-      const action = rotation && thrusting
-        ? lastHeldControlRef.current === 'rotate' ? 'thrust' : rotation
-        : rotation ?? 'thrust'
-      if (perform(action) && rotation && thrusting) lastHeldControlRef.current = action === 'thrust' ? 'thrust' : 'rotate'
+      const actions = [rotation, heldThrustsRef.current.size > 0 ? 'thrust' : null, heldFiresRef.current.size > 0 ? 'fire' : null]
+        .filter((action): action is AsteroidsAction => action !== null)
+      if (actions.length === 0) return
+      const priorIndex = actions.indexOf(lastHeldControlRef.current)
+      const action = actions[(priorIndex + 1) % actions.length]!
+      if (perform(action)) lastHeldControlRef.current = action
     }
     const refreshHeldControls = () => {
-      if (heldRotationsRef.current.size === 0 && heldThrustsRef.current.size === 0) {
+      if (heldRotationsRef.current.size === 0 && heldThrustsRef.current.size === 0 && heldFiresRef.current.size === 0) {
         stopHeldControls()
         return
       }
@@ -159,18 +137,23 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
         }
         return
       }
-      perform(action)
+      if (!heldFiresRef.current.has(event.code)) {
+        heldFiresRef.current.add(event.code)
+        refreshHeldControls()
+      }
     }
     const onKeyUp = (event: KeyboardEvent) => {
       const rotationReleased = heldRotationsRef.current.delete(event.code)
       const thrustReleased = heldThrustsRef.current.delete(event.code)
-      if (!rotationReleased && !thrustReleased) return
+      const fireReleased = heldFiresRef.current.delete(event.code)
+      if (!rotationReleased && !thrustReleased && !fireReleased) return
       event.preventDefault()
       refreshHeldControls()
     }
     const onWindowBlur = () => {
       heldRotationsRef.current.clear()
       heldThrustsRef.current.clear()
+      heldFiresRef.current.clear()
       stopHeldControls()
     }
     window.addEventListener('keydown', onKeyDown)
@@ -182,38 +165,42 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
       window.removeEventListener('blur', onWindowBlur)
       heldRotationsRef.current.clear()
       heldThrustsRef.current.clear()
+      heldFiresRef.current.clear()
       stopHeldControls()
     }
   }, [perform])
 
   const newGame = () => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
-    submittedRunRef.current = null
-    setLeaderboard(null)
-    setSubmittingScore(false)
     void run(() => game ? gateway.reset(game.gameId) : gateway.startGame())
   }
 
   return <div className="ff-asteroids-page">
-    <header className="ff-asteroids-header"><a className="ff-asteroids-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-asteroids-games" href={backHref}>Other games</a><div className="ff-asteroids-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>
     <main className="ff-asteroids-main">
-      {game?.phase === 'game-over' ? <section ref={leaderboardRef} className="ff-asteroids-leaderboard" aria-live="polite" tabIndex={-1}>
-        <div className="ff-asteroids-leaderboard-head"><div><small>Mission complete</small><h2>Galactic leaderboard</h2></div><strong>{submittingScore ? 'Submitting score…' : `${formatScore(game.score)} points · Wave ${game.wave}`}</strong></div>
-        {leaderboard ? <ol>{leaderboard.entries.map(entry => <li key={`${entry.rank}:${entry.playerName}:${entry.score}`} className={entry.playerName === playerName && entry.score === game.score ? 'ff-asteroids-leaderboard-current' : undefined}><span>#{entry.rank}</span><strong>{entry.playerName}</strong><span>{formatScore(entry.score)}</span><small>Wave {entry.wave}</small></li>)}</ol> : <p>{submittingScore ? 'Posting your score to the leaderboard…' : 'The leaderboard is unavailable.'}</p>}
-        <button className="ff-asteroids-play-again" type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'Play again'}</button>
-      </section> : game ? <>
-        <section className="ff-asteroids-stage" aria-label="Asteroids playfield">
+      {game ? <>
+        <section className="ff-asteroids-stage" aria-label="Asteroid Blaster playfield">
           <canvas ref={canvasRef} className="ff-asteroids-canvas" />
           <section className="ff-asteroids-title">
-            <div><small>{tableLabel}</small><h1>Asteroids</h1></div>
+            <div><small>{tableLabel}</small><h1>Asteroid Blaster</h1></div>
             <button className="ff-asteroids-new" type="button" aria-label="New mission" title="New mission" onClick={newGame} disabled={busy}>{busy ? '…' : '↻'}</button>
           </section>
           <section className="ff-asteroids-stats" aria-live="polite"><div className="ff-asteroids-score"><small>Score</small><strong>{formatScore(game.score)}</strong></div><div className="ff-asteroids-best"><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div className="ff-asteroids-lives"><small>Lives</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div className="ff-asteroids-wave"><small>Wave</small><strong>{game.wave}</strong></div></section>
+          {game.phase === 'game-over' && <div className="ff-asteroids-overlay" role="status"><small>Mission ended</small><strong>{formatScore(game.score)}</strong><button type="button" onClick={newGame} disabled={busy}>Play again</button></div>}
         </section>
+        <div className="ff-asteroids-touch-controls" aria-label="Touch controls">
+          <TouchControl label="Turn left" symbol="↶" action="rotate-left" perform={perform} disabled={game.phase !== 'playing'} />
+          <TouchControl label="Thrust" symbol="▲" action="thrust" perform={perform} disabled={game.phase !== 'playing'} />
+          <TouchControl label="Turn right" symbol="↷" action="rotate-right" perform={perform} disabled={game.phase !== 'playing'} />
+          <TouchControl label="Fire" symbol="●" action="fire" perform={perform} disabled={game.phase !== 'playing'} />
+        </div>
       </> : <div className="ff-asteroids-loading">{error ?? 'Launching mission…'}</div>}
       {error && <div className="ff-asteroids-error" role="alert"><strong>{error}</strong><button type="button" onClick={newGame} disabled={busy}>Try again</button></div>}
     </main>
   </div>
+}
+
+function TouchControl({ label, symbol, action, perform, disabled }: Readonly<{ label: string; symbol: string; action: AsteroidsAction; perform: (action: AsteroidsAction) => boolean; disabled: boolean }>) {
+  return <button type="button" aria-label={label} disabled={disabled} onPointerDown={event => { event.preventDefault(); perform(action) }}><strong aria-hidden="true">{symbol}</strong><span>{label}</span></button>
 }
 
 function actionForKey(event: KeyboardEvent): AsteroidsAction | null {
@@ -240,3 +227,12 @@ function nextImpacts(existing: readonly AsteroidsImpact[], previous: AsteroidsGa
 }
 
 function clamp(value: number, minimum: number, maximum: number): number { return Math.min(maximum, Math.max(minimum, value)) }
+
+function playFrameSounds(previous: AsteroidsGameState | null, game: AsteroidsGameState): void {
+  if (previous === null || previous.gameId !== game.gameId || game.tick <= previous.tick) return
+  const previousBullets = new Set(previous.bullets.map(bullet => bullet.id))
+  const currentAsteroids = new Set(game.asteroids.map(asteroid => asteroid.id))
+  if (game.bullets.some(bullet => !previousBullets.has(bullet.id))) playAsteroidsSound('laser')
+  if (previous.asteroids.some(asteroid => !currentAsteroids.has(asteroid.id))) playAsteroidsSound('explosion')
+  if (game.ship.thrustTicks > 0) playAsteroidsSound('thrust')
+}

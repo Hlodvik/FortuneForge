@@ -169,7 +169,7 @@ function CompetitionWindowDetails({
 }
 
 function displayGameName(gameId: string): string {
-  if (gameId === 'asteroids') return 'Asteroids'
+  if (gameId === 'asteroids') return 'Asteroid Blaster'
   if (gameId === 'flappy') return 'Flappy'
   return gameId
 }

@@ -1,5 +1,5 @@
 :root {
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
   color: #f7fbff;
   background: #030712;
   font-synthesis: none;
@@ -8,64 +8,41 @@
 
 * { box-sizing: border-box; }
 
+html,
+body,
+#root { min-width: 320px; min-height: 100%; margin: 0; }
+
 body {
-  margin: 0;
-  min-width: 320px;
   background:
     radial-gradient(circle at 72% 8%, #173e6459 0, transparent 28rem),
     radial-gradient(circle at 15% 85%, #55254b30 0, transparent 26rem),
     #030712;
 }
 
+button { font: inherit; }
+
 .ff-asteroids-page {
-  display: flex;
+  display: grid;
+  width: 100%;
   height: 100svh;
   min-height: 0;
-  flex-direction: column;
   overflow: hidden;
 }
-
-.ff-asteroids-page:has(.ff-asteroids-leaderboard) {
-  height: auto;
-  min-height: 100svh;
-  overflow: auto;
-}
-
-.ff-asteroids-header {
-  z-index: 10;
-  display: flex;
-  min-height: 3.5rem;
-  align-items: center;
-  gap: 1.25rem;
-  padding: .45rem clamp(.75rem, 3vw, 2.5rem);
-  border-bottom: 1px solid #77e7ff2e;
-  background: #030712e8;
-  backdrop-filter: blur(16px);
-}
-
-.ff-asteroids-brand,
-.ff-asteroids-games { color: #f6fbff; text-decoration: none; }
-.ff-asteroids-brand { display: flex; align-items: center; gap: .5rem; }
-.ff-asteroids-brand span { color: #ffd56b; font-size: 1.25rem; }
-.ff-asteroids-brand strong { font: 800 .95rem/1 "Arial Black", Impact, sans-serif; letter-spacing: .04em; }
-.ff-asteroids-games { color: #a9c3d8; font-size: .72rem; }
-.ff-asteroids-account { display: grid; margin-left: auto; text-align: right; }
-.ff-asteroids-account strong { font-size: .72rem; }
-.ff-asteroids-account span { color: #78dff6; font-size: .6rem; letter-spacing: .08em; text-transform: uppercase; }
 
 .ff-asteroids-main {
   display: grid;
   width: 100%;
   min-height: 0;
-  flex: 1;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: .45rem;
   place-items: center;
-  padding: clamp(.35rem, 1vw, .8rem);
+  padding: clamp(.3rem, 1vw, .7rem);
 }
 
 .ff-asteroids-stage {
   position: relative;
   display: grid;
-  width: min(100%, calc((100svh - 4.7rem) * 1.3333));
+  width: min(100%, 133.333cqh);
   max-height: 100%;
   aspect-ratio: 4 / 3;
   overflow: hidden;
@@ -74,7 +51,7 @@ body {
   background: #030712;
   box-shadow: 0 0 0 1px #ffffff0d, 0 1.25rem 3rem #000a, 0 0 2rem #237ea42b;
   isolation: isolate;
-  container-type: inline-size;
+  container-type: size;
 }
 
 .ff-asteroids-stage::after {
@@ -101,7 +78,7 @@ body {
 .ff-asteroids-title {
   position: absolute;
   z-index: 3;
-  inset: clamp(.65rem, 2.8cqw, 1.6rem) clamp(.7rem, 3cqw, 1.8rem) auto;
+  inset: clamp(.6rem, 2.6cqw, 1.5rem) clamp(.65rem, 2.8cqw, 1.7rem) auto;
   display: flex;
   align-items: start;
   justify-content: space-between;
@@ -116,7 +93,7 @@ body {
   color: #77e7ff;
   font-size: clamp(.48rem, 1.25cqw, .72rem);
   font-weight: 900;
-  letter-spacing: .17em;
+  letter-spacing: .15em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -124,8 +101,8 @@ body {
 .ff-asteroids-title h1 {
   margin: .12rem 0 0;
   color: #fff;
-  font: 900 clamp(1rem, 3.9cqw, 2.7rem)/.9 "Arial Black", Impact, sans-serif;
-  letter-spacing: .08em;
+  font: 900 clamp(.9rem, 3.5cqw, 2.45rem)/.9 "Cooper Black", "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+  letter-spacing: .035em;
 }
 
 .ff-asteroids-new,
@@ -138,20 +115,14 @@ body {
   background: #07101ed9;
   color: #ffe59f;
   box-shadow: inset 0 1px #ffffff17;
-  font: 900 .62rem/1 inherit;
-  letter-spacing: .08em;
+  font-weight: 900;
+  letter-spacing: .06em;
   text-transform: uppercase;
   cursor: pointer;
   pointer-events: auto;
 }
 
-.ff-asteroids-new {
-  width: 2.4rem;
-  min-width: 2.4rem;
-  padding: 0;
-  font-size: 1.15rem;
-}
-
+.ff-asteroids-new { width: 2.4rem; min-width: 2.4rem; padding: 0; font-size: 1.15rem; }
 .ff-asteroids-new:disabled,
 .ff-asteroids-overlay button:disabled,
 .ff-asteroids-error button:disabled { cursor: not-allowed; opacity: .5; }
@@ -173,22 +144,72 @@ body {
 .ff-asteroids-lives { bottom: clamp(.65rem, 3cqw, 1.8rem); left: clamp(.7rem, 3cqw, 1.8rem); }
 .ff-asteroids-lives strong { color: #ffd56b; letter-spacing: .18em; }
 
+.ff-asteroids-overlay {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: .8rem;
+  background: radial-gradient(circle, #081328d9, #02050bec 72%);
+  backdrop-filter: blur(3px);
+}
+
+.ff-asteroids-overlay > strong {
+  color: #fff;
+  font: 900 clamp(2rem, 8cqw, 5.5rem)/.9 "Cooper Black", "Arial Rounded MT Bold", sans-serif;
+  text-shadow: 0 0 1rem #77e7ff77;
+}
+
 .ff-asteroids-loading,
 .ff-asteroids-error { width: min(100%, 42rem); padding: 1rem; border-radius: .7rem; background: #101d32; color: #c9d5e6; }
 .ff-asteroids-error { display: flex; justify-content: space-between; gap: 1rem; border: 1px solid #e07d7655; background: #4d202a; color: #ffd9d4; font-size: .75rem; }
-.ff-asteroids-error button { border-color: #edb675; background: #26130d; color: #fff2d4; }
 
-@media (max-width: 650px) {
-  .ff-asteroids-header { min-height: 3.1rem; gap: .75rem; padding-inline: .6rem; }
-  .ff-asteroids-games { display: none; }
-  .ff-asteroids-account span { display: none; }
-  .ff-asteroids-stage { width: 100%; }
-  .ff-asteroids-new { width: 2rem; min-width: 2rem; min-height: 2rem; }
-  .ff-asteroids-score { top: 3rem; }
-  .ff-asteroids-wave { top: auto; bottom: .65rem; }
+.ff-asteroids-touch-controls {
+  display: grid;
+  width: min(100%, 42rem);
+  grid-template-columns: repeat(4, 1fr);
+  gap: .4rem;
 }
 
-@media (max-height: 500px) and (orientation: landscape) {
-  .ff-asteroids-header { min-height: 2.7rem; }
-  .ff-asteroids-stage { width: min(100%, calc((100svh - 3.4rem) * 1.3333)); }
+.ff-asteroids-touch-controls button {
+  display: grid;
+  min-height: 3.15rem;
+  place-content: center;
+  gap: .1rem;
+  border: 1px solid #77e7ff66;
+  border-radius: .65rem;
+  background: linear-gradient(180deg, #11243bea, #07101fee);
+  color: #f6fbff;
+  box-shadow: inset 0 1px #ffffff16, 0 .35rem 1rem #0005;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+}
+
+.ff-asteroids-touch-controls strong { font-size: 1.1rem; }
+.ff-asteroids-touch-controls span { color: #9fdff0; font-size: .55rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.ff-asteroids-touch-controls button:active { border-color: #ffd56b; background: #183957; translate: 0 1px; }
+
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  .ff-asteroids-touch-controls { display: none; }
+}
+
+@media (max-width: 520px) {
+  .ff-asteroids-main { gap: .3rem; padding: .25rem; }
+  .ff-asteroids-stage { border-radius: .45rem; }
+  .ff-asteroids-title h1 { max-width: 10rem; }
+  .ff-asteroids-new { width: 2rem; min-width: 2rem; min-height: 2rem; }
+  .ff-asteroids-score { top: 3rem; }
+  .ff-asteroids-wave { top: auto; bottom: .6rem; }
+  .ff-asteroids-touch-controls { gap: .25rem; }
+  .ff-asteroids-touch-controls button { min-height: 2.8rem; border-radius: .5rem; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .ff-asteroids-main { grid-template-columns: minmax(0, 1fr) 3rem; grid-template-rows: minmax(0, 1fr); }
+  .ff-asteroids-touch-controls { width: auto; grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+  .ff-asteroids-touch-controls button { min-height: 0; padding: .1rem; }
+  .ff-asteroids-touch-controls span { display: none; }
 }

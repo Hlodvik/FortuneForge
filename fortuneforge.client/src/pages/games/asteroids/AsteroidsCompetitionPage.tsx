@@ -33,6 +33,7 @@ export type AsteroidsCompetitionPageProps = Readonly<{
 }>
 
 type CompetitionPhase = 'lobby' | 'starting-free' | 'starting-paid' | 'playing-free' | 'playing-paid' | 'submitting' | 'submit-failed' | 'result'
+type LobbyView = 'modes' | 'ranked'
 
 type ActiveRun = Readonly<{
   kind: 'free' | 'paid'
@@ -53,8 +54,8 @@ type PendingStart = Readonly<{ kind: 'free'; idempotencyKey: string }> | Readonl
 type StoredAsteroidsState = Readonly<{ state: 'active'; run: ActiveRun }> | Readonly<{ state: 'submitting'; submission: PendingAsteroidsSubmission }> | Readonly<{ state: 'starting'; start: PendingStart }>
 
 const paidChoices: readonly Readonly<{ period: ArcadeCompetitionPaidPeriod, label: string }>[] = [
-  { period: 'daily', label: 'Daily competition · R1' },
-  { period: 'weekly', label: 'Weekly competition · R1' },
+  { period: 'daily', label: 'Daily · R1' },
+  { period: 'weekly', label: 'Weekly · R1' },
 ]
 
 export function AsteroidsCompetitionPage({
@@ -63,6 +64,7 @@ export function AsteroidsCompetitionPage({
   onPaidAccountRefresh,
 }: AsteroidsCompetitionPageProps) {
   const [phase, setPhase] = useState<CompetitionPhase>('lobby')
+  const [lobbyView, setLobbyView] = useState<LobbyView>('modes')
   const [activeRun, setActiveRun] = useState<ActiveRun | null>(null)
   const [pendingSubmission, setPendingSubmission] = useState<PendingAsteroidsSubmission | null>(null)
   const [result, setResult] = useState<CompetitionResult | null>(null)
@@ -151,6 +153,7 @@ export function AsteroidsCompetitionPage({
     }
 
     if (stored.start.kind === 'paid') {
+      setLobbyView('ranked')
       void gateway.startAsteroidsAttempt(stored.start.period, stored.start.idempotencyKey)
         .then((attempt) => activate({ kind: 'paid', period: attempt.period, runId: attempt.runId, seedHex: attempt.seedHex }))
         .catch(recoverStartFailure)
@@ -172,6 +175,7 @@ export function AsteroidsCompetitionPage({
     }
 
     startingRun.current = true
+    setLobbyView('ranked')
     setError(null)
     setPhase('starting-paid')
     const start = pendingStart.current ?? { kind: 'paid' as const, period, idempotencyKey: createAsteroidsIdempotencyKey() }
@@ -187,6 +191,7 @@ export function AsteroidsCompetitionPage({
       void refreshPaidAccount()
     } catch (reason: unknown) {
       setError(friendlyAsteroidsCompetitionError(reason))
+      setLobbyView('ranked')
       setPhase('lobby')
     } finally {
       startingRun.current = false
@@ -247,56 +252,70 @@ export function AsteroidsCompetitionPage({
     setResult(null)
     setError(null)
     setNotice(null)
+    setLobbyView('modes')
     setPhase('lobby')
   }
 
   return (
     <div className={`asteroids-competition-page${isActiveLayout ? ' asteroids-competition-page--active' : ''}`}>
       <main className="asteroids-competition-page__content">
-        {!isActiveLayout && (
-          <header className="asteroids-competition-page__intro">
-            <p className="asteroids-competition-page__eyebrow">Asteroids</p>
-            <h1>Competition arena</h1>
-            <p>Fly a fresh seeded run, submit your replay, and chase the official leaderboard.</p>
-          </header>
-        )}
-
         {(phase === 'lobby' || phase === 'starting-paid' || phase === 'starting-free') && (
-          <div className="asteroids-competition-page__lobby-grid">
-            <div className="asteroids-competition-page__leaderboard">
-              <ArcadeCompetitionLeaderboard key={leaderboardVersion} gameId="asteroids" gateway={gateway} />
+          <section className={`asteroids-competition-page__launch asteroids-competition-page__launch--${lobbyView}`}>
+            <div className="asteroids-competition-page__hero">
+              <span className="asteroids-competition-page__orbit" aria-hidden="true"><i /><i /><i /></span>
+              <p className="asteroids-competition-page__eyebrow">Fortune Forge Arcade</p>
+              <h1>Asteroid <span>Blaster</span></h1>
             </div>
-            <section aria-labelledby="asteroids-play-options" className="asteroids-competition-page__options">
-              <h2 id="asteroids-play-options">Choose your flight</h2>
-              <p>R1 competition entries add R1 to the displayed jackpot. Casual runs are recorded to your account but do not enter the leaderboard.</p>
-              <div className="asteroids-competition-page__choice-grid">
-                {paidChoices.map((choice) => (
-                  <button
-                    className="asteroids-competition-page__choice"
-                    disabled={phase === 'starting-paid' || phase === 'starting-free'}
-                    key={choice.period}
-                    onClick={() => void beginPaidRun(choice.period)}
-                    type="button"
-                  >
-                    {phase === 'starting-paid' ? 'Preparing secure run…' : choice.label}
-                  </button>
-                ))}
+
+            {lobbyView === 'modes' ? (
+              <div className="asteroids-competition-page__mode-grid" aria-label="Choose play mode">
                 <button
-                  className="asteroids-competition-page__choice asteroids-competition-page__choice--free"
-                  disabled={phase === 'starting-paid' || phase === 'starting-free'}
+                  className="asteroids-competition-page__mode asteroid-mode--free"
+                  disabled={phase !== 'lobby'}
                   onClick={() => void beginFreeRun()}
                   type="button"
                 >
-                  {phase === 'starting-free' ? 'Preparing recorded run…' : 'Casual run'}
+                  <span aria-hidden="true">✦</span><strong>{phase === 'starting-free' ? 'Launching…' : 'Free Play'}</strong><small>No entry fee</small>
+                </button>
+                <button
+                  className="asteroids-competition-page__mode asteroid-mode--ranked"
+                  disabled={phase !== 'lobby'}
+                  onClick={() => setLobbyView('ranked')}
+                  type="button"
+                >
+                  <span aria-hidden="true">★</span><strong>Ranked Play</strong><small>R1 entry</small>
                 </button>
               </div>
-            </section>
-          </div>
+            ) : (
+              <div className="asteroids-competition-page__ranked-grid">
+                <section aria-labelledby="asteroids-ranked-title" className="asteroids-competition-page__ranked-options">
+                  <button className="asteroids-competition-page__back" disabled={phase !== 'lobby'} onClick={() => setLobbyView('modes')} type="button">← Back</button>
+                  <h2 id="asteroids-ranked-title">Ranked Play</h2>
+                  <div className="asteroids-competition-page__choice-grid">
+                    {paidChoices.map((choice) => (
+                      <button
+                        className="asteroids-competition-page__choice"
+                        disabled={phase !== 'lobby'}
+                        key={choice.period}
+                        onClick={() => void beginPaidRun(choice.period)}
+                        type="button"
+                      >
+                        {phase === 'starting-paid' ? 'Launching…' : choice.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+                <div className="asteroids-competition-page__leaderboard">
+                  <ArcadeCompetitionLeaderboard key={leaderboardVersion} gameId="asteroids" gateway={gateway} />
+                </div>
+              </div>
+            )}
+          </section>
         )}
 
         {(phase === 'playing-free' || phase === 'playing-paid') && activeRun !== null && (
-          <section aria-label={activeRun.kind === 'paid' ? 'Competition run' : 'Casual run'} className="asteroids-competition-page__run">
-            <AsteroidsReplayPlay key={activeRun.runId} modeLabel={activeRun.kind === 'paid' ? 'Competition' : 'Casual'} onComplete={completeRun} runId={activeRun.runId} seedHex={activeRun.seedHex} />
+          <section aria-label={activeRun.kind === 'paid' ? 'Ranked Asteroid Blaster run' : 'Free Asteroid Blaster run'} className="asteroids-competition-page__run">
+            <AsteroidsReplayPlay key={activeRun.runId} modeLabel={activeRun.kind === 'paid' ? 'Ranked Play' : 'Free Play'} onComplete={completeRun} runId={activeRun.runId} seedHex={activeRun.seedHex} />
           </section>
         )}
 
@@ -317,11 +336,10 @@ export function AsteroidsCompetitionPage({
 
         {phase === 'result' && result !== null && (
           <section aria-labelledby="asteroids-result" className="asteroids-competition-page__result">
-            <h2 id="asteroids-result">{result.kind === 'paid' ? 'Official result' : 'Practice complete'}</h2>
+            <h2 id="asteroids-result">{result.kind === 'paid' ? 'Official result' : 'Free play complete'}</h2>
             {result.kind === 'paid' && <p>{paidOfficialScoreText(result.officialScore)}</p>}
-            {result.kind === 'free' && <p>Recorded practice score: <strong>{result.recordedScore}</strong></p>}
-            {result.kind === 'free' && <p>This free-play result is saved to your account and is not leaderboard eligible.</p>}
-            <button onClick={returnToLobby} type="button">Return to lobby and play again</button>
+            {result.kind === 'free' && <p>Score: <strong>{result.recordedScore}</strong></p>}
+            <button onClick={returnToLobby} type="button">Play again</button>
           </section>
         )}
 

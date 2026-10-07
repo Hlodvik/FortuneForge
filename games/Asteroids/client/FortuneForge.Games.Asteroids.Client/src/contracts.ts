@@ -3,10 +3,13 @@ export type AsteroidsPhase = 'playing' | 'game-over'
 export type AsteroidsEvent = 'started' | 'ticked' | 'rotated' | 'thrusted' | 'fired' | 'hit' | 'damaged' | 'wave-cleared' | 'power-up-collected' | 'no-op' | 'game-over'
 export type AsteroidSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge'
 export type AsteroidsPowerUpType = 'shield' | 'rapid-fire' | 'extra-life'
+export type AsteroidsAlienShipType = 'scout' | 'hunter'
 
 export type AsteroidsShip = Readonly<{ x: number; y: number; velocityX: number; velocityY: number; angle: number; invulnerabilityTicks: number; thrustTicks: number }>
 export type Asteroid = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; radius: number; hitPoints: number; spriteVariant: number; size: AsteroidSize }>
 export type AsteroidsBullet = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; remainingTicks: number }>
+export type AsteroidsAlienShip = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; radius: number; type: AsteroidsAlienShipType; hitPoints: number; fireCooldownTicks: number; courseChangeTicks: number; remainingTicks: number }>
+export type AsteroidsEnemyBullet = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; remainingTicks: number }>
 export type AsteroidsPowerUp = Readonly<{ id: number; x: number; y: number; velocityX: number; velocityY: number; remainingTicks: number; type: AsteroidsPowerUpType }>
 
 export type AsteroidsStatus = Readonly<{ available: boolean; width: number; height: number; tickMilliseconds: number; startingLives: number; mode: string }>
@@ -20,6 +23,8 @@ export type AsteroidsGameState = Readonly<{
   ship: AsteroidsShip
   asteroids: readonly Asteroid[]
   bullets: readonly AsteroidsBullet[]
+  alienShip: AsteroidsAlienShip | null
+  enemyBullets: readonly AsteroidsEnemyBullet[]
   powerUps: readonly AsteroidsPowerUp[]
   score: number
   bestScore: number

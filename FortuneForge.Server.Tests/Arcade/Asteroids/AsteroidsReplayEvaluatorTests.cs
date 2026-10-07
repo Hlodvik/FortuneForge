@@ -39,7 +39,7 @@ public sealed class AsteroidsReplayEvaluatorTests
             new AsteroidsInputCommand(0, AsteroidsInput.Fire),
         ]));
 
-        Assert.Equal(225, result.Score);
+        Assert.Equal(2025, result.Score);
         Assert.Equal(AsteroidsTerminalState.GameOver, result.Terminal);
     }
 
@@ -81,8 +81,8 @@ public sealed class AsteroidsReplayEvaluatorTests
     [Fact]
     public void SurvivingTheExactTimeCapCompletesTheRun()
     {
-        var result = AsteroidsReplayEvaluator.Evaluate(Run(), new AsteroidsReplay(AsteroidsReplayEvaluator.MaximumReplaySteps, [
-            new AsteroidsInputCommand(0, AsteroidsInput.TurnRight | AsteroidsInput.Thrust),
+        var result = AsteroidsReplayEvaluator.Evaluate(Run(9), new AsteroidsReplay(AsteroidsReplayEvaluator.MaximumReplaySteps, [
+            new AsteroidsInputCommand(0, AsteroidsInput.Thrust | AsteroidsInput.Fire),
         ]));
 
         Assert.Equal(AsteroidsTerminalState.Completed, result.Terminal);
@@ -93,7 +93,7 @@ public sealed class AsteroidsReplayEvaluatorTests
     public void PreservesCanonicalValidationAndReplayText()
     {
         var replay = new AsteroidsReplay(3, [new AsteroidsInputCommand(1, AsteroidsInput.Fire)]);
-        Assert.Equal("v1|3|1:8", AsteroidsReplayEvaluator.CanonicalizeReplay(replay));
+        Assert.Equal("v2|3|1:8", AsteroidsReplayEvaluator.CanonicalizeReplay(replay));
         Assert.Throws<ArgumentException>(() => AsteroidsReplayEvaluator.ValidateReplayInput(new AsteroidsReplay(3, [
             new AsteroidsInputCommand(0, AsteroidsInput.Thrust),
             new AsteroidsInputCommand(1, AsteroidsInput.Thrust),

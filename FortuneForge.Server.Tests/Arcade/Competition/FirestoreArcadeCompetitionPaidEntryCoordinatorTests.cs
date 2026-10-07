@@ -161,6 +161,7 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         Assert.Equal(result.Attempt.DocumentId, result.Run.Attempt.DocumentId);
         var run = Assert.Single((await database.Collection("asteroidsRuns").GetSnapshotAsync()).Documents);
         Assert.Equal("000000000000002a", Field<string>(run, "seedHex"));
+        Assert.Equal((long)AsteroidsReplayEvaluator.RulesVersion, Field<long>(run, "rulesVersion"));
         Assert.Equal(100, await ReadBalanceCentsAsync(database, "player-1"));
         Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
         Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);

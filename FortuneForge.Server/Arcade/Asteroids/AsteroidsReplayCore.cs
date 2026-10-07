@@ -13,6 +13,7 @@ namespace FortuneForge.Server.Arcade.Asteroids;
 /// </summary>
 internal static class AsteroidsReplayEvaluator
 {
+    internal const int RulesVersion = 2;
     internal const int MaximumReplaySteps = 3_600;
     internal const int MaximumCommands = 512;
 
@@ -59,7 +60,7 @@ internal static class AsteroidsReplayEvaluator
     internal static string CanonicalizeReplay(AsteroidsReplay replay)
     {
         ValidateReplayInput(replay);
-        return $"v1|{replay.TotalSteps}|{string.Join(',', replay.Commands.Select(command => $"{command.Step}:{(int)command.Input}"))}";
+        return $"v{RulesVersion}|{replay.TotalSteps}|{string.Join(',', replay.Commands.Select(command => $"{command.Step}:{(int)command.Input}"))}";
     }
 
     internal static uint FoldSeed(ulong seed) => (uint)seed ^ (uint)(seed >> 32);

@@ -189,6 +189,32 @@ static AsteroidsGameResponse ToResponse(AsteroidsSession session)
             bullet.Velocity.X,
             bullet.Velocity.Y,
             bullet.RemainingTicks)).ToArray(),
+        state.AlienShip is null ? null : new AlienShipResponse(
+            state.AlienShip.Id,
+            state.AlienShip.Position.X,
+            state.AlienShip.Position.Y,
+            state.AlienShip.Velocity.X,
+            state.AlienShip.Velocity.Y,
+            state.AlienShip.Radius,
+            state.AlienShip.Type switch
+            {
+                AsteroidsAlienShipType.Scout => "scout",
+                AsteroidsAlienShipType.Hunter => "hunter",
+                _ => throw new InvalidOperationException("Unknown Asteroids alien ship type."),
+            },
+            state.AlienShip.HitPoints,
+            state.AlienShip.FireCooldownTicks,
+            state.AlienShip.CourseChangeTicks,
+            state.AlienShip.RemainingTicks),
+        state.EnemyBullets.IsDefaultOrEmpty
+            ? []
+            : state.EnemyBullets.Select(bullet => new EnemyBulletResponse(
+                bullet.Id,
+                bullet.Position.X,
+                bullet.Position.Y,
+                bullet.Velocity.X,
+                bullet.Velocity.Y,
+                bullet.RemainingTicks)).ToArray(),
         state.Score,
         state.BestScore,
         state.Lives,
@@ -262,8 +288,10 @@ public sealed record AsteroidsStatusResponse(bool Available, int Width, int Heig
 public sealed record ShipResponse(double X, double Y, double VelocityX, double VelocityY, double Angle, int InvulnerabilityTicks, int ThrustTicks);
 public sealed record AsteroidResponse(int Id, double X, double Y, double VelocityX, double VelocityY, double Radius, int HitPoints, int SpriteVariant, string Size);
 public sealed record BulletResponse(int Id, double X, double Y, double VelocityX, double VelocityY, int RemainingTicks);
+public sealed record AlienShipResponse(int Id, double X, double Y, double VelocityX, double VelocityY, double Radius, string Type, int HitPoints, int FireCooldownTicks, int CourseChangeTicks, int RemainingTicks);
+public sealed record EnemyBulletResponse(int Id, double X, double Y, double VelocityX, double VelocityY, int RemainingTicks);
 public sealed record PowerUpResponse(int Id, double X, double Y, double VelocityX, double VelocityY, int RemainingTicks, string Type);
-public sealed record AsteroidsGameResponse(Guid GameId, int Width, int Height, ShipResponse Ship, IReadOnlyList<AsteroidResponse> Asteroids, IReadOnlyList<BulletResponse> Bullets, int Score, int BestScore, int Lives, int Wave, int Tick, string Phase, string LastEvent, int ScoreGained, string Message, IReadOnlyList<PowerUpResponse> PowerUps, int RapidFireTicks);
+public sealed record AsteroidsGameResponse(Guid GameId, int Width, int Height, ShipResponse Ship, IReadOnlyList<AsteroidResponse> Asteroids, IReadOnlyList<BulletResponse> Bullets, AlienShipResponse? AlienShip, IReadOnlyList<EnemyBulletResponse> EnemyBullets, int Score, int BestScore, int Lives, int Wave, int Tick, string Phase, string LastEvent, int ScoreGained, string Message, IReadOnlyList<PowerUpResponse> PowerUps, int RapidFireTicks);
 public sealed record AsteroidsErrorResponse(string Code, string Message);
 public sealed record AsteroidsSubmitScoreRequest(string? PlayerName);
 public sealed record AsteroidsLeaderboardEntry(Guid Id, string PlayerName, int Score, int Wave, DateTimeOffset SubmittedAt);

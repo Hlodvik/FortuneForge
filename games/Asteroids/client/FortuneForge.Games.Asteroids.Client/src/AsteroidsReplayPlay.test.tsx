@@ -14,6 +14,7 @@ describe('AsteroidsReplayPlay', () => {
     expect(html).toContain('aria-label="Asteroid Blaster playfield"')
     expect(html).toContain('Asteroid Blaster')
     expect(html).toContain('aria-live="polite"')
+    expect(html).toContain('aria-label="Mute Asteroid Blaster sound"')
     expect(html).toContain('aria-label="Touch controls"')
     expect(html).toContain('aria-label="Direction control"')
     expect(html).toContain('aria-label="Fire"')

@@ -13,8 +13,8 @@ public sealed class AsteroidsReplayVectorFixtureTests
         var tolerance = root.GetProperty("floatTolerance").GetDouble();
         var vectors = root.GetProperty("vectors").EnumerateArray().ToArray();
         Assert.Contains(vectors, vector => vector.GetProperty("name").GetString() == "held-fire-cooldown-scoring");
-        Assert.Contains(vectors, vector => vector.GetProperty("name").GetString() == "game-over-no-control");
-        Assert.Contains(vectors, vector => vector.GetProperty("name").GetString() == "long-surviving-time-cap");
+        Assert.Contains(vectors, vector => vector.GetProperty("name").GetString() == "no-control-alien-pressure-game-over");
+        Assert.Contains(vectors, vector => vector.GetProperty("name").GetString() == "held-turn-thrust-game-over");
 
         foreach (var vector in vectors)
             AssertSnapshot(vector.GetProperty("expected"), Replay(vector), tolerance);
@@ -51,9 +51,13 @@ public sealed class AsteroidsReplayVectorFixtureTests
         Assert.Equal(expected.GetProperty("asteroidCount").GetInt32(), actual.Asteroids.Length);
         Assert.Equal(expected.GetProperty("bulletCount").GetInt32(), actual.Bullets.Length);
         Assert.Equal(expected.GetProperty("powerUpCount").GetInt32(), actual.PowerUps.IsDefault ? 0 : actual.PowerUps.Length);
+        Assert.Equal(expected.GetProperty("enemyBulletCount").GetInt32(), actual.EnemyBullets.IsDefault ? 0 : actual.EnemyBullets.Length);
+        Assert.Equal(expected.GetProperty("alienSpawnCooldownTicks").GetInt32(), actual.AlienSpawnCooldownTicks);
         AssertShip(expected.GetProperty("ship"), actual.Ship, tolerance);
         AssertAsteroid(expected.GetProperty("asteroid"), actual.Asteroids.OrderBy(asteroid => asteroid.Id).FirstOrDefault(), tolerance);
         AssertBullet(expected.GetProperty("bullet"), actual.Bullets.OrderBy(bullet => bullet.Id).FirstOrDefault(), tolerance);
+        AssertAlien(expected.GetProperty("alienShip"), actual.AlienShip, tolerance);
+        AssertEnemyBullet(expected.GetProperty("enemyBullet"), actual.EnemyBullets.IsDefault ? null : actual.EnemyBullets.OrderBy(bullet => bullet.Id).FirstOrDefault(), tolerance);
     }
 
     private static void AssertShip(JsonElement expected, AsteroidsShip actual, double tolerance)
@@ -86,6 +90,35 @@ public sealed class AsteroidsReplayVectorFixtureTests
     {
         if (expected.ValueKind == JsonValueKind.Null) { Assert.Null(actual); return; }
         actual = Assert.IsType<AsteroidsBullet>(actual);
+        Assert.Equal(expected.GetProperty("id").GetInt32(), actual.Id);
+        Assert.Equal(expected.GetProperty("remainingTicks").GetInt32(), actual.RemainingTicks);
+        Close(expected.GetProperty("x").GetDouble(), actual.Position.X, tolerance);
+        Close(expected.GetProperty("y").GetDouble(), actual.Position.Y, tolerance);
+        Close(expected.GetProperty("velocityX").GetDouble(), actual.Velocity.X, tolerance);
+        Close(expected.GetProperty("velocityY").GetDouble(), actual.Velocity.Y, tolerance);
+    }
+
+    private static void AssertAlien(JsonElement expected, AsteroidsAlienShip? actual, double tolerance)
+    {
+        if (expected.ValueKind == JsonValueKind.Null) { Assert.Null(actual); return; }
+        actual = Assert.IsType<AsteroidsAlienShip>(actual);
+        Assert.Equal(expected.GetProperty("id").GetInt32(), actual.Id);
+        Assert.Equal(expected.GetProperty("type").GetString(), actual.Type.ToString().ToLowerInvariant());
+        Assert.Equal(expected.GetProperty("hitPoints").GetInt32(), actual.HitPoints);
+        Assert.Equal(expected.GetProperty("fireCooldownTicks").GetInt32(), actual.FireCooldownTicks);
+        Assert.Equal(expected.GetProperty("courseChangeTicks").GetInt32(), actual.CourseChangeTicks);
+        Assert.Equal(expected.GetProperty("remainingTicks").GetInt32(), actual.RemainingTicks);
+        Close(expected.GetProperty("x").GetDouble(), actual.Position.X, tolerance);
+        Close(expected.GetProperty("y").GetDouble(), actual.Position.Y, tolerance);
+        Close(expected.GetProperty("velocityX").GetDouble(), actual.Velocity.X, tolerance);
+        Close(expected.GetProperty("velocityY").GetDouble(), actual.Velocity.Y, tolerance);
+        Close(expected.GetProperty("radius").GetDouble(), actual.Radius, tolerance);
+    }
+
+    private static void AssertEnemyBullet(JsonElement expected, AsteroidsEnemyBullet? actual, double tolerance)
+    {
+        if (expected.ValueKind == JsonValueKind.Null) { Assert.Null(actual); return; }
+        actual = Assert.IsType<AsteroidsEnemyBullet>(actual);
         Assert.Equal(expected.GetProperty("id").GetInt32(), actual.Id);
         Assert.Equal(expected.GetProperty("remainingTicks").GetInt32(), actual.RemainingTicks);
         Close(expected.GetProperty("x").GetDouble(), actual.Position.X, tolerance);

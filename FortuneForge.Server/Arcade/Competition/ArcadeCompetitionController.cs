@@ -415,7 +415,7 @@ public sealed class ArcadeCompetitionController : ControllerBase
     private static bool TryCreateReplay(AsteroidsReplayInputRequest? request, out AsteroidsReplay replay)
     {
         replay = null!;
-        if (request?.Commands is null) return false;
+        if (request?.Commands is null || request.RulesVersion != AsteroidsReplayEvaluator.RulesVersion) return false;
         try
         {
             replay = new AsteroidsReplay(
@@ -454,7 +454,7 @@ public sealed record ArcadeCompetitionPaidAttemptResponse(
     bool WasReplay,
     string RunId,
     string SeedHex);
-public sealed record AsteroidsReplayInputRequest(int TotalSteps, IReadOnlyList<AsteroidsReplayCommandRequest>? Commands);
+public sealed record AsteroidsReplayInputRequest(int RulesVersion, int TotalSteps, IReadOnlyList<AsteroidsReplayCommandRequest>? Commands);
 public sealed record AsteroidsReplayCommandRequest(int Step, int Input);
 public sealed record AsteroidsReplayCompletionResponse(string RunId, long Score, string Terminal, bool WasReplay);
 public sealed record AsteroidsFreeRunStartResponse(string RunId, string SeedHex, DateTimeOffset StartedAtUtc, bool WasReplay);

@@ -4,7 +4,7 @@ import type { ArcadeCompetitionPaidPeriod } from './arcadeCompetitionApi'
 import type { AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
 import type { FlappyReplayPayload } from '@fortuneforge/games-flappy'
 
-const replay: AsteroidsReplayPayload = { totalSteps: 4, commands: [{ step: 0, input: 8 }] }
+const replay: AsteroidsReplayPayload = { rulesVersion: 2, totalSteps: 4, commands: [{ step: 0, input: 8 }] }
 const flappyReplay: FlappyReplayPayload = { totalTicks: 36, flapTicks: [] }
 const runId = 'asteroids_0123456789abcdef'
 

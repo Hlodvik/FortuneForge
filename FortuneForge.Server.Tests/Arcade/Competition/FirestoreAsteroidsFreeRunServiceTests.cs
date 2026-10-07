@@ -34,6 +34,7 @@ public sealed class FirestoreAsteroidsFreeRunServiceTests
         Assert.Equal("000000000000002a", Field<string>(document, "seedHex"));
         Assert.Equal("player-1", Field<string>(document, "playerId"));
         Assert.Equal("started", Field<string>(document, "status"));
+        Assert.Equal((long)AsteroidsReplayEvaluator.RulesVersion, Field<long>(document, "rulesVersion"));
         Assert.True(document.ContainsField("startedAt"));
         Assert.False(document.ContainsField("completedAt"));
         Assert.Empty((await database.Collection("userBalances").GetSnapshotAsync()).Documents);

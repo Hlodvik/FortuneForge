@@ -54,8 +54,21 @@ describe('AsteroidsCompetitionPage', () => {
     expect(pageSource).not.toContain('createFreeAsteroidsIdentity')
   })
 
+  it('unlocks the soundscape synchronously before either asynchronous launch request', () => {
+    const pageSource = readFileSync(new URL('./AsteroidsCompetitionPage.tsx', import.meta.url), 'utf8')
+    const paidLaunch = pageSource.indexOf('const beginPaidRun')
+    const freeLaunch = pageSource.indexOf('const beginFreeRun')
+    const paidUnlock = pageSource.indexOf('unlockAsteroidsAudio()', paidLaunch)
+    const freeUnlock = pageSource.indexOf('unlockAsteroidsAudio()', freeLaunch)
+
+    expect(paidUnlock).toBeGreaterThan(paidLaunch)
+    expect(freeUnlock).toBeGreaterThan(freeLaunch)
+    expect(paidUnlock).toBeLessThan(pageSource.indexOf('await gateway.startAsteroidsAttempt', paidLaunch))
+    expect(freeUnlock).toBeLessThan(pageSource.indexOf('await gateway.startFreeAsteroidsRun', freeLaunch))
+  })
+
   it('retains the exact completed replay and display result for a paid-submission retry', () => {
-    const replay = { totalSteps: 44, commands: [{ step: 5, input: 3 }] }
+    const replay = { rulesVersion: 2, totalSteps: 44, commands: [{ step: 5, input: 3 }] }
     const display = { score: 725, wave: 2, lives: 1, reason: 'game-over' as const }
     const pending = createPendingPaidAsteroidsSubmission('daily', 'paid-run-12345678', replay, display)
 
@@ -65,7 +78,7 @@ describe('AsteroidsCompetitionPage', () => {
   })
 
   it('retains the exact completed free replay for an idempotent retry', () => {
-    const replay = { totalSteps: 44, commands: [{ step: 5, input: 3 }] }
+    const replay = { rulesVersion: 2, totalSteps: 44, commands: [{ step: 5, input: 3 }] }
     const display = { score: 725, wave: 2, lives: 1, reason: 'game-over' as const }
     const pending = createPendingFreeAsteroidsSubmission('free-run-12345678', replay, display)
 

@@ -63,6 +63,7 @@ public sealed class FirestoreAsteroidsFreeRunService
                 ["startIdempotencyKey"] = idempotencyKey,
                 ["status"] = "started",
                 ["startedAt"] = Timestamp.FromDateTime(startedAtUtc.UtcDateTime),
+                ["rulesVersion"] = AsteroidsReplayEvaluator.RulesVersion,
                 ["schemaVersion"] = 1L,
             });
             return new AsteroidsFreeRunStartResult(run, startedAtUtc, false);
@@ -149,6 +150,7 @@ public sealed class FirestoreAsteroidsFreeRunService
             !ulong.TryParse(seedHex, System.Globalization.NumberStyles.HexNumber, null, out var seed) || seed == 0 ||
             !snapshot.TryGetValue<string>("status", out var status) || status is not ("started" or "completed") ||
             !snapshot.TryGetValue<Timestamp>("startedAt", out var startedAt) ||
+            !snapshot.TryGetValue<long>("rulesVersion", out var rulesVersion) || rulesVersion != AsteroidsReplayEvaluator.RulesVersion ||
             !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
         {
             throw new InvalidOperationException("The Asteroids free run is missing, belongs to another player, or is corrupt.");

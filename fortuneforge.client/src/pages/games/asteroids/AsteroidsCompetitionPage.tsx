@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { AsteroidsReplayPlay, maximumReplayCommands, maximumReplaySteps } from '@fortuneforge/games-asteroids'
+import { AsteroidsReplayPlay, asteroidsReplayRulesVersion, maximumReplayCommands, maximumReplaySteps, unlockAsteroidsAudio } from '@fortuneforge/games-asteroids'
 import type { AsteroidsReplayDisplayResult, AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
 import '@fortuneforge/games-asteroids/styles.css'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
@@ -174,6 +174,7 @@ export function AsteroidsCompetitionPage({
       return
     }
 
+    unlockAsteroidsAudio()
     startingRun.current = true
     setLobbyView('ranked')
     setError(null)
@@ -205,6 +206,7 @@ export function AsteroidsCompetitionPage({
       return
     }
 
+    unlockAsteroidsAudio()
     startingRun.current = true
     setPhase('starting-free')
     const start = pendingStart.current ?? { kind: 'free' as const, idempotencyKey: createAsteroidsIdempotencyKey() }
@@ -430,7 +432,7 @@ function readPendingSubmission(value: unknown): PendingAsteroidsSubmission | nul
 function isReplay(value: unknown): value is AsteroidsReplayPayload {
   const replay = asRecord(value)
   const totalSteps = replay?.totalSteps
-  if (replay === null || !isBoundedInteger(totalSteps, 1, maximumReplaySteps) || !Array.isArray(replay.commands) || replay.commands.length > maximumReplayCommands) return false
+  if (replay === null || replay.rulesVersion !== asteroidsReplayRulesVersion || !isBoundedInteger(totalSteps, 1, maximumReplaySteps) || !Array.isArray(replay.commands) || replay.commands.length > maximumReplayCommands) return false
   let previousStep = -1
   return replay.commands.every((candidate) => {
     const command = asRecord(candidate)

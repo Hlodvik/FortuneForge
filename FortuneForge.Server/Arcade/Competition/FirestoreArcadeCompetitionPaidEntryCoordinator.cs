@@ -18,7 +18,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
     private const string AvailableFractionalCentsField = "availableFractionalCents";
     private static readonly Regex SeedHexPattern = new("^[0-9a-f]{16}$", RegexOptions.CultureInvariant);
     private static readonly Regex DigestHexPattern = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant);
-    private static readonly Regex CanonicalReplayPattern = new("^v1\\|[1-9][0-9]*\\|(?:[0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)?$", RegexOptions.CultureInvariant);
+    private static readonly Regex CanonicalReplayPattern = new($"^v{AsteroidsReplayEvaluator.RulesVersion}\\|[1-9][0-9]*\\|(?:[0-9]+:[0-9]+(?:,[0-9]+:[0-9]+)*)?$", RegexOptions.CultureInvariant);
     private readonly FirestoreDb database;
     private readonly long entryFeeCents;
 
@@ -343,6 +343,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         ["enteredAt"] = Timestamp.FromDateTime(run.Attempt.EnteredAtUtc.UtcDateTime),
         ["startsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.StartsAtUtc.UtcDateTime),
         ["endsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.EndsAtUtc.UtcDateTime),
+        ["rulesVersion"] = AsteroidsReplayEvaluator.RulesVersion,
         ["schemaVersion"] = 1L,
     };
 
@@ -473,6 +474,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
             !snapshot.TryGetValue<string>("playerId", out var playerId) || playerId != attempt.PlayerId ||
             !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != attempt.Competition.StartsAtUtc ||
             !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != attempt.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<long>("rulesVersion", out var rulesVersion) || rulesVersion != AsteroidsReplayEvaluator.RulesVersion ||
             !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
         {
             throw new InvalidOperationException("A recorded Asteroids run does not match its paid competition attempt.");
@@ -519,6 +521,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
             !snapshot.TryGetValue<Timestamp>("enteredAt", out var enteredAt) ||
             !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != request.Competition.StartsAtUtc ||
             !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != request.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<long>("rulesVersion", out var rulesVersion) || rulesVersion != AsteroidsReplayEvaluator.RulesVersion ||
             !snapshot.TryGetValue<string>("status", out var status))
             throw new InvalidOperationException("A stored Asteroids run is invalid.");
         ArcadeCompetitionAttemptRecord attempt;

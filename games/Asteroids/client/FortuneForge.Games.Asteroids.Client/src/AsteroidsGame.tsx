@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AsteroidsGatewayError } from './httpAsteroidsGateway'
 import type { AsteroidsAction, AsteroidsGameState, AsteroidsGateway } from './contracts'
-import { playAsteroidsSound } from './asteroidsAudio'
+import { setAsteroidsThrusting, stopAsteroidsAudioScene, unlockAsteroidsAudio } from './asteroidsAudio'
 import { renderAsteroids, type AsteroidsImpact, type AsteroidsSpriteAtlases } from './asteroidsCanvasRenderer'
+import { playAsteroidsFrameAudio } from './asteroidsFrameAudio'
 import { formatScore } from './asteroidsHelpers'
 import { loadAsteroidsSpriteAtlases } from './asteroidsSprites'
+import { AsteroidsSoundButton } from './AsteroidsSoundButton'
+import { wasAlienDestroyed } from './asteroidsAlienLifecycle'
 import { AsteroidsTouchControls, type AsteroidsTouchControl } from './AsteroidsTouchControls'
 
 export type AsteroidsGameProps = Readonly<{ gateway: AsteroidsGateway; backHref?: string; playerName?: string; tableLabel?: string }>
@@ -20,6 +23,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const tickInFlight = useRef(false)
   const actionInFlight = useRef(false)
+  const pendingControlRequestRef = useRef<Promise<void> | null>(null)
   const gameRef = useRef<AsteroidsGameState | null>(null)
   const busyRef = useRef(false)
   const heldControlTimerRef = useRef<number | null>(null)
@@ -30,25 +34,50 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
   const lastHeldControlRef = useRef<AsteroidsAction>('fire')
   const previousGameRef = useRef<AsteroidsGameState | null>(null)
   const impactsRef = useRef<readonly AsteroidsImpact[]>([])
+  const requestSequenceRef = useRef(0)
+  const appliedSequenceRef = useRef(0)
 
   gameRef.current = game
   busyRef.current = busy
 
+  const applyGameSnapshot = useCallback((next: AsteroidsGameState, sequence: number) => {
+    setGame(current => {
+      if (sequence < appliedSequenceRef.current) return current
+      if (current !== null && current.gameId === next.gameId) {
+        const isReset = next.tick === 0 && next.lastEvent === 'started'
+        if (next.tick < current.tick && !isReset) return current
+      }
+      appliedSequenceRef.current = sequence
+      return next
+    })
+  }, [])
+
   const run = useCallback(async (action: () => Promise<AsteroidsGameState>) => {
-    if (busy) return
+    if (busyRef.current) return
+    busyRef.current = true
     setBusy(true)
     setError(null)
-    try { setGame(await action()) } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
-  }, [busy])
+    try {
+      await pendingControlRequestRef.current
+      const sequence = ++requestSequenceRef.current
+      applyGameSnapshot(await action(), sequence)
+    } catch (reason) {
+      setError(messageForError(reason))
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
+  }, [applyGameSnapshot])
 
   useEffect(() => {
     const controller = new AbortController()
+    const sequence = ++requestSequenceRef.current
     void gateway.getStatus(controller.signal)
       .then(nextStatus => { setStatus(nextStatus); return nextStatus.available ? gateway.startGame(undefined, controller.signal) : Promise.reject(new Error('The Asteroids service is unavailable.')) })
-      .then(setGame)
+      .then(next => applyGameSnapshot(next, sequence))
       .catch((reason: unknown) => { if (!(reason instanceof DOMException && reason.name === 'AbortError')) setError(messageForError(reason)) })
     return () => controller.abort()
-  }, [gateway])
+  }, [applyGameSnapshot, gateway])
 
   useEffect(() => {
     let active = true
@@ -65,34 +94,46 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
     const previous = previousGameRef.current
     impactsRef.current = nextImpacts(impactsRef.current, previous, game)
     if (context) renderAsteroids(context, game, spriteAtlases, impactsRef.current)
-    playFrameSounds(previous, game)
+    playAsteroidsFrameAudio(previous, game)
     previousGameRef.current = game
   }, [game, spriteAtlases])
 
+  useEffect(() => () => stopAsteroidsAudioScene(), [])
+
   const perform = useCallback((action: AsteroidsAction) => {
     const currentGame = gameRef.current
-    if (!currentGame || currentGame.phase !== 'playing' || busyRef.current || actionInFlight.current) return false
+    if (!currentGame || currentGame.phase !== 'playing' || busyRef.current || actionInFlight.current || tickInFlight.current) return false
     actionInFlight.current = true
+    const sequence = ++requestSequenceRef.current
     setError(null)
-    void gateway.action(currentGame.gameId, action)
-      .then(setGame)
+    const request = gateway.action(currentGame.gameId, action)
+      .then(next => applyGameSnapshot(next, sequence))
       .catch(reason => setError(messageForError(reason)))
-      .finally(() => { actionInFlight.current = false })
+      .finally(() => {
+        actionInFlight.current = false
+        if (pendingControlRequestRef.current === request) pendingControlRequestRef.current = null
+      })
+    pendingControlRequestRef.current = request
     return true
-  }, [gateway])
+  }, [applyGameSnapshot, gateway])
 
   useEffect(() => {
     if (!game || game.phase !== 'playing' || !status) return
     const timer = window.setInterval(() => {
-      if (busy || tickInFlight.current) return
+      if (busyRef.current || tickInFlight.current || actionInFlight.current) return
       tickInFlight.current = true
-      void gateway.action(game.gameId, 'tick')
-        .then(setGame)
+      const sequence = ++requestSequenceRef.current
+      const request = gateway.action(game.gameId, 'tick')
+        .then(next => applyGameSnapshot(next, sequence))
         .catch(reason => setError(messageForError(reason)))
-        .finally(() => { tickInFlight.current = false })
+        .finally(() => {
+          tickInFlight.current = false
+          if (pendingControlRequestRef.current === request) pendingControlRequestRef.current = null
+        })
+      pendingControlRequestRef.current = request
     }, status.tickMilliseconds)
     return () => window.clearInterval(timer)
-  }, [busy, game, gateway, status])
+  }, [applyGameSnapshot, game, gateway, status])
 
   useEffect(() => {
     const stopHeldControls = () => {
@@ -111,6 +152,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
       if (perform(action)) lastHeldControlRef.current = action
     }
     const refreshHeldControls = () => {
+      setAsteroidsThrusting(heldThrustsRef.current.size > 0)
       if (heldRotationsRef.current.size === 0 && heldThrustsRef.current.size === 0 && heldFiresRef.current.size === 0) {
         stopHeldControls()
         return
@@ -126,6 +168,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
       const action = actionForKey(event)
       if (!action || !gameRef.current || gameRef.current.phase !== 'playing' || busyRef.current) return
       event.preventDefault()
+      unlockAsteroidsAudio()
       if (isRotation(action)) {
         if (!heldRotationsRef.current.has(event.code)) {
           heldRotationsRef.current.set(event.code, action)
@@ -157,6 +200,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
       heldRotationsRef.current.clear()
       heldThrustsRef.current.clear()
       heldFiresRef.current.clear()
+      setAsteroidsThrusting(false)
       stopHeldControls()
     }
     window.addEventListener('keydown', onKeyDown)
@@ -169,12 +213,14 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
       heldRotationsRef.current.clear()
       heldThrustsRef.current.clear()
       heldFiresRef.current.clear()
+      setAsteroidsThrusting(false)
       stopHeldControls()
       refreshHeldControlsRef.current = () => undefined
     }
   }, [perform])
 
   const setTouchControl = useCallback((control: AsteroidsTouchControl, pressed: boolean) => {
+    if (pressed) unlockAsteroidsAudio()
     const controlKey = control === 'fire' ? 'touch-fire' : 'touch-joystick'
     if (control === 'left' || control === 'right') {
       if (pressed) heldRotationsRef.current.set(controlKey, control === 'left' ? 'rotate-left' : 'rotate-right')
@@ -189,6 +235,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
 
   const newGame = () => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
+    unlockAsteroidsAudio()
     void run(() => game ? gateway.reset(game.gameId) : gateway.startGame())
   }
 
@@ -199,7 +246,10 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
           <canvas ref={canvasRef} className="ff-asteroids-canvas" />
           <section className="ff-asteroids-title">
             <div><small>{tableLabel}</small><h1>Asteroid Blaster</h1></div>
-            <button className="ff-asteroids-new" type="button" aria-label="New mission" title="New mission" onClick={newGame} disabled={busy}>{busy ? '…' : '↻'}</button>
+            <div className="ff-asteroids-title-actions">
+              <AsteroidsSoundButton className="ff-asteroids-sound" />
+              <button className="ff-asteroids-new" type="button" aria-label="New mission" title="New mission" onClick={newGame} disabled={busy}>{busy ? '…' : '↻'}</button>
+            </div>
           </section>
           <section className="ff-asteroids-stats" aria-live="polite"><div className="ff-asteroids-score"><small>Score</small><strong>{formatScore(game.score)}</strong></div><div className="ff-asteroids-best"><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div className="ff-asteroids-lives"><small>Lives</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div className="ff-asteroids-wave"><small>Wave</small><strong>{game.wave}</strong></div></section>
           {game.phase === 'game-over' && <div className="ff-asteroids-overlay" role="status"><small>Mission ended</small><strong>{formatScore(game.score)}</strong><button type="button" onClick={newGame} disabled={busy}>Play again</button></div>}
@@ -221,7 +271,7 @@ function messageForError(reason: unknown): string { return reason instanceof Ast
 
 function nextImpacts(existing: readonly AsteroidsImpact[], previous: AsteroidsGameState | null, game: AsteroidsGameState): readonly AsteroidsImpact[] {
   if (!previous || previous.gameId !== game.gameId) return []
-  const active = existing.filter(impact => game.tick >= impact.startedTick && game.tick - impact.startedTick < (impact.kind === 'hit' ? 7 : 18))
+  const active = existing.filter(impact => game.tick >= impact.startedTick && game.tick - impact.startedTick < (impact.kind === 'hit' || impact.kind === 'alien-hit' ? 7 : 18))
   if (game.tick <= previous.tick) return active
   const remainingIds = new Set(game.asteroids.map(asteroid => asteroid.id))
   const previousById = new Map(previous.asteroids.map(asteroid => [asteroid.id, asteroid]))
@@ -230,17 +280,14 @@ function nextImpacts(existing: readonly AsteroidsImpact[], previous: AsteroidsGa
     .map(asteroid => ({ x: asteroid.x, y: asteroid.y, startedTick: game.tick, kind: 'hit' as const }))
   const destroyedImpacts = previous.asteroids
     .filter(asteroid => !remainingIds.has(asteroid.id))
-    .map(asteroid => ({ x: clamp(asteroid.x + asteroid.velocityX, asteroid.radius, game.width - asteroid.radius), y: clamp(asteroid.y + asteroid.velocityY, asteroid.radius, game.height - asteroid.radius), startedTick: game.tick, kind: 'destroyed' as const }))
-  return [...active, ...hitFlashes, ...destroyedImpacts]
+    .map(asteroid => ({ x: wrap(asteroid.x + asteroid.velocityX, game.width), y: wrap(asteroid.y + asteroid.velocityY, game.height), startedTick: game.tick, kind: 'destroyed' as const }))
+  const alienHit = previous.alienShip !== null && game.alienShip?.id === previous.alienShip.id && game.alienShip.hitPoints < previous.alienShip.hitPoints
+    ? [{ x: game.alienShip.x, y: game.alienShip.y, startedTick: game.tick, kind: 'alien-hit' as const }]
+    : []
+  const alienDestroyed = previous.alienShip !== null && game.alienShip?.id !== previous.alienShip.id && wasAlienDestroyed(previous.alienShip, game)
+    ? [{ x: wrap(previous.alienShip.x + previous.alienShip.velocityX, game.width), y: wrap(previous.alienShip.y + previous.alienShip.velocityY, game.height), startedTick: game.tick, kind: 'alien-destroyed' as const }]
+    : []
+  return [...active, ...hitFlashes, ...destroyedImpacts, ...alienHit, ...alienDestroyed]
 }
 
-function clamp(value: number, minimum: number, maximum: number): number { return Math.min(maximum, Math.max(minimum, value)) }
-
-function playFrameSounds(previous: AsteroidsGameState | null, game: AsteroidsGameState): void {
-  if (previous === null || previous.gameId !== game.gameId || game.tick <= previous.tick) return
-  const previousBullets = new Set(previous.bullets.map(bullet => bullet.id))
-  const currentAsteroids = new Set(game.asteroids.map(asteroid => asteroid.id))
-  if (game.bullets.some(bullet => !previousBullets.has(bullet.id))) playAsteroidsSound('laser')
-  if (previous.asteroids.some(asteroid => !currentAsteroids.has(asteroid.id))) playAsteroidsSound('explosion')
-  if (game.ship.thrustTicks > 0) playAsteroidsSound('thrust')
-}
+function wrap(value: number, maximum: number): number { return ((value % maximum) + maximum) % maximum }

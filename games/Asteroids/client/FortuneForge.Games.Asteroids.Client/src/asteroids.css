@@ -105,7 +105,15 @@ button { font: inherit; }
   letter-spacing: .035em;
 }
 
+.ff-asteroids-title-actions {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  pointer-events: auto;
+}
+
 .ff-asteroids-new,
+.ff-asteroids-sound,
 .ff-asteroids-overlay button,
 .ff-asteroids-error button {
   min-height: 2.25rem;
@@ -122,7 +130,13 @@ button { font: inherit; }
   pointer-events: auto;
 }
 
-.ff-asteroids-new { width: 2.4rem; min-width: 2.4rem; padding: 0; font-size: 1.15rem; }
+.ff-asteroids-new,
+.ff-asteroids-sound { width: 2.4rem; min-width: 2.4rem; padding: 0; font-size: 1.15rem; }
+.ff-asteroids-sound { display: grid; place-items: center; color: #bfeeff; border-color: #77e7ff66; }
+.ff-asteroids-new:hover,
+.ff-asteroids-sound:hover { border-color: currentColor; background: #10243ce8; }
+.ff-asteroids-new:focus-visible,
+.ff-asteroids-sound:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .ff-asteroids-new:disabled,
 .ff-asteroids-overlay button:disabled,
 .ff-asteroids-error button:disabled { cursor: not-allowed; opacity: .5; }
@@ -170,7 +184,8 @@ button { font: inherit; }
   .ff-asteroids-main { gap: .3rem; padding: .25rem; }
   .ff-asteroids-stage { border-radius: .45rem; }
   .ff-asteroids-title h1 { max-width: 10rem; }
-  .ff-asteroids-new { width: 2rem; min-width: 2rem; min-height: 2rem; }
+  .ff-asteroids-new,
+  .ff-asteroids-sound { width: 2rem; min-width: 2rem; min-height: 2rem; }
   .ff-asteroids-score { top: 3rem; }
   .ff-asteroids-wave { top: auto; bottom: .6rem; }
 }

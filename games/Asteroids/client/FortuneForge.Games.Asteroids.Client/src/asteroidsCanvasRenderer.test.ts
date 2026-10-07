@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { renderAsteroids } from './asteroidsCanvasRenderer'
-import type { Asteroid, AsteroidsGameState } from './contracts'
+import type { Asteroid, AsteroidsAlienShip, AsteroidsGameState } from './contracts'
 
 describe('renderAsteroids', () => {
   it('selects the asteroid sprite cell supplied by the game state', () => {
@@ -44,6 +44,63 @@ describe('renderAsteroids', () => {
     expect(context.drawImageCalls).toHaveLength(1)
     expect(context.drawImageCalls[0].slice(1, 5)).toEqual([272, 0, 272, 362])
   })
+
+  it.each([
+    ['scout', 0, 2],
+    ['hunter', 1086, -3],
+  ] as const)('selects and faces the %s alien sprite cell', (type, sourceX, velocityX) => {
+    const context = testContext()
+    const game = {
+      ...gameWith({ id: 1, size: 'small', radius: 13 }),
+      asteroids: [],
+      alienShip: alienShip({ type, velocityX }),
+    }
+
+    renderAsteroids(context.value, game, { alienShip: readyImage(2172) })
+
+    expect(context.drawImageCalls).toHaveLength(1)
+    expect(context.drawImageCalls[0].slice(1, 5)).toEqual([sourceX, 0, 1086, 724])
+    expect(context.scaleCalls).toContainEqual([velocityX < 0 ? -1 : 1, 1])
+  })
+
+  it('draws distinct layered plasma for enemy bullets without another atlas', () => {
+    const context = testContext()
+    const game = {
+      ...gameWith({ id: 1, size: 'small', radius: 13 }),
+      asteroids: [],
+      enemyBullets: [{ id: 30, x: 320, y: 240, velocityX: -5, velocityY: 1, remainingTicks: 60 }],
+    }
+
+    renderAsteroids(context.value, game)
+
+    expect(context.fillRectCalls).toContainEqual([-12, -3, 13, 6])
+    expect(context.fillRectCalls).toContainEqual([0, -1, 5, 2])
+  })
+
+  it('draws an edge-straddling alien on both sides of the toroidal field', () => {
+    const context = testContext()
+    const game = {
+      ...gameWith({ id: 1, size: 'small', radius: 13 }),
+      asteroids: [],
+      alienShip: alienShip({ x: 3 }),
+    }
+
+    renderAsteroids(context.value, game, { alienShip: readyImage(2172) })
+
+    expect(context.drawImageCalls).toHaveLength(2)
+    expect(context.translateCalls).toContainEqual([3, 180])
+    expect(context.translateCalls).toContainEqual([803, 180])
+  })
+
+  it('renders alien impacts as pixel shards without reusing the asteroid explosion art', () => {
+    const context = testContext()
+    const game = { ...gameWith({ id: 1, size: 'small', radius: 13 }), asteroids: [], tick: 4 }
+
+    renderAsteroids(context.value, game, { explosion: readyImage(2172) }, [{ x: 400, y: 300, startedTick: 0, kind: 'alien-destroyed' }])
+
+    expect(context.drawImageCalls).toHaveLength(0)
+    expect(context.fillRectCalls.length).toBeGreaterThan(8)
+  })
 })
 
 function gameWith(asteroid: Pick<Asteroid, 'id' | 'size' | 'radius'> & Partial<Asteroid>): AsteroidsGameState {
@@ -54,6 +111,8 @@ function gameWith(asteroid: Pick<Asteroid, 'id' | 'size' | 'radius'> & Partial<A
     ship: { x: 400, y: 300, velocityX: 0, velocityY: 0, angle: 0, invulnerabilityTicks: 0, thrustTicks: 0 },
     asteroids: [{ x: 400, y: 300, velocityX: 0, velocityY: 0, hitPoints: 1, spriteVariant: 0, ...asteroid }],
     bullets: [],
+    alienShip: null,
+    enemyBullets: [],
     powerUps: [],
     score: 0,
     bestScore: 0,
@@ -68,15 +127,36 @@ function gameWith(asteroid: Pick<Asteroid, 'id' | 'size' | 'radius'> & Partial<A
   }
 }
 
+function alienShip(overrides: Partial<AsteroidsAlienShip> = {}): AsteroidsAlienShip {
+  return {
+    id: 20,
+    x: 600,
+    y: 180,
+    velocityX: 2,
+    velocityY: 0.5,
+    radius: 20,
+    type: 'scout',
+    hitPoints: 2,
+    fireCooldownTicks: 40,
+    courseChangeTicks: 50,
+    remainingTicks: 300,
+    ...overrides,
+  }
+}
+
 function readyImage(naturalWidth: number): HTMLImageElement { return { complete: true, naturalWidth } as HTMLImageElement }
 
-function testContext(): { value: CanvasRenderingContext2D; drawImageCalls: unknown[][]; strokeCalls: number } {
+function testContext(): { value: CanvasRenderingContext2D; drawImageCalls: unknown[][]; fillRectCalls: unknown[][]; scaleCalls: unknown[][]; translateCalls: unknown[][]; strokeCalls: number } {
   const drawImageCalls: unknown[][] = []
+  const fillRectCalls: unknown[][] = []
+  const scaleCalls: unknown[][] = []
+  const translateCalls: unknown[][] = []
   let strokeCalls = 0
   const value = {
-    save() {}, restore() {}, clearRect() {}, fillRect() {}, beginPath() {}, arc() {}, fill() {}, closePath() {}, moveTo() {}, lineTo() {}, translate() {}, rotate() {},
+    save() {}, restore() {}, clearRect() {}, fillRect(...args: unknown[]) { fillRectCalls.push(args) }, beginPath() {}, arc() {}, fill() {}, closePath() {}, moveTo() {}, lineTo() {},
+    translate(...args: unknown[]) { translateCalls.push(args) }, scale(...args: unknown[]) { scaleCalls.push(args) }, rotate() {},
     stroke() { strokeCalls++ },
     drawImage(...args: unknown[]) { drawImageCalls.push(args) },
   } as unknown as CanvasRenderingContext2D
-  return { value, drawImageCalls, get strokeCalls() { return strokeCalls } }
+  return { value, drawImageCalls, fillRectCalls, scaleCalls, translateCalls, get strokeCalls() { return strokeCalls } }
 }

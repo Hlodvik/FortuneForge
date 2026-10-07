@@ -7,6 +7,7 @@ export { AsteroidsControl, advanceAsteroidsFrame, foldPaidSeedHex, replayAsteroi
 export type { AsteroidsControl as AsteroidsSimulationControl, AsteroidsSimulationState } from './asteroidsSimulation'
 export { AsteroidsReplayPlay } from './AsteroidsReplayPlay'
 export type { AsteroidsReplayPlayProps } from './AsteroidsReplayPlay'
-export { AsteroidsReplaySession, maximumReplayCommands, maximumReplaySteps } from './asteroidsReplaySession'
+export { AsteroidsReplaySession, asteroidsReplayRulesVersion, maximumReplayCommands, maximumReplaySteps } from './asteroidsReplaySession'
 export type { AsteroidsReplayCommand, AsteroidsReplayCompletion, AsteroidsReplayDisplayResult, AsteroidsReplayPayload, AsteroidsReplaySessionView } from './asteroidsReplaySession'
+export { unlockAsteroidsAudio } from './asteroidsAudio'
 import './asteroids.css'

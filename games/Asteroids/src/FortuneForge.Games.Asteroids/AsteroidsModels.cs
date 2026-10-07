@@ -58,6 +58,12 @@ public enum AsteroidsPowerUpType
     ExtraLife,
 }
 
+public enum AsteroidsAlienShipType
+{
+    Scout,
+    Hunter,
+}
+
 public readonly record struct AsteroidsVector(double X, double Y)
 {
     public double Length => Math.Sqrt((X * X) + (Y * Y));
@@ -96,6 +102,23 @@ public sealed record AsteroidsPowerUp(
     AsteroidsPowerUpType Type,
     int RemainingTicks);
 
+public sealed record AsteroidsAlienShip(
+    int Id,
+    AsteroidsVector Position,
+    AsteroidsVector Velocity,
+    double Radius,
+    AsteroidsAlienShipType Type,
+    int HitPoints,
+    int FireCooldownTicks,
+    int CourseChangeTicks,
+    int RemainingTicks);
+
+public sealed record AsteroidsEnemyBullet(
+    int Id,
+    AsteroidsVector Position,
+    AsteroidsVector Velocity,
+    int RemainingTicks);
+
 public sealed record AsteroidsState(
     int Width,
     int Height,
@@ -113,7 +136,10 @@ public sealed record AsteroidsState(
     int Tick,
     AsteroidsPhase Phase,
     ImmutableArray<AsteroidsPowerUp> PowerUps = default,
-    int RapidFireTicks = 0)
+    int RapidFireTicks = 0,
+    AsteroidsAlienShip? AlienShip = null,
+    ImmutableArray<AsteroidsEnemyBullet> EnemyBullets = default,
+    int AlienSpawnCooldownTicks = int.MaxValue)
 {
     public int AsteroidCount => Asteroids.Length;
 }

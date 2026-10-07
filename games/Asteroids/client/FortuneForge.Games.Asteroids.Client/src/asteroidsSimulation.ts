@@ -4,14 +4,18 @@ export type AsteroidsControl = number
 export type AsteroidsPhase = 'playing' | 'game-over'
 export type AsteroidSize = 'tiny' | 'small' | 'medium' | 'large' | 'huge'
 export type PowerUpType = 'shield' | 'rapid-fire' | 'extra-life'
+export type AlienShipType = 'scout' | 'hunter'
 export type AsteroidsVector = Readonly<{ x: number; y: number }>
 export type AsteroidsShipSimulation = Readonly<{ position: AsteroidsVector; velocity: AsteroidsVector; angle: number; invulnerabilityTicks: number; thrustTicks: number }>
 export type AsteroidSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; radius: number; size: AsteroidSize; hitPoints: number; spriteVariant: number }>
 export type BulletSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; remainingTicks: number }>
 export type PowerUpSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; type: PowerUpType; remainingTicks: number }>
+export type AlienShipSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; radius: number; type: AlienShipType; hitPoints: number; fireCooldownTicks: number; courseChangeTicks: number; remainingTicks: number }>
+export type EnemyBulletSimulation = Readonly<{ id: number; position: AsteroidsVector; velocity: AsteroidsVector; remainingTicks: number }>
 export type AsteroidsSimulationState = Readonly<{
   width: number; height: number; seed: number; randomState: number; ship: AsteroidsShipSimulation
   asteroids: readonly AsteroidSimulation[]; bullets: readonly BulletSimulation[]; powerUps: readonly PowerUpSimulation[]
+  alienShip: AlienShipSimulation | null; enemyBullets: readonly EnemyBulletSimulation[]; alienSpawnCooldownTicks: number
   nextEntityId: number; fireCooldownTicks: number; rapidFireTicks: number; score: number; bestScore: number
   lives: number; wave: number; tick: number; phase: AsteroidsPhase; event: string; scoreGained: number; message: string
 }>
@@ -19,6 +23,7 @@ export type AsteroidsSimulationState = Readonly<{
 const maxShipSpeed = 7, thrustPower = 0.22, bulletSpeed = 10, bulletLifetime = 80, fireCooldown = 8, rapidFireCooldown = 2
 const rapidFireTicks = 300, shieldTicks = 240, powerUpLifetime = 2_147_483_647, powerUpRadius = 18, shipRadius = 12
 const shipInvulnerabilityTicks = 120, thrustVisualTicks = 3, maxAsteroidSpeed = 3.08
+const firstAlienSpawnTicks = 270, enemyBulletLifetime = 120
 
 export function foldPaidSeedHex(seedHex: string): number {
   if (!/^[0-9a-f]{16}$/.test(seedHex)) throw new Error('Asteroids paid seed must be 16 lowercase hexadecimal characters.')
@@ -34,7 +39,7 @@ export function startAsteroidsSimulation(seed: number, width = 800, height = 600
   const ship: AsteroidsShipSimulation = { position: vector(width / 2, height / 2), velocity: vector(0, 0), angle: -Math.PI / 2, invulnerabilityTicks: 0, thrustTicks: 0 }
   const spawned = spawnWave(1, ship.position, width, height, random, nextEntityId)
   random = spawned.random; nextEntityId = spawned.nextEntityId
-  return { width, height, seed, randomState: random, ship, asteroids: spawned.asteroids, bullets: [], powerUps: [], nextEntityId, fireCooldownTicks: 0, rapidFireTicks: 0, score: 0, bestScore, lives: 3, wave: 1, tick: 0, phase: 'playing', event: 'started', scoreGained: 0, message: '' }
+  return { width, height, seed, randomState: random, ship, asteroids: spawned.asteroids, bullets: [], powerUps: [], alienShip: null, enemyBullets: [], alienSpawnCooldownTicks: firstAlienSpawnTicks, nextEntityId, fireCooldownTicks: 0, rapidFireTicks: 0, score: 0, bestScore, lives: 3, wave: 1, tick: 0, phase: 'playing', event: 'started', scoreGained: 0, message: '' }
 }
 
 export function advanceAsteroidsFrame(state: AsteroidsSimulationState, controls: AsteroidsControl): AsteroidsSimulationState {
@@ -77,31 +82,71 @@ function thrust(state: AsteroidsSimulationState): AsteroidsSimulationState {
 function fire(state: AsteroidsSimulationState): AsteroidsSimulationState {
   if (state.fireCooldownTicks > 0) return { ...state, event: 'no-op', scoreGained: 0, message: 'Weapons are cooling down.' }
   const direction = forward(state.ship.angle)
-  const bullet: BulletSimulation = { id: state.nextEntityId, position: clampToField(add(state.ship.position, scale(direction, 18)), state.width, state.height, 0), velocity: add(state.ship.velocity, scale(direction, bulletSpeed)), remainingTicks: bulletLifetime }
+  const bullet: BulletSimulation = { id: state.nextEntityId, position: wrapToField(add(state.ship.position, scale(direction, 18)), state.width, state.height), velocity: add(state.ship.velocity, scale(direction, bulletSpeed)), remainingTicks: bulletLifetime }
   return { ...state, bullets: [...state.bullets, bullet], nextEntityId: state.nextEntityId + 1, fireCooldownTicks: state.rapidFireTicks > 0 ? rapidFireCooldown : fireCooldown, event: 'fired', scoreGained: 0, message: 'Photon torpedo fired.' }
 }
 function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
-  const requested = add(state.ship.position, state.ship.velocity), position = clampToField(requested, state.width, state.height, shipRadius), decelerated = scale(state.ship.velocity, 0.995)
-  let ship: AsteroidsShipSimulation = { ...state.ship, position, velocity: vector(position.x === requested.x ? decelerated.x : 0, position.y === requested.y ? decelerated.y : 0), invulnerabilityTicks: Math.max(0, state.ship.invulnerabilityTicks - 1), thrustTicks: Math.max(0, state.ship.thrustTicks - 1) }
+  const requested = add(state.ship.position, state.ship.velocity), position = wrapToField(requested, state.width, state.height), decelerated = scale(state.ship.velocity, 0.995)
+  let ship: AsteroidsShipSimulation = { ...state.ship, position, velocity: decelerated, invulnerabilityTicks: Math.max(0, state.ship.invulnerabilityTicks - 1), thrustTicks: Math.max(0, state.ship.thrustTicks - 1) }
+  const asteroidMotions = new Map(state.asteroids.map(asteroid => [asteroid.id, { previous: asteroid.position, requested: add(asteroid.position, asteroid.velocity) }] as const))
   let asteroids = state.asteroids.map(asteroid => moveAsteroid(asteroid, state.width, state.height))
-  const moving = state.bullets.map(bullet => ({ previous: bullet.position, value: { ...bullet, position: add(bullet.position, bullet.velocity), remainingTicks: bullet.remainingTicks - 1 } })).filter(bullet => bullet.value.remainingTicks > 0 && inside(bullet.value.position, state.width, state.height))
-  let powerUps = state.powerUps.map(powerUp => ({ ...powerUp, position: add(powerUp.position, powerUp.velocity) })).filter(powerUp => inside(powerUp.position, state.width, state.height))
-  let random = state.randomState, nextEntityId = state.nextEntityId, scoreGained = 0, hitCount = 0, destroyedCount = 0
+  const moving = state.bullets.map(bullet => { const requestedPosition = add(bullet.position, bullet.velocity); return { previous: bullet.position, requested: requestedPosition, value: { ...bullet, position: wrapToField(requestedPosition, state.width, state.height), remainingTicks: bullet.remainingTicks - 1 } } }).filter(bullet => bullet.value.remainingTicks > 0)
+  let powerUps = state.powerUps.map(powerUp => ({ ...powerUp, position: wrapToField(add(powerUp.position, powerUp.velocity), state.width, state.height) }))
+  const movingEnemyBullets = state.enemyBullets.map(bullet => { const requestedPosition = add(bullet.position, bullet.velocity); return { previous: bullet.position, requested: requestedPosition, value: { ...bullet, position: wrapToField(requestedPosition, state.width, state.height), remainingTicks: bullet.remainingTicks - 1 } } }).filter(bullet => bullet.value.remainingTicks > 0)
+  let random = state.randomState, nextEntityId = state.nextEntityId
+  let alienShip = state.alienShip, alienSpawnCooldownTicks = state.alienSpawnCooldownTicks
+  const alienMotion = alienShip === null ? null : { previous: alienShip.position, requested: add(alienShip.position, alienShip.velocity) }
+  const spawnedEnemyBullets: EnemyBulletSimulation[] = []
+  if (alienShip !== null) {
+    alienShip = moveAlien(alienShip, state.height)
+    if (alienShip.remainingTicks <= 0 || hasAlienExited(alienShip, state.width)) {
+      alienShip = null
+      const cooldown = nextAlienSpawnCooldown(state.wave, random); random = cooldown.random; alienSpawnCooldownTicks = cooldown.value
+    } else {
+      if (alienShip.courseChangeTicks === 0) {
+        const course = changeAlienCourse(alienShip, ship.position, state.height, random); alienShip = course.alien; random = course.random
+      }
+      if (alienShip.fireCooldownTicks === 0) {
+        const shot = createEnemyBullet(alienShip, ship, state.width, state.height, random, nextEntityId)
+        spawnedEnemyBullets.push(shot.bullet); random = shot.random; nextEntityId = shot.nextEntityId
+        const cooldown = nextAlienFireCooldown(alienShip.type, random); random = cooldown.random; alienShip = { ...alienShip, fireCooldownTicks: cooldown.value }
+      }
+      alienSpawnCooldownTicks = 0
+    }
+  } else if (alienSpawnCooldownTicks > 0 && alienSpawnCooldownTicks < 2_147_483_647) alienSpawnCooldownTicks--
+
+  let scoreGained = 0, hitCount = 0, destroyedCount = 0, alienHitCount = 0
+  let destroyedAlienType: AlienShipType | null = null
   const bullets: BulletSimulation[] = []
   for (const bullet of moving) {
-    const hitIndex = asteroids.findIndex(asteroid => segmentIntersectsCircle(bullet.previous, bullet.value.position, asteroid.position, asteroid.radius))
-    if (hitIndex < 0) { bullets.push(bullet.value); continue }
-    const hit = asteroids[hitIndex]!; hitCount++
-    if (hit.hitPoints > 1) asteroids[hitIndex] = { ...hit, hitPoints: hit.hitPoints - 1 }
-    else {
-      asteroids.splice(hitIndex, 1); scoreGained += scoreFor(hit.size); destroyedCount++
-      const splitResult = split(hit, random, nextEntityId); random = splitResult.random; nextEntityId = splitResult.nextEntityId; asteroids.push(...splitResult.asteroids)
-      const powerResult = trySpawnPowerUp(hit.position, random, nextEntityId, powerUps); random = powerResult.random; nextEntityId = powerResult.nextEntityId; powerUps = powerResult.powerUps
+    const hitIndex = asteroids.findIndex(asteroid => {
+      const motion = asteroidMotions.get(asteroid.id) ?? { previous: asteroid.position, requested: asteroid.position }
+      return movingPointIntersectsToroidalCircle(bullet.previous, bullet.requested, motion.previous, motion.requested, asteroid.radius, state.width, state.height)
+    })
+    if (hitIndex >= 0) {
+      const hit = asteroids[hitIndex]!; hitCount++
+      if (hit.hitPoints > 1) asteroids[hitIndex] = { ...hit, hitPoints: hit.hitPoints - 1 }
+      else {
+        asteroids.splice(hitIndex, 1); scoreGained += scoreFor(hit.size); destroyedCount++
+        const splitResult = split(hit, random, nextEntityId); random = splitResult.random; nextEntityId = splitResult.nextEntityId; asteroids.push(...splitResult.asteroids)
+        const powerResult = trySpawnPowerUp(hit.position, random, nextEntityId, powerUps); random = powerResult.random; nextEntityId = powerResult.nextEntityId; powerUps = powerResult.powerUps
+      }
+      continue
     }
+    if (alienShip !== null && alienMotion !== null && movingPointIntersectsToroidalCircle(bullet.previous, bullet.requested, alienMotion.previous, alienMotion.requested, alienShip.radius, state.width, state.height)) {
+      alienHitCount++
+      if (alienShip.hitPoints > 1) alienShip = { ...alienShip, hitPoints: alienShip.hitPoints - 1 }
+      else {
+        destroyedAlienType = alienShip.type; scoreGained += alienScoreFor(alienShip.type); alienShip = null
+        const cooldown = nextAlienSpawnCooldown(state.wave, random); random = cooldown.random; alienSpawnCooldownTicks = cooldown.value
+      }
+      continue
+    }
+    bullets.push(bullet.value)
   }
   let lives = state.lives, phase: AsteroidsPhase = 'playing', rapidTicks = Math.max(0, state.rapidFireTicks - 1)
-  let event = hitCount > 0 ? 'hit' : 'ticked', message = destroyedCount > 0 ? `Destroyed ${destroyedCount} asteroid${destroyedCount === 1 ? '' : 's'}.` : hitCount > 0 ? `Damaged ${hitCount} asteroid${hitCount === 1 ? '' : 's'}.` : ''
-  const collected = powerUps.filter(powerUp => distance(ship.position, powerUp.position) <= powerUpRadius + shipRadius)
+  let event = hitCount + alienHitCount > 0 ? 'hit' : 'ticked', message = alienHitMessage(hitCount, destroyedCount, alienHitCount, destroyedAlienType)
+  const collected = powerUps.filter(powerUp => toroidalDistance(ship.position, powerUp.position, state.width, state.height) <= powerUpRadius + shipRadius)
   if (collected.length > 0) {
     for (const powerUp of collected) {
       if (powerUp.type === 'shield') ship = { ...ship, invulnerabilityTicks: Math.max(ship.invulnerabilityTicks, shieldTicks) }
@@ -110,8 +155,22 @@ function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
     }
     powerUps = powerUps.filter(powerUp => !collected.includes(powerUp)); event = 'power-up-collected'; message = powerMessage(collected.at(-1)!.type)
   }
-  if (ship.invulnerabilityTicks === 0 && asteroids.some(asteroid => distance(ship.position, asteroid.position) <= asteroid.radius + shipRadius)) {
-    lives = Math.max(0, lives - 1); ship = { ...ship, velocity: vector(0, 0), invulnerabilityTicks: shipInvulnerabilityTicks, thrustTicks: 0 }; bullets.length = 0
+
+  let enemyBulletHitShip = false
+  let enemyBullets = movingEnemyBullets.filter(bullet => {
+    const hit = movingPointIntersectsToroidalCircle(bullet.previous, bullet.requested, state.ship.position, requested, shipRadius, state.width, state.height)
+    enemyBulletHitShip ||= hit
+    return !hit
+  }).map(bullet => bullet.value)
+  enemyBullets.push(...spawnedEnemyBullets)
+  const alienBodyHitShip = alienShip !== null && toroidalDistance(ship.position, alienShip.position, state.width, state.height) <= alienShip.radius + shipRadius
+  if (alienBodyHitShip) {
+    alienShip = null
+    const cooldown = nextAlienSpawnCooldown(state.wave, random); random = cooldown.random; alienSpawnCooldownTicks = cooldown.value
+  }
+  const asteroidHitShip = asteroids.some(asteroid => toroidalDistance(ship.position, asteroid.position, state.width, state.height) <= asteroid.radius + shipRadius)
+  if (ship.invulnerabilityTicks === 0 && (asteroidHitShip || enemyBulletHitShip || alienBodyHitShip)) {
+    lives = Math.max(0, lives - 1); ship = { ...ship, velocity: vector(0, 0), invulnerabilityTicks: shipInvulnerabilityTicks, thrustTicks: 0 }; bullets.length = 0; enemyBullets = []
     if (lives === 0) { phase = 'game-over'; event = 'game-over'; message = 'The ship was destroyed. Game over.' } else { event = 'damaged'; message = `Ship damaged. ${lives} ${lives === 1 ? 'life' : 'lives'} remaining.` }
   }
   let wave = state.wave
@@ -119,15 +178,80 @@ function tick(state: AsteroidsSimulationState): AsteroidsSimulationState {
     wave++; const spawned = spawnWave(wave, ship.position, state.width, state.height, random, nextEntityId); asteroids = spawned.asteroids; random = spawned.random; nextEntityId = spawned.nextEntityId
     const bonus = wave * 100; scoreGained += bonus; event = 'wave-cleared'; message = `Wave ${wave - 1} cleared. Wave ${wave} incoming · +${bonus} points.`
   }
+  if (phase === 'playing' && alienShip === null && alienSpawnCooldownTicks === 0) {
+    const spawned = spawnAlien(wave, state.width, state.height, random, nextEntityId)
+    alienShip = spawned.alien; random = spawned.random; nextEntityId = spawned.nextEntityId
+  }
   const score = state.score + scoreGained
-  return { ...state, randomState: random, ship, asteroids, bullets, powerUps, nextEntityId, fireCooldownTicks: Math.max(0, state.fireCooldownTicks - 1), rapidFireTicks: rapidTicks, score, bestScore: Math.max(state.bestScore, score), lives, wave, tick: state.tick + 1, phase, event, scoreGained, message }
+  return { ...state, randomState: random, ship, asteroids, bullets, powerUps, alienShip, enemyBullets, alienSpawnCooldownTicks, nextEntityId, fireCooldownTicks: Math.max(0, state.fireCooldownTicks - 1), rapidFireTicks: rapidTicks, score, bestScore: Math.max(state.bestScore, score), lives, wave, tick: state.tick + 1, phase, event, scoreGained, message }
+}
+
+function moveAlien(alien: AlienShipSimulation, height: number): AlienShipSimulation {
+  return { ...alien, position: vector(alien.position.x + alien.velocity.x, wrapCoordinate(alien.position.y + alien.velocity.y, height)), fireCooldownTicks: Math.max(0, alien.fireCooldownTicks - 1), courseChangeTicks: Math.max(0, alien.courseChangeTicks - 1), remainingTicks: alien.remainingTicks - 1 }
+}
+
+function changeAlienCourse(alien: AlienShipSimulation, shipPosition: AsteroidsVector, height: number, random: number) {
+  if (alien.type === 'scout') {
+    const speed = randomRange(random, -0.85, 0.85); random = speed.random
+    const timer = randomInteger(random, 60, 90); random = timer.random
+    return { alien: { ...alien, velocity: vector(alien.velocity.x, speed.value), courseChangeTicks: timer.value }, random }
+  }
+  const drift = randomRange(random, -0.25, 0.25); random = drift.random
+  const verticalDirection = Math.sign(toroidalDelta(alien.position.y, shipPosition.y, height))
+  const verticalSpeed = Math.min(1.4, Math.max(-1.4, verticalDirection * 1.15 + drift.value))
+  const timer = randomInteger(random, 42, 66); random = timer.random
+  return { alien: { ...alien, velocity: vector(alien.velocity.x, verticalSpeed), courseChangeTicks: timer.value }, random }
+}
+
+function createEnemyBullet(alien: AlienShipSimulation, ship: AsteroidsShipSimulation, width: number, height: number, random: number, nextEntityId: number) {
+  const source = wrapToField(alien.position, width, height)
+  const target = alien.type === 'hunter' ? wrapToField(add(ship.position, scale(ship.velocity, 12)), width, height) : ship.position
+  const delta = vector(toroidalDelta(source.x, target.x, width), toroidalDelta(source.y, target.y, height))
+  const baseAngle = length(delta) === 0 ? 0 : Math.atan2(delta.y, delta.x)
+  const error = randomRange(random, alien.type === 'scout' ? -0.42 : -0.10, alien.type === 'scout' ? 0.42 : 0.10); random = error.random
+  const direction = forward(baseAngle + error.value)
+  const speed = alien.type === 'scout' ? 4.4 : 5.4
+  const bullet: EnemyBulletSimulation = { id: nextEntityId++, position: wrapToField(add(alien.position, scale(direction, alien.radius + 6)), width, height), velocity: scale(direction, speed), remainingTicks: enemyBulletLifetime }
+  return { bullet, random, nextEntityId }
+}
+
+function spawnAlien(wave: number, width: number, height: number, random: number, nextEntityId: number) {
+  const typeRoll = randomRange(random, 0, 1); random = typeRoll.random
+  const type: AlienShipType = typeRoll.value < hunterChanceFor(wave) ? 'hunter' : 'scout'
+  const radius = type === 'scout' ? 20 : 16
+  const sideRoll = randomRange(random, 0, 1); random = sideRoll.random
+  const entersFromLeft = sideRoll.value < 0.5
+  const y = randomRange(random, radius, height - radius); random = y.random
+  const verticalSpeed = randomRange(random, type === 'scout' ? -0.75 : -1, type === 'scout' ? 0.75 : 1); random = verticalSpeed.random
+  const fireTimer = nextAlienFireCooldown(type, random); random = fireTimer.random
+  const courseTimer = randomInteger(random, type === 'scout' ? 60 : 42, type === 'scout' ? 90 : 66); random = courseTimer.random
+  const horizontalSpeed = type === 'scout' ? 2.2 : 3
+  const alien: AlienShipSimulation = { id: nextEntityId++, position: vector(entersFromLeft ? -radius : width + radius, y.value), velocity: vector(entersFromLeft ? horizontalSpeed : -horizontalSpeed, verticalSpeed.value), radius, type, hitPoints: type === 'scout' ? 2 : 4, fireCooldownTicks: fireTimer.value, courseChangeTicks: courseTimer.value, remainingTicks: type === 'scout' ? 420 : 360 }
+  return { alien, random, nextEntityId }
+}
+
+function hasAlienExited(alien: AlienShipSimulation, width: number): boolean {
+  return (alien.velocity.x > 0 && alien.position.x > width + alien.radius) || (alien.velocity.x < 0 && alien.position.x < -alien.radius)
+}
+
+function nextAlienFireCooldown(type: AlienShipType, random: number) { return randomInteger(random, type === 'scout' ? 65 : 38, type === 'scout' ? 105 : 64) }
+function nextAlienSpawnCooldown(wave: number, random: number) { const jitter = randomInteger(random, 0, 90); return { value: Math.max(150, 360 - wave * 18) + jitter.value, random: jitter.random } }
+function hunterChanceFor(wave: number): number { return wave <= 1 ? 0 : wave === 2 ? 0.2 : wave === 3 ? 0.4 : Math.min(0.8, 0.4 + (wave - 3) * 0.1) }
+function alienScoreFor(type: AlienShipType): number { return type === 'scout' ? 300 : 750 }
+function alienHitMessage(asteroidHits: number, destroyedAsteroids: number, alienHits: number, destroyedAlien: AlienShipType | null): string {
+  if (destroyedAlien !== null && destroyedAsteroids > 0) return `Destroyed ${destroyedAsteroids} asteroid${destroyedAsteroids === 1 ? '' : 's'} and the ${destroyedAlien} alien ship.`
+  if (destroyedAlien !== null) return `Destroyed the ${destroyedAlien} alien ship.`
+  if (destroyedAsteroids > 0) return `Destroyed ${destroyedAsteroids} asteroid${destroyedAsteroids === 1 ? '' : 's'}.`
+  if (alienHits > 0 && asteroidHits > 0) return 'Damaged an asteroid and the alien ship.'
+  if (alienHits > 0) return 'Damaged the alien ship.'
+  return asteroidHits > 0 ? `Damaged ${asteroidHits} asteroid${asteroidHits === 1 ? '' : 's'}.` : ''
 }
 
 function spawnWave(wave: number, ship: AsteroidsVector, width: number, height: number, random: number, nextEntityId: number) {
   const asteroids: AsteroidSimulation[] = []
   for (let index = 0; index < Math.min(18, 4 + wave); index++) {
     const size = initialSize(wave, index), radius = radiusFor(size); let position = vector(0, 0)
-    for (let attempt = 0; ; attempt++) { const x = randomRange(random, radius, width - radius); random = x.random; const y = randomRange(random, radius, height - radius); random = y.random; position = vector(x.value, y.value); if (distance(position, ship) >= 150 || attempt >= 64) break }
+    for (let attempt = 0; ; attempt++) { const x = randomRange(random, radius, width - radius); random = x.random; const y = randomRange(random, radius, height - radius); random = y.random; position = vector(x.value, y.value); if (toroidalDistance(position, ship, width, height) >= 150 || attempt >= 64) break }
     const angleResult = randomRange(random, 0, Math.PI * 2); random = angleResult.random
     const range = size === 'huge' ? [0.12, 0.55] : size === 'large' ? [0.25, 1.05] : size === 'medium' ? [0.5, 1.65] : size === 'small' ? [0.9, 2.35] : [1.3, 3.02]
     const base = randomRange(random, range[0], range[1]); random = base.random
@@ -148,21 +272,26 @@ function trySpawnPowerUp(position: AsteroidsVector, random: number, nextEntityId
   const angle = randomRange(random, 0, Math.PI * 2); random = angle.random
   return { powerUps: [...powerUps, { id: nextEntityId++, position, velocity: vector(Math.cos(angle.value) * 0.8, Math.sin(angle.value) * 0.8), type, remainingTicks: powerUpLifetime }], random, nextEntityId }
 }
-function moveAsteroid(asteroid: AsteroidSimulation, width: number, height: number): AsteroidSimulation { const requested = add(asteroid.position, asteroid.velocity), position = clampToField(requested, width, height, asteroid.radius); return { ...asteroid, position, velocity: vector(position.x === requested.x ? asteroid.velocity.x : -asteroid.velocity.x, position.y === requested.y ? asteroid.velocity.y : -asteroid.velocity.y) } }
+function moveAsteroid(asteroid: AsteroidSimulation, width: number, height: number): AsteroidSimulation { return { ...asteroid, position: wrapToField(add(asteroid.position, asteroid.velocity), width, height) } }
 function validateControl(control: number): void { const known = AsteroidsControl.Thrust | AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight | AsteroidsControl.Fire; if (!Number.isInteger(control) || (control & ~known) !== 0 || (control & (AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight)) === (AsteroidsControl.TurnLeft | AsteroidsControl.TurnRight)) throw new Error('Asteroids control contains unknown or contradictory bits.') }
 function normalizeSeed(seed: number): number { return seed === 0 ? 0xA341316C : seed >>> 0 }
 function nextRandom(value: number): number { value >>>= 0; if (value === 0) value = 0xA341316C; value = (value ^ (value << 13)) >>> 0; value = (value ^ (value >>> 17)) >>> 0; return (value ^ (value << 5)) >>> 0 }
 function randomRange(random: number, minimum: number, maximum: number) { random = nextRandom(random); return { value: minimum + (random / 0xffff_ffff) * (maximum - minimum), random } }
+function randomInteger(random: number, minimum: number, maximum: number) { random = nextRandom(random); return { value: Math.min(maximum, minimum + Math.floor((random / 0xffff_ffff) * (maximum - minimum + 1))), random } }
 function vector(x: number, y: number): AsteroidsVector { return { x, y } }
 function add(a: AsteroidsVector, b: AsteroidsVector): AsteroidsVector { return vector(a.x + b.x, a.y + b.y) }
 function scale(value: AsteroidsVector, factor: number): AsteroidsVector { return vector(value.x * factor, value.y * factor) }
 function length(value: AsteroidsVector): number { return Math.sqrt(value.x * value.x + value.y * value.y) }
 function distance(a: AsteroidsVector, b: AsteroidsVector): number { return length(vector(a.x - b.x, a.y - b.y)) }
+function toroidalDistance(a: AsteroidsVector, b: AsteroidsVector, width: number, height: number): number { let deltaX = Math.abs(a.x - b.x) % width, deltaY = Math.abs(a.y - b.y) % height; deltaX = Math.min(deltaX, width - deltaX); deltaY = Math.min(deltaY, height - deltaY); return Math.sqrt(deltaX * deltaX + deltaY * deltaY) }
+function toroidalDelta(source: number, target: number, extent: number): number { let delta = (target - source) % extent; if (delta > extent / 2) delta -= extent; else if (delta < -extent / 2) delta += extent; return delta }
 function forward(angle: number): AsteroidsVector { return vector(Math.cos(angle), Math.sin(angle)) }
 function clampSpeed(value: AsteroidsVector, maximum: number): AsteroidsVector { const current = length(value); return current <= maximum || current === 0 ? value : scale(value, maximum / current) }
-function clampToField(position: AsteroidsVector, width: number, height: number, padding: number): AsteroidsVector { return vector(Math.min(Math.max(position.x, padding), width - padding), Math.min(Math.max(position.y, padding), height - padding)) }
-function inside(position: AsteroidsVector, width: number, height: number): boolean { return position.x >= 0 && position.x <= width && position.y >= 0 && position.y <= height }
+function wrapToField(position: AsteroidsVector, width: number, height: number): AsteroidsVector { return vector(wrapCoordinate(position.x, width), wrapCoordinate(position.y, height)) }
+function wrapCoordinate(value: number, extent: number): number { const wrapped = value % extent; return wrapped < 0 ? wrapped + extent : wrapped }
 function segmentIntersectsCircle(start: AsteroidsVector, end: AsteroidsVector, center: AsteroidsVector, radius: number): boolean { const segment = vector(end.x - start.x, end.y - start.y), squared = segment.x * segment.x + segment.y * segment.y; if (squared === 0) return distance(start, center) <= radius; const toCenter = vector(center.x - start.x, center.y - start.y), projection = Math.min(Math.max((toCenter.x * segment.x + toCenter.y * segment.y) / squared, 0), 1); return distance(add(start, scale(segment, projection)), center) <= radius }
+function segmentIntersectsToroidalCircle(start: AsteroidsVector, end: AsteroidsVector, center: AsteroidsVector, radius: number, width: number, height: number): boolean { for (let horizontalOffset = -1; horizontalOffset <= 1; horizontalOffset++) for (let verticalOffset = -1; verticalOffset <= 1; verticalOffset++) if (segmentIntersectsCircle(start, end, vector(center.x + horizontalOffset * width, center.y + verticalOffset * height), radius)) return true; return false }
+function movingPointIntersectsToroidalCircle(pointStart: AsteroidsVector, pointEnd: AsteroidsVector, circleStart: AsteroidsVector, circleEnd: AsteroidsVector, radius: number, width: number, height: number): boolean { return segmentIntersectsToroidalCircle(vector(pointStart.x - circleStart.x, pointStart.y - circleStart.y), vector(pointEnd.x - circleEnd.x, pointEnd.y - circleEnd.y), vector(0, 0), radius, width, height) }
 function initialSize(wave: number, index: number): AsteroidSize { return (wave + index) % 5 === 0 ? 'huge' : (wave + index) % 5 === 1 ? 'large' : (wave + index) % 5 === 2 ? 'medium' : (wave + index) % 5 === 3 ? 'small' : 'tiny' }
 function radiusFor(size: AsteroidSize): number { return size === 'huge' ? 52 : size === 'large' ? 40 : size === 'medium' ? 29 : size === 'small' ? 20 : 13 }
 function hitPointsFor(size: AsteroidSize): number { return size === 'huge' ? 10 : size === 'large' ? 8 : size === 'medium' ? 6 : size === 'small' ? 4 : 2 }

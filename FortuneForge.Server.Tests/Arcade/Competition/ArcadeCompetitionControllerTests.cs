@@ -154,7 +154,7 @@ public sealed class ArcadeCompetitionControllerTests
         Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionAsteroidsPaidEntryService");
         Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "time" or "competition");
         var properties = typeof(AsteroidsReplayInputRequest).GetProperties().Select(property => property.Name).ToArray();
-        Assert.Equal(new[] { "TotalSteps", "Commands" }, properties);
+        Assert.Equal(new[] { "RulesVersion", "TotalSteps", "Commands" }, properties);
     }
 
     [Theory]

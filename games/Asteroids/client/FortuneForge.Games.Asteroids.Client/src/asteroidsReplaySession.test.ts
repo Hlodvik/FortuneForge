@@ -25,7 +25,8 @@ describe('Asteroids replay session', () => {
       { step: 3, input: 2 },
       { step: 4, input: 0 },
     ])
-    expect(Object.keys(completion.replay).sort()).toEqual(['commands', 'totalSteps'])
+    expect(Object.keys(completion.replay).sort()).toEqual(['commands', 'rulesVersion', 'totalSteps'])
+    expect(completion.replay.rulesVersion).toBe(2)
     expect(JSON.stringify(completion.replay)).not.toMatch(/seed|score|user|time|run/i)
   })
 
@@ -59,9 +60,9 @@ describe('Asteroids replay session', () => {
   })
 
   it('uses the exact 3,600-frame cap when the ship survives', () => {
-    const session = new AsteroidsReplaySession(runId, seedHex)
-    session.setHeld('right', true)
+    const session = new AsteroidsReplaySession(runId, '0000000000000009')
     session.setHeld('thrust', true)
+    session.setHeld('fire', true)
     for (let frame = 0; frame < maximumReplaySteps; frame++) session.advanceFrame()
 
     const completion = session.takeCompletion()

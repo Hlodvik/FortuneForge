@@ -1,5 +1,6 @@
-import asteroidAtlasSource from './assets/sprites/asteroid-atlas-v3.png?no-inline'
+import asteroidAtlasSource from './assets/sprites/asteroid-atlas-v4.png?no-inline'
 import asteroidExplosionAtlasSource from './assets/sprites/asteroid-explosion-atlas-v1.png?no-inline'
+import alienShipAtlasSource from './assets/sprites/alien-ship-atlas-v1.png?no-inline'
 import laserImpactAtlasSource from './assets/sprites/laser-impact-atlas-v1-0.5x.webp?no-inline'
 import powerUpAtlasSource from './assets/sprites/powerup-atlas-v1.png?no-inline'
 import shipAtlasSource from './assets/sprites/ship-atlas-v1-0.5x.webp?no-inline'
@@ -11,6 +12,7 @@ const atlasSources = {
   laserImpact: laserImpactAtlasSource,
   explosion: asteroidExplosionAtlasSource,
   powerUp: powerUpAtlasSource,
+  alienShip: alienShipAtlasSource,
 } as const
 
 type AtlasName = keyof typeof atlasSources

@@ -4,7 +4,10 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SicBoGame } from './SicBoGame'
 import { SicBoGatewayError, type SicBoBetRequest, type SicBoGateway, type SicBoRound, type SicBoStatus } from './contracts'
+import { playSicBoSound } from './sicBoAudio'
 import { betTargets, createTargetBet, historyStorageKey, pendingStorageKey } from './sicBoPresentation'
+
+vi.mock('./sicBoAudio',()=>({playSicBoSound:vi.fn()}))
 
 // Independent server-hash fixtures use the test runtime's crypto; this browser package has no Node typings.
 const { createHash, webcrypto } = await import('node:' + 'crypto') as {
@@ -16,6 +19,7 @@ const status: SicBoStatus = { available: true, minimumStake: 1, maximumStakePerB
 const owner='owner-7', savedKey='sic-bo-recovery-0001', uuid='4e9c20fa-1e81-455f-b3e9-26dd0c31c543', defaultId='a1'.repeat(32)
 const small=createTargetBet('small',1)!, totalNine=createTargetBet('total-9',1)!, combination=createTargetBet('two-number-combination-2-5',1)!
 beforeEach(()=>{
+  vi.mocked(playSicBoSound).mockClear()
   vi.stubGlobal('crypto',{subtle:webcrypto.subtle,randomUUID:()=>uuid}); motion(true)
   Object.defineProperty(HTMLDialogElement.prototype,'showModal',{configurable:true,value(this:HTMLDialogElement){this.setAttribute('open','')}})
   Object.defineProperty(HTMLDialogElement.prototype,'close',{configurable:true,value(this:HTMLDialogElement){this.removeAttribute('open')}})
@@ -32,6 +36,12 @@ describe('Sic Bo table',()=>{
     expect(disabled('Roll dice')).toBe(true)
   })
   it('lets the host supply the title',async()=>{render(<SicBoGame gateway={fakeGateway()} showTitle={false}/>);await ready();expect(screen.queryByRole('heading',{name:'Sic Bo'})).toBeNull()})
+  it('plays a quiet control cue for buttons and a distinct cue for a valid roll',async()=>{
+    render(<SicBoGame gateway={fakeGateway()}/>);await ready()
+    click('Rules');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
+    click('Close table details');add('Small');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
+    click('Roll dice');expect(playSicBoSound).toHaveBeenLastCalledWith('roll')
+  })
   it.each(betTargets.map(t=>[t.label,t.id] as const))('submits canonical %s selection',async(label,id)=>{
     const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();add(label);click('Roll dice')
     await waitFor(()=>expect(gateway.createRound).toHaveBeenCalledTimes(1))

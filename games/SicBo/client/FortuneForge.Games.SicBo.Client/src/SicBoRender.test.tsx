@@ -28,7 +28,7 @@ describe('Sic Bo server rendering', () => {
     expect(markup.match(/data-target="/g)).toHaveLength(52)
     expect(markup.match(/aria-label="Add [^"]+ bet"/g)).toHaveLength(52)
     expect(markup).toContain('aria-label="Dice tray"')
-    expect(markup).toContain('disabled="">Roll dice</button>')
+    expect(markup).toMatch(/disabled=""[^>]*>Roll dice<\/button>/)
     expect(markup).not.toContain('Winning bet')
     expect(markup).not.toContain('Losing bet')
     expect(server.getStatus).not.toHaveBeenCalled()

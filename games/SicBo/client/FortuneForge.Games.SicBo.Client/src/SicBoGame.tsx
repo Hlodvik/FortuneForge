@@ -1,7 +1,8 @@
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { type SicBoGateway, type SicBoRound } from './contracts'
 import { HttpSicBoGateway } from './httpSicBoGateway'
 import { availableChipValues, betLabel, betTargets, targetsForKind, type SicBoBetTarget } from './sicBoPresentation'
+import { playSicBoSound, type SicBoAudioCue } from './sicBoAudio'
 import { useSicBoTable, type SicBoRecoveryMode } from './useSicBoTable'
 import './sicBo.css'
 import './sicBoViewport.css'
@@ -42,7 +43,8 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
   </button>}
   function trapPanel(event:KeyboardEvent<HTMLDialogElement>){if(event.key!=='Tab')return;const nodes=Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),a[href],summary,[tabindex="0"]')).filter(node=>node.getClientRects().length>0);const first=nodes[0],last=nodes.at(-1);if(!first)return;if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus()}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}}
   function preventSelection(event:KeyboardEvent){if(event.key==='Escape'&&panel){event.preventDefault();close()}}
-  return <main className={'ff-sic-bo is-'+table.phase} aria-busy={['requesting','revealing','recovering'].includes(table.phase)} onKeyDown={preventSelection}>
+  function playControlSound(event:MouseEvent<HTMLElement>){if(!(event.target instanceof Element))return;const control=event.target.closest<HTMLButtonElement>('button');if(!control||control.disabled)return;playSicBoSound((control.dataset.sicBoAudio as SicBoAudioCue|undefined)??'click')}
+  return <main className={'ff-sic-bo is-'+table.phase} aria-busy={['requesting','revealing','recovering'].includes(table.phase)} onKeyDown={preventSelection} onClick={playControlSound}>
     <header className="ff-sic-bo__header">{showTitle&&<h1>Sic Bo</h1>}<nav aria-label="Table details"><button type="button" onClick={e=>open('slip',e)}>Slip <span>{table.slip.length}</span></button><button type="button" onClick={e=>open('history',e)}>History</button><button type="button" onClick={e=>open('rules',e)}>Rules</button></nav></header>
     <section className="ff-sic-bo__layout" aria-label="Sic Bo betting table">
       <div className="ff-sic-bo__roll-area">
@@ -60,7 +62,7 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
     </section>
     <section className="ff-sic-bo__controls" aria-label="Bet controls"><div className="ff-sic-bo__stake"><label htmlFor="sic-stake">Stake</label><input ref={stakeInput} id="sic-stake" aria-invalid={!!table.status&&table.stakeValue===null} type="text" inputMode="decimal" autoComplete="off" value={table.stake} onChange={e=>table.setStake(e.target.value)} disabled={!table.unlocked}/><div className="ff-sic-bo__chips">{table.status&&availableChipValues(table.status).map(value=><button key={value} type="button" aria-label={'Set stake '+money(value)} aria-pressed={value===table.stakeValue} disabled={!table.unlocked} onClick={()=>table.setStake(String(value))}>{compact(value)}</button>)}</div></div>
       <div className="ff-sic-bo__summary"><span>Balance <b>{table.balance===null?'—':money(table.balance)}</b></span><span>Bet <b>{money(table.totalStake)}</b></span></div>
-      <div className="ff-sic-bo__actions">{settled?<><button type="button" disabled={!table.status?.available} onClick={fresh}>New round</button><button className="ff-sic-bo__primary" ref={primary} type="button" disabled={!table.canRepeat} onClick={repeat}>Repeat bets</button></>:<><button type="button" disabled={!table.unlocked||!table.slip.length} onClick={()=>table.remove(table.slip.length-1)}>Undo</button><button className="ff-sic-bo__primary" ref={primary} type="button" disabled={!table.canRoll} onClick={()=>void table.roll()}>{table.phase==='retry'?'Retry roll':'Roll dice'}</button></>}</div>
+      <div className="ff-sic-bo__actions">{settled?<><button type="button" disabled={!table.status?.available} onClick={fresh}>New round</button><button className="ff-sic-bo__primary" ref={primary} type="button" disabled={!table.canRepeat} onClick={repeat}>Repeat bets</button></>:<><button type="button" disabled={!table.unlocked||!table.slip.length} onClick={()=>table.remove(table.slip.length-1)}>Undo</button><button className="ff-sic-bo__primary" ref={primary} type="button" disabled={!table.canRoll} data-sic-bo-audio="roll" onClick={()=>void table.roll()}>{table.phase==='retry'?'Retry roll':'Roll dice'}</button></>}</div>
     </section>
     <div className="ff-sic-bo__notice" role={table.error?'alert':'status'}><span>{notice}</span>{table.phase==='read-failed'&&<button type="button" onClick={()=>void table.restore()} disabled={!table.pending?.roundId}>Retry restoration</button>}{(!table.status||!table.status.available||table.phase==='loading')&&table.error&&<button type="button" onClick={()=>void table.loadStatus()}>Retry connection</button>}</div>
     <dialog onKeyDown={trapPanel} className="ff-sic-bo__details" ref={dialog} onCancel={e=>{e.preventDefault();close()}} onClose={()=>{if(panel)close()}} aria-labelledby="sic-panel-title"><header><h2 id="sic-panel-title">{panel==='slip'?'Bet slip':panel==='rules'?'Rules & payouts':'History'}</h2><button type="button" onClick={close} autoFocus aria-label="Close table details">×</button></header><div className="ff-sic-bo__panel-body" tabIndex={0}>

@@ -18,5 +18,7 @@ describe('AsteroidsReplayPlay', () => {
     expect(html).toContain('aria-label="Thrust"')
     expect(html).toContain('aria-label="Turn right"')
     expect(html).toContain('aria-label="Fire"')
+    expect(html).not.toContain('Server-seeded local simulation')
+    expect(html).not.toContain('Frame')
   })
 })

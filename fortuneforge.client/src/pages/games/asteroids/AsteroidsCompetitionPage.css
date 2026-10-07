@@ -208,3 +208,78 @@
   .asteroids-competition-page--active .ff-asteroids-replay-message { display: none; }
   .asteroids-competition-page--active .ff-asteroids-replay-stats > div { min-height: 2.3rem; }
 }
+
+/* Active play follows a cabinet-style, full-field layout: the game is the interface. */
+.asteroids-competition-page--active {
+  background:
+    radial-gradient(circle at 50% 10%, rgb(26 66 100 / 38%), transparent 36rem),
+    #02050b;
+}
+
+.asteroids-competition-page--active .asteroids-competition-page__content {
+  padding: .45rem;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay {
+  width: min(100%, 80rem);
+  height: 100%;
+  max-height: 100%;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: .45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-stage {
+  grid-row: 1;
+  width: min(100%, 133.333cqh);
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-head,
+.asteroids-competition-page--active .ff-asteroids-replay-stats {
+  display: flex;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-stats {
+  position: absolute;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-stats > div {
+  position: absolute;
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.asteroids-competition-page--active .ff-asteroids-replay-controls {
+  grid-row: 2;
+}
+
+@media (max-width: 520px), (max-height: 620px) {
+  .asteroids-competition-page--active .ff-asteroids-replay { padding: 0; }
+  .asteroids-competition-page--active .ff-asteroids-replay-controls { grid-template-columns: repeat(4, 1fr); }
+  .asteroids-competition-page--active .ff-asteroids-replay-control { min-height: 3rem; }
+  .asteroids-competition-page--active .ff-asteroids-replay-control span { display: block; }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .asteroids-competition-page--active .ff-asteroids-replay-controls { display: none; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .asteroids-competition-page--active .ff-asteroids-replay {
+    grid-template-columns: minmax(0, 1fr) 3.2rem;
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .asteroids-competition-page--active .ff-asteroids-replay-controls {
+    grid-row: 1;
+    grid-column: 2;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+  }
+}

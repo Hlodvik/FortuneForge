@@ -11,4 +11,3 @@ export { AsteroidsReplaySession, maximumReplayCommands, maximumReplaySteps } fro
 export type { AsteroidsReplayCommand, AsteroidsReplayCompletion, AsteroidsReplayDisplayResult, AsteroidsReplayPayload, AsteroidsReplaySessionView } from './asteroidsReplaySession'
 import './asteroids.css'
 import './asteroidsLeaderboard.css'
-import './asteroidsViewport.css'

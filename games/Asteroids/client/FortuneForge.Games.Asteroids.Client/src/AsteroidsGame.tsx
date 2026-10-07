@@ -197,17 +197,19 @@ export function AsteroidsGame({ gateway, backHref = '/', playerName = 'Player', 
   return <div className="ff-asteroids-page">
     <header className="ff-asteroids-header"><a className="ff-asteroids-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-asteroids-games" href={backHref}>Other games</a><div className="ff-asteroids-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>
     <main className="ff-asteroids-main">
-      <section className="ff-asteroids-title">
-        <div><small>Arcade free play</small><h1>Asteroids</h1><p>Rotate, thrust, and fire through deterministic waves. Clear the field to advance.</p></div>
-        {game?.phase !== 'game-over' && <button className="ff-asteroids-new" type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'New mission'}</button>}
-      </section>
       {game?.phase === 'game-over' ? <section ref={leaderboardRef} className="ff-asteroids-leaderboard" aria-live="polite" tabIndex={-1}>
         <div className="ff-asteroids-leaderboard-head"><div><small>Mission complete</small><h2>Galactic leaderboard</h2></div><strong>{submittingScore ? 'Submitting score…' : `${formatScore(game.score)} points · Wave ${game.wave}`}</strong></div>
         {leaderboard ? <ol>{leaderboard.entries.map(entry => <li key={`${entry.rank}:${entry.playerName}:${entry.score}`} className={entry.playerName === playerName && entry.score === game.score ? 'ff-asteroids-leaderboard-current' : undefined}><span>#{entry.rank}</span><strong>{entry.playerName}</strong><span>{formatScore(entry.score)}</span><small>Wave {entry.wave}</small></li>)}</ol> : <p>{submittingScore ? 'Posting your score to the leaderboard…' : 'The leaderboard is unavailable.'}</p>}
         <button className="ff-asteroids-play-again" type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'Play again'}</button>
       </section> : game ? <>
-        <section className="ff-asteroids-stats" aria-live="polite"><div><small>Score</small><strong>{formatScore(game.score)}</strong></div><div><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div><small>Lives</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div><small>Wave</small><strong>{game.wave}</strong></div></section>
-        <section className="ff-asteroids-canvas-wrap" aria-label="Asteroids playfield"><canvas ref={canvasRef} className="ff-asteroids-canvas" /></section>
+        <section className="ff-asteroids-stage" aria-label="Asteroids playfield">
+          <canvas ref={canvasRef} className="ff-asteroids-canvas" />
+          <section className="ff-asteroids-title">
+            <div><small>{tableLabel}</small><h1>Asteroids</h1></div>
+            <button className="ff-asteroids-new" type="button" aria-label="New mission" title="New mission" onClick={newGame} disabled={busy}>{busy ? '…' : '↻'}</button>
+          </section>
+          <section className="ff-asteroids-stats" aria-live="polite"><div className="ff-asteroids-score"><small>Score</small><strong>{formatScore(game.score)}</strong></div><div className="ff-asteroids-best"><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div className="ff-asteroids-lives"><small>Lives</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div className="ff-asteroids-wave"><small>Wave</small><strong>{game.wave}</strong></div></section>
+        </section>
       </> : <div className="ff-asteroids-loading">{error ?? 'Launching mission…'}</div>}
       {error && <div className="ff-asteroids-error" role="alert"><strong>{error}</strong><button type="button" onClick={newGame} disabled={busy}>Try again</button></div>}
     </main>

@@ -1,1 +1,235 @@
-.ff-asteroids-replay{width:min(100%,60rem);margin:auto;padding:1rem;border:1px solid #7594c388;border-radius:1rem;background:#0c1524;color:#edf2fb;box-shadow:0 1.2rem 2.2rem #0005}.ff-asteroids-replay-head{display:flex;justify-content:space-between;gap:1rem;padding:.7rem .4rem 1rem}.ff-asteroids-replay small{color:#efc373;font-size:.63rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.ff-asteroids-replay h2{margin:.18rem 0;color:#fff1d8;font:700 2.1rem Georgia,serif}.ff-asteroids-replay p{margin:.25rem 0;color:#afbdd1;font-size:.74rem}.ff-asteroids-replay-clock{display:grid;align-content:start;text-align:right}.ff-asteroids-replay-clock strong{color:#fff0d3;font:700 1.4rem Georgia,serif}.ff-asteroids-replay-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;margin-bottom:.7rem}.ff-asteroids-replay-stats>div{display:grid;gap:.22rem;min-height:3.75rem;padding:.65rem .8rem;border:1px solid #b9cce82b;border-radius:.65rem;background:#132136cc}.ff-asteroids-replay-stats strong{color:#fff0d3;font:700 1rem Georgia,serif}.ff-asteroids-replay-canvas-wrap{position:relative;padding:.65rem;border:1px solid #7594c388;border-radius:.85rem;background:#070c15}.ff-asteroids-replay-canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;border-radius:.45rem;background:#070c15;image-rendering:pixelated}.ff-asteroids-replay-overlay{position:absolute;inset:.65rem;display:grid;place-items:center;align-content:center;gap:.4rem;border-radius:.45rem;background:#0b1220df;backdrop-filter:blur(3px);text-align:center}.ff-asteroids-replay-overlay strong{color:#fff0d9;font:700 clamp(1.6rem,7vw,2.8rem) Georgia,serif}.ff-asteroids-replay-overlay span{color:#c2cfdf;font-size:.76rem}.ff-asteroids-replay-message{min-height:1.3rem;margin:.8rem 0!important;color:#f0d28e!important;text-align:center}.ff-asteroids-replay-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem}.ff-asteroids-replay-control{display:grid;gap:.2rem;min-height:4.2rem;padding:.45rem;border:1px solid #557399;border-radius:.55rem;background:#14243a;color:#eff5ff;cursor:pointer}.ff-asteroids-replay-control strong{font:800 .75rem inherit}.ff-asteroids-replay-control span{color:#a5b8d1;font-size:.58rem;text-transform:uppercase}.ff-asteroids-replay-control:active{background:#294464}.ff-asteroids-replay-control:focus-visible{outline:2px solid #efc373;outline-offset:2px}.ff-asteroids-replay-control:disabled{cursor:not-allowed;opacity:.5}@media(max-width:520px){.ff-asteroids-replay{padding:.6rem;border-radius:.7rem}.ff-asteroids-replay-head{padding:.45rem .25rem .8rem}.ff-asteroids-replay-stats{grid-template-columns:repeat(2,1fr)}.ff-asteroids-replay-controls{grid-template-columns:repeat(2,1fr)}.ff-asteroids-replay-canvas-wrap{padding:.4rem}.ff-asteroids-replay-overlay{inset:.4rem}}
+.ff-asteroids-replay {
+  --asteroids-cyan: #77e7ff;
+  --asteroids-gold: #ffd56b;
+  --asteroids-ink: #030712;
+  display: grid;
+  width: min(100%, 80rem);
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: .55rem;
+  margin: auto;
+  color: #f7fbff;
+}
+
+.ff-asteroids-replay-stage {
+  position: relative;
+  display: grid;
+  width: min(100%, 133.333cqh);
+  max-width: 100%;
+  min-height: 0;
+  aspect-ratio: 4 / 3;
+  align-self: center;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid #77e7ff66;
+  border-radius: clamp(.55rem, 1.4vw, 1rem);
+  background: var(--asteroids-ink);
+  box-shadow: 0 0 0 1px #ffffff0d, 0 1.3rem 3rem #000a, 0 0 2rem #237ea42b;
+  isolation: isolate;
+  container-type: size;
+}
+
+.ff-asteroids-replay-stage::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background:
+    linear-gradient(#77e7ff08 1px, transparent 1px),
+    linear-gradient(90deg, #77e7ff08 1px, transparent 1px),
+    radial-gradient(circle at 50% 45%, transparent 44%, #0008 100%);
+  background-size: 8cqw 8cqw, 8cqw 8cqw, 100% 100%;
+}
+
+.ff-asteroids-replay-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--asteroids-ink);
+  image-rendering: pixelated;
+}
+
+.ff-asteroids-replay-head {
+  position: absolute;
+  z-index: 3;
+  inset: clamp(.65rem, 2.8cqw, 1.6rem) clamp(.7rem, 3cqw, 1.8rem) auto;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  pointer-events: none;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px #000, 0 0 12px #000;
+}
+
+.ff-asteroids-replay-title {
+  display: grid;
+  gap: .12rem;
+}
+
+.ff-asteroids-replay small {
+  color: var(--asteroids-cyan);
+  font-size: clamp(.48rem, 1.25cqw, .72rem);
+  font-weight: 900;
+  letter-spacing: .17em;
+  line-height: 1;
+}
+
+.ff-asteroids-replay h2 {
+  margin: 0;
+  color: #fff;
+  font: 900 clamp(1rem, 3.9cqw, 2.7rem)/.9 "Arial Black", Impact, sans-serif;
+  letter-spacing: .08em;
+}
+
+.ff-asteroids-replay-clock {
+  display: grid;
+  gap: .15rem;
+  text-align: right;
+}
+
+.ff-asteroids-replay-clock strong {
+  color: #fff;
+  font: 900 clamp(.95rem, 3cqw, 2rem)/1 ui-monospace, "Cascadia Mono", monospace;
+  letter-spacing: .06em;
+}
+
+.ff-asteroids-replay-stats {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+  text-transform: uppercase;
+  text-shadow: 0 2px 8px #000, 0 0 12px #000;
+}
+
+.ff-asteroids-replay-stats > div {
+  position: absolute;
+  display: grid;
+  gap: .15rem;
+}
+
+.ff-asteroids-replay-stats strong {
+  color: #fff;
+  font: 900 clamp(.85rem, 2.6cqw, 1.7rem)/1 ui-monospace, "Cascadia Mono", monospace;
+  letter-spacing: .05em;
+}
+
+.ff-asteroids-replay-score {
+  top: clamp(3.25rem, 11cqw, 7rem);
+  left: clamp(.7rem, 3cqw, 1.8rem);
+}
+
+.ff-asteroids-replay-wave {
+  top: clamp(.65rem, 2.8cqw, 1.6rem);
+  left: 50%;
+  translate: -50% 0;
+  text-align: center;
+}
+
+.ff-asteroids-replay-lives {
+  bottom: clamp(.65rem, 3cqw, 1.8rem);
+  left: clamp(.7rem, 3cqw, 1.8rem);
+}
+
+.ff-asteroids-replay-lives strong {
+  color: var(--asteroids-gold);
+  letter-spacing: .18em;
+}
+
+.ff-asteroids-replay-overlay {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: .65rem;
+  padding: 2rem;
+  background: radial-gradient(circle, #081328d9, #02050bec 72%);
+  backdrop-filter: blur(3px);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.ff-asteroids-replay-overlay strong {
+  color: #fff;
+  font: 900 clamp(1.7rem, 7cqw, 4.8rem)/.92 "Arial Black", Impact, sans-serif;
+  letter-spacing: .08em;
+  text-shadow: 0 0 1rem #77e7ff66;
+}
+
+.ff-asteroids-replay-overlay span {
+  color: #d4e8f7;
+  font: 700 clamp(.65rem, 1.5cqw, .95rem)/1.4 ui-monospace, "Cascadia Mono", monospace;
+  letter-spacing: .04em;
+}
+
+.ff-asteroids-replay-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .45rem;
+  width: min(100%, 42rem);
+  justify-self: center;
+}
+
+.ff-asteroids-replay-control {
+  display: grid;
+  min-height: 3.4rem;
+  place-content: center;
+  gap: .1rem;
+  border: 1px solid #77e7ff66;
+  border-radius: .65rem;
+  background: linear-gradient(180deg, #11243bea, #07101fee);
+  color: #f6fbff;
+  box-shadow: inset 0 1px #ffffff16, 0 .35rem 1rem #0005;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+
+.ff-asteroids-replay-control strong {
+  font: 900 1.15rem/1 sans-serif;
+}
+
+.ff-asteroids-replay-control span {
+  color: #9fdff0;
+  font-size: .55rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.ff-asteroids-replay-control:active {
+  border-color: var(--asteroids-gold);
+  background: #183957;
+  translate: 0 1px;
+}
+
+.ff-asteroids-replay-control:focus-visible {
+  outline: 2px solid var(--asteroids-gold);
+  outline-offset: 2px;
+}
+
+.ff-asteroids-replay-control:disabled {
+  cursor: not-allowed;
+  opacity: .42;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ff-asteroids-replay-controls { display: none; }
+}
+
+@media (max-width: 520px) {
+  .ff-asteroids-replay { gap: .35rem; }
+  .ff-asteroids-replay-stage { border-radius: .55rem; }
+  .ff-asteroids-replay-controls { gap: .3rem; }
+  .ff-asteroids-replay-control { min-height: 3rem; border-radius: .5rem; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .ff-asteroids-replay { grid-template-columns: minmax(0, 1fr) 3.2rem; grid-template-rows: minmax(0, 1fr); }
+  .ff-asteroids-replay-controls { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); gap: .25rem; width: auto; }
+  .ff-asteroids-replay-control { min-height: 0; padding: .15rem; }
+  .ff-asteroids-replay-control span { display: none; }
+}

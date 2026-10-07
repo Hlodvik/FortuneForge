@@ -4,7 +4,6 @@ import { AsteroidsGame } from '../AsteroidsGame'
 import { HttpAsteroidsGateway } from '../httpAsteroidsGateway'
 import '../asteroids.css'
 import '../asteroidsLeaderboard.css'
-import '../asteroidsViewport.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Asteroids preview root was not found.')

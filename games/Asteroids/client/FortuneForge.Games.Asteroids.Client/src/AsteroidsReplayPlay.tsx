@@ -99,41 +99,39 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
   const seconds = Math.ceil(view.remainingSteps * 0.033)
 
   return <section className="ff-asteroids-replay" aria-label={modeLabel + ' Asteroids replay'}>
-    <header className="ff-asteroids-replay-head">
-      <div><small>{modeLabel}</small><h2>Asteroids</h2><p>Server-seeded local simulation · controls are recorded as held-state transitions.</p></div>
-      <div className="ff-asteroids-replay-clock" aria-label={seconds + ' seconds remaining'}><small>Remaining</small><strong>{formatTime(seconds)}</strong></div>
-    </header>
-    <section className="ff-asteroids-replay-stats" aria-live="polite">
-      <div><small>Score</small><strong>{formatScore(view.state.score)}</strong></div>
-      <div><small>Wave</small><strong>{view.state.wave}</strong></div>
-      <div><small>Lives</small><strong>{view.state.lives}</strong></div>
-      <div><small>Frame</small><strong>{view.state.tick}/3600</strong></div>
-    </section>
-    <div className="ff-asteroids-replay-canvas-wrap">
+    <div className="ff-asteroids-replay-stage">
       <canvas ref={canvasRef} className="ff-asteroids-replay-canvas" aria-label="Asteroids deterministic replay playfield" />
+      <header className="ff-asteroids-replay-head">
+        <div className="ff-asteroids-replay-title"><small>{modeLabel}</small><h2>Asteroids</h2></div>
+        <div className="ff-asteroids-replay-clock" aria-label={seconds + ' seconds remaining'}><small>Time</small><strong>{formatTime(seconds)}</strong></div>
+      </header>
+      <section className="ff-asteroids-replay-stats" aria-live="polite">
+        <div className="ff-asteroids-replay-score"><small>Score</small><strong>{formatScore(view.state.score)}</strong></div>
+        <div className="ff-asteroids-replay-wave"><small>Wave</small><strong>{view.state.wave}</strong></div>
+        <div className="ff-asteroids-replay-lives"><small>Lives</small><strong>{'◆'.repeat(view.state.lives) || '—'}</strong></div>
+      </section>
       {view.status !== 'running' && <div className="ff-asteroids-replay-overlay" role={view.status === 'failed' ? 'alert' : 'status'}>
         <small>{view.status === 'failed' ? 'Replay unavailable' : result?.reason === 'time-up' ? 'Time up' : 'Mission ended'}</small>
         <strong>{view.status === 'failed' ? 'Run stopped' : result?.reason === 'time-up' ? 'Two-minute limit reached' : 'Game over'}</strong>
         <span>{view.status === 'failed' ? view.error : formatScore(result?.score ?? view.state.score) + ' points · Wave ' + (result?.wave ?? view.state.wave) + ' · ' + (result?.lives ?? view.state.lives) + ' lives'}</span>
       </div>}
     </div>
-    <p className="ff-asteroids-replay-message" aria-live="polite">{view.status === 'running' ? 'A / Left · D / Right · W / Up · Space to fire' : 'Controls are locked after the replay ends.'}</p>
     <div className="ff-asteroids-replay-controls" aria-label="Touch controls">
-      <ControlButton label="Turn left" control="left" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton label="Thrust" control="thrust" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton label="Turn right" control="right" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton label="Fire" control="fire" setControl={setPointerControl} disabled={view.status !== 'running'} />
+      <ControlButton symbol="↶" label="Turn left" control="left" setControl={setPointerControl} disabled={view.status !== 'running'} />
+      <ControlButton symbol="▲" label="Thrust" control="thrust" setControl={setPointerControl} disabled={view.status !== 'running'} />
+      <ControlButton symbol="↷" label="Turn right" control="right" setControl={setPointerControl} disabled={view.status !== 'running'} />
+      <ControlButton symbol="●" label="Fire" control="fire" setControl={setPointerControl} disabled={view.status !== 'running'} />
     </div>
   </section>
 }
 
-function ControlButton({ label, control, setControl, disabled }: Readonly<{ label: string; control: AsteroidsHeldControl; setControl: (control: AsteroidsHeldControl, pressed: boolean) => void; disabled: boolean }>) {
+function ControlButton({ symbol, label, control, setControl, disabled }: Readonly<{ symbol: string; label: string; control: AsteroidsHeldControl; setControl: (control: AsteroidsHeldControl, pressed: boolean) => void; disabled: boolean }>) {
   return <button type="button" className="ff-asteroids-replay-control" aria-label={label} disabled={disabled}
     onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); setControl(control, true) }}
     onPointerUp={() => setControl(control, false)} onPointerCancel={() => setControl(control, false)} onLostPointerCapture={() => setControl(control, false)}
     onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); setControl(control, true) } }}
     onKeyUp={event => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); setControl(control, false) } }}>
-    <strong>{label}</strong><span>{control === 'left' ? 'A / Left' : control === 'right' ? 'D / Right' : control === 'thrust' ? 'W / Up' : 'Space'}</span>
+    <strong aria-hidden="true">{symbol}</strong><span>{label}</span>
   </button>
 }
 

@@ -5,6 +5,7 @@ import { renderAsteroids, type AsteroidsImpact, type AsteroidsSpriteAtlases } fr
 import { formatScore } from './asteroidsHelpers'
 import { AsteroidsReplaySession, type AsteroidsHeldControl, type AsteroidsReplayDisplayResult, type AsteroidsReplayPayload, type AsteroidsReplaySessionView } from './asteroidsReplaySession'
 import { loadAsteroidsSpriteAtlases } from './asteroidsSprites'
+import { AsteroidsTouchControls, type AsteroidsTouchControl } from './AsteroidsTouchControls'
 import './asteroidsReplayPlay.css'
 
 export type AsteroidsReplayPlayProps = Readonly<{ runId: string; seedHex: string; modeLabel?: string; onComplete: (replay: AsteroidsReplayPayload, display: AsteroidsReplayDisplayResult) => void }>
@@ -94,10 +95,10 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
     }
   }, [runId, seedHex])
 
-  const setPointerControl = (control: AsteroidsHeldControl, pressed: boolean) => {
+  const setPointerControl = useCallback((control: AsteroidsTouchControl, pressed: boolean) => {
     sessionRef.current.setHeld(control, pressed)
     setView(sessionRef.current.view)
-  }
+  }, [])
   const result = view.status === 'finished' ? localResult(view) : null
   const seconds = Math.ceil(view.remainingSteps * 0.033)
 
@@ -118,24 +119,9 @@ export function AsteroidsReplayPlay({ runId, seedHex, modeLabel = 'Deterministic
         <strong>{view.status === 'failed' ? 'Run stopped' : result?.reason === 'time-up' ? 'Two-minute limit reached' : 'Game over'}</strong>
         <span>{view.status === 'failed' ? view.error : formatScore(result?.score ?? view.state.score) + ' points · Wave ' + (result?.wave ?? view.state.wave) + ' · ' + (result?.lives ?? view.state.lives) + ' lives'}</span>
       </div>}
-    </div>
-    <div className="ff-asteroids-replay-controls" aria-label="Touch controls">
-      <ControlButton symbol="↶" label="Turn left" control="left" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton symbol="▲" label="Thrust" control="thrust" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton symbol="↷" label="Turn right" control="right" setControl={setPointerControl} disabled={view.status !== 'running'} />
-      <ControlButton symbol="●" label="Fire" control="fire" setControl={setPointerControl} disabled={view.status !== 'running'} />
+      <AsteroidsTouchControls disabled={view.status !== 'running'} shipAngle={view.state.ship.angle} onControlChange={setPointerControl} />
     </div>
   </section>
-}
-
-function ControlButton({ symbol, label, control, setControl, disabled }: Readonly<{ symbol: string; label: string; control: AsteroidsHeldControl; setControl: (control: AsteroidsHeldControl, pressed: boolean) => void; disabled: boolean }>) {
-  return <button type="button" className="ff-asteroids-replay-control" aria-label={label} disabled={disabled}
-    onPointerDown={event => { event.currentTarget.setPointerCapture(event.pointerId); setControl(control, true) }}
-    onPointerUp={() => setControl(control, false)} onPointerCancel={() => setControl(control, false)} onLostPointerCapture={() => setControl(control, false)}
-    onKeyDown={event => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); setControl(control, true) } }}
-    onKeyUp={event => { if (event.key === ' ' || event.key === 'Enter') { event.preventDefault(); setControl(control, false) } }}>
-    <strong aria-hidden="true">{symbol}</strong><span>{label}</span>
-  </button>
 }
 
 function keyControl(event: KeyboardEvent): AsteroidsHeldControl | null {

@@ -33,7 +33,7 @@ button { font: inherit; }
   display: grid;
   width: 100%;
   min-height: 0;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
   gap: .45rem;
   place-items: center;
   padding: clamp(.3rem, 1vw, .7rem);
@@ -166,36 +166,6 @@ button { font: inherit; }
 .ff-asteroids-error { width: min(100%, 42rem); padding: 1rem; border-radius: .7rem; background: #101d32; color: #c9d5e6; }
 .ff-asteroids-error { display: flex; justify-content: space-between; gap: 1rem; border: 1px solid #e07d7655; background: #4d202a; color: #ffd9d4; font-size: .75rem; }
 
-.ff-asteroids-touch-controls {
-  display: grid;
-  width: min(100%, 42rem);
-  grid-template-columns: repeat(4, 1fr);
-  gap: .4rem;
-}
-
-.ff-asteroids-touch-controls button {
-  display: grid;
-  min-height: 3.15rem;
-  place-content: center;
-  gap: .1rem;
-  border: 1px solid #77e7ff66;
-  border-radius: .65rem;
-  background: linear-gradient(180deg, #11243bea, #07101fee);
-  color: #f6fbff;
-  box-shadow: inset 0 1px #ffffff16, 0 .35rem 1rem #0005;
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-}
-
-.ff-asteroids-touch-controls strong { font-size: 1.1rem; }
-.ff-asteroids-touch-controls span { color: #9fdff0; font-size: .55rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
-.ff-asteroids-touch-controls button:active { border-color: #ffd56b; background: #183957; translate: 0 1px; }
-
-@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
-  .ff-asteroids-touch-controls { display: none; }
-}
-
 @media (max-width: 520px) {
   .ff-asteroids-main { gap: .3rem; padding: .25rem; }
   .ff-asteroids-stage { border-radius: .45rem; }
@@ -203,13 +173,8 @@ button { font: inherit; }
   .ff-asteroids-new { width: 2rem; min-width: 2rem; min-height: 2rem; }
   .ff-asteroids-score { top: 3rem; }
   .ff-asteroids-wave { top: auto; bottom: .6rem; }
-  .ff-asteroids-touch-controls { gap: .25rem; }
-  .ff-asteroids-touch-controls button { min-height: 2.8rem; border-radius: .5rem; }
 }
 
 @media (max-height: 520px) and (orientation: landscape) {
-  .ff-asteroids-main { grid-template-columns: minmax(0, 1fr) 3rem; grid-template-rows: minmax(0, 1fr); }
-  .ff-asteroids-touch-controls { width: auto; grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
-  .ff-asteroids-touch-controls button { min-height: 0; padding: .1rem; }
-  .ff-asteroids-touch-controls span { display: none; }
+  .ff-asteroids-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
 }

@@ -5,6 +5,7 @@ import { playAsteroidsSound } from './asteroidsAudio'
 import { renderAsteroids, type AsteroidsImpact, type AsteroidsSpriteAtlases } from './asteroidsCanvasRenderer'
 import { formatScore } from './asteroidsHelpers'
 import { loadAsteroidsSpriteAtlases } from './asteroidsSprites'
+import { AsteroidsTouchControls, type AsteroidsTouchControl } from './AsteroidsTouchControls'
 
 export type AsteroidsGameProps = Readonly<{ gateway: AsteroidsGateway; backHref?: string; playerName?: string; tableLabel?: string }>
 
@@ -22,6 +23,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
   const gameRef = useRef<AsteroidsGameState | null>(null)
   const busyRef = useRef(false)
   const heldControlTimerRef = useRef<number | null>(null)
+  const refreshHeldControlsRef = useRef<() => void>(() => undefined)
   const heldRotationsRef = useRef(new Map<string, AsteroidsAction>())
   const heldThrustsRef = useRef(new Set<string>())
   const heldFiresRef = useRef(new Set<string>())
@@ -118,6 +120,7 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
         heldControlTimerRef.current = window.setInterval(performHeldControl, heldControlIntervalMilliseconds)
       }
     }
+    refreshHeldControlsRef.current = refreshHeldControls
     const onKeyDown = (event: KeyboardEvent) => {
       if (isInteractiveTarget(event.target)) return
       const action = actionForKey(event)
@@ -167,8 +170,22 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
       heldThrustsRef.current.clear()
       heldFiresRef.current.clear()
       stopHeldControls()
+      refreshHeldControlsRef.current = () => undefined
     }
   }, [perform])
+
+  const setTouchControl = useCallback((control: AsteroidsTouchControl, pressed: boolean) => {
+    const controlKey = control === 'fire' ? 'touch-fire' : 'touch-joystick'
+    if (control === 'left' || control === 'right') {
+      if (pressed) heldRotationsRef.current.set(controlKey, control === 'left' ? 'rotate-left' : 'rotate-right')
+      else heldRotationsRef.current.delete(controlKey)
+    } else if (control === 'thrust') {
+      if (pressed) heldThrustsRef.current.add(controlKey)
+      else heldThrustsRef.current.delete(controlKey)
+    } else if (pressed) heldFiresRef.current.add(controlKey)
+    else heldFiresRef.current.delete(controlKey)
+    refreshHeldControlsRef.current()
+  }, [])
 
   const newGame = () => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
@@ -186,21 +203,12 @@ export function AsteroidsGame({ gateway, tableLabel = 'Free Play' }: AsteroidsGa
           </section>
           <section className="ff-asteroids-stats" aria-live="polite"><div className="ff-asteroids-score"><small>Score</small><strong>{formatScore(game.score)}</strong></div><div className="ff-asteroids-best"><small>Best</small><strong>{formatScore(game.bestScore)}</strong></div><div className="ff-asteroids-lives"><small>Lives</small><strong>{'◆'.repeat(game.lives) || '—'}</strong></div><div className="ff-asteroids-wave"><small>Wave</small><strong>{game.wave}</strong></div></section>
           {game.phase === 'game-over' && <div className="ff-asteroids-overlay" role="status"><small>Mission ended</small><strong>{formatScore(game.score)}</strong><button type="button" onClick={newGame} disabled={busy}>Play again</button></div>}
+          <AsteroidsTouchControls disabled={game.phase !== 'playing'} shipAngle={game.ship.angle} onControlChange={setTouchControl} />
         </section>
-        <div className="ff-asteroids-touch-controls" aria-label="Touch controls">
-          <TouchControl label="Turn left" symbol="↶" action="rotate-left" perform={perform} disabled={game.phase !== 'playing'} />
-          <TouchControl label="Thrust" symbol="▲" action="thrust" perform={perform} disabled={game.phase !== 'playing'} />
-          <TouchControl label="Turn right" symbol="↷" action="rotate-right" perform={perform} disabled={game.phase !== 'playing'} />
-          <TouchControl label="Fire" symbol="●" action="fire" perform={perform} disabled={game.phase !== 'playing'} />
-        </div>
       </> : <div className="ff-asteroids-loading">{error ?? 'Launching mission…'}</div>}
       {error && <div className="ff-asteroids-error" role="alert"><strong>{error}</strong><button type="button" onClick={newGame} disabled={busy}>Try again</button></div>}
     </main>
   </div>
-}
-
-function TouchControl({ label, symbol, action, perform, disabled }: Readonly<{ label: string; symbol: string; action: AsteroidsAction; perform: (action: AsteroidsAction) => boolean; disabled: boolean }>) {
-  return <button type="button" aria-label={label} disabled={disabled} onPointerDown={event => { event.preventDefault(); perform(action) }}><strong aria-hidden="true">{symbol}</strong><span>{label}</span></button>
 }
 
 function actionForKey(event: KeyboardEvent): AsteroidsAction | null {

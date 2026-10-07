@@ -1,0 +1,127 @@
+.ff-asteroids-mobile-controls {
+  --asteroids-touch-size: clamp(4.6rem, 23cqw, 6.25rem);
+  position: absolute;
+  z-index: 4;
+  right: clamp(.7rem, 4cqw, 2.2rem);
+  bottom: clamp(.65rem, 4cqw, 2rem);
+  left: clamp(.7rem, 4cqw, 2.2rem);
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.ff-asteroids-joystick,
+.ff-asteroids-fire-control {
+  width: var(--asteroids-touch-size);
+  height: var(--asteroids-touch-size);
+  border: 1px solid #b5efff80;
+  border-radius: 50%;
+  background: radial-gradient(circle, #8ddff317 0 53%, #77e7ff0b 54% 100%);
+  box-shadow: inset 0 0 1.2rem #77e7ff14, 0 0 .9rem #0008;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.ff-asteroids-joystick {
+  position: relative;
+}
+
+.ff-asteroids-joystick::before,
+.ff-asteroids-joystick::after {
+  position: absolute;
+  inset: 50% 18%;
+  height: 1px;
+  content: "";
+  background: #b5efff2c;
+}
+
+.ff-asteroids-joystick::after {
+  rotate: 90deg;
+}
+
+.ff-asteroids-joystick-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 42%;
+  height: 42%;
+  border: 1px solid #d9f8ff9e;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #f6fdff4d, #77e7ff24 58%, #09223582);
+  box-shadow: 0 .25rem .8rem #0008, inset 0 0 .6rem #d7f9ff2b;
+  translate: calc(-50% + var(--asteroids-stick-x, 0px)) calc(-50% + var(--asteroids-stick-y, 0px));
+  transition: translate 65ms linear;
+  pointer-events: none;
+}
+
+.ff-asteroids-fire-control {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #fff;
+  cursor: pointer;
+}
+
+.ff-asteroids-fire-control::before,
+.ff-asteroids-fire-control::after,
+.ff-asteroids-fire-control > span {
+  position: absolute;
+  border-radius: 50%;
+  content: "";
+}
+
+.ff-asteroids-fire-control::before {
+  width: 62%;
+  height: 62%;
+  border: 1px solid #ffd56b9e;
+  box-shadow: 0 0 .65rem #ffd56b38;
+}
+
+.ff-asteroids-fire-control::after {
+  width: 38%;
+  height: 38%;
+  background: radial-gradient(circle at 38% 32%, #fff4c1, #ffc542 52%, #e05b28);
+  box-shadow: 0 0 .8rem #ffb33c75;
+}
+
+.ff-asteroids-fire-control > span {
+  width: 12%;
+  height: 12%;
+  background: #fffbe7;
+  box-shadow: 0 0 .45rem #fff;
+}
+
+.ff-asteroids-fire-control.is-pressed,
+.ff-asteroids-fire-control:active {
+  border-color: #ffe58f;
+  background: radial-gradient(circle, #ffd56b2b 0 53%, #ff9d1b16 54% 100%);
+  scale: .94;
+}
+
+.ff-asteroids-fire-control:focus-visible {
+  outline: 2px solid #ffd56b;
+  outline-offset: 3px;
+}
+
+.ff-asteroids-joystick[aria-disabled="true"],
+.ff-asteroids-fire-control:disabled {
+  opacity: .3;
+}
+
+@media (hover: hover) and (pointer: fine) and (min-width: 721px) {
+  .ff-asteroids-mobile-controls { display: none; }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .ff-asteroids-mobile-controls {
+    --asteroids-touch-size: clamp(3.7rem, 21cqh, 5rem);
+    right: clamp(.5rem, 2.5cqw, 1.3rem);
+    bottom: clamp(.45rem, 2.5cqh, 1rem);
+    left: clamp(.5rem, 2.5cqw, 1.3rem);
+  }
+}

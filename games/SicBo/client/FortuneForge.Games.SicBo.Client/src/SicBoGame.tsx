@@ -59,6 +59,7 @@ function SicBoSession({gateway=defaultGateway,scope,currencySymbol='R',showTitle
         <div className="ff-sic-bo__return">{settled&&<><span>Return <b>{money(table.round!.totalReturn)}</b></span><strong className={table.round!.profit>=0?'is-win':'is-loss'}>{table.round!.profit>0?'+':''}{money(table.round!.profit)} net</strong></>}</div>
       </div>
       <div className="ff-sic-bo__board">
+        {settled&&table.round!.profit>0&&<output key={table.round!.roundId} className="ff-sic-bo__win-flash" aria-live="polite" aria-label={'Won '+money(table.round!.profit)}><strong>+{money(table.round!.profit)}</strong></output>}
         <div className="ff-sic-bo__board-left"><div className="ff-sic-bo__quick">{betTargets.filter(t=>['small','big','odd','even','any-triple'].includes(t.kind)).map(cell)}</div><div className="ff-sic-bo__faces">{(['single-number','specific-double','specific-triple'] as const).map(kind=><div className="ff-sic-bo__face-row" key={kind}><span>{kind==='single-number'?'Singles':kind==='specific-double'?'Doubles':'Triples'}</span>{targetsForKind(kind).map(cell)}</div>)}</div></div>
         <div className="ff-sic-bo__board-right"><div className="ff-sic-bo__totals" aria-label="Total bets">{targetsForKind('total').map(cell)}</div><div className="ff-sic-bo__combinations" aria-label="Two-number combination bets">{targetsForKind('two-number-combination').map(cell)}</div></div>
       </div>

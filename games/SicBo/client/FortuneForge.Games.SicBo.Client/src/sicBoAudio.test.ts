@@ -7,7 +7,7 @@ afterEach(() => {
 })
 
 describe('Sic Bo audio', () => {
-  it.each([['click', 2], ['roll', 18], ['win', 10]] as const)('synthesizes a %s cue without loading cross-game assets', async (cue, expectedStrikes) => {
+  it.each([['click', 2], ['bet', 3], ['roll', 18], ['win', 10]] as const)('synthesizes a %s cue without loading cross-game assets', async (cue, expectedStrikes) => {
     const audio = installAudioContextMock()
     const { playSicBoSound } = await import('./sicBoAudio')
 

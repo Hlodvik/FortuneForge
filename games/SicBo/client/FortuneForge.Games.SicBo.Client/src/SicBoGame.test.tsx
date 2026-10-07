@@ -39,7 +39,7 @@ describe('Sic Bo table',()=>{
   it('plays a quiet control cue for buttons and a distinct cue for a valid roll',async()=>{
     render(<SicBoGame gateway={fakeGateway()}/>);await ready()
     click('Rules');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
-    click('Close table details');add('Small');expect(playSicBoSound).toHaveBeenLastCalledWith('click')
+    click('Close table details');add('Small');expect(playSicBoSound).toHaveBeenLastCalledWith('bet')
     click('Roll dice');expect(playSicBoSound).toHaveBeenLastCalledWith('roll')
     await screen.findByRole('button',{name:'New round'});expect(playSicBoSound).toHaveBeenLastCalledWith('win')
   })

@@ -1,6 +1,6 @@
 type AudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }
 
-export type SicBoAudioCue = 'click' | 'roll' | 'win'
+export type SicBoAudioCue = 'bet' | 'click' | 'roll' | 'win'
 
 let context: AudioContext | null = null
 
@@ -39,6 +39,13 @@ function click(audio: AudioContext) {
   const start = audio.currentTime
   strike(audio, start, 310, 185, 0.055, 0.026, 'triangle')
   strike(audio, start, 760, 430, 0.026, 0.009, 'sine')
+}
+
+function bet(audio: AudioContext) {
+  const start = audio.currentTime
+  strike(audio, start, 230, 145, 0.075, 0.06, 'triangle')
+  strike(audio, start, 720, 390, 0.038, 0.026, 'square')
+  strike(audio, start + 0.026, 410, 265, 0.06, 0.038, 'triangle')
 }
 
 function roll(audio: AudioContext) {
@@ -106,5 +113,6 @@ export function playSicBoSound(cue: SicBoAudioCue): void {
   if (!audio) return
   if (cue === 'roll') roll(audio)
   else if (cue === 'win') win(audio)
+  else if (cue === 'bet') bet(audio)
   else click(audio)
 }

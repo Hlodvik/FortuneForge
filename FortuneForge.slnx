@@ -5,6 +5,9 @@
   <Folder Name="/Games/Baccarat/">
     <Project Path="games/Baccarat/src/FortuneForge.Games.Baccarat/FortuneForge.Games.Baccarat.csproj" />
   </Folder>
+  <Folder Name="/Games/Three Card Poker/">
+    <Project Path="games/ThreeCardPoker/src/FortuneForge.Games.ThreeCardPoker/FortuneForge.Games.ThreeCardPoker.csproj" />
+  </Folder>
   <Folder Name="/Games/Blackjack/">
     <Project Path="games/Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
   </Folder>

@@ -10,6 +10,7 @@ const AuthenticatedSlotsLibraryRoute = lazy(() => import('./routes/SlotsLibraryR
 const AuthenticatedCardLibraryRoute = lazy(() => import('./routes/CardLibraryRoute').then((module) => ({ default: module.AuthenticatedCardLibraryRoute })))
 const AuthenticatedGameHubRoute = lazy(() => import('./routes/GameHubRoute').then((module) => ({ default: module.AuthenticatedGameHubRoute })))
 const AuthenticatedBlackjackRoute = lazy(() => import('./routes/BlackjackRoute').then((module) => ({ default: module.AuthenticatedBlackjackRoute })))
+const AuthenticatedThreeCardPokerRoute = lazy(() => import('./routes/ThreeCardPokerRoute').then((module) => ({ default: module.AuthenticatedThreeCardPokerRoute })))
 const AuthenticatedTexasHoldemRoute = lazy(() => import('./routes/TexasHoldemRoute').then((module) => ({ default: module.AuthenticatedTexasHoldemRoute })))
 const AuthenticatedSolitaireRoute = lazy(() => import('./routes/SolitaireRoute').then((module) => ({ default: module.AuthenticatedSolitaireRoute })))
 const AuthenticatedAsteroidsRoute = lazy(() => import('./routes/AsteroidsRoute').then((module) => ({ default: module.AuthenticatedAsteroidsRoute })))
@@ -79,6 +80,7 @@ export function AppRoutes({
   else if (pathname === '/games/liars-dice') route = <AuthenticatedLiarsDiceRoute />
   else if (pathname === '/cards/hearts') route = <AuthenticatedHeartsRoute />
   else if (pathname === '/cards/blackjack') route = <AuthenticatedBlackjackRoute />
+  else if (pathname === '/cards/three-card-poker') route = <AuthenticatedThreeCardPokerRoute />
   else if (pathname === '/cards/texas-holdem') route = <AuthenticatedTexasHoldemRoute />
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />
   else if (slotRoute !== null) {

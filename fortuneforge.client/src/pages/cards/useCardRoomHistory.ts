@@ -9,6 +9,7 @@ import type { CardRoomActivity } from '../../games/cards/shared/cardRoomHistoryT
 const gameHref: Record<CardRoomActivity['game'], string> = {
   blackjack: '/cards/blackjack',
   'texas-holdem': '/cards/texas-holdem',
+  'three-card-poker': '/cards/three-card-poker',
   solitaire: '/cards/solitaire',
 }
 
@@ -19,7 +20,7 @@ export function useCardRoomHistory(onBalanceChange?: (balanceCredits: number) =>
   const [busyId, setBusyId] = useState<string | null>(null)
 
   const refresh = useCallback(async (signal?: AbortSignal) => {
-    const [historyResult, blackjackResult, holdemResult, solitaireResult] = await Promise.allSettled([
+    const [historyResult, blackjackResult, holdemResult, solitaireResult, threeCardPokerResult] = await Promise.allSettled([
       getCardRoomHistory(40, signal),
       import('../../games/cards/blackjack/blackjackTableApi')
         .then(({ getBlackjackTableSession }) => getBlackjackTableSession(signal)),
@@ -27,6 +28,8 @@ export function useCardRoomHistory(onBalanceChange?: (balanceCredits: number) =>
         .then(({ getCreditHoldemSession }) => getCreditHoldemSession(signal)),
       import('../../games/cards/solitaire/solitaireApi')
         .then(({ getSolitaireSession }) => getSolitaireSession(signal)),
+      import('../../games/cards/threeCardPoker/threeCardPokerApi')
+        .then(({ getThreeCardPokerSession }) => getThreeCardPokerSession(signal)),
     ])
     if (signal?.aborted) return
 
@@ -37,6 +40,7 @@ export function useCardRoomHistory(onBalanceChange?: (balanceCredits: number) =>
       blackjackResult.status === 'fulfilled' ? blackjackActivity(blackjackResult.value) : null,
       holdemResult.status === 'fulfilled' ? holdemActivity(holdemResult.value) : null,
       solitaireResult.status === 'fulfilled' ? solitaireActivity(solitaireResult.value) : null,
+      threeCardPokerResult.status === 'fulfilled' ? threeCardPokerActivity(threeCardPokerResult.value) : null,
     ].filter((activity): activity is CardRoomActivity => activity !== null)
 
     const activeKeys = new Set(active.map((activity) => `${activity.game}:${activity.matchId}`))
@@ -189,6 +193,23 @@ function holdemActivity(session: Awaited<ReturnType<
   }
 }
 
+function threeCardPokerActivity(session: Awaited<ReturnType<
+  typeof import('../../games/cards/threeCardPoker/threeCardPokerApi').getThreeCardPokerSession
+>>): CardRoomActivity | null {
+  if (session.kind === 'idle') return null
+  return {
+    id: session.kind === 'queue' ? session.ticketId : session.table.tableId,
+    matchId: session.kind === 'queue' ? session.ticketId : session.table.tableId,
+    game: 'three-card-poker',
+    gameLabel: 'Three Card Poker',
+    title: session.kind === 'queue' ? 'Waiting for a table' : `Table · round ${session.table.round}`,
+    summary: session.kind === 'queue' ? `${session.players.length} players ready` : readable(session.table.phase),
+    startedAtUtc: session.kind === 'queue' ? session.joinedAtUtc : session.table.createdAtUtc,
+    completedAtUtc: null, unseen: false, requiresClaim: false, winningsCredits: null,
+    sourceIds: [], rounds: 0, wagerCredits: 0, netCredits: 0,
+  }
+}
+
 function solitaireActivity(session: Awaited<ReturnType<
   typeof import('../../games/cards/solitaire/solitaireApi').getSolitaireSession
 >>): CardRoomActivity | null {
@@ -235,7 +256,7 @@ function groupHistoryActivities(items: readonly CardRoomActivity[]): CardRoomAct
     const last = ordered[ordered.length - 1]
     if (first.game === 'solitaire') return first
     const rounds = ordered.reduce((sum, item) => sum + (item.rounds ?? 1), 0)
-    const label = first.game === 'blackjack' ? 'rounds' : 'hands'
+    const label = first.game === 'texas-holdem' ? 'hands' : 'rounds'
     const wagerCredits = ordered.reduce((sum, item) => sum + (item.wagerCredits ?? 0), 0)
     const winningsCredits = ordered.reduce((sum, item) => sum + (item.winningsCredits ?? 0), 0)
     const netCredits = ordered.reduce((sum, item) => sum + (item.netCredits ?? 0), 0)
@@ -270,6 +291,7 @@ function money(value: number): string {
 function gameLabel(game: CardRoomActivity['game']): string {
   if (game === 'blackjack') return 'Blackjack'
   if (game === 'texas-holdem') return 'Hold’em'
+  if (game === 'three-card-poker') return 'Three Card Poker'
   return 'Solitaire'
 }
 

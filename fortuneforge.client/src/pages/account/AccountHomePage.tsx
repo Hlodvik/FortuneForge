@@ -11,6 +11,7 @@ import '../index.css'
 const cardDetails = {
   blackjack: { href: '/cards/blackjack', image: blackjackPreview },
   'texas-holdem': { href: '/cards/texas-holdem', image: holdemPreview },
+  'three-card-poker': { href: '/cards/three-card-poker', image: holdemPreview },
   solitaire: { href: '/cards/solitaire', image: solitairePreview },
 } as const
 

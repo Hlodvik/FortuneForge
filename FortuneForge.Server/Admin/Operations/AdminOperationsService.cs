@@ -45,6 +45,7 @@ internal sealed class AdminOperationsService(
         var snapshot = await store.ReadAsync(range, cancellationToken);
         var slots = GameFinancials(snapshot.Financial, "slots");
         var blackjack = GameFinancials(snapshot.Financial, "blackjack");
+        var threeCardPoker = GameFinancials(snapshot.Financial, "three-card-poker");
         var solitaire = PoolFinancials(snapshot.Financial, "solitaire");
         var texasHoldem = PoolFinancials(snapshot.Financial, "texas-holdem");
         var purchases = snapshot.Funding.Where(static record => record.Category == "purchase").ToArray();
@@ -54,9 +55,10 @@ internal sealed class AdminOperationsService(
             range.ToUtc,
             slots,
             blackjack,
+            threeCardPoker,
             solitaire,
             texasHoldem,
-            slots.HouseNetCredits + blackjack.HouseNetCredits +
+            slots.HouseNetCredits + blackjack.HouseNetCredits + threeCardPoker.HouseNetCredits +
                 solitaire.PlatformFeeCredits + texasHoldem.PlatformFeeCredits,
             new AdminFundingFlows(
                 purchases.Sum(static record => record.Credits),
@@ -162,7 +164,8 @@ internal sealed class AdminOperationsService(
         {
             BotTelemetry("blackjack", true, snapshot.BotLeases, nowUtc),
             BotTelemetry("solitaire", false, snapshot.BotLeases, nowUtc),
-            BotTelemetry("texas-holdem", false, snapshot.BotLeases, nowUtc)
+            BotTelemetry("texas-holdem", false, snapshot.BotLeases, nowUtc),
+            BotTelemetry("three-card-poker", true, snapshot.BotLeases, nowUtc)
         };
         return new(
             range.FromUtc,

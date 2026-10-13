@@ -14,6 +14,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../ThreeCardPoker/src/FortuneForge.Games.ThreeCardPoker/FortuneForge.Games.ThreeCardPoker.csproj" />
     <ProjectReference Include="../../Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
     <ProjectReference Include="../../shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
     <ProjectReference Include="../../Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />

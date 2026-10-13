@@ -24,8 +24,13 @@ internal static class ManagedPlayerGames
     public const string Roulette = "roulette";
     public const string Solitaire = "solitaire";
     public const string TexasHoldem = "texas-holdem";
+    public const string ThreeCardPoker = "three-card-poker";
     public static readonly IReadOnlyList<string> All =
-        [Blackjack, Hearts, LiarsDice, Roulette, Solitaire, TexasHoldem];
+        [Blackjack, Hearts, LiarsDice, Roulette, Solitaire, TexasHoldem, ThreeCardPoker];
+
+    // Existing profiles can use the newly installed server-owned game adapter.
+    public static IReadOnlySet<string> SupportedWithCurrentAdapters(IEnumerable<string> games) =>
+        games.Append(ThreeCardPoker).ToHashSet(StringComparer.OrdinalIgnoreCase);
 }
 
 internal static class ManagedPlayerTableStayPolicy

@@ -10,6 +10,7 @@ export type OperationsOverview = {
   toUtc: string
   slots: GameFinancials
   blackjack: GameFinancials
+  threeCardPoker?: GameFinancials
   solitaire: {
     grossPoolCredits: number
     winnerPayoutCredits: number

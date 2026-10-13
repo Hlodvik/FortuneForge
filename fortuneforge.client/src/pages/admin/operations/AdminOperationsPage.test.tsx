@@ -25,9 +25,10 @@ describe('admin operations route', () => {
         fromUtc: now, toUtc: now,
         slots: { wageredCredits: 0, paidCredits: 0, houseNetCredits: 0, completedEvents: 0 },
         blackjack: { wageredCredits: 0, paidCredits: 0, houseNetCredits: 0, completedEvents: 0 },
+        threeCardPoker: { wageredCredits: 15, paidCredits: 40, houseNetCredits: -25, completedEvents: 1 },
         solitaire: { grossPoolCredits: 0, winnerPayoutCredits: 0, platformFeeCredits: 0, settledRealHumanPoolMatches: 0 },
         texasHoldem: { grossPoolCredits: 100, winnerPayoutCredits: 90, platformFeeCredits: 10, settledRealHumanPoolMatches: 1 },
-        houseGamingNetCredits: 10,
+        houseGamingNetCredits: -15,
         funding: { completedPurchaseCredits: 0, completedPurchases: 0, completedWithdrawalCredits: 0, completedWithdrawals: 0 },
         complete: true, limitations: [],
       },
@@ -43,5 +44,6 @@ describe('admin operations route', () => {
     expect(markup).toContain('R10,00')
     expect(markup).toContain('net R-5,00')
     expect(markup).toContain('Simulated-player telemetry')
+    expect(markup).toContain('Three Card Poker wager / payout')
   })
 })

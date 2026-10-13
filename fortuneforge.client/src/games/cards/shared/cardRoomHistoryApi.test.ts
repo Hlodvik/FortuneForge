@@ -42,4 +42,10 @@ describe('card-room history API', () => {
     expect(init.body).toBeUndefined()
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe('aaaaaaaabbbb4ccc8dddeeeeeeeeeeee')
   })
+
+  it('accepts settled Three Card Poker rounds in the shared history', async () => {
+    const result = { resultId: 'three-card-round-1', game: 'three-card-poker', mode: 'credit-table', matchId: 'table-1', startedAtUtc: '2026-10-12T12:00:00Z', completedAtUtc: '2026-10-12T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 20, wagerCredits: 10, netCredits: 10, score: null, moves: null, schemaVersion: 1 }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([result]), { status: 200 })))
+    await expect(getCardRoomHistory()).resolves.toEqual([result])
+  })
 })

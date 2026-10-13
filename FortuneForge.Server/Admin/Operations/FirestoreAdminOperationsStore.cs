@@ -30,7 +30,8 @@ internal sealed class FirestoreAdminOperationsStore(
             ReadRangeAsync("solitaireMatches", "startedAt", range, cancellationToken),
             ReadRangeAsync("managedPlayerAssignments", "heartbeatAt", range, cancellationToken),
             ReadRangeAsync("creditHoldemMatchRevenue", "recognizedAt", range, cancellationToken),
-            ReadRangeAsync("blackjackTableRoundRevenue", "recognizedAt", range, cancellationToken));
+            ReadRangeAsync("blackjackTableRoundRevenue", "recognizedAt", range, cancellationToken),
+            ReadRangeAsync("threeCardPokerTableRoundRevenue", "recognizedAt", range, cancellationToken));
 
         var solitaireRecords = reads[2].Documents
             .Select(TryMapSolitaireRevenue)
@@ -47,6 +48,9 @@ internal sealed class FirestoreAdminOperationsStore(
             .ToArray();
         var rejectedBlackjackTableRecords = blackjackTableRecords.Count(static record => record is null);
 
+        var threeCardPokerRecords = reads[10].Documents.Select(TryMapThreeCardPokerTableRevenue).ToArray();
+        var rejectedThreeCardPokerRecords = threeCardPokerRecords.Count(static record => record is null);
+
         var limitations = reads
             .Where(static read => read.Truncated)
             .Select(static read => $"{read.Collection} exceeded the safe document cap; totals are incomplete.")
@@ -59,6 +63,8 @@ internal sealed class FirestoreAdminOperationsStore(
             .Concat(rejectedBlackjackTableRecords == 0
                 ? []
                 : [$"{rejectedBlackjackTableRecords} Blackjack table revenue record(s) failed the real-human dealer-counterparty financial contract and were excluded."])
+            .Concat(rejectedThreeCardPokerRecords == 0 ? []
+                : [$"{rejectedThreeCardPokerRecords} Three Card Poker revenue record(s) failed the real-human dealer-counterparty financial contract and were excluded."])
             .ToArray();
 
         var financial = reads[0].Documents.Select(MapSlot)
@@ -68,8 +74,9 @@ internal sealed class FirestoreAdminOperationsStore(
             .Concat(solitaireRecords.OfType<AdminOperationsFinancialRecord>())
             .Concat(creditHoldemRecords.OfType<AdminOperationsFinancialRecord>())
             .Concat(blackjackTableRecords
-                .OfType<ValidatedBlackjackTableRevenue>()
+                .OfType<ValidatedDealerTableRevenue>()
                 .Select(static record => record.Financial))
+            .Concat(threeCardPokerRecords.OfType<ValidatedDealerTableRevenue>().Select(static record => record.Financial))
             .OrderByDescending(static record => record.OccurredAtUtc)
             .ThenBy(static record => record.Id, StringComparer.Ordinal)
             .ToArray();
@@ -100,8 +107,9 @@ internal sealed class FirestoreAdminOperationsStore(
         var matches = reads[1].Documents.Select(MapBlackjackMatch)
             .Concat(reads[6].Documents.Select(MapSolitaireMatch))
             .Concat(blackjackTableRecords
-                .OfType<ValidatedBlackjackTableRevenue>()
+                .OfType<ValidatedDealerTableRevenue>()
                 .Select(static record => record.Match))
+            .Concat(threeCardPokerRecords.OfType<ValidatedDealerTableRevenue>().Select(static record => record.Match))
             .OrderByDescending(static item => item.StartedAtUtc)
             .ThenBy(static item => item.MatchId, StringComparer.Ordinal)
             .ToArray();
@@ -130,7 +138,11 @@ internal sealed class FirestoreAdminOperationsStore(
                 "blackjack-table-revenue-contract",
                 "Blackjack table revenue must be slotsCredits, classified as real-human-dealer-counterparty-v1, contain zero bot contribution, and satisfy signed house net equals wager minus payout.",
                 reads[9].Documents.Count,
-                rejectedBlackjackTableRecords)
+                rejectedBlackjackTableRecords),
+            new AdminOperationsSourceFinding(
+                "three-card-poker-table-revenue-contract",
+                "Three Card Poker revenue must satisfy the real-human dealer-counterparty contract with zero bot contribution.",
+                reads[10].Documents.Count, rejectedThreeCardPokerRecords)
         };
 
         return new AdminOperationsSnapshot(
@@ -267,7 +279,13 @@ internal sealed class FirestoreAdminOperationsStore(
             CreditsFromCents(fee));
     }
 
-    private static ValidatedBlackjackTableRevenue? TryMapBlackjackTableRevenue(DocumentSnapshot document)
+    private static ValidatedDealerTableRevenue? TryMapBlackjackTableRevenue(DocumentSnapshot document) =>
+        TryMapDealerTableRevenue(document, "blackjack");
+
+    private static ValidatedDealerTableRevenue? TryMapThreeCardPokerTableRevenue(DocumentSnapshot document) =>
+        TryMapDealerTableRevenue(document, "three-card-poker");
+
+    private static ValidatedDealerTableRevenue? TryMapDealerTableRevenue(DocumentSnapshot document, string game)
     {
         if (String(document, "currencyId") != "slotsCredits" ||
             String(document, "financialClassification") != "real-human-dealer-counterparty-v1" ||
@@ -285,17 +303,17 @@ internal sealed class FirestoreAdminOperationsStore(
 
         var recognizedAt = TimestampUtc(document, "recognizedAt");
         var financial = new AdminOperationsFinancialRecord(
-            OpaqueId("blackjack-table", document.Id),
+            OpaqueId($"{game}-table", document.Id),
             "gaming",
-            "blackjack",
+            game,
             "settled",
             recognizedAt,
             CreditsFromCents(wager),
             CreditsFromCents(payout),
             CreditsFromCents(houseNet));
         var match = new AdminOperationsMatchItem(
-            OpaqueId("blackjack-table-match", document.Id),
-            "blackjack",
+            OpaqueId($"{game}-table-match", document.Id),
+            game,
             "settled",
             checked((int)humanPlayers),
             recognizedAt,
@@ -356,6 +374,7 @@ internal sealed class FirestoreAdminOperationsStore(
         "blackjack" => value,
         "solitaire" => value,
         "texas-holdem" => value,
+        "three-card-poker" => value,
         _ => "unknown"
     };
 
@@ -410,7 +429,7 @@ internal sealed class FirestoreAdminOperationsStore(
         IReadOnlyList<DocumentSnapshot> Documents,
         bool Truncated);
 
-    private sealed record ValidatedBlackjackTableRevenue(
+    private sealed record ValidatedDealerTableRevenue(
         AdminOperationsFinancialRecord Financial,
         AdminOperationsMatchItem Match);
 }

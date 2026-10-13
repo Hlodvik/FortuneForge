@@ -1,0 +1,980 @@
+using System.Text.Json;
+using FortuneForge.Server.Bots;
+using Google.Cloud.Firestore;
+using FortuneForge.Server.Bots.ThreeCardPoker;
+using FortuneForge.Server.Matchmaking;
+using Grpc.Core;
+
+namespace FortuneForge.Server.Cards.ThreeCardPoker.Table;
+
+internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableStore
+{
+    private const string CurrencyId = "slotsCredits";
+    private const string FractionField = "availableFractionalCents";
+    private const int MaximumShardCandidates = 20;
+    private const int MaximumSweepBatch = 25;
+    private static readonly TimeSpan GuardRetention = TimeSpan.FromDays(7);
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly FirestoreDb database;
+    private readonly Func<IReadOnlyList<string>>? deckFactory;
+    private readonly Func<ulong>? seedFactory;
+    private readonly IMultiplayerMatchmaker matchmaking;
+    private readonly IManagedTablePopulationDirector population;
+    private readonly string leaseOwner = $"three-card-poker-table-worker-{Guid.NewGuid():N}";
+
+    public FirestoreThreeCardPokerTableStore(FirestoreDb database) : this(database, null, null, null, null)
+    {
+    }
+
+    internal FirestoreThreeCardPokerTableStore(
+        FirestoreDb database,
+        Func<IReadOnlyList<string>>? deckFactory,
+        Func<ulong>? seedFactory,
+        IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+        IManagedTablePopulationDirector? managedPopulationDirector = null)
+    {
+        this.database = database;
+        this.deckFactory = deckFactory;
+        this.seedFactory = seedFactory;
+        matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+        population = managedPopulationDirector ?? new ManagedTablePopulationDirector();
+    }
+
+    public async Task<ThreeCardPokerTableStoreResult> GetSessionAsync(
+        string userId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var route = await SessionDocument(userId).GetSnapshotAsync(cancellationToken);
+        var stateId = ReadString(route, "stateId");
+        if (string.IsNullOrEmpty(stateId))
+        {
+            var balance = await BalanceDocument(userId).GetSnapshotAsync(cancellationToken);
+            return new(new ThreeCardPokerTableIdleSessionResponse(), ReadBalance(balance));
+        }
+
+        return await ExecuteRoutedAsync(
+            stateId,
+            userId,
+            null,
+            false,
+            (coordinator, state, balances) => coordinator.Get(state, balances, userId, nowUtc),
+            nowUtc,
+            cancellationToken);
+    }
+
+    public async Task<ThreeCardPokerTableStoreResult> JoinAsync(
+        string userId,
+        string displayName,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var replaySnapshot = await GuardDocument(userId, idempotencyKey)
+            .GetSnapshotAsync(cancellationToken);
+        if (replaySnapshot.Exists)
+        {
+            var replay = ReadGuard(replaySnapshot);
+            var expectedTicketId = ThreeCardPokerTableIds.Hash($"{userId}\n{idempotencyKey}");
+            var expectedDetail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            if (replay.Operation != "join" || replay.Target != expectedTicketId || replay.Detail != expectedDetail)
+                throw new ThreeCardPokerTableConflictException(
+                    "This Idempotency-Key was already used for a different Three Card Poker table request.");
+            return await ReadCurrentSessionAsync(userId, nowUtc, cancellationToken);
+        }
+
+        ThreeCardPokerTableCoordinatorResult Command(
+            ThreeCardPokerTableCoordinator coordinator,
+            ThreeCardPokerTableLobbyState state,
+            IDictionary<string, long> balances) =>
+            coordinator.Join(
+                state,
+                balances,
+                userId,
+                displayName,
+                expectedVersion,
+                idempotencyKey,
+                nowUtc);
+
+        var existing = await ResolveStateIdAsync(userId, idempotencyKey, cancellationToken);
+        if (!string.IsNullOrEmpty(existing))
+        {
+            return await ExecuteRoutedAsync(
+                existing,
+                userId,
+                idempotencyKey,
+                false,
+                Command,
+                nowUtc,
+                cancellationToken);
+        }
+
+        var excluded = new HashSet<string>(StringComparer.Ordinal);
+        for (var attempt = 0; attempt < 8; attempt++)
+        {
+            var stateId = await FindAcceptingStateIdAsync(excluded, cancellationToken)
+                ?? CohortStateId(nowUtc, attempt);
+            try
+            {
+                return await ExecuteRoutedAsync(
+                    stateId,
+                    userId,
+                    idempotencyKey,
+                    true,
+                    Command,
+                    nowUtc,
+                    cancellationToken);
+            }
+            catch (ThreeCardPokerTableShardUnavailableException)
+            {
+                excluded.Add(stateId);
+            }
+        }
+
+        throw new ThreeCardPokerTableConflictException(
+            "Three Card Poker table matchmaking is busy. Reconnect before joining again.");
+    }
+
+    private async Task<ThreeCardPokerTableStoreResult> ReadCurrentSessionAsync(
+        string userId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var routeTask = SessionDocument(userId).GetSnapshotAsync(cancellationToken);
+        var balanceTask = BalanceDocument(userId).GetSnapshotAsync(cancellationToken);
+        await Task.WhenAll(routeTask, balanceTask);
+        var route = await routeTask;
+        var balance = ReadBalance(await balanceTask);
+        var stateId = ReadString(route, "stateId");
+        if (string.IsNullOrEmpty(stateId))
+            return new(new ThreeCardPokerTableIdleSessionResponse(), balance);
+
+        var stateSnapshot = await StateDocument(stateId).GetSnapshotAsync(cancellationToken);
+        if (!stateSnapshot.Exists)
+            return new(new ThreeCardPokerTableIdleSessionResponse(), balance);
+        return new(ThreeCardPokerTableProjection.Session(ReadState(stateSnapshot), userId, nowUtc), balance);
+    }
+
+    public Task<ThreeCardPokerTableStoreResult> CancelAsync(
+        string userId,
+        string ticketId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.Cancel(
+                state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
+    public Task<ThreeCardPokerTableStoreResult> WagerAsync(
+        string userId,
+        string tableId,
+        long wagerCents,
+        long pairPlusCents,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.Wager(
+                state, balances, userId, tableId, wagerCents, pairPlusCents, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
+    public Task<ThreeCardPokerTableStoreResult> SitOutAsync(
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.SitOut(
+                state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
+    public Task<ThreeCardPokerTableStoreResult> ActionAsync(
+        string userId,
+        string tableId,
+        string action,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.Action(
+                state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
+    public Task<ThreeCardPokerTableStoreResult> LeaveAsync(
+        string userId,
+        string tableId,
+        int expectedVersion,
+        string idempotencyKey,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        ExecuteResolvedAsync(
+            userId,
+            idempotencyKey,
+            (coordinator, state, balances) => coordinator.Leave(
+                state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
+            nowUtc,
+            cancellationToken);
+
+    public async Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        var acquired = await RunTransactionAsync(async transaction =>
+        {
+            var lease = await transaction.GetSnapshotAsync(LeaseDocument(), cancellationToken);
+            if (lease.Exists && ReadString(lease, "owner") != leaseOwner &&
+                lease.TryGetValue<Timestamp>("leaseUntil", out var timestamp) &&
+                timestamp.ToDateTime() > nowUtc)
+                return false;
+            transaction.Set(LeaseDocument(), new Dictionary<string, object>
+            {
+                ["owner"] = leaseOwner,
+                ["leaseUntil"] = Timestamp.FromDateTime(nowUtc.AddSeconds(2)),
+                ["heartbeatAt"] = Timestamp.FromDateTime(nowUtc),
+                ["schemaVersion"] = 2L
+            }, SetOptions.MergeAll);
+            return true;
+        }, cancellationToken);
+        if (!acquired) return;
+
+        var due = await StateCollection()
+            .WhereLessThanOrEqualTo("nextDeadlineAt", Timestamp.FromDateTime(nowUtc))
+            .Limit(MaximumSweepBatch)
+            .GetSnapshotAsync(cancellationToken);
+        foreach (var snapshot in due.Documents)
+            await SweepShardAsync(snapshot.Id, nowUtc, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ThreeCardPokerTableHistoryItemResponse>> GetHistoryAsync(
+        string userId,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var snapshots = await database.Collection("cardGameResults")
+            .WhereEqualTo("userGameHash", ThreeCardPokerTableIds.Hash($"{userId}\nthree-card-poker\ncredit-table"))
+            .Limit(Math.Min(limit, 50))
+            .GetSnapshotAsync(cancellationToken);
+        return snapshots.Documents
+            .OrderByDescending(snapshot => ReadTimestamp(snapshot, "completedAt"))
+            .Take(limit)
+            .Select<DocumentSnapshot, ThreeCardPokerTableHistoryItemResponse>(snapshot => HistoryResponse(snapshot))
+            .ToArray();
+    }
+
+    public Task<ThreeCardPokerTableHistoryItemResponse> MarkHistorySeenAsync(
+        string userId,
+        string resultId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        RunTransactionAsync(async transaction =>
+        {
+            var reference = CardGameResultDocument(resultId);
+            var snapshot = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            if (!snapshot.Exists || ReadString(snapshot, "userId") != userId ||
+                ReadString(snapshot, "game") != "three-card-poker" || ReadString(snapshot, "mode") != "credit-table")
+                throw new ThreeCardPokerTableNotFoundException("The Three Card Poker table result was not found.");
+            DateTime seenAt;
+            if (!snapshot.ToDictionary().TryGetValue("seenAt", out var seenValue) || seenValue is not Timestamp priorSeen)
+            {
+                transaction.Update(reference, new Dictionary<string, object>
+                {
+                    ["seenAt"] = Timestamp.FromDateTime(nowUtc)
+                });
+                seenAt = nowUtc;
+            }
+            else seenAt = priorSeen.ToDateTime();
+            return HistoryResponse(snapshot, seenAt);
+        }, cancellationToken);
+
+    private async Task<ThreeCardPokerTableStoreResult> ExecuteResolvedAsync(
+        string userId,
+        string idempotencyKey,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var stateId = await ResolveStateIdAsync(userId, idempotencyKey, cancellationToken);
+        if (string.IsNullOrEmpty(stateId))
+            throw new ThreeCardPokerTableNotFoundException("The Three Card Poker table session was not found.");
+        return await ExecuteRoutedAsync(
+            stateId, userId, idempotencyKey, false, command, nowUtc, cancellationToken);
+    }
+
+    private async Task<ThreeCardPokerTableStoreResult> ExecuteRoutedAsync(
+        string initialStateId,
+        string userId,
+        string? idempotencyKey,
+        bool requireAcceptingShard,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var stateId = initialStateId;
+        for (var routeAttempt = 0; routeAttempt < 4; routeAttempt++)
+        {
+            try
+            {
+                return await ExecuteShardAsync(
+                    stateId,
+                    userId,
+                    idempotencyKey,
+                    requireAcceptingShard,
+                    command,
+                    nowUtc,
+                    cancellationToken);
+            }
+            catch (ThreeCardPokerTableShardChangedException changed)
+            {
+                stateId = changed.StateId;
+                requireAcceptingShard = false;
+            }
+        }
+        throw new ThreeCardPokerTableConflictException("The Three Card Poker table session changed. Reconnect and try again.");
+    }
+
+    private async Task<ThreeCardPokerTableStoreResult> ExecuteShardAsync(
+        string stateId,
+        string userId,
+        string? idempotencyKey,
+        bool requireAcceptingShard,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var reservations = new List<ThreeCardPokerReservedManagedPlayer>();
+        while (true)
+        {
+            try
+            {
+                var execution = await RunTransactionAsync(async transaction =>
+                {
+                    var supply = new ThreeCardPokerManagedPlayerSupply(reservations, generateWhenEmpty: false);
+                    var coordinator = new ThreeCardPokerTableCoordinator(
+                        deckFactory, seedFactory, supply, matchmaking, population);
+                    var stateReference = StateDocument(stateId);
+                    var sessionReference = SessionDocument(userId);
+                    var guardReference = string.IsNullOrEmpty(idempotencyKey)
+                        ? null
+                        : GuardDocument(userId, idempotencyKey);
+                    var initialReads = new List<Task<DocumentSnapshot>>
+                    {
+                        transaction.GetSnapshotAsync(stateReference, cancellationToken),
+                        transaction.GetSnapshotAsync(sessionReference, cancellationToken)
+                    };
+                    if (guardReference is not null)
+                        initialReads.Add(transaction.GetSnapshotAsync(guardReference, cancellationToken));
+                    var snapshots = await Task.WhenAll(initialReads);
+                    var routedStateId = ReadString(snapshots[1], "stateId");
+                    if (!string.IsNullOrEmpty(routedStateId) && routedStateId != stateId)
+                        throw new ThreeCardPokerTableShardChangedException(routedStateId);
+
+                    var state = ReadState(snapshots[0]);
+                    var durableBefore = DurableStateJson(state);
+                    var guardSnapshot = guardReference is null ? null : snapshots[2];
+                    var guardKey = string.IsNullOrEmpty(idempotencyKey) ? null : GuardKey(userId, idempotencyKey);
+                    if (guardSnapshot?.Exists == true && guardKey is not null)
+                        state.Guards[guardKey] = ReadGuard(guardSnapshot);
+                    if (requireAcceptingShard && guardSnapshot?.Exists != true && !CanAcceptHuman(state))
+                        throw new ThreeCardPokerTableShardUnavailableException();
+
+                    var prior = StateReferences.Capture(state, userId);
+                    var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
+                    var result = command(coordinator, state, loaded.Current);
+                    var commandGuard = guardKey is not null && state.Guards.TryGetValue(guardKey, out var value)
+                        ? value
+                        : null;
+                    Normalize(state);
+                    state.Guards.Clear();
+                    var durableAfter = DurableStateJson(state);
+                    WriteMutation(
+                        transaction,
+                        stateId,
+                        state,
+                        prior,
+                        loaded,
+                        result.Journal,
+                        commandGuard,
+                        guardReference,
+                        durableBefore != durableAfter,
+                        nowUtc);
+                    return CaptureManagedExecution(result.Store, state, result.Journal);
+                }, cancellationToken);
+                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
+                return execution.Value;
+            }
+            catch (ThreeCardPokerManagedPlayerSupplyRequiredException required)
+            {
+                var profiles = await matchmaking.ReserveManagedPlayersAsync(
+                    ManagedPlayerGames.ThreeCardPoker,
+                    required.AssignmentId,
+                    required.Count,
+                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
+                    nowUtc,
+                    cancellationToken);
+                reservations.AddRange(profiles.Select(profile =>
+                    new ThreeCardPokerReservedManagedPlayer(profile, required.AssignmentId)));
+            }
+        }
+    }
+
+    private async Task SweepShardAsync(
+        string stateId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var reservations = new List<ThreeCardPokerReservedManagedPlayer>();
+        while (true)
+        {
+            try
+            {
+                var execution = await RunTransactionAsync(async transaction =>
+                {
+                    var supply = new ThreeCardPokerManagedPlayerSupply(reservations, generateWhenEmpty: false);
+                    var coordinator = new ThreeCardPokerTableCoordinator(
+                        deckFactory, seedFactory, supply, matchmaking, population);
+                    var stateReference = StateDocument(stateId);
+                    var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
+                    if (!stateSnapshot.Exists)
+                        return CaptureManagedExecution(false, new ThreeCardPokerTableLobbyState(), new ThreeCardPokerTableJournal());
+                    var state = ReadState(stateSnapshot);
+                    var durableBefore = DurableStateJson(state);
+                    var prior = StateReferences.Capture(state, null);
+                    var loaded = await ReadBalancesAsync(transaction, state, null, cancellationToken);
+                    var journal = coordinator.Sweep(state, loaded.Current, nowUtc);
+                    Normalize(state);
+                    state.Guards.Clear();
+                    WriteMutation(
+                        transaction,
+                        stateId,
+                        state,
+                        prior,
+                        loaded,
+                        journal,
+                        null,
+                        null,
+                        durableBefore != DurableStateJson(state),
+                        nowUtc);
+                    return CaptureManagedExecution(true, state, journal);
+                }, cancellationToken);
+                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
+                return;
+            }
+            catch (ThreeCardPokerManagedPlayerSupplyRequiredException required)
+            {
+                var profiles = await matchmaking.ReserveManagedPlayersAsync(
+                    ManagedPlayerGames.ThreeCardPoker,
+                    required.AssignmentId,
+                    required.Count,
+                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
+                    nowUtc,
+                    cancellationToken);
+                reservations.AddRange(profiles.Select(profile =>
+                    new ThreeCardPokerReservedManagedPlayer(profile, required.AssignmentId)));
+            }
+        }
+    }
+
+    private async Task FinalizeManagedPlayersAsync<T>(
+        ManagedExecution<T> execution,
+        IReadOnlyCollection<ThreeCardPokerReservedManagedPlayer> reservations,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        foreach (var (assignmentId, profileIds) in execution.ActiveAssignments)
+        {
+            await matchmaking.HeartbeatManagedPlayersAsync(
+                ManagedPlayerGames.ThreeCardPoker, assignmentId, profileIds, nowUtc, cancellationToken);
+        }
+
+        var releases = execution.Releases
+            .Concat(reservations
+                .Where(reservation => !execution.ActiveAssignments
+                    .GetValueOrDefault(reservation.AssignmentId, [])
+                    .Contains(reservation.Profile.UserId, StringComparer.Ordinal))
+                .Select(reservation => new ThreeCardPokerManagedPlayerRelease(
+                    reservation.Profile.UserId, reservation.AssignmentId)))
+            .DistinctBy(value => $"{value.AssignmentId}\n{value.ProfileId}", StringComparer.Ordinal)
+            .GroupBy(value => value.AssignmentId, StringComparer.Ordinal);
+        foreach (var group in releases)
+        {
+            await matchmaking.ReleaseManagedPlayersAsync(
+                group.Key,
+                group.Select(value => value.ProfileId).ToArray(),
+                nowUtc,
+                cancellationToken);
+        }
+    }
+
+    private static ManagedExecution<T> CaptureManagedExecution<T>(
+        T value,
+        ThreeCardPokerTableLobbyState state,
+        ThreeCardPokerTableJournal journal) => new(
+        value,
+        state.Tables.Values.ToDictionary(
+            table => table.TableId,
+            table => (IReadOnlyCollection<string>)table.Players
+                .Where(ThreeCardPokerManagedSeat.IsManaged)
+                .Select(player => player.ActorId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
+            StringComparer.Ordinal),
+        journal.ManagedPlayerReleases.ToArray());
+
+    private async Task<LoadedBalances> ReadBalancesAsync(
+        Transaction transaction,
+        ThreeCardPokerTableLobbyState state,
+        string? requestedUserId,
+        CancellationToken cancellationToken)
+    {
+        var users = state.Sessions.Keys
+            .Concat(state.Tickets.Select(ticket => ticket.UserId))
+            .Concat(state.Tables.Values.SelectMany(table =>
+                table.Players.Where(player => !ThreeCardPokerManagedSeat.IsManaged(player)).Select(player => player.ActorId)))
+            .Append(requestedUserId ?? string.Empty)
+            .Where(value => !string.IsNullOrEmpty(value))
+            .Distinct(StringComparer.Ordinal)
+            .OrderBy(value => value, StringComparer.Ordinal)
+            .ToArray();
+        if (users.Length > ThreeCardPokerTableEngine.Capacity)
+            throw new InvalidOperationException("A Three Card Poker table persistence shard exceeded five human accounts.");
+        var snapshots = await Task.WhenAll(users.Select(value =>
+            transaction.GetSnapshotAsync(BalanceDocument(value), cancellationToken)));
+        var current = users.Select((value, index) => (userId: value, cents: ReadBalance(snapshots[index])))
+            .ToDictionary(pair => pair.userId, pair => pair.cents, StringComparer.Ordinal);
+        return new LoadedBalances(current, new Dictionary<string, long>(current, StringComparer.Ordinal));
+    }
+
+    private void WriteMutation(
+        Transaction transaction,
+        string stateId,
+        ThreeCardPokerTableLobbyState state,
+        StateReferences prior,
+        LoadedBalances balances,
+        ThreeCardPokerTableJournal journal,
+        ThreeCardPokerTableCommandGuard? commandGuard,
+        DocumentReference? guardReference,
+        bool stateChanged,
+        DateTime nowUtc)
+    {
+        if (stateChanged)
+        {
+            if (IsEmpty(state))
+            {
+                transaction.Delete(StateDocument(stateId));
+            }
+            else
+            {
+                var stateData = new Dictionary<string, object>
+                {
+                    ["stateJson"] = DurableStateJson(state),
+                    ["acceptingHumans"] = CanAcceptHuman(state),
+                    ["humanCount"] = ActiveHumanCount(state),
+                    ["tableCount"] = state.Tables.Count,
+                    ["queuedTicketCount"] = state.Tickets.Count,
+                    ["createdAt"] = Timestamp.FromDateTime(StateCreatedAt(state, nowUtc)),
+                    ["updatedAt"] = Timestamp.FromDateTime(nowUtc),
+                    ["schemaVersion"] = 2L
+                };
+                if (NextDeadline(state) is { } deadline)
+                    stateData["nextDeadlineAt"] = Timestamp.FromDateTime(deadline);
+                else
+                    stateData["nextDeadlineAt"] = FieldValue.Delete;
+                transaction.Set(StateDocument(stateId), stateData, SetOptions.MergeAll);
+            }
+
+            foreach (var tableId in prior.TableIds.Except(state.Tables.Keys, StringComparer.Ordinal))
+                transaction.Delete(TableDocument(tableId));
+            foreach (var table in state.Tables.Values)
+            {
+                transaction.Set(TableDocument(table.TableId), new Dictionary<string, object>
+                {
+                    ["stateId"] = stateId,
+                    ["tableId"] = table.TableId,
+                    ["tableJson"] = JsonSerializer.Serialize(table, JsonOptions),
+                    ["phase"] = table.Phase,
+                    ["round"] = table.RoundNumber,
+                    ["version"] = table.Version,
+                    ["updatedAt"] = Timestamp.FromDateTime(table.UpdatedAtUtc),
+                    ["schemaVersion"] = 2L
+                }, SetOptions.MergeAll);
+            }
+
+            foreach (var ticketId in prior.TicketIds.Except(
+                         state.Tickets.Select(ticket => ticket.TicketId), StringComparer.Ordinal))
+                transaction.Delete(TicketDocument(ticketId));
+            foreach (var ticket in state.Tickets)
+            {
+                transaction.Set(TicketDocument(ticket.TicketId), new Dictionary<string, object>
+                {
+                    ["stateId"] = stateId,
+                    ["ticketId"] = ticket.TicketId,
+                    ["ticketJson"] = JsonSerializer.Serialize(ticket, JsonOptions),
+                    ["status"] = ticket.Status,
+                    ["version"] = ticket.Version,
+                    ["expiresAt"] = Timestamp.FromDateTime(ticket.GraceEndsAtUtc.AddHours(1)),
+                    ["schemaVersion"] = 2L
+                }, SetOptions.MergeAll);
+            }
+
+            var routeUsers = prior.UserIds.Union(state.Sessions.Keys, StringComparer.Ordinal);
+            foreach (var routeUserId in routeUsers)
+            {
+                if (!state.Sessions.TryGetValue(routeUserId, out var link) ||
+                    link.Kind == ThreeCardPokerTableSessionKinds.Idle)
+                {
+                    transaction.Delete(SessionDocument(routeUserId));
+                    continue;
+                }
+                transaction.Set(SessionDocument(routeUserId), new Dictionary<string, object>
+                {
+                    ["stateId"] = stateId,
+                    ["kind"] = link.Kind,
+                    ["ticketId"] = link.TicketId ?? string.Empty,
+                    ["tableId"] = link.TableId ?? string.Empty,
+                    ["updatedAt"] = Timestamp.FromDateTime(nowUtc),
+                    ["schemaVersion"] = 2L
+                }, SetOptions.MergeAll);
+            }
+        }
+
+        foreach (var (balanceUserId, cents) in balances.Current)
+        {
+            if (balances.Original.GetValueOrDefault(balanceUserId) == cents) continue;
+            transaction.Set(BalanceDocument(balanceUserId), BalanceData(cents, nowUtc), SetOptions.MergeAll);
+        }
+        foreach (var entry in journal.Ledger)
+            transaction.Create(LedgerDocument(entry.Id), LedgerData(entry));
+        foreach (var entry in journal.Revenue)
+            transaction.Create(RevenueDocument(entry.RoundId), RevenueData(entry));
+        foreach (var result in journal.Results)
+        {
+            transaction.Create(CardGameResultDocument(result.ResultId), CardGameResultData(result));
+            if (result.IsManagedPlayer)
+            {
+                transaction.Set(ManagedProfileDocument(result.UserId), new Dictionary<string, object>
+                {
+                    ["cardMatchesPlayed"] = FieldValue.Increment(1),
+                    ["cardWins"] = FieldValue.Increment(result.PayoutCents > result.WagerCents ? 1 : 0),
+                    ["cardLosses"] = FieldValue.Increment(result.PayoutCents < result.WagerCents ? 1 : 0),
+                    ["cardPushes"] = FieldValue.Increment(result.PayoutCents == result.WagerCents ? 1 : 0),
+                    ["updatedAt"] = Timestamp.FromDateTime(result.CompletedAtUtc)
+                }, SetOptions.MergeAll);
+            }
+        }
+        if (guardReference is not null && commandGuard is not null)
+        {
+            transaction.Set(guardReference, new Dictionary<string, object>
+            {
+                ["stateId"] = stateId,
+                ["guardJson"] = JsonSerializer.Serialize(commandGuard, JsonOptions),
+                ["createdAt"] = Timestamp.FromDateTime(commandGuard.CreatedAtUtc),
+                ["expiresAt"] = Timestamp.FromDateTime(commandGuard.CreatedAtUtc.Add(GuardRetention)),
+                ["schemaVersion"] = 2L
+            }, SetOptions.MergeAll);
+        }
+    }
+
+    private async Task<string?> ResolveStateIdAsync(
+        string userId,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
+        var snapshots = await Task.WhenAll(
+            SessionDocument(userId).GetSnapshotAsync(cancellationToken),
+            GuardDocument(userId, idempotencyKey).GetSnapshotAsync(cancellationToken));
+        var sessionState = ReadString(snapshots[0], "stateId");
+        if (!string.IsNullOrEmpty(sessionState)) return sessionState;
+        var guardState = ReadString(snapshots[1], "stateId");
+        return string.IsNullOrEmpty(guardState) ? null : guardState;
+    }
+
+    private async Task<string?> FindAcceptingStateIdAsync(
+        ISet<string> excluded,
+        CancellationToken cancellationToken)
+    {
+        var candidates = await StateCollection()
+            .WhereEqualTo("acceptingHumans", true)
+            .Limit(MaximumShardCandidates)
+            .GetSnapshotAsync(cancellationToken);
+        return candidates.Documents
+            .Where(snapshot => !excluded.Contains(snapshot.Id))
+            .OrderBy(snapshot => ReadTimestamp(snapshot, "createdAt"))
+            .ThenBy(snapshot => snapshot.Id, StringComparer.Ordinal)
+            .Select(snapshot => snapshot.Id)
+            .FirstOrDefault();
+    }
+
+    private async Task<T> RunTransactionAsync<T>(
+        Func<Transaction, Task<T>> callback,
+        CancellationToken cancellationToken)
+    {
+        const int maximumAttempts = 12;
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                return await database.RunTransactionAsync(callback, cancellationToken: cancellationToken);
+            }
+            catch (RpcException exception) when (
+                (exception.StatusCode == StatusCode.Aborted ||
+                 exception.StatusCode == StatusCode.InvalidArgument &&
+                 exception.Status.Detail.Contains("Transaction is invalid or closed", StringComparison.OrdinalIgnoreCase)) &&
+                attempt < maximumAttempts)
+            {
+                var exponential = Math.Min(500, 20 * (1 << Math.Min(attempt - 1, 5)));
+                var backoffMilliseconds = exponential + Random.Shared.Next(25, 126);
+                await Task.Delay(backoffMilliseconds, cancellationToken);
+            }
+        }
+    }
+
+    private static void Normalize(ThreeCardPokerTableLobbyState state)
+    {
+        foreach (var table in state.Tables.Values.Where(value => value.Phase == ThreeCardPokerTablePhases.Closed).ToArray())
+        {
+            foreach (var ticket in state.Tickets.Where(value =>
+                         value.Status == "queued" && value.TargetTableId == table.TableId).ToArray())
+            {
+                var index = state.Tickets.FindIndex(value => value.TicketId == ticket.TicketId);
+                state.Tickets[index] = ticket with { TargetTableId = null, EligibleAfterRound = 0 };
+            }
+            state.Tables.Remove(table.TableId);
+        }
+        state.Tickets.RemoveAll(ticket => ticket.Status != "queued");
+        foreach (var userId in state.Sessions
+                     .Where(pair => pair.Value.Kind == ThreeCardPokerTableSessionKinds.Idle)
+                     .Select(pair => pair.Key)
+                     .ToArray())
+            state.Sessions.Remove(userId);
+    }
+
+    private static bool CanAcceptHuman(ThreeCardPokerTableLobbyState state) =>
+        state.Tables.Count <= 1 && ActiveHumanCount(state) < ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats;
+
+    private static int ActiveHumanCount(ThreeCardPokerTableLobbyState state) => state.Sessions.Count(pair =>
+        pair.Value.Kind is ThreeCardPokerTableSessionKinds.Queue or ThreeCardPokerTableSessionKinds.Table);
+
+    private static bool IsEmpty(ThreeCardPokerTableLobbyState state) =>
+        state.Sessions.Count == 0 && state.Tickets.Count == 0 && state.Tables.Count == 0;
+
+    private static DateTime? NextDeadline(ThreeCardPokerTableLobbyState state)
+    {
+        var deadlines = state.Tickets.Where(ticket => ticket.Status == "queued" && ticket.TargetTableId is null)
+            .Select(ticket => (DateTime?)ticket.GraceEndsAtUtc)
+            .Concat(state.Tables.Values.SelectMany(table => new DateTime?[]
+            {
+                table.ActionDeadlineAtUtc,
+                table.WagerDeadlineAtUtc,
+                table.NextTransitionAtUtc
+            }.Concat(table.Players.SelectMany(player => new DateTime?[]
+            {
+                ThreeCardPokerManagedSeat.ActionReadyAt(player),
+                ThreeCardPokerManagedSeat.WagerReadyAt(player)
+            }))))
+            .Where(value => value is not null)
+            .Select(value => value!.Value)
+            .ToArray();
+        return deadlines.Length == 0 ? null : deadlines.Min();
+    }
+
+    private static DateTime StateCreatedAt(ThreeCardPokerTableLobbyState state, DateTime fallback) =>
+        state.Tickets.Select(ticket => ticket.JoinedAtUtc)
+            .Concat(state.Tables.Values.Select(table => table.CreatedAtUtc))
+            .DefaultIfEmpty(fallback)
+            .Min();
+
+    private static string DurableStateJson(ThreeCardPokerTableLobbyState state) =>
+        JsonSerializer.Serialize(state, JsonOptions);
+
+    private static string CohortStateId(DateTime nowUtc, int overflow) =>
+        ThreeCardPokerTableIds.Hash(
+            $"three-card-poker-table-shard\n{nowUtc.Ticks / ThreeCardPokerTableEngine.HumanGrace.Ticks}\n{overflow}");
+
+    private static string GuardKey(string userId, string idempotencyKey) =>
+        ThreeCardPokerTableIds.Hash($"{userId}\n{idempotencyKey}");
+
+    private CollectionReference StateCollection() => database.Collection("threeCardPokerTableState");
+    private DocumentReference StateDocument(string stateId) => StateCollection().Document(stateId);
+    private DocumentReference LeaseDocument() =>
+        database.Collection("threeCardPokerTableLeases").Document("deadline-worker");
+    private DocumentReference TableDocument(string tableId) =>
+        database.Collection("threeCardPokerTables").Document(tableId);
+    private DocumentReference TicketDocument(string ticketId) =>
+        database.Collection("threeCardPokerTableTickets").Document(ticketId);
+    private DocumentReference SessionDocument(string userId) =>
+        database.Collection("threeCardPokerTableSessions").Document(ThreeCardPokerTableIds.Hash(userId));
+    private DocumentReference GuardDocument(string userId, string idempotencyKey) =>
+        database.Collection("threeCardPokerTableCommandGuards").Document(GuardKey(userId, idempotencyKey));
+    private DocumentReference BalanceDocument(string userId) =>
+        database.Collection("userBalances").Document($"{userId}_{CurrencyId}");
+    private DocumentReference LedgerDocument(string id) =>
+        database.Collection("balanceTransactions").Document(id);
+    private DocumentReference RevenueDocument(string id) =>
+        database.Collection("threeCardPokerTableRoundRevenue").Document(ThreeCardPokerTableIds.Hash(id));
+    private DocumentReference CardGameResultDocument(string resultId) =>
+        database.Collection("cardGameResults").Document(resultId);
+    private DocumentReference ManagedProfileDocument(string userId) =>
+        database.Collection("users").Document(userId);
+
+    private static ThreeCardPokerTableLobbyState ReadState(DocumentSnapshot snapshot)
+    {
+        var json = ReadString(snapshot, "stateJson");
+        return string.IsNullOrEmpty(json)
+            ? new ThreeCardPokerTableLobbyState()
+            : JsonSerializer.Deserialize<ThreeCardPokerTableLobbyState>(json, JsonOptions)
+              ?? throw new InvalidOperationException("The durable Three Card Poker table shard state is invalid.");
+    }
+
+    private static ThreeCardPokerTableCommandGuard ReadGuard(DocumentSnapshot snapshot)
+    {
+        var json = ReadString(snapshot, "guardJson");
+        return JsonSerializer.Deserialize<ThreeCardPokerTableCommandGuard>(json, JsonOptions)
+            ?? throw new InvalidOperationException("The durable Three Card Poker table command guard is invalid.");
+    }
+
+    private static Dictionary<string, object> BalanceData(long cents, DateTime nowUtc) => new()
+    {
+        ["available"] = cents / ThreeCardPokerMoney.CentsPerRand,
+        [FractionField] = cents % ThreeCardPokerMoney.CentsPerRand,
+        ["version"] = FieldValue.Increment(1),
+        ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
+    };
+
+    private static Dictionary<string, object> LedgerData(ThreeCardPokerTableLedgerEntry entry) => new()
+    {
+        ["transactionId"] = entry.Id,
+        ["userId"] = entry.UserId,
+        ["currencyId"] = CurrencyId,
+        ["amount"] = (double)ThreeCardPokerMoney.ToRand(entry.AmountCents),
+        ["balanceAfter"] = (double)ThreeCardPokerMoney.ToRand(entry.BalanceAfterCents),
+        ["type"] = entry.Type,
+        ["idempotencyKey"] = entry.Reference,
+        ["createdAt"] = Timestamp.FromDateTime(entry.CreatedAtUtc)
+    };
+
+    private static Dictionary<string, object> RevenueData(ThreeCardPokerTableRevenueEntry entry) => new()
+    {
+        ["roundId"] = entry.RoundId,
+        ["tableId"] = entry.TableId,
+        ["round"] = entry.RoundNumber,
+        ["humanWagerCents"] = entry.HumanWagerCents,
+        ["humanPayoutCents"] = entry.HumanPayoutCents,
+        ["houseNetCents"] = checked(entry.HumanWagerCents - entry.HumanPayoutCents),
+        ["humanPlayerCount"] = entry.HumanPlayerCount,
+        ["currencyId"] = CurrencyId,
+        ["financialClassification"] = "real-human-dealer-counterparty-v1",
+        ["botFinancialContributionCents"] = 0L,
+        ["recognizedAt"] = Timestamp.FromDateTime(entry.SettledAtUtc),
+        ["settledAt"] = Timestamp.FromDateTime(entry.SettledAtUtc),
+        ["schemaVersion"] = 1L
+    };
+
+    private static Dictionary<string, object> CardGameResultData(ThreeCardPokerTableResultEntry entry) => new()
+    {
+        ["resultId"] = entry.ResultId,
+        ["game"] = "three-card-poker",
+        ["mode"] = "credit-table",
+        ["matchId"] = entry.TableId,
+        ["tableId"] = entry.TableId,
+        ["round"] = entry.RoundNumber,
+        ["userId"] = entry.UserId,
+        ["userHash"] = ThreeCardPokerTableIds.Hash(entry.UserId),
+        ["userGameHash"] = ThreeCardPokerTableIds.Hash($"{entry.UserId}\nthree-card-poker\ncredit-table"),
+        ["claimStatus"] = "completed",
+        ["settlementStatus"] = entry.IsManagedPlayer ? "recorded" : "paid",
+        ["wagerCents"] = entry.WagerCents,
+        ["payoutCents"] = entry.PayoutCents,
+        ["netCents"] = checked(entry.PayoutCents - entry.WagerCents),
+        ["completedAt"] = Timestamp.FromDateTime(entry.CompletedAtUtc),
+        ["seenAt"] = null!,
+        ["financialClassification"] = entry.IsManagedPlayer
+            ? "managed-player-virtual-v1"
+            : "real-human-dealer-counterparty-v1",
+        ["schemaVersion"] = 1L
+    };
+
+    private static ThreeCardPokerTableHistoryItemResponse HistoryResponse(
+        DocumentSnapshot snapshot,
+        DateTime? seenOverride = null)
+    {
+        var seenAt = seenOverride;
+        if (seenAt is null && snapshot.Exists &&
+            snapshot.ToDictionary().TryGetValue("seenAt", out var seenValue) && seenValue is Timestamp timestamp)
+            seenAt = timestamp.ToDateTime();
+        return new(
+            ReadString(snapshot, "resultId"),
+            ReadString(snapshot, "game"),
+            ReadString(snapshot, "mode"),
+            ReadString(snapshot, "matchId"),
+            ReadString(snapshot, "tableId"),
+            checked((int)ReadLong(snapshot, "round")),
+            ThreeCardPokerMoney.ToRand(ReadLong(snapshot, "wagerCents")),
+            ThreeCardPokerMoney.ToRand(ReadLong(snapshot, "payoutCents")),
+            ThreeCardPokerMoney.ToRand(ReadLong(snapshot, "netCents")),
+            ReadString(snapshot, "claimStatus"),
+            ReadString(snapshot, "settlementStatus"),
+            ReadTimestamp(snapshot, "completedAt"),
+            seenAt is not null,
+            seenAt);
+    }
+
+    private static long ReadBalance(DocumentSnapshot snapshot) => checked(
+        ReadLong(snapshot, "available") * ThreeCardPokerMoney.CentsPerRand +
+        Math.Clamp(ReadLong(snapshot, FractionField), 0, 99));
+    private static long ReadLong(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<long>(field, out var value) ? value : 0;
+    private static string ReadString(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<string>(field, out var value) ? value : string.Empty;
+    private static DateTime ReadTimestamp(DocumentSnapshot snapshot, string field) =>
+        snapshot.Exists && snapshot.TryGetValue<Timestamp>(field, out var value)
+            ? value.ToDateTime()
+            : DateTime.MaxValue;
+
+    private sealed record LoadedBalances(
+        Dictionary<string, long> Current,
+        Dictionary<string, long> Original);
+
+    private sealed record ManagedExecution<T>(
+        T Value,
+        IReadOnlyDictionary<string, IReadOnlyCollection<string>> ActiveAssignments,
+        IReadOnlyCollection<ThreeCardPokerManagedPlayerRelease> Releases);
+
+    private sealed record StateReferences(
+        IReadOnlySet<string> TableIds,
+        IReadOnlySet<string> TicketIds,
+        IReadOnlySet<string> UserIds)
+    {
+        public static StateReferences Capture(ThreeCardPokerTableLobbyState state, string? requestedUserId) => new(
+            state.Tables.Keys.ToHashSet(StringComparer.Ordinal),
+            state.Tickets.Select(ticket => ticket.TicketId).ToHashSet(StringComparer.Ordinal),
+            state.Sessions.Keys.Append(requestedUserId ?? string.Empty)
+                .Where(value => !string.IsNullOrEmpty(value))
+                .ToHashSet(StringComparer.Ordinal));
+    }
+}
+
+internal sealed class ThreeCardPokerTableShardUnavailableException : Exception
+{
+}
+
+internal sealed class ThreeCardPokerTableShardChangedException(string stateId) : Exception
+{
+    public string StateId { get; } = stateId;
+}

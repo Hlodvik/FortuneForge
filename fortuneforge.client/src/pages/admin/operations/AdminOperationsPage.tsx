@@ -53,6 +53,7 @@ export function AdminOperationsDashboardView({ dashboard }: { dashboard: Operati
         <Metric label="House gaming net" value={credits(overview.houseGamingNetCredits)} tone={overview.houseGamingNetCredits >= 0 ? 'good' : 'bad'} />
         <Metric label="Slots wagered / won" value={`${credits(overview.slots.wageredCredits)} / ${credits(overview.slots.paidCredits)}`} />
         <Metric label="Blackjack wager / payout" value={`${credits(overview.blackjack.wageredCredits)} / ${credits(overview.blackjack.paidCredits)}`} />
+        {overview.threeCardPoker && <Metric label="Three Card Poker wager / payout" value={`${credits(overview.threeCardPoker.wageredCredits)} / ${credits(overview.threeCardPoker.paidCredits)}`} />}
         <Metric label="Real-human pool Solitaire fees" value={credits(overview.solitaire.platformFeeCredits)} />
         <Metric label="Real-human pool Hold'em fees" value={credits(overview.texasHoldem.platformFeeCredits)} />
       </div>

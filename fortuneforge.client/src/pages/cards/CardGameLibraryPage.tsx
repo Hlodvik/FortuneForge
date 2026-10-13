@@ -12,6 +12,7 @@ export type CardGameAvailabilityState = 'checking' | 'available' | 'unavailable'
 export type CardGameAvailability = Readonly<{
   blackjack: CardGameAvailabilityState
   texasHoldem: CardGameAvailabilityState
+  threeCardPoker?: CardGameAvailabilityState
   solitaire: CardGameAvailabilityState
 }>
 
@@ -26,6 +27,7 @@ export function CardGameLibraryPage({
 }) {
   const blackjackState = availability?.blackjack ?? 'checking'
   const holdemState = availability?.texasHoldem ?? 'checking'
+  const threeCardPokerState = availability?.threeCardPoker ?? 'checking'
   const solitaireState = availability?.solitaire ?? 'checking'
   const [balanceCredits, setBalanceCredits] = useState(account?.balances.slotsCredits ?? 0)
 
@@ -83,6 +85,14 @@ export function CardGameLibraryPage({
               href="/cards/solitaire"
               image={solitairePreview}
               title="Competitive Solitaire"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
+            />
+            <CardGameCard
+              available={!demoMode && threeCardPokerState === 'available'}
+              description="A live three-card table with Ante, Pair Plus, and Play or Fold against the dealer."
+              href="/cards/three-card-poker"
+              image={holdemPreview}
+              title="Three Card Poker"
               unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             {!demoMode && <CardGameCard

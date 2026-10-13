@@ -109,7 +109,7 @@ internal sealed class FirestoreManagedPlayerProfileRepository(
             snapshot.Id,
             ReadString(snapshot, "playerName"),
             checked((int)ReadLong(snapshot, "skillLevel", 3)),
-            games.ToHashSet(StringComparer.OrdinalIgnoreCase),
+            ManagedPlayerGames.SupportedWithCurrentAdapters(games),
             ReadTimestamp(snapshot, "createdAt"));
     }
 

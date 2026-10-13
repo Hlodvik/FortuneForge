@@ -19,6 +19,7 @@ describe('card game route integration', () => {
   it('lazy-loads gated Blackjack and competitive Solitaire wrappers', () => {
     expect(renderRoute('/cards/blackjack')).toContain('Opening Fortune Forge…')
     expect(renderRoute('/cards/solitaire')).toContain('Opening Fortune Forge…')
+    expect(renderRoute('/cards/three-card-poker')).toContain('Opening Fortune Forge…')
   })
 
   it('isolates authenticated Blackjack from the internal single-hand demo client', () => {
@@ -37,8 +38,9 @@ describe('card game route integration', () => {
     const holdem = source('./texasHoldem/TexasHoldemPage.tsx')
     const creditHoldem = source('./texasHoldem/CreditTexasHoldemPage.tsx')
     const solitaire = source('./solitaire/CompetitiveSolitairePage.tsx')
+    const threeCardPoker = source('./threeCardPoker/ThreeCardPokerPage.tsx')
 
-    for (const page of [blackjack, blackjackTable, holdem, creditHoldem, solitaire]) {
+    for (const page of [blackjack, blackjackTable, holdem, creditHoldem, solitaire, threeCardPoker]) {
       expect(page).toContain('InGameShell')
       expect(page).not.toContain('CardRoomNavigation')
     }
@@ -51,6 +53,7 @@ describe('card game route integration', () => {
     expect(pageTitleForPath('/demo/cards/blackjack')).toBe('Blackjack Demo — Fortune Forge')
     expect(pageTitleForPath('/cards/texas-holdem')).toBe('Texas Hold’em Table — Fortune Forge')
     expect(pageTitleForPath('/cards/solitaire')).toBe('Competitive Solitaire — Fortune Forge')
+    expect(pageTitleForPath('/cards/three-card-poker')).toBe('Three Card Poker Table — Fortune Forge')
   })
 
   it('keeps the shared game shell and legacy card roots above the app backdrop', () => {
@@ -82,18 +85,20 @@ describe('card game route integration', () => {
     expect(markup).not.toContain('href="/demo/cards/solitaire"')
   })
 
-  it('links all three authoritative credit games when their server gates are open', () => {
+  it('links authoritative credit games when their server gates are open', () => {
     const markup = renderToStaticMarkup(createElement(CardGameLibraryPage, {
       availability: {
         blackjack: 'available',
         texasHoldem: 'available',
         solitaire: 'available',
+        threeCardPoker: 'available',
       },
     }))
 
     expect(markup).toContain('href="/cards/blackjack"')
     expect(markup).toContain('href="/cards/texas-holdem"')
     expect(markup).toContain('href="/cards/solitaire"')
+    expect(markup).toContain('href="/cards/three-card-poker"')
     expect(markup).not.toContain('Credit play available')
   })
 
@@ -103,12 +108,14 @@ describe('card game route integration', () => {
         blackjack: 'unavailable',
         texasHoldem: 'checking',
         solitaire: 'unavailable',
+        threeCardPoker: 'unavailable',
       },
     }))
 
     expect(markup).not.toContain('href="/cards/blackjack"')
     expect(markup).not.toContain('href="/cards/texas-holdem"')
     expect(markup).not.toContain('href="/cards/solitaire"')
+    expect(markup).not.toContain('href="/cards/three-card-poker"')
     expect(markup).not.toContain('machine-card__action')
   })
 })

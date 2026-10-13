@@ -11,6 +11,7 @@ public sealed partial class ManagedPlayerGamePackageBoundaryTests
     [InlineData("LiarsDice")]
     [InlineData("Solitaire")]
     [InlineData("TexasHoldem")]
+    [InlineData("ThreeCardPoker")]
     public void Multiplayer_game_packages_do_not_define_managed_player_concepts(
         string packageName)
     {

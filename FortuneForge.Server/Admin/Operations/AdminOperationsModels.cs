@@ -25,6 +25,7 @@ public sealed record AdminOperationsOverviewResponse(
     DateTime ToUtc,
     AdminGameFinancials Slots,
     AdminGameFinancials Blackjack,
+    AdminGameFinancials ThreeCardPoker,
     AdminPoolGameFinancials Solitaire,
     AdminPoolGameFinancials TexasHoldem,
     decimal HouseGamingNetCredits,

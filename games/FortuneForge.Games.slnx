@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/games/ThreeCardPoker/">
+    <Project Path="ThreeCardPoker/src/FortuneForge.Games.ThreeCardPoker/FortuneForge.Games.ThreeCardPoker.csproj" />
+  </Folder>
   <Folder Name="/games/Blackjack/">
     <Project Path="Blackjack/src/FortuneForge.Games.Blackjack/FortuneForge.Games.Blackjack.csproj" />
   </Folder>

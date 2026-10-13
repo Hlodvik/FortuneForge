@@ -18,12 +18,14 @@
 
   <ItemGroup>
     <Using Include="FortuneForge.Games.Blackjack" />
+    <Using Include="FortuneForge.Games.ThreeCardPoker" />
     <Using Include="FortuneForge.Games.Cards" />
     <Using Include="FortuneForge.Games.Solitaire" />
     <Using Include="FortuneForge.Games.TexasHoldem" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\games\ThreeCardPoker\src\FortuneForge.Games.ThreeCardPoker\FortuneForge.Games.ThreeCardPoker.csproj" />
     <ProjectReference Include="..\games\Baccarat\src\FortuneForge.Games.Baccarat\FortuneForge.Games.Baccarat.csproj" />
     <ProjectReference Include="..\games\Blackjack\src\FortuneForge.Games.Blackjack\FortuneForge.Games.Blackjack.csproj" />
     <ProjectReference Include="..\games\CasinoWar\src\FortuneForge.Games.CasinoWar\FortuneForge.Games.CasinoWar.csproj" />

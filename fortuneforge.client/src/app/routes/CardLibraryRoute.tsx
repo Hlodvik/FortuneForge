@@ -9,6 +9,7 @@ import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 const checkingAvailability: CardGameAvailability = {
   blackjack: 'checking',
   texasHoldem: 'checking',
+  threeCardPoker: 'checking',
   solitaire: 'checking',
 }
 
@@ -34,12 +35,17 @@ export function AuthenticatedCardLibraryRoute() {
         .then(({ getSolitaireSession }) => getSolitaireSession(controller.signal))
         .then(() => true)
         .catch(() => false),
-    ]).then(([blackjack, texasHoldem, solitaire]) => {
+      import('../../games/cards/threeCardPoker/threeCardPokerApi')
+        .then(({ getThreeCardPokerStatus }) => getThreeCardPokerStatus(controller.signal))
+        .then((status) => status.available)
+        .catch(() => false),
+    ]).then(([blackjack, texasHoldem, solitaire, threeCardPoker]) => {
       if (active) {
         setAvailability({
           blackjack: blackjack ? 'available' : 'unavailable',
           texasHoldem: texasHoldem ? 'available' : 'unavailable',
           solitaire: solitaire ? 'available' : 'unavailable',
+          threeCardPoker: threeCardPoker ? 'available' : 'unavailable',
         })
       }
     })

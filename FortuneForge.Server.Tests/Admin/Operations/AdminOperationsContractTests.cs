@@ -101,6 +101,23 @@ public sealed class AdminOperationsContractTests
     }
 
     [Fact]
+    public async Task ThreeCardPoker_real_player_payouts_enter_house_totals_but_bot_leases_do_not()
+    {
+        var store = new FakeStore(Snapshot(
+            financial: [Financial("three-card-round", "three-card-poker", 15m, 40m, -25m)],
+            botLeases: [new("lease", "three-card-poker", NowUtc.AddMinutes(-1), NowUtc.AddMinutes(1), false)]));
+        var controller = Controller(store, new FakeAuthorizer(AdminOperationsAccessStatus.Authorized), enabled: true);
+        var response = Assert.IsType<OkObjectResult>(await controller.Overview(cancellationToken: CancellationToken.None));
+        var overview = Assert.IsType<AdminOperationsOverviewResponse>(response.Value);
+        Assert.Equal(-25m, overview.HouseGamingNetCredits);
+        Assert.Equal(15m, overview.ThreeCardPoker.WageredCredits);
+        Assert.Equal(40m, overview.ThreeCardPoker.PaidCredits);
+        Assert.Equal(1, overview.ThreeCardPoker.CompletedEvents);
+        var botsResponse = Assert.IsType<OkObjectResult>(await controller.Bots(cancellationToken: CancellationToken.None));
+        var bots = Assert.IsType<AdminOperationsBotsResponse>(botsResponse.Value);
+        Assert.Equal(1, Assert.Single(bots.Games, game => game.Game == "three-card-poker").ActiveLeases);
+    }
+    [Fact]
     public async Task BotTelemetry_IsOperationalOnlyAndCannotEnterFinancialTotals()
     {
         var snapshot = Snapshot(

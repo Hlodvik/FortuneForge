@@ -54,7 +54,9 @@ describe('game category menus', () => {
     expect(markup).not.toContain('href="/demo/cards/texas-holdem"')
     expect(markup).toContain('Competitive Solitaire')
     expect(markup).not.toContain('href="/demo/cards/solitaire"')
-    expect(markup.match(/Internal route only/g)).toHaveLength(3)
+    expect(markup).toContain('Three Card Poker')
+    expect(markup).not.toContain('href="/cards/three-card-poker"')
+    expect(markup.match(/Internal route only/g)).toHaveLength(4)
   })
 
   it('omits recently played when the authenticated game browser has no history', () => {

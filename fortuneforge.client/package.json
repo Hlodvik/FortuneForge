@@ -13,6 +13,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/sora": "^5.3.0",
     "@fortuneforge/games-2048": "0.1.0",
     "@fortuneforge/games-asteroids": "0.1.0",
     "@fortuneforge/games-baccarat": "0.1.9",

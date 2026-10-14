@@ -10,63 +10,206 @@ public sealed class ThreeCardPokerTableStateTests
 {
     private static readonly DateTime Start = new(2026, 10, 12, 12, 0, 0, DateTimeKind.Utc);
 
-    [Theory]
-    [InlineData(1, 3, 2)]
-    [InlineData(2, 3, 1)]
-    [InlineData(3, 3, 0)]
-    [InlineData(4, 4, 0)]
-    public async Task QueueUsesTheSameFreeGraceAndManagedFillAsBlackjack(int humans, int occupied, int managed)
+    [Fact]
+    public void WagerLimitsUseWholeRandBetsFromOneToFiveHundred()
+    {
+        var status = ThreeCardPokerTableController.StatusContract();
+        Assert.Equal((1m, 500m, 1m),
+            (status.MinimumWager, status.MaximumWager, status.WagerIncrement));
+        Assert.Equal(100, ThreeCardPokerMoney.ToWagerCents(1m));
+        Assert.Equal(200, ThreeCardPokerMoney.ToWagerCents(2m));
+        Assert.Equal(50_000, ThreeCardPokerMoney.ToWagerCents(500m));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(0.50m));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(1.50m));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(501m));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(1.005m));
+    }
+
+    [Fact]
+    public async Task AnteAndPairPlusAcceptMixedOneTwoAndFiveRandChipTotals()
+    {
+        var (store, table, actor, now) = await AllHumanTable();
+        var result = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.WagerAsync(
+            actor, table.Table.TableId, 800, 700, table.Version, Key("mixed-chip-wager"), now, default)).Session);
+
+        Assert.Equal(8_500, store.Balance(actor));
+        Assert.Equal(-1_500, Assert.Single(store.Ledger).AmountCents);
+        var seat = Assert.Single(result.Table.Seats, player => player.IsCurrentPlayer);
+        Assert.Equal(8m, seat.Ante);
+        Assert.Equal(7m, seat.PairPlus);
+    }
+
+    [Fact]
+    public void ManagedWagerAdjustmentsRemainFiftyCentSteps()
+    {
+        var winningPlayer = new ThreeCardPokerTablePlayer
+        {
+            ActorId = "managed-winner",
+            PublicSeatId = "winner-seat",
+            DisplayName = "Winner",
+            Seat = 0,
+            SessionId = "winner-session",
+            SessionStartedAtUtc = Start,
+            HostMetadata = ThreeCardPokerManagedSeat.Create(1, 500, 0),
+            PayoutCents = 2_000
+        };
+        ThreeCardPokerTableCoordinator.UpdateManagedWagerHabit(winningPlayer, 500);
+        Assert.InRange(ThreeCardPokerManagedSeat.BaseWager(winningPlayer), 550, 700);
+        Assert.Equal(0, ThreeCardPokerManagedSeat.BaseWager(winningPlayer) % 50);
+
+        var losingPlayer = new ThreeCardPokerTablePlayer
+        {
+            ActorId = "managed-loser",
+            PublicSeatId = "loser-seat",
+            DisplayName = "Loser",
+            Seat = 1,
+            SessionId = "loser-session",
+            SessionStartedAtUtc = Start,
+            HostMetadata = ThreeCardPokerManagedSeat.Create(1, 500, 0),
+            PayoutCents = 0
+        };
+        ThreeCardPokerManagedSeat.SetConsecutiveLosses(losingPlayer, 2);
+        ThreeCardPokerTableCoordinator.UpdateManagedWagerHabit(losingPlayer, 500);
+        Assert.InRange(ThreeCardPokerManagedSeat.BaseWager(losingPlayer), 350, 450);
+        Assert.Equal(0, ThreeCardPokerManagedSeat.BaseWager(losingPlayer) % 50);
+    }
+
+    [Fact]
+    public async Task JoinImmediatelyStartsAPrivateHumanVersusDealerTable()
     {
         var store = Store();
-        for (var index = 0; index < humans; index++)
+        var tableIds = new HashSet<string>(StringComparer.Ordinal);
+        for (var index = 0; index < 4; index++)
         {
             var user = $"human-{index}";
             store.SetBalance(user, 10_000);
             var joined = await store.JoinAsync(user, $"Player {index}", 0, Key($"join-{index}"), Start, default);
-            Assert.IsType<ThreeCardPokerTableQueueSessionResponse>(joined.Session);
+            var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>(joined.Session);
+            Assert.True(tableIds.Add(session.Table.TableId));
+            Assert.Equal("human-wager", session.Table.Transition);
+            Assert.Equal(0, session.Table.Round);
+            Assert.True(Assert.Single(session.Table.Seats).IsCurrentPlayer);
+            Assert.Equal(user, Assert.Single(store.TableForTest(session.Table.TableId).Players).ActorId);
+            Assert.Equal(10_000, store.Balance(user));
         }
-        Assert.IsType<ThreeCardPokerTableQueueSessionResponse>((await store.GetSessionAsync(
-            "human-0", Start.Add(ThreeCardPokerTableEngine.HumanGrace).AddTicks(-1), default)).Session);
-
-        var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(
-            "human-0", Start.Add(ThreeCardPokerTableEngine.HumanGrace), default)).Session);
-        var table = store.TableForTest(session.Table.TableId);
-        Assert.Equal(occupied, table.Players.Count);
-        Assert.Equal(humans, table.Players.Count(player => !ThreeCardPokerManagedSeat.IsManaged(player)));
-        Assert.Equal(managed, table.Players.Count(ThreeCardPokerManagedSeat.IsManaged));
-        Assert.Equal(ThreeCardPokerTablePhases.Betting, session.Table.Phase);
+        Assert.Equal(4, tableIds.Count);
+        Assert.Empty(store.StateForTest.Tickets);
         Assert.Empty(store.Ledger);
-        for (var index = 0; index < humans; index++) Assert.Equal(10_000, store.Balance($"human-{index}"));
+        var status = ThreeCardPokerTableController.StatusContract();
+        Assert.Equal(1, status.MinimumStartOccupancy);
+        Assert.Equal(1, status.TableCapacity);
+        Assert.Equal(0, status.HumanGraceSeconds);
+        Assert.Equal(0, status.ActionDeadlineSeconds);
     }
 
     [Fact]
-    public async Task FiveQueuedHumansSplitAcrossTablesAndKeepTheReservedSeatFree()
+    public async Task JoiningWhileAnotherRoundIsActiveStillCreatesAPrivateTable()
     {
         var store = Store();
-        for (var index = 0; index < 5; index++)
-            await store.JoinAsync($"human-{index}", $"Player {index}", 0, Key($"join-{index}"), Start, default);
-        await store.GetSessionAsync("human-0", Start.Add(ThreeCardPokerTableEngine.HumanGrace), default);
-        Assert.Equal(2, store.StateForTest.Tables.Count);
-        Assert.All(store.StateForTest.Tables.Values, table => Assert.InRange(table.Players.Count, 3, 4));
-        Assert.Equal(5, store.StateForTest.Tables.Values.Sum(table => table.Players.Count(player => !ThreeCardPokerManagedSeat.IsManaged(player))));
+        store.SetBalance("alice", 10_000);
+        store.SetBalance("bob", 10_000);
+        var first = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+            "alice", "Alice", 0, Key("join-alice"), Start, default)).Session);
+        await store.WagerAsync("alice", first.Table.TableId, 100, 0, first.Version, Key("wager-alice"), Start, default);
+        var second = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+            "bob", "Bob", 0, Key("join-bob"), Start, default)).Session);
+        Assert.NotEqual(first.Table.TableId, second.Table.TableId);
+        Assert.Single(second.Table.Seats);
+        Assert.Equal("bob", Assert.Single(store.TableForTest(second.Table.TableId).Players).ActorId);
     }
 
     [Fact]
-    public async Task QueueCancellationReplaysWithoutChargingOrCreatingATable()
+    public async Task DuplicateJoinReplaysWithoutCreatingAnotherTableOrCharging()
     {
         var store = Store();
         store.SetBalance("human", 10_000);
-        var queue = Assert.IsType<ThreeCardPokerTableQueueSessionResponse>((await store.JoinAsync(
-            "human", "Player", 0, Key("queue"), Start, default)).Session);
+        var first = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+            "human", "Player", 0, Key("join"), Start, default)).Session);
         for (var index = 0; index < 2; index++)
         {
-            var cancelled = await store.CancelAsync("human", queue.TicketId, queue.Version, Key("cancel"), Start.AddSeconds(1), default);
-            Assert.IsType<ThreeCardPokerTableIdleSessionResponse>(cancelled.Session);
+            var replayed = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+                "human", "Player", 0, Key("join"), Start.AddSeconds(1), default)).Session);
+            Assert.Equal(first.Table.TableId, replayed.Table.TableId);
         }
-        await store.SweepAsync(Start.AddMinutes(1), default);
-        Assert.Empty(store.StateForTest.Tables);
+        Assert.Single(store.StateForTest.Tables);
         Assert.Empty(store.Ledger);
         Assert.Equal(10_000, store.Balance("human"));
+    }
+
+    [Fact]
+    public async Task PersistedMultiplayerBettingTableRefundsPendingWagersBeforeClosing()
+    {
+        var store = Store();
+        const string tableId = "legacy-betting-table";
+        var table = LegacyTable(tableId, ThreeCardPokerTablePhases.Betting);
+        table.Players[0].NextWagerCents = 100;
+        table.Players[0].NextPairPlusCents = 50;
+        table.Players[1].NextWagerCents = 200;
+        store.StateForTest.Tables[tableId] = table;
+        foreach (var player in table.Players)
+            store.StateForTest.Sessions[player.ActorId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
+        store.SetBalance("alice", 9_850);
+        store.SetBalance("bob", 9_800);
+
+        var session = await store.GetSessionAsync("alice", Start, default);
+        Assert.IsType<ThreeCardPokerTableIdleSessionResponse>(session.Session);
+        Assert.Equal(ThreeCardPokerTablePhases.Closed, table.Phase);
+        Assert.Equal(10_000, store.Balance("alice"));
+        Assert.Equal(10_000, store.Balance("bob"));
+        Assert.Equal(new long[] { 150, 200 }, store.Ledger.OrderBy(value => value.UserId).Select(value => value.AmountCents));
+        Assert.IsType<ThreeCardPokerTableIdleSessionResponse>((await store.GetSessionAsync("bob", Start, default)).Session);
+    }
+
+    [Fact]
+    public async Task PersistedMultiplayerRoundSettlesBeforeItsTableIsRetired()
+    {
+        var store = Store();
+        const string tableId = "legacy-settlement-table";
+        var table = LegacyTable(tableId, ThreeCardPokerTablePhases.Settlement);
+        table.RoundNumber = 1;
+        table.RoundAccountingSettled = false;
+        foreach (var player in table.Players)
+        {
+            player.WagerCents = player.TotalWagerCents = 100;
+            player.PayoutCents = 200;
+            store.StateForTest.Sessions[player.ActorId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
+            store.SetBalance(player.ActorId, 9_900);
+        }
+        store.StateForTest.Tables[tableId] = table;
+
+        var settled = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(
+            "alice", Start, default)).Session);
+        Assert.Equal(ThreeCardPokerTablePhases.Settled, settled.Table.Phase);
+        Assert.Equal(10_100, store.Balance("alice"));
+        Assert.Equal(10_100, store.Balance("bob"));
+        Assert.Single(await store.GetHistoryAsync("alice", 10, default));
+        Assert.Single(await store.GetHistoryAsync("bob", 10, default));
+
+        var afterDisplay = await store.GetSessionAsync("alice", Start.Add(ThreeCardPokerTableEngine.SettlementDisplayDuration), default);
+        Assert.IsType<ThreeCardPokerTableIdleSessionResponse>(afterDisplay.Session);
+        Assert.IsType<ThreeCardPokerTableIdleSessionResponse>((await store.GetSessionAsync("bob", Start.AddSeconds(5), default)).Session);
+        Assert.Equal(ThreeCardPokerTablePhases.Closed, table.Phase);
+        Assert.Equal(10_100, store.Balance("alice"));
+        Assert.Equal(10_100, store.Balance("bob"));
+        Assert.Equal(2, store.Ledger.Count);
+    }
+
+    [Fact]
+    public async Task PersistedQueueTicketMovesToAPrivateTableWithoutWaitingForGrace()
+    {
+        var store = Store();
+        var ticketId = ThreeCardPokerTableIds.Hash("old-queue-ticket");
+        store.StateForTest.Tickets.Add(new(ticketId, "alice", "old-seat", "Alice", "old-shared-table", 3,
+            "queued", 1, Start.AddSeconds(-1), Start.AddMinutes(1)));
+        store.StateForTest.Sessions["alice"] = new(ThreeCardPokerTableSessionKinds.Queue, ticketId, null);
+
+        var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(
+            "alice", Start, default)).Session);
+        Assert.Equal("human-wager", session.Table.Transition);
+        Assert.Null(session.Table.WagerDeadlineAtUtc);
+        Assert.Equal("alice", Assert.Single(store.TableForTest(session.Table.TableId).Players).ActorId);
+        Assert.Single(store.StateForTest.Tickets, value => value.TicketId == ticketId && value.Status == "matched");
     }
 
     [Fact]
@@ -84,28 +227,22 @@ public sealed class ThreeCardPokerTableStateTests
     }
 
     [Fact]
-    public async Task LeavingRejoiningAndLeavingTheSameTableCreatesDistinctRefunds()
+    public async Task LeavingAndRejoiningCreatesAPrivateTableWithDistinctRefunds()
     {
         var (store, session, actor, now) = await AllHumanTable();
         var tableId = session.Table.TableId;
         var first = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.WagerAsync(
-            actor, tableId, 100, 50, session.Version, Key("first-wager"), now, default)).Session);
+            actor, tableId, 100, 100, session.Version, Key("first-wager"), now, default)).Session);
         await store.LeaveAsync(actor, tableId, first.Version, Key("first-leave"), now, default);
         var rejoined = await store.JoinAsync(actor, "Player", 0, Key("rejoin"), now, default);
         session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>(rejoined.Session);
-        Assert.Equal(tableId, session.Table.TableId);
-        for (var step = 0; step < 10; step++)
-        {
-            session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(actor, now, default)).Session);
-            var active = store.TableForTest(tableId).Players.Single(player => player.Seat == session.Table.ActiveSeat).ActorId;
-            if (active == actor) break;
-            await store.SitOutAsync(active, tableId, session.Version, Key($"sitout-{active}"), now, default);
-        }
+        Assert.NotEqual(tableId, session.Table.TableId);
+        tableId = session.Table.TableId;
         var second = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.WagerAsync(
-            actor, tableId, 150, 50, session.Version, Key("second-wager"), now, default)).Session);
+            actor, tableId, 200, 100, session.Version, Key("second-wager"), now, default)).Session);
         await store.LeaveAsync(actor, tableId, second.Version, Key("second-leave"), now, default);
         Assert.Equal(10_000, store.Balance(actor));
-        Assert.Equal(new long[] { -150, 150, -200, 200 }, store.Ledger.Where(entry => entry.UserId == actor).Select(entry => entry.AmountCents));
+        Assert.Equal(new long[] { -200, 200, -300, 300 }, store.Ledger.Where(entry => entry.UserId == actor).Select(entry => entry.AmountCents));
         Assert.Equal(4, store.Ledger.Select(entry => entry.Id).Distinct().Count());
     }
     [Fact]
@@ -114,18 +251,18 @@ public sealed class ThreeCardPokerTableStateTests
         var (store, table, actor, now) = await AllHumanTable();
         store.SetBalance(actor, 100);
         await Assert.ThrowsAsync<ThreeCardPokerTableInsufficientCreditsException>(() => store.WagerAsync(
-            actor, table.Table.TableId, 100, 50, table.Version, Key("too-much"), now, default));
+            actor, table.Table.TableId, 100, 100, table.Version, Key("too-much"), now, default));
         Assert.Equal(100, store.Balance(actor));
         Assert.Empty(store.Ledger);
         Assert.Equal(0, store.TableForTest(table.Table.TableId).Players.Single(player => player.ActorId == actor).NextWagerCents);
 
         store.SetBalance(actor, 10_000);
-        await store.WagerAsync(actor, table.Table.TableId, 100, 50, table.Version, Key("wager"), now, default);
+        await store.WagerAsync(actor, table.Table.TableId, 100, 100, table.Version, Key("wager"), now, default);
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => store.WagerAsync(
-            actor, table.Table.TableId, 200, 50, table.Version, Key("wager"), now, default));
+            actor, table.Table.TableId, 200, 100, table.Version, Key("wager"), now, default));
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => store.WagerAsync(
-            actor, table.Table.TableId, 100, 50, table.Version, Key("stale"), now, default));
-        Assert.Equal(9_850, store.Balance(actor));
+            actor, table.Table.TableId, 100, 100, table.Version, Key("stale"), now, default));
+        Assert.Equal(9_800, store.Balance(actor));
         Assert.Single(store.Ledger);
     }
 
@@ -184,14 +321,14 @@ public sealed class ThreeCardPokerTableStateTests
     }
 
     [Theory]
-    [InlineData("play", 10_150, 250, 400)]
-    [InlineData("fold", 9_950, 150, 100)]
+    [InlineData("play", 10_200, 300, 500)]
+    [InlineData("fold", 10_000, 200, 200)]
     public async Task PlayOrFoldAndItsPayoutAreRecordedExactlyOnce(string action, long expectedBalance, long expectedCommitted, long expectedPayout)
     {
         var (store, table, actor, now) = await WagerAndDeal();
         var acted = await store.ActionAsync(actor, table.Table.TableId, action, table.Version, Key("decision"), now, default);
         await store.ActionAsync(actor, table.Table.TableId, action, table.Version, Key("decision"), now, default);
-        Assert.Equal(action == ThreeCardPokerActions.Play ? 9_750 : 9_850, store.Balance(actor));
+        Assert.Equal(action == ThreeCardPokerActions.Play ? 9_700 : 9_800, store.Balance(actor));
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => store.ActionAsync(
             actor, table.Table.TableId, action == "play" ? "fold" : "play", table.Version, Key("decision"), now, default));
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => store.ActionAsync(
@@ -202,7 +339,7 @@ public sealed class ThreeCardPokerTableStateTests
         Assert.Equal(expectedBalance, store.Balance(actor));
         Assert.Equal(expectedCommitted / 100m, own.TotalWager);
         Assert.Equal(expectedPayout / 100m, own.Payout);
-        Assert.Equal(1m, own.PairPlusPayout);
+        Assert.Equal(2m, own.PairPlusPayout);
         Assert.Equal(0m, own.AnteBonusPayout);
         Assert.Equal(action == "fold" ? "fold" : "dealer-not-qualified", own.Outcome);
         Assert.All(settled.Table.Dealer.Cards, card => Assert.False(card.Hidden));
@@ -229,16 +366,11 @@ public sealed class ThreeCardPokerTableStateTests
     }
 
     [Fact]
-    public async Task AllHumansCanSitOutAndReceiveANewWagerTurnAfterTheCountdown()
+    public async Task SoloPlayerCanSitOutAndReceiveANewWagerTurnAfterTheCountdown()
     {
         var (store, session, viewer, now) = await AllHumanTable();
         var tableId = session.Table.TableId;
-        for (var step = 0; step < 3; step++)
-        {
-            session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(viewer, now, default)).Session);
-            var actor = store.TableForTest(tableId).Players.Single(player => player.Seat == session.Table.ActiveSeat).ActorId;
-            await store.SitOutAsync(actor, tableId, session.Version, Key($"sitout-{actor}"), now, default);
-        }
+        await store.SitOutAsync(viewer, tableId, session.Version, Key("sitout"), now, default);
         var countdown = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(viewer, now, default)).Session);
         Assert.Equal("next-round-countdown", countdown.Table.Transition);
         Assert.Null(countdown.Table.ActiveSeat);
@@ -248,9 +380,29 @@ public sealed class ThreeCardPokerTableStateTests
         Assert.Equal("human-wager", resumed.Table.Transition);
         Assert.NotNull(resumed.Table.ActiveSeat);
         Assert.Equal(0, resumed.Table.Round);
-        Assert.Equal(3, resumed.Table.Seats.Count);
+        Assert.Single(resumed.Table.Seats);
         Assert.All(store.TableForTest(tableId).Players, player => Assert.Equal(0, player.ConsecutiveMissedRounds));
         Assert.Empty(store.Ledger);
+    }
+
+    [Fact]
+    public async Task SoloWagerAndPlayChoicesDoNotExpireWhileThePlayerIsAway()
+    {
+        var (store, initial, actor, now) = await AllHumanTable();
+        Assert.Null(initial.Table.WagerDeadlineAtUtc);
+        var later = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(
+            actor, now.AddHours(3), default)).Session);
+        Assert.Equal("human-wager", later.Table.Transition);
+        Assert.Null(later.Table.WagerDeadlineAtUtc);
+        Assert.Single(later.Table.Seats);
+
+        var (roundStore, active, roundActor, activeAt) = await WagerAndDeal();
+        Assert.Null(active.Table.ActionDeadlineAtUtc);
+        var stillActive = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await roundStore.GetSessionAsync(
+            roundActor, activeAt.AddHours(3), default)).Session);
+        Assert.Equal(ThreeCardPokerTablePhases.Active, stillActive.Table.Phase);
+        Assert.Contains(ThreeCardPokerActions.Play, stillActive.Table.LegalActions);
+        Assert.Null(stillActive.Table.ActionDeadlineAtUtc);
     }
     [Fact]
     public async Task UnaffordablePlayCanStillFoldWithoutLosingTheDecisionOrTakingAnotherDebit()
@@ -275,28 +427,23 @@ public sealed class ThreeCardPokerTableStateTests
         Assert.Null(card.Suit);
     });
 
-    private static InMemoryThreeCardPokerTableStore Store() => new(() => PairDeck(3), () => 3UL);
+    private static InMemoryThreeCardPokerTableStore Store() => new(() => PairDeck(1), () => 3UL);
     private static string Key(string value) => value.PadRight(16, 'x');
 
     private static async Task<(InMemoryThreeCardPokerTableStore Store, ThreeCardPokerTablePlaySessionResponse Session, string Actor, DateTime Now)> AllHumanTable()
     {
         var store = Store();
-        foreach (var user in new[] { "alice", "bob", "charlie" })
-        {
-            store.SetBalance(user, 10_000);
-            await store.JoinAsync(user, "Player", 0, Key($"join-{user}"), Start, default);
-        }
-        var now = Start.Add(ThreeCardPokerTableEngine.HumanGrace);
-        var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync("alice", now, default)).Session);
-        var actor = store.TableForTest(session.Table.TableId).Players.Single(player => player.Seat == session.Table.ActiveSeat).ActorId;
-        return (store, session, actor, now);
+        store.SetBalance("alice", 10_000);
+        var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+            "alice", "Player", 0, Key("join-alice"), Start, default)).Session);
+        return (store, session, "alice", Start);
     }
 
     private static async Task<(InMemoryThreeCardPokerTableStore Store, ThreeCardPokerTablePlaySessionResponse Session, string Actor, DateTime Now)> WagerAndDeal()
     {
         var (store, session, _, now) = await AllHumanTable();
         var tableId = session.Table.TableId;
-        var first = store.TableForTest(tableId).Players.OrderBy(player => player.Seat).First().ActorId;
+        var first = "alice";
         for (var step = 0; step < 100; step++)
         {
             session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(first, now, default)).Session);
@@ -304,12 +451,11 @@ public sealed class ThreeCardPokerTableStateTests
                 return (store, session, first, now);
             if (session.Table.Phase == ThreeCardPokerTablePhases.Betting && session.Table.Transition == "human-wager")
             {
-                var actor = store.TableForTest(tableId).Players.Single(player => player.Seat == session.Table.ActiveSeat).ActorId;
-                await store.WagerAsync(actor, tableId, 100, actor == first ? 50 : 0, session.Version, Key($"ante-{actor}"), now, default);
+                await store.WagerAsync(first, tableId, 100, 100, session.Version, Key("ante-alice"), now, default);
             }
             now = now.AddMilliseconds(200);
         }
-        throw new Xunit.Sdk.XunitException("Three Card Poker did not deal after the three human wagers.");
+        throw new Xunit.Sdk.XunitException("Three Card Poker did not deal after the solo wager.");
     }
 
     private static async Task<(ThreeCardPokerTablePlaySessionResponse Session, DateTime Now)> CompleteRound(
@@ -336,6 +482,16 @@ public sealed class ThreeCardPokerTableStateTests
         {
             ActorId = actor, PublicSeatId = $"seat-{seat}", DisplayName = $"Player {seat}", Seat = seat,
             SessionId = $"session-{seat}", SessionStartedAtUtc = Start, NextWagerCents = 100
+        }).ToList()
+    };
+
+    private static ThreeCardPokerTableState LegacyTable(string tableId, string phase) => new()
+    {
+        TableId = tableId, CreatedAtUtc = Start, UpdatedAtUtc = Start, Phase = phase,
+        Players = new[] { "alice", "bob" }.Select((actor, seat) => new ThreeCardPokerTablePlayer
+        {
+            ActorId = actor, PublicSeatId = $"legacy-seat-{seat}", DisplayName = actor, Seat = seat,
+            SessionId = $"legacy-session-{seat}", SessionStartedAtUtc = Start
         }).ToList()
     };
 

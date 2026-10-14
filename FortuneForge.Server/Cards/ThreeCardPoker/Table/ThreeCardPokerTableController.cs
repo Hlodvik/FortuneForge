@@ -1,7 +1,6 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
-using FortuneForge.Server.Bots.ThreeCardPoker;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -193,10 +192,10 @@ public sealed class ThreeCardPokerTableController(
         ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.MinimumWagerCents),
         ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.MaximumWagerCents),
         ThreeCardPokerMoney.ToRand(ThreeCardPokerMoney.WagerIncrementCents),
-        ThreeCardPokerManagedTablePolicy.MinimumStartOccupancy,
-        ThreeCardPokerTableEngine.Capacity,
-        checked((int)ThreeCardPokerTableEngine.HumanGrace.TotalSeconds),
-        checked((int)ThreeCardPokerTableEngine.ActionDuration.TotalSeconds),
+        1,
+        1,
+        0,
+        0,
         "Dealer qualifies with queen high or better; Play equals Ante", true,
         "Straight 1:1; Three of a kind 4:1; Straight flush 5:1",
         "Pair 1:1; Flush 3:1; Straight 6:1; Three of a kind 30:1; Straight flush 40:1", true);

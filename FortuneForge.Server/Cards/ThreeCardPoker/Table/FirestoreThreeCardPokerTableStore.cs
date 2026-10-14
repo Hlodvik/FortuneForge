@@ -11,7 +11,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
 {
     private const string CurrencyId = "slotsCredits";
     private const string FractionField = "availableFractionalCents";
-    private const int MaximumShardCandidates = 20;
     private const int MaximumSweepBatch = 25;
     private static readonly TimeSpan GuardRetention = TimeSpan.FromDays(7);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -57,7 +56,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             stateId,
             userId,
             null,
-            false,
             (coordinator, state, balances) => coordinator.Get(state, balances, userId, nowUtc),
             nowUtc,
             cancellationToken);
@@ -104,36 +102,20 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                 existing,
                 userId,
                 idempotencyKey,
-                false,
                 Command,
                 nowUtc,
                 cancellationToken);
         }
 
-        var excluded = new HashSet<string>(StringComparer.Ordinal);
-        for (var attempt = 0; attempt < 8; attempt++)
-        {
-            var stateId = await FindAcceptingStateIdAsync(excluded, cancellationToken)
-                ?? CohortStateId(nowUtc, attempt);
-            try
-            {
-                return await ExecuteRoutedAsync(
-                    stateId,
-                    userId,
-                    idempotencyKey,
-                    true,
-                    Command,
-                    nowUtc,
-                    cancellationToken);
-            }
-            catch (ThreeCardPokerTableShardUnavailableException)
-            {
-                excluded.Add(stateId);
-            }
-        }
-
-        throw new ThreeCardPokerTableConflictException(
-            "Three Card Poker table matchmaking is busy. Reconnect before joining again.");
+        // A Three Card Poker table is private to one human. Never route new joins
+        // through an accepting multiplayer shard or reserve managed profiles.
+        return await ExecuteRoutedAsync(
+            ThreeCardPokerTableIds.Hash($"three-card-poker-solo-state\n{userId}"),
+            userId,
+            idempotencyKey,
+            Command,
+            nowUtc,
+            cancellationToken);
     }
 
     private async Task<ThreeCardPokerTableStoreResult> ReadCurrentSessionAsync(
@@ -314,14 +296,13 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         if (string.IsNullOrEmpty(stateId))
             throw new ThreeCardPokerTableNotFoundException("The Three Card Poker table session was not found.");
         return await ExecuteRoutedAsync(
-            stateId, userId, idempotencyKey, false, command, nowUtc, cancellationToken);
+            stateId, userId, idempotencyKey, command, nowUtc, cancellationToken);
     }
 
     private async Task<ThreeCardPokerTableStoreResult> ExecuteRoutedAsync(
         string initialStateId,
         string userId,
         string? idempotencyKey,
-        bool requireAcceptingShard,
         Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
@@ -335,7 +316,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                     stateId,
                     userId,
                     idempotencyKey,
-                    requireAcceptingShard,
                     command,
                     nowUtc,
                     cancellationToken);
@@ -343,7 +323,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             catch (ThreeCardPokerTableShardChangedException changed)
             {
                 stateId = changed.StateId;
-                requireAcceptingShard = false;
             }
         }
         throw new ThreeCardPokerTableConflictException("The Three Card Poker table session changed. Reconnect and try again.");
@@ -353,21 +332,14 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         string stateId,
         string userId,
         string? idempotencyKey,
-        bool requireAcceptingShard,
         Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        var reservations = new List<ThreeCardPokerReservedManagedPlayer>();
-        while (true)
-        {
-            try
-            {
-                var execution = await RunTransactionAsync(async transaction =>
+        var execution = await RunTransactionAsync(async transaction =>
                 {
-                    var supply = new ThreeCardPokerManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new ThreeCardPokerTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population);
+                        deckFactory, seedFactory, population);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -391,9 +363,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                     var guardKey = string.IsNullOrEmpty(idempotencyKey) ? null : GuardKey(userId, idempotencyKey);
                     if (guardSnapshot?.Exists == true && guardKey is not null)
                         state.Guards[guardKey] = ReadGuard(guardSnapshot);
-                    if (requireAcceptingShard && guardSnapshot?.Exists != true && !CanAcceptHuman(state))
-                        throw new ThreeCardPokerTableShardUnavailableException();
-
                     var prior = StateReferences.Capture(state, userId);
                     var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
                     var result = command(coordinator, state, loaded.Current);
@@ -416,22 +385,8 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                         nowUtc);
                     return CaptureManagedExecution(result.Store, state, result.Journal);
                 }, cancellationToken);
-                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
-                return execution.Value;
-            }
-            catch (ThreeCardPokerManagedPlayerSupplyRequiredException required)
-            {
-                var profiles = await matchmaking.ReserveManagedPlayersAsync(
-                    ManagedPlayerGames.ThreeCardPoker,
-                    required.AssignmentId,
-                    required.Count,
-                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
-                    nowUtc,
-                    cancellationToken);
-                reservations.AddRange(profiles.Select(profile =>
-                    new ThreeCardPokerReservedManagedPlayer(profile, required.AssignmentId)));
-            }
-        }
+        await FinalizeManagedPlayersAsync(execution, nowUtc, cancellationToken);
+        return execution.Value;
     }
 
     private async Task SweepShardAsync(
@@ -439,16 +394,10 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        var reservations = new List<ThreeCardPokerReservedManagedPlayer>();
-        while (true)
-        {
-            try
-            {
-                var execution = await RunTransactionAsync(async transaction =>
+        var execution = await RunTransactionAsync(async transaction =>
                 {
-                    var supply = new ThreeCardPokerManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new ThreeCardPokerTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population);
+                        deckFactory, seedFactory, population);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -473,27 +422,11 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                         nowUtc);
                     return CaptureManagedExecution(true, state, journal);
                 }, cancellationToken);
-                await FinalizeManagedPlayersAsync(execution, reservations, nowUtc, cancellationToken);
-                return;
-            }
-            catch (ThreeCardPokerManagedPlayerSupplyRequiredException required)
-            {
-                var profiles = await matchmaking.ReserveManagedPlayersAsync(
-                    ManagedPlayerGames.ThreeCardPoker,
-                    required.AssignmentId,
-                    required.Count,
-                    required.ExcludedProfileIds.Concat(reservations.Select(value => value.Profile.UserId)).ToArray(),
-                    nowUtc,
-                    cancellationToken);
-                reservations.AddRange(profiles.Select(profile =>
-                    new ThreeCardPokerReservedManagedPlayer(profile, required.AssignmentId)));
-            }
-        }
+        await FinalizeManagedPlayersAsync(execution, nowUtc, cancellationToken);
     }
 
     private async Task FinalizeManagedPlayersAsync<T>(
         ManagedExecution<T> execution,
-        IReadOnlyCollection<ThreeCardPokerReservedManagedPlayer> reservations,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -504,12 +437,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         }
 
         var releases = execution.Releases
-            .Concat(reservations
-                .Where(reservation => !execution.ActiveAssignments
-                    .GetValueOrDefault(reservation.AssignmentId, [])
-                    .Contains(reservation.Profile.UserId, StringComparer.Ordinal))
-                .Select(reservation => new ThreeCardPokerManagedPlayerRelease(
-                    reservation.Profile.UserId, reservation.AssignmentId)))
             .DistinctBy(value => $"{value.AssignmentId}\n{value.ProfileId}", StringComparer.Ordinal)
             .GroupBy(value => value.AssignmentId, StringComparer.Ordinal);
         foreach (var group in releases)
@@ -584,7 +511,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                 var stateData = new Dictionary<string, object>
                 {
                     ["stateJson"] = DurableStateJson(state),
-                    ["acceptingHumans"] = CanAcceptHuman(state),
+                    ["acceptingHumans"] = false,
                     ["humanCount"] = ActiveHumanCount(state),
                     ["tableCount"] = state.Tables.Count,
                     ["queuedTicketCount"] = state.Tickets.Count,
@@ -705,22 +632,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         return string.IsNullOrEmpty(guardState) ? null : guardState;
     }
 
-    private async Task<string?> FindAcceptingStateIdAsync(
-        ISet<string> excluded,
-        CancellationToken cancellationToken)
-    {
-        var candidates = await StateCollection()
-            .WhereEqualTo("acceptingHumans", true)
-            .Limit(MaximumShardCandidates)
-            .GetSnapshotAsync(cancellationToken);
-        return candidates.Documents
-            .Where(snapshot => !excluded.Contains(snapshot.Id))
-            .OrderBy(snapshot => ReadTimestamp(snapshot, "createdAt"))
-            .ThenBy(snapshot => snapshot.Id, StringComparer.Ordinal)
-            .Select(snapshot => snapshot.Id)
-            .FirstOrDefault();
-    }
-
     private async Task<T> RunTransactionAsync<T>(
         Func<Transaction, Task<T>> callback,
         CancellationToken cancellationToken)
@@ -765,9 +676,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             state.Sessions.Remove(userId);
     }
 
-    private static bool CanAcceptHuman(ThreeCardPokerTableLobbyState state) =>
-        state.Tables.Count <= 1 && ActiveHumanCount(state) < ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats;
-
     private static int ActiveHumanCount(ThreeCardPokerTableLobbyState state) => state.Sessions.Count(pair =>
         pair.Value.Kind is ThreeCardPokerTableSessionKinds.Queue or ThreeCardPokerTableSessionKinds.Table);
 
@@ -802,10 +710,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
 
     private static string DurableStateJson(ThreeCardPokerTableLobbyState state) =>
         JsonSerializer.Serialize(state, JsonOptions);
-
-    private static string CohortStateId(DateTime nowUtc, int overflow) =>
-        ThreeCardPokerTableIds.Hash(
-            $"three-card-poker-table-shard\n{nowUtc.Ticks / ThreeCardPokerTableEngine.HumanGrace.Ticks}\n{overflow}");
 
     private static string GuardKey(string userId, string idempotencyKey) =>
         ThreeCardPokerTableIds.Hash($"{userId}\n{idempotencyKey}");
@@ -968,10 +872,6 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                 .Where(value => !string.IsNullOrEmpty(value))
                 .ToHashSet(StringComparer.Ordinal));
     }
-}
-
-internal sealed class ThreeCardPokerTableShardUnavailableException : Exception
-{
 }
 
 internal sealed class ThreeCardPokerTableShardChangedException(string stateId) : Exception

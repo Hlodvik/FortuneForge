@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Security.Cryptography;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.ThreeCardPoker;
-using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Cards.ThreeCardPoker.Table;
 
@@ -11,20 +10,16 @@ internal sealed record ThreeCardPokerTableCoordinatorResult(ThreeCardPokerTableS
 internal sealed class ThreeCardPokerTableCoordinator(
     Func<IReadOnlyList<string>>? deckFactory = null,
     Func<ulong>? seedFactory = null,
-    ThreeCardPokerManagedPlayerSupply? managedPlayerSupply = null,
-    IMultiplayerMatchmaker? multiplayerMatchmaker = null,
     IManagedTablePopulationDirector? managedPopulationDirector = null)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
     private static readonly TimeSpan MinimumManagedWagerPause = TimeSpan.FromMilliseconds(700);
     private static readonly TimeSpan MaximumManagedWagerPause = TimeSpan.FromMilliseconds(1_800);
+    private const long ManagedWagerAdjustmentCents = 50;
     private readonly Func<IReadOnlyList<string>> createDeck = deckFactory ?? ThreeCardPokerRules.CreateShuffledDeck;
     private readonly Func<ulong> createSeed = seedFactory ??
         (() => BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong))));
-    private readonly ThreeCardPokerManagedPlayerSupply managedPlayers = managedPlayerSupply ?? new(generateWhenEmpty: true);
-    private readonly IMultiplayerMatchmaker matchmaking =
-        multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     private readonly IManagedTablePopulationDirector population =
         managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
@@ -57,49 +52,32 @@ internal sealed class ThreeCardPokerTableCoordinator(
         var current = ThreeCardPokerTableProjection.Session(state, userId, nowUtc);
         if (current.Kind != ThreeCardPokerTableSessionKinds.Idle || current.Version != expectedVersion)
             throw new ThreeCardPokerTableConflictException("The Three Card Poker table session changed. Reconnect before joining.");
-        var target = matchmaking.FindLiveTable(
-            state.Tables.Values,
-            table => table.Phase != ThreeCardPokerTablePhases.Closed &&
-                table.Players.Count(player => !ThreeCardPokerManagedSeat.IsManaged(player)) < ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats &&
-                (table.Players.Count < ThreeCardPokerTableEngine.Capacity || table.Players.Any(ThreeCardPokerManagedSeat.IsManaged)),
-            table => table.CreatedAtUtc,
-            table => table.TableId);
         var ticket = new ThreeCardPokerTableTicket(
             ticketId,
             userId,
             $"seat_{Guid.NewGuid():N}",
             displayName.Trim(),
-            target?.TableId,
-            target?.RoundNumber ?? 0,
-            "queued",
+            null,
+            0,
+            "matched",
             1,
             nowUtc,
-            nowUtc.Add(ThreeCardPokerTableEngine.HumanGrace));
-        state.Tickets.Add(ticket);
-        state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Queue, ticketId, null);
+            nowUtc);
+        var tableId = ThreeCardPokerTableIds.Hash($"solo\n{ticketId}");
+        var table = new ThreeCardPokerTableState
+        {
+            TableId = tableId,
+            Players = [Human(ticket, 0, 0)],
+            CreatedAtUtc = nowUtc,
+            UpdatedAtUtc = nowUtc,
+            Phase = ThreeCardPokerTablePhases.Betting,
+            Version = 1,
+            RoundNumber = 0
+        };
+        state.Tables[tableId] = table;
+        state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
         state.Guards[GuardKey(userId, idempotencyKey)] = new("join", ticketId, detail, nowUtc);
-        if (target?.Phase == ThreeCardPokerTablePhases.Betting)
-        {
-            AdmitQueuedHumansAtBoundary(state, target, journal);
-            target.UpdatedAtUtc = nowUtc;
-            StartIfReady(target, nowUtc);
-        }
-        else if (target is not null && target.Players.Count < ThreeCardPokerTableEngine.Capacity)
-        {
-            var seat = NextOpenSeatAfterPlayers(target);
-            var joining = Human(ticket, seat, target.RoundNumber);
-            joining.Status = "joining-next-round";
-            target.Players.Add(joining);
-            MarkTicketMatched(state, ticket);
-            state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Table, null, target.TableId);
-            ScheduleGracefulManagedDeparture(target);
-            target.UpdatedAtUtc = nowUtc;
-        }
-        else if (target is not null)
-        {
-            ScheduleGracefulManagedDeparture(target);
-        }
-        Advance(state, balances, journal, nowUtc);
+        StartIfReady(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
@@ -335,10 +313,21 @@ internal sealed class ThreeCardPokerTableCoordinator(
         ThreeCardPokerTableJournal journal,
         DateTime nowUtc)
     {
+        // Old queue tickets may still point at a shared table. Let every queued
+        // human start a private table instead of waiting for that table's boundary.
+        foreach (var ticket in state.Tickets.Where(value => value.Status == "queued" && value.TargetTableId is not null).ToArray())
+            ReplaceTicket(state, ticket with { TargetTableId = null, EligibleAfterRound = 0 });
         foreach (var table in state.Tables.Values.OrderBy(value => value.CreatedAtUtc).ToArray())
         {
+            if (table.Phase == ThreeCardPokerTablePhases.Betting &&
+                (table.Players.Count != 1 || ThreeCardPokerManagedSeat.IsManaged(table.Players[0])))
+            {
+                RetireLegacyBettingTable(state, balances, journal, table, nowUtc);
+                continue;
+            }
             if (table.Phase is ThreeCardPokerTablePhases.Dealing or ThreeCardPokerTablePhases.Active or ThreeCardPokerTablePhases.Dealer)
                 ThreeCardPokerTableEngine.AdvanceAutomatedTurns(table, nowUtc);
+            if (IsSoloTable(table)) table.ActionDeadlineAtUtc = null;
             AdvanceManagedPlayerTurns(table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Settlement) CompleteSettlement(state, balances, journal, table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Betting && table.Transition == "next-round-countdown" &&
@@ -364,6 +353,31 @@ internal sealed class ThreeCardPokerTableCoordinator(
             }
         }
         StartNewTables(state, balances, journal, nowUtc);
+    }
+
+    private void RetireLegacyBettingTable(
+        ThreeCardPokerTableLobbyState state,
+        IDictionary<string, long> balances,
+        ThreeCardPokerTableJournal journal,
+        ThreeCardPokerTableState table,
+        DateTime nowUtc)
+    {
+        foreach (var player in table.Players.Where(value => !ThreeCardPokerManagedSeat.IsManaged(value)))
+        {
+            var pending = checked(player.NextWagerCents + player.NextPairPlusCents);
+            if (pending == 0) continue;
+            Credit(balances, player.ActorId, pending);
+            journal.Ledger.Add(new(
+                $"three-card-poker-table-solo-migration-release-{table.TableId}-{ThreeCardPokerTableIds.Hash(player.ActorId)}-{table.RoundNumber}",
+                player.ActorId,
+                pending,
+                Balance(balances, player.ActorId),
+                "three-card-poker-table-wager-release",
+                table.TableId,
+                nowUtc));
+            player.NextWagerCents = player.NextPairPlusCents = 0;
+        }
+        CloseTable(state, table, journal);
     }
 
     private static void AdvanceManagedPlayerTurns(ThreeCardPokerTableState table, DateTime nowUtc)
@@ -433,27 +447,19 @@ internal sealed class ThreeCardPokerTableCoordinator(
         ThreeCardPokerTableJournal journal,
         DateTime nowUtc)
     {
-        while (true)
+        // Existing persisted queue tickets are admitted individually. New joins bypass
+        // the queue entirely, but an old ticket must not be stranded on deployment.
+        foreach (var ticket in state.Tickets
+                     .Where(value => value.Status == "queued" && value.TargetTableId is null)
+                     .OrderBy(value => value.JoinedAtUtc)
+                     .ThenBy(value => value.TicketId, StringComparer.Ordinal)
+                     .ToArray())
         {
-            var selected = matchmaking.PlanQueue(
-                state.Tickets,
-                new MultiplayerQueueRules(
-                    1,
-                    ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats),
-                nowUtc,
-                ticket => ticket.Status == "queued" && ticket.TargetTableId is null,
-                ticket => ticket.JoinedAtUtc,
-                ticket => ticket.GraceEndsAtUtc,
-                ticket => ticket.TicketId).HumanTickets.ToArray();
-            if (selected.Length == 0) return;
-            var tableId = ThreeCardPokerTableIds.Hash(string.Join("\n", selected.Select(ticket => ticket.TicketId)));
-            var initialSeed = createSeed();
-            var startingSeats = RandomizedInitialSeats(selected.Length, initialSeed);
-            var players = selected.Select((ticket, index) => Human(ticket, startingSeats[index], 0)).ToList();
+            var tableId = ThreeCardPokerTableIds.Hash($"solo\n{ticket.TicketId}");
             var table = new ThreeCardPokerTableState
             {
                 TableId = tableId,
-                Players = players,
+                Players = [Human(ticket, 0, 0)],
                 CreatedAtUtc = nowUtc,
                 UpdatedAtUtc = nowUtc,
                 Phase = ThreeCardPokerTablePhases.Betting,
@@ -461,13 +467,9 @@ internal sealed class ThreeCardPokerTableCoordinator(
                 RoundNumber = 0,
                 WagerDeadlineAtUtc = null
             };
-            ApplyPopulationDecision(state, table, journal, nowUtc);
             state.Tables[tableId] = table;
-            foreach (var ticket in selected)
-            {
-                MarkTicketMatched(state, ticket);
-                state.Sessions[ticket.UserId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
-            }
+            MarkTicketMatched(state, ticket);
+            state.Sessions[ticket.UserId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
             StartIfReady(table, nowUtc);
         }
     }
@@ -588,7 +590,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         foreach (var player in table.Players.Where(player => !ThreeCardPokerManagedSeat.IsManaged(player) && player.LeavingAfterRound).ToArray())
         {
             table.Players.Remove(player);
-            state.Sessions[player.ActorId] = new(ThreeCardPokerTableSessionKinds.Idle, null, null);
+            ReleaseSessionForTable(state, player.ActorId, table.TableId);
         }
         foreach (var player in table.Players.Where(player => ThreeCardPokerManagedSeat.IsManaged(player) &&
                      (ThreeCardPokerManagedSeat.DepartureRound(player) is { } departureRound && departureRound <= table.RoundNumber ||
@@ -597,6 +599,13 @@ internal sealed class ThreeCardPokerTableCoordinator(
             table.Players.Remove(player);
             ReleaseManagedPlayer(table, player, journal);
         }
+        if (table.Players.Count != 1 || ThreeCardPokerManagedSeat.IsManaged(table.Players[0]))
+        {
+            // Allow an in-flight pre-solo round to settle, then retire its multiplayer
+            // table. Players can rejoin a private table without forfeiting that round.
+            CloseTable(state, table, journal);
+            return;
+        }
         table.Phase = ThreeCardPokerTablePhases.Betting;
         table.ActiveSeat = null;
         table.PendingSeat = null;
@@ -604,7 +613,6 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.Transition = "next-round-countdown";
         table.NextTransitionAtUtc = nowUtc.Add(ThreeCardPokerTableEngine.NextRoundCountdownDuration);
         table.WagerDeadlineAtUtc = null;
-        AdmitQueuedHumansAtBoundary(state, table, journal);
         if (!ApplyPopulationDecision(state, table, journal, nowUtc)) return;
         ThreeCardPokerTableEngine.PrepareForBetting(table);
         foreach (var player in table.Players)
@@ -615,36 +623,6 @@ internal sealed class ThreeCardPokerTableCoordinator(
         }
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
-    }
-
-    private void AdmitQueuedHumansAtBoundary(
-        ThreeCardPokerTableLobbyState state,
-        ThreeCardPokerTableState table,
-        ThreeCardPokerTableJournal journal)
-    {
-        var waiting = state.Tickets
-            .Where(ticket => ticket.Status == "queued" && ticket.TargetTableId == table.TableId &&
-                ticket.EligibleAfterRound <= table.RoundNumber)
-            .OrderBy(ticket => ticket.JoinedAtUtc)
-            .ThenBy(ticket => ticket.TicketId, StringComparer.Ordinal)
-            .ToArray();
-        foreach (var ticket in waiting)
-        {
-            if (table.Players.Count < ThreeCardPokerTableEngine.Capacity)
-            {
-                var emptySeat = NextOpenSeatAfterPlayers(table);
-                table.Players.Add(Human(ticket, emptySeat, table.RoundNumber));
-                if (table.Players.Count == ThreeCardPokerTableEngine.Capacity)
-                    ScheduleGracefulManagedDeparture(table);
-            }
-            else
-            {
-                ScheduleGracefulManagedDeparture(table);
-                break;
-            }
-            MarkTicketMatched(state, ticket);
-            state.Sessions[ticket.UserId] = new(ThreeCardPokerTableSessionKinds.Table, null, table.TableId);
-        }
     }
 
     private void StartIfReady(
@@ -695,58 +673,12 @@ internal sealed class ThreeCardPokerTableCoordinator(
         ThreeCardPokerTableJournal journal,
         DateTime nowUtc)
     {
-        var decision = population.Observe(PopulationObservation(table));
-        if (!decision.KeepTableOpen)
+        if (table.Players.Count == 0 || table.Players.All(ThreeCardPokerManagedSeat.IsManaged))
         {
             CloseTable(state, table, journal);
             return false;
         }
-        for (var index = 0; index < decision.ManagedArrivals; index++)
-            AddManagedPlayer(table, nowUtc);
         return true;
-    }
-
-    private static ManagedTablePopulationObservation PopulationObservation(ThreeCardPokerTableState table) => new(
-        ManagedPlayerGames.ThreeCardPoker,
-        table.TableId,
-        table.RoundNumber,
-        table.Players.Count(player => !ThreeCardPokerManagedSeat.IsManaged(player)),
-        table.Players.Count(ThreeCardPokerManagedSeat.IsManaged),
-        ThreeCardPokerManagedTablePolicy.MinimumStartOccupancy,
-        Math.Max(ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats, table.Players.Count),
-        table.Phase != ThreeCardPokerTablePhases.Closed);
-
-    private void AddManagedPlayer(ThreeCardPokerTableState table, DateTime nowUtc)
-    {
-        if (table.Players.Count >= ThreeCardPokerManagedTablePolicy.MaximumOccupiedSeats) return;
-        var profile = managedPlayers.Take(
-            table.TableId,
-            table.Players.Where(ThreeCardPokerManagedSeat.IsManaged).Select(player => player.ActorId).ToArray(),
-            nowUtc);
-        var player = new ThreeCardPokerTablePlayer
-        {
-            ActorId = profile.UserId,
-            PublicSeatId = $"seat_{Guid.NewGuid():N}",
-            DisplayName = profile.PlayerName,
-            Seat = ClosestOpenSeatOnDealerLeft(table),
-            SessionId = $"managed-session-{Guid.NewGuid():N}",
-            SessionStartedAtUtc = nowUtc,
-            JoinedRound = table.RoundNumber,
-            NextWagerCents = 0,
-            HostMetadata = ThreeCardPokerManagedSeat.Create(
-                profile.SkillLevel,
-                InitialManagedWager(profile.UserId),
-                ManagedWagerChangeChance(profile.UserId)),
-            Status = "waiting-to-wager"
-        };
-        ThreeCardPokerManagedSeat.SetDepartureRound(
-            player,
-            ManagedPlayerTableStayPolicy.DepartureRound(
-                ManagedPlayerGames.ThreeCardPoker,
-                table.TableId,
-                profile.UserId,
-                table.RoundNumber));
-        table.Players.Add(player);
     }
 
     private static void ReleaseManagedPlayer(
@@ -756,50 +688,6 @@ internal sealed class ThreeCardPokerTableCoordinator(
     {
         if (ThreeCardPokerManagedSeat.IsManaged(player))
             journal.ManagedPlayerReleases.Add(new(player.ActorId, table.TableId));
-    }
-
-    internal static IReadOnlyList<int> RandomizedInitialSeats(int occupiedSeats, ulong seed)
-    {
-        if (occupiedSeats is < 1 or > ThreeCardPokerTableEngine.Capacity)
-            throw new ArgumentOutOfRangeException(nameof(occupiedSeats));
-
-        var offset = checked((int)(((seed % (ulong)ThreeCardPokerTableEngine.Capacity) * 2UL + 4UL)
-            % (ulong)ThreeCardPokerTableEngine.Capacity));
-        var direction = (seed & 2UL) == 0 ? 1 : ThreeCardPokerTableEngine.Capacity - 1;
-        return Enumerable.Range(0, ThreeCardPokerTableEngine.Capacity)
-            .Select(index => (offset + index * direction) % ThreeCardPokerTableEngine.Capacity)
-            .Take(occupiedSeats)
-            .ToArray();
-    }
-
-    private static int ClosestOpenSeatOnDealerLeft(ThreeCardPokerTableState table) =>
-        Enumerable.Range(0, ThreeCardPokerTableEngine.Capacity)
-            .First(seat => table.Players.All(player => player.Seat != seat));
-
-    private static int NextOpenSeatAfterPlayers(ThreeCardPokerTableState table)
-    {
-        var start = table.Players.Count == 0
-            ? 0
-            : (table.Players.OrderBy(player => player.JoinedRound).ThenBy(player => player.Seat).Last().Seat + 1)
-              % ThreeCardPokerTableEngine.Capacity;
-        return Enumerable.Range(0, ThreeCardPokerTableEngine.Capacity)
-            .Select(offset => (start + offset) % ThreeCardPokerTableEngine.Capacity)
-            .First(seat => table.Players.All(player => player.Seat != seat));
-    }
-
-    private static void ScheduleGracefulManagedDeparture(ThreeCardPokerTableState table)
-    {
-        var departing = table.Players
-            .Where(ThreeCardPokerManagedSeat.IsManaged)
-            .OrderBy(player => player.SessionStartedAtUtc)
-            .ThenBy(player => player.Seat)
-            .FirstOrDefault();
-        if (departing is null) return;
-
-        var gracefulDepartureRound = checked(table.RoundNumber + RandomNumberGenerator.GetInt32(1, 4));
-        var scheduledDepartureRound = ThreeCardPokerManagedSeat.DepartureRound(departing);
-        if (scheduledDepartureRound is null || gracefulDepartureRound < scheduledDepartureRound)
-            ThreeCardPokerManagedSeat.SetDepartureRound(departing, gracefulDepartureRound);
     }
 
     private static ThreeCardPokerTablePlayer Human(ThreeCardPokerTableTicket ticket, int seat, int joinedRound) => new()
@@ -821,6 +709,8 @@ internal sealed class ThreeCardPokerTableCoordinator(
         ThreeCardPokerTableJournal journal)
     {
         population.Close(ManagedPlayerGames.ThreeCardPoker, table.TableId);
+        foreach (var player in table.Players.Where(player => !ThreeCardPokerManagedSeat.IsManaged(player)))
+            ReleaseSessionForTable(state, player.ActorId, table.TableId);
         table.Phase = ThreeCardPokerTablePhases.Closed;
         table.ActiveSeat = null;
         table.PendingSeat = null;
@@ -836,6 +726,13 @@ internal sealed class ThreeCardPokerTableCoordinator(
 
     private static void MarkTicketMatched(ThreeCardPokerTableLobbyState state, ThreeCardPokerTableTicket ticket) =>
         ReplaceTicket(state, ticket with { Status = "matched", Version = checked(ticket.Version + 1) });
+
+    private static void ReleaseSessionForTable(ThreeCardPokerTableLobbyState state, string userId, string tableId)
+    {
+        if (state.Sessions.TryGetValue(userId, out var link) && link.Kind == ThreeCardPokerTableSessionKinds.Table &&
+            link.TableId == tableId)
+            state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Idle, null, null);
+    }
 
     private static void ReplaceTicket(ThreeCardPokerTableLobbyState state, ThreeCardPokerTableTicket replacement)
     {
@@ -898,13 +795,6 @@ internal sealed class ThreeCardPokerTableCoordinator(
         return options[hash[0] % options.Length];
     }
 
-    internal static int ManagedWagerChangeChance(string actorId)
-    {
-        var options = new[] { 600, 1_200, 2_200, 3_400 };
-        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes($"three-card-poker-tempo\n{actorId}"));
-        return options[hash[0] % options.Length];
-    }
-
     internal static void UpdateManagedWagerHabit(ThreeCardPokerTablePlayer player, long committed)
     {
         var net = checked(player.PayoutCents - committed);
@@ -927,7 +817,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
 
         var baseWager = ThreeCardPokerManagedSeat.BaseWager(player);
         var wager = baseWager > 0 ? baseWager : InitialManagedWager(player.ActorId);
-        var increment = ThreeCardPokerMoney.WagerIncrementCents;
+        var increment = ManagedWagerAdjustmentCents;
         var bigWin = net >= Math.Max(increment, checked(committed + committed / 2));
         if (bigWin)
         {
@@ -1001,7 +891,9 @@ internal sealed class ThreeCardPokerTableCoordinator(
         next.Status = managed ? "considering-wager" : "choosing-wager";
         table.ActiveSeat = next.Seat;
         table.PendingSeat = next.Seat;
-        table.WagerDeadlineAtUtc = nowUtc.Add(ThreeCardPokerTableEngine.WagerDuration);
+        table.WagerDeadlineAtUtc = IsSoloTable(table)
+            ? null
+            : nowUtc.Add(ThreeCardPokerTableEngine.WagerDuration);
         table.Transition = managed ? "managed-wager" : "human-wager";
         table.NextTransitionAtUtc = null;
         if (managed)
@@ -1017,4 +909,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
 
     private static string GuardKey(string userId, string idempotencyKey) =>
         ThreeCardPokerTableIds.Hash($"{userId}\n{idempotencyKey}");
+
+    private static bool IsSoloTable(ThreeCardPokerTableState table) =>
+        table.Players.Count == 1 && !ThreeCardPokerManagedSeat.IsManaged(table.Players[0]);
 }

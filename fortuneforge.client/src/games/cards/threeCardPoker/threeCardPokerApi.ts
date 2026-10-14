@@ -152,8 +152,9 @@ function hasPrivateField(value: unknown): boolean {
 function isStatus(value: unknown): value is ThreeCardPokerStatus {
   return isRecord(value) && typeof value.available === 'boolean'
     && positive(value.minimumWager) && positive(value.maximumWager) && positive(value.wagerIncrement)
-    && value.minimumStartOccupancy === 3 && value.tableCapacity === 5
-    && positiveInteger(value.humanGraceSeconds) && positiveInteger(value.actionDeadlineSeconds)
+    && ((value.minimumStartOccupancy === 1 && value.tableCapacity === 1 && nonNegativeInteger(value.humanGraceSeconds))
+      || (value.minimumStartOccupancy === 3 && value.tableCapacity === 5 && positiveInteger(value.humanGraceSeconds)))
+    && nonNegativeInteger(value.actionDeadlineSeconds)
     && typeof value.dealerRule === 'string' && typeof value.pairPlusAllowed === 'boolean'
     && typeof value.anteBonusPaytable === 'string' && typeof value.pairPlusPaytable === 'string' && typeof value.pairPlusPaysOnFold === 'boolean'
 }

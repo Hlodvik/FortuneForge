@@ -3,22 +3,30 @@ import {
   cancelThreeCardPokerQueue, getThreeCardPokerSession, getThreeCardPokerSnapshot,
   getThreeCardPokerStatus, joinThreeCardPokerQueue, postThreeCardPokerAction,
   postThreeCardPokerWager, sitOutThreeCardPokerRound, stableThreeCardPokerMutation,
-  toThreeCardPokerPlayingCard, type ThreeCardPokerMutationResponse,
+  toThreeCardPokerPlayingCard, validThreeCardPokerWager, type ThreeCardPokerMutationResponse,
   type ThreeCardPokerPlaySession, type ThreeCardPokerStatus,
 } from './threeCardPokerApi'
 
 afterEach(() => vi.unstubAllGlobals())
 describe('Three Card Poker API boundary', () => {
-  it('reads the authenticated table gate and server paytables', async () => {
+  it('accepts whole-rand wagers from R1 through R500', () => {
+    expect(validThreeCardPokerWager(1, status)).toBe(true)
+    expect(validThreeCardPokerWager(27, status)).toBe(true)
+    expect(validThreeCardPokerWager(500, status)).toBe(true)
+    expect(validThreeCardPokerWager(.5, status)).toBe(false)
+    expect(validThreeCardPokerWager(1.5, status)).toBe(false)
+    expect(validThreeCardPokerWager(501, status)).toBe(false)
+  })
+  it('reads the solo table gate and server paytables', async () => {
     const fetch = successfulFetch(status)
     vi.stubGlobal('fetch', fetch)
     await expect(getThreeCardPokerStatus()).resolves.toEqual(status)
     expect(fetch.mock.calls[0]?.[0]).toBe('/api/cards/three-card-poker/table/status')
   })
-  it('joins without a wager and preserves version and idempotency', async () => {
-    const fetch = successfulFetch(idle)
+  it('starts a private table without a wager and preserves version and idempotency', async () => {
+    const fetch = successfulFetch({ session, balanceCredits: 100 })
     vi.stubGlobal('fetch', fetch)
-    await joinThreeCardPokerQueue(0, 'join-1')
+    await expect(joinThreeCardPokerQueue(0, 'join-1')).resolves.toMatchObject({ session: { kind: 'table', table: { seats: [{ displayName: 'Ada' }] } } })
     const [path, request] = fetch.mock.calls[0] as [string, RequestInit]
     expect(path).toBe('/api/cards/three-card-poker/table/queue')
     expect(JSON.parse(String(request.body))).toEqual({ expectedVersion: 0 })
@@ -84,8 +92,8 @@ describe('Three Card Poker API boundary', () => {
 })
 
 const status: ThreeCardPokerStatus = {
-  available: true, minimumWager: .5, maximumWager: 100, wagerIncrement: .5,
-  minimumStartOccupancy: 3, tableCapacity: 5, humanGraceSeconds: 5, actionDeadlineSeconds: 30,
+  available: true, minimumWager: 1, maximumWager: 500, wagerIncrement: 1,
+  minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 0,
   dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true,
   anteBonusPaytable: 'Straight 1:1; three of a kind 4:1; straight flush 5:1',
   pairPlusPaytable: 'Pair 1:1; flush 3:1; straight 6:1; trips 30:1; straight flush 40:1', pairPlusPaysOnFold: true,

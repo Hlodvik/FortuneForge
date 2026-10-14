@@ -23,39 +23,40 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         await SeedPlayers(database);
         var joins = await Task.WhenAll(Enumerable.Range(0, 6).Select(index => (index % 2 == 0 ? first : second).JoinAsync(
             "alice", "Player A", 0, Key("join-alice"), Start, default)));
-        Assert.All(joins, joined => Assert.IsType<ThreeCardPokerTableQueueSessionResponse>(joined.Session));
-        Assert.Single(joins.Select(joined => ((ThreeCardPokerTableQueueSessionResponse)joined.Session).TicketId).Distinct());
-        await first.JoinAsync("bob", "Player B", 0, Key("join-bob"), Start, default);
-        await first.JoinAsync("charlie", "Player C", 0, Key("join-charlie"), Start, default);
-        var now = Start.Add(ThreeCardPokerTableEngine.HumanGrace);
+        Assert.All(joins, joined => Assert.IsType<ThreeCardPokerTablePlaySessionResponse>(joined.Session));
+        Assert.Single(joins.Select(joined => ((ThreeCardPokerTablePlaySessionResponse)joined.Session).Table.TableId).Distinct());
+        var bob = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await first.JoinAsync(
+            "bob", "Player B", 0, Key("join-bob"), Start, default)).Session);
+        Assert.NotEqual(((ThreeCardPokerTablePlaySessionResponse)joins[0].Session).Table.TableId, bob.Table.TableId);
+        var now = Start;
         var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await first.GetSessionAsync("alice", now, default)).Session);
         var table = await ReadTable(database, session.Table.TableId);
+        Assert.Single(table.Players);
         var actor = table.Players.Single(player => player.Seat == table.ActiveSeat).ActorId;
         Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
 
         await Task.WhenAll(Enumerable.Range(0, 6).Select(index => (index % 2 == 0 ? first : second).WagerAsync(
-            actor, table.TableId, 100, 50, session.Version, Key("ante-pair-once"), now, default)));
-        Assert.Equal(9_850, await ReadBalance(database, actor));
+            actor, table.TableId, 100, 100, session.Version, Key("ante-pair-once"), now, default)));
+        Assert.Equal(9_800, await ReadBalance(database, actor));
         var debit = Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-        Assert.Equal(-1.5, debit.GetValue<double>("amount"));
+        Assert.Equal(-2.0, debit.GetValue<double>("amount"));
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => second.WagerAsync(
-            actor, table.TableId, 100, 100, session.Version, Key("ante-pair-once"), now, default));
-        Assert.Equal(9_850, await ReadBalance(database, actor));
+            actor, table.TableId, 100, 200, session.Version, Key("ante-pair-once"), now, default));
+        Assert.Equal(9_800, await ReadBalance(database, actor));
         Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         var reconnected = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await second.GetSessionAsync(actor, now, default)).Session);
         Assert.Equal(table.TableId, reconnected.Table.TableId);
     }
 
     [Theory]
-    [InlineData("play", 10_150, 250, 400)]
-    [InlineData("fold", 9_950, 150, 100)]
+    [InlineData("play", 10_200, 300, 500)]
+    [InlineData("fold", 10_000, 200, 200)]
     public async Task ConcurrentDecisionAndPayoutCommitOneWalletLedgerHistoryAndRevenue(string action, long expectedBalance, long expectedWager, long expectedPayout)
     {
         var (database, first, second) = CreateStores();
         await SeedPlayers(database);
-        foreach (var user in new[] { "alice", "bob", "charlie" })
-            await first.JoinAsync(user, "Player", 0, Key($"join-{user}"), Start, default);
-        var now = Start.Add(ThreeCardPokerTableEngine.HumanGrace);
+        await first.JoinAsync("alice", "Player", 0, Key("join-alice"), Start, default);
+        var now = Start;
         var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await first.GetSessionAsync("alice", now, default)).Session);
         var table = await ReadTable(database, session.Table.TableId);
         var actor = table.Players.OrderBy(player => player.Seat).First().ActorId;
@@ -67,7 +68,7 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
             {
                 table = await ReadTable(database, session.Table.TableId);
                 var wagerActor = table.Players.Single(player => player.Seat == table.ActiveSeat).ActorId;
-                await first.WagerAsync(wagerActor, table.TableId, 100, wagerActor == actor ? 50 : 0, session.Version,
+                await first.WagerAsync(wagerActor, table.TableId, 100, wagerActor == actor ? 100 : 0, session.Version,
                     Key($"ante-{wagerActor}"), now, default);
             }
             now = now.AddMilliseconds(200);
@@ -75,11 +76,11 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         Assert.Equal(ThreeCardPokerTablePhases.Active, session.Table.Phase);
         Assert.Contains(ThreeCardPokerActions.Play, session.Table.LegalActions);
         Assert.All(session.Table.Dealer.Cards, card => Assert.True(card.Hidden));
-        Assert.All(session.Table.Seats.Where(seat => !seat.IsCurrentPlayer).SelectMany(seat => seat.Hand.Cards), card => Assert.True(card.Hidden));
+        Assert.Single(session.Table.Seats);
 
         await Task.WhenAll(Enumerable.Range(0, 6).Select(index => (index % 2 == 0 ? first : second).ActionAsync(
             actor, session.Table.TableId, action, session.Version, Key("decide-once"), now, default)));
-        Assert.Equal(action == "play" ? 9_750 : 9_850, await ReadBalance(database, actor));
+        Assert.Equal(action == "play" ? 9_700 : 9_800, await ReadBalance(database, actor));
         await Assert.ThrowsAsync<ThreeCardPokerTableConflictException>(() => second.ActionAsync(
             actor, session.Table.TableId, action, session.Version, Key("stale-decision"), now, default));
 
@@ -119,7 +120,7 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
     }
 
     [Fact]
-    public async Task ProductionManagedReservationsFillTheQueueAndNeverTouchBotWalletsOrHouseRevenue()
+    public async Task SoloTableNeverReservesManagedPlayersOrChargesTheirWallets()
     {
         var (database, _, _) = CreateStores();
         var profiles = new FirestoreManagedPlayerProfileRepository(database);
@@ -129,32 +130,19 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         var first = new FirestoreThreeCardPokerTableStore(database, PairDeck, () => 3UL, matchmaker);
         var second = new FirestoreThreeCardPokerTableStore(database, PairDeck, () => 3UL, matchmaker);
         await SeedPlayers(database);
-        await first.JoinAsync("alice", "Player A", 0, Key("managed-table-join"), Start, default);
-        var now = Start.Add(ThreeCardPokerTableEngine.HumanGrace);
+        await first.JoinAsync("alice", "Player A", 0, Key("solo-table-join"), Start, default);
+        var now = Start;
         var starts = await Task.WhenAll(first.GetSessionAsync("alice", now, default), second.GetSessionAsync("alice", now, default));
         var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>(starts[0].Session);
         Assert.All(starts, value => Assert.Equal(session.Table.TableId,
             Assert.IsType<ThreeCardPokerTablePlaySessionResponse>(value.Session).Table.TableId));
         var table = await ReadTable(database, session.Table.TableId);
-        var bots = table.Players.Where(ThreeCardPokerManagedSeat.IsManaged).ToArray();
-        Assert.Equal(2, bots.Length);
-        Assert.Equal(2, bots.Select(player => player.ActorId).Distinct().Count());
+        Assert.Equal("alice", Assert.Single(table.Players).ActorId);
         var assignments = (await database.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents;
-        Assert.Equal(bots.Select(player => player.ActorId).Order(), assignments.Select(value => value.Id).Order());
-        Assert.All(assignments, value =>
-        {
-            Assert.Equal("three-card-poker", value.GetValue<string>("gameId"));
-            Assert.Equal(table.TableId, value.GetValue<string>("assignmentId"));
-        });
-        foreach (var bot in bots)
-        {
-            var profile = await database.Collection("users").Document(bot.ActorId).GetSnapshotAsync();
-            Assert.Equal("managed-game-player", profile.GetValue<string>("authProvider"));
-            Assert.Contains("three-card-poker", profile.GetValue<string[]>("supportedGames"));
-        }
+        Assert.Empty(assignments);
         Assert.Equal(10_000, await ReadBalance(database, "alice"));
         Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
-        await first.WagerAsync("alice", table.TableId, 100, 50, session.Version, Key("managed-table-ante"), now, default);
+        await first.WagerAsync("alice", table.TableId, 100, 100, session.Version, Key("managed-table-ante"), now, default);
         var folded = false;
         for (var step = 0; step < 100; step++)
         {
@@ -173,21 +161,13 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         var humanHistory = Assert.Single(await first.GetHistoryAsync("alice", 10, default));
         var revenue = Assert.Single((await database.Collection("threeCardPokerTableRoundRevenue").GetSnapshotAsync()).Documents);
         Assert.Equal(1, revenue.GetValue<long>("humanPlayerCount"));
-        Assert.Equal(150, revenue.GetValue<long>("humanWagerCents"));
+        Assert.Equal(200, revenue.GetValue<long>("humanWagerCents"));
         Assert.Equal((long)(humanHistory.PayoutCredits * 100m), revenue.GetValue<long>("humanPayoutCents"));
         Assert.Equal(0, revenue.GetValue<long>("botFinancialContributionCents"));
-        Assert.Equal(10_000 - 150 + (long)(humanHistory.PayoutCredits * 100m), await ReadBalance(database, "alice"));
+        Assert.Equal(10_000 - 200 + (long)(humanHistory.PayoutCredits * 100m), await ReadBalance(database, "alice"));
         Assert.All((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents,
             entry => Assert.Equal("alice", entry.GetValue<string>("userId")));
-        foreach (var bot in bots)
-        {
-            var balance = await database.Collection("userBalances").Document($"{bot.ActorId}_slotsCredits").GetSnapshotAsync();
-            Assert.Equal(0, balance.GetValue<long>("available"));
-            Assert.Equal(1, balance.GetValue<long>("version"));
-            var profile = await database.Collection("users").Document(bot.ActorId).GetSnapshotAsync();
-            Assert.Equal(1, profile.GetValue<long>("cardMatchesPlayed"));
-            Assert.Equal("recorded", Assert.Single(await first.GetHistoryAsync(bot.ActorId, 10, default)).SettlementStatus);
-        }
+        Assert.Empty((await database.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
     }
     private (FirestoreDb Database, FirestoreThreeCardPokerTableStore First, FirestoreThreeCardPokerTableStore Second) CreateStores()
     {

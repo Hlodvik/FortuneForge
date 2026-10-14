@@ -33,9 +33,10 @@ Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'verify:game-routes')
 
 Write-Host "`nRunning client and game checks..." -ForegroundColor Yellow
 Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'games:check')
+Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'games:build')
 Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'test')
 Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'lint')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'build')
+Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'web:build')
 
 Write-Host "`nRunning server tests..." -ForegroundColor Yellow
 Invoke-Checked `

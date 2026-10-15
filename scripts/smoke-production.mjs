@@ -2,7 +2,7 @@ import { gameSmokeRoutes, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const baseUrl = normalizeBaseUrl(process.env.FORTUNE_FORGE_URL ?? process.argv[2] ?? 'https://fortuneforgegame.web.app')
 
-if (gameSmokeRoutes.length !== 39) throw new Error(`Smoke inventory must contain 39 games, found ${gameSmokeRoutes.length}.`)
+if (gameSmokeRoutes.length !== 40) throw new Error(`Smoke inventory must contain 40 games, found ${gameSmokeRoutes.length}.`)
 
 console.log(`Fortune Forge production smoke: ${baseUrl}`)
 
@@ -39,7 +39,7 @@ for (const [route, gameId] of slotSmokeInventory) {
   console.log(`✓ ${route} (${gameId}) demo contract`)
 }
 
-console.log(`✓ production smoke passed: 39 routes and ${slotSmokeInventory.length} live demo spins`)
+console.log(`✓ production smoke passed: ${gameSmokeRoutes.length} routes and ${slotSmokeInventory.length} live demo spins`)
 
 async function request(url, init, attempt = 1) {
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })

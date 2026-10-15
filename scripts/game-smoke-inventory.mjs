@@ -33,6 +33,7 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/games/sic-bo' },
   { smokePath: '/demo/cards/texas-holdem', catalogPath: '/cards/texas-holdem' },
   { smokePath: '/cards/three-card-poker' },
+  { smokePath: '/cards/house-holdem' },
   { smokePath: '/games/flappy' },
   { smokePath: '/games/asteroids' },
   { smokePath: '/games/drop-merge' },

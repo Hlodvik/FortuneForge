@@ -13,6 +13,7 @@ export type CardGameAvailability = Readonly<{
   blackjack: CardGameAvailabilityState
   texasHoldem: CardGameAvailabilityState
   threeCardPoker?: CardGameAvailabilityState
+  houseHoldem?: CardGameAvailabilityState
   solitaire: CardGameAvailabilityState
 }>
 
@@ -28,6 +29,7 @@ export function CardGameLibraryPage({
   const blackjackState = availability?.blackjack ?? 'checking'
   const holdemState = availability?.texasHoldem ?? 'checking'
   const threeCardPokerState = availability?.threeCardPoker ?? 'checking'
+  const houseHoldemState = availability?.houseHoldem ?? 'checking'
   const solitaireState = availability?.solitaire ?? 'checking'
   const [balanceCredits, setBalanceCredits] = useState(account?.balances.slotsCredits ?? 0)
 
@@ -93,6 +95,14 @@ export function CardGameLibraryPage({
               href="/cards/three-card-poker"
               image={holdemPreview}
               title="Three Card Poker"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
+            />
+            <CardGameCard
+              available={!demoMode && houseHoldemState === 'available'}
+              description="A single-player Hold’em table against the house."
+              href="/cards/house-holdem"
+              image={holdemPreview}
+              title="House Hold’em"
               unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             {!demoMode && <CardGameCard

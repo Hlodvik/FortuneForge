@@ -56,7 +56,9 @@ describe('game category menus', () => {
     expect(markup).not.toContain('href="/demo/cards/solitaire"')
     expect(markup).toContain('Three Card Poker')
     expect(markup).not.toContain('href="/cards/three-card-poker"')
-    expect(markup.match(/Internal route only/g)).toHaveLength(4)
+    expect(markup).toContain('House Hold’em')
+    expect(markup).not.toContain('href="/cards/house-holdem"')
+    expect(markup.match(/Internal route only/g)).toHaveLength(5)
   })
 
   it('omits recently played when the authenticated game browser has no history', () => {

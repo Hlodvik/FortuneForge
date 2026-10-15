@@ -35,6 +35,7 @@ const cardGames: readonly CatalogGame[] = [
   { name: 'Casino War', category: 'Casino card game', href: '/games/casino-war', icon: '⚔', summary: 'Compare cards against the dealer in a simple showdown.', tone: 'war' },
   { name: 'Hearts', category: 'Card game', href: '/cards/hearts', icon: '♥', summary: 'Avoid points, take tricks wisely, and shoot the moon.' },
   { name: 'Three Card Poker', category: 'Casino card game', href: '/cards/three-card-poker', image: holdemPreview, summary: 'Play three cards against the dealer with Ante and Pair Plus wagers.', tone: 'poker' },
+  { name: 'House Hold’em', category: 'Casino card game', href: '/cards/house-holdem', image: holdemPreview, summary: 'Play a seven-card Hold’em hand against the house.', tone: 'poker' },
 ]
 
 const slotGames: readonly CatalogGame[] = SLOT_GAME_CATALOG.map(catalogGameFromSlot)
@@ -62,6 +63,7 @@ const casinoGames: readonly CatalogGame[] = [
   { name: 'Roulette', category: 'Casino game', href: '/games/roulette', icon: '◉', summary: 'Choose straight, split, street, corner, and outside bets on a single-zero wheel.' },
   { name: 'Craps', category: 'Casino game', href: '/games/craps', icon: '⚄', summary: 'Ride the come-out roll, establish the point, and press the Pass Line.' },
   cardGames[7]!,
+  cardGames[8]!,
 ]
 
 const arcadeGames: readonly CatalogGame[] = [
@@ -80,6 +82,7 @@ const diceGames: readonly CatalogGame[] = [
 ]
 
 const newGames: readonly CatalogGame[] = [
+  cardGames[8]!,
   cardGames[7]!,
   cardGames[3]!,
   cardGames[4]!,
@@ -118,6 +121,8 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
         ? cardGames[1]!
         : activity.game === 'three-card-poker'
           ? cardGames[7]!
+          : activity.game === 'house-holdem'
+            ? cardGames[8]!
           : cardGames[2]!
     if (game === undefined || game.href === undefined || seen.has(game.href)) continue
     seen.add(game.href)

@@ -7,7 +7,7 @@ const appRoutes = source('fortuneforge.client/src/app/AppRoutes.tsx')
 const catalog = source('fortuneforge.client/src/pages/games/OtherGamesPage.tsx')
 const slotRoutes = source('fortuneforge.client/src/games/slots/routeRegistry.ts')
 
-assert(gameSmokeRoutes.length === 39, `expected 39 smoke routes, found ${gameSmokeRoutes.length}`)
+assert(gameSmokeRoutes.length === 40, `expected 40 smoke routes, found ${gameSmokeRoutes.length}`)
 assert(new Set(gameSmokeRoutes).size === gameSmokeRoutes.length, 'smoke routes must be unique')
 assert(slotSmokeInventory.length === 20, `expected 20 slot contracts, found ${slotSmokeInventory.length}`)
 

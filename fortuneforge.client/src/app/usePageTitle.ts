@@ -25,6 +25,7 @@ const pageTitles: Record<string, string> = {
   '/cards/hearts': 'Hearts — Fortune Forge',
   '/cards/blackjack': 'Blackjack Table — Fortune Forge',
   '/cards/three-card-poker': 'Three Card Poker Table — Fortune Forge',
+  '/cards/house-holdem': 'House Hold’em — Fortune Forge',
   '/demo/cards/blackjack': 'Blackjack Demo — Fortune Forge',
   '/cards/texas-holdem': 'Texas Hold’em Table — Fortune Forge',
   '/demo/cards/texas-holdem': 'Texas Hold’em Demo — Fortune Forge',

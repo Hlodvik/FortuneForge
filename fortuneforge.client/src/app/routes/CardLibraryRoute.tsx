@@ -10,6 +10,7 @@ const checkingAvailability: CardGameAvailability = {
   blackjack: 'checking',
   texasHoldem: 'checking',
   threeCardPoker: 'checking',
+  houseHoldem: 'checking',
   solitaire: 'checking',
 }
 
@@ -39,13 +40,18 @@ export function AuthenticatedCardLibraryRoute() {
         .then(({ getThreeCardPokerStatus }) => getThreeCardPokerStatus(controller.signal))
         .then((status) => status.available)
         .catch(() => false),
-    ]).then(([blackjack, texasHoldem, solitaire, threeCardPoker]) => {
+      import('../../games/cards/houseHoldem/houseHoldemApi')
+        .then(({ getHouseHoldemStatus }) => getHouseHoldemStatus(controller.signal))
+        .then((status) => status.available)
+        .catch(() => false),
+    ]).then(([blackjack, texasHoldem, solitaire, threeCardPoker, houseHoldem]) => {
       if (active) {
         setAvailability({
           blackjack: blackjack ? 'available' : 'unavailable',
           texasHoldem: texasHoldem ? 'available' : 'unavailable',
           solitaire: solitaire ? 'available' : 'unavailable',
           threeCardPoker: threeCardPoker ? 'available' : 'unavailable',
+          houseHoldem: houseHoldem ? 'available' : 'unavailable',
         })
       }
     })

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.HouseHoldem</PackageId>
+    <Description>Pure single-player house Hold'em rules for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+    <ProjectReference Include="../../../TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
+  </ItemGroup>
+</Project>

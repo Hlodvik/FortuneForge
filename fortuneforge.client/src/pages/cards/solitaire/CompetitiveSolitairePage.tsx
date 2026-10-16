@@ -138,6 +138,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const autoWinAnimationRef = useRef<Promise<void> | null>(null)
   const autoWinGenerationRef = useRef(0)
   const freeAutoWinGenerationRef = useRef(0)
+  const sessionReadGenerationRef = useRef(0)
 
   useEffect(() => {
     if (freeGame === null || freePaused || freeComplete || freeAutoWinning || freeSubmitting) return
@@ -151,10 +152,15 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   }, [freeGame, freePaused, freeComplete, freeAutoWinning, freeSubmitting])
 
   const loadSession = useCallback(async (quiet = false, signal?: AbortSignal) => {
+    // A read started before a mutation must not restore an older queue or board.
+    const generation = sessionReadGenerationRef.current
     if (!quiet) setAvailability({ kind: 'loading' })
     try {
       const session = await getSolitaireSession(signal)
+      if (signal?.aborted || generation !== sessionReadGenerationRef.current) return
       if (moveQueueRef.current.length > 0 || processingMovesRef.current) return
+      if (session.kind === 'match' && serverMatchRef.current?.matchId === session.matchId
+        && session.version < serverMatchRef.current.version) return
       serverMatchRef.current = session.kind === 'match' ? session : null
       setAvailability((current) => {
         if (quiet && current.kind === 'ready' && current.session.kind === 'match'
@@ -165,6 +171,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       setPending(null)
       setRequestError(null)
     } catch (error) {
+      if (signal?.aborted || generation !== sessionReadGenerationRef.current) return
       if (error instanceof DOMException && error.name === 'AbortError') return
       if (error instanceof SolitaireRequestError && error.code === 'competitive-solitaire-disabled') {
         setAvailability({ kind: 'disabled', message: error.message })
@@ -179,19 +186,38 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   useEffect(() => {
     const controller = new AbortController()
     void loadSession(false, controller.signal)
+    return () => controller.abort()
+  }, [loadSession])
+
+  const sessionKind = availability.kind === 'ready' ? availability.session.kind : null
+  useEffect(() => {
+    if (sessionKind === null || sessionKind === 'idle' || busy || pending !== null) return
+    const controller = new AbortController()
+    const interval = sessionKind === 'queued' ? 1_250 : 15_000
+    let stopped = false
+    let timer = 0
+    let inFlight: Promise<void> | null = null
     const refresh = () => {
-      if (document.visibilityState === 'visible') void loadSession(true)
+      if (stopped || document.visibilityState !== 'visible') return Promise.resolve()
+      if (inFlight !== null) return inFlight
+      inFlight = loadSession(true, controller.signal).finally(() => { inFlight = null })
+      return inFlight
     }
-    const poll = window.setInterval(refresh, 15_000)
+    const poll = async () => {
+      await refresh()
+      if (!stopped) timer = window.setTimeout(poll, interval)
+    }
+    timer = window.setTimeout(poll, interval)
     window.addEventListener('focus', refresh)
     window.addEventListener('online', refresh)
     return () => {
+      stopped = true
       controller.abort()
-      window.clearInterval(poll)
+      window.clearTimeout(timer)
       window.removeEventListener('focus', refresh)
       window.removeEventListener('online', refresh)
     }
-  }, [loadSession])
+  }, [sessionKind, busy, pending, loadSession])
 
   const beginMutation = (fingerprint: string): PendingSolitaireMutation | null => {
     if (pending !== null && pending.fingerprint !== fingerprint) {
@@ -199,12 +225,14 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       return null
     }
     const next = stableSolitaireMutation(pending, fingerprint)
+    sessionReadGenerationRef.current += 1
     setPending(next)
     setRequestError(null)
     return next
   }
 
   const acceptMutation = (mutation: SolitaireMutationResponse) => {
+    sessionReadGenerationRef.current += 1
     serverMatchRef.current = mutation.session.kind === 'match' ? mutation.session : null
     setAvailability({ kind: 'ready', session: mutation.session })
     setBalanceCredits(mutation.balanceCredits)
@@ -299,6 +327,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
           queued.command,
           queued.idempotencyKey,
         )
+        sessionReadGenerationRef.current += 1
         if (outcome.mutation === null) {
           moveQueueRef.current = []
           autoWinGenerationRef.current += 1
@@ -370,6 +399,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         ? automaticCommands
         : [nextCommand, ...automaticCommands]
       const celebratesCompletion = isLocalSolitaireWon(autoFinished.game)
+      sessionReadGenerationRef.current += 1
       setAvailability({ kind: 'ready', session: {
         ...match,
         score: celebratesCompletion ? optimisticGame.score : autoFinished.game.score,

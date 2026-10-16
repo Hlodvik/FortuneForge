@@ -11,6 +11,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
     {
         var sessionReference = SessionDocument(userId);
         var sessionSnapshot = await sessionReference.GetSnapshotAsync(cancellationToken);
+        if (ReadString(sessionSnapshot, "kind") == SolitaireSessionKinds.Queued)
+        {
+            var queuedTicket = await TicketDocument(ReadString(sessionSnapshot, "ticketId"))
+                .GetSnapshotAsync(cancellationToken);
+            if (queuedTicket.Exists && ReadString(queuedTicket, "status") == QueueStatus)
+                await TryMatchPartitionAsync(ReadString(queuedTicket, "partitionKey"), nowUtc, cancellationToken);
+            sessionSnapshot = await sessionReference.GetSnapshotAsync(cancellationToken);
+        }
         var matchId = EmptyToNull(ReadString(sessionSnapshot, "matchId"));
         if (matchId is not null)
         {
@@ -35,16 +43,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 throw new InvalidOperationException("A Solitaire queue session is missing its ticket.");
             }
             var ticket = ReadTicket(ticketSnapshot);
-            if (ticket.Status == MatchedStatus && ticket.MatchId is not null)
-            {
-                var refreshedSession = await sessionReference.GetSnapshotAsync(cancellationToken);
-                if (ReadString(refreshedSession, "kind") == SolitaireSessionKinds.Match)
-                {
-                    return await GetSessionAsync(userId, nowUtc, cancellationToken);
-                }
-            }
             if (ticket.Status != QueueStatus)
             {
+                var transitioned = await ReadQueueTransitionAsync(userId, ticketId, nowUtc, cancellationToken);
+                if (transitioned is not null) return transitioned;
                 throw new SolitaireConflictException(
                     "The queue changed while reconnecting. Retry the session request.");
             }
@@ -57,28 +59,37 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 .Where(snapshot => snapshot.Exists)
                 .Select(ReadTicket)
                 .Where(value => value.Status == QueueStatus)
+                .OrderBy(value => value.JoinedAtUtc)
+                .ThenBy(value => value.TicketId, StringComparer.Ordinal)
                 .ToArray();
             var position = Array.FindIndex(queue, value => value.TicketId == ticketId) + 1;
             if (position <= 0)
             {
+                var transitioned = await ReadQueueTransitionAsync(userId, ticketId, nowUtc, cancellationToken);
+                if (transitioned is not null) return transitioned;
                 throw new InvalidOperationException("A Solitaire ticket is missing from its queue partition.");
             }
-            var players = queue.Select((value, index) => new SolitairePlayerResponse(
+            var cohort = queue.Skip((position - 1) / ticket.PlayerCount * ticket.PlayerCount)
+                .Take(ticket.PlayerCount).ToArray();
+            var players = cohort.Select((value, index) => new SolitairePlayerResponse(
                 value.UserId,
                 value.DisplayName,
                 index + 1,
                 value.JoinedAtUtc,
                 SolitairePlayerStatuses.Queued,
                 value.UserId == userId)).ToArray();
-            var poolCents = checked(ticket.PlayerCount * ticket.BuyInCents);
+            // Managed seats have no buy-in. Only this cohort's human entrants
+            // contribute to the prospective pool, just as in the dealt match.
+            var humanCount = options.AllowSingleHumanBotFill ? cohort.Length : ticket.PlayerCount;
+            var poolCents = checked(humanCount * ticket.BuyInCents);
+            var payoutCents = humanCount == 1 ? ticket.BuyInCents : checked(poolCents * 90 / 100);
             return new SolitaireStoreSession(
                 new SolitaireQueueSessionResponse(
                     ticket.TicketId,
                     ticket.PlayerCount,
                     SolitaireMoney.ToCredits(ticket.BuyInCents),
                     SolitaireMoney.ToCredits(poolCents),
-                    SolitaireMoney.ToCredits(
-                        SolitaireMoney.WinnerPayout(ticket.PlayerCount, ticket.BuyInCents)),
+                    SolitaireMoney.ToCredits(payoutCents),
                     position,
                     ticket.JoinedAtUtc,
                     players),
@@ -142,6 +153,19 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     : null
             },
             balanceCents);
+    }
+
+    private async Task<SolitaireStoreSession?> ReadQueueTransitionAsync(
+        string userId,
+        string previousTicketId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var refreshed = await SessionDocument(userId).GetSnapshotAsync(cancellationToken);
+        return ReadString(refreshed, "kind") != SolitaireSessionKinds.Queued ||
+            ReadString(refreshed, "ticketId") != previousTicketId
+            ? await GetSessionAsync(userId, nowUtc, cancellationToken)
+            : null;
     }
 
     public async Task<IReadOnlyList<SolitaireHistoryItemResponse>> GetHistoryAsync(

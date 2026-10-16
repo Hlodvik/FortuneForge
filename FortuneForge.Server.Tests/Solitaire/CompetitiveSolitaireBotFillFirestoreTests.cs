@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -12,661 +13,501 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
     private static readonly DateTime Start = new(2026, 8, 15, 18, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task SingleHuman_NoBotsBeforeExactBoundary_RefundsOnceWithoutRevenue()
+    public async Task FiveSecondLobby_ReusesProfiles_HoldsTheirLeasesUntilSettlement_AndRefundsSoloHumanOnce()
     {
-        var (database, store, suffix) = CreateStore();
-        var user = $"solo-{suffix}";
-        await SeedBalanceAsync(database, user, 10_000);
+        var (database, store) = CreateStore();
+        const string user = "solo-human";
+        await SeedBalanceAsync(database, user);
+        var profiles = await SeedProfilesAsync(database, 3);
 
-        var joins = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.JoinAsync(
-            user,
-            "Alice",
-            4,
-            500,
-            3,
-            "single-human-join-0001",
-            1001,
-            Start,
-            default)));
-        var started = Assert.IsType<SolitaireMatchSessionResponse>(joins[0].Session);
-        Assert.All(joins, result => Assert.Equal(started.MatchId,
-            Assert.IsType<SolitaireMatchSessionResponse>(result.Session).MatchId));
+        var joins = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => JoinAsync(store, user, Start)));
+        var queued = Assert.IsType<SolitaireQueueSessionResponse>(joins[0].Session);
+        Assert.All(joins, value => Assert.Equal(queued.TicketId,
+            Assert.IsType<SolitaireQueueSessionResponse>(value.Session).TicketId));
+        Assert.Single(queued.Players);
+        Assert.Equal((5m, 5m), (queued.PrizePoolCredits, queued.WinnerPayoutCredits));
         Assert.Equal(9_500, await ReadBalanceAsync(database, user));
         Assert.Single(await LedgerAsync(database));
-        Assert.Equal(3, started.Players.Count(player => player.Status == SolitairePlayerStatuses.Open));
-        Assert.Single(await StoredPlayersAsync(database, started.MatchId));
+        Assert.Empty((await database.Collection("solitaireMatchPlayers").GetSnapshotAsync()).Documents);
+
+        Assert.IsType<SolitaireQueueSessionResponse>(
+            (await store.GetSessionAsync(user, Start.AddMilliseconds(4_999), default)).Session);
+        Assert.Empty(await AssignmentsAsync(database));
+
+        var deals = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ =>
+            store.GetSessionAsync(user, Start.AddSeconds(5), default)));
+        var started = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync(user, Start.AddSeconds(5), default)).Session);
+        Assert.All(deals, value => AssertQueueOrMatch(value.Session, queued.TicketId, started.MatchId));
+        Assert.Equal(Start.AddSeconds(5), started.StartedAtUtc);
+        Assert.Equal(started.StartedAtUtc.AddMinutes(10), started.DeadlineAtUtc);
+        Assert.Equal(4, started.Players.Count);
+        Assert.All(started.Players, player => Assert.Equal(SolitairePlayerStatuses.Playing, player.Status));
+        Assert.All(profiles, profile => Assert.Contains(started.Players,
+            player => player.DisplayName == profile.PlayerName));
+        AssertAutomationNeutral(started);
+        var stored = await StoredPlayersAsync(database, started.MatchId);
+        Assert.Equal(profiles.Select(profile => profile.UserId).Order(), stored
+            .Where(player => Field<bool>(player, "isSynthetic"))
+            .Select(player => Field<string>(player, "userId")).Order());
+        Assert.Empty(await CardGameResultsAsync(database, started.MatchId));
+        Assert.Equal(3, (await AssignmentsAsync(database)).Count);
+        await Assert.ThrowsAsync<SolitaireConflictException>(() => store.CancelAsync(
+            user, queued.TicketId, "cancel-after-deal-key", Start.AddSeconds(6), default));
+        Assert.Equal(9_500, await ReadBalanceAsync(database, user));
 
         var reconnect = Assert.IsType<SolitaireMatchSessionResponse>(
             (await store.GetSessionAsync(user, Start.AddSeconds(30), default)).Session);
         Assert.Equal(started.Version, reconnect.Version);
         Assert.Equal(JsonSerializer.Serialize(started.Game), JsonSerializer.Serialize(reconnect.Game));
-        AssertAutomationNeutral(reconnect);
-
-        var completedAt = Start.AddMinutes(1);
         var finished = Assert.IsType<SolitaireMatchSessionResponse>((await store.ForfeitAsync(
-            user,
-            started.MatchId,
-            started.Version,
-            "single-human-forfeit-01",
-            completedAt,
-            default)).Session);
+            user, started.MatchId, started.Version, "solo-forfeit-command", Start.AddMinutes(1), default)).Session);
         Assert.Equal(SolitairePlayerStatuses.Forfeited,
             Assert.Single(finished.Players, player => player.IsCurrentPlayer).Status);
-        Assert.Single(await StoredPlayersAsync(database, started.MatchId));
+        Assert.Contains(finished.Players, player => !player.IsCurrentPlayer && player.Status == SolitairePlayerStatuses.Playing);
 
-        var beforeFill = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(
-                user,
-                completedAt.AddMinutes(2).AddSeconds(59),
-                default)).Session);
-        Assert.Equal(3, beforeFill.Players.Count(player => player.Status == SolitairePlayerStatuses.Open));
-        Assert.Single(await StoredPlayersAsync(database, started.MatchId));
+        _ = await store.GetSessionAsync(user, Start.AddMinutes(2), default);
+        Assert.All(await AssignmentsAsync(database), assignment =>
+        {
+            Assert.Equal(ManagedPlayerGames.Solitaire, Field<string>(assignment, "gameId"));
+            Assert.Equal(Timestamp.FromDateTime(Start.AddMinutes(2)), Field<Timestamp>(assignment, "heartbeatAt"));
+        });
 
-        var fillAt = completedAt.AddMinutes(3);
-        var fills = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ =>
-            store.GetSessionAsync(user, fillAt, default)));
-        var result = Assert.IsType<SolitaireResultSessionResponse>(fills[0].Session);
-        Assert.All(fills, value => Assert.IsType<SolitaireResultSessionResponse>(value.Session));
+        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync(user, Start.AddMinutes(8), default)).Session);
         Assert.Equal((5m, 5m, 0m),
             (result.PrizePoolCredits, result.WinnerPayoutCredits, result.PlatformFeeCredits));
         Assert.Equal(9_500, await ReadBalanceAsync(database, user));
-        AssertAutomationNeutral(result);
-
-        var storedPlayers = await StoredPlayersAsync(database, started.MatchId);
-        Assert.Equal(4, storedPlayers.Count);
-        var synthetics = storedPlayers.Where(snapshot => Field<bool>(snapshot, "isSynthetic")).ToArray();
-        Assert.Equal(3, synthetics.Length);
-        Assert.Equal([2L, 3L, 4L], synthetics
-            .Select(snapshot => Field<long>(snapshot, "syntheticSkill"))
-            .Order()
-            .ToArray());
-        var ledger = await LedgerAsync(database);
-        Assert.Single(ledger);
-        Assert.Single(ledger, entry => Field<string>(entry, "type") == "solitaire-buyin");
+        Assert.Empty(await AssignmentsAsync(database));
         Assert.Empty((await database.Collection("solitaireMatchRevenue").GetSnapshotAsync()).Documents);
         Assert.Single((await database.Collection("solitaireTestMatchTrace").GetSnapshotAsync()).Documents);
+        AssertAutomationNeutral(result);
+        Assert.Equal(3, (await CardGameResultsAsync(database, started.MatchId)).Count(snapshot =>
+            snapshot.ContainsField("financialClassification") &&
+            Field<string>(snapshot, "financialClassification") == "managed-player-virtual-v1"));
 
         var claims = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.ClaimAsync(
-            user,
-            started.MatchId,
-            "single-human-claim-001",
-            fillAt.AddSeconds(1),
-            default)));
-        Assert.All(claims, value => Assert.IsType<SolitaireIdleSessionResponse>(value.Session));
+            user, started.MatchId, "solo-result-claim-key", Start.AddMinutes(8).AddSeconds(1), default)));
+        Assert.All(claims, claim => Assert.IsType<SolitaireIdleSessionResponse>(claim.Session));
         Assert.Equal(10_000, await ReadBalanceAsync(database, user));
-        ledger = await LedgerAsync(database);
-        Assert.Equal(2, ledger.Count);
-        Assert.Single(ledger, entry => Field<string>(entry, "type") == "solitaire-test-refund-claim");
-    }
-
-    [Fact]
-    public async Task CompletedHumanCanLeaveWhileSharedMatchKeepsExactLateJoinWindow()
-    {
-        var (database, store, suffix) = CreateStore();
-        var user = $"restart-{suffix}";
-        var lateUser = $"restart-late-{suffix}";
-        await Task.WhenAll(
-            SeedBalanceAsync(database, user, 10_000),
-            SeedBalanceAsync(database, lateUser, 10_000));
-
-        var first = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            user, "Alice", 4, 500, 3, "restart-first-join-01", 7117, Start, default)).Session);
-        _ = await store.ForfeitAsync(
-            user,
-            first.MatchId,
-            first.Version,
-            "restart-first-forfeit",
-            Start.AddMinutes(1),
-            default);
-
-        var dismissedAt = Start.AddMinutes(1).AddSeconds(1);
-        var idle = await store.DismissAsync(
-            user,
-            first.MatchId,
-            "restart-first-dismiss1",
-            dismissedAt,
-            default);
-        Assert.IsType<SolitaireIdleSessionResponse>(idle.Session);
-        Assert.Equal(9_500, await ReadBalanceAsync(database, user));
-        Assert.Single(await StoredPlayersAsync(database, first.MatchId));
-        Assert.Empty((await database.Collection("solitaireMatchRevenue").GetSnapshotAsync()).Documents);
-
-        var late = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            lateUser,
-            "Bruno",
-            4,
-            500,
-            3,
-            "restart-late-join-001",
-            8118,
-            Start.AddMinutes(3).AddSeconds(59),
-            default)).Session);
-        Assert.Equal(first.MatchId, late.MatchId);
-        Assert.Equal(2, (await StoredPlayersAsync(database, first.MatchId)).Count);
-        Assert.Equal(9_500, await ReadBalanceAsync(database, lateUser));
-
-        var replay = await store.DismissAsync(
-            user,
-            first.MatchId,
-            "restart-first-dismiss1",
-            dismissedAt.AddSeconds(2),
-            default);
-        Assert.IsType<SolitaireIdleSessionResponse>(replay.Session);
-    }
-
-    [Fact]
-    public async Task CompletedHumanCanStartAnotherMatchBeforePriorFillWindowCloses()
-    {
-        var (database, store, suffix) = CreateStore();
-        var user = $"restart-self-{suffix}";
-        await SeedBalanceAsync(database, user, 10_000);
-
-        var first = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            user, "Alice", 4, 500, 3, "restart-self-first-join", 9119, Start, default)).Session);
-        _ = await store.ForfeitAsync(
-            user,
-            first.MatchId,
-            first.Version,
-            "restart-self-forfeit1",
-            Start.AddMinutes(1),
-            default);
-        _ = await store.DismissAsync(
-            user,
-            first.MatchId,
-            "restart-self-dismiss01",
-            Start.AddMinutes(1).AddSeconds(1),
-            default);
-
-        var second = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            user,
-            "Alice",
-            4,
-            500,
-            3,
-            "restart-self-secondjoin",
-            9120,
-            Start.AddMinutes(1).AddSeconds(2),
-            default)).Session);
-
-        Assert.NotEqual(first.MatchId, second.MatchId);
-        Assert.Equal(9_000, await ReadBalanceAsync(database, user));
-        Assert.Single(await StoredPlayersAsync(database, first.MatchId));
-        Assert.Single(await StoredPlayersAsync(database, second.MatchId));
-    }
-
-    [Fact]
-    public async Task LateHuman_ClaimsOpenSeatBeforeBoundary_GetsOwnDeadlineAndNormalHumanPool()
-    {
-        var (database, store, suffix) = CreateStore();
-        var firstUser = $"first-{suffix}";
-        var lateUser = $"late-{suffix}";
-        await Task.WhenAll(
-            SeedBalanceAsync(database, firstUser, 10_000),
-            SeedBalanceAsync(database, lateUser, 10_000));
-
-        var first = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            firstUser, "Alice", 4, 500, 3, "late-first-join-0001", 2002, Start, default)).Session);
-        var firstGame = JsonSerializer.Serialize(first.Game);
-
-        var firstDeadline = Start.AddMinutes(10);
-        var expired = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(firstUser, firstDeadline, default)).Session);
-        Assert.Equal(SolitairePlayerStatuses.Finished,
-            Assert.Single(expired.Players, player => player.IsCurrentPlayer).Status);
-        Assert.Single(await StoredPlayersAsync(database, first.MatchId));
-
-        var lateJoinAt = firstDeadline.AddMinutes(2).AddSeconds(59);
-        var claims = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.JoinAsync(
-            lateUser,
-            "Bruno",
-            4,
-            500,
-            3,
-            "late-second-join-001",
-            9999,
-            lateJoinAt,
-            default)));
-        var late = Assert.IsType<SolitaireMatchSessionResponse>(claims[0].Session);
-        Assert.All(claims, value => Assert.Equal(first.MatchId,
-            Assert.IsType<SolitaireMatchSessionResponse>(value.Session).MatchId));
-        Assert.Equal(first.MatchId, late.MatchId);
-        Assert.Equal(firstGame, JsonSerializer.Serialize(late.Game));
-        Assert.Equal(lateJoinAt, late.StartedAtUtc);
-        Assert.Equal(lateJoinAt.AddMinutes(10), late.DeadlineAtUtc);
-        Assert.Equal(9_500, await ReadBalanceAsync(database, lateUser));
-        Assert.Equal(2, (await LedgerAsync(database)).Count);
-
-        var fillAt = firstDeadline.AddMinutes(3);
-        var waitingForLateHuman = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(firstUser, fillAt, default)).Session);
-        Assert.DoesNotContain(waitingForLateHuman.Players, player => player.Status == SolitairePlayerStatuses.Open);
-        Assert.Equal(4, (await StoredPlayersAsync(database, first.MatchId)).Count);
-        AssertAutomationNeutral(waitingForLateHuman);
-
-        var result = Assert.IsType<SolitaireResultSessionResponse>(
-            (await store.GetSessionAsync(lateUser, late.DeadlineAtUtc, default)).Session);
-        Assert.Equal((10m, 9m, 1m),
-            (result.PrizePoolCredits, result.WinnerPayoutCredits, result.PlatformFeeCredits));
-        Assert.Equal(19_000,
-            await ReadBalanceAsync(database, firstUser) + await ReadBalanceAsync(database, lateUser));
-        var paid = Assert.Single(result.Standings, standing => standing.PayoutCredits > 0);
-        Assert.True(paid.PlayerId == firstUser || paid.PlayerId == lateUser);
-        AssertAutomationNeutral(result);
-
         var ledger = await LedgerAsync(database);
         Assert.Equal(2, ledger.Count);
-        Assert.Equal(2, ledger.Count(entry => Field<string>(entry, "type") == "solitaire-buyin"));
-        _ = await store.ClaimAsync(
-            firstUser, first.MatchId, "late-first-claim-0001", late.DeadlineAtUtc.AddSeconds(1), default);
-        _ = await store.ClaimAsync(
-            lateUser, first.MatchId, "late-second-claim-001", late.DeadlineAtUtc.AddSeconds(1), default);
-        Assert.Equal(19_900,
-            await ReadBalanceAsync(database, firstUser) + await ReadBalanceAsync(database, lateUser));
-        ledger = await LedgerAsync(database);
-        Assert.Equal(3, ledger.Count);
-        var payout = Assert.Single(ledger,
-            entry => Field<string>(entry, "type") == "solitaire-winner-payout-claim");
-        Assert.DoesNotContain("internal", Field<string>(payout, "userId"), StringComparison.OrdinalIgnoreCase);
-        var revenue = Assert.Single(
-            (await database.Collection("solitaireMatchRevenue").GetSnapshotAsync()).Documents);
+        Assert.Single(ledger, entry => Field<string>(entry, "type") == "solitaire-test-refund-claim");
+        Assert.All(ledger, entry => Assert.Equal(user, Field<string>(entry, "userId")));
+        foreach (var profile in profiles) Assert.Equal(0, await ReadBalanceAsync(database, profile.UserId));
+
+        // Reconnect/new matches keep the same persisted identities after their normal break.
+        var nextTime = Start.AddMinutes(50);
+        _ = await JoinAsync(store, user, nextTime, "solo-second-join-key");
+        var next = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync(user, nextTime.AddSeconds(5), default)).Session);
+        Assert.NotEqual(started.MatchId, next.MatchId);
+        Assert.All(profiles, profile => Assert.Contains(next.Players,
+            player => player.DisplayName == profile.PlayerName));
+        Assert.Equal(3, (await database.Collection("users").GetSnapshotAsync()).Count);
+    }
+
+    [Fact]
+    public async Task HumanJoiningDuringGraceGetsPriority_AndOnlyHumanBuyInsFundThePrize()
+    {
+        var (database, store) = CreateStore();
+        await Task.WhenAll(SeedBalanceAsync(database, "alice"), SeedBalanceAsync(database, "bruno"));
+        _ = await SeedProfilesAsync(database, 3);
+        Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, "alice", Start)).Session);
+        Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, "bruno", Start.AddSeconds(4))).Session);
+        var before = Assert.IsType<SolitaireQueueSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddMilliseconds(4_999), default)).Session);
+        Assert.Equal(2, before.Players.Count);
+        Assert.Equal((10m, 9m), (before.PrizePoolCredits, before.WinnerPayoutCredits));
+
+        var first = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddSeconds(5), default)).Session);
+        var second = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("bruno", Start.AddSeconds(5), default)).Session);
+        Assert.Equal(first.MatchId, second.MatchId);
+        Assert.Equal(first.StartedAtUtc, second.StartedAtUtc);
+        Assert.Equal(JsonSerializer.Serialize(first.Game), JsonSerializer.Serialize(second.Game));
+        Assert.Equal((10m, 9m), (first.PrizePoolCredits, first.WinnerPayoutCredits));
+        Assert.Equal(2, (await StoredPlayersAsync(database, first.MatchId)).Count(player => Field<bool>(player, "isSynthetic")));
+
+        _ = await store.ForfeitAsync("alice", first.MatchId, first.Version, "alice-forfeit-key", Start.AddMinutes(1), default);
+        _ = await store.ForfeitAsync("bruno", first.MatchId, second.Version, "bruno-forfeit-key", Start.AddMinutes(1), default);
+        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddMinutes(8), default)).Session);
+        Assert.Equal((10m, 9m, 1m),
+            (result.PrizePoolCredits, result.WinnerPayoutCredits, result.PlatformFeeCredits));
+        var paid = Assert.Single(result.Standings, standing => standing.PayoutCredits > 0);
+        Assert.Contains(paid.PlayerId, new[] { "alice", "bruno" });
+        Assert.Equal(2, (await LedgerAsync(database)).Count);
+        _ = await store.ClaimAsync("alice", first.MatchId, "alice-result-claim-key", Start.AddMinutes(8).AddSeconds(1), default);
+        _ = await store.ClaimAsync("bruno", first.MatchId, "bruno-result-claim-key", Start.AddMinutes(8).AddSeconds(1), default);
+        Assert.Equal(19_900, await ReadBalanceAsync(database, "alice") + await ReadBalanceAsync(database, "bruno"));
+        Assert.Equal(3, (await LedgerAsync(database)).Count);
+        var revenue = Assert.Single((await database.Collection("solitaireMatchRevenue").GetSnapshotAsync()).Documents);
         Assert.Equal(1_000, Field<long>(revenue, "grossPoolCents"));
         Assert.Equal(900, Field<long>(revenue, "winnerPayoutCents"));
         Assert.Equal(100, Field<long>(revenue, "platformFeeCents"));
-        Assert.Equal("slotsCredits", Field<string>(revenue, "currencyId"));
-        Assert.Equal("real-human-pool-v1", Field<string>(revenue, "financialClassification"));
         Assert.Equal(0, Field<long>(revenue, "botFinancialContributionCents"));
         Assert.Equal(2, Field<long>(revenue, "humanPlayerCount"));
-        Assert.Equal(
-            Field<long>(revenue, "grossPoolCents") - Field<long>(revenue, "winnerPayoutCents"),
-            Field<long>(revenue, "platformFeeCents"));
-        Assert.Equal(Timestamp.FromDateTime(late.DeadlineAtUtc), Field<Timestamp>(revenue, "recognizedAt"));
+        Assert.Equal("real-human-pool-v1", Field<string>(revenue, "financialClassification"));
     }
 
     [Fact]
-    public async Task PauseBudget_IsCumulativeAndExtendsOnlyThePlayersPlayDeadline()
+    public async Task FullHumanLobbyUsesTheSameGraceWithoutGeneratingOrReservingProfiles()
     {
-        var (database, store, suffix) = CreateStore();
-        var user = $"pause-{suffix}";
-        await SeedBalanceAsync(database, user, 10_000);
-        var started = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            user, "Alice", 4, 500, 3, "pause-join-command01", 5050, Start, default)).Session);
+        var (database, store) = CreateStore();
+        var users = new[] { "alice", "bruno", "casey", "daria" };
+        await Task.WhenAll(users.Select(user => SeedBalanceAsync(database, user)));
+        for (var index = 0; index < 4; index++)
+            Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, users[index], Start.AddSeconds(index))).Session);
+        var match = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync(users[3], Start.AddSeconds(5), default)).Session);
+        Assert.Equal(Start.AddSeconds(5), match.StartedAtUtc);
+        Assert.Equal(4, match.Players.Count);
+        Assert.All(await StoredPlayersAsync(database, match.MatchId), player => Assert.False(Field<bool>(player, "isSynthetic")));
+        Assert.Empty(await AssignmentsAsync(database));
+        Assert.Empty((await database.Collection("users").GetSnapshotAsync()).Documents);
 
-        var paused = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Pause, started.Version, null, null, null, null),
-            "pause-first-command1",
-            Start.AddMinutes(1),
-            default)).Session);
-        Assert.True(paused.IsPaused);
-        Assert.Equal(9 * 60_000, paused.RemainingMilliseconds);
-        Assert.Equal(10 * 60_000, paused.PauseRemainingMilliseconds);
-
-        var stillPaused = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(user, Start.AddMinutes(5), default)).Session);
-        Assert.True(stillPaused.IsPaused);
-        Assert.Equal(9 * 60_000, stillPaused.RemainingMilliseconds);
-        Assert.Equal(6 * 60_000, stillPaused.PauseRemainingMilliseconds);
-
-        var resumed = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Resume, stillPaused.Version, null, null, null, null),
-            "pause-first-resume01",
-            Start.AddMinutes(5),
-            default)).Session);
-        Assert.False(resumed.IsPaused);
-        Assert.Equal(Start.AddMinutes(14), resumed.DeadlineAtUtc);
-
-        var pausedAgain = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Pause, resumed.Version, null, null, null, null),
-            "pause-second-command",
-            Start.AddMinutes(6),
-            default)).Session);
-        Assert.True(pausedAgain.IsPaused);
-
-        var exhausted = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(user, Start.AddMinutes(12), default)).Session);
-        Assert.False(exhausted.IsPaused);
-        Assert.Equal(0, exhausted.PauseRemainingMilliseconds);
-        Assert.Equal(Start.AddMinutes(20), exhausted.DeadlineAtUtc);
-        Assert.Equal(8 * 60_000, exhausted.RemainingMilliseconds);
-
-        var beforeDeadline = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(user, Start.AddMinutes(19), default)).Session);
-        Assert.Equal(SolitairePlayerStatuses.Playing,
-            Assert.Single(beforeDeadline.Players, player => player.IsCurrentPlayer).Status);
-        Assert.Equal(60_000, beforeDeadline.RemainingMilliseconds);
-        var atDeadline = Assert.IsType<SolitaireMatchSessionResponse>(
-            (await store.GetSessionAsync(user, Start.AddMinutes(20), default)).Session);
-        Assert.Equal(SolitairePlayerStatuses.Finished,
-            Assert.Single(atDeadline.Players, player => player.IsCurrentPlayer).Status);
-    }
-
-    [Fact]
-    public async Task LegacyPlayerWithoutTimingFieldsUsesMatchClockAndRewritesCurrentSchema()
-    {
-        var (database, store, suffix) = CreateStore();
-        var user = $"legacy-clock-{suffix}";
-        await SeedBalanceAsync(database, user, 10_000);
-        var started = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            user, "Alice", 4, 500, 3, "legacy-clock-join01", 8080, Start, default)).Session);
-        var player = Assert.Single(await StoredPlayersAsync(database, started.MatchId));
-        await player.Reference.UpdateAsync(new Dictionary<string, object>
-        {
-            ["startedAt"] = FieldValue.Delete,
-            ["deadlineAt"] = FieldValue.Delete
-        });
-
-        var paused = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Pause, started.Version, null, null, null, null),
-            "legacy-clock-pause1",
-            Start.AddMinutes(1),
-            default)).Session);
-        Assert.Equal(Start, paused.StartedAtUtc);
-        Assert.Equal(Start.AddMinutes(10), paused.DeadlineAtUtc);
-        player = await player.Reference.GetSnapshotAsync();
-        Assert.Equal(Timestamp.FromDateTime(Start), Field<Timestamp>(player, "startedAt"));
-        Assert.Equal(Timestamp.FromDateTime(Start.AddMinutes(10)), Field<Timestamp>(player, "deadlineAt"));
-
-        var resumed = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Resume, paused.Version, null, null, null, null),
-            "legacy-clock-resume1",
-            Start.AddMinutes(2),
-            default)).Session);
-        Assert.Equal(Start.AddMinutes(11), resumed.DeadlineAtUtc);
-        _ = await store.CommandAsync(
-            user,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Submit, resumed.Version, null, null, null, null),
-            "legacy-clock-submit1",
-            Start.AddMinutes(3),
-            default);
-        player = await player.Reference.GetSnapshotAsync();
-        Assert.Equal(2 * 60_000, Field<long>(player, "elapsedMilliseconds"));
-    }
-
-    [Fact]
-    public async Task LegacyFullHumanMatchWithoutBotsFilledSettlesAndRewritesCurrentSchema()
-    {
-        var (database, store, suffix) = CreateStore();
-        var users = Enumerable.Range(1, 4).Select(index => $"legacy-full-{index}-{suffix}").ToArray();
-        await Task.WhenAll(users.Select(user => SeedBalanceAsync(database, user, 10_000)));
-        SolitaireMatchSessionResponse? match = null;
-        for (var index = 0; index < users.Length; index++)
-        {
-            match = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-                users[index],
-                $"Player {index + 1}",
-                4,
-                500,
-                3,
-                $"legacy-full-join-{index + 1}",
-                (uint)(9000 + index),
-                Start.AddSeconds(index),
-                default)).Session);
-        }
-        Assert.NotNull(match);
         var matchReference = database.Collection("solitaireMatches").Document(match.MatchId);
         await matchReference.UpdateAsync("botsFilled", FieldValue.Delete);
-
         for (var index = 0; index < users.Length; index++)
-        {
-            var current = Assert.IsType<SolitaireMatchSessionResponse>(
-                (await store.GetSessionAsync(users[index], Start.AddMinutes(1), default)).Session);
-            _ = await store.ForfeitAsync(
-                users[index],
-                match.MatchId,
-                current.Version,
-                $"legacy-full-forfeit-{index + 1}",
-                Start.AddMinutes(1).AddSeconds(index),
-                default);
-        }
-
-        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            _ = await store.ForfeitAsync(users[index], match.MatchId, 1,
+                $"full-human-forfeit-{index}", Start.AddMinutes(1).AddSeconds(index), default);
+        Assert.IsType<SolitaireResultSessionResponse>(
             (await store.GetSessionAsync(users[0], Start.AddMinutes(2), default)).Session);
-        Assert.Equal(match.MatchId, result.MatchId);
         var rewritten = await matchReference.GetSnapshotAsync();
         Assert.True(Field<bool>(rewritten, "botsFilled"));
         Assert.Equal("settled", Field<string>(rewritten, "status"));
     }
 
     [Fact]
-    public async Task SubmitAndIntegrityRollback_WriteResultsAndPersistAcknowledgedWarning()
+    public async Task AllHumanOptOutWaitsPastGrace_AndQueueCancellationRefundsExactlyOnce()
     {
-        var (database, store, suffix) = CreateStore();
-        var submittedUser = $"submit-{suffix}";
-        await SeedBalanceAsync(database, submittedUser, 10_000);
-        var started = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            submittedUser, "Alice", 4, 500, 1, "submit-join-command", 6060, Start, default)).Session);
-
-        var submitted = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            submittedUser,
-            started.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Submit, started.Version, null, null, null, null),
-            "submit-game-command",
-            Start.AddMinutes(1),
-            default)).Session);
-        Assert.Equal(SolitairePlayerStatuses.Finished,
-            Assert.Single(submitted.Players, player => player.IsCurrentPlayer).Status);
-        var pendingResult = Assert.Single(await CardGameResultsAsync(database, started.MatchId));
-        Assert.False(string.IsNullOrWhiteSpace(Field<string>(pendingResult, "resultId")));
-        Assert.Equal("solitaire", Field<string>(pendingResult, "game"));
-        Assert.Equal("competitive", Field<string>(pendingResult, "mode"));
-        Assert.Equal(started.MatchId, Field<string>(pendingResult, "matchId"));
-        Assert.Equal(submittedUser, Field<string>(pendingResult, "userId"));
-        Assert.Equal(SolitaireClaimStatuses.Unclaimed, Field<string>(pendingResult, "claimStatus"));
-        Assert.Equal("pending", Field<string>(pendingResult, "settlementStatus"));
-        Assert.Equal("slotsCredits", Field<string>(pendingResult, "currencyId"));
-        Assert.IsType<Timestamp>(pendingResult.ToDictionary()["completedAt"]);
-        Assert.Equal(1, Field<long>(pendingResult, "schemaVersion"));
-        Assert.Equal(9_500, await ReadBalanceAsync(database, submittedUser));
-
-        var settled = Assert.IsType<SolitaireResultSessionResponse>(
-            (await store.GetSessionAsync(submittedUser, Start.AddMinutes(4), default)).Session);
-        Assert.True(settled.CanClaim);
-        Assert.Equal(9_500, await ReadBalanceAsync(database, submittedUser));
-        var matchResults = await CardGameResultsAsync(database, started.MatchId);
-        Assert.Equal(4, matchResults.Count);
-        Assert.Equal(3, matchResults.Count(result =>
-            result.ContainsField("financialClassification") &&
-            Field<string>(result, "financialClassification") == "managed-player-virtual-v1"));
-        var claimable = Assert.Single(matchResults, result =>
-            Field<string>(result, "userId") == submittedUser);
-        Assert.Equal("claimable", Field<string>(claimable, "settlementStatus"));
-        Assert.Equal(500, Field<long>(claimable, "payoutCents"));
-
-        var claims = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.ClaimAsync(
-            submittedUser,
-            started.MatchId,
-            "submit-result-claim1",
-            Start.AddMinutes(4).AddSeconds(1),
-            default)));
-        Assert.All(claims, claim => Assert.IsType<SolitaireIdleSessionResponse>(claim.Session));
-        Assert.Equal(10_000, await ReadBalanceAsync(database, submittedUser));
-        Assert.Equal(SolitaireClaimStatuses.Completed,
-            Field<string>(Assert.Single(
-                await CardGameResultsAsync(database, started.MatchId),
-                result => Field<string>(result, "userId") == submittedUser), "claimStatus"));
-
-        var integrityUser = $"integrity-{suffix}";
-        await SeedBalanceAsync(database, integrityUser, 10_000);
-        var integrityStarted = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            integrityUser,
-            "Bruno",
-            4,
-            500,
-            3,
-            "integrity-join-0001",
-            7070,
-            Start.AddMinutes(5),
-            default)).Session);
-        var warned = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            integrityUser,
-            integrityStarted.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.Move,
-                integrityStarted.Version,
-                new SolitairePileReference("waste", 0),
-                0,
-                new SolitairePileReference("foundation", 0),
-                null),
-            "integrity-bad-move1",
-            Start.AddMinutes(5).AddSeconds(1),
-            default)).Session);
-        Assert.Equal(SolitairePlayerStatuses.Playing,
-            Assert.Single(warned.Players, player => player.IsCurrentPlayer).Status);
-        Assert.Equal(integrityStarted.Game.Score, warned.Game.Score);
-        Assert.Equal(integrityStarted.Game.Moves, warned.Game.Moves);
-        Assert.Equal(
-            JsonSerializer.Serialize(integrityStarted.Game with { Message = string.Empty }),
-            JsonSerializer.Serialize(warned.Game with { Message = string.Empty }));
-        Assert.Equal(integrityStarted.Version + 1, warned.Version);
-        Assert.False(warned.IntegrityWarning?.Acknowledged);
-        Assert.Contains("last verified board", warned.IntegrityWarning?.Reason);
-        Assert.Contains("fair competitive play", warned.IntegrityWarning?.Purpose);
-        Assert.Empty(await CardGameResultsAsync(database, integrityStarted.MatchId));
-
-        var reconnected = Assert.IsType<SolitaireMatchSessionResponse>((await store.GetSessionAsync(
-            integrityUser,
-            Start.AddMinutes(5).AddSeconds(2),
-            default)).Session);
-        Assert.Equal(warned.IntegrityWarning, reconnected.IntegrityWarning);
-        var acknowledged = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync(
-            integrityUser,
-            integrityStarted.MatchId,
-            new SolitaireCommandRequest(
-                SolitaireCommandTypes.AcknowledgeWarning,
-                reconnected.Version,
-                null,
-                null,
-                null,
-                null),
-            "integrity-acknowledge1",
-            Start.AddMinutes(5).AddSeconds(3),
-            default)).Session);
-        Assert.True(acknowledged.IntegrityWarning?.Acknowledged);
-        Assert.Equal(SolitairePlayerStatuses.Playing,
-            Assert.Single(acknowledged.Players, player => player.IsCurrentPlayer).Status);
+        var (database, store) = CreateStore(allowManagedPlayers: false);
+        await SeedBalanceAsync(database, "alice");
+        var queued = Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, "alice", Start)).Session);
+        Assert.IsType<SolitaireQueueSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddMinutes(10), default)).Session);
+        var cancellations = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.CancelAsync(
+            "alice", queued.TicketId, "cancel-queued-solitaire", Start.AddMinutes(10), default)));
+        Assert.All(cancellations, value => Assert.IsType<SolitaireIdleSessionResponse>(value.Session));
+        Assert.Equal(10_000, await ReadBalanceAsync(database, "alice"));
+        var ledger = await LedgerAsync(database);
+        Assert.Equal(2, ledger.Count);
+        Assert.Single(ledger, entry => Field<string>(entry, "type") == "solitaire-refund");
+        Assert.Empty((await database.Collection("solitaireMatches").GetSnapshotAsync()).Documents);
+        Assert.Empty(await AssignmentsAsync(database));
     }
 
     [Fact]
-    public async Task ExactBoundaryRace_ClosesOldSeatsAndStartsNewMatchForNewcomer()
+    public async Task ConcurrentServerInstancesFillOnce_AndRespectAnotherGamesProfileLease()
     {
-        var (database, store, suffix) = CreateStore();
-        var firstUser = $"boundary-first-{suffix}";
-        var newcomer = $"boundary-next-{suffix}";
-        await Task.WhenAll(
-            SeedBalanceAsync(database, firstUser, 10_000),
-            SeedBalanceAsync(database, newcomer, 10_000));
-        var first = Assert.IsType<SolitaireMatchSessionResponse>((await store.JoinAsync(
-            firstUser, "Alice", 4, 500, 3, "boundary-first-join01", 3003, Start, default)).Session);
-        _ = await store.ForfeitAsync(
-            firstUser,
-            first.MatchId,
-            first.Version,
-            "boundary-first-fold01",
-            Start.AddMinutes(1),
-            default);
+        var (database, store) = CreateStore();
+        var otherStore = new FirestoreCompetitiveSolitaireStore(database,
+            new CompetitiveSolitaireOptions { AllowSingleHumanBotFill = true });
+        await SeedBalanceAsync(database, "alice");
+        var profiles = await SeedProfilesAsync(database, 4);
+        var assignments = new FirestoreManagedPlayerAssignmentStore(database);
+        Assert.True(await assignments.TryReserveAsync(profiles[0].UserId,
+            ManagedPlayerGames.Blackjack, "blackjack-still-playing", Start, default));
+        var queued = Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, "alice", Start)).Session);
 
-        var boundary = Start.AddMinutes(4);
-        var advance = store.GetSessionAsync(firstUser, boundary, default);
-        var join = store.JoinAsync(
-            newcomer,
-            "Casey",
-            4,
-            500,
-            3,
-            "boundary-next-join001",
-            4004,
-            boundary,
-            default);
-        await Task.WhenAll(advance, join);
-
-        var oldResult = Assert.IsType<SolitaireResultSessionResponse>(
-            (await store.GetSessionAsync(firstUser, boundary, default)).Session);
-        var newMatch = Assert.IsType<SolitaireMatchSessionResponse>((await join).Session);
-        Assert.NotEqual(oldResult.MatchId, newMatch.MatchId);
-        Assert.Equal(3, newMatch.Players.Count(player => player.Status == SolitairePlayerStatuses.Open));
-        Assert.Single((await StoredPlayersAsync(database, newMatch.MatchId)));
-        Assert.Equal(9_500, await ReadBalanceAsync(database, newcomer));
+        var filled = await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
+            (index % 2 == 0 ? store : otherStore).GetSessionAsync("alice", Start.AddSeconds(5), default)));
+        var match = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddSeconds(5), default)).Session);
+        Assert.All(filled, value => AssertQueueOrMatch(value.Session, queued.TicketId, match.MatchId));
+        Assert.Equal(4, (await StoredPlayersAsync(database, match.MatchId)).Count);
+        Assert.Single((await database.Collection("solitaireMatches").GetSnapshotAsync()).Documents);
+        Assert.DoesNotContain(match.Players, player => player.DisplayName == profiles[0].PlayerName);
+        var leases = await AssignmentsAsync(database);
+        Assert.Equal(4, leases.Count);
+        Assert.Equal("blackjack-still-playing", Field<string>(Assert.Single(leases,
+            lease => lease.Id == profiles[0].UserId), "assignmentId"));
+        Assert.Equal(3, leases.Count(lease => Field<string>(lease, "gameId") == ManagedPlayerGames.Solitaire));
+        Assert.Single(await LedgerAsync(database));
     }
 
-    private static (FirestoreDb Database, FirestoreCompetitiveSolitaireStore Store, string Suffix) CreateStore()
+    [Fact]
+    public async Task PauseBudgetRemainsCumulativeAndOnlyExtendsTheHumansDeadline()
     {
-        var suffix = Guid.NewGuid().ToString("N");
+        var (database, store) = CreateStore();
+        await SeedBalanceAsync(database, "alice");
+        var started = await JoinStartedAsync(store, "alice", Start);
+        var matchStart = started.StartedAtUtc;
+        var paused = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("alice", started.MatchId,
+            Command(SolitaireCommandTypes.Pause, started.Version), "pause-first-command", matchStart.AddMinutes(1), default)).Session);
+        Assert.True(paused.IsPaused);
+        Assert.Equal(9 * 60_000, paused.RemainingMilliseconds);
+        Assert.Equal(10 * 60_000, paused.PauseRemainingMilliseconds);
+        var stillPaused = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", matchStart.AddMinutes(5), default)).Session);
+        Assert.Equal(9 * 60_000, stillPaused.RemainingMilliseconds);
+        Assert.Equal(6 * 60_000, stillPaused.PauseRemainingMilliseconds);
+        var resumed = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("alice", started.MatchId,
+            Command(SolitaireCommandTypes.Resume, stillPaused.Version), "pause-resume-command", matchStart.AddMinutes(5), default)).Session);
+        Assert.False(resumed.IsPaused);
+        Assert.Equal(matchStart.AddMinutes(14), resumed.DeadlineAtUtc);
+        _ = await store.CommandAsync("alice", started.MatchId, Command(SolitaireCommandTypes.Pause, resumed.Version),
+            "pause-second-command", matchStart.AddMinutes(6), default);
+        var exhausted = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", matchStart.AddMinutes(12), default)).Session);
+        Assert.False(exhausted.IsPaused);
+        Assert.Equal(0, exhausted.PauseRemainingMilliseconds);
+        Assert.Equal(matchStart.AddMinutes(20), exhausted.DeadlineAtUtc);
+        Assert.Equal(8 * 60_000, exhausted.RemainingMilliseconds);
+        Assert.Equal(3, (await AssignmentsAsync(database)).Count);
+        var before = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", matchStart.AddMinutes(20).AddMilliseconds(-1), default)).Session);
+        Assert.Equal(1, before.RemainingMilliseconds);
+        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync("alice", matchStart.AddMinutes(20), default)).Session);
+        Assert.Equal(SolitairePlayerStatuses.Finished,
+            Assert.Single(result.Standings, player => player.IsCurrentPlayer).Status);
+    }
+
+    [Fact]
+    public async Task WorkerStartsAndSettlesAQueuedMatchAfterTheHumanLeavesTheWaitingScreen()
+    {
+        var (database, store) = CreateStore();
+        await SeedBalanceAsync(database, "alice");
+        _ = await SeedProfilesAsync(database, 3);
+        Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, "alice", Start)).Session);
+
+        await store.SweepAsync(Start.AddMilliseconds(4_999), default);
+        Assert.Empty((await database.Collection("solitaireMatches").GetSnapshotAsync()).Documents);
+        await store.SweepAsync(Start.AddSeconds(5), default);
+        var durableMatch = Assert.Single((await database.Collection("solitaireMatches").GetSnapshotAsync()).Documents);
+        Assert.Equal("playing", Field<string>(durableMatch, "status"));
+        Assert.Equal(4, (await StoredPlayersAsync(database, durableMatch.Id)).Count);
+        var match = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddSeconds(6), default)).Session);
+        _ = await store.ForfeitAsync("alice", match.MatchId, match.Version,
+            "worker-human-forfeit", Start.AddMinutes(1), default);
+        var dismissed = await store.DismissAsync("alice", match.MatchId,
+            "worker-human-dismiss", Start.AddMinutes(1).AddSeconds(1), default);
+        Assert.IsType<SolitaireIdleSessionResponse>(dismissed.Session);
+
+        await store.SweepAsync(Start.AddMinutes(8), default);
+
+        Assert.Equal("settled", Field<string>(await durableMatch.Reference.GetSnapshotAsync(), "status"));
+        Assert.Empty(await AssignmentsAsync(database));
+        Assert.IsType<SolitaireIdleSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddMinutes(8), default)).Session);
+        var claimable = Assert.Single(await CardGameResultsAsync(database, match.MatchId),
+            value => Field<string>(value, "userId") == "alice");
+        Assert.Equal("claimable", Field<string>(claimable, "settlementStatus"));
+        _ = await store.ClaimAsync("alice", match.MatchId, "worker-human-result-claim", Start.AddMinutes(8), default);
+        Assert.Equal(10_000, await ReadBalanceAsync(database, "alice"));
+    }
+
+    [Fact]
+    public async Task LegacyPlayerWithoutTimingFieldsUsesMatchClockAndRewritesCurrentSchema()
+    {
+        var (database, store) = CreateStore();
+        await SeedBalanceAsync(database, "alice");
+        var started = await JoinStartedAsync(store, "alice", Start);
+        var player = Assert.Single(await StoredPlayersAsync(database, started.MatchId),
+            value => !Field<bool>(value, "isSynthetic"));
+        await player.Reference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["startedAt"] = FieldValue.Delete,
+            ["deadlineAt"] = FieldValue.Delete
+        });
+        var paused = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("alice", started.MatchId,
+            Command(SolitaireCommandTypes.Pause, started.Version), "legacy-pause-command", started.StartedAtUtc.AddMinutes(1), default)).Session);
+        Assert.Equal(started.StartedAtUtc, paused.StartedAtUtc);
+        Assert.Equal(started.DeadlineAtUtc, paused.DeadlineAtUtc);
+        player = await player.Reference.GetSnapshotAsync();
+        Assert.Equal(Timestamp.FromDateTime(started.StartedAtUtc), Field<Timestamp>(player, "startedAt"));
+        Assert.Equal(Timestamp.FromDateTime(started.DeadlineAtUtc), Field<Timestamp>(player, "deadlineAt"));
+        var resumed = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("alice", started.MatchId,
+            Command(SolitaireCommandTypes.Resume, paused.Version), "legacy-resume-command", started.StartedAtUtc.AddMinutes(2), default)).Session);
+        _ = await store.CommandAsync("alice", started.MatchId, Command(SolitaireCommandTypes.Submit, resumed.Version),
+            "legacy-submit-command", started.StartedAtUtc.AddMinutes(3), default);
+        player = await player.Reference.GetSnapshotAsync();
+        Assert.Equal(2 * 60_000, Field<long>(player, "elapsedMilliseconds"));
+    }
+
+    [Fact]
+    public async Task LegacyMatchWithOpenSeatsCanFinishWithoutReopeningTheOldFabricatedOpponentFlow()
+    {
+        var (database, store) = CreateStore();
+        const string user = "legacy-human";
+        const string matchId = "legacy-underfilled-match";
+        var startedAt = Timestamp.FromDateTime(Start);
+        var deadline = Timestamp.FromDateTime(Start.AddMinutes(10));
+        await database.Collection("userBalances").Document($"{user}_slotsCredits").SetAsync(
+            new Dictionary<string, object> { ["available"] = 95L, ["availableFractionalCents"] = 0L });
+        await database.Collection("solitairePlayerSessions")
+            .Document(FirestoreCompetitiveSolitaireStore.CreateLookupKey(user)).SetAsync(new Dictionary<string, object>
+            {
+                ["userId"] = user, ["kind"] = SolitaireSessionKinds.Match, ["matchId"] = matchId
+            });
+        await database.Collection("solitaireMatches").Document(matchId).SetAsync(new Dictionary<string, object>
+        {
+            ["matchId"] = matchId, ["playerCount"] = 4L, ["buyInCents"] = 500L,
+            ["prizePoolCents"] = 500L, ["winnerPayoutCents"] = 500L, ["platformFeeCents"] = 0L,
+            ["dealSeed"] = 1001L, ["startedAt"] = startedAt, ["deadlineAt"] = deadline,
+            ["status"] = "playing", ["playerIds"] = new[] { user }, ["displayNames"] = new[] { user },
+            ["ticketIds"] = new[] { "legacy-ticket" }, ["joinedAt"] = new[] { startedAt },
+            ["botsFilled"] = false, ["drawCount"] = 3L
+        });
+        await database.Collection("solitaireMatchPlayers")
+            .Document(FirestoreCompetitiveSolitaireStore.CreateLookupKey($"{matchId}\n{user}"))
+            .SetAsync(new Dictionary<string, object>
+            {
+                ["matchId"] = matchId, ["userId"] = user, ["displayName"] = user,
+                ["seat"] = 1L, ["status"] = SolitairePlayerStatuses.Playing,
+                ["gameStateJson"] = JsonSerializer.Serialize(SolitaireEngine.CreateGame(1001, 3),
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                ["version"] = 1L, ["elapsedMilliseconds"] = -1L,
+                ["payoutCents"] = 0L, ["acknowledged"] = false, ["isSynthetic"] = false
+            });
+
+        var result = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync(user, Start.AddMinutes(10), default)).Session);
+
+        Assert.Single(result.Standings);
+        Assert.True(result.CanClaim);
+        Assert.Equal(5m, result.WinnerPayoutCredits);
+        Assert.Empty(await AssignmentsAsync(database));
+        Assert.Empty((await database.Collection("users").GetSnapshotAsync()).Documents);
+        _ = await store.ClaimAsync(user, matchId, "legacy-open-seats-claim", Start.AddMinutes(10), default);
+        Assert.Equal(10_000, await ReadBalanceAsync(database, user));
+    }
+
+    [Fact]
+    public async Task SubmitAndIntegrityRollbackKeepClaimsAndVerifiedBoardWarnings()
+    {
+        var (database, store) = CreateStore();
+        await Task.WhenAll(SeedBalanceAsync(database, "alice"), SeedBalanceAsync(database, "bruno"));
+        var started = await JoinStartedAsync(store, "alice", Start);
+        _ = await store.CommandAsync("alice", started.MatchId, Command(SolitaireCommandTypes.Submit, started.Version),
+            "submit-human-command", Start.AddMinutes(1), default);
+        var pending = Assert.Single(await CardGameResultsAsync(database, started.MatchId));
+        Assert.Equal("pending", Field<string>(pending, "settlementStatus"));
+        Assert.Equal(SolitaireClaimStatuses.Unclaimed, Field<string>(pending, "claimStatus"));
+        var settled = Assert.IsType<SolitaireResultSessionResponse>(
+            (await store.GetSessionAsync("alice", Start.AddMinutes(8), default)).Session);
+        Assert.True(settled.CanClaim);
+        _ = await store.ClaimAsync("alice", started.MatchId, "submit-claim-command", Start.AddMinutes(8).AddSeconds(1), default);
+        var claimed = Assert.Single(await CardGameResultsAsync(database, started.MatchId),
+            value => Field<string>(value, "userId") == "alice");
+        Assert.Equal(SolitaireClaimStatuses.Completed, Field<string>(claimed, "claimStatus"));
+        Assert.Equal(10_000, await ReadBalanceAsync(database, "alice"));
+
+        var integrityStart = await JoinStartedAsync(store, "bruno", Start.AddMinutes(8));
+        var warned = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("bruno", integrityStart.MatchId,
+            new SolitaireCommandRequest(SolitaireCommandTypes.Move, integrityStart.Version,
+                new SolitairePileReference("waste", 0), 0, new SolitairePileReference("foundation", 0), null),
+            "integrity-bad-command", Start.AddMinutes(8).AddSeconds(6), default)).Session);
+        Assert.Equal(integrityStart.Game.Score, warned.Game.Score);
+        Assert.Equal(integrityStart.Game.Moves, warned.Game.Moves);
+        Assert.Equal(JsonSerializer.Serialize(integrityStart.Game with { Message = string.Empty }),
+            JsonSerializer.Serialize(warned.Game with { Message = string.Empty }));
+        Assert.Equal(integrityStart.Version + 1, warned.Version);
+        Assert.False(warned.IntegrityWarning?.Acknowledged);
+        Assert.Contains("last verified board", warned.IntegrityWarning?.Reason);
+        Assert.Contains("fair competitive play", warned.IntegrityWarning?.Purpose);
+        var reconnect = Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync("bruno", Start.AddMinutes(8).AddSeconds(7), default)).Session);
+        Assert.Equal(warned.IntegrityWarning, reconnect.IntegrityWarning);
+        var acknowledged = Assert.IsType<SolitaireMatchSessionResponse>((await store.CommandAsync("bruno", integrityStart.MatchId,
+            Command(SolitaireCommandTypes.AcknowledgeWarning, reconnect.Version), "integrity-ack-command",
+            Start.AddMinutes(8).AddSeconds(8), default)).Session);
+        Assert.True(acknowledged.IntegrityWarning?.Acknowledged);
+    }
+
+    private static (FirestoreDb Database, FirestoreCompetitiveSolitaireStore Store) CreateStore(bool allowManagedPlayers = true)
+    {
         var database = new FirestoreDbBuilder
         {
-            ProjectId = $"demo-solitaire-{suffix}",
+            ProjectId = $"demo-solitaire-{Guid.NewGuid():N}",
             EmulatorDetection = EmulatorDetection.EmulatorOnly
         }.Build();
         return (database, new FirestoreCompetitiveSolitaireStore(database, new CompetitiveSolitaireOptions
         {
-            AllowSingleHumanBotFill = true
-        }), suffix);
+            AllowSingleHumanBotFill = allowManagedPlayers
+        }));
     }
 
-    private static Task SeedBalanceAsync(FirestoreDb database, string userId, long cents) =>
-        database.Collection("userBalances").Document($"{userId}_slotsCredits").SetAsync(
-            new Dictionary<string, object>
-            {
-                ["available"] = cents / 100,
-                ["availableFractionalCents"] = cents % 100,
-                ["version"] = 1L,
-                ["updatedAt"] = Timestamp.FromDateTime(Start)
-            });
+    private static Task<SolitaireStoreSession> JoinAsync(FirestoreCompetitiveSolitaireStore store, string user,
+        DateTime now, string? key = null) => store.JoinAsync(user, user, 4, 500, 3,
+            key ?? $"join-command-{user}", 1001, now, default);
+
+    private static async Task<SolitaireMatchSessionResponse> JoinStartedAsync(
+        FirestoreCompetitiveSolitaireStore store, string user, DateTime now)
+    {
+        Assert.IsType<SolitaireQueueSessionResponse>((await JoinAsync(store, user, now)).Session);
+        return Assert.IsType<SolitaireMatchSessionResponse>(
+            (await store.GetSessionAsync(user, now.AddSeconds(5), default)).Session);
+    }
+
+    private static SolitaireCommandRequest Command(string type, int version) => new(type, version, null, null, null, null);
+
+    private static void AssertQueueOrMatch(SolitaireSessionResponse session, string ticketId, string matchId)
+    {
+        if (session is SolitaireQueueSessionResponse queued)
+            Assert.Equal(ticketId, queued.TicketId);
+        else
+            Assert.Equal(matchId, Assert.IsType<SolitaireMatchSessionResponse>(session).MatchId);
+    }
+
+    private static async Task<IReadOnlyList<ManagedPlayerProfile>> SeedProfilesAsync(FirestoreDb database, int count)
+    {
+        string[] names = ["CopperGarden", "SilverMeteor", "QuietMaple", "BlueLantern"];
+        var profiles = new List<ManagedPlayerProfile>();
+        var repository = new FirestoreManagedPlayerProfileRepository(database);
+        for (var index = 0; profiles.Count < count; index++)
+        {
+            var id = $"managed-solitaire-test-{index}";
+            if (ManagedPlayerAvailabilityPolicy.IsSleeping(id, Start) ||
+                ManagedPlayerAvailabilityPolicy.IsSleeping(id, Start.AddHours(2))) continue;
+            // Profiles created before the Solitaire adapter existed are reusable too.
+            var profile = new ManagedPlayerProfile(id, names[profiles.Count], 2 + profiles.Count % 3,
+                new HashSet<string>([ManagedPlayerGames.Blackjack],
+                    StringComparer.OrdinalIgnoreCase), Start);
+            Assert.True(await repository.TryCreateAsync(profile, default));
+            profiles.Add(profile);
+        }
+        return profiles;
+    }
+
+    private static Task SeedBalanceAsync(FirestoreDb database, string userId) =>
+        database.Collection("userBalances").Document($"{userId}_slotsCredits").SetAsync(new Dictionary<string, object>
+        {
+            ["available"] = 100L,
+            ["availableFractionalCents"] = 0L,
+            ["version"] = 1L,
+            ["updatedAt"] = Timestamp.FromDateTime(Start)
+        });
 
     private static async Task<long> ReadBalanceAsync(FirestoreDb database, string userId)
     {
-        var snapshot = await database.Collection("userBalances")
-            .Document($"{userId}_slotsCredits")
-            .GetSnapshotAsync();
-        return checked(
-            Field<long>(snapshot, "available") * 100 +
-            Field<long>(snapshot, "availableFractionalCents"));
+        var snapshot = await database.Collection("userBalances").Document($"{userId}_slotsCredits").GetSnapshotAsync();
+        return checked(Field<long>(snapshot, "available") * 100 +
+            (snapshot.TryGetValue<long>("availableFractionalCents", out var cents) ? cents : 0));
     }
 
     private static async Task<IReadOnlyList<DocumentSnapshot>> LedgerAsync(FirestoreDb database) =>
         (await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents;
 
-    private static async Task<IReadOnlyList<DocumentSnapshot>> StoredPlayersAsync(
-        FirestoreDb database,
-        string matchId) => (await database.Collection("solitaireMatchPlayers")
-            .WhereEqualTo("matchId", matchId)
-            .GetSnapshotAsync()).Documents;
+    private static async Task<IReadOnlyList<DocumentSnapshot>> AssignmentsAsync(FirestoreDb database) =>
+        (await database.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents;
 
-    private static async Task<IReadOnlyList<DocumentSnapshot>> CardGameResultsAsync(
-        FirestoreDb database,
-        string matchId) => (await database.Collection("cardGameResults")
-            .WhereEqualTo("matchId", matchId)
-            .GetSnapshotAsync()).Documents;
+    private static async Task<IReadOnlyList<DocumentSnapshot>> StoredPlayersAsync(FirestoreDb database, string matchId) =>
+        (await database.Collection("solitaireMatchPlayers").WhereEqualTo("matchId", matchId).GetSnapshotAsync()).Documents;
+
+    private static async Task<IReadOnlyList<DocumentSnapshot>> CardGameResultsAsync(FirestoreDb database, string matchId) =>
+        (await database.Collection("cardGameResults").WhereEqualTo("matchId", matchId).GetSnapshotAsync()).Documents;
 
     private static T Field<T>(DocumentSnapshot snapshot, string field) => snapshot.GetValue<T>(field);
 
     private static void AssertAutomationNeutral(SolitaireSessionResponse session)
     {
-        var json = JsonSerializer.Serialize(
-            session,
-            session.GetType(),
-            new JsonSerializerOptions(JsonSerializerDefaults.Web));
-        Assert.DoesNotContain("isBot", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("skill", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("difficulty", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("synthetic", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("__solitaire_internal__", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("dealSeed", json, StringComparison.OrdinalIgnoreCase);
+        var json = JsonSerializer.Serialize(session, session.GetType(), new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        foreach (var privateField in new[] { "isBot", "skill", "difficulty", "synthetic", "managed-", "dealSeed" })
+            Assert.DoesNotContain(privateField, json, StringComparison.OrdinalIgnoreCase);
     }
 }

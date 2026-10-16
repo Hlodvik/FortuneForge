@@ -5,15 +5,40 @@ namespace FortuneForge.Server.Bots.Solitaire;
 internal static class SolitaireManagedPlayerPolicy
 {
     private const string SkillKey = "managed-skill";
-    public static IReadOnlyList<ManagedPlayerProfile> CreateLocalProfiles(int count, DateTime nowUtc) =>
-        Enumerable.Range(0, Math.Max(0, count))
-            .Select(index => new ManagedPlayerProfile(
-                $"managed-local-solitaire-{Guid.NewGuid():N}",
-                new[] { "Avery", "Blake", "Casey", "Drew", "Emery" }[index % 5],
-                ManagedPlayerSkillLevels.Poor + index % 3,
-                new HashSet<string>([ManagedPlayerGames.Solitaire], StringComparer.OrdinalIgnoreCase),
-                nowUtc))
-            .ToArray();
+    private const string CompletionElapsedKey = "managed-completion-elapsed";
+
+    public static SolitairePlayerState Start(SolitaireMatch match, int seat, ManagedPlayerProfile profile)
+    {
+        ManagedPlayerSkillLevels.Validate(profile.SkillLevel);
+        return new SolitairePlayerState(
+            match.MatchId, profile.UserId, profile.PlayerName, seat,
+            SolitairePlayerStatuses.Playing, SolitaireEngine.CreateGame(match.DealSeed, match.DrawCount),
+            1, null, null, 0, false)
+        {
+            StartedAtUtc = match.StartedAtUtc,
+            DeadlineAtUtc = match.DeadlineAtUtc,
+            IsAccountBacked = false,
+            HostMetadata = new(StringComparer.Ordinal)
+            {
+                [SkillKey] = profile.SkillLevel.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                [CompletionElapsedKey] = ElapsedMilliseconds(match.DealSeed, seat, profile.UserId, profile.SkillLevel)
+                    .ToString(System.Globalization.CultureInfo.InvariantCulture)
+            }
+        };
+    }
+
+    internal static DateTime CompletionAt(SolitaireMatch match, SolitairePlayerState player) =>
+        match.StartedAtUtc.AddMilliseconds(CompletionElapsed(match, player));
+
+    internal static SolitairePlayerState CompleteScheduled(SolitaireMatch match, SolitairePlayerState player) =>
+        player with
+        {
+            Status = SolitairePlayerStatuses.Finished,
+            Game = Play(match.DealSeed, match.DrawCount, player.Seat, Skill(player)),
+            Version = checked(player.Version + 1),
+            ElapsedMilliseconds = CompletionElapsed(match, player),
+            CompletedAtUtc = CompletionAt(match, player)
+        };
 
     public static SolitairePlayerState Complete(
         SolitaireMatch match,
@@ -21,33 +46,19 @@ internal static class SolitaireManagedPlayerPolicy
         ManagedPlayerProfile profile,
         DateTime completedAtUtc)
     {
-        var game = Play(match.DealSeed, match.DrawCount, seat, profile.SkillLevel);
-        return new SolitairePlayerState(
-            match.MatchId,
-            profile.UserId,
-            profile.PlayerName,
-            seat,
-            SolitairePlayerStatuses.Finished,
-            game,
-            1,
-            ElapsedMilliseconds(match.DealSeed, seat, profile.UserId, profile.SkillLevel),
-            completedAtUtc,
-            0,
-            false)
-        {
-            StartedAtUtc = match.StartedAtUtc,
-            DeadlineAtUtc = completedAtUtc,
-            IsAccountBacked = false,
-            HostMetadata = new(StringComparer.Ordinal)
-            {
-                [SkillKey] = profile.SkillLevel.ToString(System.Globalization.CultureInfo.InvariantCulture)
-            }
-        };
+        return CompleteScheduled(match, Start(match, seat, profile)) with { CompletedAtUtc = completedAtUtc };
     }
 
     internal static int Skill(SolitairePlayerState player) =>
         player.HostMetadata.TryGetValue(SkillKey, out var stored) &&
-        int.TryParse(stored, out var skill) ? skill : 0;
+        int.TryParse(stored, out var skill) && skill is >= 2 and <= 4
+            ? skill : ManagedPlayerSkillLevels.Average;
+
+    private static long CompletionElapsed(SolitaireMatch match, SolitairePlayerState player) =>
+        player.HostMetadata.TryGetValue(CompletionElapsedKey, out var stored) &&
+        long.TryParse(stored, out var elapsed) && elapsed > 0
+            ? elapsed
+            : ElapsedMilliseconds(match.DealSeed, player.Seat, player.UserId, Skill(player));
 
     internal static SolitaireCommandRequest Choose(
         SolitaireGameState game,

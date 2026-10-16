@@ -29,7 +29,13 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
-        matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
+        // Direct store consumers use the same persisted identities and assignment
+        // leases as the application singleton; no local opponent fallback exists.
+        var profiles = new FirestoreManagedPlayerProfileRepository(database);
+        matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker(new ManagedPlayerQueuer(
+            new ManagedPlayerProfileGenerator(profiles),
+            profiles,
+            new FirestoreManagedPlayerAssignmentStore(database)));
     }
 
     private async Task<T> RunTransactionAsync<T>(
@@ -179,11 +185,12 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         ["deadlineAt"] = Timestamp.FromDateTime(player.DeadlineAtUtc),
         ["isSynthetic"] = !player.IsAccountBacked,
         ["syntheticSkill"] = FortuneForge.Server.Bots.Solitaire.SolitaireManagedPlayerPolicy.Skill(player),
+        ["managedMetadataJson"] = JsonSerializer.Serialize(player.HostMetadata, JsonOptions),
         ["pauseUsedMilliseconds"] = player.PauseUsedMilliseconds,
         ["pausedAt"] = player.PausedAtUtc is null
             ? string.Empty
             : Timestamp.FromDateTime(player.PausedAtUtc.Value),
-        ["schemaVersion"] = 5L
+        ["schemaVersion"] = 6L
     };
 
     private static Dictionary<string, object> ActionData(
@@ -352,6 +359,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         var elapsed = ReadLong(snapshot, "elapsedMilliseconds", -1);
         var startedAt = ReadOptionalTimestamp(snapshot, "startedAt") ?? match.StartedAtUtc;
         var deadlineAt = ReadOptionalTimestamp(snapshot, "deadlineAt") ?? match.DeadlineAtUtc;
+        var metadataJson = ReadString(snapshot, "managedMetadataJson");
+        var metadata = string.IsNullOrWhiteSpace(metadataJson)
+            ? new Dictionary<string, string>(StringComparer.Ordinal)
+            : JsonSerializer.Deserialize<Dictionary<string, string>>(metadataJson, JsonOptions)
+                ?? new Dictionary<string, string>(StringComparer.Ordinal);
+        if (!metadata.ContainsKey("managed-skill") && ReadBool(snapshot, "isSynthetic"))
+            metadata["managed-skill"] = ReadLong(snapshot, "syntheticSkill", ManagedPlayerSkillLevels.Average)
+                .ToString(System.Globalization.CultureInfo.InvariantCulture);
         return new SolitairePlayerState(
             ReadString(snapshot, "matchId"),
             ReadString(snapshot, "userId"),
@@ -371,7 +386,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             PauseUsedMilliseconds = ReadLong(snapshot, "pauseUsedMilliseconds"),
             PausedAtUtc = ReadOptionalTimestamp(snapshot, "pausedAt"),
             UndoHistory = undoHistory,
-            IntegrityWarnings = integrityWarnings
+            IntegrityWarnings = integrityWarnings,
+            HostMetadata = metadata
         };
     }
 
@@ -392,6 +408,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
 
     private static IReadOnlyList<string> ReadStringArray(DocumentSnapshot snapshot, string field)
     {
+        if (!snapshot.Exists) return [];
         var values = snapshot.ToDictionary();
         if (!values.TryGetValue(field, out var raw) || raw is not IEnumerable<object> items)
         {
@@ -402,6 +419,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
 
     private static IReadOnlyList<DateTime> ReadTimestampArray(DocumentSnapshot snapshot, string field)
     {
+        if (!snapshot.Exists) return [];
         var values = snapshot.ToDictionary();
         if (!values.TryGetValue(field, out var raw) || raw is not IEnumerable<object> items)
         {

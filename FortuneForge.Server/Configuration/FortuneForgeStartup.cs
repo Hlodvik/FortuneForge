@@ -3,6 +3,7 @@ using FortuneForge.Server.Admin.Operations;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Cards.ThreeCardPoker.Table;
+using FortuneForge.Server.Cards.Solitaire;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.Games.Roulette;
 using FortuneForge.Server.Games.Craps;
@@ -47,6 +48,7 @@ public static class FortuneForgeStartup
         builder.Services.AddCreditHoldem(builder.Configuration);
         builder.Services.AddBlackjackTables();
         builder.Services.AddThreeCardPokerTables();
+        builder.Services.AddCompetitiveSolitaireQueues(builder.Configuration);
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
         builder.Services.AddSingleton(provider => new RouletteGameService(

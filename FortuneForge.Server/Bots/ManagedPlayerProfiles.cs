@@ -28,9 +28,9 @@ internal static class ManagedPlayerGames
     public static readonly IReadOnlyList<string> All =
         [Blackjack, Hearts, LiarsDice, Roulette, Solitaire, TexasHoldem, ThreeCardPoker];
 
-    // Existing profiles can use the newly installed server-owned game adapter.
+    // Existing profiles can use the installed server-owned card game adapters.
     public static IReadOnlySet<string> SupportedWithCurrentAdapters(IEnumerable<string> games) =>
-        games.Append(ThreeCardPoker).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        games.Append(ThreeCardPoker).Append(Solitaire).ToHashSet(StringComparer.OrdinalIgnoreCase);
 }
 
 internal static class ManagedPlayerTableStayPolicy

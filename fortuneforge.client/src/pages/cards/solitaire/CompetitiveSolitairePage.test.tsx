@@ -37,6 +37,21 @@ describe('Solitaire presentation', () => {
     expect(markup).toContain('Play free')
   })
 
+  it('renders only server-provided queue participants and keeps unassigned seats open', () => {
+    const markup = render({ kind: 'ready', session: {
+      kind: 'queued', ticketId: 'ticket-1', playerCount: 4, buyInCredits: 5,
+      prizePoolCredits: 20, winnerPayoutCredits: 18, position: 1,
+      joinedAtUtc: '2026-10-16T12:00:00Z',
+      players: [player('seat-1', 'Sam River', 1, 'queued', true)],
+    } })
+
+    expect(markup).toContain('Sam River')
+    expect(markup.match(/Open seat/g)).toHaveLength(3)
+    expect(markup).toContain('1 of 4 players ready')
+    expect(markup).toContain('Leave queue')
+    expect(markup).not.toMatch(/Avery|Blake|Casey|Drew|Emery/)
+  })
+
   it('orders status, board, pause, and submit without match/table headings', () => {
     const markup = render({ kind: 'ready', session: matchSession() })
     expect(markup.indexOf('solitaire-match__status')).toBeLessThan(markup.indexOf('solitaire-board'))

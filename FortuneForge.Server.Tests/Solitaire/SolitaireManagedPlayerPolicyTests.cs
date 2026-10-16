@@ -12,7 +12,8 @@ public sealed class SolitaireManagedPlayerPolicyTests
     [Fact]
     public void CompletedManagedSeatUsesTheReservedProfileIdentity()
     {
-        var profile = Assert.Single(SolitaireManagedPlayerPolicy.CreateLocalProfiles(1, Start));
+        var profile = new ManagedPlayerProfile("managed-reserved-profile", "CopperGarden", ManagedPlayerSkillLevels.Average,
+            new HashSet<string>([ManagedPlayerGames.Solitaire], StringComparer.OrdinalIgnoreCase), Start);
         var match = Match();
 
         var player = SolitaireManagedPlayerPolicy.Complete(match, 2, profile, Start.AddMinutes(4));
@@ -31,6 +32,33 @@ public sealed class SolitaireManagedPlayerPolicyTests
 
         var result = SolitaireEngine.Apply(game, command);
         Assert.Equal(1, result.Moves);
+    }
+
+    [Fact]
+    public void ManagedSeatStartsWithTheCommonDealAndCompletesOnItsPersistedSchedule()
+    {
+        var profile = new ManagedPlayerProfile("managed-scheduled-profile", "SilverMeteor", ManagedPlayerSkillLevels.Strong,
+            new HashSet<string>([ManagedPlayerGames.Solitaire], StringComparer.OrdinalIgnoreCase), Start);
+        var match = Match();
+        var player = SolitaireManagedPlayerPolicy.Start(match, 2, profile);
+
+        Assert.Equal(SolitairePlayerStatuses.Playing, player.Status);
+        Assert.Null(player.CompletedAtUtc);
+        Assert.Null(player.ElapsedMilliseconds);
+        Assert.Equal(match.StartedAtUtc, player.StartedAtUtc);
+        Assert.Equal(match.DeadlineAtUtc, player.DeadlineAtUtc);
+        Assert.Equal(SolitaireEngine.CreateGame(match.DealSeed, match.DrawCount).Stock, player.Game.Stock);
+        var scheduledAt = SolitaireManagedPlayerPolicy.CompletionAt(match, player);
+        Assert.InRange(scheduledAt, Start.AddMinutes(3), Start.AddMinutes(7));
+
+        var completed = SolitaireManagedPlayerPolicy.CompleteScheduled(match, player);
+
+        Assert.Equal(SolitairePlayerStatuses.Finished, completed.Status);
+        Assert.Equal(scheduledAt, completed.CompletedAtUtc);
+        Assert.Equal((long)(scheduledAt - Start).TotalMilliseconds, completed.ElapsedMilliseconds);
+        Assert.Equal(profile.UserId, completed.UserId);
+        Assert.Equal(profile.PlayerName, completed.DisplayName);
+        Assert.False(completed.IsAccountBacked);
     }
 
     private static SolitaireMatch Match() => new(

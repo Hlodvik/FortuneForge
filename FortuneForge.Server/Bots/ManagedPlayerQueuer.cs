@@ -6,7 +6,8 @@ namespace FortuneForge.Server.Bots;
 internal sealed class ManagedPlayerQueuer(
     IManagedPlayerProfileGenerator generator,
     IManagedPlayerProfileRepository profiles,
-    IManagedPlayerAssignmentStore assignments) : IManagedPlayerQueuer
+    IManagedPlayerAssignmentStore assignments,
+    ILogger<ManagedPlayerQueuer>? logger = null) : IManagedPlayerQueuer
 {
     private const int CandidateLimit = 100;
 
@@ -24,31 +25,53 @@ internal sealed class ManagedPlayerQueuer(
             gameId, CandidateLimit, cancellationToken);
 
         var selected = new List<ManagedPlayerProfile>(count);
-        foreach (var candidate in candidates
+        try
+        {
+            foreach (var candidate in candidates
                      .Where(candidate => !excluded.Contains(candidate.UserId))
                      .DistinctBy(candidate => candidate.UserId, StringComparer.Ordinal)
                      .OrderBy(candidate => StableRank(
                          gameId, assignmentId, candidate.UserId)))
-        {
-            if (!await assignments.TryReserveAsync(
-                    candidate.UserId, gameId, assignmentId, nowUtc, cancellationToken))
-                continue;
-            selected.Add(candidate);
-            excluded.Add(candidate.UserId);
-            if (selected.Count == count) return selected;
-        }
+            {
+                if (!await assignments.TryReserveAsync(
+                        candidate.UserId, gameId, assignmentId, nowUtc, cancellationToken))
+                    continue;
+                selected.Add(candidate);
+                excluded.Add(candidate.UserId);
+                if (selected.Count == count) return selected;
+            }
 
-        while (selected.Count < count)
-        {
-            var profile = await generator.GenerateAsync(gameId, nowUtc, cancellationToken);
-            if (excluded.Contains(profile.UserId) ||
-                !await assignments.TryReserveAsync(
-                    profile.UserId, gameId, assignmentId, nowUtc, cancellationToken))
-                continue;
-            selected.Add(profile);
-            excluded.Add(profile.UserId);
+            while (selected.Count < count)
+            {
+                var profile = await generator.GenerateAsync(gameId, nowUtc, cancellationToken);
+                if (excluded.Contains(profile.UserId) ||
+                    !await assignments.TryReserveAsync(
+                        profile.UserId, gameId, assignmentId, nowUtc, cancellationToken))
+                    continue;
+                selected.Add(profile);
+                excluded.Add(profile.UserId);
+            }
+            return selected;
         }
-        return selected;
+        catch
+        {
+            // No caller receives a partial supply, so none of these leases can be used.
+            // A cancelled request must not prevent releasing profiles already reserved.
+            foreach (var profile in selected)
+            {
+                try
+                {
+                    await ReleaseAsync(assignmentId, [profile.UserId], nowUtc, CancellationToken.None);
+                }
+                catch (Exception cleanupException)
+                {
+                    logger?.LogWarning(cleanupException,
+                        "Unable to release an incomplete managed-player reservation for assignment {AssignmentId}.",
+                        assignmentId);
+                }
+            }
+            throw;
+        }
     }
 
     public async Task HeartbeatAsync(

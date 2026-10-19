@@ -331,7 +331,10 @@ try {
             if ($LASTEXITCODE -eq 0) { $indexesChanged = $false }
             elseif ($LASTEXITCODE -ne 1) { throw 'Cannot compare committed Firestore index definitions.' }
         }
-        if ($indexesChanged -and -not $AllowRollback) {
+        $currentIndexes = @(Get-CurrentFirestoreIndexes -Expected $expectedIndexes)
+        $missingIndexes = @(Get-UnreadyFirestoreIndexes -Expected $expectedIndexes -Actual $currentIndexes |
+            Where-Object { $_.state -ceq 'MISSING' })
+        if ($indexesChanged -and -not $AllowRollback -and $missingIndexes.Count -gt 0) {
             Write-Host "`nDeploying committed Firestore indexes before the API..." -ForegroundColor Yellow
             Invoke-Checked -Executable 'npx.cmd' -Arguments @(
                 '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'firestore:indexes',
@@ -340,6 +343,9 @@ try {
         }
         elseif ($indexesChanged -and $AllowRollback) {
             Write-Warning 'Keeping existing Firestore indexes during source rollback; database indexes are not rolled back automatically.'
+        }
+        elseif ($indexesChanged) {
+            Write-Host 'Required Firestore index definitions already exist; preserving them and checking readiness.' -ForegroundColor Yellow
         }
 
         # Firebase accepting an index definition does not mean its backfill has

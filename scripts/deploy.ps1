@@ -242,6 +242,14 @@ if ($InspectLive) {
     return
 }
 
+# Use the same already-configured principal for Firebase and Cloud Run rather
+# than silently choosing a different Firebase CLI default account.
+$firebaseAccount = [string](& gcloud.cmd config get-value account --quiet 2>$null)
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($firebaseAccount) -or $firebaseAccount.Trim() -ceq '(unset)') {
+    throw 'Configure an authenticated gcloud account before deploying.'
+}
+$firebaseAccount = $firebaseAccount.Trim()
+
 $candidateSha = (& git -C $repoRoot rev-parse --verify "$Commit`^{commit}").Trim()
 if ($LASTEXITCODE -ne 0) { throw "Cannot resolve commit $Commit." }
 Assert-CommitOnMain -Repository $repoRoot -Sha $candidateSha
@@ -327,7 +335,7 @@ try {
             Write-Host "`nDeploying committed Firestore indexes before the API..." -ForegroundColor Yellow
             Invoke-Checked -Executable 'npx.cmd' -Arguments @(
                 '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'firestore:indexes',
-                '--project', $project, '--non-interactive'
+                '--project', $project, '--account', $firebaseAccount, '--non-interactive'
             ) -WorkingDirectory $releaseCheckout
         }
         elseif ($indexesChanged -and $AllowRollback) {
@@ -402,7 +410,7 @@ try {
         Write-Host "`nPublishing stamped Firebase Hosting build..." -ForegroundColor Yellow
         Invoke-Checked -Executable 'npx.cmd' -Arguments @(
             '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'hosting',
-            '--project', $project, '--non-interactive'
+            '--project', $project, '--account', $firebaseAccount, '--non-interactive'
         ) -WorkingDirectory $releaseCheckout
 
         $hostingAfter = $null

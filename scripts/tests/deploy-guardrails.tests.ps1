@@ -104,6 +104,8 @@ Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $otherIndexName -Project '
 # Keep the traffic preconditions adjacent to the actual traffic command. These
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
+$firebaseAccountFlag = "'--account', " + '$firebaseAccount'
+Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 2 'explicit account for both Firebase publications'
 $trafficCommand = $deploySource.LastIndexOf("'run', 'services', 'update-traffic'")
 if ($trafficCommand -lt 0) { throw 'API traffic command is missing from the deploy script.' }
 $readinessCheck = $deploySource.LastIndexOf('Wait-FirestoreIndexesReady -Expected $expectedIndexes', $trafficCommand)

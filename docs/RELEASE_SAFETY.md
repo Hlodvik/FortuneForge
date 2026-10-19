@@ -9,6 +9,9 @@ checkout. Edits in the normal working tree stay local. A push does not deploy.
 After committing the intended change to `main`, run `npm run deploy`, or use
 `npm run deploy:hosting` / `npm run deploy:api`. To deploy an earlier commit on
 the same main history, call `scripts/deploy.ps1 -Commit SHA` explicitly. The
+Firebase commands use the active gcloud account, which must also already be
+signed in to Firebase CLI, so the two tools cannot silently choose different
+default users. The
 active deploy script, guard module, guard tests, and release verifier must match
 their committed versions on the current local `main` HEAD. Uncommitted release
 tooling blocks deployment, but unrelated local game edits may remain uncommitted.

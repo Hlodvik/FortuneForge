@@ -9,6 +9,9 @@
 .codex-server.*.log
 **/bin
 **/obj
+**/node_modules
+**/dist
+**/dist-ssr
 fortuneforge.client
 FortuneForge.AppHost
 artifacts

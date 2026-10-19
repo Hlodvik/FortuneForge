@@ -55,11 +55,18 @@ npm run verify:slot-math
 
 Slot math also runs in its own CI workflow when relevant slot files change and on a weekly schedule. It is deliberately separate from deployment so publishing an already-verified card-game, UI, or infrastructure change does not rerun millions of simulated spins.
 
-After verification passes, publish the tested commit and run the production smoke with:
+Commit the intended change to `main`, then verify and publish that exact commit
+with:
 
 ```powershell
 npm run deploy
 ```
+
+Deployment verifies a clean commit on `main` in a temporary detached checkout,
+leaving unrelated local edits unpublished. Because the present live release has
+no source stamp, read [release safety](docs/RELEASE_SAFETY.md) before the first
+guarded deployment; the script deliberately blocks it until the live baseline
+has been inspected and explicitly adopted.
 
 ## Game releases
 

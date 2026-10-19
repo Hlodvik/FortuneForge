@@ -13,18 +13,37 @@ import {
 export class HttpBaccaratGateway implements BaccaratGateway {
   readonly basePath: string
   private readonly requestFn: typeof fetch
+  private pairBetsSupported: boolean | undefined
 
   constructor(basePath = '/api/games/baccarat', requestFn: typeof fetch = fetch) {
     this.basePath = basePath.replace(/\/$/, '')
     this.requestFn = requestFn
   }
 
-  getStatus(signal?: AbortSignal) {
-    return this.request('/status', { signal }, isStatus)
+  async getStatus(signal?: AbortSignal) {
+    const status = await this.request('/status', { signal }, isStatus)
+    this.pairBetsSupported = status.supportsPairBets === true
+    return status
   }
 
-  createRound(betSide: BaccaratBetSide, stake: number, options: BaccaratRequestOptions = {}) {
-    return this.request('/rounds', jsonPost({ betSide, stake }, options.signal, options.idempotencyKey ?? createIdempotencyKey()), isRound)
+  async createRound(betSide: BaccaratBetSide, stake: number, options: BaccaratRequestOptions = {}) {
+    const requestsPairBet = (options.playerPairStake ?? 0) > 0 || (options.bankerPairStake ?? 0) > 0
+    if (requestsPairBet) {
+      if (this.pairBetsSupported === undefined) await this.getStatus(options.signal)
+      if (this.pairBetsSupported !== true) {
+        throw new BaccaratGatewayError('Pair bets are not available at this table. No wager was placed.', 'baccarat-pair-unavailable')
+      }
+    }
+    const round = await this.request('/rounds', jsonPost({
+      betSide,
+      stake,
+      playerPairStake: options.playerPairStake,
+      bankerPairStake: options.bankerPairStake,
+    }, options.signal, options.idempotencyKey ?? createIdempotencyKey()), isRound)
+    if (requestsPairBet && !hasRequestedPairSettlement(round, options)) {
+      throw new BaccaratGatewayError('The table did not confirm the pair wagers. Retry with the same deal key.', 'baccarat-pair-response-invalid')
+    }
+    return round
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {
@@ -43,6 +62,15 @@ export class HttpBaccaratGateway implements BaccaratGateway {
   }
 }
 
+function hasRequestedPairSettlement(round: BaccaratRound, options: BaccaratRequestOptions): boolean {
+  return round.playerPairStake !== undefined && nearlyEqual(round.playerPairStake, options.playerPairStake ?? 0) &&
+    round.bankerPairStake !== undefined && nearlyEqual(round.bankerPairStake, options.bankerPairStake ?? 0) &&
+    round.playerPairDisposition !== undefined && round.bankerPairDisposition !== undefined &&
+    round.playerPairProfit !== undefined && round.bankerPairProfit !== undefined &&
+    round.playerPairTotalReturn !== undefined && round.bankerPairTotalReturn !== undefined &&
+    round.totalStake !== undefined && round.combinedProfit !== undefined && round.combinedTotalReturn !== undefined
+}
+
 function jsonPost(body: object, signal: AbortSignal | undefined, idempotencyKey: string): RequestInit {
   return { method: 'POST', headers: { 'content-type': 'application/json', 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(body), signal }
 }
@@ -55,7 +83,8 @@ function isStatus(value: unknown): value is BaccaratStatus {
   return isRecord(value) && typeof value.available === 'boolean' &&
     isPositiveFinite(value.minimumStake) && isPositiveFinite(value.maximumStake) &&
     isPositiveFinite(value.stakeIncrement) && isNonNegativeFinite(value.balance) &&
-    value.minimumStake <= value.maximumStake && typeof value.mode === 'string'
+    value.minimumStake <= value.maximumStake && typeof value.mode === 'string' &&
+    (value.supportsPairBets === undefined || typeof value.supportsPairBets === 'boolean')
 }
 
 function isRound(value: unknown): value is BaccaratRound {
@@ -65,11 +94,39 @@ function isRound(value: unknown): value is BaccaratRound {
     !isTotal(value.playerTotal) || !isTotal(value.bankerTotal) || !isOutcome(value.outcome) ||
     typeof value.endedOnNatural !== 'boolean' || !isDisposition(value.disposition) ||
     !isFiniteNumber(value.profit) || !isNonNegativeFinite(value.totalReturn) ||
+    !isOptionalNonNegativeFinite(value.playerPairStake) || !isOptionalNonNegativeFinite(value.bankerPairStake) ||
+    !isOptionalDisposition(value.playerPairDisposition) || !isOptionalDisposition(value.bankerPairDisposition) ||
+    !isOptionalFiniteNumber(value.playerPairProfit) || !isOptionalFiniteNumber(value.bankerPairProfit) ||
+    !isOptionalNonNegativeFinite(value.playerPairTotalReturn) || !isOptionalNonNegativeFinite(value.bankerPairTotalReturn) ||
+    !isOptionalNonNegativeFinite(value.totalStake) || !isOptionalFiniteNumber(value.combinedProfit) ||
+    !isOptionalNonNegativeFinite(value.combinedTotalReturn) ||
     value.shoeCardsUsed != null && !isShoeCount(value.shoeCardsUsed) ||
     value.shoeCardsRemaining != null && !isShoeCount(value.shoeCardsRemaining) ||
     value.shoeCardsUsed != null && value.shoeCardsRemaining != null && value.shoeCardsUsed + value.shoeCardsRemaining !== 416) return false
 
-  return nearlyEqual(value.profit, value.totalReturn - value.stake)
+  if (!nearlyEqual(value.profit, value.totalReturn - value.stake)) return false
+  if (!isConsistentSideBet(value.playerPairStake, value.playerPairDisposition, value.playerPairProfit, value.playerPairTotalReturn)) return false
+  if (!isConsistentSideBet(value.bankerPairStake, value.bankerPairDisposition, value.bankerPairProfit, value.bankerPairTotalReturn)) return false
+  if (value.totalStake !== undefined && value.playerPairStake !== undefined && value.bankerPairStake !== undefined &&
+    !nearlyEqual(value.totalStake, value.stake + value.playerPairStake + value.bankerPairStake)) return false
+  if (value.combinedProfit !== undefined && value.playerPairProfit !== undefined && value.bankerPairProfit !== undefined &&
+    !nearlyEqual(value.combinedProfit, value.profit + value.playerPairProfit + value.bankerPairProfit)) return false
+  if (value.combinedTotalReturn !== undefined && value.totalStake !== undefined && value.combinedProfit !== undefined &&
+    !nearlyEqual(value.combinedTotalReturn, value.totalStake + value.combinedProfit)) return false
+  return true
+}
+
+function isConsistentSideBet(
+  stake: number | undefined,
+  disposition: BaccaratBetDisposition | null | undefined,
+  profit: number | undefined,
+  totalReturn: number | undefined,
+): boolean {
+  if (stake !== undefined && disposition !== undefined &&
+    (stake === 0 ? disposition !== null : disposition === null)) return false
+  if (stake !== undefined && profit !== undefined && totalReturn !== undefined &&
+    !nearlyEqual(profit, totalReturn - stake)) return false
+  return true
 }
 
 function isShoeCount(value: unknown): value is number { return typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 416 }
@@ -94,8 +151,20 @@ function isNonNegativeFinite(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
 }
 
+function isOptionalNonNegativeFinite(value: unknown): value is number | undefined {
+  return value === undefined || isNonNegativeFinite(value)
+}
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
+}
+
+function isOptionalFiniteNumber(value: unknown): value is number | undefined {
+  return value === undefined || isFiniteNumber(value)
+}
+
+function isOptionalDisposition(value: unknown): value is BaccaratBetDisposition | null | undefined {
+  return value == null || isDisposition(value)
 }
 
 function nearlyEqual(left: number, right: number): boolean {

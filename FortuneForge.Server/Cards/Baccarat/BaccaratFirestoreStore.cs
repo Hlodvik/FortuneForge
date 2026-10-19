@@ -18,6 +18,8 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         string idempotencyKey,
         BaccaratBetSide betSide,
         long stakeCents,
+        long playerPairStakeCents,
+        long bankerPairStakeCents,
         IReadOnlyList<PlayingCard> shuffledShoe,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken)
@@ -44,17 +46,21 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             if (snapshots[0].Exists)
             {
                 var existing = ReadRound(snapshots[0]);
-                if (existing.UserId != userId || existing.BetSide != betSide || ToCents(existing.Settlement.Stake) != stakeCents)
+                if (existing.UserId != userId || existing.BetSide != betSide ||
+                    BaccaratMoney.ToCents(existing.Settlement.Stake) != stakeCents ||
+                    BaccaratMoney.ToCents(existing.PlayerPairSettlement.Stake) != playerPairStakeCents ||
+                    BaccaratMoney.ToCents(existing.BankerPairSettlement.Stake) != bankerPairStakeCents)
                     throw new BaccaratRoundConflictException("This Idempotency-Key was already used with a different Baccarat request.");
-                var returnedCents = ToCents(existing.Settlement.TotalReturn);
+                var returnedCents = BaccaratMoney.ToCents(existing.CombinedTotalReturn);
                 if (!snapshots[2].Exists || !snapshots[4].Exists || (returnedCents > 0) != snapshots[3].Exists)
                     throw new InvalidOperationException("A recorded Baccarat round is missing its ledger.");
                 return new BaccaratStoreResult(existing, balanceCents);
             }
             if (snapshots[2].Exists || snapshots[3].Exists || snapshots[4].Exists)
                 throw new InvalidOperationException("A Baccarat ledger already exists without its round.");
-            if (balanceCents < stakeCents)
-                throw new BaccaratInsufficientCreditsException(balanceCents, stakeCents);
+            var totalStakeCents = checked(stakeCents + playerPairStakeCents + bankerPairStakeCents);
+            if (balanceCents < totalStakeCents)
+                throw new BaccaratInsufficientCreditsException(balanceCents, totalStakeCents);
 
             var shoe = snapshots[5].Exists ? ReadShoe(snapshots[5], userId) : new BaccaratShoe(shuffledShoe.ToArray(), 0);
             if (shoe.NextIndex >= 312) shoe = new BaccaratShoe(shuffledShoe.ToArray(), 0);
@@ -62,16 +68,20 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             var nextShoeIndex = checked(shoe.NextIndex + round.ConsumedCards.Length);
             var stake = BaccaratMoney.ToRand(stakeCents);
             var settlement = PuntoBancoPaytable.Settle(betSide, stake, round);
-            var returnedCentsForRound = ToCents(settlement.TotalReturn);
-            var balanceAfterWagerCents = checked(balanceCents - stakeCents);
+            var playerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(playerPairStakeCents), round.PlayerHand);
+            var bankerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(bankerPairStakeCents), round.BankerHand);
+            var returnedCentsForRound = BaccaratMoney.ToCents(
+                settlement.TotalReturn + playerPairSettlement.TotalReturn + bankerPairSettlement.TotalReturn);
+            var balanceAfterWagerCents = checked(balanceCents - totalStakeCents);
             var finalBalanceCents = checked(balanceAfterWagerCents + returnedCentsForRound);
-            var stored = new BaccaratStoreRound(roundId, userId, betSide, round, settlement, nextShoeIndex, shoe.Cards.Count - nextShoeIndex);
+            var stored = new BaccaratStoreRound(roundId, userId, betSide, round, settlement,
+                playerPairSettlement, bankerPairSettlement, nextShoeIndex, shoe.Cards.Count - nextShoeIndex);
 
             transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc));
             transaction.Set(shoeReference, ShoeData(userId, shoe.Cards, nextShoeIndex, nowUtc));
             transaction.Set(balanceReference, BalanceUpdate(finalBalanceCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(
-                wagerReference.Id, userId, -stakeCents, balanceAfterWagerCents, "baccarat-wager", idempotencyKey, nowUtc));
+                wagerReference.Id, userId, -totalStakeCents, balanceAfterWagerCents, "baccarat-wager", idempotencyKey, nowUtc));
             if (returnedCentsForRound > 0)
             {
                 transaction.Create(payoutReference, BalanceTransactionData(
@@ -115,11 +125,22 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         ["disposition"] = BaccaratService.DispositionName(stored.Settlement.Disposition),
         ["profitCents"] = ToCents(stored.Settlement.Profit),
         ["totalReturnCents"] = ToCents(stored.Settlement.TotalReturn),
+        ["playerPairStakeCents"] = ToCents(stored.PlayerPairSettlement.Stake),
+        ["playerPairDisposition"] = BaccaratService.DispositionName(stored.PlayerPairSettlement.Disposition),
+        ["playerPairProfitCents"] = ToCents(stored.PlayerPairSettlement.Profit),
+        ["playerPairTotalReturnCents"] = ToCents(stored.PlayerPairSettlement.TotalReturn),
+        ["bankerPairStakeCents"] = ToCents(stored.BankerPairSettlement.Stake),
+        ["bankerPairDisposition"] = BaccaratService.DispositionName(stored.BankerPairSettlement.Disposition),
+        ["bankerPairProfitCents"] = ToCents(stored.BankerPairSettlement.Profit),
+        ["bankerPairTotalReturnCents"] = ToCents(stored.BankerPairSettlement.TotalReturn),
+        ["totalStakeCents"] = ToCents(stored.TotalStake),
+        ["combinedProfitCents"] = ToCents(stored.CombinedProfit),
+        ["combinedTotalReturnCents"] = ToCents(stored.CombinedTotalReturn),
         ["shoeCardsUsed"] = (long)stored.ShoeCardsUsed,
         ["shoeCardsRemaining"] = (long)stored.ShoeCardsRemaining,
         ["startIdempotencyKey"] = idempotencyKey,
         ["createdAt"] = Timestamp.FromDateTime(nowUtc.UtcDateTime),
-        ["schemaVersion"] = 1L,
+        ["schemaVersion"] = 2L,
     };
 
     private static Dictionary<string, object> ShoeData(
@@ -179,7 +200,7 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             !snapshot.TryGetValue<string>("userId", out var userId) || string.IsNullOrWhiteSpace(userId) ||
             !snapshot.TryGetValue<string>("betSide", out var rawBetSide) ||
             !snapshot.TryGetValue<long>("stakeCents", out var stakeCents) ||
-            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
+            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion is not (1 or 2))
         {
             throw new InvalidOperationException("The Baccarat round is corrupt.");
         }
@@ -192,6 +213,12 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         if (!round.ConsumedCards.SequenceEqual(consumedCards))
             throw new InvalidOperationException("The Baccarat dealt cards are corrupt.");
         var settlement = PuntoBancoPaytable.Settle(betSide, stake, round);
+        var playerPairStakeCents = schemaVersion == 2 ? ReadRequiredLong(snapshot, "playerPairStakeCents") : 0;
+        var bankerPairStakeCents = schemaVersion == 2 ? ReadRequiredLong(snapshot, "bankerPairStakeCents") : 0;
+        var playerPairSettlement = PuntoBancoPaytable.SettlePair(
+            BaccaratMoney.ToRand(ValidateOptionalStakeCents(playerPairStakeCents)), round.PlayerHand);
+        var bankerPairSettlement = PuntoBancoPaytable.SettlePair(
+            BaccaratMoney.ToRand(ValidateOptionalStakeCents(bankerPairStakeCents)), round.BankerHand);
         if (!snapshot.TryGetValue<string>("outcome", out var outcome) || outcome != BaccaratService.OutcomeName(round.Outcome) ||
             !snapshot.TryGetValue<bool>("endedOnNatural", out var endedOnNatural) || endedOnNatural != round.EndedOnNatural ||
             !snapshot.TryGetValue<string>("disposition", out var disposition) || disposition != BaccaratService.DispositionName(settlement.Disposition) ||
@@ -201,6 +228,19 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         {
             throw new InvalidOperationException("The Baccarat round settlement is corrupt.");
         }
+        if (schemaVersion == 2 &&
+            (ReadRequiredString(snapshot, "playerPairDisposition") != BaccaratService.DispositionName(playerPairSettlement.Disposition) ||
+             ReadRequiredLong(snapshot, "playerPairProfitCents") != ToCents(playerPairSettlement.Profit) ||
+             ReadRequiredLong(snapshot, "playerPairTotalReturnCents") != ToCents(playerPairSettlement.TotalReturn) ||
+             ReadRequiredString(snapshot, "bankerPairDisposition") != BaccaratService.DispositionName(bankerPairSettlement.Disposition) ||
+             ReadRequiredLong(snapshot, "bankerPairProfitCents") != ToCents(bankerPairSettlement.Profit) ||
+             ReadRequiredLong(snapshot, "bankerPairTotalReturnCents") != ToCents(bankerPairSettlement.TotalReturn) ||
+             ReadRequiredLong(snapshot, "totalStakeCents") != stakeCents + playerPairStakeCents + bankerPairStakeCents ||
+             ReadRequiredLong(snapshot, "combinedProfitCents") != ToCents(settlement.Profit + playerPairSettlement.Profit + bankerPairSettlement.Profit) ||
+             ReadRequiredLong(snapshot, "combinedTotalReturnCents") != ToCents(settlement.TotalReturn + playerPairSettlement.TotalReturn + bankerPairSettlement.TotalReturn)))
+        {
+            throw new InvalidOperationException("The Baccarat pair settlement is corrupt.");
+        }
         var shoeCardsUsed = snapshot.TryGetValue<long>("shoeCardsUsed", out var rawUsed)
             ? checked((int)rawUsed)
             : round.ConsumedCards.Length;
@@ -209,7 +249,8 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             : 416 - shoeCardsUsed;
         if (shoeCardsUsed is < 0 or > 416 || shoeCardsRemaining is < 0 or > 416 || shoeCardsUsed + shoeCardsRemaining != 416)
             throw new InvalidOperationException("The Baccarat shoe position is corrupt.");
-        return new BaccaratStoreRound(roundId, userId, betSide, round, settlement, shoeCardsUsed, shoeCardsRemaining);
+        return new BaccaratStoreRound(roundId, userId, betSide, round, settlement,
+            playerPairSettlement, bankerPairSettlement, shoeCardsUsed, shoeCardsRemaining);
     }
 
     private static BaccaratShoe ReadShoe(DocumentSnapshot snapshot, string expectedUserId)
@@ -230,6 +271,22 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
         _ = BaccaratMoney.ToStakeCents(BaccaratMoney.ToRand(stakeCents));
         return stakeCents;
     }
+
+    private static long ValidateOptionalStakeCents(long stakeCents)
+    {
+        _ = BaccaratMoney.ToOptionalStakeCents(BaccaratMoney.ToRand(stakeCents));
+        return stakeCents;
+    }
+
+    private static long ReadRequiredLong(DocumentSnapshot snapshot, string field) =>
+        snapshot.TryGetValue<long>(field, out var value)
+            ? value
+            : throw new InvalidOperationException($"The Baccarat round is missing {field}.");
+
+    private static string ReadRequiredString(DocumentSnapshot snapshot, string field) =>
+        snapshot.TryGetValue<string>(field, out var value)
+            ? value
+            : throw new InvalidOperationException($"The Baccarat round is missing {field}.");
 
     private static long ToCents(decimal value)
     {

@@ -1,0 +1,598 @@
+/* The game surface follows the shape of a printed baccarat table.  Keep all
+   stakes and cards in their existing game state; this sheet only owns layout. */
+.ff-baccarat {
+  background: radial-gradient(ellipse at 50% -30%, #16443c 0, #071b1c 54%, #071114 100%);
+}
+.ff-baccarat__table {
+  grid-template-columns: minmax(10rem, 22%) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0;
+  padding: 0;
+  border: .45rem solid #694226;
+  border-radius: 2.6rem 2.6rem 1.15rem 1.15rem / 1.6rem 1.6rem 1.15rem 1.15rem;
+  background:
+    radial-gradient(ellipse at 60% 30%, #157559 0, #095b48 38%, #064437 75%, #043229 100%),
+    #064437;
+  box-shadow: inset 0 0 0 2px #dbb46c, inset 0 0 3rem #001c16, 0 1rem 2rem #0009;
+}
+.ff-baccarat__table::before {
+  inset: 2rem 2.5rem 2.5rem 27%;
+  border: 1px solid #f6e7b34d;
+  border-radius: 50% 50% 18% 18% / 40% 40% 18% 18%;
+  box-shadow: none;
+}
+.ff-baccarat__table::after { display: none; }
+.ff-baccarat__inline-road {
+  z-index: 2;
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  padding: 1rem .65rem;
+  border-right: 1px solid #d9daba42;
+  background: linear-gradient(90deg, #031b1bfa, #052d28dc);
+}
+.ff-baccarat__play-surface {
+  z-index: 1;
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-rows: 2.3rem minmax(0, 1fr) clamp(8.4rem, 23vh, 12rem);
+  min-width: 0;
+  min-height: 0;
+  padding: .4rem clamp(.7rem, 2vw, 1.6rem) .55rem;
+}
+.ff-baccarat__round-head { align-self: center; }
+.ff-baccarat__place-bets { color: #f9edd4; font-size: .77rem; letter-spacing: .16em; }
+.ff-baccarat__hands {
+  width: min(100%, 54rem);
+  justify-self: center;
+  gap: clamp(.6rem, 5vw, 4rem);
+  padding-inline: clamp(.2rem, 2vw, 1.2rem);
+}
+.ff-baccarat__hand { grid-template-rows: 2.4rem minmax(0, 1fr); }
+.ff-baccarat__hand.is-winner { border-color: transparent; background: transparent; box-shadow: none; }
+.ff-baccarat__hand-title { font-size: clamp(.95rem, 1.7vw, 1.3rem); letter-spacing: .12em; }
+.ff-baccarat__hand:first-child .ff-baccarat__hand-title span,
+.ff-baccarat__hand:last-child .ff-baccarat__hand-title span { color: #fff4d6; }
+.ff-baccarat__hand-title strong { border-radius: .3rem; width: 2.1rem; height: 1.8rem; font: 800 1.05rem/1 'Trebuchet MS', sans-serif; }
+.ff-baccarat__cards { gap: clamp(.2rem, .6vw, .6rem); }
+.ff-baccarat__card-slot { width: clamp(2.6rem, 25cqw, 6.6rem); }
+.ff-baccarat__card-slot:empty { border: 1px solid #eef4e65e; border-radius: .55rem; background: #dff6e40b; box-shadow: inset 0 0 1rem #002f2659; }
+.ff-baccarat__bet-sides {
+  display: grid;
+  width: min(100%, 47rem);
+  height: 100%;
+  justify-self: center;
+  grid-template-columns: 1fr;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  transform: perspective(50rem) rotateX(5deg);
+}
+.ff-baccarat__bet {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  flex-direction: row;
+  justify-content: center;
+  gap: .7rem;
+  padding: .15rem 4.5rem;
+  overflow: visible;
+  border: 0;
+  border-top: 1px solid #e8f6d69c;
+  border-radius: 50% 50% 0 0 / 58% 58% 0 0;
+  background: transparent;
+  color: #f7f3e4;
+  box-shadow: none;
+  text-shadow: 0 1px 3px #00251d;
+}
+.ff-baccarat__bet::before { display: none; }
+.ff-baccarat__bet:last-child { border-bottom: 1px solid #e8f6d69c; }
+.ff-baccarat__bet.is-player, .ff-baccarat__bet.is-banker, .ff-baccarat__bet.is-tie { border-color: #e8f6d69c; background: transparent; color: #f7f3e4; }
+.ff-baccarat__bet.is-selected {
+  outline: 0;
+  background: linear-gradient(180deg, #d0ffde16, #dcf7de2b);
+  box-shadow: inset 0 0 1.5rem #d2f4d624;
+}
+.ff-baccarat__bet.is-winner {
+  border-top: 2px solid #ffe2a2;
+  background: linear-gradient(180deg, #f4d89428, #eecc7a0c);
+  box-shadow: inset 0 .6rem 1.7rem #efce6e14, 0 0 1rem #f2d37622;
+}
+.ff-baccarat__bet strong { color: #f6f1dc; font: 800 clamp(.9rem, 1.7vw, 1.45rem)/1 Georgia, serif; letter-spacing: .14em; }
+.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { color: #f1e6c9; font-size: .65rem; letter-spacing: .04em; }
+.ff-baccarat__placed-chip {
+  position: absolute;
+  right: clamp(1.5rem, 16%, 8rem);
+  top: 50%;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  transform: translateY(-50%);
+}
+.ff-baccarat__chip-pile { position: relative; display: block; width: clamp(1.65rem, 3.4vw, 2.55rem); aspect-ratio: 1; }
+.ff-baccarat__placed-chip img { position: absolute; bottom: 0; left: 0; display: block; width: 100%; aspect-ratio: 1; object-fit: contain; filter: drop-shadow(0 .15rem .14rem #001a16a0); }
+.ff-baccarat__placed-chip em { min-width: 2.7rem; padding: .13rem .25rem; border-radius: .2rem; background: #031e1be8; color: #fff2d1; font-size: .63rem; font-style: normal; font-weight: 800; font-variant-numeric: tabular-nums; text-shadow: none; }
+.ff-baccarat__rail {
+  z-index: 3;
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 5.3rem;
+  min-height: 5.3rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .55rem clamp(.8rem, 2vw, 1.8rem);
+  border-top: 1px solid #e4d0a85e;
+  border-radius: 0;
+  background: linear-gradient(180deg, #062f2ac9, #021a19f5);
+  box-shadow: inset 0 1px #f7e7bd20;
+}
+.ff-baccarat__chips { display: flex; flex: 0 1 auto; align-items: center; gap: .3rem; }
+.ff-baccarat__chips button { display: grid; flex: 0 0 auto; width: clamp(45px, 4.2vw, 3rem); aspect-ratio: 1; place-items: center; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; transition: transform .15s, filter .15s; }
+.ff-baccarat__chips button[aria-pressed="true"] { filter: drop-shadow(0 0 .35rem #f9e195); transform: translateY(-.2rem); }
+.ff-baccarat__chips img { width: 100%; height: 100%; object-fit: contain; }
+.ff-baccarat__wager-row { width: min(100%, 28rem); margin-left: auto; }
+.ff-baccarat__stake { flex: 1 1 8rem; }
+.ff-baccarat__stake-edit { border-radius: .4rem; }
+.ff-baccarat__stake-edit button { border-radius: .4rem; }
+.ff-baccarat__primary { border-radius: .45rem; }
+.ff-baccarat__secondary { border-radius: .45rem; }
+.ff-baccarat button:disabled { opacity: .78; }
+.ff-baccarat__bet:disabled { cursor: default; opacity: 1; }
+.ff-baccarat__ticket { margin-inline: auto; }
+.ff-baccarat__round-actions { margin-left: auto; }
+.ff-baccarat__rail:has(.ff-baccarat__round-actions) { justify-content: center; }
+.ff-baccarat__rail:has(.ff-baccarat__round-actions) .ff-baccarat__ticket { margin-inline: 0; }
+.ff-baccarat__rail:has(.ff-baccarat__recovery) { justify-content: center; }
+.ff-baccarat__error { position: absolute; z-index: 12; bottom: 6.2rem; left: 50%; width: min(40rem, calc(100% - 1.2rem)); margin: 0; transform: translateX(-50%); box-shadow: 0 .4rem 1.2rem #0017; }
+
+.ff-baccarat__inline-road .ff-baccarat__road {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .6rem;
+  padding: .15rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.ff-baccarat__inline-road .ff-baccarat__road small,
+.ff-baccarat__inline-road .ff-baccarat__shoe-progress > span { color: #e2d7af; font-size: .62rem; letter-spacing: .04em; text-transform: uppercase; }
+.ff-baccarat__inline-road .ff-baccarat__road ol { min-height: 5.15rem; grid-template-rows: repeat(6, .78rem); grid-auto-columns: .78rem; gap: .08rem; border: 1px solid #f2ead021; border-radius: .2rem; background-image: linear-gradient(#f1ecd719 1px, transparent 1px), linear-gradient(90deg, #f1ecd719 1px, transparent 1px); background-size: .86rem .86rem; }
+.ff-baccarat__inline-road .ff-baccarat__road li { width: .78rem; font-size: .42rem; }
+.ff-baccarat__inline-road .ff-baccarat__big-road > div { grid-template: repeat(6, .74rem) / repeat(12, .74rem); gap: .08rem; max-width: 100%; background-size: .82rem .82rem; }
+.ff-baccarat__inline-road .ff-baccarat__big-road i { width: .56rem; height: .56rem; }
+.ff-baccarat__inline-road .ff-baccarat__road-stats { display: flex; flex-wrap: wrap; gap: .25rem .6rem; font-size: .64rem; }
+.ff-baccarat__inline-road .ff-baccarat__road-stats span { gap: .2rem; }
+.ff-baccarat__inline-road .ff-baccarat__shoe-progress { margin-top: auto; }
+.ff-baccarat__inline-road .ff-baccarat__shoe-progress small { display: none; }
+
+@media (max-width: 680px) {
+  .ff-baccarat__table { grid-template-columns: minmax(0, 1fr); }
+  .ff-baccarat__table::before { inset: 2rem 2rem 5rem; }
+  .ff-baccarat__inline-road { display: none; }
+  .ff-baccarat__play-surface { grid-column: 1; }
+}
+@media (max-width: 680px) {
+  .ff-baccarat button { min-height: 45px; }
+  .ff-baccarat__table { border-width: .28rem; border-radius: 1rem; }
+  .ff-baccarat__play-surface { grid-template-rows: 2.1rem minmax(0, 1fr) clamp(135px, 20vh, 10rem); padding: .25rem .35rem .3rem; }
+  .ff-baccarat__hands { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: .15rem; }
+  .ff-baccarat__hand { grid-template-rows: 1.7rem minmax(0, 1fr); padding: .15rem; }
+  .ff-baccarat__hand-title { gap: .2rem; font-size: .74rem; }
+  .ff-baccarat__hand-title strong { width: 1.45rem; height: 1.35rem; font-size: .8rem; }
+  .ff-baccarat__card-slot { width: min(29cqw, 4.1rem, calc((100cqh - 1.7rem) * 5 / 7)); }
+  .ff-baccarat__bet { min-height: 0; flex-direction: row; gap: .35rem; padding-inline: 2.8rem; }
+  .ff-baccarat__bet strong { font-size: .82rem; }
+  .ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: .53rem; }
+  .ff-baccarat__placed-chip { right: .6rem; gap: .15rem; }
+  .ff-baccarat__chip-pile { width: 1.55rem; }
+  .ff-baccarat__placed-chip em { min-width: 2rem; font-size: .53rem; }
+  .ff-baccarat__rail { height: 7.2rem; min-height: 7.2rem; flex-wrap: wrap; justify-content: center; gap: .2rem; padding: .35rem .45rem; }
+  .ff-baccarat__chips { width: 100%; justify-content: center; gap: .45rem; }
+  .ff-baccarat__chips button { width: 45px; height: 45px; }
+  .ff-baccarat__chips img { width: 2rem; height: 2rem; }
+  .ff-baccarat__wager-row { width: min(100%, 24rem); margin: 0; }
+  .ff-baccarat__stake small { display: none; }
+  .ff-baccarat__stake-edit button { min-height: 45px; flex-basis: 45px; }
+  .ff-baccarat__primary { min-height: 45px; }
+  .ff-baccarat__info-panel { top: 4.5rem; max-height: calc(100dvh - 5rem); }
+  .ff-baccarat__error { bottom: 8rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .ff-baccarat__play-surface { grid-template-rows: 1.5rem minmax(0, 1fr) 135px; padding: .15rem .45rem; }
+  .ff-baccarat__table::before { inset: 1rem 2rem 3rem; }
+  .ff-baccarat__hands { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); }
+  .ff-baccarat__card-slot { width: min(2.75rem, calc((100cqh - 1.9rem) * 5 / 7)); }
+  .ff-baccarat__bet { padding: 0 2rem; }
+  .ff-baccarat__bet strong { font-size: .75rem; }
+  .ff-baccarat__rail { height: 3.6rem; min-height: 3.6rem; flex-wrap: nowrap; }
+  .ff-baccarat__chips { display: flex; width: auto; gap: .05rem; }
+  .ff-baccarat__wager-row { width: min(100%, 24rem); min-width: 0; flex: 1 1 auto; }
+  .ff-baccarat__stake label { display: none; }
+  .ff-baccarat__error { bottom: 4.2rem; }
+}
+
+/* Full-table presentation: the roadmap, chip rack, felt and betting arcs share
+   one coordinate system rather than reading as separate cards. */
+.ff-baccarat { display: block; padding: 0; background: #050a08; }
+.ff-baccarat__table {
+  width: 100%; height: 100%; max-width: none; margin: 0;
+  grid-template-columns: minmax(12rem, 25%) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) clamp(4.6rem, 9vh, 5.8rem);
+  border: 0; border-radius: 0; padding: 0; gap: 0;
+  background: #06100d; box-shadow: none;
+}
+.ff-baccarat__table::before, .ff-baccarat__table::after { display: none; }
+.ff-baccarat__header {
+  position: absolute; z-index: 10; top: 1rem; left: calc(25% + 1.15rem); right: 1.15rem;
+  width: auto; max-width: none; min-height: 2.6rem; margin: 0; pointer-events: none;
+}
+.ff-baccarat__header > * { pointer-events: auto; }
+.ff-baccarat h1 { color: #f7f6ed; font: 500 1rem/1.1 'Trebuchet MS', sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+.ff-baccarat__account { display: none; }
+.ff-baccarat__header .ff-baccarat__info:first-of-type { margin-left: auto; }
+.ff-baccarat__header .ff-baccarat__secondary { border-color: #efeee390; border-radius: 50%; background: #07130fbd; color: #fff; }
+.ff-baccarat__play-surface {
+  position: relative; display: block; grid-column: 2; grid-row: 1; min-width: 0;
+  padding: 0; overflow: hidden; container-type: size;
+  background: #005305;
+}
+.ff-baccarat__play-surface::before {
+  position: absolute; z-index: 0; top: 50%; left: 50%;
+  width: max(100cqw, 157.377cqh); height: max(100cqh, 63.542cqw);
+  transform: translate(-50%, -50%);
+  background: radial-gradient(ellipse at 48% 50%, transparent 25%, #001a0830 100%), url('./baccarat-felt-generated-v3.png') center / 100% 100% no-repeat;
+  filter: blur(.1vmin); content: ''; pointer-events: none;
+}
+.ff-baccarat__play-surface::after { display: none; }
+.ff-baccarat__felt-lines { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; fill: none; stroke: #d4e3cd; stroke-opacity: .37; stroke-width: 2; filter: blur(.32px); pointer-events: none; }
+.ff-baccarat__table-edge { position: absolute; z-index: 4; inset: 0; width: 100%; height: 100%; filter: drop-shadow(0 -.2rem .45rem #0008); pointer-events: none; }
+.ff-baccarat__table-props { position: absolute; z-index: 4; inset: 0; pointer-events: none; }
+.ff-baccarat__table-tray {
+  position: absolute; top: -.55rem; left: 50%; display: grid; width: clamp(15rem, 35%, 32rem); height: 4.25rem;
+  grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .12rem; align-items: stretch;
+  padding: .35rem .35rem .5rem; transform: translateX(-50%);
+  border: .25rem solid #2a140d; border-top: 0; border-radius: 0 0 .55rem .55rem;
+  background: repeating-linear-gradient(93deg, #391b10 0 .32rem, #794529 .4rem .48rem, #4c2618 .55rem .9rem);
+  box-shadow: inset 0 -.4rem .32rem #1b0b08, inset 0 0 0 2px #9b6034, 0 .3rem .7rem #000a;
+}
+.ff-baccarat__table-tray::after { position: absolute; right: -.1rem; bottom: -.15rem; left: -.1rem; height: .38rem; border-radius: 0 0 .4rem .4rem; background: linear-gradient(#9c5a2d, #412016 45%, #1b0e0a); box-shadow: 0 .2rem .3rem #0008; content: ''; }
+.ff-baccarat__tray-slot { display: grid; min-width: 0; place-items: center; overflow: hidden; border: 1px solid #a66d3c77; border-radius: 0 0 45% 45%; background: radial-gradient(ellipse at 50% 35%, #030b0add, #1d100d 60%, #4b2917 100%); box-shadow: inset 0 .1rem .25rem #000, inset 0 -.14rem .2rem #ae75465c; }
+.ff-baccarat__tray-slot svg { width: min(100%, 3.6rem); height: auto; transform: rotate(-17deg) translateY(-.1rem); filter: drop-shadow(.1rem .22rem .12rem #000b); }
+.ff-baccarat__round-head {
+  position: absolute; z-index: 5; top: 42%; left: 50%; width: max-content; max-width: 75%;
+  min-height: 0; transform: translateX(-50%); text-shadow: 0 .2rem .6rem #001d0a;
+}
+.ff-baccarat__round-head span:not(.ff-baccarat__place-bets) { color: #fff; font-size: clamp(1.1rem, 2vw, 1.7rem); }
+.ff-baccarat__hands {
+  position: absolute; z-index: 2; top: 13%; right: auto; left: 20%; width: 60%; height: 35%;
+  justify-self: auto; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; padding: 0;
+}
+.ff-baccarat__hands::after { display: none; }
+.ff-baccarat__hand { grid-template-rows: 3rem minmax(0, 1fr); padding: 0; border: 0; border-radius: 0; background: transparent; }
+.ff-baccarat__hand.is-winner { border: 0; background: radial-gradient(ellipse, #f6dd7330, transparent 70%); box-shadow: none; }
+.ff-baccarat__hand-title { align-self: start; color: #fff; font: bold clamp(1.2rem, 2.2vw, 2rem)/1.1 Georgia, serif; letter-spacing: .025em; text-shadow: 0 1px 3px #00270f; }
+.ff-baccarat__hand:first-child .ff-baccarat__hand-title span,
+.ff-baccarat__hand:last-child .ff-baccarat__hand-title span { color: #fff; }
+.ff-baccarat__hand-title strong { width: 1.8rem; height: 1.8rem; border-radius: 50%; background: #071c14d9; font-size: .95rem; }
+.ff-baccarat__cards { align-self: start; align-items: flex-start; padding-top: .7rem; }
+.ff-baccarat__card-slot { width: clamp(3rem, 6vw, 6rem); }
+.ff-baccarat__card-slot:empty { border: 0; background: transparent; box-shadow: none; }
+.ff-baccarat__bet-sides {
+  position: absolute; z-index: 2; top: 58%; right: 0; bottom: 6%; left: 0;
+  width: 100%; height: auto; grid-template-rows: 26% 33% 41%; transform: none;
+}
+.ff-baccarat__bet, .ff-baccarat__bet.is-player, .ff-baccarat__bet.is-banker, .ff-baccarat__bet.is-tie {
+  min-height: 0; flex-direction: column; gap: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent; color: #fff; box-shadow: none; text-shadow: 0 .1rem .2rem #002;
+}
+.ff-baccarat__bet:last-child { border: 0; }
+.ff-baccarat__bet.is-selected { background: transparent; box-shadow: none; }
+.ff-baccarat__bet.is-selected strong { text-shadow: 0 0 .8rem #f9fff3a1, 0 .1rem .2rem #002; }
+.ff-baccarat__bet.is-winner { background: transparent; box-shadow: none; }
+.ff-baccarat__bet.is-winner strong { color: #fff4ca; text-shadow: 0 0 .9rem #f6e096bd, 0 .1rem .2rem #002; }
+.ff-baccarat__bet strong { color: #fff; font: bold clamp(1.1rem, 2.1vw, 1.95rem)/1 Georgia, serif; letter-spacing: .025em; }
+.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { color: #fff; font: bold clamp(.55rem, .9vw, .75rem)/1.25 Georgia, serif; letter-spacing: 0; }
+.ff-baccarat__placed-chip { right: 25%; gap: .3rem; }
+.ff-baccarat__chip-pile { width: clamp(2rem, 3.1vw, 3rem); }
+.ff-baccarat__chips {
+  position: absolute; z-index: 5; top: 25%; left: 3%; display: flex; width: clamp(3.3rem, 5.2vw, 4.6rem);
+  flex-direction: column; gap: .15rem; padding: .35rem .2rem; border: .15rem solid #392d20; border-radius: 2.6rem;
+  background: linear-gradient(90deg, #060907, #20231d 42%, #040806); box-shadow: 0 .25rem 1rem #0009, inset 0 0 0 1px #a8986b69, inset 0 .2rem .45rem #000;
+}
+.ff-baccarat__chips button, .ff-baccarat__chips button[aria-pressed="true"] { width: clamp(45px, 4.6vw, 4rem); height: clamp(45px, 4.6vw, 4rem); margin: auto; }
+.ff-baccarat__chips button { position: relative; }
+.ff-baccarat__chips button::before { position: absolute; inset: 0; border: 1px solid #85745c; border-radius: 50%; background: radial-gradient(circle at 50% 38%, #111b15, #050705 73%); box-shadow: inset 0 .22rem .5rem #000e, 0 1px #d4bd8b52; content: ''; }
+.ff-baccarat__chips button[aria-pressed="true"] { filter: drop-shadow(0 0 .35rem #f5f4e3); transform: scale(1.06); }
+.ff-baccarat__chips img { position: relative; width: 93%; height: 93%; }
+.ff-baccarat__rail {
+  grid-column: 1 / -1; grid-row: 2; display: flex; height: auto; min-height: 0;
+  flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: .75rem;
+  padding: .35rem clamp(.65rem, 2vw, 2rem); border: 0; border-radius: 0;
+  background: transparent;
+  -webkit-backdrop-filter: brightness(.55);
+  backdrop-filter: brightness(.55);
+  box-shadow: none;
+}
+.ff-baccarat__table-totals { display: grid; flex: 1 1 auto; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: center; color: #fff; }
+.ff-baccarat__table-totals span { display: flex; justify-content: center; gap: .45rem; white-space: nowrap; font-size: clamp(.72rem, 1.1vw, 1.1rem); }
+.ff-baccarat__table-totals strong { color: #fff; font-variant-numeric: tabular-nums; }
+.ff-baccarat__wager-row { width: auto; min-width: 0; flex: 0 0 auto; margin: 0; gap: .55rem; }
+.ff-baccarat__stake { flex-basis: 8rem; }
+.ff-baccarat__stake label { display: none; }
+.ff-baccarat__stake small { display: none; }
+.ff-baccarat__stake-edit { min-height: 2.7rem; border: 1px solid #edf1e76b; border-radius: 2rem; background: #07120ebd; }
+.ff-baccarat__primary, .ff-baccarat__secondary { border-radius: 50%; }
+.ff-baccarat__wager-row .ff-baccarat__primary {
+  width: 3.5rem; min-width: 3.5rem; height: 3.5rem; min-height: 3.5rem; padding: 0;
+  border: 1px solid #aab4a0; border-radius: 50%; background: #08120fda;
+  box-shadow: inset 0 0 .6rem #fff2, 0 .2rem .55rem #0008; color: #fff; font-size: 0;
+}
+.ff-baccarat__wager-row .ff-baccarat__primary::before { font: 400 2.6rem/1 Georgia, serif; content: '↻'; }
+.ff-baccarat__ticket { display: none; }
+.ff-baccarat__round-actions { margin-left: auto; }
+.ff-baccarat__rail:has(.ff-baccarat__round-actions) { justify-content: space-between; }
+.ff-baccarat__round-actions { display: flex; align-items: center; gap: .55rem; }
+.ff-baccarat__round-actions .ff-baccarat__primary,
+.ff-baccarat__round-actions .ff-baccarat__secondary,
+.ff-baccarat__rail > .ff-baccarat__primary {
+  display: grid; width: 3.25rem; min-width: 3.25rem; height: 3.25rem; min-height: 3.25rem;
+  place-items: center; padding: 0; border: 1px solid #b8c0ae7d; border-radius: 50%;
+  background: #06100ddb; box-shadow: inset 0 .08rem .35rem #ffffff25, 0 .25rem .65rem #0008;
+  color: #fff; font-size: 0;
+}
+.ff-baccarat__round-actions .ff-baccarat__primary::before,
+.ff-baccarat__rail > .ff-baccarat__primary::before { content: '↻'; font: 400 2.5rem/1 Georgia, serif; }
+.ff-baccarat__round-actions > .ff-baccarat__secondary::before { content: '×'; font: 300 2.5rem/1 'Trebuchet MS', sans-serif; }
+.ff-baccarat__round-actions .ff-baccarat__info > .ff-baccarat__secondary { width: 3.25rem; min-width: 3.25rem; height: 3.25rem; min-height: 3.25rem; }
+.ff-baccarat__round-actions .ff-baccarat__info > .ff-baccarat__secondary::before { content: 'i'; font: bold 1.55rem/1 Georgia, serif; }
+.ff-baccarat__error { bottom: 6rem; }
+.ff-baccarat__inline-road {
+  grid-column: 1; grid-row: 1; min-height: 0; padding: 1.4rem .65rem .5rem;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; border: 0; border-right: 1px solid #a9b6a444;
+  background: radial-gradient(ellipse at 45% 32%, #1e3323, #091d13 66%, #06140d);
+}
+.ff-baccarat__inline-road .ff-baccarat__road { display: flex; height: auto; min-height: 100%; flex-direction: column; gap: clamp(.45rem, 1.5vh, 1.1rem); padding: 0; }
+.ff-baccarat__inline-road:focus-visible { outline: 2px solid #fff0a6; outline-offset: -2px; }
+.ff-baccarat__inline-road .ff-baccarat__road h2 { margin: 0; color: #fff; font: 400 clamp(1rem, 1.8vw, 1.8rem)/1 'Trebuchet MS', sans-serif; text-align: center; text-transform: uppercase; }
+.ff-baccarat__inline-road .ff-baccarat__road-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: .2rem 1rem; color: #fff; font-size: .72rem; }
+.ff-baccarat__inline-road .ff-baccarat__road-stats span { justify-content: space-between; }
+.ff-baccarat__inline-road .ff-baccarat__road-stats b { color: #fff; }
+.ff-baccarat__inline-road .ff-baccarat__road small { color: #f6f5ee; font-size: .65rem; text-transform: uppercase; }
+.ff-baccarat__inline-road .ff-baccarat__beads, .ff-baccarat__inline-road .ff-baccarat__big-road { width: 100%; }
+.ff-baccarat__inline-road .ff-baccarat__road ol { width: 100%; min-height: 6.6rem; grid-template: repeat(6, minmax(0, 1fr)) / repeat(10, minmax(0, 1fr)); grid-auto-columns: 0; gap: 0; padding: 0; border: 1px solid #eef2e9b3; border-radius: 0; background: linear-gradient(#eef2e973 1px, transparent 1px) 0 0 / 100% 16.666667%, linear-gradient(90deg, #eef2e973 1px, transparent 1px) 0 0 / 10% 100%; }
+.ff-baccarat__inline-road .ff-baccarat__road li { width: min(.85rem, 80%); height: auto; aspect-ratio: 1; place-self: center; font-size: .5rem; border: 0; background: currentColor; color: #fff; }
+.ff-baccarat__inline-road .ff-baccarat__road li.is-player { background: #143dff; color: #fff; }
+.ff-baccarat__inline-road .ff-baccarat__road li.is-banker { background: #e01927; color: #fff; }
+.ff-baccarat__inline-road .ff-baccarat__road li.is-tie { background: #229e38; color: #fff; }
+.ff-baccarat__inline-road .ff-baccarat__big-road > div { width: 100%; grid-template: repeat(6, 1rem) / repeat(12, minmax(0, 1fr)); gap: 0; padding: 0; border-color: #eef2e9b3; border-radius: 0; background-size: 100% 16.666667%, 8.333333% 100%; }
+.ff-baccarat__inline-road .ff-baccarat__big-road i { width: min(.78rem, 80%); height: auto; aspect-ratio: 1; background: currentColor; }
+.ff-baccarat__inline-road .ff-baccarat__big-road i.is-player { color: #1746ff; }
+.ff-baccarat__inline-road .ff-baccarat__big-road i.is-banker { color: #d92330; }
+.ff-baccarat__derived-roads { display: grid; width: 100%; gap: clamp(.3rem, .8vh, .65rem); }
+.ff-baccarat__derived-road { display: grid; gap: .12rem; min-width: 0; }
+.ff-baccarat__derived-road > div { display: grid; width: 100%; height: clamp(2.55rem, 6vh, 4.1rem); grid-template: repeat(6, minmax(0, 1fr)) / repeat(12, minmax(0, 1fr)); gap: 0; overflow: hidden; border: 1px solid #eef2e9b3; background: linear-gradient(#eef2e958 1px, transparent 1px) 0 0 / 100% 16.666667%, linear-gradient(90deg, #eef2e958 1px, transparent 1px) 0 0 / 8.333333% 100%; }
+.ff-baccarat__derived-road i { width: auto; height: min(.48rem, 80%); aspect-ratio: 1; place-self: center; border: 2px solid currentColor; border-radius: 50%; }
+.ff-baccarat__derived-road i.is-red { color: #e22c3e; }
+.ff-baccarat__derived-road i.is-blue { color: #1d60f7; }
+.ff-baccarat__derived-road.is-smallRoad i { width: auto; height: min(.32rem, 75%); border: 0; background: currentColor; }
+.ff-baccarat__derived-road.is-cockroachPig i { width: min(.4rem, 50%); height: .15rem; aspect-ratio: auto; border: 0; border-radius: .15rem; background: currentColor; transform: rotate(-45deg); }
+.ff-baccarat__inline-road .ff-baccarat__shoe-progress { display: grid; gap: .25rem; }
+.ff-baccarat__loading { position: absolute; z-index: 8; top: 45%; left: 50%; transform: translate(-50%, -50%); padding: .6rem .9rem; border-radius: 1rem; background: #041b13ed; color: #fff4cf; }
+.ff-baccarat__info-panel .ff-baccarat__road h2 { margin: .2rem 0 .4rem; }
+.ff-baccarat__info-panel .ff-baccarat__derived-roads { grid-column: 1 / -1; }
+.ff-baccarat__sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+@media (max-width: 680px) {
+  .ff-baccarat__table { grid-template-columns: minmax(0, 1fr); }
+  .ff-baccarat__inline-road { display: none; }
+  .ff-baccarat__play-surface { grid-column: 1; }
+  .ff-baccarat__header { left: .85rem; right: .85rem; }
+}
+@media (max-width: 680px) {
+  .ff-baccarat__table { grid-template-rows: minmax(0, 1fr) 7.8rem; }
+  .ff-baccarat__header { top: .4rem; left: .6rem; right: .6rem; }
+  .ff-baccarat h1 { font-size: .85rem; }
+  .ff-baccarat__header .ff-baccarat__secondary { min-width: 2.75rem; min-height: 2.75rem; padding: .25rem; }
+  .ff-baccarat__table-tray { display: none; }
+  .ff-baccarat__hands { top: 10%; right: auto; left: 9%; width: 82%; height: 39%; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 0; }
+  .ff-baccarat__hand { grid-template-rows: 2rem minmax(0, 1fr); padding: 0; }
+  .ff-baccarat__hand-title { gap: .25rem; font-size: clamp(.82rem, 3.4vw, 1.08rem); letter-spacing: 0; }
+  .ff-baccarat__hand-title strong { width: 1.4rem; height: 1.4rem; font-size: .72rem; }
+  .ff-baccarat__cards { gap: .1rem; padding-top: .1rem; }
+  .ff-baccarat__card-slot { width: min(13vw, 3.5rem, calc((100cqh - 2rem) * 5 / 7)); }
+  .ff-baccarat__chips { top: 34%; left: .3rem; width: 3.25rem; gap: .04rem; padding: .15rem; }
+  .ff-baccarat__chips button, .ff-baccarat__chips button[aria-pressed="true"] { width: 45px; height: 45px; }
+  .ff-baccarat__bet-sides { top: 55%; bottom: 7%; grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .ff-baccarat__bet strong { font-size: 1rem; }
+  .ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: .6rem; }
+  .ff-baccarat__placed-chip { right: .8rem; gap: .1rem; }
+  .ff-baccarat__chip-pile { width: 1.7rem; }
+  .ff-baccarat__placed-chip em { min-width: 2.2rem; font-size: .55rem; }
+  .ff-baccarat__rail { height: auto; min-height: 0; flex-wrap: wrap; justify-content: center; gap: .15rem; padding: .35rem .5rem; }
+  .ff-baccarat__table-totals { flex: 0 0 100%; gap: .15rem; }
+  .ff-baccarat__table-totals span { gap: .15rem; font-size: .65rem; }
+  .ff-baccarat__wager-row { width: auto; min-width: 0; gap: .35rem; }
+  .ff-baccarat__stake { flex-basis: 7rem; }
+  .ff-baccarat__stake-edit { min-height: 2.8rem; }
+  .ff-baccarat__stake-edit button { min-height: 45px; flex-basis: 45px; }
+  .ff-baccarat__wager-row .ff-baccarat__primary { width: 3rem; min-width: 3rem; height: 3rem; min-height: 3rem; }
+  .ff-baccarat__round-actions { margin: auto; }
+  .ff-baccarat__error { bottom: 8rem; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .ff-baccarat__table { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) 4rem; }
+  .ff-baccarat__inline-road { display: none; }
+  .ff-baccarat__play-surface { grid-column: 1; }
+  .ff-baccarat__header { top: .2rem; left: .85rem; right: .85rem; }
+  .ff-baccarat__header .ff-baccarat__secondary { min-height: 2.75rem; min-width: 2.75rem; }
+  .ff-baccarat__table-tray { display: none; }
+  .ff-baccarat__hands { top: 6%; right: auto; left: 9%; width: 82%; height: 43%; grid-template-rows: minmax(0, 1fr); }
+  .ff-baccarat__hand { grid-template-rows: 1.55rem minmax(0, 1fr); }
+  .ff-baccarat__hand-title { font-size: .9rem; }
+  .ff-baccarat__cards { padding-top: .3rem; }
+  .ff-baccarat__card-slot { width: min(2.5rem, calc((100cqh - 1.7rem) * 5 / 7)); }
+  .ff-baccarat__chips { top: 13%; left: .3rem; width: 3rem; gap: 0; padding: 0; }
+  .ff-baccarat__chips button, .ff-baccarat__chips button[aria-pressed="true"] { width: 45px; height: 45px; }
+  .ff-baccarat__bet-sides { top: 47%; bottom: 4%; grid-template-rows: repeat(3, minmax(44px, 1fr)); }
+  .ff-baccarat__bet strong { font-size: .85rem; }
+  .ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: .48rem; }
+  .ff-baccarat__rail { height: auto; min-height: 0; flex-wrap: nowrap; justify-content: space-between; }
+  .ff-baccarat__table-totals { flex: 1 1 auto; gap: .2rem; }
+  .ff-baccarat__table-totals span { font-size: .65rem; }
+  .ff-baccarat__wager-row { width: auto; flex: 0 0 auto; }
+  .ff-baccarat__wager-row .ff-baccarat__primary { width: 2.9rem; min-width: 2.9rem; height: 2.9rem; min-height: 2.9rem; }
+  .ff-baccarat__error { bottom: 4rem; }
+}
+@media (max-width: 680px) and (max-height: 620px) and (orientation: portrait) {
+  .ff-baccarat__hands { top: 16%; height: 34%; }
+}
+@media (max-width: 680px) and (orientation: portrait) {
+  .ff-baccarat__round-head { top: 43%; left: 4rem; right: .5rem; width: auto; max-width: none; transform: none; flex-wrap: wrap; gap: .15rem .45rem; }
+  .ff-baccarat__round-head small { flex-basis: 100%; }
+  .ff-baccarat__round-head span { white-space: nowrap; }
+  .ff-baccarat__round-head strong { font-size: 1.35rem; }
+}
+@media (min-width: 681px) and (max-width: 900px) {
+  .ff-baccarat__table { grid-template-columns: minmax(10.5rem, 25%) minmax(0, 1fr); }
+  .ff-baccarat__header { left: calc(max(10.5rem, 25%) + .5rem); right: .5rem; }
+  .ff-baccarat__header .ff-baccarat__account + .ff-baccarat__info { display: none; }
+  .ff-baccarat__table-tray { width: clamp(15rem, 35%, 32rem); }
+}
+
+/* Printed markings, betting areas and rail use one uncropped 1440×915 board.
+   The viewport crops this fixed shape instead of stretching its arcs. */
+.ff-baccarat__bet-sides {
+  position: absolute; z-index: 2; inset: 0; display: block;
+  width: 100%; height: 100%; overflow: hidden; transform: none;
+  pointer-events: none;
+}
+.ff-baccarat__bet-sides foreignObject { overflow: visible; pointer-events: auto; }
+.ff-baccarat__bet, .ff-baccarat__bet.is-player, .ff-baccarat__bet.is-banker,
+.ff-baccarat__bet.is-tie, .ff-baccarat__bet.is-player-pair, .ff-baccarat__bet.is-banker-pair {
+  position: relative; display: flex; width: 100%; height: 100%; min-height: 0;
+  flex-direction: column; align-items: center; justify-content: center;
+  gap: .18rem; padding: 0; border: 0; border-radius: 0;
+  background: transparent; color: #fff; box-shadow: none;
+  cursor: pointer;
+}
+.ff-baccarat__bet strong { font: bold 26px/1 Georgia, serif; letter-spacing: .015em; }
+.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font: bold 11px/1.1 Georgia, serif; }
+.ff-baccarat__bet.is-player-pair strong, .ff-baccarat__bet.is-banker-pair strong { font-size: 18px; }
+.ff-baccarat__bet.is-player-pair strong,
+.ff-baccarat__bet.is-player-pair > span:not(.ff-baccarat__placed-chip) { transform: rotate(4deg); }
+.ff-baccarat__bet.is-banker-pair strong,
+.ff-baccarat__bet.is-banker-pair > span:not(.ff-baccarat__placed-chip) { transform: rotate(-4deg); }
+.ff-baccarat__bet.is-banker strong { font-size: 31px; }
+.ff-baccarat__bet.is-player strong { font-size: 35px; }
+.ff-baccarat__bet.is-player-pair, .ff-baccarat__bet.is-banker-pair {
+  display: grid; grid-template-rows: 20px 12px var(--ff-board-chip-size); align-content: center;
+  justify-items: center; gap: 2px; padding: 0;
+}
+.ff-baccarat__bet.is-player-pair .ff-baccarat__placed-chip,
+.ff-baccarat__bet.is-banker-pair .ff-baccarat__placed-chip {
+  position: static; display: block; width: var(--ff-board-chip-size); height: var(--ff-board-chip-size);
+  margin: 0; transform: none;
+}
+.ff-baccarat__bet.is-player-pair .ff-baccarat__chip-pile,
+.ff-baccarat__bet.is-banker-pair .ff-baccarat__chip-pile { width: var(--ff-board-chip-size); height: var(--ff-board-chip-size); }
+.ff-baccarat__bet.is-player-pair .ff-baccarat__placed-chip em,
+.ff-baccarat__bet.is-banker-pair .ff-baccarat__placed-chip em { display: none; }
+.ff-baccarat__placed-chip { right: 3%; top: 48%; }
+.ff-baccarat__chip-pile { width: var(--ff-board-chip-size); }
+.ff-baccarat__chips { gap: .05rem; padding-block: .1rem; }
+.ff-baccarat__play-surface { --ff-chip-screen-size: 40px; --ff-board-chip-size: 40px; }
+.ff-baccarat__chips button[aria-pressed="true"] { transform: none; }
+.ff-baccarat__chips button::before {
+  inset: auto; top: 50%; left: 50%;
+  width: calc(var(--ff-chip-screen-size) + 4px);
+  height: calc(var(--ff-chip-screen-size) + 4px);
+  transform: translate(-50%, -50%);
+}
+.ff-baccarat__chips img { width: var(--ff-chip-screen-size); height: var(--ff-chip-screen-size); }
+.ff-baccarat__chips .ff-baccarat__chip-arrow,
+.ff-baccarat__chips .ff-baccarat__chip-arrow[aria-pressed="true"] {
+  width: 3rem; height: 2.2rem; min-height: 2.2rem;
+  border: 0; background: transparent; box-shadow: none;
+  color: #fff; font: 900 2.25rem/.7 Arial, sans-serif;
+}
+.ff-baccarat__chips .ff-baccarat__chip-arrow::before { display: none; }
+.ff-baccarat__chips .ff-baccarat__chip-arrow:disabled { opacity: .35; }
+.ff-baccarat__clear-wagers {
+  display: grid; width: 3.2rem; min-width: 3.2rem; height: 3.2rem;
+  place-items: center; padding: 0; border: 1px solid #b8c0ae7d;
+  border-radius: 50%; background: #06100ddb; color: #fff;
+  font: 300 2.5rem/1 'Trebuchet MS', sans-serif;
+  box-shadow: inset 0 .08rem .35rem #ffffff25, 0 .25rem .65rem #0008;
+}
+@media (max-width: 680px) {
+  .ff-baccarat__bet-sides { top: 0; bottom: 0; height: 100%; }
+  .ff-baccarat__clear-wagers { width: 2.85rem; min-width: 2.85rem; height: 2.85rem; }
+}
+
+/* The arrows sit outside the black chip capsule, as on a physical rail. */
+.ff-baccarat__chips {
+  --ff-chip-hit-size: max(44px, calc(var(--ff-chip-screen-size) + 4px));
+  width: max-content;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+.ff-baccarat__chip-pill {
+  display: flex;
+  width: calc(var(--ff-chip-hit-size) + 8px);
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 3px;
+  border: 1px solid #060909;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #020303, #111514 50%, #020303);
+  box-shadow: inset 1px 0 2px #5a625a50, inset -1px 0 2px #000, 0 3px 9px #000a;
+}
+.ff-baccarat__chips .ff-baccarat__chip-pill button,
+.ff-baccarat__chips .ff-baccarat__chip-pill button[aria-pressed="true"] {
+  width: var(--ff-chip-hit-size);
+  height: var(--ff-chip-hit-size);
+  min-height: var(--ff-chip-hit-size);
+  margin: 0;
+}
+.ff-baccarat__chips .ff-baccarat__chip-pill button::before {
+  border: 1px solid #171d1a;
+  background: radial-gradient(circle, #151917, #030505 75%);
+  box-shadow: inset 0 2px 5px #000d;
+}
+.ff-baccarat__chips .ff-baccarat__chip-arrow,
+.ff-baccarat__chips .ff-baccarat__chip-arrow[aria-pressed="true"] {
+  display: grid;
+  width: var(--ff-chip-hit-size);
+  height: 44px;
+  min-height: 44px;
+  place-items: center;
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0;
+}
+.ff-baccarat__chip-arrow svg { display: block; width: 36px; height: 24px; overflow: visible; }
+.ff-baccarat__chip-arrow path {
+  fill: none;
+  stroke: #f6f7f2;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (max-width: 480px), (max-height: 560px) and (orientation: landscape) {
+  .ff-baccarat__chips { top: 17%; left: .2rem; }
+  .ff-baccarat__chip-pill { padding-block: 3px; }
+}

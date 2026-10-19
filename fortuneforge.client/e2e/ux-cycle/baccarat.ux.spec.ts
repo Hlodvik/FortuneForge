@@ -15,6 +15,7 @@ const viewports = [
   { name: 'compact-phone', width: 320, height: 568 },
   { name: 'landscape', width: 667, height: 375 },
   { name: 'wide-landscape', width: 852, height: 393 },
+  { name: 'short-desktop', width: 1280, height: 480 },
 ] as const
 type HandKind = 'natural-banker' | 'banker-third' | 'player-third-tie' | 'both-third' | 'natural-player' | 'natural-tie'
 const card = (rank: BaccaratCard['rank'], suit: BaccaratCard['suit']): BaccaratCard => ({ rank, suit })
@@ -44,6 +45,9 @@ for (const viewport of viewports) {
     await expect(stake).toHaveValue('1')
     await stake.fill('10.5')
     await expect(deal).toBeDisabled()
+    await expect(stake).toHaveAttribute('aria-invalid', 'true')
+    await expect(page.locator('.ff-baccarat__stake small')).toBeVisible()
+    await expect(page.locator('.ff-baccarat__stake small')).toContainText('increments')
     await page.getByRole('button', { name: 'Decrease Baccarat stake' }).click()
     await expect(stake).toHaveValue('10')
     await page.getByRole('button', { name: /^Banker/ }).click()
@@ -51,11 +55,10 @@ for (const viewport of viewports) {
     await capture(page, testInfo, `${viewport.name}-betting`)
     const board = await page.locator('.ff-baccarat__hands').boundingBox()
     await deal.click()
-    await expect(page.getByRole('button', { name: 'Dealing…', exact: true })).toBeDisabled()
-    await expect(page.getByRole('button', { name: 'Deal Again', exact: true })).toHaveCount(0)
-    await expect(page.locator('.ff-baccarat__round-head')).toBeEmpty()
-    await expect(page.locator('.ff-baccarat__account strong')).toHaveText('R1,000.00')
     await expect(page.getByRole('button', { name: 'Deal Again', exact: true })).toBeEnabled()
+    await expect(page.getByRole('button', { name: 'Dealing…', exact: true })).toHaveCount(0)
+    await expect(page.locator('.ff-baccarat__account strong')).toHaveText('R1,009.50')
+    await expect(page.getByRole('button', { name: 'Set Baccarat stake to R25.00' })).toBeDisabled()
     await expect(page.locator('.ff-baccarat__round-head')).toHaveText('NaturalBanker wins+R9.50')
     await expect(page.getByLabel('eight of spades', { exact: true })).toHaveCount(2)
     expect(fixture.requests[0].body).toEqual({ betSide: 'banker', stake: 10 })
@@ -102,6 +105,9 @@ for (const viewport of viewports) {
     const road = page.getByRole('dialog', { name: 'Baccarat road and shoe', exact: true })
     // Shoe remaining, not used: 416 - (4 + 5 + 6).
     await expect(road).toContainText('401 cards')
+    await expect(road.locator('.ff-baccarat__shoe-progress')).toBeVisible()
+    expect(await road.locator('.ff-baccarat__shoe-progress').evaluate(e => getComputedStyle(e).position)).toBe('static')
+    await expect(road.locator('.ff-baccarat__shoe-progress')).toHaveCSS('transform', 'none')
     await expect(road.locator('ol li')).toHaveCount(3)
     await fitsPanel(road, viewport)
     await capture(page, testInfo, `${viewport.name}-road`)
@@ -246,6 +252,12 @@ test('Baccarat uses nonstandard increments and latest returned balance for affor
 async function fits(page: Page, viewport: { width: number; height: number }) {
   expect(await page.evaluate(() => Math.max(document.documentElement.scrollHeight, document.body.scrollHeight))).toBeLessThanOrEqual(viewport.height + 1)
   expect(await page.locator('.in-game-shell__body').evaluate(e => e.scrollHeight <= e.clientHeight + 1)).toBe(true)
+  if (viewport.height <= 500 && viewport.width > viewport.height) {
+    const table = (await page.locator('.ff-baccarat__table').boundingBox())!
+    const surface = (await page.locator('.ff-baccarat__play-surface').boundingBox())!
+    expect(surface.x).toBeCloseTo(table.x, 0)
+    expect(surface.width).toBeCloseTo(table.width, 0)
+  }
   for (const surface of await page.locator('.ff-baccarat__table, .ff-baccarat__card, .ff-baccarat__rail, .ff-baccarat button, .ff-baccarat input').all()) {
     const bounds = await surface.boundingBox()
     expect(bounds).not.toBeNull()
@@ -263,6 +275,13 @@ async function fits(page: Page, viewport: { width: number; height: number }) {
       expect(cardBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 1)
       expect(cardBox.y + cardBox.height).toBeLessThanOrEqual(handBox.y + handBox.height + 1)
     }
+  }
+  const result = page.locator('.ff-baccarat__round-head')
+  if (await result.innerText()) {
+    const resultBox = (await result.boundingBox())!
+    const rackBox = (await page.locator('.ff-baccarat__chips').boundingBox())!
+    expect(resultBox.x).toBeGreaterThanOrEqual(rackBox.x + rackBox.width)
+    expect(resultBox.x + resultBox.width).toBeLessThanOrEqual(viewport.width + 1)
   }
   expect(await page.locator('.ff-baccarat').evaluate(e => getComputedStyle(e).userSelect)).toBe('none')
 }
@@ -423,4 +442,25 @@ test('Baccarat compact Road keeps the newest opposite result and all twelve colu
     expect(box.x + box.width).toBeLessThanOrEqual(gridBox.x + gridBox.width)
   }
   await capture(page, testInfo, 'compact-phone-long-streak-road')
+})
+
+test('Baccarat keeps every roadmap and shoe accessible in a short desktop window', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 600 })
+  await page.addInitScript(() => {
+    localStorage.setItem('fortuneforge:baccarat:history:baccarat-ux-player:account', JSON.stringify(
+      Array.from({ length: 120 }, (_, index) => ({ roundId: 'history-' + index, outcome: index % 3 === 0 ? 'player' : 'banker', cardsUsed: 4, natural: false })),
+    ))
+  })
+  await mockBaccarat(page)
+  await page.goto('/games/baccarat')
+  const history = page.getByRole('region', { name: 'Recent Baccarat history' })
+  await expect(history).toBeVisible()
+  await history.focus()
+  await page.keyboard.press('End')
+  const shoe = history.locator('.ff-baccarat__shoe-progress')
+  await expect(shoe).toBeInViewport()
+  const shoeBox = (await shoe.boundingBox())!
+  const historyBox = (await history.boundingBox())!
+  expect(shoeBox.y + shoeBox.height).toBeLessThanOrEqual(historyBox.y + historyBox.height + 1)
+  await capture(page, testInfo, 'short-desktop-roadmap-scroll')
 })

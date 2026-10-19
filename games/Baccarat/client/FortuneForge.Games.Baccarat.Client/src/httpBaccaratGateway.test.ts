@@ -18,6 +18,7 @@ const settledRound = {
   profit: 9.5,
   totalReturn: 19.5,
 }
+const pairStatus = { available: true, minimumStake: .25, maximumStake: 100, stakeIncrement: .25, balance: 1_000, mode: 'eight-deck-punto-banco', supportsPairBets: true }
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -56,6 +57,80 @@ describe('HttpBaccaratGateway', () => {
     }))
   })
 
+  it('posts independent pair stakes and accepts their combined settlement', async () => {
+    const pairedRound = {
+      ...settledRound,
+      playerPairStake: 2,
+      bankerPairStake: 1,
+      playerPairDisposition: 'win',
+      bankerPairDisposition: 'loss',
+      playerPairProfit: 22,
+      bankerPairProfit: -1,
+      playerPairTotalReturn: 24,
+      bankerPairTotalReturn: 0,
+      totalStake: 13,
+      combinedProfit: 30.5,
+      combinedTotalReturn: 43.5,
+    }
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(pairStatus)).mockResolvedValueOnce(jsonResponse(pairedRound))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new HttpBaccaratGateway().createRound('banker', 10, {
+      playerPairStake: 2,
+      bankerPairStake: 1,
+    })).resolves.toEqual(pairedRound)
+
+    expect(fetchMock).toHaveBeenNthCalledWith(1, '/api/games/baccarat/status', { signal: undefined })
+    expect(fetchMock).toHaveBeenCalledWith('/api/games/baccarat/rounds', expect.objectContaining({
+      body: JSON.stringify({ betSide: 'banker', stake: 10, playerPairStake: 2, bankerPairStake: 1 }),
+    }))
+  })
+
+  it('does not POST pair wagers when an older status lacks the capability', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
+      available: true, minimumStake: 1, maximumStake: 100, stakeIncrement: 1,
+      balance: 1_000, mode: 'legacy-eight-deck-punto-banco',
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new HttpBaccaratGateway().createRound('banker', 1, { playerPairStake: 1 }))
+      .rejects.toMatchObject({ code: 'baccarat-pair-unavailable', status: 0 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith('/api/games/baccarat/status', { signal: undefined })
+  })
+
+  it('refuses a pair settlement omitted by a mixed-version server', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(pairStatus)).mockResolvedValueOnce(jsonResponse(settledRound))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new HttpBaccaratGateway().createRound('banker', 10, { playerPairStake: 1, idempotencyKey: 'baccarat-pair-retry-0001' }))
+      .rejects.toMatchObject({ code: 'baccarat-pair-response-invalid', status: 0 })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenNthCalledWith(2, '/api/games/baccarat/rounds', expect.objectContaining({
+      headers: expect.objectContaining({ 'Idempotency-Key': 'baccarat-pair-retry-0001' }),
+    }))
+  })
+
+  it('accepts null side dispositions and zero settlements when no pair bets are placed', async () => {
+    const round = {
+      ...settledRound,
+      playerPairStake: 0,
+      bankerPairStake: 0,
+      playerPairDisposition: null,
+      bankerPairDisposition: null,
+      playerPairProfit: 0,
+      bankerPairProfit: 0,
+      playerPairTotalReturn: 0,
+      bankerPairTotalReturn: 0,
+      totalStake: 10,
+      combinedProfit: 9.5,
+      combinedTotalReturn: 19.5,
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse(round)))
+
+    await expect(new HttpBaccaratGateway().createRound('banker', 10)).resolves.toEqual(round)
+  })
+
   it('preserves API errors as typed gateway errors', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ code: 'insufficient-balance', message: 'Not enough credits.' }, 400)))
 
@@ -68,6 +143,20 @@ describe('HttpBaccaratGateway', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(jsonResponse({ ...settledRound, profit: 9.49 })))
 
     await expect(new HttpBaccaratGateway().createRound('banker', 10)).rejects.toBeInstanceOf(BaccaratGatewayError)
+  })
+
+  it('rejects inconsistent pair settlements', async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(jsonResponse(pairStatus)).mockResolvedValueOnce(jsonResponse({
+      ...settledRound,
+      playerPairStake: 2,
+      playerPairDisposition: 'win',
+      playerPairProfit: 22,
+      playerPairTotalReturn: 22,
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(new HttpBaccaratGateway().createRound('banker', 10, { playerPairStake: 2 }))
+      .rejects.toBeInstanceOf(BaccaratGatewayError)
   })
 })
 

@@ -5,7 +5,11 @@ using FortuneForge.Server.Accounts.Models;
 
 namespace FortuneForge.Server.Cards.Baccarat;
 
-public sealed record CreateBaccaratRoundRequest(string? BetSide, decimal Stake);
+public sealed record CreateBaccaratRoundRequest(
+    string? BetSide,
+    decimal Stake,
+    decimal PlayerPairStake = 0m,
+    decimal BankerPairStake = 0m);
 
 public sealed record BaccaratStatusResponse(
     bool Available,
@@ -13,7 +17,8 @@ public sealed record BaccaratStatusResponse(
     decimal MaximumStake,
     decimal StakeIncrement,
     decimal Balance,
-    string Mode);
+    string Mode,
+    bool SupportsPairBets);
 
 public sealed record BaccaratCardResponse(string Rank, string Suit);
 
@@ -33,7 +38,18 @@ public sealed record BaccaratRoundResponse(
     decimal Profit,
     decimal TotalReturn,
     int ShoeCardsUsed,
-    int ShoeCardsRemaining);
+    int ShoeCardsRemaining,
+    decimal PlayerPairStake,
+    string? PlayerPairDisposition,
+    decimal PlayerPairProfit,
+    decimal PlayerPairTotalReturn,
+    decimal BankerPairStake,
+    string? BankerPairDisposition,
+    decimal BankerPairProfit,
+    decimal BankerPairTotalReturn,
+    decimal TotalStake,
+    decimal CombinedProfit,
+    decimal CombinedTotalReturn);
 
 public sealed record BaccaratErrorResponse(string Code, string Message);
 
@@ -43,8 +59,15 @@ internal sealed record BaccaratStoreRound(
     BaccaratBetSide BetSide,
     PuntoBancoRoundResult Round,
     BaccaratBetSettlement Settlement,
+    BaccaratPairSettlement PlayerPairSettlement,
+    BaccaratPairSettlement BankerPairSettlement,
     int ShoeCardsUsed = 0,
-    int ShoeCardsRemaining = 416);
+    int ShoeCardsRemaining = 416)
+{
+    public decimal TotalStake => Settlement.Stake + PlayerPairSettlement.Stake + BankerPairSettlement.Stake;
+    public decimal CombinedProfit => Settlement.Profit + PlayerPairSettlement.Profit + BankerPairSettlement.Profit;
+    public decimal CombinedTotalReturn => Settlement.TotalReturn + PlayerPairSettlement.TotalReturn + BankerPairSettlement.TotalReturn;
+}
 
 internal sealed record BaccaratStoreResult(BaccaratStoreRound Round, long BalanceCents);
 
@@ -61,9 +84,9 @@ internal sealed class BaccaratInsufficientCreditsException(long availableCents, 
 
 internal static class BaccaratMoney
 {
-    public const long MinimumStakeCents = 100;
+    public const long MinimumStakeCents = 25;
     public const long MaximumStakeCents = 10_000;
-    public const long StakeIncrementCents = 100;
+    public const long StakeIncrementCents = 25;
 
     public static long ToStakeCents(decimal stake)
     {
@@ -75,9 +98,19 @@ internal static class BaccaratMoney
         {
             throw new ArgumentOutOfRangeException(
                 nameof(stake),
-                $"Choose a whole-rand Baccarat stake from R{ToRand(MinimumStakeCents):0.00} through R{ToRand(MaximumStakeCents):0.00}.");
+                $"Choose a Baccarat stake in R{ToRand(StakeIncrementCents):0.00} increments from R{ToRand(MinimumStakeCents):0.00} through R{ToRand(MaximumStakeCents):0.00}.");
         }
         return value;
+    }
+
+    public static long ToOptionalStakeCents(decimal stake) => stake == 0m ? 0 : ToStakeCents(stake);
+
+    public static long ToCents(decimal amount)
+    {
+        var cents = checked(amount * RandMoney.CentsPerRand);
+        if (cents != decimal.Truncate(cents))
+            throw new InvalidOperationException("A Baccarat settlement resolved to a fraction of a cent.");
+        return checked((long)cents);
     }
 
     public static decimal ToRand(long cents) => RandMoney.CentsToRand(cents);
@@ -90,6 +123,8 @@ internal interface IBaccaratStore
         string idempotencyKey,
         BaccaratBetSide betSide,
         long stakeCents,
+        long playerPairStakeCents,
+        long bankerPairStakeCents,
         IReadOnlyList<PlayingCard> shuffledShoe,
         DateTimeOffset nowUtc,
         CancellationToken cancellationToken);
@@ -114,11 +149,15 @@ internal sealed class BaccaratService(
         ValidateIdempotencyKey(idempotencyKey);
         var betSide = ParseBetSide(request.BetSide);
         var stakeCents = BaccaratMoney.ToStakeCents(request.Stake);
+        var playerPairStakeCents = BaccaratMoney.ToOptionalStakeCents(request.PlayerPairStake);
+        var bankerPairStakeCents = BaccaratMoney.ToOptionalStakeCents(request.BankerPairStake);
         var result = await store.StartAsync(
             userId,
             idempotencyKey,
             betSide,
             stakeCents,
+            playerPairStakeCents,
+            bankerPairStakeCents,
             createShuffledShoe(),
             timeProvider.GetUtcNow(),
             cancellationToken);
@@ -152,7 +191,18 @@ internal sealed class BaccaratService(
             settlement.Profit,
             settlement.TotalReturn,
             stored.ShoeCardsUsed,
-            stored.ShoeCardsRemaining);
+            stored.ShoeCardsRemaining,
+            stored.PlayerPairSettlement.Stake,
+            PairResponseDispositionName(stored.PlayerPairSettlement.Disposition),
+            stored.PlayerPairSettlement.Profit,
+            stored.PlayerPairSettlement.TotalReturn,
+            stored.BankerPairSettlement.Stake,
+            PairResponseDispositionName(stored.BankerPairSettlement.Disposition),
+            stored.BankerPairSettlement.Profit,
+            stored.BankerPairSettlement.TotalReturn,
+            stored.TotalStake,
+            stored.CombinedProfit,
+            stored.CombinedTotalReturn);
     }
 
     internal static BaccaratBetSide ParseBetSide(string? value) => value?.Trim().ToLowerInvariant() switch
@@ -178,8 +228,12 @@ internal sealed class BaccaratService(
     internal static string DispositionName(BaccaratBetDisposition disposition) => disposition switch
     {
         BaccaratBetDisposition.Win => "win", BaccaratBetDisposition.Loss => "loss", BaccaratBetDisposition.Push => "push",
+        BaccaratBetDisposition.NotPlaced => "not-placed",
         _ => throw new ArgumentOutOfRangeException(nameof(disposition)),
     };
+
+    internal static string? PairResponseDispositionName(BaccaratBetDisposition disposition) =>
+        disposition == BaccaratBetDisposition.NotPlaced ? null : DispositionName(disposition);
 
     internal static BaccaratCardResponse ToCard(PlayingCard card) => new(
         card.Rank switch

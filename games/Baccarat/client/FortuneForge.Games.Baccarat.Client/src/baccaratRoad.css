@@ -1,6 +1,6 @@
 .ff-baccarat__inline-road { min-height: 0; }
 .ff-baccarat__road { display: grid; grid-template-columns: minmax(4rem, .6fr) minmax(9rem, 1fr) auto minmax(9rem, .8fr); gap: .65rem; align-items: center; height: 100%; padding: .4rem .6rem; border: 1px solid #ffe09c33; border-radius: .65rem; background: #041c1bb3; }
-.ff-baccarat__road small, .ff-baccarat__shoe > span { color: #cbb888; font-size: .52rem; font-weight: 800; }
+.ff-baccarat__road small, .ff-baccarat__shoe-progress > span { color: #cbb888; font-size: .52rem; font-weight: 800; }
 .ff-baccarat__beads { min-width: 0; }
 .ff-baccarat__road ol { display: grid; grid-auto-flow: column; grid-template-rows: repeat(6, .58rem); grid-auto-columns: .58rem; gap: .1rem; margin: .2rem 0 0; padding: 0; overflow: hidden; list-style: none; min-height: 4rem; }
 .ff-baccarat__road li { display: grid; width: .58rem; aspect-ratio: 1; place-items: center; border: 1px solid currentColor; border-radius: 50%; background: #f5efe3; font-size: .35rem; font-weight: 1000; }
@@ -15,16 +15,23 @@
 .ff-baccarat__big-road i.is-player { color: #4d95ef; }
 .ff-baccarat__big-road i.is-banker { color: #ef5f65; }
 .ff-baccarat__big-road i span { position: absolute; right: -.25rem; bottom: -.2rem; color: #65d58b; font-size: .4rem; font-weight: 950; text-shadow: 0 1px 2px #001; }
-.ff-baccarat__shoe { min-width: 0; display: grid; gap: .15rem; }
-.ff-baccarat__shoe strong { color: #f5df9c; font-size: .72rem; }
-.ff-baccarat__shoe i { height: .3rem; overflow: hidden; border-radius: 999px; background: #152f31; }
-.ff-baccarat__shoe i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #56a588, #e4b95d); }
-.ff-baccarat__shoe small { font-weight: 400; }
-.ff-baccarat__info-panel .ff-baccarat__road { clear: both; grid-template-columns: minmax(0, 1fr) auto; height: auto; gap: .7rem; padding: .7rem; }
-.ff-baccarat__info-panel .ff-baccarat__road ol { grid-template-rows: repeat(6, 1.2rem); grid-auto-columns: 1.2rem; gap: .12rem; min-height: 7.8rem; }
-.ff-baccarat__info-panel .ff-baccarat__road li { width: 1.2rem; font-size: .55rem; border-width: 2px; }
-.ff-baccarat__info-panel .ff-baccarat__big-road { grid-column: 1 / -1; grid-row: 2; }
-.ff-baccarat__info-panel .ff-baccarat__big-road > div { grid-template: repeat(6, 1.2rem) / repeat(12, minmax(0, 1fr)); gap: .12rem; width: min(100%, 17rem); background-size: 1.32rem 1.32rem; }
-.ff-baccarat__info-panel .ff-baccarat__big-road i { width: .9rem; height: .9rem; border-width: 2px; }
-.ff-baccarat__info-panel .ff-baccarat__big-road i span { font-size: .55rem; }
-.ff-baccarat__info-panel .ff-baccarat__shoe { grid-column: 1 / -1; }
+.ff-baccarat__shoe-progress { min-width: 0; display: grid; gap: .15rem; }
+.ff-baccarat__shoe-progress strong { color: #f5df9c; font-size: .72rem; }
+.ff-baccarat__shoe-progress i { height: .3rem; overflow: hidden; border-radius: 999px; background: #152f31; }
+.ff-baccarat__shoe-progress i b { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #56a588, #e4b95d); }
+.ff-baccarat__shoe-progress small { font-weight: 400; }
+.ff-baccarat__info-panel .ff-baccarat__road { clear: both; grid-template-columns: minmax(0, 1fr); height: auto; gap: .85rem; padding: .7rem; align-items: stretch; }
+.ff-baccarat__info-panel .ff-baccarat__road small { font-size: .68rem; }
+.ff-baccarat__info-panel .ff-baccarat__road-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .4rem; font-size: .65rem; }
+.ff-baccarat__info-panel .ff-baccarat__road-stats span { flex-direction: column; align-items: center; gap: .2rem; }
+.ff-baccarat__info-panel .ff-baccarat__road-stats b { color: #fff6df; font-size: 1rem; font-variant-numeric: tabular-nums; }
+.ff-baccarat__info-panel .ff-baccarat__road ol { grid-template: repeat(6, 1.2rem) / repeat(10, minmax(0, 1fr)); grid-auto-columns: auto; gap: 0; min-height: 7.2rem; border: 1px solid #ead89b55; background-image: linear-gradient(#d9d0bd33 1px, transparent 1px), linear-gradient(90deg, #d9d0bd33 1px, transparent 1px); background-size: 100% 16.666667%, 10% 100%; }
+.ff-baccarat__info-panel .ff-baccarat__road li { width: min(1rem, 85%); place-self: center; font-size: .55rem; border-width: 2px; }
+.ff-baccarat__info-panel .ff-baccarat__big-road { grid-column: auto; grid-row: auto; }
+.ff-baccarat__info-panel .ff-baccarat__big-road > div { grid-template: repeat(6, 1.2rem) / repeat(12, minmax(0, 1fr)); gap: 0; width: 100%; padding: 0; border-radius: 0; background-size: 100% 16.666667%, 8.333333% 100%; }
+.ff-baccarat__info-panel .ff-baccarat__big-road i { width: min(.9rem, 80%); height: auto; aspect-ratio: 1; border-width: 2px; }
+.ff-baccarat__info-panel .ff-baccarat__big-road i span { inset: 0; display: grid; place-items: center; font-size: .55rem; }
+.ff-baccarat__info-panel .ff-baccarat__shoe-progress { grid-column: auto; gap: .35rem; }
+.ff-baccarat__info-panel .ff-baccarat__shoe-progress > span { font-size: .7rem; }
+.ff-baccarat__info-panel .ff-baccarat__shoe-progress strong { font-size: .95rem; }
+.ff-baccarat__info-panel .ff-baccarat__shoe-progress small { line-height: 1.5; }

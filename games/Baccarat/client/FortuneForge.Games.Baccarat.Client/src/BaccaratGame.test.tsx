@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, configure, render, screen } from '@testing-library/react'
+import { cleanup, configure, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BaccaratGame } from './BaccaratGame'
 import { BaccaratGatewayError, type BaccaratGateway, type BaccaratRound, type BaccaratStatus } from './contracts'
 
-const status: BaccaratStatus = { available: true, minimumStake: 1, maximumStake: 100, stakeIncrement: 1, balance: 1_000, mode: 'test' }
+const status: BaccaratStatus = { available: true, minimumStake: .25, maximumStake: 100, stakeIncrement: .25, balance: 1_000, mode: 'test', supportsPairBets: true }
 const settledRound: BaccaratRound = {
   roundId: 'round-11', balance: 1_009.5, betSide: 'banker', stake: 10, phase: 'settled',
   playerCards: [{ rank: 'eight', suit: 'spades' }, { rank: 'eight', suit: 'spades' }],
@@ -18,6 +18,13 @@ configure({ asyncUtilTimeout: 2_500 })
 afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear() })
 
 describe('BaccaratGame', () => {
+  it('leaves the Player and Banker total circles empty until a total is available', async () => {
+    render(<BaccaratGame gateway={fakeGateway()} />)
+
+    expect((await screen.findByLabelText('Player total pending')).textContent).toBe('')
+    expect(screen.getByLabelText('Banker total pending').textContent).toBe('')
+  })
+
   it('retries an unavailable table connection without requiring a page refresh', async () => {
     const user = userEvent.setup()
     const getStatus = vi.fn().mockRejectedValueOnce(new Error('Offline.')).mockResolvedValueOnce(status)
@@ -43,17 +50,119 @@ describe('BaccaratGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(settledRound) })
     render(<BaccaratGame gateway={gateway} />)
 
-    await user.click(await screen.findByRole('button', { name: /Banker/ }))
-    const stake = screen.getByRole('spinbutton', { name: 'Stake' })
-    await user.clear(stake)
-    await user.type(stake, '10')
+    await user.click(await screen.findByRole('button', { name: 'Select R5.00 chip' }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
 
-    expect(gateway.createRound).toHaveBeenCalledWith('banker', 10, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^baccarat-/) }))
+    expect(gateway.createRound).toHaveBeenCalledWith('banker', 10, expect.objectContaining({
+      idempotencyKey: expect.stringMatching(/^baccarat-/), playerPairStake: 0, bankerPairStake: 0,
+    }))
     expect(await screen.findByText('Banker wins')).toBeTruthy()
     expect(screen.getAllByLabelText('eight of spades')).toHaveLength(2)
     expect(screen.getByText('Natural')).toBeTruthy()
     expect(screen.getByText('+R9.50')).toBeTruthy()
+  })
+
+  it('selects a chip denomination without wagering until a felt area is clicked', async () => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue(settledRound)
+    render(<BaccaratGame gateway={fakeGateway({ createRound })} />)
+
+    const deal = await screen.findByRole('button', { name: 'Deal' }) as HTMLButtonElement
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
+    expect(deal.disabled).toBe(true)
+    const chip = screen.getByRole('button', { name: 'Select R5.00 chip' })
+    await user.click(chip)
+    expect(chip.getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R10.00')
+    expect(deal.disabled).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+
+    expect(createRound).toHaveBeenCalledWith('banker', 10, expect.objectContaining({ idempotencyKey: expect.any(String), playerPairStake: 0, bankerPairStake: 0 }))
+  })
+
+  it('adds independent pair wagers and sends the complete bet while showing the combined total', async () => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue({
+      ...settledRound,
+      stake: 2,
+      playerPairStake: .5,
+      bankerPairStake: .5,
+      playerPairDisposition: 'win',
+      bankerPairDisposition: 'loss',
+      playerPairProfit: 5.5,
+      bankerPairProfit: -.5,
+      playerPairTotalReturn: 6,
+      bankerPairTotalReturn: 0,
+      totalStake: 3,
+      combinedProfit: 6.9,
+      combinedTotalReturn: 9.9,
+    } satisfies BaccaratRound)
+    render(<BaccaratGame gateway={fakeGateway({ createRound })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Select R2.00 chip' }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: 'Select R0.50 chip' }))
+    await user.click(screen.getByRole('button', { name: /^Player Pair, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker Pair, / }))
+
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R3.00')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(createRound).toHaveBeenCalledWith('banker', 2, expect.objectContaining({
+      playerPairStake: .5, bankerPairStake: .5, idempotencyKey: expect.any(String),
+    }))
+    expect(await screen.findByText('+R6.90')).toBeTruthy()
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Win R9.90')
+  })
+
+  it('does not allow pair-only wagers to deal, and clearing removes every placed chip', async () => {
+    const user = userEvent.setup()
+    render(<BaccaratGame gateway={fakeGateway()} />)
+
+    const deal = await screen.findByRole('button', { name: 'Deal' }) as HTMLButtonElement
+    await user.click(screen.getByRole('button', { name: /^Player Pair, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker Pair, / }))
+    expect(deal.disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: /^Player, / }))
+    expect(deal.disabled).toBe(false)
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.75')
+
+    await user.click(screen.getByRole('button', { name: 'Clear Baccarat bets' }))
+    expect(screen.getByRole('button', { name: /^Player, / }).getAttribute('aria-label')).toContain('R0.00')
+    expect(screen.getByRole('button', { name: /^Player Pair, / }).getAttribute('aria-label')).toContain('R0.00')
+    expect(screen.getByRole('button', { name: /^Banker Pair, / }).getAttribute('aria-label')).toContain('R0.00')
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
+    expect(deal.disabled).toBe(true)
+  })
+
+  it('keeps pair wagers unavailable when an older status response omits pair-bet support', async () => {
+    const legacyStatus: BaccaratStatus = {
+      available: true, minimumStake: .25, maximumStake: 100,
+      stakeIncrement: .25, balance: 1_000, mode: 'test',
+    }
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue(settledRound)
+    render(<BaccaratGame gateway={fakeGateway({
+      getStatus: vi.fn().mockResolvedValue(legacyStatus), createRound,
+    })} />)
+
+    const player = await screen.findByRole('button', { name: /^Player, / }) as HTMLButtonElement
+    await waitFor(() => expect(player.disabled).toBe(false))
+    const playerPair = screen.getByRole('button', { name: /^Player Pair, / }) as HTMLButtonElement
+    const bankerPair = screen.getByRole('button', { name: /^Banker Pair, / }) as HTMLButtonElement
+    expect(playerPair.disabled).toBe(true)
+    expect(bankerPair.disabled).toBe(true)
+
+    await user.click(player)
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.25')
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(createRound).toHaveBeenCalledWith('player', .25, expect.objectContaining({
+      playerPairStake: 0, bankerPairStake: 0,
+    }))
   })
 
   it('prevents repeated deals while busy', async () => {
@@ -64,6 +173,7 @@ describe('BaccaratGame', () => {
     render(<BaccaratGame gateway={gateway} />)
 
     const deal = await screen.findByRole('button', { name: 'Deal' })
+    await user.click(screen.getByRole('button', { name: /^Player, / }))
     await user.click(deal)
     expect((screen.getByRole('button', { name: 'Dealing…' }) as HTMLButtonElement).disabled).toBe(true)
     expect(gateway.createRound).toHaveBeenCalledTimes(1)
@@ -77,6 +187,7 @@ describe('BaccaratGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue({ ...settledRound, disposition: 'loss', profit: -10, totalReturn: 0 }) })
     render(<BaccaratGame gateway={gateway} />)
 
+    await user.click(await screen.findByRole('button', { name: /^Player, / }))
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
 
     expect(await screen.findByText('-R10.00')).toBeTruthy()
@@ -88,10 +199,11 @@ describe('BaccaratGame', () => {
     const gateway = fakeGateway({ createRound })
     render(<BaccaratGame gateway={gateway} />)
 
+    await user.click(await screen.findByRole('button', { name: /^Player, / }))
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     await screen.findByRole('alert')
-    expect((screen.getByRole('spinbutton', { name: 'Stake' }) as HTMLInputElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: /Banker/ }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Select R0.25 chip' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /^Banker, / }) as HTMLButtonElement).disabled).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Retry Deal' }))
     await screen.findByRole('button', { name: 'Deal Again' })
 
@@ -100,7 +212,7 @@ describe('BaccaratGame', () => {
 
   it('replays the exact player-scoped pending deal after a reload', async () => {
     sessionStorage.setItem('fortuneforge:baccarat:pending:player-7', JSON.stringify({
-      idempotencyKey: 'baccarat-recovery-0001', betSide: 'banker', stake: 10,
+      idempotencyKey: 'baccarat-recovery-0001', betSide: 'banker', stake: 10, playerPairStake: .25, bankerPairStake: .5,
     }))
     const createRound = vi.fn().mockResolvedValue(settledRound)
     render(<BaccaratGame playerId="player-7" gateway={fakeGateway({ createRound })} />)
@@ -108,6 +220,7 @@ describe('BaccaratGame', () => {
     expect(await screen.findByRole('button', { name: 'Deal Again' })).toBeTruthy()
     expect(createRound).toHaveBeenCalledWith('banker', 10, expect.objectContaining({
       idempotencyKey: 'baccarat-recovery-0001', signal: expect.any(AbortSignal),
+      playerPairStake: .25, bankerPairStake: .5,
     }))
   })
 
@@ -117,10 +230,9 @@ describe('BaccaratGame', () => {
     const gateway = fakeGateway({ createRound })
     render(<BaccaratGame gateway={gateway} />)
 
-    await user.click(await screen.findByRole('button', { name: /Banker/ }))
-    const stake = screen.getByRole('spinbutton', { name: 'Stake' })
-    await user.clear(stake)
-    await user.type(stake, '10')
+    await user.click(await screen.findByRole('button', { name: 'Select R5.00 chip' }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     expect((await screen.findByRole('alert')).textContent).toContain('Table closed.')
 

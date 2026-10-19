@@ -41,8 +41,20 @@ public sealed class PuntoBancoPaytableTests
             12.34m,
             BaccaratRoundOutcome.Banker);
 
-        Assert.Equal(24.063m, settlement.TotalReturn);
-        Assert.Equal(11.723m, settlement.Profit);
+        Assert.Equal(24.06m, settlement.TotalReturn);
+        Assert.Equal(11.72m, settlement.Profit);
+    }
+
+    [Fact]
+    public void BankerWinRoundsQuarterRandStakeToWholeCents()
+    {
+        var settlement = PuntoBancoPaytable.Settle(
+            BaccaratBetSide.Banker,
+            0.25m,
+            BaccaratRoundOutcome.Banker);
+
+        Assert.Equal(0.49m, settlement.TotalReturn);
+        Assert.Equal(0.24m, settlement.Profit);
     }
 
     [Theory]

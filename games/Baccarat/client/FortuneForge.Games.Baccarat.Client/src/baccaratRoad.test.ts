@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildBigRoad, type BaccaratHistoryItem } from './baccaratRoad'
+import { buildBigRoad, buildDerivedRoad, buildDerivedRoads, type BaccaratHistoryItem } from './baccaratRoad'
 
 const history = (outcomes: string): BaccaratHistoryItem[] => [...outcomes].map<BaccaratHistoryItem>((outcome, index) => ({
   roundId: String(index), outcome: outcome === 'B' ? 'banker' : outcome === 'P' ? 'player' : 'tie', cardsUsed: 4, natural: false,
@@ -30,5 +30,44 @@ describe('Big Road presentation', () => {
     const cells = buildBigRoad(history('B'.repeat(30) + 'P'))
     expect(cells.at(-1)).toEqual({ outcome: 'player', column: 1, row: 0, ties: 0 })
     expect(cells.every(cell => cell.column >= 0 && cell.column < 12)).toBe(true)
+  })
+})
+
+describe('derived roads', () => {
+  it('waits for enough actual streaks and derives red from equal depths', () => {
+    expect(buildDerivedRoads(history('BP'))).toEqual({ bigEyeBoy: [], smallRoad: [], cockroachPig: [] })
+    const roads = buildDerivedRoads(history('BPBPB'))
+    expect(roads.bigEyeBoy.map(cell => cell.color)).toEqual(['red', 'red', 'red'])
+    expect(roads.smallRoad.map(cell => cell.color)).toEqual(['red', 'red'])
+    expect(roads.cockroachPig.map(cell => cell.color)).toEqual(['red'])
+    expect(roads.bigEyeBoy.map(({ column, row }) => [column, row])).toEqual([[0, 0], [0, 1], [0, 2]])
+  })
+
+  it('compares prior column depths at the start of a streak', () => {
+    expect(buildDerivedRoad(history('BBPB'), 'bigEyeBoy').map(cell => cell.color)).toEqual(['blue'])
+    expect(buildDerivedRoad(history('BBBPPBP'), 'smallRoad').map(cell => cell.color)).toEqual(['blue'])
+    expect(buildDerivedRoad(history('BBBPPBPB'), 'cockroachPig').map(cell => cell.color)).toEqual(['blue'])
+  })
+
+  it('compares occupation at successive depths, including beyond a dragon tail', () => {
+    expect(buildDerivedRoad(history('BPPPP'), 'bigEyeBoy').map(cell => cell.color)).toEqual(['blue', 'red', 'red'])
+    expect(buildDerivedRoad(history('B'.repeat(7) + 'P'.repeat(8)), 'bigEyeBoy').map(cell => cell.color))
+      .toEqual(['red', 'red', 'red', 'red', 'red', 'red', 'blue'])
+  })
+
+  it('ignores ties entirely and does not mutate API history', () => {
+    const input = history('BTTPTBTTPTB')
+    const before = structuredClone(input)
+    expect(buildDerivedRoads(input)).toEqual(buildDerivedRoads(history('BPBPB')))
+    expect(input).toEqual(before)
+  })
+
+  it('lays out and clips only after deriving every historical mark', () => {
+    const all = buildDerivedRoad(history('BP'.repeat(30)), 'bigEyeBoy', 100)
+    const visible = buildDerivedRoad(history('BP'.repeat(30)), 'bigEyeBoy', 12)
+    expect(all.length).toBe(58)
+    expect(visible.every(cell => cell.column >= 0 && cell.column < 12 && cell.row >= 0 && cell.row < 6)).toBe(true)
+    expect(visible.at(-1)?.column).toBe(11)
+    expect(visible.every(cell => cell.color === 'red')).toBe(true)
   })
 })

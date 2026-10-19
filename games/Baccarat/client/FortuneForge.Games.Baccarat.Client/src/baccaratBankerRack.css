@@ -1,0 +1,14 @@
+.ff-baccarat__banker-rack {
+  position: absolute;
+  top: -.35rem;
+  left: 50%;
+  width: clamp(17rem, 32%, 29rem);
+  aspect-ratio: 5.5;
+  transform: translateX(-50%);
+  background: url('./baccarat-banker-rack.png') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 .3rem .35rem #0008);
+}
+
+@media (max-width: 680px), (max-height: 500px) and (orientation: landscape) {
+  .ff-baccarat__banker-rack { display: none; }
+}

@@ -16,20 +16,24 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
     private readonly Dictionary<string, ShoeState> shoes = [];
 
     public Task<BaccaratStoreResult> StartAsync(string userId, string idempotencyKey, BaccaratBetSide betSide,
-        long stakeCents, IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
+        long stakeCents, long playerPairStakeCents, long bankerPairStakeCents,
+        IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
     {
         lock (sync)
         {
             if (starts.TryGetValue((userId, idempotencyKey), out var existingId))
             {
                 var existing = rounds[existingId];
-                if (existing.Round.BetSide != betSide || BaccaratMoney.ToStakeCents(existing.Round.Settlement.Stake) != stakeCents)
+                if (existing.Round.BetSide != betSide || BaccaratMoney.ToStakeCents(existing.Round.Settlement.Stake) != stakeCents ||
+                    BaccaratMoney.ToOptionalStakeCents(existing.Round.PlayerPairSettlement.Stake) != playerPairStakeCents ||
+                    BaccaratMoney.ToOptionalStakeCents(existing.Round.BankerPairSettlement.Stake) != bankerPairStakeCents)
                     throw new BaccaratRoundConflictException("Practice deal conflict.");
                 return Task.FromResult(Result(existing));
             }
 
             var balance = Balance(userId);
-            if (balance < stakeCents) throw new BaccaratInsufficientCreditsException(balance, stakeCents);
+            var totalStakeCents = checked(stakeCents + playerPairStakeCents + bankerPairStakeCents);
+            if (balance < totalStakeCents) throw new BaccaratInsufficientCreditsException(balance, totalStakeCents);
             var shoe = shoes.GetValueOrDefault(userId);
             if (shoe is null || shoe.NextIndex >= 312)
                 shoe = new ShoeState(shuffledShoe.ToArray(), 0);
@@ -37,11 +41,14 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
             var nextIndex = checked(shoe.NextIndex + dealt.ConsumedCards.Length);
             shoes[userId] = shoe with { NextIndex = nextIndex };
             var settlement = PuntoBancoPaytable.Settle(betSide, BaccaratMoney.ToRand(stakeCents), dealt);
-            var returned = checked((long)(settlement.TotalReturn * 100m));
+            var playerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(playerPairStakeCents), dealt.PlayerHand);
+            var bankerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(bankerPairStakeCents), dealt.BankerHand);
+            var returned = BaccaratMoney.ToCents(settlement.TotalReturn + playerPairSettlement.TotalReturn + bankerPairSettlement.TotalReturn);
             var id = Id("baccarat", userId, idempotencyKey);
-            var round = new BaccaratStoreRound(id, userId, betSide, dealt, settlement, nextIndex, shoe.Cards.Count - nextIndex);
+            var round = new BaccaratStoreRound(id, userId, betSide, dealt, settlement,
+                playerPairSettlement, bankerPairSettlement, nextIndex, shoe.Cards.Count - nextIndex);
             var stored = new StoredRound(round, idempotencyKey);
-            balances[userId] = checked(balance - stakeCents + returned);
+            balances[userId] = checked(balance - totalStakeCents + returned);
             rounds[id] = stored;
             starts[(userId, idempotencyKey)] = id;
             return Task.FromResult(Result(stored));
@@ -52,6 +59,12 @@ internal sealed class PracticeBaccaratStore : IBaccaratStore
     {
         lock (sync)
             return Task.FromResult(rounds.TryGetValue(roundId, out var stored) && stored.Round.UserId == userId ? Result(stored) : null);
+    }
+
+    internal long GetBalanceCents(string userId)
+    {
+        lock (sync)
+            return Balance(userId);
     }
 
     private BaccaratStoreResult Result(StoredRound stored) => new(stored.Round, Balance(stored.Round.UserId));

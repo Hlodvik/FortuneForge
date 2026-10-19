@@ -5,6 +5,12 @@ public enum BaccaratBetDisposition
     Win,
     Loss,
     Push,
+    NotPlaced,
+}
+
+public sealed record BaccaratPairSettlement(decimal Stake, BaccaratBetDisposition Disposition, decimal Profit, decimal TotalReturn)
+{
+    public static BaccaratPairSettlement NotPlaced { get; } = new(0m, BaccaratBetDisposition.NotPlaced, 0m, 0m);
 }
 
 public sealed record BaccaratBetSettlement
@@ -70,7 +76,8 @@ public static class PuntoBancoPaytable
         {
             BaccaratBetDisposition.Push => stake,
             BaccaratBetDisposition.Win when betSide == BaccaratBetSide.Player => stake * 2m,
-            BaccaratBetDisposition.Win when betSide == BaccaratBetSide.Banker => stake * 1.95m,
+            BaccaratBetDisposition.Win when betSide == BaccaratBetSide.Banker =>
+                decimal.Round(stake * 1.95m, 2, MidpointRounding.AwayFromZero),
             BaccaratBetDisposition.Win => stake * 9m,
             _ => 0m,
         };
@@ -80,6 +87,23 @@ public static class PuntoBancoPaytable
             stake,
             roundOutcome,
             disposition,
+            totalReturn - stake,
+            totalReturn);
+    }
+
+    /// <summary>A pair wins when the first two dealt cards on that side share a rank, regardless of the third-card draw.</summary>
+    public static BaccaratPairSettlement SettlePair(decimal stake, BaccaratHand hand)
+    {
+        ArgumentNullException.ThrowIfNull(hand);
+        if (stake < 0m)
+            throw new ArgumentOutOfRangeException(nameof(stake), "A Baccarat pair stake cannot be negative.");
+        if (stake == 0m) return BaccaratPairSettlement.NotPlaced;
+
+        var won = hand.Cards[0].Rank == hand.Cards[1].Rank;
+        var totalReturn = won ? stake * 12m : 0m;
+        return new BaccaratPairSettlement(
+            stake,
+            won ? BaccaratBetDisposition.Win : BaccaratBetDisposition.Loss,
             totalReturn - stake,
             totalReturn);
     }

@@ -21,16 +21,20 @@ public sealed class BaccaratController(
     {
         if (Disabled() is { } unavailable) return unavailable;
         var account = await AuthenticatedAccountAsync(cancellationToken);
-        return account is null
-            ? Unauthorized(new BaccaratErrorResponse("baccarat-authentication-required", "Sign in to play Baccarat."))
-            : Ok(new BaccaratStatusResponse(
-                true,
-                BaccaratMoney.ToRand(BaccaratMoney.MinimumStakeCents),
-                BaccaratMoney.ToRand(BaccaratMoney.MaximumStakeCents),
-                BaccaratMoney.ToRand(BaccaratMoney.StakeIncrementCents),
-                IsPractice ? BaccaratMoney.ToRand(PracticeBaccaratStore.StartingBalanceCents) : account.Balances.SlotsCredits,
-                IsPractice ? "practice-eight-deck-punto-banco" : "eight-deck-punto-banco"));
+        if (account is null)
+            return Unauthorized(new BaccaratErrorResponse("baccarat-authentication-required", "Sign in to play Baccarat."));
+        var practiceStore = IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeBaccaratStore>() : null;
+        return Ok(CreateStatusResponse(account.UserId, account.Balances.SlotsCredits, practiceStore));
     }
+
+    internal static BaccaratStatusResponse CreateStatusResponse(string userId, decimal walletBalance, PracticeBaccaratStore? practiceStore) => new(
+        true,
+        BaccaratMoney.ToRand(BaccaratMoney.MinimumStakeCents),
+        BaccaratMoney.ToRand(BaccaratMoney.MaximumStakeCents),
+        BaccaratMoney.ToRand(BaccaratMoney.StakeIncrementCents),
+        practiceStore is null ? walletBalance : BaccaratMoney.ToRand(practiceStore.GetBalanceCents(userId)),
+        practiceStore is null ? "eight-deck-punto-banco" : "practice-eight-deck-punto-banco",
+        true);
 
     [HttpPost("rounds")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]

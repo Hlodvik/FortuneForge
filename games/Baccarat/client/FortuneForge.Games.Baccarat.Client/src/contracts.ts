@@ -16,6 +16,8 @@ export type BaccaratStatus = Readonly<{
   stakeIncrement: number
   balance: number
   mode: string
+  /** Missing on older servers; pair wagers must remain unavailable in that case. */
+  supportsPairBets?: boolean
 }>
 export type BaccaratRound = Readonly<{
   roundId: string
@@ -32,10 +34,26 @@ export type BaccaratRound = Readonly<{
   disposition: BaccaratBetDisposition
   profit: number
   totalReturn: number
+  playerPairStake?: number
+  bankerPairStake?: number
+  playerPairDisposition?: BaccaratBetDisposition | null
+  bankerPairDisposition?: BaccaratBetDisposition | null
+  playerPairProfit?: number
+  bankerPairProfit?: number
+  playerPairTotalReturn?: number
+  bankerPairTotalReturn?: number
+  totalStake?: number
+  combinedProfit?: number
+  combinedTotalReturn?: number
   shoeCardsUsed?: number
   shoeCardsRemaining?: number
 }>
-export type BaccaratRequestOptions = Readonly<{ signal?: AbortSignal; idempotencyKey?: string }>
+export type BaccaratRequestOptions = Readonly<{
+  signal?: AbortSignal
+  idempotencyKey?: string
+  playerPairStake?: number
+  bankerPairStake?: number
+}>
 
 export interface BaccaratGateway {
   getStatus(signal?: AbortSignal): Promise<BaccaratStatus>

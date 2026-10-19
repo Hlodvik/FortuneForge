@@ -16,7 +16,8 @@ public static class CompetitiveSolitaireConfiguration
         services.AddSingleton(provider => new FirestoreCompetitiveSolitaireStore(
             provider.GetRequiredService<FirestoreDb>(),
             provider.GetRequiredService<CompetitiveSolitaireOptions>(),
-            provider.GetRequiredService<IMultiplayerMatchmaker>()));
+            provider.GetRequiredService<IMultiplayerMatchmaker>(),
+            provider.GetRequiredService<ILogger<FirestoreCompetitiveSolitaireStore>>()));
         services.AddSingleton<ICompetitiveSolitaireStore>(provider =>
             provider.GetRequiredService<FirestoreCompetitiveSolitaireStore>());
         services.AddSingleton<CompetitiveSolitaireService>();

@@ -62,6 +62,13 @@ internal interface ICompetitiveSolitaireStore
         int limit,
         DateTime nowUtc,
         CancellationToken cancellationToken);
+
+    Task<SolitaireHistoryPageResponse> GetHistoryPageAsync(
+        string userId,
+        int limit,
+        string? cursor,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
 }
 
 internal sealed class CompetitiveSolitaireService(ICompetitiveSolitaireStore store)
@@ -201,6 +208,19 @@ internal sealed class CompetitiveSolitaireService(ICompetitiveSolitaireStore sto
             throw new ArgumentOutOfRangeException(nameof(limit), "Choose a history limit from 1 to 100.");
         }
         return store.GetHistoryAsync(userId, limit, DateTime.UtcNow, cancellationToken);
+    }
+
+    public Task<SolitaireHistoryPageResponse> GetHistoryPageAsync(
+        string userId,
+        int limit,
+        string? cursor,
+        CancellationToken cancellationToken)
+    {
+        if (limit is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(limit), "Choose a history limit from 1 to 100.");
+        if (cursor is { Length: > 128 })
+            throw new ArgumentException("The Solitaire history cursor is invalid.", nameof(cursor));
+        return store.GetHistoryPageAsync(userId, limit, cursor, DateTime.UtcNow, cancellationToken);
     }
 
     internal static void ValidateIdempotencyKey(string value)

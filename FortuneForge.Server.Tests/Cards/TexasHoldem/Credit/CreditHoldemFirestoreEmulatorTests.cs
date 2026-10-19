@@ -482,6 +482,13 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
             return Task.CompletedTask;
         }
 
+        public Task<bool> TryRenewAsync(
+            string gameId,
+            string assignmentId,
+            IReadOnlyCollection<string> profileIds,
+            DateTime nowUtc,
+            CancellationToken cancellationToken) => Task.FromResult(true);
+
         public Task ReleaseAsync(
             string assignmentId,
             IReadOnlyCollection<string> profileIds,

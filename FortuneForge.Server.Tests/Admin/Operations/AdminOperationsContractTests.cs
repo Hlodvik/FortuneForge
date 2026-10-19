@@ -117,6 +117,64 @@ public sealed class AdminOperationsContractTests
         var bots = Assert.IsType<AdminOperationsBotsResponse>(botsResponse.Value);
         Assert.Equal(1, Assert.Single(bots.Games, game => game.Game == "three-card-poker").ActiveLeases);
     }
+
+    [Fact]
+    public async Task HouseFundedSolitaire_ReportsSignedNetRatherThanTreatingFeeAsHouseProfit()
+    {
+        var store = new FakeStore(Snapshot(financial:
+        [
+            new AdminOperationsFinancialRecord(
+                "human-winner", "gaming", "solitaire", "settled", NowUtc.AddMinutes(-2),
+                1m, 3.6m, -2.6m, 4m, 0.4m, "house-funded-bot-pool-v1",
+                3.6m, 1m, 3m, 3.6m, 0m),
+            new AdminOperationsFinancialRecord(
+                "bot-winner", "gaming", "solitaire", "settled", NowUtc.AddMinutes(-1),
+                2m, 0m, 2m, 4m, 0.4m, "house-funded-bot-pool-v1",
+                3.6m, 2m, 2m, 0m, 3.6m)
+        ]));
+        var controller = Controller(store, new FakeAuthorizer(AdminOperationsAccessStatus.Authorized), enabled: true);
+
+        var overviewResult = Assert.IsType<OkObjectResult>(await controller.Overview(cancellationToken: CancellationToken.None));
+        var overview = Assert.IsType<AdminOperationsOverviewResponse>(overviewResult.Value);
+        Assert.Equal(-0.6m, overview.HouseGamingNetCredits);
+        Assert.Equal(-0.6m, overview.Solitaire.HouseNetCredits);
+        Assert.Equal(0.8m, overview.Solitaire.PlatformFeeCredits);
+        Assert.Equal(8m, overview.Solitaire.GrossPoolCredits);
+        Assert.Equal(7.2m, overview.Solitaire.WinnerPayoutCredits);
+        Assert.Equal(5m, overview.Solitaire.HouseFundedEntryCredits);
+        Assert.Equal(3.6m, overview.Solitaire.BotPrizeCredits);
+        Assert.Equal(2, overview.Solitaire.SettledHouseFundedPoolMatches);
+        Assert.Equal(0, overview.Solitaire.SettledRealHumanPoolMatches);
+
+        var activityResult = Assert.IsType<OkObjectResult>(await controller.Activity(cancellationToken: CancellationToken.None));
+        var activity = Assert.IsType<AdminOperationsPage<AdminOperationsActivityItem>>(activityResult.Value);
+        Assert.Contains(activity.Items, item => item.EventId == "human-winner" && item.HouseNetCredits == -2.6m);
+        Assert.Contains(activity.Items, item => item.EventId == "bot-winner" && item.HouseNetCredits == 2m);
+
+        var integrityResult = Assert.IsType<OkObjectResult>(await controller.Integrity(cancellationToken: CancellationToken.None));
+        var integrity = Assert.IsType<AdminOperationsIntegrityResponse>(integrityResult.Value);
+        Assert.Equal("pass", Assert.Single(integrity.Checks, check => check.Id == "solitaire-platform-fee").Status);
+    }
+
+    [Fact]
+    public async Task HouseFundedSolitaire_BrokenSignedNetFailsIntegrity()
+    {
+        var store = new FakeStore(Snapshot(financial:
+        [
+            new AdminOperationsFinancialRecord(
+                "bad-house-net", "gaming", "solitaire", "settled", NowUtc,
+                1m, 3.6m, 0.4m, 4m, 0.4m, "house-funded-bot-pool-v1",
+                3.6m, 1m, 3m, 3.6m, 0m)
+        ]));
+        var controller = Controller(store, new FakeAuthorizer(AdminOperationsAccessStatus.Authorized), enabled: true);
+
+        var result = Assert.IsType<OkObjectResult>(await controller.Integrity(cancellationToken: CancellationToken.None));
+        var integrity = Assert.IsType<AdminOperationsIntegrityResponse>(result.Value);
+        var check = Assert.Single(integrity.Checks, item => item.Id == "solitaire-platform-fee");
+        Assert.Equal("fail", check.Status);
+        Assert.Equal(1, check.Findings);
+    }
+
     [Fact]
     public async Task BotTelemetry_IsOperationalOnlyAndCannotEnterFinancialTotals()
     {
@@ -137,7 +195,7 @@ public sealed class AdminOperationsContractTests
 
         Assert.Equal(4m, overview.HouseGamingNetCredits);
         Assert.Equal(1, Assert.Single(bots.Games, game => game.Game == "blackjack").ActiveLeases);
-        Assert.Contains("excluded", bots.FinancialTreatment, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("never contribute human credits", bots.FinancialTreatment, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

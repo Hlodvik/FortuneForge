@@ -88,6 +88,14 @@ internal sealed class ManagedPlayerQueuer(
         }
     }
 
+    public Task<bool> TryRenewAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        assignments.TryRenewAsync(gameId, assignmentId, profileIds, nowUtc, cancellationToken);
+
     public async Task ReleaseAsync(
         string assignmentId,
         IReadOnlyCollection<string> profileIds,

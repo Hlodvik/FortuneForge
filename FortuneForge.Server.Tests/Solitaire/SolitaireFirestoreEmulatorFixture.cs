@@ -112,15 +112,20 @@ public sealed class SolitaireFirestoreEmulatorFixture : IAsyncLifetime
         if (!string.IsNullOrWhiteSpace(value)) output.Enqueue(value);
     }
 
-    private static string FindRepositoryRoot()
+    private static string FindRepositoryRoot(
+        [System.Runtime.CompilerServices.CallerFilePath] string sourcePath = "")
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "FortuneForge.slnx")))
+        foreach (var start in new[] { AppContext.BaseDirectory, Environment.CurrentDirectory, Path.GetDirectoryName(sourcePath) })
         {
-            directory = directory.Parent;
+            if (string.IsNullOrWhiteSpace(start)) continue;
+            var directory = new DirectoryInfo(start);
+            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "FortuneForge.slnx")))
+            {
+                directory = directory.Parent;
+            }
+            if (directory is not null) return directory.FullName;
         }
-        return directory?.FullName
-            ?? throw new DirectoryNotFoundException("Could not locate the FortuneForge repository root.");
+        throw new DirectoryNotFoundException("Could not locate the FortuneForge repository root.");
     }
 
     private static string FirebaseExecutable()

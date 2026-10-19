@@ -43,6 +43,18 @@ public sealed class ManagedPlayerSeparationTests
     }
 
     [Fact]
+    public async Task QueuerPassesLeaseRenewalOutcomeThroughWithoutFallingBackToHeartbeat()
+    {
+        var assignments = new RecordingAssignmentStore { RenewalResult = false };
+        var queuer = new ManagedPlayerQueuer(
+            new RecordingGenerator(), new ExistingProfileRepository(), assignments);
+
+        Assert.False(await queuer.TryRenewAsync(
+            ManagedPlayerGames.Solitaire, "queue-one", ["managed-seed-player"], Now, default));
+        Assert.Equal(1, assignments.RenewalAttempts);
+    }
+
+    [Fact]
     public async Task Generator_retries_identity_collisions_through_profile_repository()
     {
         var repository = new CollisionOnceProfileRepository();
@@ -302,6 +314,8 @@ public sealed class ManagedPlayerSeparationTests
         private readonly HashSet<string> unavailable =
             new(unavailableProfileIds, StringComparer.Ordinal);
         public List<string> ReservationAttempts { get; } = [];
+        public int RenewalAttempts { get; private set; }
+        public bool RenewalResult { get; init; } = true;
 
         public Task<bool> TryReserveAsync(
             string profileId,
@@ -320,6 +334,17 @@ public sealed class ManagedPlayerSeparationTests
             string assignmentId,
             DateTime nowUtc,
             CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<bool> TryRenewAsync(
+            string gameId,
+            string assignmentId,
+            IReadOnlyCollection<string> profileIds,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            RenewalAttempts++;
+            return Task.FromResult(RenewalResult);
+        }
 
         public Task<bool> ReleaseAsync(
             string profileId,

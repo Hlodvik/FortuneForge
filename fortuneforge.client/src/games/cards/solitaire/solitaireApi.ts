@@ -101,6 +101,33 @@ export async function getSolitaireHistory(
   )
 }
 
+export type SolitaireHistoryPage = Readonly<{
+  items: readonly SolitaireHistoryItem[]
+  nextCursor: string | null
+}>
+
+export async function getSolitaireHistoryPage(
+  limit = 30,
+  cursor?: string,
+  signal?: AbortSignal,
+): Promise<SolitaireHistoryPage> {
+  const query = new URLSearchParams({ limit: String(limit) })
+  if (cursor) query.set('cursor', cursor)
+  const response = await fetchWithAccountSession(`/api/solitaire/history-page?${query}`, {
+    method: 'GET',
+    cache: 'no-store',
+    signal,
+  })
+  return readResponse(
+    response,
+    (value): value is SolitaireHistoryPage => isRecord(value)
+      && Array.isArray(value.items)
+      && value.items.every(isSolitaireHistoryItem)
+      && (value.nextCursor === null || typeof value.nextCursor === 'string'),
+    'Solitaire history page',
+  )
+}
+
 export async function joinSolitaireQueue(
   playerCount: SolitairePlayerCount,
   buyInCredits: SolitaireBuyIn,
@@ -344,7 +371,7 @@ function isSolitairePlayer(value: unknown): value is SolitairePlayer {
   if (!valid) return false
   return value.status !== 'open'
     || (value.playerId.startsWith('open-seat-')
-      && value.displayName === 'Open seat'
+      && (value.displayName === 'Open seat' || value.displayName === 'Waiting for players...')
       && value.isCurrentPlayer === false)
 }
 
@@ -372,13 +399,20 @@ function isSolitaireHistoryItem(value: unknown): value is SolitaireHistoryItem {
     && isPlayerCount(value.playerCount)
     && isBuyIn(value.buyInCredits)
     && isNonNegativeNumber(value.prizePoolCredits)
+    && (value.status === 'playing' || value.status === 'settled')
+    && typeof value.startedAtUtc === 'string'
+    && isPlayerList(value.players)
+    && value.players.length === value.playerCount
     && Number.isInteger(value.placement)
     && isNonNegativeNumber(value.score)
     && isNonNegativeNumber(value.elapsedSeconds)
     && isNonNegativeNumber(value.payoutCredits)
     && typeof value.netCredits === 'number'
     && Number.isFinite(value.netCredits)
-    && typeof value.completedAtUtc === 'string'
+    && (value.completedAtUtc === null || typeof value.completedAtUtc === 'string')
+    && (value.claimStatus === undefined || value.claimStatus === null
+      || value.claimStatus === 'unclaimed' || value.claimStatus === 'completed')
+    && (value.canClaim === undefined || typeof value.canClaim === 'boolean')
     && Array.isArray(value.opponents)
     && value.opponents.every((opponent) => typeof opponent === 'string')
 }

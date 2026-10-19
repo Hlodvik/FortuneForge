@@ -71,18 +71,29 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             }
             var cohort = queue.Skip((position - 1) / ticket.PlayerCount * ticket.PlayerCount)
                 .Take(ticket.PlayerCount).ToArray();
-            var players = cohort.Select((value, index) => new SolitairePlayerResponse(
+            var humanPlayers = cohort.Select((value, index) => new SolitairePlayerResponse(
                 value.UserId,
                 value.DisplayName,
                 index + 1,
                 value.JoinedAtUtc,
                 SolitairePlayerStatuses.Queued,
                 value.UserId == userId)).ToArray();
-            // Managed seats have no buy-in. Only this cohort's human entrants
-            // contribute to the prospective pool, just as in the dealt match.
-            var humanCount = options.AllowSingleHumanBotFill ? cohort.Length : ticket.PlayerCount;
-            var poolCents = checked(humanCount * ticket.BuyInCents);
-            var payoutCents = humanCount == 1 ? ticket.BuyInCents : checked(poolCents * 90 / 100);
+            var queuedBots = position <= ticket.PlayerCount &&
+                ReadString(partitionSnapshot, "queuedManagedFirstTicketId") == cohort[0].TicketId
+                ? ReadQueuedManagedSeats(partitionSnapshot).Take(ticket.PlayerCount - cohort.Length).ToArray()
+                : [];
+            var players = humanPlayers.Concat(queuedBots.Select((bot, index) =>
+                new SolitairePlayerResponse(
+                    $"competitor-{CreateLookupKey(bot.UserId)[..12]}",
+                    bot.PlayerName,
+                    humanPlayers.Length + index + 1,
+                    bot.JoinedAtUtc,
+                    SolitairePlayerStatuses.Queued,
+                    false))).ToArray();
+            // Every eventual seat contributes an equal entry. Any unfilled
+            // seats in a bot-enabled lobby are funded by the house at deal.
+            var poolCents = checked(ticket.PlayerCount * ticket.BuyInCents);
+            var payoutCents = checked(poolCents * 90 / 100);
             return new SolitaireStoreSession(
                 new SolitaireQueueSessionResponse(
                     ticket.TicketId,
@@ -172,61 +183,127 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         string userId,
         int limit,
         DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        (await GetHistoryPageAsync(userId, limit, null, nowUtc, cancellationToken)).Items;
+
+    public async Task<SolitaireHistoryPageResponse> GetHistoryPageAsync(
+        string userId,
+        int limit,
+        string? cursor,
+        DateTime nowUtc,
         CancellationToken cancellationToken)
     {
-        _ = await GetSessionAsync(userId, nowUtc, cancellationToken);
-        var snapshots = new List<DocumentSnapshot>();
-        await foreach (var snapshot in database.Collection("solitaireMatchPlayers")
-            .WhereEqualTo("userId", userId)
-            .Limit(500)
-            .StreamAsync(cancellationToken))
-        {
-            snapshots.Add(snapshot);
-        }
+        if (limit is < 1 or > 100)
+            throw new ArgumentOutOfRangeException(nameof(limit));
+        if (cursor is null)
+            _ = await GetSessionAsync(userId, nowUtc, cancellationToken);
+        await EnsureLegacyHistoryTimestampsAsync(userId, nowUtc, cancellationToken);
 
-        var matchIds = snapshots.Select(snapshot => ReadString(snapshot, "matchId"))
-            .Distinct(StringComparer.Ordinal)
-            .ToArray();
-        var histories = new List<SolitaireHistoryItemResponse>();
-        foreach (var matchId in matchIds)
+        var query = database.Collection("solitaireMatchPlayers")
+            .WhereEqualTo("userId", userId)
+            .OrderByDescending("startedAt");
+        if (cursor is not null)
         {
-            var resultSnapshot = await CardGameResultDocument(matchId, userId)
-                .GetSnapshotAsync(cancellationToken);
-            if (ReadString(resultSnapshot, "claimStatus") != SolitaireClaimStatuses.Completed)
-            {
-                continue;
-            }
-            var graph = await ReadMatchGraphForReadAsync(matchId, cancellationToken);
-            if (graph.Match.Status != SettledMatchStatus || graph.Match.CompletedAtUtc is null)
-            {
-                continue;
-            }
-            var standings = SolitaireCompetitionRules.Rank(graph.Players);
-            var placement = standings
-                .Select((player, index) => new { player.UserId, Placement = index + 1 })
-                .First(value => value.UserId == userId)
-                .Placement;
-            var current = graph.Players.First(player => player.UserId == userId);
-            histories.Add(new SolitaireHistoryItemResponse(
-                matchId,
-                graph.Match.PlayerCount,
-                SolitaireMoney.ToCredits(graph.Match.BuyInCents),
-                SolitaireMoney.ToCredits(graph.Match.PrizePoolCents),
-                placement,
-                current.Game.Score,
-                checked((int)Math.Ceiling((current.ElapsedMilliseconds ?? 0) / 1000d)),
-                SolitaireMoney.ToCredits(current.PayoutCents),
-                SolitaireMoney.ToCredits(current.PayoutCents - graph.Match.BuyInCents),
-                graph.Match.CompletedAtUtc.Value,
-                graph.Match.DisplayNames
-                    .Where((_, index) => graph.Match.PlayerIds[index] != userId)
-                    .ToArray()));
+            if (cursor.Length != 64 || cursor.Any(character => !char.IsAsciiHexDigit(character)))
+                throw new ArgumentException("The Solitaire history cursor is invalid.", nameof(cursor));
+            var cursorSnapshot = await database.Collection("solitaireMatchPlayers")
+                .Document(cursor).GetSnapshotAsync(cancellationToken);
+            if (!cursorSnapshot.Exists || ReadString(cursorSnapshot, "userId") != userId ||
+                !cursorSnapshot.TryGetValue<Timestamp>("startedAt", out _))
+                throw new ArgumentException("The Solitaire history cursor is invalid.", nameof(cursor));
+            query = query.StartAfter(cursorSnapshot);
         }
-        return histories
-            .OrderByDescending(history => history.CompletedAtUtc)
-            .ThenBy(history => history.MatchId, StringComparer.Ordinal)
-            .Take(limit)
-            .ToArray();
+        var snapshots = (await query.Limit(limit + 1).GetSnapshotAsync(cancellationToken)).Documents;
+        var selected = snapshots.Take(limit).ToArray();
+        using var hydrateLimit = new SemaphoreSlim(8);
+        var items = await Task.WhenAll(selected.Select(async snapshot =>
+        {
+            await hydrateLimit.WaitAsync(cancellationToken);
+            try
+            {
+                return await ReadHistoryItemAsync(snapshot, userId, cancellationToken);
+            }
+            finally
+            {
+                hydrateLimit.Release();
+            }
+        }));
+        return new SolitaireHistoryPageResponse(
+            items.Where(item => item is not null).Select(item => item!).ToArray(),
+            snapshots.Count > limit ? selected[^1].Id : null);
+    }
+
+    private async Task EnsureLegacyHistoryTimestampsAsync(
+        string userId,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var marker = database.Collection("solitaireHistoryIndexMigrations")
+            .Document(CreateLookupKey(userId));
+        if ((await marker.GetSnapshotAsync(cancellationToken)).Exists) return;
+        await foreach (var snapshot in database.Collection("solitaireMatchPlayers")
+            .WhereEqualTo("userId", userId).StreamAsync(cancellationToken))
+        {
+            if (snapshot.TryGetValue<Timestamp>("startedAt", out var startedAt) &&
+                startedAt.ToDateTime() != DateTime.UnixEpoch) continue;
+            var matchId = ReadString(snapshot, "matchId");
+            var match = await MatchDocument(matchId).GetSnapshotAsync(cancellationToken);
+            if (!match.Exists) continue;
+            await snapshot.Reference.UpdateAsync(new Dictionary<string, object>
+            {
+                ["startedAt"] = match.GetValue<Timestamp>("startedAt")
+            }, cancellationToken: cancellationToken);
+        }
+        await marker.SetAsync(new Dictionary<string, object>
+        {
+            ["completedAt"] = Timestamp.FromDateTime(nowUtc)
+        }, cancellationToken: cancellationToken);
+    }
+
+    private async Task<SolitaireHistoryItemResponse?> ReadHistoryItemAsync(
+        DocumentSnapshot playerSnapshot,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var matchId = ReadString(playerSnapshot, "matchId");
+        var graph = await ReadMatchGraphForReadAsync(matchId, cancellationToken);
+        if (graph.Match.Status is not (PlayingMatchStatus or SettledMatchStatus)) return null;
+        var resultSnapshot = graph.Match.Status == SettledMatchStatus
+            ? await CardGameResultDocument(matchId, userId).GetSnapshotAsync(cancellationToken)
+            : null;
+        var standings = SolitaireCompetitionRules.Rank(graph.Players);
+        var placement = graph.Match.Status == SettledMatchStatus
+            ? standings.Select((player, index) => new { player.UserId, Placement = index + 1 })
+                .First(value => value.UserId == userId).Placement
+            : 0;
+        var current = graph.Players.First(player => player.UserId == userId);
+        return new SolitaireHistoryItemResponse(
+            matchId,
+            graph.Match.PlayerCount,
+            SolitaireMoney.ToCredits(graph.Match.BuyInCents),
+            SolitaireMoney.ToCredits(graph.Match.PrizePoolCents),
+            placement,
+            current.Game.Score,
+            checked((int)Math.Ceiling((current.ElapsedMilliseconds ?? 0) / 1000d)),
+            SolitaireMoney.ToCredits(current.PayoutCents),
+            graph.Match.Status == SettledMatchStatus
+                ? SolitaireMoney.ToCredits(current.PayoutCents - graph.Match.BuyInCents)
+                : 0m,
+            graph.Match.CompletedAtUtc,
+            graph.Match.DisplayNames
+                .Where((_, index) => graph.Match.PlayerIds[index] != userId)
+                .ToArray())
+        {
+            Status = graph.Match.Status,
+            StartedAtUtc = current.StartedAtUtc == DateTime.UnixEpoch
+                ? graph.Match.StartedAtUtc : current.StartedAtUtc,
+            Players = PlayerResponses(graph.Match, graph.Players, userId),
+            ClaimStatus = resultSnapshot is null
+                ? null : EmptyToNull(ReadString(resultSnapshot, "claimStatus")),
+            CanClaim = resultSnapshot is not null &&
+                ReadString(resultSnapshot, "claimStatus") == SolitaireClaimStatuses.Unclaimed &&
+                ReadString(resultSnapshot, "settlementStatus") == "claimable"
+        };
     }
 
     private async Task<ReadGraph> ReadMatchGraphForReadAsync(
@@ -310,7 +387,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         : null)
                 : new SolitairePlayerResponse(
                     $"open-seat-{seat}",
-                    "Open seat",
+                    "Waiting for players...",
                     seat,
                     match.StartedAtUtc,
                     SolitairePlayerStatuses.Open,

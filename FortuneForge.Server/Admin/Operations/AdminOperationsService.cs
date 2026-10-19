@@ -59,7 +59,7 @@ internal sealed class AdminOperationsService(
             solitaire,
             texasHoldem,
             slots.HouseNetCredits + blackjack.HouseNetCredits + threeCardPoker.HouseNetCredits +
-                solitaire.PlatformFeeCredits + texasHoldem.PlatformFeeCredits,
+                solitaire.HouseNetCredits + texasHoldem.PlatformFeeCredits,
             new AdminFundingFlows(
                 purchases.Sum(static record => record.Credits),
                 purchases.Length,
@@ -126,23 +126,33 @@ internal sealed class AdminOperationsService(
     {
         var snapshot = await store.ReadAsync(range, cancellationToken);
         var negativeFinancials = snapshot.Financial.Count(static record =>
-            record.WageredCredits < 0 || record.PaidCredits < 0 || record.PlatformFeeCredits < 0);
+            record.WageredCredits < 0 || record.PaidCredits < 0 || record.PlatformFeeCredits < 0 ||
+            record.GrossPoolCredits < 0 || record.WinnerPayoutCredits < 0 ||
+            record.HumanEntryCredits < 0 || record.HouseFundedEntryCredits < 0 ||
+            record.HumanPayoutCredits < 0 || record.BotPrizeCredits < 0);
         var solitaireFormulaFailures = snapshot.Financial.Count(static record =>
             record.Game == "solitaire" &&
-            record.GrossPoolCredits - record.PaidCredits != record.PlatformFeeCredits);
+            (record.FinancialClassification == "house-funded-bot-pool-v1"
+                ? record.GrossPoolCredits - record.WinnerPayoutCredits != record.PlatformFeeCredits ||
+                  record.GrossPoolCredits != record.HumanEntryCredits + record.HouseFundedEntryCredits ||
+                  record.WinnerPayoutCredits != record.HumanPayoutCredits + record.BotPrizeCredits ||
+                  record.HouseNetCredits != record.HumanEntryCredits - record.HumanPayoutCredits ||
+                  record.HouseNetCredits != record.PlatformFeeCredits + record.BotPrizeCredits - record.HouseFundedEntryCredits
+                : record.GrossPoolCredits - record.PaidCredits != record.PlatformFeeCredits ||
+                  record.HouseNetCredits != record.PlatformFeeCredits));
         var unknownMatches = snapshot.Matches.Count(static match => match.Status == "unknown");
         var checks = new[]
         {
             Check("nonnegative-gaming-money", snapshot.Financial.Count, negativeFinancials,
-                "Gaming monetary values must be non-negative."),
+                "Gaming wagers, payouts, funding, and fees must be non-negative; signed house net may be negative."),
             Check("solitaire-platform-fee", snapshot.Financial.Count(static record => record.Game == "solitaire"),
-                solitaireFormulaFailures, "Real-human pool Solitaire gross pool minus winner payout must equal the platform fee."),
+                solitaireFormulaFailures, "Solitaire pool, payout, fee, funding, and signed house net must reconcile."),
             Check("known-match-status", snapshot.Matches.Count, unknownMatches,
                 "Stored match status must be a recognized operational value."),
             new AdminOperationsIntegrityCheck(
                 "bot-financial-isolation",
                 "pass",
-                "Managed game profiles are excluded from every real-player financial source and formula.",
+                "Managed profiles do not contribute human credits; house-funded Solitaire entries and bot prizes enter signed house P&L.",
                 snapshot.BotLeases.Count,
                 0)
         }.Concat(snapshot.SourceFindings.Select(static finding => new AdminOperationsIntegrityCheck(
@@ -171,7 +181,7 @@ internal sealed class AdminOperationsService(
             range.FromUtc,
             range.ToUtc,
             games,
-            "Managed-player game activity is excluded from real-player revenue, expense, liability, and house P&L.");
+            "Managed profiles never contribute human credits; Solitaire house-funded entries and bot prizes are included in signed house P&L.");
     }
 
     private AdminOperationsPage<T> Page<T>(
@@ -220,9 +230,16 @@ internal sealed class AdminOperationsService(
         var selected = records.Where(record => record.Game == game).ToArray();
         return new(
             selected.Sum(static record => record.GrossPoolCredits),
-            selected.Sum(static record => record.PaidCredits),
+            selected.Sum(static record => record.FinancialClassification == "house-funded-bot-pool-v1"
+                ? record.WinnerPayoutCredits : record.PaidCredits),
             selected.Sum(static record => record.PlatformFeeCredits),
-            selected.Length);
+            selected.Count(static record => record.FinancialClassification != "house-funded-bot-pool-v1"),
+            selected.Sum(static record => record.HouseNetCredits),
+            selected.Sum(static record => record.HumanEntryCredits),
+            selected.Sum(static record => record.HouseFundedEntryCredits),
+            selected.Sum(static record => record.HumanPayoutCredits),
+            selected.Sum(static record => record.BotPrizeCredits),
+            selected.Count(static record => record.FinancialClassification == "house-funded-bot-pool-v1"));
     }
 
     private static AdminOperationsIntegrityCheck Check(

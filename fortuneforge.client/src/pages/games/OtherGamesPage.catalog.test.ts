@@ -12,7 +12,6 @@ describe('Other games catalogue', () => {
       ['Keno', '/games/keno', 'keno'],
       ['Sic Bo', '/games/sic-bo', 'sic-bo'],
       ['Flappy', '/games/flappy', 'flappy'],
-      ['Horse Flight', '/games/horse-flight', 'horse'],
     ]) {
       expect(page).toContain(`{ name: '${name}'`)
       expect(page).toContain(`href: '${href}'`)
@@ -25,6 +24,7 @@ describe('Other games catalogue', () => {
     expect(page).toContain("href: '/games/craps'")
     expect(page).toContain("{ name: 'Three Card Poker'")
     expect(page).toContain("href: '/cards/three-card-poker'")
+    expect(page).not.toContain("{ name: 'Horse Flight'")
 
     expect(page).toContain('const slotGames: readonly CatalogGame[] = SLOT_GAME_CATALOG.map(catalogGameFromSlot)')
     expect(page).toContain('<GameSection games={slotGames} title="Slot machines" />')

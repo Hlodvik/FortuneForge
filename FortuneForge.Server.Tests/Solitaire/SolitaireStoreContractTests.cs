@@ -592,6 +592,18 @@ public sealed class SolitaireStoreContractTests
             }
         }
 
+        public async Task<SolitaireHistoryPageResponse> GetHistoryPageAsync(
+            string userId,
+            int limit,
+            string? cursor,
+            DateTime nowUtc,
+            CancellationToken cancellationToken)
+        {
+            if (cursor is not null) throw new ArgumentException("Unknown history cursor.", nameof(cursor));
+            return new SolitaireHistoryPageResponse(
+                await GetHistoryAsync(userId, limit, nowUtc, cancellationToken), null);
+        }
+
         private bool Replay(string actionId, string operation, string target, string detail)
         {
             if (!actions.TryGetValue(actionId, out var existing)) return false;

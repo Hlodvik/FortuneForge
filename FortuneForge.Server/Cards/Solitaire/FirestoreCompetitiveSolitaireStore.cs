@@ -17,18 +17,22 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private const string CancelledStatus = "cancelled";
     private const string PlayingMatchStatus = "playing";
     private const string SettledMatchStatus = "settled";
+    private const string HouseFundedPoolModel = "house-funded-bot-pool-v1";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
     private readonly CompetitiveSolitaireOptions options;
     private readonly IMultiplayerMatchmaker matchmaking;
+    private readonly ILogger<FirestoreCompetitiveSolitaireStore>? logger;
 
     public FirestoreCompetitiveSolitaireStore(
         FirestoreDb database,
         CompetitiveSolitaireOptions? options = null,
-        IMultiplayerMatchmaker? multiplayerMatchmaker = null)
+        IMultiplayerMatchmaker? multiplayerMatchmaker = null,
+        ILogger<FirestoreCompetitiveSolitaireStore>? logger = null)
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
+        this.logger = logger;
         // Direct store consumers use the same persisted identities and assignment
         // leases as the application singleton; no local opponent fallback exists.
         var profiles = new FirestoreManagedPlayerProfileRepository(database);
@@ -94,6 +98,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private DocumentReference RevenueDocument(string matchId) =>
         database.Collection("solitaireMatchRevenue").Document(matchId);
 
+    private DocumentReference HouseFundingDocument(string matchId) =>
+        database.Collection("solitaireHouseFunding").Document(matchId);
+
     private DocumentReference TestTraceDocument(string matchId) =>
         database.Collection("solitaireTestMatchTrace").Document(matchId);
 
@@ -156,12 +163,18 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             : Timestamp.FromDateTime(match.CompletedAtUtc.Value),
         ["winnerUserId"] = match.WinnerUserId ?? string.Empty,
         ["partitionKey"] = match.PartitionKey,
+        ["financialModel"] = match.FinancialModel,
+        ["humanEntryCents"] = match.HumanEntryCents,
+        ["houseFundedEntryCents"] = match.HouseFundedEntryCents,
+        ["admissionClosesAt"] = match.AdmissionClosesAtUtc is null
+            ? string.Empty
+            : Timestamp.FromDateTime(match.AdmissionClosesAtUtc.Value),
         ["botFillEligibleAt"] = match.SeatFillEligibleAtUtc is null
             ? string.Empty
             : Timestamp.FromDateTime(match.SeatFillEligibleAtUtc.Value),
         ["botsFilled"] = match.SeatsFilled,
         ["drawCount"] = match.DrawCount,
-        ["schemaVersion"] = 3L
+        ["schemaVersion"] = 4L
     };
 
     private static Dictionary<string, object> PlayerData(SolitairePlayerState player) => new()
@@ -288,9 +301,12 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
         ["moves"] = (long)player.Game.Moves,
         ["elapsedMilliseconds"] = player.ElapsedMilliseconds ?? 0L,
         ["buyInCents"] = 0L,
-        ["payoutCents"] = 0L,
+        ["payoutCents"] = player.PayoutCents,
         ["completedAt"] = Timestamp.FromDateTime(completedAtUtc),
-        ["financialClassification"] = "managed-player-virtual-v1",
+        ["financialClassification"] = match.FinancialModel == HouseFundedPoolModel
+            ? "house-funded-managed-player-v1"
+            : "managed-player-virtual-v1",
+        ["payoutDisposition"] = player.PayoutCents > 0 ? "house-revenue" : "none",
         ["schemaVersion"] = 1L
     };
 
@@ -335,6 +351,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             EmptyToNull(ReadString(snapshot, "winnerUserId")))
         {
             PartitionKey = ReadString(snapshot, "partitionKey"),
+            FinancialModel = ReadString(snapshot, "financialModel"),
+            HumanEntryCents = ReadLong(snapshot, "humanEntryCents"),
+            HouseFundedEntryCents = ReadLong(snapshot, "houseFundedEntryCents"),
+            AdmissionClosesAtUtc = ReadOptionalTimestamp(snapshot, "admissionClosesAt"),
             SeatFillEligibleAtUtc = ReadOptionalTimestamp(snapshot, "botFillEligibleAt"),
             SeatsFilled = seatsFilled,
             DrawCount = checked((int)ReadLong(snapshot, "drawCount", 3))

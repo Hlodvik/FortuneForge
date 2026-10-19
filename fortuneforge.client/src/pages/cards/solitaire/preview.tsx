@@ -20,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
         drawCount={3}
         freeGame={previewGame}
         freePaused={false}
+        freePauseBusy={false}
         freeComplete={false}
         freeAutoWinning={false}
         freeSubmitting={false}

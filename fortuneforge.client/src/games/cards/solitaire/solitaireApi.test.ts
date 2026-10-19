@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   SolitaireRequestError,
+  getSolitaireHistoryPage,
   getSolitaireSession,
   joinSolitaireQueue,
   postCommandWithReconciliation,
@@ -60,6 +61,27 @@ describe('competitive Solitaire API boundary', () => {
       drawCount: 3,
       idempotencyKey: 'queue_request_0000001',
     })
+  })
+
+  it('requests an older history page with an opaque cursor', async () => {
+    const fetchMock = successfulFetch({ items: [], nextCursor: null })
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(getSolitaireHistoryPage(30, 'opaque+/cursor=')).resolves.toEqual({
+      items: [], nextCursor: null,
+    })
+
+    const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(path).toBe('/api/solitaire/history-page?limit=30&cursor=opaque%2B%2Fcursor%3D')
+    expect(init.method).toBe('GET')
+  })
+
+  it('rejects a malformed paginated history response', async () => {
+    vi.stubGlobal('fetch', successfulFetch({ items: [], nextCursor: 42 }))
+
+    await expect(getSolitaireHistoryPage()).rejects.toThrow(
+      'The server returned an invalid solitaire history page response.',
+    )
   })
 
   it('reuses an uncertain request key for the same mutation fingerprint', () => {

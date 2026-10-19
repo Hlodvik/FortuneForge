@@ -28,9 +28,11 @@ public sealed class SolitaireApiContractTests
             .Where(value => value.Http is not null)
             .ToArray();
 
-        Assert.Equal(10, actions.Length);
+        Assert.Equal(13, actions.Length);
         AssertRoute(actions, "StartFreeRun", "free/runs", "POST");
         AssertRoute(actions, "CompleteFreeRun", "free/runs/{runId}/replay", "POST");
+        AssertRoute(actions, "PauseFreeRun", "free/runs/{runId}/pause", "POST");
+        AssertRoute(actions, "ResumeFreeRun", "free/runs/{runId}/resume", "POST");
         AssertRoute(actions, "Session", "session", "GET");
         AssertRoute(actions, "Join", "queue", "POST");
         AssertRoute(actions, "Cancel", "queue/{ticketId}", "DELETE");
@@ -39,6 +41,7 @@ public sealed class SolitaireApiContractTests
         AssertRoute(actions, "Dismiss", "matches/{matchId}/dismiss", "POST");
         AssertRoute(actions, "Claim", "matches/{matchId}/claim", "POST");
         AssertRoute(actions, "History", "history", "GET");
+        AssertRoute(actions, "HistoryPage", "history-page", "GET");
         Assert.DoesNotContain(actions, value => value.Name.Contains("Result", StringComparison.Ordinal));
         Assert.All(actions, value => Assert.NotNull(value.Rate));
     }

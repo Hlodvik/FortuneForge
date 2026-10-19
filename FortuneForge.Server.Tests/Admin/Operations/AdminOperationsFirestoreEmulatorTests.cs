@@ -39,7 +39,12 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             database.Collection("solitaireMatchRevenue").Document($"admin-solitaire-poison-{suffix}"),
             database.Collection("blackjackTableRoundRevenue").Document($"admin-blackjack-table-win-{suffix}"),
             database.Collection("blackjackTableRoundRevenue").Document($"admin-blackjack-table-loss-{suffix}"),
-            database.Collection("blackjackTableRoundRevenue").Document($"admin-blackjack-table-poison-{suffix}")
+            database.Collection("blackjackTableRoundRevenue").Document($"admin-blackjack-table-poison-{suffix}"),
+            database.Collection("solitaireMatchRevenue").Document($"admin-solitaire-house-human-win-{suffix}"),
+            database.Collection("solitaireMatchRevenue").Document($"admin-solitaire-house-bot-win-{suffix}"),
+            database.Collection("solitaireMatchRevenue").Document($"admin-solitaire-house-poison-{suffix}"),
+            database.Collection("solitaireMatches").Document($"admin-solitaire-house-match-{suffix}"),
+            database.Collection("solitaireMatchRevenue").Document($"admin-solitaire-house-all-human-{suffix}")
         };
 
         await Task.WhenAll(
@@ -120,7 +125,27 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             documents[11].SetAsync(SolitaireRevenue(now.AddSeconds(-30), 2_000L, 1_800L, 150L, 0L)),
             documents[12].SetAsync(BlackjackTableRevenue(now.AddSeconds(-25), 1_000L, 800L, 200L, 0L)),
             documents[13].SetAsync(BlackjackTableRevenue(now.AddSeconds(-20), 1_000L, 1_500L, -500L, 0L)),
-            documents[14].SetAsync(BlackjackTableRevenue(now.AddSeconds(-15), 1_000L, 800L, 200L, 25L))
+            documents[14].SetAsync(BlackjackTableRevenue(now.AddSeconds(-15), 1_000L, 800L, 200L, 25L)),
+            documents[15].SetAsync(HouseFundedSolitaireRevenue(now.AddSeconds(-14), 100L, 300L, 360L, 0L, 40L, -260L, 1L, 3L)),
+            documents[16].SetAsync(HouseFundedSolitaireRevenue(now.AddSeconds(-13), 200L, 200L, 0L, 360L, 40L, 200L, 2L, 2L)),
+            documents[17].SetAsync(HouseFundedSolitaireRevenue(now.AddSeconds(-12), 100L, 300L, 360L, 0L, 40L, 0L, 1L, 3L)),
+            documents[18].SetAsync(new Dictionary<string, object>
+            {
+                ["startedAt"] = Timestamp.FromDateTime(now.AddSeconds(-14)),
+                ["completedAt"] = Timestamp.FromDateTime(now.AddSeconds(-11)),
+                ["status"] = "settled",
+                ["financialModel"] = "house-funded-bot-pool-v1",
+                ["playerCount"] = 4L,
+                ["humanEntryCents"] = 100L,
+                ["houseFundedEntryCents"] = 300L,
+                ["prizePoolCents"] = 400L,
+                ["winnerPayoutCents"] = 360L,
+                ["humanPayoutCents"] = 360L,
+                ["houseNetCents"] = -260L,
+                ["platformFeeCents"] = 40L,
+                ["dealSeed"] = 314L
+            }),
+            documents[19].SetAsync(HouseFundedSolitaireRevenue(now.AddSeconds(-10), 200L, 0L, 180L, 0L, 20L, 20L, 2L, 0L))
             );
 
         try
@@ -150,9 +175,21 @@ public sealed class AdminOperationsFirestoreEmulatorTests
                 limitation.Contains("2 credit Hold'em revenue", StringComparison.Ordinal));
             var solitaireFinding = Assert.Single(snapshot.SourceFindings, finding =>
                 finding.Id == "solitaire-revenue-contract");
-            Assert.Equal(2, solitaireFinding.RecordsChecked);
-            Assert.Equal(1, solitaireFinding.Findings);
-            Assert.Single(snapshot.Financial, record => record.Game == "solitaire");
+            Assert.Equal(6, solitaireFinding.RecordsChecked);
+            Assert.Equal(2, solitaireFinding.Findings);
+            Assert.Equal(4, snapshot.Financial.Count(record => record.Game == "solitaire"));
+            Assert.Contains(snapshot.Financial, record =>
+                record.Id == FirestoreAdminOperationsStore.OpaqueId("solitaire", documents[15].Id) &&
+                record.HouseNetCredits == -2.6m && record.HouseFundedEntryCredits == 3m);
+            Assert.Contains(snapshot.Financial, record =>
+                record.Id == FirestoreAdminOperationsStore.OpaqueId("solitaire", documents[16].Id) &&
+                record.HouseNetCredits == 2m && record.BotPrizeCredits == 3.6m);
+            Assert.Contains(snapshot.Financial, record =>
+                record.Id == FirestoreAdminOperationsStore.OpaqueId("solitaire", documents[19].Id) &&
+                record.HouseNetCredits == 0.2m && record.HouseFundedEntryCredits == 0m);
+            Assert.Contains(snapshot.Matches, match =>
+                match.MatchId == FirestoreAdminOperationsStore.OpaqueId("solitaire-match", documents[18].Id) &&
+                match.WageredCredits == 1m && match.PaidCredits == 3.6m && match.HouseNetCredits == -2.6m);
             var blackjackTableFinding = Assert.Single(snapshot.SourceFindings, finding =>
                 finding.Id == "blackjack-table-revenue-contract");
             Assert.Equal(3, blackjackTableFinding.RecordsChecked);
@@ -221,6 +258,34 @@ public sealed class AdminOperationsFirestoreEmulatorTests
         ["winnerPayoutCents"] = payoutCents,
         ["platformFeeCents"] = feeCents,
         ["humanPlayerCount"] = 4L,
+        ["winnerUserId"] = "must-not-leak"
+    };
+
+    private static Dictionary<string, object> HouseFundedSolitaireRevenue(
+        DateTime recognizedAtUtc,
+        long humanEntryCents,
+        long houseFundedEntryCents,
+        long humanPayoutCents,
+        long botPrizeCents,
+        long platformFeeCents,
+        long houseNetCents,
+        long humanPlayerCount,
+        long managedPlayerCount) => new()
+    {
+        ["recognizedAt"] = Timestamp.FromDateTime(recognizedAtUtc),
+        ["currencyId"] = "slotsCredits",
+        ["financialClassification"] = "house-funded-bot-pool-v1",
+        ["botFinancialContributionCents"] = 0L,
+        ["humanEntryCents"] = humanEntryCents,
+        ["houseFundedEntryCents"] = houseFundedEntryCents,
+        ["grossPoolCents"] = humanEntryCents + houseFundedEntryCents,
+        ["winnerPayoutCents"] = humanPayoutCents + botPrizeCents,
+        ["humanPayoutCents"] = humanPayoutCents,
+        ["botPrizeCents"] = botPrizeCents,
+        ["platformFeeCents"] = platformFeeCents,
+        ["houseNetCents"] = houseNetCents,
+        ["humanPlayerCount"] = humanPlayerCount,
+        ["managedPlayerCount"] = managedPlayerCount,
         ["winnerUserId"] = "must-not-leak"
     };
 

@@ -4,11 +4,12 @@ import { describe, expect, it, vi } from 'vitest'
 import { createLocalSolitaireGame, projectRedactedDraw } from '../../../games/cards/solitaire/solitaireEngine'
 import type {
   SolitaireAvailability,
+  SolitaireHistoryItem,
   SolitaireMatchSession,
   SolitairePlayerStatus,
   SolitaireResultSession,
 } from '../../../games/cards/solitaire/solitaireTypes'
-import { SolitaireContent } from './CompetitiveSolitairePage'
+import { SolitaireContent, SolitaireHistoryPanel } from './CompetitiveSolitairePage'
 
 describe('Solitaire presentation', () => {
   it('projects a redacted competitive draw immediately without exposing stock identities', () => {
@@ -37,7 +38,7 @@ describe('Solitaire presentation', () => {
     expect(markup).toContain('Play free')
   })
 
-  it('renders only server-provided queue participants and keeps unassigned seats open', () => {
+  it('keeps legacy queued tickets recoverable without displaying a queue screen', () => {
     const markup = render({ kind: 'ready', session: {
       kind: 'queued', ticketId: 'ticket-1', playerCount: 4, buyInCredits: 5,
       prizePoolCredits: 20, winnerPayoutCredits: 18, position: 1,
@@ -45,16 +46,65 @@ describe('Solitaire presentation', () => {
       players: [player('seat-1', 'Sam River', 1, 'queued', true)],
     } })
 
-    expect(markup).toContain('Sam River')
-    expect(markup.match(/Open seat/g)).toHaveLength(3)
-    expect(markup).toContain('1 of 4 players ready')
-    expect(markup).toContain('Leave queue')
-    expect(markup).not.toMatch(/Avery|Blake|Casey|Drew|Emery/)
+    expect(markup).toContain('Starting match…')
+    expect(markup).toContain('Cancel')
+    expect(markup).not.toContain('Queue position')
+    expect(markup).not.toContain('Open seat')
+  })
+
+  it('shows ordered match participants and open seats in history without provisional winnings', () => {
+    const item: SolitaireHistoryItem = {
+      matchId: 'h'.repeat(64), playerCount: 4, buyInCredits: 5, prizePoolCredits: 20,
+      status: 'playing', startedAtUtc: '2026-10-17T12:00:00Z', completedAtUtc: null,
+      placement: 0, score: 430, elapsedSeconds: 600, payoutCredits: 0, netCredits: -5,
+      opponents: [],
+      players: [
+        player('player-1', 'Ada', 1, 'finished', true),
+        player('player-2', 'Kai', 2, 'playing', false),
+        player('open-seat-3', 'Waiting for players...', 3, 'open', false),
+        player('open-seat-4', 'Waiting for players...', 4, 'open', false),
+      ],
+    }
+    const markup = renderToStaticMarkup(createElement(SolitaireHistoryPanel, {
+      items: [item], loading: false, error: null, claimingMatchId: null,
+      hasMore: true, onLoadMore: vi.fn(),
+      onClose: vi.fn(), onRefresh: vi.fn(), onClaim: vi.fn(),
+    }))
+
+    expect(markup).toContain('Ada')
+    expect(markup).toContain('Kai')
+    expect(markup.match(/Waiting for players\.\.\./g)).toHaveLength(2)
+    expect(markup).toContain('In progress')
+    expect(markup).toContain('Older matches')
+    expect(markup).not.toContain('No payout')
+    expect(markup).not.toContain('Claim reward')
+  })
+
+  it('offers claiming from settled match history after another run has begun', () => {
+    const item: SolitaireHistoryItem = {
+      matchId: 'h'.repeat(64), playerCount: 4, buyInCredits: 5, prizePoolCredits: 20,
+      status: 'settled', startedAtUtc: '2026-10-17T12:00:00Z', completedAtUtc: '2026-10-17T15:00:00Z',
+      placement: 1, score: 800, elapsedSeconds: 600, payoutCredits: 18, netCredits: 13,
+      claimStatus: 'unclaimed', canClaim: true, opponents: ['Kai'],
+      players: [player('player-1', 'Ada', 1, 'finished', true), player('player-2', 'Kai', 2, 'finished', false),
+        player('player-3', 'Noor', 3, 'finished', false), player('player-4', 'Rae', 4, 'finished', false)],
+    }
+    const markup = renderToStaticMarkup(createElement(SolitaireHistoryPanel, {
+      items: [item], loading: false, error: null, claimingMatchId: null,
+      onClose: vi.fn(), onRefresh: vi.fn(), onClaim: vi.fn(),
+    }))
+
+    expect(markup).toContain('Settled')
+    expect(markup).toContain('R18.00 won')
+    expect(markup).toContain('Claim reward')
   })
 
   it('orders status, board, pause, and submit without match/table headings', () => {
     const markup = render({ kind: 'ready', session: matchSession() })
     expect(markup.indexOf('solitaire-match__status')).toBeLessThan(markup.indexOf('solitaire-board'))
+    expect(markup.indexOf('aria-label="Board controls"')).toBeLessThan(markup.indexOf('solitaire-board'))
+    expect(markup.match(/aria-label="Undo"/g)).toHaveLength(1)
+    expect(markup.match(/aria-label="Hint"/g)).toHaveLength(1)
     expect(markup.indexOf('solitaire-board')).toBeLessThan(markup.indexOf('Pause · 10:00 left'))
     expect(markup.indexOf('Pause · 10:00 left')).toBeLessThan(markup.indexOf('Submit game'))
     expect(markup).not.toMatch(/authoritative/i)
@@ -243,6 +293,7 @@ function render(
     drawCount: 3,
     freeGame: null,
     freePaused: false,
+    freePauseBusy: false,
     freeComplete: false,
     freeAutoWinning: false,
     freeSubmitting: false,

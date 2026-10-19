@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { completeSolitaireFreeRun, startSolitaireFreeRun } from './solitaireFreeRunApi'
+import { completeSolitaireFreeRun, setSolitaireFreeRunPaused, startSolitaireFreeRun } from './solitaireFreeRunApi'
 
 describe('Solitaire free-run API boundary', () => {
   afterEach(() => vi.unstubAllGlobals())
@@ -22,6 +22,24 @@ describe('Solitaire free-run API boundary', () => {
     expect(init.method).toBe('POST')
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe('solitaire_free_start_0001')
     expect(JSON.parse(String(init.body))).toEqual({ drawCount: 3 })
+  })
+
+  it('requests a fresh run from a completed deal when replaying', async () => {
+    const originalRunId = `solitaire_free_${'a'.repeat(64)}`
+    const response = {
+      runId: `solitaire_free_${'b'.repeat(64)}`,
+      seed: 42,
+      drawCount: 3,
+      startedAtUtc: '2026-09-06T12:01:00Z',
+      wasAlreadyStarted: false,
+    }
+    const fetchMock = successfulFetch(response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(startSolitaireFreeRun(3, 'solitaire_free_replay_0001', originalRunId)).resolves.toEqual(response)
+
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(String(init.body))).toEqual({ drawCount: 3, replayRunId: originalRunId })
   })
 
   it('submits only the effective replay and accepts authoritative result fields', async () => {
@@ -57,6 +75,23 @@ describe('Solitaire free-run API boundary', () => {
     for (const forbidden of ['score', 'moves', 'elapsedMilliseconds', 'terminal', 'seed', 'balance', 'payout']) {
       expect(JSON.parse(String(init.body))).not.toHaveProperty(forbidden)
     }
+  })
+
+  it('uses server-owned pause transitions without accepting a client elapsed time', async () => {
+    const runId = `solitaire_free_${'c'.repeat(64)}`
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ runId, isPaused: true, elapsedMilliseconds: 2_000 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ runId, isPaused: false, elapsedMilliseconds: 2_000 }), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(setSolitaireFreeRunPaused(runId, true)).resolves.toMatchObject({ isPaused: true, elapsedMilliseconds: 2_000 })
+    await expect(setSolitaireFreeRunPaused(runId, false)).resolves.toMatchObject({ isPaused: false, elapsedMilliseconds: 2_000 })
+
+    expect(fetchMock.mock.calls.map(([path, init]) => [path, init.method])).toEqual([
+      [`/api/solitaire/free/runs/${runId}/pause`, 'POST'],
+      [`/api/solitaire/free/runs/${runId}/resume`, 'POST'],
+    ])
+    expect(fetchMock.mock.calls.every(([, init]) => init.body === undefined)).toBe(true)
   })
 })
 

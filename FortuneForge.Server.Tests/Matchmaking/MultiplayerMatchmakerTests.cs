@@ -61,6 +61,15 @@ public sealed class MultiplayerMatchmakerTests
         Assert.Equal("first", table?.Id);
     }
 
+    [Fact]
+    public async Task RenewingAnEmptyManagedRosterSucceeds()
+    {
+        var matchmaker = new MultiplayerMatchmaker();
+
+        Assert.True(await matchmaker.TryRenewManagedPlayersAsync(
+            "solitaire", "queue-one", [], Start, default));
+    }
+
     private static MultiplayerQueuePlan<Ticket> Plan(
         IMultiplayerMatchmaker matchmaker,
         IEnumerable<Ticket> tickets,

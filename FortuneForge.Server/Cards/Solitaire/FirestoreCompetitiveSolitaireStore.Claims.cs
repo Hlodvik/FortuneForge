@@ -17,6 +17,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         var playerReference = PlayerDocument(matchId, userId);
         var resultReference = CardGameResultDocument(matchId, userId);
         var balanceReference = BalanceDocument(userId);
+        var sessionReference = SessionDocument(userId);
 
         await database.RunTransactionAsync(
             async transaction =>
@@ -26,7 +27,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     transaction.GetSnapshotAsync(matchReference, cancellationToken),
                     transaction.GetSnapshotAsync(playerReference, cancellationToken),
                     transaction.GetSnapshotAsync(resultReference, cancellationToken),
-                    transaction.GetSnapshotAsync(balanceReference, cancellationToken));
+                    transaction.GetSnapshotAsync(balanceReference, cancellationToken),
+                    transaction.GetSnapshotAsync(sessionReference, cancellationToken));
                 if (snapshots[0].Exists)
                 {
                     VerifyAction(snapshots[0], "claim", matchId, string.Empty);
@@ -70,9 +72,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                             userId,
                             player.PayoutCents,
                             finalBalance,
-                            match.PrizePoolCents == match.BuyInCents
-                                ? "solitaire-test-refund-claim"
-                                : "solitaire-winner-payout-claim",
+                            match.AdmissionClosesAtUtc is not null && match.PlayerIds.Count == 1
+                                ? "solitaire-no-contest-refund-claim"
+                                : match.PrizePoolCents == match.BuyInCents
+                                    ? "solitaire-test-refund-claim"
+                                    : "solitaire-winner-payout-claim",
                             idempotencyKey,
                             nowUtc));
                 }
@@ -88,10 +92,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     ["acknowledged"] = true,
                     ["acknowledgedAt"] = Timestamp.FromDateTime(nowUtc)
                 });
-                transaction.Set(
-                    SessionDocument(userId),
-                    SessionData(userId, SolitaireSessionKinds.Idle, null, null, nowUtc),
-                    SetOptions.MergeAll);
+                if (ReadString(snapshots[5], "matchId") == matchId)
+                    transaction.Set(
+                        sessionReference,
+                        SessionData(userId, SolitaireSessionKinds.Idle, null, null, nowUtc),
+                        SetOptions.MergeAll);
                 transaction.Create(
                     actionReference,
                     ActionData(userId, "claim", matchId, string.Empty, nowUtc));

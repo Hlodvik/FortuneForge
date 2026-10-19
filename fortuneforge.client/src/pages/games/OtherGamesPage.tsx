@@ -69,7 +69,6 @@ const casinoGames: readonly CatalogGame[] = [
 const arcadeGames: readonly CatalogGame[] = [
   { name: 'Asteroid Blaster', category: 'Arcade game', href: '/games/asteroids', icon: '☄', summary: 'Blast through asteroid fields in free play or ranked competition.', tone: 'asteroids' },
   { name: 'Flappy', category: 'Arcade game', href: '/games/flappy', icon: '⌁', summary: 'Thread a flier through a fast-moving obstacle course.', tone: 'flappy' },
-  { name: 'Horse Flight', category: 'Platform running game', href: '/games/horse-flight', icon: '♞', summary: 'An endless platform runner with timed jumps and obstacles.', tone: 'horse' },
   { name: '2048', category: 'Puzzle game', href: '/games/2048', icon: '▦', summary: 'Merge matching tiles and build the golden 2048.' },
   { name: 'Drop Merge', category: 'Number arcade', href: '/games/drop-merge', icon: '▩', summary: 'Drop number tiles, build chains, and make a huge tile.' },
   { name: 'Snake', category: 'Arcade game', href: '/games/snake', icon: '⌁', summary: 'Grow longer, collect fruit, and stay clear of the walls.' },
@@ -92,7 +91,6 @@ const newGames: readonly CatalogGame[] = [
   arcadeGames[1]!,
   arcadeGames[2]!,
   arcadeGames[3]!,
-  arcadeGames[4]!,
 ]
 
 export function OtherGamesPage({ account }: { account: AccountSummary }) {

@@ -59,7 +59,7 @@ internal sealed class FirestoreAdminOperationsStore(
                 : [$"{rejectedCreditHoldemRecords} credit Hold'em revenue record(s) failed the real-human pool financial contract and were excluded."])
             .Concat(rejectedSolitaireRecords == 0
                 ? []
-                : [$"{rejectedSolitaireRecords} Solitaire revenue record(s) failed the real-human pool financial contract and were excluded."])
+                : [$"{rejectedSolitaireRecords} Solitaire revenue record(s) failed a supported pool financial contract and were excluded."])
             .Concat(rejectedBlackjackTableRecords == 0
                 ? []
                 : [$"{rejectedBlackjackTableRecords} Blackjack table revenue record(s) failed the real-human dealer-counterparty financial contract and were excluded."])
@@ -126,7 +126,7 @@ internal sealed class FirestoreAdminOperationsStore(
         {
             new AdminOperationsSourceFinding(
                 "solitaire-revenue-contract",
-                "Solitaire revenue must be slotsCredits, classified as real-human-pool-v1, contain zero bot contribution, and satisfy pool minus payout equals platform fee.",
+                "Solitaire revenue must use a supported pool classification, contain zero bot financial contribution, and reconcile gross pool, payout, fee, house funding, and signed house net.",
                 reads[2].Documents.Count,
                 rejectedSolitaireRecords),
             new AdminOperationsSourceFinding(
@@ -224,15 +224,55 @@ internal sealed class FirestoreAdminOperationsStore(
     private static AdminOperationsFinancialRecord? TryMapSolitaireRevenue(DocumentSnapshot document)
     {
         if (String(document, "currencyId") != "slotsCredits" ||
-            String(document, "financialClassification") != "real-human-pool-v1" ||
             !document.TryGetValue<long>("botFinancialContributionCents", out var botContribution) ||
             botContribution != 0 ||
             !document.TryGetValue<long>("grossPoolCents", out var gross) ||
             !document.TryGetValue<long>("winnerPayoutCents", out var payout) ||
             !document.TryGetValue<long>("platformFeeCents", out var fee) ||
             !document.TryGetValue<long>("humanPlayerCount", out var humanPlayers) ||
-            gross < 0 || payout < 0 || fee < 0 || humanPlayers < 2 ||
-            gross < payout || gross - payout != fee)
+            gross < 0 || payout < 0 || fee < 0 || (decimal)gross - payout != fee)
+        {
+            return null;
+        }
+
+        var classification = String(document, "financialClassification");
+        long humanEntry;
+        long houseFundedEntry;
+        long humanPayout;
+        long botPrize;
+        long houseNet;
+        if (classification == "real-human-pool-v1")
+        {
+            if (humanPlayers < 2) return null;
+            humanEntry = gross;
+            houseFundedEntry = 0;
+            humanPayout = payout;
+            botPrize = 0;
+            houseNet = fee;
+        }
+        else if (classification == "house-funded-bot-pool-v1")
+        {
+            if (!document.TryGetValue<long>("humanEntryCents", out humanEntry) ||
+                !document.TryGetValue<long>("houseFundedEntryCents", out houseFundedEntry) ||
+                !document.TryGetValue<long>("humanPayoutCents", out humanPayout) ||
+                !document.TryGetValue<long>("botPrizeCents", out botPrize) ||
+                !document.TryGetValue<long>("houseNetCents", out houseNet) ||
+                !document.TryGetValue<long>("managedPlayerCount", out var managedPlayers) ||
+                humanPlayers is < 1 or > int.MaxValue || managedPlayers is < 0 or > int.MaxValue ||
+                humanEntry <= 0 || houseFundedEntry < 0 || humanPayout < 0 || botPrize < 0 ||
+                humanEntry % humanPlayers != 0 ||
+                (decimal)houseFundedEntry != (decimal)humanEntry / humanPlayers * managedPlayers ||
+                (decimal)humanEntry + houseFundedEntry != gross ||
+                (decimal)humanPayout + botPrize != payout ||
+                (decimal)humanEntry - humanPayout != houseNet ||
+                (decimal)fee + botPrize - houseFundedEntry != houseNet ||
+                (humanPayout > 0 && botPrize > 0) ||
+                (managedPlayers == 0 && botPrize > 0))
+            {
+                return null;
+            }
+        }
+        else
         {
             return null;
         }
@@ -243,11 +283,17 @@ internal sealed class FirestoreAdminOperationsStore(
             "solitaire",
             "settled",
             TimestampUtc(document, "recognizedAt"),
+            CreditsFromCents(humanEntry),
+            CreditsFromCents(humanPayout),
+            CreditsFromCents(houseNet),
             CreditsFromCents(gross),
-            CreditsFromCents(payout),
             CreditsFromCents(fee),
-            CreditsFromCents(gross),
-            CreditsFromCents(fee));
+            classification,
+            CreditsFromCents(payout),
+            CreditsFromCents(humanEntry),
+            CreditsFromCents(houseFundedEntry),
+            CreditsFromCents(humanPayout),
+            CreditsFromCents(botPrize));
     }
 
     private static AdminOperationsFinancialRecord? TryMapCreditHoldemRevenue(DocumentSnapshot document)
@@ -355,8 +401,10 @@ internal sealed class FirestoreAdminOperationsStore(
 
     private static AdminOperationsMatchItem MapSolitaireMatch(DocumentSnapshot document)
     {
-        var gross = CreditsFromCents(Long(document, "prizePoolCents"));
-        var paid = CreditsFromCents(Long(document, "winnerPayoutCents"));
+        var houseFunded = String(document, "financialModel") == "house-funded-bot-pool-v1";
+        var wagered = CreditsFromCents(Long(document, houseFunded ? "humanEntryCents" : "prizePoolCents"));
+        var paid = CreditsFromCents(Long(document, houseFunded ? "humanPayoutCents" : "winnerPayoutCents"));
+        var houseNet = CreditsFromCents(Long(document, houseFunded ? "houseNetCents" : "platformFeeCents"));
         return new(
             OpaqueId("solitaire-match", document.Id),
             "solitaire",
@@ -364,9 +412,9 @@ internal sealed class FirestoreAdminOperationsStore(
             checked((int)Long(document, "playerCount")),
             TimestampUtc(document, "startedAt"),
             OptionalTimestampUtc(document, "completedAt"),
-            gross,
+            wagered,
             paid,
-            CreditsFromCents(Long(document, "platformFeeCents")));
+            houseNet);
     }
 
     private static string SafeGame(string value) => value switch

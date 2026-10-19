@@ -134,8 +134,20 @@ public sealed record SolitaireHistoryItemResponse(
     int ElapsedSeconds,
     decimal PayoutCredits,
     decimal NetCredits,
-    DateTime CompletedAtUtc,
-    IReadOnlyList<string> Opponents);
+    DateTime? CompletedAtUtc,
+    IReadOnlyList<string> Opponents)
+{
+    public string Status { get; init; } = "settled";
+    public DateTime StartedAtUtc { get; init; }
+    public IReadOnlyList<SolitairePlayerResponse> Players { get; init; } = [];
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ClaimStatus { get; init; }
+    public bool CanClaim { get; init; }
+}
+
+public sealed record SolitaireHistoryPageResponse(
+    IReadOnlyList<SolitaireHistoryItemResponse> Items,
+    string? NextCursor);
 
 internal sealed record SolitaireTicket(
     string TicketId,
@@ -170,6 +182,12 @@ internal sealed record SolitaireMatch(
     string? WinnerUserId)
 {
     public string PartitionKey { get; init; } = string.Empty;
+    public string FinancialModel { get; init; } = string.Empty;
+    public long HumanEntryCents { get; init; }
+    public long HouseFundedEntryCents { get; init; }
+    // The join window belongs to the table, not to an individual ten-minute run.
+    // Null preserves the original fill-before-start lifecycle for older matches.
+    public DateTime? AdmissionClosesAtUtc { get; init; }
     public DateTime? SeatFillEligibleAtUtc { get; init; }
     public bool SeatsFilled { get; init; }
     public int DrawCount { get; init; } = 3;

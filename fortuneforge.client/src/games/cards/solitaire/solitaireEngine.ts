@@ -189,6 +189,27 @@ export function firstLegalFoundation(
   return null
 }
 
+/** A single click chooses a legal forward move; returning foundation cards remains deliberate. */
+export function firstLegalClickMove(
+  game: SolitaireGame,
+  from: SolitairePileReference,
+  startIndex: number,
+): Extract<SolitaireCommand, { type: 'move' }> | null {
+  if (from.zone === 'foundation') return null
+
+  const foundation = firstLegalFoundation(game, from, startIndex)
+  if (foundation !== null) {
+    return { type: 'move', from, startIndex, to: { zone: 'foundation', index: foundation } }
+  }
+
+  for (let column = 0; column < game.tableau.length; column += 1) {
+    if (from.zone === 'tableau' && from.index === column) continue
+    const command = { type: 'move', from, startIndex, to: { zone: 'tableau', index: column } } as const
+    if (canApplyLocalSolitaireCommand(game, command)) return command
+  }
+  return null
+}
+
 export function isLocalSolitaireWon(game: SolitaireGame): boolean {
   return game.foundations.every((foundation) => foundation.length === 13)
 }

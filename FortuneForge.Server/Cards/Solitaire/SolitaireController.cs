@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace FortuneForge.Server.Cards.Solitaire;
 
 public sealed record SolitaireForfeitRequest(int ExpectedVersion);
-public sealed record SolitaireFreeRunStartRequest(int DrawCount);
+public sealed record SolitaireFreeRunStartRequest(int DrawCount, string? ReplayRunId = null);
 public sealed record SolitaireFreeRunReplayRequest(IReadOnlyList<SolitaireFreeReplayCommand>? Commands);
 
 [ApiController]
@@ -34,7 +34,8 @@ public sealed class SolitaireController(
         try
         {
             return Ok(await freeRunService.StartAsync(
-                idempotencyKey ?? string.Empty, account.UserId, request.DrawCount, cancellationToken));
+                idempotencyKey ?? string.Empty, account.UserId, request.DrawCount, cancellationToken,
+                request.ReplayRunId));
         }
         catch (Exception exception)
         {
@@ -61,6 +62,39 @@ public sealed class SolitaireController(
             return FreeRunHttp(exception);
         }
     }
+
+    [HttpPost("free/runs/{runId}/pause")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> PauseFreeRun(string runId, CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to pause free Solitaire." });
+        try
+        {
+            return Ok(await freeRunService.PauseAsync(runId, account.UserId, cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            return FreeRunHttp(exception);
+        }
+    }
+
+    [HttpPost("free/runs/{runId}/resume")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> ResumeFreeRun(string runId, CancellationToken cancellationToken)
+    {
+        var account = await AccountAsync(cancellationToken);
+        if (account is null) return Unauthorized(new { error = "Sign in to resume free Solitaire." });
+        try
+        {
+            return Ok(await freeRunService.ResumeAsync(runId, account.UserId, cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            return FreeRunHttp(exception);
+        }
+    }
+
     [HttpGet("session")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
     public async Task<ActionResult> Session(CancellationToken cancellationToken)
@@ -261,6 +295,27 @@ public sealed class SolitaireController(
         try
         {
             return Ok(await Service().GetHistoryAsync(account.UserId, limit, cancellationToken));
+        }
+        catch (Exception exception)
+        {
+            return SolitaireHttp.FromException(this, exception, logger);
+        }
+    }
+
+    [HttpGet("history-page")]
+    [EnableRateLimiting(RateLimitPolicies.SlotReads)]
+    public async Task<ActionResult> HistoryPage(
+        [FromQuery] int limit = 30,
+        [FromQuery] string? cursor = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (Disabled() is { } unavailable) return unavailable;
+        var account = await AccountAsync(cancellationToken);
+        if (account is null)
+            return Unauthorized(new { error = "Sign in to read Solitaire history." });
+        try
+        {
+            return Ok(await Service().GetHistoryPageAsync(account.UserId, limit, cursor, cancellationToken));
         }
         catch (Exception exception)
         {

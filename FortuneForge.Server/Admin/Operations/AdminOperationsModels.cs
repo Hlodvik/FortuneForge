@@ -12,7 +12,13 @@ public sealed record AdminPoolGameFinancials(
     decimal GrossPoolCredits,
     decimal WinnerPayoutCredits,
     decimal PlatformFeeCredits,
-    int SettledRealHumanPoolMatches);
+    int SettledRealHumanPoolMatches,
+    decimal HouseNetCredits = 0,
+    decimal HumanEntryCredits = 0,
+    decimal HouseFundedEntryCredits = 0,
+    decimal HumanPayoutCredits = 0,
+    decimal BotPrizeCredits = 0,
+    int SettledHouseFundedPoolMatches = 0);
 
 public sealed record AdminFundingFlows(
     decimal CompletedPurchaseCredits,
@@ -104,7 +110,13 @@ internal sealed record AdminOperationsFinancialRecord(
     decimal PaidCredits,
     decimal HouseNetCredits,
     decimal GrossPoolCredits = 0,
-    decimal PlatformFeeCredits = 0);
+    decimal PlatformFeeCredits = 0,
+    string FinancialClassification = "",
+    decimal WinnerPayoutCredits = 0,
+    decimal HumanEntryCredits = 0,
+    decimal HouseFundedEntryCredits = 0,
+    decimal HumanPayoutCredits = 0,
+    decimal BotPrizeCredits = 0);
 
 internal sealed record AdminOperationsFundingRecord(
     string Id,

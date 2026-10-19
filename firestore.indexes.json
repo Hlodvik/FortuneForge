@@ -1,6 +1,24 @@
 {
   "indexes": [
     {
+      "collectionGroup": "solitaireMatchPlayers",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "arcadeCompetitions",
       "queryScope": "COLLECTION",
       "fields": [

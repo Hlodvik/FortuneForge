@@ -11,7 +11,7 @@ import { cardLabel } from '../shared/cards'
 import {
   canApplyLocalSolitaireCommand,
   findLocalSolitaireHint,
-  firstLegalFoundation,
+  firstLegalClickMove,
 } from './solitaireEngine'
 import type {
   SolitaireCard,
@@ -24,7 +24,6 @@ type Selection = Readonly<{
   from: SolitairePileReference
   startIndex: number
   cardId: string
-  label: string
 }>
 
 type DragState = Readonly<{
@@ -57,11 +56,13 @@ export function SolitaireBoard({
   game,
   busy,
   autoWinning = false,
+  hintRequestId = 0,
   onCommand,
 }: {
   game: SolitaireGame
   busy: boolean
   autoWinning?: boolean
+  hintRequestId?: number
   onCommand: (command: SolitaireCommand) => void
 }) {
   const [selection, setSelection] = useState<Selection | null>(null)
@@ -75,6 +76,7 @@ export function SolitaireBoard({
   const previousGameRef = useRef<SolitaireGame | null>(null)
   const cardRectsRef = useRef<Map<string, DOMRect>>(new Map())
   const flightTimerRef = useRef<number | null>(null)
+  const lastHintRequestId = useRef(hintRequestId)
 
   useEffect(() => {
     setSelection(null)
@@ -82,6 +84,12 @@ export function SolitaireBoard({
     setHint(null)
     dragRef.current = null
   }, [game])
+
+  useEffect(() => {
+    if (hintRequestId === lastHintRequestId.current) return
+    lastHintRequestId.current = hintRequestId
+    setHint(findLocalSolitaireHint(game))
+  }, [game, hintRequestId])
 
   useLayoutEffect(() => {
     const board = boardRef.current
@@ -140,19 +148,12 @@ export function SolitaireBoard({
   ) => {
     if (busy || !card.isFaceUp) return
     if (selection === null) {
-      if (card.rank === 1 && from.zone !== 'foundation') {
-        const foundation = firstLegalFoundation(game, from, startIndex)
-        if (foundation !== null) {
-          onCommand({
-            type: 'move',
-            from,
-            startIndex,
-            to: { zone: 'foundation', index: foundation },
-          })
-          return
-        }
+      const automatic = firstLegalClickMove(game, from, startIndex)
+      if (automatic !== null) {
+        onCommand(automatic)
+        return
       }
-      setSelection({ from, startIndex, cardId: card.id, label: cardLabel(card) })
+      setSelection({ from, startIndex, cardId: card.id })
       return
     }
     if (samePile(selection.from, from) && selection.startIndex === startIndex) {
@@ -164,7 +165,13 @@ export function SolitaireBoard({
       onCommand(command)
       return
     }
-    setSelection({ from, startIndex, cardId: card.id, label: cardLabel(card) })
+    const automatic = firstLegalClickMove(game, from, startIndex)
+    if (automatic !== null) {
+      setSelection(null)
+      onCommand(automatic)
+      return
+    }
+    setSelection({ from, startIndex, cardId: card.id })
   }
 
   const moveTo = (to: SolitairePileReference) => {
@@ -172,19 +179,6 @@ export function SolitaireBoard({
     const command = { type: 'move', from: selection.from, startIndex: selection.startIndex, to } as const
     if (canApplyLocalSolitaireCommand(game, command)) onCommand(command)
     else setSelection(null)
-  }
-
-  const moveHome = (source: Selection) => {
-    if (busy) return
-    const foundation = firstLegalFoundation(game, source.from, source.startIndex)
-    if (foundation === null) return
-    setSelection(null)
-    onCommand({
-      type: 'move',
-      from: source.from,
-      startIndex: source.startIndex,
-      to: { zone: 'foundation', index: foundation },
-    })
   }
 
   const beginDrag = (
@@ -397,7 +391,6 @@ export function SolitaireBoard({
                   from: { zone: 'waste', index: 0 },
                   startIndex: game.waste.length - 1,
                   cardId: card.id,
-                  label: cardLabel(card),
                 } : null
                 return (
                   <CardButton
@@ -416,9 +409,6 @@ export function SolitaireBoard({
                     } as CSSProperties}
                     onClick={() => {
                       if (source !== null) activate(() => choose(source.from, source.startIndex, card))
-                    }}
-                    onDoubleClick={() => {
-                      if (source !== null) moveHome(source)
                     }}
                   />
                 )
@@ -444,7 +434,6 @@ export function SolitaireBoard({
                       from: target,
                       startIndex: pile.length - 1,
                       cardId: top.id,
-                      label: cardLabel(top),
                     } : null
                     return (
                       <CardButton
@@ -466,7 +455,9 @@ export function SolitaireBoard({
                   <button
                     className="solitaire-empty-target"
                     type="button"
-                    disabled={busy || selection === null}
+                    disabled={busy || selection === null || !canApplyLocalSolitaireCommand(game, {
+                      type: 'move', from: selection.from, startIndex: selection.startIndex, to: target,
+                    })}
                     aria-label={`Move selected card to foundation ${index + 1}`}
                     onClick={() => moveTo(target)}
                   >
@@ -495,7 +486,9 @@ export function SolitaireBoard({
                 <button
                   className="solitaire-empty-target solitaire-empty-target--tableau"
                   type="button"
-                  disabled={busy || selection === null}
+                  disabled={busy || selection === null || !canApplyLocalSolitaireCommand(game, {
+                    type: 'move', from: selection.from, startIndex: selection.startIndex, to: target,
+                  })}
                   aria-label={`Move selected cards to empty tableau column ${column + 1}`}
                   onClick={() => moveTo(target)}
                 >
@@ -514,7 +507,6 @@ export function SolitaireBoard({
                   from: target,
                   startIndex: index,
                   cardId: card.id,
-                  label: cardLabel(card),
                 } : null
                 return (
                   <CardButton
@@ -541,9 +533,6 @@ export function SolitaireBoard({
                         if (card.isFaceUp) choose(target, index, card)
                       })
                     }}
-                    onDoubleClick={() => {
-                      if (source !== null) moveHome(source)
-                    }}
                   />
                 )
               })}
@@ -552,14 +541,6 @@ export function SolitaireBoard({
         })}
       </div>
 
-      <div className="solitaire-board__help">
-        <p className="solitaire-board__hint" aria-live="polite">
-          {hint?.message ?? (selection === null
-            ? 'Drag, tap, or use Tab and Enter to select a card and its destination.'
-            : `Selected ${selection.label}. Tap a tableau or foundation pile, or drag the card.`)}
-        </p>
-        <button type="button" disabled={busy} onClick={() => setHint(findLocalSolitaireHint(game))}>Hint</button>
-      </div>
     </section>
   )
 }
@@ -582,7 +563,6 @@ function CardButton({
   onDrag,
   onDragEnd,
   onClick,
-  onDoubleClick,
 }: {
   card: SolitaireCard
   compact: boolean
@@ -601,7 +581,6 @@ function CardButton({
   onDrag?: (event: ReactDragEvent<HTMLButtonElement>) => void
   onDragEnd?: (event: ReactDragEvent<HTMLButtonElement>) => void
   onClick: () => void
-  onDoubleClick?: () => void
 }) {
   const dragging = dragState?.active === true && dragSource !== undefined
     && samePile(dragState.source.from, dragSource.from)
@@ -618,7 +597,7 @@ function CardButton({
       data-solitaire-drag-source={dragSource === undefined ? undefined : 'true'}
       data-solitaire-card-id={card.isFaceUp ? card.id : undefined}
       aria-pressed={card.isFaceUp ? selected : undefined}
-      aria-label={card.isFaceUp ? `Select ${cardLabel(card)}` : 'Flip face-down card'}
+      aria-label={card.isFaceUp ? `Move or select ${cardLabel(card)}` : 'Flip face-down card'}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
@@ -627,7 +606,6 @@ function CardButton({
       onDrag={onDrag}
       onDragEnd={onDragEnd}
       onClick={onClick}
-      onDoubleClick={onDoubleClick}
     >
       {card.isFaceUp
         ? <SolitaireFaceCard card={card} compact={compact} />
@@ -668,7 +646,11 @@ function SolitaireFaceCard({
       <span className="solitaire-card-face__corner">
         <b>{rankSymbols[card.rank]}</b><i>{suitSymbols[card.suit]}</i>
       </span>
-      <i className="solitaire-card-face__pip">{suitSymbols[card.suit]}</i>
+      {card.rank >= 11 ? (
+        <span className="solitaire-card-face__court">
+          <b>{rankSymbols[card.rank]}</b><i>{suitSymbols[card.suit]}</i>
+        </span>
+      ) : <i className="solitaire-card-face__pip">{suitSymbols[card.suit]}</i>}
       <span className="solitaire-card-face__corner solitaire-card-face__corner--bottom">
         <b>{rankSymbols[card.rank]}</b><i>{suitSymbols[card.suit]}</i>
       </span>

@@ -5,6 +5,7 @@ import {
   canApplyLocalSolitaireCommand,
   createLocalSolitaireGame,
   findLocalSolitaireHint,
+  firstLegalClickMove,
   firstLegalFoundation,
   SolitaireRuleError,
 } from './solitaireEngine'
@@ -82,6 +83,51 @@ describe('local Klondike rules', () => {
     })).toBe(false)
   })
 
+  it('clicks a black 10 and its face-up run onto an available red Jack', () => {
+    const game = state({
+      tableau: [
+        [face('spades', 10), face('hearts', 9)],
+        [face('diamonds', 11)],
+        [], [], [], [], [],
+      ],
+    })
+
+    const command = firstLegalClickMove(game, { zone: 'tableau', index: 0 }, 0)
+    expect(command).toEqual({
+      type: 'move',
+      from: { zone: 'tableau', index: 0 },
+      startIndex: 0,
+      to: { zone: 'tableau', index: 1 },
+    })
+    expect(applyLocalSolitaireCommand(game, command!).tableau[1]).toHaveLength(3)
+  })
+
+  it('prefers an eligible foundation over a tableau destination for an Ace', () => {
+    const game = state({
+      tableau: [[ace('hearts')], [face('clubs', 2)], [], [], [], [], []],
+    })
+
+    expect(firstLegalClickMove(game, { zone: 'tableau', index: 0 }, 0)).toEqual({
+      type: 'move',
+      from: { zone: 'tableau', index: 0 },
+      startIndex: 0,
+      to: { zone: 'foundation', index: 0 },
+    })
+  })
+
+  it('returns no click move when the card has no legal destination', () => {
+    const game = state({ tableau: [[face('spades', 10)], [], [], [], [], [], []] })
+    expect(firstLegalClickMove(game, { zone: 'tableau', index: 0 }, 0)).toBeNull()
+  })
+
+  it('does not auto-return foundation cards to the tableau on click', () => {
+    const game = state({
+      foundations: [[ace('hearts')], [], [], []],
+      tableau: [[face('clubs', 2)], [], [], [], [], [], []],
+    })
+    expect(firstLegalClickMove(game, { zone: 'foundation', index: 0 }, 0)).toBeNull()
+  })
+
   it('returns a concrete legal move for the hint surface', () => {
     const game = state({ tableau: [[ace('hearts')], [], [], [], [], [], []] })
 
@@ -125,7 +171,7 @@ function ace(suit: 'clubs' | 'diamonds' | 'hearts' | 'spades') {
 
 function face(
   suit: 'clubs' | 'diamonds' | 'hearts' | 'spades',
-  rank: 1 | 2 | 3 | 8 | 12 | 13,
+  rank: 1 | 2 | 3 | 8 | 9 | 10 | 11 | 12 | 13,
 ) {
   return { id: `${suit}-${rank}`, suit, rank, isFaceUp: true as const }
 }

@@ -18,7 +18,7 @@ describe('admin operations route', () => {
     expect(pageTitleForPath('/admin/operations')).toBe('Operations — Fortune Forge')
   })
 
-  it('renders credit Hold’em fees separately from bot telemetry', () => {
+  it('renders signed Solitaire net separately from pool fees and bot telemetry', () => {
     const now = new Date().toISOString()
     const dashboard = {
       overview: {
@@ -26,7 +26,7 @@ describe('admin operations route', () => {
         slots: { wageredCredits: 0, paidCredits: 0, houseNetCredits: 0, completedEvents: 0 },
         blackjack: { wageredCredits: 0, paidCredits: 0, houseNetCredits: 0, completedEvents: 0 },
         threeCardPoker: { wageredCredits: 15, paidCredits: 40, houseNetCredits: -25, completedEvents: 1 },
-        solitaire: { grossPoolCredits: 0, winnerPayoutCredits: 0, platformFeeCredits: 0, settledRealHumanPoolMatches: 0 },
+        solitaire: { grossPoolCredits: 8, winnerPayoutCredits: 7.2, platformFeeCredits: 0.8, settledRealHumanPoolMatches: 0, houseNetCredits: -5.2, houseFundedEntryCredits: 6, botPrizeCredits: 0, settledHouseFundedPoolMatches: 1 },
         texasHoldem: { grossPoolCredits: 100, winnerPayoutCredits: 90, platformFeeCredits: 10, settledRealHumanPoolMatches: 1 },
         houseGamingNetCredits: -15,
         funding: { completedPurchaseCredits: 0, completedPurchases: 0, completedWithdrawalCredits: 0, completedWithdrawals: 0 },
@@ -41,6 +41,9 @@ describe('admin operations route', () => {
     const markup = renderToStaticMarkup(createElement(AdminOperationsDashboardView, { dashboard }))
 
     expect(markup).toContain("Real-human pool Hold&#x27;em fees")
+    expect(markup).toContain('Solitaire house net')
+    expect(markup).toContain('R-5,20')
+    expect(markup).toContain('Solitaire house-funded entries')
     expect(markup).toContain('R10,00')
     expect(markup).toContain('net R-5,00')
     expect(markup).toContain('Simulated-player telemetry')

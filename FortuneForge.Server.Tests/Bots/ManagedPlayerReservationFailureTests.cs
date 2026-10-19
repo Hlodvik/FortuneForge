@@ -93,6 +93,7 @@ public sealed class ManagedPlayerReservationFailureTests
             return Task.FromResult(true);
         }
         public Task HeartbeatAsync(string profileId, string gameId, string assignmentId, DateTime nowUtc, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task<bool> TryRenewAsync(string gameId, string assignmentId, IReadOnlyCollection<string> profileIds, DateTime nowUtc, CancellationToken cancellationToken) => Task.FromResult(true);
         public Task<bool> ReleaseAsync(string profileId, string assignmentId, DateTime nowUtc, CancellationToken cancellationToken)
         {
             Released.Add(profileId);

@@ -37,19 +37,24 @@ public sealed class FirestoreSolitaireFreeRunService
         string idempotencyKey,
         string authenticatedUserId,
         int drawCount,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        string? replayRunId = null)
     {
         ValidateUser(authenticatedUserId);
         SolitaireRules.ValidateDrawCount(drawCount);
         if (string.IsNullOrWhiteSpace(idempotencyKey) || !IdempotencyKeyPattern.IsMatch(idempotencyKey))
             throw new ArgumentException("The idempotency key is invalid.", nameof(idempotencyKey));
+        if (replayRunId is not null && string.IsNullOrWhiteSpace(replayRunId))
+            throw new ArgumentException("The replay run id is invalid.", nameof(replayRunId));
 
         var documentId = DocumentId(authenticatedUserId, idempotencyKey);
         var runId = $"{RunIdPrefix}{documentId}";
         var startedAtUtc = timeProvider.GetUtcNow();
-        var proposedSeed = createSeed();
-        if (proposedSeed == 0) throw new InvalidOperationException("The Solitaire seed source returned zero.");
+        var proposedSeed = replayRunId is null ? createSeed() : 0;
+        if (replayRunId is null && proposedSeed == 0)
+            throw new InvalidOperationException("The Solitaire seed source returned zero.");
         var reference = database.Collection(CollectionName).Document(documentId);
+        var replayReference = replayRunId is null ? null : RunDocument(replayRunId);
 
         return database.RunTransactionAsync(async transaction =>
         {
@@ -58,13 +63,25 @@ public sealed class FirestoreSolitaireFreeRunService
             {
                 var existing = ReadRun(snapshot, runId, authenticatedUserId);
                 if (!snapshot.TryGetValue<string>("startIdempotencyKey", out var storedKey) || storedKey != idempotencyKey ||
-                    existing.DrawCount != drawCount)
+                    existing.DrawCount != drawCount ||
+                    (snapshot.TryGetValue<string>("replayRunId", out var storedReplayRunId) ? storedReplayRunId : null) != replayRunId)
                     throw new InvalidOperationException("The Solitaire free-run idempotency record conflicts with this request.");
                 return new SolitaireFreeRunStartResult(
                     existing.RunId, existing.Seed, existing.DrawCount, existing.StartedAtUtc, true);
             }
 
-            transaction.Create(reference, new Dictionary<string, object>
+            if (replayReference is not null)
+            {
+                var sourceSnapshot = await transaction.GetSnapshotAsync(replayReference, cancellationToken);
+                var source = ReadRun(sourceSnapshot, replayRunId!, authenticatedUserId);
+                if (source.Status != "completed")
+                    throw new InvalidOperationException("Only a completed Solitaire free run can be replayed.");
+                if (source.DrawCount != drawCount)
+                    throw new InvalidOperationException("The Solitaire replay draw count must match the original run.");
+                proposedSeed = source.Seed;
+            }
+
+            var document = new Dictionary<string, object>
             {
                 ["runId"] = runId,
                 ["userId"] = authenticatedUserId,
@@ -74,7 +91,9 @@ public sealed class FirestoreSolitaireFreeRunService
                 ["status"] = "started",
                 ["startedAt"] = Timestamp.FromDateTime(startedAtUtc.UtcDateTime),
                 ["schemaVersion"] = 1L,
-            });
+            };
+            if (replayRunId is not null) document["replayRunId"] = replayRunId;
+            transaction.Create(reference, document);
             return new SolitaireFreeRunStartResult(runId, proposedSeed, drawCount, startedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }
@@ -125,23 +144,83 @@ public sealed class FirestoreSolitaireFreeRunService
             }
 
             var terminal = SolitaireEngine.IsWon(game) ? "won" : "submitted";
-            var elapsedMilliseconds = Math.Max(0, (long)(completedAtUtc - stored.StartedAtUtc).TotalMilliseconds);
+            var elapsedMilliseconds = ActiveElapsedMilliseconds(stored, completedAtUtc);
+            var score = SolitaireScoreRules.FinalScore(game, elapsedMilliseconds);
             transaction.Set(reference, new Dictionary<string, object>
             {
                 ["status"] = "completed",
                 ["replayCanonical"] = canonical,
                 ["replayDigest"] = digest,
-                ["score"] = (long)game.Score,
+                ["score"] = (long)score,
                 ["moves"] = (long)game.Moves,
                 ["elapsedMilliseconds"] = elapsedMilliseconds,
                 ["terminal"] = terminal,
+                ["isPaused"] = false,
+                ["pausedMilliseconds"] = TotalPausedMilliseconds(stored, completedAtUtc),
                 ["completedAt"] = Timestamp.FromDateTime(completedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
             return new SolitaireFreeRunCompletionResult(
-                runId, stored.Seed, stored.DrawCount, game.Score, game.Moves,
+                runId, stored.Seed, stored.DrawCount, score, game.Moves,
                 elapsedMilliseconds, terminal, completedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }
+
+    internal Task<SolitaireFreeRunPauseResult> PauseAsync(
+        string runId,
+        string authenticatedUserId,
+        CancellationToken cancellationToken) =>
+        SetPausedAsync(runId, authenticatedUserId, true, cancellationToken);
+
+    internal Task<SolitaireFreeRunPauseResult> ResumeAsync(
+        string runId,
+        string authenticatedUserId,
+        CancellationToken cancellationToken) =>
+        SetPausedAsync(runId, authenticatedUserId, false, cancellationToken);
+
+    private Task<SolitaireFreeRunPauseResult> SetPausedAsync(
+        string runId,
+        string authenticatedUserId,
+        bool pause,
+        CancellationToken cancellationToken)
+    {
+        ValidateUser(authenticatedUserId);
+        var changedAtUtc = timeProvider.GetUtcNow();
+        var reference = RunDocument(runId);
+        return database.RunTransactionAsync(async transaction =>
+        {
+            var snapshot = await transaction.GetSnapshotAsync(reference, cancellationToken);
+            var stored = ReadRun(snapshot, runId, authenticatedUserId);
+            if (stored.Status != "started")
+                throw new InvalidOperationException("The Solitaire free run is not available for pause or resume.");
+            if (stored.IsPaused == pause)
+                return new SolitaireFreeRunPauseResult(runId, pause, ActiveElapsedMilliseconds(stored, changedAtUtc));
+
+            var pausedMilliseconds = pause
+                ? stored.PausedMilliseconds
+                : TotalPausedMilliseconds(stored, changedAtUtc);
+            transaction.Set(reference, new Dictionary<string, object>
+            {
+                ["isPaused"] = pause,
+                ["pausedMilliseconds"] = pausedMilliseconds,
+                ["pauseStartedAt"] = Timestamp.FromDateTime(changedAtUtc.UtcDateTime),
+            }, SetOptions.MergeAll);
+            var updated = stored with
+            {
+                IsPaused = pause,
+                PausedMilliseconds = pausedMilliseconds,
+                PauseStartedAtUtc = pause ? changedAtUtc : null,
+            };
+            return new SolitaireFreeRunPauseResult(runId, pause, ActiveElapsedMilliseconds(updated, changedAtUtc));
+        }, cancellationToken: cancellationToken);
+    }
+
+    private static long ActiveElapsedMilliseconds(StoredFreeRun run, DateTimeOffset now) =>
+        Math.Max(0, (long)(now - run.StartedAtUtc).TotalMilliseconds - TotalPausedMilliseconds(run, now));
+
+    private static long TotalPausedMilliseconds(StoredFreeRun run, DateTimeOffset now) =>
+        run.PausedMilliseconds + (run.IsPaused && run.PauseStartedAtUtc is { } pauseStartedAt
+            ? Math.Max(0, (long)(now - pauseStartedAt).TotalMilliseconds)
+            : 0);
 
     private static SolitaireFreeReplayCommand Normalize(SolitaireFreeReplayCommand command)
     {
@@ -185,7 +264,21 @@ public sealed class FirestoreSolitaireFreeRunService
 
         var baseRun = new StoredFreeRun(
             runId, (uint)seedValue, (int)drawCountValue, status, new DateTimeOffset(startedAt.ToDateTime()),
-            string.Empty, string.Empty, 0, 0, 0, "", null);
+            string.Empty, string.Empty, 0, 0, 0, "", null, 0, false, null);
+        // Older free-run documents predate pause tracking and remain fully playable.
+        var pausedMilliseconds = snapshot.TryGetValue<long>("pausedMilliseconds", out var storedPausedMilliseconds)
+            ? storedPausedMilliseconds : 0;
+        var isPaused = snapshot.TryGetValue<bool>("isPaused", out var storedIsPaused) && storedIsPaused;
+        DateTimeOffset? pauseStartedAtUtc = snapshot.TryGetValue<Timestamp>("pauseStartedAt", out var pauseStartedAt)
+            ? new DateTimeOffset(pauseStartedAt.ToDateTime()) : null;
+        if (pausedMilliseconds < 0 || (isPaused && pauseStartedAtUtc is null) || (status == "completed" && isPaused))
+            throw new InvalidOperationException("The Solitaire free-run pause state is corrupt.");
+        baseRun = baseRun with
+        {
+            PausedMilliseconds = pausedMilliseconds,
+            IsPaused = isPaused,
+            PauseStartedAtUtc = isPaused ? pauseStartedAtUtc : null,
+        };
         if (status == "started") return baseRun;
 
         if (!snapshot.TryGetValue<string>("replayCanonical", out var canonical) || string.IsNullOrWhiteSpace(canonical) ||
@@ -242,7 +335,10 @@ public sealed class FirestoreSolitaireFreeRunService
         int Moves,
         long ElapsedMilliseconds,
         string Terminal,
-        DateTimeOffset? CompletedAtUtc)
+        DateTimeOffset? CompletedAtUtc,
+        long PausedMilliseconds,
+        bool IsPaused,
+        DateTimeOffset? PauseStartedAtUtc)
     {
         internal SolitaireFreeRunCompletionResult ToCompletionResult(bool replayed) => new(
             RunId, Seed, DrawCount, Score, Moves, ElapsedMilliseconds, Terminal,
@@ -275,3 +371,8 @@ internal sealed record SolitaireFreeRunCompletionResult(
     string Terminal,
     DateTimeOffset CompletedAtUtc,
     bool WasAlreadyCompleted);
+
+internal sealed record SolitaireFreeRunPauseResult(
+    string RunId,
+    bool IsPaused,
+    long ElapsedMilliseconds);

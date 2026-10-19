@@ -6,6 +6,7 @@ import {
   cancelSolitaireQueue,
   claimSolitaireResult,
   dismissSolitaireResult,
+  getSolitaireHistoryPage,
   getSolitaireSession,
   isUncertainSolitaireFailure,
   joinSolitaireQueue,
@@ -17,6 +18,7 @@ import {
 import {
   completeSolitaireFreeRun,
   createSolitaireFreeRunRequestId,
+  setSolitaireFreeRunPaused,
   startSolitaireFreeRun,
   type SolitaireFreeReplayCommand,
   type SolitaireFreeRun,
@@ -42,6 +44,7 @@ import {
   type SolitaireCommand,
   type SolitaireDrawCount,
   type SolitaireGame,
+  type SolitaireHistoryItem,
   type SolitaireMatchSession,
   type SolitaireMutationResponse,
   type SolitairePlayerCount,
@@ -65,6 +68,7 @@ type SolitaireContentProps = Readonly<{
   drawCount: SolitaireDrawCount
   freeGame: SolitaireGame | null
   freePaused: boolean
+  freePauseBusy: boolean
   freeComplete: boolean
   freeAutoWinning: boolean
   freeSubmitting: boolean
@@ -119,17 +123,31 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const [requestError, setRequestError] = useState<string | null>(null)
   const [freeGame, setFreeGame] = useState<SolitaireGame | null>(null)
   const [freePaused, setFreePaused] = useState(false)
+  const [freePauseBusy, setFreePauseBusy] = useState(false)
   const [freeComplete, setFreeComplete] = useState(false)
   const [freeAutoWinning, setFreeAutoWinning] = useState(false)
   const [freeSubmitting, setFreeSubmitting] = useState(false)
   const [freeSubmissionError, setFreeSubmissionError] = useState<string | null>(null)
   const [freeSetupOpen, setFreeSetupOpen] = useState(false)
   const [competitiveSetupMatchId, setCompetitiveSetupMatchId] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [history, setHistory] = useState<readonly SolitaireHistoryItem[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyLoadingMore, setHistoryLoadingMore] = useState(false)
+  const [historyNextCursor, setHistoryNextCursor] = useState<string | null>(null)
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [historyRefresh, setHistoryRefresh] = useState(0)
+  const [claimingHistoryMatchId, setClaimingHistoryMatchId] = useState<string | null>(null)
   const [freeElapsedMilliseconds, setFreeElapsedMilliseconds] = useState(0)
   const [freeHistory, setFreeHistory] = useState<readonly FreeHistoryEntry[]>([])
   const freeRunRef = useRef<SolitaireFreeRun | null>(null)
+  const historyOlderAbortRef = useRef<AbortController | null>(null)
   const freeCommandsRef = useRef<readonly SolitaireFreeReplayCommand[]>([])
-  const freeStartRequestRef = useRef<{ drawCount: SolitaireDrawCount, idempotencyKey: string } | null>(null)
+  const freeStartRequestRef = useRef<{
+    drawCount: SolitaireDrawCount
+    idempotencyKey: string
+    replayRunId: string | null
+  } | null>(null)
   const onCardAudioClick = useCardAudioClick()
   const serverMatchRef = useRef<SolitaireMatchSession | null>(null)
   const moveQueueRef = useRef<QueuedSolitaireCommand[]>([])
@@ -188,6 +206,55 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     void loadSession(false, controller.signal)
     return () => controller.abort()
   }, [loadSession])
+
+  useEffect(() => {
+    if (!historyOpen) return
+    const controller = new AbortController()
+    const readHistory = async () => {
+      try {
+        const page = await getSolitaireHistoryPage(30, undefined, controller.signal)
+        if (controller.signal.aborted) return
+        setHistory(page.items)
+        setHistoryNextCursor(page.nextCursor)
+        setHistoryError(null)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        setHistoryError(errorMessage(error))
+      } finally {
+        if (!controller.signal.aborted) setHistoryLoading(false)
+      }
+    }
+    setHistoryLoading(true)
+    void readHistory()
+    return () => {
+      controller.abort()
+      historyOlderAbortRef.current?.abort()
+    }
+  }, [historyOpen, historyRefresh])
+
+  const loadOlderHistory = async () => {
+    if (historyNextCursor === null || historyLoading || historyLoadingMore) return
+    const controller = new AbortController()
+    historyOlderAbortRef.current = controller
+    setHistoryLoadingMore(true)
+    try {
+      const page = await getSolitaireHistoryPage(30, historyNextCursor, controller.signal)
+      if (controller.signal.aborted) return
+      setHistory((current) => {
+        const seen = new Set(current.map((item) => item.matchId))
+        return [...current, ...page.items.filter((item) => !seen.has(item.matchId))]
+      })
+      setHistoryNextCursor(page.nextCursor)
+      setHistoryError(null)
+    } catch (error) {
+      if (!controller.signal.aborted) setHistoryError(errorMessage(error))
+    } finally {
+      if (historyOlderAbortRef.current === controller) {
+        historyOlderAbortRef.current = null
+        setHistoryLoadingMore(false)
+      }
+    }
+  }
 
   const sessionKind = availability.kind === 'ready' ? availability.session.kind : null
   useEffect(() => {
@@ -461,26 +528,43 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       (key) => dismissSolitaireResult(matchId, key),
     )
   }
-  const restartCompetitive = async (matchId: string) => {
-    const dismissal = beginMutation(`dismiss:${matchId}`)
-    if (dismissal === null) return
+  const restartCompetitive = async (_matchId: string) => {
+    const fingerprint = `join:${playerCount}:${buyInCredits}:${drawCount}`
+    const request = beginMutation(fingerprint)
+    if (request === null) return
     setCompetitiveSetupMatchId(null)
     setBusy(true)
     try {
-      acceptMutation(await dismissSolitaireResult(matchId, dismissal.idempotencyKey))
-      const fingerprint = `join:${playerCount}:${buyInCredits}:${drawCount}`
-      const next = stableSolitaireMutation(null, fingerprint)
-      setPending(next)
       acceptMutation(await joinSolitaireQueue(
         playerCount,
         buyInCredits,
         drawCount,
-        next.idempotencyKey,
+        request.idempotencyKey,
       ))
+      setHistoryRefresh((value) => value + 1)
     } catch (error) {
       rejectMutation(error)
     } finally {
       setBusy(false)
+    }
+  }
+  const claimHistory = async (matchId: string) => {
+    if (claimingHistoryMatchId !== null) return
+    const request = beginMutation(`claim:${matchId}`)
+    if (request === null) return
+    setClaimingHistoryMatchId(matchId)
+    try {
+      const mutation = await claimSolitaireResult(matchId, request.idempotencyKey)
+      setBalanceCredits(mutation.balanceCredits)
+      setPending(null)
+      setRequestError(null)
+      setHistory((items) => items.map((item) => item.matchId === matchId
+        ? { ...item, canClaim: false, claimStatus: 'completed' }
+        : item))
+    } catch (error) {
+      rejectMutation(error)
+    } finally {
+      setClaimingHistoryMatchId(null)
     }
   }
   const claim = (result: SolitaireResultSession) => void runMutation(
@@ -491,8 +575,10 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     freeAutoWinGenerationRef.current += 1
     freeRunRef.current = run
     freeCommandsRef.current = []
+    setDrawCount(run.drawCount)
     setFreeGame(createLocalSolitaireGame(run.seed, run.drawCount))
     setFreePaused(false)
+    setFreePauseBusy(false)
     setFreeComplete(false)
     setFreeAutoWinning(false)
     setFreeSubmitting(false)
@@ -502,16 +588,18 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     setFreeHistory([])
     setRequestError(null)
   }
-  const startFree = async () => {
+  const startFree = async (replaySource: SolitaireFreeRun | null = null) => {
+    const requestedDrawCount = replaySource?.drawCount ?? drawCount
+    const replayRunId = replaySource?.runId ?? null
     const existing = freeStartRequestRef.current
-    const request = existing?.drawCount === drawCount
+    const request = existing?.drawCount === requestedDrawCount && existing.replayRunId === replayRunId
       ? existing
-      : { drawCount, idempotencyKey: createSolitaireFreeRunRequestId() }
+      : { drawCount: requestedDrawCount, idempotencyKey: createSolitaireFreeRunRequestId(), replayRunId }
     freeStartRequestRef.current = request
     setBusy(true)
     setRequestError(null)
     try {
-      const run = await startSolitaireFreeRun(request.drawCount, request.idempotencyKey)
+      const run = await startSolitaireFreeRun(request.drawCount, request.idempotencyKey, request.replayRunId ?? undefined)
       freeStartRequestRef.current = null
       resetFreeGame(run)
     } catch (error) {
@@ -520,10 +608,31 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       setBusy(false)
     }
   }
-  const replayFree = () => void startFree()
+  const replayFree = () => {
+    const run = freeRunRef.current
+    if (run !== null) void startFree(run)
+  }
+  const toggleFreePause = async () => {
+    const run = freeRunRef.current
+    if (run === null || freePauseBusy || freeComplete || freeAutoWinning || freeSubmitting) return
+    const pause = !freePaused
+    setFreePauseBusy(true)
+    setRequestError(null)
+    try {
+      const result = await setSolitaireFreeRunPaused(run.runId, pause)
+      if (freeRunRef.current?.runId !== run.runId) return
+      setFreeElapsedMilliseconds(result.elapsedMilliseconds)
+      setFreePaused(result.isPaused)
+    } catch (error) {
+      setRequestError(errorMessage(error))
+    } finally {
+      setFreePauseBusy(false)
+    }
+  }
   const submitFreeRun = async (commands = freeCommandsRef.current) => {
     const run = freeRunRef.current
-    if (run === null || freeSubmitting) return
+    if (run === null || freeSubmitting || freePauseBusy) return
+    const wasPaused = freePaused
     setFreeSubmitting(true)
     setFreePaused(true)
     setFreeSubmissionError(null)
@@ -539,7 +648,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       setFreeComplete(true)
     } catch (error) {
       setFreeSubmissionError(errorMessage(error))
-      setFreePaused(false)
+      setFreePaused(wasPaused)
     } finally {
       setFreeSubmitting(false)
     }
@@ -567,7 +676,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     })()
   }
   const freeCommand = (nextCommand: SolitaireCommand) => {
-    if (freeGame === null || freePaused || freeComplete || freeAutoWinning || freeSubmitting) return
+    if (freeGame === null || freePaused || freePauseBusy || freeComplete || freeAutoWinning || freeSubmitting) return
     if (nextCommand.type !== 'draw' && nextCommand.type !== 'flip' && nextCommand.type !== 'move') return
     try {
       const next = applyLocalSolitaireCommand(freeGame, nextCommand)
@@ -604,6 +713,14 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     void loadSession(false)
   }
 
+  const activePaidRun = availability.kind === 'ready'
+    && availability.session.kind === 'match'
+    && availability.session.players.some((player) => player.isCurrentPlayer && player.status === 'playing')
+
+  useEffect(() => {
+    if (activePaidRun) setHistoryOpen(false)
+  }, [activePaidRun])
+
   return (
     <InGameShell
       account={{ ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }}
@@ -618,6 +735,16 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
           <button type="button" onClick={refresh}>Refresh game</button>
         </div>
       )}
+      {availability.kind === 'ready' && !activePaidRun && !busy && (
+        <div className="solitaire-history-access">
+          <button type="button" onClick={() => {
+            setHistory([])
+            setHistoryNextCursor(null)
+            setHistoryError(null)
+            setHistoryOpen(true)
+          }}>Match history</button>
+        </div>
+      )}
       <SolitaireContent
         availability={availability}
         balanceCredits={balanceCredits}
@@ -628,6 +755,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         drawCount={drawCount}
         freeGame={freeGame}
         freePaused={freePaused}
+        freePauseBusy={freePauseBusy}
         freeComplete={freeComplete}
         freeAutoWinning={freeAutoWinning}
         freeSubmitting={freeSubmitting}
@@ -652,9 +780,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         onChooseNewFreeGame={() => setFreeSetupOpen(true)}
         onCancelFreeSetup={() => setFreeSetupOpen(false)}
         onFreeCommand={freeCommand}
-        onFreePause={() => {
-          if (!freeAutoWinning) setFreePaused((value) => !value)
-        }}
+        onFreePause={() => void toggleFreePause()}
         onFreeUndo={undoFree}
         onFreeSubmit={() => void submitFreeRun()}
         onExitFree={() => {
@@ -669,6 +795,20 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
         }}
         onRefresh={refresh}
         />
+      {historyOpen && !activePaidRun && (
+        <SolitaireHistoryPanel
+          items={history}
+          loading={historyLoading}
+          loadingMore={historyLoadingMore}
+          hasMore={historyNextCursor !== null}
+          error={historyError}
+          claimingMatchId={claimingHistoryMatchId}
+          onClose={() => setHistoryOpen(false)}
+          onRefresh={() => setHistoryRefresh((value) => value + 1)}
+          onLoadMore={() => void loadOlderHistory()}
+          onClaim={(matchId) => void claimHistory(matchId)}
+        />
+      )}
       </div>
     </InGameShell>
   )
@@ -752,25 +892,119 @@ function SessionPanel(props: SolitaireContentProps & { session: SolitaireSession
 }
 
 function QueuePanel({ queue, busy, onCancel }: { queue: SolitaireQueueSession, busy: boolean, onCancel: () => void }) {
-  const seats = Array.from({ length: queue.playerCount }, (_, index) => queue.players[index] ?? null)
+  void queue
   return (
-    <section className="solitaire-panel solitaire-queue">
-      <p className="solitaire-eyebrow">Queue position {queue.position}</p>
-      <div className="solitaire-queue__progress" aria-label={`${queue.players.length} of ${queue.playerCount} players ready`}>
-        <span style={{ width: `${queue.players.length / queue.playerCount * 100}%` }} />
-      </div>
-      <div className="solitaire-seat-grid">
-        {seats.map((player, index) => (
-          <div className={player ? 'is-filled' : ''} key={player?.playerId ?? index}>
-            <span>{player?.displayName.slice(0, 1).toUpperCase() ?? '·'}</span>
-            <strong>{player?.displayName ?? 'Open seat'}</strong>
-            <small>{player?.isCurrentPlayer ? 'You' : `Seat ${index + 1}`}</small>
-          </div>
-        ))}
-      </div>
-      <p>Pool R{queue.prizePoolCredits.toFixed(2)} · Winner R{queue.winnerPayoutCredits.toFixed(2)}</p>
-      <button type="button" disabled={busy} onClick={onCancel}>{busy ? 'Leaving…' : 'Leave queue'}</button>
+    <section className="solitaire-panel solitaire-queue" role="status">
+      <h2>Starting match…</h2>
+      <button type="button" disabled={busy} onClick={onCancel}>{busy ? 'Leaving…' : 'Cancel'}</button>
     </section>
+  )
+}
+
+export function SolitaireHistoryPanel({ items, loading, loadingMore = false, hasMore = false, error, claimingMatchId, onClose, onRefresh, onLoadMore, onClaim }: {
+  items: readonly SolitaireHistoryItem[]
+  loading: boolean
+  loadingMore?: boolean
+  hasMore?: boolean
+  error: string | null
+  claimingMatchId: string | null
+  onClose: () => void
+  onRefresh: () => void
+  onLoadMore?: () => void
+  onClaim: (matchId: string) => void
+}) {
+  const closeRef = useRef<HTMLButtonElement>(null)
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    closeRef.current?.focus()
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onCloseRef.current()
+        return
+      }
+      if (event.key !== 'Tab' || dialogRef.current === null) return
+      const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])',
+      ))
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (first === undefined || last === undefined) {
+        event.preventDefault()
+        return
+      }
+      if (event.shiftKey && (document.activeElement === first || !dialogRef.current.contains(document.activeElement))) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && (document.activeElement === last || !dialogRef.current.contains(document.activeElement))) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      if (previousFocus?.isConnected) previousFocus.focus()
+    }
+  }, [])
+
+  return (
+    <div ref={dialogRef} className="solitaire-history-layer" role="dialog" aria-modal="true" aria-labelledby="solitaire-history-title">
+      <section className="solitaire-history">
+        <header className="solitaire-history__header">
+          <h2 id="solitaire-history-title">Match history</h2>
+          <div>
+            <button type="button" onClick={onRefresh} disabled={loading}>Refresh</button>
+            <button ref={closeRef} type="button" onClick={onClose} aria-label="Close match history">×</button>
+          </div>
+        </header>
+        {error && <p className="solitaire-history__error" role="alert">{error}</p>}
+        {loading && items.length === 0 ? <p role="status">Loading matches…</p> : null}
+        {!loading && items.length === 0 && !error ? <p>No matches yet.</p> : null}
+        <ol>
+          {items.map((item) => (
+            <li key={item.matchId}>
+              <div className="solitaire-history__summary">
+                <strong>{new Date(item.startedAtUtc).toLocaleString()}</strong>
+                <span>{item.status === 'settled' ? 'Settled' : 'In progress'}</span>
+              </div>
+              <ol className="solitaire-history__seats">
+                {item.players.map((player, index) => (
+                  <li key={`${item.matchId}-${player.seat}`} className={player.isCurrentPlayer ? 'is-current' : ''}>
+                    <span>#{index + 1}</span>
+                    <strong>{player.status === 'open' ? 'Waiting for players...' : player.displayName}</strong>
+                    {player.status === 'finished' && player.score != null
+                      ? <small>{player.score.toLocaleString()} pts</small>
+                      : null}
+                  </li>
+                ))}
+              </ol>
+              {item.status === 'settled' && (
+                <div className="solitaire-history__outcome">
+                  <span>#{item.placement} · {item.score.toLocaleString()} pts</span>
+                  <span>{item.payoutCredits > 0 ? `R${item.payoutCredits.toFixed(2)} won` : 'No payout'}</span>
+                  {item.canClaim && item.claimStatus !== 'completed' && (
+                    <button type="button" disabled={claimingMatchId !== null}
+                      onClick={() => onClaim(item.matchId)}>
+                      {claimingMatchId === item.matchId ? 'Claiming…' : 'Claim reward'}
+                    </button>
+                  )}
+                </div>
+              )}
+            </li>
+          ))}
+        </ol>
+        {hasMore && onLoadMore && (
+          <button type="button" className="solitaire-history__more" onClick={onLoadMore}
+            disabled={loading || loadingMore}>
+            {loadingMore ? 'Loading…' : 'Older matches'}
+          </button>
+        )}
+      </section>
+    </div>
   )
 }
 
@@ -805,6 +1039,7 @@ function MatchPanel({
   onBuyInChange: (value: SolitaireBuyIn) => void
   onDrawCountChange: (value: SolitaireDrawCount) => void
 }) {
+  const [hintRequestId, setHintRequestId] = useState(0)
   const current = match.players.find((player) => player.isCurrentPlayer)
   const playing = current?.status === 'playing'
   const integrityFailed = current?.status === 'integrity-failed'
@@ -815,9 +1050,15 @@ function MatchPanel({
   return (
     <section className="solitaire-match">
       <div className="solitaire-match__status">
-        <div><span>Score</span><strong>{match.score.toLocaleString()}</strong></div>
-        <div><span>Moves</span><strong>{match.moves}</strong></div>
-        <div><span>Time</span><strong><RemainingTime match={match} /></strong></div>
+        <div className="solitaire-match__metric"><span>Score</span><strong>{match.score.toLocaleString()}</strong></div>
+        <div className="solitaire-match__metric"><span>Moves</span><strong>{match.moves}</strong></div>
+        <div className="solitaire-match__metric"><span>Time</span><strong><RemainingTime match={match} /></strong></div>
+        <SolitaireBoardUtilities
+          undoDisabled={busy || !playing || !match.canUndo || match.isPaused || autoWinning || warning !== null}
+          hintDisabled={busy || !playing || match.isPaused || autoWinning || warning !== null}
+          onUndo={() => onCommand({ type: 'undo' })}
+          onHint={() => setHintRequestId((value) => value + 1)}
+        />
       </div>
       {warning !== null && (
         <div className="solitaire-integrity-warning" role="alert">
@@ -832,12 +1073,11 @@ function MatchPanel({
         </div>
       )}
       <SolitaireBoard game={match.game} autoWinning={autoWinning}
-        busy={busy || !playing || match.isPaused || autoWinning || warning !== null} onCommand={onCommand} />
+        busy={busy || !playing || match.isPaused || autoWinning || warning !== null}
+        hintRequestId={hintRequestId} onCommand={onCommand} />
       <div className="solitaire-match__controls">
         {playing && !autoWinning && warning === null ? (
           <>
-            <button type="button" disabled={busy || !match.canUndo || match.isPaused}
-              onClick={() => onCommand({ type: 'undo' })}>Undo</button>
             <button type="button" disabled={busy || match.pauseRemainingMilliseconds <= 0}
               onClick={() => onCommand({ type: match.isPaused ? 'resume' : 'pause' })}>
               {match.isPaused ? 'Resume' : 'Pause'} · <PauseRemainingTime match={match} /> left
@@ -854,6 +1094,35 @@ function MatchPanel({
         onDrawCountChange={onDrawCountChange} onChooseNewGame={onChooseNewGame}
         onCancelSetup={onCancelSetup} onNewGame={onNewGame} onReturn={onClose} />}
     </section>
+  )
+}
+
+function SolitaireBoardUtilities({
+  undoDisabled,
+  hintDisabled,
+  onUndo,
+  onHint,
+}: {
+  undoDisabled: boolean
+  hintDisabled: boolean
+  onUndo: () => void
+  onHint: () => void
+}) {
+  return (
+    <div className="solitaire-match__utilities" role="group" aria-label="Board controls">
+      <button type="button" aria-label="Undo" title="Undo" disabled={undoDisabled} onClick={onUndo}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 14 4 9l5-5" /><path d="M4 9h9a7 7 0 0 1 0 14h-2" />
+        </svg>
+        <span>Undo</span>
+      </button>
+      <button type="button" aria-label="Hint" title="Hint" disabled={hintDisabled} onClick={onHint}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 18h6m-5 3h4m-5.3-6.5A7 7 0 1 1 15.3 14c-.8.7-1.3 1.4-1.3 2.5h-4c0-1.1-.5-1.8-1.3-2.5Z" />
+        </svg>
+        <span>Hint</span>
+      </button>
+    </div>
   )
 }
 
@@ -882,24 +1151,30 @@ function PauseRemainingTime({ match }: { match: SolitaireMatchSession }) {
 }
 
 function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
+  const [hintRequestId, setHintRequestId] = useState(0)
   return (
     <main className="solitaire-main">
       <section className="solitaire-match solitaire-match--free">
         <div className="solitaire-match__status">
-          <div><span>Score</span><strong>{props.game.score.toLocaleString()}</strong></div>
-          <div><span>Moves</span><strong>{props.game.moves}</strong></div>
-          <div><span>Time</span><strong>{formatElapsed(props.freeElapsedMilliseconds)}</strong></div>
+          <div className="solitaire-match__metric"><span>Score</span><strong>{props.game.score.toLocaleString()}</strong></div>
+          <div className="solitaire-match__metric"><span>Moves</span><strong>{props.game.moves}</strong></div>
+          <div className="solitaire-match__metric"><span>Time</span><strong>{formatElapsed(props.freeElapsedMilliseconds)}</strong></div>
+          <SolitaireBoardUtilities
+            undoDisabled={!props.freeCanUndo || props.freePaused || props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+            hintDisabled={props.freePaused || props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+            onUndo={props.onFreeUndo}
+            onHint={() => setHintRequestId((value) => value + 1)}
+          />
         </div>
         <SolitaireBoard game={props.game} autoWinning={props.freeAutoWinning}
-          busy={props.freePaused || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+          busy={props.freePaused || props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+          hintRequestId={hintRequestId}
           onCommand={props.onFreeCommand} />
         <div className="solitaire-match__controls">
-          <button type="button" disabled={!props.freeCanUndo || props.freePaused || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
-            onClick={props.onFreeUndo}>Undo</button>
-          <button type="button" disabled={props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+          <button type="button" disabled={props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
             onClick={props.onFreePause}>{props.freePaused ? 'Resume' : 'Pause'}</button>
           <button className="solitaire-primary-action" type="button"
-            disabled={props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
+            disabled={props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
             onClick={props.onFreeSubmit}>{props.freeSubmitting ? 'Saving…' : 'Submit game'}</button>
         </div>
         {props.freeSubmissionError && (
@@ -923,7 +1198,7 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
                   ))}
                 </div>
                 <div className="solitaire-results__actions">
-                  <button className="solitaire-primary-action" type="button" onClick={props.onStartFree}>Start new game</button>
+                  <button className="solitaire-primary-action" type="button" disabled={props.busy} onClick={props.onStartFree}>Start new game</button>
                   <button type="button" onClick={props.onCancelFreeSetup}>Back</button>
                 </div>
               </div>
@@ -941,8 +1216,8 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
                   significance="major"
                 />
                 <div className="solitaire-results__actions solitaire-results__actions--three">
-                  <button className="solitaire-primary-action" type="button" onClick={props.onReplayFree}>Replay</button>
-                  <button type="button" onClick={props.onChooseNewFreeGame}>New game</button>
+                  <button className="solitaire-primary-action" type="button" disabled={props.busy} onClick={props.onReplayFree}>Replay</button>
+                  <button type="button" disabled={props.busy} onClick={props.onChooseNewFreeGame}>New game</button>
                   <button type="button" onClick={props.onExitFree}>Return</button>
                 </div>
               </div>
@@ -1034,6 +1309,7 @@ function CompetitiveCompletionDialog({
   onReturn: () => void
 }) {
   const current = match.players.find((player) => player.isCurrentPlayer)
+  const hasOpenSeats = match.players.some((player) => player.status === 'open')
   return (
     <div className="solitaire-result-dialog" role="dialog" aria-modal="true" aria-labelledby="competitive-result-title">
       {setupOpen ? (
@@ -1068,7 +1344,7 @@ function CompetitiveCompletionDialog({
         <GameOutcomeBanner
           className="solitaire-result-dialog__outcome"
           label={integrityFailed ? 'Game ended' : 'Your run is complete'}
-          title={integrityFailed ? 'This result cannot be scored' : 'Your result is being finalized'}
+          title={integrityFailed ? 'This result cannot be scored' : hasOpenSeats ? 'Waiting for players...' : 'Waiting for results'}
           detail={integrityFailed
             ? 'No reward was issued for this run.'
             : `${match.score.toLocaleString()} points in ${match.moves} moves.`}

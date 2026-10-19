@@ -136,12 +136,17 @@ export type SolitaireHistoryItem = Readonly<{
   playerCount: SolitairePlayerCount
   buyInCredits: SolitaireBuyIn
   prizePoolCredits: number
+  status: 'playing' | 'settled'
+  startedAtUtc: string
+  players: readonly SolitairePlayer[]
   placement: number
   score: number
   elapsedSeconds: number
   payoutCredits: number
   netCredits: number
-  completedAtUtc: string
+  completedAtUtc: string | null
+  claimStatus?: 'unclaimed' | 'completed' | null
+  canClaim?: boolean
   opponents: readonly string[]
 }>
 

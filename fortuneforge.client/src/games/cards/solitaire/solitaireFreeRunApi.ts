@@ -27,6 +27,12 @@ export type SolitaireFreeRunCompletion = Readonly<{
   wasAlreadyCompleted: boolean
 }>
 
+export type SolitaireFreeRunPause = Readonly<{
+  runId: string
+  isPaused: boolean
+  elapsedMilliseconds: number
+}>
+
 export function createSolitaireFreeRunRequestId(): string {
   return `free_${createSolitaireRequestId().replaceAll('-', '_')}`
 }
@@ -34,6 +40,7 @@ export function createSolitaireFreeRunRequestId(): string {
 export async function startSolitaireFreeRun(
   drawCount: SolitaireDrawCount,
   idempotencyKey: string,
+  replayRunId?: string,
 ): Promise<SolitaireFreeRun> {
   const response = await fetchWithAccountSession('/api/solitaire/free/runs', {
     method: 'POST',
@@ -41,7 +48,7 @@ export async function startSolitaireFreeRun(
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey,
     }),
-    body: JSON.stringify({ drawCount }),
+    body: JSON.stringify(replayRunId === undefined ? { drawCount } : { drawCount, replayRunId }),
   })
   return readFreeResponse(response, isStartResponse, 'Solitaire free-run start')
 }
@@ -59,6 +66,19 @@ export async function completeSolitaireFreeRun(
     },
   )
   return readFreeResponse(response, isCompletionResponse, 'Solitaire free-run completion')
+}
+
+export async function setSolitaireFreeRunPaused(runId: string, pause: boolean): Promise<SolitaireFreeRunPause> {
+  const action = pause ? 'pause' : 'resume'
+  const response = await fetchWithAccountSession(
+    `/api/solitaire/free/runs/${encodeURIComponent(runId)}/${action}`,
+    { method: 'POST' },
+  )
+  const result = await readFreeResponse(response, isPauseResponse, `Solitaire free-run ${action}`)
+  if (result.runId !== runId || result.isPaused !== pause) {
+    throw new Error(`The server returned an invalid Solitaire free-run ${action} response.`)
+  }
+  return result
 }
 
 async function readFreeResponse<T>(
@@ -102,6 +122,14 @@ function isCompletionResponse(value: unknown): value is SolitaireFreeRunCompleti
     && (value.terminal === 'won' || value.terminal === 'submitted')
     && typeof value.completedAtUtc === 'string'
     && typeof value.wasAlreadyCompleted === 'boolean'
+}
+
+function isPauseResponse(value: unknown): value is SolitaireFreeRunPause {
+  return isRecord(value)
+    && typeof value.runId === 'string'
+    && value.runId.startsWith('solitaire_free_')
+    && typeof value.isPaused === 'boolean'
+    && isNonNegativeInteger(value.elapsedMilliseconds)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

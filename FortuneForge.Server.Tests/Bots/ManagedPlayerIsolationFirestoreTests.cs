@@ -79,6 +79,85 @@ public sealed class ManagedPlayerIsolationFirestoreTests(
     }
 
     [Fact]
+    public async Task RenewalRequiresEveryCurrentOwnedLeaseAndWritesAllOrNone()
+    {
+        var database = Database("managed-lease-renewal");
+        var ids = Enumerable.Range(0, 100)
+            .Select(index => $"managed-renew-{index}")
+            .Where(id => !ManagedPlayerAvailabilityPolicy.IsSleeping(id, Now))
+            .Take(2)
+            .ToArray();
+        Assert.Equal(2, ids.Length);
+        foreach (var id in ids)
+        {
+            await database.Collection("users").Document(id).SetAsync(new Dictionary<string, object>
+            {
+                ["userId"] = id,
+                ["authProvider"] = ManagedPlayerProfileSchema.AuthenticationProvider,
+                [ManagedPlayerProfileSchema.ProfileTagsField] =
+                    new[] { ManagedPlayerProfileSchema.BotTag }
+            });
+        }
+
+        var assignments = new FirestoreManagedPlayerAssignmentStore(database);
+        foreach (var id in ids)
+            Assert.True(await assignments.TryReserveAsync(
+                id, ManagedPlayerGames.Solitaire, "queue-one", Now, default));
+
+        var renewedAt = Now.AddMinutes(25);
+        Assert.True(await assignments.TryRenewAsync(
+            ManagedPlayerGames.Solitaire, "queue-one", ids, renewedAt, default));
+        foreach (var id in ids)
+        {
+            var assignment = await database.Collection("managedPlayerAssignments")
+                .Document(id).GetSnapshotAsync();
+            Assert.Equal(Now, assignment.GetValue<Timestamp>("reservedAt").ToDateTime());
+            Assert.Equal(renewedAt.AddMinutes(30),
+                assignment.GetValue<Timestamp>("leaseUntil").ToDateTime());
+        }
+
+        await database.Collection("managedPlayerAssignments").Document(ids[1]).SetAsync(
+            new Dictionary<string, object> { ["assignmentId"] = "queue-two" }, SetOptions.MergeAll);
+        Assert.False(await assignments.TryRenewAsync(
+            ManagedPlayerGames.Solitaire, "queue-one", ids, Now.AddMinutes(26), default));
+        var untouched = await database.Collection("managedPlayerAssignments")
+            .Document(ids[0]).GetSnapshotAsync();
+        Assert.Equal(renewedAt, untouched.GetValue<Timestamp>("heartbeatAt").ToDateTime());
+
+        Assert.False(await assignments.TryRenewAsync(
+            ManagedPlayerGames.Solitaire, "queue-one", [ids[0]], Now.AddMinutes(56), default));
+    }
+
+    [Fact]
+    public async Task RenewalCannotTouchARealProfileEvenWithAForgedAssignment()
+    {
+        var database = Database("real-user-renewal-boundary");
+        const string userId = "real-user-renewal";
+        await database.Collection("users").Document(userId).SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = userId,
+            ["authProvider"] = "firebase",
+            [ManagedPlayerProfileSchema.ProfileTagsField] =
+                new[] { ManagedPlayerProfileSchema.BotTag }
+        });
+        var assignment = database.Collection("managedPlayerAssignments").Document(userId);
+        await assignment.SetAsync(new Dictionary<string, object>
+        {
+            ["profileId"] = userId,
+            ["gameId"] = ManagedPlayerGames.Solitaire,
+            ["assignmentId"] = "forged",
+            ["leaseUntil"] = Timestamp.FromDateTime(Now.AddMinutes(30)),
+            ["heartbeatAt"] = Timestamp.FromDateTime(Now)
+        });
+
+        var assignments = new FirestoreManagedPlayerAssignmentStore(database);
+        Assert.False(await assignments.TryRenewAsync(
+            ManagedPlayerGames.Solitaire, "forged", [userId], Now.AddMinutes(1), default));
+        Assert.Equal(Now, (await assignment.GetSnapshotAsync())
+            .GetValue<Timestamp>("heartbeatAt").ToDateTime());
+    }
+
+    [Fact]
     public async Task ProfileRepositoryAtomicallyRejectsNearDuplicateNamesButAllowsReorderedNames()
     {
         var database = Database("managed-name-boundary");

@@ -185,6 +185,16 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                             break;
                         }
                         var won = SolitaireEngine.IsWon(nextGame);
+                        var elapsedMilliseconds = won
+                            ? ActiveElapsedMilliseconds(graph.Match, player, nowUtc)
+                            : (long?)null;
+                        if (elapsedMilliseconds is long winElapsedMilliseconds)
+                        {
+                            nextGame = nextGame with
+                            {
+                                Score = SolitaireScoreRules.FinalScore(nextGame, winElapsedMilliseconds)
+                            };
+                        }
                         updated = player with
                         {
                             Game = nextGame,
@@ -194,9 +204,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                                 .ToArray(),
                             Version = checked(player.Version + 1),
                             Status = won ? SolitairePlayerStatuses.Finished : SolitairePlayerStatuses.Playing,
-                            ElapsedMilliseconds = won
-                                ? ActiveElapsedMilliseconds(graph.Match, player, nowUtc)
-                                : null,
+                            ElapsedMilliseconds = elapsedMilliseconds,
                             CompletedAtUtc = won ? nowUtc : null
                         };
                         terminal = won;
@@ -216,13 +224,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         UnclaimedResultData(match, updated, updated.CompletedAtUtc ?? nowUtc),
                         SetOptions.MergeAll);
                 }
-                if (CanSettle(players))
+                if (CanSettle(match, players, nowUtc))
                 {
                     ApplySettlement(
                         transaction,
                         match,
                         players,
                         graph.BalanceSnapshots,
+                        graph.SessionSnapshots,
                         nowUtc);
                 }
                 else
@@ -325,13 +334,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     CardGameResultDocument(matchId, userId),
                     UnclaimedResultData(match, updated, nowUtc),
                     SetOptions.MergeAll);
-                if (CanSettle(players))
+                if (CanSettle(match, players, nowUtc))
                 {
                     ApplySettlement(
                         transaction,
                         match,
                         players,
                         graph.BalanceSnapshots,
+                        graph.SessionSnapshots,
                         nowUtc);
                 }
                 else
@@ -366,7 +376,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var snapshots = await Task.WhenAll(
                     transaction.GetSnapshotAsync(actionReference, cancellationToken),
                     transaction.GetSnapshotAsync(matchReference, cancellationToken),
-                    transaction.GetSnapshotAsync(playerReference, cancellationToken));
+                    transaction.GetSnapshotAsync(playerReference, cancellationToken),
+                    transaction.GetSnapshotAsync(sessionReference, cancellationToken));
                 if (snapshots[0].Exists)
                 {
                     VerifyAction(snapshots[0], "dismiss", matchId, string.Empty);
@@ -395,10 +406,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     ["acknowledged"] = true,
                     ["acknowledgedAt"] = Timestamp.FromDateTime(nowUtc)
                 });
-                transaction.Set(
-                    sessionReference,
-                    SessionData(userId, SolitaireSessionKinds.Idle, null, null, nowUtc),
-                    SetOptions.MergeAll);
+                if (ReadString(snapshots[3], "matchId") == matchId)
+                    transaction.Set(
+                        sessionReference,
+                        SessionData(userId, SolitaireSessionKinds.Idle, null, null, nowUtc),
+                        SetOptions.MergeAll);
                 transaction.Create(
                     actionReference,
                     ActionData(userId, "dismiss", matchId, string.Empty, nowUtc));
@@ -418,21 +430,22 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         {
             var graph = await ReadMatchGraphAsync(transaction, matchId, cancellationToken);
             var match = graph.Match;
-            var managedIds = graph.Players.Where(player => !player.IsAccountBacked)
-                .Select(player => player.UserId).ToArray();
             var managed = graph.Players.FirstOrDefault(player => !player.IsAccountBacked);
             var assignmentId = managed?.HostMetadata.GetValueOrDefault(ManagedAssignmentMetadataKey)
                 ?? ManagedAssignmentId(matchId);
             if (match.Status != PlayingMatchStatus)
                 return new ManagedAssignmentState(assignmentId,
-                    graph.ManagedPlayersReleasePending ? managedIds : [], true);
+                    graph.ManagedPlayersReleasePending
+                        ? graph.Players.Where(player => !player.IsAccountBacked).ToArray()
+                        : [],
+                    graph.ManagedPlayersReleasePending
+                        ? graph.Players.Where(player => !player.IsAccountBacked && IsTerminal(player)).ToArray()
+                        : [], true);
             var players = graph.Players.Select(player =>
             {
                 if (player.Status != SolitairePlayerStatuses.Playing) return player;
                 if (!player.IsAccountBacked)
-                    return nowUtc >= SolitaireManagedPlayerPolicy.CompletionAt(match, player)
-                        ? SolitaireManagedPlayerPolicy.CompleteScheduled(match, player)
-                        : player;
+                    return SolitaireManagedPlayerProgression.Advance(match, player, nowUtc);
                 var advanced = AdvancePause(match, player, nowUtc);
                 return advanced.PausedAtUtc is null && nowUtc >= PlayerDeadline(match, advanced)
                     ? ExpirePlayer(advanced, PlayerDeadline(match, advanced))
@@ -444,10 +457,13 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 transaction.Set(CardGameResultDocument(matchId, player.UserId),
                     UnclaimedResultData(match, player, player.CompletedAtUtc ?? nowUtc), SetOptions.MergeAll);
             }
-            if (CanSettle(players))
+            if (CanSettle(match, players, nowUtc))
             {
-                ApplySettlement(transaction, match, players, graph.BalanceSnapshots, nowUtc);
-                return new ManagedAssignmentState(assignmentId, managedIds, true);
+                ApplySettlement(transaction, match, players, graph.BalanceSnapshots,
+                    graph.SessionSnapshots, nowUtc);
+                return new ManagedAssignmentState(assignmentId,
+                    players.Where(player => !player.IsAccountBacked).ToArray(),
+                    players.Where(player => !player.IsAccountBacked).ToArray(), true);
             }
             for (var index = 0; index < players.Length; index++)
             {
@@ -455,35 +471,115 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 transaction.Set(PlayerDocument(matchId, players[index].UserId),
                     PlayerData(players[index]), SetOptions.Overwrite);
             }
-            return new ManagedAssignmentState(assignmentId, managedIds, false);
+            var newlyFinished = players.Where((player, index) =>
+                !player.IsAccountBacked && IsTerminal(player) &&
+                !IsTerminal(graph.Players[index])).ToArray();
+            var nextSweepAt = NextSweepAt(match, players, nowUtc);
+            var matchChanges = new Dictionary<string, object>();
+            if (graph.NextSweepAtUtc != nextSweepAt)
+                matchChanges["nextSweepAt"] = Timestamp.FromDateTime(nextSweepAt);
+            if (newlyFinished.Length > 0 && !graph.ManagedPlayersReleasePending)
+                matchChanges["managedPlayersReleasePending"] = true;
+            if (matchChanges.Count > 0)
+                transaction.Update(MatchDocument(matchId), matchChanges);
+            return new ManagedAssignmentState(assignmentId,
+                players.Where(player => !player.IsAccountBacked).ToArray(),
+                graph.ManagedPlayersReleasePending || newlyFinished.Length > 0
+                    ? players.Where(player => !player.IsAccountBacked && IsTerminal(player)).ToArray()
+                    : [], false);
         }, cancellationToken);
-        if (leaseState.ProfileIds.Count == 0) return;
-        if (leaseState.Settled)
-        {
+        if (leaseState.ManagedPlayers.Count == 0) return;
+        foreach (var player in leaseState.ReleasePlayers)
             await matchmaking.ReleaseManagedPlayersAsync(
-                leaseState.AssignmentId, leaseState.ProfileIds, nowUtc, CancellationToken.None);
+                leaseState.AssignmentId, [player.UserId],
+                player.CompletedAtUtc ?? nowUtc, CancellationToken.None);
+        if (leaseState.ReleasePlayers.Count > 0)
+        {
             await RunTransactionAsync(async transaction =>
             {
-                var reference = MatchDocument(matchId);
-                var snapshot = await transaction.GetSnapshotAsync(reference, CancellationToken.None);
-                if (ReadString(snapshot, "status") != SettledMatchStatus ||
-                    !ReadBool(snapshot, "managedPlayersReleasePending")) return false;
-                transaction.Update(reference, new Dictionary<string, object>
+                var graph = await ReadMatchGraphAsync(transaction, matchId, CancellationToken.None);
+                if (!graph.ManagedPlayersReleasePending) return false;
+                var released = leaseState.ReleasePlayers.Select(player => player.UserId)
+                    .ToHashSet(StringComparer.Ordinal);
+                if (graph.Players.Any(player => !player.IsAccountBacked &&
+                    IsTerminal(player) && !released.Contains(player.UserId))) return false;
+                transaction.Update(MatchDocument(matchId), new Dictionary<string, object>
                 {
                     ["managedPlayersReleasePending"] = false
                 });
                 return true;
             }, CancellationToken.None);
         }
-        else
+        if (!leaseState.Settled)
         {
-            await matchmaking.HeartbeatManagedPlayersAsync(
-                ManagedPlayerGames.Solitaire, leaseState.AssignmentId,
-                leaseState.ProfileIds, nowUtc, cancellationToken);
+            var activeIds = leaseState.ManagedPlayers.Where(player => !IsTerminal(player))
+                .Select(player => player.UserId).ToArray();
+            if (activeIds.Length > 0 &&
+                !await matchmaking.TryRenewManagedPlayersAsync(
+                    ManagedPlayerGames.Solitaire, leaseState.AssignmentId,
+                    activeIds, nowUtc, cancellationToken))
+            {
+                var unowned = new List<string>();
+                foreach (var id in activeIds)
+                    if (!await matchmaking.TryRenewManagedPlayersAsync(
+                            ManagedPlayerGames.Solitaire, leaseState.AssignmentId,
+                            [id], nowUtc, cancellationToken))
+                        unowned.Add(id);
+                if (unowned.Count > 0)
+                    await RetireUnownedManagedPlayersAsync(matchId, unowned, nowUtc, cancellationToken);
+            }
         }
     }
 
-    private sealed record ManagedAssignmentState(string AssignmentId, IReadOnlyList<string> ProfileIds, bool Settled);
+    private sealed record ManagedAssignmentState(
+        string AssignmentId,
+        IReadOnlyList<SolitairePlayerState> ManagedPlayers,
+        IReadOnlyList<SolitairePlayerState> ReleasePlayers,
+        bool Settled);
+
+    private Task<bool> RetireUnownedManagedPlayersAsync(
+        string matchId,
+        IReadOnlyCollection<string> unownedIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) => RunTransactionAsync(async transaction =>
+        {
+            var graph = await ReadMatchGraphAsync(transaction, matchId, cancellationToken);
+            if (graph.Match.Status != PlayingMatchStatus) return false;
+            var unowned = unownedIds.ToHashSet(StringComparer.Ordinal);
+            var changed = false;
+            var players = graph.Players.Select(player =>
+            {
+                if (player.IsAccountBacked || !unowned.Contains(player.UserId) || IsTerminal(player))
+                    return player;
+                changed = true;
+                return player with
+                {
+                    Status = SolitairePlayerStatuses.Finished,
+                    Version = checked(player.Version + 1),
+                    CompletedAtUtc = nowUtc,
+                    ElapsedMilliseconds = Math.Clamp(
+                        (long)(nowUtc - PlayerStartedAt(graph.Match, player)).TotalMilliseconds,
+                        0, (long)SolitaireCompetitionRules.MatchDuration.TotalMilliseconds),
+                    Game = player.Game with { Message = "Run complete" }
+                };
+            }).ToArray();
+            if (!changed) return false;
+            if (CanSettle(graph.Match, players, nowUtc))
+                ApplySettlement(transaction, graph.Match, players, graph.BalanceSnapshots,
+                    graph.SessionSnapshots, nowUtc);
+            else
+            {
+                foreach (var player in players.Where(player => unowned.Contains(player.UserId)))
+                    transaction.Set(PlayerDocument(matchId, player.UserId), PlayerData(player),
+                        SetOptions.Overwrite);
+                transaction.Update(MatchDocument(matchId), new Dictionary<string, object>
+                {
+                    ["nextSweepAt"] = Timestamp.FromDateTime(NextSweepAt(graph.Match, players, nowUtc)),
+                    ["managedPlayersReleasePending"] = true
+                });
+            }
+            return true;
+        }, cancellationToken);
     private async Task<MatchGraph> ReadMatchGraphAsync(
         Transaction transaction,
         string matchId,
@@ -497,7 +593,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             throw new SolitaireNotFoundException("The Solitaire match was not found.");
         }
         var graph = await ReadMatchGraphAsync(transaction, ReadMatch(snapshot), cancellationToken);
-        return graph with { ManagedPlayersReleasePending = ReadBool(snapshot, "managedPlayersReleasePending") };
+        return graph with
+        {
+            ManagedPlayersReleasePending = ReadBool(snapshot, "managedPlayersReleasePending"),
+            NextSweepAtUtc = ReadOptionalTimestamp(snapshot, "nextSweepAt")
+        };
     }
 
     private async Task<MatchGraph> ReadMatchGraphAsync(
@@ -518,13 +618,19 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             .ToArray();
         var balanceSnapshots = await Task.WhenAll(realPlayerIds.Select(userId =>
             transaction.GetSnapshotAsync(BalanceDocument(userId), cancellationToken)));
+        var sessionSnapshots = await Task.WhenAll(realPlayerIds.Select(userId =>
+            transaction.GetSnapshotAsync(SessionDocument(userId), cancellationToken)));
         return new MatchGraph(
             match,
             playerSnapshots.Select(snapshot => ReadPlayer(snapshot, match)).ToArray(),
             realPlayerIds.Zip(balanceSnapshots).ToDictionary(
                 pair => pair.First,
                 pair => pair.Second,
-                StringComparer.Ordinal));
+                StringComparer.Ordinal))
+        {
+            SessionSnapshots = realPlayerIds.Zip(sessionSnapshots).ToDictionary(
+                pair => pair.First, pair => pair.Second, StringComparer.Ordinal)
+        };
     }
 
     private void ApplySettlement(
@@ -532,22 +638,36 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         SolitaireMatch match,
         IReadOnlyList<SolitairePlayerState> players,
         IReadOnlyDictionary<string, DocumentSnapshot> balanceSnapshots,
+        IReadOnlyDictionary<string, DocumentSnapshot> sessionSnapshots,
         DateTime completedAtUtc)
     {
         _ = balanceSnapshots;
+        // If no opponent arrived during the entire admission window, return
+        // the only entrant's stake rather than collecting a competition fee.
+        if (match.AdmissionClosesAtUtc is not null && players.Count == 1)
+            match = match with
+            {
+                WinnerPayoutCents = match.PrizePoolCents,
+                PlatformFeeCents = 0
+            };
         var standings = SolitaireCompetitionRules.Rank(players);
         var realPlayers = standings.Where(player => player.IsAccountBacked).ToArray();
-        var winner = realPlayers.FirstOrDefault()
+        var winner = (match.FinancialModel == HouseFundedPoolModel
+                ? standings.FirstOrDefault()
+                : realPlayers.FirstOrDefault())
             ?? throw new InvalidOperationException("A Solitaire match cannot settle without a real player.");
 
         foreach (var player in players)
         {
             var payout = player.UserId == winner.UserId ? match.WinnerPayoutCents : 0;
+            var settledPlayer = player with { PayoutCents = payout };
             transaction.Set(
                 PlayerDocument(match.MatchId, player.UserId),
-                PlayerData(player with { PayoutCents = payout }),
+                PlayerData(settledPlayer),
                 SetOptions.Overwrite);
-            if (player.IsAccountBacked && !player.Acknowledged)
+            if (player.IsAccountBacked && !player.Acknowledged &&
+                sessionSnapshots.TryGetValue(player.UserId, out var currentSession) &&
+                ReadString(currentSession, "matchId") == match.MatchId)
             {
                 transaction.Set(
                     SessionDocument(player.UserId),
@@ -563,14 +683,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             {
                 transaction.Set(
                     CardGameResultDocument(match.MatchId, player.UserId),
-                    ClaimableResultData(match, player, payout, completedAtUtc),
+                    ClaimableResultData(match, settledPlayer, payout, completedAtUtc),
                     SetOptions.MergeAll);
             }
             else
             {
                 transaction.Set(
                     CardGameResultDocument(match.MatchId, player.UserId),
-                    ManagedResultData(match, player, completedAtUtc),
+                    ManagedResultData(match, settledPlayer, completedAtUtc),
                     SetOptions.MergeAll);
             }
         }
@@ -581,8 +701,55 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             CompletedAtUtc = completedAtUtc,
             WinnerUserId = winner.UserId
         });
+        settledData["nextSweepAt"] = FieldValue.Delete;
         settledData["managedPlayersReleasePending"] = players.Any(player => !player.IsAccountBacked);
+        var isHouseFunded = match.FinancialModel == HouseFundedPoolModel;
+        var humanPayout = isHouseFunded && winner.IsAccountBacked ? match.WinnerPayoutCents : 0L;
+        var botPrize = isHouseFunded && !winner.IsAccountBacked ? match.WinnerPayoutCents : 0L;
+        var houseNet = isHouseFunded ? checked(match.HumanEntryCents - humanPayout) : 0L;
+        if (isHouseFunded)
+        {
+            settledData["humanPayoutCents"] = humanPayout;
+            settledData["botPrizeCents"] = botPrize;
+            settledData["houseNetCents"] = houseNet;
+        }
         transaction.Update(MatchDocument(match.MatchId), settledData);
+        if (isHouseFunded)
+        {
+            var managedCount = players.Count(player => !player.IsAccountBacked);
+            var expectedHumanEntry = checked(realPlayers.Length * match.BuyInCents);
+            var expectedHouseEntry = checked(managedCount * match.BuyInCents);
+            if (match.HumanEntryCents != expectedHumanEntry ||
+                match.HouseFundedEntryCents != expectedHouseEntry ||
+                match.PrizePoolCents != checked(expectedHumanEntry + expectedHouseEntry) ||
+                match.PrizePoolCents - match.WinnerPayoutCents != match.PlatformFeeCents)
+            {
+                throw new InvalidOperationException("The Solitaire house-funded prize pool does not reconcile.");
+            }
+            if (houseNet != checked(match.PlatformFeeCents + botPrize - match.HouseFundedEntryCents))
+                throw new InvalidOperationException("The Solitaire house-funded result does not reconcile.");
+            transaction.Create(RevenueDocument(match.MatchId), new Dictionary<string, object>
+            {
+                ["matchId"] = match.MatchId,
+                ["currencyId"] = SlotsCreditsCurrencyId,
+                ["financialClassification"] = HouseFundedPoolModel,
+                ["humanEntryCents"] = match.HumanEntryCents,
+                ["houseFundedEntryCents"] = match.HouseFundedEntryCents,
+                ["grossPoolCents"] = match.PrizePoolCents,
+                ["winnerPayoutCents"] = match.WinnerPayoutCents,
+                ["humanPayoutCents"] = humanPayout,
+                ["botPrizeCents"] = botPrize,
+                ["platformFeeCents"] = match.PlatformFeeCents,
+                ["houseNetCents"] = houseNet,
+                ["botFinancialContributionCents"] = 0L,
+                ["humanPlayerCount"] = (long)realPlayers.Length,
+                ["managedPlayerCount"] = (long)managedCount,
+                ["winnerUserId"] = winner.UserId,
+                ["recognizedAt"] = Timestamp.FromDateTime(completedAtUtc),
+                ["schemaVersion"] = 2L
+            });
+            return;
+        }
         var singleHuman = realPlayers.Length == 1;
         if (singleHuman)
         {
@@ -646,8 +813,50 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             SolitairePlayerStatuses.IntegrityFailed;
 
     private static bool CanSettle(
-        IReadOnlyList<SolitairePlayerState> players) =>
-        players.All(IsTerminal);
+        SolitaireMatch match,
+        IReadOnlyList<SolitairePlayerState> players,
+        DateTime nowUtc) =>
+        players.All(IsTerminal) &&
+        (match.AdmissionClosesAtUtc is null ||
+         match.PlayerIds.Count >= match.PlayerCount ||
+         nowUtc >= match.AdmissionClosesAtUtc.Value);
+
+    private DateTime NextSweepAt(
+        SolitaireMatch match,
+        IReadOnlyList<SolitairePlayerState> players,
+        DateTime nowUtc)
+    {
+        var due = new List<DateTime>();
+        foreach (var player in players.Where(player => player.Status == SolitairePlayerStatuses.Playing))
+        {
+            var deadline = PlayerDeadline(match, player);
+            if (!player.IsAccountBacked)
+            {
+                due.Add(Min(deadline, SolitaireManagedPlayerProgression.NextActionAt(player)));
+            }
+            else if (player.PausedAtUtc is { } pausedAt)
+            {
+                var remainingPause = Math.Max(0,
+                    (long)SolitaireCompetitionRules.PauseBudget.TotalMilliseconds -
+                    player.PauseUsedMilliseconds);
+                due.Add(pausedAt.AddMilliseconds(remainingPause));
+            }
+            else
+            {
+                due.Add(deadline);
+            }
+        }
+        if (match.AdmissionClosesAtUtc is { } closesAt &&
+            match.PlayerIds.Count < match.PlayerCount && nowUtc < closesAt)
+        {
+            due.Add(closesAt);
+            if (options.AllowSingleHumanBotFill)
+                due.Add(match.SeatFillEligibleAtUtc ?? match.StartedAtUtc.AddHours(1));
+        }
+        return due.Count == 0 ? nowUtc : due.Min();
+    }
+
+    private static DateTime Min(DateTime first, DateTime second) => first < second ? first : second;
 
     private static DateTime PlayerDeadline(SolitaireMatch match, SolitairePlayerState player) =>
         player.DeadlineAtUtc == DateTime.UnixEpoch ? match.DeadlineAtUtc : player.DeadlineAtUtc;
@@ -772,5 +981,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         IReadOnlyDictionary<string, DocumentSnapshot> BalanceSnapshots)
     {
         public bool ManagedPlayersReleasePending { get; init; }
+        public DateTime? NextSweepAtUtc { get; init; }
+        public IReadOnlyDictionary<string, DocumentSnapshot> SessionSnapshots { get; init; } =
+            new Dictionary<string, DocumentSnapshot>(StringComparer.Ordinal);
     }
 }

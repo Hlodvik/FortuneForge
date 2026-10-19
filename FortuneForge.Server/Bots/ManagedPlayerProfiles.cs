@@ -97,6 +97,13 @@ internal interface IManagedPlayerAssignmentStore
         DateTime nowUtc,
         CancellationToken cancellationToken);
 
+    Task<bool> TryRenewAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
+
     Task<bool> ReleaseAsync(
         string profileId,
         string assignmentId,
@@ -161,6 +168,13 @@ internal interface IManagedPlayerQueuer
         CancellationToken cancellationToken);
 
     Task HeartbeatAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
+
+    Task<bool> TryRenewAsync(
         string gameId,
         string assignmentId,
         IReadOnlyCollection<string> profileIds,

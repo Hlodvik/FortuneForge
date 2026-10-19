@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using FortuneForge.Games.Solitaire;
 
 namespace FortuneForge.Server.Bots.Solitaire;
@@ -5,7 +7,6 @@ namespace FortuneForge.Server.Bots.Solitaire;
 internal static class SolitaireManagedPlayerPolicy
 {
     private const string SkillKey = "managed-skill";
-    private const string CompletionElapsedKey = "managed-completion-elapsed";
 
     public static SolitairePlayerState Start(SolitaireMatch match, int seat, ManagedPlayerProfile profile)
     {
@@ -20,33 +21,9 @@ internal static class SolitaireManagedPlayerPolicy
             IsAccountBacked = false,
             HostMetadata = new(StringComparer.Ordinal)
             {
-                [SkillKey] = profile.SkillLevel.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                [CompletionElapsedKey] = ElapsedMilliseconds(match.DealSeed, seat, profile.UserId, profile.SkillLevel)
-                    .ToString(System.Globalization.CultureInfo.InvariantCulture)
+                [SkillKey] = profile.SkillLevel.ToString(System.Globalization.CultureInfo.InvariantCulture)
             }
         };
-    }
-
-    internal static DateTime CompletionAt(SolitaireMatch match, SolitairePlayerState player) =>
-        match.StartedAtUtc.AddMilliseconds(CompletionElapsed(match, player));
-
-    internal static SolitairePlayerState CompleteScheduled(SolitaireMatch match, SolitairePlayerState player) =>
-        player with
-        {
-            Status = SolitairePlayerStatuses.Finished,
-            Game = Play(match.DealSeed, match.DrawCount, player.Seat, Skill(player)),
-            Version = checked(player.Version + 1),
-            ElapsedMilliseconds = CompletionElapsed(match, player),
-            CompletedAtUtc = CompletionAt(match, player)
-        };
-
-    public static SolitairePlayerState Complete(
-        SolitaireMatch match,
-        int seat,
-        ManagedPlayerProfile profile,
-        DateTime completedAtUtc)
-    {
-        return CompleteScheduled(match, Start(match, seat, profile)) with { CompletedAtUtc = completedAtUtc };
     }
 
     internal static int Skill(SolitairePlayerState player) =>
@@ -54,17 +31,12 @@ internal static class SolitaireManagedPlayerPolicy
         int.TryParse(stored, out var skill) && skill is >= 2 and <= 4
             ? skill : ManagedPlayerSkillLevels.Average;
 
-    private static long CompletionElapsed(SolitaireMatch match, SolitairePlayerState player) =>
-        player.HostMetadata.TryGetValue(CompletionElapsedKey, out var stored) &&
-        long.TryParse(stored, out var elapsed) && elapsed > 0
-            ? elapsed
-            : ElapsedMilliseconds(match.DealSeed, player.Seat, player.UserId, Skill(player));
-
     internal static SolitaireCommandRequest Choose(
         SolitaireGameState game,
         int expectedVersion,
         int skillLevel,
-        ulong seed)
+        ulong seed,
+        IReadOnlySet<string>? recentVisibleStates = null)
     {
         ManagedPlayerSkillLevels.Validate(skillLevel);
         var legal = LegalCommands(game, expectedVersion);
@@ -85,7 +57,7 @@ internal static class SolitaireManagedPlayerPolicy
             : options.StrongImperfectionRate;
         if (random.NextDouble() < errorRate) return random.Choose(legal).Command;
         return legal
-            .OrderByDescending(candidate => Score(game, candidate.Result, candidate.Command, skillLevel))
+            .OrderByDescending(candidate => Score(game, candidate.Result, candidate.Command, recentVisibleStates))
             .ThenBy(candidate => Key(candidate.Command), StringComparer.Ordinal)
             .First().Command;
     }
@@ -135,43 +107,53 @@ internal static class SolitaireManagedPlayerPolicy
         return legal;
     }
 
-    private static SolitaireGameState Play(uint dealSeed, int drawCount, int seat, int skill)
+    internal static string VisibleStateFingerprint(SolitaireGameState game)
     {
-        var game = SolitaireEngine.CreateGame(dealSeed, drawCount);
-        var maximumCommands = skill switch { 2 => 72, 3 => 120, _ => 168 };
-        for (var version = 1; version <= maximumCommands && !SolitaireEngine.IsWon(game); version++)
+        var visible = new StringBuilder();
+        visible.Append(game.Stock.Count).Append('|').Append(game.Waste.Count).Append(':')
+            .Append(game.Waste.LastOrDefault()?.Id).Append('|');
+        foreach (var pile in game.Foundations)
+            visible.Append(pile.Count).Append(':').Append(pile.LastOrDefault()?.Id).Append('|');
+        foreach (var pile in game.Tableau)
         {
-            var legal = LegalCommands(game, version);
-            if (legal.Count == 0) break;
-            var selected = skill == 2 || skill == 3 && version % 4 == 0
-                ? new DeterministicManagedPlayerRandom(((ulong)dealSeed << 32) | (uint)seat, $"solitaire-run:{profileKey(seat)}:{version}").Choose(legal)
-                : legal.OrderByDescending(candidate => candidate.Result.Score)
-                    .ThenByDescending(candidate => candidate.Result.Foundations.Sum(pile => pile.Count))
-                    .ThenBy(candidate => candidate.Result.Tableau.Sum(pile => pile.Count(card => !card.FaceUp)))
-                    .ThenBy(candidate => Key(candidate.Command), StringComparer.Ordinal)
-                    .First();
-            game = selected.Result;
+            visible.Append(pile.Count).Append(':');
+            foreach (var card in pile)
+                visible.Append(card.FaceUp ? card.Id : "?").Append(',');
+            visible.Append('|');
         }
-        return game with { Message = SolitaireEngine.IsWon(game) ? "Game complete" : "Time expired" };
-
-        static string profileKey(int value) => value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(visible.ToString()));
+        return Convert.ToHexString(hash.AsSpan(0, 8));
     }
 
-    private static long ElapsedMilliseconds(uint dealSeed, int seat, string profileId, int skill)
+    private static int Score(
+        SolitaireGameState before,
+        SolitaireGameState after,
+        SolitaireCommandRequest command,
+        IReadOnlySet<string>? recentVisibleStates)
     {
-        var stable = new DeterministicManagedPlayerRandom(((ulong)dealSeed << 32) | (uint)seat, $"solitaire-elapsed:{profileId}");
-        var spread = stable.Next(90_000);
-        return Math.Min(599_000, 420_000 - skill * 30_000L + spread);
-    }
+        // Stock identities and cards revealed by a move are hidden until the
+        // action happens. A draw's merit must not depend on its simulated result.
+        if (command.Type == SolitaireCommandTypes.Draw)
+            return before.Stock.Count == 0 ? -10 : -8;
 
-    private static int Score(SolitaireGameState before, SolitaireGameState after, SolitaireCommandRequest command, int skill)
-    {
         var score = (after.Score - before.Score) * 10;
         score += (after.Foundations.Sum(pile => pile.Count) - before.Foundations.Sum(pile => pile.Count)) * 60;
         score += (FaceDown(before) - FaceDown(after)) * 80;
-        if (command.Type == SolitaireCommandTypes.Draw) score -= 8;
         if (command.From?.Zone == "foundation") score -= 100;
-        if (skill == ManagedPlayerSkillLevels.Strong) score += LegalCommands(after, 1).Count * 2;
+        if (score == 0)
+        {
+            // Moving an entire face-up pile into an empty column just relocates
+            // it; other neutral moves can set up a useful next move.
+            score = command.From?.Zone == "tableau" && command.To?.Zone == "tableau" &&
+                after.Tableau[command.From.Index].Count == 0 &&
+                before.Tableau[command.To.Index].Count == 0
+                    ? -12 : -6;
+        }
+        // Only compare a candidate's layout if it did not reveal a hidden
+        // tableau card. Its identity must not influence the pre-move choice.
+        if (FaceDown(before) == FaceDown(after) &&
+            recentVisibleStates?.Contains(VisibleStateFingerprint(after)) == true)
+            score -= 50;
         return score;
     }
 

@@ -58,6 +58,13 @@ internal interface IMultiplayerMatchmaker
         DateTime nowUtc,
         CancellationToken cancellationToken);
 
+    Task<bool> TryRenewManagedPlayersAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken);
+
     Task ReleaseManagedPlayersAsync(
         string assignmentId,
         IReadOnlyCollection<string> profileIds,
@@ -136,6 +143,17 @@ internal sealed class MultiplayerMatchmaker(
         managedPlayerQueuer is null || profileIds.Count == 0
             ? Task.CompletedTask
             : managedPlayerQueuer.HeartbeatAsync(
+                gameId, assignmentId, profileIds, nowUtc, cancellationToken);
+
+    public Task<bool> TryRenewManagedPlayersAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken) =>
+        managedPlayerQueuer is null || profileIds.Count == 0
+            ? Task.FromResult(true)
+            : managedPlayerQueuer.TryRenewAsync(
                 gameId, assignmentId, profileIds, nowUtc, cancellationToken);
 
     public Task ReleaseManagedPlayersAsync(

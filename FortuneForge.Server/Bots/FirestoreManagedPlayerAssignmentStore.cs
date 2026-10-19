@@ -61,6 +61,47 @@ internal sealed class FirestoreManagedPlayerAssignmentStore(
         }, cancellationToken: cancellationToken);
     }
 
+    public Task<bool> TryRenewAsync(
+        string gameId,
+        string assignmentId,
+        IReadOnlyCollection<string> profileIds,
+        DateTime nowUtc,
+        CancellationToken cancellationToken)
+    {
+        var ids = profileIds.Distinct(StringComparer.Ordinal).ToArray();
+        if (ids.Length == 0) return Task.FromResult(true);
+
+        return database.RunTransactionAsync(async transaction =>
+        {
+            var references = ids.Select(Assignment).ToArray();
+            var assignmentSnapshots = await Task.WhenAll(references.Select(reference =>
+                transaction.GetSnapshotAsync(reference, cancellationToken)));
+            var profileSnapshots = await Task.WhenAll(ids.Select(profileId =>
+                transaction.GetSnapshotAsync(User(profileId), cancellationToken)));
+
+            for (var index = 0; index < ids.Length; index++)
+            {
+                var snapshot = assignmentSnapshots[index];
+                if (!FirestoreManagedPlayerProfileRepository.IsManagedPlayer(profileSnapshots[index]) ||
+                    !snapshot.Exists ||
+                    ReadString(snapshot, "profileId") != ids[index] ||
+                    ReadString(snapshot, "gameId") != gameId ||
+                    ReadString(snapshot, "assignmentId") != assignmentId ||
+                    ReadTimestamp(snapshot, "leaseUntil") <= nowUtc)
+                    return false;
+            }
+
+            for (var index = 0; index < ids.Length; index++)
+            {
+                transaction.Set(references[index], AssignmentData(
+                    ids[index], gameId, assignmentId,
+                    ReadTimestamp(assignmentSnapshots[index], "reservedAt"), nowUtc),
+                    SetOptions.MergeAll);
+            }
+            return true;
+        }, cancellationToken: cancellationToken);
+    }
+
     public Task<bool> ReleaseAsync(
         string profileId,
         string assignmentId,

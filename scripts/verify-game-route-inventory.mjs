@@ -18,10 +18,13 @@ for (const [route, gameId] of slotSmokeInventory) {
   assert(routeBlock[1].includes(`'${gameId}'`), `${demoPath} does not declare server profile ${gameId}`)
 }
 
-for (const { smokePath, catalogPath = smokePath } of nonSlotSmokeInventory) {
+for (const { smokePath, catalogPath = smokePath, listed = true } of nonSlotSmokeInventory) {
   assert(appRoutes.includes(`pathname === '${smokePath}'`), `${smokePath} is missing from AppRoutes`)
   assert(appRoutes.includes(`pathname === '${catalogPath}'`), `${catalogPath} is missing from AppRoutes`)
-  assert(catalog.includes(`href: '${catalogPath}'`), `${catalogPath} is missing from the game catalog`)
+  const appearsInCatalog = catalog.includes(`href: '${catalogPath}'`)
+  assert(appearsInCatalog === listed, listed
+    ? `${catalogPath} is missing from the game catalog`
+    : `${catalogPath} must remain unlisted in the game catalog`)
 }
 
 console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes and ${slotSmokeInventory.length} slot contracts`)

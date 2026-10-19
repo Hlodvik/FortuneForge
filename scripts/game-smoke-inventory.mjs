@@ -39,7 +39,7 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/games/drop-merge' },
   { smokePath: '/games/2048' },
   { smokePath: '/games/snake' },
-  { smokePath: '/games/horse-flight' },
+  { smokePath: '/games/horse-flight', listed: false },
   { smokePath: '/cards/solitaire' },
   { smokePath: '/cards/hearts' },
 ]

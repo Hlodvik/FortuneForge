@@ -54,10 +54,7 @@ export function AdminOperationsDashboardView({ dashboard }: { dashboard: Operati
         <Metric label="Slots wagered / won" value={`${credits(overview.slots.wageredCredits)} / ${credits(overview.slots.paidCredits)}`} />
         <Metric label="Blackjack wager / payout" value={`${credits(overview.blackjack.wageredCredits)} / ${credits(overview.blackjack.paidCredits)}`} />
         {overview.threeCardPoker && <Metric label="Three Card Poker wager / payout" value={`${credits(overview.threeCardPoker.wageredCredits)} / ${credits(overview.threeCardPoker.paidCredits)}`} />}
-        <Metric label="Solitaire house net" value={credits(overview.solitaire.houseNetCredits ?? overview.solitaire.platformFeeCredits)} tone={(overview.solitaire.houseNetCredits ?? overview.solitaire.platformFeeCredits) >= 0 ? 'good' : 'bad'} />
-        <Metric label="Solitaire platform fees" value={credits(overview.solitaire.platformFeeCredits)} />
-        <Metric label="Solitaire house-funded entries" value={credits(overview.solitaire.houseFundedEntryCredits ?? 0)} />
-        <Metric label="Solitaire bot prizes" value={credits(overview.solitaire.botPrizeCredits ?? 0)} />
+        <Metric label="Real-human pool Solitaire fees" value={credits(overview.solitaire.platformFeeCredits)} />
         <Metric label="Real-human pool Hold'em fees" value={credits(overview.texasHoldem.platformFeeCredits)} />
       </div>
     </section>

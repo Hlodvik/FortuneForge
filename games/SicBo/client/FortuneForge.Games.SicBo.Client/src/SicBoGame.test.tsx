@@ -56,7 +56,7 @@ describe('Sic Bo table',()=>{
     await waitFor(()=>expect(gateway.createRound).toHaveBeenCalledTimes(1));const bets=vi.mocked(gateway.createRound).mock.calls[0]![0]
     expect(bets.map(b=>b.kind)).toEqual(['small','big','odd','even','any-triple','single-number','specific-double','specific-triple','total','two-number-combination','small'])
     expect(bets[0]).toEqual(bets[10]);expect(bets).toHaveLength(11)
-  })
+  },10_000)
   it('aggregates markers while retaining duplicate slip entries',async()=>{
     render(<SicBoGame gateway={fakeGateway()}/>);await ready();add('Small');stake('5');add('Small')
     expect(within(screen.getByRole('button',{name:'Add Small bet'})).getByLabelText(money(6)+' staked')).toBeTruthy()

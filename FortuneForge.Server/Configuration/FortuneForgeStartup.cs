@@ -51,6 +51,8 @@ public static class FortuneForgeStartup
         builder.Services.AddCompetitiveSolitaireQueues(builder.Configuration);
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
+        builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
+        builder.Services.AddPaidHearts(builder.Configuration);
         builder.Services.AddSingleton(provider => new RouletteGameService(
             provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
             provider.GetRequiredService<IManagedTablePopulationDirector>()));

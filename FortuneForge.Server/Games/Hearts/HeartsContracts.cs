@@ -28,7 +28,8 @@ public sealed record HeartsMatchResponse(
     HeartsScoreResponse RoundScore,
     string Difficulty,
     string? Winner,
-    string Message);
+    string Message,
+    bool IsTrial = false);
 public sealed record HeartsPlayerResponse(string Seat, string DisplayName, int HandCount, int RoundScore, int MatchScore, bool HasPassed);
 public sealed record HeartsCardResponse(string Code, string Rank, string Suit, string Label);
 public sealed record HeartsTrickResponse(string Leader, IReadOnlyList<HeartsTrickPlayResponse> Plays);

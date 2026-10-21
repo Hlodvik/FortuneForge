@@ -11,7 +11,9 @@ namespace FortuneForge.Server.Games.Hearts;
 /// <summary>Owns short-lived, no-credit Hearts tables.</summary>
 public sealed class HeartsGameService(
     IHeartsManagedPlayerRoster managedPlayers,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IHeartsOnboardingStore? onboarding = null,
+    ILogger<HeartsGameService>? logger = null)
 {
     private const PlayerSeat HumanSeat = PlayerSeat.North;
     private static readonly TimeSpan LeaseHeartbeatInterval = TimeSpan.FromMinutes(5);
@@ -19,11 +21,57 @@ public sealed class HeartsGameService(
         .Where(seat => seat != HumanSeat)
         .ToHashSet();
     private readonly ConcurrentDictionary<Guid, HeartsSession> sessions = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> trialStarts = new(StringComparer.Ordinal);
 
-    public async Task<HeartsMatchResponse> StartAsync(
+    public Task<HeartsMatchResponse> StartAsync(
         string userId,
         StartHeartsMatchRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) => StartAsync(userId, request, false, cancellationToken);
+
+    public async Task<HeartsMatchResponse> StartTrialAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        var gate = trialStarts.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken);
+        try
+        {
+            foreach (var previous in sessions.Values.Where(session => session.IsTrial && session.UserId == userId))
+            {
+                await PersistTrialCompletionAsync(previous, cancellationToken);
+                await ReleaseTrialProfilesAsync(previous, cancellationToken, throwOnFailure: true);
+                lock (previous.SyncRoot)
+                    if (!previous.IsCancelled && !IsFinished(previous)) return ToResponse(previous);
+            }
+            return await StartAsync(userId, new StartHeartsMatchRequest(null, HeartsMatchEngine.DefaultTargetScore, "standard"), true, cancellationToken);
+        }
+        finally { gate.Release(); }
+    }
+
+    public async Task CancelTrialAsync(string userId, Guid matchId, CancellationToken cancellationToken = default)
+    {
+        var session = Session(userId, matchId);
+        lock (session.SyncRoot)
+        {
+            if (!session.IsTrial) throw new HeartsRuleException("This table is not a learning trial.");
+            if (!IsFinished(session))
+            {
+                session.IsCancelled = true;
+                session.ClearScheduledTurn();
+                session.Message = "Trial ended.";
+            }
+            session.TrialReleasePending = !session.ManagedPlayersReleased;
+        }
+        await PersistTrialCompletionAsync(session, cancellationToken);
+        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: true);
+    }
+
+    public async Task RetryTrialCompletionAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        foreach (var session in sessions.Values.Where(session => session.IsTrial && session.UserId == userId))
+            await PersistTrialCompletionAsync(session, cancellationToken);
+    }
+
+    private async Task<HeartsMatchResponse> StartAsync(
+        string userId, StartHeartsMatchRequest request, bool isTrial, CancellationToken cancellationToken)
     {
         var targetScore = request.TargetScore ?? HeartsMatchEngine.DefaultTargetScore;
         var seed = request.Seed ?? NextSeed();
@@ -49,7 +97,7 @@ public sealed class HeartsGameService(
             .ToDictionary();
         var session = new HeartsSession(
             matchId, userId, initialState, requestedSkillLevel, roster,
-            UtcNow() + LeaseHeartbeatInterval);
+            UtcNow() + LeaseHeartbeatInterval, isTrial);
         if (!sessions.TryAdd(session.Id, session))
         {
             await managedPlayers.ReleaseAsync(
@@ -76,6 +124,8 @@ public sealed class HeartsGameService(
             heartbeatDue = session.TryClaimLeaseHeartbeat(
                 UtcNow(), LeaseHeartbeatInterval);
         }
+        await PersistTrialCompletionAsync(session, cancellationToken);
+        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
         if (heartbeatDue)
             await HeartbeatAsync(session, matchId, cancellationToken);
         return response;
@@ -111,27 +161,33 @@ public sealed class HeartsGameService(
     {
         foreach (var session in sessions.Values)
         {
+            await PersistTrialCompletionAsync(session, cancellationToken);
+            await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
             string[] releaseIds = [];
             bool heartbeatDue;
             lock (session.SyncRoot)
             {
-                if (!session.OpponentsThinking ||
+                if (session.IsCancelled || !session.OpponentsThinking ||
                     session.NextManagedActionAtUtc is not { } actionAt ||
                     UtcNow() < actionAt)
                     continue;
 
                 AdvanceManagedTurn(session);
-                if (session.State.Winner is not null && !session.ManagedPlayersReleased)
+                if (IsFinished(session) && !session.ManagedPlayersReleased)
                 {
-                    session.ManagedPlayersReleased = true;
-                    releaseIds = session.ManagedActors.Values
-                        .Select(actor => actor.Profile.UserId)
-                        .ToArray();
+                    if (session.IsTrial) session.TrialReleasePending = true;
+                    else
+                    {
+                        session.ManagedPlayersReleased = true;
+                        releaseIds = session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray();
+                    }
                 }
                 heartbeatDue = releaseIds.Length == 0 && session.TryClaimLeaseHeartbeat(
                     UtcNow(), LeaseHeartbeatInterval);
             }
 
+            await PersistTrialCompletionAsync(session, cancellationToken);
+            await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
             if (releaseIds.Length > 0)
             {
                 await managedPlayers.ReleaseAsync(
@@ -151,6 +207,7 @@ public sealed class HeartsGameService(
         CancellationToken cancellationToken = default) =>
         ChangeAsync(userId, matchId, session =>
         {
+            if (session.IsTrial) throw new HeartsRuleException("The trial has one hand. Start a free game or join a competitive table to keep playing.");
             session.State = HeartsMatchEngine.StartNextRound(session.State, seed ?? NextSeed());
             session.LastCompletedTrick = null;
             session.Message = $"Round {session.State.RoundNumber} is ready. Pass three cards {DirectionName(session.State.PassDirection)}.";
@@ -170,18 +227,23 @@ public sealed class HeartsGameService(
         bool heartbeatDue;
         lock (session.SyncRoot)
         {
+            if (session.IsCancelled) throw new HeartsRuleException("This trial has ended. Choose Learn to play to start another.");
             action(session);
-            if (session.State.Winner is not null && !session.ManagedPlayersReleased)
+            if (IsFinished(session) && !session.ManagedPlayersReleased)
             {
-                session.ManagedPlayersReleased = true;
-                releaseIds = session.ManagedActors.Values
-                    .Select(actor => actor.Profile.UserId)
-                    .ToArray();
+                if (session.IsTrial) session.TrialReleasePending = true;
+                else
+                {
+                    session.ManagedPlayersReleased = true;
+                    releaseIds = session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray();
+                }
             }
             heartbeatDue = releaseIds.Length == 0 && session.TryClaimLeaseHeartbeat(
                 UtcNow(), LeaseHeartbeatInterval);
             response = ToResponse(session);
         }
+        await PersistTrialCompletionAsync(session, cancellationToken);
+        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
         if (releaseIds.Length > 0)
         {
             await managedPlayers.ReleaseAsync(
@@ -193,6 +255,50 @@ public sealed class HeartsGameService(
         }
         return response;
     }
+
+    private async Task PersistTrialCompletionAsync(HeartsSession session, CancellationToken cancellationToken)
+    {
+        if (onboarding is null) return;
+        lock (session.SyncRoot)
+            if (!session.TrialCompletionPending) return;
+        try
+        {
+            await onboarding.CompleteTrialAsync(session.UserId, session.Id, UtcNow(), cancellationToken);
+            lock (session.SyncRoot) session.TrialCompletionPending = false;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            // Finishing the cards remains successful. A later read or worker
+            // sweep retries the monotonic account update without replaying cards.
+            logger?.LogWarning(exception, "Hearts trial {MatchId} will retry recording account onboarding.", session.Id);
+        }
+    }
+
+    private async Task ReleaseTrialProfilesAsync(HeartsSession session, CancellationToken cancellationToken, bool throwOnFailure)
+    {
+        lock (session.SyncRoot)
+            if (!session.IsTrial || !session.TrialReleasePending) return;
+        try
+        {
+            await managedPlayers.ReleaseAsync(AssignmentId(session.Id),
+                session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray(), UtcNow(), cancellationToken);
+            lock (session.SyncRoot)
+            {
+                session.ManagedPlayersReleased = true;
+                session.TrialReleasePending = false;
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (Exception exception)
+        {
+            logger?.LogWarning(exception, "Hearts trial {MatchId} will retry releasing opponent profiles.", session.Id);
+            if (throwOnFailure) throw;
+        }
+    }
+
+    private static bool IsFinished(HeartsSession session) => session.State.Winner is not null ||
+        (session.IsTrial && session.State.Round.Phase == HeartsPhase.Complete);
 
     private async Task HeartbeatAsync(
         HeartsSession session,
@@ -324,6 +430,9 @@ public sealed class HeartsGameService(
     {
         if (session.State.Round.CompletedTricks.Count > completedBefore)
             session.LastCompletedTrick = session.State.Round.CompletedTricks[^1];
+        if (session.IsTrial && session.State.Round.Phase == HeartsPhase.Complete &&
+            session.State.Round.CompletedTricks.Count == 13)
+            session.TrialCompletionPending = true;
     }
 
     private static HeartsMatchResponse ToResponse(HeartsSession session)
@@ -337,7 +446,7 @@ public sealed class HeartsGameService(
         return new HeartsMatchResponse(
             session.Id, state.TargetScore, state.RoundNumber, PhaseName(round.Phase),
             DirectionName(state.PassDirection), SeatName(round.Turn), SeatName(HumanSeat),
-            round.Turn == HumanSeat && state.Winner is null, session.OpponentsThinking, round.HeartsBroken,
+            !session.IsCancelled && round.Turn == HumanSeat && state.Winner is null, session.OpponentsThinking, round.HeartsBroken,
             round.SubmittedPasses.Select(pass => SeatName(pass.Seat)).ToArray(),
             Enum.GetValues<PlayerSeat>().Select(seat => new HeartsPlayerResponse(
                 SeatName(seat), DisplayName(session, seat), round.HandFor(seat).Count,
@@ -355,11 +464,11 @@ public sealed class HeartsGameService(
                 trick.Plays.Sum(play => HeartsRules.PointValue(play.Card)))).ToArray(),
             new HeartsScoreResponse(state.Score.North, state.Score.East, state.Score.South, state.Score.West),
             new HeartsScoreResponse(scores[PlayerSeat.North], scores[PlayerSeat.East], scores[PlayerSeat.South], scores[PlayerSeat.West]),
-            DifficultyName(session.RequestedSkillLevel), state.Winner is { } winner ? SeatName(winner) : null, session.Message);
+            DifficultyName(session.RequestedSkillLevel), state.Winner is { } winner ? SeatName(winner) : null, session.Message, session.IsTrial);
     }
 
     private static string DisplayName(HeartsSession session, PlayerSeat seat) =>
-        seat == HumanSeat ? "You" : session.ManagedActors[seat].Profile.PlayerName;
+        seat == HumanSeat ? "You" : session.IsTrial ? $"Trial bot {(int)seat}" : session.ManagedActors[seat].Profile.PlayerName;
     private static HeartsCardResponse ToCard(PlayingCard card) => new(card.Code, RankName(card.Rank), SuitName(card.Suit), CardLabel(card));
     private static uint NextSeed() => (uint)RandomNumberGenerator.GetInt32(1, int.MaxValue);
     private static int ParseDifficulty(string? difficulty) => difficulty?.Trim().ToLowerInvariant() switch
@@ -408,10 +517,15 @@ public sealed class HeartsGameService(
         HeartsMatchState state,
         int requestedSkillLevel,
         IReadOnlyDictionary<PlayerSeat, ManagedActor> managedActors,
-        DateTime nextLeaseHeartbeatAtUtc)
+        DateTime nextLeaseHeartbeatAtUtc,
+        bool isTrial)
     {
         private DateTime nextLeaseHeartbeatAtUtc = nextLeaseHeartbeatAtUtc;
         public Guid Id { get; } = id;
+        public bool IsTrial { get; } = isTrial;
+        public bool IsCancelled { get; set; }
+        public bool TrialCompletionPending { get; set; }
+        public bool TrialReleasePending { get; set; }
         public object SyncRoot { get; } = new();
         public string UserId { get; } = userId;
         public HeartsMatchState State { get; set; } = state;
@@ -426,7 +540,7 @@ public sealed class HeartsGameService(
 
         public bool TryClaimLeaseHeartbeat(DateTime nowUtc, TimeSpan interval)
         {
-            if (ManagedPlayersReleased || nowUtc < nextLeaseHeartbeatAtUtc)
+            if (ManagedPlayersReleased || IsCancelled || nowUtc < nextLeaseHeartbeatAtUtc)
                 return false;
             nextLeaseHeartbeatAtUtc = nowUtc + interval;
             return true;

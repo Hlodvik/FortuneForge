@@ -8,7 +8,7 @@ import { seatsClockwise } from './heartsHelpers'
 
 const two = { code: '2|clubs', rank: '2', suit: 'clubs', label: '2♣' }
 function hand(isTrial = true, overrides: Partial<HeartsMatch> = {}): HeartsMatch {
-  return { matchId: 'intro-hand', isTrial, targetScore: 100, roundNumber: 1, phase: 'passing', passDirection: 'left', turn: 'north', humanSeat: 'north', yourTurn: false, opponentsThinking: false, heartsBroken: false, submittedPasses: [], players: seatsClockwise.map((seat, index) => ({ seat, displayName: isTrial && index > 0 ? `Trial bot ${index}` : ['Ada', 'Rowan', 'Clover', 'Quinn'][index], handCount: 13, roundScore: 0, matchScore: 0, hasPassed: false })), hand: [two], legalCards: [], currentTrick: { leader: 'north', plays: [] }, recentTrick: null, completedTricks: [], score: { north: 0, east: 0, south: 0, west: 0 }, roundScore: { north: 0, east: 0, south: 0, west: 0 }, difficulty: 'standard', winner: null, message: '', ...overrides }
+  return { matchId: 'intro-hand', isTrial, targetScore: 100, roundNumber: 1, phase: 'passing', passDirection: 'left', turn: 'north', humanSeat: 'north', yourTurn: false, opponentsThinking: false, heartsBroken: false, submittedPasses: [], players: seatsClockwise.map((seat, index) => ({ seat, displayName: isTrial && index > 0 ? `Trial player ${index}` : ['Ada', 'Rowan', 'Clover', 'Quinn'][index], handCount: 13, roundScore: 0, matchScore: 0, hasPassed: false })), hand: [two], legalCards: [], currentTrick: { leader: 'north', plays: [] }, recentTrick: null, completedTricks: [], score: { north: 0, east: 0, south: 0, west: 0 }, roundScore: { north: 0, east: 0, south: 0, west: 0 }, difficulty: 'standard', winner: null, message: '', ...overrides }
 }
 const tricks = (count: number) => Array.from({ length: count }, (_, index) => ({ number: index + 1, leader: 'north' as const, winner: 'north' as const, points: 0 }))
 const idle: HeartsPaidSession = { kind: 'idle', version: 0, balanceCredits: 100, entryOptions: [1, 2, 5], queue: null, table: null }
@@ -107,9 +107,9 @@ describe('account Hearts onboarding', () => {
     expect(screen.getByText('Trial run · No entry')).toBeTruthy()
     expect(screen.getByText('Trial run', { exact: true })).toBeTruthy()
     expect(screen.getByText('One hand · 13 tricks')).toBeTruthy()
-    expect(screen.getByText('Trial bot 1')).toBeTruthy()
-    expect(screen.getByText('Trial bot 2')).toBeTruthy()
-    expect(screen.getByText('Trial bot 3')).toBeTruthy()
+    expect(screen.getByText('Trial player 1')).toBeTruthy()
+    expect(screen.getByText('Trial player 2')).toBeTruthy()
+    expect(screen.getByText('Trial player 3')).toBeTruthy()
     expectNoModeChoices()
     expect(screen.queryByRole('button', { name: 'Next round' })).toBeNull()
   })

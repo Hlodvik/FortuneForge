@@ -32,7 +32,7 @@ export function createPreviewGateway(): HeartsGateway {
   }
   function snapshot() {
     if (!match) throw new Error('Open a table first.')
-    match = { ...match, hand: [...hands.north], legalCards: match.phase === 'playing' && match.turn === 'north' ? legal('north') : [], yourTurn: match.phase === 'playing' && match.turn === 'north', opponentsThinking: match.phase === 'playing' && match.turn !== 'north', players: seatsClockwise.map((seat, index) => ({ seat, displayName: trialActive && index > 0 ? `Trial bot ${index}` : names[index], handCount: hands[seat].length, hasPassed: match!.submittedPasses.includes(seat), roundScore: match!.roundScore[seat], matchScore: match!.score[seat] })) }
+    match = { ...match, hand: [...hands.north], legalCards: match.phase === 'playing' && match.turn === 'north' ? legal('north') : [], yourTurn: match.phase === 'playing' && match.turn === 'north', opponentsThinking: match.phase === 'playing' && match.turn !== 'north', players: seatsClockwise.map((seat, index) => ({ seat, displayName: trialActive && index > 0 ? `Trial player ${index}` : names[index], handCount: hands[seat].length, hasPassed: match!.submittedPasses.includes(seat), roundScore: match!.roundScore[seat], matchScore: match!.score[seat] })) }
     return structuredClone(match)
   }
   function start(round = 1, scores = { north: 0, east: 0, south: 0, west: 0 }) {

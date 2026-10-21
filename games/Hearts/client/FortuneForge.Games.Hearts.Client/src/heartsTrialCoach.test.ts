@@ -60,8 +60,8 @@ describe('Hearts trial coach', () => {
     expect(getTrialCoach(match({ phase: 'playing', yourTurn: true, hand: [own], legalCards: [hidden] })).suggestedCodes).toEqual([])
   })
   it('explains clockwise rotation, the opening lead, and who leads the next trick', () => {
-    const coach = getTrialCoach(match({ phase: 'playing', turn: 'east', players: [{ seat: 'east', displayName: 'Trial bot 1', handCount: 13, matchScore: 0, roundScore: 0, hasPassed: true }] }))
-    expect(coach.title).toBe('Trial bot 1’s turn')
+    const coach = getTrialCoach(match({ phase: 'playing', turn: 'east', players: [{ seat: 'east', displayName: 'Trial player 1', handCount: 13, matchScore: 0, roundScore: 0, hasPassed: true }] }))
+    expect(coach.title).toBe('Trial player 1’s turn')
     expect(coach.message).toContain('clockwise')
     expect(coach.why).toContain('2 of clubs')
     expect(coach.why).toContain('wins a trick leads the next')

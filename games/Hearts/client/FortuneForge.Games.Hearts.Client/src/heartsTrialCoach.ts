@@ -18,7 +18,7 @@ export function getTrialCoach(match: HeartsMatch, selected: readonly string[] = 
   if (match.phase === 'passing') {
     if (match.submittedPasses.includes(match.humanSeat)) return {
       kind: 'waiting', title: 'Cards on the move!',
-      message: 'The trial bots are choosing their cards. Three new cards are heading your way.',
+      message: 'Your opponents are choosing their cards. Three new cards are heading your way.',
       why: 'Passing happens before the first trick. The direction changes each hand: left, right, across, then a hand with no pass.', suggestedCodes: [],
     }
     const ownCodes = new Set(match.hand.map(card => card.code))

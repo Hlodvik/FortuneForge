@@ -13,10 +13,10 @@ describe('Trial coach arrow grounding', () => {
     const user = userEvent.setup(), boardRef = createRef<HTMLElement>(), passRef = createRef<HTMLButtonElement>(), cards = { current: new Map<string, HTMLButtonElement>() }
     const coach = (kind: 'waiting' | 'play', name: string) => ({ kind, title: name, message: 'One card each, clockwise.', why: 'The trick winner leads next.', suggestedCodes: [] })
     const surface = (kind: 'waiting' | 'play', name: string) => <section ref={boardRef}><HeartsTrialCoachBubble coach={coach(kind, name)} boardRef={boardRef} cardRefs={cards} passRef={passRef} layoutKey="same hand" /></section>
-    const rendered = render(surface('waiting', 'Trial bot 1’s turn'))
+    const rendered = render(surface('waiting', 'Trial player 1’s turn'))
     await user.click(screen.getByText('Why?'))
     expect(screen.getByText('Why?').parentElement?.hasAttribute('open')).toBe(true)
-    rendered.rerender(surface('waiting', 'Trial bot 2’s turn'))
+    rendered.rerender(surface('waiting', 'Trial player 2’s turn'))
     expect(screen.getByText('Why?').parentElement?.hasAttribute('open')).toBe(true)
     rendered.rerender(surface('play', 'Your turn'))
     expect(screen.getByText('Why?').parentElement?.hasAttribute('open')).toBe(false)

@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VideoPokerGame } from './VideoPokerGame'
@@ -246,36 +246,47 @@ describe('VideoPokerGame', () => {
   })
 
   it('does not replay recovery when only the balance callback changes and notifies the latest callback after draw', async () => {
-    const user = userEvent.setup()
-    sessionStorage.setItem('fortuneforge:video-poker:pending:player-7', JSON.stringify({ operation: 'deal', idempotencyKey: 'video-poker-deal-recovery-0001', coinsWagered: 3, handCount: 1 }))
-    const createRound = vi.fn().mockResolvedValue(awaitingRound)
-    const getRound = vi.fn().mockResolvedValue(awaitingRound)
-    const getStatus = vi.fn().mockResolvedValue(status)
-    const draw = vi.fn().mockResolvedValue(settledRound)
-    const gateway = fakeGateway({ createRound, getRound, getStatus, draw })
-    const initialCallback = vi.fn()
-    const latestCallback = vi.fn()
-    const { rerender } = render(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={initialCallback} />)
+    vi.useFakeTimers()
+    try {
+      sessionStorage.setItem('fortuneforge:video-poker:pending:player-7', JSON.stringify({ operation: 'deal', idempotencyKey: 'video-poker-deal-recovery-0001', coinsWagered: 3, handCount: 1 }))
+      const createRound = vi.fn().mockResolvedValue(awaitingRound)
+      const getRound = vi.fn().mockResolvedValue(awaitingRound)
+      const getStatus = vi.fn().mockResolvedValue(status)
+      const draw = vi.fn().mockResolvedValue(settledRound)
+      const gateway = fakeGateway({ createRound, getRound, getStatus, draw })
+      const initialCallback = vi.fn()
+      const latestCallback = vi.fn()
+      const { rerender } = render(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={initialCallback} />)
 
-    await screen.findByRole('button', { name: 'Draw' })
-    await waitFor(() => expect(initialCallback).toHaveBeenCalledWith(100))
-    expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
-    expect(sessionStorage.getItem('fortuneforge:video-poker:round:player-7')).toBe('round-7')
+      // Finish recovery, then its reveal and passive balance effect explicitly.
+      await act(async () => {})
+      await act(async () => { await vi.runOnlyPendingTimersAsync() })
+      expect(screen.getByRole('button', { name: 'Draw' })).toBeTruthy()
+      expect(initialCallback).toHaveBeenCalledWith(100)
+      expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
+      expect(sessionStorage.getItem('fortuneforge:video-poker:round:player-7')).toBe('round-7')
 
-    rerender(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={latestCallback} />)
+      rerender(<VideoPokerGame playerId="player-7" gateway={gateway} onBalanceChange={latestCallback} />)
 
-    expect(createRound).toHaveBeenCalledTimes(1)
-    expect(getRound).not.toHaveBeenCalled()
-    expect(getStatus).toHaveBeenCalledTimes(1)
-    expect(latestCallback).not.toHaveBeenCalled()
-    await user.click(screen.getByRole('button', { name: 'Draw' }))
-    await screen.findByRole('button', { name: 'New Hand' })
+      expect(createRound).toHaveBeenCalledTimes(1)
+      expect(getRound).not.toHaveBeenCalled()
+      expect(getStatus).toHaveBeenCalledTimes(1)
+      expect(latestCallback).not.toHaveBeenCalled()
+      fireEvent.click(screen.getByRole('button', { name: 'Draw' }))
+      await act(async () => {})
+      await act(async () => { await vi.runOnlyPendingTimersAsync() })
+      expect(screen.getByRole('button', { name: 'New Hand' })).toBeTruthy()
 
-    expect(initialCallback).toHaveBeenCalledTimes(1)
-    expect(latestCallback).toHaveBeenCalledTimes(1)
-    expect(latestCallback).toHaveBeenCalledWith(112)
-    expect(getRound).not.toHaveBeenCalled()
-    expect(createRound).toHaveBeenCalledTimes(1)
+      expect(initialCallback).toHaveBeenCalledTimes(1)
+      expect(latestCallback).toHaveBeenCalledTimes(1)
+      expect(latestCallback).toHaveBeenCalledWith(112)
+      expect(getRound).not.toHaveBeenCalled()
+      expect(createRound).toHaveBeenCalledTimes(1)
+    } finally {
+      cleanup()
+      vi.clearAllTimers()
+      vi.useRealTimers()
+    }
   })
 
   it.each([

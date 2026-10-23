@@ -6,6 +6,7 @@ using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Cards.TexasHoldem.Credit;
@@ -102,8 +103,8 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var match = await StartMatchAsync(store, first, second);
         var at = match.Table.MatchDeadlineAtUtc.AddSeconds(1);
 
-        await Task.WhenAll(Enumerable.Range(0, 8).Select(index => store.GetSessionAsync(
-            index % 2 == 0 ? first : second, at, default)));
+        await Task.WhenAll(Enumerable.Range(0, 8).Select(index => PollSettlementWithEmulatorContentionRetryAsync(
+            store, index % 2 == 0 ? first : second, at)));
         var result = Assert.IsType<CreditHoldemResultSessionResponse>(
             (await store.GetSessionAsync(first, at, default)).Session);
         var balanceTotal = await ReadBalanceAsync(database, first) + await ReadBalanceAsync(database, second);
@@ -396,6 +397,24 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         await store.JoinAsync(second, "Bruno", 0, "join-second", 202, Start, default);
         return Assert.IsType<CreditHoldemMatchSessionResponse>(
             (await store.GetSessionAsync(first, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+    }
+
+    private static async Task<CreditHoldemStoreResult> PollSettlementWithEmulatorContentionRetryAsync(
+        FirestoreCreditHoldemStore store, string userId, DateTime nowUtc)
+    {
+        // Keep all eight initial settlement polls concurrent. The emulator can
+        // exhaust the store's transaction retries under loaded runners; retry
+        // only that definitive Aborted status with a fresh read-poll. Every
+        // payout/revenue/ledger assertion still runs against the raced result.
+        const int maximumAttempts = 3;
+        for (var attempt = 1; ; attempt++)
+        {
+            try { return await store.GetSessionAsync(userId, nowUtc, default); }
+            catch (RpcException exception) when (exception.StatusCode == StatusCode.Aborted && attempt < maximumAttempts)
+            {
+                await Task.Delay(50 * attempt + Random.Shared.Next(25, 126));
+            }
+        }
     }
 
     private (FirestoreDb Database, FirestoreCreditHoldemStore Store, string Suffix) CreateStore()

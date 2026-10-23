@@ -125,7 +125,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     .Concat(originallyQueued.Select(seat => seat.UserId)).ToArray();
                 proposedProfile = (await matchmaking.ReserveManagedPlayersAsync(
                     ManagedPlayerGames.Solitaire, currentAssignmentId, 1,
-                    excluded, nowUtc, cancellationToken)).Single();
+                    excluded, nowUtc, cancellationToken)).SingleOrDefault();
             }
 
             await RunTransactionAsync(async transaction =>
@@ -464,7 +464,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             1,
             candidate.PlayerIds.ToArray(),
             nowUtc,
-            cancellationToken)).Single();
+            cancellationToken)).SingleOrDefault();
+        if (proposed is null) return;
         try
         {
             await RunTransactionAsync(async transaction =>

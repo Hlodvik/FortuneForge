@@ -42,6 +42,7 @@ const pageTitles: Record<string, string> = {
   '/home/invoices': 'Payment Invoices — Fortune Forge',
   '/admin/invoices': 'Customer Invoices — Fortune Forge',
   '/admin/operations': 'Operations — Fortune Forge',
+  '/admin': 'Admin Portal — Fortune Forge',
 }
 
 export function usePageTitle(pathname: string) {

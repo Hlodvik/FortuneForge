@@ -45,7 +45,37 @@ public enum HorseFlightObstacleKind
     NetTower,
     Skeleton,
     RollingBarrel,
+    MarketCart,
+    HangingSign,
+    ThornBramble,
+    SpikeBarricade,
+    Cactus,
+    StormCloud,
 }
+
+public enum HorseFlightBiome
+{
+    Mountain,
+    CastleTown,
+    DarkForest,
+    Battleground,
+    Haunted,
+    Desert,
+    Sky,
+}
+
+public enum HorseFlightBiomePhase
+{
+    Main,
+    Transition,
+}
+
+public readonly record struct HorseFlightBiomeSection(
+    HorseFlightBiomePhase Phase,
+    HorseFlightBiome Biome,
+    HorseFlightBiome From,
+    HorseFlightBiome To,
+    double Blend);
 
 public sealed record HorseFlightPlatform(
     int Id,
@@ -92,6 +122,12 @@ public sealed record HorseFlightState(
 
     /// <summary>How many ticks remain in the low slide dash.</summary>
     public int SlideTicksRemaining { get; init; }
+
+    /// <summary>The obstacle that ended the run, or <see langword="null"/> while running or after a fall.</summary>
+    public HorseFlightObstacleKind? TerminalObstacleKind { get; init; }
+
+    /// <summary>Generation rules used for this run. Version 1 preserves the original mountain-to-haunted route.</summary>
+    public int RulesVersion { get; init; } = HorseFlightEngine.CurrentRulesVersion;
 }
 
 public sealed record HorseFlightTransition(
@@ -130,7 +166,11 @@ public sealed record HorseFlightSnapshot(
     int Level,
     HorseFlightPhase Phase,
     ImmutableArray<HorseFlightPlatformSnapshot> Platforms,
-    ImmutableArray<HorseFlightObstacleSnapshot> Obstacles);
+    ImmutableArray<HorseFlightObstacleSnapshot> Obstacles)
+{
+    /// <summary>The obstacle that ended the run, or <see langword="null"/> when no obstacle caused the terminal state.</summary>
+    public HorseFlightObstacleKind? TerminalObstacleKind { get; init; }
+}
 
 /// <summary>
 /// A compact, deterministic terminal-run replay. Input ticks are zero-based step indexes.
@@ -140,6 +180,7 @@ public sealed record HorseFlightReplay(
     ImmutableArray<int> JumpTicks)
 {
     public ImmutableArray<int> RightClickTicks { get; init; } = ImmutableArray<int>.Empty;
+    public int RulesVersion { get; init; } = HorseFlightEngine.CurrentRulesVersion;
 }
 
 public sealed record HorseFlightReplayResult(

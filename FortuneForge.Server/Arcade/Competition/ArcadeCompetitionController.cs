@@ -1,10 +1,12 @@
 using System.Globalization;
 using System.Collections.Immutable;
 using FortuneForge.Games.Flappy;
+using FortuneForge.Games.HorseFlight;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Server.Arcade.HorseFlight;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
@@ -71,11 +73,13 @@ public sealed class ArcadeCompetitionController : ControllerBase
         [FromServices] AccountService accountService,
         [FromServices] ArcadeCompetitionAsteroidsPaidEntryService paidEntryService,
         [FromServices] ArcadeCompetitionFlappyPaidEntryService flappyPaidEntryService,
+        [FromServices] ArcadeCompetitionHorseFlightPaidEntryService horseFlightPaidEntryService,
+        [FromServices] IConfiguration configuration,
         CancellationToken cancellationToken)
     {
         if (!options.Value.AllowedGameIds.Contains(gameId, StringComparer.Ordinal))
             return NotFound(new ArcadeCompetitionApiError("arcade-competition-game-not-found"));
-        if (gameId is not ("asteroids" or "flappy"))
+        if (gameId is not ("asteroids" or "flappy" or "horse-flight"))
             return NotFound(new ArcadeCompetitionApiError("arcade-competition-game-not-found"));
         if (period == "all-time")
             return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-not-startable"));
@@ -83,6 +87,8 @@ public sealed class ArcadeCompetitionController : ControllerBase
             return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-invalid"));
         if (string.IsNullOrWhiteSpace(idempotencyKey))
             return BadRequest(new ArcadeCompetitionApiError("arcade-competition-idempotency-key-required"));
+        if (gameId == "horse-flight" && !HorseFlightController.IsEnabled(configuration))
+            return HorseFlightUnavailable();
 
         var account = (await accountService.GetProfileAsync(
             AccountSessionCookie.Read(Request),
@@ -92,6 +98,22 @@ public sealed class ArcadeCompetitionController : ControllerBase
 
         try
         {
+            if (gameId == "horse-flight")
+            {
+                var result = await horseFlightPaidEntryService.StartAttemptAsync(
+                    idempotencyKey, account.UserId, windowKind, cancellationToken);
+                var attempt = result.Attempt;
+                return Ok(new HorseFlightPaidAttemptResponse(
+                    attempt.AttemptId,
+                    PeriodName(attempt.Competition.WindowKind),
+                    attempt.Competition.StartsAtUtc,
+                    attempt.Competition.EndsAtUtc,
+                    attempt.EntryFeeCents,
+                    result.WasAlreadyRecorded,
+                    result.Run.Run.RunId,
+                    result.Run.Run.Seed,
+                    HorseFlightEngine.TickMilliseconds));
+            }
             if (gameId == "flappy")
             {
                 var result = await flappyPaidEntryService.StartAttemptAsync(
@@ -265,6 +287,106 @@ public sealed class ArcadeCompetitionController : ControllerBase
         catch (Exception exception) { return FlappyFreeRunFailure(exception); }
     }
 
+    [HttpPost("horse-flight/free/runs")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<IActionResult> StartFreeHorseFlightRun(
+        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
+        [FromServices] AccountService accountService,
+        [FromServices] HorseFlightFirestoreStore freeRunService,
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        if (!HorseFlightController.IsEnabled(configuration)) return HorseFlightUnavailable();
+        if (string.IsNullOrWhiteSpace(idempotencyKey))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-horse-flight-free-idempotency-key-required"));
+
+        var account = (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
+        if (account is null)
+            return Unauthorized(new ArcadeCompetitionApiError("arcade-competition-authentication-required"));
+        try
+        {
+            var result = await freeRunService.StartAsync(account.UserId, idempotencyKey, cancellationToken);
+            return Ok(new HorseFlightFreeRunStartResponse(
+                result.RunId,
+                result.Seed,
+                result.TickMilliseconds,
+                result.WasReplay));
+        }
+        catch (Exception exception) { return HorseFlightFreeRunStartFailure(exception); }
+    }
+
+    [HttpPost("horse-flight/free/runs/{runId}/replay")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<IActionResult> CompleteFreeHorseFlightReplay(
+        string runId,
+        [FromBody] HorseFlightReplayInputRequest? request,
+        [FromServices] AccountService accountService,
+        [FromServices] HorseFlightFirestoreStore freeRunService,
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        if (!HorseFlightController.IsEnabled(configuration)) return HorseFlightUnavailable();
+        if (!TryCreateHorseFlightReplay(request, out var replay))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-horse-flight-replay-invalid"));
+        var account = (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
+        if (account is null)
+            return Unauthorized(new ArcadeCompetitionApiError("arcade-competition-authentication-required"));
+        try
+        {
+            var result = await freeRunService.CompleteAsync(
+                account.UserId,
+                runId,
+                new CompleteHorseFlightRunRequest(replay.TotalTicks, replay.JumpTicks, replay.RightClickTicks),
+                $"horse-flight-free-complete-{runId}",
+                cancellationToken);
+            return Ok(new HorseFlightReplayCompletionResponse(
+                result.RunId,
+                result.Score,
+                result.Phase,
+                result.TotalTicks,
+                result.JumpTicks,
+                result.RightClickTicks,
+                result.WasReplay));
+        }
+        catch (Exception exception) { return HorseFlightFreeRunFailure(exception); }
+    }
+
+    [HttpPost("horse-flight/{period}/runs/{runId}/replay")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<IActionResult> CompletePaidHorseFlightReplay(
+        string period,
+        string runId,
+        [FromBody] HorseFlightReplayInputRequest? request,
+        [FromServices] AccountService accountService,
+        [FromServices] ArcadeCompetitionHorseFlightPaidEntryService horseFlightService,
+        [FromServices] IConfiguration configuration,
+        CancellationToken cancellationToken)
+    {
+        if (!HorseFlightController.IsEnabled(configuration)) return HorseFlightUnavailable();
+        if (period == "all-time") return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-not-startable"));
+        if (!TryParsePeriod(period, out var windowKind))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-competition-period-invalid"));
+        if (!TryCreateHorseFlightReplay(request, out var replay))
+            return BadRequest(new ArcadeCompetitionApiError("arcade-horse-flight-replay-invalid"));
+        var account = (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
+        if (account is null)
+            return Unauthorized(new ArcadeCompetitionApiError("arcade-competition-authentication-required"));
+        try
+        {
+            var result = await horseFlightService.CompleteAttemptAsync(
+                runId, account.UserId, windowKind, replay, cancellationToken);
+            return Ok(new HorseFlightReplayCompletionResponse(
+                runId,
+                result.Score,
+                HorseFlightPhaseName(result.Phase),
+                result.TotalTicks,
+                result.JumpTicks,
+                result.RightClickTicks,
+                result.WasAlreadyCompleted));
+        }
+        catch (Exception exception) { return HorseFlightPaidReplayFailure(exception); }
+    }
+
     [HttpPost("flappy/{period}/runs/{runId}/replay")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<IActionResult> CompletePaidFlappyReplay(
@@ -412,6 +534,51 @@ public sealed class ArcadeCompetitionController : ControllerBase
         },
     };
 
+    internal static IActionResult HorseFlightFreeRunStartFailure(Exception exception) => exception switch
+    {
+        ArgumentException => new BadRequestObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-free-run-invalid")),
+        HorseFlightRunConflictException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-free-run-conflict")),
+        _ => new ObjectResult(new ArcadeCompetitionApiError("arcade-horse-flight-free-run-failed"))
+        {
+            StatusCode = StatusCodes.Status500InternalServerError
+        },
+    };
+
+    internal static IActionResult HorseFlightFreeRunFailure(Exception exception) => exception switch
+    {
+        HorseFlightRunNotFoundException => new NotFoundObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-free-run-not-found")),
+        ArgumentException => new BadRequestObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-replay-invalid")),
+        HorseFlightRunConflictException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-free-run-conflict")),
+        _ => new ObjectResult(new ArcadeCompetitionApiError("arcade-horse-flight-free-run-failed"))
+        {
+            StatusCode = StatusCodes.Status500InternalServerError
+        },
+    };
+
+    internal static IActionResult HorseFlightPaidReplayFailure(Exception exception) => exception switch
+    {
+        ArcadeCompetitionSettlementCompletedException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-competition-settlement-closed")),
+        ArgumentException => new BadRequestObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-replay-invalid")),
+        InvalidOperationException => new ConflictObjectResult(
+            new ArcadeCompetitionApiError("arcade-horse-flight-run-conflict")),
+        _ => new ObjectResult(new ArcadeCompetitionApiError("arcade-horse-flight-replay-failed"))
+        {
+            StatusCode = StatusCodes.Status500InternalServerError
+        },
+    };
+
+    private static ObjectResult HorseFlightUnavailable() => new(new ArcadeCompetitionApiError("arcade-horse-flight-disabled"))
+    {
+        StatusCode = StatusCodes.Status503ServiceUnavailable,
+    };
+
     private static bool TryCreateReplay(AsteroidsReplayInputRequest? request, out AsteroidsReplay replay)
     {
         replay = null!;
@@ -441,6 +608,47 @@ public sealed class ArcadeCompetitionController : ControllerBase
         }
         catch (Exception) { return false; }
     }
+
+    private static bool TryCreateHorseFlightReplay(HorseFlightReplayInputRequest? request, out HorseFlightReplay replay)
+    {
+        replay = null!;
+        if (request?.JumpTicks is null || request.TotalTicks is < 1 or > HorseFlightReplayEvaluator.MaximumTicks ||
+            request.JumpTicks.Count > HorseFlightReplayEvaluator.MaximumJumps ||
+            request.RightClickTicks?.Count > HorseFlightReplayEvaluator.MaximumRightClicks)
+        {
+            return false;
+        }
+        var rightClicks = request.RightClickTicks ?? [];
+        if (!AreValidHorseFlightTicks(request.JumpTicks, request.TotalTicks) ||
+            !AreValidHorseFlightTicks(rightClicks, request.TotalTicks) ||
+            request.JumpTicks.Intersect(rightClicks).Any())
+        {
+            return false;
+        }
+        replay = new HorseFlightReplay(request.TotalTicks, request.JumpTicks.ToImmutableArray())
+        {
+            RightClickTicks = rightClicks.ToImmutableArray(),
+        };
+        return true;
+    }
+
+    private static bool AreValidHorseFlightTicks(IReadOnlyList<int> ticks, int totalTicks)
+    {
+        var previous = -1;
+        foreach (var tick in ticks)
+        {
+            if (tick < 0 || tick >= totalTicks || tick <= previous) return false;
+            previous = tick;
+        }
+        return true;
+    }
+
+    private static string HorseFlightPhaseName(HorseFlightPhase phase) => phase switch
+    {
+        HorseFlightPhase.ObstacleCollision => "obstacle-collision",
+        HorseFlightPhase.Fell => "fell",
+        _ => throw new ArgumentOutOfRangeException(nameof(phase)),
+    };
 }
 
 public sealed record ArcadeCompetitionApiError(string Code);
@@ -473,6 +681,29 @@ public sealed record FlappyPaidAttemptResponse(
     public string GameId => "flappy";
 }
 public sealed record FlappyReplayCompletionResponse(string RunId, long Score, string Terminal, bool WasReplay);
+public sealed record HorseFlightReplayInputRequest(int TotalTicks, IReadOnlyList<int>? JumpTicks, IReadOnlyList<int>? RightClickTicks = null);
+public sealed record HorseFlightFreeRunStartResponse(string RunId, uint Seed, int TickMilliseconds, bool WasReplay);
+public sealed record HorseFlightPaidAttemptResponse(
+    string AttemptId,
+    string Period,
+    DateTimeOffset StartsAtUtc,
+    DateTimeOffset EndsAtUtc,
+    long EntryFeeCents,
+    bool WasReplay,
+    string RunId,
+    uint Seed,
+    int TickMilliseconds)
+{
+    public string GameId => "horse-flight";
+}
+public sealed record HorseFlightReplayCompletionResponse(
+    string RunId,
+    int Score,
+    string Phase,
+    int TotalTicks,
+    IReadOnlyList<int> JumpTicks,
+    IReadOnlyList<int> RightClickTicks,
+    bool WasReplay);
 public sealed record ArcadeCompetitionPlacementResponse(int Position, string PlayerId, long Score);
 public sealed record ArcadeCompetitionRefundResponse(string PlayerId, long AmountCents);
 public sealed record ArcadeCompetitionAllTimeResponse(

@@ -7,6 +7,7 @@ import { SLOT_GAME_CATALOG } from '../../games/slots/catalog'
 import { useRecentSlotGame } from '../../games/slots/useRecentSlotGame'
 import { useCardRoomHistory } from '../cards/useCardRoomHistory'
 import '../index.css'
+import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
 
 const cardDetails = {
   blackjack: { href: '/cards/blackjack', image: blackjackPreview },
@@ -66,14 +67,16 @@ function featuredSlot(id: string, summary: string): HomeGameHighlight {
   }
 }
 
-function featuredGameForToday(): HomeGameHighlight {
-  return featuredGameCycle[new Date().getDay()]!
+function featuredGameForToday(isVisible: (route: string) => boolean): HomeGameHighlight | null {
+  const available = featuredGameCycle.filter(game => isVisible(game.href))
+  return available.length ? available[new Date().getDay() % available.length]! : null
 }
 
 export function HomePage() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount()
   const recentSlot = useRecentSlotGame(account?.userId)
   const cardHistory = useCardRoomHistory()
+  const visibility = useCatalogueVisibility()
   const recentCard = cardHistory.activities[0] ?? null
   const cardPlayedAt = recentCard?.completedAtUtc ?? recentCard?.startedAtUtc ?? null
   const slotIsLatest = recentSlot.game !== null && recentSlot.playedAtUtc !== null
@@ -95,8 +98,9 @@ export function HomePage() {
           summary: recentCard.completedAtUtc === null ? recentCard.summary : recentCard.title,
         }
       : null
-  const gameHighlight = recent ?? featuredGameForToday()
-  const isFeaturedGame = recent === null
+  const visibleRecent = recent && visibility.isVisible(recent.href) ? recent : null
+  const gameHighlight = visibleRecent ?? featuredGameForToday(visibility.isVisible)
+  const isFeaturedGame = visibleRecent === null
 
   return (
     <div className="player-page player-home-page">
@@ -123,11 +127,11 @@ export function HomePage() {
 
               <section className="player-home-card player-home-card--recent" aria-labelledby="recently-played-title">
                 <small>{isFeaturedGame ? 'Featured today' : 'Recently played'}</small>
-                <a href={gameHighlight.href}>
+                {gameHighlight ? <a href={gameHighlight.href}>
                   <img className={`player-home-card__image player-home-card__image--${gameHighlight.imagePresentation ?? 'cover'}${gameHighlight.imageScale === 'compact' ? ' player-home-card__image--compact' : ''}`} src={gameHighlight.image} alt="" draggable="false" />
                   <strong id="recently-played-title">{gameHighlight.title}</strong>
                   <span>{gameHighlight.summary}</span><b>{isFeaturedGame ? 'Play now →' : 'Continue →'}</b>
-                </a>
+                </a> : <a href="/games"><strong id="recently-played-title">Find your next game</strong><span>Browse the games currently available in the catalogue.</span><b>Browse games →</b></a>}
               </section>
 
               <nav className="player-home-card player-home-card--account" aria-label="Account shortcuts">

@@ -1,0 +1,277 @@
+{
+  "result": "passed",
+  "origin": "http://127.0.0.1:5181",
+  "practiceOnly": true,
+  "checks": [
+    "Practice label, predetermined private board, debit, locked wager/mines, no zero-pick cash-out, exact displayed cash-out",
+    "Refresh resumes active round; mute persists; arrow plus Space reveals; keyboard board remains reachable; cash-out credits exact payout and reveals terminal board",
+    "Immediate mine loss reveals board, no payout; unmuted wager and gem/mine/cash-out audio APIs exercised",
+    "Lost start response after durable debit; Restore retries identical requestId/payload; exact receipt replay; no second debit",
+    "Full refresh replays persisted reveal identity exactly and recovers authoritative current state without a second reveal",
+    "1440x900 document/body without scroll; 320/360/390/430 portrait and 844/667 short landscape board/control bounds, horizontal overflow and touch target checks",
+    "320px native touch context places wager and reveals a tile",
+    "Rules show exact math and rounding; Escape closes native modal and returns keyboard focus"
+  ],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "documentHeight": 900,
+      "innerWidth": 1440,
+      "innerHeight": 900,
+      "bodyScroll": {
+        "client": 837,
+        "scroll": 837
+      },
+      "board": {
+        "x": 605.5,
+        "y": 211.59375,
+        "width": 515,
+        "height": 515,
+        "right": 1120.5,
+        "bottom": 726.59375
+      },
+      "firstTile": {
+        "x": 605.5,
+        "y": 211.59375,
+        "width": 95,
+        "height": 94,
+        "right": 700.5,
+        "bottom": 305.59375
+      },
+      "table": {
+        "x": 158,
+        "y": 154.59375,
+        "width": 1124,
+        "height": 699.40625,
+        "right": 1282,
+        "bottom": 854
+      }
+    },
+    {
+      "name": "portrait320",
+      "width": 320,
+      "height": 568,
+      "documentWidth": 320,
+      "documentHeight": 568,
+      "innerWidth": 320,
+      "innerHeight": 568,
+      "bodyScroll": {
+        "client": 521,
+        "scroll": 521
+      },
+      "board": {
+        "x": 33.5,
+        "y": 133,
+        "width": 253,
+        "height": 253,
+        "right": 286.5,
+        "bottom": 386
+      },
+      "firstTile": {
+        "x": 33.5,
+        "y": 133,
+        "width": 45.796875,
+        "height": 45,
+        "right": 79.296875,
+        "bottom": 178
+      },
+      "table": {
+        "x": 10,
+        "y": 98,
+        "width": 300,
+        "height": 436,
+        "right": 310,
+        "bottom": 534
+      }
+    },
+    {
+      "name": "portrait360",
+      "width": 360,
+      "height": 640,
+      "documentWidth": 360,
+      "documentHeight": 640,
+      "innerWidth": 360,
+      "innerHeight": 640,
+      "bodyScroll": {
+        "client": 593,
+        "scroll": 593
+      },
+      "board": {
+        "x": 20,
+        "y": 133,
+        "width": 320,
+        "height": 320,
+        "right": 340,
+        "bottom": 453
+      },
+      "firstTile": {
+        "x": 20,
+        "y": 133,
+        "width": 59.1875,
+        "height": 58.390625,
+        "right": 79.1875,
+        "bottom": 191.390625
+      },
+      "table": {
+        "x": 10,
+        "y": 98,
+        "width": 340,
+        "height": 503,
+        "right": 350,
+        "bottom": 601
+      }
+    },
+    {
+      "name": "portrait390",
+      "width": 390,
+      "height": 844,
+      "documentWidth": 390,
+      "documentHeight": 844,
+      "innerWidth": 390,
+      "innerHeight": 844,
+      "bodyScroll": {
+        "client": 797,
+        "scroll": 802
+      },
+      "board": {
+        "x": 23,
+        "y": 172.890625,
+        "width": 344,
+        "height": 344,
+        "right": 367,
+        "bottom": 516.890625
+      },
+      "firstTile": {
+        "x": 23,
+        "y": 172.890625,
+        "width": 64,
+        "height": 63.1875,
+        "right": 87,
+        "bottom": 236.078125
+      },
+      "table": {
+        "x": 12,
+        "y": 133.890625,
+        "width": 366,
+        "height": 676.59375,
+        "right": 378,
+        "bottom": 810.484375
+      }
+    },
+    {
+      "name": "portrait430",
+      "width": 430,
+      "height": 932,
+      "documentWidth": 430,
+      "documentHeight": 932,
+      "innerWidth": 430,
+      "innerHeight": 932,
+      "bodyScroll": {
+        "client": 885,
+        "scroll": 885
+      },
+      "board": {
+        "x": 23,
+        "y": 155.890625,
+        "width": 384,
+        "height": 384,
+        "right": 407,
+        "bottom": 539.890625
+      },
+      "firstTile": {
+        "x": 23,
+        "y": 155.890625,
+        "width": 72,
+        "height": 71.1875,
+        "right": 95,
+        "bottom": 227.078125
+      },
+      "table": {
+        "x": 12,
+        "y": 116.890625,
+        "width": 406,
+        "height": 716.59375,
+        "right": 418,
+        "bottom": 833.484375
+      }
+    },
+    {
+      "name": "landscape844",
+      "width": 844,
+      "height": 390,
+      "documentWidth": 844,
+      "documentHeight": 390,
+      "innerWidth": 844,
+      "innerHeight": 390,
+      "bodyScroll": {
+        "client": 338,
+        "scroll": 338
+      },
+      "board": {
+        "x": 425,
+        "y": 129.03125,
+        "width": 209,
+        "height": 209,
+        "right": 634,
+        "bottom": 338.03125
+      },
+      "firstTile": {
+        "x": 425,
+        "y": 129.03125,
+        "width": 37.796875,
+        "height": 37.1875,
+        "right": 462.796875,
+        "bottom": 166.21875
+      },
+      "table": {
+        "x": 16,
+        "y": 97.03125,
+        "width": 812,
+        "height": 265.96875,
+        "right": 828,
+        "bottom": 363
+      }
+    },
+    {
+      "name": "landscape667",
+      "width": 667,
+      "height": 375,
+      "documentWidth": 667,
+      "documentHeight": 375,
+      "innerWidth": 667,
+      "innerHeight": 375,
+      "bodyScroll": {
+        "client": 323,
+        "scroll": 323
+      },
+      "board": {
+        "x": 344,
+        "y": 129.03125,
+        "width": 194,
+        "height": 194,
+        "right": 538,
+        "bottom": 323.03125
+      },
+      "firstTile": {
+        "x": 344,
+        "y": 129.03125,
+        "width": 34.796875,
+        "height": 34.1875,
+        "right": 378.796875,
+        "bottom": 163.21875
+      },
+      "table": {
+        "x": 16,
+        "y": 97.03125,
+        "width": 635,
+        "height": 250.96875,
+        "right": 651,
+        "bottom": 348
+      }
+    }
+  ],
+  "screenshots": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\games\\Mines\\evidence\\"
+}

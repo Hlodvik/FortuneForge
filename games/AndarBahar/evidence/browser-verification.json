@@ -1,0 +1,72 @@
+{
+  "result": "passed",
+  "verifiedOn": "2026-10-20",
+  "origin": "http://127.0.0.1:5182",
+  "api": "http://127.0.0.1:5202",
+  "walletMode": "development-practice-andar-first",
+  "browser": "Chromium 140.0.7339.186",
+  "gatewayTests": 57,
+  "viewports": [
+    "1440x1000",
+    "320x844",
+    "360x844",
+    "375x844",
+    "390x844",
+    "430x844",
+    "844x390",
+    "568x320"
+  ],
+  "checks": [
+    "real settlement and played-prefix math",
+    "individual paced dealing and skip",
+    "idempotency replay and changed-body conflict",
+    "cookie wallet privacy",
+    "response-loss and reload recovery",
+    "two tabs retain independent pending keys and settle without duplicate debit",
+    "result refresh without new wager",
+    "confirmed insufficient-funds UI recovery",
+    "keyboard and touch",
+    "all OGG cues loaded, played and decoded to non-silent PCM; mute prevents dispatch",
+    "320–430px portrait and short landscape",
+    "rules and reconnect",
+    "no browser errors"
+  ],
+  "screenshots": [
+    "desktop-table.png",
+    "desktop-chips.png",
+    "desktop-dealing.png",
+    "desktop-result.png",
+    "mobile-390.png",
+    "mobile-320.png",
+    "mobile-result.png",
+    "landscape-568.png",
+    "landscape-568-result.png",
+    "connection-recovery.png"
+  ],
+  "audioEvidence": [
+    {
+      "cue": "chip-lay-1.ogg",
+      "duration": 0.18139583333333334,
+      "channels": 2,
+      "sampleRate": 48000,
+      "frames": 8707,
+      "peak": 0.8512954711914062
+    },
+    {
+      "cue": "card-place-1.ogg",
+      "duration": 0.7096458333333333,
+      "channels": 2,
+      "sampleRate": 48000,
+      "frames": 34063,
+      "peak": 0.8717595934867859
+    },
+    {
+      "cue": "chips-collide-1.ogg",
+      "duration": 0.27427083333333335,
+      "channels": 2,
+      "sampleRate": 48000,
+      "frames": 13165,
+      "peak": 0.8161579966545105
+    }
+  ]
+}

@@ -50,6 +50,10 @@ internal sealed class FirestoreAdminOperationsStore(
 
         var threeCardPokerRecords = reads[10].Documents.Select(TryMapThreeCardPokerTableRevenue).ToArray();
         var rejectedThreeCardPokerRecords = threeCardPokerRecords.Count(static record => record is null);
+        var fundingRecords = reads[3].Documents.Select(document => MapFunding(document, "purchase", "credits"))
+            .Concat(reads[4].Documents.Select(document => MapFunding(document, "withdrawal", "creditsDebited"))).ToArray();
+        var rejectedFundingRecords = reads[3].Documents.Concat(reads[4].Documents)
+            .Count(document => String(document, "status") == "completed" && FundingIsMock(document) is null);
 
         var limitations = reads
             .Where(static read => read.Truncated)
@@ -65,6 +69,8 @@ internal sealed class FirestoreAdminOperationsStore(
                 : [$"{rejectedBlackjackTableRecords} Blackjack table revenue record(s) failed the real-human dealer-counterparty financial contract and were excluded."])
             .Concat(rejectedThreeCardPokerRecords == 0 ? []
                 : [$"{rejectedThreeCardPokerRecords} Three Card Poker revenue record(s) failed the real-human dealer-counterparty financial contract and were excluded."])
+            .Concat(rejectedFundingRecords == 0 ? []
+                : [$"{rejectedFundingRecords} completed funding record(s) lacked a valid real/mock classification and were excluded from both real and mock funding totals."])
             .ToArray();
 
         var financial = reads[0].Documents.Select(MapSlot)
@@ -81,20 +87,7 @@ internal sealed class FirestoreAdminOperationsStore(
             .ThenBy(static record => record.Id, StringComparer.Ordinal)
             .ToArray();
 
-        var funding = reads[3].Documents
-            .Where(document => String(document, "status") == "completed")
-            .Select(document => new AdminOperationsFundingRecord(
-                OpaqueId("purchase", document.Id),
-                "purchase",
-                TimestampUtc(document, "statusUpdatedAt"),
-                Decimal(document, "credits")))
-            .Concat(reads[4].Documents
-                .Where(document => String(document, "status") == "completed")
-                .Select(document => new AdminOperationsFundingRecord(
-                    OpaqueId("withdrawal", document.Id),
-                    "withdrawal",
-                    TimestampUtc(document, "statusUpdatedAt"),
-                    Decimal(document, "creditsDebited"))))
+        var funding = fundingRecords.OfType<AdminOperationsFundingRecord>()
             .OrderByDescending(static record => record.OccurredAtUtc)
             .ThenBy(static record => record.Id, StringComparer.Ordinal)
             .ToArray();
@@ -190,6 +183,16 @@ internal sealed class FirestoreAdminOperationsStore(
         var documents = snapshot.Documents.Take(maximumDocuments).ToArray();
         return new CollectionRead(collection, documents, snapshot.Count > maximumDocuments);
     }
+
+    private static AdminOperationsFundingRecord? MapFunding(DocumentSnapshot document, string category, string amountField)
+    {
+        if (String(document, "status") != "completed" || FundingIsMock(document) is not { } isMock) return null;
+        return new(OpaqueId(category, document.Id), isMock ? $"mock-{category}" : category,
+            TimestampUtc(document, "statusUpdatedAt"), Decimal(document, amountField));
+    }
+
+    private static bool? FundingIsMock(DocumentSnapshot document) =>
+        document.TryGetValue<object>("isMock", out var value) && value is bool flag ? flag : null;
 
     private static AdminOperationsFinancialRecord MapSlot(DocumentSnapshot document)
     {

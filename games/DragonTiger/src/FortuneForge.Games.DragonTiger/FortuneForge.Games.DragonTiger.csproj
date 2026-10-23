@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PackageId>FortuneForge.Games.DragonTiger</PackageId>
+    <Description>Independent eight-deck Dragon Tiger rules and exact-cent paytable.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
+  </ItemGroup>
+</Project>

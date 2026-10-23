@@ -1,12 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { useVerifiedTestCatalogue } from '../../features/catalog/catalogueTestFixture'
 import { AppRoutes } from '../../app/AppRoutes'
 import { pageTitleForPath } from '../../app/usePageTitle'
 import { CardGameLibraryPage } from './CardGameLibraryPage'
 
 describe('card game route integration', () => {
+  beforeEach(useVerifiedTestCatalogue)
   it('keeps the Blackjack demo as a lazy deep link', () => {
     expect(renderRoute('/demo/cards/blackjack')).toContain('Opening Fortune Forge…')
   })

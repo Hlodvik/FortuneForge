@@ -41,7 +41,7 @@ public sealed class LiarsDiceGameService(
                 reserved.Select(profile => profile.UserId).ToArray(),
                 UtcNow(),
                 cancellationToken);
-            throw new InvalidOperationException("A complete Liar's Dice table could not be reserved.");
+            throw new ManagedPlayerSupplyUnavailableException();
         }
 
         var roster = reserved.ToDictionary(

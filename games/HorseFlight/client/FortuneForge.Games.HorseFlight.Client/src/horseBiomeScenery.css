@@ -1,0 +1,14 @@
+.ff-horse-biome-scenery {
+  pointer-events: none;
+  shape-rendering: crispEdges;
+}
+
+.ff-horse-biome-scenery__legacy-image {
+  image-rendering: pixelated;
+}
+
+.ff-horse-biome-scenery__background,
+.ff-horse-biome-scenery__midground,
+.ff-horse-biome-scenery__foreground {
+  shape-rendering: crispEdges;
+}

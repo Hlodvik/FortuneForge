@@ -17,11 +17,13 @@ Automated checks, repository-wide fixes, and delegated stabilization may continu
 
 ## Current state
 
-- Active game: **Roulette**
-- Current phase: **professional reference comparison and obvious-fix pass**
+- Active game: **Hearts**
+- Current phase: **four-seat table presentation and fixed-buy-in implementation**
 - Start gate: complete — the owner started the loop
 - Advance gate after start: the owner explicitly says **move on** after hands-on review
-- Resume point: Video Poker professional comparison, followed by obvious functional and visual fixes
+- Baccarat: owner directed deployment and advancement on October 18, 2026; the guarded release is in progress.
+- Parallel new-game build: **Dragon Tiger**, in the separate **Build Dragon Tiger** chat. This does not change the active owner-led review game.
+- Hearts settlement approved by owner: equal fixed buy-ins, lowest match score wins the pot, tied lowest scores split it. The paid entry must be explicit and resumable. Implementation and review are in progress.
 
 ## Review queue
 
@@ -32,21 +34,21 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | 1 | Keno | Casino | Shippable — owner approved and deployed |
 | 2 | Fortune Blackjack | Card | Shippable — owner directed advancement and deployed |
 | 3 | Casino War | Card/table | Shippable — owner marked complete |
-| 4 | Baccarat | Card/table | Paused — professional first pass complete; owner review deferred |
+| 4 | Baccarat | Card/table | Owner approved advancement — deployment in progress |
 | 5 | Video Poker | Card | Shippable — owner directed advancement and deployed |
-| 6 | Roulette | Casino | Active — professional reference comparison |
+| 6 | Roulette | Casino | Shippable — owner directed advancement and deployment |
 | 7 | Craps | Casino | Queued |
 | 8 | Liar's Dice | Casino | Queued |
-| 9 | Sic Bo | Casino | Queued |
-| 10 | Texas Hold'em | Card | Queued |
-| 11 | Flappy | Arcade | Queued |
-| 12 | Asteroids | Arcade | Queued |
+| 9 | Sic Bo | Casino | Shippable — owner directed deployment and advancement |
+| 10 | Texas Hold'em | Card | Shippable — owner explicitly marked done |
+| 11 | Flappy | Arcade | Shippable — owner explicitly marked finished |
+| 12 | Asteroids | Arcade | Reviewed as Asteroid Blaster — owner directed deployment and advancement |
 | 13 | Drop Merge | Puzzle | Queued |
 | 14 | 2048 | Puzzle | Queued |
 | 15 | Snake | Arcade | Queued |
-| 16 | Horse Flight | Arcade | Queued |
-| 17 | Competitive Solitaire | Card | Queued |
-| 18 | Hearts | Card | Queued |
+| 16 | Horse Flight | Arcade | Paused — owner directed temporary delisting and post-deadline repairs |
+| 17 | Competitive Solitaire | Card | Owner directed deployment — release state being audited |
+| 18 | Hearts | Card | Active — fixed buy-ins and professional four-seat table implementation |
 | 19 | Rainbow Realm | Slot | Queued |
 | 20 | Gods of Olympus | Slot | Queued |
 | 21 | Reel Riches | Slot | Queued |

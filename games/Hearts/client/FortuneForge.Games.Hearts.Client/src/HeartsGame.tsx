@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useHeartsAudio } from './cardAudio'
 import { HeartsGatewayError, type HeartsCard, type HeartsGateway, type HeartsMatch, type HeartsOnboardingState, type HeartsPaidRequest, type HeartsPaidSession, type HeartsPaidTable, type HeartsSeat, type HeartsStatus } from './contracts'
-import { cardName, directionLabel, relativeSeat } from './heartsHelpers'
+import { cardName, directionLabel, legalCardRationale, relativeSeat } from './heartsHelpers'
 import { getTrialCoach } from './heartsTrialCoach'
 import { HeartsTrialCoachBubble } from './HeartsTrialCoachBubble'
+import { HeartsResultOverlay } from './HeartsResultOverlay'
 import chip1 from './assets/chip-1.png'
 import chip2 from './assets/chip-2.png'
 import chip5 from './assets/chip-5.png'
@@ -31,15 +32,24 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   const [onboardingBusy, setOnboardingBusy] = useState(false)
   const [onboardingError, setOnboardingError] = useState<string | null>(null)
   const [trialExitFailed, setTrialExitFailed] = useState(false)
+  const [freeExitFailed, setFreeExitFailed] = useState(false)
   const [entry, setEntry] = useState(1)
   const [selected, setSelected] = useState<readonly string[]>([])
+  const [pendingCardCode, setPendingCardCode] = useState<string | null>(null)
+  const mobileHand = useMobileHand()
   const [busy, setBusy] = useState(false)
   const [connecting, setConnecting] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [recovery, setRecovery] = useState(false)
+  const [practiceRecovery, setPracticeRecovery] = useState(false)
+  const [passSelectionNotice, setPassSelectionNotice] = useState<string | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
   const [history, setHistory] = useState<readonly HeartsPaidTable[]>([])
+  const [historyState, setHistoryState] = useState<'idle' | 'loading' | 'loaded' | 'error'>('idle')
+  const [historyError, setHistoryError] = useState<string | null>(null)
+  const [waitingForHumans, setWaitingForHumans] = useState(false)
+  const historyRequest = useRef<AbortController | null>(null)
   const paidRef = useRef<HeartsPaidSession | null>(null)
   const actionLock = useRef(false)
   const onboardingLock = useRef(false)
@@ -47,12 +57,15 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   const boardRef = useRef<HTMLElement | null>(null)
   const handCardRefs = useRef(new Map<string, HTMLButtonElement>())
   const passButtonRef = useRef<HTMLButtonElement | null>(null)
+  const playButtonRef = useRef<HTMLButtonElement | null>(null)
+  const handGesture = useRef<{ x: number; y: number; scroll: number; moved: boolean } | null>(null)
   const balanceCallback = useRef(onBalanceChange)
   balanceCallback.current = onBalanceChange
   const { muted, toggleMute, play } = useHeartsAudio()
   const table = mode === 'paid' ? paid?.table ?? null : null
   const match = mode === 'paid' ? table?.match ?? null : practice
   const queue = mode === 'paid' ? paid?.queue ?? null : null
+  const canPlayHouse = queue?.canPlayHouse === true && queue.players.length === 1 && queue.players[0].isCurrentPlayer && !!gateway.paid?.playHouse
   const { shownTrick, revealing } = useTrickReveal(match, play)
   const trialComplete = mode === 'trial' && practice?.isTrial === true && practice.phase === 'complete' && practice.completedTricks.length === 13
   const setupResolved = !gateway.onboarding || onboarding?.shouldAskPlayedBefore === false
@@ -98,7 +111,11 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   }, [gateway, publishPaid])
 
   useEffect(() => { const controller = new AbortController(); void connect(controller.signal); return () => controller.abort() }, [connect])
-  useEffect(() => { setSelected([]) }, [match?.matchId, match?.roundNumber, match?.phase])
+  useEffect(() => () => historyRequest.current?.abort(), [])
+  useEffect(() => { setSelected([]); setPassSelectionNotice(null) }, [match?.matchId, match?.roundNumber, match?.phase])
+  useEffect(() => { setWaitingForHumans(false) }, [queue?.matchId])
+  const handActionKey = `${mode}:${match?.matchId}:${match?.roundNumber}:${match?.phase}:${match?.yourTurn}:${match?.turn}:${match?.hand.map(card => card.code).join(',')}:${match?.legalCards.map(card => card.code).join(',')}:${match?.currentTrick.plays.map(item => item.card.code).join(',')}`
+  useEffect(() => { setPendingCardCode(null) }, [handActionKey, mobileHand])
   useEffect(() => { if (!choices.includes(entry)) setEntry(choices[0] ?? 1) }, [entry, choices.join(',')])
   useEffect(() => { if (match) play('phase') }, [match?.phase, match?.roundNumber, match?.matchId])
   useEffect(() => { if (match?.winner || paid?.kind === 'result' && mode === 'paid') play('win') }, [match?.winner, paid?.kind, mode])
@@ -123,13 +140,29 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
     if (!gateway.paid || actionLock.current) return
     actionLock.current = true
     setBusy(true)
-    try { publishPaid(await gateway.paid.getSession()); setRecovery(false); setError(null) }
+    try {
+      const next = await gateway.paid.getSession()
+      publishPaid(next)
+      if (next.kind !== 'idle') setMode('paid')
+      setRecovery(false); setError(null)
+    }
     catch (reason) { setError(errorMessage(reason)); setRecovery(true) }
     finally { actionLock.current = false; setBusy(false) }
   }, [gateway, publishPaid])
 
+  async function retryPractice() {
+    if (!practice || actionLock.current || (mode !== 'free' && mode !== 'trial')) return
+    actionLock.current = true
+    setBusy(true)
+    try {
+      setPractice(await gateway.advance(practice.matchId))
+      setSelected([]); setPendingCardCode(null); setPracticeRecovery(false); setError(null)
+    } catch (reason) { setError(errorMessage(reason)); setPracticeRecovery(true) }
+    finally { actionLock.current = false; setBusy(false) }
+  }
+
   useEffect(() => {
-    if (busy || revealing || recovery || trialExitFailed || panel === 'leave') return
+    if (busy || revealing || recovery || practiceRecovery || trialExitFailed || freeExitFailed || panel === 'leave') return
     const shouldPollPaid = mode === 'paid' && (paid?.kind === 'queue' || paid?.kind === 'match')
     const shouldPollFree = (mode === 'free' || mode === 'trial') && !!practice?.opponentsThinking
     if (!shouldPollPaid && !shouldPollFree) return
@@ -139,13 +172,13 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
       try {
         if (shouldPollPaid && gateway.paid) { const next = await gateway.paid.getSession(controller.signal); if (!controller.signal.aborted) publishPaid(next) }
         else if (practice) { const next = await gateway.advance(practice.matchId, controller.signal); if (!controller.signal.aborted) setPractice(next) }
-      } catch (reason) { if (!controller.signal.aborted) { setError(errorMessage(reason)); if (shouldPollPaid) setRecovery(true) } }
+      } catch (reason) { if (!controller.signal.aborted) { setError(errorMessage(reason)); if (shouldPollPaid) setRecovery(true); else setPracticeRecovery(true) } }
     }, shouldPollPaid ? 1000 : 1200)
     return () => { window.clearTimeout(timer); controller.abort() }
-  }, [busy, revealing, recovery, mode, paid, practice, gateway, publishPaid, panel, trialExitFailed])
+  }, [busy, revealing, recovery, practiceRecovery, mode, paid, practice, gateway, publishPaid, panel, trialExitFailed, freeExitFailed])
 
   async function act(operation: () => Promise<HeartsMatch | HeartsPaidSession>, isPaid = mode === 'paid', practiceMode: 'free' | 'trial' = mode === 'trial' ? 'trial' : 'free') {
-    if (actionLock.current || recovery) return
+    if (actionLock.current || recovery || practiceRecovery || freeExitFailed) return
     actionLock.current = true
     setBusy(true)
     setError(null)
@@ -154,9 +187,11 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
       if ('kind' in next) { publishPaid(next); setMode(next.kind === 'idle' ? 'lobby' : 'paid') }
       else { setPractice(next); setMode(practiceMode) }
       setSelected([])
+      setPracticeRecovery(false)
     } catch (reason) {
       setError(errorMessage(reason))
       if (isPaid && (!(reason instanceof HeartsGatewayError) || reason.status === 0 || reason.status >= 500 || reason.status === 409)) setRecovery(true)
+      else if (!isPaid && practice) setPracticeRecovery(true)
     } finally { actionLock.current = false; setBusy(false) }
   }
   function request(): HeartsPaidRequest { return { idempotencyKey: `hearts-${crypto.randomUUID()}`, expectedVersion: paid?.version } }
@@ -184,19 +219,31 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
     }, false, 'trial')
   }
   function joinPaid() { if (!gateway.paid || !setupResolved) return; play('chip'); const options = request(); void act(() => gateway.paid!.join(entry, options), true) }
+  function playHouse() {
+    if (!queue || !gateway.paid?.playHouse || !canPlayHouse || locked) return
+    play('shuffle')
+    const options = request()
+    void act(() => gateway.paid!.playHouse!(queue.matchId, options), true)
+  }
   function selectCard(card: HeartsCard) {
-    if (!match || busy || revealing || recovery || trialExitFailed) return
-    if (match.phase === 'passing') {
+    if (!match || locked) return
+    if (canPass) {
       play('click')
+      setPassSelectionNotice(selected.length === 3 && !selected.includes(card.code) ? 'Three picked! Remove a card below to choose another.' : null)
       setSelected(current => current.includes(card.code) ? current.filter(code => code !== card.code) : current.length < 3 ? [...current, card.code] : current)
-    } else {
-      play('deal')
-      const options = request()
-      void act(() => mode === 'paid' ? gateway.paid!.play(match.matchId, card.code, options) : gateway.playCard(match.matchId, card.code))
+    } else if (canPlay && legal.has(card.code)) {
+      if (mobileHand) { play('click'); setPendingCardCode(current => current === card.code ? null : card.code) }
+      else playCard(card)
     }
   }
+  function playCard(card: HeartsCard) {
+    if (!match || locked || !canPlay || !legal.has(card.code)) return
+    play('deal')
+    const options = request()
+    void act(() => mode === 'paid' ? gateway.paid!.play(match.matchId, card.code, options) : gateway.playCard(match.matchId, card.code))
+  }
   function passCards() {
-    if (!match || selected.length !== 3) return
+    if (!match || !canPass || locked || selected.length !== 3) return
     play('move')
     const options = request()
     void act(() => mode === 'paid' ? gateway.paid!.pass(match.matchId, selected, options) : gateway.pass(match.matchId, selected))
@@ -210,11 +257,22 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   function leave() {
     setPanel(null)
     if (mode === 'trial') { void leaveTrial(); return }
+    if (mode === 'free') { void leaveFree(); return }
     const matchId = queue?.matchId ?? match?.matchId
-    if (mode !== 'paid' || paid?.kind === 'result') { setMode('lobby'); setPractice(null); return }
+    if (mode !== 'paid' || paid?.kind === 'result') { setMode('lobby'); setPractice(null); setPracticeRecovery(false); setError(null); return }
     if (!matchId || !gateway.paid) return
     const options = request()
     void act(async () => { const next = await gateway.paid!.leave(matchId, options); setMode('lobby'); return next.kind === 'match' || next.kind === 'result' ? { ...next, kind: 'idle' as const, queue: null, table: null } : next })
+  }
+  async function leaveFree() {
+    if (!practice || actionLock.current) return
+    actionLock.current = true
+    setBusy(true); setError(null)
+    try {
+      await gateway.leaveMatch?.(practice.matchId)
+      setPractice(null); setMode('lobby'); setPracticeRecovery(false); setFreeExitFailed(false)
+    } catch (reason) { setError(errorMessage(reason)); setFreeExitFailed(true) }
+    finally { actionLock.current = false; setBusy(false) }
   }
   async function leaveTrial() {
     if (!practice || actionLock.current) return
@@ -233,25 +291,36 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
       setOnboarding(state)
       setPractice(null)
       setMode('lobby')
+      setPracticeRecovery(false)
     } catch (reason) { setError(errorMessage(reason)); setTrialExitFailed(true) }
     finally { actionLock.current = false; setBusy(false) }
   }
+  async function loadHistory() {
+    if (!gateway.paid) return
+    historyRequest.current?.abort()
+    const controller = new AbortController()
+    historyRequest.current = controller
+    setHistoryState('loading'); setHistoryError(null)
+    try { const items = await gateway.paid.getHistory(controller.signal); if (!controller.signal.aborted) { setHistory(items); setHistoryState('loaded') } }
+    catch (reason) { if (!controller.signal.aborted) { setHistoryError(errorMessage(reason)); setHistoryState('error') } }
+  }
+  function closePanel() { historyRequest.current?.abort(); setPanel(null) }
   async function openPanel(next: Panel) {
     play('click')
     setPanel(next)
-    if (next === 'history' && gateway.paid) {
-      try { setHistory(await gateway.paid.getHistory()) } catch (reason) { setError(errorMessage(reason)) }
-    }
+    if (next === 'history') await loadHistory()
   }
   const hasLeft = table?.players.some(player => player.isCurrentPlayer && player.hasLeft) ?? false
   const canPass = !!match && !hasLeft && match.phase === 'passing' && !match.submittedPasses.includes(match.humanSeat)
   const canPlay = !!match && !hasLeft && match.phase === 'playing' && match.yourTurn
-  const locked = busy || revealing || recovery || trialExitFailed
+  const deadline = mode === 'paid' && (canPlay || canPass) ? table?.actionDeadlineAtUtc : null
+  const deadlineExpired = useDeadlineExpired(deadline)
+  const locked = busy || revealing || recovery || practiceRecovery || trialExitFailed || freeExitFailed || deadlineExpired
   const legal = new Set(match?.legalCards.map(card => card.code) ?? [])
+  const pendingCard = canPlay && legal.has(pendingCardCode ?? '') ? match?.hand.find(card => card.code === pendingCardCode) : undefined
   const result = !!match && mode !== 'trial' && (mode === 'paid' ? paid?.kind === 'result' : !!match.winner)
   const turnName = match?.players.find(player => player.seat === match.turn)?.displayName ?? ''
-  const instruction = !match ? '' : trialComplete ? 'Trial complete' : result ? 'Match complete' : revealing ? shownTrick?.winner ? `${playerName(match, shownTrick.winner)} takes the trick` : 'Cards in play' : canPass ? `Pass 3 cards ${directionLabel(match.passDirection).toLowerCase()}` : match.phase === 'passing' ? 'Waiting for the pass' : match.phase === 'complete' ? 'Round complete' : canPlay ? 'Your turn' : `${turnName} is playing`
-  const deadline = mode === 'paid' && (canPlay || canPass) ? table?.actionDeadlineAtUtc : null
+  const instruction = !match ? '' : trialComplete ? 'Trial complete' : result ? 'Match complete' : deadlineExpired ? 'Time’s up—checking the table' : revealing ? shownTrick?.winner ? `${playerName(match, shownTrick.winner)} takes the trick` : 'Cards in play' : canPass ? `Pass 3 cards ${directionLabel(match.passDirection).toLowerCase()}` : match.phase === 'passing' ? 'Waiting for the pass' : match.phase === 'complete' ? 'Round complete' : canPlay ? 'Your turn' : `${turnName} is playing`
   const completedTrickVisible = revealing && shownTrick?.plays.length === 4 && shownTrick.winner
   const trialCoach = mode === 'trial' && match ? revealing ? {
     kind: 'waiting' as const,
@@ -262,14 +331,14 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   } : getTrialCoach(match, selected) : null
   const suggestedCodes = new Set(trialCoach?.suggestedCodes ?? [])
 
-  return <div className="ff-hearts-page">
+  return <div className={`ff-hearts-page ${mobileHand ? 'has-mobile-hand' : ''}`}>
     <main className="ff-hearts-main">
       <nav className="ff-hearts-toolbar" aria-label="Hearts table tools">
-        <div className="ff-hearts-table-info"><span className="ff-hearts-heart" aria-hidden="true">♥</span><strong>{mode === 'lobby' ? 'Hearts' : mode === 'trial' ? 'Trial run' : mode === 'free' ? 'Free play' : queue ? 'Finding a table' : `${money(table?.entryCredits ?? entry)} table`}</strong>{match && <span>{mode === 'trial' ? 'One hand · 13 tricks' : <>Round {match.roundNumber} <i>·</i> {match.targetScore} points</>}</span>}</div>
+        <div className="ff-hearts-table-info"><span className="ff-hearts-heart" aria-hidden="true">♥</span><strong>{mode === 'lobby' ? 'Hearts' : mode === 'trial' ? 'Trial run' : mode === 'free' ? 'Free play · House' : queue ? 'Finding a table' : `${money(table?.entryCredits ?? entry)} table`}</strong>{match && <span>{mode === 'trial' ? 'One hand · 13 tricks' : <>Round {match.roundNumber} <i>·</i> {match.targetScore} points</>}</span>}</div>
         <div className="ff-hearts-tools"><button type="button" onClick={toggleMute} aria-label={muted ? 'Turn sound on' : 'Mute sound'} title={muted ? 'Turn sound on' : 'Mute sound'}>{muted ? <SoundIcon muted /> : <SoundIcon />}</button>{match && <button type="button" onClick={() => void openPanel('scores')} aria-label="View scores"><ScoresIcon /></button>}<button type="button" onClick={() => void openPanel('rules')} aria-label="How to play">?</button>{gateway.paid && !showEntryGate && mode !== 'trial' && <button type="button" onClick={() => void openPanel('history')} aria-label="Match history"><HistoryIcon /></button>}{mode !== 'lobby' && <button type="button" className="ff-hearts-leave" onClick={() => mode === 'free' || mode === 'trial' || result ? leave() : void openPanel('leave')}>{mode === 'trial' ? 'Leave trial' : 'Leave table'}</button>}</div>
       </nav>
 
-      <section className={`ff-hearts-table ${mode === 'lobby' ? 'is-lobby' : ''} ${queue ? 'is-queue' : ''} ${mode === 'trial' ? 'is-trial' : ''}`} aria-label="Hearts table" ref={boardRef}>
+      <section className={`ff-hearts-table ${mode === 'lobby' ? 'is-lobby' : ''} ${queue ? 'is-queue' : ''} ${mode === 'trial' ? 'is-trial' : ''} ${canPass ? 'is-passing' : ''}`} aria-label="Hearts table" ref={boardRef}>
         <div className="ff-hearts-table__edge" aria-hidden="true" />
         <div className="ff-hearts-watermark" aria-hidden="true"><span>♥</span><strong>Hearts</strong><small>FORTUNE FORGE</small></div>
         {showEntryGate && <div className="ff-hearts-onboarding" aria-labelledby="hearts-experience-question" aria-busy={connecting || onboardingBusy || busy}>
@@ -289,7 +358,7 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
           <div className="ff-hearts-entry-summary"><span>Entry <strong>{money(entry)}</strong></span><span>4-player pot <strong>{money(entry * 4)}</strong></span></div>
           <button className="ff-hearts-primary" type="button" onClick={joinPaid} disabled={connecting || busy || !paid || !gateway.paid || wallet < entry || recovery}>{busy ? 'Opening table…' : `Play for ${money(entry)}`}</button>
           <button className="ff-hearts-secondary" type="button" onClick={startFree} disabled={connecting || busy || !status?.available}>Play free</button>
-          <small className="ff-hearts-lobby__note">Equal entries. Lowest score wins. Ties split the pot.</small>
+          <small className="ff-hearts-lobby__note">Join human players first. At an active table, your entry takes over a House seat’s cards and score; the pot stays the same. If no human table is available, choose whether to play the house.<br />Equal entries. Lowest score wins. Ties split the pot.<br />45-second competitive turns. Timing out or leaving after the deal forfeits your entry and prize eligibility. Free play is practice against the house.</small>
           {paid && wallet < entry && <small className="ff-hearts-insufficient">Not enough balance for this table.</small>}
           <span className="ff-hearts-lobby__balance">Balance <b>{money(wallet)}</b></span>
         </div>}
@@ -298,6 +367,12 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
           <div className="ff-hearts-queue__heading"><span className="ff-hearts-search" aria-hidden="true" /><h2>Finding your table</h2><p>{queue.players.length} of 4 seats filled</p></div>
           <div className="ff-hearts-queue__seats">{Array.from({ length: 4 }, (_, index) => { const player = queue.players[index]; return <div className={player ? 'has-player' : ''} key={index}><span className="ff-hearts-avatar">{player ? initials(player.displayName) : '·'}</span><strong>{player ? player.isCurrentPlayer ? 'You' : player.displayName : 'Waiting for players…'}</strong><small>{player ? money(queue.entryCredits) : 'Open seat'}</small></div> })}</div>
           <div className="ff-hearts-entry-summary"><span>Your entry <strong>{money(queue.entryCredits)}</strong></span><span>Pot <strong>{money(queue.potCredits)}</strong></span></div>
+          {canPlayHouse && <div className="ff-hearts-house-offer" aria-labelledby="hearts-house-question">
+            <h3 id="hearts-house-question">{waitingForHumans ? 'Waiting for human players' : 'Play against the house?'}</h3>
+            <p>{waitingForHumans ? 'We’ll keep checking for players at this entry. You can choose the house instead while you wait.' : `No other human players are waiting at this ${money(queue.entryCredits)} table. Would you like three clearly labelled House opponents?`}</p>
+            <p className="ff-hearts-house-offer__terms">Your entry is already reserved. Each house seat adds {money(queue.entryCredits)}, making a {money(queue.entryCredits * 4)} pot. If a house seat wins, the house keeps that share. Other human players may take over House seats during the match.</p>
+            <div><button type="button" className="ff-hearts-primary" onClick={playHouse} disabled={locked}>Play against the house</button>{!waitingForHumans && <button type="button" className="ff-hearts-secondary" onClick={() => { play('click'); setWaitingForHumans(true) }} disabled={locked}>Wait for players</button>}</div>
+          </div>}
           <button type="button" className="ff-hearts-secondary" onClick={leave} disabled={locked}>Cancel & return entry</button>
         </div>}
 
@@ -318,24 +393,35 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
             {canPass && <div className={`ff-hearts-pass-direction direction-${match.passDirection}`} aria-label={`Pass ${directionLabel(match.passDirection).toLowerCase()}`}><b aria-hidden="true">{match.passDirection === 'across' ? '↑' : match.passDirection === 'left' ? '↖' : '↗'}</b><span>Pass {directionLabel(match.passDirection).toLowerCase()}</span></div>}
           </div>
 
+          {canPass && <div className="ff-hearts-pass-review" role="group" aria-label="Cards selected to pass"><div>{Array.from({ length: 3 }, (_, index) => {
+            const card = match.hand.find(card => card.code === selected[index])
+            return card ? <button type="button" key={card.code} className={card.suit === 'hearts' || card.suit === 'diamonds' ? 'is-red' : ''} aria-label={`Remove ${cardName(card)} from pass`} disabled={locked} onClick={() => { play('click'); setSelected(current => current.filter(code => code !== card.code)); setPassSelectionNotice(null) }}>{card.label}<small aria-hidden="true">×</small></button> : <span key={`empty-${index}`} aria-label={`Pass slot ${index + 1} empty`}>{index + 1}</span>
+          })}</div><small role="status">{passSelectionNotice ?? (selected.length ? 'Your picks · tap to remove' : 'Pick three cards to pass')}</small></div>}
           <div className="ff-hearts-decision">
             <div className="ff-hearts-status" role="status" aria-live="polite"><strong>{instruction}</strong>{canPass ? <span>{selected.length}/3 selected</span> : match.phase === 'playing' && <span className={match.heartsBroken ? 'hearts-broken' : ''}>♥ {match.heartsBroken ? 'Hearts broken' : 'Hearts unbroken'}</span>}</div>
             {deadline && <TurnClock deadline={deadline} />}
             {canPass && <button type="button" ref={passButtonRef} className="ff-hearts-primary ff-hearts-pass-button" onClick={passCards} disabled={locked || selected.length !== 3}>Pass cards {selected.length}/3</button>}
+            {mobileHand && canPlay && <button type="button" ref={playButtonRef} className="ff-hearts-primary ff-hearts-play-button" onClick={() => { if (pendingCard) playCard(pendingCard) }} disabled={locked || !pendingCard}>{pendingCard ? `Play ${pendingCard.label}` : 'Select a card'}</button>}
             {match.phase === 'complete' && !result && mode !== 'trial' && <button type="button" className="ff-hearts-primary" onClick={nextRound} disabled={locked}>Next round</button>}
           </div>
-          <div className="ff-hearts-hand" aria-label="Your hand" style={{ '--hand-count': match.hand.length } as CSSProperties}>{match.hand.map((card, index) => <button key={card.code} type="button" ref={element => { if (element) handCardRefs.current.set(card.code, element); else handCardRefs.current.delete(card.code) }} className={`ff-hearts-hand__card ${selected.includes(card.code) ? 'is-selected' : ''} ${canPlay && legal.has(card.code) ? 'is-legal' : ''} ${suggestedCodes.has(card.code) ? 'is-suggested' : ''}`} style={{ '--card-index': index } as CSSProperties} aria-label={`${cardName(card)}${canPass ? selected.includes(card.code) ? ', selected to pass' : ', select to pass' : canPlay && legal.has(card.code) ? ', play card' : ''}`} aria-describedby={suggestedCodes.has(card.code) ? 'hearts-trial-coach' : undefined} aria-pressed={canPass ? selected.includes(card.code) : undefined} disabled={locked || (!canPass && (!canPlay || !legal.has(card.code)))} onClick={() => selectCard(card)}>{face(card)}</button>)}</div>
-          {trialCoach && <HeartsTrialCoachBubble coach={trialCoach} boardRef={boardRef} cardRefs={handCardRefs} passRef={passButtonRef} layoutKey={`${match.matchId}:${match.hand.map(card => card.code).join(',')}:${selected.join(',')}`} onExplain={() => void openPanel('rules')} />}
+          <div className="ff-hearts-hand" aria-label="Your hand" style={{ '--hand-count': match.hand.length } as CSSProperties}
+            onPointerDown={event => { handGesture.current = { x: event.clientX, y: event.clientY, scroll: event.currentTarget.scrollLeft, moved: false } }}
+            onPointerMove={event => { const gesture = handGesture.current; if (gesture && Math.hypot(event.clientX - gesture.x, event.clientY - gesture.y) > 10) gesture.moved = true }}
+            onPointerCancel={() => { if (handGesture.current) handGesture.current.moved = true }}
+            onClickCapture={event => { const gesture = handGesture.current; handGesture.current = null; if (event.detail !== 0 && gesture && (gesture.moved || Math.abs(event.currentTarget.scrollLeft - gesture.scroll) > 8)) { event.preventDefault(); event.stopPropagation() } }}
+          >{match.hand.map((card, index) => <button key={card.code} type="button" ref={element => { if (element) handCardRefs.current.set(card.code, element); else handCardRefs.current.delete(card.code) }} className={`ff-hearts-hand__card ${selected.includes(card.code) || pendingCard?.code === card.code ? 'is-selected' : ''} ${canPlay && legal.has(card.code) ? 'is-legal' : ''} ${suggestedCodes.has(card.code) ? 'is-suggested' : ''}`} style={{ '--card-index': index } as CSSProperties} aria-label={`${cardName(card)}${canPass ? selected.includes(card.code) ? ', selected to pass' : ', select to pass' : canPlay && legal.has(card.code) ? mobileHand ? pendingCard?.code === card.code ? ', selected to play' : ', select to play' : ', play card' : ''}`} aria-describedby={suggestedCodes.has(card.code) ? 'hearts-trial-coach' : undefined} aria-pressed={canPass ? selected.includes(card.code) : mobileHand && canPlay && legal.has(card.code) ? pendingCard?.code === card.code : undefined} disabled={locked || (!canPass && (!canPlay || !legal.has(card.code)))} onClick={() => selectCard(card)}>{face(card)}</button>)}</div>
+          {match.hand.length > 0 && (mobileHand || canPlay) && <div className="ff-hearts-hand-hint" role={canPlay && !revealing ? 'status' : undefined}>{canPlay && !revealing && mode !== 'trial' ? legalCardRationale(match) : <>Swipe to see your hand{canPlay ? ' · Tap a card, then Play' : ''}</>}</div>}
+          {trialCoach && <HeartsTrialCoachBubble coach={trialCoach} boardRef={boardRef} cardRefs={handCardRefs} passRef={passButtonRef} mobileHand={mobileHand} selectedPlayCard={pendingCard} playRef={playButtonRef} layoutKey={`${match.matchId}:${match.hand.map(card => card.code).join(',')}:${selected.join(',')}:${pendingCardCode ?? ''}`} onExplain={() => void openPanel('rules')} />}
           {mode === 'paid' && <div className="ff-hearts-pot" aria-label="Table pot"><span className="ff-hearts-pot__chip" aria-hidden="true">R</span><small>Pot</small><strong>{money(table?.potCredits ?? 0)}</strong></div>}
-          {result && <div className="ff-hearts-result"><div><span className="ff-hearts-result__suit" aria-hidden="true">♥</span><small>Final result</small><h2>{resultTitle(match, table)}</h2><ResultScores match={match} table={table} />{mode === 'paid' && <p className="ff-hearts-result__payout">Your return <b>{money(table?.payoutCredits ?? 0)}</b></p>}<button type="button" className="ff-hearts-primary" onClick={() => { setMode('lobby'); setPractice(null) }}>Back to tables</button></div></div>}
-          {trialComplete && !revealing && <div className="ff-hearts-result ff-hearts-trial-complete"><div><span className="ff-hearts-result__suit" aria-hidden="true">♥</span><small>13 tricks played</small><h2>Trial complete</h2><p>You finished your introductory hand. In Hearts, fewer points is better.</p><ResultScores match={match} table={null} />{onboardingBusy ? <p role="status">Confirming your trial…</p> : setupResolved ? <button type="button" className="ff-hearts-primary" onClick={() => { setMode('lobby'); setPractice(null) }}>Choose how to play</button> : <><p role="status">Your trial completion has not been confirmed yet.</p><button type="button" className="ff-hearts-primary" onClick={() => void refreshOnboarding()}>Retry confirmation</button></>}{onboardingError && <p role="alert">{onboardingError}</p>}</div></div>}
+          {result && <HeartsResultOverlay label="Match result"><span className="ff-hearts-result__suit" aria-hidden="true">♥</span><small>Final result</small><h2>{resultTitle(match, table)}</h2><ResultScores match={match} table={table} />{mode === 'paid' && <p className="ff-hearts-result__payout">Your return <b>{money(table?.payoutCredits ?? 0)}</b></p>}{freeExitFailed && error && <p role="alert">{error}</p>}<button type="button" className="ff-hearts-primary" disabled={busy} onClick={leave}>{freeExitFailed ? 'Retry leaving table' : 'Back to tables'}</button></HeartsResultOverlay>}
+          {trialComplete && !revealing && <HeartsResultOverlay label="Trial result" className="ff-hearts-trial-complete"><span className="ff-hearts-result__suit" aria-hidden="true">♥</span><small>13 tricks played</small><h2>Trial complete</h2><p>You finished your introductory hand. In Hearts, fewer points is better.</p><ResultScores match={match} table={null} />{onboardingBusy ? <p role="status">Confirming your trial…</p> : setupResolved ? <button type="button" className="ff-hearts-primary" onClick={() => { setMode('lobby'); setPractice(null) }}>Choose how to play</button> : <><p role="status">Your trial completion has not been confirmed yet.</p><button type="button" className="ff-hearts-primary" onClick={() => void refreshOnboarding()}>Retry confirmation</button></>}{onboardingError && <p role="alert">{onboardingError}</p>}</HeartsResultOverlay>}
         </>}
       </section>
-      {error && <div className="ff-hearts-error" role="alert"><span>{error}</span><button type="button" disabled={busy} onClick={() => trialExitFailed ? void leaveTrial() : recovery ? void refresh() : void connect()}>{trialExitFailed ? 'Retry closing trial' : recovery ? 'Refresh table' : 'Retry connection'}</button></div>}
+      {error && <div className="ff-hearts-error" role="alert"><span>{error}</span><button type="button" disabled={busy} onClick={() => trialExitFailed ? void leaveTrial() : freeExitFailed ? void leaveFree() : recovery ? void refresh() : practiceRecovery ? void retryPractice() : void connect()}>{trialExitFailed ? 'Retry closing trial' : freeExitFailed ? 'Retry leaving table' : recovery ? 'Refresh table' : practiceRecovery ? 'Retry hand' : 'Retry connection'}</button></div>}
       {notice && <div className="ff-hearts-notice" role="status"><span>{notice}</span><button type="button" aria-label="Dismiss notice" onClick={() => setNotice(null)}>×</button></div>}
       {mode !== 'lobby' && <footer className="ff-hearts-footer"><span>{mode === 'paid' ? <>Entry <b>{money(queue?.entryCredits ?? table?.entryCredits ?? entry)}</b></> : mode === 'trial' ? 'Trial run · No entry' : 'Free play'}</span>{mode !== 'trial' && <span>Balance <b>{money(wallet)}</b></span>}<span>{match ? `${match.completedTricks.length}/13 tricks` : '4 seats'}</span></footer>}
     </main>
-    {panel && <Dialog title={panel === 'rules' ? 'How to play Hearts' : panel === 'scores' ? 'Table scores' : panel === 'history' ? 'Match history' : 'Leave this table?'} onClose={() => setPanel(null)}>
+    {panel && <Dialog title={panel === 'rules' ? 'How to play Hearts' : panel === 'scores' ? 'Table scores' : panel === 'history' ? 'Match history' : 'Leave this table?'} onClose={closePanel} tableLive={mode === 'paid' && paid?.kind === 'match'} deadline={deadline}>
       {panel === 'rules' && <div className="ff-hearts-rules">
         <p>In Hearts, less is more! Each heart adds 1 point; the queen of spades brings a hefty 13. A full game ends when someone reaches 100, and the lowest score wins. Your Trial run is just one hand: 13 tricks to find your feet.</p>
         <h3>Pass three troublemakers</h3><p>Pick three cards you’d rather give away, then tap Pass cards. You’ll get three back. Pass left, then right, then across; on the fourth hand, everyone keeps their cards. Repeat!</p>
@@ -343,13 +429,28 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
         <h3>Follow that suit</h3><p>Have the suit that started the trick? You must play it. None left? Pick another suit. Only the suit led can win, so an off-suit card cannot steal the trick.</p><p>Leading a fresh trick? Pick a legal suit. Hearts cannot lead until a heart has been discarded on an earlier trick (hearts are “broken”), unless hearts are all you have left. On the very first trick, hearts and the queen of spades stay in your hand if a non-point card is legally available.</p>
         <details className="ff-hearts-strategy"><summary>Why keep or pass certain cards?</summary><p>A few friendly pointers—not a magic winning recipe. Keep an eye on the cards already played.</p><p><b>Keep a low escape card:</b> low cards in each suit can help you duck under a higher card when a trick gets loaded with points.</p><p><b>Lose with your highest safe card:</b> when following suit, consider the highest card that still stays below the current winner. That’s one less risky high card to save for later.</p><p><b>Give points a new home:</b> if you cannot follow suit, you can often discard the queen of spades or a heart into someone else’s trick. First-trick restrictions still count!</p><p><b>Watch those high spades:</b> the ace and king may force you to take the queen later. Low spades can help protect you; without them, consider passing the high ones.</p><p><b>Run out of a suit:</b> passing your last few cards of one suit may let you discard points when that suit comes around. Balance that plan against keeping useful low cards.</p></details>
         <h3>Feeling brave? Shoot the moon</h3><p>Take all 26 points in one hand and the other three players each get 26 instead. It’s a daring alternative to dodging points—not a plan to try by accident!</p>
-        <h3>Playing for chips</h3><p>All four seats put in the same entry. The lowest eligible score wins the whole pot. Tied winners split it. Leaving before the deal returns your entry; leaving after the deal forfeits it. Take your turn before the table timer ends. A second missed turn leaves the table.</p>
+        <h3>Playing for chips</h3><p>All four seats put in the same entry. The lowest eligible score wins the whole pot. Tied winners split it. Leaving before the deal returns your entry; leaving after the deal forfeits it. You have 45 seconds for each action, with a warning during the last 10 seconds. The first expired turn forfeits your entry and prize eligibility. Only after forfeiting does the table automatically finish your seat’s cards so everyone else can continue. Free play and the trial have no competitive turn timer.</p>
+        <h3>Pull up a chair</h3><p>We look for other human players at your entry first. A table already playing with House opponents can welcome you into a House seat. You inherit that seat’s remaining cards, earlier passing decisions, current-round points and total match score—nothing is reset or redealt. Your normal entry replaces the house-funded stake, so the four-entry pot stays the same. A person who left or timed out cannot buy back into that same match. If no human table is available, we ask before starting a new table against the house. House seats are clearly named for their compass direction and may be replaced by newcomers as the match continues.</p>
       </div>}
       {panel === 'scores' && match && <ResultScores match={match} table={table} />}
-      {panel === 'history' && <div className="ff-hearts-history">{history.length ? history.map(item => <div key={item.match.matchId}><span>Table {money(item.entryCredits)} <small>{item.completedAtUtc ? new Date(item.completedAtUtc).toLocaleDateString() : 'In progress'}</small></span><ResultScores match={item.match} table={item} /><strong>Your return {money(item.payoutCredits)}</strong></div>) : <p>No completed chip matches yet.</p>}</div>}
+      {panel === 'history' && <div className="ff-hearts-history">{historyState === 'loading' ? <p role="status">Loading match history…</p> : historyState === 'error' ? <div className="ff-hearts-history-error" role="alert"><p>{historyError}</p><button type="button" className="ff-hearts-secondary" onClick={() => void loadHistory()}>Retry history</button></div> : historyState === 'loaded' && (history.length ? history.map(item => <div key={item.match.matchId}><span>Table {money(item.entryCredits)} <small>{item.completedAtUtc ? new Date(item.completedAtUtc).toLocaleDateString() : 'In progress'}</small></span><ResultScores match={item.match} table={item} /><strong>Your return {money(item.payoutCredits)}</strong></div>) : <p>No completed chip matches yet.</p>)}</div>}
       {panel === 'leave' && <div className="ff-hearts-leave-confirm"><p>{queue ? 'Your entry will be returned to your balance.' : 'The cards have been dealt. Leaving forfeits your entry and your chance to win this pot.'}</p><button type="button" className="ff-hearts-primary" onClick={leave} disabled={locked}>{queue ? 'Leave & return entry' : 'Leave table'}</button><button type="button" className="ff-hearts-secondary" onClick={() => setPanel(null)}>Keep playing</button></div>}
     </Dialog>}
   </div>
+}
+
+const mobileHandQuery = '(max-width: 600px), (any-pointer: coarse)'
+function useMobileHand() {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(mobileHandQuery).matches)
+  useEffect(() => {
+    const media = window.matchMedia?.(mobileHandQuery)
+    if (!media) return
+    const update = () => setMobile(media.matches)
+    update()
+    media.addEventListener('change', update)
+    return () => media.removeEventListener('change', update)
+  }, [])
+  return mobile
 }
 
 function playerName(match: HeartsMatch, seat: HeartsSeat) { return seat === match.humanSeat ? 'You' : match.players.find(player => player.seat === seat)?.displayName ?? 'Player' }
@@ -367,7 +468,19 @@ function TurnClock({ deadline }: { deadline: string }) {
   const [now, setNow] = useState(Date.now)
   useEffect(() => { const timer = window.setInterval(() => setNow(Date.now()), 500); return () => window.clearInterval(timer) }, [deadline])
   const left = Math.max(0, Math.ceil((Date.parse(deadline) - now) / 1000))
-  return <span className={`ff-hearts-clock ${left <= 10 ? 'is-low' : ''}`} aria-label={`${left} seconds remaining for your turn`}>{left}s</span>
+  return <><span className={`ff-hearts-clock ${left <= 10 ? 'is-low' : ''}`} role="timer" aria-live="off" aria-label={`${left} seconds remaining for your turn`}>{left}s</span>{left <= 10 && <span className="ff-hearts-low-time" role="alert">{left > 0 ? 'Play now—timeout forfeits your entry.' : 'Time’s up—checking the table.'}</span>}</>
+}
+
+function useDeadlineExpired(deadline: string | null | undefined) {
+  const [now, setNow] = useState(Date.now)
+  const expires = deadline ? Date.parse(deadline) : NaN
+  useEffect(() => {
+    setNow(Date.now())
+    if (!Number.isFinite(expires)) return
+    const timer = window.setTimeout(() => setNow(Date.now()), Math.max(0, expires - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [expires])
+  return Number.isFinite(expires) && now >= expires
 }
 
 function useTrickReveal(match: HeartsMatch | null, play: (cue: 'deal' | 'collect') => void) {
@@ -406,7 +519,7 @@ function CardFace({ card, faceDown }: { card: HeartsCard; faceDown?: boolean }) 
   const rank = card.label.replace(/[♠♥♣♦]/g, '')
   return <span className={`ff-hearts-fallback-card ${card.suit === 'hearts' || card.suit === 'diamonds' ? 'is-red' : ''}`}><span><b>{rank}</b><i>{symbol}</i></span><strong>{symbol}</strong><span><b>{rank}</b><i>{symbol}</i></span></span>
 }
-function Dialog({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
+function Dialog({ title, children, onClose, tableLive = false, deadline }: { title: string; children: ReactNode; onClose: () => void; tableLive?: boolean; deadline?: string | null }) {
   const root = useRef<HTMLDivElement>(null)
   const close = useRef<HTMLButtonElement>(null)
   useEffect(() => {
@@ -423,7 +536,7 @@ function Dialog({ title, children, onClose }: { title: string; children: ReactNo
     document.addEventListener('keydown', key)
     return () => { document.removeEventListener('keydown', key); if (previous?.isConnected) previous.focus() }
   }, [])
-  return <div className="ff-hearts-dialog-backdrop" onClick={event => { if (event.target === event.currentTarget) onClose() }}><div className="ff-hearts-dialog" role="dialog" aria-modal="true" aria-label={title} ref={root}><header><h2>{title}</h2><button type="button" ref={close} aria-label="Close dialog" onClick={onClose}>×</button></header><div className="ff-hearts-dialog__body">{children}</div></div></div>
+  return <div className="ff-hearts-dialog-backdrop" onClick={event => { if (event.target === event.currentTarget) onClose() }}><div className="ff-hearts-dialog" role="dialog" aria-modal="true" aria-label={title} ref={root}><header><h2>{title}</h2><button type="button" ref={close} aria-label="Close dialog" onClick={onClose}>×</button></header>{tableLive && <div className="ff-hearts-dialog-live"><span>Competitive play continues while this window is open.</span>{deadline && <TurnClock deadline={deadline} />}</div>}<div className="ff-hearts-dialog__body">{children}</div></div></div>
 }
 function SoundIcon({ muted }: { muted?: boolean }) { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" />{muted ? <path d="m17 9 5 6m0-6-5 6" /> : <><path d="M17 8q5 4 0 8M20 5q7 7 0 14" /></>}</svg> }
 function ScoresIcon() { return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V11h4v10m2 0V3h4v18m2 0v-7h4v7" /></svg> }

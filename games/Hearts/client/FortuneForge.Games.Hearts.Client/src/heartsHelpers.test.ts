@@ -24,4 +24,11 @@ describe('Hearts preview helpers', () => {
       expect(rotated.map(seat => relativeSeat(seat, human))).toEqual(['bottom', 'left', 'top', 'right'])
     }
   })
+  it('explains first-trick restrictions without claiming any hidden card is playable', () => {
+    const two = { code: '2|clubs', rank: '2', suit: 'clubs', label: '2♣' }
+    const base = { phase: 'playing' as const, yourTurn: true, heartsBroken: false, completedTricks: [], currentTrick: { leader: 'north' as const, plays: [] }, legalCards: [two] }
+    expect(legalCardRationale(base)).toBe('The 2 of clubs starts the first trick.')
+    expect(legalCardRationale({ ...base, currentTrick: { leader: 'east', plays: [{ seat: 'east', card: two }] }, legalCards: [{ code: '5|diamonds', rank: '5', suit: 'diamonds', label: '5♦' }] })).toBe('No clubs left. Play an available non-point card on this first trick.')
+    expect(legalCardRationale({ ...base, legalCards: [] })).toBe('Waiting for your available cards…')
+  })
 })

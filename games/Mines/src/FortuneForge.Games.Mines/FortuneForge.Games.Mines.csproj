@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>FortuneForge.Games.Mines</PackageId>
+    <Description>Exact Mines rules, secure board generation, and private round projection for Fortune Forge.</Description>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
+  </ItemGroup>
+</Project>

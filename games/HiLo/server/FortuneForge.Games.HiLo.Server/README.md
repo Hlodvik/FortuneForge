@@ -1,0 +1,33 @@
+# Hi-Lo server package
+
+The engine, secure random draw and every debit/credit run on the server. The client sends a wager or direction only. Each draw independently chooses rank 1–13 and suit 0–3 with `RandomNumberGenerator.GetInt32`; cards are replaced. Only revealed cards exist in state. The package never generates or persists an unrevealed deck, random seed or future sequence.
+
+## Host integration
+
+Reference this project from the authenticated ASP.NET host, register `AddHiLoServer`, and map `MapHiLo` with a resolver that reads the existing authenticated account cookie and returns `HiLoAccount(canonicalUserId)`. Do not resolve identity from a request body, query, browser storage or arbitrary header. Register the host's existing `FirestoreDb`. `Features:HiLoEnabled` is false by default; explicitly enable it only after the package/release checks. When disabled, new wagers/guesses/skips return503; authenticated existing-round session reads and cashouts remain available, and accepted-operation replays retain their original responses. Disabled GET with no prior round returns503. Existing-round GET exposes `enabled:false`; clients disable new wagers/risk actions and retain cashout. Configure the host's existing read/write rate-limit policy names through `HiLoServerOptions`.
+
+`ForcePractice` or the existing `X-FortuneForge-Practice: true` convention selects the separate practice store. Practice never accesses Firestore, production credentials, account wallets or payment data. Paid requests use canonical `userBalances/{userId}_slotsCredits`: `available` whole credits plus `availableFractionalCents` 0–99. Fractional cents and unrelated wallet fields are preserved. The host must ensure other games preserve this canonical fractional-cent field too.
+
+All mutating requests require `X-FortuneForge-Game: hi-lo`, JSON content and an approved exact Origin (same origin is accepted). Configure only the actual host origins in `AllowedOrigins`; use credentialed CORS solely for those origins. Attach existing host authentication and rate limits. In hosted HTTPS the account cookie remains the host's secure cookie; the local practice sample intentionally binds only HTTP loopback and never authenticates a paid account.
+
+## HTTP contract
+
+* `GET /api/games/hi-lo/session` returns `{practice,walletBalanceCents,limits,round}`. No active/latest round yields `round:null`.
+* `POST /api/games/hi-lo/rounds` accepts `{operationId,wagerCents}`.
+* `POST /api/games/hi-lo/rounds/{roundId}/actions` accepts `{operationId,expectedRevision,choice}` with `higher`, `lower`, `skip`, or `cashout`.
+
+Both writes return a session snapshot. Cents are integers. Rank strings are `ace`, `two` … `king`; suits are `clubs`, `diamonds`, `hearts`, `spades`. Status is `active`, `lost`, `cashedOut` or `maximumReturn`. `higher.multiplier`/`lower.multiplier` are the **total cumulative multiplier after a successful choice**, with limits applied; `projectedReturnCents` is the exact payable return after cent flooring. `probability` includes equal ranks as losing outcomes. `currentReturnCents` includes the stake at the beginning, so immediate cashout refunds the wager.
+
+Each write must generate one operationId (16–128 ASCII letters, digits, hyphens or underscores) and preserve the *exact command* until confirmed. Retries with that ID and same payload return the exact original response, even after subsequent actions. Reusing an ID for another payload returns409 `operation_conflict`. After recovery of an older command, GET session obtains the current state. Preserve pending operations across browser refresh; never silently invent a new operationId after timeout.
+
+Concurrent different actions at the same expectedRevision permit one transition; the other returns409 `stale_revision`. Concurrent starts permit one active wager. A round cannot incur a second debit or payout. Cashout and automatic limit settlement credit exactly once. Error bodies contain `{code,message}`. `insufficient_funds`, `round_active`, `stale_revision`, `round_finished` and `invalid_choice` are409; inaccessible round404; malformed request400; unauthenticated401; disallowed origin403; transient/uncertain service failure503 `retry_required`. Responses set no-store.
+
+## Persistence and operation journal
+
+The Firestore adapter transaction reads the authenticated player's head, canonical wallet, operation, deterministic ledger and event. It atomically commits revealed state, operation response/fingerprint, event and debit or payout ledger. Every read replays revealed engine history to reject corrupt persisted settlements. Firestore transaction conflicts retry against the latest wallet and revision; no client balance or result is trusted. Collections `hiLoPlayers`, `hiLoOperations`, `hiLoEvents` must be server-only. Existing `balanceTransactions` receives `hi-lo-wager` / `hi-lo-payout` entries with both canonical credit fields and integer-cent audit fields. Do not grant direct client writes to these collections or the wallet. Production access rules/configuration are deliberately not changed by this package.
+
+Practice state uses an exclusive cross-process lock file, a flushed temporary file and atomic replacement to commit the wallet, current revealed round, ledger and operation response together. It survives service restart. Configure a dedicated writable persistent path for the host; avoid network shares without atomic rename/locking guarantees. The practice file retains its complete operation journal and grows over time; it is intended for local/development play, not a production database. Paid operation/event documents are deliberately retained for replay and audit. A future retention/archival job must retain operation identity and exact response for at least the host's published replay window, and preserve ledger audits; no unreviewed TTL is installed here.
+
+The sample has no production credentials and creates a 256-bit random HttpOnly SameSite Strict practice cookie, with separate wallet state for each cookie. The cookie persists30days and the file has no cash value. Start it from this repository with `dotnet run --project games/HiLo/samples/FortuneForge.Games.HiLo.Web` (port5203). The package sample's `.data` path and logs are ignored.
+
+Run `dotnet test games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests` to execute practice, HTTP and actual Firestore transaction tests. The test fixture starts an isolated localhost Firestore emulator from an already installed Firebase emulator JAR and Java, on an unused port; it never connects to live Firestore. Alternatively supply localhost `FIRESTORE_EMULATOR_HOST`. Missing local emulator prerequisites fail visibly rather than skip paid-wallet tests.

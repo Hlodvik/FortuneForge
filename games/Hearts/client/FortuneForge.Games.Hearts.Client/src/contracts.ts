@@ -51,6 +51,7 @@ export interface HeartsGateway {
   startTrial?(signal?: AbortSignal): Promise<HeartsMatch>
   cancelTrial?(matchId: string, signal?: AbortSignal): Promise<HeartsOnboardingState>
   startMatch(options: { targetScore: number; difficulty?: HeartsDifficulty; seed?: number }, signal?: AbortSignal): Promise<HeartsMatch>
+  leaveMatch?(matchId: string, signal?: AbortSignal): Promise<void>
   pass(matchId: string, cards: readonly string[], signal?: AbortSignal): Promise<HeartsMatch>
   playCard(matchId: string, card: string, signal?: AbortSignal): Promise<HeartsMatch>
   advance(matchId: string, signal?: AbortSignal): Promise<HeartsMatch>
@@ -59,12 +60,13 @@ export interface HeartsGateway {
 
 export type HeartsPaidPlayer = Readonly<{ seat: HeartsSeat; displayName: string; isCurrentPlayer: boolean; hasLeft: boolean; entryCredits: number; payoutCredits: number }>
 export type HeartsPaidTable = Readonly<{ match: HeartsMatch; entryCredits: number; potCredits: number; payoutCredits: number; winnerSeats: readonly HeartsSeat[]; players: readonly HeartsPaidPlayer[]; actionDeadlineAtUtc: string | null; completedAtUtc: string | null }>
-export type HeartsPaidQueue = Readonly<{ matchId: string; entryCredits: number; potCredits: number; joinedAtUtc: string; players: readonly Readonly<{ seat: HeartsSeat; displayName: string; isCurrentPlayer: boolean }>[]; message: string }>
+export type HeartsPaidQueue = Readonly<{ matchId: string; entryCredits: number; potCredits: number; joinedAtUtc: string; players: readonly Readonly<{ seat: HeartsSeat; displayName: string; isCurrentPlayer: boolean }>[]; message: string; canPlayHouse?: boolean }>
 export type HeartsPaidSession = Readonly<{ kind: 'idle' | 'queue' | 'match' | 'result'; version: number; balanceCredits: number; entryOptions: readonly number[]; queue: HeartsPaidQueue | null; table: HeartsPaidTable | null; notice?: string | null }>
 export type HeartsPaidRequest = Readonly<{ idempotencyKey: string; expectedVersion?: number; signal?: AbortSignal }>
 export interface HeartsPaidGateway {
   getSession(signal?: AbortSignal): Promise<HeartsPaidSession>
   join(entryCredits: number, options: HeartsPaidRequest): Promise<HeartsPaidSession>
+  playHouse?(matchId: string, options: HeartsPaidRequest): Promise<HeartsPaidSession>
   getMatch(matchId: string, signal?: AbortSignal): Promise<HeartsPaidSession>
   pass(matchId: string, cards: readonly string[], options: HeartsPaidRequest): Promise<HeartsPaidSession>
   play(matchId: string, card: string, options: HeartsPaidRequest): Promise<HeartsPaidSession>

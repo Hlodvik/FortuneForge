@@ -17,11 +17,17 @@ public sealed class HeartsGameService(
 {
     private const PlayerSeat HumanSeat = PlayerSeat.North;
     private static readonly TimeSpan LeaseHeartbeatInterval = TimeSpan.FromMinutes(5);
+    internal static readonly TimeSpan AbandonedSessionTimeout = TimeSpan.FromMinutes(20);
+    // The shared assignment store leases profiles for thirty minutes. Stop using
+    // a local cohort before that deadline, even if a worker/heartbeat was delayed.
+    private static readonly TimeSpan LeaseSafetyWindow = TimeSpan.FromMinutes(25);
     private static readonly IReadOnlySet<PlayerSeat> ManagedSeats = Enum.GetValues<PlayerSeat>()
         .Where(seat => seat != HumanSeat)
         .ToHashSet();
     private readonly ConcurrentDictionary<Guid, HeartsSession> sessions = new();
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> trialStarts = new(StringComparer.Ordinal);
+    // A fixed stripe pool keeps repeated account visits from growing a permanent gate map.
+    private readonly SemaphoreSlim[] trialStarts = Enumerable.Range(0, 64).Select(_ => new SemaphoreSlim(1, 1)).ToArray();
+    internal int RetainedSessionCount => sessions.Count;
 
     public Task<HeartsMatchResponse> StartAsync(
         string userId,
@@ -30,16 +36,17 @@ public sealed class HeartsGameService(
 
     public async Task<HeartsMatchResponse> StartTrialAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var gate = trialStarts.GetOrAdd(userId, _ => new SemaphoreSlim(1, 1));
+        var gate = trialStarts[(StringComparer.Ordinal.GetHashCode(userId) & int.MaxValue) % trialStarts.Length];
         await gate.WaitAsync(cancellationToken);
         try
         {
             foreach (var previous in sessions.Values.Where(session => session.IsTrial && session.UserId == userId))
             {
+                lock (previous.SyncRoot) ExpireIfDue(previous, UtcNow());
                 await PersistTrialCompletionAsync(previous, cancellationToken);
-                await ReleaseTrialProfilesAsync(previous, cancellationToken, throwOnFailure: true);
+                await ReleaseProfilesAsync(previous, cancellationToken, throwOnFailure: true);
                 lock (previous.SyncRoot)
-                    if (!previous.IsCancelled && !IsFinished(previous)) return ToResponse(previous);
+                    if (!previous.IsCancelled && !IsFinished(previous)) { previous.LastActivityAtUtc = UtcNow(); return ToResponse(previous); }
             }
             return await StartAsync(userId, new StartHeartsMatchRequest(null, HeartsMatchEngine.DefaultTargetScore, "standard"), true, cancellationToken);
         }
@@ -58,10 +65,27 @@ public sealed class HeartsGameService(
                 session.ClearScheduledTurn();
                 session.Message = "Trial ended.";
             }
-            session.TrialReleasePending = !session.ManagedPlayersReleased;
+            session.ManagedReleasePending = !session.ManagedPlayersReleased;
         }
         await PersistTrialCompletionAsync(session, cancellationToken);
-        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: true);
+        await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: true);
+    }
+
+    public async Task LeaveAsync(string userId, Guid matchId, CancellationToken cancellationToken = default)
+    {
+        // Removing an already-absent free table is harmless; an existing private
+        // session still requires its owner and must not bypass trial onboarding.
+        if (!sessions.TryGetValue(matchId, out var session)) return;
+        if (!string.Equals(session.UserId, userId, StringComparison.Ordinal)) throw new HeartsAccessException();
+        lock (session.SyncRoot)
+        {
+            if (session.IsTrial) throw new HeartsRuleException("Use the learning trial exit to close this table.");
+            session.IsCancelled = true;
+            session.ClearScheduledTurn();
+            session.ManagedReleasePending = !session.ManagedPlayersReleased;
+        }
+        await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: true);
+        sessions.TryRemove(session.Id, out _);
     }
 
     public async Task RetryTrialCompletionAsync(string userId, CancellationToken cancellationToken = default)
@@ -79,8 +103,9 @@ public sealed class HeartsGameService(
         var initialState = HeartsMatchEngine.Start(seed, targetScore);
         var matchId = Guid.NewGuid();
         var assignmentId = AssignmentId(matchId);
+        var reservedAtUtc = UtcNow();
         var reserved = await managedPlayers.ReserveAsync(
-            assignmentId, ManagedSeats.Count, [userId], UtcNow(), cancellationToken);
+            assignmentId, ManagedSeats.Count, [userId], reservedAtUtc, cancellationToken);
         if (reserved.Count != ManagedSeats.Count)
         {
             await managedPlayers.ReleaseAsync(
@@ -88,7 +113,7 @@ public sealed class HeartsGameService(
                 reserved.Select(profile => profile.UserId).ToArray(),
                 UtcNow(),
                 cancellationToken);
-            throw new InvalidOperationException("A complete Hearts table could not be reserved.");
+            throw new ManagedPlayerSupplyUnavailableException();
         }
 
         var roster = ManagedSeats.OrderBy(seat => seat)
@@ -97,7 +122,7 @@ public sealed class HeartsGameService(
             .ToDictionary();
         var session = new HeartsSession(
             matchId, userId, initialState, requestedSkillLevel, roster,
-            UtcNow() + LeaseHeartbeatInterval, isTrial);
+            reservedAtUtc, isTrial);
         if (!sessions.TryAdd(session.Id, session))
         {
             await managedPlayers.ReleaseAsync(
@@ -120,12 +145,13 @@ public sealed class HeartsGameService(
         bool heartbeatDue;
         lock (session.SyncRoot)
         {
+            if (session.IsExpired) throw new HeartsAccessException();
             response = ToResponse(session);
             heartbeatDue = session.TryClaimLeaseHeartbeat(
                 UtcNow(), LeaseHeartbeatInterval);
         }
         await PersistTrialCompletionAsync(session, cancellationToken);
-        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
+        await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
         if (heartbeatDue)
             await HeartbeatAsync(session, matchId, cancellationToken);
         return response;
@@ -161,9 +187,18 @@ public sealed class HeartsGameService(
     {
         foreach (var session in sessions.Values)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            lock (session.SyncRoot) ExpireIfDue(session, UtcNow());
             await PersistTrialCompletionAsync(session, cancellationToken);
-            await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
-            string[] releaseIds = [];
+            await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
+            lock (session.SyncRoot)
+            {
+                if (session.IsExpired && session.ManagedPlayersReleased && !session.TrialCompletionPending)
+                {
+                    sessions.TryRemove(session.Id, out _);
+                    continue;
+                }
+            }
             bool heartbeatDue;
             lock (session.SyncRoot)
             {
@@ -174,26 +209,14 @@ public sealed class HeartsGameService(
 
                 AdvanceManagedTurn(session);
                 if (IsFinished(session) && !session.ManagedPlayersReleased)
-                {
-                    if (session.IsTrial) session.TrialReleasePending = true;
-                    else
-                    {
-                        session.ManagedPlayersReleased = true;
-                        releaseIds = session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray();
-                    }
-                }
-                heartbeatDue = releaseIds.Length == 0 && session.TryClaimLeaseHeartbeat(
+                    session.ManagedReleasePending = true;
+                heartbeatDue = session.TryClaimLeaseHeartbeat(
                     UtcNow(), LeaseHeartbeatInterval);
             }
 
             await PersistTrialCompletionAsync(session, cancellationToken);
-            await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
-            if (releaseIds.Length > 0)
-            {
-                await managedPlayers.ReleaseAsync(
-                    AssignmentId(session.Id), releaseIds, UtcNow(), cancellationToken);
-            }
-            else if (heartbeatDue)
+            await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
+            if (heartbeatDue)
             {
                 await HeartbeatAsync(session, session.Id, cancellationToken);
             }
@@ -223,33 +246,21 @@ public sealed class HeartsGameService(
     {
         var session = Session(userId, matchId);
         HeartsMatchResponse response;
-        string[] releaseIds = [];
         bool heartbeatDue;
         lock (session.SyncRoot)
         {
-            if (session.IsCancelled) throw new HeartsRuleException("This trial has ended. Choose Learn to play to start another.");
+            if (session.IsExpired) throw new HeartsAccessException();
+            if (session.IsCancelled) throw new HeartsRuleException(session.IsTrial ? "This trial has ended. Choose Learn to play to start another." : "This free table has ended. Start another free game to play.");
             action(session);
             if (IsFinished(session) && !session.ManagedPlayersReleased)
-            {
-                if (session.IsTrial) session.TrialReleasePending = true;
-                else
-                {
-                    session.ManagedPlayersReleased = true;
-                    releaseIds = session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray();
-                }
-            }
-            heartbeatDue = releaseIds.Length == 0 && session.TryClaimLeaseHeartbeat(
+                session.ManagedReleasePending = true;
+            heartbeatDue = session.TryClaimLeaseHeartbeat(
                 UtcNow(), LeaseHeartbeatInterval);
             response = ToResponse(session);
         }
         await PersistTrialCompletionAsync(session, cancellationToken);
-        await ReleaseTrialProfilesAsync(session, cancellationToken, throwOnFailure: false);
-        if (releaseIds.Length > 0)
-        {
-            await managedPlayers.ReleaseAsync(
-                AssignmentId(matchId), releaseIds, UtcNow(), cancellationToken);
-        }
-        else if (heartbeatDue)
+        await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
+        if (heartbeatDue)
         {
             await HeartbeatAsync(session, matchId, cancellationToken);
         }
@@ -275,26 +286,30 @@ public sealed class HeartsGameService(
         }
     }
 
-    private async Task ReleaseTrialProfilesAsync(HeartsSession session, CancellationToken cancellationToken, bool throwOnFailure)
+    private async Task ReleaseProfilesAsync(HeartsSession session, CancellationToken cancellationToken, bool throwOnFailure)
     {
         lock (session.SyncRoot)
-            if (!session.IsTrial || !session.TrialReleasePending) return;
+            if (!session.ManagedReleasePending || session.ManagedPlayersReleased) return;
+        await session.LeaseGate.WaitAsync(cancellationToken);
         try
         {
+            lock (session.SyncRoot)
+                if (!session.ManagedReleasePending || session.ManagedPlayersReleased) return;
             await managedPlayers.ReleaseAsync(AssignmentId(session.Id),
                 session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray(), UtcNow(), cancellationToken);
             lock (session.SyncRoot)
             {
                 session.ManagedPlayersReleased = true;
-                session.TrialReleasePending = false;
+                session.ManagedReleasePending = false;
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception exception)
         {
-            logger?.LogWarning(exception, "Hearts trial {MatchId} will retry releasing opponent profiles.", session.Id);
+            logger?.LogWarning(exception, "Hearts table {MatchId} will retry releasing opponent profiles.", session.Id);
             if (throwOnFailure) throw;
         }
+        finally { session.LeaseGate.Release(); }
     }
 
     private static bool IsFinished(HeartsSession session) => session.State.Winner is not null ||
@@ -305,13 +320,21 @@ public sealed class HeartsGameService(
         Guid matchId,
         CancellationToken cancellationToken)
     {
+        await session.LeaseGate.WaitAsync(cancellationToken);
         try
         {
+            var now = UtcNow();
+            lock (session.SyncRoot)
+            {
+                ExpireIfDue(session, now);
+                if (session.ManagedPlayersReleased || session.ManagedReleasePending || session.IsCancelled) return;
+            }
             await managedPlayers.HeartbeatAsync(
                 AssignmentId(matchId),
                 session.ManagedActors.Values.Select(actor => actor.Profile.UserId).ToArray(),
-                UtcNow(),
+                now,
                 cancellationToken);
+            lock (session.SyncRoot) session.LeaseSafeUntilUtc = now + LeaseSafetyWindow;
         }
         catch
         {
@@ -319,6 +342,7 @@ public sealed class HeartsGameService(
                 session.RetryLeaseHeartbeat(UtcNow());
             throw;
         }
+        finally { session.LeaseGate.Release(); }
     }
 
     private HeartsSession Session(string userId, Guid matchId)
@@ -326,7 +350,24 @@ public sealed class HeartsGameService(
         if (!sessions.TryGetValue(matchId, out var session) ||
             !string.Equals(session.UserId, userId, StringComparison.Ordinal))
             throw new HeartsAccessException();
+        lock (session.SyncRoot)
+        {
+            ExpireIfDue(session, UtcNow());
+            if (session.IsExpired) throw new HeartsAccessException();
+            session.LastActivityAtUtc = UtcNow();
+        }
         return session;
+    }
+
+    private static void ExpireIfDue(HeartsSession session, DateTime nowUtc)
+    {
+        if (session.IsExpired || nowUtc < session.LastActivityAtUtc + AbandonedSessionTimeout &&
+            (session.ManagedPlayersReleased || nowUtc < session.LeaseSafeUntilUtc)) return;
+        session.IsExpired = true;
+        session.IsCancelled = true;
+        session.ClearScheduledTurn();
+        session.ManagedReleasePending = !session.ManagedPlayersReleased;
+        session.Message = "This Hearts table expired after inactivity. Start another game to play.";
     }
 
     private void ApplyHumanAction(HeartsSession session, HeartsCommand command)
@@ -517,16 +558,20 @@ public sealed class HeartsGameService(
         HeartsMatchState state,
         int requestedSkillLevel,
         IReadOnlyDictionary<PlayerSeat, ManagedActor> managedActors,
-        DateTime nextLeaseHeartbeatAtUtc,
+        DateTime createdAtUtc,
         bool isTrial)
     {
-        private DateTime nextLeaseHeartbeatAtUtc = nextLeaseHeartbeatAtUtc;
+        private DateTime nextLeaseHeartbeatAtUtc = createdAtUtc + LeaseHeartbeatInterval;
         public Guid Id { get; } = id;
         public bool IsTrial { get; } = isTrial;
         public bool IsCancelled { get; set; }
+        public bool IsExpired { get; set; }
         public bool TrialCompletionPending { get; set; }
-        public bool TrialReleasePending { get; set; }
+        public bool ManagedReleasePending { get; set; }
         public object SyncRoot { get; } = new();
+        public SemaphoreSlim LeaseGate { get; } = new(1, 1);
+        public DateTime LastActivityAtUtc { get; set; } = createdAtUtc;
+        public DateTime LeaseSafeUntilUtc { get; set; } = createdAtUtc + LeaseSafetyWindow;
         public string UserId { get; } = userId;
         public HeartsMatchState State { get; set; } = state;
         public int RequestedSkillLevel { get; } = requestedSkillLevel;
@@ -540,7 +585,7 @@ public sealed class HeartsGameService(
 
         public bool TryClaimLeaseHeartbeat(DateTime nowUtc, TimeSpan interval)
         {
-            if (ManagedPlayersReleased || IsCancelled || nowUtc < nextLeaseHeartbeatAtUtc)
+            if (ManagedPlayersReleased || ManagedReleasePending || IsCancelled || nowUtc < nextLeaseHeartbeatAtUtc)
                 return false;
             nextLeaseHeartbeatAtUtc = nowUtc + interval;
             return true;

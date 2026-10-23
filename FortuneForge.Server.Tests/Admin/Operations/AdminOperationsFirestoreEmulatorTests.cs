@@ -78,6 +78,7 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             }),
             documents[3].SetAsync(new Dictionary<string, object>
             {
+                ["isMock"] = false,
                 ["statusUpdatedAt"] = Timestamp.FromDateTime(now.AddMinutes(-4)),
                 ["status"] = "completed",
                 ["credits"] = 100L,
@@ -85,6 +86,7 @@ public sealed class AdminOperationsFirestoreEmulatorTests
             }),
             documents[4].SetAsync(new Dictionary<string, object>
             {
+                ["isMock"] = false,
                 ["statusUpdatedAt"] = Timestamp.FromDateTime(now.AddMinutes(-3)),
                 ["status"] = "completed",
                 ["creditsDebited"] = 25L,

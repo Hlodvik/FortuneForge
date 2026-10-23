@@ -1,13 +1,14 @@
 using Microsoft.Extensions.Options;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Server.Cards.Solitaire;
 
 namespace FortuneForge.Server.Arcade.Competition;
 
 public sealed record ArcadeCompetitionApiOptions
 {
-    public IReadOnlyList<string> AllowedGameIds { get; init; } = ["asteroids", "flappy"];
+    public IReadOnlyList<string> AllowedGameIds { get; init; } = ["asteroids", "flappy", "horse-flight"];
     public int AllTimeMaximumPlaces { get; init; } = 100;
 }
 
@@ -26,6 +27,8 @@ public static class ArcadeCompetitionConfiguration
                 provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
         services.AddSingleton<IArcadeCompetitionFlappyPaidEntryCoordinator>(provider =>
             (IArcadeCompetitionFlappyPaidEntryCoordinator)provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>());
+        services.AddSingleton<IArcadeCompetitionHorseFlightPaidEntryCoordinator>(provider =>
+            (IArcadeCompetitionHorseFlightPaidEntryCoordinator)provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>());
         services.AddSingleton<ArcadeCompetitionPaidEntryService>(provider => new ArcadeCompetitionPaidEntryService(
             provider.GetRequiredService<IArcadeCompetitionPaidEntryCoordinator>(),
             provider.GetRequiredService<TimeProvider>(),
@@ -38,6 +41,10 @@ public static class ArcadeCompetitionConfiguration
             provider.GetRequiredService<IArcadeCompetitionFlappyPaidEntryCoordinator>(),
             provider.GetRequiredService<TimeProvider>(),
             provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
+        services.AddSingleton<ArcadeCompetitionHorseFlightPaidEntryService>(provider => new ArcadeCompetitionHorseFlightPaidEntryService(
+            provider.GetRequiredService<IArcadeCompetitionHorseFlightPaidEntryCoordinator>(),
+            provider.GetRequiredService<TimeProvider>(),
+            provider.GetRequiredService<ArcadeCompetitionRulesOptions>()));
         services.AddSingleton<TimeProvider>(TimeProvider.System);
         services.AddSingleton(provider => new FirestoreAsteroidsFreeRunService(
             provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>(),
@@ -45,6 +52,8 @@ public static class ArcadeCompetitionConfiguration
         services.AddSingleton(provider => new FirestoreFlappyFreeRunService(
             provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>(),
             provider.GetRequiredService<TimeProvider>()));
+        services.AddSingleton(provider => new HorseFlightFirestoreStore(
+            provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>()));
         services.AddSingleton(provider => new FirestoreSolitaireFreeRunService(
             provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>(),
             provider.GetRequiredService<TimeProvider>()));

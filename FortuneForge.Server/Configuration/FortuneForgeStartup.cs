@@ -1,5 +1,7 @@
 using FortuneForge.Server.Payments;
 using FortuneForge.Server.Admin.Operations;
+using FortuneForge.Server.Admin.Players;
+using FortuneForge.Server.Admin.Management;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Cards.ThreeCardPoker.Table;
@@ -50,6 +52,8 @@ public static class FortuneForgeStartup
         builder.Services.AddThreeCardPokerTables();
         builder.Services.AddCompetitiveSolitaireQueues(builder.Configuration);
         builder.Services.AddAdminOperations(builder.Configuration);
+        builder.Services.AddAdminPlayers(builder.Configuration);
+        builder.Services.AddAdminManagement(builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
         builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
         builder.Services.AddPaidHearts(builder.Configuration);

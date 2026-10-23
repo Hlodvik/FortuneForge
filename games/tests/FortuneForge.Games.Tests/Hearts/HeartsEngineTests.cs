@@ -114,13 +114,15 @@ public sealed class HeartsEngineTests
     }
 
     [Fact]
-    public void DescriptorIdentifiesThePreviewShellContract()
+    public void DescriptorIdentifiesTheCurrentHeartsGameContract()
     {
         Assert.Equal("Hearts", HeartsModule.Descriptor.DisplayName);
         Assert.Equal("0.1.1", HeartsModule.Descriptor.PackageVersion);
         Assert.Equal("/cards/hearts", HeartsModule.Descriptor.ClientRoute);
         Assert.Equal("/api/games/hearts", HeartsModule.Descriptor.ApiBasePath);
-        Assert.False(HeartsModule.Descriptor.Capabilities.HasFlag(GameCapability.Credits));
+        Assert.Equal(
+            GameCapability.FreePlay | GameCapability.Multiplayer | GameCapability.Credits | GameCapability.History,
+            HeartsModule.Descriptor.Capabilities);
     }
 
     private static HeartsState State(

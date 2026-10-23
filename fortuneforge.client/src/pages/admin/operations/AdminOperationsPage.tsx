@@ -54,17 +54,20 @@ export function AdminOperationsDashboardView({ dashboard }: { dashboard: Operati
         <Metric label="Slots wagered / won" value={`${credits(overview.slots.wageredCredits)} / ${credits(overview.slots.paidCredits)}`} />
         <Metric label="Blackjack wager / payout" value={`${credits(overview.blackjack.wageredCredits)} / ${credits(overview.blackjack.paidCredits)}`} />
         {overview.threeCardPoker && <Metric label="Three Card Poker wager / payout" value={`${credits(overview.threeCardPoker.wageredCredits)} / ${credits(overview.threeCardPoker.paidCredits)}`} />}
-        <Metric label="Real-human pool Solitaire fees" value={credits(overview.solitaire.platformFeeCredits)} />
+        <Metric label="Solitaire house net" value={credits(overview.solitaire.houseNetCredits ?? overview.solitaire.platformFeeCredits)} tone={(overview.solitaire.houseNetCredits ?? overview.solitaire.platformFeeCredits) >= 0 ? 'good' : 'bad'} />
+        <Metric label="Solitaire platform fees" value={credits(overview.solitaire.platformFeeCredits)} />
+        <Metric label="Solitaire house-funded entries" value={credits(overview.solitaire.houseFundedEntryCredits ?? 0)} />
+        <Metric label="Solitaire bot prizes" value={credits(overview.solitaire.botPrizeCredits ?? 0)} />
         <Metric label="Real-human pool Hold'em fees" value={credits(overview.texasHoldem.platformFeeCredits)} />
       </div>
     </section>
     <section aria-labelledby="funding-title">
       <SectionHeading id="funding-title" title="Funding flows" note="Purchases and withdrawals are not gaming P&L" />
-      <div className="operations-grid"><Metric label="Completed purchases" value={`${credits(overview.funding.completedPurchaseCredits)} · ${overview.funding.completedPurchases}`} /><Metric label="Completed withdrawals" value={`${credits(overview.funding.completedWithdrawalCredits)} · ${overview.funding.completedWithdrawals}`} /></div>
+      <div className="operations-grid"><Metric label="Completed real purchases" value={`${credits(overview.funding.completedPurchaseCredits)} · ${overview.funding.completedPurchases}`} /><Metric label="Completed real withdrawals" value={`${credits(overview.funding.completedWithdrawalCredits)} · ${overview.funding.completedWithdrawals}`} />{overview.funding.completedMockPurchaseCredits !== undefined && <Metric label="Test purchase credits (not revenue)" value={`${credits(overview.funding.completedMockPurchaseCredits)} · ${overview.funding.completedMockPurchases ?? 0}`} />}{overview.funding.completedMockWithdrawalCredits !== undefined && <Metric label="Test withdrawals (not cash outflow)" value={`${credits(overview.funding.completedMockWithdrawalCredits)} · ${overview.funding.completedMockWithdrawals ?? 0}`} />}</div>
     </section>
     <section className="operations-bots" aria-labelledby="bots-title">
-      <SectionHeading id="bots-title" title="Simulated-player telemetry" note={dashboard.bots.financialTreatment} />
-      <div className="operations-grid">{dashboard.bots.games.map((game) => <Metric key={game.game} label={label(game.game)} value={`${game.activeLeases} active · ${game.completedTurns} completed turns`} meta={game.enabled ? 'Enabled' : 'Disabled'} />)}</div>
+      <SectionHeading id="bots-title" title="Simulated-player telemetry" note={`${dashboard.bots.financialTreatment} Historical telemetry only; use Bot controls for current admission settings.`} />
+      <div className="operations-grid">{dashboard.bots.games.map((game) => <Metric key={game.game} label={label(game.game)} value={`${game.activeLeases} active · ${game.completedTurns} completed turns`} meta={game.enabled ? 'Legacy telemetry adapter enabled' : 'Legacy telemetry adapter disabled'} />)}</div>
     </section>
     <section aria-labelledby="integrity-title">
       <SectionHeading id="integrity-title" title="Integrity" note="Sanitized consistency checks" />

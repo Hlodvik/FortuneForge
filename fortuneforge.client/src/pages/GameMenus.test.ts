@@ -1,6 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
+import { useVerifiedTestCatalogue } from '../features/catalog/catalogueTestFixture'
 import { pageTitleForPath } from '../app/usePageTitle'
 import { CardGameLibraryPage } from './cards/CardGameLibraryPage'
 import { OtherGamesPage } from './games/OtherGamesPage'
@@ -24,6 +25,7 @@ const account = {
 } as const
 
 describe('game category menus', () => {
+  beforeEach(useVerifiedTestCatalogue)
   it('renders the slot menu with all twenty demo games and a card-room link', () => {
     const markup = renderToStaticMarkup(createElement(DemoSlotsLibraryPage))
     const demoLinks = markup.match(/aria-label="Play demo:/g) ?? []

@@ -9,9 +9,9 @@ namespace FortuneForge.Games.HorseFlight;
 /// </summary>
 public static class HorseFlightReplayEvaluator
 {
-    // A complete scenic run lasts five minutes at 20ms per simulation tick.
-    // Keep enough headroom for a player who dashes through the whole transition.
-    public const int MaximumTicks = 20_000;
+    // Archived v2 runs can reach the sky biome after the old 20,000-tick ceiling.
+    // Preserve enough headroom to replay them even though new runs use v3.
+    public const int MaximumTicks = 30_000;
     public const int MaximumJumps = 1_500;
     public const int MaximumRightClicks = 20_000;
 
@@ -46,7 +46,7 @@ public static class HorseFlightReplayEvaluator
                 nameof(replay));
         }
 
-        var state = HorseFlightEngine.Start(seed);
+        var state = HorseFlightEngine.Start(seed, rulesVersion: replay.RulesVersion);
         var jumpIndex = 0;
         var rightClickIndex = 0;
         for (var tick = 0; tick < replay.TotalTicks; tick++)

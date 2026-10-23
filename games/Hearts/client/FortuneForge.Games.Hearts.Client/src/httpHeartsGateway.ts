@@ -14,6 +14,7 @@ export class HttpHeartsGateway implements HeartsGateway {
     this.paid = {
       getSession: signal => this.request('/paid/session', { signal }, isPaidSession),
       join: (entryCredits, options) => mutate('/join', { entryCredits }, options),
+      playHouse: (id, options) => mutate(`/matches/${encodeURIComponent(id)}/play-house`, {}, options),
       getMatch: (id, signal) => this.request(`/paid/matches/${encodeURIComponent(id)}`, { signal }, isPaidSession),
       pass: (id, cards, options) => mutate(`/matches/${encodeURIComponent(id)}/pass`, { cards }, options),
       play: (id, card, options) => mutate(`/matches/${encodeURIComponent(id)}/card`, { card }, options),
@@ -27,6 +28,13 @@ export class HttpHeartsGateway implements HeartsGateway {
   startTrial(signal?: AbortSignal) { return this.request('/trial', { method: 'POST', signal }, isTrialMatch) }
   cancelTrial(matchId: string, signal?: AbortSignal) { return this.request(`/trial/${encodeURIComponent(matchId)}/cancel`, { method: 'POST', signal }, isOnboardingState) }
   startMatch(options: { targetScore: number; difficulty?: HeartsDifficulty; seed?: number }, signal?: AbortSignal) { return this.request('/matches', jsonPost(options, { signal }), isMatch) }
+  async leaveMatch(matchId: string, signal?: AbortSignal) {
+    const response = await this.requestFn(`${this.basePath}/matches/${encodeURIComponent(matchId)}/leave`, { method: 'POST', signal })
+    if (response.ok) return
+    const value: unknown = await response.json().catch(() => null)
+    const error = isError(value) ? value : null
+    throw new HeartsGatewayError(error?.message ?? `The Hearts table could not be closed (${response.status}).`, error?.code, response.status)
+  }
   pass(matchId: string, cards: readonly string[], signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/pass`, jsonPost({ cards }, { signal }), isMatch) }
   playCard(matchId: string, card: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/card`, jsonPost({ card }, { signal }), isMatch) }
   advance(matchId: string, signal?: AbortSignal) { return this.request(`/matches/${encodeURIComponent(matchId)}/advance`, jsonPost({}, { signal }), isMatch) }
@@ -63,7 +71,7 @@ function isPaidTable(value: unknown): value is HeartsPaidTable { return isRecord
 export function isPaidSession(value: unknown): value is HeartsPaidSession {
   if (!isRecord(value) || !['idle', 'queue', 'match', 'result'].includes(String(value.kind)) || !Number.isInteger(value.version) || !money(value.balanceCredits) || !Array.isArray(value.entryOptions) || !value.entryOptions.every(option => money(option) && option > 0)) return false
   if (value.kind === 'idle') return value.queue === null && value.table === null
-  if (value.kind === 'queue') return value.table === null && isRecord(value.queue) && typeof value.queue.matchId === 'string' && money(value.queue.entryCredits) && money(value.queue.potCredits) && typeof value.queue.joinedAtUtc === 'string' && typeof value.queue.message === 'string' && Array.isArray(value.queue.players) && value.queue.players.every(player => isRecord(player) && isSeat(player.seat) && typeof player.displayName === 'string' && typeof player.isCurrentPlayer === 'boolean')
+  if (value.kind === 'queue') return value.table === null && isRecord(value.queue) && typeof value.queue.matchId === 'string' && money(value.queue.entryCredits) && money(value.queue.potCredits) && typeof value.queue.joinedAtUtc === 'string' && typeof value.queue.message === 'string' && (value.queue.canPlayHouse === undefined || typeof value.queue.canPlayHouse === 'boolean') && Array.isArray(value.queue.players) && value.queue.players.every(player => isRecord(player) && isSeat(player.seat) && typeof player.displayName === 'string' && typeof player.isCurrentPlayer === 'boolean')
   return value.queue === null && isPaidTable(value.table)
 }
 function isHistory(value: unknown): value is { items: HeartsPaidTable[] } { return isRecord(value) && Array.isArray(value.items) && value.items.every(isPaidTable) }

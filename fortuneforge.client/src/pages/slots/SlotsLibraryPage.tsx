@@ -4,6 +4,8 @@ import { GameTypeMenu } from '../../components/GameTypeMenu'
 import { PlayerHeader } from '../../components/PlayerHeader'
 import { SLOT_GAME_CATALOG, type SlotGameCatalogEntry } from '../../games/slots/catalog'
 import '../index.css'
+import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
+import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 
 export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
   return (
@@ -15,6 +17,7 @@ export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
         <section className="game-picker-heading game-picker-heading--compact" aria-labelledby="game-picker-title">
           <p className="account-eyebrow">Slot collection</p>
           <h1 id="game-picker-title">Choose your machine</h1>
+          <CatalogueStatus />
           <p>Welcome, {account.playerName}. Pick a realm and see what fortune has waiting.</p>
         </section>
 
@@ -48,6 +51,7 @@ export function DemoSlotsLibraryPage() {
         <section className="game-picker-heading" aria-labelledby="demo-picker-title">
           <p className="account-eyebrow">No-account demo</p>
           <h1 id="demo-picker-title">Choose your demo.</h1>
+          <CatalogueStatus />
           <p>Each machine starts with a local R10,000 demo wallet. Demo play never uses or changes an account balance.</p>
         </section>
 
@@ -62,6 +66,8 @@ export function DemoSlotsLibraryPage() {
 }
 
 function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; demoMode?: boolean }) {
+  const visibility = useCatalogueVisibility()
+  if (!visibility.isVisible(game.playHref ?? game.demoHref)) return null
   const artStyle = game.slotDivBackgroundImage
     ? { '--machine-card-slot-background': `url("${game.slotDivBackgroundImage}")` } as CSSProperties
     : undefined

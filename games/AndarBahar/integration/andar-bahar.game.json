@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "andar-bahar",
+  "displayName": "Andar Bahar",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/andar-bahar",
+  "clientPackage": "@fortuneforge/games-andar-bahar",
+  "apiBasePath": "/api/games/andar-bahar",
+  "capabilities": ["credits", "free-play", "history"],
+  "migrationState": "rules-pilot"
+}

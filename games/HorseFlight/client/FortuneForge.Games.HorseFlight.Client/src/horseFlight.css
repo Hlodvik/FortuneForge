@@ -5,28 +5,23 @@
   height: 100%;
   margin: 0 auto;
   padding: clamp(0.45rem, 1vw, 0.85rem) clamp(0.55rem, 1.6vw, 1.25rem);
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: clamp(0.32rem, 0.8vh, 0.55rem);
   overflow: hidden;
   color: #f8f0df;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", "Segoe UI", sans-serif;
+  letter-spacing: .025em;
 }
 
-.ff-horse-flight__header {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.25rem 1rem;
-}
-
-.ff-horse-flight__header > div { display: grid; gap: 0.08rem; }
-.ff-horse-flight__header small { color: #f5ca72; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
-.ff-horse-flight h1 { margin: 0; font-size: clamp(1.45rem, 2.5vw, 2.25rem); letter-spacing: -0.045em; line-height: 0.95; }
-.ff-horse-flight p { margin: 0; color: #c6cbd7; }
-.ff-horse-flight__header p { justify-self: end; max-width: 43rem; color: #bac8d6; font-size: clamp(0.62rem, 0.85vw, 0.76rem); line-height: 1.35; text-align: right; }
-.ff-horse-flight__header p b { color: #f8e5a8; font-weight: 850; }
+.ff-horse-flight button,
+.ff-horse-flight input,
+.ff-horse-flight select { font: inherit; }
+.ff-horse-flight h1,
+.ff-horse-flight h2,
+.ff-horse-flight p { margin: 0; }
 
 .ff-horse-flight > section:not(.ff-horse-flight__field) {
-  grid-row: 2 / -1;
+  grid-row: 1 / -1;
   align-self: center;
   justify-self: center;
   display: grid;
@@ -39,41 +34,53 @@
   align-self: stretch;
   justify-self: stretch;
   justify-items: stretch;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   height: 100%;
 }
 
 .ff-horse-flight__lobby-scene {
   position: relative;
+  display: grid;
   min-height: 0;
+  place-items: stretch;
   overflow: hidden;
   border: 2px solid rgb(239 194 104 / 78%);
   border-radius: clamp(0.55rem, 1vw, 0.9rem);
   background-color: #101c31;
-  background-position: center;
+  background-position: center 45%;
   background-size: cover;
   box-shadow: 0 0.85rem 2.2rem rgb(0 0 0 / 32%), inset 0 0 0 1px rgb(255 238 177 / 12%);
 }
 
-.ff-horse-flight__lobby-copy {
-  position: absolute;
-  inset: auto 0 0;
+.ff-horse-flight__default-launch {
   display: grid;
-  gap: 0.12rem;
-  padding: 1rem;
-  background: linear-gradient(180deg, transparent, rgb(5 11 23 / 86%));
-  color: #f8f0df;
-  text-align: left;
+  width: min(90%, 30rem);
+  align-content: start;
+  justify-items: center;
+  gap: .7rem;
+  margin: 0 auto;
+  padding-top: clamp(1.35rem, 8vh, 4rem);
+  text-align: center;
 }
 
-.ff-horse-flight__lobby-copy span { color: #f5ca72; font-size: 0.58rem; font-weight: 900; letter-spacing: 0.14em; text-transform: uppercase; }
-.ff-horse-flight__lobby-copy strong { font-size: clamp(1.1rem, 2vw, 1.6rem); }
-.ff-horse-flight__rehearsal { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .45rem; }
-.ff-horse-flight__rehearsal button { display: grid; gap: .12rem; padding: .45rem .65rem; border: 1px solid rgb(255 226 143 / 48%); border-radius: .55rem; background: rgb(8 18 36 / 86%); color: #f8e5a8; font: 800 .65rem/1.1 inherit; text-align: left; }
-.ff-horse-flight__rehearsal button span { color: #aebcca; font-size: .55rem; font-weight: 600; letter-spacing: 0; text-transform: none; }
-.ff-horse-flight__rehearsal button.is-complete { border-color: #80d39a; color: #a9edb8; }
-.ff-horse-flight__rehearsal button:disabled { opacity: .55; }
+.ff-horse-flight__default-launch h1 {
+  color: #ffe090;
+  font-family: Impact, Haettenschweiler, "Arial Black", fantasy;
+  font-size: clamp(2.4rem, 8vw, 5.8rem);
+  font-weight: 900;
+  letter-spacing: .075em;
+  line-height: .9;
+  text-shadow: 0 .08em 0 #8f431e, 0 .14em 0 #2c1420, 0 0 .3em rgb(255 215 112 / 45%);
+}
+
+.ff-horse-flight__default-launch > p:not(.ff-horse-flight__error) {
+  color: #fff2c6;
+  font-family: "Copperplate Gothic Bold", "Trebuchet MS", sans-serif;
+  font-size: clamp(.9rem, 2.1vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: .12em;
+}
 
 .ff-horse-flight__start,
 .ff-horse-flight__over button {
@@ -84,7 +91,9 @@
   background: linear-gradient(145deg, #f5c75e, #bb7724);
   box-shadow: 0 0.65rem 1.2rem rgb(0 0 0 / 24%);
   color: #17120b;
+  font-family: "Copperplate Gothic Bold", "Trebuchet MS", sans-serif;
   font-weight: 900;
+  letter-spacing: .055em;
 }
 
 .ff-horse-flight__stats {
@@ -108,7 +117,7 @@
 }
 
 .ff-horse-flight__stats b { color: #ffe09b; }
-.ff-horse-flight__biome { margin-left: auto; color: #e9c1df !important; }
+.ff-horse-flight__stats .ff-horse-flight__debug-mode { border-color: rgb(255 218 108 / 62%); color: #ffe09b; }
 
 .ff-horse-flight__field {
   position: relative;
@@ -116,7 +125,7 @@
   width: min(100%, 50rem);
   max-height: 100%;
   aspect-ratio: 16 / 9;
-  align-self: center;
+  align-self: start;
   justify-self: center;
   outline: none;
   border: 2px solid rgb(239 194 104 / 88%);
@@ -152,22 +161,15 @@
 
 .ff-horse-flight__over strong:first-child { font-size: clamp(1.35rem, 2.5vw, 2rem); }
 .ff-horse-flight__error { color: #ffaba1; font-size: 0.7rem; text-align: center; }
-.ff-horse-flight__near-miss { position: absolute; z-index: 3; top: 12%; left: 50%; translate: -50% 0; padding: .38rem .7rem; border: 1px solid #ffe299; border-radius: 999px; background: rgb(8 16 30 / 88%); color: #ffe299; font-size: .7rem; font-weight: 900; animation: ff-horse-near-miss .9s ease-out both; }
 .ff-horse-flight__touch-controls { position: absolute; z-index: 4; right: .55rem; bottom: .55rem; left: .55rem; display: flex; justify-content: flex-end; gap: .4rem; pointer-events: none; }
-.ff-horse-flight__touch-controls button { min-width: 4.5rem; min-height: 2.7rem; padding: .35rem .65rem; border: 1px solid rgb(255 226 143 / 72%); border-radius: .65rem; background: rgb(7 16 31 / 88%); color: #ffe5a1; font: 900 .66rem/1 Inter, sans-serif; pointer-events: auto; touch-action: manipulation; }
+.ff-horse-flight__touch-controls button { min-width: 4.5rem; min-height: 2.7rem; padding: .35rem .65rem; border: 1px solid rgb(255 226 143 / 72%); border-radius: .65rem; background: rgb(7 16 31 / 88%); color: #ffe5a1; font: 900 .66rem/1 "Trebuchet MS", "Arial Rounded MT Bold", sans-serif; letter-spacing: .045em; pointer-events: auto; touch-action: manipulation; }
 .ff-horse-flight__touch-controls button span { display: block; margin-top: .2rem; color: #aebcca; font-size: .48rem; font-weight: 650; }
 
-@keyframes ff-horse-near-miss { 0% { opacity: 0; transform: translateY(.4rem) scale(.92); } 20% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-.7rem); } }
-
 @media (max-width: 650px) {
-  .ff-horse-flight__header { grid-template-columns: 1fr; gap: 0.25rem; }
-  .ff-horse-flight__header p { justify-self: start; max-width: none; text-align: left; }
   .ff-horse-flight__stats { flex-wrap: wrap; }
-  .ff-horse-flight__biome { margin-left: 0; }
 }
 
 @media (max-height: 540px) {
-  .ff-horse-flight__header p { display: none; }
   .ff-horse-flight { padding-block: 0.35rem; }
   .ff-horse-flight__field { width: min(100%, calc((100dvh - 9rem) * 1.7778)); }
 }
@@ -175,8 +177,4 @@
 @media (hover: hover) and (pointer: fine) {
   .ff-horse-flight__touch-controls { opacity: .42; }
   .ff-horse-flight__touch-controls:hover, .ff-horse-flight__touch-controls:focus-within { opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ff-horse-flight__near-miss { animation: none; }
 }

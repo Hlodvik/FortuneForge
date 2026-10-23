@@ -20,11 +20,13 @@ export type ArcadeCompetitionLeaderboardProps = Readonly<{
   /** Defaults to the currently allowed arcade competition game. */
   gameId?: string
   gateway: ArcadeCompetitionGateway
+  pageSize?: number
 }>
 
 export function ArcadeCompetitionLeaderboard({
   gameId = 'asteroids',
   gateway,
+  pageSize,
 }: ArcadeCompetitionLeaderboardProps) {
   const [period, setPeriod] = useState<ArcadeCompetitionPeriod>('daily')
   const [at, setAt] = useState<string | undefined>()
@@ -32,6 +34,7 @@ export function ArcadeCompetitionLeaderboard({
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loadAttempt, setLoadAttempt] = useState(0)
+  const [page, setPage] = useState(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -50,6 +53,8 @@ export function ArcadeCompetitionLeaderboard({
       })
     return () => controller.abort()
   }, [at, gameId, gateway, loadAttempt, period])
+
+  useEffect(() => setPage(0), [at, period, snapshot])
 
   const selectPeriod = (nextPeriod: ArcadeCompetitionPeriod) => {
     const next = selectCompetitionPeriod(nextPeriod)
@@ -100,9 +105,22 @@ export function ArcadeCompetitionLeaderboard({
           <p className="arcade-leaderboard__state arcade-leaderboard__state--error" role="alert">{error}</p>
           <button className="arcade-leaderboard__retry" onClick={retry} type="button">Retry leaderboard</button>
         </div>}
-        {!isLoading && error === null && snapshot !== null && (
-          <ArcadeCompetitionLeaderboardView snapshot={snapshot} onNavigate={moveWindow} />
-        )}
+        {!isLoading && error === null && snapshot !== null && <>
+          <ArcadeCompetitionLeaderboardView
+            snapshot={pageSize === undefined ? snapshot : {
+              ...snapshot,
+              leaderboard: snapshot.leaderboard.slice(page * pageSize, (page + 1) * pageSize),
+            }}
+            onNavigate={moveWindow}
+          />
+          {pageSize !== undefined && snapshot.leaderboard.length > pageSize && (
+            <nav aria-label="Leaderboard pages" className="arcade-leaderboard__pagination">
+              <button aria-label="Previous leaderboard page" disabled={page === 0} onClick={() => setPage((value) => value - 1)} type="button">‹</button>
+              <span>{page + 1} / {Math.ceil(snapshot.leaderboard.length / pageSize)}</span>
+              <button aria-label="Next leaderboard page" disabled={(page + 1) * pageSize >= snapshot.leaderboard.length} onClick={() => setPage((value) => value + 1)} type="button">›</button>
+            </nav>
+          )}
+        </>}
       </div>
     </section>
   )
@@ -171,5 +189,6 @@ function CompetitionWindowDetails({
 function displayGameName(gameId: string): string {
   if (gameId === 'asteroids') return 'Asteroid Blaster'
   if (gameId === 'flappy') return 'Flappy'
+  if (gameId === 'horse-flight') return 'Horse Flight'
   return gameId
 }

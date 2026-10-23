@@ -1,0 +1,13 @@
+# Dragon Tiger verification
+
+Verified locally on 18 October 2026 (America/Chicago), on the existing `main` working tree. Only this new game package was authored; shared application integration remains deferred because no Baccarat release record exists under `artifacts/releases` after the assignment start.
+
+- **39 C# tests passed, zero skipped.** Rules, exact half-stake returns, independent spot payouts, API normal play/feature/auth/limit gates, practice isolation, real Firestore same-key and different-key concurrency, insufficient-funds competition, wallet/ledger/event/round integrity, ownership and recovery. The emulator tests use unique localhost-only demo projects, never production funds.
+- **39 client/gateway tests passed.** Repeated chip accumulation, undo/clear, limits, 300/1050/1700 ms reveal stages, reduced motion, numeric totals, tie accounting, sound mute behavior, response validation, native-fetch receiver compatibility, account-scope isolation including delayed responses, pending preservation across session expiry/feature pauses, reload recovery and unavailable browser storage.
+- **TypeScript check and production library build passed.** Final build: CSS 181.63 KB (127.82 KB gzip), JavaScript 111.58 KB (65.92 KB gzip), including inlined game artwork/audio/chips. Felt source WebP is 121,728 bytes.
+- **Real Chrome browser smoke passed after the final changes.** A real mixed Dragon/Tiger/Tie wager settles against the sample API. Identical-key replay leaves the wallet unchanged; changed stakes return 409. The test deliberately loses the HTTP response after actual server settlement, reloads, and restores the original key without another debit. Desktop 1440px, portrait 390px, landscape 844×390 and small portrait 320px support betting and have no horizontal overflow. Rules open/close and no browser page errors occur.
+- **Visual review:** readable cards, accumulated stacks, table limits, Bet/Balance/Win/Returned/Net values, and independent responsive layouts reviewed from the captured desktop, portrait and landscape images. Landscape uses a compact two-column table. Tiny portrait hides the optional central caption to preserve card space.
+
+The standalone UI is running at **http://127.0.0.1:5180/** with the isolated practice API at **http://127.0.0.1:5198/**. Its own ignored dependencies let it continue working during the shared workspace dependency rebuild. Relaunch commands and references are in [README.md](README.md).
+
+Production host authentication, shared navigation/catalogue entry, main-app account refresh, rate-limit wiring, feature enablement and connected-route verification are still pending as listed precisely in [INTEGRATION.md](INTEGRATION.md). No commit, branch change, push or deploy was performed.

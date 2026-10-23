@@ -16,6 +16,12 @@ export type OperationsOverview = {
     winnerPayoutCredits: number
     platformFeeCredits: number
     settledRealHumanPoolMatches: number
+    houseNetCredits?: number
+    humanEntryCredits?: number
+    houseFundedEntryCredits?: number
+    humanPayoutCredits?: number
+    botPrizeCredits?: number
+    settledHouseFundedPoolMatches?: number
   }
   texasHoldem: {
     grossPoolCredits: number
@@ -29,6 +35,10 @@ export type OperationsOverview = {
     completedPurchases: number
     completedWithdrawalCredits: number
     completedWithdrawals: number
+    completedMockPurchaseCredits?: number
+    completedMockPurchases?: number
+    completedMockWithdrawalCredits?: number
+    completedMockWithdrawals?: number
   }
   complete: boolean
   limitations: string[]

@@ -8,6 +8,8 @@ import { SLOT_GAME_CATALOG, type SlotGameCatalogEntry } from '../../games/slots/
 import { useRecentSlotGame } from '../../games/slots/useRecentSlotGame'
 import { useCardRoomHistory } from '../cards/useCardRoomHistory'
 import '../index.css'
+import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
+import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 
 type CatalogGame = {
   category: string
@@ -72,6 +74,8 @@ const arcadeGames: readonly CatalogGame[] = [
   { name: '2048', category: 'Puzzle game', href: '/games/2048', icon: '▦', summary: 'Merge matching tiles and build the golden 2048.' },
   { name: 'Drop Merge', category: 'Number arcade', href: '/games/drop-merge', icon: '▩', summary: 'Drop number tiles, build chains, and make a huge tile.' },
   { name: 'Snake', category: 'Arcade game', href: '/games/snake', icon: '⌁', summary: 'Grow longer, collect fruit, and stay clear of the walls.' },
+  // Present only when an administrator explicitly unhides its default-hidden route.
+  { name: 'Horse Flight', category: 'Arcade game', href: '/games/horse-flight', icon: '♞', summary: 'Run through the mountain pass.', tone: 'horse' },
 ]
 
 const diceGames: readonly CatalogGame[] = [
@@ -143,6 +147,7 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
             <p className="account-eyebrow">All games</p>
             <h1>Find your next game</h1>
             <p>Browse by what is popular, what you played recently, or the kind of game you want.</p>
+            <CatalogueStatus />
           </section>
           <GameSection games={[casinoGames[0]!, cardGames[3]!, arcadeGames[0]!, cardGames[4]!]} title="Popular" />
           {recentlyPlayed.length > 0 && <GameSection games={recentlyPlayed} title="Recently played" recent />}
@@ -167,11 +172,14 @@ function GameSection({
   games: readonly CatalogGame[]
   recent?: boolean
 }) {
+  const visibility = useCatalogueVisibility()
+  const visibleGames = games.filter(game => visibility.isVisible(game.href))
+  if (!visibleGames.length) return null
   return (
     <section className="all-games-section" aria-labelledby={`all-games-${title.replaceAll(' ', '-').toLowerCase()}`}>
-      <header><h2 id={`all-games-${title.replaceAll(' ', '-').toLowerCase()}`}>{title}</h2><span>{games.length > 0 ? `${games.length} games` : ''}</span></header>
+      <header><h2 id={`all-games-${title.replaceAll(' ', '-').toLowerCase()}`}>{title}</h2><span>{visibleGames.length} games</span></header>
       <div className={`all-games-row${recent ? ' all-games-row--recent' : ''}`}>
-        {games.map((game, index) => <GameTile game={game} key={`${game.name}-${index}`} />)}
+        {visibleGames.map((game, index) => <GameTile game={game} key={`${game.name}-${index}`} />)}
       </div>
     </section>
   )

@@ -4,6 +4,7 @@ using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.Admin.Management;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -40,7 +41,7 @@ internal sealed partial class FirestorePaidHeartsStore
             {
                 var match = Read(snapshot);
                 if (match.Players.Any(player => player.IsAccountBacked && player.UserId == userId))
-                    return await ResponseAsync(match, userId, ct);
+                    return await ResponseAsync(match, userId, now, ct);
             }
         }
         return Idle(ReadBalance(await Balance(userId).GetSnapshotAsync(ct)));
@@ -53,7 +54,7 @@ internal sealed partial class FirestorePaidHeartsStore
         if (!snapshot.Exists || !Read(snapshot).Players.Any(player => player.IsAccountBacked && player.UserId == userId))
             throw new HeartsAccessException();
         await AdvanceAsync(id, now, ct);
-        return await ResponseAsync(Read(await Match(id).GetSnapshotAsync(ct)), userId, ct);
+        return await ResponseAsync(Read(await Match(id).GetSnapshotAsync(ct)), userId, now, ct);
     }
 
     public async Task<PaidHeartsSessionResponse> JoinAsync(
@@ -69,52 +70,189 @@ internal sealed partial class FirestorePaidHeartsStore
         var detail = cents.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var newId = Guid.NewGuid().ToString("N");
         var actor = Human(userId, name, now);
-        await TransactionAsync(async tx =>
+        string? joinNotice;
+        for (var attempt = 0; ; attempt++)
         {
-            var guard = await tx.GetSnapshotAsync(Guard(userId, key), ct);
-            if (guard.Exists) { Verify(guard, "join", "", detail); return false; }
-            var session = await tx.GetSnapshotAsync(Session(userId), ct);
-            var previousId = Text(session, "matchId");
-            if (previousId.Length > 0)
+            if (attempt >= 20)
+                throw new PaidHeartsConflictException("The available tables are changing quickly. Please try joining again.");
+            var batch = new PaidHeartsJoinBatch(database);
+            try
             {
-                var previous = await tx.GetSnapshotAsync(Match(previousId), ct);
-                if (previous.Exists && Read(previous) is { Status: "queue" or "match" } active &&
-                    active.Players.Any(player => player.UserId == userId && !player.HasLeft))
+                // Refresh the receipt first, including after a failed-condition
+                // commit. Never re-use a stale balance or funding delta.
+                var guard = await batch.ReadAsync(Guard(userId, key), ct);
+                if (guard.Exists)
                 {
-                    tx.Create(Guard(userId, key), GuardData("join", "", detail, now));
-                    return false;
+                    Verify(guard, "join", "", detail);
+                    joinNotice = Text(guard, "notice") is { Length: > 0 } savedNotice ? savedNotice : null;
+                    break;
                 }
-            }
-            var partition = await tx.GetSnapshotAsync(Partition(cents), ct);
-            var waitingId = Text(partition, "matchId");
-            PaidHeartsMatch? candidate = null;
-            if (waitingId.Length > 0)
-            {
-                var waiting = await tx.GetSnapshotAsync(Match(waitingId), ct);
-                if (waiting.Exists) candidate = Read(waiting);
-            }
-            var match = matchmaking.FindLiveTable(candidate is null ? [] : new[] { candidate },
-                value => value.Status == "queue" && value.EntryCents == cents && value.Players.Count < 4 &&
-                    now < value.CreatedAtUtc.AddMinutes(2), value => value.CreatedAtUtc, value => value.Id)
-                ?? new PaidHeartsMatch
+                var session = await batch.ReadAsync(Session(userId), ct);
+                var previousId = Text(session, "matchId");
+                if (previousId.Length > 0)
+                {
+                    var previous = await batch.ReadAsync(Match(previousId), ct);
+                    if (previous.Exists && Read(previous) is { Status: "queue" or "match" } active &&
+                        active.Players.Any(player => player.UserId == userId && !player.HasLeft))
+                    {
+                        // Session CAS protects different request keys for the same
+                        // account without charging or creating another seat.
+                        batch.Set(Session(userId), new Dictionary<string, object> { ["matchId"] = previousId });
+                        batch.Create(Guard(userId, key), GuardData("join", "", detail, now));
+                        await batch.CommitAsync(ct);
+                        joinNotice = null;
+                        break;
+                    }
+                }
+
+                // The index is advisory. All selected match, funding, account,
+                // session and fallback-partition snapshots are conditional writes
+                // in one atomic batch; no pessimistic read locks are held.
+                var houseHint = await FindHouseTableHintAsync(cents, userId, now, ct);
+                PaidHeartsMatch? activeMatch = null;
+                DocumentSnapshot? activeSnapshot = null;
+                if (houseHint is not null)
+                {
+                    var available = await batch.ReadAsync(Match(houseHint), ct);
+                    if (!available.Exists || !CanTakeHouseSeat(Read(available), cents, userId, now))
+                    {
+                        await Task.Delay(20 + Random.Shared.Next(40), ct);
+                        continue;
+                    }
+                    activeMatch = Read(available);
+                    activeSnapshot = available;
+                }
+                PaidHeartsMatch? waitingMatch = null;
+                if (activeMatch is null)
+                {
+                    var partition = await batch.ReadAsync(Partition(cents), ct);
+                    var waitingId = Text(partition, "matchId");
+                    PaidHeartsMatch? candidate = null;
+                    if (waitingId.Length > 0)
+                    {
+                        var waiting = await batch.ReadAsync(Match(waitingId), ct);
+                        if (waiting.Exists) candidate = Read(waiting);
+                    }
+                    waitingMatch = matchmaking.FindLiveTable(candidate is null ? [] : new[] { candidate },
+                        value => value.Status == "queue" && value.EntryCents == cents && value.Players.Count < 4 &&
+                            value.Players.All(player => player.IsAccountBacked) && now < value.CreatedAtUtc.AddMinutes(2),
+                        value => value.CreatedAtUtc, value => value.Id);
+                }
+                var match = activeMatch ?? waitingMatch ?? new PaidHeartsMatch
                 {
                     Id = newId, EntryCents = cents, CreatedAtUtc = now, UpdatedAtUtc = now,
-                    NextAdmissionAtUtc = options.AllowManagedPlayers ? now.AddSeconds(options.HumanQueueSeconds) : now.AddMinutes(2)
+                    NextAdmissionAtUtc = now.AddSeconds(options.HumanQueueSeconds)
                 };
-            var balance = ReadBalance(await tx.GetSnapshotAsync(Balance(userId), ct));
-            if (balance < cents) throw new PaidHeartsInsufficientFundsException();
-            actor.Seat = Enum.GetValues<PlayerSeat>().First(seat => match.Players.All(player => player.Seat != seat));
-            match.Players.Add(actor);
+                var balance = ReadBalance(await batch.ReadAsync(Balance(userId), ct));
+                if (balance < cents) throw new PaidHeartsInsufficientFundsException();
+                var house = activeMatch?.Players.Where(player => IsVirtualHouse(activeMatch, player)).OrderBy(player => player.Seat).First();
+                var funding = house is null ? null : await batch.ReadAsync(Funding(match.Id), ct);
+                if (house is not null && !FundingReconciles(match, funding!))
+                {
+                    // Independent reads can straddle somebody else's atomic
+                    // takeover. Refresh that legitimate race, but fail closed
+                    // when the unchanged match's funding really is inconsistent.
+                    var latest = await Match(match.Id).GetSnapshotAsync(ct);
+                    if (!latest.Exists || latest.UpdateTime != activeSnapshot!.UpdateTime)
+                    {
+                        await Task.Delay(20 + Random.Shared.Next(40), ct);
+                        continue;
+                    }
+                    throw new InvalidOperationException("The Hearts table funding does not reconcile.");
+                }
+                string? notice = null;
+                if (house is not null)
+                {
+                    actor.Seat = house.Seat;
+                    ReclassifyHouseStake(batch, match, house, actor, funding!, key, now);
+                    match.Players[match.Players.IndexOf(house)] = actor;
+                    if (match.ScheduledSeat == actor.Seat)
+                        match.NextActionAtUtc = now.AddSeconds(options.ActionTimeoutSeconds);
+                    notice = $"You joined in place of House {actor.Seat}, keeping that seat's existing cards and score. Your entry replaced its house-funded stake; the pot is unchanged.";
+                    match.Message = $"{actor.DisplayName} joined in place of House {actor.Seat}.";
+                }
+                else
+                {
+                    actor.Seat = Enum.GetValues<PlayerSeat>().First(seat => match.Players.All(player => player.Seat != seat));
+                    match.Players.Add(actor);
+                }
+                match.Version++;
+                match.UpdatedAtUtc = now;
+                var deal = house is null && match.Players.Count == 4;
+                if (deal) Start(match, now, PaidHeartsIds.Seed());
+                batch.Set(Balance(userId), BalanceData(balance - cents, now));
+                Ledger(batch, $"{match.Id}-entry-{actor.EntryId}", userId, -cents, balance - cents, "hearts-entry", key, now);
+                batch.Set(Session(userId), new Dictionary<string, object> { ["matchId"] = match.Id, ["updatedAt"] = Timestamp.FromDateTime(now) });
+                if (house is null)
+                    batch.Set(Partition(cents), new Dictionary<string, object> { ["matchId"] = match.Status == "queue" ? match.Id : "" });
+                Write(batch, match);
+                if (deal) WriteFunding(batch, match, now);
+                var receipt = GuardData("join", "", detail, now);
+                if (notice is not null) receipt["notice"] = notice;
+                batch.Create(Guard(userId, key), receipt);
+                await batch.CommitAsync(ct);
+                joinNotice = notice;
+                break;
+            }
+            catch (RpcException exception) when (exception.StatusCode is StatusCode.FailedPrecondition or StatusCode.AlreadyExists or StatusCode.Aborted)
+            {
+                // These statuses mean the atomic preconditions did not hold.
+                // An uncertain DeadlineExceeded commit is not retried here.
+                await Task.Delay(20 + Random.Shared.Next(60), ct);
+            }
+        }
+        var response = await SessionAsync(userId, now, ct);
+        return joinNotice is null || response.Notice is not null ? response : response with { Notice = joinNotice };
+    }
+
+    public async Task<PaidHeartsSessionResponse> PlayHouseAsync(
+        string userId, string id, int expectedVersion, string key, DateTime now, CancellationToken ct)
+    {
+        id = Identifier(id); Key(key);
+        if (expectedVersion < 0) throw new ArgumentException("ExpectedVersion cannot be negative.");
+        var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var shuffleSeed = PaidHeartsIds.Seed();
+        var observed = await Match(id).GetSnapshotAsync(ct);
+        if (!observed.Exists || !Read(observed).Players.Any(player => player.UserId == userId && player.IsAccountBacked))
+            throw new HeartsAccessException();
+        await AdvanceAsync(id, now, ct);
+        await TransactionAsync(async tx =>
+        {
+            var receipt = await tx.GetSnapshotAsync(Guard(userId, key), ct);
+            if (receipt.Exists) { Verify(receipt, "play-house", id, detail); return false; }
+            var snapshot = await tx.GetSnapshotAsync(Match(id), ct);
+            if (!snapshot.Exists) throw new HeartsAccessException();
+            var match = Read(snapshot);
+            if (!match.Players.Any(player => player.UserId == userId && player.IsAccountBacked && !player.HasLeft))
+                throw new HeartsAccessException();
+            var partition = await tx.GetSnapshotAsync(Partition(match.EntryCents), ct);
+            var policy = await tx.GetSnapshotAsync(database.Document(FirestoreAdminManagementStore.StatePath), ct);
+            if (match.Version != expectedVersion)
+                throw new PaidHeartsConflictException("Players have arrived or the table changed. Check the updated queue before choosing again.");
+            if (match.Status != "queue" || match.Players.Count != 1 || !match.Players[0].IsAccountBacked ||
+                Text(partition, "matchId") != id)
+                throw new PaidHeartsConflictException("Other players are available. Continue with the human queue instead.");
+            if (now < match.NextAdmissionAtUtc)
+                throw new PaidHeartsConflictException("The human-player search is still running. Please wait a moment.");
+            if (!options.AllowManagedPlayers || !FirestoreAdminManagementStore.ReadState(policy).AllowsBots(ManagedPlayerGames.Hearts))
+                throw new PaidHeartsConflictException("House opponents are currently unavailable. You can wait for players or leave for a refund.");
+            foreach (var seat in Enum.GetValues<PlayerSeat>().Where(seat => match.Players.All(player => player.Seat != seat)))
+            {
+                var house = HeartsHousePlayers.Create(match.Id, seat);
+                match.Players.Add(new PaidHeartsParticipant
+                {
+                    UserId = house.UserId, DisplayName = house.PlayerName, Seat = seat,
+                    SkillLevel = house.SkillLevel, JoinedAtUtc = now,
+                    DecisionSeed = PaidHeartsIds.PrivateSeed(), TimingSeed = PaidHeartsIds.PrivateSeed()
+                });
+            }
             match.Version++;
             match.UpdatedAtUtc = now;
-            if (match.Players.Count == 4) Start(match, now, PaidHeartsIds.Seed());
-            tx.Set(Balance(userId), BalanceData(balance - cents, now), SetOptions.MergeAll);
-            Ledger(tx, $"{match.Id}-entry-{actor.EntryId}", userId, -cents, balance - cents, "hearts-entry", key, now);
-            tx.Set(Session(userId), new Dictionary<string, object> { ["matchId"] = match.Id, ["updatedAt"] = Timestamp.FromDateTime(now) });
-            tx.Set(Partition(cents), new Dictionary<string, object> { ["matchId"] = match.Status == "queue" ? match.Id : "" });
+            Start(match, now, shuffleSeed);
+            WriteFunding(tx, match, now);
+            tx.Set(Partition(match.EntryCents), new Dictionary<string, object> { ["matchId"] = "" });
             Write(tx, match);
-            if (match.Status == "match") WriteFunding(tx, match, now);
-            tx.Create(Guard(userId, key), GuardData("join", "", detail, now));
+            tx.Create(Guard(userId, key), GuardData("play-house", id, detail, now));
             return true;
         }, ct);
         return await SessionAsync(userId, now, ct);
@@ -128,7 +266,7 @@ internal sealed partial class FirestorePaidHeartsStore
         if (expectedVersion < 0) throw new ArgumentException("ExpectedVersion cannot be negative.");
         var detail = JsonSerializer.Serialize(new { expectedVersion, cards }, Json);
         var nextSeed = PaidHeartsIds.Seed();
-        await TransactionAsync(async tx =>
+        var deadlineAdvanced = await TransactionAsync(async tx =>
         {
             var guard = await tx.GetSnapshotAsync(Guard(userId, key), ct);
             if (guard.Exists) { Verify(guard, operation, id, detail); return false; }
@@ -141,6 +279,20 @@ internal sealed partial class FirestorePaidHeartsStore
             var session = await tx.GetSnapshotAsync(Session(userId), ct);
             if (match.Version != expectedVersion) throw new PaidHeartsConflictException("The table changed. Refresh it before trying again.");
             if (match.Status == "result") throw new PaidHeartsConflictException("This match has finished.");
+            if (ActionIsDue(match, now))
+            {
+                // Commit the authoritative timeout in this same transaction. Do
+                // not throw after advancing: that would roll back the timeout
+                // and let a late card/pass keep racing the worker indefinitely.
+                AdvanceDueAction(tx, match, balances, now, nextSeed);
+                if (operation != "leave" || match.Status != "match" || actor.HasLeft)
+                {
+                    tx.Create(Guard(userId, key), GuardData(operation, id, detail, now));
+                    return true;
+                }
+                // A still-active player may leave after the overdue action.
+                // The just-advanced actor/deadline must not be reset by it.
+            }
             if (operation == "leave")
             {
                 if (match.Status == "queue")
@@ -189,10 +341,14 @@ internal sealed partial class FirestorePaidHeartsStore
             match.UpdatedAtUtc = now;
             Write(tx, match);
             tx.Create(Guard(userId, key), GuardData(operation, id, detail, now));
-            return true;
+            return false;
         }, ct);
         await ReleaseIfNeededAsync(id, now, ct);
-        return await SessionAsync(userId, now, ct);
+        var response = await SessionAsync(userId, now, ct);
+        return deadlineAdvanced ? response with
+        {
+            Notice = response.Notice ?? "The table timer expired before that action arrived. The automatic play stands; the table is now up to date."
+        } : response;
     }
 
     public async Task<PaidHeartsHistoryResponse> HistoryAsync(string userId, CancellationToken ct)
@@ -210,20 +366,27 @@ internal sealed partial class FirestorePaidHeartsStore
         DecisionSeed = PaidHeartsIds.PrivateSeed(), TimingSeed = PaidHeartsIds.PrivateSeed()
     };
 
-    private async Task<PaidHeartsSessionResponse> ResponseAsync(PaidHeartsMatch match, string userId, CancellationToken ct)
+    private async Task<PaidHeartsSessionResponse> ResponseAsync(PaidHeartsMatch match, string userId, DateTime now, CancellationToken ct)
     {
         var balance = ReadBalance(await Balance(userId).GetSnapshotAsync(ct));
-        if (match.Status == "cancelled") return Idle(balance);
+        if (match.Status == "cancelled") return Idle(balance) with { Notice = match.Message };
         if (match.Status == "match" && match.Players.FirstOrDefault(player => player.UserId == userId && player.HasLeft) is { } departed)
-            return Idle(balance) with { Notice = departed.MissedTurns >= 2
-                ? "Your seat was forfeited after two missed turns. Your entry remains in the pot; you can start another game."
+            return Idle(balance) with { Notice = departed.MissedTurns > 0
+                ? "Your seat was forfeited when the turn timer expired. Your entry remains in the pot; you can start another game."
                 : "You left the table and forfeited your entry. You can start another game." };
+        var canPlayHouse = match.Status == "queue" && match.Players.Count == 1 &&
+            match.Players[0].IsAccountBacked && now >= match.NextAdmissionAtUtc && options.AllowManagedPlayers &&
+            FirestoreAdminManagementStore.ReadState(await database.Document(FirestoreAdminManagementStore.StatePath)
+                .GetSnapshotAsync(ct)).AllowsBots(ManagedPlayerGames.Hearts);
         return new(match.Status, match.Version, balance / 100m, Entries,
             match.Status == "queue" ? new PaidHeartsQueueResponse(match.Id, match.EntryCents / 100m, match.PotCents / 100m,
                 match.Players.Single(player => player.UserId == userId).JoinedAtUtc,
                 match.Players.OrderBy(player => player.Seat).Select(player => new PaidHeartsQueuePlayerResponse(
                     PaidHeartsProjection.Seat(player.Seat), player.DisplayName, player.UserId == userId)).ToArray(),
-                "Looking for players before filling the open seats.") : null,
+                canPlayHouse
+                    ? "No other human players are waiting for this entry. Play against the house, or keep waiting. The queue refunds after two minutes."
+                    : "Looking for human players. No house opponents will join without your permission. The queue refunds after two minutes.",
+                canPlayHouse) : null,
             match.State is null ? null : PaidHeartsProjection.Table(match, userId));
     }
 
@@ -232,12 +395,107 @@ internal sealed partial class FirestorePaidHeartsStore
     private DocumentReference Match(string id) => database.Collection("heartsPaidMatches").Document(id);
     private DocumentReference Session(string userId) => database.Collection("heartsPaidSessions").Document(PaidHeartsIds.Hash(userId));
     private DocumentReference Partition(long cents) => database.Collection("heartsPaidQueuePartitions").Document($"entry-{cents}-target-100-v1");
+    private CollectionReference HouseTables(long cents) => database.Collection("heartsPaidSeatAvailability")
+        .Document($"entry-{cents}-target-100-v1").Collection("tables");
+    private DocumentReference HouseTable(PaidHeartsMatch match) =>
+        HouseTables(match.EntryCents).Document($"{match.CreatedAtUtc.Ticks:D19}-{match.Id}");
+    private DocumentReference Funding(string id) => database.Collection("heartsPaidFunding").Document(id);
     private DocumentReference Balance(string userId) => database.Collection("userBalances").Document($"{userId}_{Currency}");
     private DocumentReference Guard(string userId, string key) => database.Collection("heartsPaidCommands").Document(PaidHeartsIds.Hash($"{userId}\n{key}"));
-    private static string Assignment(string id) => $"hearts-paid:{id}";
     private static PaidHeartsMatch Read(DocumentSnapshot snapshot) => JsonSerializer.Deserialize<PaidHeartsMatch>(Text(snapshot, "matchJson"), Json)
         ?? throw new InvalidOperationException("The stored Hearts match is invalid.");
-    private void Write(Transaction tx, PaidHeartsMatch match) => tx.Set(Match(match.Id), Data(match));
+    private void Write(Transaction tx, PaidHeartsMatch match)
+    {
+        tx.Set(Match(match.Id), Data(match));
+        // Availability is a transactionally maintained, entry-partitioned index.
+        // Document IDs preserve creation order without a composite index or
+        // scanning every active match. The match remains authoritative on join.
+        if (HasJoinableHouseSeat(match))
+            tx.Set(HouseTable(match), new Dictionary<string, object> { ["matchId"] = match.Id });
+        else tx.Delete(HouseTable(match));
+    }
+
+    private static bool IsVirtualHouse(PaidHeartsMatch match, PaidHeartsParticipant player) =>
+        !player.IsAccountBacked && !player.HasLeft && player.ManagedAssignmentId is null &&
+        player.UserId == HeartsHousePlayers.Create(match.Id, player.Seat).UserId;
+
+    private static bool HasJoinableHouseSeat(PaidHeartsMatch match) =>
+        match.Status == "match" && match.State is { Winner: null } && match.Players.Count == 4 &&
+        match.Players.Any(player => player.IsAccountBacked && !player.HasLeft) &&
+        match.Players.Any(player => IsVirtualHouse(match, player));
+
+    private static bool CanTakeHouseSeat(PaidHeartsMatch table, long cents, string userId, DateTime now) =>
+        table.EntryCents == cents && HasJoinableHouseSeat(table) &&
+        table.Players.All(player => player.UserId != userId) &&
+        // Progression must process an overdue human forfeiture before somebody
+        // enters that potentially abandoned table. House timing is replaced by
+        // the incoming human's full turn allowance.
+        !(ActionIsDue(table, now) && table.ScheduledSeat is { } seat &&
+          table.Players.Any(player => player.Seat == seat && player.IsAccountBacked && !player.HasLeft));
+
+    private async Task<string?> FindHouseTableHintAsync(long cents, string userId, DateTime now, CancellationToken ct)
+    {
+        Query query = HouseTables(cents).OrderBy(FieldPath.DocumentId).Limit(16);
+        while (true)
+        {
+            var available = await query.GetSnapshotAsync(ct);
+            foreach (var row in available.Documents)
+            {
+                var id = Text(row, "matchId");
+                if (!Guid.TryParseExact(id, "N", out _)) continue;
+                var snapshot = await Match(id).GetSnapshotAsync(ct);
+                if (!snapshot.Exists) continue;
+                var table = Read(snapshot);
+                if (CanTakeHouseSeat(table, cents, userId, now)) return id;
+            }
+            if (available.Count < 16) return null;
+            query = HouseTables(cents).OrderBy(FieldPath.DocumentId).StartAfter(available.Documents[^1]).Limit(16);
+        }
+    }
+
+    private void ReclassifyHouseStake(PaidHeartsJoinBatch tx, PaidHeartsMatch match, PaidHeartsParticipant house,
+        PaidHeartsParticipant human, DocumentSnapshot funding, string key, DateTime now)
+    {
+        var beforeHuman = checked(match.EntryCents * match.Players.Count(player => player.IsAccountBacked));
+        var beforeHouse = checked(match.PotCents - beforeHuman);
+        if (!FundingReconciles(match, funding))
+            throw new InvalidOperationException("The Hearts table funding does not reconcile.");
+        var initialHuman = funding.TryGetValue<long>("initialHumanEntryCents", out var value) ? value : beforeHuman;
+        var afterHuman = checked(beforeHuman + match.EntryCents);
+        var afterHouse = checked(beforeHouse - match.EntryCents);
+        match.InitialHumanEntryCents = initialHuman;
+        match.HouseTakeoverCount++;
+        tx.Update(Funding(match.Id), new Dictionary<string, object>
+        {
+            ["initialHumanEntryCents"] = initialHuman,
+            ["initialHouseFundedEntryCents"] = checked(match.PotCents - initialHuman),
+            ["humanEntryCents"] = afterHuman, ["houseFundedEntryCents"] = afterHouse,
+            ["takeoverCount"] = match.HouseTakeoverCount, ["updatedAt"] = Timestamp.FromDateTime(now)
+        });
+        var state = match.State!;
+        tx.Create(database.Collection("heartsPaidFundingTransfers").Document($"{match.Id}-{human.EntryId}"),
+            new Dictionary<string, object>
+            {
+                ["matchId"] = match.Id, ["userId"] = human.UserId, ["entryId"] = human.EntryId,
+                ["seat"] = PaidHeartsProjection.Seat(house.Seat), ["replacedHouseId"] = house.UserId,
+                ["entryCents"] = match.EntryCents, ["grossPoolCents"] = match.PotCents,
+                ["humanEntryCentsBefore"] = beforeHuman, ["humanEntryCentsAfter"] = afterHuman,
+                ["houseFundedEntryCentsBefore"] = beforeHouse, ["houseFundedEntryCentsAfter"] = afterHouse,
+                ["inheritedRoundNumber"] = state.RoundNumber, ["inheritedMatchScore"] = state.Score.For(house.Seat),
+                ["inheritedRoundPoints"] = state.Round.Scores.Single(score => score.Seat == house.Seat).Points,
+                ["inheritedCompletedTricks"] = state.Round.CompletedTricks.Count,
+                ["inheritedPhase"] = state.Round.Phase.ToString().ToLowerInvariant(),
+                ["inheritedSubmittedPass"] = state.Round.SubmittedPasses.Any(pass => pass.Seat == house.Seat),
+                ["idempotencyKey"] = key, ["occurredAt"] = Timestamp.FromDateTime(now), ["schemaVersion"] = 1L,
+                ["financialClassification"] = "human-replaces-house-funded-hearts-entry-v1"
+            });
+    }
+
+    private static bool FundingReconciles(PaidHeartsMatch match, DocumentSnapshot funding) =>
+        funding.Exists && funding.GetValue<long>("entryCents") == match.EntryCents &&
+        funding.GetValue<long>("grossPoolCents") == match.PotCents &&
+        funding.GetValue<long>("humanEntryCents") == checked(match.EntryCents * match.Players.Count(player => player.IsAccountBacked)) &&
+        funding.GetValue<long>("houseFundedEntryCents") == checked(match.EntryCents * match.Players.Count(player => !player.IsAccountBacked));
     private static Dictionary<string, object> Data(PaidHeartsMatch match)
     {
         var data = new Dictionary<string, object>
@@ -246,7 +504,7 @@ internal sealed partial class FirestorePaidHeartsStore
             ["releasePending"] = match.ReleasePending,
             ["entryCents"] = match.EntryCents, ["updatedAt"] = Timestamp.FromDateTime(match.UpdatedAtUtc), ["schemaVersion"] = 1L
         };
-        var due = match.Status == "queue" ? match.AdmissionClaimExpiresAtUtc ?? match.NextAdmissionAtUtc
+        var due = match.Status == "queue" ? match.CreatedAtUtc.AddMinutes(2)
             : match.Status == "match" ? new[] { match.NextActionAtUtc, match.LeaseRenewalAtUtc }
                 .Where(value => value is not null).Min() : null;
         if (due is { } next) data["nextSweepAt"] = Timestamp.FromDateTime(next);
@@ -277,13 +535,15 @@ internal sealed partial class FirestorePaidHeartsStore
         ["version"] = FieldValue.Increment(1), ["updatedAt"] = Timestamp.FromDateTime(now)
     };
     private void Ledger(Transaction tx, string id, string userId, long amount, long after, string type, string key, DateTime now) =>
-        tx.Create(database.Collection("balanceTransactions").Document(id), new Dictionary<string, object>
+        tx.Create(database.Collection("balanceTransactions").Document(id), LedgerData(id, userId, amount, after, type, key, now));
+    private static Dictionary<string, object> LedgerData(string id, string userId, long amount, long after,
+        string type, string key, DateTime now) => new()
         {
             ["transactionId"] = id, ["userId"] = userId, ["currencyId"] = Currency,
             ["amountCents"] = amount, ["balanceAfterCents"] = after,
             ["amount"] = (double)(amount / 100m), ["balanceAfter"] = (double)(after / 100m),
             ["type"] = type, ["idempotencyKey"] = key, ["createdAt"] = Timestamp.FromDateTime(now)
-        });
+        };
     private async Task<Dictionary<string, long>> BalancesAsync(Transaction tx, PaidHeartsMatch match, CancellationToken ct)
     {
         var ids = match.Players.Where(player => player.IsAccountBacked).Select(player => player.UserId).ToArray();

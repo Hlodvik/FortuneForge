@@ -42,6 +42,7 @@ const PaymentInvoicesPage = lazy(() => import('../pages/payments/PaymentInvoices
 const PaymentInvoicePage = lazy(() => import('../pages/payments/PaymentInvoicePage').then((module) => ({ default: module.PaymentInvoicePage })))
 const AdminPaymentInvoicesPage = lazy(() => import('../pages/payments/AdminPaymentInvoicesPage').then((module) => ({ default: module.AdminPaymentInvoicesPage })))
 const AdminOperationsRoute = lazy(() => import('./routes/AdminOperationsRoute').then((module) => ({ default: module.AdminOperationsRoute })))
+const AdminPortalRoute = lazy(() => import('./routes/AdminPortalRoute').then((module) => ({ default: module.AdminPortalRoute })))
 const NotFoundPage = lazy(() => import('../pages/not-found/NotFoundPage').then((module) => ({ default: module.NotFoundPage })))
 
 export function AppRoutes({
@@ -100,6 +101,7 @@ export function AppRoutes({
   else if (invoiceMatch !== null) route = <PaymentInvoicePage invoiceId={invoiceMatch[1]} />
   else if (pathname === '/admin/invoices') route = <AdminPaymentInvoicesPage />
   else if (pathname === '/admin/operations') route = <AdminOperationsRoute />
+  else if (pathname === '/admin') route = <AdminPortalRoute />
   else if (adminInvoiceMatch !== null) route = <PaymentInvoicePage invoiceId={adminInvoiceMatch[1]} adminView />
   else route = <NotFoundPage />
 

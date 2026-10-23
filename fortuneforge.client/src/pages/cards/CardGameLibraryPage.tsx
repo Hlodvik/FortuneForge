@@ -6,6 +6,8 @@ import holdemPreview from '../../assets/cards/previews/holdem-game.png'
 import solitairePreview from '../../assets/cards/previews/solitaire-game.png'
 import { CardRoomNavigation } from './CardRoomNavigation'
 import '../index.css'
+import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
+import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 
 export type CardGameAvailabilityState = 'checking' | 'available' | 'unavailable'
 
@@ -62,6 +64,7 @@ export function CardGameLibraryPage({
           <section className="game-picker-heading game-picker-heading--compact" aria-labelledby="card-picker-title">
             <p className="account-eyebrow">Table room</p>
             <h1 id="card-picker-title">Choose your card game</h1>
+            <CatalogueStatus />
           </section>
 
           <section className="card-game-library" aria-label="Available card games">
@@ -136,6 +139,8 @@ function CardGameCard({
   title: string
   unavailableLabel?: string
 }) {
+  const visibility = useCatalogueVisibility()
+  if (!visibility.isVisible(href)) return null
   const className = `machine-card card-game-card ${available ? 'machine-card--available' : 'machine-card--coming'}`
   const content = <>
     {image && <img className="card-game-card__preview" src={image} alt="" loading="lazy" decoding="async" />}

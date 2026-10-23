@@ -1,7 +1,9 @@
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Games.Flappy;
+using FortuneForge.Games.HorseFlight;
 using System.Collections.Immutable;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
@@ -49,6 +51,121 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         var storedAttempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
         Assert.Equal("completed", Field<string>(storedAttempt, "status"));
         Assert.Equal(completed.Score, Field<long>(storedAttempt, "score"));
+    }
+
+    [Fact]
+    public async Task HorseFlightPaidEntryDebitsCreatesAndCompletesAnAuthoritativeLeaderboardAttemptAtomically()
+    {
+        var (database, coordinator) = CreateCoordinator();
+        await SeedBalanceAsync(database, "horse-flight-player", 200);
+        var competition = new ArcadeCompetitionIdentity("horse-flight", ArcadeCompetitionWindowKind.Daily, Start, Start.AddDays(1));
+        var request = new ArcadeCompetitionPaidEntryRequest(
+            "horse-flight-attempt-1", competition, "horse-flight-player", 100, Start.AddMinutes(1));
+        var attempt = ArcadeCompetitionAttemptRecord.Start(new ArcadeCompetitionAttemptStart(
+            request.AttemptId, request.Competition, request.AuthenticatedPlayerId, request.EntryFeeCents, request.EnteredAtUtc));
+        var proposedRun = new HorseFlightPaidRunIdentity(
+            FirestoreArcadeCompetitionPaidEntryCoordinator.HorseFlightRunId(attempt), 17);
+        var replay = HorseFlightTerminalReplay(proposedRun.Seed);
+
+        var started = await coordinator.StartHorseFlightPaidAttemptAsync(request, proposedRun, default);
+        var startRetry = await coordinator.StartHorseFlightPaidAttemptAsync(
+            request,
+            proposedRun with { Seed = 99 },
+            default);
+        var completed = await coordinator.CompleteHorseFlightReplayAsync(new HorseFlightPaidReplayCompletionRequest(
+            started.Run.Run.RunId, competition, "horse-flight-player", replay, Start.AddMinutes(3)), default);
+        var completionRetry = await coordinator.CompleteHorseFlightReplayAsync(new HorseFlightPaidReplayCompletionRequest(
+            started.Run.Run.RunId, competition, "horse-flight-player", replay, Start.AddMinutes(4)), default);
+
+        Assert.False(started.WasAlreadyRecorded);
+        Assert.True(startRetry.WasAlreadyRecorded);
+        Assert.Equal(17U, startRetry.Run.Run.Seed);
+        Assert.Matches("^horse_flight_[0-9a-f]{64}$", started.Run.Run.RunId);
+        Assert.Equal(100, await ReadBalanceCentsAsync(database, "horse-flight-player"));
+        Assert.Single((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        Assert.NotEqual(HorseFlightPhase.Running, completed.Phase);
+        Assert.False(completed.WasAlreadyCompleted);
+        Assert.True(completionRetry.WasAlreadyCompleted);
+        Assert.Equal(completed.Score, completionRetry.Score);
+        Assert.Equal(completed.Phase, completionRetry.Phase);
+        var storedRun = Assert.Single((await database.Collection("horseFlightRuns").GetSnapshotAsync()).Documents);
+        Assert.Equal("completed", Field<string>(storedRun, "status"));
+        Assert.Equal(17L, Field<long>(storedRun, "seed"));
+        Assert.Equal((long)HorseFlightEngine.CurrentRulesVersion, Field<long>(storedRun, "rulesVersion"));
+        Assert.Equal(completed.TotalTicks, Field<long>(storedRun, "totalTicks"));
+        Assert.Equal(completed.Score, Field<long>(storedRun, "score"));
+        var storedAttempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
+        Assert.Equal("completed", Field<string>(storedAttempt, "status"));
+        Assert.Equal(completed.Score, Field<long>(storedAttempt, "score"));
+    }
+
+    [Fact]
+    public async Task HorseFlightPaidRunWithoutAStoredRulesVersionCompletesWithLegacyRules()
+    {
+        var (database, coordinator) = CreateCoordinator();
+        await SeedBalanceAsync(database, "legacy-horse-player", 200);
+        var competition = new ArcadeCompetitionIdentity("horse-flight", ArcadeCompetitionWindowKind.Daily, Start, Start.AddDays(1));
+        var request = new ArcadeCompetitionPaidEntryRequest(
+            "horse-flight-legacy-attempt", competition, "legacy-horse-player", 100, Start.AddMinutes(1));
+        var attempt = ArcadeCompetitionAttemptRecord.Start(new ArcadeCompetitionAttemptStart(
+            request.AttemptId, request.Competition, request.AuthenticatedPlayerId, request.EntryFeeCents, request.EnteredAtUtc));
+        var proposedRun = new HorseFlightPaidRunIdentity(
+            FirestoreArcadeCompetitionPaidEntryCoordinator.HorseFlightRunId(attempt), 271);
+        var started = await coordinator.StartHorseFlightPaidAttemptAsync(request, proposedRun, default);
+        var runReference = database.Collection("horseFlightRuns").Document(started.Attempt.DocumentId);
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = FieldValue.Delete,
+        });
+        var replay = HorseFlightTerminalReplay(proposedRun.Seed, HorseFlightEngine.LegacyRulesVersion);
+
+        var completed = await coordinator.CompleteHorseFlightReplayAsync(new HorseFlightPaidReplayCompletionRequest(
+            started.Run.Run.RunId, competition, "legacy-horse-player", replay, Start.AddMinutes(3)), default);
+
+        Assert.False(completed.WasAlreadyCompleted);
+        Assert.NotEqual(HorseFlightPhase.Running, completed.Phase);
+        var storedRun = await runReference.GetSnapshotAsync();
+        Assert.Equal((long)HorseFlightEngine.LegacyRulesVersion, Field<long>(storedRun, "rulesVersion"));
+        Assert.Equal((long)completed.Score, Field<long>(storedRun, "score"));
+
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = FieldValue.Delete,
+        });
+        var retry = await coordinator.CompleteHorseFlightReplayAsync(new HorseFlightPaidReplayCompletionRequest(
+            started.Run.Run.RunId, competition, "legacy-horse-player", replay, Start.AddMinutes(4)), default);
+        Assert.True(retry.WasAlreadyCompleted);
+        Assert.Equal(completed.Score, retry.Score);
+    }
+
+    [Fact]
+    public async Task HorseFlightPaidRunStartedOnPreviousRulesCanFinishAfterRulesUpgrade()
+    {
+        var (database, coordinator) = CreateCoordinator();
+        await SeedBalanceAsync(database, "previous-horse-player", 200);
+        var competition = new ArcadeCompetitionIdentity("horse-flight", ArcadeCompetitionWindowKind.Daily, Start, Start.AddDays(1));
+        var request = new ArcadeCompetitionPaidEntryRequest(
+            "horse-flight-v3-attempt", competition, "previous-horse-player", 100, Start.AddMinutes(1));
+        var attempt = ArcadeCompetitionAttemptRecord.Start(new ArcadeCompetitionAttemptStart(
+            request.AttemptId, request.Competition, request.AuthenticatedPlayerId, request.EntryFeeCents, request.EnteredAtUtc));
+        var proposedRun = new HorseFlightPaidRunIdentity(
+            FirestoreArcadeCompetitionPaidEntryCoordinator.HorseFlightRunId(attempt), 42);
+        var started = await coordinator.StartHorseFlightPaidAttemptAsync(request, proposedRun, default);
+        var runReference = database.Collection("horseFlightRuns").Document(started.Attempt.DocumentId);
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = (long)HorseFlightEngine.PreviousRulesVersion,
+        });
+        var replay = HorseFlightTerminalReplay(proposedRun.Seed, HorseFlightEngine.PreviousRulesVersion);
+
+        var completed = await coordinator.CompleteHorseFlightReplayAsync(new HorseFlightPaidReplayCompletionRequest(
+            started.Run.Run.RunId, competition, "previous-horse-player", replay, Start.AddMinutes(3)), default);
+
+        Assert.False(completed.WasAlreadyCompleted);
+        Assert.NotEqual(HorseFlightPhase.Running, completed.Phase);
+        var storedRun = await runReference.GetSnapshotAsync();
+        Assert.Equal((long)HorseFlightEngine.PreviousRulesVersion, Field<long>(storedRun, "rulesVersion"));
+        Assert.Equal((long)completed.Score, Field<long>(storedRun, "score"));
     }
 
     [Fact]
@@ -420,6 +537,20 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
 
     private static AsteroidsReplay TerminalReplay() =>
         new(AsteroidsReplayEvaluator.MaximumReplaySteps, []);
+
+    private static HorseFlightReplay HorseFlightTerminalReplay(
+        uint seed,
+        int rulesVersion = HorseFlightEngine.CurrentRulesVersion)
+    {
+        var state = HorseFlightEngine.Start(seed, rulesVersion: rulesVersion);
+        var totalTicks = 0;
+        while (state.Phase == HorseFlightPhase.Running)
+        {
+            state = HorseFlightEngine.Step(state, HorseFlightInput.None).State;
+            totalTicks++;
+        }
+        return new HorseFlightReplay(totalTicks, []) { RulesVersion = rulesVersion };
+    }
 
     private static ArcadeCompetitionPayoutPlan Plan()
     {

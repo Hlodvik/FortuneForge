@@ -5,7 +5,11 @@
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   background: #080d1c;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", "Segoe UI", sans-serif;
+  letter-spacing: .025em;
 }
+
+.horse-flight-page button { font-family: "Copperplate Gothic Bold", "Trebuchet MS", sans-serif; }
 
 .horse-flight-page > .in-game-shell__body {
   display: grid;
@@ -13,4 +17,439 @@
 
 .horse-flight-page > .in-game-shell__body > .ff-horse-flight {
   min-height: 0;
+}
+
+.horse-flight-launch {
+  display: grid;
+  min-height: 100%;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  align-items: start;
+  gap: clamp(.55rem, 1.7vh, 1rem);
+  padding: clamp(1rem, 4vh, 2.25rem) clamp(.8rem, 3vw, 2rem) clamp(.75rem, 2vh, 1.25rem);
+  color: #fff5d5;
+  text-align: center;
+}
+
+.horse-flight-launch__heading {
+  display: grid;
+  justify-items: center;
+  gap: clamp(.28rem, .8vh, .55rem);
+}
+
+.horse-flight-launch__heading h1 {
+  margin: 0;
+  color: #ffe08a;
+  font-family: Impact, Haettenschweiler, "Arial Black", fantasy;
+  font-size: clamp(2.35rem, min(7vw, 10vh), 5.6rem);
+  font-weight: 900;
+  letter-spacing: .075em;
+  line-height: .88;
+  text-transform: uppercase;
+  text-shadow: 0 .075em 0 #a84c22, 0 .145em 0 #321528, 0 0 .28em rgb(255 214 105 / 48%);
+  transform: skew(-3deg);
+}
+
+.horse-flight-launch__heading p {
+  margin: 0;
+  color: #fff2c8;
+  font-family: "Copperplate Gothic Bold", "Trebuchet MS", sans-serif;
+  font-size: clamp(.82rem, min(2.1vw, 3vh), 1.35rem);
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-shadow: 0 2px .25rem #000;
+}
+
+.horse-flight-launch__menu {
+  display: grid;
+  width: min(100%, 34rem);
+  align-self: center;
+  justify-self: center;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(.55rem, 1.5vw, .85rem);
+}
+
+.horse-flight-launch__button,
+.horse-flight-launch__panel button,
+.horse-flight-launch__error button {
+  min-height: clamp(2.65rem, 7vh, 3.45rem);
+  padding: .6rem .75rem;
+  border: 1px solid rgb(255 225 143 / 68%);
+  border-radius: .68rem;
+  background: linear-gradient(160deg, rgb(18 34 60 / 96%), rgb(8 16 31 / 96%));
+  box-shadow: 0 .5rem 1.1rem rgb(0 0 0 / 32%), inset 0 1px rgb(255 248 215 / 12%);
+  color: #ffe7a7;
+  font-size: clamp(.66rem, 1.35vw, .86rem);
+  font-weight: 900;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.horse-flight-launch__button--ranked {
+  border-color: #ffe08b;
+  background: linear-gradient(145deg, #ffd66e, #bb6828);
+  color: #211008;
+  text-shadow: 0 1px rgb(255 245 198 / 65%);
+}
+
+.horse-flight-launch__button--free {
+  border-color: rgb(117 224 255 / 75%);
+  background: linear-gradient(145deg, #2d7592, #183957);
+  color: #f3fcff;
+}
+
+.horse-flight-launch button:not(:disabled):hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.horse-flight-launch button:focus-visible {
+  outline: 3px solid #fff0aa;
+  outline-offset: 3px;
+}
+
+.horse-flight-launch button:disabled {
+  cursor: wait;
+  filter: grayscale(.45);
+  opacity: .58;
+}
+
+.horse-flight-launch__panel {
+  display: grid;
+  width: min(100%, 37rem);
+  max-height: 100%;
+  min-height: 0;
+  align-self: center;
+  justify-self: center;
+  gap: .65rem;
+  overflow: auto;
+  padding: clamp(.65rem, 1.8vw, 1rem);
+  border: 1px solid rgb(255 224 139 / 56%);
+  border-radius: .8rem;
+  background: rgb(5 13 28 / 91%);
+  box-shadow: 0 .8rem 2rem rgb(0 0 0 / 42%);
+}
+
+.horse-flight-launch__panel h2 {
+  margin: 0;
+  color: #ffe3a1;
+  font-family: "Copperplate Gothic Bold", "Trebuchet MS", sans-serif;
+  font-size: clamp(.9rem, 2vw, 1.2rem);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.horse-flight-launch__ranked > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.horse-flight-launch__back {
+  min-height: 2.35rem !important;
+  justify-self: center;
+  background: #18263c !important;
+  color: #ffe8aa !important;
+}
+
+.horse-flight-launch__instructions ul {
+  display: grid;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  text-align: left;
+  list-style: none;
+}
+
+.horse-flight-launch__instructions li {
+  display: grid;
+  grid-template-columns: minmax(4rem, auto) minmax(0, 1fr);
+  gap: .6rem;
+  padding: .52rem .62rem;
+  border-left: 3px solid #d49336;
+  border-radius: .3rem;
+  background: rgb(21 35 56 / 88%);
+  color: #dce9ed;
+  font-size: clamp(.62rem, 1.35vw, .78rem);
+  line-height: 1.35;
+}
+
+.horse-flight-launch__instructions strong { color: #ffe09a; letter-spacing: .06em; text-transform: uppercase; }
+.horse-flight-launch__status { align-self: end; margin: 0; color: #c7d9e2; font-size: .7rem; font-weight: 800; letter-spacing: .06em; }
+.horse-flight-launch__error { display: flex; align-self: end; align-items: center; justify-content: center; gap: .5rem; color: #ffb8ad; font-size: .7rem; font-weight: 800; }
+.horse-flight-launch__error button { min-height: 2rem; padding: .35rem .6rem; }
+
+.horse-flight-launch__leaderboard .arcade-leaderboard {
+  display: grid;
+  min-height: 0;
+  gap: .45rem;
+  overflow: hidden;
+}
+
+.horse-flight-launch__leaderboard .arcade-leaderboard__heading { margin: 0; color: #ffe2a0; font-size: clamp(.9rem, 2vw, 1.15rem); }
+.horse-flight-launch__leaderboard .arcade-leaderboard__periods { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .35rem; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__period,
+.horse-flight-launch__leaderboard .arcade-leaderboard__history button,
+.horse-flight-launch__leaderboard .arcade-leaderboard__retry { min-height: 2rem; padding: .3rem .4rem; border: 1px solid rgb(245 202 114 / 38%); border-radius: .45rem; background: #101c31; color: #dce8f1; font-size: .62rem; font-weight: 900; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__period--active { background: linear-gradient(145deg, #f5c75e, #bb7724); color: #17120b; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__panel,
+.horse-flight-launch__leaderboard .arcade-leaderboard__results { min-height: 0; overflow: hidden; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__dates,
+.horse-flight-launch__leaderboard .arcade-leaderboard__state,
+.horse-flight-launch__leaderboard .arcade-leaderboard__refund { margin: .25rem 0; color: #cbd8df; font-size: .6rem; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__summary { display: flex; flex-wrap: wrap; justify-content: center; gap: .25rem; margin: .3rem 0; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__summary div { display: flex; gap: .2rem; padding: .22rem .32rem; border-radius: .35rem; background: rgb(38 50 70 / 80%); font-size: .56rem; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__summary dd { margin: 0; color: #ffe09b; font-weight: 900; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__rows { display: grid; max-height: clamp(4.4rem, 16vh, 7.5rem); gap: .2rem; margin: .3rem 0 0; padding: 0; overflow: auto; list-style: none; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__row { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr) auto; gap: .35rem; padding: .25rem .4rem; border-left: 2px solid #d89436; border-radius: .3rem; background: rgb(15 28 49 / 86%); font-size: .62rem; text-align: left; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__position,
+.horse-flight-launch__leaderboard .arcade-leaderboard__score { color: #ffe09b; }
+.horse-flight-launch__leaderboard .arcade-leaderboard__history { display: flex; justify-content: center; gap: .35rem; margin-top: .3rem; }
+
+.horse-flight-page .arcade-leaderboard__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  margin-top: .35rem;
+  color: #ffe09b;
+  font-size: .62rem;
+  font-weight: 900;
+}
+
+.horse-flight-page .arcade-leaderboard__pagination button {
+  min-width: 2rem;
+  min-height: 1.8rem;
+  padding: .2rem .5rem;
+  border: 1px solid rgb(245 202 114 / 38%);
+  border-radius: .4rem;
+  background: #101c31;
+  color: #ffe09b;
+  font-weight: 900;
+}
+
+.horse-flight-result {
+  display: grid;
+  width: min(100%, 37rem);
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .65rem;
+  overflow: hidden;
+  padding: clamp(.65rem, 2vw, 1rem);
+  border: 1px solid rgb(245 202 114 / 58%);
+  border-radius: .85rem;
+  background: linear-gradient(155deg, rgb(8 18 36 / 96%), rgb(31 20 35 / 96%));
+  box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 48%), inset 0 1px rgb(255 244 199 / 12%);
+  color: #f8f0df;
+  text-align: left;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", sans-serif;
+}
+
+.horse-flight-result__outcome {
+  display: grid;
+  justify-items: center;
+  gap: .2rem;
+  padding: .5rem .7rem;
+  border: 1px solid rgb(255 218 125 / 42%);
+  border-radius: .55rem;
+  background: rgb(70 34 30 / 68%);
+  text-align: center;
+}
+
+.horse-flight-result__outcome strong {
+  color: #ffe3a1;
+  font-size: clamp(.78rem, 1.8vw, 1rem);
+  line-height: 1.2;
+}
+
+.horse-flight-result__outcome span {
+  color: #fff7da;
+  font-size: clamp(.72rem, 1.5vw, .88rem);
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.horse-flight-result .arcade-leaderboard {
+  display: grid;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: .5rem;
+  overflow: hidden;
+}
+
+.horse-flight-result .arcade-leaderboard__heading {
+  margin: 0;
+  color: #ffe2a0;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  text-align: center;
+}
+
+.horse-flight-result .arcade-leaderboard__periods {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .35rem;
+}
+
+.horse-flight-result .arcade-leaderboard__period,
+.horse-flight-result .arcade-leaderboard__history button,
+.horse-flight-result .arcade-leaderboard__retry {
+  min-height: 2rem;
+  padding: .3rem .45rem;
+  border: 1px solid rgb(245 202 114 / 38%);
+  border-radius: .45rem;
+  background: #101c31;
+  color: #dce8f1;
+  font-size: .65rem;
+  font-weight: 850;
+}
+
+.horse-flight-result .arcade-leaderboard__period--active {
+  background: linear-gradient(145deg, #f5c75e, #bb7724);
+  color: #17120b;
+}
+
+.horse-flight-result .arcade-leaderboard__panel,
+.horse-flight-result .arcade-leaderboard__results {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.horse-flight-result .arcade-leaderboard__panel {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.horse-flight-result .arcade-leaderboard__results {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.horse-flight-result .arcade-leaderboard__dates,
+.horse-flight-result .arcade-leaderboard__state,
+.horse-flight-result .arcade-leaderboard__refund {
+  margin: .3rem 0;
+  color: #c6d2dc;
+  font-size: .62rem;
+  text-align: center;
+}
+
+.horse-flight-result .arcade-leaderboard__summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: .25rem;
+  margin: .35rem 0;
+}
+
+.horse-flight-result .arcade-leaderboard__summary div {
+  display: flex;
+  gap: .2rem;
+  padding: .25rem .35rem;
+  border-radius: .35rem;
+  background: rgb(38 50 70 / 76%);
+  font-size: .58rem;
+}
+
+.horse-flight-result .arcade-leaderboard__summary dd { margin: 0; color: #ffe09b; font-weight: 900; }
+.horse-flight-result .arcade-leaderboard__rows {
+  display: grid;
+  min-height: 0;
+  gap: .22rem;
+  margin: .4rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-gutter: stable;
+}
+
+.horse-flight-result .arcade-leaderboard__row {
+  display: grid;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
+  gap: .35rem;
+  padding: .28rem .42rem;
+  border-left: 2px solid #d89436;
+  border-radius: .3rem;
+  background: rgb(15 28 49 / 82%);
+  font-size: .65rem;
+}
+
+.horse-flight-result .arcade-leaderboard__position,
+.horse-flight-result .arcade-leaderboard__score { color: #ffe09b; }
+.horse-flight-result .arcade-leaderboard__history { display: flex; justify-content: center; gap: .35rem; margin-top: .35rem; }
+.horse-flight-result .arcade-leaderboard__pagination {
+  display: grid;
+  grid-template-columns: 2.2rem auto 2.2rem;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  margin-top: .4rem;
+  color: #ffe09b;
+  font: 900 .65rem/1 "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
+}
+.horse-flight-result .arcade-leaderboard__pagination button {
+  min-height: 1.8rem;
+  padding: .15rem;
+  border: 1px solid rgb(245 202 114 / 38%);
+  border-radius: .4rem;
+  background: #101c31;
+  color: #ffe09b;
+}
+.horse-flight-result .arcade-leaderboard__pagination button:disabled { opacity: .35; }
+.horse-flight-result__actions,
+.horse-flight-result__ranked { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
+.horse-flight-result__ranked { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.ff-horse-flight__over .horse-flight-result button {
+  min-height: 2.45rem;
+  margin: 0;
+  padding: .45rem .7rem;
+}
+
+.horse-flight-result__back { background: #182438 !important; color: #f8e5a8 !important; }
+.horse-flight-result__error { display: flex; align-items: center; justify-content: center; gap: .5rem; color: #ffb3a9; font-size: .67rem; }
+.horse-flight-result__error button { min-height: 1.9rem !important; }
+
+@media (max-height: 600px) {
+  .horse-flight-launch { gap: .35rem; padding-block: .65rem .45rem; }
+  .horse-flight-launch__heading h1 { font-size: clamp(2rem, 9vh, 3.15rem); }
+  .horse-flight-launch__panel { gap: .35rem; padding: .5rem; }
+  .horse-flight-launch__leaderboard .arcade-leaderboard__summary,
+  .horse-flight-launch__leaderboard .arcade-leaderboard__dates { display: none; }
+  .horse-flight-launch__leaderboard .arcade-leaderboard__rows { max-height: 4rem; }
+  .horse-flight-result { gap: .35rem; padding: .5rem; }
+  .horse-flight-result__outcome { padding: .28rem .45rem; }
+  .horse-flight-result .arcade-leaderboard { gap: .25rem; }
+  .horse-flight-result .arcade-leaderboard__heading { font-size: .82rem; }
+  .horse-flight-result .arcade-leaderboard__period { min-height: 1.65rem; padding: .18rem .3rem; }
+  .horse-flight-result .arcade-leaderboard__window { display: none; }
+  .horse-flight-result .arcade-leaderboard__rows { margin-top: 0; }
+  .horse-flight-result .arcade-leaderboard__row { padding-block: .2rem; }
+  .horse-flight-result .arcade-leaderboard__pagination { margin-top: .2rem; }
+  .ff-horse-flight__over .horse-flight-result button { min-height: 2rem; padding-block: .3rem; }
+}
+
+@media (max-width: 520px) {
+  .horse-flight-launch__menu { grid-template-columns: 1fr; }
+  .horse-flight-launch__button { min-height: 2.45rem; }
+  .horse-flight-launch__instructions li { grid-template-columns: 1fr; gap: .16rem; }
+
+  .horse-flight-page .ff-horse-flight__field:has(> .ff-horse-flight__over[data-terminal-overlay]) {
+    height: 100%;
+    max-height: none;
+    aspect-ratio: auto;
+    align-self: stretch;
+  }
+
+  .horse-flight-page .ff-horse-flight__over[data-terminal-overlay] { padding: .35rem; }
+  .horse-flight-result { gap: .4rem; padding: .45rem; }
+  .horse-flight-result .arcade-leaderboard { gap: .3rem; }
+  .horse-flight-result .arcade-leaderboard__heading { font-size: .9rem; }
+  .horse-flight-result .arcade-leaderboard__period { min-height: 1.8rem; padding: .22rem .3rem; }
+  .horse-flight-result .arcade-leaderboard__rows { margin-top: .2rem; }
+  .horse-flight-result__actions { gap: .35rem; }
+  .ff-horse-flight__over .horse-flight-result button { min-height: 2.15rem; padding-block: .32rem; }
 }

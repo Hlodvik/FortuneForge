@@ -1,0 +1,66 @@
+{
+  "origin": "http://127.0.0.1:5183",
+  "testedAt": "2026-10-20T17:33:50.844Z",
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "phone-320",
+      "width": 320,
+      "height": 640
+    },
+    {
+      "name": "phone-360",
+      "width": 360,
+      "height": 740
+    },
+    {
+      "name": "phone-390",
+      "width": 390,
+      "height": 844
+    },
+    {
+      "name": "phone-430",
+      "width": 430,
+      "height": 932
+    },
+    {
+      "name": "landscape",
+      "width": 844,
+      "height": 390
+    }
+  ],
+  "flows": [
+    "Wager debited once and initial server card shown",
+    "Refresh resumes same active round; skip preserves return",
+    "Touch rules dialog and Escape focus return",
+    "Lost cash-out response + reload replays exact key, credits once",
+    "Duplicate cash-out and changed-payload conflict leave balance unchanged",
+    "Keyboard starts round, mute suppresses media, collect plays approved sound",
+    "Real server loss resets return and permits a new wager",
+    "Reduced motion disables card animation; full round remains playable",
+    "Native media playback successfully decodes shuffle, deal and collect assets"
+  ],
+  "realAudio": [
+    {
+      "source": "http://127.0.0.1:5183/src/assets/audio/card-shuffle.ogg",
+      "played": true
+    },
+    {
+      "source": "http://127.0.0.1:5183/src/assets/audio/card-place-1.ogg",
+      "played": true
+    },
+    {
+      "source": "http://127.0.0.1:5183/src/assets/audio/chips-collide-1.ogg",
+      "played": true
+    }
+  ],
+  "browserErrors": [],
+  "audioSources": [
+    "http://127.0.0.1:5183/src/assets/audio/chips-handle-1.ogg",
+    "http://127.0.0.1:5183/src/assets/audio/chips-collide-1.ogg"
+  ]
+}

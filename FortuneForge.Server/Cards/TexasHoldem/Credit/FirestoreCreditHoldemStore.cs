@@ -130,7 +130,7 @@ internal sealed class FirestoreCreditHoldemStore(
                 var queue = ReadQueue(initial[1]);
                 queue.Add(ticket);
                 var selected = SelectMatch(queue, nowUtc);
-                if (selected.Count == 0)
+                if (selected.Count == 0 || !await CreateMatchAsync(transaction, partitionKey, queue, selected, seed, nowUtc, cancellationToken))
                 {
                     transaction.Create(TicketDocument(ticketId), TicketData(ticket));
                     transaction.Set(PartitionDocument(partitionKey), QueueData(
@@ -141,7 +141,6 @@ internal sealed class FirestoreCreditHoldemStore(
                         userId, "join", ticketId, detail, nowUtc));
                     return true;
                 }
-                await CreateMatchAsync(transaction, partitionKey, queue, selected, seed, nowUtc, cancellationToken);
                 transaction.Create(GuardDocument(userId, idempotencyKey), GuardData(
                     userId, "join", ticketId, detail, nowUtc));
                 return true;
@@ -466,8 +465,7 @@ internal sealed class FirestoreCreditHoldemStore(
             var queue = ReadQueue(snapshot);
             var selected = SelectMatch(queue, nowUtc);
             if (selected.Count == 0) return false;
-            await CreateMatchAsync(transaction, partitionKey, queue, selected, seed, nowUtc, cancellationToken);
-            return true;
+            return await CreateMatchAsync(transaction, partitionKey, queue, selected, seed, nowUtc, cancellationToken);
         }, cancellationToken: cancellationToken);
     }
 
@@ -764,7 +762,7 @@ internal sealed class FirestoreCreditHoldemStore(
         transaction.Set(MatchDocument(match.MatchId), MatchData(match), SetOptions.MergeAll);
     }
 
-    private async Task CreateMatchAsync(
+    private async Task<bool> CreateMatchAsync(
         Transaction transaction,
         string partitionKey,
         List<CreditHoldemTicket> queue,
@@ -795,6 +793,7 @@ internal sealed class FirestoreCreditHoldemStore(
             selected.Select(value => value.UserId).ToArray(),
             nowUtc,
             cancellationToken);
+        if (selected.Count + managedProfiles.Count < CreditHoldemMoney.MinimumStartPlayers) return false;
         var seats = TexasHoldemManagedPlayers.BuildSeats(selected, managedProfiles, balances, seed, rule, matchId);
         var match = CreditHoldemEngine.Deal(
             matchId, seats, partitionKey, seed, nowUtc, rule.Id);
@@ -819,6 +818,7 @@ internal sealed class FirestoreCreditHoldemStore(
             queue,
             selected.Count < CreditHoldemMoney.MaximumSeats ? matchId : string.Empty,
             nowUtc), SetOptions.MergeAll);
+        return true;
     }
 
     private Task<IReadOnlyList<ManagedPlayerProfile>> ManagedProfilesAsync(

@@ -1,27 +1,27 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { HorseFlightGatewayError, type HorseFlightGateway, type HorseFlightResult, type HorseFlightStatus } from './contracts'
 import { HttpHorseFlightGateway } from './httpHorseFlightGateway'
-import { hauntedBiomeBlend, horseScreenX, startHorse, stepHorse, type HorseState, type ObstacleKind } from './horseFlightSimulation'
+import { biomeSectionForTick, horseScreenX, startHorse, stepHorse, type HorseBiome, type HorseState, type ObstacleKind } from './horseFlightSimulation'
+import { HorseBiomeScenery } from './HorseBiomeScenery'
+import { HorseBiomeObstacleArt, isHorseBiomeObstacleKind } from './HorseBiomeObstacleArt'
+import { CaptureHorseArtwork, CaptureThrowArtwork } from './HorseCaptureArtwork'
+import { horseSpriteScale, jumpSpriteGeometry, terminalGroundBaseline, terminalSpriteGeometry } from './horseSpriteScale'
 import horseDashSpriteSheet from './horse-flight-dash-sprite-sheet-v1.png?no-inline'
-import horseJumpSpriteSheet from './horse-flight-jump-sprite-sheet-v2.png?no-inline'
-import horseRearSpriteSheet from './horse-flight-rear-sprite-sheet-v1.png?no-inline'
+import horseCrashSpriteSheet from './horse-flight-crash-sprite-sheet-v2.png?no-inline'
+import horseJumpSpriteSheet from './horse-flight-jump-sprite-sheet-v3.png?no-inline'
+import horseRearSpriteSheet from './horse-flight-rear-sprite-sheet-v2.png?no-inline'
+import horseSlipSpriteSheet from './horse-flight-slip-sprite-sheet-v2.png?no-inline'
+import horseRockSkidSpriteSheet from './horse-flight-rock-skid-sprite-sheet-v1.png?no-inline'
+import horseTripSpriteSheet from './horse-flight-trip-over-sprite-sheet-v1.png?no-inline'
 import horseMountainBackground from './horse-flight-mountain-background-v1.png?no-inline'
-import horseMedievalMidground from './horse-flight-medieval-midground-4x-v1.png?no-inline'
-import horseHauntedBackground from './horse-flight-haunted-background-v1.png?no-inline'
-import horseHauntedMidground from './horse-flight-haunted-midground-v1.png?no-inline'
-import horseRunSpriteSheet from './horse-flight-run-sprite-sheet-v2.png?no-inline'
+import horseRunSpriteSheet from './horse-flight-run-sprite-sheet-v3.png?no-inline'
 import obstacleBoulder from './obstacles/horse-flight-obstacle-boulder-v1.png?no-inline'
-import obstacleCrate from './obstacles/horse-flight-obstacle-crate-single-v1.png?no-inline'
-import obstacleCrateCluster from './obstacles/horse-flight-obstacle-crate-double-v1.png?no-inline'
 import obstacleFallenLog from './obstacles/horse-flight-obstacle-fallen-log-v3.png?no-inline'
 import obstacleFence from './obstacles/horse-flight-obstacle-fence-v2.png?no-inline'
-import obstacleOilSpill from './obstacles/horse-flight-obstacle-oil-spill-v1.png?no-inline'
 import obstaclePit from './obstacles/horse-flight-obstacle-pit-v1.png?no-inline'
 import obstacleWell from './obstacles/horse-flight-obstacle-well-v3.png?no-inline'
 import obstacleBats from './animated-obstacles/horse-flight-animated-bats-horizontal-v2.png?no-inline'
 import obstacleLassoKnockdown from './animated-obstacles/horse-flight-animated-lasso-knockdown-horizontal-v1.png?no-inline'
-import obstacleLassoThrower from './animated-obstacles/horse-flight-animated-lasso-thrower-horizontal-v3.png?no-inline'
-import obstacleNetTower from './animated-obstacles/horse-flight-animated-net-tower-horizontal-v1.png?no-inline'
 import obstacleRollingBarrel from './animated-obstacles/horse-flight-animated-rolling-barrel-horizontal-v3.png?no-inline'
 import obstacleSkeletonDog from './animated-obstacles/horse-flight-animated-skeleton-dog-horizontal-v1.png?no-inline'
 import obstacleSkeletonDogKnockdown from './animated-obstacles/horse-flight-animated-skeleton-dog-knockdown-horizontal-v1.png?no-inline'
@@ -30,26 +30,72 @@ import './horseFlight.css'
 import './horseFlightArt.css'
 
 const defaultGateway = new HttpHorseFlightGateway()
-const horseSpriteFrameWidth = 2172 / 8
-const horseSpriteFrameTop = 240
-const horseSpriteFrameHeight = 224
-const horseSpriteSheetHeight = 724
+const legacyHorseSpriteFrameWidth = 2172 / 8
+const legacyHorseSpriteFrameTop = 240
+const legacyHorseSpriteFrameHeight = 224
+const legacyHorseSpriteSheetWidth = 2172
+const legacyHorseSpriteSheetHeight = 724
 const runningTrackTop = 460
-const rearingHoldMilliseconds = 1_250
 const openingRunInTicks = 42
 const rearingHorseCenterX = 960 * 0.08
-const runningHorseArtWidth = 55
-// Keep the rearing pose on the same ground line and at the same on-screen scale
-// as the normal running sheet. The generated rear frames fill almost their entire
-// 240×256 cell, whereas the running art has generous frame padding.
-const rearingHorseArtWidth = 55
-const rearingHorseArtHeight = 45
-const rearingSpriteFrameWidth = 240
-const rearingSpriteFrameHeight = 256
-const rearingSpriteSheetWidth = rearingSpriteFrameWidth * 6
-const rearingFrameMilliseconds = 120
+const runningHorseArtWidth = horseSpriteScale.running.width
+const runningHorseArtHeight = horseSpriteScale.running.height
+const legacyHorseArtWidth = horseSpriteScale.dash.width
+const legacyHorseArtHeight = horseSpriteScale.dash.height
+const rearingHorseArtWidth = horseSpriteScale.rear.width
+const rearingHorseArtHeight = horseSpriteScale.rear.height
 const runningFrameMilliseconds = 90
-type HorseSpriteFrame = Readonly<{ sheet: string; index: number }>
+const rearingFrameMilliseconds = runningFrameMilliseconds
+const rearingSpriteColumns = 3
+const rearingSpriteRows = 4
+const rearingSpriteFrameCount = rearingSpriteColumns * rearingSpriteRows
+const rearingSpriteFrameWidth = 362
+const rearingSpriteFrameHeight = 362
+const rearingSpriteSheetWidth = rearingSpriteFrameWidth * rearingSpriteColumns
+const rearingSpriteSheetHeight = rearingSpriteFrameHeight * rearingSpriteRows
+const terminalHorseArtSize = horseSpriteScale.terminal.width
+const terminalHorseFrameMilliseconds = 54
+const terminalHorseSpriteFrameCount = 8
+const tripForwardProgress = [0, .08, .22, .42, .62, .78, .92, 1] as const
+const tripArcProgress = [0, .2, .64, .92, 1, .72, .3, 0] as const
+const tripGroundProgress = [0, 0, 0, .08, .24, .54, .82, 1] as const
+const skidForwardProgress = [0, .08, .19, .34, .56, .76, .91, 1] as const
+const skidGroundProgress = [0, .08, .2, .4, .64, .82, .94, 1] as const
+// Image generation keeps each pose in a fixed atlas cell, while these small root
+// offsets keep the planted hoof and body center stable throughout the transition.
+const rearingFrameOffsets = [
+  { x: 8, y: 0 }, { x: 13, y: 2 }, { x: 4, y: 0 },
+  { x: 3, y: 6 }, { x: 0, y: 6 }, { x: 0, y: 6 },
+  { x: -8, y: 30 }, { x: -2, y: 30 }, { x: 4, y: 30 },
+  { x: -3, y: 68 }, { x: 3, y: 68 }, { x: -5, y: 66 },
+] as const
+// The new sheet is 1774×887: each column is 443 or 444 whole pixels.
+// Cropping row-specific transparent headroom makes the actual horse, not the
+// atlas cell, match the approved rearing pose's visible height.
+const runningFrameCrops = [
+  { sourceX: 0, sourceY: 108, sourceWidth: 444, sourceHeight: 300 },
+  { sourceX: 444, sourceY: 108, sourceWidth: 443, sourceHeight: 300 },
+  { sourceX: 887, sourceY: 108, sourceWidth: 444, sourceHeight: 300 },
+  { sourceX: 1331, sourceY: 108, sourceWidth: 443, sourceHeight: 300 },
+  { sourceX: 0, sourceY: 494, sourceWidth: 444, sourceHeight: 300 },
+  { sourceX: 444, sourceY: 494, sourceWidth: 443, sourceHeight: 300 },
+  { sourceX: 887, sourceY: 494, sourceWidth: 444, sourceHeight: 300 },
+  { sourceX: 1331, sourceY: 494, sourceWidth: 443, sourceHeight: 300 },
+] as const
+type HorseSpriteFrame = Readonly<{
+  sheet: string
+  index: number
+  sourceX?: number
+  sourceY?: number
+  sourceWidth?: number
+  sourceHeight?: number
+  sheetWidth?: number
+  sheetHeight?: number
+  artWidth?: number
+  artHeight?: number
+  groundOffset?: number
+}>
+type TerminalHorseSpriteFrame = Readonly<{ sheet: string } & ReturnType<typeof terminalSpriteGeometry>>
 type ObstacleSpriteSheet = Readonly<{
   width: number
   height: number
@@ -59,48 +105,128 @@ type ObstacleSpriteSheet = Readonly<{
   frameCrop?: Readonly<{ x: number; y: number; width: number; height: number }>
 }>
 type StaticObstacleCrop = Readonly<{ sourceWidth: number; sourceHeight: number; x: number; y: number; width: number; height: number }>
+type RenderedObstacleFrame = Readonly<{
+  index: number
+  x: number
+  y: number
+  width: number
+  height: number
+  sheetWidth: number
+  sheetHeight: number
+}>
 type ObstacleArtwork = Readonly<{
   source: string
   label: string
+  failureMessage: string
   spriteSheet?: ObstacleSpriteSheet
   knockdownSource?: string
   knockdownSpriteSheet?: ObstacleSpriteSheet
   staticCrop?: StaticObstacleCrop
 }>
 
+export type HorseTerminalReaction = 'crash' | 'trip-over' | 'slip' | 'rock-skid' | 'bat-retreat' | 'lasso-caught' | 'net-caught' | 'fall' | 'impact'
+export type HorseTerminalPhase = Exclude<HorseState['phase'], 'running'>
+
 const obstacleArtwork: Readonly<Record<ObstacleKind, ObstacleArtwork>> = {
-  crate: { source: obstacleCrate, label: 'tombstone' },
-  'crate-cluster': { source: obstacleCrateCluster, label: 'tombstone cluster' },
-  pit: { source: obstaclePit, label: 'sunken pit', staticCrop: { sourceWidth: 1774, sourceHeight: 887, x: 60, y: 304, width: 1654, height: 355 } },
-  well: { source: obstacleWell, label: 'well', staticCrop: { sourceWidth: 112, sourceHeight: 104, x: 8, y: 12, width: 96, height: 88 } },
-  fence: { source: obstacleFence, label: 'fence', staticCrop: { sourceWidth: 354, sourceHeight: 177, x: 76, y: 59, width: 203, height: 66 } },
-  carriage: { source: obstacleBoulder, label: 'wooden obstacle', staticCrop: { sourceWidth: 1536, sourceHeight: 1024, x: 275, y: 275, width: 987, height: 518 } },
-  'oil-spill': { source: obstacleOilSpill, label: 'green grave goo' },
-  boulder: { source: obstacleBoulder, label: 'boulder', staticCrop: { sourceWidth: 1536, sourceHeight: 1024, x: 275, y: 275, width: 987, height: 518 } },
-  'fallen-log': { source: obstacleFallenLog, label: 'fallen log', staticCrop: { sourceWidth: 160, sourceHeight: 80, x: 4, y: 20, width: 144, height: 40 } },
+  crate: { source: '', label: 'tombstone', failureMessage: 'You ran into a tombstone!' },
+  'crate-cluster': { source: '', label: 'tombstone cluster', failureMessage: 'You crashed into a cluster of tombstones!' },
+  pit: { source: obstaclePit, label: 'sunken pit', failureMessage: 'You fell into a sunken pit!', staticCrop: { sourceWidth: 1774, sourceHeight: 887, x: 60, y: 304, width: 1654, height: 355 } },
+  well: { source: obstacleWell, label: 'well', failureMessage: 'You ran into a well!', staticCrop: { sourceWidth: 112, sourceHeight: 104, x: 8, y: 12, width: 96, height: 88 } },
+  fence: { source: obstacleFence, label: 'fence', failureMessage: 'You tripped over a fence!', staticCrop: { sourceWidth: 354, sourceHeight: 177, x: 76, y: 59, width: 203, height: 66 } },
+  carriage: { source: obstacleBoulder, label: 'wooden obstacle', failureMessage: 'A carriage blocked your escape!', staticCrop: { sourceWidth: 1536, sourceHeight: 1024, x: 275, y: 275, width: 987, height: 518 } },
+  'oil-spill': { source: '', label: 'oil slick', failureMessage: 'You slipped on an oil slick!' },
+  boulder: { source: obstacleBoulder, label: 'boulder', failureMessage: 'You ran into a boulder!', staticCrop: { sourceWidth: 1536, sourceHeight: 1024, x: 275, y: 275, width: 987, height: 518 } },
+  'fallen-log': { source: obstacleFallenLog, label: 'fallen log', failureMessage: 'You tripped over a fallen log!', staticCrop: { sourceWidth: 160, sourceHeight: 80, x: 4, y: 20, width: 144, height: 40 } },
   dog: {
     source: obstacleSkeletonDog,
     label: 'skeleton hound',
+    failureMessage: 'A skeleton hound caught you!',
     spriteSheet: { width: 2172, height: 724, columns: 6, rows: 1, ticksPerFrame: 3, frameCrop: { x: 0, y: 180, width: 362, height: 360 } },
     knockdownSource: obstacleSkeletonDogKnockdown,
     knockdownSpriteSheet: { width: 2172, height: 724, columns: 6, rows: 1, ticksPerFrame: 2, frameCrop: { x: 0, y: 180, width: 362, height: 360 } },
   },
-  'bat-flock': { source: obstacleBats, label: 'flying bats', spriteSheet: { width: 1152, height: 128, columns: 6, rows: 1, ticksPerFrame: 3 } },
+  'bat-flock': { source: obstacleBats, label: 'flying bats', failureMessage: 'A flock of bats scared you back!', spriteSheet: { width: 1152, height: 128, columns: 6, rows: 1, ticksPerFrame: 3 } },
   'lasso-thrower': {
-    source: obstacleLassoThrower,
+    source: '',
     label: 'lasso thrower',
-    spriteSheet: { width: 1120, height: 112, columns: 8, rows: 1, ticksPerFrame: 4 },
+    failureMessage: 'A peasant caught you with a lasso!',
     knockdownSource: obstacleLassoKnockdown,
     knockdownSpriteSheet: { width: 768, height: 112, columns: 6, rows: 1, ticksPerFrame: 2 },
   },
-  'net-tower': { source: obstacleNetTower, label: 'net tower', spriteSheet: { width: 1024, height: 160, columns: 8, rows: 1, ticksPerFrame: 4 } },
-  skeleton: { source: obstacleSkeleton, label: 'shambling skeleton', spriteSheet: { width: 768, height: 112, columns: 6, rows: 1, ticksPerFrame: 3 } },
-  'rolling-barrel': { source: obstacleRollingBarrel, label: 'rolling barrel', spriteSheet: { width: 768, height: 128, columns: 4, rows: 1, ticksPerFrame: 3 } },
+  'net-tower': { source: '', label: 'net tower', failureMessage: 'You were caught in the tower’s net!' },
+  skeleton: { source: obstacleSkeleton, label: 'shambling skeleton', failureMessage: 'A skeleton blocked your escape!', spriteSheet: { width: 768, height: 112, columns: 6, rows: 1, ticksPerFrame: 3 } },
+  'rolling-barrel': { source: obstacleRollingBarrel, label: 'rolling barrel', failureMessage: 'A rolling barrel knocked you down!', spriteSheet: { width: 768, height: 128, columns: 4, rows: 1, ticksPerFrame: 3 } },
+  'market-cart': { source: '', label: 'market cart', failureMessage: 'You crashed into a market cart!' },
+  'hanging-sign': { source: '', label: 'hanging sign', failureMessage: 'You struck a hanging sign!' },
+  'thorn-bramble': { source: '', label: 'thorn bramble', failureMessage: 'You were caught in thorn brambles!' },
+  'spike-barricade': { source: '', label: 'spike barricade', failureMessage: 'You hit a spike barricade!' },
+  cactus: { source: '', label: 'cactus', failureMessage: 'You ran into a cactus!' },
+  'storm-cloud': { source: '', label: 'storm cloud', failureMessage: 'A storm cloud struck you!' },
 }
 
-export type HorseFlightGameProps = Readonly<{ gateway?: HorseFlightGateway; playerId?: string }>
+type GroundPalette = Readonly<{ earth: string; seam: string; stone: string; turf: string; turfLight: string; turfDark: string }>
+const groundPalettes: Readonly<Record<HorseBiome, GroundPalette>> = {
+  mountain: { earth: '#181a27', seam: '#3b4051', stone: '#282c3d', turf: '#609b14', turfLight: '#86c828', turfDark: '#426f12' },
+  'castle-town': { earth: '#48454a', seam: '#797379', stone: '#5e5860', turf: '#8e867d', turfLight: '#b4a796', turfDark: '#625e60' },
+  'dark-forest': { earth: '#14252b', seam: '#304747', stone: '#21363b', turf: '#2f513a', turfLight: '#55754a', turfDark: '#203e33' },
+  battleground: { earth: '#302b32', seam: '#64534b', stone: '#443b3e', turf: '#655b4a', turfLight: '#8a795c', turfDark: '#4b453c' },
+  haunted: { earth: '#1d1b29', seam: '#49465d', stone: '#302c40', turf: '#3d4a42', turfLight: '#657866', turfDark: '#29372e' },
+  desert: { earth: '#805a4d', seam: '#b68a62', stone: '#9b7155', turf: '#c59a65', turfLight: '#e4bc7c', turfDark: '#a8784f' },
+  sky: { earth: '#586a75', seam: '#a2afb2', stone: '#718892', turf: '#a9b8b9', turfLight: '#e0e5dc', turfDark: '#809ca4' },
+}
 
-export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGameProps) {
+function blendColor(first: string, second: string, fraction: number): string {
+  const channel = (offset: number) => {
+    const start = Number.parseInt(first.slice(offset, offset + 2), 16)
+    const end = Number.parseInt(second.slice(offset, offset + 2), 16)
+    return Math.round(start + (end - start) * fraction).toString(16).padStart(2, '0')
+  }
+  return `#${channel(1)}${channel(3)}${channel(5)}`
+}
+
+function paletteForSection(section: ReturnType<typeof biomeSectionForTick>): GroundPalette {
+  if (section.phase === 'main') return groundPalettes[section.biome]
+  const first = groundPalettes[section.from]
+  const second = groundPalettes[section.to]
+  return {
+    earth: blendColor(first.earth, second.earth, section.blend),
+    seam: blendColor(first.seam, second.seam, section.blend),
+    stone: blendColor(first.stone, second.stone, section.blend),
+    turf: blendColor(first.turf, second.turf, section.blend),
+    turfLight: blendColor(first.turfLight, second.turfLight, section.blend),
+    turfDark: blendColor(first.turfDark, second.turfDark, section.blend),
+  }
+}
+
+export type HorseFlightEndScreenState = Readonly<{
+  error: string | null
+  isSaving: boolean
+  phase: HorseTerminalPhase
+  result: HorseFlightResult | null
+  retrySave: () => void
+  score: number
+  terminalMessage: string
+  terminalObstacleKind: ObstacleKind | null
+}>
+
+export type HorseFlightLaunchScreenState = Readonly<{
+  available: boolean
+  connecting: boolean
+  error: string | null
+  retryConnection: () => void
+}>
+
+export type HorseFlightGameProps = Readonly<{
+  autoStart?: boolean
+  debugFreePlay?: boolean
+  gateway?: HorseFlightGateway
+  onResult?: (result: HorseFlightResult) => void
+  playerId?: string
+  renderEndScreen?: (state: HorseFlightEndScreenState) => ReactNode
+  renderLaunchScreen?: (state: HorseFlightLaunchScreenState) => ReactNode
+}>
+
+export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gateway = defaultGateway, onResult, renderEndScreen, renderLaunchScreen }: HorseFlightGameProps) {
   const [status, setStatus] = useState<HorseFlightStatus | null>(null)
   const [game, setGame] = useState<HorseState | null>(null)
   const [result, setResult] = useState<HorseFlightResult | null>(null)
@@ -110,20 +236,30 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   const [openingPose, setOpeningPose] = useState(false)
   const [rearingFrame, setRearingFrame] = useState(0)
   const [runningFrame, setRunningFrame] = useState(0)
+  const [terminalHorseFrame, setTerminalHorseFrame] = useState(0)
   const [paused, setPaused] = useState(false)
-  const [nearMiss, setNearMiss] = useState<string | null>(null)
-  const [rehearsalStep, setRehearsalStep] = useState(readRehearsalComplete() ? 2 : 0)
+  const [godMode, setGodMode] = useState(false)
+  const [fastMode, setFastMode] = useState(false)
   const gameRef = useRef<HorseState | null>(null)
   const runId = useRef<string | null>(null)
   const queuedJump = useRef(false)
   const queuedRightClick = useRef(false)
   const dashHeld = useRef(false)
+  const fastModeHeld = useRef(false)
+  const godModeEnabled = useRef(false)
+  const usedDebugMode = useRef(false)
   const jumps = useRef<number[]>([])
   const rightClicks = useRef<number[]>([])
   const submitted = useRef(false)
   const field = useRef<HTMLElement | null>(null)
   const startRequestKey = useRef<string | null>(null)
   const completionRequestKey = useRef<string | null>(null)
+  const autoStartRequested = useRef(false)
+  // The game package is prebuilt for the app, so its own Vite DEV flag is
+  // always false even when the consuming app runs locally. The route supplies
+  // the DEV-gated prop; the loopback check keeps this test hook local-only.
+  const isLocalHost = typeof window !== 'undefined' && ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
+  const canDebugFreePlay = isLocalHost && debugFreePlay && status?.mode === 'free'
 
   const accept = useCallback((next: HorseState) => {
     gameRef.current = next
@@ -153,10 +289,14 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
     queuedJump.current = false
     queuedRightClick.current = false
     dashHeld.current = false
+    fastModeHeld.current = false
+    godModeEnabled.current = false
+    usedDebugMode.current = false
+    setGodMode(false)
+    setFastMode(false)
     jumps.current = []
     rightClicks.current = []
     setPaused(false)
-    setNearMiss(null)
     const idempotencyKey = startRequestKey.current ??= key('start')
     try {
       const run = await gateway.start({ idempotencyKey })
@@ -172,36 +312,96 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   }, [accept, gateway, status?.available])
 
   useEffect(() => {
-    if (game?.phase !== 'running') {
-      setOpeningPose(false)
-      return undefined
-    }
-
-    setOpeningPose(true)
-    const timer = window.setTimeout(() => setOpeningPose(false), rearingHoldMilliseconds)
-    return () => window.clearTimeout(timer)
-  }, [game?.phase])
+    if (!autoStart || autoStartRequested.current || !status?.available || game !== null) return
+    autoStartRequested.current = true
+    void start()
+  }, [autoStart, game, start, status?.available])
 
   useEffect(() => {
-    if (!openingPose || game?.phase !== 'running') {
+    if (game?.phase !== 'running') {
+      setOpeningPose(false)
       setRearingFrame(0)
       return undefined
     }
 
+    setOpeningPose(true)
     setRearingFrame(0)
-    const timer = window.setInterval(
-      () => setRearingFrame(frame => Math.min(frame + 1, 5)),
-      rearingFrameMilliseconds)
-    return () => window.clearInterval(timer)
-  }, [game?.phase, openingPose])
+    const startedAt = Date.now()
+    let timer = 0
+    const advanceOpening = () => {
+      const elapsed = Date.now() - startedAt
+      const nextFrame = Math.floor(elapsed / rearingFrameMilliseconds)
+      if (nextFrame >= rearingSpriteFrameCount) {
+        setOpeningPose(false)
+        setRearingFrame(0)
+        return
+      }
+      setRearingFrame(nextFrame)
+      const nextFrameAt = (nextFrame + 1) * rearingFrameMilliseconds
+      timer = window.setTimeout(advanceOpening, Math.max(1, nextFrameAt - elapsed))
+    }
+    timer = window.setTimeout(advanceOpening, rearingFrameMilliseconds)
+    return () => window.clearTimeout(timer)
+  }, [game?.phase])
 
   useEffect(() => {
-    const releaseDash = (event: MouseEvent) => {
-      if (event.button === 2) dashHeld.current = false
+    const releaseHeldRightButton = (event: MouseEvent | PointerEvent) => {
+      if (event.button !== 2 && (event.buttons & 2) !== 0) return
+      dashHeld.current = false
+      fastModeHeld.current = false
+      setFastMode(false)
     }
-    window.addEventListener('mouseup', releaseDash)
-    return () => window.removeEventListener('mouseup', releaseDash)
+    const releaseAll = () => {
+      dashHeld.current = false
+      fastModeHeld.current = false
+      setFastMode(false)
+    }
+    const releaseOnHidden = () => { if (document.hidden) releaseAll() }
+    window.addEventListener('mouseup', releaseHeldRightButton)
+    window.addEventListener('pointerup', releaseHeldRightButton)
+    window.addEventListener('pointercancel', releaseAll)
+    window.addEventListener('blur', releaseAll)
+    document.addEventListener('visibilitychange', releaseOnHidden)
+    return () => {
+      window.removeEventListener('mouseup', releaseHeldRightButton)
+      window.removeEventListener('pointerup', releaseHeldRightButton)
+      window.removeEventListener('pointercancel', releaseAll)
+      window.removeEventListener('blur', releaseAll)
+      document.removeEventListener('visibilitychange', releaseOnHidden)
+    }
   }, [])
+
+  useEffect(() => {
+    if (game?.phase === 'running' && !paused) return
+    fastModeHeld.current = false
+    setFastMode(false)
+  }, [game?.phase, paused])
+
+  useEffect(() => {
+    if (!canDebugFreePlay || game?.phase !== 'running') return undefined
+    const toggleGodMode = (event: KeyboardEvent) => {
+      if (event.code !== 'KeyG' || !event.ctrlKey || !event.altKey || event.repeat) return
+      event.preventDefault()
+      godModeEnabled.current = !godModeEnabled.current
+      if (godModeEnabled.current) {
+        usedDebugMode.current = true
+        if (dashHeld.current) {
+          dashHeld.current = false
+          queuedRightClick.current = false
+          fastModeHeld.current = true
+          setFastMode(true)
+        }
+      } else if (fastModeHeld.current) {
+        fastModeHeld.current = false
+        setFastMode(false)
+        dashHeld.current = true
+        queuedRightClick.current = true
+      }
+      setGodMode(godModeEnabled.current)
+    }
+    window.addEventListener('keydown', toggleGodMode)
+    return () => window.removeEventListener('keydown', toggleGodMode)
+  }, [canDebugFreePlay, game?.phase])
 
   useEffect(() => {
     if (openingPose || game?.phase !== 'running' || paused) {
@@ -216,9 +416,24 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
   }, [game?.phase, openingPose, paused])
 
   const complete = useCallback((terminal: HorseState) => {
+    if (terminal.phase === 'running') return
     const currentRunId = runId.current
     if (submitted.current || currentRunId === null) return
     submitted.current = true
+    if (canDebugFreePlay && usedDebugMode.current) {
+      // Debugged runs are local-only: the replay no longer matches the server's
+      // authoritative simulation and must never reach a leaderboard.
+      setResult({
+        runId: `horse-flight-debug-${currentRunId}`,
+        balance: status?.balance ?? 0,
+        score: terminal.score,
+        phase: terminal.phase,
+        totalTicks: terminal.tick,
+        jumpTicks: [...jumps.current],
+        rightClickTicks: [...rightClicks.current],
+      })
+      return
+    }
     const idempotencyKey = completionRequestKey.current ??= key('complete')
     const submission = {
       runId: currentRunId,
@@ -231,11 +446,12 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
       completionRequestKey.current = null
       setResult(response)
       setError(null)
+      onResult?.(response)
     }).catch(reason => {
       submitted.current = false
       setError(messageForError(reason, 'Horse Flight score could not be recorded.'))
     })
-  }, [gateway])
+  }, [canDebugFreePlay, gateway, onResult, status?.balance])
 
   useEffect(() => {
     if (!status || !game || game.phase !== 'running' || openingPose || paused) return undefined
@@ -243,24 +459,19 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
       const current = gameRef.current
       if (!current || current.phase !== 'running') return
       const wantsDash = dashHeld.current || queuedRightClick.current
-      const next = stepHorse(current, queuedJump.current, wantsDash)
+      const debug = canDebugFreePlay
+        ? { godMode: godModeEnabled.current, speedMultiplier: fastModeHeld.current ? 3 as const : undefined }
+        : undefined
+      const next = stepHorse(current, queuedJump.current, wantsDash, debug)
       queuedJump.current = false
       queuedRightClick.current = false
       if (next.jumped) jumps.current.push(current.tick)
       if (next.slid || next.fastFell) rightClicks.current.push(current.tick)
-      const clearedObstacle = current.obstacles.find(obstacle => {
-        const moved = next.state.obstacles.find(candidate => candidate.id === obstacle.id)
-        return moved && obstacle.x + obstacle.width >= horseScreenX - 24 && moved.x + moved.width < horseScreenX - 24
-      })
-      if (clearedObstacle) {
-        setNearMiss(`Clean pass: ${obstacleArtwork[clearedObstacle.kind].label}`)
-        window.setTimeout(() => setNearMiss(null), 900)
-      }
       accept(next.state)
       if (next.state.phase !== 'running') complete(next.state)
     }, status.tickMilliseconds)
     return () => window.clearInterval(timer)
-  }, [accept, complete, game?.phase, openingPose, paused, status])
+  }, [accept, canDebugFreePlay, complete, game?.phase, openingPose, paused, status])
 
   useEffect(() => {
     if (game?.phase !== 'running') return
@@ -302,72 +513,120 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
 
   const endDash = () => { dashHeld.current = false }
 
+  const beginFastMode = () => {
+    if (!canDebugFreePlay || !godModeEnabled.current || openingPose || gameRef.current?.phase !== 'running') return
+    fastModeHeld.current = true
+    usedDebugMode.current = true
+    setFastMode(true)
+  }
+
+  const endFastMode = () => {
+    fastModeHeld.current = false
+    setFastMode(false)
+  }
+
   const retryStatus = () => {
     setError(null)
     setTableUnavailable(false)
     setStatusLoadAttempt(attempt => attempt + 1)
   }
-  const rehearse = (action: 'jump' | 'dash') => {
-    setRehearsalStep(step => {
-      const next = action === 'jump' ? Math.max(step, 1) : step >= 1 ? 2 : step
-      if (next === 2) writeRehearsalComplete()
-      return next
-    })
-  }
-  const horseSpriteFrame = game && !openingPose ? spriteFrameFor(game, runningFrame) : null
+  const terminalReaction = horseFlightTerminalReaction(game?.phase ?? null, game?.terminalObstacleKind ?? null, game?.terminalRockLanding ?? false)
+  useEffect(() => {
+    if (terminalReaction !== 'crash' && terminalReaction !== 'trip-over' && terminalReaction !== 'slip' && terminalReaction !== 'rock-skid' && terminalReaction !== 'impact' && terminalReaction !== 'lasso-caught' && terminalReaction !== 'net-caught') {
+      setTerminalHorseFrame(0)
+      return undefined
+    }
+
+    let frame = 0
+    setTerminalHorseFrame(frame)
+    const timer = window.setInterval(() => {
+      frame++
+      setTerminalHorseFrame(Math.min(frame, terminalHorseSpriteFrameCount - 1))
+      if (frame >= terminalHorseSpriteFrameCount - 1) window.clearInterval(timer)
+    }, terminalHorseFrameMilliseconds)
+    return () => window.clearInterval(timer)
+  }, [terminalReaction])
+  const terminalMessage = horseFlightTerminalMessage(game?.phase ?? null, game?.terminalObstacleKind ?? null)
+  const terminalRearFrame = terminalReaction === 'bat-retreat' ? 8 : null
+  const displayedRearFrame = openingPose ? rearingFrame : terminalRearFrame
+  const terminalHorseSpriteFrame = terminalHorseSpriteFor(terminalReaction, terminalHorseFrame)
+  const horseSpriteFrame = game && displayedRearFrame === null && terminalHorseSpriteFrame === null && terminalReaction !== 'lasso-caught' && terminalReaction !== 'net-caught' ? spriteFrameFor(game, runningFrame) : null
+  const horseSpriteSourceX = horseSpriteFrame ? horseSpriteFrame.sourceX ?? horseSpriteFrame.index * legacyHorseSpriteFrameWidth : 0
+  const horseSpriteSourceY = horseSpriteFrame?.sourceY ?? legacyHorseSpriteFrameTop
+  const horseSpriteSourceWidth = horseSpriteFrame?.sourceWidth ?? legacyHorseSpriteFrameWidth
+  const horseSpriteSourceHeight = horseSpriteFrame?.sourceHeight ?? legacyHorseSpriteFrameHeight
+  const horseSpriteSheetWidth = horseSpriteFrame?.sheetWidth ?? legacyHorseSpriteSheetWidth
+  const horseSpriteSheetHeight = horseSpriteFrame?.sheetHeight ?? legacyHorseSpriteSheetHeight
+  const horseSpriteArtWidth = horseSpriteFrame?.artWidth ?? legacyHorseArtWidth
+  const horseSpriteArtHeight = horseSpriteFrame?.artHeight ?? legacyHorseArtHeight
   const runInProgress = !openingPose && game?.phase === 'running'
+  const sceneMoving = runInProgress && !paused
   const runInProgressRatio = runInProgress ? Math.min(game.tick / openingRunInTicks, 1) : 1
   const horseCenterX = openingPose
     ? rearingHorseCenterX
     : rearingHorseCenterX + ((horseScreenX - rearingHorseCenterX) * runInProgressRatio)
-  const hauntedSceneOpacity = game ? hauntedBiomeBlend(game.tick) : 0
-  const activeBiome = game?.biome ?? 'mountain'
+  const terminalHorsePosition = terminalHorseSpriteFrame && game
+    ? terminalReaction === 'trip-over'
+      ? tripHorsePosition(game, horseCenterX, terminalHorseFrame)
+      : terminalReaction === 'rock-skid'
+        ? skidHorsePosition(game, horseCenterX, terminalHorseFrame)
+      : groundImpactHorsePosition(game, horseCenterX, terminalHorseFrame)
+    : null
+  const rearingFrameColumn = (displayedRearFrame ?? 0) % rearingSpriteColumns
+  const rearingFrameRow = Math.floor((displayedRearFrame ?? 0) / rearingSpriteColumns)
+  const rearingFrameOffset = rearingFrameOffsets[displayedRearFrame ?? 0] ?? rearingFrameOffsets[0]
+  const biomeSection = biomeSectionForTick(game?.tick ?? 0, game?.rulesVersion)
+  const activeBiome = biomeSection.biome
+  const groundPalette = paletteForSection(biomeSection)
+  const activeLasso = game ? activeCaptureObstacle(game, 'lasso-thrower') : null
+  const activeNetTower = game ? activeCaptureObstacle(game, 'net-tower') : null
 
   return <main className="ff-horse-flight" data-active-biome={activeBiome}>
-    <header className="ff-horse-flight__header">
-      <div><small>{activeBiome === 'haunted' ? 'Haunted trail' : 'Mountain pass'}</small><h1>Horse Flight</h1></div>
-      <p><b>Space / tap Jump / A</b> to double-jump. <b>Hold Dash / B</b> to slide under high hazards or fast-fall in mid-air. <b>P / Start</b> pauses.</p>
-    </header>
     {!game && <section className="ff-horse-flight__lobby">
-      <div className="ff-horse-flight__lobby-scene" style={{ backgroundImage: `linear-gradient(180deg, rgb(5 11 23 / 12%) 20%, rgb(5 11 23 / 72%) 100%), url(${horseMountainBackground})` }} aria-hidden="true">
-        <div className="ff-horse-flight__lobby-copy"><span>Mountain pass</span><strong>Ready to ride?</strong><div className="ff-horse-flight__rehearsal" aria-label="Control rehearsal"><button type="button" className={rehearsalStep >= 1 ? 'is-complete' : ''} onClick={() => rehearse('jump')}>1. Tap Jump <span>clear ground hazards</span></button><button type="button" className={rehearsalStep >= 2 ? 'is-complete' : ''} onClick={() => rehearse('dash')} disabled={rehearsalStep < 1}>2. Hold Dash <span>duck high hazards</span></button></div></div>
+      <div className="ff-horse-flight__lobby-scene" style={{ backgroundImage: `linear-gradient(180deg, rgb(5 11 23 / 36%) 0%, rgb(5 11 23 / 58%) 54%, rgb(5 11 23 / 86%) 100%), url(${horseMountainBackground})` }}>
+        {renderLaunchScreen
+          ? renderLaunchScreen({
+            available: status?.available === true,
+            connecting: status === null && error === null,
+            error,
+            retryConnection: retryStatus,
+          })
+          : <DefaultLaunchScreen
+            available={status?.available === true}
+            connecting={status === null && error === null}
+            error={error}
+            onRetry={retryStatus}
+            onStart={() => void start()}
+            unavailable={tableUnavailable}
+          />}
       </div>
-      {result && <p role="status">Previous run saved. Official score: <strong>{result.score}</strong>.</p>}
-      {!status && error && !tableUnavailable && <button className="ff-horse-flight__start" onClick={retryStatus} type="button">Retry connection</button>}
-      <button className="ff-horse-flight__start" disabled={!status?.available} onClick={() => void start()} type="button">{status?.available ? 'Start run' : tableUnavailable ? 'Run unavailable' : 'Connecting…'}</button>
     </section>}
     {game && <>
-      <div className="ff-horse-flight__stats"><span>Score <b>{game.score}</b></span><span>Level <b>{1 + Math.floor(game.score / 500)}</b></span><span>Jumps <b>{game.jumpsRemaining}</b></span><span>Dash <b>{game.slideTicksRemaining > 0 ? 'On' : 'Ready'}</b></span><span className="ff-horse-flight__biome">{activeBiome === 'haunted' ? 'Haunted trail' : 'Mountain pass'}</span></div>
-      <section className="ff-horse-flight__field" ref={field} tabIndex={0} aria-label="Horse Flight playfield" onMouseDown={event => { if (event.button === 0) { field.current?.focus(); jump() } else if (event.button === 2) { event.preventDefault(); field.current?.focus(); beginDash() } }} onMouseUp={event => { if (event.button === 2) endDash() }} onMouseLeave={endDash} onContextMenu={event => event.preventDefault()} onKeyDown={event => { if (event.code === 'Space' && !event.repeat) { event.preventDefault(); jump() } else if ((event.code === 'KeyP' || event.code === 'Escape') && !event.repeat) { event.preventDefault(); setPaused(value => !value) } }}>
-        <svg viewBox="0 0 960 540" role="img" aria-label="Horse and platforms" data-active-biome={activeBiome}>
+      <div className="ff-horse-flight__stats"><span>Score <b>{game.score}</b></span><span>Level <b>{1 + Math.floor(game.score / 500)}</b></span><span>Jumps <b>{game.jumpsRemaining}</b></span><span>Dash <b>{game.slideTicksRemaining > 0 ? 'On' : 'Ready'}</b></span>{canDebugFreePlay && godMode && <span className="ff-horse-flight__debug-mode">God mode{fastMode ? ' · 3×' : ''}</span>}</div>
+      <section className="ff-horse-flight__field" data-scene-moving={sceneMoving} data-terminal-reaction={terminalReaction ?? undefined} data-debug-god-mode={canDebugFreePlay && godMode || undefined} ref={field} tabIndex={0} aria-label="Horse Flight playfield" onMouseDown={event => { if (event.button === 0) { field.current?.focus(); jump() } else if (event.button === 2) { event.preventDefault(); field.current?.focus(); if (canDebugFreePlay && godModeEnabled.current) beginFastMode(); else beginDash() } }} onMouseUp={event => { if (event.button === 2) { endDash(); endFastMode() } }} onMouseLeave={() => { endDash(); endFastMode() }} onContextMenu={event => event.preventDefault()} onKeyDown={event => { if (event.code === 'Space' && !event.repeat) { event.preventDefault(); jump() } else if ((event.code === 'KeyP' || event.code === 'Escape') && !event.repeat) { event.preventDefault(); setPaused(value => !value) } }}>
+        <svg viewBox="0 0 960 540" role="img" aria-label="Horse and platforms" data-active-biome={activeBiome} data-terminal-reaction={terminalReaction ?? undefined}>
           <defs>
             <pattern id="horse-flight-earth" width="32" height="32" patternUnits="userSpaceOnUse">
-              <rect width="32" height="32" fill="#181a27" />
-              <rect width="32" height="3" fill="#3b4051" />
-              <rect y="3" width="32" height="4" fill="#282c3d" />
-              <rect x="2" y="9" width="8" height="2" fill="#303548" /><rect x="17" y="8" width="11" height="2" fill="#25293a" />
-              <rect x="8" y="15" width="6" height="2" fill="#353a4d" /><rect x="24" y="18" width="5" height="2" fill="#2d3143" />
-              <rect x="1" y="24" width="12" height="2" fill="#10121c" /><rect x="17" y="27" width="9" height="2" fill="#24283a" />
+              <rect width="32" height="32" fill={groundPalette.earth} />
+              <rect width="32" height="3" fill={groundPalette.seam} />
+              <rect y="3" width="32" height="4" fill={groundPalette.stone} />
+              <rect x="2" y="9" width="8" height="2" fill={groundPalette.seam} /><rect x="17" y="8" width="11" height="2" fill={groundPalette.stone} />
+              <rect x="8" y="15" width="6" height="2" fill={groundPalette.seam} /><rect x="24" y="18" width="5" height="2" fill={groundPalette.stone} />
+              <rect x="1" y="24" width="12" height="2" fill={groundPalette.stone} /><rect x="17" y="27" width="9" height="2" fill={groundPalette.seam} />
             </pattern>
             <pattern id="horse-flight-grass" width="28" height="14" patternUnits="userSpaceOnUse">
-              <rect width="28" height="14" fill="#609b14" />
-              <rect y="3" width="28" height="4" fill="#86c828" /><rect y="8" width="28" height="6" fill="#426f12" />
-              <rect x="1" width="2" height="5" fill="#b9ec42" /><rect x="7" y="1" width="2" height="4" fill="#9cda31" />
-              <rect x="15" width="2" height="5" fill="#b9ec42" /><rect x="23" y="1" width="2" height="4" fill="#9cda31" />
-              <rect x="4" y="7" width="6" height="2" fill="#75b51d" /><rect x="18" y="7" width="7" height="2" fill="#75b51d" />
+              <rect width="28" height="14" fill={groundPalette.turf} />
+              <rect y="3" width="28" height="4" fill={groundPalette.turfLight} /><rect y="8" width="28" height="6" fill={groundPalette.turfDark} />
+              <rect x="1" width="2" height="5" fill={groundPalette.turfLight} /><rect x="7" y="1" width="2" height="4" fill={groundPalette.turfLight} />
+              <rect x="15" width="2" height="5" fill={groundPalette.turfLight} /><rect x="23" y="1" width="2" height="4" fill={groundPalette.turfLight} />
+              <rect x="4" y="7" width="6" height="2" fill={groundPalette.turf} /><rect x="18" y="7" width="7" height="2" fill={groundPalette.turf} />
             </pattern>
             <linearGradient id="horse-flight-coat" x2="0" y2="1"><stop stopColor="#f3c76a" /><stop offset="1" stopColor="#9f572a" /></linearGradient>
             <clipPath id="horse-flight-scene"><rect width="960" height={runningTrackTop} /></clipPath>
           </defs>
           <g clipPath="url(#horse-flight-scene)" aria-hidden="true">
-            <g opacity={1 - hauntedSceneOpacity} data-biome="mountain">
-              <g className="ff-horse-flight__background-pan"><image href={horseMountainBackground} x="-330" y="0" width="1620" height={runningTrackTop} preserveAspectRatio="none" /></g>
-              <g className="ff-horse-flight__midground-pan"><image href={horseMedievalMidground} x="0" y="0" width="6480" height={runningTrackTop} preserveAspectRatio="none" /></g>
-            </g>
-            <g opacity={hauntedSceneOpacity} data-biome="haunted">
-              <g className="ff-horse-flight__background-pan"><image href={horseHauntedBackground} x="-330" y="0" width="1620" height={runningTrackTop} preserveAspectRatio="none" /></g>
-              <g className="ff-horse-flight__midground-pan"><image href={horseHauntedMidground} x="0" y="0" width="6480" height={runningTrackTop} preserveAspectRatio="none" /></g>
-            </g>
+            <HorseBiomeScenery section={biomeSection} layer="background" distance={game.distance} tick={game.tick} />
+            <HorseBiomeScenery section={biomeSection} layer="midground" distance={game.distance} tick={game.tick} />
           </g>
           {game.platforms.map(platform => {
             const groundHazards = game.obstacles.filter(obstacle =>
@@ -388,6 +647,7 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
                   </g>)}
             </g>
           })}
+          <g clipPath="url(#horse-flight-scene)"><HorseBiomeScenery section={biomeSection} layer="foreground" distance={game.distance} tick={game.tick} /></g>
           {game.obstacles.map(obstacle => {
             const platform = game.platforms.find(item => item.id === obstacle.platformId)
             const artwork = obstacleArtwork[obstacle.kind]
@@ -396,11 +656,15 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
             const spriteSource = isKnockedDown ? artwork.knockdownSource! : artwork.source
             const spriteFrame = spriteSheet ? obstacleSpriteFrameFor(spriteSheet, game.tick, obstacle.id, obstacle.knockedDownAt) : null
             const staticCrop = artwork.staticCrop
-            return platform && <g key={obstacle.id} className="ff-horse-flight__obstacle" data-obstacle-kind={obstacle.kind} data-clearance={obstacle.elevation > 0 ? 'high' : 'ground'} data-knocked-down={isKnockedDown || undefined} aria-label={`${obstacle.elevation > 0 ? 'High' : 'Ground'} hazard: ${artwork.label}`} transform={`translate(${obstacle.x} ${platform.y - obstacle.elevation - obstacle.height})`}>
-              {obstacle.kind === 'crate' || obstacle.kind === 'crate-cluster'
+            return platform && <g key={obstacle.id} className="ff-horse-flight__obstacle" data-obstacle-kind={obstacle.kind} data-clearance={obstacle.elevation > 0 ? 'high' : 'ground'} data-knocked-down={isKnockedDown || undefined} data-attack-stage={captureAttackStage(obstacle.kind, obstacle.x, terminalReaction)} aria-label={`${obstacle.elevation > 0 ? 'High' : 'Ground'} hazard: ${artwork.label}`} transform={`translate(${obstacle.x} ${platform.y - obstacle.elevation - obstacle.height})`}>
+              {isHorseBiomeObstacleKind(obstacle.kind)
+                ? <HorseBiomeObstacleArt kind={obstacle.kind} width={obstacle.width} height={obstacle.height} />
+                : obstacle.kind === 'crate' || obstacle.kind === 'crate-cluster'
                 ? <TombstoneObstacle width={obstacle.width} height={obstacle.height} cluster={obstacle.kind === 'crate-cluster'} />
                 : obstacle.kind === 'oil-spill'
                   ? <GreenGooObstacle width={obstacle.width} height={obstacle.height} />
+                : !isKnockedDown && (obstacle.kind === 'lasso-thrower' || obstacle.kind === 'net-tower')
+                  ? <CaptureThrowArtwork obstacle={obstacle} platformY={platform.y} animationFrame={runningFrame} caught={obstacle.kind === 'lasso-thrower' ? terminalReaction === 'lasso-caught' && activeLasso?.id === obstacle.id : terminalReaction === 'net-caught' && activeNetTower?.id === obstacle.id} />
                 : spriteFrame
                 ? <svg x="0" y="0" width={obstacle.width} height={obstacle.height} viewBox={`0 0 ${spriteFrame.width} ${spriteFrame.height}`} preserveAspectRatio="none" overflow="hidden">
                     <image href={spriteSource} x={-spriteFrame.x} y={-spriteFrame.y} width={spriteFrame.sheetWidth} height={spriteFrame.sheetHeight} preserveAspectRatio="none" />
@@ -412,30 +676,100 @@ export function HorseFlightGame({ gateway = defaultGateway }: HorseFlightGamePro
                 : <image href={artwork.source} x="0" y="0" width={obstacle.width} height={obstacle.height} preserveAspectRatio="none" />}
             </g>
           })}
-          {openingPose && <svg className="ff-horse-flight__horse-art" x={horseCenterX - (rearingHorseArtWidth / 2)} y={game.horseY - 44} width={rearingHorseArtWidth} height={rearingHorseArtHeight} viewBox={`0 0 ${rearingSpriteFrameWidth} ${rearingSpriteFrameHeight}`} preserveAspectRatio="xMidYMax meet" overflow="hidden" data-sprite-frame={rearingFrame} aria-hidden="true">
-            <defs><clipPath id="horse-flight-rear-frame"><rect width={rearingSpriteFrameWidth} height={rearingSpriteFrameHeight} /></clipPath></defs>
-            <image clipPath="url(#horse-flight-rear-frame)" href={horseRearSpriteSheet} x={-rearingFrame * rearingSpriteFrameWidth} y="0" width={rearingSpriteSheetWidth} height={rearingSpriteFrameHeight} preserveAspectRatio="none" />
-          </svg>}
-          {horseSpriteFrame && <svg className="ff-horse-flight__horse-art" x={horseCenterX - (runningHorseArtWidth / 2)} y={game.horseY - 44} width={runningHorseArtWidth} height="45" viewBox={`0 ${horseSpriteFrameTop} ${horseSpriteFrameWidth} ${horseSpriteFrameHeight}`} preserveAspectRatio="none" overflow="hidden" data-sprite-frame={horseSpriteFrame.index} aria-hidden="true">
-            <defs><clipPath id="horse-flight-running-frame"><rect x="0" y={horseSpriteFrameTop} width={horseSpriteFrameWidth} height={horseSpriteFrameHeight} /></clipPath></defs>
-            <image clipPath="url(#horse-flight-running-frame)" href={horseSpriteFrame.sheet} x={-horseSpriteFrame.index * horseSpriteFrameWidth} y="0" width="2172" height={horseSpriteSheetHeight} preserveAspectRatio="none" />
-          </svg>}
+          <g className="ff-horse-flight__horse-actor" data-terminal-reaction={terminalReaction ?? undefined} aria-hidden="true">
+            {displayedRearFrame !== null && <svg className="ff-horse-flight__horse-art" x={horseCenterX - (rearingHorseArtWidth / 2)} y={game.horseY - rearingHorseArtHeight + 1} width={rearingHorseArtWidth} height={rearingHorseArtHeight} viewBox={`0 0 ${rearingSpriteFrameWidth} ${rearingSpriteFrameHeight}`} preserveAspectRatio="none" overflow="hidden" imageRendering="pixelated" data-sprite-frame={displayedRearFrame}>
+              <defs><clipPath id="horse-flight-rear-frame" clipPathUnits="userSpaceOnUse"><rect width={rearingSpriteFrameWidth} height={rearingSpriteFrameHeight} /></clipPath></defs>
+              <g transform={`translate(${rearingFrameOffset.x} ${rearingFrameOffset.y})`}>
+                <g clipPath="url(#horse-flight-rear-frame)"><image href={horseRearSpriteSheet} x={-rearingFrameColumn * rearingSpriteFrameWidth} y={-rearingFrameRow * rearingSpriteFrameHeight} width={rearingSpriteSheetWidth} height={rearingSpriteSheetHeight} preserveAspectRatio="none" /></g>
+              </g>
+            </svg>}
+            {terminalHorseSpriteFrame && <svg className="ff-horse-flight__horse-art ff-horse-flight__horse-reaction-art" x={terminalHorsePosition?.x ?? horseCenterX - (terminalHorseArtSize / 2)} y={terminalHorsePosition?.y ?? game.horseY - terminalHorseArtSize + 1} width={terminalHorseArtSize} height={terminalHorseArtSize} viewBox={`0 0 ${terminalHorseSpriteFrame.sourceWidth} ${terminalHorseSpriteFrame.sourceHeight}`} preserveAspectRatio="none" overflow="hidden" imageRendering="pixelated" data-terminal-horse-sprite={terminalReaction ?? undefined} data-sprite-frame={terminalHorseSpriteFrame.index}>
+              <defs><clipPath id="horse-flight-terminal-frame" clipPathUnits="userSpaceOnUse"><rect x={terminalReaction === 'rock-skid' && terminalHorseSpriteFrame.index === 7 ? 10 : 0} y={terminalReaction === 'trip-over' && terminalHorseSpriteFrame.index === 7 ? 220 : 0} width={terminalHorseSpriteFrame.sourceWidth} height={terminalHorseSpriteFrame.sourceHeight} /></clipPath></defs>
+              <g transform={`translate(0 ${terminalHorseSpriteFrame.groundOffset})`}>
+                <g clipPath="url(#horse-flight-terminal-frame)"><image href={terminalHorseSpriteFrame.sheet} x={-terminalHorseSpriteFrame.sourceX} y={-terminalHorseSpriteFrame.sourceY} width={terminalHorseSpriteFrame.sheetWidth} height={terminalHorseSpriteFrame.sheetHeight} preserveAspectRatio="none" /></g>
+              </g>
+            </svg>}
+            {terminalReaction === 'lasso-caught' && activeLasso && <CaptureHorseArtwork kind="lasso-thrower" horseX={horseCenterX} horseY={game.horseY} platformY={platformYFor(game, activeLasso.platformId)} reactionFrame={terminalHorseFrame} />}
+            {terminalReaction === 'net-caught' && activeNetTower && <CaptureHorseArtwork kind="net-tower" horseX={horseCenterX} horseY={game.horseY} platformY={platformYFor(game, activeNetTower.platformId)} reactionFrame={terminalHorseFrame} />}
+            {horseSpriteFrame && <svg className="ff-horse-flight__horse-art" x={horseCenterX - (horseSpriteArtWidth / 2)} y={game.horseY - horseSpriteArtHeight + 1} width={horseSpriteArtWidth} height={horseSpriteArtHeight} viewBox={`0 0 ${horseSpriteSourceWidth} ${horseSpriteSourceHeight}`} preserveAspectRatio="none" overflow="hidden" imageRendering="pixelated" data-sprite-frame={horseSpriteFrame.index}>
+              <defs><clipPath id="horse-flight-running-frame" clipPathUnits="userSpaceOnUse"><rect width={horseSpriteSourceWidth} height={horseSpriteSourceHeight} /></clipPath></defs>
+              <g transform={`translate(0 ${horseSpriteFrame.groundOffset ?? 0})`}>
+                <g clipPath="url(#horse-flight-running-frame)"><image href={horseSpriteFrame.sheet} x={-horseSpriteSourceX} y={-horseSpriteSourceY} width={horseSpriteSheetWidth} height={horseSpriteSheetHeight} preserveAspectRatio="none" /></g>
+              </g>
+            </svg>}
+          </g>
+          {terminalReaction && <TerminalReactionEffect reaction={terminalReaction} x={horseCenterX} y={game.horseY} />}
         </svg>
-        {nearMiss && <div className="ff-horse-flight__near-miss" role="status">{nearMiss}</div>}
         {paused && <div className="ff-horse-flight__over" role="status"><strong>Run paused</strong><span>Your replay clock is stopped too.</span><button type="button" onClick={() => setPaused(false)}>Resume run</button></div>}
-        {game.phase !== 'running' && <div className="ff-horse-flight__over" role="status" aria-live="assertive">
-          <strong>Run ended</strong>
-          <span>{game.phase === 'obstacle-collision' ? 'You hit an obstacle.' : 'The horse left the track.'}</span>
-          <strong>Score {result?.score ?? game.score}</strong>
-          <span>{result ? 'Score saved to the leaderboard.' : error ? 'Save failed' : 'Saving score…'}</span>
-          {!result && error && <button onClick={() => complete(game)} type="button">Try saving again</button>}
-          {result && <button onClick={() => void start()} type="button">Start fresh run</button>}
+        {game.phase !== 'running' && <div className="ff-horse-flight__over" data-terminal-overlay data-terminal-reaction={terminalReaction ?? undefined} aria-live="polite">
+          {renderEndScreen
+            ? renderEndScreen({
+              error,
+              isSaving: result === null && error === null,
+              phase: game.phase,
+              result,
+              retrySave: () => complete(game),
+              score: result?.score ?? game.score,
+              terminalMessage,
+              terminalObstacleKind: game.terminalObstacleKind,
+            })
+            : <>
+              <strong>{terminalMessage}</strong>
+              <strong>Score {result?.score ?? game.score}</strong>
+              {!result && !error && <span>Saving score…</span>}
+              {!result && error && <button onClick={() => complete(game)} type="button">Try saving again</button>}
+              {result && <button onClick={() => void start()} type="button">Start fresh run</button>}
+            </>}
         </div>}
         {game.phase === 'running' && <div className="ff-horse-flight__touch-controls" aria-label="Horse controls"><button type="button" onPointerDown={event => { event.stopPropagation(); jump() }}>Jump <span>ground hazard</span></button><button type="button" onPointerDown={event => { event.stopPropagation(); beginDash() }} onPointerUp={endDash} onPointerCancel={endDash}>Dash <span>high hazard</span></button><button type="button" onClick={event => { event.stopPropagation(); setPaused(value => !value) }}>{paused ? 'Resume' : 'Pause'}</button></div>}
       </section>
     </>}
-    {error && <p role="alert" className="ff-horse-flight__error">{error}</p>}
   </main>
+}
+
+function DefaultLaunchScreen({
+  available,
+  connecting,
+  error,
+  onRetry,
+  onStart,
+  unavailable,
+}: Readonly<{
+  available: boolean
+  connecting: boolean
+  error: string | null
+  onRetry: () => void
+  onStart: () => void
+  unavailable: boolean
+}>) {
+  return <div className="ff-horse-flight__default-launch">
+    <h1>HORSE FLIGHT</h1>
+    <p>Ready to run?</p>
+    {error && <p className="ff-horse-flight__error" role="alert">{error}</p>}
+    {error && !unavailable && <button className="ff-horse-flight__start" onClick={onRetry} type="button">Retry connection</button>}
+    <button className="ff-horse-flight__start" disabled={!available} onClick={onStart} type="button">
+      {available ? 'Start run' : unavailable ? 'Run unavailable' : connecting ? 'Connecting…' : 'Start unavailable'}
+    </button>
+  </div>
+}
+
+
+
+
+
+function TerminalReactionEffect({ reaction, x, y }: Readonly<{ reaction: HorseTerminalReaction; x: number; y: number }>) {
+  if (reaction === 'crash' || reaction === 'trip-over' || reaction === 'impact') return <g className="ff-horse-flight__impact-burst" data-reaction={reaction} transform={`translate(${x + 25} ${y - 12})`} aria-hidden="true">
+    <path d="m0-28 7 18 18-9-10 17 22 6-22 5 9 19-18-10-7 20-5-20-20 9 11-18-23-6 23-5-10-19 19 10Z" />
+    <circle cx="-20" cy="18" r="9" /><circle cx="-2" cy="23" r="12" /><circle cx="18" cy="20" r="7" />
+  </g>
+  if (reaction === 'slip') return <g className="ff-horse-flight__slip-splash" transform={`translate(${x} ${y - 1})`} aria-hidden="true">
+    <ellipse rx="39" ry="8" /><path d="M-31-4-45-18M-9-7-15-25M17-6 27-22M34-2 49-12" />
+  </g>
+  if (reaction === 'bat-retreat') return <g className="ff-horse-flight__retreat-lines" transform={`translate(${x - 43} ${y - 61})`} aria-hidden="true">
+    <path d="M0 0-28-7M4 13-35 14M8 25-24 35" />
+  </g>
+  if (reaction === 'fall') return <g className="ff-horse-flight__fall-lines" transform={`translate(${x - 32} ${y - 50})`} aria-hidden="true"><path d="M0 0h-34M8 14h-28M3 29h-40" /></g>
+  return null
 }
 
 function TombstoneObstacle({ width, height, cluster }: Readonly<{ width: number; height: number; cluster: boolean }>) {
@@ -469,15 +803,18 @@ function GreenGooObstacle({ width, height }: Readonly<{ width: number; height: n
 }
 
 function key(action: 'start' | 'complete') { const random = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID().replaceAll('-', '') : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`; return `horse-flight-${action}-${random}` }
-function readRehearsalComplete(): boolean { try { return window.localStorage.getItem('fortuneforge:horse-flight:rehearsal') === 'complete' } catch { return false } }
-function writeRehearsalComplete(): void { try { window.localStorage.setItem('fortuneforge:horse-flight:rehearsal', 'complete') } catch { /* optional storage */ } }
 function messageForError(reason: unknown, fallback: string): string { return reason instanceof Error && reason.message.trim().length > 0 ? reason.message : fallback }
 function isTableUnavailable(reason: unknown): boolean { return reason instanceof HorseFlightGatewayError && reason.code === 'horse-flight-disabled' }
 function spriteFrameFor(game: HorseState, runningFrame: number): HorseSpriteFrame {
-  if (game.phase !== 'running') return { sheet: horseJumpSpriteSheet, index: 6 }
+  if (game.phase !== 'running') return jumpHorseSpriteFrame(6)
   if (game.grounded && game.slideTicksRemaining > 0) return { sheet: horseDashSpriteSheet, index: Math.floor(game.tick / 2) % 8 }
-  if (!game.grounded) return { sheet: horseJumpSpriteSheet, index: jumpFrameFor(game.velocity) }
-  return { sheet: horseRunSpriteSheet, index: runningFrame }
+  if (!game.grounded) return jumpHorseSpriteFrame(jumpFrameFor(game.velocity))
+  const crop = runningFrameCrops[runningFrame] ?? runningFrameCrops[0]
+  return { sheet: horseRunSpriteSheet, index: runningFrame, ...crop, sheetWidth: 1774, sheetHeight: 887, artWidth: runningHorseArtWidth, artHeight: runningHorseArtHeight }
+}
+
+function jumpHorseSpriteFrame(frame: number): HorseSpriteFrame {
+  return { sheet: horseJumpSpriteSheet, ...jumpSpriteGeometry(frame), artWidth: horseSpriteScale.jump.width, artHeight: horseSpriteScale.jump.height }
 }
 
 function jumpFrameFor(velocity: number): number {
@@ -489,7 +826,7 @@ function jumpFrameFor(velocity: number): number {
   return 6
 }
 
-function obstacleSpriteFrameFor(spriteSheet: ObstacleSpriteSheet, tick: number, obstacleId: number, startedAt?: number) {
+function obstacleSpriteFrameFor(spriteSheet: ObstacleSpriteSheet, tick: number, obstacleId: number, startedAt?: number): RenderedObstacleFrame {
   const frameCount = spriteSheet.columns * spriteSheet.rows
   const animationTick = startedAt === undefined
     ? tick + obstacleId * 2
@@ -499,6 +836,7 @@ function obstacleSpriteFrameFor(spriteSheet: ObstacleSpriteSheet, tick: number, 
   const sourceFrameHeight = spriteSheet.height / spriteSheet.rows
   const crop = spriteSheet.frameCrop
   return {
+    index: frameIndex,
     x: (frameIndex % spriteSheet.columns) * sourceFrameWidth + (crop?.x ?? 0),
     y: Math.floor(frameIndex / spriteSheet.columns) * sourceFrameHeight + (crop?.y ?? 0),
     width: crop?.width ?? sourceFrameWidth,
@@ -506,4 +844,110 @@ function obstacleSpriteFrameFor(spriteSheet: ObstacleSpriteSheet, tick: number, 
     sheetWidth: spriteSheet.width,
     sheetHeight: spriteSheet.height,
   }
+}
+
+export function horseFlightTerminalReaction(phase: HorseState['phase'] | null, obstacleKind: ObstacleKind | null, rockLanding = false): HorseTerminalReaction | null {
+  if (phase === null || phase === 'running') return null
+  if (phase === 'fell') return 'fall'
+  if (obstacleKind === 'boulder' && rockLanding) return 'rock-skid'
+  switch (obstacleKind) {
+    case 'fence':
+    case 'fallen-log': return 'trip-over'
+    case 'market-cart':
+    case 'spike-barricade':
+    case 'cactus': return 'crash'
+    case 'oil-spill': return 'slip'
+    case 'bat-flock': return 'bat-retreat'
+    case 'lasso-thrower': return 'lasso-caught'
+    case 'net-tower': return 'net-caught'
+    default: return 'impact'
+  }
+}
+
+export function terminalHorseSpriteFor(reaction: HorseTerminalReaction | null, frame: number): TerminalHorseSpriteFrame | null {
+  if (reaction !== 'crash' && reaction !== 'trip-over' && reaction !== 'slip' && reaction !== 'rock-skid' && reaction !== 'impact') return null
+  const index = Math.min(terminalHorseSpriteFrameCount - 1, Math.max(0, frame))
+  return {
+    sheet: reaction === 'slip' ? horseSlipSpriteSheet : reaction === 'trip-over' ? horseTripSpriteSheet : reaction === 'rock-skid' ? horseRockSkidSpriteSheet : horseCrashSpriteSheet,
+    ...terminalSpriteGeometry(reaction === 'slip' ? 'slip' : reaction === 'trip-over' ? 'trip' : reaction === 'rock-skid' ? 'skid' : 'crash', index),
+  }
+}
+
+export function horseFlightTerminalMessage(phase: HorseState['phase'] | null, obstacleKind: ObstacleKind | null): string {
+  if (phase === 'fell') return 'You missed the trail and fell!'
+  if (phase !== 'obstacle-collision') return ''
+  return obstacleKind === null ? 'An obstacle ended your escape!' : obstacleArtwork[obstacleKind].failureMessage
+}
+
+
+function captureAttackStage(kind: ObstacleKind, x: number, reaction: HorseTerminalReaction | null): 'idle' | 'prep' | 'throw' | 'caught' | undefined {
+  if (kind !== 'lasso-thrower' && kind !== 'net-tower') return undefined
+  if (((kind === 'lasso-thrower' && reaction === 'lasso-caught') || (kind === 'net-tower' && reaction === 'net-caught')) && Math.abs(x - horseScreenX) < 140) return 'caught'
+  const distance = x - horseScreenX
+  const launchDistance = kind === 'lasso-thrower' ? 200 : 260
+  if (distance > launchDistance + 70) return 'idle'
+  return distance > launchDistance ? 'prep' : 'throw'
+}
+
+function activeCaptureObstacle(game: HorseState, kind: 'lasso-thrower' | 'net-tower'): HorseState['obstacles'][number] | null {
+  const terminal = game.phase === 'obstacle-collision' && game.terminalObstacleKind === kind
+  if (terminal) {
+    const struckObstacle = game.obstacles.find(obstacle => obstacle.id === game.terminalObstacleId && obstacle.kind === kind)
+    if (struckObstacle) return struckObstacle
+  }
+  const candidates = game.obstacles
+    .filter(obstacle => obstacle.kind === kind && obstacle.knockedDownAt === undefined)
+    .filter(obstacle => terminal || (obstacle.x + obstacle.width > horseScreenX - 90 && obstacle.x < horseScreenX + 310))
+    .sort((left, right) => Math.abs(left.x - horseScreenX) - Math.abs(right.x - horseScreenX))
+  return candidates[0] ?? null
+}
+
+function terminalObstacleFor(game: HorseState, horseCenterX: number): HorseState['obstacles'][number] | null {
+  const struckObstacle = game.obstacles.find(obstacle => obstacle.id === game.terminalObstacleId)
+  if (struckObstacle) return struckObstacle
+  return game.obstacles
+    .filter(obstacle => obstacle.kind === game.terminalObstacleKind)
+    .sort((left, right) => Math.abs(left.x - horseCenterX) - Math.abs(right.x - horseCenterX))[0] ?? null
+}
+
+export function groundImpactHorsePosition(game: HorseState, horseCenterX: number, frame: number): Readonly<{ x: number; y: number }> {
+  const obstacle = terminalObstacleFor(game, horseCenterX)
+  const groundY = obstacle ? platformYFor(game, obstacle.platformId) : game.horseY
+  return {
+    x: horseCenterX - terminalHorseArtSize / 2,
+    y: terminalGroundBaseline(game.horseY, groundY, frame) - terminalHorseArtSize + 1,
+  }
+}
+
+export function tripHorsePosition(game: HorseState, horseCenterX: number, frame: number): Readonly<{ x: number; y: number }> {
+  const obstacle = terminalObstacleFor(game, horseCenterX)
+  const landingTravel = obstacle
+    ? Math.max(126, obstacle.x + obstacle.width - (horseCenterX - terminalHorseArtSize / 2) + 12)
+    : 150
+  const arcHeight = (obstacle?.height ?? 42) + 28
+  const landingY = obstacle ? platformYFor(game, obstacle.platformId) : game.horseY
+  const index = Math.min(terminalHorseSpriteFrameCount - 1, Math.max(0, frame))
+  return {
+    x: horseCenterX - terminalHorseArtSize / 2 + landingTravel * (tripForwardProgress[index] ?? 1),
+    y: terminalGroundBaseline(game.horseY, landingY, index, tripGroundProgress) - terminalHorseArtSize + 1
+      - arcHeight * (tripArcProgress[index] ?? 0),
+  }
+}
+
+export function skidHorsePosition(game: HorseState, horseCenterX: number, frame: number): Readonly<{ x: number; y: number }> {
+  const obstacle = terminalObstacleFor(game, horseCenterX)
+  const initialX = horseCenterX - terminalHorseArtSize / 2
+  const landingTravel = obstacle
+    ? Math.max(150, obstacle.x + obstacle.width - initialX + 12)
+    : 150
+  const landingY = obstacle ? platformYFor(game, obstacle.platformId) : game.horseY
+  const index = Math.min(terminalHorseSpriteFrameCount - 1, Math.max(0, frame))
+  return {
+    x: initialX + landingTravel * skidForwardProgress[index],
+    y: terminalGroundBaseline(game.horseY, landingY, index, skidGroundProgress) - terminalHorseArtSize + 1,
+  }
+}
+
+function platformYFor(game: HorseState, platformId: number): number {
+  return game.platforms.find(platform => platform.id === platformId)?.y ?? runningTrackTop
 }

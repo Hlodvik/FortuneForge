@@ -22,7 +22,7 @@ internal static class PaidHeartsProjection
                 table.Players.Any(player => player.Seat == scheduled && (!player.IsAccountBacked || player.HasLeft)),
             round.HeartsBroken, round.SubmittedPasses.Select(pass => Seat(pass.Seat)).ToArray(),
             table.Players.OrderBy(player => player.Seat).Select(player => new HeartsPlayerResponse(
-                Seat(player.Seat), player.DisplayName, round.HandFor(player.Seat).Count,
+                Seat(player.Seat), DisplayName(player), round.HandFor(player.Seat).Count,
                 score[player.Seat], state.Score.For(player.Seat),
                 round.SubmittedPasses.Any(pass => pass.Seat == player.Seat))).ToArray(),
             round.HandFor(viewer.Seat).Select(Card).ToArray(), legal.Select(Card).ToArray(),
@@ -39,13 +39,15 @@ internal static class PaidHeartsProjection
         return new PaidHeartsTableResponse(match, table.EntryCents / 100m, table.PotCents / 100m,
             viewer.PayoutCents / 100m, table.Winners.Select(Seat).ToArray(),
             table.Players.OrderBy(player => player.Seat).Select(player => new PaidHeartsPlayerResponse(
-                Seat(player.Seat), player.DisplayName, player.UserId == userId, player.HasLeft,
+                Seat(player.Seat), DisplayName(player), player.UserId == userId, player.HasLeft,
                 table.EntryCents / 100m, player.PayoutCents / 100m)).ToArray(),
             table.Status == "match" && table.ScheduledSeat == viewer.Seat && !viewer.HasLeft
                 ? table.NextActionAtUtc : null, table.CompletedAtUtc);
     }
 
     public static string Seat(PlayerSeat seat) => seat.ToString().ToLowerInvariant();
+    private static string DisplayName(PaidHeartsParticipant player) =>
+        player.IsAccountBacked ? player.DisplayName : $"House {player.Seat}";
     private static HeartsCardResponse Card(PlayingCard card) => new(card.Code,
         card.Rank.ToString().ToLowerInvariant(), card.Suit.ToString().ToLowerInvariant(),
         $"{card.Code.Split('|')[0]}{card.Suit switch { CardSuit.Clubs => "♣", CardSuit.Diamonds => "♦", CardSuit.Hearts => "♥", _ => "♠" }}");

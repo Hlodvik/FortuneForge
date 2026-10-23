@@ -14,7 +14,7 @@ public sealed record PaidHeartsSessionResponse(
     PaidHeartsQueueResponse? Queue, PaidHeartsTableResponse? Table, string? Notice = null);
 public sealed record PaidHeartsQueueResponse(
     string MatchId, decimal EntryCredits, decimal PotCredits, DateTime JoinedAtUtc,
-    IReadOnlyList<PaidHeartsQueuePlayerResponse> Players, string Message);
+    IReadOnlyList<PaidHeartsQueuePlayerResponse> Players, string Message, bool CanPlayHouse = false);
 public sealed record PaidHeartsQueuePlayerResponse(string Seat, string DisplayName, bool IsCurrentPlayer);
 public sealed record PaidHeartsTableResponse(
     HeartsMatchResponse Match, decimal EntryCredits, decimal PotCredits, decimal PayoutCredits,
@@ -28,6 +28,8 @@ public sealed record PaidHeartsHistoryResponse(IReadOnlyList<PaidHeartsTableResp
 internal sealed class PaidHeartsOptions
 {
     public long[] EntryOptionsCents { get; set; } = [100, 200, 500, 1000, 2500];
+    // Retain the configuration key for compatibility, but only explicit house
+    // admission uses it. Human-looking shared profiles never fill Hearts queues.
     public bool AllowManagedPlayers { get; set; } = true;
     public int HumanQueueSeconds { get; set; } = 5;
     public int ActionTimeoutSeconds { get; set; } = 45;
@@ -77,6 +79,8 @@ internal sealed class PaidHeartsMatch
     public string? AdmissionClaim { get; set; }
     public DateTime? AdmissionClaimExpiresAtUtc { get; set; }
     public bool ReleasePending { get; set; }
+    public long InitialHumanEntryCents { get; set; }
+    public int HouseTakeoverCount { get; set; }
     public List<PaidHeartsParticipant> Players { get; set; } = [];
     public HeartsMatchState? State { get; set; }
     public CompletedTrick? RecentTrick { get; set; }

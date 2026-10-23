@@ -2,7 +2,9 @@ using System.Text.Json;
 using FortuneForge.Server.Arcade.Competition;
 using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Accounts.Security;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.RateLimiting;
 using Xunit;
@@ -49,6 +51,15 @@ public sealed class ArcadeCompetitionControllerTests
     }
 
     [Fact]
+    public async Task HorseFlightIsAnAllowedLeaderboardGame()
+    {
+        var response = Response(await Create().Get("horse-flight", "daily", null, default));
+
+        Assert.Equal("horse-flight", response.GameId);
+        Assert.Empty(response.Leaderboard);
+    }
+
+    [Fact]
     public async Task PublicSnapshotOmitsHouseCutFields()
     {
         var response = Response(await Create().Get("asteroids", "daily", null, default));
@@ -91,13 +102,13 @@ public sealed class ArcadeCompetitionControllerTests
         var controller = Create();
 
         var unknownGame = Assert.IsType<NotFoundObjectResult>(await controller.StartAttempt(
-            "other-arcade", "daily", "attempt-1", null!, null!, null!, default));
+            "other-arcade", "daily", "attempt-1", null!, null!, null!, null!, null!, default));
         var allTime = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "all-time", "attempt-1", null!, null!, null!, default));
+            "asteroids", "all-time", "attempt-1", null!, null!, null!, null!, null!, default));
         var badPeriod = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "monthly", "attempt-1", null!, null!, null!, default));
+            "asteroids", "monthly", "attempt-1", null!, null!, null!, null!, null!, default));
         var missingKey = Assert.IsType<BadRequestObjectResult>(await controller.StartAttempt(
-            "asteroids", "daily", " ", null!, null!, null!, default));
+            "asteroids", "daily", " ", null!, null!, null!, null!, null!, default));
 
         Assert.Equal("arcade-competition-game-not-found", ErrorCode(unknownGame));
         Assert.Equal("arcade-competition-period-not-startable", ErrorCode(allTime));
@@ -117,6 +128,7 @@ public sealed class ArcadeCompetitionControllerTests
             .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
         Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionAsteroidsPaidEntryService");
         Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
+        Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionHorseFlightPaidEntryService");
         Assert.DoesNotContain(method.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionPaidEntryService");
         Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "balance" or "time" or "window");
     }
@@ -253,6 +265,69 @@ public sealed class ArcadeCompetitionControllerTests
         Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
         Assert.Contains(complete.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionFlappyPaidEntryService");
         Assert.DoesNotContain(complete.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
+    }
+
+    [Fact]
+    public void HorseFlightRunRoutesAreAuthenticatedRateLimitedReplayOnlyContracts()
+    {
+        var freeStart = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.StartFreeHorseFlightRun))
+            ?? throw new InvalidOperationException("Horse Flight free start action is missing.");
+        var freeComplete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompleteFreeHorseFlightReplay))
+            ?? throw new InvalidOperationException("Horse Flight free completion action is missing.");
+        var paidComplete = typeof(ArcadeCompetitionController).GetMethod(nameof(ArcadeCompetitionController.CompletePaidHorseFlightReplay))
+            ?? throw new InvalidOperationException("Horse Flight paid completion action is missing.");
+
+        Assert.Equal("horse-flight/free/runs", freeStart.GetCustomAttributes(typeof(HttpPostAttribute), false)
+            .Cast<HttpPostAttribute>().Single().Template);
+        Assert.Equal("horse-flight/free/runs/{runId}/replay", freeComplete.GetCustomAttributes(typeof(HttpPostAttribute), false)
+            .Cast<HttpPostAttribute>().Single().Template);
+        Assert.Equal("horse-flight/{period}/runs/{runId}/replay", paidComplete.GetCustomAttributes(typeof(HttpPostAttribute), false)
+            .Cast<HttpPostAttribute>().Single().Template);
+        Assert.All(new[] { freeStart, freeComplete, paidComplete }, method =>
+        {
+            Assert.Equal(RateLimitPolicies.SlotSpins, method.GetCustomAttributes(typeof(EnableRateLimitingAttribute), false)
+                .Cast<EnableRateLimitingAttribute>().Single().PolicyName);
+            Assert.Contains(method.GetParameters(), parameter => parameter.ParameterType.Name == "AccountService");
+            Assert.DoesNotContain(method.GetParameters(), parameter => parameter.Name is "score" or "userId" or "seed" or "balance");
+        });
+        Assert.Contains(freeStart.GetParameters(), parameter => parameter.ParameterType.Name == "HorseFlightFirestoreStore");
+        Assert.Contains(freeComplete.GetParameters(), parameter => parameter.ParameterType.Name == "HorseFlightFirestoreStore");
+        Assert.Contains(paidComplete.GetParameters(), parameter => parameter.ParameterType.Name == "ArcadeCompetitionHorseFlightPaidEntryService");
+        Assert.Equal(
+            new[] { "TotalTicks", "JumpTicks", "RightClickTicks" },
+            typeof(HorseFlightReplayInputRequest).GetProperties().Select(property => property.Name));
+    }
+
+    [Fact]
+    public async Task HorseFlightPaidAttemptHonorsTheExistingFeatureGateBeforeAuthentication()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["Features:HorseFlightEnabled"] = "false",
+        }).Build();
+
+        var result = Assert.IsAssignableFrom<ObjectResult>(await Create().StartAttempt(
+            "horse-flight", "daily", "horse-flight-attempt-1", null!, null!, null!, null!, configuration, default));
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+        Assert.Equal("arcade-horse-flight-disabled", ErrorCode(result));
+    }
+
+    [Fact]
+    public void HorseFlightResponsesExposeCanonicalRunAndAuthoritativeReplayFields()
+    {
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var startJson = JsonSerializer.Serialize(new HorseFlightFreeRunStartResponse(
+            $"horse_flight_free_{new string('a', 64)}", 42, 20, true), options);
+        var completionJson = JsonSerializer.Serialize(new HorseFlightReplayCompletionResponse(
+            $"horse_flight_{new string('b', 64)}", 123, "obstacle-collision", 456, [7], [9], false), options);
+
+        Assert.Contains("\"seed\":42", startJson);
+        Assert.Contains("\"wasReplay\":true", startJson);
+        Assert.Contains("\"score\":123", completionJson);
+        Assert.Contains("\"phase\":\"obstacle-collision\"", completionJson);
+        Assert.Contains("\"wasReplay\":false", completionJson);
+        Assert.DoesNotContain("balance", completionJson, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]

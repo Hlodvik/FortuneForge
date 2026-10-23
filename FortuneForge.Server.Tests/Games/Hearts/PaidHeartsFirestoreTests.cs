@@ -7,6 +7,7 @@ using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Games.Hearts;
 using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Tests.Solitaire;
+using FortuneForge.Server.Admin.Management;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Xunit;
@@ -14,7 +15,7 @@ using Xunit;
 namespace FortuneForge.Server.Tests.Games.Hearts;
 
 [Collection(SolitaireFirestoreEmulatorCollection.Name)]
-public sealed class PaidHeartsFirestoreTests
+public sealed partial class PaidHeartsFirestoreTests
 {
     private static readonly DateTime Start = new(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc);
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
@@ -57,6 +58,163 @@ public sealed class PaidHeartsFirestoreTests
         Assert.Empty((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         Assert.Equal(0, roster.Reservations);
         Assert.Equal(.5m, await Credits(db, "alice"));
+    }
+
+    [Fact]
+    public async Task House_consent_waits_for_assessment_and_retries_fund_once_without_shared_leases()
+    {
+        var (db, store, roster) = Create();
+        await Seed(db, "alice");
+        var queued = await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
+        Assert.False(queued.Queue!.CanPlayHouse);
+        await Assert.ThrowsAsync<PaidHeartsConflictException>(() => store.PlayHouseAsync(
+            "alice", queued.Queue.MatchId, queued.Version, "early", Start.AddSeconds(4), default));
+        var now = Start.AddSeconds(5);
+        var results = await Task.WhenAll(Enumerable.Range(0, 6).Select(_ => store.PlayHouseAsync(
+            "alice", queued.Queue.MatchId, queued.Version, "consent-once", now, default)));
+        Assert.All(results, value => Assert.Equal("match", value.Kind));
+        var table = await Stored(db, queued.Queue.MatchId);
+        Assert.Equal(4, table.Players.Count);
+        Assert.Equal(4, table.Players.Select(player => player.UserId).Distinct().Count());
+        Assert.All(table.Players.Where(player => !player.IsAccountBacked), player =>
+        {
+            Assert.StartsWith($"hearts-house:{table.Id}:", player.UserId);
+            Assert.Equal($"House {player.Seat}", player.DisplayName);
+            Assert.Null(player.ManagedAssignmentId);
+        });
+        Assert.Equal(99m, await Credits(db, "alice"));
+        Assert.Single((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        Assert.Single((await db.Collection("heartsPaidFunding").GetSnapshotAsync()).Documents);
+        Assert.Empty((await db.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
+        Assert.Equal(0, roster.Reservations);
+    }
+
+    [Fact]
+    public async Task Human_arrival_after_offer_prevents_house_admission_and_humans_fill_the_table()
+    {
+        var (db, store, roster) = Create();
+        foreach (var user in new[] { "alice", "bruno", "cara", "drew" }) await Seed(db, user);
+        var offer = await store.JoinAsync("alice", "Alice", 1m, "join-alice", Start, default);
+        offer = await store.SessionAsync("alice", Start.AddSeconds(5), default);
+        Assert.True(offer.Queue!.CanPlayHouse);
+        var bruno = await store.JoinAsync("bruno", "Bruno", 1m, "join-bruno", Start.AddSeconds(6), default);
+        Assert.Equal(offer.Queue.MatchId, bruno.Queue!.MatchId);
+        await Assert.ThrowsAsync<PaidHeartsConflictException>(() => store.PlayHouseAsync(
+            "alice", offer.Queue.MatchId, offer.Version, "stale-consent", Start.AddSeconds(7), default));
+        var updated = await store.SessionAsync("alice", Start.AddSeconds(8), default);
+        Assert.False(updated.Queue!.CanPlayHouse);
+        await Assert.ThrowsAsync<PaidHeartsConflictException>(() => store.PlayHouseAsync(
+            "alice", offer.Queue.MatchId, updated.Version, "fresh-consent", Start.AddSeconds(8), default));
+        foreach (var user in new[] { "cara", "drew" })
+            await store.JoinAsync(user, user, 1m, $"join-{user}", Start.AddSeconds(9), default);
+        var table = await Stored(db, offer.Queue.MatchId);
+        Assert.Equal("match", table.Status);
+        Assert.All(table.Players, player => Assert.True(player.IsAccountBacked));
+        Assert.Equal(0, roster.Reservations);
+        Assert.Equal(4, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
+
+    [Fact]
+    public async Task Human_join_racing_house_confirmation_never_overfills_and_can_replace_a_house_seat()
+    {
+        var (db, store, roster) = Create();
+        await Seed(db, "alice"); await Seed(db, "bruno");
+        var queued = await store.JoinAsync("alice", "Alice", 1m, "join-alice", Start, default);
+        async Task Confirm()
+        {
+            try { await store.PlayHouseAsync("alice", queued.Queue!.MatchId, queued.Version, "house", Start.AddSeconds(5), default); }
+            catch (PaidHeartsConflictException) { }
+        }
+        await Task.WhenAll(Confirm(), store.JoinAsync("bruno", "Bruno", 1m, "join-bruno", Start.AddSeconds(5), default));
+        var table = await Stored(db, queued.Queue!.MatchId);
+        if (table.Status == "queue")
+        {
+            Assert.Equal(2, table.Players.Count);
+            Assert.All(table.Players, player => Assert.True(player.IsAccountBacked));
+        }
+        else
+        {
+            Assert.Equal("match", table.Status);
+            Assert.Equal(4, table.Players.Count);
+            Assert.Equal(2, table.Players.Count(player => player.IsAccountBacked));
+            Assert.Contains(table.Players, player => player.UserId == "bruno");
+        }
+        Assert.Equal(99m, await Credits(db, "alice"));
+        Assert.Equal(99m, await Credits(db, "bruno"));
+        Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+        Assert.Equal(0, roster.Reservations);
+    }
+
+    [Fact]
+    public async Task House_seats_can_play_multiple_tables_without_profile_capacity_limits()
+    {
+        var (db, _, roster) = Create();
+        var store = new FirestorePaidHeartsStore(db, new MultiplayerMatchmaker(roster),
+            new PaidHeartsOptions { EntryOptionsCents = [100, 200, 300, 400, 500, 600] });
+        var houseIds = new HashSet<string>();
+        var entry = 0m;
+        foreach (var user in new[] { "alice", "bruno", "cara", "drew", "emma", "frank" })
+        {
+            await Seed(db, user);
+            var queued = await store.JoinAsync(user, user, ++entry, $"join-{user}", Start, default);
+            var table = await store.PlayHouseAsync(user, queued.Queue!.MatchId, queued.Version,
+                $"house-{user}", Start.AddSeconds(5), default);
+            Assert.Equal("match", table.Kind);
+            foreach (var player in (await Stored(db, queued.Queue.MatchId)).Players.Where(player => !player.IsAccountBacked))
+                Assert.True(houseIds.Add(player.UserId));
+        }
+        Assert.Equal(18, houseIds.Count);
+        Assert.Equal(6, (await db.Collection("heartsPaidFunding").GetSnapshotAsync()).Count);
+        Assert.Empty((await db.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
+        Assert.Equal(0, roster.Reservations);
+    }
+
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Global_or_hearts_admin_disable_blocks_new_house_seats_without_refund_or_extra_charge(bool global, bool hearts)
+    {
+        var (db, store, roster) = Create();
+        await Seed(db, "alice");
+        var queued = await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
+        Assert.True((await store.SessionAsync("alice", Start.AddSeconds(5), default)).Queue!.CanPlayHouse);
+        await db.Document(FirestoreAdminManagementStore.StatePath).SetAsync(new Dictionary<string, object>
+        {
+            ["version"] = 1L, ["botsEnabled"] = global,
+            ["gameBots"] = new Dictionary<string, object> { [ManagedPlayerGames.Hearts] = hearts },
+            ["visibility"] = new Dictionary<string, object>(), ["updatedAt"] = Timestamp.FromDateTime(Start)
+        });
+        Assert.False((await store.SessionAsync("alice", Start.AddSeconds(6), default)).Queue!.CanPlayHouse);
+        await Assert.ThrowsAsync<PaidHeartsConflictException>(() => store.PlayHouseAsync(
+            "alice", queued.Queue!.MatchId, queued.Version, "house-disabled", Start.AddSeconds(6), default));
+        Assert.Single((await Stored(db, queued.Queue!.MatchId)).Players);
+        Assert.Equal(99m, await Credits(db, "alice"));
+        Assert.Empty((await db.Collection("heartsPaidFunding").GetSnapshotAsync()).Documents);
+        Assert.Equal(0, roster.Reservations);
+    }
+
+    [Fact]
+    public async Task Legacy_preconsent_queue_is_refunded_and_profiles_released_instead_of_dealt()
+    {
+        var (db, store, roster) = Create();
+        await Seed(db, "alice");
+        var queued = await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
+        var legacy = await Stored(db, queued.Queue!.MatchId);
+        legacy.Players.Add(new PaidHeartsParticipant
+        {
+            UserId = "legacy-managed", DisplayName = "HumanLookingName", Seat = PlayerSeat.East,
+            ManagedAssignmentId = "legacy-assignment", JoinedAtUtc = Start
+        });
+        await db.Collection("heartsPaidMatches").Document(legacy.Id).UpdateAsync("matchJson", JsonSerializer.Serialize(legacy, Json));
+        var response = await store.SessionAsync("alice", Start.AddSeconds(1), default);
+        Assert.Equal("idle", response.Kind);
+        Assert.Contains("refunded", response.Notice);
+        Assert.Equal(100m, response.BalanceCredits);
+        var cancelled = await Stored(db, legacy.Id);
+        Assert.Equal("cancelled", cancelled.Status);
+        Assert.Null(cancelled.State);
+        Assert.Contains("legacy-managed", roster.Released);
+        Assert.Empty((await db.Collection("heartsPaidFunding").GetSnapshotAsync()).Documents);
     }
 
     [Fact]
@@ -103,24 +261,23 @@ public sealed class PaidHeartsFirestoreTests
     }
 
     [Fact]
-    public async Task Managed_arrivals_wait_for_humans_and_each_private_action_plays_real_hand()
+    public async Task House_opponents_require_consent_and_each_private_action_plays_real_hand()
     {
         var (db, store, roster) = Create();
         await Seed(db, "alice");
         var queued = await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
         await store.SessionAsync("alice", Start.AddSeconds(4), default);
         Assert.Equal(0, roster.Reservations);
-        var arrivals = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => store.SessionAsync("alice", Start.AddSeconds(5), default)));
-        var one = arrivals.MaxBy(view => view.Queue!.Players.Count)!;
-        Assert.Equal(2, one.Queue!.Players.Count);
-        Assert.Equal(1, roster.Reservations);
-        var two = await store.SessionAsync("alice", Start.AddSeconds(9), default);
-        Assert.Equal(3, two.Queue!.Players.Count);
-        var active = await store.SessionAsync("alice", Start.AddSeconds(13), default);
+        var offer = await store.SessionAsync("alice", Start.AddSeconds(5), default);
+        Assert.True(offer.Queue!.CanPlayHouse);
+        Assert.Single(offer.Queue.Players);
+        await store.SweepAsync(Start.AddSeconds(12), default);
+        Assert.Single((await store.SessionAsync("alice", Start.AddSeconds(12), default)).Queue!.Players);
+        var active = await store.PlayHouseAsync("alice", queued.Queue!.MatchId, offer.Version, "accept-house", Start.AddSeconds(13), default);
         Assert.Equal("match", active.Kind);
         Assert.Equal(4m, active.Table!.PotCredits);
         Assert.Null(active.Table.ActionDeadlineAtUtc);
-        Assert.Equal(3, roster.Reservations);
+        Assert.Equal(0, roster.Reservations);
         var now = Start.AddSeconds(13);
         var id = active.Table.Match.MatchId.ToString("N");
         for (var guard = 0; guard < 100; guard++)
@@ -170,7 +327,7 @@ public sealed class PaidHeartsFirestoreTests
     }
 
     [Fact]
-    public async Task Paid_hearts_respects_real_cross_game_reservations_and_off_time()
+    public async Task Dedicated_house_opponents_do_not_touch_shared_reservations_or_off_time()
     {
         var (db, _, _) = Create();
         var profiles = new FirestoreManagedPlayerProfileRepository(db);
@@ -187,14 +344,16 @@ public sealed class PaidHeartsFirestoreTests
         var store = new FirestorePaidHeartsStore(db, new MultiplayerMatchmaker(queuer));
         await Seed(db, "alice");
         await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
-        foreach (var seconds in new[] { 5, 9, 13 }) await store.SessionAsync("alice", Start.AddSeconds(seconds), default);
-        var current = await store.SessionAsync("alice", Start.AddSeconds(13), default);
+        var waiting = await store.SessionAsync("alice", Start.AddSeconds(5), default);
+        var current = await store.PlayHouseAsync("alice", waiting.Queue!.MatchId, waiting.Version, "accept-house", Start.AddSeconds(5), default);
         var match = await Stored(db, current.Table!.Match.MatchId.ToString("N"));
         Assert.DoesNotContain(match.Players, player => player.UserId == ids[0] || player.UserId == ids[1]);
         Assert.Equal(3, match.Players.Count(player => !player.IsAccountBacked));
         var held = await db.Collection("managedPlayerAssignments").Document(ids[0]).GetSnapshotAsync();
         Assert.Equal("occupied-blackjack", held.GetValue<string>("assignmentId"));
-        Assert.Equal(3, match.Players.Where(player => !player.IsAccountBacked).Select(player => player.ManagedAssignmentId).Distinct().Count());
+        Assert.All(match.Players.Where(player => !player.IsAccountBacked), player => Assert.Null(player.ManagedAssignmentId));
+        Assert.Single((await db.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
+        Assert.All(match.Players.Where(player => !player.IsAccountBacked), player => Assert.Equal($"House {player.Seat}", player.DisplayName));
     }
 
     [Theory]
@@ -205,8 +364,8 @@ public sealed class PaidHeartsFirestoreTests
         var (db, store, roster) = Create();
         await Seed(db, "alice");
         await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
-        foreach (var seconds in new[] { 5, 9, 13 }) await store.SessionAsync("alice", Start.AddSeconds(seconds), default);
-        var current = await store.SessionAsync("alice", Start.AddSeconds(13), default);
+        var waiting = await store.SessionAsync("alice", Start.AddSeconds(5), default);
+        var current = await store.PlayHouseAsync("alice", waiting.Queue!.MatchId, waiting.Version, "accept-house", Start.AddSeconds(5), default);
         var id = current.Table!.Match.MatchId.ToString("N");
         var winnerId = humanWins ? "alice" : (await Stored(db, id)).Players.First(player => !player.IsAccountBacked).UserId;
         await PrepareFinalCard(db, id, player => player.UserId == winnerId ? 50 : 80);
@@ -222,7 +381,7 @@ public sealed class PaidHeartsFirestoreTests
         Assert.Equal(humanWins ? 0L : 400L, revenue.GetValue<long>("botPrizeCents"));
         Assert.All((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents, entry => Assert.Equal("alice", entry.GetValue<string>("userId")));
         Assert.Single((await store.HistoryAsync("alice", default)).Items);
-        Assert.Equal(3, roster.Released.Count);
+        Assert.Empty(roster.Released);
         Assert.True((await new FirestoreHeartsOnboardingStore(db).GetAsync("alice", default)).ShouldAskPlayedBefore);
     }
 
@@ -266,27 +425,27 @@ public sealed class PaidHeartsFirestoreTests
     }
 
     [Fact]
-    public async Task Inactivity_warns_once_then_forfeits_without_refund_or_indefinite_seat()
+    public async Task First_expired_turn_forfeits_without_refund_or_indefinite_seat()
     {
         var (db, store, _) = Create();
         foreach (var user in new[] { "a", "b", "c", "d" }) { await Seed(db, user); await store.JoinAsync(user, user, 1m, $"join-{user}", Start, default); }
         var view = await store.SessionAsync("a", Start, default);
         var id = view.Table!.Match.MatchId.ToString("N");
-        // Passing deadlines auto-play one legal pass per idle seat.
-        var now = Start;
-        for (var index = 0; index < 4; index++) { now = (await Stored(db, id)).NextActionAtUtc!.Value; await store.GetAsync("a", id, now, default); }
         var pending = await Stored(db, id);
-        var timedOutUser = pending.Players.Single(player => player.Seat == pending.State!.Turn).UserId;
-        Assert.Equal(1, pending.Players.Single(player => player.UserId == timedOutUser).MissedTurns);
-        now = pending.NextActionAtUtc!.Value;
+        var timedOutUser = pending.Players.Single(player => player.Seat == pending.ScheduledSeat).UserId;
+        var now = pending.NextActionAtUtc!.Value;
         await store.GetAsync("a", id, now, default);
-        var forfeited = (await Stored(db, id)).Players.Single(player => player.UserId == timedOutUser);
+        var advanced = await Stored(db, id);
+        var forfeited = advanced.Players.Single(player => player.UserId == timedOutUser);
         Assert.True(forfeited.HasLeft);
+        Assert.Equal(1, forfeited.MissedTurns);
+        Assert.Single(advanced.State!.Round.SubmittedPasses);
+        Assert.All(advanced.Players.Where(player => player.UserId != timedOutUser), player => Assert.False(player.HasLeft));
         Assert.Equal(99m, await Credits(db, timedOutUser));
         Assert.Equal(0L, forfeited.PayoutCents);
         var idle = await store.SessionAsync(timedOutUser, now, default);
         Assert.Equal("idle", idle.Kind);
-        Assert.Contains("two missed turns", idle.Notice);
+        Assert.Contains("turn timer expired", idle.Notice);
     }
 
     [Fact]
@@ -311,9 +470,14 @@ public sealed class PaidHeartsFirestoreTests
     {
         var (db, store, roster) = Create();
         await Seed(db, "alice"); await store.JoinAsync("alice", "Alice", 1m, "join", Start, default);
-        foreach (var seconds in new[] { 5, 9, 13 }) await store.SessionAsync("alice", Start.AddSeconds(seconds), default);
-        var current = await store.SessionAsync("alice", Start.AddSeconds(13), default);
+        var waiting = await store.SessionAsync("alice", Start.AddSeconds(5), default);
+        var current = await store.PlayHouseAsync("alice", waiting.Queue!.MatchId, waiting.Version, "accept-house", Start.AddSeconds(5), default);
         var id = current.Table!.Match.MatchId.ToString("N");
+        // Existing dealt tables may still hold pre-migration shared-profile leases.
+        var legacy = await Stored(db, id);
+        foreach (var player in legacy.Players.Where(player => !player.IsAccountBacked))
+            player.ManagedAssignmentId = $"legacy:{player.Seat}";
+        await db.Collection("heartsPaidMatches").Document(id).UpdateAsync("matchJson", JsonSerializer.Serialize(legacy, Json));
         await PrepareFinalCard(db, id, player => player.UserId == "alice" ? 50 : 80);
         var model = await Stored(db, id);
         var actor = model.Players.Single(player => player.Seat == model.State!.Turn);
@@ -322,7 +486,7 @@ public sealed class PaidHeartsFirestoreTests
         {
             if (actor.IsAccountBacked)
                 await store.CommandAsync(actor.UserId, id, "card", model.Version,
-                    [HeartsEngine.LegalCards(model.State!.Round, actor.Seat)[0].Code], "final", Start.AddSeconds(20), default);
+                    [HeartsEngine.LegalCards(model.State!.Round, actor.Seat)[0].Code], "final", Start.AddSeconds(19), default);
             else await store.GetAsync("alice", id, Start.AddSeconds(20), default);
         });
         Assert.Equal("result", (await Stored(db, id)).Status);
@@ -352,7 +516,7 @@ public sealed class PaidHeartsFirestoreTests
             await store.CommandAsync(user, id, "leave", latest.Version, null, $"{user}-leave", Start.AddSeconds(15), default);
         }
         model = await Stored(db, id);
-        model.Players.Single(player => player.UserId == finalActor).MissedTurns = 1;
+        model.Players.Single(player => player.UserId == finalActor).MissedTurns = 0;
         await db.Collection("heartsPaidMatches").Document(id).UpdateAsync("matchJson", JsonSerializer.Serialize(model, Json));
         await store.GetAsync(finalActor, id, model.NextActionAtUtc!.Value, default);
         var settled = await Stored(db, id);
@@ -418,8 +582,10 @@ public sealed class PaidHeartsFirestoreTests
         if (actor.IsAccountBacked)
         {
             var card = HeartsEngine.LegalCards(model.State!.Round, actor.Seat)[0].Code;
-            await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => store.CommandAsync(actor.UserId, id, "card", model.Version, [card], "last-card", now, default)));
-            await store.CommandAsync(actor.UserId, id, "card", model.Version, [card], "last-card", now, default);
+            // These tests exercise an on-time winning card, not timeout policy.
+            var commandAt = now < model.NextActionAtUtc!.Value ? now : model.NextActionAtUtc.Value.AddTicks(-1);
+            await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => store.CommandAsync(actor.UserId, id, "card", model.Version, [card], "last-card", commandAt, default)));
+            await store.CommandAsync(actor.UserId, id, "card", model.Version, [card], "last-card", commandAt, default);
         }
         else await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => store.GetAsync(viewer, id, Start.AddSeconds(20), default)));
         return await store.GetAsync(viewer, id, Start.AddSeconds(21), default);

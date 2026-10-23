@@ -2,7 +2,6 @@ using FortuneForge.Games.Hearts;
 using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
-using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Games.Hearts;
@@ -35,12 +34,16 @@ internal sealed partial class FirestorePaidHeartsStore
         var observed = Read(snapshot);
         if (observed.Status == "queue")
         {
-            if (now >= observed.CreatedAtUtc.AddMinutes(2)) await ExpireQueueAsync(id, now, ct);
-            else if (now >= observed.NextAdmissionAtUtc && options.AllowManagedPlayers) await AdmitManagedAsync(id, now, ct);
+            // A legacy pre-consent queue may already contain shared profiles.
+            // Refund and close it instead of silently dealing with those seats.
+            var legacySeats = observed.Players.Any(player => !player.IsAccountBacked);
+            if (legacySeats || now >= observed.CreatedAtUtc.AddMinutes(2))
+                await ExpireQueueAsync(id, now, ct, legacySeats);
         }
         else if (observed.Status == "match")
         {
-            if (observed.LeaseRenewalAtUtc is null || now >= observed.LeaseRenewalAtUtc)
+            if (observed.Players.Any(player => !player.IsAccountBacked && player.ManagedAssignmentId is not null) &&
+                (observed.LeaseRenewalAtUtc is null || now >= observed.LeaseRenewalAtUtc))
                 await RenewAsync(observed, now, ct);
             if (observed.NextActionAtUtc is { } due && now >= due)
             {
@@ -48,40 +51,9 @@ internal sealed partial class FirestorePaidHeartsStore
                 await TransactionAsync(async tx =>
                 {
                     var latest = Read(await tx.GetSnapshotAsync(Match(id), ct));
-                    if (latest.Status != "match" || latest.NextActionAtUtc is not { } at || now < at) return false;
+                    if (!ActionIsDue(latest, now)) return false;
                     var balances = await BalancesAsync(tx, latest, ct);
-                    if (latest.State!.Round.Phase == HeartsPhase.Complete)
-                    {
-                        latest.State = HeartsMatchEngine.StartNextRound(latest.State, seed);
-                        latest.RecentTrick = null;
-                        latest.Message = "A new round has been dealt.";
-                    }
-                    else if (latest.ScheduledSeat is { } seat)
-                    {
-                        var actor = latest.Players.Single(player => player.Seat == seat);
-                        if (actor.IsAccountBacked && !actor.HasLeft)
-                        {
-                            actor.MissedTurns++;
-                            if (actor.MissedTurns >= 2) Forfeit(actor);
-                        }
-                        var round = latest.State.Round;
-                        HeartsCommand action = round.Phase == HeartsPhase.Passing
-                            ? new PassHeartsCards(seat, HeartsManagedActionPolicy.ChoosePass(round, seat,
-                                actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++))
-                            : new PlayHeartsCard(seat, HeartsManagedActionPolicy.ChooseCard(round, seat,
-                                actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++));
-                        Apply(latest, action);
-                        if (actor.IsAccountBacked && actor.MissedTurns > 0)
-                            latest.Message = actor.HasLeft
-                                ? $"{actor.DisplayName} was removed for inactivity and forfeited their entry."
-                                : $"An automatic legal play was made for {actor.DisplayName}. Another missed turn forfeits their entry.";
-                    }
-                    if (latest.State.Winner is not null || latest.Players.All(player => !player.IsAccountBacked || player.HasLeft))
-                        Settle(tx, latest, balances, now, abandoned: latest.State.Winner is null);
-                    else Schedule(latest, now);
-                    latest.Version++;
-                    latest.UpdatedAtUtc = now;
-                    Write(tx, latest);
+                    AdvanceDueAction(tx, latest, balances, now, seed);
                     return true;
                 }, ct);
             }
@@ -89,89 +61,53 @@ internal sealed partial class FirestorePaidHeartsStore
         await ReleaseIfNeededAsync(id, now, ct);
     }
 
-    private async Task AdmitManagedAsync(string id, DateTime now, CancellationToken ct)
+    private static bool ActionIsDue(PaidHeartsMatch match, DateTime now) =>
+        match.Status == "match" && match.NextActionAtUtc is { } due && now >= due;
+
+    private void AdvanceDueAction(Transaction tx, PaidHeartsMatch match,
+        IReadOnlyDictionary<string, long> balances, DateTime now, uint nextSeed)
     {
-        var claimId = Guid.NewGuid().ToString("N");
-        var claimed = await TransactionAsync(async tx =>
+        if (match.State!.Round.Phase == HeartsPhase.Complete)
         {
-            var match = Read(await tx.GetSnapshotAsync(Match(id), ct));
-            if (match.Status != "queue" || match.Players.Count >= 4 || now < match.NextAdmissionAtUtc ||
-                !match.Players.Any(player => player.IsAccountBacked) ||
-                (match.AdmissionClaimExpiresAtUtc is { } expires && now < expires)) return false;
-            var humans = matchmaking.PlanQueue(match.Players,
-                new MultiplayerQueueRules(1, 4), now, player => player.IsAccountBacked,
-                player => player.JoinedAtUtc, _ => match.CreatedAtUtc.AddSeconds(options.HumanQueueSeconds), player => player.UserId);
-            if (!humans.IsReady) return false;
-            match.AdmissionClaim = claimId;
-            match.AdmissionClaimExpiresAtUtc = now.AddSeconds(30);
-            Write(tx, match);
-            return true;
-        }, ct);
-        if (!claimed) return;
-        IReadOnlyList<ManagedPlayerProfile> reserved = [];
-        var assignmentId = $"{Assignment(id)}:{claimId}";
-        var admitted = false;
-        try
+            match.State = HeartsMatchEngine.StartNextRound(match.State, nextSeed);
+            match.RecentTrick = null;
+            match.Message = "A new round has been dealt.";
+        }
+        else if (match.ScheduledSeat is { } seat)
         {
-            var observed = Read(await Match(id).GetSnapshotAsync(ct));
-            reserved = await matchmaking.ReserveManagedPlayersAsync(ManagedPlayerGames.Hearts, assignmentId, 1,
-                observed.Players.Select(player => player.UserId).ToArray(), now, ct);
-            if (reserved.Count != 1) return;
-            var profile = reserved[0];
-            var decisionSeed = PaidHeartsIds.PrivateSeed();
-            var timingSeed = PaidHeartsIds.PrivateSeed();
-            var shuffleSeed = PaidHeartsIds.Seed();
-            admitted = await TransactionAsync(async tx =>
+            var actor = match.Players.Single(player => player.Seat == seat);
+            if (actor.IsAccountBacked && !actor.HasLeft)
             {
-                var match = Read(await tx.GetSnapshotAsync(Match(id), ct));
-                if (match.Status != "queue" || match.AdmissionClaim != claimId || match.Players.Count >= 4 ||
-                    !match.Players.Any(player => player.IsAccountBacked)) return false;
-                match.Players.Add(new PaidHeartsParticipant
-                {
-                    UserId = profile.UserId, DisplayName = profile.PlayerName, SkillLevel = profile.SkillLevel,
-                    ManagedAssignmentId = assignmentId,
-                    Seat = Enum.GetValues<PlayerSeat>().First(seat => match.Players.All(player => player.Seat != seat)),
-                    JoinedAtUtc = now, DecisionSeed = decisionSeed, TimingSeed = timingSeed
-                });
-                match.AdmissionClaim = null;
-                match.AdmissionClaimExpiresAtUtc = null;
-                match.Version++;
-                match.UpdatedAtUtc = now;
-                match.NextAdmissionAtUtc = now + ManagedQueueArrivalPolicy.NextGap(
-                    ManagedPlayerGames.Hearts, id, match.Players.Count(player => !player.IsAccountBacked) + 1);
-                if (match.Players.Count == 4)
-                {
-                    Start(match, now, shuffleSeed);
-                    WriteFunding(tx, match, now);
-                    tx.Set(Partition(match.EntryCents), new Dictionary<string, object> { ["matchId"] = "" });
-                }
-                Write(tx, match);
-                return true;
-            }, ct);
+                actor.MissedTurns++;
+                // Prize eligibility ends before any automatic choice is made.
+                // The substitute only keeps the remaining players' table moving.
+                Forfeit(actor);
+            }
+            var round = match.State.Round;
+            HeartsCommand action = round.Phase == HeartsPhase.Passing
+                ? new PassHeartsCards(seat, HeartsManagedActionPolicy.ChoosePass(round, seat,
+                    actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++))
+                : new PlayHeartsCard(seat, HeartsManagedActionPolicy.ChooseCard(round, seat,
+                    actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++));
+            Apply(match, action);
+            if (actor.IsAccountBacked && actor.MissedTurns > 0)
+                match.Message = $"{actor.DisplayName} was removed when their turn timer expired and forfeited their entry. Their remaining cards will be played automatically.";
         }
-        finally
-        {
-            if (!admitted && reserved.Count > 0)
-                await matchmaking.ReleaseManagedPlayersAsync(assignmentId, reserved.Select(profile => profile.UserId).ToArray(), now, CancellationToken.None);
-            if (!admitted)
-                await TransactionAsync(async tx =>
-                {
-                    var match = Read(await tx.GetSnapshotAsync(Match(id), CancellationToken.None));
-                    if (match.AdmissionClaim != claimId) return false;
-                    match.AdmissionClaim = null;
-                    match.AdmissionClaimExpiresAtUtc = null;
-                    Write(tx, match);
-                    return true;
-                }, CancellationToken.None);
-        }
+        if (match.State.Winner is not null || match.Players.All(player => !player.IsAccountBacked || player.HasLeft))
+            Settle(tx, match, balances, now, abandoned: match.State.Winner is null);
+        else Schedule(match, now);
+        match.Version++;
+        match.UpdatedAtUtc = now;
+        Write(tx, match);
     }
 
-    private async Task ExpireQueueAsync(string id, DateTime now, CancellationToken ct)
+    private async Task ExpireQueueAsync(string id, DateTime now, CancellationToken ct, bool legacySeats = false)
     {
         await TransactionAsync(async tx =>
         {
             var match = Read(await tx.GetSnapshotAsync(Match(id), ct));
-            if (match.Status != "queue" || now < match.CreatedAtUtc.AddMinutes(2)) return false;
+            if (match.Status != "queue" ||
+                (!legacySeats && now < match.CreatedAtUtc.AddMinutes(2))) return false;
             var balances = await BalancesAsync(tx, match, ct);
             var humans = match.Players.Where(player => player.IsAccountBacked).ToArray();
             var sessions = await Task.WhenAll(humans.Select(player => tx.GetSnapshotAsync(Session(player.UserId), ct)));
@@ -186,6 +122,9 @@ internal sealed partial class FirestorePaidHeartsStore
                     tx.Set(Session(player.UserId), new Dictionary<string, object> { ["matchId"] = "" });
             }
             CancelEmptyQueue(match, now);
+            match.Message = legacySeats
+                ? "This older queue was closed and your entry refunded. Join again to choose human players or explicit house opponents."
+                : "No table filled within two minutes. Your entry was refunded; you can search again.";
             match.Version++;
             Write(tx, match);
             return true;
@@ -195,7 +134,7 @@ internal sealed partial class FirestorePaidHeartsStore
     private async Task RenewAsync(PaidHeartsMatch observed, DateTime now, CancellationToken ct)
     {
         var lost = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var player in observed.Players.Where(player => !player.IsAccountBacked && !player.HasLeft))
+        foreach (var player in observed.Players.Where(player => !player.IsAccountBacked && !player.HasLeft && player.ManagedAssignmentId is not null))
             if (!await matchmaking.TryRenewManagedPlayersAsync(ManagedPlayerGames.Hearts,
                     player.ManagedAssignmentId!, [player.UserId], now, ct)) lost.Add(player.UserId);
         await TransactionAsync(async tx =>
@@ -224,7 +163,8 @@ internal sealed partial class FirestorePaidHeartsStore
     {
         var snapshot = await Match(id).GetSnapshotAsync(ct);
         if (!snapshot.Exists || Read(snapshot) is not { ReleasePending: true } match) return;
-        foreach (var group in match.Players.Where(player => !player.IsAccountBacked).GroupBy(player => player.ManagedAssignmentId!))
+        foreach (var group in match.Players.Where(player => !player.IsAccountBacked && player.ManagedAssignmentId is not null)
+                     .GroupBy(player => player.ManagedAssignmentId!))
             await matchmaking.ReleaseManagedPlayersAsync(group.Key, group.Select(player => player.UserId).ToArray(), now, ct);
         await TransactionAsync(async tx =>
         {
@@ -240,10 +180,12 @@ internal sealed partial class FirestorePaidHeartsStore
     {
         match.Status = "match";
         match.State = HeartsMatchEngine.Start(seed, 100);
+        match.InitialHumanEntryCents = checked(match.EntryCents * match.Players.Count(player => player.IsAccountBacked));
         match.Message = "Pass three cards to the left.";
         match.AdmissionClaim = null;
         match.AdmissionClaimExpiresAtUtc = null;
-        match.LeaseRenewalAtUtc = now.AddMinutes(3);
+        match.LeaseRenewalAtUtc = match.Players.Any(player => !player.IsAccountBacked && player.ManagedAssignmentId is not null)
+            ? now.AddMinutes(3) : null;
         Schedule(match, now);
     }
 
@@ -255,8 +197,14 @@ internal sealed partial class FirestorePaidHeartsStore
         match.Message = transition.Message;
         if (transition.State.Round.CompletedTricks.Count > before)
             match.RecentTrick = transition.State.Round.CompletedTricks[^1];
-        match.ScheduledSeat = null;
-        match.NextActionAtUtc = null;
+        // Passing is simultaneous. A different player's pass must not restart
+        // the timer of the human seat that is already being waited on.
+        if (transition.State.Round.Phase != HeartsPhase.Passing || match.ScheduledSeat is not { } waiting ||
+            transition.State.Round.SubmittedPasses.Any(pass => pass.Seat == waiting))
+        {
+            match.ScheduledSeat = null;
+            match.NextActionAtUtc = null;
+        }
     }
 
     private void Schedule(PaidHeartsMatch match, DateTime now)
@@ -272,9 +220,11 @@ internal sealed partial class FirestorePaidHeartsStore
             ? match.Players.Where(player => !state.Round.SubmittedPasses.Any(pass => pass.Seat == player.Seat))
                 .OrderBy(player => player.IsAccountBacked && !player.HasLeft).ThenBy(player => player.Seat).First()
             : match.Players.Single(player => player.Seat == state.Round.Turn);
+        var unchangedDeadline = match.ScheduledSeat == actor.Seat ? match.NextActionAtUtc : null;
         match.ScheduledSeat = actor.Seat;
         if (actor.IsAccountBacked && !actor.HasLeft)
-            match.NextActionAtUtc = now.AddSeconds(options.ActionTimeoutSeconds);
+            match.NextActionAtUtc = unchangedDeadline is { } existing && existing > now
+                ? existing : now.AddSeconds(options.ActionTimeoutSeconds);
         else
         {
             var random = new DeterministicManagedPlayerRandom(actor.TimingSeed, $"paid-hearts-think:{actor.UserId}:{actor.TimingVersion++}");
@@ -295,18 +245,23 @@ internal sealed partial class FirestorePaidHeartsStore
         match.Status = "cancelled";
         match.CompletedAtUtc = now;
         match.UpdatedAtUtc = now;
-        match.ReleasePending = match.Players.Any(player => !player.IsAccountBacked);
+        match.ReleasePending = match.Players.Any(player => !player.IsAccountBacked && player.ManagedAssignmentId is not null);
     }
 
     private void WriteFunding(Transaction tx, PaidHeartsMatch match, DateTime now) =>
-        tx.Create(database.Collection("heartsPaidFunding").Document(match.Id), new Dictionary<string, object>
+        tx.Create(Funding(match.Id), FundingData(match, now));
+
+    private static Dictionary<string, object> FundingData(PaidHeartsMatch match, DateTime now) => new()
         {
             ["matchId"] = match.Id, ["currencyId"] = Currency, ["entryCents"] = match.EntryCents,
             ["humanEntryCents"] = checked(match.EntryCents * match.Players.Count(player => player.IsAccountBacked)),
             ["houseFundedEntryCents"] = checked(match.EntryCents * match.Players.Count(player => !player.IsAccountBacked)),
+            ["initialHumanEntryCents"] = match.InitialHumanEntryCents,
+            ["initialHouseFundedEntryCents"] = checked(match.PotCents - match.InitialHumanEntryCents),
+            ["takeoverCount"] = 0L,
             ["grossPoolCents"] = match.PotCents, ["financialClassification"] = "house-funded-hearts-pool-v1",
             ["fundedAt"] = Timestamp.FromDateTime(now), ["schemaVersion"] = 1L
-        });
+        };
 
     private void Settle(Transaction tx, PaidHeartsMatch match, IReadOnlyDictionary<string, long> balances, DateTime now, bool abandoned = false)
     {
@@ -319,7 +274,7 @@ internal sealed partial class FirestorePaidHeartsStore
         match.CompletedAtUtc = now;
         match.NextActionAtUtc = null;
         match.ScheduledSeat = null;
-        match.ReleasePending = match.Players.Any(player => !player.IsAccountBacked);
+        match.ReleasePending = match.Players.Any(player => !player.IsAccountBacked && player.ManagedAssignmentId is not null);
         match.Winners = match.Players.Where(player => shares.ContainsKey(player.UserId)).Select(player => player.Seat).ToList();
         match.Message = abandoned ? "All players left. Entries were forfeited."
             : match.Winners.Count > 1 ? "The lowest scores tied. The full pot was shared."
@@ -346,6 +301,8 @@ internal sealed partial class FirestorePaidHeartsStore
         {
             ["matchId"] = match.Id, ["currencyId"] = Currency, ["humanEntryCents"] = humanEntry,
             ["houseFundedEntryCents"] = houseEntry, ["grossPoolCents"] = match.PotCents,
+            ["initialHumanEntryCents"] = match.InitialHumanEntryCents > 0 ? match.InitialHumanEntryCents : humanEntry,
+            ["houseStakeReclassifiedCents"] = checked(match.HouseTakeoverCount * match.EntryCents),
             ["humanPayoutCents"] = humanPayout, ["botPrizeCents"] = botPrize,
             ["forfeitedPoolCents"] = forfeited, ["houseNetCents"] = checked(humanEntry - humanPayout),
             ["platformFeeCents"] = 0L, ["financialClassification"] = "house-funded-hearts-pool-v1",

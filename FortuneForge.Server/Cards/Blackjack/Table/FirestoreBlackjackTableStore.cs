@@ -358,6 +358,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         CancellationToken cancellationToken)
     {
         var reservations = new List<BlackjackReservedManagedPlayer>();
+        var allowManagedArrivals = true;
         while (true)
         {
             try
@@ -366,7 +367,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -429,6 +430,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                     cancellationToken);
                 reservations.AddRange(profiles.Select(profile =>
                     new BlackjackReservedManagedPlayer(profile, required.AssignmentId)));
+                if (profiles.Count == 0) allowManagedArrivals = false;
             }
         }
     }
@@ -439,6 +441,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         CancellationToken cancellationToken)
     {
         var reservations = new List<BlackjackReservedManagedPlayer>();
+        var allowManagedArrivals = true;
         while (true)
         {
             try
@@ -447,7 +450,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -486,6 +489,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                     cancellationToken);
                 reservations.AddRange(profiles.Select(profile =>
                     new BlackjackReservedManagedPlayer(profile, required.AssignmentId)));
+                if (profiles.Count == 0) allowManagedArrivals = false;
             }
         }
     }

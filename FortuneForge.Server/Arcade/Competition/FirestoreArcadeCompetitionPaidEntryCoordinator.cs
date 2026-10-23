@@ -1,7 +1,10 @@
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Games.Flappy;
+using FortuneForge.Games.HorseFlight;
+using System.Collections;
 using System.Text.RegularExpressions;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,7 +15,7 @@ namespace FortuneForge.Server.Arcade.Competition;
 /// Unregistered internal admission boundary. It atomically debits an entry and starts an attempt;
 /// settlement, refunds, and payouts deliberately belong to separate future work.
 /// </summary>
-internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCompetitionPaidEntryCoordinator, IArcadeCompetitionFlappyPaidEntryCoordinator
+internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCompetitionPaidEntryCoordinator, IArcadeCompetitionFlappyPaidEntryCoordinator, IArcadeCompetitionHorseFlightPaidEntryCoordinator
 {
     private const string SlotsCreditsCurrencyId = "slotsCredits";
     private const string AvailableFractionalCentsField = "availableFractionalCents";
@@ -35,7 +38,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
     public async Task<ArcadeCompetitionPaidEntryResult> StartPaidAttemptAsync(
         ArcadeCompetitionPaidEntryRequest request,
         CancellationToken cancellationToken) =>
-        (await StartAsync(request, null, null, cancellationToken)).Entry;
+        (await StartAsync(request, null, null, null, cancellationToken)).Entry;
 
     public async Task<ArcadeCompetitionAsteroidsPaidEntryResult> StartAsteroidsPaidAttemptAsync(
         ArcadeCompetitionPaidEntryRequest request,
@@ -43,7 +46,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(proposedRun);
-        var outcome = await StartAsync(request, proposedRun, null, cancellationToken);
+        var outcome = await StartAsync(request, proposedRun, null, null, cancellationToken);
         return new ArcadeCompetitionAsteroidsPaidEntryResult(
             outcome.Entry.Attempt,
             outcome.Entry.WasAlreadyRecorded,
@@ -56,11 +59,24 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(proposedRun);
-        var outcome = await StartAsync(request, null, proposedRun, cancellationToken);
+        var outcome = await StartAsync(request, null, proposedRun, null, cancellationToken);
         return new ArcadeCompetitionFlappyPaidEntryResult(
             outcome.Entry.Attempt,
             outcome.Entry.WasAlreadyRecorded,
             outcome.FlappyRun ?? throw new InvalidOperationException("A Flappy paid entry did not produce a run."));
+    }
+
+    public async Task<ArcadeCompetitionHorseFlightPaidEntryResult> StartHorseFlightPaidAttemptAsync(
+        ArcadeCompetitionPaidEntryRequest request,
+        HorseFlightPaidRunIdentity proposedRun,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(proposedRun);
+        var outcome = await StartAsync(request, null, null, proposedRun, cancellationToken);
+        return new ArcadeCompetitionHorseFlightPaidEntryResult(
+            outcome.Entry.Attempt,
+            outcome.Entry.WasAlreadyRecorded,
+            outcome.HorseFlightRun ?? throw new InvalidOperationException("A Horse Flight paid entry did not produce a run."));
     }
 
     public Task<AsteroidsReplayCompletionResult> CompleteAsteroidsReplayAsync(
@@ -178,10 +194,83 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         }, cancellationToken: cancellationToken);
     }
 
+    public Task<HorseFlightPaidReplayCompletionResult> CompleteHorseFlightReplayAsync(
+        HorseFlightPaidReplayCompletionRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var attemptDocumentId = HorseFlightAttemptDocumentIdFromRunId(request.RunId);
+        return database.RunTransactionAsync(async transaction =>
+        {
+            var competitionReference = CompetitionDocument(request.Competition);
+            var settlementReference = SettlementDocument(request.Competition);
+            var runReference = database.Collection("horseFlightRuns").Document(attemptDocumentId);
+            var first = await Task.WhenAll(
+                transaction.GetSnapshotAsync(competitionReference, cancellationToken),
+                transaction.GetSnapshotAsync(settlementReference, cancellationToken),
+                transaction.GetSnapshotAsync(runReference, cancellationToken));
+            if (!first[0].Exists) throw new InvalidOperationException("The paid competition is missing.");
+            VerifyCompetition(first[0], request.Competition);
+            VerifySettlementIsAcceptingEntries(first[1], request.Competition);
+            var run = ReadHorseFlightRunForCompletion(first[2], request);
+            var attemptReference = database.Collection(ArcadeCompetitionFirestoreDocuments.AttemptsCollection).Document(attemptDocumentId);
+            var attemptSnapshot = await transaction.GetSnapshotAsync(attemptReference, cancellationToken);
+            if (run.Status == "completed")
+            {
+                if (run.TotalTicks != request.Replay.TotalTicks ||
+                    !run.JumpTicks.SequenceEqual(request.Replay.JumpTicks) ||
+                    !run.RightClickTicks.SequenceEqual(request.Replay.RightClickTicks))
+                {
+                    throw new InvalidOperationException("This Horse Flight run was already completed with a different replay.");
+                }
+                var completedAttempt = ReadCompletedAttempt(attemptSnapshot, request.Competition);
+                if (completedAttempt.AttemptId != run.Attempt.AttemptId ||
+                    completedAttempt.PlayerId != run.Attempt.PlayerId ||
+                    completedAttempt.Score != run.Score ||
+                    completedAttempt.CompletedAtUtc != run.CompletedAtUtc)
+                {
+                    throw new InvalidOperationException("The completed Horse Flight run does not match its competition attempt.");
+                }
+                return new HorseFlightPaidReplayCompletionResult(
+                    completedAttempt, run.Score, run.Phase, run.TotalTicks, run.JumpTicks, run.RightClickTicks, true);
+            }
+            if (run.Status != "started" || !attemptSnapshot.Exists)
+                throw new InvalidOperationException("The Horse Flight run is not available for completion.");
+            var attempt = ReadAttempt(attemptSnapshot, request.Competition);
+            if (attempt.PlayerId != request.AuthenticatedPlayerId || attempt.AttemptId != run.Attempt.AttemptId)
+                throw new InvalidOperationException("The Horse Flight run does not match its competition attempt.");
+            var authoritativeReplay = request.Replay with { RulesVersion = run.RulesVersion };
+            var replayResult = HorseFlightReplayEvaluator.Evaluate(run.Run.Seed, authoritativeReplay);
+            var completed = attempt.Complete(new ArcadeCompetitionAttemptCompletion(
+                attempt.AttemptId, request.Competition, request.AuthenticatedPlayerId, replayResult.Snapshot.Score, request.CompletedAtUtc));
+            transaction.Set(runReference, new Dictionary<string, object>
+            {
+                ["status"] = "completed",
+                ["rulesVersion"] = (long)run.RulesVersion,
+                ["totalTicks"] = request.Replay.TotalTicks,
+                ["jumpTicks"] = request.Replay.JumpTicks.ToArray(),
+                ["rightClickTicks"] = request.Replay.RightClickTicks.ToArray(),
+                ["score"] = replayResult.Snapshot.Score,
+                ["phase"] = HorseFlightPhaseName(replayResult.Snapshot.Phase),
+                ["completedAt"] = Timestamp.FromDateTime(request.CompletedAtUtc.UtcDateTime),
+            }, SetOptions.MergeAll);
+            transaction.Set(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(completed));
+            return new HorseFlightPaidReplayCompletionResult(
+                completed,
+                replayResult.Snapshot.Score,
+                replayResult.Snapshot.Phase,
+                request.Replay.TotalTicks,
+                request.Replay.JumpTicks,
+                request.Replay.RightClickTicks,
+                false);
+        }, cancellationToken: cancellationToken);
+    }
+
     private Task<PaidEntryOutcome> StartAsync(
         ArcadeCompetitionPaidEntryRequest request,
         AsteroidsRunIdentity? proposedRun,
         FlappyPaidRunIdentity? proposedFlappyRun,
+        HorseFlightPaidRunIdentity? proposedHorseFlightRun,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -199,15 +288,18 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         var attemptReference = AttemptDocument(requested);
         var balanceReference = BalanceDocument(request.AuthenticatedPlayerId);
         var entryReference = BalanceTransactionDocument($"arcade-competition-{requested.DocumentId}-entry");
-        if (proposedRun is not null && proposedFlappyRun is not null)
+        if (new object?[] { proposedRun, proposedFlappyRun, proposedHorseFlightRun }.Count(run => run is not null) > 1)
             throw new ArgumentException("A paid entry cannot create more than one game run.");
         var runReference = proposedRun is not null ? AsteroidsRunDocument(requested)
             : proposedFlappyRun is not null ? FlappyRunDocument(requested)
+            : proposedHorseFlightRun is not null ? HorseFlightRunDocument(requested)
             : null;
         if (proposedRun is not null && proposedRun.RunId != AsteroidsRunId(requested))
             throw new ArgumentException("The Asteroids run id must be deterministic for its competition attempt.", nameof(proposedRun));
         if (proposedFlappyRun is not null && proposedFlappyRun.RunId != FlappyRunId(requested))
             throw new ArgumentException("The Flappy run id must be deterministic for its competition attempt.", nameof(proposedFlappyRun));
+        if (proposedHorseFlightRun is not null && proposedHorseFlightRun.RunId != HorseFlightRunId(requested))
+            throw new ArgumentException("The Horse Flight run id must be deterministic for its competition attempt.", nameof(proposedHorseFlightRun));
 
         return database.RunTransactionAsync(async transaction =>
         {
@@ -242,7 +334,9 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                     runSnapshot ?? throw new InvalidOperationException("An Asteroids run snapshot is missing."), existing);
                 var existingFlappyRun = proposedFlappyRun is null ? null : ReadFlappyRun(
                     runSnapshot ?? throw new InvalidOperationException("A Flappy run snapshot is missing."), existing);
-                return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(existing, WasAlreadyRecorded: true), existingRun, existingFlappyRun);
+                var existingHorseFlightRun = proposedHorseFlightRun is null ? null : ReadHorseFlightRun(
+                    runSnapshot ?? throw new InvalidOperationException("A Horse Flight run snapshot is missing."), existing);
+                return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(existing, WasAlreadyRecorded: true), existingRun, existingFlappyRun, existingHorseFlightRun);
             }
 
             if (entrySnapshot.Exists)
@@ -267,6 +361,7 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
             transaction.Create(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(requested));
             AsteroidsRunRecord? createdRun = null;
             FlappyPaidRunRecord? createdFlappyRun = null;
+            HorseFlightPaidRunRecord? createdHorseFlightRun = null;
             if (proposedRun is not null && runReference is not null)
             {
                 createdRun = new AsteroidsRunRecord(proposedRun, requested);
@@ -277,7 +372,12 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 createdFlappyRun = new FlappyPaidRunRecord(proposedFlappyRun, requested);
                 transaction.Create(runReference, FlappyRunData(createdFlappyRun));
             }
-            return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(requested, WasAlreadyRecorded: false), createdRun, createdFlappyRun);
+            if (proposedHorseFlightRun is not null && runReference is not null)
+            {
+                createdHorseFlightRun = new HorseFlightPaidRunRecord(proposedHorseFlightRun, requested);
+                transaction.Create(runReference, HorseFlightRunData(createdHorseFlightRun));
+            }
+            return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(requested, WasAlreadyRecorded: false), createdRun, createdFlappyRun, createdHorseFlightRun);
         }, cancellationToken: cancellationToken);
     }
 
@@ -302,6 +402,9 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
 
     private DocumentReference FlappyRunDocument(ArcadeCompetitionAttemptRecord attempt) =>
         database.Collection("flappyRuns").Document(attempt.DocumentId);
+
+    private DocumentReference HorseFlightRunDocument(ArcadeCompetitionAttemptRecord attempt) =>
+        database.Collection("horseFlightRuns").Document(attempt.DocumentId);
 
     private static Dictionary<string, object> BalanceUpdate(long cents, DateTimeOffset updatedAtUtc) => new()
     {
@@ -361,6 +464,25 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         ["enteredAt"] = Timestamp.FromDateTime(run.Attempt.EnteredAtUtc.UtcDateTime),
         ["startsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.StartsAtUtc.UtcDateTime),
         ["endsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.EndsAtUtc.UtcDateTime),
+        ["schemaVersion"] = 1L,
+    };
+
+    private static Dictionary<string, object> HorseFlightRunData(HorseFlightPaidRunRecord run) => new()
+    {
+        ["runId"] = run.Run.RunId,
+        ["seed"] = (long)run.Run.Seed,
+        ["status"] = "started",
+        ["attemptId"] = run.Attempt.AttemptId,
+        ["attemptDocumentId"] = run.Attempt.DocumentId,
+        ["competitionId"] = run.Attempt.Competition.DocumentId,
+        ["gameId"] = run.Attempt.Competition.GameId,
+        ["playerId"] = run.Attempt.PlayerId,
+        ["entryFeeCents"] = run.Attempt.EntryFeeCents,
+        ["enteredAt"] = Timestamp.FromDateTime(run.Attempt.EnteredAtUtc.UtcDateTime),
+        ["startsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.StartsAtUtc.UtcDateTime),
+        ["endsAt"] = Timestamp.FromDateTime(run.Attempt.Competition.EndsAtUtc.UtcDateTime),
+        ["tickMilliseconds"] = HorseFlightEngine.TickMilliseconds,
+        ["rulesVersion"] = (long)run.RulesVersion,
         ["schemaVersion"] = 1L,
     };
 
@@ -508,6 +630,29 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         return new FlappyPaidRunRecord(new FlappyPaidRunIdentity(runId, (uint)seed), attempt);
     }
 
+    private static HorseFlightPaidRunRecord ReadHorseFlightRun(DocumentSnapshot snapshot, ArcadeCompetitionAttemptRecord attempt)
+    {
+        if (!snapshot.Exists ||
+            !snapshot.TryGetValue<string>("runId", out var runId) || runId != HorseFlightRunId(attempt) ||
+            !snapshot.TryGetValue<long>("seed", out var seed) || seed is < 1 or > uint.MaxValue ||
+            !snapshot.TryGetValue<string>("attemptId", out var attemptId) || attemptId != attempt.AttemptId ||
+            !snapshot.TryGetValue<string>("attemptDocumentId", out var documentId) || documentId != attempt.DocumentId ||
+            !snapshot.TryGetValue<string>("competitionId", out var competitionId) || competitionId != attempt.Competition.DocumentId ||
+            !snapshot.TryGetValue<string>("gameId", out var gameId) || gameId != attempt.Competition.GameId ||
+            !snapshot.TryGetValue<string>("playerId", out var playerId) || playerId != attempt.PlayerId ||
+            !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != attempt.Competition.StartsAtUtc ||
+            !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != attempt.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<long>("tickMilliseconds", out var tickMilliseconds) || tickMilliseconds != HorseFlightEngine.TickMilliseconds ||
+            !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
+        {
+            throw new InvalidOperationException("A recorded Horse Flight run does not match its paid competition attempt.");
+        }
+        return new HorseFlightPaidRunRecord(new HorseFlightPaidRunIdentity(runId, (uint)seed), attempt)
+        {
+            RulesVersion = ReadHorseFlightRulesVersion(snapshot),
+        };
+    }
+
     private static StoredRun ReadRunForCompletion(DocumentSnapshot snapshot, AsteroidsReplayCompletionRequest request)
     {
         if (!snapshot.Exists || !snapshot.TryGetValue<string>("runId", out var runId) || runId != request.RunId ||
@@ -586,6 +731,83 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         return new StoredFlappyRun(identity, attempt, status, canonical, digest, score, terminal, completedAt);
     }
 
+    private static StoredHorseFlightRun ReadHorseFlightRunForCompletion(DocumentSnapshot snapshot, HorseFlightPaidReplayCompletionRequest request)
+    {
+        if (!snapshot.Exists || !snapshot.TryGetValue<string>("runId", out var runId) || runId != request.RunId ||
+            !snapshot.TryGetValue<long>("seed", out var seed) || seed is < 1 or > uint.MaxValue ||
+            !snapshot.TryGetValue<string>("attemptId", out var attemptId) ||
+            !snapshot.TryGetValue<string>("attemptDocumentId", out var attemptDocumentId) ||
+            !snapshot.TryGetValue<string>("competitionId", out var competitionId) || competitionId != request.Competition.DocumentId ||
+            !snapshot.TryGetValue<string>("gameId", out var gameId) || gameId != request.Competition.GameId ||
+            !snapshot.TryGetValue<string>("playerId", out var playerId) || playerId != request.AuthenticatedPlayerId ||
+            !snapshot.TryGetValue<long>("entryFeeCents", out var entryFee) || entryFee <= 0 ||
+            !snapshot.TryGetValue<Timestamp>("enteredAt", out var enteredAt) ||
+            !snapshot.TryGetValue<Timestamp>("startsAt", out var startsAt) || new DateTimeOffset(startsAt.ToDateTime()) != request.Competition.StartsAtUtc ||
+            !snapshot.TryGetValue<Timestamp>("endsAt", out var endsAt) || new DateTimeOffset(endsAt.ToDateTime()) != request.Competition.EndsAtUtc ||
+            !snapshot.TryGetValue<long>("tickMilliseconds", out var tickMilliseconds) || tickMilliseconds != HorseFlightEngine.TickMilliseconds ||
+            !snapshot.TryGetValue<string>("status", out var status))
+        {
+            throw new InvalidOperationException("A stored Horse Flight run is invalid.");
+        }
+        var rulesVersion = ReadHorseFlightRulesVersion(snapshot);
+        ArcadeCompetitionAttemptRecord attempt;
+        try
+        {
+            var started = new ArcadeCompetitionAttemptStart(attemptId, request.Competition, playerId, entryFee, new DateTimeOffset(enteredAt.ToDateTime()));
+            attempt = ArcadeCompetitionAttemptRecord.Start(started);
+        }
+        catch { throw new InvalidOperationException("A stored Horse Flight run is invalid."); }
+        if (attempt.DocumentId != attemptDocumentId) throw new InvalidOperationException("A stored Horse Flight run is invalid.");
+        var identity = new HorseFlightPaidRunIdentity(runId, (uint)seed);
+        if (status == "started")
+        {
+            return new StoredHorseFlightRun(identity, attempt, rulesVersion, status, 0, [], [], 0, HorseFlightPhase.Running, null);
+        }
+        if (status != "completed" ||
+            !snapshot.TryGetValue<long>("totalTicks", out var totalTicks) || totalTicks is < 1 or > int.MaxValue ||
+            !snapshot.TryGetValue<long>("score", out var score) || score is < 0 or > int.MaxValue ||
+            !snapshot.TryGetValue<string>("phase", out var phaseName) ||
+            !snapshot.TryGetValue<Timestamp>("completedAt", out var completedAt))
+        {
+            throw new InvalidOperationException("A completed Horse Flight run is invalid.");
+        }
+        var jumpTicks = ReadHorseFlightTicks(snapshot, "jumpTicks");
+        var rightClickTicks = ReadHorseFlightTicks(snapshot, "rightClickTicks");
+        var phase = phaseName switch
+        {
+            "obstacle-collision" => HorseFlightPhase.ObstacleCollision,
+            "fell" => HorseFlightPhase.Fell,
+            _ => throw new InvalidOperationException("A completed Horse Flight run is invalid."),
+        };
+        try
+        {
+            var replay = new HorseFlightReplay(checked((int)totalTicks), [.. jumpTicks])
+            {
+                RightClickTicks = [.. rightClickTicks],
+                RulesVersion = rulesVersion,
+            };
+            var evaluated = HorseFlightReplayEvaluator.Evaluate((uint)seed, replay);
+            if (evaluated.Snapshot.Score != score || evaluated.Snapshot.Phase != phase)
+                throw new InvalidOperationException("A completed Horse Flight run is invalid.");
+        }
+        catch (InvalidOperationException) { throw; }
+        catch (Exception exception) when (exception is ArgumentException or OverflowException)
+        {
+            throw new InvalidOperationException("A completed Horse Flight run is invalid.");
+        }
+        return new StoredHorseFlightRun(
+            identity,
+            attempt,
+            rulesVersion,
+            status,
+            checked((int)totalTicks),
+            jumpTicks,
+            rightClickTicks,
+            checked((int)score),
+            phase,
+            new DateTimeOffset(completedAt.ToDateTime()));
+    }
+
     private static string CanonicalReplay(AsteroidsReplay replay)
     {
         return AsteroidsReplayEvaluator.CanonicalizeReplay(replay);
@@ -609,13 +831,53 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
         return runId[prefix.Length..];
     }
 
+    private static string HorseFlightAttemptDocumentIdFromRunId(string runId)
+    {
+        const string prefix = "horse_flight_";
+        if (string.IsNullOrWhiteSpace(runId) || !runId.StartsWith(prefix, StringComparison.Ordinal) || runId.Length != prefix.Length + 64 ||
+            !runId[prefix.Length..].All(character => character is >= '0' and <= '9' or >= 'a' and <= 'f'))
+            throw new ArgumentException("Horse Flight run id is invalid.", nameof(runId));
+        return runId[prefix.Length..];
+    }
+
     internal static string AsteroidsRunId(ArcadeCompetitionAttemptRecord attempt) => $"asteroids_{attempt.DocumentId}";
 
     internal static string FlappyRunId(ArcadeCompetitionAttemptRecord attempt) => $"flappy_{attempt.DocumentId}";
 
-    private sealed record PaidEntryOutcome(ArcadeCompetitionPaidEntryResult Entry, AsteroidsRunRecord? Run, FlappyPaidRunRecord? FlappyRun);
+    internal static string HorseFlightRunId(ArcadeCompetitionAttemptRecord attempt) => $"horse_flight_{attempt.DocumentId}";
+
+    private static string HorseFlightPhaseName(HorseFlightPhase phase) => phase switch
+    {
+        HorseFlightPhase.ObstacleCollision => "obstacle-collision",
+        HorseFlightPhase.Fell => "fell",
+        _ => throw new ArgumentOutOfRangeException(nameof(phase)),
+    };
+
+    private static int[] ReadHorseFlightTicks(DocumentSnapshot snapshot, string field)
+    {
+        if (!snapshot.ToDictionary().TryGetValue(field, out var raw) || raw is not IEnumerable values)
+            throw new InvalidOperationException("A completed Horse Flight run is invalid.");
+        return values.Cast<object?>().Select(item => item switch
+        {
+            long value when value is >= int.MinValue and <= int.MaxValue => (int)value,
+            int value => value,
+            _ => throw new InvalidOperationException("A completed Horse Flight run is invalid."),
+        }).ToArray();
+    }
+
+    private static int ReadHorseFlightRulesVersion(DocumentSnapshot snapshot)
+    {
+        if (!snapshot.TryGetValue<long>("rulesVersion", out var stored))
+            return HorseFlightEngine.LegacyRulesVersion;
+        return stored is HorseFlightEngine.LegacyRulesVersion or HorseFlightEngine.DraftMultiBiomeRulesVersion or HorseFlightEngine.PreviousRulesVersion or HorseFlightEngine.CurrentRulesVersion
+            ? (int)stored
+            : throw new InvalidOperationException("A stored Horse Flight run has an invalid rules version.");
+    }
+
+    private sealed record PaidEntryOutcome(ArcadeCompetitionPaidEntryResult Entry, AsteroidsRunRecord? Run, FlappyPaidRunRecord? FlappyRun, HorseFlightPaidRunRecord? HorseFlightRun);
     private sealed record StoredRun(AsteroidsRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt, string Status, string ReplayCanonical, string ReplayDigest, long Score, AsteroidsTerminalState Terminal, DateTimeOffset? CompletedAtUtc);
     private sealed record StoredFlappyRun(FlappyPaidRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt, string Status, string ReplayCanonical, string ReplayDigest, long Score, string Terminal, DateTimeOffset? CompletedAtUtc);
+    private sealed record StoredHorseFlightRun(HorseFlightPaidRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt, int RulesVersion, string Status, int TotalTicks, int[] JumpTicks, int[] RightClickTicks, int Score, HorseFlightPhase Phase, DateTimeOffset? CompletedAtUtc);
 }
 
 internal sealed record ArcadeCompetitionPaidEntryRequest(
@@ -644,6 +906,21 @@ internal sealed record ArcadeCompetitionFlappyPaidEntryResult(ArcadeCompetitionA
 internal sealed record FlappyPaidReplayCompletionRequest(string RunId, ArcadeCompetitionIdentity Competition, string AuthenticatedPlayerId, FlappyReplay Replay, DateTimeOffset CompletedAtUtc);
 internal sealed record FlappyPaidReplayCompletionResult(ArcadeCompetitionAttemptRecord Attempt, long Score, string Terminal, bool WasAlreadyCompleted);
 
+internal sealed record HorseFlightPaidRunRecord(HorseFlightPaidRunIdentity Run, ArcadeCompetitionAttemptRecord Attempt)
+{
+    public int RulesVersion { get; init; } = HorseFlightEngine.CurrentRulesVersion;
+}
+internal sealed record ArcadeCompetitionHorseFlightPaidEntryResult(ArcadeCompetitionAttemptRecord Attempt, bool WasAlreadyRecorded, HorseFlightPaidRunRecord Run);
+internal sealed record HorseFlightPaidReplayCompletionRequest(string RunId, ArcadeCompetitionIdentity Competition, string AuthenticatedPlayerId, HorseFlightReplay Replay, DateTimeOffset CompletedAtUtc);
+internal sealed record HorseFlightPaidReplayCompletionResult(
+    ArcadeCompetitionAttemptRecord Attempt,
+    int Score,
+    HorseFlightPhase Phase,
+    int TotalTicks,
+    IReadOnlyList<int> JumpTicks,
+    IReadOnlyList<int> RightClickTicks,
+    bool WasAlreadyCompleted);
+
 internal interface IArcadeCompetitionPaidEntryCoordinator
 {
     Task<ArcadeCompetitionPaidEntryResult> StartPaidAttemptAsync(
@@ -663,6 +940,15 @@ internal interface IArcadeCompetitionFlappyPaidEntryCoordinator
         FlappyPaidRunIdentity proposedRun,
         CancellationToken cancellationToken);
     Task<FlappyPaidReplayCompletionResult> CompleteFlappyReplayAsync(FlappyPaidReplayCompletionRequest request, CancellationToken cancellationToken);
+}
+
+internal interface IArcadeCompetitionHorseFlightPaidEntryCoordinator
+{
+    Task<ArcadeCompetitionHorseFlightPaidEntryResult> StartHorseFlightPaidAttemptAsync(
+        ArcadeCompetitionPaidEntryRequest request,
+        HorseFlightPaidRunIdentity proposedRun,
+        CancellationToken cancellationToken);
+    Task<HorseFlightPaidReplayCompletionResult> CompleteHorseFlightReplayAsync(HorseFlightPaidReplayCompletionRequest request, CancellationToken cancellationToken);
 }
 
 internal sealed class ArcadeCompetitionInsufficientCreditsException(long availableCents, long requiredCents) : Exception(

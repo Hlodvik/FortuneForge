@@ -6,6 +6,7 @@ import type { FlappyReplayPayload } from '@fortuneforge/games-flappy'
 
 const replay: AsteroidsReplayPayload = { rulesVersion: 2, totalSteps: 4, commands: [{ step: 0, input: 8 }] }
 const flappyReplay: FlappyReplayPayload = { totalTicks: 36, flapTicks: [] }
+const horseFlightReplay = { totalTicks: 42, jumpTicks: [2, 8], rightClickTicks: [12] } as const
 const runId = 'asteroids_0123456789abcdef'
 
 describe('Asteroids paid competition transport', () => {
@@ -166,6 +167,55 @@ describe('Flappy paid competition transport', () => {
     expect(url).toBe(`/api/arcade-competitions/flappy/weekly/runs/${paidRunId}/replay`)
     expect(JSON.parse(String(init.body))).toEqual(flappyReplay)
     expect(String(init.body)).not.toMatch(/score|user|seed|time/i)
+  })
+})
+
+describe('Horse Flight competition transport', () => {
+  const freeRunId = 'horse_flight_free_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+  const paidRunId = 'horse_flight_0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
+
+  it('starts free runs through the shared arcade boundary', async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse({
+      runId: freeRunId, seed: 42, wasReplay: false,
+    }))
+    const gateway = new HttpArcadeCompetitionGateway(fetcher)
+
+    await gateway.startFreeHorseFlightRun('horse-flight-free-0123456789')
+
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe('/api/arcade-competitions/horse-flight/free/runs')
+    expect(new Headers(init.headers).get('Idempotency-Key')).toBe('horse-flight-free-0123456789')
+  })
+
+  it('submits only the Horse Flight input timeline for a free run', async () => {
+    const fetcher = vi.fn().mockResolvedValue(jsonResponse({
+      runId: freeRunId, score: 18, phase: 'obstacle-collision', wasReplay: false,
+    }))
+    const gateway = new HttpArcadeCompetitionGateway(fetcher)
+
+    await gateway.completeFreeHorseFlightReplay(freeRunId, horseFlightReplay)
+
+    const [url, init] = fetcher.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(`/api/arcade-competitions/horse-flight/free/runs/${freeRunId}/replay`)
+    expect(JSON.parse(String(init.body))).toEqual(horseFlightReplay)
+    expect(String(init.body)).not.toMatch(/score|user|seed/i)
+  })
+
+  it('starts and completes the selected ranked pool', async () => {
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({
+        attemptId: 'horse-attempt-1', gameId: 'horse-flight', period: 'weekly',
+        startsAtUtc: '2026-10-08T12:00:00+00:00', endsAtUtc: '2026-10-15T12:00:00+00:00',
+        entryFeeCents: 100, wasReplay: false, runId: paidRunId, seed: 77,
+      }))
+      .mockResolvedValueOnce(jsonResponse({ runId: paidRunId, score: 21, phase: 'fell', wasReplay: false }))
+    const gateway = new HttpArcadeCompetitionGateway(fetcher)
+
+    await gateway.startHorseFlightAttempt('weekly', 'horse-flight-paid-0123456789')
+    await gateway.completeHorseFlightReplay('weekly', paidRunId, horseFlightReplay)
+
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/arcade-competitions/horse-flight/weekly/attempts')
+    expect(fetcher.mock.calls[1]?.[0]).toBe(`/api/arcade-competitions/horse-flight/weekly/runs/${paidRunId}/replay`)
   })
 })
 

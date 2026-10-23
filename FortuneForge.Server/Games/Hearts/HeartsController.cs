@@ -71,6 +71,16 @@ public sealed class HeartsController(
         await WithAccount(cancellationToken, account => ExecuteAsync(() => games.NextRoundAsync(
             account.UserId, matchId, request?.Seed, cancellationToken)));
 
+    [HttpPost("matches/{matchId:guid}/leave")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public Task<ActionResult> Leave(Guid matchId, CancellationToken cancellationToken) =>
+        WithAccount(cancellationToken, async account =>
+        {
+            try { await games.LeaveAsync(account.UserId, matchId, cancellationToken); return NoContent(); }
+            catch (HeartsAccessException exception) { return NotFound(new HeartsErrorResponse("hearts-match-not-found", exception.Message)); }
+            catch (HeartsRuleException exception) { return BadRequest(new HeartsErrorResponse("hearts-invalid-action", exception.Message)); }
+        });
+
     private async Task<ActionResult> WithAccount(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         if (Disabled() is { } unavailable) return unavailable;

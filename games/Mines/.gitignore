@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+**/dist/
+**/node_modules/
+**/App_Data/
+**/.test-temp/
+**/.test-tmp/
+**/TestResults/

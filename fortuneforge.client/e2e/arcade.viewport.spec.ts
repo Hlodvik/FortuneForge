@@ -36,7 +36,7 @@ const dropMerge = {
 const routes: readonly ArcadeRoute[] = [
   { name: 'Asteroids', path: '/games/asteroids', start: 'Casual run', board: '.ff-asteroids-replay-canvas', controls: '.ff-asteroids-replay-controls' },
   { name: 'Flappy', path: '/games/flappy', start: 'Start flight', board: '.flappy-course', controls: '.flappy-controls' },
-  { name: 'Horse Flight', path: '/games/horse-flight', start: 'Start run', board: '.ff-horse-flight__field', controls: '.ff-horse-flight__touch-controls' },
+  { name: 'Horse Flight', path: '/games/horse-flight', start: 'Play Free', board: '.ff-horse-flight__field', controls: '.ff-horse-flight__touch-controls' },
   { name: 'Snake', path: '/games/snake', start: 'Play', board: '.ff-snake-board-wrap', controls: '.ff-snake-controls' },
   { name: '2048', path: '/games/2048', board: '.ff-2048-board-wrap', controls: '.ff-2048-controls' },
   { name: 'Drop Merge', path: '/games/drop-merge', board: '.ff-drop-merge-board-shell', controls: '.ff-drop-merge-column-board' },
@@ -121,6 +121,48 @@ for (const viewport of [
   })
 }
 
+test('Horse Flight keeps its terminal leaderboard and replay actions usable in portrait', async ({ page }) => {
+  test.setTimeout(45_000)
+  await page.setViewportSize({ width: 390, height: 844 })
+  await mockArcadeApi(page)
+  await page.goto('/games/horse-flight')
+
+  await page.getByRole('button', { name: 'Play Free', exact: true }).click()
+
+  const result = page.locator('.horse-flight-result')
+  await expect(result).toBeVisible({ timeout: 15_000 })
+  await expect(result.getByText(/Score \d+/)).toBeVisible()
+  await expect(result.getByRole('heading', { name: 'Horse Flight leaderboard' })).toBeVisible()
+  await expect(result.getByRole('button', { name: 'Next leaderboard page' })).toBeVisible()
+  await expect(result.getByRole('button', { name: 'Play Free', exact: true })).toBeVisible()
+  await expect(result.getByRole('button', { name: 'Play Ranked', exact: true })).toBeVisible()
+
+  const geometry = await page.evaluate(() => {
+    const resultElement = document.querySelector('.horse-flight-result')
+    const fieldElement = document.querySelector('.ff-horse-flight__field')
+    const actionElement = document.querySelector('.horse-flight-result__actions')
+    if (!(resultElement instanceof HTMLElement) || !(fieldElement instanceof HTMLElement) || !(actionElement instanceof HTMLElement)) return null
+    const resultBox = resultElement.getBoundingClientRect()
+    const fieldBox = fieldElement.getBoundingClientRect()
+    const actionBox = actionElement.getBoundingClientRect()
+    return {
+      actionBottom: actionBox.bottom,
+      actionTop: actionBox.top,
+      fieldHeight: fieldBox.height,
+      fieldWidth: fieldBox.width,
+      resultBottom: resultBox.bottom,
+      resultTop: resultBox.top,
+    }
+  })
+
+  expect(geometry).not.toBeNull()
+  expect(geometry!.resultTop).toBeGreaterThanOrEqual(0)
+  expect(geometry!.resultBottom).toBeLessThanOrEqual(844)
+  expect(geometry!.actionTop).toBeGreaterThanOrEqual(geometry!.resultTop)
+  expect(geometry!.actionBottom).toBeLessThanOrEqual(geometry!.resultBottom + 1)
+  expect(geometry!.fieldHeight).toBeGreaterThan(geometry!.fieldWidth * 0.75)
+})
+
 async function mockArcadeApi(page: Page): Promise<void> {
   await page.route('**/api/**', async route => {
     const path = new URL(route.request().url()).pathname
@@ -132,8 +174,11 @@ async function mockArcadeApi(page: Page): Promise<void> {
     else if (path.startsWith('/api/games/2048/games')) body = game2048
     else if (path === '/api/games/drop-merge/status') body = { available: true, columns: 7, rows: 7, firstBigTile: 1024, mode: 'test' }
     else if (path.startsWith('/api/games/drop-merge/games')) body = dropMerge
-    else if (path === '/api/games/horse-flight/status') body = { available: true, tickMilliseconds: 20, balance: 1000, mode: 'test' }
-    else if (path === '/api/games/horse-flight/runs' && method === 'POST') body = { runId: 'horse-test', seed: 123456, tickMilliseconds: 20 }
+    else if (path === '/api/arcade-competitions/horse-flight/free/runs' && method === 'POST') body = { runId: `horse_flight_free_${'01'.repeat(32)}`, seed: 123456, wasReplay: false }
+    else if (path.startsWith('/api/arcade-competitions/horse-flight/free/runs/') && path.endsWith('/replay') && method === 'POST') body = { runId: `horse_flight_free_${'01'.repeat(32)}`, score: 160, phase: 'obstacle-collision', wasReplay: false }
+    else if (path === '/api/arcade-competitions/horse-flight/daily' && method === 'GET') body = horseFlightLeaderboard('daily')
+    else if (path === '/api/arcade-competitions/horse-flight/weekly' && method === 'GET') body = horseFlightLeaderboard('weekly')
+    else if (path === '/api/arcade-competitions/horse-flight/all-time' && method === 'GET') body = { gameId: 'horse-flight', period: 'all-time', leaderboard: horseFlightPlacements }
     else if (path === '/api/arcade-competitions/asteroids/free/runs' && method === 'POST') body = { runId: 'asteroids-test-01', seedHex: '0123456789abcdef', startedAtUtc: '2026-01-01T00:00:00Z', wasReplay: false }
     else if (path === '/api/arcade-competitions/flappy/free/runs' && method === 'POST') body = { runId: 'flappy_free_' + '01'.repeat(32), seed: 123456, startedAtUtc: '2026-01-01T00:00:00Z', wasReplay: false }
     else {
@@ -143,4 +188,25 @@ async function mockArcadeApi(page: Page): Promise<void> {
 
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
   })
+}
+
+const horseFlightPlacements = Array.from({ length: 8 }, (_, index) => ({
+  position: index + 1,
+  playerId: `runner-${index + 1}`,
+  score: 800 - index * 25,
+}))
+
+function horseFlightLeaderboard(period: 'daily' | 'weekly') {
+  return {
+    gameId: 'horse-flight',
+    period,
+    startsAtUtc: '2026-01-01T00:00:00Z',
+    endsAtUtc: '2026-01-08T00:00:00Z',
+    entriesOpen: true,
+    isCompleted: false,
+    totalUniquePlayers: horseFlightPlacements.length,
+    leaderboard: horseFlightPlacements,
+    solePlayerRefund: null,
+    visibleJackpotCents: 800,
+  }
 }

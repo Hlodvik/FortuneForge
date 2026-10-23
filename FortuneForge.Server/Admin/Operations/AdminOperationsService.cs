@@ -50,6 +50,8 @@ internal sealed class AdminOperationsService(
         var texasHoldem = PoolFinancials(snapshot.Financial, "texas-holdem");
         var purchases = snapshot.Funding.Where(static record => record.Category == "purchase").ToArray();
         var withdrawals = snapshot.Funding.Where(static record => record.Category == "withdrawal").ToArray();
+        var mockPurchases = snapshot.Funding.Where(static record => record.Category == "mock-purchase").ToArray();
+        var mockWithdrawals = snapshot.Funding.Where(static record => record.Category == "mock-withdrawal").ToArray();
         return new(
             range.FromUtc,
             range.ToUtc,
@@ -64,7 +66,11 @@ internal sealed class AdminOperationsService(
                 purchases.Sum(static record => record.Credits),
                 purchases.Length,
                 withdrawals.Sum(static record => record.Credits),
-                withdrawals.Length),
+                withdrawals.Length,
+                mockPurchases.Sum(static record => record.Credits),
+                mockPurchases.Length,
+                mockWithdrawals.Sum(static record => record.Credits),
+                mockWithdrawals.Length),
             snapshot.Complete,
             snapshot.Limitations);
     }

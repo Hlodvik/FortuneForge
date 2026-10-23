@@ -13,7 +13,8 @@ internal sealed class BlackjackTableCoordinator(
     Func<ulong>? seedFactory = null,
     BlackjackManagedPlayerSupply? managedPlayerSupply = null,
     IMultiplayerMatchmaker? multiplayerMatchmaker = null,
-    IManagedTablePopulationDirector? managedPopulationDirector = null)
+    IManagedTablePopulationDirector? managedPopulationDirector = null,
+    bool allowManagedArrivals = true)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -694,7 +695,7 @@ internal sealed class BlackjackTableCoordinator(
             CloseTable(state, table, journal);
             return false;
         }
-        for (var index = 0; index < decision.ManagedArrivals; index++)
+        for (var index = 0; allowManagedArrivals && index < decision.ManagedArrivals; index++)
             AddManagedPlayer(table, nowUtc);
         return true;
     }

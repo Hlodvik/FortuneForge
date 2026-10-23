@@ -11,7 +11,8 @@ export function createPreviewGateway(): HeartsGateway {
   let lastTurn = 0
   let onboardingPending = true
   let trialActive = false
-  const names = ['You', 'Rowan', 'NightOwl', 'Clover']
+  const names = ['You', 'House East', 'House South', 'House West']
+  let paidHumanDeadline: { key: string; at: number } | null = null
   const past: HeartsPaidTable[] = []
   const delay = async () => new Promise<void>(resolve => setTimeout(resolve, 180))
   const rank = (card: HeartsCard) => ({ A: 14, K: 13, Q: 12, J: 11 } as Record<string, number>)[card.label.slice(0, -1)] ?? Number(card.label.slice(0, -1))
@@ -85,16 +86,24 @@ export function createPreviewGateway(): HeartsGateway {
   }
   function updatePaid(): HeartsPaidSession {
     if (paid.kind === 'queue') {
-      const count = Math.min(4, 1 + Math.floor((Date.now() - joined) / 2400))
-      paid = { ...paid, queue: { ...paid.queue!, players: seatsClockwise.slice(0, count).map((seat, index) => ({ seat, displayName: names[index], isCurrentPlayer: index === 0 })), potCredits: paid.queue!.entryCredits * count } }
-      if (count === 4) {
-        trialActive = false
-        const current = start(), entryCredits = paid.queue!.entryCredits
-        paid = { ...paid, kind: 'match', version: paid.version + 1, queue: null, table: { match: current, entryCredits, potCredits: entryCredits * 4, payoutCredits: 0, winnerSeats: [], players: seatsClockwise.map((seat, index) => ({ seat, displayName: names[index], isCurrentPlayer: index === 0, hasLeft: false, entryCredits, payoutCredits: 0 })), actionDeadlineAtUtc: null, completedAtUtc: null } }
+      paid = { ...paid, queue: { ...paid.queue!, canPlayHouse: Date.now() - joined >= 5000 } }
+      if (Date.now() - joined >= 120000) {
+        wallet += paid.queue!.entryCredits
+        paid = { ...paid, kind: 'idle', version: paid.version + 1, balanceCredits: wallet, queue: null, table: null, notice: 'No table started. Your entry has been returned.' }
       }
     } else if (paid.kind === 'match' && match) {
       if (match.opponentsThinking && Date.now() - lastTurn > 1500) { const cards = legal(match.turn); play(cards[Math.floor(Math.random() * cards.length)].code); paid = { ...paid, version: paid.version + 1 } }
-      paid = { ...paid, table: { ...paid.table!, match: snapshot(), actionDeadlineAtUtc: match.yourTurn || match.phase === 'passing' ? new Date(Date.now() + 45000).toISOString() : null } }
+      const current = snapshot()
+      const needsAction = current.yourTurn || current.phase === 'passing'
+      const actionKey = `${current.roundNumber}:${current.phase}:${current.completedTricks.length}:${current.currentTrick.plays.length}:${current.hand.length}`
+      if (!needsAction) paidHumanDeadline = null
+      else if (paidHumanDeadline?.key !== actionKey) paidHumanDeadline = { key: actionKey, at: Date.now() + 45000 }
+      if (paidHumanDeadline && Date.now() >= paidHumanDeadline.at) {
+        paidHumanDeadline = null
+        paid = { ...paid, kind: 'idle', version: paid.version + 1, queue: null, table: null, notice: 'Your seat was forfeited when the turn timer expired. Your entry remains in the pot.' }
+        return structuredClone(paid)
+      }
+      paid = { ...paid, table: { ...paid.table!, match: current, actionDeadlineAtUtc: paidHumanDeadline ? new Date(paidHumanDeadline.at).toISOString() : null } }
       if (match.winner) {
         const best = Math.min(...seatsClockwise.map(seat => match!.score[seat]))
         const winnerSeats = seatsClockwise.filter(seat => match!.score[seat] === best)
@@ -113,6 +122,7 @@ export function createPreviewGateway(): HeartsGateway {
     },
     getStatus: async () => { await delay(); return { available: true, defaultTargetScore: 100, mode: 'free-play' } },
     startMatch: async () => { await delay(); trialActive = false; return start() },
+    leaveMatch: async () => { await delay(); match = null },
     startTrial: async () => { await delay(); trialActive = true; return start() },
     cancelTrial: async () => { await delay(); trialActive = false; match = null; return { shouldAskPlayedBefore: onboardingPending } },
     pass: async (_, cards) => { await delay(); return pass(cards) },
@@ -122,6 +132,17 @@ export function createPreviewGateway(): HeartsGateway {
     paid: {
       getSession: async () => { await delay(); return updatePaid() }, getMatch: async () => { await delay(); return updatePaid() },
       join: async entryCredits => { await delay(); if (paid.kind === 'queue' || paid.kind === 'match') return updatePaid(); wallet -= entryCredits; joined = Date.now(); paid = { kind: 'queue', version: paid.version + 1, balanceCredits: wallet, entryOptions: [1, 2, 5, 10, 25], table: null, queue: { matchId: crypto.randomUUID(), entryCredits, potCredits: entryCredits, joinedAtUtc: new Date().toISOString(), players: [{ seat: 'north', displayName: 'You', isCurrentPlayer: true }], message: '' } }; return updatePaid() },
+      playHouse: async id => {
+        await delay()
+        if (paid.kind !== 'queue' || paid.queue?.matchId !== id || !paid.queue.canPlayHouse) throw new Error('Refresh the queue before choosing house play.')
+        const entryCredits = paid.queue.entryCredits
+        trialActive = false
+        start()
+        match = { ...match!, matchId: id }
+        paidHumanDeadline = null
+        paid = { ...paid, kind: 'match', version: paid.version + 1, queue: null, table: { match: snapshot(), entryCredits, potCredits: entryCredits * 4, payoutCredits: 0, winnerSeats: [], players: seatsClockwise.map((seat, index) => ({ seat, displayName: names[index], isCurrentPlayer: index === 0, hasLeft: false, entryCredits, payoutCredits: 0 })), actionDeadlineAtUtc: null, completedAtUtc: null } }
+        return updatePaid()
+      },
       pass: async (_, cards) => { await delay(); pass(cards); paid = { ...paid, version: paid.version + 1 }; return updatePaid() },
       play: async (_, card) => { await delay(); play(card); paid = { ...paid, version: paid.version + 1 }; return updatePaid() },
       advance: async () => updatePaid(),

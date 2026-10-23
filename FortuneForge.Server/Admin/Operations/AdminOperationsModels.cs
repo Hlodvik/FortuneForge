@@ -24,7 +24,11 @@ public sealed record AdminFundingFlows(
     decimal CompletedPurchaseCredits,
     int CompletedPurchases,
     decimal CompletedWithdrawalCredits,
-    int CompletedWithdrawals);
+    int CompletedWithdrawals,
+    decimal CompletedMockPurchaseCredits = 0,
+    int CompletedMockPurchases = 0,
+    decimal CompletedMockWithdrawalCredits = 0,
+    int CompletedMockWithdrawals = 0);
 
 public sealed record AdminOperationsOverviewResponse(
     DateTime FromUtc,

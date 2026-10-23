@@ -1,3 +1,5 @@
+using FortuneForge.Games.TrickTaking;
+using FortuneForge.Server.Admin.Management;
 using FortuneForge.Server.Games.Hearts;
 
 namespace FortuneForge.Server.Bots.Hearts;
@@ -30,45 +32,41 @@ public interface IHeartsManagedPlayerRoster
 }
 
 internal sealed class HeartsManagedPlayerRoster(
-    IManagedPlayerQueuer queuer) : IHeartsManagedPlayerRoster
+    IManagedPlayerAssignmentStore assignments) : IHeartsManagedPlayerRoster
 {
     public async Task<IReadOnlyList<HeartsManagedPlayer>> ReserveAsync(
         string assignmentId,
         int count,
         IReadOnlyCollection<string> excludedProfileIds,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        (await queuer.ReserveAsync(
-            ManagedPlayerGames.Hearts,
-            assignmentId,
-            count,
-            excludedProfileIds,
-            nowUtc,
-            cancellationToken))
-        .Select(profile => new HeartsManagedPlayer(
-            profile.UserId,
-            profile.PlayerName,
-            profile.SkillLevel))
-        .ToArray();
+        CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(assignmentId);
+        if (count is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(count));
+        cancellationToken.ThrowIfCancellationRequested();
+        if (count == 0) return [];
+        // House seats are not shared human-looking profiles. The administrator
+        // can still pause new computer opponents without interrupting active play.
+        if (assignments is IManagedPlayerAdmissionPolicy policy &&
+            !await policy.AllowsNewAssignmentsAsync(ManagedPlayerGames.Hearts, cancellationToken))
+            return [];
+        return new[] { PlayerSeat.East, PlayerSeat.South, PlayerSeat.West }
+            .Take(count)
+            .Select(seat => HeartsHousePlayers.Create(assignmentId, seat))
+            .ToArray();
+    }
 
     public Task HeartbeatAsync(
         string assignmentId,
         IReadOnlyCollection<string> profileIds,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        queuer.HeartbeatAsync(
-            ManagedPlayerGames.Hearts,
-            assignmentId,
-            profileIds,
-            nowUtc,
-            cancellationToken);
+        CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task ReleaseAsync(
         string assignmentId,
         IReadOnlyCollection<string> profileIds,
         DateTime nowUtc,
-        CancellationToken cancellationToken) =>
-        queuer.ReleaseAsync(assignmentId, profileIds, nowUtc, cancellationToken);
+        CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public static class HeartsManagedPlayerConfiguration

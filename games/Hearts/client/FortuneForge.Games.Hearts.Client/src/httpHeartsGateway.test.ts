@@ -28,9 +28,30 @@ describe('Hearts paid gateway', () => {
     expect(request.mock.calls[0][0]).toBe('/hearts/paid/matches/match%2Fa/card')
     expect(JSON.parse(String(request.mock.calls[0][1]?.body))).toEqual({ card: '2|clubs', expectedVersion: 12 })
   })
+  it('sends house consent explicitly with the queue version and no new entry amount', async () => {
+    const request = vi.fn<typeof fetch>().mockResolvedValue(response(idle))
+    await new HttpHeartsGateway('/hearts', request).paid.playHouse!('queue/one', { expectedVersion: 4, idempotencyKey: 'hearts-house-choice' })
+    expect(request.mock.calls[0][0]).toBe('/hearts/paid/matches/queue%2Fone/play-house')
+    expect(JSON.parse(String(request.mock.calls[0][1]?.body))).toEqual({ expectedVersion: 4 })
+    expect(request.mock.calls[0][1]?.headers).toEqual({ 'content-type': 'application/json', 'Idempotency-Key': 'hearts-house-choice' })
+  })
+  it('rejects a malformed house availability flag rather than treating a truthy value as consent availability', async () => {
+    const queue = { matchId: 'one', entryCredits: 1, potCredits: 1, joinedAtUtc: '2026-10-22T12:00:00Z', message: '', players: [{ seat: 'north', displayName: 'You', isCurrentPlayer: true }], canPlayHouse: 'yes' }
+    const request = vi.fn<typeof fetch>().mockResolvedValue(response({ ...idle, kind: 'queue', queue }))
+    await expect(new HttpHeartsGateway('/hearts', request).paid.getSession()).rejects.toMatchObject({ code: 'hearts-invalid-response' })
+  })
   it('rejects a malformed queue before it can present an invented pot or playable hand', async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValue(response({ ...idle, kind: 'queue', queue: { matchId: 'queue-one', players: [] } }))
     await expect(new HttpHeartsGateway('/hearts', request).paid.getSession()).rejects.toMatchObject({ code: 'hearts-invalid-response' })
+  })
+  it('closes a free table through authenticated fetch and accepts an empty success response', async () => {
+    const request = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
+    await expect(new HttpHeartsGateway('/hearts', request).leaveMatch('free/one')).resolves.toBeUndefined()
+    expect(request).toHaveBeenCalledWith('/hearts/matches/free%2Fone/leave', { method: 'POST', signal: undefined })
+  })
+  it('retains a failed free-table close as an error instead of silently leaving locally', async () => {
+    const request = vi.fn<typeof fetch>().mockResolvedValue(response({ code: 'hearts-match-not-found', message: 'This is not your table.' }, 404))
+    await expect(new HttpHeartsGateway('/hearts', request).leaveMatch('other-table')).rejects.toMatchObject({ status: 404, code: 'hearts-match-not-found' })
   })
   it('preserves insufficient-funds and stale-version error codes from the server', async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValueOnce(response({ code: 'hearts-insufficient-funds', message: 'Not enough balance.' }, 402)).mockResolvedValueOnce(response({ code: 'hearts-conflict', message: 'The table changed.' }, 409))

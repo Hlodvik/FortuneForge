@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { HeartsGame } from './HeartsGame'
@@ -73,6 +73,32 @@ describe('Hearts table', () => {
     expect(api.pass).toHaveBeenCalledWith('match-one', ['2|clubs', '5|clubs', 'K|clubs'])
   })
 
+  it('reviews passing picks and removes an off-screen selection without submitting it', async () => {
+    const user = userEvent.setup(), api = gateway()
+    render(<HeartsGame gateway={api} />)
+    await user.click(await enabledButton('Play free'))
+    await user.click(await screen.findByRole('button', { name: 'Two of clubs, select to pass' }))
+    await user.click(screen.getByRole('button', { name: 'Five of clubs, select to pass' }))
+    await user.click(screen.getByRole('button', { name: 'King of clubs, select to pass' }))
+    await user.click(screen.getByRole('button', { name: 'Queen of spades, select to pass' }))
+    expect(screen.getByText('Three picked! Remove a card below to choose another.')).toBeTruthy()
+    const picks = screen.getByRole('group', { name: 'Cards selected to pass' })
+    await user.click(within(picks).getByRole('button', { name: 'Remove King of clubs from pass' }))
+    expect((screen.getByRole('button', { name: 'Pass cards 2/3' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Queen of spades, select to pass' }))
+    expect(within(picks).getByRole('button', { name: 'Remove Queen of spades from pass' })).toBeTruthy()
+    expect(api.pass).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Pass cards 3/3' }))
+    expect(api.pass).toHaveBeenCalledWith('match-one', ['2|clubs', '5|clubs', 'Q|spades'])
+  })
+
+  it('explains why cards are unavailable in ordinary play without requiring the trial', async () => {
+    const user = userEvent.setup(), current = match({ phase: 'playing', yourTurn: true, legalCards: [card('2')], currentTrick: { leader: 'east', plays: [{ seat: 'east', card: card('K') }] } })
+    render(<HeartsGame gateway={gateway({ startMatch: vi.fn().mockResolvedValue(current) })} />)
+    await user.click(await enabledButton('Play free'))
+    expect(await screen.findByText('Clubs were led, so you must follow clubs.')).toBeTruthy()
+  })
+
   it('plays a legal card in one click and does not enable off-suit cards', async () => {
     const user = userEvent.setup(), current = match({ phase: 'playing', yourTurn: true, legalCards: [card('2')] })
     const api = gateway({ startMatch: vi.fn().mockResolvedValue(current) })
@@ -82,6 +108,54 @@ describe('Hearts table', () => {
     expect((screen.getByRole('button', { name: 'Queen of spades' }) as HTMLButtonElement).disabled).toBe(true)
     await user.click(legal)
     await waitFor(() => expect(api.playCard).toHaveBeenCalledWith('match-one', '2|clubs'))
+  })
+
+  it('selects and changes a mobile card without playing, then confirms exactly once', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    const user = userEvent.setup(), current = atTable({ phase: 'playing', yourTurn: true, legalCards: [card('2'), card('5')] })
+    const api = gateway({}, { getSession: vi.fn().mockResolvedValue(current) })
+    render(<HeartsGame gateway={api} />)
+    const first = await screen.findByRole('button', { name: 'Two of clubs, select to play' })
+    expect((screen.getByRole('button', { name: 'Select a card' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(first)
+    expect(screen.getByRole('button', { name: 'Two of clubs, selected to play' }).getAttribute('aria-pressed')).toBe('true')
+    expect(api.paid!.play).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: 'Five of clubs, select to play' }))
+    expect(first.getAttribute('aria-pressed')).toBe('false')
+    expect((screen.getByRole('button', { name: 'Queen of spades' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.dblClick(screen.getByRole('button', { name: 'Play 5♣' }))
+    await waitFor(() => expect(api.paid!.play).toHaveBeenCalledOnce())
+    expect(api.paid!.play).toHaveBeenCalledWith('match-one', '5|clubs', expect.objectContaining({ expectedVersion: 4 }))
+  })
+
+  it('does not select a mobile card at the end of a swipe, including during passing', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    const user = userEvent.setup(), api = gateway()
+    render(<HeartsGame gateway={api} />)
+    await user.click(await enabledButton('Play free'))
+    const target = await screen.findByRole('button', { name: 'Two of clubs, select to pass' })
+    fireEvent.pointerDown(target, { clientX: 150, clientY: 400 })
+    fireEvent.pointerMove(target, { clientX: 90, clientY: 400 })
+    fireEvent.click(target, { detail: 1 })
+    expect(target.getAttribute('aria-pressed')).toBe('false')
+    expect(api.pass).not.toHaveBeenCalled()
+    await user.click(target)
+    expect(target.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('clears a mobile play selection after an authoritative turn update', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() }))
+    const user = userEvent.setup(), current = atTable({ phase: 'playing', yourTurn: true, legalCards: [card('2')] })
+    let rejectPlay!: (reason: Error) => void
+    const api = gateway({}, { getSession: vi.fn().mockResolvedValueOnce(current).mockResolvedValue(atTable({ phase: 'playing', yourTurn: false, turn: 'east', legalCards: [] })), play: vi.fn().mockImplementation(() => new Promise((_, reject) => { rejectPlay = reject })) })
+    render(<HeartsGame gateway={api} />)
+    await user.click(await screen.findByRole('button', { name: 'Two of clubs, select to play' }))
+    await user.click(screen.getByRole('button', { name: 'Play 2♣' }))
+    rejectPlay(new HeartsGatewayError('Refresh needed.', 'stale', 409))
+    await user.click(await screen.findByRole('button', { name: 'Refresh table' }))
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Play 2♣' })).toBeNull())
+    expect(screen.queryByRole('button', { name: 'Two of clubs, selected to play' })).toBeNull()
+    expect(api.paid!.play).toHaveBeenCalledOnce()
   })
 
   it('locks uncertain paid writes until a read refresh confirms the authoritative table', async () => {
@@ -127,6 +201,81 @@ describe('Hearts table', () => {
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(trigger)
+  })
+
+  it('shows history loading rather than a false empty result, with errors and retry inside its dialog', async () => {
+    const user = userEvent.setup()
+    let failHistory!: (reason: Error) => void
+    const api = gateway({}, { getHistory: vi.fn().mockImplementationOnce(() => new Promise((_, reject) => { failHistory = reject })).mockResolvedValueOnce([]) })
+    render(<HeartsGame gateway={api} />)
+    await user.click(await screen.findByRole('button', { name: 'Match history' }))
+    const dialog = screen.getByRole('dialog', { name: 'Match history' })
+    expect(within(dialog).getByText('Loading match history…')).toBeTruthy()
+    expect(within(dialog).queryByText('No completed chip matches yet.')).toBeNull()
+    failHistory(new Error('History is offline.'))
+    await user.click(await within(dialog).findByRole('button', { name: 'Retry history' }))
+    expect(await within(dialog).findByText('No completed chip matches yet.')).toBeTruthy()
+    expect(api.paid!.getHistory).toHaveBeenCalledTimes(2)
+    expect(api.paid!.join).not.toHaveBeenCalled()
+  })
+
+  it('aborts a history read when its window closes and ignores a late response', async () => {
+    const user = userEvent.setup()
+    let finishHistory!: (items: []) => void
+    const getHistory = vi.fn().mockImplementationOnce(() => new Promise(resolve => { finishHistory = resolve })).mockResolvedValueOnce([])
+    render(<HeartsGame gateway={gateway({}, { getHistory })} />)
+    await user.click(await screen.findByRole('button', { name: 'Match history' }))
+    const signal = getHistory.mock.calls[0][0] as AbortSignal
+    await user.click(screen.getByRole('button', { name: 'Close dialog' }))
+    expect(signal.aborted).toBe(true)
+    finishHistory([])
+    await user.click(screen.getByRole('button', { name: 'Match history' }))
+    expect(await screen.findByText('No completed chip matches yet.')).toBeTruthy()
+  })
+
+  it('keeps a competitive turn countdown visible while help is open', async () => {
+    const user = userEvent.setup(), source = atTable({ phase: 'playing', yourTurn: true, legalCards: [card('2')] })
+    const current = { ...source, table: { ...source.table!, actionDeadlineAtUtc: new Date(Date.now() + 45000).toISOString() } }
+    render(<HeartsGame gateway={gateway({}, { getSession: vi.fn().mockResolvedValue(current) })} />)
+    await screen.findByLabelText('Your hand')
+    await user.click(screen.getByRole('button', { name: 'How to play' }))
+    const help = screen.getByRole('dialog', { name: 'How to play Hearts' })
+    expect(within(help).getByText('Competitive play continues while this window is open.')).toBeTruthy()
+    expect(within(help).getByLabelText(/seconds remaining for your turn/)).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Two of clubs, play card' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('warns before a competitive expiry and disables expired card submissions', async () => {
+    const user = userEvent.setup(), source = atTable({ phase: 'playing', yourTurn: true, legalCards: [card('2')] })
+    const expiring = { ...source, table: { ...source.table!, actionDeadlineAtUtc: new Date(Date.now() + 5000).toISOString() } }
+    const first = render(<HeartsGame gateway={gateway({}, { getSession: vi.fn().mockResolvedValue(expiring) })} />)
+    expect(await screen.findByText('Play now—timeout forfeits your entry.')).toBeTruthy()
+    first.unmount()
+    const expired = { ...source, table: { ...source.table!, actionDeadlineAtUtc: new Date(Date.now() - 1000).toISOString() } }
+    const api = gateway({}, { getSession: vi.fn().mockResolvedValue(expired) })
+    render(<HeartsGame gateway={api} />)
+    const cardButton = await screen.findByRole('button', { name: 'Two of clubs, play card' })
+    expect((cardButton as HTMLButtonElement).disabled).toBe(true)
+    await user.click(cardButton)
+    expect(api.paid!.play).not.toHaveBeenCalled()
+    expect(screen.getAllByText('Time’s up—checking the table.').length).toBeGreaterThan(0)
+  })
+
+  it('waits for free-table cleanup and keeps a failed leave retryable', async () => {
+    const user = userEvent.setup(), leaveMatch = vi.fn().mockRejectedValueOnce(new Error('Could not close table.')).mockResolvedValueOnce(undefined)
+    const api = gateway({ leaveMatch })
+    render(<HeartsGame gateway={api} />)
+    await user.click(await enabledButton('Play free'))
+    await screen.findByLabelText('Your hand')
+    await user.click(screen.getByRole('button', { name: 'Leave table' }))
+    const retry = await screen.findByRole('button', { name: 'Retry leaving table' })
+    expect(screen.getByLabelText('Your hand')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Two of clubs, select to pass' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(retry)
+    await screen.findByRole('button', { name: 'Play free' })
+    expect(leaveMatch).toHaveBeenNthCalledWith(1, 'match-one')
+    expect(leaveMatch).toHaveBeenNthCalledWith(2, 'match-one')
+    expect(api.paid!.leave).not.toHaveBeenCalled()
   })
 })
 async function enabledButton(name: string) {

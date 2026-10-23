@@ -1,5 +1,6 @@
 import type { AsteroidsReplayPayload } from '@fortuneforge/games-asteroids'
 import type { FlappyReplayPayload } from '@fortuneforge/games-flappy'
+import type { HorseFlightReplayPayload } from '@fortuneforge/games-horse-flight'
 
 export type ArcadeCompetitionPeriod = 'daily' | 'weekly' | 'all-time'
 export type ArcadeCompetitionPaidPeriod = 'daily' | 'weekly'
@@ -119,6 +120,38 @@ export type FlappyPaidCompetitionGateway = Readonly<{
 
 export type FlappyCompetitionGateway = ArcadeCompetitionGateway & FlappyFreeRunGateway & FlappyPaidCompetitionGateway
 
+export type HorseFlightFreeRun = Readonly<{
+  runId: string
+  seed: number
+  wasReplay: boolean
+}>
+
+export type HorseFlightPaidAttempt = Readonly<{
+  attemptId: string
+  gameId: 'horse-flight'
+  period: ArcadeCompetitionPaidPeriod
+  startsAtUtc: string
+  endsAtUtc: string
+  entryFeeCents: number
+  wasReplay: boolean
+  runId: string
+  seed: number
+}>
+
+export type HorseFlightReplayCompletion = Readonly<{
+  runId: string
+  score: number
+  phase: 'obstacle-collision' | 'fell'
+  wasReplay: boolean
+}>
+
+export type HorseFlightCompetitionGateway = ArcadeCompetitionGateway & Readonly<{
+  startFreeHorseFlightRun: (idempotencyKey: string, signal?: AbortSignal) => Promise<HorseFlightFreeRun>
+  completeFreeHorseFlightReplay: (runId: string, replay: HorseFlightReplayPayload, signal?: AbortSignal) => Promise<HorseFlightReplayCompletion>
+  startHorseFlightAttempt: (period: ArcadeCompetitionPaidPeriod, idempotencyKey: string, signal?: AbortSignal) => Promise<HorseFlightPaidAttempt>
+  completeHorseFlightReplay: (period: ArcadeCompetitionPaidPeriod, runId: string, replay: HorseFlightReplayPayload, signal?: AbortSignal) => Promise<HorseFlightReplayCompletion>
+}>
+
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
 
 type CompetitionProblem = Readonly<{ code?: string }>
@@ -136,7 +169,7 @@ export class ArcadeCompetitionRequestError extends Error {
 }
 
 /** A read-only HTTP boundary. Supply a fake gateway to the component in tests. */
-export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, AsteroidsPaidCompetitionGateway, AsteroidsFreeRunGateway, FlappyFreeRunGateway, FlappyPaidCompetitionGateway {
+export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, AsteroidsPaidCompetitionGateway, AsteroidsFreeRunGateway, FlappyFreeRunGateway, FlappyPaidCompetitionGateway, HorseFlightCompetitionGateway {
   private readonly fetcher: Fetcher
 
   constructor(fetcher: Fetcher = fetch) {
@@ -309,6 +342,67 @@ export class HttpArcadeCompetitionGateway implements ArcadeCompetitionGateway, A
     return result
   }
 
+  async startFreeHorseFlightRun(idempotencyKey: string, signal?: AbortSignal): Promise<HorseFlightFreeRun> {
+    assertHorseFlightRequestKey(idempotencyKey)
+    const response = await this.fetcher('/api/arcade-competitions/horse-flight/free/runs', {
+      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, cache: 'no-store', signal,
+    })
+    return this.readResponse(response, isHorseFlightFreeRun)
+  }
+
+  async completeFreeHorseFlightReplay(
+    runId: string,
+    replay: HorseFlightReplayPayload,
+    signal?: AbortSignal,
+  ): Promise<HorseFlightReplayCompletion> {
+    if (!isHorseFlightFreeRunId(runId)) throw new Error('The Horse Flight run id is invalid.')
+    assertHorseFlightReplay(replay)
+    const response = await this.fetcher(
+      `/api/arcade-competitions/horse-flight/free/runs/${encodeURIComponent(runId)}/replay`,
+      {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(copyHorseFlightReplay(replay)), cache: 'no-store', signal,
+      },
+    )
+    const result = await this.readResponse(response, isHorseFlightReplayCompletion)
+    if (result.runId !== runId) throw new Error('The server returned an invalid arcade competition response.')
+    return result
+  }
+
+  async startHorseFlightAttempt(
+    period: ArcadeCompetitionPaidPeriod,
+    idempotencyKey: string,
+    signal?: AbortSignal,
+  ): Promise<HorseFlightPaidAttempt> {
+    assertHorseFlightRequestKey(idempotencyKey)
+    const response = await this.fetcher(`/api/arcade-competitions/horse-flight/${period}/attempts`, {
+      method: 'POST', headers: { 'Idempotency-Key': idempotencyKey }, cache: 'no-store', signal,
+    })
+    const result = await this.readResponse(response, isHorseFlightPaidAttempt)
+    if (result.period !== period) throw new Error('The server returned an invalid arcade competition response.')
+    return result
+  }
+
+  async completeHorseFlightReplay(
+    period: ArcadeCompetitionPaidPeriod,
+    runId: string,
+    replay: HorseFlightReplayPayload,
+    signal?: AbortSignal,
+  ): Promise<HorseFlightReplayCompletion> {
+    if (!isHorseFlightPaidRunId(runId)) throw new Error('The Horse Flight run id is invalid.')
+    assertHorseFlightReplay(replay)
+    const response = await this.fetcher(
+      `/api/arcade-competitions/horse-flight/${period}/runs/${encodeURIComponent(runId)}/replay`,
+      {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(copyHorseFlightReplay(replay)), cache: 'no-store', signal,
+      },
+    )
+    const result = await this.readResponse(response, isHorseFlightReplayCompletion)
+    if (result.runId !== runId) throw new Error('The server returned an invalid arcade competition response.')
+    return result
+  }
+
   private async readResponse<T>(response: Response, validator: (value: unknown) => value is T): Promise<T> {
     const value = await response.json().catch(() => null) as unknown
     if (!response.ok) {
@@ -428,6 +522,84 @@ function isFlappyReplayPayload(value: unknown): value is FlappyReplayPayload {
     previous = tick
   }
   return true
+}
+
+function isHorseFlightFreeRun(value: unknown): value is HorseFlightFreeRun {
+  return isRecord(value)
+    && isHorseFlightFreeRunId(value.runId)
+    && isHorseFlightSeed(value.seed)
+    && typeof value.wasReplay === 'boolean'
+}
+
+function isHorseFlightPaidAttempt(value: unknown): value is HorseFlightPaidAttempt {
+  return isRecord(value)
+    && value.gameId === 'horse-flight'
+    && isPaidPeriod(value.period)
+    && isNonBlankString(value.attemptId)
+    && isUtcTimestamp(value.startsAtUtc)
+    && isUtcTimestamp(value.endsAtUtc)
+    && isNonNegativeInteger(value.entryFeeCents)
+    && typeof value.wasReplay === 'boolean'
+    && isHorseFlightPaidRunId(value.runId)
+    && isHorseFlightSeed(value.seed)
+}
+
+function isHorseFlightReplayCompletion(value: unknown): value is HorseFlightReplayCompletion {
+  return isRecord(value)
+    && (isHorseFlightFreeRunId(value.runId) || isHorseFlightPaidRunId(value.runId))
+    && isNonNegativeInteger(value.score)
+    && (value.phase === 'obstacle-collision' || value.phase === 'fell')
+    && typeof value.wasReplay === 'boolean'
+}
+
+function assertHorseFlightRequestKey(value: string): void {
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(value)) throw new Error('The Horse Flight start request key is invalid.')
+}
+
+function assertHorseFlightReplay(value: HorseFlightReplayPayload): void {
+  if (!isHorseFlightReplayPayload(value)) throw new Error('The Horse Flight replay input is invalid.')
+}
+
+function isHorseFlightReplayPayload(value: unknown): value is HorseFlightReplayPayload {
+  if (!isRecord(value)
+    || !Number.isInteger(value.totalTicks)
+    || typeof value.totalTicks !== 'number'
+    || value.totalTicks < 1
+    || value.totalTicks > 20_000
+    || !Array.isArray(value.jumpTicks)
+    || value.jumpTicks.length > 1_500
+    || !Array.isArray(value.rightClickTicks)
+    || value.rightClickTicks.length > 20_000) return false
+  const jumpTicks: readonly unknown[] = value.jumpTicks
+  const rightClickTicks: readonly unknown[] = value.rightClickTicks
+  if (!isAscendingTickList(jumpTicks, value.totalTicks) || !isAscendingTickList(rightClickTicks, value.totalTicks)) return false
+  const rightClickSet = new Set(rightClickTicks)
+  return !jumpTicks.some((tick) => rightClickSet.has(tick))
+}
+
+function isAscendingTickList(value: readonly unknown[], totalTicks: number): value is readonly number[] {
+  let previous = -1
+  for (const tick of value) {
+    if (!Number.isInteger(tick) || typeof tick !== 'number' || tick < 0 || tick >= totalTicks || tick <= previous) return false
+    previous = tick
+  }
+  return true
+}
+
+function copyHorseFlightReplay(replay: HorseFlightReplayPayload): HorseFlightReplayPayload {
+  return { totalTicks: replay.totalTicks, jumpTicks: [...replay.jumpTicks], rightClickTicks: [...replay.rightClickTicks] }
+}
+
+function isHorseFlightFreeRunId(value: unknown): value is string {
+  return typeof value === 'string' && /^horse_flight_free_[0-9a-f]{64}$/.test(value)
+}
+
+function isHorseFlightPaidRunId(value: unknown): value is string {
+  return typeof value === 'string' && /^horse_flight_[0-9a-f]{64}$/.test(value)
+}
+
+function isHorseFlightSeed(value: unknown): value is number {
+  return isNonNegativeInteger(value) && value > 0 && value <= 0xffff_ffff
 }
 
 function isPlacements(value: unknown): value is readonly ArcadeCompetitionPlacement[] {

@@ -1,0 +1,4 @@
+/* Copy beside AndarBaharRoute.tsx. Keep viewport sizing local to this route. */
+.andar-bahar-route__body{padding:0 16px 12px;background:#071918;overflow:hidden!important;min-height:0}
+.andar-bahar-route__body>.ff-ab{height:100%;min-height:0}
+@media(max-width:600px){.andar-bahar-route__body{padding:0 6px 6px}}

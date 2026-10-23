@@ -30,6 +30,13 @@ public sealed class PaidHeartsController(
         [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct) =>
         Execute(ct, account => Store.JoinAsync(account.UserId, account.PlayerName, request.EntryCredits, key ?? "", DateTime.UtcNow, ct));
 
+    [HttpPost("matches/{matchId}/play-house")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public Task<ActionResult> PlayHouse(string matchId, PaidHeartsVersionRequest request,
+        [FromHeader(Name = "Idempotency-Key")] string? key, CancellationToken ct) =>
+        Execute(ct, account => Store.PlayHouseAsync(account.UserId, matchId, request.ExpectedVersion,
+            key ?? "", DateTime.UtcNow, ct));
+
     [HttpPost("matches/{matchId}/pass")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public Task<ActionResult> Pass(string matchId, PaidHeartsPassRequest request,

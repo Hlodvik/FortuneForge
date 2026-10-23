@@ -11,6 +11,13 @@ public static class HorseFlightEngine
     public const double HorseWidth = 48;
     public const double HorseHeight = 40;
     public const double SlideHorseHeight = 20;
+    public const double HorseCollisionWidth = 38;
+    public const double HorseCollisionHeight = 32;
+    public const double SlideHorseCollisionHeight = 14;
+    public const double HorseCollisionBottomInset = 2;
+    public const double ObstacleHorizontalHitboxInset = 5;
+    public const double ObstacleVerticalHitboxInset = 3;
+    public const int MinimumObstacleRecoveryTicks = 40;
     public const double GravityPerTick = 0.9;
     public const double JumpVelocity = -12.5;
     public const double FastFallVelocity = 16;
@@ -20,8 +27,18 @@ public static class HorseFlightEngine
     public const double DistancePerPoint = 10;
     public const int PlatformClearBonus = 100;
     public const int ScoresPerLevel = 500;
+    public const int LegacyRulesVersion = 1;
+    public const int DraftMultiBiomeRulesVersion = 2;
+    public const int PreviousRulesVersion = 3;
+    public const int CurrentRulesVersion = 4;
+    public const int BiomeTransitionDurationTicks = 750;
+    public const int CastleTownTransitionStartTick = 3_500;
+    public const int DarkForestTransitionStartTick = 7_000;
+    public const int BattlegroundTransitionStartTick = 10_500;
     public const int HauntedBiomeTransitionStartTick = 14_250;
     public const int HauntedBiomeStartTick = 15_000;
+    public const int DesertTransitionStartTick = 17_500;
+    public const int SkyTransitionStartTick = 21_000;
 
     private const double InitialPlatformWidth = 900;
     private const double InitialPlatformBottomMargin = 80;
@@ -36,10 +53,18 @@ public static class HorseFlightEngine
     private const int MaximumObstaclesPerPlatform = 3;
     private const double ObstacleClearance = 18;
     private const double MaximumObstacleWidth = 92;
-    private const double HorizontalHitboxInset = 3;
-    private const double VerticalHitboxInset = 2;
     private const double FenceSlideClearance = 24;
     private const double PositionTolerance = 0.000_001;
+    private const double LegacyObstacleHorizontalHitboxInset = 3;
+    private const double LegacyObstacleVerticalHitboxInset = 2;
+    private static readonly CaptureProjectileProfile LassoProjectile = new(
+        LaunchDistance: 200, ContactDistance: -15, SourceXFraction: 0.74,
+        SourceYOffset: 47, TargetYOffset: 27, ArcHeight: 12,
+        Width: 27, Height: 18);
+    private static readonly CaptureProjectileProfile NetProjectile = new(
+        LaunchDistance: 260, ContactDistance: -20, SourceXFraction: 0.48,
+        SourceYOffset: 92, TargetYOffset: 31, ArcHeight: 4,
+        Width: 42, Height: 22);
 
     private static readonly HorseFlightObstacleDefinition[] MountainObstacleDefinitions =
     [
@@ -64,16 +89,84 @@ public static class HorseFlightEngine
         new(HorseFlightObstacleKind.Skeleton, Width: 42, Height: 52, AdditionalSpeed: 1.1),
     ];
 
+    private static readonly HorseFlightObstacleDefinition[] CastleTownObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.MarketCart, Width: 76, Height: 52),
+        new(HorseFlightObstacleKind.HangingSign, Width: 74, Height: 42, Elevation: 58),
+        MountainObstacleDefinitions[0], // fence
+        MountainObstacleDefinitions[6], // rolling barrel
+        HauntedObstacleDefinitions[3], // well
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] DarkForestObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.ThornBramble, Width: 76, Height: 42),
+        MountainObstacleDefinitions[2], // boulder
+        MountainObstacleDefinitions[3], // fallen log
+        HauntedObstacleDefinitions[6], // bats
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] BattlegroundObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.SpikeBarricade, Width: 88, Height: 46),
+        MountainObstacleDefinitions[2], // boulder
+        MountainObstacleDefinitions[4], // lasso thrower
+        MountainObstacleDefinitions[5], // net tower
+        MountainObstacleDefinitions[6], // rolling barrel
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] DesertObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.Cactus, Width: 54, Height: 60),
+        MountainObstacleDefinitions[2], // boulder
+        HauntedObstacleDefinitions[2], // pit
+        HauntedObstacleDefinitions[3], // well
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] SkyObstacleDefinitions =
+    [
+        new(HorseFlightObstacleKind.StormCloud, Width: 70, Height: 38, Elevation: 76, AdditionalSpeed: 1.4),
+        MountainObstacleDefinitions[2], // boulder
+        HauntedObstacleDefinitions[6], // bats
+    ];
+
+    private static readonly HorseFlightObstacleDefinition[] MountainToCastleObstacleDefinitions =
+    [MountainObstacleDefinitions[0], MountainObstacleDefinitions[3], CastleTownObstacleDefinitions[0], CastleTownObstacleDefinitions[1]];
+    private static readonly HorseFlightObstacleDefinition[] CastleToDarkForestObstacleDefinitions =
+    [CastleTownObstacleDefinitions[0], CastleTownObstacleDefinitions[1], DarkForestObstacleDefinitions[0], DarkForestObstacleDefinitions[2]];
+    private static readonly HorseFlightObstacleDefinition[] DarkForestToBattlegroundObstacleDefinitions =
+    [DarkForestObstacleDefinitions[0], DarkForestObstacleDefinitions[2], BattlegroundObstacleDefinitions[0], BattlegroundObstacleDefinitions[2]];
+    private static readonly HorseFlightObstacleDefinition[] BattlegroundToHauntedObstacleDefinitions =
+    [BattlegroundObstacleDefinitions[0], BattlegroundObstacleDefinitions[3], HauntedObstacleDefinitions[6], HauntedObstacleDefinitions[7]];
+    private static readonly HorseFlightObstacleDefinition[] HauntedToDesertObstacleDefinitions =
+    [HauntedObstacleDefinitions[2], HauntedObstacleDefinitions[7], DesertObstacleDefinitions[0], DesertObstacleDefinitions[1]];
+    private static readonly HorseFlightObstacleDefinition[] DesertToSkyObstacleDefinitions =
+    [DesertObstacleDefinitions[0], DesertObstacleDefinitions[1], SkyObstacleDefinitions[0], SkyObstacleDefinitions[2]];
+
+    private static readonly (HorseFlightBiome From, HorseFlightBiome To, int StartTick)[] BiomeTransitions =
+    [
+        (HorseFlightBiome.Mountain, HorseFlightBiome.CastleTown, CastleTownTransitionStartTick),
+        (HorseFlightBiome.CastleTown, HorseFlightBiome.DarkForest, DarkForestTransitionStartTick),
+        (HorseFlightBiome.DarkForest, HorseFlightBiome.Battleground, BattlegroundTransitionStartTick),
+        (HorseFlightBiome.Battleground, HorseFlightBiome.Haunted, HauntedBiomeTransitionStartTick),
+        (HorseFlightBiome.Haunted, HorseFlightBiome.Desert, DesertTransitionStartTick),
+        (HorseFlightBiome.Desert, HorseFlightBiome.Sky, SkyTransitionStartTick),
+    ];
+
     private static double HorseLeft => HorseX - (HorseWidth / 2);
     private static double HorseRight => HorseX + (HorseWidth / 2);
+    private static double HorseCollisionLeft => HorseX - (HorseCollisionWidth / 2);
+    private static double HorseCollisionRight => HorseX + (HorseCollisionWidth / 2);
 
     public static HorseFlightState Start(
         uint seed,
         int width = DefaultWidth,
         int height = DefaultHeight,
-        int bestScore = 0)
+        int bestScore = 0,
+        int rulesVersion = CurrentRulesVersion)
     {
         ValidateDimensions(width, height);
+        ValidateRulesVersion(rulesVersion);
         if (bestScore < 0)
             throw new ArgumentOutOfRangeException(nameof(bestScore), "The best score cannot be negative.");
 
@@ -93,6 +186,7 @@ public static class HorseFlightEngine
             height,
             level: 1,
             tick: 0,
+            rulesVersion: rulesVersion,
             ref nextPlatformId,
             ref nextObstacleId,
             ref random);
@@ -118,6 +212,7 @@ public static class HorseFlightEngine
             HorseFlightPhase.Running)
         {
             JumpsRemaining = MaximumJumps,
+            RulesVersion = rulesVersion,
         };
     }
 
@@ -160,6 +255,7 @@ public static class HorseFlightEngine
             state.Height,
             state.Level,
             state.Tick,
+            state.RulesVersion,
             ref nextPlatformId,
             ref nextObstacleId,
             ref random);
@@ -229,9 +325,11 @@ public static class HorseFlightEngine
         var platformsCleared = checked(state.PlatformsCleared + newlyCleared);
         var score = CalculateScore(distance, platformsCleared);
         var scoreGained = score - state.Score;
-        var collisionHorseHeight = isSlidingThisTick && grounded ? SlideHorseHeight : HorseHeight;
+        var collisionHorseHeight = state.RulesVersion == LegacyRulesVersion
+            ? isSlidingThisTick && grounded ? SlideHorseHeight : HorseHeight
+            : isSlidingThisTick && grounded ? SlideHorseCollisionHeight : HorseCollisionHeight;
         var dashedObstacleId = isSlidingThisTick && grounded
-            ? ObstacleHitByDash(horseY, collisionHorseHeight, platforms, obstacles)
+            ? ObstacleHitByDash(horseY, collisionHorseHeight, platforms, obstacles, state.RulesVersion)
             : null;
         if (dashedObstacleId is not null)
         {
@@ -241,7 +339,8 @@ public static class HorseFlightEngine
                     : obstacle)
                 .ToList();
         }
-        var phase = CollidesWithObstacle(horseY, collisionHorseHeight, platforms, obstacles)
+        var terminalObstacleKind = CollidingObstacleKind(horseY, collisionHorseHeight, platforms, obstacles, state.RulesVersion);
+        var phase = terminalObstacleKind is not null
             ? HorseFlightPhase.ObstacleCollision
             : horseY - HorseHeight > state.Height
                 ? HorseFlightPhase.Fell
@@ -265,6 +364,7 @@ public static class HorseFlightEngine
             BestScore = Math.Max(state.BestScore, score),
             Tick = checked(state.Tick + 1),
             Phase = phase,
+            TerminalObstacleKind = terminalObstacleKind,
         };
         var eventType = phase switch
         {
@@ -314,10 +414,168 @@ public static class HorseFlightEngine
                     obstacle.Width,
                     platformYById[obstacle.PlatformId] - obstacle.Elevation - obstacle.Height,
                     obstacle.Height))
-                .ToImmutableArray());
+                .ToImmutableArray())
+        {
+            TerminalObstacleKind = state.TerminalObstacleKind,
+        };
+    }
+
+    public static HorseFlightBiomeSection BiomeSectionForTick(int tick, int rulesVersion = CurrentRulesVersion)
+    {
+        if (tick < 0)
+            throw new ArgumentOutOfRangeException(nameof(tick));
+        ValidateRulesVersion(rulesVersion);
+
+        if (rulesVersion != DraftMultiBiomeRulesVersion)
+        {
+            if (tick < HauntedBiomeTransitionStartTick)
+                return MainSection(HorseFlightBiome.Mountain);
+            if (tick < HauntedBiomeStartTick)
+                return TransitionSection(
+                    HorseFlightBiome.Mountain,
+                    HorseFlightBiome.Haunted,
+                    tick,
+                    HauntedBiomeTransitionStartTick);
+            return MainSection(HorseFlightBiome.Haunted);
+        }
+
+        var biome = HorseFlightBiome.Mountain;
+        foreach (var transition in BiomeTransitions)
+        {
+            if (tick < transition.StartTick)
+                break;
+            if (tick < transition.StartTick + BiomeTransitionDurationTicks)
+                return TransitionSection(transition.From, transition.To, tick, transition.StartTick);
+            biome = transition.To;
+        }
+        return MainSection(biome);
+    }
+
+    private static HorseFlightBiomeSection MainSection(HorseFlightBiome biome) =>
+        new(HorseFlightBiomePhase.Main, biome, biome, biome, 1);
+
+    private static HorseFlightBiomeSection TransitionSection(
+        HorseFlightBiome from,
+        HorseFlightBiome to,
+        int tick,
+        int startTick) =>
+        new(
+            HorseFlightBiomePhase.Transition,
+            to,
+            from,
+            to,
+            (double)(tick - startTick) / BiomeTransitionDurationTicks);
+
+    private static HorseFlightObstacleDefinition[] ObstacleDefinitionsForSection(
+        HorseFlightBiomeSection section,
+        int rulesVersion)
+    {
+        if (rulesVersion != DraftMultiBiomeRulesVersion)
+            return section.Biome == HorseFlightBiome.Haunted ? HauntedObstacleDefinitions : MountainObstacleDefinitions;
+
+        if (section.Phase == HorseFlightBiomePhase.Transition)
+        {
+            return section.To switch
+            {
+                HorseFlightBiome.CastleTown => MountainToCastleObstacleDefinitions,
+                HorseFlightBiome.DarkForest => CastleToDarkForestObstacleDefinitions,
+                HorseFlightBiome.Battleground => DarkForestToBattlegroundObstacleDefinitions,
+                HorseFlightBiome.Haunted => BattlegroundToHauntedObstacleDefinitions,
+                HorseFlightBiome.Desert => HauntedToDesertObstacleDefinitions,
+                HorseFlightBiome.Sky => DesertToSkyObstacleDefinitions,
+                _ => throw new InvalidOperationException("Unknown Horse Flight transition."),
+            };
+        }
+
+        return section.Biome switch
+        {
+            HorseFlightBiome.Mountain => MountainObstacleDefinitions,
+            HorseFlightBiome.CastleTown => CastleTownObstacleDefinitions,
+            HorseFlightBiome.DarkForest => DarkForestObstacleDefinitions,
+            HorseFlightBiome.Battleground => BattlegroundObstacleDefinitions,
+            HorseFlightBiome.Haunted => HauntedObstacleDefinitions,
+            HorseFlightBiome.Desert => DesertObstacleDefinitions,
+            HorseFlightBiome.Sky => SkyObstacleDefinitions,
+            _ => throw new InvalidOperationException("Unknown Horse Flight biome."),
+        };
     }
 
     private static void FillWorld(
+        List<HorseFlightPlatform> platforms,
+        List<HorseFlightObstacle> obstacles,
+        int width,
+        int height,
+        int level,
+        int tick,
+        int rulesVersion,
+        ref int nextPlatformId,
+        ref int nextObstacleId,
+        ref uint random)
+    {
+        if (rulesVersion == LegacyRulesVersion)
+        {
+            FillLegacyWorld(platforms, obstacles, width, height, level, tick,
+                ref nextPlatformId, ref nextObstacleId, ref random);
+            return;
+        }
+
+        while (platforms.Count < MinimumPlatformCount ||
+               platforms.Max(platform => platform.X + platform.Width) < width + GenerationLead)
+        {
+            var previous = platforms.Count == 0
+                ? null
+                : platforms.MaxBy(platform => platform.X + platform.Width);
+            var previousRight = previous?.X + previous?.Width ?? 0;
+            var obstacleSlots = Math.Min(
+                MaximumObstaclesPerPlatform,
+                1 + ((level - 1) / LevelsPerAdditionalObstacle));
+            var platformId = nextPlatformId++;
+            var platformWidth = MinimumPlatformWidth + (NextUnit(ref random) * PlatformWidthRange);
+            var eligibleDefinitions = ObstacleDefinitionsForSection(BiomeSectionForTick(tick, rulesVersion), rulesVersion);
+            for (var slot = 0; slot < obstacleSlots; slot++)
+            {
+                var definition = eligibleDefinitions[
+                    Math.Min(
+                        (int)(NextUnit(ref random) * eligibleDefinitions.Length),
+                        eligibleDefinitions.Length - 1)];
+                var naturalX = previousRight + 40 +
+                    (slot * (MaximumObstacleWidth + ObstacleClearance)) +
+                    (NextUnit(ref random) * ObstacleClearance);
+                var obstacleX = obstacles.Aggregate(
+                    naturalX,
+                    (requiredX, previousObstacle) => Math.Max(
+                        requiredX,
+                        RequiredFollowingObstacleX(previousObstacle, definition)));
+                var obstacle = new HorseFlightObstacle(
+                    nextObstacleId++,
+                    definition.Kind,
+                    platformId,
+                    obstacleX,
+                    definition.Width,
+                    definition.Height,
+                    definition.Elevation,
+                    definition.AdditionalSpeed);
+                if (!HasRecoveryWindowAfter(obstacles, obstacle))
+                {
+                    throw new InvalidOperationException(
+                        "Horse Flight generated an obstacle sequence without a clear recovery window.");
+                }
+                obstacles.Add(obstacle);
+                platformWidth = Math.Max(
+                    platformWidth,
+                    obstacle.X + obstacle.Width + 40 - previousRight);
+            }
+
+            platforms.Add(new HorseFlightPlatform(
+                platformId,
+                previousRight,
+                platformWidth,
+                height - InitialPlatformBottomMargin,
+                Cleared: false));
+        }
+    }
+
+    private static void FillLegacyWorld(
         List<HorseFlightPlatform> platforms,
         List<HorseFlightObstacle> obstacles,
         int width,
@@ -344,11 +602,8 @@ public static class HorseFlightEngine
                 minimumWidthForSlots,
                 MinimumPlatformWidth + (NextUnit(ref random) * PlatformWidthRange));
             var platform = new HorseFlightPlatform(
-                nextPlatformId++,
-                previousRight,
-                platformWidth,
-                height - InitialPlatformBottomMargin,
-                Cleared: false);
+                nextPlatformId++, previousRight, platformWidth,
+                height - InitialPlatformBottomMargin, Cleared: false);
             platforms.Add(platform);
 
             var usableWidth = platform.Width - 80 - ((obstacleSlots - 1) * ObstacleClearance);
@@ -366,14 +621,9 @@ public static class HorseFlightEngine
                 var obstacleX = slotStart + (NextUnit(ref random) * (slotWidth - definition.Width));
 
                 obstacles.Add(new HorseFlightObstacle(
-                    nextObstacleId++,
-                    definition.Kind,
-                    platform.Id,
-                    obstacleX,
-                    definition.Width,
-                    definition.Height,
-                    definition.Elevation,
-                    definition.AdditionalSpeed));
+                    nextObstacleId++, definition.Kind, platform.Id,
+                    obstacleX, definition.Width, definition.Height,
+                    definition.Elevation, definition.AdditionalSpeed));
             }
         }
     }
@@ -381,63 +631,147 @@ public static class HorseFlightEngine
     private static bool HorizontallyOverlapsHorse(HorseFlightPlatform platform) =>
         platform.X < HorseRight && platform.X + platform.Width > HorseLeft;
 
-    private static bool CollidesWithObstacle(
+    private static HorseFlightObstacleKind? CollidingObstacleKind(
         double horseY,
         double horseHeight,
         IReadOnlyCollection<HorseFlightPlatform> platforms,
-        IEnumerable<HorseFlightObstacle> obstacles)
+        IEnumerable<HorseFlightObstacle> obstacles,
+        int rulesVersion)
     {
         var platformYById = platforms.ToDictionary(platform => platform.Id, platform => platform.Y);
-        var horseTop = horseY - horseHeight;
+        var legacy = rulesVersion == LegacyRulesVersion;
+        var horseBottom = horseY - (legacy ? 0 : HorseCollisionBottomInset);
+        var horseTop = horseBottom - horseHeight;
+        var horseLeft = legacy ? HorseLeft : HorseCollisionLeft;
+        var horseRight = legacy ? HorseRight : HorseCollisionRight;
+        var horizontalInset = legacy ? LegacyObstacleHorizontalHitboxInset : ObstacleHorizontalHitboxInset;
+        var verticalInset = legacy ? LegacyObstacleVerticalHitboxInset : ObstacleVerticalHitboxInset;
         foreach (var obstacle in obstacles)
         {
             if (obstacle.KnockedDownAt is not null)
                 continue;
+            if (rulesVersion >= CurrentRulesVersion &&
+                obstacle.Kind is HorseFlightObstacleKind.LassoThrower or HorseFlightObstacleKind.NetTower)
+            {
+                if (CaptureProjectileCollides(
+                    obstacle, platformYById[obstacle.PlatformId],
+                    horseLeft, horseRight, horseTop, horseBottom))
+                    return obstacle.Kind;
+                continue;
+            }
             var obstacleBottom = CollisionBottom(obstacle, platformYById[obstacle.PlatformId]);
-            var obstacleLeft = obstacle.X + HorizontalHitboxInset;
-            var obstacleRight = obstacle.X + obstacle.Width - HorizontalHitboxInset;
-            if (obstacle.Kind == HorseFlightObstacleKind.NetTower && horseHeight <= SlideHorseHeight)
+            var obstacleLeft = obstacle.X + horizontalInset;
+            var obstacleRight = obstacle.X + obstacle.Width - horizontalInset;
+            if (obstacle.Kind == HorseFlightObstacleKind.NetTower &&
+                horseHeight <= (legacy ? SlideHorseHeight : SlideHorseCollisionHeight))
                 continue;
             var collisionHeight = obstacle.Kind == HorseFlightObstacleKind.NetTower ? 24 : obstacle.Height;
-            var obstacleTop = obstacleBottom - collisionHeight + VerticalHitboxInset;
-            var obstacleCollisionBottom = obstacleBottom - VerticalHitboxInset;
-            if (obstacleLeft < HorseRight &&
-                obstacleRight > HorseLeft &&
-                obstacleTop < horseY &&
+            var obstacleTop = obstacleBottom - collisionHeight + verticalInset;
+            var obstacleCollisionBottom = obstacleBottom - verticalInset;
+            if (obstacleLeft < horseRight &&
+                obstacleRight > horseLeft &&
+                obstacleTop < horseBottom &&
                 obstacleCollisionBottom > horseTop)
             {
-                return true;
+                return obstacle.Kind;
             }
         }
-        return false;
+        return null;
+    }
+
+    private static bool CaptureProjectileCollides(
+        HorseFlightObstacle obstacle,
+        double platformY,
+        double horseLeft,
+        double horseRight,
+        double horseTop,
+        double horseBottom)
+    {
+        var profile = obstacle.Kind == HorseFlightObstacleKind.LassoThrower
+            ? LassoProjectile : NetProjectile;
+        var distance = obstacle.X - HorseX;
+        if (distance > profile.LaunchDistance || distance <= profile.ContactDistance)
+            return false;
+
+        // The projectile follows the same obstacle-position-based path as the
+        // client. No independent timer or random value can drift in a replay.
+        var progress = (profile.LaunchDistance - distance) /
+            (profile.LaunchDistance - profile.ContactDistance);
+        var sourceX = obstacle.X + (obstacle.Width * profile.SourceXFraction);
+        var sourceY = platformY - profile.SourceYOffset;
+        var targetY = platformY - profile.TargetYOffset;
+        var x = sourceX + ((HorseX - sourceX) * progress);
+        var y = sourceY + ((targetY - sourceY) * progress) -
+            (profile.ArcHeight * Math.Sin(Math.PI * progress));
+        return x - (profile.Width / 2) < horseRight &&
+            x + (profile.Width / 2) > horseLeft &&
+            y - (profile.Height / 2) < horseBottom &&
+            y + (profile.Height / 2) > horseTop;
     }
 
     private static int? ObstacleHitByDash(
         double horseY,
         double horseHeight,
         IReadOnlyCollection<HorseFlightPlatform> platforms,
-        IEnumerable<HorseFlightObstacle> obstacles)
+        IEnumerable<HorseFlightObstacle> obstacles,
+        int rulesVersion)
     {
         var platformYById = platforms.ToDictionary(platform => platform.Id, platform => platform.Y);
-        var horseTop = horseY - horseHeight;
+        var legacy = rulesVersion == LegacyRulesVersion;
+        var horseBottom = horseY - (legacy ? 0 : HorseCollisionBottomInset);
+        var horseTop = horseBottom - horseHeight;
+        var horseLeft = legacy ? HorseLeft : HorseCollisionLeft;
+        var horseRight = legacy ? HorseRight : HorseCollisionRight;
+        var horizontalInset = legacy ? LegacyObstacleHorizontalHitboxInset : ObstacleHorizontalHitboxInset;
+        var verticalInset = legacy ? LegacyObstacleVerticalHitboxInset : ObstacleVerticalHitboxInset;
         foreach (var obstacle in obstacles)
         {
             if (obstacle.Kind is not (HorseFlightObstacleKind.LassoThrower or HorseFlightObstacleKind.Dog) || obstacle.KnockedDownAt is not null)
                 continue;
             var obstacleBottom = platformYById[obstacle.PlatformId] - obstacle.Elevation;
-            var obstacleLeft = obstacle.X + HorizontalHitboxInset;
-            var obstacleRight = obstacle.X + obstacle.Width - HorizontalHitboxInset;
-            var obstacleTop = obstacleBottom - obstacle.Height + VerticalHitboxInset;
-            var obstacleCollisionBottom = obstacleBottom - VerticalHitboxInset;
-            if (obstacleLeft < HorseRight &&
-                obstacleRight > HorseLeft &&
-                obstacleTop < horseY &&
+            var obstacleLeft = obstacle.X + horizontalInset;
+            var obstacleRight = obstacle.X + obstacle.Width - horizontalInset;
+            var obstacleTop = obstacleBottom - obstacle.Height + verticalInset;
+            var obstacleCollisionBottom = obstacleBottom - verticalInset;
+            if (obstacleLeft < horseRight &&
+                obstacleRight > horseLeft &&
+                obstacleTop < horseBottom &&
                 obstacleCollisionBottom > horseTop)
             {
                 return obstacle.Id;
             }
         }
         return null;
+    }
+
+    private static double RequiredFollowingObstacleX(
+        HorseFlightObstacle previous,
+        HorseFlightObstacleDefinition next)
+    {
+        // Reserve recovery time after the *whole* previous hitbox has passed.
+        // A slide can change forward speed mid-pair, and fast hazards drift
+        // relative to slow ones; the bounds cover either choice on every tick.
+        var fastestSpeed = MaximumForwardSpeed + SlideSpeedBonus;
+        var distanceUntilPreviousExit = Math.Max(0,
+            previous.X + previous.Width - ObstacleHorizontalHitboxInset - HorseCollisionLeft);
+        var earliestExitTick = distanceUntilPreviousExit / (fastestSpeed + previous.AdditionalSpeed);
+        var latestExitTick = distanceUntilPreviousExit / (BaseForwardSpeed + previous.AdditionalSpeed);
+        var relativeSpeed = next.AdditionalSpeed - previous.AdditionalSpeed;
+        var worstRelativeDrift = relativeSpeed *
+            (relativeSpeed >= 0 ? latestExitTick : earliestExitTick);
+        return previous.X + previous.Width - (2 * ObstacleHorizontalHitboxInset) +
+            HorseCollisionWidth + worstRelativeDrift +
+            ((MinimumObstacleRecoveryTicks + 1) * (fastestSpeed + next.AdditionalSpeed));
+    }
+
+    private static bool HasRecoveryWindowAfter(
+        IEnumerable<HorseFlightObstacle> previousObstacles,
+        HorseFlightObstacle next)
+    {
+        var definition = new HorseFlightObstacleDefinition(
+            next.Kind, next.Width, next.Height, next.Elevation, next.AdditionalSpeed);
+        return previousObstacles.All(previous =>
+            next.X + PositionTolerance >= RequiredFollowingObstacleX(previous, definition));
     }
 
     private static double CollisionBottom(HorseFlightObstacle obstacle, double platformY) =>
@@ -465,6 +799,7 @@ public static class HorseFlightEngine
     {
         ArgumentNullException.ThrowIfNull(state);
         ValidateDimensions(state.Width, state.Height);
+        ValidateRulesVersion(state.RulesVersion);
         if (state.RandomState == 0)
             throw new ArgumentException("The Horse Flight random state cannot be zero.", nameof(state));
         if (state.JumpsRemaining is < 0 or > MaximumJumps)
@@ -482,6 +817,14 @@ public static class HorseFlightEngine
         }
         if (!Enum.IsDefined(state.Phase))
             throw new ArgumentException("The Horse Flight phase is invalid.", nameof(state));
+        if (state.TerminalObstacleKind is { } terminalObstacleKind && !Enum.IsDefined(terminalObstacleKind))
+            throw new ArgumentException("The Horse Flight terminal obstacle kind is invalid.", nameof(state));
+        if ((state.Phase == HorseFlightPhase.ObstacleCollision) != (state.TerminalObstacleKind is not null))
+        {
+            throw new ArgumentException(
+                "Only an obstacle-collision terminal state may identify a terminal obstacle.",
+                nameof(state));
+        }
         if (state.Score != CalculateScore(state.Distance, state.PlatformsCleared))
             throw new ArgumentException("The score does not match distance and cleared-platform progress.", nameof(state));
 
@@ -538,6 +881,12 @@ public static class HorseFlightEngine
         }
     }
 
+    private static void ValidateRulesVersion(int rulesVersion)
+    {
+        if (rulesVersion is not (LegacyRulesVersion or DraftMultiBiomeRulesVersion or PreviousRulesVersion or CurrentRulesVersion))
+            throw new ArgumentOutOfRangeException(nameof(rulesVersion), rulesVersion, "Unknown Horse Flight generation rules version.");
+    }
+
     private static void ValidateDimensions(int width, int height)
     {
         if (width is < 480 or > 3840)
@@ -552,4 +901,14 @@ public static class HorseFlightEngine
         double Height,
         double Elevation = 0,
         double AdditionalSpeed = 0);
+
+    private readonly record struct CaptureProjectileProfile(
+        double LaunchDistance,
+        double ContactDistance,
+        double SourceXFraction,
+        double SourceYOffset,
+        double TargetYOffset,
+        double ArcHeight,
+        double Width,
+        double Height);
 }

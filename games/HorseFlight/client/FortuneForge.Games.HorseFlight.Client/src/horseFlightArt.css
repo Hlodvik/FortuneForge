@@ -13,6 +13,10 @@
 .ff-horse-flight__midground-pan {
   /* 5,520px at 627.27s is exactly four times the background's pixel speed. */
   animation: ff-horse-flight-midground-pan 627.273s linear infinite alternate;
+  animation-play-state: paused;
+}
+
+.ff-horse-flight__field[data-scene-moving="true"] .ff-horse-flight__midground-pan {
   animation-play-state: running;
 }
 
@@ -55,11 +59,18 @@
 
 .ff-horse-flight__horse-art {
   overflow: hidden;
+  /* Scale the clipped atlas with nearest-neighbour pixels. Transparent atlas
+     cells contain white RGB, which otherwise bleeds into the horse's edge. */
+  image-rendering: pixelated;
   filter: drop-shadow(.2rem .35rem .28rem #0009);
 }
 
 .ff-horse-flight__horse-art image {
   image-rendering: pixelated;
+}
+
+.ff-horse-flight__horse-reaction-art {
+  filter: drop-shadow(.28rem .42rem .3rem rgb(0 0 0 / 68%));
 }
 
 .ff-horse-flight__horse-body {
@@ -87,4 +98,116 @@
 
 .ff-horse-flight__horse-eye {
   fill: #1c2537;
+}
+
+.ff-horse-flight__decorative-trees { pointer-events: none; }
+
+.ff-horse-flight__decorative-tree {
+  opacity: .58;
+  filter: drop-shadow(.25rem .35rem .24rem rgb(3 8 14 / 55%));
+}
+
+.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-trunk { fill: #4b3223; }
+.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-shadow { fill: #1c4d38; }
+.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-crown { fill: #2e7150; }
+.ff-horse-flight__decorative-tree[data-biome="haunted"] .ff-horse-flight__decorative-tree-trunk { fill: #332a3c; }
+.ff-horse-flight__decorative-tree[data-biome="haunted"] .ff-horse-flight__decorative-tree-crown { fill: #4a3f61; }
+.ff-horse-flight__decorative-tree-branch { fill: none; stroke: #332a3c; stroke-width: 9; stroke-linecap: square; }
+
+
+.ff-horse-flight__horse-actor {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+}
+
+.ff-horse-flight__capture-throw-art,
+.ff-horse-flight__capture-horse-art {
+  pointer-events: none;
+  filter: drop-shadow(.1rem .18rem .14rem rgb(0 0 0 / 58%));
+}
+
+
+.ff-horse-flight__field[data-terminal-reaction] .ff-horse-flight__touch-controls { display: none; }
+/* The crash and slip atlases already contain the full fall. Transforming their
+   parent shifts the grounded frames below the platform as the atlas advances. */
+.ff-horse-flight__horse-actor[data-terminal-reaction="bat-retreat"] { animation: ff-horse-flight-retreat 1.05s cubic-bezier(.2,.8,.24,1) both; }
+.ff-horse-flight__horse-actor[data-terminal-reaction="fall"] { animation: ff-horse-flight-fall 1.05s cubic-bezier(.35,.1,.7,1) both; }
+
+.ff-horse-flight__impact-burst path { fill: #ffca65; stroke: #fff0a8; stroke-width: 2; }
+.ff-horse-flight__impact-burst circle { fill: #b77a3e; opacity: .72; }
+.ff-horse-flight__impact-burst { animation: ff-horse-flight-burst .9s ease-out both; transform-box: fill-box; transform-origin: center; }
+.ff-horse-flight__slip-splash ellipse { fill: #5ea74a; stroke: #b8ed70; stroke-width: 2; }
+.ff-horse-flight__slip-splash path { fill: none; stroke: #94d85e; stroke-width: 5; stroke-linecap: round; }
+.ff-horse-flight__slip-splash { animation: ff-horse-flight-splash 1s ease-out both; transform-box: fill-box; transform-origin: center bottom; }
+.ff-horse-flight__retreat-lines path,
+.ff-horse-flight__fall-lines path { fill: none; stroke: #d9ecff; stroke-width: 4; stroke-linecap: round; opacity: .8; }
+.ff-horse-flight__retreat-lines,
+.ff-horse-flight__fall-lines { animation: ff-horse-flight-lines .9s ease-out both; }
+
+.ff-horse-flight__over[data-terminal-overlay] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  animation: ff-horse-flight-end-reveal .18s ease-out 1.12s both;
+}
+
+.ff-horse-flight__over[data-terminal-reaction="trip-over"],
+.ff-horse-flight__over[data-terminal-reaction="crash"],
+.ff-horse-flight__over[data-terminal-reaction="impact"],
+.ff-horse-flight__over[data-terminal-reaction="slip"],
+.ff-horse-flight__over[data-terminal-reaction="lasso-caught"],
+.ff-horse-flight__over[data-terminal-reaction="net-caught"] {
+  animation-delay: .68s;
+}
+
+@keyframes ff-horse-flight-retreat {
+  0% { transform: none; }
+  34% { transform: translate(-5px, -9px) rotate(-7deg); }
+  68% { transform: translate(-20px, -3px) rotate(-11deg); }
+  100% { transform: translate(-35px, 4px) rotate(-7deg); }
+}
+
+@keyframes ff-horse-flight-fall {
+  0% { transform: none; }
+  100% { transform: translate(18px, 70px) rotate(38deg); }
+}
+
+@keyframes ff-horse-flight-burst {
+  0% { opacity: 0; transform: scale(.25) rotate(-12deg); }
+  28% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 0; transform: scale(1.35) rotate(8deg); }
+}
+
+@keyframes ff-horse-flight-splash {
+  0% { opacity: 0; transform: scaleX(.4); }
+  28% { opacity: 1; transform: scaleX(1.08); }
+  100% { opacity: .35; transform: scaleX(1.25); }
+}
+
+@keyframes ff-horse-flight-lines {
+  0% { opacity: 0; transform: translateX(15px); }
+  25% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-28px); }
+}
+
+@keyframes ff-horse-flight-end-reveal {
+  from { opacity: 0; visibility: hidden; pointer-events: none; }
+  to { opacity: 1; visibility: visible; pointer-events: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-horse-flight__horse-actor[data-terminal-reaction],
+  .ff-horse-flight__impact-burst,
+  .ff-horse-flight__slip-splash,
+  .ff-horse-flight__retreat-lines,
+  .ff-horse-flight__fall-lines,
+  .ff-horse-flight__over[data-terminal-overlay] {
+    animation: none;
+  }
+
+  .ff-horse-flight__over[data-terminal-overlay] {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
 }

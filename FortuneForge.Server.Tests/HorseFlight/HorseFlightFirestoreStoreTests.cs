@@ -29,12 +29,25 @@ public sealed class HorseFlightFirestoreStoreTests(SolitaireFirestoreEmulatorFix
         var retryCompletion = await store.CompleteAsync(
             "player-1", started.RunId, completion, "horse-flight-complete-0001", default);
 
-        Assert.Equal(started, retryStart);
-        Assert.Equal(completed, retryCompletion);
+        Assert.Matches("^horse_flight_free_[0-9a-f]{64}$", started.RunId);
+        Assert.False(started.WasReplay);
+        Assert.True(retryStart.WasReplay);
+        Assert.Equal(started.RunId, retryStart.RunId);
+        Assert.Equal(started.Seed, retryStart.Seed);
+        Assert.Equal(started.TickMilliseconds, retryStart.TickMilliseconds);
+        Assert.False(completed.WasReplay);
+        Assert.True(retryCompletion.WasReplay);
+        Assert.Equal(completed.RunId, retryCompletion.RunId);
+        Assert.Equal(completed.Score, retryCompletion.Score);
+        Assert.Equal(completed.Phase, retryCompletion.Phase);
+        Assert.Equal(completed.TotalTicks, retryCompletion.TotalTicks);
+        Assert.Equal(completed.JumpTicks, retryCompletion.JumpTicks);
+        Assert.Equal(completed.RightClickTicks, retryCompletion.RightClickTicks);
         var run = Assert.Single((await database.Collection("horseFlightRuns").GetSnapshotAsync()).Documents);
         Assert.Equal(started.RunId, Field<string>(run, "runId"));
         Assert.Equal("player-1", Field<string>(run, "userId"));
         Assert.Equal((long)started.Seed, Field<long>(run, "seed"));
+        Assert.Equal((long)HorseFlightEngine.CurrentRulesVersion, Field<long>(run, "rulesVersion"));
         Assert.Equal(completed.Phase, Field<string>(run, "phase"));
         Assert.Equal((long)completion.TotalTicks, Field<long>(run, "totalTicks"));
         Assert.Equal((long)completed.Score, Field<long>(run, "score"));
@@ -59,9 +72,74 @@ public sealed class HorseFlightFirestoreStoreTests(SolitaireFirestoreEmulatorFix
         Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
     }
 
-    private static CompleteHorseFlightRunRequest TerminalCompletion(uint seed)
+    [Fact]
+    public async Task FreeRunWithoutAStoredRulesVersionCompletesWithLegacyRules()
     {
-        var state = HorseFlightEngine.Start(seed);
+        _ = fixture;
+        var database = new FirestoreDbBuilder
+        {
+            ProjectId = $"demo-horse-flight-legacy-{Guid.NewGuid():N}",
+            EmulatorDetection = EmulatorDetection.EmulatorOnly,
+        }.Build();
+        var store = new HorseFlightFirestoreStore(database);
+        var started = await store.StartAsync("legacy-player", "horse-flight-legacy-start", default);
+        var runReference = database.Collection("horseFlightRuns").Document(started.RunId);
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = FieldValue.Delete,
+        });
+
+        var completion = TerminalCompletion(started.Seed, HorseFlightEngine.LegacyRulesVersion);
+        var completed = await store.CompleteAsync(
+            "legacy-player", started.RunId, completion, "horse-flight-legacy-complete", default);
+
+        Assert.NotEqual("running", completed.Phase);
+        var run = await runReference.GetSnapshotAsync();
+        Assert.Equal((long)HorseFlightEngine.LegacyRulesVersion, Field<long>(run, "rulesVersion"));
+        Assert.Equal((long)completed.Score, Field<long>(run, "score"));
+
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = FieldValue.Delete,
+        });
+        var retry = await store.CompleteAsync(
+            "legacy-player", started.RunId, completion, "horse-flight-legacy-complete", default);
+        Assert.True(retry.WasReplay);
+        Assert.Equal(completed.Score, retry.Score);
+    }
+
+    [Fact]
+    public async Task FreeRunStartedOnPreviousRulesCanFinishAfterRulesUpgrade()
+    {
+        _ = fixture;
+        var database = new FirestoreDbBuilder
+        {
+            ProjectId = $"demo-horse-flight-v3-{Guid.NewGuid():N}",
+            EmulatorDetection = EmulatorDetection.EmulatorOnly,
+        }.Build();
+        var store = new HorseFlightFirestoreStore(database);
+        var started = await store.StartAsync("previous-rules-player", "horse-flight-v3-start", default);
+        var runReference = database.Collection("horseFlightRuns").Document(started.RunId);
+        await runReference.UpdateAsync(new Dictionary<string, object>
+        {
+            ["rulesVersion"] = (long)HorseFlightEngine.PreviousRulesVersion,
+        });
+
+        var completion = TerminalCompletion(started.Seed, HorseFlightEngine.PreviousRulesVersion);
+        var completed = await store.CompleteAsync(
+            "previous-rules-player", started.RunId, completion, "horse-flight-v3-complete", default);
+
+        Assert.NotEqual("running", completed.Phase);
+        var run = await runReference.GetSnapshotAsync();
+        Assert.Equal((long)HorseFlightEngine.PreviousRulesVersion, Field<long>(run, "rulesVersion"));
+        Assert.Equal((long)completed.Score, Field<long>(run, "score"));
+    }
+
+    private static CompleteHorseFlightRunRequest TerminalCompletion(
+        uint seed,
+        int rulesVersion = HorseFlightEngine.CurrentRulesVersion)
+    {
+        var state = HorseFlightEngine.Start(seed, rulesVersion: rulesVersion);
         var totalTicks = 0;
         while (state.Phase == HorseFlightPhase.Running)
         {

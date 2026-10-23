@@ -14,18 +14,23 @@ export function cardName(card: HeartsCard): string {
   return `${names[label] ?? label} of ${card.suit}`
 }
 export function turnLabel(match: HeartsMatch): string { return match.winner ? `${seatLabel(match.winner)} wins with the lowest score.` : match.phase === 'complete' ? 'Round complete. Start the next round.' : match.yourTurn ? 'Your turn' : `${seatLabel(match.turn)} is acting…` }
-export function legalCardRationale(match: Pick<HeartsMatch, 'phase' | 'yourTurn' | 'currentTrick' | 'legalCards' | 'heartsBroken'>): string {
+export function legalCardRationale(match: Pick<HeartsMatch, 'phase' | 'yourTurn' | 'currentTrick' | 'legalCards' | 'heartsBroken'> & Partial<Pick<HeartsMatch, 'completedTricks'>>): string {
   if (match.phase !== 'playing' || !match.yourTurn) return 'Follow suit when possible. Hearts cannot lead until they are broken.'
+  if (!match.legalCards.length) return 'Waiting for your available cards…'
   const ledSuit = match.currentTrick.plays[0]?.card.suit
   if (ledSuit) {
     const label = suitLabel(ledSuit)
     return match.legalCards.every(card => card.suit === ledSuit)
       ? `${label} were led, so you must follow ${label.toLowerCase()}.`
-      : `You have no ${label.toLowerCase()}, so any highlighted card is legal.`
+      : match.completedTricks?.length === 0 && match.legalCards.every(card => !isPointCard(card))
+        ? `No ${label.toLowerCase()} left. Play an available non-point card on this first trick.`
+        : `You have no ${label.toLowerCase()}, so any available card is legal.`
   }
+  if (match.completedTricks?.length === 0 && match.legalCards.length === 1 && match.legalCards[0].suit === 'clubs' && match.legalCards[0].label === '2♣') return 'The 2 of clubs starts the first trick.'
   if (!match.heartsBroken && match.legalCards.every(card => card.suit !== 'hearts')) {
     return 'You are leading. Hearts stay unavailable until someone breaks them.'
   }
-  return 'You are leading this trick. Any highlighted card is legal.'
+  return 'You are leading this trick. Any available card is legal.'
 }
+function isPointCard(card: HeartsCard) { return card.suit === 'hearts' || card.suit === 'spades' && /^(Q|queen)$/i.test(card.rank) }
 function suitLabel(suit: string): string { return suit[0]?.toUpperCase() + suit.slice(1) }

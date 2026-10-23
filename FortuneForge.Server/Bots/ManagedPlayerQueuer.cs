@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using FortuneForge.Server.Admin.Management;
 
 namespace FortuneForge.Server.Bots;
 
@@ -20,11 +21,15 @@ internal sealed class ManagedPlayerQueuer(
         CancellationToken cancellationToken)
     {
         if (count <= 0) return [];
+        if (!await AdmissionsAllowed(gameId, cancellationToken)) return [];
         var excluded = excludedProfileIds.ToHashSet(StringComparer.Ordinal);
         var candidates = await profiles.ListSupportingAsync(
             gameId, CandidateLimit, cancellationToken);
 
         var selected = new List<ManagedPlayerProfile>(count);
+        var batchId = Guid.NewGuid().ToString("N");
+        var batches = assignments is IManagedPlayerReservationBatchStore { ProvisionalBatchesEnabled: true } enabled
+            ? enabled : null;
         try
         {
             foreach (var candidate in candidates
@@ -33,46 +38,72 @@ internal sealed class ManagedPlayerQueuer(
                      .OrderBy(candidate => StableRank(
                          gameId, assignmentId, candidate.UserId)))
             {
-                if (!await assignments.TryReserveAsync(
-                        candidate.UserId, gameId, assignmentId, nowUtc, cancellationToken))
+                if (!await AdmissionsAllowed(gameId, cancellationToken)) throw new AdmissionsStoppedException();
+                if (!await ReserveProfile(candidate.UserId))
                     continue;
                 selected.Add(candidate);
                 excluded.Add(candidate.UserId);
-                if (selected.Count == count) return selected;
+                if (selected.Count == count) break;
             }
 
             while (selected.Count < count)
             {
+                if (!await AdmissionsAllowed(gameId, cancellationToken)) throw new AdmissionsStoppedException();
                 var profile = await generator.GenerateAsync(gameId, nowUtc, cancellationToken);
                 if (excluded.Contains(profile.UserId) ||
-                    !await assignments.TryReserveAsync(
-                        profile.UserId, gameId, assignmentId, nowUtc, cancellationToken))
+                    !await ReserveProfile(profile.UserId))
                     continue;
                 selected.Add(profile);
                 excluded.Add(profile.UserId);
             }
+            if (batches is not null && !await batches.CompleteBatchAsync(gameId, assignmentId, batchId,
+                    selected.Select(profile => profile.UserId).ToArray(), nowUtc, cancellationToken))
+                throw new AdmissionsStoppedException();
             return selected;
         }
-        catch
+        catch (Exception failure)
         {
-            // No caller receives a partial supply, so none of these leases can be used.
+            // Compatibility mode cannot distinguish ownership of same-table leases
+            // shared with older binaries. Do not delete them on a policy stop;
+            // unused partial reservations retain their bounded original lease.
+            if (failure is AdmissionsStoppedException && batches is null) return [];
+            // Only this call's still-provisional leases belong to its cleanup.
+            // A concurrent same-table caller may already have committed them.
             // A cancelled request must not prevent releasing profiles already reserved.
+            var cleanupFailed = false;
             foreach (var profile in selected)
             {
                 try
                 {
-                    await ReleaseAsync(assignmentId, [profile.UserId], nowUtc, CancellationToken.None);
+                    if (batches is null)
+                        await ReleaseAsync(assignmentId, [profile.UserId], nowUtc, CancellationToken.None);
+                    else if (await batches.ReleaseIncompleteBatchAsync(profile.UserId, assignmentId, batchId,
+                                 nowUtc, CancellationToken.None))
+                        await profiles.MarkLastActiveAsync(profile.UserId, nowUtc, CancellationToken.None);
                 }
                 catch (Exception cleanupException)
                 {
+                    cleanupFailed = true;
                     logger?.LogWarning(cleanupException,
                         "Unable to release an incomplete managed-player reservation for assignment {AssignmentId}.",
                         assignmentId);
                 }
             }
+            if (failure is AdmissionsStoppedException && !cleanupFailed) return [];
             throw;
         }
+
+        Task<bool> ReserveProfile(string profileId) => batches is null
+            ? assignments.TryReserveAsync(profileId, gameId, assignmentId, nowUtc, cancellationToken)
+            : batches.TryReserveBatchAsync(profileId, gameId, assignmentId, batchId, nowUtc, cancellationToken);
     }
+
+    private sealed class AdmissionsStoppedException : Exception;
+
+    private Task<bool> AdmissionsAllowed(string gameId, CancellationToken cancellationToken) =>
+        assignments is IManagedPlayerAdmissionPolicy policy
+            ? policy.AllowsNewAssignmentsAsync(gameId, cancellationToken)
+            : Task.FromResult(true);
 
     public async Task HeartbeatAsync(
         string gameId,

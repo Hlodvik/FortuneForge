@@ -40,6 +40,7 @@ export function PlayerAccountMenus({ account }: { account: AccountSummary }) {
         <details className="player-shell-menu player-shell-menu--more">
           <summary aria-label="Account menu"><span></span><span></span><span></span></summary>
           <nav aria-label="Account menu">
+            {account.role.toLowerCase() === 'admin' && <a href="/admin"><strong>Admin portal</strong><small>Players, games and operations</small></a>}
             <a href="/home/rand"><strong>Recharge</strong><small>Add Rand to play</small></a>
             <a href="/home/settings"><strong>Account settings</strong><small>Manage your account</small></a>
             <a href="/home/history"><strong>History</strong><small>Review account activity</small></a>

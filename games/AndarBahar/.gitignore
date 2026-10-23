@@ -1,0 +1,10 @@
+**/.practice-data/
+**/.test-tmp/
+**/.test-temp/
+**/.practice/
+**/.e2e-artifacts/
+**/.vite-temp/
+**/node_modules/
+**/dist/
+**/bin/
+**/obj/

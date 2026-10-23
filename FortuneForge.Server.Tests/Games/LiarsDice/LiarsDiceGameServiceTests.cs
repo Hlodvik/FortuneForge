@@ -58,8 +58,54 @@ public sealed class LiarsDiceGameServiceTests
         await service.AdvanceDueManagedTurnsAsync();
         var advanced = await service.GetAsync("player-a", match.MatchId);
 
-        Assert.NotEqual(firstOpponentId, advanced.CurrentPlayerId);
-        Assert.True(advanced.OpponentsThinking || advanced.Phase == "resolved");
+        if (advanced.Phase == "resolved")
+        {
+            // A legal challenge resolves the round without rotating its actor.
+            Assert.NotNull(advanced.Outcome);
+            Assert.Equal(firstOpponentId, advanced.Outcome.ChallengerId);
+            Assert.False(advanced.OpponentsThinking);
+        }
+        else
+        {
+            Assert.NotEqual(firstOpponentId, advanced.CurrentPlayerId);
+            Assert.NotEqual(waiting.CurrentBid, advanced.CurrentBid);
+            Assert.True(advanced.OpponentsThinking);
+        }
+    }
+
+    [Theory]
+    [InlineData(1, 1, false)]
+    [InlineData(12, 6, true)]
+    public async Task Server_scheduler_handles_both_a_raise_and_a_resolving_challenge(
+        int quantity, int face, bool resolves)
+    {
+        // Strong players do not take the policy's occasional random challenge,
+        // so these bids deterministically exercise each legal scheduler outcome.
+        var service = CreateService(out var clock, out _, firstOpponentSkillLevel: 4);
+        var match = await service.StartAsync("player-a", new StartLiarsDiceMatchRequest(98, 3));
+        var waiting = await service.BidAsync(
+            "player-a", match.MatchId, new PlaceLiarsDiceBidRequest(quantity, face));
+
+        clock.Advance(TimeSpan.FromSeconds(2));
+        await service.AdvanceDueManagedTurnsAsync();
+        var advanced = await service.GetAsync("player-a", match.MatchId);
+
+        if (resolves)
+        {
+            Assert.Equal("resolved", advanced.Phase);
+            Assert.Equal(waiting.CurrentPlayerId, advanced.CurrentPlayerId);
+            Assert.NotNull(advanced.Outcome);
+            Assert.Equal(waiting.CurrentPlayerId, advanced.Outcome.ChallengerId);
+            Assert.False(advanced.OpponentsThinking);
+        }
+        else
+        {
+            Assert.Equal("bidding", advanced.Phase);
+            Assert.NotEqual(waiting.CurrentPlayerId, advanced.CurrentPlayerId);
+            Assert.Equal(new LiarsDiceBidResponse(1, 2), advanced.CurrentBid);
+            Assert.Null(advanced.Outcome);
+            Assert.True(advanced.OpponentsThinking);
+        }
     }
 
     [Fact]
@@ -85,14 +131,15 @@ public sealed class LiarsDiceGameServiceTests
 
     private static LiarsDiceGameService CreateService(
         out MutableTimeProvider clock,
-        out RecordingRoster roster)
+        out RecordingRoster roster,
+        int firstOpponentSkillLevel = 2)
     {
         clock = new MutableTimeProvider();
-        roster = new RecordingRoster();
+        roster = new RecordingRoster(firstOpponentSkillLevel);
         return new LiarsDiceGameService(roster, clock);
     }
 
-    private sealed class RecordingRoster : ILiarsDiceManagedPlayerRoster
+    private sealed class RecordingRoster(int firstOpponentSkillLevel) : ILiarsDiceManagedPlayerRoster
     {
         public int ReserveCalls { get; private set; }
         public int HeartbeatCalls { get; private set; }
@@ -109,7 +156,7 @@ public sealed class LiarsDiceGameServiceTests
             Assert.Equal(3, count);
             Assert.Contains("player-a", excludedProfileIds);
             return Task.FromResult<IReadOnlyList<LiarsDiceManagedPlayer>>([
-                new("managed-liars-a", "MossRiver", 2),
+                new("managed-liars-a", "MossRiver", firstOpponentSkillLevel),
                 new("managed-liars-b", "CopperFinch", 3),
                 new("managed-liars-c", "NightWindow", 4),
             ]);

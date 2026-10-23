@@ -51,6 +51,12 @@
     <Project Path="DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
     <Project Path="DropMerge/samples/FortuneForge.Games.DropMerge.Web/FortuneForge.Games.DropMerge.Web.csproj" />
   </Folder>
+  <Folder Name="/games/DragonTiger/">
+    <Project Path="DragonTiger/src/FortuneForge.Games.DragonTiger/FortuneForge.Games.DragonTiger.csproj" />
+    <Project Path="DragonTiger/server/FortuneForge.Games.DragonTiger.Server/FortuneForge.Games.DragonTiger.Server.csproj" />
+    <Project Path="DragonTiger/samples/FortuneForge.Games.DragonTiger.Web/FortuneForge.Games.DragonTiger.Web.csproj" />
+    <Project Path="DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj" />
+  </Folder>
   <Folder Name="/games/Flappy/">
     <Project Path="Flappy/samples/FortuneForge.Games.Flappy.Web/FortuneForge.Games.Flappy.Web.csproj" />
     <Project Path="Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />

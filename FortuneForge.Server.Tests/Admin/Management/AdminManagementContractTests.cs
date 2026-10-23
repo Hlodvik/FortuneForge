@@ -148,10 +148,11 @@ public sealed class AdminManagementContractTests
     {
         var service = new AdminManagementService(new Store(), Microsoft.Extensions.Options.Options.Create(Options));
         var publicState = await service.VisibilityAsync(default);
-        Assert.Equal(40, publicState.Games.Count);
-        Assert.Equal(40, publicState.Games.Select(game => game.Id).Distinct().Count());
-        Assert.Equal(40, publicState.Games.Select(game => game.Route).Distinct().Count());
-        Assert.Single(publicState.Games, game => !game.Visible);
+        Assert.Equal(41, publicState.Games.Count);
+        Assert.Equal(41, publicState.Games.Select(game => game.Id).Distinct().Count());
+        Assert.Equal(41, publicState.Games.Select(game => game.Route).Distinct().Count());
+        Assert.Equal("horse-flight", Assert.Single(publicState.Games, game => !game.Visible).Id);
+        Assert.True(publicState.Games.Single(game => game.Id == "dragon-tiger").Visible);
         var json = JsonSerializer.Serialize(publicState).ToLowerInvariant();
         Assert.DoesNotContain("bots", json);
         Assert.DoesNotContain("actor", json);

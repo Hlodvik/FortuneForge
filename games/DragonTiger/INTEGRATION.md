@@ -1,6 +1,10 @@
-# Host integration after the Baccarat release completes
+# Dragon Tiger host integration
 
-All changes below are intentionally pending until the assignment's release gate opens. Preserve unrelated local changes and re-read each shared file immediately before patching it.
+The shared-host wiring below was implemented locally on 23 October 2026 after the Baccarat release gate opened. Dragon Tiger now uses the authenticated main app, the actual shared black-themed navbar, account/practice-isolated recovery, and the shared PlayingCard faces. The game-specific Asian backs remain in the game package. The API uses the normal account resolver and existing rate-limit policies.
+
+The reviewed release enables `Features:DragonTigerEnabled` in Production and Development and makes the runtime catalogue entry visible. The user authorized publishing the completed Craps and Dragon Tiger work on 23 October 2026. Publication still uses the normal guarded release flow; no runtime configuration or wallet settings need migration.
+
+The release-owned runtime allowlist (`AdminManagementCatalog.cs`) and 41-game smoke inventory include Dragon Tiger. Release verification also runs the separate Dragon Tiger C# test project; registering it in a solution alone would not run those tests. The numbered list below describes the integration recipe, not outstanding work.
 
 1. Root `package.json`: add workspace `games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client`. App `fortuneforge.client/package.json`: add `@fortuneforge/games-dragon-tiger` version `0.1.0`. Regenerate only the necessary root lockfile entries; validate the existing game ownership/workspace checks.
 2. Add `fortuneforge.client/src/app/routes/DragonTigerRoute.tsx` patterned on `BaccaratRoute.tsx`: `useAuthenticatedAccount('/games/dragon-tiger')`, the existing `InGameShell`, `PracticeModeNavAction`, `fetchWithAccountSession` and `practiceAccountFetch`. Import the new package and its `styles.css`; key the component and `playerId` by `${account.userId}:${practiceMode ? 'practice' : 'account'}`. Refresh `getCurrentAccount` on real wallet balance changes. The standalone component owns its game heading.
@@ -30,7 +34,7 @@ app.MapDragonTiger(async (context, cancellationToken) =>
 });
 ```
 
-Keep the normal account cookie, middleware and rate-limit policies. The package honors the existing `X-FortuneForge-Practice: true` header and keeps practice funds separate. It does not own authentication. `Features:DragonTigerEnabled` defaults false: explicitly enable only the intended reviewed environment. Development can enable the sample without affecting production.
+Keep the normal account cookie, middleware and rate-limit policies. The package honors the existing `X-FortuneForge-Practice: true` header and keeps practice funds separate. It does not own authentication. The reusable package's feature gate fails closed when unset; the reviewed main-host configuration explicitly enables it. The standalone sample remains forced practice.
 
 7. Add the route to `scripts/game-smoke-inventory.mjs` and adjust inventory assertions in `scripts/verify-game-route-inventory.mjs` and `scripts/smoke-production.mjs` from 40 to 41, after verifying no other concurrent game changed that count. Extend `PackagedGameStyles.test.ts` and `CasinoTableShellRoutes.test.tsx` route coverage, add a route/account-practice integration test, and use the existing catalogue tests for the new entry.
-8. Build both packages and the host, run ownership/route inventory verification, main app route tests and this package's tests. Exercise the connected authenticated route against an isolated emulator account (never production funds), checking both wallet and practice mode. Review only this game's diff. No commit, push or deploy is authorized by this task.
+8. Build both packages and the host, run ownership/route inventory verification, main app route tests and this package's tests. Exercise the connected authenticated route against an isolated emulator account (never production funds), checking both wallet and practice mode. Review the completed release diff, commit it to main, and use the guarded deployment described in `docs/RELEASE_SAFETY.md` after approval.

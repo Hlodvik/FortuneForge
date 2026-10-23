@@ -37,29 +37,55 @@ const assertSettlement = (round, before) => {
 const dragon = () => page.getByRole('button', { name: /^Bet on Dragon,/ })
 const tiger = () => page.getByRole('button', { name: /^Bet on Tiger,/ })
 const tie = () => page.getByRole('button', { name: /^Bet on Tie,/ })
-const clear = () => page.getByRole('button', { name: /Clear/ })
+const chooseChip = async value => {
+  const result = page.getByRole('dialog', { name: 'Round result' })
+  if (await result.count()) {
+    // The first outside click only acknowledges the result, not its underlying control.
+    await page.getByRole('button', { name: /^Choose chip value, currently R/ }).click()
+    await expect(result).toHaveCount(0)
+    await expect(page.getByRole('group', { name: 'Choose chip value' })).toHaveCount(0)
+    await expect(total()).toHaveText('R0.00')
+    await expect(page.getByLabel('Face down card', { exact: true })).toHaveCount(2)
+  }
+  await page.getByRole('button', { name: /^Choose chip value, currently R/ }).click()
+  await page.getByRole('button', { name: `R${value.toFixed(2)} chip` }).click()
+}
+const takeBack = side => page.getByRole('button', { name: `Take back last chip from ${side} bet` })
+const returnDraftChips = async () => {
+  for (const side of ['Dragon', 'Tiger', 'Tie']) {
+    let returned = 0
+    while (await takeBack(side).count()) {
+      assert.ok(returned++ < 1000, `${side}: taking back a chip did not empty the draft`)
+      await expect(takeBack(side)).toBeEnabled()
+      await takeBack(side).click()
+    }
+  }
+}
 const deal = () => page.getByRole('button', { name: /Deal cards/ })
 const total = () => page.getByTestId('dragon-tiger-total-bet')
 
 try {
   await page.goto(origin)
   await expect(dragon()).toBeEnabled()
+  await expect(page.getByRole('complementary', { name: 'Recent results' })).toHaveCount(0)
   await page.getByRole('button', { name: /Mute sound|Turn sound on/ }).click()
   const before = (await readStatus()).balance
 
-  await page.getByRole('button', { name: 'R2.00 chip' }).click()
+  await chooseChip(2)
   await dragon().click(); await dragon().click(); await dragon().click()
   await expect(dragon()).toHaveAccessibleName(/current bet R6.00/)
-  await expect(dragon().getByLabel('3 chips placed').locator('img')).toHaveCount(3)
+  await expect(dragon().locator('..').getByLabel('3 chips placed').locator('img')).toHaveCount(3)
+  await expect(dragon().locator('button')).toHaveCount(0)
   if (screenshots) await page.screenshot({ path: `${screenshots}desktop-stacks.png`, fullPage: true })
-  await page.getByRole('button', { name: /Undo/ }).click()
+  await takeBack('Dragon').click()
   await expect(total()).toHaveText('R4.00')
-  await clear().click()
+  await returnDraftChips()
   await expect(total()).toHaveText('R0.00')
+  await expect(page.getByRole('button', { name: /Undo|Clear/ })).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'R1.00 chip' }).click()
+  await chooseChip(1)
   await dragon().click(); await tiger().click()
-  await page.getByRole('button', { name: 'R0.50 chip' }).click(); await tie().click()
+  await chooseChip(.5); await tie().click()
   const responsePromise = page.waitForResponse(response => response.url().endsWith('/api/games/dragon-tiger/rounds') && response.request().method() === 'POST')
   await deal().click()
   const response = await responsePromise
@@ -72,7 +98,12 @@ try {
   assert.deepEqual(submitted.postDataJSON(), { dragonStake: 1, tigerStake: 1, tieStake: .5 })
   await expect(page.getByTestId('dragon-tiger-balance')).toHaveText(money(round.balance))
   await expect(page.getByTestId('dragon-tiger-win')).toHaveText(money(Math.max(0, round.profit)))
+  await expect(page.getByRole('complementary', { name: 'Recent results' })).toHaveCount(0)
+  const resultBox = page.getByRole('dialog', { name: 'Round result' })
+  await expect(resultBox).toContainText(round.profit > 0 ? 'YOU WON' : round.profit < 0 ? 'HOUSE WINS' : 'BREAK EVEN')
+  await expect(resultBox).toContainText(`${round.profit < 0 ? '−' : ''}${money(round.profit)}`)
   await expect(page.getByRole('button', { name: /Rebet/ })).toBeEnabled()
+  await expect(takeBack('Dragon')).toBeDisabled()
   assert.equal(await page.evaluate(() => localStorage.getItem('fortuneforge:dragon-tiger:pending:standalone-practice')), null)
   if (screenshots) await page.screenshot({ path: `${screenshots}desktop-result.png`, fullPage: true })
 
@@ -86,8 +117,7 @@ try {
   assert.equal((await readStatus()).balance, round.balance)
 
   // Lose the HTTP response only after the real server has settled the wager.
-  await clear().click()
-  await page.getByRole('button', { name: 'R1.00 chip' }).click(); await dragon().click()
+  await chooseChip(1); await dragon().click()
   const beforeRecovery = (await readStatus()).balance
   let lostRound, lostKey
   await page.route('**/api/games/dragon-tiger/rounds', async route => {
@@ -120,7 +150,9 @@ try {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${viewport.name}: horizontal result overflow`)
     if (screenshots && viewport.name !== 'desktop') await page.screenshot({ path: `${screenshots}${viewport.name}-result.png`, fullPage: true })
   }
-  await clear().click()
+  // A new chip starts a fresh draft; settled bets cannot be taken back.
+  await chooseChip(1); await dragon().click()
+  await returnDraftChips()
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height })
     await expect(dragon()).toBeVisible()
@@ -129,10 +161,10 @@ try {
       const box = await spot.boundingBox()
       assert.ok(box && box.x >= 0 && box.x + box.width <= viewport.width + 1 && box.height >= 44, `${viewport.name}: betting spot has an unusable size or clips offscreen`)
     }
-    await page.getByRole('button', { name: 'R0.50 chip' }).click(); await dragon().click()
+    await chooseChip(.5); await dragon().click()
     await expect(total()).toHaveText('R0.50')
     await expect(deal()).toBeEnabled()
-    await clear().click()
+    await returnDraftChips()
     if (screenshots) await page.screenshot({ path: `${screenshots}${viewport.name}.png`, fullPage: true })
   }
   await page.getByRole('button', { name: /How to play/ }).click()
@@ -141,7 +173,7 @@ try {
   await page.getByRole('button', { name: 'Close rules' }).click()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   assert.deepEqual(errors, [])
-  console.log(JSON.stringify({ result: 'passed', origin, firstOutcome: round.outcome, recoveryOutcome: lostRound.outcome, checks: ['real mixed-spot wager and settlement', 'same-key replay does not debit twice', 'changed wager key conflict', 'response loss and reload recovery', 'visible repeated chip stack', 'undo and clear', 'desktop and mobile portrait/landscape including 320px', 'guide dialog', 'no browser errors'], ...(screenshots ? { screenshots } : {}) }, null, 2))
+  console.log(JSON.stringify({ result: 'passed', origin, firstOutcome: round.outcome, recoveryOutcome: lostRound.outcome, checks: ['real mixed-spot wager and settlement', 'net win/loss/break-even result popup', 'outside result click resets without activating underlying control', 'same-key replay does not debit twice', 'changed wager key conflict', 'response loss and reload recovery', 'visible repeated chip stack', 'per-spot draft chip returns without nested buttons', 'settled wagers cannot be taken back', 'desktop and mobile portrait/landscape including 320px', 'guide dialog', 'no browser errors'], ...(screenshots ? { screenshots } : {}) }, null, 2))
 } finally {
   await browser.close()
 }

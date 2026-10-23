@@ -20,6 +20,8 @@ using FortuneForge.Server.Cards.VideoPoker;
 using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Dice.SicBo;
+using FortuneForge.Games.DragonTiger.Server;
+using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
 
 namespace FortuneForge.Server.Configuration;
@@ -62,6 +64,11 @@ public static class FortuneForgeStartup
             provider.GetRequiredService<IManagedTablePopulationDirector>()));
         builder.Services.AddHostedService<RouletteTableWorker>();
         builder.Services.AddSingleton<CrapsGameService>();
+        builder.Services.AddDragonTigerServer(options =>
+        {
+            options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
+            options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+        });
         builder.Services.AddSingleton<DropMergeGameService>();
         builder.Services.AddSingleton<LiarsDiceGameService>();
         builder.Services.AddSingleton<TwentyFortyEightGameService>();

@@ -15,7 +15,7 @@ describe('CrapsGame', () => {
     const markup = renderToStaticMarkup(createElement(CrapsGame, { gateway }))
     expect(markup).toContain('Craps table')
     expect(markup).toContain('PASS LINE')
-    expect(markup).toContain('Pass Line bet in Rand')
+    expect(markup).toContain('Select chip value')
     expect(markup).toContain('Checking…')
     expect(markup).toContain('Tips')
     expect(markup).not.toContain('Other games')

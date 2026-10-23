@@ -1,11 +1,42 @@
-.ff-craps-page button:focus-visible, .ff-craps-page input:focus-visible { outline:2px solid #fff0a9; outline-offset:3px; }
-.ff-craps-page button:disabled, .ff-craps-page input:disabled { cursor:not-allowed; opacity:.5; }
-.ff-craps-page .ff-craps-proposition:disabled { opacity:.9; }
-.ff-craps-page .ff-craps-proposition[aria-pressed=true]:disabled { opacity:1; }
-.ff-craps-page button, .ff-craps-point-row, .ff-craps-pass-line, .ff-craps-dice, .ff-craps-rolls { user-select:none; -webkit-user-select:none; }
-.ff-craps-page button { touch-action:manipulation; }
+/* Real chip artwork is shared by the selector and every printed betting spot. */
+.ff-craps-chip-row img, .ff-craps-chip-stack img { transform:scale(var(--chip-art-scale,1)); transform-origin:center; }
+.ff-craps-limits { color:#a9bba5; font-size:10px; white-space:nowrap; }
+.ff-craps-callout > small { color:#b6c4a8; font-size:9px; font-weight:650; letter-spacing:.13em; }
+.ff-craps-point-row > span:nth-child(4) strong, .ff-craps-point-row > span:nth-child(6) strong { font-size:.64em; letter-spacing:-.025em; }
+.ff-craps-proposition__dice { display:flex; align-items:center; justify-content:center; gap:6px; }
+.ff-craps-printed-die { display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); width:23px; height:23px; gap:2px; padding:4px; border:1px solid rgb(228 223 181 / 70%); border-radius:3px; background:#e4dfb5; opacity:.9; }
+.ff-craps-printed-die i { display:block; align-self:center; justify-self:center; width:3px; height:3px; border-radius:50%; background:#133b26; }
+.ff-craps-title button svg, .ff-craps-control-actions button svg { display:block; width:23px; height:23px; flex-shrink:0; }
+.ff-craps-primary { display:grid; grid-template-columns:28px minmax(0,1fr); grid-template-rows:auto auto; align-content:center; column-gap:9px; row-gap:2px; text-align:left; }
+.ff-craps-primary > svg { grid-column:1; grid-row:1 / 3; justify-self:center; width:26px; height:26px; }
+.ff-craps-primary > strong { grid-column:2; grid-row:1; }
+.ff-craps-primary > small { grid-column:2; grid-row:2; }
+.ff-craps-wager-inputs { display:block; margin:12px 0; padding:0; border-block:1px solid #b6b89730; }
+.ff-craps-wager-inputs > summary { min-height:44px; padding:12px 0; color:#e5d59b; cursor:pointer; font-size:12px; }
+.ff-craps-wager-inputs > div { display:grid; gap:13px; padding:4px 0 15px; }
+.ff-craps-chip-stack { position:relative; display:inline-block; flex:0 0 var(--ff-craps-chip-size); width:var(--ff-craps-chip-size); height:calc(var(--ff-craps-chip-size) + (var(--chip-stack-count,1) - 1) * 3px); isolation:isolate; vertical-align:middle; pointer-events:none; }
+.ff-craps-chip-stack img { position:absolute; left:0; bottom:calc(var(--chip-index,0) * 3px); z-index:calc(1 + var(--chip-index,0)); display:block; width:var(--ff-craps-chip-size); height:var(--ff-craps-chip-size); object-fit:contain; filter:drop-shadow(0 2px 2px #0008); }
+.ff-craps-chip-stack > b { position:absolute; z-index:8; left:50%; bottom:-6px; translate:-50% 0; min-width:42px; padding:3px 5px; border:1px solid #c5b88875; border-radius:4px; color:#fff6da; background:#071810; font:650 10px/1 'FF Craps UI',sans-serif; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.ff-craps-proposition > .ff-craps-chip-stack { position:absolute; z-index:3; right:12px; top:50%; translate:0 -50%; }
+.ff-craps-proposition.is-field > .ff-craps-chip-stack { right:22px; }
+.ff-craps-pass-line > .ff-craps-chip-stack { position:absolute; z-index:3; top:auto; bottom:4px; right:clamp(18px,12%,140px); translate:none; }
+.ff-craps-pass-line > .ff-craps-chip-stack > b { bottom:0; }
+.ff-craps-proposition:not(:disabled):hover, .ff-craps-pass-line:not(:disabled):hover { background:rgb(235 224 164 / 9%); }
+.ff-craps-proposition:not(:disabled):active, .ff-craps-pass-line:not(:disabled):active { background:rgb(235 224 164 / 15%); }
+.ff-craps-chip-row button:not(:disabled):hover img { filter:drop-shadow(0 3px 6px #ead18c65); }
+.ff-craps-primary:not(:disabled):hover { background:linear-gradient(#fff0bf,#ddbd70); }
+.ff-craps-control-actions button:not(:disabled):hover, .ff-craps-title button:hover { color:#fff4c6; border-color:#c3b47c; background:#1c3827; }
+.ff-craps-page button:focus-visible, .ff-craps-page input:focus-visible { outline:3px solid #fff1b2; outline-offset:3px; }
+.ff-craps-board button:focus-visible { outline-offset:-5px; }
+.ff-craps-page button:disabled, .ff-craps-page input:disabled { cursor:not-allowed; opacity:.48; }
+.ff-craps-board .ff-craps-proposition:disabled, .ff-craps-board .ff-craps-pass-line:disabled { opacity:.82; }
+.ff-craps-board .ff-craps-proposition[aria-pressed=true]:disabled, .ff-craps-board .ff-craps-pass-line.has-bet:disabled { opacity:1; }
+.ff-craps-page button, .ff-craps-point-row, .ff-craps-dice, .ff-craps-rolls { user-select:none; -webkit-user-select:none; }
+.ff-craps-page button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
 .ff-craps-page input { user-select:text; }
 .ff-craps-page img { -webkit-user-drag:none; }
-.ff-craps-page input[aria-invalid=true] { color:#ffd0c5; }
-.ff-craps-proposition:not(:disabled):hover { background:#386143aa; border-color:#f6efc3; }
+.ff-craps-page input[aria-invalid=true] { color:#ffd3c2; border-color:#d69d89; }
+@media(max-width:1000px) { .ff-craps-limits { display:none; } }
+@media(max-width:760px) { .ff-craps-callout > small { font-size:7px; letter-spacing:.08em; } .ff-craps-primary { column-gap:7px; row-gap:1px; } }
+@media(max-height:500px) and (min-width:600px) { .ff-craps-callout > small { display:none; } .ff-craps-printed-die { width:20px; height:20px; gap:1px; padding:3px; } }
 @media(prefers-reduced-motion:reduce) { .ff-craps-page *, .ff-craps-page *::before, .ff-craps-page *::after { scroll-behavior:auto !important; transition:none !important; animation:none !important; } }

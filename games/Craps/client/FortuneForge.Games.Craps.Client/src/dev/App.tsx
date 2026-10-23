@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { CrapsGame } from '../CrapsGame'
 import { HttpCrapsGateway } from '../httpCrapsGateway'
-import tableArtworkUrl from '../assets/craps-table-backdrop.png'
 
 export function App() {
   const gateway = useMemo(() => new HttpCrapsGateway(), [])
@@ -9,7 +8,6 @@ export function App() {
   return (
     <CrapsGame
       gateway={gateway}
-      tableArtworkUrl={tableArtworkUrl}
       isYourTurn={!isAnotherPlayersTurn}
       activePlayerName="Maya"
     />

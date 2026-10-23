@@ -7,6 +7,7 @@
     "games/Baccarat/client/FortuneForge.Games.Baccarat.Client",
     "games/CasinoWar/client/FortuneForge.Games.CasinoWar.Client",
     "games/Craps/client/FortuneForge.Games.Craps.Client",
+    "games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client",
     "games/DropMerge/client/FortuneForge.Games.DropMerge.Client",
     "games/Flappy/client/FortuneForge.Games.Flappy.Client",
     "games/HorseFlight/client/FortuneForge.Games.HorseFlight.Client",

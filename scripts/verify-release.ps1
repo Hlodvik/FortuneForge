@@ -4,6 +4,7 @@ param()
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $serverTests = Join-Path $repoRoot 'FortuneForge.Server.Tests\FortuneForge.Server.Tests.csproj'
+$dragonTigerTests = Join-Path $repoRoot 'games\DragonTiger\tests\FortuneForge.Games.DragonTiger.Tests\FortuneForge.Games.DragonTiger.Tests.csproj'
 
 function Invoke-Checked {
     param(
@@ -42,5 +43,8 @@ Write-Host "`nRunning server tests..." -ForegroundColor Yellow
 Invoke-Checked `
     -Executable 'dotnet' `
     -Arguments @('test', $serverTests, '--configuration', 'Release')
+Invoke-Checked `
+    -Executable 'dotnet' `
+    -Arguments @('test', $dragonTigerTests, '--configuration', 'Release')
 
 Write-Host "`nFortune Forge release verification passed." -ForegroundColor Green

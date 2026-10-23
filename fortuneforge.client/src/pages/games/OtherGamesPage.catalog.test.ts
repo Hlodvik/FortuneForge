@@ -21,6 +21,8 @@ describe('Other games catalogue', () => {
     expect(page).toContain("{ name: 'Roulette'")
     expect(page).toContain("href: '/games/roulette'")
     expect(page).toContain("{ name: 'Craps'")
+    expect(page).toContain("{ name: 'Dragon Tiger'")
+    expect(page).toContain("href: '/games/dragon-tiger'")
     expect(page).toContain("href: '/games/craps'")
     expect(page).toContain("{ name: 'Three Card Poker'")
     expect(page).toContain("href: '/cards/three-card-poker'")

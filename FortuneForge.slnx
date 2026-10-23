@@ -23,6 +23,12 @@
   <Folder Name="/Games/Drop Merge/">
     <Project Path="games/DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />
   </Folder>
+  <Folder Name="/Games/Dragon Tiger/">
+    <Project Path="games/DragonTiger/src/FortuneForge.Games.DragonTiger/FortuneForge.Games.DragonTiger.csproj" />
+    <Project Path="games/DragonTiger/server/FortuneForge.Games.DragonTiger.Server/FortuneForge.Games.DragonTiger.Server.csproj" />
+    <Project Path="games/DragonTiger/samples/FortuneForge.Games.DragonTiger.Web/FortuneForge.Games.DragonTiger.Web.csproj" />
+    <Project Path="games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj" />
+  </Folder>
   <Folder Name="/Games/Flappy/">
     <Project Path="games/Flappy/src/FortuneForge.Games.Flappy/FortuneForge.Games.Flappy.csproj" />
   </Folder>

@@ -16,6 +16,7 @@ internal static class AdminManagementCatalog
         new("solitaire", "Competitive Solitaire", "cards", "/cards/solitaire"),
         new("video-poker", "Video Poker", "cards", "/games/video-poker"),
         new("baccarat", "Baccarat", "cards", "/games/baccarat"),
+        new("dragon-tiger", "Dragon Tiger", "casino", "/games/dragon-tiger"),
         new("casino-war", "Casino War", "cards", "/games/casino-war"),
         new("hearts", "Hearts", "cards", "/cards/hearts"),
         new("three-card-poker", "Three Card Poker", "cards", "/cards/three-card-poker"),

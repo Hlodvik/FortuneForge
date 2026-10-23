@@ -1,0 +1,40 @@
+@font-face {
+  font-family:'FF Dragon UI';
+  src:url('./assets/fonts/sora-latin-variable.woff2') format('woff2');
+  font-style:normal;
+  font-weight:100 800;
+  font-display:swap;
+}
+@font-face {
+  font-family:'FF Dragon Display';
+  src:url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2');
+  font-style:normal;
+  font-weight:100 900;
+  font-display:swap;
+}
+@font-face {
+  font-family:'FF Dragon Brush';
+  src:url('./assets/fonts/ma-shan-zheng-hanzi-subset.ttf') format('truetype');
+  font-style:normal;
+  font-weight:400;
+  font-display:swap;
+  unicode-range:U+548C,U+864E,U+9F99;
+}
+.ff-dt {
+  --dt-font-ui:'FF Dragon UI',sans-serif;
+  --dt-font-display:'FF Dragon Display',serif;
+  --dt-font-hanzi:'FF Dragon Brush','KaiTi',serif;
+}
+.ff-dt__hanzi, .ff-dt__versus > span {
+  font-family:var(--dt-font-hanzi);
+  font-weight:400;
+  font-style:normal;
+  font-synthesis:none;
+  line-height:1.1;
+}
+.ff-dt__card--back {
+  background:#14120f url('./assets/card-back-asian-v1.jpg') center / 100% 100% no-repeat;
+  border-color:#bd9858;
+  box-shadow:0 2px 8px #0006;
+}
+.ff-dt__card--back::before { content:none; }

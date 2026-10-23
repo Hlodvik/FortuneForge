@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "dragon-tiger",
+  "displayName": "Dragon Tiger",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/dragon-tiger",
+  "clientPackage": "@fortuneforge/games-dragon-tiger",
+  "apiBasePath": "/api/games/dragon-tiger",
+  "capabilities": ["credits", "free-play", "history"],
+  "migrationState": "rules-pilot"
+}

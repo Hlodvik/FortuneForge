@@ -1,6 +1,6 @@
 # Dragon Tiger verification
 
-Verified locally on 18 October 2026 (America/Chicago), on the existing `main` working tree. Only this new game package was authored; shared application integration remains deferred because no Baccarat release record exists under `artifacts/releases` after the assignment start.
+The initial standalone package was verified locally on 18 October 2026 (America/Chicago). Its historical results follow; the connected main-host verification completed on 23 October is recorded below.
 
 - **39 C# tests passed, zero skipped.** Rules, exact half-stake returns, independent spot payouts, API normal play/feature/auth/limit gates, practice isolation, real Firestore same-key and different-key concurrency, insufficient-funds competition, wallet/ledger/event/round integrity, ownership and recovery. The emulator tests use unique localhost-only demo projects, never production funds.
 - **39 client/gateway tests passed.** Repeated chip accumulation, undo/clear, limits, 300/1050/1700 ms reveal stages, reduced motion, numeric totals, tie accounting, sound mute behavior, response validation, native-fetch receiver compatibility, account-scope isolation including delayed responses, pending preservation across session expiry/feature pauses, reload recovery and unavailable browser storage.
@@ -10,4 +10,10 @@ Verified locally on 18 October 2026 (America/Chicago), on the existing `main` wo
 
 The standalone UI is running at **http://127.0.0.1:5180/** with the isolated practice API at **http://127.0.0.1:5198/**. Its own ignored dependencies let it continue working during the shared workspace dependency rebuild. Relaunch commands and references are in [README.md](README.md).
 
-Production host authentication, shared navigation/catalogue entry, main-app account refresh, rate-limit wiring, feature enablement and connected-route verification are still pending as listed precisely in [INTEGRATION.md](INTEGRATION.md). No commit, branch change, push or deploy was performed.
+## Connected main-host verification — 23 October 2026
+
+- Shared authenticated navbar, account/practice-scoped recovery, real-account balance refresh, rate-limit wiring, catalogue entry and release verification are integrated. Shared PlayingCard faces are used by the main host; game-specific backs and the approved board artwork are preserved.
+- The 39-test C# package suite passed against an isolated localhost emulator. The first loaded run hit an `Aborted` lock timeout in its unchanged eight-concurrent replay test; the focused test and complete rerun passed without weakening assertions or altering settlement.
+- The 33 focused host client tests and 21 host registration/admin tests passed. Connected local HTTP checks confirmed practice isolation, same-key replay, account-wallet settlement, owned-round recovery and HTTP 401 for an invalid session. No production wagers were used.
+- Final responsive chip-pile, Reset chips and sound changes passed 64 package client tests and typecheck. Browser review covered desktop, tablet, small portrait and short landscape: chips remain legible, piles use all seven denominations without a misleading `+N`, and the page does not scroll.
+- The approved release enables Production and Development and makes Dragon Tiger visible in the 41-route catalogue. Normal guarded deployment verifies the immutable committed source before publication; release records under `artifacts/releases` identify what is actually live.

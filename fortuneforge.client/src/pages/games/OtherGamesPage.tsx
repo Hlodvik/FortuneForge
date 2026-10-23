@@ -64,6 +64,7 @@ const casinoGames: readonly CatalogGame[] = [
   { name: 'Sic Bo', category: 'Dice game', href: '/games/sic-bo', icon: '⚂', summary: 'Predict three-dice outcomes across a betting layout.', tone: 'sic-bo' },
   { name: 'Roulette', category: 'Casino game', href: '/games/roulette', icon: '◉', summary: 'Choose straight, split, street, corner, and outside bets on a single-zero wheel.' },
   { name: 'Craps', category: 'Casino game', href: '/games/craps', icon: '⚄', summary: 'Ride the come-out roll, establish the point, and press the Pass Line.' },
+  { name: 'Dragon Tiger', category: 'Casino card game', href: '/games/dragon-tiger', icon: '♠', summary: 'Choose Dragon, Tiger, or Tie in a two-card showdown.', tone: 'baccarat' },
   cardGames[7]!,
   cardGames[8]!,
 ]

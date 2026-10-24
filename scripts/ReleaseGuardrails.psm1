@@ -380,7 +380,8 @@ function Get-ReleaseVerificationCommands {
         foreach ($path in @('FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj',
             'games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj',
             'games/HiLo/tests/FortuneForge.Games.HiLo.Engine.Tests/FortuneForge.Games.HiLo.Engine.Tests.csproj',
-            'games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests/FortuneForge.Games.HiLo.Server.Tests.csproj')) {
+            'games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests/FortuneForge.Games.HiLo.Server.Tests.csproj',
+            'games/AndarBahar/tests/FortuneForge.Games.AndarBahar.Tests/FortuneForge.Games.AndarBahar.Tests.csproj')) {
             $commands.Add([pscustomobject]@{ Executable = 'dotnet'; Arguments = @('test', (Join-Path $Repository $path), '--configuration', 'Release') })
         }
     }

@@ -22,6 +22,20 @@ const settledRound: VideoPokerRound = {
 afterEach(() => { cleanup(); sessionStorage.clear() })
 
 describe('VideoPokerGame', () => {
+  it('uses the injected shared faces only after cards are revealed, preserving hold buttons', async () => {
+    const user = userEvent.setup()
+    const renderCardFace = vi.fn(card => <span data-shared-face>{card.rank} of {card.suit}</span>)
+    render(<VideoPokerGame gateway={fakeGateway()} renderCardFace={renderCardFace} />)
+    const deal = await screen.findByRole('button', { name: 'Deal' })
+    expect(renderCardFace).not.toHaveBeenCalled()
+    await user.click(deal)
+    await screen.findByRole('button', { name: 'Draw' })
+    expect(document.querySelectorAll('[data-shared-face]')).toHaveLength(5)
+    expect(renderCardFace.mock.calls.every(([card]) => awaitingRound.initialCards.some(candidate => candidate.rank === card.rank && candidate.suit === card.suit))).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Hold ace of clubs' }))
+    expect(screen.getByRole('button', { name: 'Release ace of clubs' }).getAttribute('aria-pressed')).toBe('true')
+  })
+
   it('retries an unavailable table connection without requiring a page refresh', async () => {
     const user = userEvent.setup()
     const getStatus = vi.fn().mockRejectedValueOnce(new Error('Offline.')).mockResolvedValueOnce(status)

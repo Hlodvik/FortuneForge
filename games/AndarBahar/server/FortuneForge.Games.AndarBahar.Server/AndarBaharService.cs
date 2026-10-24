@@ -20,6 +20,7 @@ public sealed record AndarBaharStoredRound(string RoundId, string UserId, string
 public sealed record AndarBaharStoreResult(AndarBaharStoredRound Round, long BalanceCents);
 public sealed class AndarBaharRoundNotFoundException() : Exception("Andar Bahar round not found.");
 public sealed class AndarBaharRoundConflictException() : Exception("This Idempotency-Key was already used with a different Andar Bahar wager.");
+public sealed class AndarBaharDisabledException() : Exception("Andar Bahar is not accepting new wagers. Existing deals can still be restored.");
 public sealed class AndarBaharInsufficientCreditsException(long available, long required)
     : Exception($"The balance is R{AndarBaharMoney.ToRand(available):0.00}; this wager requires R{AndarBaharMoney.ToRand(required):0.00}.");
 
@@ -27,7 +28,7 @@ public interface IAndarBaharStore
 {
     Task<long> BalanceAsync(string userId, CancellationToken cancellationToken);
     Task<AndarBaharStoreResult> StartAsync(string userId, string key, AndarBaharSide side, long stakeCents,
-        IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken);
+        IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken, bool allowNewRounds = true);
     Task<AndarBaharStoreResult?> GetAsync(string userId, string roundId, CancellationToken cancellationToken);
     Task<AndarBaharStoreResult?> LatestAsync(string userId, CancellationToken cancellationToken);
 }
@@ -52,7 +53,7 @@ public static class AndarBaharMoney
 }
 
 public sealed class AndarBaharService(IAndarBaharStore store, TimeProvider timeProvider,
-    Func<IReadOnlyList<PlayingCard>>? createShuffledDeck = null)
+    Func<IReadOnlyList<PlayingCard>>? createShuffledDeck = null, bool allowNewRounds = true)
 {
     private readonly Func<IReadOnlyList<PlayingCard>> createDeck = createShuffledDeck ?? CreateShuffledDeck;
     public async Task<AndarBaharRoundResponse> StartAsync(string userId, CreateAndarBaharRoundRequest request, string key, CancellationToken cancellationToken = default)
@@ -61,7 +62,7 @@ public sealed class AndarBaharService(IAndarBaharStore store, TimeProvider timeP
         ValidateUser(userId);
         ValidateKey(key);
         var (side, cents) = AndarBaharMoney.Parse(request);
-        return ToResponse(await store.StartAsync(userId, key, side, cents, createDeck(), timeProvider.GetUtcNow(), cancellationToken));
+        return ToResponse(await store.StartAsync(userId, key, side, cents, createDeck(), timeProvider.GetUtcNow(), cancellationToken, allowNewRounds));
     }
     public async Task<AndarBaharRoundResponse> GetAsync(string userId, string roundId, CancellationToken cancellationToken = default)
     {

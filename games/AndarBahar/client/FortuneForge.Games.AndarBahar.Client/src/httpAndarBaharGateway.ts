@@ -1,4 +1,5 @@
 import { AndarBaharGatewayError, type AndarBaharCard, type AndarBaharGateway, type AndarBaharRequestOptions, type AndarBaharRound, type AndarBaharSide, type AndarBaharStatus } from './contracts'
+import { withAndarBaharRequestDeadline } from './andarBaharRequest'
 
 const invalidMessage = 'The table returned an incomplete result. Restore this deal before playing again.'
 const idempotencyKeyPattern = /^[A-Za-z0-9_-]{16,128}$/
@@ -38,23 +39,25 @@ export class HttpAndarBaharGateway implements AndarBaharGateway {
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T, allowEmpty = false): Promise<T> {
-    const request = this.requestFn
-    // Extracting fetch preserves its native receiver. A response cannot be cached across wallets.
-    const response = await request(`${this.basePath.replace(/\/$/, '')}${path}`, { ...init, credentials: 'include', cache: 'no-store' })
-    const value: unknown = response.status === 204 && allowEmpty ? null : await response.json().catch(() => undefined)
-    if (!response.ok) {
-      const error = record(value) ? value : {}
-      throw new AndarBaharGatewayError(
-        typeof error.message === 'string' && error.message.length <= 512 ? error.message : `The table request failed (${response.status}).`,
-        typeof error.code === 'string' && error.code.length <= 128 ? error.code : undefined,
-        response.status,
-      )
-    }
-    // Only HTTP 204 means an absent previous round; 200 null is malformed.
-    if (value === null && response.status !== 204 || !validate(value)) {
-      throw new AndarBaharGatewayError(invalidMessage, 'andar-bahar-invalid-response')
-    }
-    return value
+    return withAndarBaharRequestDeadline(async signal => {
+      const request = this.requestFn
+      // Extracting fetch preserves its native receiver. A response cannot be cached across wallets.
+      const response = await request(`${this.basePath.replace(/\/$/, '')}${path}`, { ...init, signal, credentials: 'include', cache: 'no-store' })
+      const value: unknown = response.status === 204 && allowEmpty ? null : await response.json().catch(() => undefined)
+      if (!response.ok) {
+        const error = record(value) ? value : {}
+        throw new AndarBaharGatewayError(
+          typeof error.message === 'string' && error.message.length <= 512 ? error.message : `The table request failed (${response.status}).`,
+          typeof error.code === 'string' && error.code.length <= 128 ? error.code : undefined,
+          response.status,
+        )
+      }
+      // Only HTTP 204 means an absent previous round; 200 null is malformed.
+      if (value === null && response.status !== 204 || !validate(value)) {
+        throw new AndarBaharGatewayError(invalidMessage, 'andar-bahar-invalid-response')
+      }
+      return value
+    }, init.signal ?? undefined)
   }
 }
 

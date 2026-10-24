@@ -19,6 +19,17 @@ const activities: readonly CardRoomActivity[] = [
 ]
 
 describe('CardRoomHistory', () => {
+  it('has an Andar Bahar result group without hiding existing game groups', () => {
+    const markup = renderToStaticMarkup(<CardRoomHistory activities={[{
+      id: 'andar-bahar-round-1', matchId: 'round-1', game: 'andar-bahar', gameLabel: 'Andar Bahar', title: 'Andar Bahar game', summary: 'R0.95 won',
+      startedAtUtc: '2026-10-24T12:00:00Z', completedAtUtc: '2026-10-24T12:00:00Z', unseen: true,
+      requiresClaim: false, winningsCredits: .95, wagerCredits: .5, netCredits: .45,
+    }]} loading={false} error={null} busyId={null} onSelect={() => undefined} />)
+    expect(markup).toContain('Andar Bahar game')
+    expect(markup).toContain('R0.95 won')
+    expect(markup).toContain('Hi-Lo')
+    expect(markup).toContain('House Hold’em')
+  })
   it('shows Hi-Lo beside the already-supported single-player card games', () => {
     const markup = renderToStaticMarkup(<CardRoomHistory activities={[{
       id: 'hi-lo-round-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won',

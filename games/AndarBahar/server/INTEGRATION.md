@@ -1,31 +1,30 @@
 # Andar Bahar server integration
 
-This package is isolated. No central project, Startup, route, catalogue, lockfile, or release script has been edited. The package implements the documented **single deck, Andar first, Joker revealed when the deal begins** variant. Andar wins return stake plus 0.9 times stake; Bahar wins return stake plus equal stake. There is no tie, surrender, or separate cash-out: every accepted wager settles completely in one server transaction before its response. The paced card presentation is a replay of that immutable settlement.
+The package is integrated into the central host in local source as of October 24, 2026; these audit fixes have not been deployed. The package implements the documented **single deck, Andar first, Joker revealed when the deal begins** variant. Andar wins return stake plus 0.9 times stake; Bahar wins return stake plus equal stake. There is no tie, surrender, or separate cash-out: every accepted wager settles completely in one server transaction before its response. The paced card presentation is a replay of that immutable settlement.
 
-## Central host changes for the integrating owner
+## Central host integration
 
-1. Add this project reference to `FortuneForge.Server/FortuneForge.Server.csproj`:
+1. `FortuneForge.Server/FortuneForge.Server.csproj` references:
 
 ```xml
 <ProjectReference Include="..\games\AndarBahar\server\FortuneForge.Games.AndarBahar.Server\FortuneForge.Games.AndarBahar.Server.csproj" />
 ```
 
-2. In `Configuration/FortuneForgeStartup.cs`, import `FortuneForge.Games.AndarBahar.Server` and `FortuneForge.Server.Accounts.Security`, then register:
+2. `Configuration/FortuneForgeStartup.cs` registers:
 
 ```csharp
 builder.Services.AddAndarBaharServer(options =>
 {
     options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
     options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
-    options.AllowPracticeRequests = builder.Environment.IsDevelopment();
-    options.PracticeStatePath = Path.Combine(builder.Environment.ContentRootPath,
-        "artifacts", "andar-bahar-practice", "wallet.json");
+    options.AllowPracticeRequests = true;
+    options.PracticeStatePath = Path.Combine(Path.GetTempPath(), "fortuneforge-andar-bahar", "practice.json");
 });
 ```
 
-`ForcePractice` defaults to false. `AllowPracticeRequests` defaults to false and should remain false on a paid production host. An explicit practice request receives 403 when practice is disabled; it never silently falls through to the paid wallet. The local file adapter is for development practice. The paid adapter uses the host's existing `FirestoreDb` registration.
+`ForcePractice` defaults to false. The package's `AllowPracticeRequests` default remains false; the central host explicitly enables authenticated, account-scoped practice using a separate file ledger, consistent with its QA policy. This ledger is ephemeral across host replacement, contains no cash, and never touches the paid Firestore wallet. Other hosts that leave practice disabled return 403 for explicit practice requests rather than silently spending paid funds. The paid adapter uses the host's existing `FirestoreDb` registration.
 
-3. In `Configuration/FortuneForgePipeline.cs`, import the server package, `FortuneForge.Server.Accounts`, and `FortuneForge.Server.Accounts.Security`. Map after routing/rate-limiter/authorization middleware and before the fallback:
+3. `Configuration/FortuneForgePipeline.cs` maps after routing/rate-limiter/authorization middleware and before the fallback:
 
 ```csharp
 app.MapAndarBahar(async (context, cancellationToken) =>
@@ -40,9 +39,9 @@ app.MapAndarBahar(async (context, cancellationToken) =>
 
 The resolver owns authentication. No request parameter can select another player. `WalletBalance` preserves the existing account-resolver convention; `/status` and round responses read the actual stored wallet balance, rather than trusting that potentially stale value.
 
-4. Leave `Features:AndarBaharEnabled` absent/false until batch acceptance, then enable it through the normal release process. Disabled endpoints return 503 before accessing an account or store. The standalone sample hardcodes this feature on and `ForcePractice=true`; it cannot reach a production wallet.
+4. The central development and main appsettings enable `Features:AndarBaharEnabled` in local source; live activation requires the separate approved release. When disabled, authenticated status returns `available:false`; owned round/latest reads and an exact replay of an already committed key remain available. New keys are rejected with 503 inside the atomic store operation, and changed-body replays still return 409. Disabling new play cannot hide an already paid wager or create a new one through the recovery path. The standalone sample hardcodes this feature on and `ForcePractice=true`; it cannot reach a production wallet.
 
-5. Add the isolated test project to the central solution and CI game-package matrix when integrating the batch. No solution/release script was edited by this package.
+5. The game engine, server, sample and tests are included in the game and central solutions. Focused Andar Bahar and shared-history checks should run when these server contracts change; unrelated gameplay suites are not required for isolated visual edits.
 
 ## Paid storage and privacy
 
@@ -52,11 +51,12 @@ The paid adapter uses existing `userBalances/{userId}_slotsCredits` and `balance
 - `andarBaharRoundEvents/{sha256}-settled`: immutable settlement event.
 - `andarBaharAccounts/{sha256(userId)}`: the current recovery pointer.
 - `balanceTransactions/andar-bahar-{sha256}-wager` and, on a win, `...-payout`.
+- `cardGameResults/andar-bahar-{sha256}`: a shared player/admin history summary with exact wager, payout and net cents, side, winner, settled timestamps and the round reference. It contains no cards, deck, balance or idempotency key. Shared history marks it unseen until acknowledged; replay preserves `seenAt`.
 - Wallet `available` whole rand, `availableFractionalCents` in 0–99, version increment, and update timestamp.
 
-Ledger amounts retain host-compatible `amount`/`balanceAfter` decimal values and add exact integer `amountCents`/`balanceAfterCents`. The transaction reads the wallet and all round ledger/event records before writing. Concurrency retries cannot overdraw or settle the same key twice. No hidden deck tail is stored or returned. These collections are server-managed private account data; direct browser reads/writes must remain denied by the host's Firestore access rules/IAM policy. No composite index is required.
+Ledger amounts retain host-compatible `amount`/`balanceAfter` decimal values and add exact integer `amountCents`/`balanceAfterCents`, `gameId` and `roundId`. The transaction reads the wallet and all round ledger/event/history records before writing. Concurrency retries cannot overdraw or settle the same key twice. No hidden deck tail is stored or returned. These collections are server-managed private account data; direct browser reads/writes must remain denied by the host's Firestore access rules/IAM policy. No composite index is required.
 
-Every recovered record is revalidated through the engine: unique standard cards, first matching rank, alternating sides, side outcome, payout, balance snapshots, ledger identities, and settlement event. Missing/corrupt records fail closed; they are never automatically reset or charged again.
+Every recovered record is revalidated through the engine: unique standard cards, first matching rank, alternating sides, side outcome, payout, balance snapshots, ledger identities and round links, settlement event, and shared history. Missing/corrupt records fail closed; they are never automatically reset or charged again. New round documents use outer schema 2 to require linked history; earlier schema 1 rounds remain recoverable without fabricating retrospective history or debiting again.
 
 ## HTTP contract
 

@@ -21,6 +21,7 @@ export function CardRoomHistory({
     ['three-card-poker', 'Three Card Poker'],
     ['house-holdem', 'House Hold’em'],
     ['hi-lo', 'Hi-Lo'],
+    ['andar-bahar', 'Andar Bahar'],
     ['solitaire', 'Solitaire'],
   ] as const
 

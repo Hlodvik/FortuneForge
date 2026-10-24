@@ -94,7 +94,7 @@ public sealed partial class CardRoomHistoryController(
     private static CardRoomHistoryItemResponse? ToPublicItem(DocumentSnapshot snapshot)
     {
         var game = String(snapshot, "game");
-        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo")) return null;
+        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar")) return null;
 
         var claimStatus = String(snapshot, "claimStatus");
         var settlementStatus = String(snapshot, "settlementStatus");

@@ -332,7 +332,7 @@
   border: 1px solid #aab4a0; border-radius: 50%; background: #08120fda;
   box-shadow: inset 0 0 .6rem #fff2, 0 .2rem .55rem #0008; color: #fff; font-size: 0;
 }
-.ff-baccarat__wager-row .ff-baccarat__primary::before { font: 400 2.6rem/1 Georgia, serif; content: '↻'; }
+.ff-baccarat__wager-row .ff-baccarat__primary::before { content: none; }
 .ff-baccarat__ticket { display: none; }
 .ff-baccarat__round-actions { margin-left: auto; }
 .ff-baccarat__rail:has(.ff-baccarat__round-actions) { justify-content: space-between; }
@@ -346,7 +346,7 @@
   color: #fff; font-size: 0;
 }
 .ff-baccarat__round-actions .ff-baccarat__primary::before,
-.ff-baccarat__rail > .ff-baccarat__primary::before { content: '↻'; font: 400 2.5rem/1 Georgia, serif; }
+.ff-baccarat__rail > .ff-baccarat__primary::before { content: none; }
 .ff-baccarat__round-actions > .ff-baccarat__secondary::before { content: '×'; font: 300 2.5rem/1 'Trebuchet MS', sans-serif; }
 .ff-baccarat__round-actions .ff-baccarat__info > .ff-baccarat__secondary { width: 3.25rem; min-width: 3.25rem; height: 3.25rem; min-height: 3.25rem; }
 .ff-baccarat__round-actions .ff-baccarat__info > .ff-baccarat__secondary::before { content: 'i'; font: bold 1.55rem/1 Georgia, serif; }
@@ -457,7 +457,7 @@
   .ff-baccarat__round-head span { white-space: nowrap; }
   .ff-baccarat__round-head strong { font-size: 1.35rem; }
 }
-@media (min-width: 681px) and (max-width: 900px) {
+@media (min-width: 681px) and (max-width: 900px) and (min-height: 501px) {
   .ff-baccarat__table { grid-template-columns: minmax(10.5rem, 25%) minmax(0, 1fr); }
   .ff-baccarat__header { left: calc(max(10.5rem, 25%) + .5rem); right: .5rem; }
   .ff-baccarat__header .ff-baccarat__account + .ff-baccarat__info { display: none; }
@@ -595,4 +595,68 @@
 @media (max-width: 480px), (max-height: 560px) and (orientation: landscape) {
   .ff-baccarat__chips { top: 17%; left: .2rem; }
   .ff-baccarat__chip-pill { padding-block: 3px; }
+}
+
+/* Ordinary HTML avoids WebKit foreignObject clipping. The cover-sized frame
+   uses the exact same 1440×915 coordinates as the printed arcs and rail. */
+.ff-baccarat,
+.ff-baccarat__table,
+.ff-baccarat__play-surface { overflow: clip; }
+.ff-baccarat__felt-lines,
+.ff-baccarat__table-edge,
+.ff-baccarat__bet-sides {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: max(100cqw, 157.377049cqh);
+  height: max(100cqh, 63.541667cqw);
+  transform: translate(-50%, -50%);
+}
+.ff-baccarat__bet-sides { container-type: size; }
+.ff-baccarat__bet-cell {
+  position: absolute;
+  left: 31.25%;
+  width: 37.5%;
+  pointer-events: auto;
+}
+.ff-baccarat__bet-cell.is-player-pair,
+.ff-baccarat__bet-cell.is-banker-pair { top: 53.989071%; width: 15.972222%; height: 8.743169%; }
+.ff-baccarat__bet-cell.is-player-pair { left: 34.027778%; }
+.ff-baccarat__bet-cell.is-banker-pair { left: 50%; }
+.ff-baccarat__bet-cell.is-tie { top: 62.732240%; height: 9.180328%; }
+.ff-baccarat__bet-cell.is-banker { top: 71.912568%; height: 10.819672%; }
+.ff-baccarat__bet-cell.is-player { top: 82.732240%; height: 12.349727%; }
+.ff-baccarat__bet strong { font-size: 1.805556cqw; }
+.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: .763889cqw; }
+.ff-baccarat__bet.is-player-pair strong,
+.ff-baccarat__bet.is-banker-pair strong { font-size: 1.25cqw; }
+.ff-baccarat__bet.is-banker strong { font-size: 2.152778cqw; }
+.ff-baccarat__bet.is-player strong { font-size: 2.430556cqw; }
+.ff-baccarat__bet.is-player-pair,
+.ff-baccarat__bet.is-banker-pair { grid-template-rows: 1.388889cqw .833333cqw var(--ff-board-chip-size); }
+.ff-baccarat__icon-action { display: grid; place-items: center; }
+.ff-baccarat__action-icon {
+  display: block;
+  width: 68%;
+  height: 68%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ff-baccarat__shared-card-face { width: 100%; height: 100%; --ff-card-width: 100cqw; container-type: size; }
+
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Keep the complete betting end of the rigid table in view; only the empty
+     top of the felt is cropped on a short, wide phone. */
+  .ff-baccarat__felt-lines,
+  .ff-baccarat__table-edge,
+  .ff-baccarat__bet-sides,
+  .ff-baccarat__play-surface::before { top: auto; bottom: 0; transform: translateX(-50%); }
+  .ff-baccarat__hands { left: 3%; width: 94%; }
+  .ff-baccarat__round-head { top: 0; left: 50%; width: 30%; max-width: 30%; flex-wrap: wrap; gap: .12rem .35rem; }
+  .ff-baccarat__round-head span:not(.ff-baccarat__place-bets) { font-size: .82rem; }
+  .ff-baccarat__round-head strong { font-size: .9rem; }
+  .ff-baccarat__round-head small { font-size: .5rem; }
 }

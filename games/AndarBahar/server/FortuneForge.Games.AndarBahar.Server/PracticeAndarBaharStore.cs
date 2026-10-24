@@ -17,7 +17,7 @@ public sealed class PracticeAndarBaharStore : IAndarBaharStore
     public Task<long> BalanceAsync(string userId, CancellationToken cancellationToken) =>
         WithState(state => (Balance(state, userId), false), cancellationToken);
     public Task<AndarBaharStoreResult> StartAsync(string userId, string key, AndarBaharSide side, long stakeCents,
-        IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken)
+        IReadOnlyList<PlayingCard> shuffledDeck, DateTimeOffset nowUtc, CancellationToken cancellationToken, bool allowNewRounds = true)
     {
         AndarBaharMoney.Validate(side, stakeCents);
         return WithState(state =>
@@ -29,6 +29,7 @@ public sealed class PracticeAndarBaharStore : IAndarBaharStore
                 if (prior.UserId != userId || prior.Side != side || prior.StakeCents != stakeCents) throw new AndarBaharRoundConflictException();
                 return (new AndarBaharStoreResult(prior, Balance(state, userId)), false);
             }
+            if (!allowNewRounds) throw new AndarBaharDisabledException();
             var balance = Balance(state, userId);
             if (balance < stakeCents) throw new AndarBaharInsufficientCreditsException(balance, stakeCents);
             var round = AndarBaharRules.Deal(shuffledDeck);

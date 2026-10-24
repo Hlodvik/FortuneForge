@@ -38,6 +38,17 @@ const completedWarRound: CasinoWarRound = {
 afterEach(() => { cleanup(); sessionStorage.clear() })
 
 describe('CasinoWarGame', () => {
+  it('uses injected shared faces without rendering hidden opening cards', async () => {
+    const user = userEvent.setup()
+    const renderCardFace = vi.fn(card => <span data-shared-face>{card.rank} of {card.suit}</span>)
+    render(<CasinoWarGame gateway={fakeGateway()} renderCardFace={renderCardFace} />)
+    const deal = await screen.findByRole('button', { name: 'Deal' })
+    expect(renderCardFace).not.toHaveBeenCalled()
+    await user.click(deal)
+    await waitFor(() => expect(document.querySelectorAll('[data-shared-face]')).toHaveLength(2))
+    expect(renderCardFace.mock.calls.every(([card]) => card === immediateRound.playerOpeningCard || card === immediateRound.dealerOpeningCard)).toBe(true)
+  })
+
   it('keeps the rules behind the table help control', async () => {
     const user = userEvent.setup()
     render(<CasinoWarGame gateway={fakeGateway()} />)

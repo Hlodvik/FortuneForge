@@ -11,7 +11,7 @@ const current = {
   runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
 }
 
-test('all 42 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
+test('all 43 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
   assert.doesNotThrow(() => verifyGameRouteInventory(current))
 })
 
@@ -19,7 +19,7 @@ test('legacy static catalogue must omit the unlisted game entirely', () => {
   const legacy = {
     ...current,
     runtimeCatalog: undefined,
-    catalog: current.catalog.split('\n').filter(line => !line.includes("href: '/games/horse-flight'")).join('\n'),
+    catalog: current.catalog.split('\n').filter(line => !['/games/horse-flight', '/games/flappy', '/games/asteroids', '/games/drop-merge', '/games/2048', '/games/snake'].some(route => line.includes(`href: '${route}'`))).join('\n'),
   }
   assert.doesNotThrow(() => verifyGameRouteInventory(legacy))
   assert.throws(() => verifyGameRouteInventory({ ...current, runtimeCatalog: undefined }), /must remain unlisted/)

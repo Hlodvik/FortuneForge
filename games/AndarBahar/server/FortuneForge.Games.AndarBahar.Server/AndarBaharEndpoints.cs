@@ -42,7 +42,7 @@ public static class AndarBaharEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<IOptions<AndarBaharServerOptions>>().Value;
         var api = endpoints.MapGroup("/api/games/andar-bahar");
         var status = api.MapGet("/status", (Func<HttpContext, Task<IResult>>)((HttpContext context) => Handle(context, resolveAccount, async (account, store, service, practice) =>
-            Results.Ok(new AndarBaharStatusResponse(true, .50m, 100m, .50m,
+            Results.Ok(new AndarBaharStatusResponse(Enabled(context), .50m, 100m, .50m,
                 AndarBaharMoney.ToRand(await store.BalanceAsync(account.UserId, context.RequestAborted)),
                 practice ? "development-practice-andar-first" : "andar-first")))));
         var create = api.MapPost("/rounds", (Func<HttpContext, Task<IResult>>)((HttpContext context) => Handle(context, resolveAccount, async (account, store, service, practice) =>
@@ -68,8 +68,6 @@ public static class AndarBaharEndpoints
     {
         context.Response.Headers.CacheControl = "no-store, max-age=0";
         context.Response.Headers.Vary = "Cookie, X-FortuneForge-Practice";
-        if (!context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Features:AndarBaharEnabled", false))
-            return Error(503, "andar-bahar-disabled", "Andar Bahar is not available yet.");
         try
         {
             var account = await resolveAccount(context, context.RequestAborted);
@@ -82,8 +80,11 @@ public static class AndarBaharEndpoints
             var practice = options.ForcePractice || requestedPractice;
             IAndarBaharStore store = practice ? context.RequestServices.GetRequiredService<PracticeAndarBaharStore>()
                 : new AndarBaharFirestoreStore(context.RequestServices.GetRequiredService<FirestoreDb>());
-            return await action(account, store, new AndarBaharService(store, TimeProvider.System), practice);
+            // Gate creation inside the store's atomic operation, after an exact-key replay
+            // has been checked. A kill switch must never hide an already settled wager.
+            return await action(account, store, new AndarBaharService(store, TimeProvider.System, allowNewRounds: Enabled(context)), practice);
         }
+        catch (AndarBaharDisabledException exception) { return Error(503, "andar-bahar-disabled", exception.Message); }
         catch (AndarBaharRoundNotFoundException exception) { return Error(404, "andar-bahar-round-not-found", exception.Message); }
         catch (AndarBaharRoundConflictException exception) { return Error(409, "andar-bahar-round-conflict", exception.Message); }
         catch (AndarBaharInsufficientCreditsException exception) { return Error(409, "insufficient-slot-credits", exception.Message); }
@@ -107,5 +108,6 @@ public static class AndarBaharEndpoints
             return Error(500, "andar-bahar-unavailable", "The service could not complete the request. Retry the same wager to recover its result.");
         }
     }
+    private static bool Enabled(HttpContext context) => context.RequestServices.GetRequiredService<IConfiguration>().GetValue("Features:AndarBaharEnabled", false);
     private static IResult Error(int status, string code, string message) => Results.Json(new AndarBaharErrorResponse(code, message), statusCode: status);
 }

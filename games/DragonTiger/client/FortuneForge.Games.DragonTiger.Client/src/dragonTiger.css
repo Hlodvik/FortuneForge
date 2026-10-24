@@ -58,6 +58,8 @@
 .ff-dt__hand { min-height:0; flex:0 0 auto; }
 .ff-dt__hand h2 { margin:0 0 7px; font:650 11px/1.2 var(--dt-font-ui,sans-serif); letter-spacing:.19em; }
 .ff-dt__card-wrap { --ff-card-width:calc(min(210px,max(0px,100cqh - 39px)) * .7142857); width:auto; height:min(210px,max(0px,100cqh - 39px)); aspect-ratio:5 / 7; flex-shrink:0; }
+.ff-dt__card-face-host { width:100%; height:100%; min-width:0; min-height:0; container-type:size; }
+.ff-dt__card-face-host > .ff-playing-card { --ff-card-width:100cqw; }
 .ff-dt__card { font-family:var(--dt-font-display,Georgia,serif); }
 .ff-dt__card-index { font-size:clamp(15px,13cqh,25px); }
 .ff-dt__card-index b { font-size:.8em; }

@@ -1,0 +1,13 @@
+/* A casino table must not reveal the catalogue's cloud artwork while scrolling. */
+.app-shell:has(> .baccarat-page) { min-height: 100dvh; background: #050a08; }
+.app-shell:has(> .baccarat-page)::before { display: none; }
+.in-game-shell.baccarat-page { min-height: 0; background: #050a08; }
+.baccarat-page > .baccarat-route__body { overflow: hidden; background: #050a08; }
+.baccarat-route__body > .ff-baccarat { height: 100%; min-height: 0; }
+
+@media (max-height: 400px) and (orientation: landscape) {
+  /* Browser bars can leave less than 260px below navigation. Keep every bet
+     and control reachable with a small internal scroll rather than clipping. */
+  .baccarat-page > .baccarat-route__body { overflow-y: auto; overscroll-behavior: contain; }
+  .baccarat-route__body > .ff-baccarat { min-height: 320px; }
+}

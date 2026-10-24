@@ -2,6 +2,7 @@
   "name": "fortune-forge-workspace",
   "private": true,
   "workspaces": [
+    "games/AndarBahar/client/FortuneForge.Games.AndarBahar.Client",
     "games/Asteroids/client/FortuneForge.Games.Asteroids.Client",
     "games/TwentyFortyEight/client/FortuneForge.Games.TwentyFortyEight.Client",
     "games/Baccarat/client/FortuneForge.Games.Baccarat.Client",

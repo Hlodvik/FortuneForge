@@ -8,7 +8,6 @@ import { PlayingCard } from '../../games/cards/shared/PlayingCard'
 import type { CardRank } from '../../games/cards/shared/cards'
 import '../../games/cards/shared/playingCards.css'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 import './DragonTigerRoute.css'
 
@@ -42,7 +41,7 @@ function DragonTigerSession({ initialAccount }: Readonly<{ initialAccount: Accou
     }).catch(() => undefined)
   }, [initialAccount.userId])
 
-  return <InGameShell account={account} title="Dragon Tiger" theme="casino" className="dragon-tiger-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/dragon-tiger" />}>
+  return <InGameShell account={account} theme="casino" className="dragon-tiger-page">
     <DragonTigerGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />
   </InGameShell>
 }

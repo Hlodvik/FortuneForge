@@ -52,15 +52,56 @@ public sealed class AndarBaharHttpTests
         Assert.Equal(HttpStatusCode.NoContent, (await other.GetTestClient().GetAsync($"{Api}/rounds/latest")).StatusCode);
     }
     [Theory]
-    [InlineData(false, true, 503)] [InlineData(true, false, 401)]
-    public async Task FeatureAndAuthenticationGatesRunBeforePersistence(bool enabled, bool authenticated, int code)
+    [InlineData(false, true)] [InlineData(true, false)] [InlineData(false, false)]
+    public async Task FeatureAndAuthenticationGatesPreventNewWagersWithoutHidingStatus(bool enabled, bool authenticated)
     {
         var path = AndarBaharServerTests.NewPath();
         await using var app = await App(path, enabled, authenticated);
         var client = app.GetTestClient();
-        Assert.Equal(code, (int)(await client.GetAsync($"{Api}/status")).StatusCode);
-        Assert.Equal(code, (int)(await client.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("andar", 1))).StatusCode);
+        var status = await client.GetAsync($"{Api}/status");
+        Assert.Equal(authenticated ? 200 : 401, (int)status.StatusCode);
+        if (authenticated) Assert.False((await status.Content.ReadFromJsonAsync<AndarBaharStatusResponse>())!.Available);
+        client.DefaultRequestHeaders.Add("Idempotency-Key", "andar_disabled_new_001");
+        Assert.Equal(authenticated ? 503 : 401, (int)(await client.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("andar", 1))).StatusCode);
         Assert.False(File.Exists(path));
+    }
+    [Fact]
+    public async Task DisabledTable_AllowsOwnedReadAndExactReplayButNotNewOrConflictingWager()
+    {
+        var path = AndarBaharServerTests.NewPath();
+        AndarBaharRoundResponse settled;
+        const string key = "andar_disabled_replay_01";
+        await using (var enabled = await App(path))
+        {
+            var client = enabled.GetTestClient();
+            client.DefaultRequestHeaders.Add("Idempotency-Key", key);
+            settled = (await (await client.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("andar", .50m)))
+                .Content.ReadFromJsonAsync<AndarBaharRoundResponse>())!;
+        }
+        var before = await File.ReadAllTextAsync(path);
+        await using var disabled = await App(path, enabled: false);
+        var recovery = disabled.GetTestClient();
+        var status = (await recovery.GetFromJsonAsync<AndarBaharStatusResponse>($"{Api}/status"))!;
+        Assert.False(status.Available);
+        Assert.Equal(settled.Balance, status.Balance);
+        Assert.Equal(settled.RoundId, (await recovery.GetFromJsonAsync<AndarBaharRoundResponse>($"{Api}/rounds/latest"))!.RoundId);
+        Assert.Equal(settled.RoundId, (await recovery.GetFromJsonAsync<AndarBaharRoundResponse>($"{Api}/rounds/{settled.RoundId}"))!.RoundId);
+        recovery.DefaultRequestHeaders.Add("Idempotency-Key", key);
+        var replay = await recovery.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("andar", .50m));
+        Assert.Equal(HttpStatusCode.Created, replay.StatusCode);
+        Assert.Equal(settled.RoundId, (await replay.Content.ReadFromJsonAsync<AndarBaharRoundResponse>())!.RoundId);
+        Assert.Equal(HttpStatusCode.Conflict, (await recovery.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("bahar", .50m))).StatusCode);
+        recovery.DefaultRequestHeaders.Remove("Idempotency-Key");
+        recovery.DefaultRequestHeaders.Add("Idempotency-Key", "andar_disabled_new_002");
+        var rejected = await recovery.PostAsJsonAsync($"{Api}/rounds", new CreateAndarBaharRoundRequest("andar", .50m));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, rejected.StatusCode);
+        Assert.Equal("andar-bahar-disabled", (await rejected.Content.ReadFromJsonAsync<AndarBaharErrorResponse>())!.Code);
+        await using var other = await App(path, enabled: false, user: "other");
+        Assert.Equal(HttpStatusCode.NotFound, (await other.GetTestClient().GetAsync($"{Api}/rounds/{settled.RoundId}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await other.GetTestClient().GetAsync($"{Api}/rounds/latest")).StatusCode);
+        await using var unauthenticated = await App(path, enabled: false, authenticated: false);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await unauthenticated.GetTestClient().GetAsync($"{Api}/rounds/{settled.RoundId}")).StatusCode);
+        Assert.Equal(before, await File.ReadAllTextAsync(path));
     }
     [Theory]
     [InlineData("{\"side\":\"andar\",\"stake\":0.25}")]

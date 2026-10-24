@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, type ReactNode } from 'react'
+import { act, type ComponentProps, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,6 +14,7 @@ const state = vi.hoisted(() => ({
   account: null as AccountSummary | null,
   loading: false,
   games: [] as GameProps[],
+  shellAccounts: [] as (AccountSummary | undefined)[],
   fetch: vi.fn<typeof fetch>(),
   refresh: vi.fn<() => Promise<AccountSummary>>(),
 }))
@@ -25,6 +26,16 @@ vi.mock('../../features/account/services/accountsApi', async importOriginal => (
   fetchWithAccountSession: state.fetch,
   getCurrentAccount: state.refresh,
 }))
+vi.mock('../../components/InGameShell', async importOriginal => {
+  const original = await importOriginal<typeof import('../../components/InGameShell')>()
+  return {
+    ...original,
+    InGameShell: (props: ComponentProps<typeof original.InGameShell>) => {
+      state.shellAccounts.push(props.account)
+      return <original.InGameShell {...props} />
+    },
+  }
+})
 vi.mock('@fortuneforge/games-dragon-tiger', () => ({
   HttpDragonTigerGateway: class {
     basePath: string
@@ -48,6 +59,7 @@ beforeEach(() => {
   state.account = account('first', 100)
   state.loading = false
   state.games = []
+  state.shellAccounts = []
   state.fetch.mockReset().mockResolvedValue(new Response('{}'))
   state.refresh.mockReset()
   host = document.createElement('div')
@@ -57,6 +69,7 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals() })
 const render = () => act(() => root.render(<AuthenticatedDragonTigerRoute />))
 const game = () => state.games.at(-1)!
+const shellAccount = () => state.shellAccounts.at(-1)!
 
 describe('Dragon Tiger connected route', () => {
   it('renders actual shared court/number faces while leaving game-specific backs to the package', () => {
@@ -79,7 +92,13 @@ describe('Dragon Tiger connected route', () => {
     expect(host.querySelector('.dragon-tiger-page [data-game-navbar]')).not.toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/games')
-    expect(host.querySelector('.in-game-navbar__title')?.textContent).toBe('Dragon Tiger')
+    expect(host.querySelector('.in-game-navbar__title')).toBeNull()
+    expect(host.querySelector('.in-game-navbar__actions')).toBeNull()
+    expect(host.textContent).not.toContain('Try practice')
+    expect(host.textContent).not.toContain('Practice active')
+    expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
+    expect(host.querySelector('.player-shell-menu--more nav[aria-label="Account menu"]')).not.toBeNull()
+    expect(shellAccount().balances.slotsCredits).toBe(100)
   })
 
   it('keeps the table behind authentication and registers the lazy route and title', () => {
@@ -93,7 +112,7 @@ describe('Dragon Tiger connected route', () => {
     expect(pageTitleSource).toContain("'/games/dragon-tiger': 'Dragon Tiger — Fortune Forge'")
   })
 
-  it('uses authenticated requests, account-scoped recovery, and refreshes the real shared wallet', async () => {
+  it('uses authenticated requests, account-scoped recovery, and refreshes the real account state', async () => {
     render()
     expect(game().playerId).toBe('first:account')
     expect(game().gateway.requestFn).toBe(state.fetch)
@@ -103,10 +122,10 @@ describe('Dragon Tiger connected route', () => {
     await act(async () => { game().onBalanceChange!(112.5); await Promise.resolve() })
 
     expect(state.refresh).toHaveBeenCalledOnce()
-    expect(host.querySelector('.player-shell-menu--balance')?.textContent).toContain('112.5')
+    expect(shellAccount().balances.slotsCredits).toBe(112.5)
   })
 
-  it('adds only the practice header and never replaces the real navbar wallet with practice funds', async () => {
+  it('adds only the practice header and never replaces the real account state with practice funds', async () => {
     window.history.replaceState(null, '', '/games/dragon-tiger?mode=practice')
     render()
     expect(game().playerId).toBe('first:practice')
@@ -117,7 +136,15 @@ describe('Dragon Tiger connected route', () => {
     expect(headers.get('X-FortuneForge-Practice')).toBe('true')
     expect(headers.get('Idempotency-Key')).toBe('original_request_key')
     expect(state.refresh).not.toHaveBeenCalled()
-    expect(host.querySelector('.in-game-navbar__actions')?.textContent).toBe('Practice active')
+    expect(host.querySelector('.in-game-navbar__title')).toBeNull()
+    expect(host.querySelector('.in-game-navbar__actions')).toBeNull()
+    expect(host.textContent).not.toContain('Try practice')
+    expect(host.textContent).not.toContain('Practice active')
+    expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
+    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/games')
+    expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
+    expect(host.querySelector('.player-shell-menu--more nav[aria-label="Account menu"]')).not.toBeNull()
+    expect(shellAccount().balances.slotsCredits).toBe(100)
   })
 
   it('does not apply a late old-account wallet refresh to a newly signed-in account', async () => {
@@ -131,7 +158,7 @@ describe('Dragon Tiger connected route', () => {
     await act(async () => { finish(account('first', 12)); await Promise.resolve() })
 
     expect(game().playerId).toBe('second:account')
-    expect(host.querySelector('.player-shell-menu--balance')?.textContent).toContain('700')
-    expect(host.querySelector('.player-shell-menu--balance')?.textContent).not.toContain('12.00')
+    expect(shellAccount().userId).toBe('second')
+    expect(shellAccount().balances.slotsCredits).toBe(700)
   })
 })

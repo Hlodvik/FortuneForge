@@ -1,0 +1,18 @@
+.in-game-navbar__account-tools{display:flex;align-items:center;justify-content:flex-end;gap:.5rem;min-width:0}
+.in-game-navbar__report{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;min-width:44px;min-height:44px;padding:.45rem .65rem;border:1px solid rgb(220 194 123 / 35%);border-radius:999px;background:rgb(0 0 0 / 20%);color:#f2dfae;font:inherit;font-size:.72rem;cursor:pointer}
+.in-game-navbar__report:focus-visible{outline:2px solid white;outline-offset:3px}
+.game-report-dialog{box-sizing:border-box;width:min(32rem,calc(100vw - 1.5rem));max-height:calc(100dvh - 1.5rem);overflow:auto;padding:0;border:1px solid #ba9a58;border-radius:1.1rem;background:#111c29;color:#f4ecd9;box-shadow:0 1.5rem 5rem #0009;font:15px/1.5 'Trebuchet MS','Segoe UI',sans-serif;text-align:left}
+.game-report-dialog::backdrop{background:#000a;backdrop-filter:blur(3px)}
+.game-report-dialog>div{position:relative;padding:1.7rem}
+.game-report-dialog h2{margin:.3rem 2rem 1.3rem 0;font-size:1.5rem;color:#f5dfad}
+.game-report-dialog__eyebrow{margin:0;font-size:.65rem;letter-spacing:.12em;color:#bdc9d5}
+.game-report-dialog label{display:grid;gap:.4rem;margin-bottom:1rem;font-weight:600}
+.game-report-dialog select,.game-report-dialog textarea{box-sizing:border-box;width:100%;min-height:44px;padding:.7rem;border:1px solid #5d6c7b;border-radius:.5rem;background:#08111c;color:#f7f2e7;font:inherit;resize:vertical}
+.game-report-dialog textarea:read-only{opacity:.8}
+.game-report-dialog__privacy{font-size:.75rem;color:#b2bfcb;font-weight:400}
+.game-report-dialog [role=alert]{color:#ffe0ad}
+.game-report-dialog__send{display:block;min-height:44px;width:100%;padding:.6rem 1rem;margin-top:1rem;border:1px solid #eed5a1;border-radius:999px;background:#d8ba7a;color:#13202e;font:inherit;font-weight:700;cursor:pointer}
+.game-report-dialog__close{position:absolute;top:.5rem;right:.5rem;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:#f4ecd9;font-size:1.6rem;cursor:pointer}
+.game-report-dialog button:disabled{opacity:.5;cursor:default}
+.game-report-dialog button:focus-visible,.game-report-dialog select:focus-visible,.game-report-dialog textarea:focus-visible{outline:2px solid #f5dc9b;outline-offset:3px}
+@media(max-width:720px){.in-game-navbar__report span{display:none}.in-game-navbar__report{padding:.4rem}.in-game-navbar__account-tools{gap:.35rem}.game-report-dialog>div{padding:1.25rem}}

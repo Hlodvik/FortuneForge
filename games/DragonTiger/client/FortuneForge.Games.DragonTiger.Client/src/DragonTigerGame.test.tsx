@@ -86,6 +86,34 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('DragonTigerGame betting and results', () => {
+  it('keeps only the game title above the board and moves live betting limits into help', async () => {
+    const prototype = HTMLDialogElement.prototype
+    const originalShow = Object.getOwnPropertyDescriptor(prototype, 'showModal')
+    const originalClose = Object.getOwnPropertyDescriptor(prototype, 'close')
+    const show = vi.fn(function (this: HTMLDialogElement) { this.open = true })
+    Object.defineProperty(prototype, 'showModal', { configurable: true, value: show })
+    Object.defineProperty(prototype, 'close', { configurable: true, value() { this.open = false } })
+    try {
+      const view = await start()
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Dragon & Tiger')
+      expect(screen.queryByText('FORTUNEFORGE · TABLE GAMES')).toBeNull()
+      expect(view.container.querySelector('.ff-dt__table-top')).toBeNull()
+      expect(screen.queryByText(/minimum per spot/)).toBeNull()
+      expect(screen.queryByText(/max \/ round/)).toBeNull()
+      fireEvent.click(screen.getByRole('button', { name: 'How to play' }))
+      expect(show).toHaveBeenCalledOnce()
+      const rules = screen.getByRole('dialog', { name: 'One card. Two contenders.' })
+      expect(within(rules).getByRole('heading', { name: 'Betting limits' })).toBeTruthy()
+      expect(within(rules).getByText('R0.50 minimum per spot, in R0.50 increments. R250.00 maximum per spot and R500.00 total per round.')).toBeTruthy()
+    } finally {
+      cleanup()
+      if (originalShow) Object.defineProperty(prototype, 'showModal', originalShow)
+      else Reflect.deleteProperty(prototype, 'showModal')
+      if (originalClose) Object.defineProperty(prototype, 'close', originalClose)
+      else Reflect.deleteProperty(prototype, 'close')
+    }
+  })
+
   it('keeps every chip denomination accessible while displaying only the numbered PNG artwork', async () => {
     await start()
     expect(screen.queryByRole('complementary', { name: 'Recent results' })).toBeNull()

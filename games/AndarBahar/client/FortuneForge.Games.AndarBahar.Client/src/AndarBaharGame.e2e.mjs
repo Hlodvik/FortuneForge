@@ -94,7 +94,7 @@ const assertResultLayout = async viewport => {
   assert.ok(bounds && bounds.x >= -1 && bounds.y >= -1 && bounds.x + bounds.width <= viewport.width + 1 && bounds.y + bounds.height <= viewport.height + 1, `${viewport.name}: result dialog clips outside viewport`)
   const overflow = await dialog.evaluate(element => ({ hidden: getComputedStyle(element).overflowY === 'hidden', content: element.scrollHeight, visible: element.clientHeight }))
   assert.equal(overflow.hidden && overflow.content > overflow.visible + 1, false, `${viewport.name}: result dialog hides content without scrolling`)
-  for (const card of await dialog.locator('.ff-ab__card').all()) {
+  for (const card of await dialog.locator('.ff-ab__card, .ff-ab__shared-card').all()) {
     const box = await card.boundingBox()
     assert.ok(box && Math.abs(box.height / box.width - 1.4) < .03, `${viewport.name}: result card proportions are distorted`)
   }
@@ -144,9 +144,9 @@ try {
   const round = await response.json()
   assertSettlement(round, before)
   await expect(page.getByRole('button', { name: /Skip deal/ })).toBeVisible()
-  await expect(page.getByLabel('Andar cards', { exact: true }).locator('.ff-ab__card')).toHaveCount(0)
-  await expect(page.getByLabel('Andar cards', { exact: true }).locator('.ff-ab__card')).toHaveCount(1)
-  await expect(page.getByLabel('Bahar cards', { exact: true }).locator('.ff-ab__card')).toHaveCount(0)
+  await expect(page.getByLabel('Andar cards', { exact: true }).locator('.ff-ab__card, .ff-ab__shared-card')).toHaveCount(0)
+  await expect(page.getByLabel('Andar cards', { exact: true }).locator('.ff-ab__card, .ff-ab__shared-card')).toHaveCount(1)
+  await expect(page.getByLabel('Bahar cards', { exact: true }).locator('.ff-ab__card, .ff-ab__shared-card')).toHaveCount(0)
   await snapshot('desktop-dealing')
   await skip()
   await expect(balance()).toHaveText(money(round.balance), { timeout: 20000 })
@@ -162,9 +162,9 @@ try {
   await closeResult()
   await expect(andar()).toBeEnabled()
   assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), null)
-  // Check the browser's real media pipeline for all three cues, then independently decode
-  // the served OGG bytes and prove they contain a non-silent waveform.
-  const cueNames = ['chip-lay-1.ogg', 'card-place-1.ogg', 'chips-collide-1.ogg']
+  // Check real playback, including the musical cue only for a positive-net result.
+  // A loss must not dispatch the win cue; unit tests also cover both outcomes.
+  const cueNames = ['chip-lay-1.ogg', 'card-place-1.ogg', ...(round.profit > 0 ? ['palace-pluck-win.wav'] : [])]
   try {
     await expect.poll(() => page.evaluate(names => names.every(name => window.__andarBaharMedia.some(playback => playback.src.includes(name) && playback.loaded && playback.fulfilled && playback.ended && playback.duration > 0 && !playback.error)), cueNames)).toBe(true)
   } catch (error) {
@@ -190,7 +190,7 @@ try {
       }))
     } finally { await audioContext.close() }
   }, cueNames)
-  for (const cue of audioEvidence) assert.ok(cue.duration > 0 && cue.channels >= 1 && cue.sampleRate > 0 && cue.frames > 0 && cue.peak > 0, `${cue.cue}: OGG decoding must produce audible samples`)
+  for (const cue of audioEvidence) assert.ok(cue.duration > 0 && cue.channels >= 1 && cue.sampleRate > 0 && cue.frames > 0 && cue.peak > 0, `${cue.cue}: media decoding must produce audible samples`)
   await page.getByRole('button', { name: /Mute sound/ }).click()
 
   const replay = await context.request.post(api('/rounds'), { headers: { 'Idempotency-Key': originalKey }, data: submitted.postDataJSON() })

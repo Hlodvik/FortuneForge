@@ -27,6 +27,7 @@ export type BaccaratGameProps = Readonly<{
   currencySymbol?: string
   onBalanceChange?: (balance: number) => void
   showTitle?: boolean
+  renderCardFace?: (card: BaccaratCard) => ReactNode
 }>
 
 const defaultGateway = new HttpBaccaratGateway()
@@ -42,7 +43,7 @@ type ChipValue = (typeof chipOptions)[number]['value']
 type PlacedChips = Readonly<{ main: readonly ChipValue[]; playerPair: readonly ChipValue[]; bankerPair: readonly ChipValue[] }>
 const emptyPlacedChips = (): PlacedChips => ({ main: [], playerPair: [], bankerPair: [] })
 
-export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true }: BaccaratGameProps) {
+export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true, renderCardFace }: BaccaratGameProps) {
   const [status, setStatus] = useState<BaccaratStatus | null>(null)
   const [round, setRound] = useState<BaccaratRound | null>(null)
   const [betSide, setBetSide] = useState<BaccaratBetSide>('player')
@@ -82,13 +83,12 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
     const updateChipSize = () => {
       const compact = window.innerWidth <= 480 || window.innerHeight <= 560 && window.innerWidth > window.innerHeight
       setCompactChipSelector(compact)
-      const board = surface.querySelector<SVGSVGElement>('.ff-baccarat__bet-sides')
+      const board = surface.querySelector<HTMLElement>('.ff-baccarat__bet-sides')
       const { width, height } = board?.getBoundingClientRect() ?? surface.getBoundingClientRect()
       if (width <= 0 || height <= 0) return
-      const svgScale = Math.max(width / 1440, height / 915)
       const chipSize = compact ? Math.min(40, Math.max(38, width * .1)) : Math.min(44, Math.max(40, width * .032))
       surface.style.setProperty('--ff-chip-screen-size', `${chipSize}px`)
-      surface.style.setProperty('--ff-board-chip-size', `${chipSize / svgScale}px`)
+      surface.style.setProperty('--ff-board-chip-size', `${chipSize}px`)
     }
     updateChipSize()
     window.addEventListener('resize', updateChipSize)
@@ -352,16 +352,16 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         <strong className={'is-' + round.disposition}>{formatSignedMoney(round.combinedProfit ?? round.profit, currencySymbol)}</strong>
       </>}</div>
       <div className="ff-baccarat__hands">
-        <Hand label="Player" cards={round?.playerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'player').length} total={completed ? round.playerTotal : null} winner={completed && (round.outcome === 'player' || round.outcome === 'tie')} />
-        <Hand label="Banker" cards={round?.bankerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'banker').length} total={completed ? round.bankerTotal : null} winner={completed && (round.outcome === 'banker' || round.outcome === 'tie')} />
+        <Hand label="Player" cards={round?.playerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'player').length} total={completed ? round.playerTotal : null} winner={completed && (round.outcome === 'player' || round.outcome === 'tie')} renderCardFace={renderCardFace} />
+        <Hand label="Banker" cards={round?.bankerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'banker').length} total={completed ? round.bankerTotal : null} winner={completed && (round.outcome === 'banker' || round.outcome === 'tie')} renderCardFace={renderCardFace} />
       </div>
-      <svg className="ff-baccarat__bet-sides" role="group" aria-label="Baccarat betting areas" viewBox="0 0 1440 915" preserveAspectRatio="xMidYMid slice">
-        <foreignObject x="490" y="494" width="230" height="80"><BetButton side="player-pair" selected={playerPairStake > 0} label="Player Pair" payout="11:1" disabled={stakeLocked || status?.supportsPairBets !== true} onSelect={() => addChip('player-pair')} stake={playerPairStake} placedChips={placedChips.playerPair} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.playerPairDisposition === 'win'} /></foreignObject>
-        <foreignObject x="720" y="494" width="230" height="80"><BetButton side="banker-pair" selected={bankerPairStake > 0} label="Banker Pair" payout="11:1" disabled={stakeLocked || status?.supportsPairBets !== true} onSelect={() => addChip('banker-pair')} stake={bankerPairStake} placedChips={placedChips.bankerPair} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.bankerPairDisposition === 'win'} /></foreignObject>
-        <foreignObject x="450" y="574" width="540" height="84"><BetButton side="tie" selected={betSide === 'tie' && stake > 0} label="Tie" payout="8:1" disabled={stakeLocked} onSelect={() => addChip('tie')} stake={betSide === 'tie' ? stake : 0} placedChips={betSide === 'tie' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'tie'} /></foreignObject>
-        <foreignObject x="450" y="658" width="540" height="99"><BetButton side="banker" selected={betSide === 'banker' && stake > 0} label="Banker" payout="0.95:1" disabled={stakeLocked} onSelect={() => addChip('banker')} stake={betSide === 'banker' ? stake : 0} placedChips={betSide === 'banker' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'banker'} /></foreignObject>
-        <foreignObject x="450" y="757" width="540" height="113"><BetButton side="player" selected={betSide === 'player' && stake > 0} label="Player" payout="1:1" disabled={stakeLocked} onSelect={() => addChip('player')} stake={betSide === 'player' ? stake : 0} placedChips={betSide === 'player' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'player'} /></foreignObject>
-      </svg>
+      <div className="ff-baccarat__bet-sides" role="group" aria-label="Baccarat betting areas">
+        <div className="ff-baccarat__bet-cell is-player-pair"><BetButton side="player-pair" selected={playerPairStake > 0} label="Player Pair" payout="11:1" disabled={stakeLocked || status?.supportsPairBets !== true} onSelect={() => addChip('player-pair')} stake={playerPairStake} placedChips={placedChips.playerPair} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.playerPairDisposition === 'win'} /></div>
+        <div className="ff-baccarat__bet-cell is-banker-pair"><BetButton side="banker-pair" selected={bankerPairStake > 0} label="Banker Pair" payout="11:1" disabled={stakeLocked || status?.supportsPairBets !== true} onSelect={() => addChip('banker-pair')} stake={bankerPairStake} placedChips={placedChips.bankerPair} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.bankerPairDisposition === 'win'} /></div>
+        <div className="ff-baccarat__bet-cell is-tie"><BetButton side="tie" selected={betSide === 'tie' && stake > 0} label="Tie" payout="8:1" disabled={stakeLocked} onSelect={() => addChip('tie')} stake={betSide === 'tie' ? stake : 0} placedChips={betSide === 'tie' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'tie'} /></div>
+        <div className="ff-baccarat__bet-cell is-banker"><BetButton side="banker" selected={betSide === 'banker' && stake > 0} label="Banker" payout="0.95:1" disabled={stakeLocked} onSelect={() => addChip('banker')} stake={betSide === 'banker' ? stake : 0} placedChips={betSide === 'banker' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'banker'} /></div>
+        <div className="ff-baccarat__bet-cell is-player"><BetButton side="player" selected={betSide === 'player' && stake > 0} label="Player" payout="1:1" disabled={stakeLocked} onSelect={() => addChip('player')} stake={betSide === 'player' ? stake : 0} placedChips={betSide === 'player' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'player'} /></div>
+      </div>
       <svg className="ff-baccarat__table-edge" viewBox="0 0 1440 915" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
         <pattern id="baccarat-black-leather" patternUnits="userSpaceOnUse" width="360" height="240"><image href={blackLeather} width="360" height="240" preserveAspectRatio="xMidYMid slice"/></pattern>
         <linearGradient id="baccarat-leather-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#030505" stopOpacity=".15"/><stop offset=".45" stopColor="#000" stopOpacity=".4"/><stop offset="1" stopColor="#020403" stopOpacity=".75"/></linearGradient>
@@ -384,18 +384,18 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         </div> : !round ? <>
           <div className="ff-baccarat__wager-row">
             <button className="ff-baccarat__clear-wagers" type="button" aria-label="Clear Baccarat bets" disabled={stakeLocked || Number.isFinite(stake) && totalStake === 0} onClick={clearWagers}>×</button>
-            <button className="ff-baccarat__primary" aria-label={busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingBet.current && (!stakeIsValid || !stakeAffordable))} onClick={deal}>{busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'}</button>
+            <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label={busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingBet.current && (!stakeIsValid || !stakeAffordable))} onClick={deal}><RedealIcon /><span className="ff-baccarat__sr-only">{busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'}</span></button>
           </div>
         </> : <>
           <span className="ff-baccarat__ticket">{capitalize(round.betSide)} · {formatMoney(round.stake, currencySymbol)}</span>
           {completed ? <div className="ff-baccarat__round-actions">
-            {status?.available ? <button className="ff-baccarat__primary" aria-label="Deal Again" disabled={busy || recovery !== 'ready' || (round.totalStake ?? round.stake) > round.balance} onClick={dealAgain}>Deal Again</button> : !status && statusError && !tableUnavailable ? <button className="ff-baccarat__primary" aria-label="Retry connection" onClick={retryStatus}>Retry connection</button> : <button className="ff-baccarat__primary" aria-label="Deal Again" disabled>Deal Again</button>}
+            {status?.available ? <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Deal Again" disabled={busy || recovery !== 'ready' || (round.totalStake ?? round.stake) > round.balance} onClick={dealAgain}><RedealIcon /><span className="ff-baccarat__sr-only">Deal Again</span></button> : !status && statusError && !tableUnavailable ? <button className="ff-baccarat__primary" aria-label="Retry connection" onClick={retryStatus}>Retry connection</button> : <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Deal Again" disabled><RedealIcon /><span className="ff-baccarat__sr-only">Deal Again</span></button>}
             <button className="ff-baccarat__secondary" aria-label="New Bet" disabled={busy} onClick={newBet}>New Bet</button>
             <InfoPanel label="Baccarat round details" trigger="Details" activePanel={activePanel} onPanelChange={setActivePanel}>
               <h2>Round details</h2>
               <dl className="ff-baccarat__settlement"><div><dt>Bet</dt><dd>{capitalize(round.betSide)} · {formatMoney(round.stake, currencySymbol)}</dd></div><div><dt>Result</dt><dd className={'is-' + round.disposition}>{capitalize(round.disposition)}</dd></div>{(round.playerPairStake ?? 0) > 0 && <div><dt>Player Pair</dt><dd>{formatSignedMoney(round.playerPairProfit ?? 0, currencySymbol)}</dd></div>}{(round.bankerPairStake ?? 0) > 0 && <div><dt>Banker Pair</dt><dd>{formatSignedMoney(round.bankerPairProfit ?? 0, currencySymbol)}</dd></div>}<div><dt>Profit</dt><dd>{formatSignedMoney(round.combinedProfit ?? round.profit, currencySymbol)}</dd></div><div><dt>Total return</dt><dd>{formatMoney(round.combinedTotalReturn ?? round.totalReturn, currencySymbol)}</dd></div></dl>
             </InfoPanel>
-          </div> : <button className="ff-baccarat__primary" aria-label="Dealing…" disabled>Dealing…</button>}
+          </div> : <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Dealing…" disabled><RedealIcon /><span className="ff-baccarat__sr-only">Dealing…</span></button>}
         </>}
       </div>
     </section>
@@ -444,11 +444,15 @@ function reconcileChipStack(placed: readonly ChipValue[], stake: number, maxStak
   // A restored round may have no click history; infer only that baseline.
   return visibleChips(stake, maxStake).map(chip => chip.value)
 }
-function Hand({ label, cards, count, total, winner }: Readonly<{ label: string; cards: readonly BaccaratCard[]; count: number; total: number | null; winner: boolean }>) {
+function RedealIcon() {
+  return <svg className="ff-baccarat__action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M19.4 11a7.5 7.5 0 1 0-1.9 6.6" /></svg>
+}
+
+function Hand({ label, cards, count, total, winner, renderCardFace }: Readonly<{ label: string; cards: readonly BaccaratCard[]; count: number; total: number | null; winner: boolean; renderCardFace?: BaccaratGameProps['renderCardFace'] }>) {
   return <section className={'ff-baccarat__hand' + (winner ? ' is-winner' : '')} aria-label={label + ' hand' + (total === null ? '' : ', total ' + total)}>
     <div className="ff-baccarat__hand-title"><span>{label}</span><strong aria-label={total === null ? label + ' total pending' : label + ' total ' + total}>{total === null ? null : total}</strong></div>
     <div className="ff-baccarat__cards">{[0, 1, 2].map(index => <div key={index} className="ff-baccarat__card-slot">
-      {index < count && cards[index] ? <CardFace card={cards[index]} /> : cards.length > 0 && index < 2 ? <div className="ff-baccarat__card ff-baccarat__card--back" aria-hidden="true">FF</div> : null}
+      {index < count && cards[index] ? renderCardFace ? <div className="ff-baccarat__shared-card-face">{renderCardFace(cards[index])}</div> : <CardFace card={cards[index]} /> : cards.length > 0 && index < 2 ? <div className="ff-baccarat__card ff-baccarat__card--back" aria-hidden="true">FF</div> : null}
     </div>)}</div>
   </section>
 }

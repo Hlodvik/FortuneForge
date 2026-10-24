@@ -1,4 +1,5 @@
 import { cardLabel, type PlayingCardModel } from './cards'
+import { CourtCardSymbol } from './CourtCardSymbol'
 
 const suitSymbols = {
   clubs: '♣',
@@ -44,6 +45,9 @@ export function PlayingCard({
   const symbol = suitSymbols[card.suit]
   const rank = rankSymbols[card.rank]
   const color = card.suit === 'hearts' || card.suit === 'diamonds' ? 'red' : 'black'
+  const courtRank = card.rank === 11 || card.rank === 12 || card.rank === 13
+    ? card.rank
+    : undefined
 
   return (
     <div className={`ff-playing-card ff-playing-card--face ff-playing-card--${color}`} aria-label={cardLabel(card)}>
@@ -51,9 +55,10 @@ export function PlayingCard({
         <b>{rank}</b>
         <i>{symbol}</i>
       </span>
-      <span className={`ff-playing-card__center${card.rank >= 11 ? ' ff-playing-card__center--court' : ''}`} aria-hidden="true">
-        {card.rank >= 11 && <b>{rank}</b>}
-        <i>{symbol}</i>
+      <span className={`ff-playing-card__center${courtRank ? ' ff-playing-card__center--court' : ''}`} aria-hidden="true">
+        {courtRank
+          ? <CourtCardSymbol rank={courtRank} />
+          : <i>{symbol}</i>}
       </span>
       <span className="ff-playing-card__corner ff-playing-card__corner--bottom" aria-hidden="true">
         <b>{rank}</b>

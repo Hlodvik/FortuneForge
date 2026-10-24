@@ -1151,8 +1151,7 @@ internal sealed class FirestoreCreditHoldemStore(
     }
 
     private static CreditHoldemMatch ReadMatch(DocumentSnapshot snapshot) =>
-        JsonSerializer.Deserialize<CreditHoldemMatch>(ReadString(snapshot, "matchJson"), JsonOptions)
-        ?? throw new InvalidOperationException("A stored Hold'em match is invalid.");
+        CreditHoldemMatchPersistence.Deserialize(ReadString(snapshot, "matchJson"));
 
     private static CreditHoldemHistoryRecord ReadHistory(DocumentSnapshot snapshot) =>
         JsonSerializer.Deserialize<CreditHoldemHistoryRecord>(ReadString(snapshot, "historyJson"), JsonOptions)

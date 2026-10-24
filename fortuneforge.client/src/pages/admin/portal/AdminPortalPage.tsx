@@ -6,13 +6,15 @@ import { AdminOperationsDashboardView } from '../operations/AdminOperationsPage'
 import './adminPortal.css'
 import { adminMoney, purchaseAmount } from '../../../features/admin/portal/adminFormatting'
 import { notifyCatalogueChanged } from '../../../features/catalog/catalogVisibility'
+import { AdminGameReportsPanel } from './AdminGameReportsPanel'
+import type { AdminGameReportsApi } from '../../../features/reports/gameReportsApi'
 
-type Section = 'overview' | 'players' | 'games' | 'bots' | 'audit'
-const sections: { id: Section; name: string; mark: string }[] = [{ id: 'overview', name: 'Overview', mark: '◈' }, { id: 'players', name: 'Players', mark: '♙' }, { id: 'games', name: 'Game catalogue', mark: '▦' }, { id: 'bots', name: 'Bot controls', mark: '♟' }, { id: 'audit', name: 'Audit log', mark: '≡' }]
+type Section = 'overview' | 'players' | 'games' | 'bots' | 'reports' | 'audit'
+const sections: { id: Section; name: string; mark: string }[] = [{ id: 'overview', name: 'Overview', mark: '◈' }, { id: 'players', name: 'Players', mark: '♙' }, { id: 'games', name: 'Game catalogue', mark: '▦' }, { id: 'bots', name: 'Bot controls', mark: '♟' }, { id: 'reports', name: 'Player reports', mark: '⚑' }, { id: 'audit', name: 'Audit log', mark: '≡' }]
 const date = (value: string | null | undefined) => value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString() : 'Not recorded'
 const errorText = (error: unknown) => error instanceof Error ? error.message : 'This information could not be loaded.'
 
-export function AdminPortalPage({ playerName, api = adminPortalApi, loadOverview = getOperationsDashboard }: { playerName: string; api?: AdminPortalApi; loadOverview?: typeof getOperationsDashboard }) {
+export function AdminPortalPage({ playerName, api = adminPortalApi, loadOverview = getOperationsDashboard, reportsApi }: { playerName: string; api?: AdminPortalApi; loadOverview?: typeof getOperationsDashboard; reportsApi?: AdminGameReportsApi }) {
   const [section, setSection] = useState<Section>('overview')
   return <div className="admin-portal">
     <aside className="admin-sidebar"><a className="admin-brand" href="/admin"><span>✦</span><strong>FORTUNE FORGE<small>CONTROL ROOM</small></strong></a><p className="admin-eyebrow">Workspace</p><nav aria-label="Administration">{sections.map(item => <button key={item.id} type="button" aria-current={section === item.id ? 'page' : undefined} onClick={() => setSection(item.id)}><span aria-hidden="true">{item.mark}</span>{item.name}</button>)}</nav><div className="admin-sidebar__footer"><a href="/admin/invoices">Payment invoices ↗</a><a href="/admin/operations">Detailed operations ↗</a><a href="/home">← Return to games</a><small>Signed in as {playerName}<br />Administrator access</small></div></aside>
@@ -21,6 +23,7 @@ export function AdminPortalPage({ playerName, api = adminPortalApi, loadOverview
       {section === 'players' && <Players api={api} />}
       {(section === 'games' || section === 'bots') && <Management key={section} api={api} kind={section} />}
       {section === 'audit' && <Audit api={api} />}
+      {section === 'reports' && <AdminGameReportsPanel api={reportsApi}/>}
     </main>
   </div>
 }

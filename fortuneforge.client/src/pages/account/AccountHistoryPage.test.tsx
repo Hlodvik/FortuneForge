@@ -12,11 +12,14 @@ vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthentica
 }) }))
 vi.mock('../../features/account/services/accountsApi', () => ({ getSlotHistory: async () => ({ spins: state.slots }) }))
 vi.mock('../cards/useCardRoomHistory', () => ({ useCardRoomHistory: () => ({
-  activities: [{ id: 'hi-lo-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won', startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 2.14 }],
+  activities: [
+    { id: 'hi-lo-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won', startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 2.14 },
+    { id: 'andar-bahar-1', matchId: 'round-2', game: 'andar-bahar', gameLabel: 'Andar Bahar', title: 'Andar Bahar game', summary: 'R0.95 won', startedAtUtc: '2026-10-24T12:00:00Z', completedAtUtc: '2026-10-24T12:00:00Z', unseen: true, requiresClaim: false, winningsCredits: .95, wagerCredits: .5, netCredits: .45 },
+  ],
   loading: false, error: null, busyId: null, select: state.select,
 }) }))
 import { AccountHistoryPage } from './AccountHistoryPage'
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { vi.unstubAllGlobals(); vi.clearAllMocks() })
 
 it('makes settled Hi-Lo reachable from account history without replacing existing slot results', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
@@ -30,5 +33,23 @@ it('makes settled Hi-Lo reachable from account history without replacing existin
     const result = [...host.querySelectorAll('button')].find(button => button.textContent?.includes('Hi-Lo game'))!
     act(() => result.click())
     expect(state.select).toHaveBeenCalledOnce()
+  } finally { act(() => root.unmount()); host.remove() }
+})
+
+it('shows settled Andar Bahar with exact committed, returned and net values', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const host = document.createElement('div'); document.body.append(host)
+  const root = createRoot(host)
+  try {
+    await act(async () => { root.render(<AccountHistoryPage />); await Promise.resolve() })
+    expect(host.querySelector('[aria-label="Card-game history"]')?.textContent).toContain('Andar Bahar game')
+    const result = [...host.querySelectorAll('button')].find(button => button.textContent?.includes('Andar Bahar game'))!
+    act(() => result.click())
+    expect(state.select).toHaveBeenCalledOnce()
+    const stats = host.querySelector('.card-room-history-stats')!
+    expect(stats.textContent).toContain('CommittedR0.50')
+    expect(stats.textContent).toContain('ReturnedR0.95')
+    expect(stats.textContent).toContain('Net+R0.45')
+    expect(host.querySelectorAll('.history-row')).toHaveLength(1)
   } finally { act(() => root.unmount()); host.remove() }
 })

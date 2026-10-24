@@ -2,10 +2,22 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BaccaratGame } from '../BaccaratGame'
 import type { BaccaratCard, BaccaratGateway, BaccaratRound } from '../contracts'
+import { PlayingCard } from '../../../../../../fortuneforge.client/src/games/cards/shared/PlayingCard'
+import type { CardRank } from '../../../../../../fortuneforge.client/src/games/cards/shared/cards'
+import '../../../../../../fortuneforge.client/src/games/cards/shared/playingCards.css'
+import { InGameShell } from '../../../../../../fortuneforge.client/src/components/InGameShell'
+import '../../../../../../fortuneforge.client/src/app/routes/BaccaratRoute.css'
 import './preview.css'
 
 let previewRound = 0
 let previewBalance = 1000
+const faceRanks: Readonly<Record<BaccaratCard['rank'], CardRank>> = {
+  ace: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7,
+  eight: 8, nine: 9, ten: 10, jack: 11, queen: 12, king: 13,
+}
+const renderCardFace = (card: BaccaratCard) => <PlayingCard card={{
+  id: `baccarat-preview-${card.rank}-${card.suit}`, rank: faceRanks[card.rank], suit: card.suit,
+}} />
 const previewHands = [
   { playerCards: [{ rank: 'nine', suit: 'hearts' }, { rank: 'king', suit: 'clubs' }], bankerCards: [{ rank: 'seven', suit: 'diamonds' }, { rank: 'queen', suit: 'spades' }] },
   { playerCards: [{ rank: 'four', suit: 'clubs' }, { rank: 'four', suit: 'hearts' }], bankerCards: [{ rank: 'nine', suit: 'clubs' }, { rank: 'king', suit: 'diamonds' }] },
@@ -76,6 +88,8 @@ if (new URLSearchParams(window.location.search).has('mock')) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BaccaratGame gateway={new URLSearchParams(window.location.search).has('mock') ? previewGateway : undefined} />
+    <InGameShell theme="casino" title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">
+      <BaccaratGame gateway={new URLSearchParams(window.location.search).has('mock') ? previewGateway : undefined} renderCardFace={renderCardFace} showTitle={false} />
+    </InGameShell>
   </StrictMode>,
 )

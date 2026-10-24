@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   CasinoWarGatewayError,
   type CasinoWarCard,
@@ -16,6 +16,7 @@ export type CasinoWarGameProps = Readonly<{
   playerId?: string
   currencySymbol?: string
   onBalanceChange?: (balance: number) => void
+  renderCardFace?: (card: CasinoWarCard) => ReactNode
 }>
 
 const defaultGateway = new HttpCasinoWarGateway()
@@ -24,7 +25,7 @@ type StoredPendingAction =
   | Readonly<{ operation: 'opening'; idempotencyKey: string; primaryStake: number; tieStake: number }>
   | Readonly<{ operation: 'decision'; idempotencyKey: string; roundId: string; decision: CasinoWarDecision }>
 
-export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange }: CasinoWarGameProps) {
+export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, renderCardFace }: CasinoWarGameProps) {
   const [status, setStatus] = useState<CasinoWarStatus | null>(null)
   const [round, setRound] = useState<CasinoWarRound | null>(null)
   const [primaryStake, setPrimaryStake] = useState(1)
@@ -253,9 +254,9 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
         </div>
 
         <section className="ff-casino-war__arena" aria-live="polite">
-          <CardSeat label="Dealer" openingLabel="Dealer opening card" openingCard={round && revealStage >= 2 ? round.dealerOpeningCard : null} warCard={round && revealStage >= 4 ? round.dealerWarCard : null} showBack={!round || revealStage < 2} />
+          <CardSeat label="Dealer" openingLabel="Dealer opening card" openingCard={round && revealStage >= 2 ? round.dealerOpeningCard : null} warCard={round && revealStage >= 4 ? round.dealerWarCard : null} showBack={!round || revealStage < 2} renderCardFace={renderCardFace} />
           <RoundCallout round={round} revealStage={revealStage} currencySymbol={currencySymbol} />
-          <CardSeat label="You" openingLabel="Player opening card" openingCard={round && revealStage >= 1 ? round.playerOpeningCard : null} warCard={round && revealStage >= 3 ? round.playerWarCard : null} showBack={!round || revealStage < 1} />
+          <CardSeat label="You" openingLabel="Player opening card" openingCard={round && revealStage >= 1 ? round.playerOpeningCard : null} warCard={round && revealStage >= 3 ? round.playerWarCard : null} showBack={!round || revealStage < 1} renderCardFace={renderCardFace} />
         </section>
 
         <section className="ff-casino-war__controls">
@@ -302,19 +303,20 @@ function StakeControl({ label, value, min = 0, max = Number.MAX_SAFE_INTEGER, st
   </div>
 }
 
-function CardSeat({ label, openingLabel, openingCard, warCard, showBack }: Readonly<{ label: string; openingLabel: string; openingCard: CasinoWarCard | null; warCard: CasinoWarCard | null; showBack: boolean }>) {
+function CardSeat({ label, openingLabel, openingCard, warCard, showBack, renderCardFace }: Readonly<{ label: string; openingLabel: string; openingCard: CasinoWarCard | null; warCard: CasinoWarCard | null; showBack: boolean; renderCardFace?: (card: CasinoWarCard) => ReactNode }>) {
   return <section className={`ff-casino-war__seat ff-casino-war__seat--${label.toLowerCase()}`} aria-label={`${label} cards`}>
     <strong>{label}</strong>
     <div className="ff-casino-war__hand">
-      {openingCard ? <div aria-label={openingLabel}><CardFace card={openingCard} /></div> : showBack ? <CardBack label={`${label} card`} /> : null}
-      {warCard && <div className="ff-casino-war__war-card" aria-label={`${label} War card`}><CardFace card={warCard} /></div>}
+      {openingCard ? <div aria-label={openingLabel}><CardFace card={openingCard} renderCardFace={renderCardFace} /></div> : showBack ? <CardBack label={`${label} card`} /> : null}
+      {warCard && <div className="ff-casino-war__war-card" aria-label={`${label} War card`}><CardFace card={warCard} renderCardFace={renderCardFace} /></div>}
     </div>
   </section>
 }
 
 function CardBack({ label }: Readonly<{ label: string }>) { return <div className="ff-casino-war__card ff-casino-war__card--back" aria-label={label}><span>FF</span></div> }
 
-function CardFace({ card }: Readonly<{ card: CasinoWarCard }>) {
+function CardFace({ card, renderCardFace }: Readonly<{ card: CasinoWarCard; renderCardFace?: (card: CasinoWarCard) => ReactNode }>) {
+  if (renderCardFace) return <div className="ff-casino-war__card ff-casino-war__card--shared">{renderCardFace(card)}</div>
   const symbol = suitSymbol(card.suit)
   const red = card.suit === 'diamonds' || card.suit === 'hearts'
   return <div className={`ff-casino-war__card${red ? ' is-red' : ''}`} aria-label={`${card.rank} of ${card.suit}`}><span className="ff-casino-war__corner">{shortRank(card.rank)}<small>{symbol}</small></span><span className="ff-casino-war__suit" aria-hidden="true">{symbol}</span><span className="ff-casino-war__corner ff-casino-war__corner--reverse">{shortRank(card.rank)}<small>{symbol}</small></span></div>

@@ -1,0 +1,7 @@
+.andar-bahar-page { background: #071918; }
+.andar-bahar-page > .in-game-navbar { background: #050505; border-bottom-color: rgb(201 164 77 / 32%); }
+.andar-bahar-route__body { padding: 0 16px 12px; background: #071918; overflow-x: hidden !important; overflow-y: auto !important; min-height: 0; }
+/* A short shared-navbar viewport must scroll rather than clip the wallet or Deal.
+   Derive the minimum from the game's own grid, not a second set of pixel guesses. */
+.andar-bahar-route__body > .ff-ab { height: 100%; min-height: min-content; grid-template-rows: auto minmax(min-content, 1fr); }
+@media (max-width: 600px) { .andar-bahar-route__body { padding: 0 6px 6px; } }

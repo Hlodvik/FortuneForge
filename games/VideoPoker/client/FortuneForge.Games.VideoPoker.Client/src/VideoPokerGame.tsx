@@ -8,13 +8,13 @@ import './videoPokerPaytable.css'
 import './videoPokerEnhancements.css'
 import './videoPokerViewport.css'
 
-export type VideoPokerGameProps = Readonly<{ gateway?: VideoPokerGateway; playerId?: string; currencySymbol?: string; onBalanceChange?: (balance: number) => void; showTitle?: boolean }>
+export type VideoPokerGameProps = Readonly<{ gateway?: VideoPokerGateway; playerId?: string; currencySymbol?: string; onBalanceChange?: (balance: number) => void; showTitle?: boolean; renderCardFace?: (card: VideoPokerCard) => ReactNode }>
 const defaultGateway = new HttpVideoPokerGateway()
 type StoredPendingAction =
   | Readonly<{ operation: 'deal'; idempotencyKey: string; coinsWagered: number; handCount: VideoPokerHandCount }>
   | Readonly<{ operation: 'draw'; idempotencyKey: string; roundId: string; heldPositions: readonly VideoPokerCardPosition[] }>
 
-export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true }: VideoPokerGameProps) {
+export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true, renderCardFace }: VideoPokerGameProps) {
   const [status, setStatus] = useState<VideoPokerStatus | null>(null)
   const [round, setRound] = useState<VideoPokerRound | null>(null)
   const [coinsWagered, setCoinsWagered] = useState(1)
@@ -221,11 +221,11 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
           {round?.phase === 'completed' ? round.finalHands?.map((cards, handIndex) => <section className={'ff-video-poker__completed-hand' + (completed && round.handPayouts![handIndex]! > 0 ? ' is-winning' : '')} key={handIndex}>
             <header><span>Hand {handIndex + 1}</span><strong>{completed ? handLabel(round.handRanks![handIndex]!, round.handPayouts![handIndex]!) : '—'}</strong>{round.handCount > 1 && <em>{completed ? formatMoney(round.handPayouts![handIndex]!, currencySymbol) : '—'}</em>}</header>
             <div className="ff-video-poker__cards">{cards.map((card, index) => <div className={'ff-video-poker__card-slot' + (round.heldPositions.includes(index as VideoPokerCardPosition) ? ' is-held' : '')} key={index}>
-              {round.heldPositions.includes(index as VideoPokerCardPosition) || drawPositions.slice(0, revealed).includes(index) ? <CardFace card={card} animate={!round.heldPositions.includes(index as VideoPokerCardPosition)} /> : <CardBack />}
+              {round.heldPositions.includes(index as VideoPokerCardPosition) || drawPositions.slice(0, revealed).includes(index) ? <CardFace card={card} animate={!round.heldPositions.includes(index as VideoPokerCardPosition)} renderCardFace={renderCardFace} /> : <CardBack />}
             </div>)}</div>
           </section>) : <section className="ff-video-poker__shared-hand">
             <div className="ff-video-poker__cards">{[0, 1, 2, 3, 4].map(position => <div className="ff-video-poker__card-slot" key={position}>
-              {round && position < revealed ? <CardButton card={round.initialCards[position]!} position={position as VideoPokerCardPosition} held={heldPositions.includes(position as VideoPokerCardPosition)} disabled={!awaitingDraw || busy || recovery !== 'ready' || pendingDraw.current !== null} onToggle={toggleHold} /> : <CardBack />}
+              {round && position < revealed ? <CardButton card={round.initialCards[position]!} position={position as VideoPokerCardPosition} held={heldPositions.includes(position as VideoPokerCardPosition)} disabled={!awaitingDraw || busy || recovery !== 'ready' || pendingDraw.current !== null} onToggle={toggleHold} renderCardFace={renderCardFace} /> : <CardBack />}
             </div>)}</div>
           </section>}
         </div>
@@ -258,10 +258,11 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   </main>
 }
 
-function CardButton({ card, position, held, disabled, onToggle }: Readonly<{ card: VideoPokerCard; position: VideoPokerCardPosition; held: boolean; disabled: boolean; onToggle: (position: VideoPokerCardPosition) => void }>) {
-  return <button className={'ff-video-poker__card-button' + (held ? ' is-held' : '')} type="button" aria-pressed={held} aria-label={(held ? 'Release ' : 'Hold ') + cardName(card)} disabled={disabled} onClick={() => onToggle(position)}><CardFace card={card} animate /><span className="ff-video-poker__hold-label">{held ? 'HELD' : 'HOLD'}</span></button>
+function CardButton({ card, position, held, disabled, onToggle, renderCardFace }: Readonly<{ card: VideoPokerCard; position: VideoPokerCardPosition; held: boolean; disabled: boolean; onToggle: (position: VideoPokerCardPosition) => void; renderCardFace?: (card: VideoPokerCard) => ReactNode }>) {
+  return <button className={'ff-video-poker__card-button' + (held ? ' is-held' : '')} type="button" aria-pressed={held} aria-label={(held ? 'Release ' : 'Hold ') + cardName(card)} disabled={disabled} onClick={() => onToggle(position)}><CardFace card={card} animate renderCardFace={renderCardFace} /><span className="ff-video-poker__hold-label">{held ? 'HELD' : 'HOLD'}</span></button>
 }
-function CardFace({ card, animate = false }: Readonly<{ card: VideoPokerCard; animate?: boolean }>) {
+function CardFace({ card, animate = false, renderCardFace }: Readonly<{ card: VideoPokerCard; animate?: boolean; renderCardFace?: (card: VideoPokerCard) => ReactNode }>) {
+  if (renderCardFace) return <div className="ff-video-poker__card ff-video-poker__card--shared" data-new={animate}>{renderCardFace(card)}</div>
   const symbol = ({ clubs: '♣', diamonds: '♦', hearts: '♥', spades: '♠' } as const)[card.suit]
   const rank = ({ ace: 'A', two: '2', three: '3', four: '4', five: '5', six: '6', seven: '7', eight: '8', nine: '9', ten: '10', jack: 'J', queen: 'Q', king: 'K' } as const)[card.rank]
   return <div className={'ff-video-poker__card' + (['diamonds', 'hearts'].includes(card.suit) ? ' is-red' : '')} role="img" aria-label={cardName(card)} data-new={animate}><span className="ff-video-poker__corner">{rank}<small>{symbol}</small></span><span className="ff-video-poker__suit" aria-hidden="true">{symbol}</span><span className="ff-video-poker__corner ff-video-poker__corner--reverse">{rank}<small>{symbol}</small></span></div>

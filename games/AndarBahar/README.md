@@ -1,6 +1,6 @@
 # FortuneForge Andar Bahar
 
-A separately packaged solo house table, ready for owner review. All source belongs to `games/AndarBahar`; the central app, catalogue, solution, manifests, lockfile and release scripts are deliberately untouched. Integration remains a parent-chat batch step; see [INTEGRATION.md](INTEGRATION.md).
+A separately packaged solo house table. As of October 24, 2026, the local source includes authenticated main-site integration at `/games/andar-bahar`, shared navigation, catalogue and account-history support. Those source changes are not a deployment; see [INTEGRATION.md](INTEGRATION.md) for the integration contract and acceptance checks.
 
 ## Play locally
 

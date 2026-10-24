@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { AccountSummary } from '../features/account/services/accountsApi'
 import { PlayerAccountMenus } from './PlayerHeader'
+import { GameReportControl } from './GameReportControl'
 import './InGameNavbar.css'
 
 export type InGameNavbarProps = Readonly<{
@@ -38,6 +39,6 @@ export function InGameNavbar({ account, title, theme = 'arcade', actions, classN
     <InGameNavExits authenticated={account !== undefined} />
     {title && <strong className="in-game-navbar__title">{title}</strong>}
     {actions && <div className="in-game-navbar__actions">{actions}</div>}
-    {account && <PlayerAccountMenus account={account} />}
+    {account && <div className="in-game-navbar__account-tools"><GameReportControl key={account.userId} gameTitle={title}/><PlayerAccountMenus account={account} showBalance={false} /></div>}
   </header>
 }

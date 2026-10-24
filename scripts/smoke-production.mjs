@@ -2,7 +2,7 @@ import { gameSmokeRoutes, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const baseUrl = normalizeBaseUrl(process.env.FORTUNE_FORGE_URL ?? process.argv[2] ?? 'https://fortuneforgegame.web.app')
 
-if (gameSmokeRoutes.length !== 42) throw new Error(`Smoke inventory must contain 42 games, found ${gameSmokeRoutes.length}.`)
+if (gameSmokeRoutes.length !== 43) throw new Error(`Smoke inventory must contain 43 games, found ${gameSmokeRoutes.length}.`)
 
 console.log(`Fortune Forge production smoke: ${baseUrl}`)
 

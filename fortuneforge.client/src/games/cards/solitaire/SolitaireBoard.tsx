@@ -8,6 +8,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { cardLabel } from '../shared/cards'
+import { CourtCardSymbol } from '../shared/CourtCardSymbol'
 import {
   canApplyLocalSolitaireCommand,
   findLocalSolitaireHint,
@@ -646,9 +647,9 @@ function SolitaireFaceCard({
       <span className="solitaire-card-face__corner">
         <b>{rankSymbols[card.rank]}</b><i>{suitSymbols[card.suit]}</i>
       </span>
-      {card.rank >= 11 ? (
+      {card.rank === 11 || card.rank === 12 || card.rank === 13 ? (
         <span className="solitaire-card-face__court">
-          <b>{rankSymbols[card.rank]}</b><i>{suitSymbols[card.suit]}</i>
+          <CourtCardSymbol rank={card.rank} />
         </span>
       ) : <i className="solitaire-card-face__pip">{suitSymbols[card.suit]}</i>}
       <span className="solitaire-card-face__corner solitaire-card-face__corner--bottom">

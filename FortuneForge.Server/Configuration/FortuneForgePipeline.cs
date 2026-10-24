@@ -3,6 +3,7 @@ using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo.Server;
+using FortuneForge.Games.AndarBahar.Server;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -52,6 +53,14 @@ public static class FortuneForgePipeline
             var profile = await context.RequestServices.GetRequiredService<AccountService>()
                 .GetProfileAsync(AccountSessionCookie.Read(context.Request), cancellationToken);
             return profile.Value is { } account ? new HiLoAccount(account.UserId) : null;
+        });
+        app.MapAndarBahar(async (context, cancellationToken) =>
+        {
+            var profile = await context.RequestServices.GetRequiredService<AccountService>()
+                .GetProfileAsync(AccountSessionCookie.Read(context.Request), cancellationToken);
+            return profile.Value is { } account
+                ? new AndarBaharAccount(account.UserId, account.Balances.SlotsCredits)
+                : null;
         });
         app.MapFallbackToFile("/index.html");
 

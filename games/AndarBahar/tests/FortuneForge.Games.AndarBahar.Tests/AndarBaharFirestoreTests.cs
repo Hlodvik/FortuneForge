@@ -159,6 +159,139 @@ public sealed class AndarBaharFirestoreTests(AndarBaharEmulator emulator)
         Assert.Empty((await db.Collection("andarBaharRounds").GetSnapshotAsync()).Documents);
         Assert.Empty((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
     }
+    [Theory]
+    [InlineData("andar", true, 95L, 45L)]
+    [InlineData("bahar", false, 100L, 50L)]
+    [InlineData("andar", false, 0L, -50L)]
+    public async Task PaidTransaction_CreatesOneExactLinkedHistoryForWinOrLossAndPreservesSeenOnReplay(string side, bool andarWins, long returned, long profit)
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        var service = Service(db, andarWins);
+        const string key = "andar_history_linked_001";
+        var round = await service.StartAsync("player", new(side, .50m), key);
+        var result = Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal($"andar-bahar-{round.RoundId}", result.Id);
+        Assert.Equal(result.Id, result.GetValue<string>("resultId"));
+        Assert.Equal("player", result.GetValue<string>("userId"));
+        Assert.Equal("andar-bahar", result.GetValue<string>("game"));
+        Assert.Equal("credit", result.GetValue<string>("mode"));
+        Assert.Equal(round.RoundId, result.GetValue<string>("matchId"));
+        Assert.Equal(side, result.GetValue<string>("side"));
+        Assert.Equal(round.Winner, result.GetValue<string>("winner"));
+        Assert.Equal(round.Disposition, result.GetValue<string>("outcome"));
+        Assert.Equal(50L, result.GetValue<long>("wagerCents"));
+        Assert.Equal(returned, result.GetValue<long>("payoutCents"));
+        Assert.Equal(profit, result.GetValue<long>("netCents"));
+        Assert.Equal("paid", result.GetValue<string>("settlementStatus"));
+        Assert.Equal("completed", result.GetValue<string>("claimStatus"));
+        Assert.False(result.ContainsField("seenAt"));
+        Assert.Equal(result.GetValue<Timestamp>("startedAt"), result.GetValue<Timestamp>("completedAt"));
+        foreach (var secret in new[] { "recordJson", "deck", "joker", "deals", "idempotencyKey", "balance" }) Assert.False(result.ContainsField(secret));
+        var entries = (await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents;
+        Assert.All(entries, entry =>
+        {
+            Assert.Equal(round.RoundId, entry.GetValue<string>("roundId"));
+            Assert.Equal("andar-bahar", entry.GetValue<string>("gameId"));
+        });
+        var seen = Timestamp.FromDateTime(new DateTime(2026, 10, 24, 12, 0, 0, DateTimeKind.Utc));
+        await result.Reference.UpdateAsync("seenAt", seen);
+        await service.StartAsync("player", new(side, .50m), key);
+        Assert.Equal(seen, (await result.Reference.GetSnapshotAsync()).GetValue<Timestamp>("seenAt"));
+        Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(returned > 0 ? 2 : 1, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
+    [Theory]
+    [InlineData("userId", "other")]
+    [InlineData("game", "hi-lo")]
+    [InlineData("matchId", "wrong")]
+    [InlineData("wagerCents", 999L)]
+    [InlineData("netCents", 999L)]
+    public async Task PaidTransaction_TamperedSharedHistoryFailsClosedWithoutRepairOrDebit(string field, object value)
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        var service = Service(db, true);
+        const string key = "andar_history_tampered_01";
+        var round = await service.StartAsync("player", new("andar", .50m), key);
+        var result = db.Collection("cardGameResults").Document($"andar-bahar-{round.RoundId}");
+        await result.UpdateAsync(field, value);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new("andar", .50m), key));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAsync("player", round.RoundId));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.LatestAsync("player"));
+        Assert.Equal(value, (await result.GetSnapshotAsync()).GetValue<object>(field));
+        Assert.Equal(10045, await new AndarBaharFirestoreStore(db).BalanceAsync("player", default));
+        Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
+    [Fact]
+    public async Task PaidTransaction_MissingSharedHistoryIsNotSilentlyRecreated()
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        var service = Service(db, true);
+        const string key = "andar_history_missing_01";
+        var round = await service.StartAsync("player", new("andar", .50m), key);
+        await db.Collection("cardGameResults").Document($"andar-bahar-{round.RoundId}").DeleteAsync();
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new("andar", .50m), key));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAsync("player", round.RoundId));
+        Assert.Empty((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(10045, await new AndarBaharFirestoreStore(db).BalanceAsync("player", default));
+    }
+    [Theory]
+    [InlineData("roundId", "wrong")]
+    [InlineData("gameId", "hi-lo")]
+    public async Task PaidTransaction_TamperedLedgerRoundLinksAreRejected(string field, string value)
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        var service = Service(db, true);
+        var round = await service.StartAsync("player", new("andar", .50m), "andar_link_tampered_001");
+        await db.Collection("balanceTransactions").Document($"andar-bahar-{round.RoundId}-wager").UpdateAsync(field, value);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.GetAsync("player", round.RoundId));
+        Assert.Equal(10045, await new AndarBaharFirestoreStore(db).BalanceAsync("player", default));
+    }
+    [Fact]
+    public async Task PaidTransaction_DisabledStoreCanOnlyReplayItsExistingExactWager()
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        const string key = "andar_disabled_paid_001";
+        var round = await Service(db, true).StartAsync("player", new("andar", .50m), key);
+        var disabled = new AndarBaharService(new AndarBaharFirestoreStore(db), TimeProvider.System,
+            () => AndarBaharServerTests.Deck(false), allowNewRounds: false);
+        Assert.Equal(round.RoundId, (await disabled.StartAsync("player", new("andar", .50m), key)).RoundId);
+        Assert.Equal(round.RoundId, (await disabled.GetAsync("player", round.RoundId)).RoundId);
+        Assert.Equal(round.RoundId, (await disabled.LatestAsync("player"))!.RoundId);
+        await Assert.ThrowsAsync<AndarBaharRoundConflictException>(() => disabled.StartAsync("player", new("bahar", .50m), key));
+        await Assert.ThrowsAsync<AndarBaharRoundConflictException>(() => disabled.StartAsync("player", new("andar", 1m), key));
+        await Assert.ThrowsAsync<AndarBaharDisabledException>(() => disabled.StartAsync("player", new("andar", .50m), "andar_disabled_new_paid"));
+        await Seed(db, "other", 10000);
+        await Assert.ThrowsAsync<AndarBaharDisabledException>(() => disabled.StartAsync("other", new("andar", .50m), key));
+        await Assert.ThrowsAsync<AndarBaharRoundNotFoundException>(() => disabled.GetAsync("other", round.RoundId));
+        Assert.Equal(10045, await new AndarBaharFirestoreStore(db).BalanceAsync("player", default));
+        Assert.Equal(10000, await new AndarBaharFirestoreStore(db).BalanceAsync("other", default));
+        Assert.Single((await db.Collection("andarBaharRounds").GetSnapshotAsync()).Documents);
+        Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
+    [Fact]
+    public async Task PaidTransaction_LegacySchemaOneRemainsRecoverableWithoutBackfillOrDebit()
+    {
+        var db = Database();
+        await Seed(db, "player", 10000);
+        const string key = "andar_legacy_recovery_01";
+        var round = await Service(db, true).StartAsync("player", new("andar", .50m), key);
+        await db.Collection("andarBaharRounds").Document(round.RoundId).UpdateAsync("schemaVersion", 1L);
+        await db.Collection("cardGameResults").Document($"andar-bahar-{round.RoundId}").DeleteAsync();
+        foreach (var ledger in (await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents)
+            await ledger.Reference.UpdateAsync(new Dictionary<string, object> { ["roundId"] = FieldValue.Delete, ["gameId"] = FieldValue.Delete });
+        var disabled = new AndarBaharService(new AndarBaharFirestoreStore(db), TimeProvider.System, allowNewRounds: false);
+        Assert.Equal(round.RoundId, (await disabled.StartAsync("player", new("andar", .50m), key)).RoundId);
+        Assert.Equal(round.RoundId, (await disabled.GetAsync("player", round.RoundId)).RoundId);
+        Assert.Empty((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(10045, await new AndarBaharFirestoreStore(db).BalanceAsync("player", default));
+        Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
     private FirestoreDb Database() => new FirestoreDbBuilder
     {
         ProjectId = $"demo-andar-bahar-{Guid.NewGuid():N}", Endpoint = emulator.Endpoint,

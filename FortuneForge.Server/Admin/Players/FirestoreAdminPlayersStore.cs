@@ -215,7 +215,7 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
     private static AdminPlayerMatch? CardMatch(DocumentSnapshot document)
     {
         var game = Text(document, "game");
-        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo")) return null;
+        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar")) return null;
         var wager = Cents(document, "wagerCents") ?? Cents(document, "buyInCents");
         var paid = Cents(document, "payoutCents");
         var complete = Time(document, "completedAt") ?? Time(document, "settledAt") ?? Time(document, "recognizedAt");

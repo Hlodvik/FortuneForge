@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { CasinoWarGame, HttpCasinoWarGateway } from '@fortuneforge/games-casino-war'
 import '@fortuneforge/games-casino-war/styles.css'
+import { renderStandardCardFace } from '../../games/cards/shared/renderStandardCardFace'
+import '../../games/cards/shared/playingCards.css'
+import '../../games/cards/shared/packagedCardFaces.css'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -29,6 +32,6 @@ function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: Account
   }, [])
 
   return <InGameShell account={account} title="Casino War" theme="casino" className="player-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/casino-war" />}>
-    <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} />
+    <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderStandardCardFace} />
   </InGameShell>
 }

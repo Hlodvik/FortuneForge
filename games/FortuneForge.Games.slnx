@@ -1,4 +1,10 @@
 <Solution>
+  <Folder Name="/games/AndarBahar/">
+    <Project Path="AndarBahar/src/FortuneForge.Games.AndarBahar/FortuneForge.Games.AndarBahar.csproj" />
+    <Project Path="AndarBahar/server/FortuneForge.Games.AndarBahar.Server/FortuneForge.Games.AndarBahar.Server.csproj" />
+    <Project Path="AndarBahar/samples/FortuneForge.Games.AndarBahar.Web/FortuneForge.Games.AndarBahar.Web.csproj" />
+    <Project Path="AndarBahar/tests/FortuneForge.Games.AndarBahar.Tests/FortuneForge.Games.AndarBahar.Tests.csproj" />
+  </Folder>
   <Folder Name="/games/ThreeCardPoker/">
     <Project Path="ThreeCardPoker/src/FortuneForge.Games.ThreeCardPoker/FortuneForge.Games.ThreeCardPoker.csproj" />
   </Folder>

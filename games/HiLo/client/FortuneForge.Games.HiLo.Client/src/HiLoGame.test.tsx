@@ -239,10 +239,11 @@ describe('Hi-Lo quick wagers and shared card faces', () => {
     expect(screen.queryByLabelText('Face-down starting card')).toBeNull()
   })
 
-  it('uses the shared-style framed court face as a standalone fallback', async () => {
+  it('uses the isolated standalone fallback when no host renderer is supplied', async () => {
     render(<HiLoGame gateway={gateway(won)} playerId="alice:practice"/>)
     const card = await screen.findByRole('img', { name: 'king of spades' })
     expect(card.querySelector('.ff-playing-card--face.ff-playing-card--black')).toBeTruthy()
+    expect(card.querySelector('.ff-playing-card--standalone')).toBeTruthy()
     expect(card.querySelector('.ff-playing-card__center--court b')?.textContent).toBe('K')
     expect(card.querySelector('.ff-playing-card__center--court i')?.textContent).toBe('♠')
     expect(card.querySelectorAll('.ff-playing-card__corner')).toHaveLength(2)

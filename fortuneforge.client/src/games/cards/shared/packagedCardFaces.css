@@ -1,0 +1,17 @@
+.ff-video-poker .ff-video-poker__card--shared,
+.ff-casino-war .ff-casino-war__card--shared {
+  padding: 0;
+  container-type: inline-size;
+}
+
+.ff-video-poker__card--shared > .ff-playing-card,
+.ff-casino-war__card--shared > .ff-playing-card {
+  --ff-card-width: 100cqw;
+  width: 100%;
+  height: 100%;
+}
+
+.ff-video-poker .ff-video-poker__card--shared::after,
+.ff-casino-war .ff-casino-war__card--shared::after {
+  content: none;
+}

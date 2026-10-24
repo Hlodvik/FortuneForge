@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
@@ -220,6 +221,60 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         Assert.Equal(balanceAfterSettlement, await ReadBalanceAsync(database, first));
         shared = await database.Collection("cardGameResults").Document(completed.EventId).GetSnapshotAsync();
         Assert.True(shared.ContainsField("seenAt"));
+    }
+
+    [Fact]
+    public async Task ProductionStore_LegacyBotFieldsResumeAndSettleExactlyOnce()
+    {
+        var (database, store, suffix) = CreateStore();
+        var first = $"legacy-role-a-{suffix}";
+        var second = $"legacy-role-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var session = await StartMatchAsync(store, first, second);
+        var original = await ReadMatchAsync(database, session.Table.MatchId);
+        var firstBalance = await ReadBalanceAsync(database, first);
+        var secondBalance = await ReadBalanceAsync(database, second);
+        var ledgerBefore = (await LedgerAsync(database)).Count;
+        var document = JsonSerializer.SerializeToNode(original, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+        foreach (var node in document["players"]!.AsArray())
+        {
+            var player = node!.AsObject();
+            var accountBacked = player["isAccountBacked"]!.GetValue<bool>();
+            player["isBot"] = !accountBacked;
+            player["botSkillLevel"] = accountBacked ? null : 3;
+            player.Remove("isAccountBacked");
+            player.Remove("hostMetadata");
+        }
+        var matchDocument = database.Collection("creditHoldemMatches").Document(session.Table.MatchId);
+        await matchDocument.SetAsync(new Dictionary<string, object> { ["matchJson"] = document.ToJsonString() }, SetOptions.MergeAll);
+
+        var resumed = Assert.IsType<CreditHoldemMatchSessionResponse>(
+            (await store.GetSessionAsync(first, Start.Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        Assert.Equal(session.Table.MatchId, resumed.Table.MatchId);
+        Assert.Equal(original.Version, resumed.Version);
+        Assert.Equal(firstBalance, await ReadBalanceAsync(database, first));
+        Assert.Equal(secondBalance, await ReadBalanceAsync(database, second));
+        Assert.Equal(ledgerBefore, (await LedgerAsync(database)).Count);
+
+        var completedAt = original.MatchDeadlineAtUtc.AddSeconds(1);
+        CreditHoldemEngine.ForceComplete(original, completedAt);
+        var expected = CreditHoldemEngine.ApplyFinancialSettlement(original);
+        _ = Assert.IsType<CreditHoldemResultSessionResponse>(
+            (await store.GetSessionAsync(first, completedAt, default)).Session);
+        var ledgerAfter = (await LedgerAsync(database)).Count;
+        _ = await store.GetSessionAsync(first, completedAt.AddSeconds(1), default);
+
+        Assert.Equal(firstBalance + expected.HumanPayoutsCents[first], await ReadBalanceAsync(database, first));
+        Assert.Equal(secondBalance + expected.HumanPayoutsCents[second], await ReadBalanceAsync(database, second));
+        Assert.Equal(ledgerAfter, (await LedgerAsync(database)).Count);
+        Assert.Single((await database.Collection("creditHoldemMatchRevenue").GetSnapshotAsync()).Documents);
+        var rewritten = await ReadMatchAsync(database, session.Table.MatchId);
+        Assert.Equal(2, rewritten.Players.Count(player => player.IsAccountBacked));
+        Assert.Single(rewritten.Players, player => !player.IsAccountBacked);
+        Assert.Equal("3", rewritten.Players.Single(player => !player.IsAccountBacked).HostMetadata["managed-skill"]);
+        var rewrittenJson = Field<string>(await matchDocument.GetSnapshotAsync(), "matchJson");
+        Assert.DoesNotContain("\"isBot\"", rewrittenJson);
+        Assert.DoesNotContain("\"botSkillLevel\"", rewrittenJson);
     }
 
     [Fact]

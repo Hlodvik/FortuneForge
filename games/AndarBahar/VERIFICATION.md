@@ -1,6 +1,31 @@
 # Verification — October 20, 2026
 
-The package is ready for owner review as an isolated playable table. It is not integrated into the central catalogue or deployed. Production feature activation and the composed authenticated route require the parent batch integration and owner acceptance described in [INTEGRATION.md](INTEGRATION.md).
+The results below record the isolated package verification on October 20. On October 24, local main-site integration was added at `/games/andar-bahar`, with shared navigation, catalogue and account-history support; this is not a deployment. Current integration acceptance is described in [INTEGRATION.md](INTEGRATION.md).
+
+## October 24 implementation verification
+
+- **Latest approved court design:** the detailed portrait experiment below has
+  been superseded by three shared inline SVG symbols: upright Jack sword with
+  curved guard gap, closed arched Queen crown, and pointed King crown. Their
+  geometry matches the approved preview; colour inherits from the normal suit
+  styles. Number cards and backs are unchanged, and no portrait images are
+  requested or included in the production asset output. The **51/51 focused
+  host card/route/Hold'em checks and main production build passed**. Desktop and
+  **390x844** practice-board inspection confirmed readable icons, zero inner
+  borders and no horizontal overflow. No commit, push, or deployment was made.
+
+- Client strict type check and **85/85 package unit/component tests passed**. Coverage includes bounded requests, ignored-abort adapters, same-key timeout/retry, account changes, late responses, disabled-table restoration, duplicate settlement callbacks, utility clicks and mute/audio limits, compact header/help and shared faces restricted to revealed cards.
+- The game and its playable monorepo preview reuse the real shared navbar. Duplicate site branding, navbar title/practice action, table-mode label and board limits were removed; connected limits are available in the **?** panel. The Joker, both visible hands and result-popup cards use a host face renderer; the game-specific back is preserved. **22/22 focused route/shared-shell checks passed**, and both package and main-client production builds passed. Desktop, phone and landscape checks found no horizontal overflow; short phones retain inner scrolling.
+- Andar Bahar uses the canonical host `PlayingCard` component and `playingCards.css`, exactly as Blackjack and Dragon Tiger do. Its connected route tests compare court and number markup directly with the shared component; the standalone preview injects that same component too. The rejected SVG alternative and its image renderer were removed from active sources. Hold'em's separate court-face styling was also removed so its variants retain the canonical face design, without changing table geometry or backs. Focused checks passed: 11 Andar-route/shared-card tests, 6 Andar component tests, and 28 Hold'em/shared-card tests (the groups overlap on the 2 shared-card checks). No gameplay rules or server code changed in this face-consistency pass.
+- A subsequent shared court-art pass replaces the inset J/Q/K letter panels with traditional mirrored human figures, simplified to **black ink for clubs/spades and red ink for hearts/diamonds**, with no inner frame or decorative colour fills. All twelve portraits are shared assets (about 330 kB total); number cards and backs are unchanged. **51/51 focused host renderer/Andar/Dragon Tiger/Hi-Lo/Hold'em checks passed**, plus **49/49 Dragon Tiger and 37/37 Hi-Lo package checks**, both package strict checks/builds, and the main production build. Fallback CSS is isolated so it cannot restore a frame on host-rendered cards. The local Andar preview was visually checked on desktop and at **390×844**: all visible portraits loaded, computed inner borders were zero, and no horizontal overflow occurred. Evidence: `.tmp/andar-bahar-monochrome-courts-desktop.png` and `.tmp/andar-bahar-monochrome-courts-mobile.png`. This remains local, not deployed.
+- **58/58 focused server/practice/HTTP/local-Firestore tests passed**, including atomic shared history, linked ledger entries, legacy recovery, history corruption rejection and the disabled-new-bet/exact-replay distinction.
+- **13/13 focused host history/admin checks passed**, including an actual emulator settlement followed by player/admin history reads, exact fractional-cent totals and seen/unseen replay preservation.
+- Host registration, authenticated routing, practice isolation, catalogue/history mappings and the release route inventory received additional focused checks; package and main web production builds passed. No unrelated game test sweep was requested or run.
+- The new palace artwork was visually checked at **1440×900**, **390×844**, **320×568** and **844×390** through the local practice preview, with no document overflow or browser errors. A winning R0.50 Andar round returned exactly **R0.95**, adding **R0.45** to its no-cash-value wallet.
+- The built main client was also checked under its real shared navbar using an ephemeral read-only localhost fixture, a synthetic layout-test profile and the force-practice sample API. At **320×568**, the inner game area scrolls safely to reveal the complete wallet/footer; at **1440×900**, it fits without inner scrolling. No horizontal overflow was present. The wrapper preserves the table's intrinsic minimum track height rather than clipping fixed rows. Account refreshes reject stale responses, including two out-of-order refreshes for the same account.
+- This pass did **not** run the historical raw Playwright script, use production funds, push a commit or deploy. Current manual browser evidence is in `.tmp/andar-bahar-client-audit/palace-desktop.png`, `palace-shared-shell-desktop.png` and `palace-shared-shell-phone.png`; current artwork, exact generation prompt and sound provenance are documented in [THEME.md](THEME.md).
+
+The October 20 results below are historical, not a claim that its entire browser suite was rerun for this pass.
 
 ## Results
 

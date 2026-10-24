@@ -142,23 +142,6 @@
   color: transparent;
 }
 
-.credit-holdem-page .ff-playing-card__center--court {
-  inset: 21% 19%;
-  display: grid;
-  border: 0;
-  background: none;
-  box-shadow: none;
-}
-
-.credit-holdem-page .ff-playing-card__center--court b {
-  display: none;
-}
-
-.credit-holdem-page .ff-playing-card__center--court i {
-  align-self: center;
-  font-size: calc(var(--ff-card-width, 6rem) * .45);
-}
-
 .credit-holdem-player,
 .credit-holdem-open-seat {
   width: clamp(8.8rem, 13.2vw, 11.8rem);

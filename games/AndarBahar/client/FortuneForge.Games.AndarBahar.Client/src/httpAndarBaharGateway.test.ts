@@ -1,6 +1,9 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AndarBaharCard, AndarBaharRound } from './contracts'
 import { HttpAndarBaharGateway, isRound } from './httpAndarBaharGateway'
+import { andarBaharRequestTimeoutMs } from './andarBaharRequest'
+
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 
 const key = 'andar-bahar-original-key'
 const settled: AndarBaharRound = {
@@ -22,7 +25,7 @@ describe('HttpAndarBaharGateway', () => {
     const signal = new AbortController().signal
     expect(await gateway.createRound('andar', .5, { idempotencyKey: key, signal })).toEqual(settled)
     expect(fetcher).toHaveBeenCalledExactlyOnceWith('/custom/table/rounds', {
-      method: 'POST', signal, credentials: 'include', cache: 'no-store',
+      method: 'POST', signal: expect.any(AbortSignal), credentials: 'include', cache: 'no-store',
       headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
       body: JSON.stringify({ side: 'andar', stake: .5 }),
     })
@@ -144,7 +147,7 @@ describe('HttpAndarBaharGateway', () => {
     const gateway = new HttpAndarBaharGateway(undefined, fetcher)
     await expect(gateway.createRound('andar', .5, { idempotencyKey: key })).rejects.toThrow('Connection interrupted')
     await expect(gateway.createRound('andar', .5, { idempotencyKey: key })).resolves.toEqual(settled)
-    expect(fetcher.mock.calls[0][1]).toEqual(fetcher.mock.calls[1][1])
+    expect(fetcher.mock.calls[0][1]).toEqual(expect.objectContaining({ ...fetcher.mock.calls[1][1], signal: expect.any(AbortSignal) }))
   })
 
   it('preserves native abort cancellation', async () => {
@@ -180,5 +183,56 @@ describe('HttpAndarBaharGateway', () => {
     const gateway = new HttpAndarBaharGateway(undefined, fetcher)
     await expect(gateway.getLatestRound()).rejects.toMatchObject({ code: 'andar-bahar-invalid-response' })
     await expect(gateway.getStatus()).rejects.toMatchObject({ code: 'andar-bahar-request-failed', status: 502 })
+  })
+
+  it('times out a fetch implementation that never resolves and aborts its network signal', async () => {
+    vi.useFakeTimers()
+    const fetcher = vi.fn<typeof fetch>().mockReturnValue(new Promise(() => undefined))
+    const gateway = new HttpAndarBaharGateway(undefined, fetcher)
+    const pending = gateway.createRound('andar', .5, { idempotencyKey: key })
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'andar-bahar-request-timeout', status: 0 })
+    await vi.advanceTimersByTimeAsync(andarBaharRequestTimeoutMs)
+    await rejected
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('also bounds a response body that never finishes decoding', async () => {
+    vi.useFakeTimers()
+    const response = json(settled)
+    vi.spyOn(response, 'json').mockReturnValue(new Promise(() => undefined))
+    const fetcher = vi.fn<typeof fetch>().mockResolvedValue(response)
+    const gateway = new HttpAndarBaharGateway(undefined, fetcher)
+    const pending = gateway.createRound('andar', .5, { idempotencyKey: key })
+    const rejected = expect(pending).rejects.toMatchObject({ code: 'andar-bahar-request-timeout' })
+    await vi.advanceTimersByTimeAsync(andarBaharRequestTimeoutMs)
+    await rejected
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('propagates account cancellation even when the fetch implementation ignores abort', async () => {
+    vi.useFakeTimers()
+    const controller = new AbortController()
+    const fetcher = vi.fn<typeof fetch>().mockReturnValue(new Promise(() => undefined))
+    const gateway = new HttpAndarBaharGateway(undefined, fetcher)
+    const pending = gateway.createRound('andar', .5, { idempotencyKey: key, signal: controller.signal })
+    const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    await Promise.resolve()
+    controller.abort()
+    await rejected
+    expect(fetcher.mock.calls[0][1]?.signal?.aborted).toBe(true)
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('does not dispatch an already-cancelled request and clears successful request timers', async () => {
+    vi.useFakeTimers()
+    const controller = new AbortController()
+    controller.abort()
+    const { gateway, fetcher } = makeGateway(settled)
+    await expect(gateway.createRound('andar', .5, { idempotencyKey: key, signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' })
+    expect(fetcher).not.toHaveBeenCalled()
+    await expect(gateway.createRound('andar', .5, { idempotencyKey: key })).resolves.toEqual(settled)
+    expect(vi.getTimerCount()).toBe(0)
   })
 })

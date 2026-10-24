@@ -24,6 +24,8 @@ coverage/
 /artifacts/
 **/.artifacts/
 /tmp/
+/.tmp/
+/.baccarat-test-temp/
 
 # Logs and local process output
 *.log

@@ -1,0 +1,11 @@
+/* Use the canonical shared face at the same responsive size as the table's backs. */
+.ff-ab__shared-card {
+  --ff-card-width: var(--ab-card-w);
+  width: var(--ab-card-w);
+  height: calc(var(--ab-card-w) * 1.4);
+}
+
+.ff-ab__hand.is-winner .ff-ab__shared-card {
+  border-radius: 5px;
+  box-shadow: 0 0 0 2px #f5d487, 0 0 35px #f3cf6770, 0 9px 16px #0007;
+}

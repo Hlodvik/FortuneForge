@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, type ReactNode } from 'react'
+import { act, type ComponentProps, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -12,6 +12,7 @@ import type { HiLoCard } from '@fortuneforge/games-hi-lo'
 type GameProps = { playerId: string; gateway: { requestFn: typeof fetch }; onBalanceChange?: (balance: number) => void; renderCardFace?: (card: HiLoCard) => ReactNode }
 const state = vi.hoisted(() => ({
   account: null as AccountSummary | null, loading: false, games: [] as GameProps[],
+  shellAccounts: [] as (AccountSummary | undefined)[],
   fetch: vi.fn<typeof fetch>(), refresh: vi.fn<() => Promise<AccountSummary>>(),
 }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({
@@ -21,6 +22,16 @@ vi.mock('../../features/account/services/accountsApi', async importOriginal => (
   ...await importOriginal<typeof import('../../features/account/services/accountsApi')>(),
   fetchWithAccountSession: state.fetch, getCurrentAccount: state.refresh,
 }))
+vi.mock('../../components/InGameShell', async importOriginal => {
+  const original = await importOriginal<typeof import('../../components/InGameShell')>()
+  return {
+    ...original,
+    InGameShell: (props: ComponentProps<typeof original.InGameShell>) => {
+      state.shellAccounts.push(props.account)
+      return <original.InGameShell {...props} />
+    },
+  }
+})
 vi.mock('@fortuneforge/games-hi-lo', () => ({
   HttpHiLoGateway: class {
     basePath: string
@@ -42,12 +53,14 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   window.history.replaceState(null, '', '/games/hi-lo')
   state.account = account('first', 100); state.loading = false; state.games = []
+  state.shellAccounts = []
   state.fetch.mockReset().mockResolvedValue(new Response('{}')); state.refresh.mockReset()
   host = document.createElement('div'); document.body.append(host); root = createRoot(host)
 })
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals() })
 const render = () => act(() => root.render(<AuthenticatedHiLoRoute />))
 const game = () => state.games.at(-1)!
+const shellAccount = () => state.shellAccounts.at(-1)!
 
 describe('Hi-Lo connected route', () => {
   it('delegates to actual shared card faces with a stable renderer', () => {
@@ -69,6 +82,8 @@ describe('Hi-Lo connected route', () => {
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/games')
     expect(host.querySelector('.in-game-navbar__title')?.textContent).toBe('Hi-Lo')
+    expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
+    expect(host.querySelector('.player-shell-menu--more nav[aria-label="Account menu"]')).not.toBeNull()
   })
 
   it('keeps the game behind authentication and registers its lazy route and title', () => {
@@ -79,17 +94,17 @@ describe('Hi-Lo connected route', () => {
     expect(pageTitleSource).toContain("'/games/hi-lo': 'Hi-Lo — Fortune Forge'")
   })
 
-  it('uses authenticated requests and refreshes the actual shared account wallet', async () => {
+  it('uses authenticated requests and refreshes the actual shared account state', async () => {
     render()
     expect(game().playerId).toBe('first:account')
     expect(game().gateway.requestFn).toBe(state.fetch)
     state.refresh.mockResolvedValue(account('first', 112.5))
     await act(async () => { game().onBalanceChange!(112.5); await Promise.resolve() })
     expect(state.refresh).toHaveBeenCalledOnce()
-    expect(host.querySelector('.player-shell-menu--balance')?.textContent).toContain('112.5')
+    expect(shellAccount().balances.slotsCredits).toBe(112.5)
   })
 
-  it('isolates practice recovery and never substitutes practice funds into the real navbar wallet', async () => {
+  it('isolates practice recovery and never substitutes practice funds into the real account state', async () => {
     window.history.replaceState(null, '', '/games/hi-lo?mode=practice'); render()
     expect(game().playerId).toBe('first:practice'); expect(game().onBalanceChange).toBeUndefined()
     await game().gateway.requestFn('/api/games/hi-lo/rounds', { headers: { 'X-FortuneForge-Game': 'hi-lo' } })
@@ -98,6 +113,7 @@ describe('Hi-Lo connected route', () => {
     expect(headers.get('X-FortuneForge-Game')).toBe('hi-lo')
     expect(state.refresh).not.toHaveBeenCalled()
     expect(host.querySelector('.in-game-navbar__actions')?.textContent).toBe('Practice active')
+    expect(shellAccount().balances.slotsCredits).toBe(100)
   })
 
   it('does not apply an old-account response after another account signs in', async () => {
@@ -107,6 +123,7 @@ describe('Hi-Lo connected route', () => {
     state.account = account('second', 700); render()
     await act(async () => { finish(account('first', 12)); await Promise.resolve() })
     expect(game().playerId).toBe('second:account')
-    expect(host.querySelector('.player-shell-menu--balance')?.textContent).toContain('700')
+    expect(shellAccount().userId).toBe('second')
+    expect(shellAccount().balances.slotsCredits).toBe(700)
   })
 })

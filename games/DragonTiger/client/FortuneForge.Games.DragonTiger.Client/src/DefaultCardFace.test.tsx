@@ -4,12 +4,13 @@ import { DefaultCardFace } from './DefaultCardFace'
 import type { DragonTigerCard } from './contracts'
 
 describe('Dragon Tiger standard standalone card faces', () => {
-  it('uses the shared-site framed rank-and-suit court layout for every court rank and suit', () => {
+  it('marks fallback court faces separately from the host-owned shared renderer', () => {
     const suits: readonly DragonTigerCard['suit'][] = ['clubs', 'diamonds', 'hearts', 'spades']
     const ranks = [{ rank: 'jack', symbol: 'J' }, { rank: 'queen', symbol: 'Q' }, { rank: 'king', symbol: 'K' }] as const
     for (const suit of suits) {
       for (const { rank, symbol } of ranks) {
         const markup = renderToStaticMarkup(<DefaultCardFace card={{ rank, suit }}/>)
+        expect(markup).toContain('ff-playing-card--standalone')
         expect(markup).toContain('ff-playing-card__center ff-playing-card__center--court')
         expect(markup.match(/ff-playing-card__center--court/g)).toHaveLength(1)
         expect(markup).toContain(`aria-hidden="true"><b>${symbol}</b><i>`)
@@ -25,4 +26,5 @@ describe('Dragon Tiger standard standalone card faces', () => {
     expect(markup).toContain('ff-playing-card__center" aria-hidden="true"><i>♦</i>')
     expect(markup).not.toContain('ff-playing-card__center--court')
   })
+
 })

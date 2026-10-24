@@ -2,6 +2,7 @@ using FortuneForge.Server.Payments;
 using FortuneForge.Server.Admin.Operations;
 using FortuneForge.Server.Admin.Players;
 using FortuneForge.Server.Admin.Management;
+using FortuneForge.Server.GameReports;
 using FortuneForge.Server.Cards.TexasHoldem.Credit;
 using FortuneForge.Server.Cards.Blackjack.Table;
 using FortuneForge.Server.Cards.ThreeCardPoker.Table;
@@ -22,6 +23,7 @@ using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Dice.SicBo;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo.Server;
+using FortuneForge.Games.AndarBahar.Server;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
 
@@ -57,6 +59,7 @@ public static class FortuneForgeStartup
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddAdminPlayers(builder.Configuration);
         builder.Services.AddAdminManagement(builder.Configuration);
+        builder.Services.AddGameReports(builder.Configuration, builder.Environment.IsDevelopment());
         builder.Services.AddSingleton<HeartsGameService>();
         builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
         builder.Services.AddPaidHearts(builder.Configuration);
@@ -69,6 +72,15 @@ public static class FortuneForgeStartup
         {
             options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
             options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+        });
+        builder.Services.AddAndarBaharServer(options =>
+        {
+            options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
+            options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+            options.AllowPracticeRequests = true;
+            // Explicit practice requests use this account-scoped QA ledger, never
+            // the Firestore wallet. Like Hi-Lo, it is ephemeral across host replacement.
+            options.PracticeStatePath = Path.Combine(Path.GetTempPath(), "fortuneforge-andar-bahar", "practice.json");
         });
         builder.Services.AddHiLoServer(options =>
         {

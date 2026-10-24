@@ -13,6 +13,7 @@ const pageTitles: Record<string, string> = {
   '/games/baccarat': 'Baccarat — Fortune Forge',
   '/games/dragon-tiger': 'Dragon Tiger — Fortune Forge',
   '/games/hi-lo': 'Hi-Lo — Fortune Forge',
+  '/games/andar-bahar': 'Andar Bahar — Fortune Forge',
   '/games/casino-war': 'Casino War — Fortune Forge',
   '/games/keno': 'Keno — Fortune Forge',
   '/games/sic-bo': 'Sic Bo — Fortune Forge',

@@ -54,6 +54,8 @@ function catalogGameFromSlot(game: SlotGameCatalogEntry): CatalogGame {
   }
 }
 
+const andarBaharGame: CatalogGame = { name: 'Andar Bahar', category: 'Casino card game', href: '/games/andar-bahar', icon: '♠', summary: 'Choose the side that first matches the central Joker.', tone: 'baccarat' }
+
 const casinoGames: readonly CatalogGame[] = [
   slotGames[0]!,
   cardGames[0]!,
@@ -68,6 +70,7 @@ const casinoGames: readonly CatalogGame[] = [
   cardGames[7]!,
   cardGames[8]!,
   { name: 'Hi-Lo', category: 'Casino card game', href: '/games/hi-lo', icon: '↕', summary: 'Call the next card higher or lower, then collect your streak.', tone: 'poker' },
+  andarBaharGame,
 ]
 
 const arcadeGames: readonly CatalogGame[] = [
@@ -87,6 +90,7 @@ const diceGames: readonly CatalogGame[] = [
 ]
 
 const newGames: readonly CatalogGame[] = [
+  andarBaharGame,
   cardGames[8]!,
   cardGames[7]!,
   cardGames[3]!,
@@ -119,7 +123,9 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
     })
   }
   for (const activity of cardHistory.activities) {
-    const game = activity.game === 'hi-lo'
+    const game = activity.game === 'andar-bahar'
+      ? andarBaharGame
+      : activity.game === 'hi-lo'
       ? casinoGames.find(entry => entry.href === '/games/hi-lo')!
       : activity.game === 'blackjack'
       ? cardGames[0]!

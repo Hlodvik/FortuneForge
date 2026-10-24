@@ -14,6 +14,18 @@ describe('Baccarat route integration', () => {
     expect(routeSource).toContain("useAuthenticatedAccount('/games/baccarat')")
     expect(routeSource).toContain("new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession)")
   })
+
+  it('uses the canonical card faces and a table-only shell without catalogue clouds', () => {
+    const routeSource = source('./BaccaratRoute.tsx')
+    const shellStyles = source('./BaccaratRoute.css')
+    expect(routeSource).toContain("import { PlayingCard } from '../../games/cards/shared/PlayingCard'")
+    expect(routeSource).toContain('renderCardFace={renderCardFace}')
+    expect(routeSource).toContain('className="baccarat-page"')
+    expect(routeSource).not.toContain('className="player-page"')
+    expect(routeSource).toContain('bodyClassName="baccarat-route__body"')
+    expect(shellStyles).toContain('.app-shell:has(> .baccarat-page)::before { display: none; }')
+    expect(shellStyles).toContain('overflow: hidden; background: #050a08;')
+  })
 })
 
 function renderRoute(pathname: string): string {

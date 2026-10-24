@@ -64,6 +64,30 @@ Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }
 $fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
 Assert-ScopeEqual $fullText.Contains('run games:check') $true 'full suite retains all game checks'
 Assert-ScopeEqual $fullText.Contains("run test`n") $true 'full suite retains all client tests'
+Assert-ReleaseTestWaiver -Target hosting
+Assert-ReleaseTestWaiver -Target hosting -SkipTestSuites -TestWaiverReason 'Owner requested reviewed visual release without test suites.'
+foreach ($target in @('api', 'all')) {
+    Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target $target -SkipTestSuites -TestWaiverReason 'Owner request' } "$target cannot waive test suites"
+}
+foreach ($reason in @('', '   ')) {
+    Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -SkipTestSuites -TestWaiverReason $reason } 'missing waiver reason'
+}
+Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -TestWaiverReason 'Orphan reason' } 'reason without explicit waiver'
+foreach ($plan in @($scoped, (New-ReleaseVerificationPlan -FullReason 'Tooling changes keep this full'))) {
+    $normalCommands = @(Get-ReleaseVerificationCommands -Plan $plan -Repository $scopeRepoRoot)
+    $waivedCommands = @(Get-ReleaseVerificationCommands -Plan $plan -Repository $scopeRepoRoot -Target hosting -SkipTestSuites -TestWaiverReason 'Owner request')
+    $expectedRetained = @($normalCommands | Where-Object {
+        -not (($_.Executable -ceq 'dotnet' -and $_.Arguments[0] -ceq 'test') -or
+            ($_.Executable -ceq 'npm.cmd' -and $_.Arguments[0] -ceq 'run' -and $_.Arguments[1] -cin @('test', 'web:test')))
+    })
+    $actualText = ($waivedCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+    $expectedText = ($expectedRetained | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+    Assert-ScopeEqual $actualText $expectedText "$($plan.mode) waiver omits only exact application test commands"
+    foreach ($required in @('verify:game-source', 'verify:game-routes', 'games:build', 'lint', 'web:build')) {
+        Assert-ScopeEqual $actualText.Contains($required) $true "waiver retains $required"
+    }
+    Assert-ScopeEqual $actualText.Contains($(if ($plan.mode -ceq 'full') { 'games:check' } else { 'check --workspace' })) $true 'waiver retains type checks'
+}
 $scopeDeploySource = Get-Content -LiteralPath (Join-Path $scopeRepoRoot 'scripts/deploy.ps1') -Raw
 foreach ($required in @("(Join-Path `$repoRoot 'scripts/verify-release.ps1')", "'-Repository', `$releaseCheckout",
     "'-ExpectedSha', `$candidateSha", "'-ExpectedToolingSha', `$mainSha", 'verificationPlan = $verificationPlan',
@@ -71,6 +95,14 @@ foreach ($required in @("(Join-Path `$repoRoot 'scripts/verify-release.ps1')", "
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "deployment retains $required"
 }
 Assert-ScopeEqual ((Get-ReleaseToolPaths) -contains 'scripts/tests/release-scope.tests.ps1') $true 'scope tests protected from dirty-tooling bypass'
+$waiverGuard = 'Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason'
+Assert-ScopeEqual ($scopeDeploySource.IndexOf($waiverGuard) -lt $scopeDeploySource.IndexOf('function Get-LiveHosting')) $true 'invalid waiver rejected before live reads'
+Assert-ScopeEqual $scopeDeploySource.Contains("@('-SkipTestSuites', '-TestWaiverReason', `$TestWaiverReason)") $true 'waiver switch and exact reason forwarded to trusted verifier'
+Assert-ScopeEqual $scopeDeploySource.Contains('testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }') $true 'release record reports waiver rather than passed tests'
+$scopeVerifySource = Get-Content -LiteralPath (Join-Path $scopeRepoRoot 'scripts/verify-release.ps1') -Raw
+Assert-ScopeEqual $scopeVerifySource.Contains($waiverGuard) $true 'verifier independently rejects invalid waiver flags'
+Assert-ScopeEqual $scopeVerifySource.Contains('standalone verification does not accept waivers') $true 'standalone verification cannot waive suites'
+Assert-ScopeEqual $scopeVerifySource.Contains('application test suites NOT RUN under the recorded waiver') $true 'verification does not claim waived tests passed'
 
 # Real Git fixture: never infer the deployment delta from just HEAD's parent.
 $scopeFixtureParent = Join-Path $scopeRepoRoot 'artifacts'

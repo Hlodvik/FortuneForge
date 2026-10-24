@@ -9,7 +9,9 @@ param(
     [string]$ExpectedHostingIndexSha = '',
     [string]$ExpectedApiRevision = '',
     [switch]$AllowRollback,
-    [string]$RollbackReason = ''
+    [string]$RollbackReason = '',
+    [switch]$SkipTestSuites,
+    [string]$TestWaiverReason = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -20,6 +22,7 @@ $region = 'us-east4'
 $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
+Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason
 
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory)
@@ -277,6 +280,7 @@ $record = [ordered]@{
     candidateSha = $candidateSha
     toolingSha = $mainSha
     verificationPlan = $verificationPlan
+    testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }
     startedAtUtc = [DateTime]::UtcNow.ToString('o')
     adoption = [bool]$AdoptUnstampedLive
     rollbackReason = $RollbackReason
@@ -310,6 +314,10 @@ try {
     if ($verificationPlan.workspace) { $verificationArguments += @('-ExpectedWorkspace', $verificationPlan.workspace) }
     if ($AllowRollback) { $verificationArguments += '-Rollback' }
     if ($AdoptUnstampedLive) { $verificationArguments += '-Adoption' }
+    if ($SkipTestSuites) {
+        Write-Warning "Application test suites will NOT run for this Hosting release. Waiver: $TestWaiverReason"
+        $verificationArguments += @('-SkipTestSuites', '-TestWaiverReason', $TestWaiverReason)
+    }
     Invoke-Checked -Executable 'powershell.exe' -Arguments $verificationArguments -WorkingDirectory $releaseCheckout
     # The orchestration tests run from the committed active main tooling, so
     # they still protect explicit releases of older commits without this suite.

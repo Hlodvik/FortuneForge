@@ -344,8 +344,21 @@ function Get-ReleaseVerificationPlan {
     }
 }
 
+function Assert-ReleaseTestWaiver {
+    param([string]$Target = 'all', [switch]$SkipTestSuites, [string]$TestWaiverReason = '')
+    if ($SkipTestSuites) {
+        if ($Target -cne 'hosting') { throw '-SkipTestSuites is permitted only for a Hosting-only release.' }
+        if ([string]::IsNullOrWhiteSpace($TestWaiverReason)) { throw '-SkipTestSuites requires a nonempty -TestWaiverReason.' }
+    }
+    elseif (-not [string]::IsNullOrEmpty($TestWaiverReason)) { throw '-TestWaiverReason requires -SkipTestSuites.' }
+}
+
 function Get-ReleaseVerificationCommands {
-    param([Parameter(Mandatory)]$Plan, [Parameter(Mandatory)][string]$Repository)
+    param(
+        [Parameter(Mandatory)]$Plan, [Parameter(Mandatory)][string]$Repository,
+        [string]$Target = 'all', [switch]$SkipTestSuites, [string]$TestWaiverReason = ''
+    )
+    Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason
     if ($Plan.mode -cnotin @('full', 'game-visual')) { throw 'Unknown verification mode.' }
     if ($Plan.mode -ceq 'game-visual' -and $Plan.workspace -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$') { throw 'Invalid scoped workspace.' }
     $commands = [System.Collections.Generic.List[object]]::new()
@@ -355,13 +368,15 @@ function Get-ReleaseVerificationCommands {
     $checkArgs = if ($Plan.mode -ceq 'game-visual') { @('run', 'check', '--workspace', $Plan.workspace) } else { @('run', 'games:check') }
     $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = $checkArgs })
     $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'games:build') })
-    if ($Plan.mode -ceq 'game-visual') {
-        $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test', '--workspace', $Plan.workspace) })
-        $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'web:test') })
+    if (-not $SkipTestSuites) {
+        if ($Plan.mode -ceq 'game-visual') {
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test', '--workspace', $Plan.workspace) })
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'web:test') })
+        }
+        else { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test') }) }
     }
-    else { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test') }) }
     foreach ($script in @('lint', 'web:build')) { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) }) }
-    if ($Plan.mode -ceq 'full') {
+    if ($Plan.mode -ceq 'full' -and -not $SkipTestSuites) {
         foreach ($path in @('FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj',
             'games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj',
             'games/HiLo/tests/FortuneForge.Games.HiLo.Engine.Tests/FortuneForge.Games.HiLo.Engine.Tests.csproj',
@@ -372,4 +387,4 @@ function Get-ReleaseVerificationCommands {
     return $commands.ToArray()
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Get-ReleaseVerificationCommands
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands

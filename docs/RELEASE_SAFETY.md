@@ -43,6 +43,20 @@ The verifier independently recalculates the plan. The release record saves the
 baseline, candidate, tooling SHA, mode, workspace, reason, and changed paths.
 Standalone `npm run verify:release` defaults to the full suite.
 
+### Explicit Hosting test-suite waiver
+
+When the owner explicitly requests deployment without application test suites,
+use `scripts/deploy.ps1 -Target hosting -SkipTestSuites -TestWaiverReason 'Owner requested skipping test suites for the reviewed visual change.'`.
+Both flags are required together, and API/combined releases reject a waiver
+before reading live services. This is not a force-scoped override: the live-to-candidate
+plan is still independently calculated and may remain `full`. Only application
+npm test suites and .NET test runs are omitted. Type checks, every game build,
+lint, web build, ownership/route checks, focused deployment guard tests, immutable
+source/main/ancestry/live-race checks, release stamps and production smoke remain.
+The release record stores `testSuiteWaiver.skipped` and its reason; output says
+application tests were **NOT RUN**, never that they passed. Standalone verification
+does not accept this waiver.
+
 Hosting publishes `release.json` with the source commit. Cloud Run stores the
 same commit in the serving revision's `FF_RELEASE_SHA` environment variable.
 Before either target is changed, the script requires the currently serving

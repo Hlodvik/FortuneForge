@@ -34,7 +34,9 @@ internal static class TexasHoldemManagedPlayers
             ticket.DisplayName,
             true,
             seat,
-            CreditHoldemMoney.StackFromBalance(balances.GetValueOrDefault(ticket.UserId), rule.MaximumStackCents)))
+            ticket.BuyInCents > 0 ? ticket.BuyInCents : CreditHoldemMoney.StackFromBalance(
+                balances.GetValueOrDefault(ticket.UserId), rule.MaximumStackCents),
+            EscrowTicketId: ticket.BuyInCents > 0 ? ticket.TicketId : null))
             .ToList();
         var required = Math.Max(0, CreditHoldemMoney.MinimumStartPlayers - seats.Count);
         if (managedProfiles.Count < required)
@@ -74,8 +76,10 @@ internal static class TexasHoldemManagedPlayers
     public static IReadOnlyList<CreditHoldemPlayer> DepartingAfterCurrentHand(
         CreditHoldemMatch match) =>
         match.Players.Where(player => IsManaged(player) &&
-            DepartureHand(player) is { } departure &&
-            ManagedPlayerTableStayPolicy.ShouldLeave(match.HandNumber, departure)).ToArray();
+            (match.UsesBuyInEscrow && match.Status == "completed" &&
+                player.Stack < CreditHoldemTableRules.Resolve(match.TableRuleId).BigBlindCents ||
+             DepartureHand(player) is { } departure &&
+                ManagedPlayerTableStayPolicy.ShouldLeave(match.HandNumber, departure))).ToArray();
 
     public static IReadOnlyList<string> RemoveDepartingPlayers(CreditHoldemMatch match)
     {

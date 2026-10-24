@@ -24,7 +24,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
-    public async Task ProductionStore_FreeJoinAndQueueLeaveNeverTouchMoney()
+    public async Task ProductionStore_JoinReservesAndQueueLeaveRefundsExactlyOnce()
     {
         var (database, store, suffix) = CreateStore();
         var user = $"queue-{suffix}";
@@ -37,11 +37,14 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         await store.CancelAsync(user, queued.TicketId, queued.Version, "free-leave-1", Start, default);
 
         Assert.Equal(10_000, await ReadBalanceAsync(database, user));
-        Assert.Empty(await LedgerAsync(database));
+        var ledger = await LedgerAsync(database);
+        Assert.Equal(2, ledger.Count);
+        Assert.Single(ledger, entry => Field<string>(entry, "type") == "texas-holdem-buy-in");
+        Assert.Single(ledger, entry => Field<string>(entry, "type") == "texas-holdem-buy-in-refund");
     }
 
     [Fact]
-    public async Task ProductionStore_BlindsAndActionCommitExactlyOnceAfterValidation()
+    public async Task ProductionStore_ReservedChipsFundBlindsAndActionsWithoutExtraWalletDebits()
     {
         var (database, store, suffix) = CreateStore();
         var first = $"alice-{suffix}";
@@ -63,11 +66,11 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
             actor.ActorId, match.Table.MatchId, request, "call-once-1", Start.AddSeconds(7), default)));
 
         Assert.Single(duplicate.Select(value => value.Session.Version).Distinct());
-        Assert.Equal(before - required, await ReadBalanceAsync(database, actor.ActorId));
+        Assert.Equal(before, await ReadBalanceAsync(database, actor.ActorId));
         var ledger = await LedgerAsync(database);
         Assert.Equal(ledger.Count, ledger.Select(entry => Field<string>(entry, "transactionId")).Distinct().Count());
-        Assert.Contains(ledger, entry => Field<string>(entry, "type") == "texas-holdem-blind");
-        Assert.Contains(ledger, entry => Field<string>(entry, "type").StartsWith("texas-holdem-action-v", StringComparison.Ordinal));
+        Assert.Equal(2, ledger.Count);
+        Assert.All(ledger, entry => Assert.Equal("texas-holdem-buy-in", Field<string>(entry, "type")));
         await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.ActionAsync(
             actor.ActorId, match.Table.MatchId, request, "stale-call-1", Start.AddSeconds(8), default));
     }
@@ -95,7 +98,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     }
 
     [Fact]
-    public async Task ProductionStore_SettlesImmediatePayoutAndSignedHouseNetExactlyOnce()
+    public async Task ProductionStore_HoldsAwardsInEscrowAndRecognizesSignedHouseNetExactlyOnce()
     {
         var (database, store, suffix) = CreateStore();
         var first = $"settle-a-{suffix}";
@@ -112,14 +115,18 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var ledgerCount = (await LedgerAsync(database)).Count;
         _ = await store.GetSessionAsync(first, at.AddSeconds(1), default);
 
-        Assert.Equal(20_000 - result.HumanCommittedCredits * 100 + result.HumanPayoutCredits * 100, balanceTotal);
+        Assert.Equal(0, balanceTotal);
         Assert.Equal(ledgerCount, (await LedgerAsync(database)).Count);
         Assert.Equal(result.HumanCommittedCredits - result.HumanPayoutCredits, result.HouseNetCredits);
         var revenue = Assert.Single((await database.Collection("creditHoldemMatchRevenue").GetSnapshotAsync()).Documents);
         Assert.Equal(Field<long>(revenue, "humanWagerCents") - Field<long>(revenue, "humanPayoutCents"),
             Field<long>(revenue, "houseNetCents"));
-        Assert.Equal("real-human-wager-v2", Field<string>(revenue, "financialClassification"));
-        Assert.Equal(0, Field<long>(revenue, "botFinancialContributionCents"));
+        Assert.Equal("escrow-house-backed-v1", Field<string>(revenue, "financialClassification"));
+        var settled = await ReadMatchAsync(database, match.Table.MatchId);
+        Assert.Equal(settled.Players.Where(player => !player.IsAccountBacked).Sum(player => (long)player.CommittedHand),
+            Field<long>(revenue, "botFinancialContributionCents"));
+        Assert.Equal(20_000 - result.HouseNetCredits * 100,
+            settled.Players.Where(player => player.IsAccountBacked).Sum(player => (long)player.Stack));
     }
 
     [Fact]
@@ -173,7 +180,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         await SeedPlayersAsync(database, first, second, late);
         var hand = await StartMatchAsync(store, first, second);
         var pending = Assert.IsType<CreditHoldemQueueSessionResponse>((await store.JoinAsync(
-            late, "Casey", 0, "late-join-1", 303, Start.AddSeconds(7), default)).Session);
+            late, "Casey", 0, "late-join-1", 303, hand.Table.MatchDeadlineAtUtc.AddSeconds(-10), default)).Session);
         Assert.Equal("pending-next-hand", pending.Players.Single().Status);
         var at = hand.Table.MatchDeadlineAtUtc.AddSeconds(1);
         var result = Assert.IsType<CreditHoldemResultSessionResponse>(
@@ -264,11 +271,12 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var ledgerAfter = (await LedgerAsync(database)).Count;
         _ = await store.GetSessionAsync(first, completedAt.AddSeconds(1), default);
 
-        Assert.Equal(firstBalance + expected.HumanPayoutsCents[first], await ReadBalanceAsync(database, first));
-        Assert.Equal(secondBalance + expected.HumanPayoutsCents[second], await ReadBalanceAsync(database, second));
+        Assert.Equal(firstBalance, await ReadBalanceAsync(database, first));
+        Assert.Equal(secondBalance, await ReadBalanceAsync(database, second));
         Assert.Equal(ledgerAfter, (await LedgerAsync(database)).Count);
         Assert.Single((await database.Collection("creditHoldemMatchRevenue").GetSnapshotAsync()).Documents);
         var rewritten = await ReadMatchAsync(database, session.Table.MatchId);
+        Assert.Equal(expected.HumanPayoutCents, rewritten.HumanPayoutCents);
         Assert.Equal(2, rewritten.Players.Count(player => player.IsAccountBacked));
         Assert.Single(rewritten.Players, player => !player.IsAccountBacked);
         Assert.Equal("3", rewritten.Players.Single(player => !player.IsAccountBacked).HostMetadata["managed-skill"]);
@@ -420,11 +428,11 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var managedBefore = before.Players.Where(TexasHoldemManagedPlayers.IsManaged)
             .Select(player => player.ActorId).ToHashSet(StringComparer.Ordinal);
         _ = await store.JoinAsync(
-            second, "Bruno", 0, "replace-second", 902, Start.AddSeconds(6), default);
+            second, "Bruno", 0, "replace-second", 902, before.MatchDeadlineAtUtc.AddSeconds(-10), default);
         _ = await store.JoinAsync(
-            third, "Casey", 0, "replace-third", 903, Start.AddSeconds(6), default);
+            third, "Casey", 0, "replace-third", 903, before.MatchDeadlineAtUtc.AddSeconds(-10), default);
         _ = await store.JoinAsync(
-            fourth, "Devon", 0, "replace-fourth", 904, Start.AddSeconds(6), default);
+            fourth, "Devon", 0, "replace-fourth", 904, before.MatchDeadlineAtUtc.AddSeconds(-10), default);
         var completed = Assert.IsType<CreditHoldemResultSessionResponse>(
             (await store.GetSessionAsync(first, before.MatchDeadlineAtUtc.AddMilliseconds(1), default)).Session);
 
@@ -470,6 +478,114 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
                 await Task.Delay(50 * attempt + Random.Shared.Next(25, 126));
             }
         }
+    }
+
+    [Fact]
+    public async Task ProductionStore_QueueExpiryAndCancellationRaceRefundAChosenBuyInOnlyOnce()
+    {
+        var (database, store, suffix) = CreateStore();
+        var user = $"expiry-{suffix}";
+        await SeedBalanceAsync(database, user, 10_000);
+        var joined = await store.JoinAsync(user, "Player", 0, "chosen-expiring", 101,
+            Start, default, buyInCents: 2_500);
+        var queue = Assert.IsType<CreditHoldemQueueSessionResponse>(joined.Session);
+        Assert.Equal(7_500, joined.BalanceCents);
+        var expiry = Start.Add(CreditHoldemEscrow.QueueLifetime);
+        var cancel = Task.Run(async () =>
+        {
+            try { await store.CancelAsync(user, queue.TicketId, queue.Version, "cancel-expiring", expiry, default); }
+            catch (CreditHoldemConflictException) { }
+        });
+        await Task.WhenAll(store.SweepAsync(expiry, default), cancel);
+        await store.SweepAsync(expiry.AddSeconds(1), default);
+        Assert.Equal(10_000, await ReadBalanceAsync(database, user));
+        Assert.IsType<CreditHoldemIdleSessionResponse>((await store.GetSessionAsync(user, expiry, default)).Session);
+        Assert.Equal(2, (await LedgerAsync(database)).Count);
+    }
+
+    [Fact]
+    public async Task ProductionStore_PendingTakeoverCanCancelAfterACompletedHand()
+    {
+        var (database, store, suffix) = CreateStore();
+        string first = $"pending-first-{suffix}", second = $"pending-second-{suffix}", third = $"pending-third-{suffix}";
+        await SeedPlayersAsync(database, first, second, third);
+        var session = await StartMatchAsync(store, first, second);
+        var pending = Assert.IsType<CreditHoldemQueueSessionResponse>((await store.JoinAsync(
+            third, "Late arrival", 0, "pending-chosen", 201, Start.AddSeconds(7), default, buyInCents: 4_000)).Session);
+        Assert.Equal("pending-next-hand", Assert.Single(pending.Players).Status);
+        Assert.Equal(4_000, Assert.Single(pending.Players).Stack);
+        var completedAt = session.Table.MatchDeadlineAtUtc;
+        _ = await store.GetSessionAsync(first, completedAt, default);
+        Assert.True((await ReadMatchAsync(database, session.Table.MatchId)).AccountingSettled);
+        var cancelled = await store.CancelAsync(third, pending.TicketId, pending.Version,
+            "cancel-completed-pending", completedAt, default);
+        Assert.Equal(10_000, cancelled.BalanceCents);
+        Assert.IsType<CreditHoldemIdleSessionResponse>(cancelled.Session);
+        Assert.Empty((await ReadMatchAsync(database, session.Table.MatchId)).PendingTakeovers);
+    }
+
+    [Fact]
+    public async Task ProductionStore_CashoutIsAtomicAndAStaleLeaveCannotDiscardAReplacementReservation()
+    {
+        var (database, store, suffix) = CreateStore();
+        string first = $"return-first-{suffix}", second = $"return-second-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var session = await StartMatchAsync(store, first, second);
+        var before = await ReadMatchAsync(database, session.Table.MatchId);
+        var uncommitted = before.Players.Single(player => player.ActorId == first).Stack;
+        var results = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => store.LeaveAsync(
+            first, session.Table.MatchId, session.Version, "cash-out-race", Start.AddSeconds(7), default)));
+        Assert.All(results, result => Assert.Equal(uncommitted, result.BalanceCents));
+        Assert.Single(await LedgerAsync(database), entry => Field<string>(entry, "type") == "texas-holdem-cash-out");
+        var pending = Assert.IsType<CreditHoldemQueueSessionResponse>((await store.JoinAsync(first,
+            "Player", 0, "buy-back-same-table", 301, Start.AddSeconds(8), default, buyInCents: 1_000)).Session);
+        var current = await ReadMatchAsync(database, session.Table.MatchId);
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.LeaveAsync(first,
+            session.Table.MatchId, current.Version, "stale-replacement-leave", Start.AddSeconds(8), default));
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.NextHandAsync(first,
+            session.Table.MatchId, current.Version, "stale-replacement-next", 302, Start.AddSeconds(8), default));
+        Assert.Equal(uncommitted - 1_000, await ReadBalanceAsync(database, first));
+        var cancelled = await store.CancelAsync(first, pending.TicketId, pending.Version,
+            "cancel-replacement", Start.AddSeconds(8), default);
+        Assert.Equal(uncommitted, cancelled.BalanceCents);
+    }
+
+    [Fact]
+    public async Task ProductionStore_PreExistingLegacyMatchKeepsItsOriginalPerActionAndPayoutAccounting()
+    {
+        var (database, store, suffix) = CreateStore();
+        var users = Enumerable.Range(0, 3).Select(index => $"legacy-{index}-{suffix}").ToArray();
+        var matchId = CreditHoldemIds.Hash($"legacy-match-{suffix}");
+        var match = CreditHoldemEngine.Deal(matchId, users.Select((user, index) =>
+            new CreditHoldemSeatAssignment(user, $"seat-{index}", $"Legacy {index}", true, index, 10_000)).ToArray(),
+            CreditHoldemTableRules.Partition("standard"), 401, Start);
+        var json = JsonSerializer.SerializeToNode(match, new JsonSerializerOptions(JsonSerializerDefaults.Web))!.AsObject();
+        json.Remove("usesBuyInEscrow");
+        json.Remove("escrowCashedOutTicketIds");
+        await database.Collection("creditHoldemMatches").Document(matchId).SetAsync(new Dictionary<string, object>
+        {
+            ["matchJson"] = json.ToJsonString(), ["status"] = match.Status,
+            ["version"] = match.Version, ["nextDeadlineAt"] = Timestamp.FromDateTime(match.MatchDeadlineAtUtc)
+        });
+        foreach (var player in match.Players)
+        {
+            await SeedBalanceAsync(database, player.ActorId, 10_000 - player.CommittedHand);
+            await database.Collection("creditHoldemSessions").Document(CreditHoldemIds.Hash(player.ActorId))
+                .SetAsync(new Dictionary<string, object> { ["userId"] = player.ActorId, ["kind"] = "match", ["matchId"] = matchId, ["version"] = match.Version });
+        }
+        var actor = match.Players.Single(player => player.Seat == match.ActiveSeat);
+        var amount = match.CurrentBet - actor.CommittedRound;
+        var walletBefore = await ReadBalanceAsync(database, actor.ActorId);
+        _ = await store.ActionAsync(actor.ActorId, matchId, new(CreditHoldemActions.Call, match.Version),
+            "legacy-call", Start.AddSeconds(1), default);
+        Assert.Equal(walletBefore - amount, await ReadBalanceAsync(database, actor.ActorId));
+        var result = Assert.IsType<CreditHoldemResultSessionResponse>((await store.GetSessionAsync(
+            actor.ActorId, match.MatchDeadlineAtUtc, default)).Session);
+        var totalWallet = 0L;
+        foreach (var user in users) totalWallet += await ReadBalanceAsync(database, user);
+        Assert.Equal(30_000 - result.HumanCommittedCredits * 100 + result.HumanPayoutCredits * 100, totalWallet);
+        var revenue = Assert.Single((await database.Collection("creditHoldemMatchRevenue").GetSnapshotAsync()).Documents);
+        Assert.Equal("real-human-wager-v2", Field<string>(revenue, "financialClassification"));
     }
 
     private (FirestoreDb Database, FirestoreCreditHoldemStore Store, string Suffix) CreateStore()

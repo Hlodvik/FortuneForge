@@ -22,6 +22,7 @@ internal sealed class InMemoryCreditHoldemStore(
     private readonly HashSet<string> revenueIds = new(StringComparer.Ordinal);
     private readonly Dictionary<string, CreditHoldemHistoryRecord> history = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> activeMatchIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> closedEscrowMatchIds = new(StringComparer.Ordinal);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     private readonly IManagedTablePopulationDirector population =
@@ -46,6 +47,7 @@ internal sealed class InMemoryCreditHoldemStore(
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ExpireQueueReservations(nowUtc);
             foreach (var match in matches.Values.Where(match =>
                          match.Status is "active" or "completed").ToArray())
             {
@@ -63,6 +65,7 @@ internal sealed class InMemoryCreditHoldemStore(
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ExpireQueueReservations(nowUtc);
             AdvanceForUser(userId, nowUtc);
             return Task.FromResult(Project(userId, nowUtc));
         }
@@ -76,22 +79,23 @@ internal sealed class InMemoryCreditHoldemStore(
         ulong seed,
         DateTime nowUtc,
         CancellationToken cancellationToken,
-        string tableRuleId = CreditHoldemTableRules.StandardId)
+        string tableRuleId = CreditHoldemTableRules.StandardId,
+        int? buyInCents = null)
     {
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var ticketId = CreditHoldemIds.Hash($"{userId}\n{idempotencyKey}");
+            ExpireQueueReservations(nowUtc);
             var rule = CreditHoldemTableRules.Resolve(tableRuleId);
-            var partitionKey = CreditHoldemTableRules.Partition(rule.Id);
-            var detail = $"{expectedVersion}:{rule.Id}";
+            var partitionKey = CreditHoldemEscrow.Partition(rule.Id);
+            var detail = CreditHoldemEscrow.JoinDetail(expectedVersion, rule.Id, buyInCents);
             if (Replay(userId, idempotencyKey, "join", ticketId, detail)) return Task.FromResult(Project(userId, nowUtc));
             var current = Project(userId, nowUtc).Session;
             if (current.Version != expectedVersion || current.Kind != CreditHoldemSessionKinds.Idle)
                 throw new CreditHoldemConflictException("The Hold'em session changed. Reconnect before joining.");
             var available = balances.GetValueOrDefault(userId);
-            if (available < rule.BigBlindCents)
-                throw new CreditHoldemInsufficientCreditsException(available, rule.BigBlindCents);
+            var reserved = CreditHoldemEscrow.ReserveAmount(available, rule, buyInCents);
 
             var ticket = new CreditHoldemTicket(
                 ticketId,
@@ -104,14 +108,18 @@ internal sealed class InMemoryCreditHoldemStore(
                 nowUtc,
                 nowUtc.Add(CreditHoldemEngine.HumanGrace),
                 null,
-                rule.Id);
-            if (activeMatchIds.TryGetValue(partitionKey, out var openMatchId) &&
-                matches.TryGetValue(openMatchId, out var openMatch) && CanAcceptTakeover(openMatch))
+                rule.Id,
+                reserved);
+            balances[userId] = checked(available - reserved);
+            ledgerIds.Add($"{ticketId}-buy-in");
+            var openMatch = matches.Values.Where(match => !closedEscrowMatchIds.Contains(match.MatchId) && match.PartitionKey == partitionKey && CreditHoldemEscrow.CanAcceptTakeover(match))
+                .OrderBy(match => match.StartedAtUtc).ThenBy(match => match.MatchId, StringComparer.Ordinal).FirstOrDefault();
+            if (openMatch is not null)
             {
-                var pending = ticket with { Status = "pending-next-hand", MatchId = openMatchId };
+                var pending = ticket with { Status = "pending-next-hand", MatchId = openMatch.MatchId };
                 tickets.Add(ticketId, pending);
                 openMatch.PendingTakeovers.Add(pending);
-                sessions[userId] = new(CreditHoldemSessionKinds.Queue, ticketId, openMatchId);
+                sessions[userId] = new(CreditHoldemSessionKinds.Queue, ticketId, openMatch.MatchId);
             }
             else
             {
@@ -145,6 +153,7 @@ internal sealed class InMemoryCreditHoldemStore(
                 !sessions.TryGetValue(userId, out var session) || session.Kind != CreditHoldemSessionKinds.Queue)
                 throw new CreditHoldemConflictException("This queue ticket changed, matched, or was already cancelled.");
             tickets[ticketId] = ticket with { Status = "cancelled", Version = checked(ticket.Version + 1) };
+            RefundTicket(ticket);
             queue.Remove(ticketId);
             if (ticket.MatchId is { } matchId && matches.TryGetValue(matchId, out var match))
                 match.PendingTakeovers.RemoveAll(value => value.TicketId == ticketId);
@@ -168,6 +177,7 @@ internal sealed class InMemoryCreditHoldemStore(
             var action = request.Type.Trim().ToLowerInvariant();
             var detail = $"{action}:{request.ExpectedVersion}:{request.RaiseTo?.ToString() ?? string.Empty}";
             if (Replay(userId, idempotencyKey, "action", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
+            RequireCurrentTableSession(userId, matchId);
             var match = MatchForUser(matchId, userId);
             AdvanceMatch(match, nowUtc);
             if (match.Status != "active" || match.Version != request.ExpectedVersion)
@@ -175,7 +185,7 @@ internal sealed class InMemoryCreditHoldemStore(
             var player = match.Players.Single(value => value.ActorId == userId);
             var required = RequiredCommitment(match, player, action, request.RaiseTo);
             var available = balances.GetValueOrDefault(userId);
-            if (available < required) throw new CreditHoldemInsufficientCreditsException(available, required);
+            if (!match.UsesBuyInEscrow && available < required) throw new CreditHoldemInsufficientCreditsException(available, required);
             var committed = CreditHoldemEngine.ApplyAction(match, userId, action, request.RaiseTo, nowUtc);
             if (committed != required) throw new InvalidOperationException("The Hold'em commitment changed during validation.");
             DebitCommitment(match, player, committed, $"action-v{request.ExpectedVersion}", idempotencyKey, nowUtc);
@@ -199,14 +209,25 @@ internal sealed class InMemoryCreditHoldemStore(
             cancellationToken.ThrowIfCancellationRequested();
             var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (Replay(userId, idempotencyKey, "next-hand", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
+            RequireCurrentTableSession(userId, matchId);
+            ExpireQueueReservations(nowUtc);
             var prior = MatchForUser(matchId, userId);
             SettleOnce(prior, nowUtc);
             if (prior.Status != "completed" || prior.Version != expectedVersion || !prior.AccountingSettled)
                 throw new CreditHoldemConflictException("The hand changed or is not ready for the next deal.");
+            CashOutReleasedPlayers(prior);
+            if (prior.LeavingActorIds.Contains(userId))
+                throw new CreditHoldemConflictException("You have left this Hold'em table.");
+            RemoveBustedEscrowSeats(prior);
             _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(prior);
             var populationDecision = PopulationDecision(prior, includePendingHumans: true);
             if (!populationDecision.KeepTableOpen)
-                throw new CreditHoldemConflictException("This Hold'em table has closed.");
+            {
+                if (!prior.UsesBuyInEscrow) throw new CreditHoldemConflictException("This Hold'em table has closed.");
+                CloseEscrowTable(prior);
+                guards[Guard(userId, idempotencyKey)] = ("next-hand", matchId, detail);
+                return Task.FromResult(Project(userId, nowUtc));
+            }
             TexasHoldemManagedPlayers.AddPlayers(
                 prior,
                 TexasHoldemManagedPlayers.CreateLocalProfiles(
@@ -229,10 +250,16 @@ internal sealed class InMemoryCreditHoldemStore(
             var minimumHumans = allowSingleHumanBotFill ? 1 : 2;
             var next = CreditHoldemEngine.StartNextHand(prior, balanceMap, seed, minimumHumans, nowUtc);
             if (next is null)
-                throw new CreditHoldemConflictException("Not enough funded real players remain for the next hand.");
+            {
+                if (!prior.UsesBuyInEscrow) throw new CreditHoldemConflictException("Not enough funded real players remain for the next hand.");
+                CloseEscrowTable(prior);
+                guards[Guard(userId, idempotencyKey)] = ("next-hand", matchId, detail);
+                return Task.FromResult(Project(userId, nowUtc));
+            }
+            RefundUnadmittedTakeovers(prior, next);
             ApplyBlindCommitments(next, idempotencyKey, nowUtc);
             matches[matchId] = next;
-            foreach (var ticket in prior.PendingTakeovers)
+            foreach (var ticket in prior.PendingTakeovers.Where(ticket => !prior.UsesBuyInEscrow || next.Players.Any(player => player.EscrowTicketId == ticket.TicketId)))
                 tickets[ticket.TicketId] = ticket with { Status = "matched", Version = checked(ticket.Version + 1) };
             foreach (var human in next.Players.Where(value => value.IsAccountBacked))
                 sessions[human.ActorId] = new(CreditHoldemSessionKinds.Match, null, matchId);
@@ -258,12 +285,14 @@ internal sealed class InMemoryCreditHoldemStore(
             cancellationToken.ThrowIfCancellationRequested();
             var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
             if (Replay(userId, idempotencyKey, "leave", matchId, detail)) return Task.FromResult(Project(userId, nowUtc));
+            RequireCurrentTableSession(userId, matchId);
             var match = MatchForUser(matchId, userId);
             AdvanceMatch(match, nowUtc);
             if (match.Version != expectedVersion)
                 throw new CreditHoldemConflictException("The Hold'em table changed. Reconnect before leaving.");
             CreditHoldemEngine.Leave(match, userId, nowUtc);
             SettleOnce(match, nowUtc);
+            CashOutReleasedPlayers(match);
             sessions[userId] = new(CreditHoldemSessionKinds.Idle, null, null);
             if (match.Players.Where(value => value.IsAccountBacked).All(value => match.LeavingActorIds.Contains(value.ActorId)))
                 activeMatchIds.Remove(match.PartitionKey);
@@ -331,6 +360,7 @@ internal sealed class InMemoryCreditHoldemStore(
     {
         var advance = CreditHoldemTableCoordinator.AdvanceIfDue(match, nowUtc);
         SettleOnce(match, nowUtc);
+        CashOutReleasedPlayers(match);
         foreach (var actorId in advance.ReleasedHumanActorIds)
             sessions[actorId] = new(CreditHoldemSessionKinds.Idle, null, null);
         if (advance.ReleasedHumanActorIds.Count > 0 &&
@@ -348,12 +378,14 @@ internal sealed class InMemoryCreditHoldemStore(
                 !prior.LeavingActorIds.Contains(player.ActorId)))
             return;
 
+        RemoveBustedEscrowSeats(prior);
         _ = TexasHoldemManagedPlayers.RemoveDepartingPlayers(prior);
         var decision = PopulationDecision(prior, includePendingHumans: true);
         if (!decision.KeepTableOpen)
         {
             population.Close(ManagedPlayerGames.TexasHoldem, prior.MatchId);
             activeMatchIds.Remove(prior.PartitionKey);
+            CloseEscrowTable(prior);
             return;
         }
 
@@ -371,12 +403,14 @@ internal sealed class InMemoryCreditHoldemStore(
         {
             population.Close(ManagedPlayerGames.TexasHoldem, prior.MatchId);
             activeMatchIds.Remove(prior.PartitionKey);
+            CloseEscrowTable(prior);
             return;
         }
 
         ApplyBlindCommitments(next, "automatic-next-hand", nowUtc);
+        RefundUnadmittedTakeovers(prior, next);
         matches[prior.MatchId] = next;
-        foreach (var ticket in prior.PendingTakeovers)
+        foreach (var ticket in prior.PendingTakeovers.Where(ticket => !prior.UsesBuyInEscrow || next.Players.Any(player => player.EscrowTicketId == ticket.TicketId)))
             tickets[ticket.TicketId] = ticket with
             {
                 Status = "matched",
@@ -396,13 +430,14 @@ internal sealed class InMemoryCreditHoldemStore(
                 allowSingleHumanBotFill ? 1 : 2,
                 CreditHoldemMoney.MaximumSeats),
             nowUtc,
-            value => value.Status == "queued" && value.PartitionKey == partitionKey,
+            value => value.Status == "queued" && value.PartitionKey == partitionKey && !CreditHoldemEscrow.Expired(value, nowUtc),
             value => value.JoinedAtUtc,
             value => value.GraceEndsAtUtc,
             value => value.TicketId).HumanTickets;
         if (selected.Count == 0) return;
         var rule = CreditHoldemTableRules.Resolve(selected[0].TableRuleId);
-        var balancesForHand = selected.ToDictionary(value => value.UserId, value => balances.GetValueOrDefault(value.UserId), StringComparer.Ordinal);
+        var escrow = selected.All(ticket => ticket.BuyInCents > 0);
+        var balancesForHand = selected.ToDictionary(value => value.UserId, value => escrow ? value.BuyInCents : balances.GetValueOrDefault(value.UserId), StringComparer.Ordinal);
         if (balancesForHand.Values.Any(value => value < rule.BigBlindCents)) return;
         var matchId = CreditHoldemIds.Hash($"{partitionKey}\n{string.Join("\n", selected.Select(value => value.TicketId))}");
         var populationDecision = population.Observe(new(
@@ -418,7 +453,7 @@ internal sealed class InMemoryCreditHoldemStore(
             nowUtc);
         var seats = TexasHoldemManagedPlayers.BuildSeats(selected, profiles, balancesForHand, seed, rule, matchId);
         var match = CreditHoldemEngine.Deal(
-            matchId, seats, partitionKey, seed, nowUtc, rule.Id);
+            matchId, seats, partitionKey, seed, nowUtc, rule.Id, escrow);
         ApplyBlindCommitments(match, "initial-deal", nowUtc);
         matches.Add(matchId, match);
         foreach (var ticket in selected)
@@ -434,6 +469,7 @@ internal sealed class InMemoryCreditHoldemStore(
 
     private void ApplyBlindCommitments(CreditHoldemMatch match, string sourceKey, DateTime nowUtc)
     {
+        if (match.UsesBuyInEscrow) return;
         foreach (var human in match.Players.Where(value => value.IsAccountBacked && value.CommittedHand > 0))
         {
             var available = balances.GetValueOrDefault(human.ActorId);
@@ -451,7 +487,7 @@ internal sealed class InMemoryCreditHoldemStore(
         string sourceKey,
         DateTime nowUtc)
     {
-        if (cents <= 0 || !player.IsAccountBacked) return;
+        if (match.UsesBuyInEscrow || cents <= 0 || !player.IsAccountBacked) return;
         var before = balances.GetValueOrDefault(player.ActorId);
         var after = checked(before - cents);
         if (after < 0) throw new CreditHoldemInsufficientCreditsException(before, cents);
@@ -464,7 +500,7 @@ internal sealed class InMemoryCreditHoldemStore(
     {
         if (match.Status == "active" || match.AccountingSettled) return;
         var settlement = CreditHoldemEngine.ApplyFinancialSettlement(match);
-        foreach (var payout in settlement.HumanPayoutsCents.Where(value => value.Value > 0))
+        foreach (var payout in settlement.HumanPayoutsCents.Where(value => !match.UsesBuyInEscrow && value.Value > 0))
         {
             var player = match.Players.Single(value => value.ActorId == payout.Key);
             var ledgerId = $"{match.MatchId}-hand-{match.HandNumber}-payout-{CreditHoldemIds.Hash(payout.Key)}";
@@ -481,11 +517,94 @@ internal sealed class InMemoryCreditHoldemStore(
         else activeMatchIds.Remove(match.PartitionKey);
     }
 
+    private void RefundTicket(CreditHoldemTicket ticket)
+    {
+        if (ticket.BuyInCents <= 0 || !ledgerIds.Add($"{ticket.TicketId}-buy-in-refund")) return;
+        balances[ticket.UserId] = checked(balances.GetValueOrDefault(ticket.UserId) + ticket.BuyInCents);
+    }
+
+    private void ExpireQueueReservations(DateTime nowUtc)
+    {
+        foreach (var ticket in tickets.Values.Where(ticket => CreditHoldemEscrow.Expired(ticket, nowUtc)).ToArray())
+        {
+            RefundTicket(ticket);
+            tickets[ticket.TicketId] = ticket with { Status = "expired", Version = checked(ticket.Version + 1) };
+            queue.Remove(ticket.TicketId);
+            if (ticket.MatchId is { } matchId && matches.TryGetValue(matchId, out var match))
+                match.PendingTakeovers.RemoveAll(value => value.TicketId == ticket.TicketId);
+            if (sessions.TryGetValue(ticket.UserId, out var session) && session.TicketId == ticket.TicketId)
+                sessions[ticket.UserId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        }
+    }
+
+    private void CashOutReleasedPlayers(CreditHoldemMatch match)
+    {
+        if (!match.UsesBuyInEscrow) return;
+        foreach (var player in match.Players.Where(player => player.IsAccountBacked && match.LeavingActorIds.Contains(player.ActorId)))
+        {
+            if (string.IsNullOrEmpty(player.EscrowTicketId)) throw new InvalidOperationException("An escrow seat is missing its reservation.");
+            if (!match.EscrowCashedOutTicketIds.Add(player.EscrowTicketId)) continue;
+            if (!ledgerIds.Add($"{player.EscrowTicketId}-cash-out")) continue;
+            balances[player.ActorId] = checked(balances.GetValueOrDefault(player.ActorId) + player.Stack);
+        }
+    }
+
+    private void RemoveBustedEscrowSeats(CreditHoldemMatch match)
+    {
+        if (!match.UsesBuyInEscrow) return;
+        var minimum = CreditHoldemTableRules.Resolve(match.TableRuleId).BigBlindCents;
+            foreach (var player in match.Players.Where(player => player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId) && player.Stack < minimum))
+        {
+            match.LeavingActorIds.Add(player.ActorId);
+            sessions[player.ActorId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        }
+        CashOutReleasedPlayers(match);
+        match.Players.RemoveAll(player => !player.IsAccountBacked && player.Stack < minimum);
+    }
+
+    private void RefundUnadmittedTakeovers(CreditHoldemMatch prior, CreditHoldemMatch next)
+    {
+        foreach (var ticket in prior.PendingTakeovers.Where(ticket => next.Players.All(player => player.EscrowTicketId != ticket.TicketId)))
+        {
+            RefundTicket(ticket);
+            tickets[ticket.TicketId] = ticket with { Status = "cancelled", Version = checked(ticket.Version + 1) };
+            sessions[ticket.UserId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        }
+    }
+
+    private void CloseEscrowTable(CreditHoldemMatch match)
+    {
+        if (!match.UsesBuyInEscrow) return;
+        closedEscrowMatchIds.Add(match.MatchId);
+        foreach (var player in match.Players.Where(player => player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId)))
+        {
+            match.LeavingActorIds.Add(player.ActorId);
+            sessions[player.ActorId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        }
+        CashOutReleasedPlayers(match);
+        foreach (var ticket in match.PendingTakeovers)
+        {
+            RefundTicket(ticket);
+            tickets[ticket.TicketId] = ticket with { Status = "cancelled", Version = checked(ticket.Version + 1) };
+            sessions[ticket.UserId] = new(CreditHoldemSessionKinds.Idle, null, null);
+        }
+        match.PendingTakeovers.Clear();
+        activeMatchIds.Remove(match.PartitionKey);
+    }
+
     private CreditHoldemMatch MatchForUser(string matchId, string userId)
     {
         if (!matches.TryGetValue(matchId, out var match) || match.Players.All(value => value.ActorId != userId))
             throw new CreditHoldemNotFoundException("The Hold'em table was not found.");
         return match;
+    }
+
+    private void RequireCurrentTableSession(string userId, string matchId)
+    {
+        if (!sessions.TryGetValue(userId, out var session) || session.MatchId != matchId ||
+            session.Kind is not CreditHoldemSessionKinds.Match and not CreditHoldemSessionKinds.Result ||
+            !matches.TryGetValue(matchId, out var match) || match.LeavingActorIds.Contains(userId))
+            throw new CreditHoldemConflictException("You no longer have a seat at this Hold'em table.");
     }
 
     private void WriteActiveHistory(CreditHoldemMatch match)
@@ -527,8 +646,8 @@ internal sealed class InMemoryCreditHoldemStore(
                 value.PublicSeatId,
                 value.DisplayName,
                 index,
-                0,
-                0,
+                value.BuyInCents,
+                value.BuyInCents,
                 0,
                 0,
                 value.Status,

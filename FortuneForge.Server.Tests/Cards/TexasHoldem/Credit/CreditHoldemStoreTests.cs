@@ -10,7 +10,7 @@ public sealed class CreditHoldemStoreTests
     private static readonly DateTime Start = new(2026, 8, 16, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public async Task QueueJoinAndLeaveAreFreeAndIdempotent()
+    public async Task QueueJoinReservesAndCancellationRefundsExactlyOnce()
     {
         var store = NewStore();
         var before = store.Balance("u1");
@@ -22,7 +22,7 @@ public sealed class CreditHoldemStoreTests
 
         Assert.IsType<CreditHoldemQueueSessionResponse>(replay.Session);
         Assert.Equal(before, store.Balance("u1"));
-        Assert.Equal(0, store.LedgerCount);
+        Assert.Equal(2, store.LedgerCount);
         Assert.IsType<CreditHoldemIdleSessionResponse>((await store.GetSessionAsync("u1", Start, default)).Session);
     }
 
@@ -42,7 +42,7 @@ public sealed class CreditHoldemStoreTests
     }
 
     [Fact]
-    public async Task BlindsAndActionsCommitCreditsOnlyAfterServerValidation()
+    public async Task BlindsAndActionsUseReservedChipsWithoutFurtherWalletDebits()
     {
         var store = NewStore();
         var match = await StartMatch(store);
@@ -66,7 +66,7 @@ public sealed class CreditHoldemStoreTests
             new CreditHoldemActionRequest(CreditHoldemActions.Call, actorView.Version),
             "call-validated-1", Start.AddSeconds(7), default);
 
-        Assert.Equal(before - required, store.Balance(actor.ActorId));
+        Assert.Equal(before, store.Balance(actor.ActorId));
         Assert.Equal(response.Session.Version, replay.Session.Version);
         await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.ActionAsync(
             actor.ActorId, table.MatchId,
@@ -222,7 +222,7 @@ public sealed class CreditHoldemStoreTests
         var json = JsonSerializer.Serialize(status, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
         Assert.Equal((0.5m, 1m), (status.SmallBlindCredits, status.BigBlindCredits));
-        Assert.DoesNotContain("buyIn", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("minimumBuyInCredits", json, StringComparison.Ordinal);
         Assert.DoesNotContain("fee", json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("pool", json, StringComparison.OrdinalIgnoreCase);
     }

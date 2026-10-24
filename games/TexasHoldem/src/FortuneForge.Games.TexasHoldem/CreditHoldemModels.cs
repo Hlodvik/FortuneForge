@@ -23,7 +23,10 @@ public static class CreditHoldemActions
     public const string Raise = "raise";
 }
 
-public sealed record JoinCreditHoldemQueueRequest(int ExpectedVersion, string TableRuleId = "standard");
+public sealed record JoinCreditHoldemQueueRequest(
+    int ExpectedVersion,
+    string TableRuleId = "standard",
+    decimal? BuyInCredits = null);
 public sealed record CreditHoldemVersionRequest(int ExpectedVersion);
 
 public sealed record CreditHoldemActionRequest(
@@ -149,7 +152,8 @@ public sealed record CreditHoldemTableRuleResponse(
     decimal SmallBlindCredits,
     decimal BigBlindCredits,
     decimal AnteCredits,
-    decimal MaximumTableStackCredits);
+    decimal MaximumTableStackCredits,
+    decimal? MinimumBuyInCredits = null);
 
 public sealed record CreditHoldemHistoryItemResponse(
     string EventId,
@@ -177,7 +181,8 @@ internal sealed record CreditHoldemTicket(
     DateTime JoinedAtUtc,
     DateTime GraceEndsAtUtc,
     string? MatchId,
-    string TableRuleId = "standard");
+    string TableRuleId = "standard",
+    int BuyInCents = 0);
 
 internal sealed class CreditHoldemMatch
 {
@@ -195,6 +200,10 @@ internal sealed class CreditHoldemMatch
     // These collections were introduced after the first credit-table documents
     // were persisted. Keep absent JSON fields compatible with those matches.
     public HashSet<string> LeavingActorIds { get; init; } = new(StringComparer.Ordinal);
+    // Missing fields on old persisted hands must retain their original wallet-per-action model.
+    public bool UsesBuyInEscrow { get; init; }
+    // A reservation ID, not an actor ID, permits a later independently funded return to this table.
+    public HashSet<string> EscrowCashedOutTicketIds { get; init; } = new(StringComparer.Ordinal);
     public Dictionary<string, long> HumanPayoutsCents { get; set; } = new(StringComparer.Ordinal);
     public List<CreditHoldemActionLogEntry> ActionLog { get; init; } = [];
     public DateTime? ActionDeadlineAtUtc { get; set; }
@@ -229,6 +238,7 @@ internal sealed class CreditHoldemPlayer
     public required string PublicSeatId { get; init; }
     public required string DisplayName { get; init; }
     public required bool IsAccountBacked { get; init; }
+    public string? EscrowTicketId { get; init; }
     public Dictionary<string, string> HostMetadata { get; init; } = new(StringComparer.Ordinal);
     public required int Seat { get; init; }
     public required int StartingStack { get; init; }
@@ -258,7 +268,8 @@ internal sealed record CreditHoldemSeatAssignment(
     int Stack,
     IReadOnlyDictionary<string, string>? HostMetadata = null,
     int ConsecutiveMissedActionHands = 0,
-    int LastMissedActionHand = 0);
+    int LastMissedActionHand = 0,
+    string? EscrowTicketId = null);
 
 internal sealed record CreditHoldemFinancialSettlement(
     long HumanCommittedCents,
@@ -285,7 +296,7 @@ internal static class CreditHoldemMoney
     public const int MaximumSeats = 5;
     public const int SmallBlindCents = 50;
     public const int BigBlindCents = 100;
-    public const string OpenPartition = "open-table-v3-standard";
+    public const string OpenPartition = "open-table-v4-buyin-standard";
 
     public static decimal ToCredits(long cents) => cents / (decimal)CentsPerCredit;
     public static int StackFromBalance(long cents, int maximumStackCents = 10_000) =>
@@ -307,7 +318,8 @@ internal sealed record CreditHoldemTableRule(
         CreditHoldemMoney.ToCredits(SmallBlindCents),
         CreditHoldemMoney.ToCredits(BigBlindCents),
         0,
-        CreditHoldemMoney.ToCredits(MaximumStackCents));
+        CreditHoldemMoney.ToCredits(MaximumStackCents),
+        CreditHoldemMoney.ToCredits(BigBlindCents));
 }
 
 internal static class CreditHoldemTableRules
@@ -327,7 +339,7 @@ internal static class CreditHoldemTableRules
         rule => string.Equals(rule.Id, value?.Trim(), StringComparison.OrdinalIgnoreCase))
         ?? throw new ArgumentException("Choose a valid Hold'em table.", nameof(value));
 
-    public static string Partition(string tableRuleId) => $"open-table-v3-{Resolve(tableRuleId).Id}";
+    public static string Partition(string tableRuleId) => $"open-table-v4-buyin-{Resolve(tableRuleId).Id}";
 }
 
 internal sealed class CreditHoldemConflictException(string message) : Exception(message);

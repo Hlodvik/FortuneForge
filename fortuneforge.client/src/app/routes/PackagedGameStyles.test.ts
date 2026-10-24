@@ -18,6 +18,7 @@ const packagedGameEntryPoints = [
   ['./SicBoRoute.tsx', '@fortuneforge/games-sic-bo'],
   ['./SnakeRoute.tsx', '@fortuneforge/games-snake'],
   ['./TwentyFortyEightRoute.tsx', '@fortuneforge/games-2048'],
+  ['../../pages/cards/texasHoldem/CreditTexasHoldemPage.tsx', '@fortuneforge/games-texas-holdem'],
   ['./VideoPokerRoute.tsx', '@fortuneforge/games-video-poker'],
 ] as const
 

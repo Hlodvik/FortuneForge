@@ -1,0 +1,419 @@
+@font-face {
+  font-family: FFHoldemSans;
+  src: url('./assets/fonts/sora-latin-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: FFHoldemDisplay;
+  src: url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.ff-holdem-page {
+  --hh-gold: #d8b66e;
+  --hh-ivory: #fff0ce;
+  --hh-muted: #b6c2ad;
+  --hh-line: #d3b27655;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  color: var(--hh-ivory);
+  background: linear-gradient(#00150c2b, #00150c2b), #004b31 url('./assets/emerald-felt-v2.webp') center / cover no-repeat;
+  font-family: FFHoldemSans, sans-serif;
+  isolation: isolate;
+}
+.ff-holdem-page * { box-sizing: border-box; }
+.ff-holdem-page button, .ff-holdem-page input { font: inherit; }
+.ff-holdem-page button { color: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.ff-holdem-page button:disabled { cursor: default; opacity: .42; }
+.ff-holdem-page button:focus-visible, .ff-holdem-page input:focus-visible,
+.ff-holdem-page summary:focus-visible { outline: 2px solid #ffe0a1; outline-offset: 4px; }
+.ff-holdem-shell-body:has(.ff-holdem-page) { overflow: hidden; background: #003823; }
+.in-game-shell:has(.ff-holdem-page) .in-game-navbar { background: #080b09; border-bottom: 1px solid #bda15a66; }
+.in-game-shell:has(.ff-holdem-page) .in-game-navbar__title { display: none; }
+.ff-holdem-main { display: flex; flex: 1; flex-direction: column; min-height: 0; width: 100%; max-width: 1660px; margin: 0 auto; }
+.ff-holdem-game-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 76px; padding: 10px 28px 2px; flex: none; }
+.ff-holdem-game-header h1 { margin: 0; color: #ffedc6; font: 650 clamp(32px, 3.6vw, 55px)/1.05 FFHoldemDisplay, Georgia, serif; letter-spacing: -.045em; }
+.ff-holdem-game-tools { display: flex; gap: 12px; align-items: center; }
+.ff-holdem-game-tools button { display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1.5px solid #c9aa67; border-radius: 50%; background: #00190f80; font-size: 23px; box-shadow: 0 2px 4px #0004; }
+.ff-holdem-game-tools svg { width: 21px; height: 21px; }
+.ff-holdem-match, .ff-holdem-result { display: flex; flex: 1; flex-direction: column; position: relative; min-height: 0; }
+.ff-holdem-table { display: flex; flex: 1; flex-direction: column; position: relative; min-height: 425px; container-type: inline-size; }
+.ff-holdem-table-meta { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 20px; padding: 0 30px; color: #c2c7ae; font-size: 8px; text-transform: uppercase; letter-spacing: .13em; opacity: .7; }
+.ff-holdem-table-meta i { margin: 0 7px; font-style: normal; color: #d0b575; }
+.ff-holdem-stage { position: relative; flex: 1; min-height: 395px; width: 100%; isolation: isolate; }
+/* Keep a clear felt gap between the community cards and the viewer's private hand. */
+.ff-holdem-board { position: absolute; top: calc(40% - 24px); left: 50%; transform: translate(-50%, -50%); width: max-content; max-width: 72%; display: grid; gap: 19px; justify-items: center; z-index: 2; }
+.ff-holdem-pot { display: flex; flex-direction: column; align-items: center; gap: 8px; min-height: 32px; }
+.ff-holdem-pot > div:last-child { display: flex; align-items: baseline; justify-content: center; gap: 10px; }
+.ff-holdem-pot > div:last-child > span { font: 500 15px FFHoldemDisplay, Georgia, serif; text-transform: uppercase; color: #fff0ce; }
+.ff-holdem-pot strong { color: #efd18a; font: 550 clamp(23px, 2.25cqw, 33px)/1 FFHoldemDisplay, Georgia, serif; font-variant-numeric: tabular-nums; }
+.ff-holdem-pot-chips { display: flex; align-items: flex-end; justify-content: center; gap: 1px; height: 49px; padding-top: 10px; }
+.ff-holdem-pot-chips .ff-holdem-chip-pile { --hh-chip-size: 43px; }
+.ff-holdem-pot-chips .ff-holdem-chip-pile:nth-child(2) { margin-bottom: 9px; z-index: 1; }
+.ff-holdem-community { display: flex; gap: 12px; --ff-card-width: clamp(65px, 6.1cqw, 98px); }
+.ff-holdem-card { display: block; flex: none; width: var(--ff-card-width); aspect-ratio: .704; }
+.ff-holdem-card > .ff-card-slot { display: block; width: 100%; height: 100%; }
+.ff-holdem-card-empty { display: block; width: 100%; height: 100%; border: 1px dashed #c4ceaa68; border-radius: 7px; background: #001d0b10; }
+
+.ff-holdem-seat, .ff-holdem-open-seat { position: absolute; width: 170px; transform: translate(-50%, -50%); z-index: 3; }
+:where(.ff-holdem-stage) .seat-pos-0 { left: 50%; top: 78%; }
+:where(.ff-holdem-stage) .seat-pos-1 { left: 12%; top: 49%; }
+:where(.ff-holdem-stage) .seat-pos-2 { left: 34%; top: 17%; }
+:where(.ff-holdem-stage) .seat-pos-3 { left: 66%; top: 17%; }
+:where(.ff-holdem-stage) .seat-pos-4 { left: 88%; top: 49%; }
+.ff-holdem-table--2-seats .ff-holdem-open-seat.seat-pos-3,
+.ff-holdem-table--4-seats .ff-holdem-open-seat.seat-pos-3 { display: none; }
+.ff-holdem-seat { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ff-holdem-seat-cards { order: 2; display: flex; justify-content: center; gap: 5px; --ff-card-width: clamp(50px, 4.7cqw, 72px); transition: opacity .18s; }
+.ff-holdem-seat-plaque { order: 1; position: relative; width: 100%; padding: 0 3px; text-align: center; }
+.ff-holdem-seat-identity { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.ff-holdem-seat-identity strong { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #fff3d8; font: 500 clamp(13px, 1.25cqw, 20px)/1.08 FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-seat-identity > span { color: #fff2cf; font: 450 clamp(13px, 1.2cqw, 19px)/1.1 FFHoldemDisplay, Georgia, serif; font-variant-numeric: tabular-nums; }
+.ff-holdem-seat-action { order: 3; height: 13px; line-height: 13px; font-size: 9px; text-transform: capitalize; color: #b7c8aa; }
+.ff-holdem-seat-action strong { color: #f3d993; font-weight: 500; }
+.ff-holdem-seat-hand { color: #eed8a0; }
+.ff-holdem-seat-action strong + .ff-holdem-seat-hand { margin-left: 7px; }
+.ff-holdem-seat.is-current .ff-holdem-seat-action:not(:has(strong, .ff-holdem-seat-hand)) { visibility: hidden; }
+.ff-holdem-seat.is-current { width: 190px; gap: 5px; }
+.ff-holdem-seat.is-current .ff-holdem-seat-cards { order: 0; --ff-card-width: clamp(66px, 5.1cqw, 84px); gap: 8px; }
+.ff-holdem-seat.is-current .ff-holdem-seat-identity strong { color: #ecd17c; }
+.ff-holdem-seat.is-active .ff-holdem-seat-identity > span { color: #ffe8b8; }
+.ff-holdem-seat-active { position: absolute; top: calc(100% + 2px); left: 35%; right: 35%; height: 1px; background: #efd29280; }
+.ff-holdem-seat.is-current .ff-holdem-seat-active { display: none; }
+.ff-holdem-seat.is-winner .ff-holdem-seat-cards { filter: drop-shadow(0 0 8px #dfb64a88); }
+.ff-holdem-seat.is-folded .ff-holdem-seat-cards { opacity: .3; }
+.ff-holdem-dealer { position: absolute; right: -13px; top: 39px; display: grid; place-items: center; width: 28px; height: 28px; border: 2px solid #c6ae73; border-radius: 50%; background: #fff3d2; color: #171b13; box-shadow: 0 3px 4px #0007; font: 600 15px FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-chip-pile { --hh-chip-size: 31px; display: inline-block; position: relative; width: var(--hh-chip-size); height: var(--hh-chip-size); flex: none; }
+.ff-holdem-chip-pile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 2px 1px #0007); }
+.ff-holdem-seat-bet { position: absolute; display: flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; color: #eee0b3; font-size: 10px; font-variant-numeric: tabular-nums; }
+.ff-holdem-seat.seat-pos-0 .ff-holdem-seat-bet { left: calc(100% + 15px); top: 26%; }
+.ff-holdem-seat.seat-pos-1 .ff-holdem-seat-bet { left: calc(100% + 14px); top: 52%; }
+.ff-holdem-seat.seat-pos-4 .ff-holdem-seat-bet { right: calc(100% + 14px); top: 52%; flex-direction: row-reverse; }
+.ff-holdem-seat.seat-pos-2 .ff-holdem-seat-bet, .ff-holdem-seat.seat-pos-3 .ff-holdem-seat-bet { left: 50%; top: calc(100% + 6px); transform: translateX(-50%); }
+.ff-holdem-open-seat { width: 100px; color: #b4c1a0; text-align: center; opacity: .38; font-size: 10px; }
+.ff-holdem-open-seat > span { display: none; }
+.ff-holdem-open-seat small { font-size: 9px; letter-spacing: .08em; }
+.ff-holdem-turn-status { position: absolute; left: calc(50% + 110px); bottom: 10px; color: #b9cbb0; font-size: 10px; white-space: nowrap; }
+.ff-holdem-turn-status > span { display: none; }
+.ff-holdem-turn-status.is-your-turn { color: #f5e5c2; }
+
+/* The shallow translucent casino dock deliberately sits on the same felt. */
+.ff-holdem-actions { position: relative; display: flex; flex: none; align-items: center; justify-content: center; gap: 25px; width: max-content; max-width: calc(100% - 36px); min-height: 126px; margin: 14px auto 18px; padding: 9px 28px; border: 1px solid #ac895045; border-radius: 28px; background: #00170ed9; box-shadow: 0 7px 14px #00190c3b; z-index: 5; }
+.ff-holdem-round-actions { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.ff-holdem-round-actions .ff-holdem-action {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; width: 88px; height: 88px; flex: 0 0 auto; padding: 8px; border: 2px solid #efce8d; border-radius: 50%; isolation: isolate;
+  color: #2d2114; background: radial-gradient(circle at 35% 24%, #fff0bb 0, #e7be68 45%, #b67a28 90%); box-shadow: 0 4px 9px #0008, inset 0 0 0 3px #8e5d27, inset 0 0 0 5px #f6d997, inset 0 0 13px #fff2c466;
+  font: 600 17px/1 FFHoldemDisplay, Georgia, serif; text-transform: uppercase;
+}
+.ff-holdem-round-actions .ff-holdem-action::before { position: absolute; inset: 8px; border: 1px solid #8e632c; border-radius: 50%; box-shadow: inset 0 1px #fff1b6a0; content: ''; pointer-events: none; z-index: -1; }
+.ff-holdem-round-actions .ff-holdem-action small { font: 550 16px/1 FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-round-actions .ff-holdem-action--call { width: 104px; height: 104px; }
+.ff-holdem-round-actions .ff-holdem-action--fold { width: 85px; height: 85px; border-color: #746d5b; background: radial-gradient(circle at 32% 22%, #30302a, #111612 85%); color: #f8e9c4; box-shadow: 0 4px 9px #0008, inset 0 0 0 3px #0b100e, inset 0 0 0 4px #958c71a0; }
+.ff-holdem-round-actions .ff-holdem-action--fold::before { border-color: #635f4d; box-shadow: none; }
+.ff-holdem-round-actions button:hover:enabled { filter: brightness(1.08); }
+.ff-holdem-turn-clock { position: absolute; bottom: calc(100% + 25px); left: calc(50% + 52px); display: flex; align-items: baseline; gap: 4px; color: #f4e4c0; font-size: 10px; white-space: nowrap; pointer-events: none; }
+.ff-holdem-turn-clock > span { display: none; }
+.ff-holdem-turn-clock strong { font-size: 11px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.ff-holdem-turn-clock strong::after { content: 's'; }
+.ff-holdem-raise-control { display: grid; grid-template-columns: minmax(150px, 1fr) auto; column-gap: 12px; row-gap: 6px; align-items: center; width: 390px; max-width: 100%; }
+.ff-holdem-raise-control > label { display: block; grid-column: 1 / -1; text-align: left; color: #dfdfc2; font-size: 10px; }
+.ff-holdem-raise-control > label strong { display: none; }
+.ff-holdem-raise-control > input[type=range] { grid-row: 3; grid-column: 1 / -1; width: 100%; height: 20px; margin: 0; accent-color: #d9b66e; cursor: pointer; }
+.ff-holdem-raise-buttons { display: grid; grid-column: 1; grid-row: 2; grid-template-columns: 35px minmax(85px, 1fr) 35px; overflow: hidden; min-height: 40px; border: 1px solid #b48b49; border-radius: 7px; background: #000e0a8c; }
+.ff-holdem-raise-buttons button { min-width: 35px; min-height: 38px; padding: 0; border: 0; border-radius: 0; background: linear-gradient(#282e22, #08110d); color: #f4e8bf; font-size: 21px; }
+.ff-holdem-raise-buttons output { display: grid; place-items: center; border-inline: 1px solid #b48b495e; color: #fff1d2; font: 500 16px FFHoldemDisplay, Georgia, serif; font-variant-numeric: tabular-nums; }
+.ff-holdem-raise-shortcuts { display: flex; grid-column: 2; grid-row: 2; gap: 5px; }
+.ff-holdem-raise-shortcuts button { min-height: 34px; min-width: 52px; border: 1px solid #b48b497c; border-radius: 22px; padding: 5px 8px; background: linear-gradient(#303025a0, #001309a0); color: #f5e6c0; font: 500 10px FFHoldemDisplay, Georgia, serif; text-transform: uppercase; white-space: nowrap; }
+.ff-holdem-actions .ff-holdem-leave { position: absolute; right: -106px; top: 50%; transform: translateY(-50%); padding: 8px 14px; min-height: 36px; border: 1px solid #a6823d60; border-radius: 22px; background: #00160f8c; color: #dfdec1; font-size: 10px; white-space: nowrap; }
+.ff-holdem-waiting { min-width: 230px; text-align: center; color: #c4cbae; font-size: 12px; }
+.ff-holdem-actions:has(.ff-holdem-waiting):not(:has(.ff-holdem-action)) { min-height: 70px; min-width: 300px; margin-top: 20px; }
+.ff-holdem-leave-confirm { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); z-index: 8; width: min(370px, 90vw); max-height: 65dvh; overflow: auto; padding: 22px; border: 1px solid #b39859; border-radius: 14px; background: #082719; color: #f5e8c6; box-shadow: 0 10px 30px #0009; }
+.ff-holdem-leave-confirm h2 { margin: 0; font: 500 24px FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-leave-confirm p { color: #bcc8b0; font-size: 12px; line-height: 1.6; }
+.ff-holdem-confirm-actions { display: flex; gap: 7px; }
+.ff-holdem-confirm-actions button, .ff-holdem-primary, .ff-holdem-state button, .ff-holdem-queue button, .ff-holdem-result__controls button { padding: 11px 19px; min-height: 44px; border: 1px solid #c3a66b; border-radius: 7px; background: #001e13; color: #f5e5bd; font-size: 12px; }
+.ff-holdem-page .ff-holdem-primary { background: linear-gradient(145deg, #f2da9e, #be8e3b); border-color: #f0d38d; color: #30220e; box-shadow: inset 0 1px #fff5; }
+.ff-holdem-hand-history { position: absolute; top: 4px; right: 26px; z-index: 7; max-width: min(330px, 85%); color: #d0cfb0; font-size: 9px; }
+.ff-holdem-hand-history summary { list-style: none; padding: 6px 10px; border: 1px solid #bf9f5c44; border-radius: 20px; background: #001d1290; cursor: pointer; }
+.ff-holdem-hand-history[open] { border: 1px solid #bf9f5c60; border-radius: 12px; background: #052416; box-shadow: 0 10px 20px #0008; }
+.ff-holdem-hand-history ol { max-height: 230px; overflow: auto; padding: 4px 13px; margin: 0; list-style: none; }
+.ff-holdem-hand-history li { display: flex; gap: 18px; justify-content: space-between; border-bottom: 1px solid #fff1; padding: 8px 0; font-size: 10px; }
+.ff-holdem-hand-history b { font-weight: 500; color: #f0e6c5; }
+.ff-holdem-result__outcome { align-self: center; flex: none; z-index: 4; margin: 5px auto 9px; padding: 8px 22px; border: 1px solid #b7a06455; border-radius: 14px; background: #001b10ed; color: #f3d38f; box-shadow: 0 6px 15px #0004; }
+.ff-holdem-result__outcome strong { font: 550 23px FFHoldemDisplay, Georgia, serif; white-space: nowrap; }
+.ff-holdem-result__controls { display: flex; align-items: center; justify-content: center; gap: 13px; min-height: 92px; padding: 15px; background: #001c1170; }
+.ff-holdem-error { display: flex; flex: none; align-items: center; justify-content: center; gap: 10px; z-index: 8; padding: 8px 15px; color: #ffedca; background: #332913; border-bottom: 1px solid #b9995a; font-size: 11px; }
+.ff-holdem-error button { border: 1px solid #b9995a; border-radius: 5px; padding: 6px 9px; background: none; }
+.ff-holdem-state, .ff-holdem-queue { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 15px; min-height: 300px; padding: 25px; text-align: center; }
+.ff-holdem-state h1, .ff-holdem-queue h1 { margin: 0; font: 500 34px FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-state > span, .ff-holdem-queue__mark { color: #d9bf7f; font-size: 48px; }
+.ff-holdem-state p, .ff-holdem-queue p { max-width: 40ch; font-size: 12px; line-height: 1.7; color: #c3ceb7; }
+
+.ff-holdem-lobby { display: flex; flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 24px; text-align: center; }
+.ff-holdem-lobby-header h1, .ff-holdem-lobby__eyebrow { display: none; }
+.ff-holdem-lobby-header p { font: 500 29px FFHoldemDisplay, Georgia, serif; color: #eee0b4; margin: 0 0 6px; }
+.ff-holdem-lobby__details { display: flex; gap: 12px; color: #c6d0b3; font-size: 12px; }
+.ff-holdem-lobby__details strong { color: #f1d596; }
+.ff-holdem-stakes { display: flex; justify-content: center; gap: 15px; width: 100%; max-width: 760px; margin: 12px 0; }
+.ff-holdem-stakes button { display: flex; flex: 1; flex-direction: column; gap: 14px; max-width: 300px; min-height: 170px; padding: 24px; border: 1px solid #c0aa6b80; border-radius: 12px; text-align: left; background: #001e1280; box-shadow: 0 7px 14px #0003; }
+.ff-holdem-stakes button[aria-checked=true] { border-color: #eed091; background: #073b20b3; box-shadow: inset 0 1px #eed09144, 0 0 0 1px #eed09122; }
+.ff-holdem-stakes strong { font: 500 28px FFHoldemDisplay, Georgia, serif; color: #f3dfac; }
+.ff-holdem-stakes span { font-size: 13px; }
+.ff-holdem-stakes small { color: #b6c8aa; font-size: 11px; line-height: 1.6; }
+.ff-holdem-lobby-join { min-width: 220px; }
+.ff-holdem-lobby-note { color: #efdaa4; font-size: 12px; }
+.ff-holdem-buy-in { display: grid; gap: 11px; width: min(100%, 350px); padding: 17px 20px; border: 1px solid #bca66b70; border-radius: 12px; background: #00221470; }
+.ff-holdem-buy-in > label { color: #eedaa4; font-size: 12px; }
+.ff-holdem-buy-in__amount { display: flex; align-items: center; justify-content: center; gap: 8px; color: #f1d596; font: 500 27px FFHoldemDisplay, Georgia, serif; }
+.ff-holdem-buy-in__amount input { box-sizing: border-box; width: 155px; min-height: 44px; padding: 5px 9px; border: 1px solid #bca66b80; border-radius: 6px; background: #001c11b3; color: inherit; font: inherit; text-align: center; }
+.ff-holdem-buy-in__amount input[aria-invalid=true] { border-color: #e7c88b; }
+.ff-holdem-buy-in input[type=range] { width: 100%; min-height: 28px; accent-color: #d4b575; cursor: pointer; }
+.ff-holdem-buy-in__presets { display: flex; justify-content: center; gap: 8px; }
+.ff-holdem-buy-in__presets button { flex: 1; min-height: 44px; padding: 5px 9px; border: 1px solid #bca66b80; border-radius: 6px; background: #001c1180; color: #f0dfb4; font-size: 11px; }
+.ff-holdem-buy-in__presets small { display: block; margin-top: 3px; font-size: 10px; color: #c2cba9; }
+.ff-holdem-buy-in p { margin: 0; color: #c2cba9; font-size: 10px; line-height: 1.7; }
+.ff-holdem-buy-in :disabled { cursor: default; opacity: .5; }
+
+.ff-holdem-rules { width: min(620px, calc(100vw - 24px)); max-height: min(82dvh, 760px); overflow: auto; padding: 0; border: 1px solid #b59a60; border-radius: 15px; background: #062518; color: #f4e6c2; box-shadow: 0 20px 70px #000b; font-family: FFHoldemSans, sans-serif; }
+.ff-holdem-rules::backdrop { background: #0009; }
+.ff-holdem-rules > div { position: relative; padding: 26px; }
+.ff-holdem-rules__close { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid #b39a5a80; border-radius: 50%; background: #001b10; color: #f8e7bd; font-size: 23px; }
+.ff-holdem-rules__eyebrow { color: #ccae6f; letter-spacing: .12em; text-transform: uppercase; font-size: 10px; }
+.ff-holdem-rules h2 { font: 550 32px FFHoldemDisplay, Georgia, serif; margin: 9px 0 18px; }
+.ff-holdem-rules h3 { font: 500 20px FFHoldemDisplay, Georgia, serif; color: #e9ce8f; }
+.ff-holdem-rules p, .ff-holdem-rules li, .ff-holdem-rules dd { color: #c2cfb7; line-height: 1.7; font-size: 12px; }
+.ff-holdem-rules dl { display: flex; flex-direction: column; gap: 10px; }
+.ff-holdem-rules dl > div { display: grid; grid-template-columns: 80px 1fr; gap: 14px; }
+.ff-holdem-rules dt { font-size: 12px; color: #f3deb0; }
+.ff-holdem-rules dd { margin: 0; }
+.ff-holdem-rules__stakes { overflow-x: auto; }
+.ff-holdem-rules table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 10px; }
+.ff-holdem-rules caption { text-align: left; margin-bottom: 8px; color: #e5cea0; }
+.ff-holdem-rules th, .ff-holdem-rules td { padding: 8px 5px; border-bottom: 1px solid #b9a36b40; text-align: left; }
+
+@media (max-width: 1100px) {
+  .ff-holdem-actions { gap: 15px; padding: 9px 18px; }
+  .ff-holdem-raise-control { width: 340px; grid-template-columns: minmax(120px, 1fr) auto; column-gap: 7px; }
+  .ff-holdem-round-actions { gap: 10px; }
+  .ff-holdem-actions .ff-holdem-leave { position: static; transform: none; align-self: flex-end; margin-bottom: 2px; font-size: 9px; padding: 6px 10px; }
+  .ff-holdem-seat { width: 140px; }
+  .ff-holdem-seat.is-current { width: 175px; }
+  .ff-holdem-seat-bet { font-size: 9px; gap: 4px; }
+}
+@media (max-width: 800px) and (min-width: 601px) {
+  .ff-holdem-actions { gap: 10px; padding: 9px 13px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 70px; height: 70px; font-size: 14px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 82px; height: 82px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 68px; height: 68px; }
+  .ff-holdem-round-actions .ff-holdem-action small { font-size: 13px; }
+  .ff-holdem-raise-control { width: 265px; display: grid; grid-template-columns: 1fr; }
+  .ff-holdem-raise-shortcuts { grid-column: 1; grid-row: 4; }
+  .ff-holdem-raise-shortcuts button { flex: 1; }
+  .ff-holdem-seat { width: 120px; }
+  .ff-holdem-seat-cards { --ff-card-width: 45px; }
+}
+@media (max-height: 800px) and (min-width: 601px) {
+  .ff-holdem-game-header { min-height: 61px; padding-top: 7px; }
+  .ff-holdem-game-header h1 { font-size: 44px; }
+  .ff-holdem-actions { min-height: 124px; margin-block: 8px 12px; padding-block: 6px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 90px; height: 90px; font-size: 16px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 108px; height: 108px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 88px; height: 88px; }
+  .ff-holdem-round-actions .ff-holdem-action small { font-size: 14px; }
+  .ff-holdem-table { min-height: 350px; }
+  .ff-holdem-stage { min-height: 320px; }
+  .ff-holdem-board { top: calc(36% - 24px); gap: 14px; }
+  .ff-holdem-community { --ff-card-width: clamp(62px, 6.5cqw, 90px); gap: 10px; }
+  .ff-holdem-pot-chips { height: 48px; }
+  .ff-holdem-pot-chips .ff-holdem-chip-pile { --hh-chip-size: 43px; }
+  .ff-holdem-pot strong { font-size: 29px; }
+  .ff-holdem-seat-cards { --ff-card-width: clamp(46px, 4.8cqw, 65px); }
+  .ff-holdem-seat.is-current .ff-holdem-seat-cards { --ff-card-width: 72px; }
+  .ff-holdem-seat-identity strong, .ff-holdem-seat-identity > span { font-size: 14px; }
+  .ff-holdem-chip-pile { --hh-chip-size: 25px; }
+}
+@media (max-width: 600px) {
+  .ff-holdem-game-header { min-height: 56px; padding: 7px 13px 3px; gap: 8px; }
+  .ff-holdem-game-header h1 { font-size: 31px; }
+  .ff-holdem-game-tools { gap: 7px; }
+  .ff-holdem-game-tools button { width: 36px; height: 36px; font-size: 21px; }
+  .ff-holdem-game-tools svg { width: 18px; height: 18px; }
+  .ff-holdem-table { min-height: 385px; }
+  .ff-holdem-stage { min-height: 365px; }
+  .ff-holdem-table-meta { min-height: 18px; padding: 0 13px; letter-spacing: .03em; font-size: 7px; }
+  .ff-holdem-table-meta i { margin: 0 2px; }
+  .ff-holdem-board { top: 43%; max-width: 90%; gap: 11px; }
+  .ff-holdem-community { --ff-card-width: clamp(39px, 11.1cqw, 59px); gap: 6px; }
+  .ff-holdem-pot { gap: 5px; }
+  .ff-holdem-pot > div:last-child { gap: 6px; }
+  .ff-holdem-pot > div:last-child > span { font-size: 11px; }
+  .ff-holdem-pot strong { font-size: 23px; }
+  .ff-holdem-pot-chips { height: 30px; padding-top: 5px; }
+  .ff-holdem-pot-chips .ff-holdem-chip-pile { --hh-chip-size: 27px; }
+  .ff-holdem-pot-chips .ff-holdem-chip-pile:nth-child(2) { margin-bottom: 6px; }
+  .ff-holdem-seat, .ff-holdem-seat.is-current { width: 110px; gap: 4px; }
+  .ff-holdem-seat-plaque { padding: 0; }
+  .ff-holdem-seat-identity strong, .ff-holdem-seat-identity > span { font-size: 12px; }
+  .ff-holdem-seat-identity { gap: 1px; }
+  .ff-holdem-seat-cards { --ff-card-width: 33px; gap: 3px; }
+  .ff-holdem-seat.is-current .ff-holdem-seat-cards { --ff-card-width: 52px; gap: 6px; }
+  :where(.ff-holdem-stage) .seat-pos-1 { left: 12%; top: 29%; width: 23cqw; }
+  :where(.ff-holdem-stage) .seat-pos-4 { left: 88%; top: 29%; width: 23cqw; }
+  :where(.ff-holdem-stage) .seat-pos-2 { left: 35%; top: 14%; }
+  :where(.ff-holdem-stage) .seat-pos-3 { left: 65%; top: 14%; }
+  :where(.ff-holdem-stage) .seat-pos-0 { top: calc(78% + 18px); width: 145px; }
+  .ff-holdem-seat-action { height: 11px; line-height: 11px; font-size: 7px; }
+  .ff-holdem-dealer { width: 21px; height: 21px; top: 35px; right: -5px; font-size: 11px; }
+  .ff-holdem-chip-pile { --hh-chip-size: 22px; }
+  .ff-holdem-seat-bet { font-size: 8px; gap: 3px; }
+  .ff-holdem-seat.seat-pos-1 .ff-holdem-seat-bet,
+  .ff-holdem-seat.seat-pos-4 .ff-holdem-seat-bet { left: 50%; right: auto; top: calc(100% + 2px); transform: translateX(-50%); flex-direction: row; }
+  .ff-holdem-seat.seat-pos-0 .ff-holdem-seat-bet { left: calc(100% + 5px); top: 23%; }
+  .ff-holdem-seat.seat-pos-2 .ff-holdem-seat-bet,
+  .ff-holdem-seat.seat-pos-3 .ff-holdem-seat-bet { top: calc(100% + 3px); }
+  .ff-holdem-open-seat { display: none; }
+  .ff-holdem-turn-status { left: calc(50% + 70px); bottom: 8px; font-size: 9px; }
+  .ff-holdem-actions { flex-wrap: wrap; width: calc(100% - 20px); max-width: none; min-height: 175px; gap: 7px; padding: 8px 10px 6px; margin: 7px 10px 9px; border-radius: 23px; }
+  .ff-holdem-round-actions { width: 100%; gap: 14px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 65px; height: 65px; font-size: 13px; gap: 4px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 76px; height: 76px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 63px; height: 63px; }
+  .ff-holdem-round-actions .ff-holdem-action small { font-size: 12px; }
+  .ff-holdem-round-actions .ff-holdem-action::before { inset: 6px; }
+  .ff-holdem-raise-control { width: 100%; grid-template-columns: minmax(115px, 1fr) auto; gap: 3px 6px; }
+  .ff-holdem-raise-control > label { grid-column: 1; font-size: 8px; }
+  .ff-holdem-raise-control > input[type=range] { grid-column: 1; grid-row: 3; height: 24px; }
+  .ff-holdem-raise-buttons { grid-column: 1; grid-row: 2; min-height: 36px; grid-template-columns: 33px 1fr 33px; }
+  .ff-holdem-raise-buttons button { min-height: 34px; font-size: 19px; }
+  .ff-holdem-raise-buttons output { font-size: 14px; }
+  .ff-holdem-raise-shortcuts { grid-column: 2; grid-row: 2 / 4; gap: 4px; align-items: center; }
+  .ff-holdem-raise-shortcuts button { min-width: 44px; min-height: 35px; padding: 4px 6px; font-size: 9px; }
+  .ff-holdem-actions .ff-holdem-leave { position: static; transform: none; align-self: auto; order: 9; min-height: 24px; padding: 3px 10px; margin: 0; border: 0; background: none; font-size: 8px; }
+  .ff-holdem-turn-clock { bottom: calc(100% + 14px); left: calc(50% + 48px); font-size: 10px; }
+  .ff-holdem-turn-clock strong { font-size: 10px; }
+  .ff-holdem-waiting { min-width: 0; flex: 1; font-size: 10px; }
+  .ff-holdem-actions:has(.ff-holdem-waiting):not(:has(.ff-holdem-action)) { min-height: 56px; min-width: 0; }
+  .ff-holdem-hand-history { top: 0; right: 10px; font-size: 8px; }
+  .ff-holdem-hand-history summary { padding: 4px 7px; }
+  .ff-holdem-result__outcome { padding: 6px 15px; }
+  .ff-holdem-result__outcome strong { font-size: 19px; }
+  .ff-holdem-result__controls { min-height: 72px; }
+  .ff-holdem-result__controls button { padding: 9px 15px; font-size: 11px; }
+  .ff-holdem-lobby { padding: 20px 13px; gap: 15px; overflow: auto; }
+  .ff-holdem-lobby-header p { font-size: 25px; }
+  .ff-holdem-stakes { gap: 9px; margin: 4px 0; }
+  .ff-holdem-stakes button { min-height: 150px; padding: 18px 12px; gap: 11px; }
+  .ff-holdem-stakes strong { font-size: 23px; }
+  .ff-holdem-stakes span { font-size: 11px; }
+  .ff-holdem-stakes small { font-size: 9px; }
+  .ff-holdem-rules > div { padding: 21px; }
+  .ff-holdem-rules dl > div { grid-template-columns: 65px 1fr; gap: 8px; }
+}
+@media (max-width: 600px) and (max-height: 700px) {
+  .ff-holdem-game-header { min-height: 48px; padding-top: 4px; }
+  .ff-holdem-game-header h1 { font-size: 28px; }
+  .ff-holdem-table { min-height: 280px; }
+  .ff-holdem-stage { min-height: 260px; }
+  .ff-holdem-community { --ff-card-width: 35px; gap: 5px; }
+  .ff-holdem-board { top: calc(43% - 10px); gap: 7px; }
+  .ff-holdem-seat-cards { --ff-card-width: 25px; gap: 2px; }
+  .ff-holdem-seat.is-current .ff-holdem-seat-cards { --ff-card-width: 40px; gap: 5px; }
+  .ff-holdem-seat-identity strong, .ff-holdem-seat-identity > span { font-size: 10px; }
+  .ff-holdem-seat, .ff-holdem-seat.is-current { gap: 3px; }
+  .ff-holdem-seat-action { font-size: 6px; height: 8px; line-height: 8px; }
+  :where(.ff-holdem-stage) .seat-pos-1, :where(.ff-holdem-stage) .seat-pos-4 { top: 22%; }
+  :where(.ff-holdem-stage) .seat-pos-0 { top: calc(78% + 8px); }
+  .ff-holdem-pot-chips { height: 22px; }
+  .ff-holdem-pot-chips .ff-holdem-chip-pile { --hh-chip-size: 21px; }
+  .ff-holdem-pot { gap: 3px; }
+  .ff-holdem-pot strong { font-size: 19px; }
+  .ff-holdem-pot > div:last-child > span { font-size: 9px; }
+  .ff-holdem-chip-pile { --hh-chip-size: 17px; }
+  .ff-holdem-seat-bet { font-size: 6px; }
+  .ff-holdem-dealer { width: 17px; height: 17px; top: 26px; font-size: 9px; }
+  .ff-holdem-turn-status { bottom: 4px; font-size: 8px; }
+  .ff-holdem-actions { min-height: 156px; gap: 4px; padding-top: 6px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 56px; height: 56px; font-size: 11px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 65px; height: 65px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 55px; height: 55px; }
+  .ff-holdem-round-actions .ff-holdem-action small { font-size: 10px; }
+  .ff-holdem-raise-control > input[type=range] { height: 18px; }
+  .ff-holdem-raise-buttons, .ff-holdem-raise-buttons button { min-height: 31px; }
+  .ff-holdem-raise-shortcuts button { min-height: 32px; }
+  .ff-holdem-actions .ff-holdem-leave { min-height: 18px; }
+  .ff-holdem-turn-clock { bottom: calc(100% + 11px); left: calc(50% + 41px); }
+  .ff-holdem-turn-clock strong { font-size: 8px; }
+}
+@media (max-height: 500px) and (min-width: 601px) {
+  .ff-holdem-game-header { min-height: 39px; padding: 3px 18px 0; }
+  .ff-holdem-game-header h1 { font-size: 28px; }
+  .ff-holdem-game-tools button { width: 30px; height: 30px; font-size: 18px; }
+  .ff-holdem-game-tools svg { width: 16px; height: 16px; }
+  .ff-holdem-table { min-height: 202px; }
+  .ff-holdem-stage { min-height: 183px; }
+  .ff-holdem-table-meta { font-size: 6px; min-height: 17px; padding-inline: 20px; }
+  .ff-holdem-board { top: calc(30% - 12px); gap: 5px; }
+  .ff-holdem-community { --ff-card-width: 35px; gap: 5px; }
+  .ff-holdem-pot-chips { display: none; }
+  .ff-holdem-pot { gap: 0; }
+  .ff-holdem-pot strong { font-size: 17px; }
+  .ff-holdem-pot > div:last-child > span { font-size: 9px; }
+  .ff-holdem-seat { width: 95px; gap: 3px; }
+  .ff-holdem-seat-cards { --ff-card-width: 25px; gap: 2px; }
+  .ff-holdem-seat-identity strong, .ff-holdem-seat-identity > span { font-size: 10px; }
+  .ff-holdem-seat-action { height: 8px; line-height: 8px; font-size: 6px; }
+  .ff-holdem-seat.is-current { gap: 2px; }
+  .ff-holdem-seat.is-current .ff-holdem-seat-cards { --ff-card-width: 33px; gap: 4px; }
+  :where(.ff-holdem-stage) .seat-pos-0 { top: 78%; }
+  :where(.ff-holdem-stage) .seat-pos-2, :where(.ff-holdem-stage) .seat-pos-3 { top: 19%; }
+  .ff-holdem-dealer { top: 26px; width: 17px; height: 17px; font-size: 9px; right: -4px; }
+  .ff-holdem-chip-pile { --hh-chip-size: 18px; }
+  .ff-holdem-seat-bet { font-size: 7px; }
+  .ff-holdem-seat.seat-pos-2 .ff-holdem-seat-bet, .ff-holdem-seat.seat-pos-3 .ff-holdem-seat-bet { left: calc(100% + 4px); top: 50%; transform: none; }
+  .ff-holdem-turn-status { left: auto; right: 14px; bottom: 6px; transform: none; font-size: 8px; }
+  .ff-holdem-actions { min-height: 76px; margin-block: 3px 7px; padding-block: 4px; gap: 14px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 55px; height: 55px; font-size: 11px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 64px; height: 64px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 53px; height: 53px; }
+  .ff-holdem-round-actions .ff-holdem-action small { font-size: 10px; }
+  .ff-holdem-raise-control { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; width: 325px; }
+  .ff-holdem-raise-control > label { font-size: 8px; }
+  .ff-holdem-raise-control > input[type=range] { height: 14px; }
+  .ff-holdem-raise-buttons { min-height: 30px; grid-template-columns: 28px minmax(74px, 1fr) 28px; }
+  .ff-holdem-raise-buttons button { min-height: 28px; font-size: 17px; }
+  .ff-holdem-raise-buttons output { font-size: 13px; }
+  .ff-holdem-raise-shortcuts { grid-column: 2; grid-row: 2; }
+  .ff-holdem-raise-shortcuts button { min-height: 29px; min-width: 42px; font-size: 8px; padding: 4px; }
+  .ff-holdem-turn-clock { bottom: auto; top: -16px; left: calc(50% + 90px); }
+  .ff-holdem-turn-clock strong { font-size: 8px; }
+  .ff-holdem-actions .ff-holdem-leave { min-height: 28px; padding: 4px 8px; font-size: 8px; }
+  .ff-holdem-result__controls { min-height: 60px; }
+  .ff-holdem-result__outcome { position: absolute; left: 15px; bottom: 14px; margin: 0; padding: 5px 13px; }
+  .ff-holdem-result__outcome strong { font-size: 15px; }
+}
+@media (min-width: 601px) and (min-height: 501px) and (max-height: 800px) {
+  :where(.ff-holdem-stage) .seat-pos-2 { left: 25%; }
+  :where(.ff-holdem-stage) .seat-pos-3 { left: 75%; }
+}
+@media (min-width: 601px) and (min-height: 501px) and (max-height: 740px) {
+  .ff-holdem-board { top: calc(31% - 24px); }
+}
+@media (max-width: 600px) and (max-height: 600px) {
+  .ff-holdem-pot-chips { display: none; }
+  .ff-holdem-board { top: calc(42% - 10px); }
+  .ff-holdem-actions { gap: 3px; margin-bottom: 5px; }
+  .ff-holdem-round-actions .ff-holdem-action { width: 54px; height: 54px; }
+  .ff-holdem-round-actions .ff-holdem-action--call { width: 60px; height: 60px; }
+  .ff-holdem-round-actions .ff-holdem-action--fold { width: 52px; height: 52px; }
+  .ff-holdem-raise-control > input[type=range] { height: 14px; }
+  .ff-holdem-actions .ff-holdem-leave { min-height: 16px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ff-holdem-community .ff-holdem-card:has(.ff-playing-card) { animation: ff-holdem-reveal .18s ease-out both; }
+  @keyframes ff-holdem-reveal { from { opacity: .3; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+}

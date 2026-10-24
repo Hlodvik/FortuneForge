@@ -14,7 +14,8 @@ internal interface ICreditHoldemStore
         ulong seed,
         DateTime nowUtc,
         CancellationToken cancellationToken,
-        string tableRuleId = CreditHoldemTableRules.StandardId);
+        string tableRuleId = CreditHoldemTableRules.StandardId,
+        int? buyInCents = null);
     Task<CreditHoldemStoreResult> CancelAsync(
         string userId,
         string ticketId,

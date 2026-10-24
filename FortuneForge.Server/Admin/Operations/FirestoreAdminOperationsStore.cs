@@ -301,6 +301,26 @@ internal sealed class FirestoreAdminOperationsStore(
 
     private static AdminOperationsFinancialRecord? TryMapCreditHoldemRevenue(DocumentSnapshot document)
     {
+        if (String(document, "financialClassification") == "escrow-house-backed-v1")
+        {
+            // Buy-ins/cash-outs are transfers, not wagers or revenue. Recognize
+            // only the settled hand's chip movements, including house-funded seats.
+            if (String(document, "currencyId") != "slotsCredits" ||
+                !document.TryGetValue<long>("humanWagerCents", out var wager) ||
+                !document.TryGetValue<long>("humanPayoutCents", out var paid) ||
+                !document.TryGetValue<long>("houseNetCents", out var net) ||
+                !document.TryGetValue<long>("botFinancialContributionCents", out var houseChips) ||
+                !document.TryGetValue<long>("humanPlayerCount", out var players) ||
+                wager < 0 || paid < 0 || houseChips < 0 || players is < 1 or > 5 ||
+                (decimal)wager - paid != net || (decimal)paid > (decimal)wager + houseChips)
+                return null;
+            return new(
+                OpaqueId("credit-holdem", document.Id), "gaming", "texas-holdem", "settled",
+                TimestampUtc(document, "recognizedAt"), CreditsFromCents(wager), CreditsFromCents(paid),
+                CreditsFromCents(net), FinancialClassification: "escrow-house-backed-v1",
+                HumanEntryCredits: CreditsFromCents(wager), HouseFundedEntryCredits: CreditsFromCents(houseChips),
+                HumanPayoutCredits: CreditsFromCents(paid));
+        }
         if (String(document, "currencyId") != "slotsCredits" ||
             String(document, "financialClassification") != "real-human-pool-v1" ||
             !document.TryGetValue<long>("botFinancialContributionCents", out var botContribution) ||

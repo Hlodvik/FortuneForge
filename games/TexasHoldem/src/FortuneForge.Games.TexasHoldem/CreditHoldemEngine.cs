@@ -12,7 +12,8 @@ internal static class CreditHoldemEngine
         string partitionKey,
         ulong seed,
         DateTime nowUtc,
-        string tableRuleId = CreditHoldemTableRules.StandardId)
+        string tableRuleId = CreditHoldemTableRules.StandardId,
+        bool usesBuyInEscrow = false)
     {
         if (seats.Count is < CreditHoldemMoney.MinimumStartPlayers or > CreditHoldemMoney.MaximumSeats)
             throw new ArgumentOutOfRangeException(nameof(seats));
@@ -22,7 +23,9 @@ internal static class CreditHoldemEngine
             throw new ArgumentException("Hold'em seat assignments must be unique.", nameof(seats));
 
         var rule = CreditHoldemTableRules.Resolve(tableRuleId);
-        return CreateHand(matchId, partitionKey, seats, seed, 0, 1, 1, nowUtc, rule.Id);
+        if (usesBuyInEscrow && seats.Any(seat => seat.Stack < rule.BigBlindCents || seat.Stack > rule.MaximumStackCents))
+            throw new ArgumentException("Initial escrow stacks must be within the table's buy-in limits.", nameof(seats));
+        return CreateHand(matchId, partitionKey, seats, seed, 0, 1, 1, nowUtc, rule.Id, usesBuyInEscrow);
     }
 
     public static CreditHoldemMatch? StartNextHand(
@@ -38,8 +41,12 @@ internal static class CreditHoldemEngine
         var rule = CreditHoldemTableRules.Resolve(prior.TableRuleId);
         var descriptors = prior.Players
             .Where(player => !prior.LeavingActorIds.Contains(player.ActorId))
+            .Where(player => !prior.UsesBuyInEscrow || player.EscrowTicketId is null ||
+                !prior.EscrowCashedOutTicketIds.Contains(player.EscrowTicketId))
             .OrderBy(player => player.Seat)
-            .Select(player => player.IsAccountBacked
+            .Select(player => prior.UsesBuyInEscrow
+                ? ReturningEscrowSeat(player)
+                : player.IsAccountBacked
                 ? ReturningAccountSeat(player, balances, rule)
                 : new CreditHoldemSeatAssignment(
                     player.ActorId,
@@ -49,13 +56,19 @@ internal static class CreditHoldemEngine
                     player.Seat,
                     player.StartingStack,
                     player.HostMetadata))
-            .Where(descriptor => !descriptor.IsAccountBacked || descriptor.Stack >= rule.BigBlindCents)
+            .Where(descriptor => (!prior.UsesBuyInEscrow && !descriptor.IsAccountBacked) || descriptor.Stack >= rule.BigBlindCents)
             .ToList();
 
         foreach (var ticket in prior.PendingTakeovers.OrderBy(ticket => ticket.JoinedAtUtc).ThenBy(ticket => ticket.TicketId, StringComparer.Ordinal))
         {
-            if (!balances.TryGetValue(ticket.UserId, out var balance) || balance < rule.BigBlindCents) continue;
-            var accountSeat = AccountSeat(ticket, descriptors.Count, balances, rule);
+            if (prior.UsesBuyInEscrow)
+            {
+                if (ticket.BuyInCents < rule.BigBlindCents || ticket.BuyInCents > rule.MaximumStackCents ||
+                    prior.EscrowCashedOutTicketIds.Contains(ticket.TicketId) ||
+                    descriptors.Any(descriptor => descriptor.ActorId == ticket.UserId)) continue;
+            }
+            else if (!balances.TryGetValue(ticket.UserId, out var balance) || balance < rule.BigBlindCents) continue;
+            var accountSeat = AccountSeat(ticket, descriptors.Count, balances, rule, prior.UsesBuyInEscrow);
             var openSeat = Enumerable.Range(0, CreditHoldemMoney.MaximumSeats)
                 .FirstOrDefault(seat => descriptors.All(value => value.Seat != seat));
             if (descriptors.Count < CreditHoldemMoney.MaximumSeats)
@@ -80,7 +93,9 @@ internal static class CreditHoldemEngine
             checked(prior.Version + 1),
             checked(prior.HandNumber + 1),
             nowUtc,
-            rule.Id);
+            rule.Id,
+            prior.UsesBuyInEscrow,
+            prior.EscrowCashedOutTicketIds);
     }
 
     public static IReadOnlyList<string> LegalActions(CreditHoldemMatch match, CreditHoldemPlayer player)
@@ -259,6 +274,17 @@ internal static class CreditHoldemEngine
 
     public static CreditHoldemFinancialSettlement CalculateHumanSettlement(CreditHoldemMatch match)
     {
+        if (match.UsesBuyInEscrow)
+        {
+            // Managed seats are house-funded table chips. A human's cashable stack
+            // receives the actual award, not only the human-funded fraction of a pot.
+            var escrowPayouts = match.Players.Where(player => player.IsAccountBacked)
+                .ToDictionary(player => player.ActorId, player => (long)player.WonHandChips, StringComparer.Ordinal);
+            var escrowCommitted = match.Players.Where(player => player.IsAccountBacked)
+                .Sum(player => (long)player.CommittedHand);
+            var escrowPaid = escrowPayouts.Values.Sum();
+            return new(escrowCommitted, escrowPayouts, escrowPaid, checked(escrowCommitted - escrowPaid));
+        }
         var payouts = match.Players.Where(value => value.IsAccountBacked)
             .ToDictionary(value => value.ActorId, _ => 0L, StringComparer.Ordinal);
         var levels = match.Players.Select(value => value.CommittedHand).Where(value => value > 0).Distinct().Order().ToArray();
@@ -297,7 +323,9 @@ internal static class CreditHoldemEngine
         int version,
         int handNumber,
         DateTime nowUtc,
-        string tableRuleId)
+        string tableRuleId,
+        bool usesBuyInEscrow = false,
+        IReadOnlySet<string>? escrowCashedOutTicketIds = null)
     {
         var rule = CreditHoldemTableRules.Resolve(tableRuleId);
         var deck = TexasHoldemRules.CreateDeck(seed);
@@ -309,12 +337,13 @@ internal static class CreditHoldemEngine
                 PublicSeatId = descriptor.PublicSeatId,
                 DisplayName = descriptor.DisplayName,
                 IsAccountBacked = descriptor.IsAccountBacked,
+                EscrowTicketId = descriptor.EscrowTicketId,
                 HostMetadata = descriptor.HostMetadata is null
                     ? new(StringComparer.Ordinal)
                     : new(descriptor.HostMetadata, StringComparer.Ordinal),
                 Seat = descriptor.Seat,
-                StartingStack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
-                Stack = Math.Min(rule.MaximumStackCents, descriptor.Stack),
+                StartingStack = usesBuyInEscrow ? descriptor.Stack : Math.Min(rule.MaximumStackCents, descriptor.Stack),
+                Stack = usesBuyInEscrow ? descriptor.Stack : Math.Min(rule.MaximumStackCents, descriptor.Stack),
                 HoleCards = [],
                 ConsecutiveMissedActionHands = descriptor.ConsecutiveMissedActionHands,
                 LastMissedActionHand = descriptor.LastMissedActionHand
@@ -341,6 +370,10 @@ internal static class CreditHoldemEngine
             MatchId = matchId,
             PartitionKey = partitionKey,
             TableRuleId = rule.Id,
+            UsesBuyInEscrow = usesBuyInEscrow,
+            EscrowCashedOutTicketIds = escrowCashedOutTicketIds is null
+                ? new(StringComparer.Ordinal)
+                : new(escrowCashedOutTicketIds, StringComparer.Ordinal),
             PendingTakeovers = [],
             LeavingActorIds = [],
             HumanPayoutsCents = [],
@@ -511,12 +544,26 @@ internal static class CreditHoldemEngine
         CreditHoldemTicket ticket,
         int seat,
         IReadOnlyDictionary<string, long> balances,
-        CreditHoldemTableRule rule)
+        CreditHoldemTableRule rule,
+        bool usesBuyInEscrow = false)
     {
-        var stack = CreditHoldemMoney.StackFromBalance(
+        var stack = usesBuyInEscrow ? ticket.BuyInCents : CreditHoldemMoney.StackFromBalance(
             balances.GetValueOrDefault(ticket.UserId), rule.MaximumStackCents);
-        return new(ticket.UserId, ticket.PublicSeatId, ticket.DisplayName, true, seat, stack);
+        return new(ticket.UserId, ticket.PublicSeatId, ticket.DisplayName, true, seat, stack,
+            EscrowTicketId: usesBuyInEscrow ? ticket.TicketId : null);
     }
+
+    private static CreditHoldemSeatAssignment ReturningEscrowSeat(CreditHoldemPlayer player) => new(
+        player.ActorId,
+        player.PublicSeatId,
+        player.DisplayName,
+        player.IsAccountBacked,
+        player.Seat,
+        player.Stack,
+        player.HostMetadata,
+        player.ConsecutiveMissedActionHands,
+        player.LastMissedActionHand,
+        player.EscrowTicketId);
 
     private static CreditHoldemSeatAssignment ReturningAccountSeat(
         CreditHoldemPlayer player,

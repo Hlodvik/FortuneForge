@@ -28,7 +28,8 @@ internal sealed class CreditHoldemService(ICreditHoldemStore store)
             BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(8)),
             DateTime.UtcNow,
             cancellationToken,
-            tableRule.Id);
+            tableRule.Id,
+            CreditHoldemEscrow.RequestedCents(request.BuyInCredits, tableRule));
     }
 
     public Task<CreditHoldemStoreResult> CancelAsync(

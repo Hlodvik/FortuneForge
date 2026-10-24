@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
-import type { CreditHoldemTable } from '../../../games/cards/texasHoldem/creditHoldemApi'
-import { CreditHoldemTableSurface, CreditTexasHoldemPreview, FindingTableView } from './CreditTexasHoldemPage'
+import type { CreditHoldemResultSession, CreditHoldemTable } from '../../../games/cards/texasHoldem/creditHoldemApi'
+import { CreditHoldemResultView, CreditHoldemTableSurface, CreditTexasHoldemPreview, FindingTableView } from './CreditTexasHoldemPage'
 
 describe('credit Texas Hold’em v2 composition', () => {
   it('lays out the current human at the front and exposes per-seat action state', () => {
@@ -17,14 +17,14 @@ describe('credit Texas Hold’em v2 composition', () => {
     expect(markup).toContain('seat-pos-0 is-current')
     expect(markup).toContain('seat-pos-2')
     expect(markup).toContain('R1.00')
-    expect(markup).toContain('credit-holdem-open-seat seat-pos-1')
+    expect(markup).toContain('ff-holdem-open-seat seat-pos-1')
     expect(markup).toContain('raise')
-    expect(markup).toContain('Pot')
+    expect(markup).toContain('Total pot')
     expect(markup).toContain('R0.50 / R1.00')
     expect(markup).not.toMatch(/buy.?in|refund|claim|skill|seed|actor/i)
   })
 
-  it('marks the winning seat with an animated surround and amount won', () => {
+  it('marks the winning seat and retains the exact cents-based pot display', () => {
     const settled = {
       ...table,
       status: 'completed',
@@ -39,7 +39,41 @@ describe('credit Texas Hold’em v2 composition', () => {
     }))
 
     expect(markup).toContain('is-winner')
-    expect(markup).toContain('+R9.50')
+    expect(markup).toContain('Winner')
+    expect(markup).toContain('Total pot R9.50')
+  })
+
+  it('shows only the viewer’s decimal-Rand payout rather than dividing it again or using all human payouts', () => {
+    const markup = renderToStaticMarkup(createElement(CreditHoldemResultView, {
+      session: resultSession(1.5, ['seat-one']), busy: false, next: vi.fn(), leave: vi.fn(),
+    }))
+
+    expect(markup).toContain('R1.50 collected')
+    expect(markup).not.toContain('R0.01 collected')
+    expect(markup).not.toContain('R9.50 collected')
+    expect(markup).toContain('Next hand')
+    expect(markup).toContain('Leave table')
+  })
+
+  it('shows a returned side-pot share without attributing another player’s win to the viewer', () => {
+    const markup = renderToStaticMarkup(createElement(CreditHoldemResultView, {
+      session: resultSession(1.5, ['seat-two']), busy: true, next: vi.fn(), leave: vi.fn(),
+    }))
+
+    expect(markup).toContain('R1.50 returned')
+    expect(markup).not.toContain('R9.50 collected')
+    expect(markup).toMatch(/disabled=""[^>]*>Next hand/)
+    expect(markup).toMatch(/disabled=""[^>]*>Leave table/)
+  })
+
+  it('does not claim the all-human payout when the viewer received nothing', () => {
+    const markup = renderToStaticMarkup(createElement(CreditHoldemResultView, {
+      session: resultSession(0, ['seat-two']), busy: false, next: vi.fn(), leave: vi.fn(),
+    }))
+
+    expect(markup).toContain('Hand complete')
+    expect(markup).not.toContain(' collected</strong>')
+    expect(markup).not.toContain('returned')
   })
 
   it('provides a deterministic actual-DOM thumbnail fixture', () => {
@@ -47,7 +81,7 @@ describe('credit Texas Hold’em v2 composition', () => {
     const second = renderToStaticMarkup(createElement(CreditTexasHoldemPreview))
 
     expect(first).toBe(second)
-    expect(first).toContain('credit-holdem-preview')
+    expect(first).toContain('ff-holdem-preview')
     expect(first).toContain('RiverMoss')
   })
 
@@ -77,7 +111,22 @@ describe('credit Texas Hold’em v2 composition', () => {
     expect(pageSource).not.toContain('optimistic')
     expect(pageSource).not.toMatch(/\bbots?\b/i)
     expect(apiSource).not.toContain('/slots')
-    expect(apiSource).not.toMatch(/dismissCredit|claimCredit|buyInCredits/)
+    expect(apiSource).not.toMatch(/dismissCredit|claimCredit/)
+  })
+
+  it('uses the isolated presentation package while retaining host-owned cards and server mutation coordination', () => {
+    const pageSource = source('./CreditTexasHoldemPage.tsx')
+
+    expect(pageSource).toContain("from '@fortuneforge/games-texas-holdem'")
+    expect(pageSource).toContain("import '@fortuneforge/games-texas-holdem/styles.css'")
+    expect(pageSource).not.toContain("import './texasHoldem.css'")
+    expect(pageSource).not.toContain("import './pokerClientHoldem.css'")
+    expect(pageSource).toContain('renderCard={renderHoldemCard}')
+    expect(pageSource).toContain('toCreditHoldemPlayingCard(card, index, scope)')
+    expect(pageSource).toContain('<PlayingCard ')
+    expect(pageSource).toContain('stableCreditHoldemMutation(pending, fingerprint)')
+    expect(pageSource).toContain('waitingForTable ? 950 : 4200')
+    expect(pageSource).toContain('setBalanceCredits(response.balanceCredits)')
   })
 })
 
@@ -114,6 +163,22 @@ const table: CreditHoldemTable = {
   legalActions: ['fold', 'call', 'raise'], winningSeatIds: [], winningAmount: 0,
   startedAtUtc: '2026-08-16T12:00:00Z', matchDeadlineAtUtc: '2026-08-16T13:00:00Z',
   actionDeadlineAtUtc: '2026-08-16T12:00:30Z', remainingActionMilliseconds: 30000,
+}
+
+function resultSession(payoutCredits: number, winningSeatIds: readonly string[]): CreditHoldemResultSession {
+  return {
+    contractVersion: 'cards.texas-holdem.credit.v2', kind: 'result', version: 8,
+    matchId: table.matchId, handNumber: table.handNumber,
+    humanCommittedCredits: 9.5, humanPayoutCredits: 9.5, houseNetCredits: 0,
+    startedAtUtc: table.startedAtUtc, completedAtUtc: '2026-08-16T12:01:00Z',
+    standings: table.seats.map((seat, index) => ({
+      rank: index + 1, seatId: seat.seatId, displayName: seat.displayName,
+      finalStack: seat.stack, status: 'completed',
+      payoutCredits: seat.isCurrentPlayer ? payoutCredits : index === 1 ? 9.5 - payoutCredits : 0,
+      isCurrentPlayer: seat.isCurrentPlayer,
+    })),
+    finalTable: { ...table, status: 'completed', activeSeat: -1, legalActions: [], winningSeatIds },
+  }
 }
 
 function source(relativePath: string): string {

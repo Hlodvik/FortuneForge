@@ -13,6 +13,7 @@ export type CreditHoldemTableRule = Readonly<{
   bigBlindCredits: number
   anteCredits: number
   maximumTableStackCredits: number
+  minimumBuyInCredits?: number
 }>
 export type CreditHoldemStatus = Readonly<{
   available: boolean
@@ -168,11 +169,27 @@ export function joinCreditHoldemQueue(
   expectedVersion: number,
   idempotencyKey: string,
   tableRuleId = 'standard',
+  buyInCredits?: number,
 ): Promise<CreditHoldemMutationResponse> {
+  if (buyInCredits !== undefined && creditHoldemBuyInCents(buyInCredits) === null) {
+    return Promise.reject(new Error('Choose a buy-in in whole cents.'))
+  }
   return mutationRequest('/queue', {
     method: 'POST', headers: mutationHeaders(idempotencyKey),
-    body: JSON.stringify({ expectedVersion, tableRuleId }),
+    body: JSON.stringify({ expectedVersion, tableRuleId, ...(buyInCredits === undefined ? {} : { buyInCredits }) }),
   })
+}
+
+export function creditHoldemBuyInCents(credits: number): number | null {
+  const cents = Math.round(credits * 100)
+  return Number.isFinite(credits) && Number.isSafeInteger(cents) && cents > 0
+    && Math.abs(credits * 100 - cents) < 0.000001 ? cents : null
+}
+
+export function creditHoldemJoinFingerprint(ruleId: string, version: number, buyInCredits: number): string {
+  const cents = creditHoldemBuyInCents(buyInCredits)
+  if (cents === null) throw new Error('Choose a buy-in in whole cents.')
+  return `join:${ruleId}:${version}:${cents}`
 }
 export function cancelCreditHoldemQueue(
   ticketId: string,
@@ -331,6 +348,9 @@ function isCreditHoldemTableRule(value: unknown): value is CreditHoldemTableRule
     && isPositiveNumber(value.bigBlindCredits) && isNonNegativeNumber(value.anteCredits)
     && isPositiveNumber(value.maximumTableStackCredits)
     && value.maximumTableStackCredits >= value.bigBlindCredits
+    && (value.minimumBuyInCredits == null || isPositiveNumber(value.minimumBuyInCredits)
+      && value.minimumBuyInCredits >= value.bigBlindCredits
+      && value.minimumBuyInCredits <= value.maximumTableStackCredits)
 }
 function isSeatList(value: unknown): value is readonly CreditHoldemSeat[] {
   return Array.isArray(value) && value.every(isCreditHoldemSeat)

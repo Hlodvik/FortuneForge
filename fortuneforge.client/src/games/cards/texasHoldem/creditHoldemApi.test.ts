@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   dealNextCreditHoldemHand,
+  creditHoldemBuyInCents,
+  creditHoldemJoinFingerprint,
   getCreditHoldemSession,
   getCreditHoldemStatus,
   joinCreditHoldemQueue,
@@ -13,20 +15,20 @@ import {
 describe('credit Hold’em v2 API boundary', () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it('joins for free with only the authoritative version and idempotency key', async () => {
+  it('submits the chosen decimal-Rand buy-in with the authoritative version and idempotency key', async () => {
     const fetchMock = successfulFetch(idleMutation)
     vi.stubGlobal('fetch', fetchMock)
 
-    await joinCreditHoldemQueue(0, 'join-key')
+    await joinCreditHoldemQueue(0, 'join-key', 'standard', 12.35)
 
     const [path, init] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(path).toBe('/api/cards/texas-holdem/credit/queue')
     expect(new Headers(init.headers).get('Idempotency-Key')).toBe('join-key')
-    expect(JSON.parse(String(init.body))).toEqual({ expectedVersion: 0, tableRuleId: 'standard' })
-    expect(String(init.body)).not.toMatch(/buy.?in|stake|balance|payout|score/i)
+    expect(JSON.parse(String(init.body))).toEqual({ expectedVersion: 0, tableRuleId: 'standard', buyInCredits: 12.35 })
+    expect(String(init.body)).not.toMatch(/balance|payout|score|cards/i)
   })
 
-  it('accepts fixed blinds and no public buy-in or fee menu', async () => {
+  it('accepts table-specific buy-in limits without accepting a client-authored wallet balance', async () => {
     vi.stubGlobal('fetch', successfulFetch({
       available: true,
       minimumStartPlayers: 3,
@@ -38,15 +40,40 @@ describe('credit Hold’em v2 API boundary', () => {
       matchDeadlineSeconds: 900,
       tableRules: [{
         id: 'standard', name: 'Standard', description: 'Automatic blinds · no ante',
-        smallBlindCredits: 0.5, bigBlindCredits: 1, anteCredits: 0, maximumTableStackCredits: 100,
+        smallBlindCredits: 0.5, bigBlindCredits: 1, anteCredits: 0, maximumTableStackCredits: 100, minimumBuyInCredits: 1,
       }],
     }))
 
     const status = await getCreditHoldemStatus()
     expect(status).toMatchObject({ smallBlindCredits: 0.5, bigBlindCredits: 1 })
-    expect(status.tableRules?.[0]).toMatchObject({ id: 'standard', maximumTableStackCredits: 100 })
+    expect(status.tableRules?.[0]).toMatchObject({ id: 'standard', minimumBuyInCredits: 1, maximumTableStackCredits: 100 })
     expect(status).not.toHaveProperty('buyInCredits')
     expect(status).not.toHaveProperty('platformFeePercent')
+  })
+
+  it('keeps omitted buy-ins compatible with the server-selected legacy default', async () => {
+    const fetchMock = successfulFetch(idleMutation)
+    vi.stubGlobal('fetch', fetchMock)
+    await joinCreditHoldemQueue(0, 'legacy-key')
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body))).toEqual({ expectedVersion: 0, tableRuleId: 'standard' })
+  })
+
+  it.each([0, -1, 1.001, Number.NaN, Number.POSITIVE_INFINITY])('rejects invalid fractional or nonpositive buy-in %s without sending money intent', async amount => {
+    const fetchMock = successfulFetch(idleMutation)
+    vi.stubGlobal('fetch', fetchMock)
+    await expect(joinCreditHoldemQueue(0, 'invalid-key', 'standard', amount)).rejects.toThrow('whole cents')
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('scopes stable reservation keys to version, selected rule and exact cents', () => {
+    expect(creditHoldemBuyInCents(12.35)).toBe(1235)
+    const intent = creditHoldemJoinFingerprint('standard', 2, 12.35)
+    expect(intent).toBe('join:standard:2:1235')
+    const pending = stableCreditHoldemMutation(null, intent)
+    expect(stableCreditHoldemMutation(pending, creditHoldemJoinFingerprint('standard', 2, 12.35))).toBe(pending)
+    expect(stableCreditHoldemMutation(pending, creditHoldemJoinFingerprint('standard', 2, 12.36))).not.toBe(pending)
+    expect(stableCreditHoldemMutation(pending, creditHoldemJoinFingerprint('ante', 2, 12.35))).not.toBe(pending)
+    expect(stableCreditHoldemMutation(pending, creditHoldemJoinFingerprint('standard', 3, 12.35))).not.toBe(pending)
   })
 
   it('submits only synchronous action intent and server version', async () => {

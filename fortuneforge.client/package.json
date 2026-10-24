@@ -31,6 +31,7 @@
     "@fortuneforge/games-roulette": "0.1.0",
     "@fortuneforge/games-sic-bo": "0.1.7",
     "@fortuneforge/games-snake": "0.1.0",
+    "@fortuneforge/games-texas-holdem": "0.1.0",
     "@fortuneforge/games-video-poker": "0.1.12",
     "react": "19.2.7",
     "react-dom": "19.2.7"

@@ -116,4 +116,5 @@ if ($readinessCheck -lt 0 -or $revisionRead -le $readinessCheck -or
     throw 'API traffic command is missing its immediately preceding index and live-revision checks.'
 }
 
+& (Join-Path $PSScriptRoot 'release-scope.tests.ps1')
 Write-Host 'Release guardrail tests passed.' -ForegroundColor Green

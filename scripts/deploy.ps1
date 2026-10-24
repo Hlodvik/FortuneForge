@@ -258,14 +258,12 @@ $activeSha = (& git -C $repoRoot rev-parse --verify HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $activeSha -cne $mainSha) {
     throw 'Run the release tooling from the local main checkout, not a detached or stale checkout.'
 }
-$releaseToolPaths = @(
-    'scripts/deploy.ps1',
-    'scripts/ReleaseGuardrails.psm1',
-    'scripts/tests/deploy-guardrails.tests.ps1',
-    'scripts/verify-release.ps1'
-)
+$releaseToolPaths = @(Get-ReleaseToolPaths)
 Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $mainSha -Paths $releaseToolPaths
 Assert-LiveTargets -CandidateSha $candidateSha -Hosting $hostingBefore -Api $apiBefore
+$verificationPlan = Get-ReleaseVerificationPlan -Repository $repoRoot -CandidateSha $candidateSha `
+    -HostingBaseSha $(if ($hostingBefore) { $hostingBefore.SourceSha } else { '' }) `
+    -Target $Target -Rollback:$AllowRollback -Adoption:$AdoptUnstampedLive
 
 # A release must never build from the active, possibly dirty development tree.
 # This detached checkout creates no branch and leaves local edits untouched.
@@ -277,6 +275,8 @@ $record = [ordered]@{
     schemaVersion = 1
     target = $Target
     candidateSha = $candidateSha
+    toolingSha = $mainSha
+    verificationPlan = $verificationPlan
     startedAtUtc = [DateTime]::UtcNow.ToString('o')
     adoption = [bool]$AdoptUnstampedLive
     rollbackReason = $RollbackReason
@@ -300,9 +300,17 @@ try {
 
     Write-Host "`nVerifying immutable main commit $candidateSha..." -ForegroundColor Yellow
     Invoke-Checked -Executable 'npm.cmd' -Arguments @('ci') -WorkingDirectory $releaseCheckout
-    # verify:release runs game/client tests, lint, builds, and server tests. The
-    # 250,000-spin slot simulation is a separate, change-triggered workflow.
-    Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'verify:release') -WorkingDirectory $releaseCheckout
+    # Trusted active tooling independently rechecks scope against the immutable
+    # selected commit, including older commits without the scoped verifier.
+    $verificationArguments = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+        (Join-Path $repoRoot 'scripts/verify-release.ps1'), '-Repository', $releaseCheckout,
+        '-ExpectedSha', $candidateSha, '-ExpectedToolingSha', $mainSha,
+        '-Target', $Target, '-ExpectedMode', $verificationPlan.mode)
+    if ($verificationPlan.baseSha) { $verificationArguments += @('-HostingBaseSha', $verificationPlan.baseSha) }
+    if ($verificationPlan.workspace) { $verificationArguments += @('-ExpectedWorkspace', $verificationPlan.workspace) }
+    if ($AllowRollback) { $verificationArguments += '-Rollback' }
+    if ($AdoptUnstampedLive) { $verificationArguments += '-Adoption' }
+    Invoke-Checked -Executable 'powershell.exe' -Arguments $verificationArguments -WorkingDirectory $releaseCheckout
     # The orchestration tests run from the committed active main tooling, so
     # they still protect explicit releases of older commits without this suite.
     Invoke-Checked -Executable 'powershell.exe' -Arguments @(
@@ -313,6 +321,7 @@ try {
     if ($LASTEXITCODE -ne 0 -or $sourceChanges) {
         throw 'Verification changed tracked or untracked source in the release checkout.'
     }
+    Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
     $record.status = 'verified'
     Write-ReleaseRecord -Record $record -Path $recordPath
 
@@ -324,6 +333,7 @@ try {
     Assert-UnchangedLiveTargets -BeforeHosting $hostingBefore -BeforeApi $apiBefore
 
     if ($Target -in @('all', 'api')) {
+        Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         $expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)
         $indexesChanged = $true
         if (-not [string]::IsNullOrWhiteSpace($apiBefore.SourceSha)) {
@@ -354,6 +364,7 @@ try {
 
         $apiImmediatelyBefore = Get-LiveApi
         Assert-ServingApiUnchanged -Before $apiBefore -Now $apiImmediatelyBefore
+        Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
 
         Write-Host "`nBuilding a non-serving Cloud Run revision..." -ForegroundColor Yellow
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
@@ -396,6 +407,7 @@ try {
     }
 
     if ($Target -in @('all', 'hosting')) {
+        Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         $hostingImmediatelyBefore = Get-LiveHosting
         if ($hostingImmediatelyBefore.ReleaseName -cne $hostingBefore.ReleaseName -or
             $hostingImmediatelyBefore.VersionName -cne $hostingBefore.VersionName -or

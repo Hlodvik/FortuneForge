@@ -219,4 +219,157 @@ function Get-UnreadyFirestoreIndexes {
     }
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes
+function Get-ReleaseToolPaths {
+    @('scripts/deploy.ps1', 'scripts/ReleaseGuardrails.psm1',
+      'scripts/tests/deploy-guardrails.tests.ps1', 'scripts/tests/release-scope.tests.ps1',
+      'scripts/verify-release.ps1')
+}
+
+function Assert-ReleaseCheckout {
+    param([Parameter(Mandatory)][string]$Repository, [Parameter(Mandatory)][string]$Sha)
+    Assert-ReleaseSha $Sha
+    $head = [string](& git -C $Repository rev-parse --verify HEAD)
+    if ($LASTEXITCODE -ne 0 -or $head.Trim() -cne $Sha) { throw 'Release checkout HEAD is not the exact selected commit.' }
+    $dirty = @(& git -C $Repository status --porcelain=v1 --untracked-files=normal)
+    if ($LASTEXITCODE -ne 0 -or $dirty.Count -gt 0) { throw 'Release verification requires a clean source checkout.' }
+}
+
+function New-ReleaseVerificationPlan {
+    param(
+        [string]$Target = 'all', [string]$BaseSha = '', [string]$CandidateSha = '',
+        [AllowEmptyCollection()][object[]]$Changes = @(),
+        [AllowEmptyCollection()][object[]]$Workspaces = @(),
+        [string]$FullReason = ''
+    )
+    $plan = [ordered]@{ mode = 'full'; workspace = ''; baseSha = $BaseSha;
+        candidateSha = $CandidateSha; reason = ''; changedPaths = @($Changes | ForEach-Object { $_.Path }) }
+    if ($FullReason) { $plan.reason = $FullReason; return [pscustomobject]$plan }
+    if ($Target -cne 'hosting') { $plan.reason = 'Only Hosting-only releases may use visual scope.'; return [pscustomobject]$plan }
+    if ($Changes.Count -eq 0) { $plan.reason = 'No visual changes to scope.'; return [pscustomobject]$plan }
+    $selected = $null
+    $hasVisual = $false
+    foreach ($change in $Changes) {
+        $path = [string]$change.Path
+        # Refuse unusual names, renames, deletions, executable bits, symlinks,
+        # submodules, and type changes rather than guessing their impact.
+        if ($path -cmatch '[\\\x00-\x20\x7f]' -or $path -cmatch '(^|/)\.\.?(/|$)' -or
+            $change.Status -cnotmatch '^[AM]$' -or $change.NewMode -cne '100644' -or
+            ($change.OldMode -cne '100644' -and $change.OldMode -cne '000000')) {
+            $plan.reason = "Unsafe or unsupported change: $path"; return [pscustomobject]$plan
+        }
+        if ($path -cmatch '^(docs/.+\.md|README\.md)$') { continue }
+        $workspace = @($Workspaces | Where-Object { $path.StartsWith($_.Path + '/', [System.StringComparison]::Ordinal) })
+        if ($workspace.Count -ne 1) { $plan.reason = "Shared or unknown path: $path"; return [pscustomobject]$plan }
+        $workspace = $workspace[0]
+        if ($selected -and $selected.Path -cne $workspace.Path) {
+            $plan.reason = 'Changes span multiple game workspaces.'; return [pscustomobject]$plan
+        }
+        $selected = $workspace
+        $relative = $path.Substring($workspace.Path.Length + 1)
+        $isVisual = $relative -cmatch '^src/.+\.css$' -or
+            $relative -cmatch '^(src/assets|public)/.+\.(png|jpe?g|webp|avif|gif|svg|woff2?|ttf|otf)$'
+        $isTestOrDoc = $relative -cmatch '^src/.+\.(test|spec)\.(tsx?|jsx?|mjs|cjs)$' -or
+            $relative -cmatch '^src/.+\.e2e\.mjs$' -or
+            $relative -cmatch '^tests/.+\.(tsx?|jsx?|mjs|cjs)$' -or
+            $relative -cmatch '^(docs/.+\.md|README\.md)$'
+        if (-not $isVisual -and -not $isTestOrDoc) {
+            $plan.reason = "Nonvisual source, configuration, or manifest: $path"; return [pscustomobject]$plan
+        }
+        $hasVisual = $hasVisual -or $isVisual
+    }
+    if (-not $selected -or -not $hasVisual -or
+        $selected.Name -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$' -or
+        -not $selected.HasCheck -or -not $selected.HasTest) {
+        $plan.reason = 'A registered, testable game with a visual change is required.'; return [pscustomobject]$plan
+    }
+    $plan.mode = 'game-visual'
+    $plan.workspace = $selected.Name
+    $plan.reason = 'One game visual-only diff; shared checks and every game build remain mandatory.'
+    return [pscustomobject]$plan
+}
+
+function Get-ReleaseVerificationPlan {
+    param(
+        [Parameter(Mandatory)][string]$Repository,
+        [Parameter(Mandatory)][string]$CandidateSha,
+        [string]$HostingBaseSha = '', [string]$Target = 'all',
+        [switch]$Rollback, [switch]$Adoption
+    )
+    Assert-ReleaseSha $CandidateSha
+    $reason = ''
+    if ($Target -cne 'hosting') { $reason = 'API or combined release requires full verification.' }
+    elseif ($Rollback -or $Adoption) { $reason = 'Rollback or adoption requires full verification.' }
+    elseif ($HostingBaseSha -cnotmatch '^[0-9a-f]{40}([0-9a-f]{24})?$') { $reason = 'No valid live Hosting baseline.' }
+    if ($reason) { return New-ReleaseVerificationPlan -Target $Target -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -FullReason $reason }
+    try {
+        & git -C $Repository cat-file -e "$HostingBaseSha`^{commit}" 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'Missing baseline object.' }
+    }
+    catch { return New-ReleaseVerificationPlan -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -FullReason 'Live Hosting commit is unavailable locally.' }
+    try {
+        & git -C $Repository merge-base --is-ancestor $HostingBaseSha $CandidateSha 2>$null
+        if ($LASTEXITCODE -ne 0) { throw 'Nonancestor baseline.' }
+    }
+    catch { return New-ReleaseVerificationPlan -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -FullReason 'Live Hosting baseline is not an ancestor.' }
+    try {
+        # -z keeps file names intact; disabling rename detection exposes both
+        # sides, so any deletion falls back to full checks.
+        $rawLines = @(& git -C $Repository diff --raw -z --no-renames --no-ext-diff --no-textconv $HostingBaseSha $CandidateSha --)
+        if ($LASTEXITCODE -ne 0) { throw 'Cannot read live-to-candidate diff.' }
+        $raw = $rawLines -join "`n"
+        $parts = $raw.Split([char]0)
+        if ($raw -and (-not $raw.EndsWith([string][char]0) -or $parts.Length % 2 -ne 1)) { throw 'Incomplete Git diff record.' }
+        $changes = @()
+        for ($index = 0; $index -lt $parts.Length - 1; $index += 2) {
+            if ($parts[$index] -cnotmatch '^:([0-7]{6}) ([0-7]{6}) [0-9a-f]+ [0-9a-f]+ ([A-Z][0-9]*)$') { throw 'Unsupported Git diff record.' }
+            $changes += [pscustomobject]@{ OldMode = $Matches[1]; NewMode = $Matches[2]; Status = $Matches[3]; Path = $parts[$index + 1] }
+        }
+        $packageText = @(& git -C $Repository show "${CandidateSha}:package.json")
+        if ($LASTEXITCODE -ne 0) { throw 'Missing root workspace manifest.' }
+        $package = ($packageText -join "`n") | ConvertFrom-Json -ErrorAction Stop
+        $workspaces = @()
+        foreach ($path in @($package.workspaces)) {
+            if ($path -cnotmatch '^games/[A-Za-z0-9-]+/client/[A-Za-z0-9.-]+$') { continue }
+            $manifestText = @(& git -C $Repository show "${CandidateSha}:$path/package.json")
+            if ($LASTEXITCODE -ne 0) { throw "Missing workspace manifest: $path" }
+            $manifest = ($manifestText -join "`n") | ConvertFrom-Json -ErrorAction Stop
+            $workspaces += [pscustomobject]@{ Path = $path; Name = [string]$manifest.name;
+                HasCheck = -not [string]::IsNullOrWhiteSpace($manifest.scripts.check);
+                HasTest = -not [string]::IsNullOrWhiteSpace($manifest.scripts.test) }
+        }
+        return New-ReleaseVerificationPlan -Target $Target -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -Changes $changes -Workspaces $workspaces
+    }
+    catch {
+        return New-ReleaseVerificationPlan -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -FullReason "Cannot safely classify scope: $($_.Exception.Message)"
+    }
+}
+
+function Get-ReleaseVerificationCommands {
+    param([Parameter(Mandatory)]$Plan, [Parameter(Mandatory)][string]$Repository)
+    if ($Plan.mode -cnotin @('full', 'game-visual')) { throw 'Unknown verification mode.' }
+    if ($Plan.mode -ceq 'game-visual' -and $Plan.workspace -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$') { throw 'Invalid scoped workspace.' }
+    $commands = [System.Collections.Generic.List[object]]::new()
+    foreach ($script in @('verify:game-source', 'verify:game-routes')) {
+        $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
+    }
+    $checkArgs = if ($Plan.mode -ceq 'game-visual') { @('run', 'check', '--workspace', $Plan.workspace) } else { @('run', 'games:check') }
+    $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = $checkArgs })
+    $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'games:build') })
+    if ($Plan.mode -ceq 'game-visual') {
+        $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test', '--workspace', $Plan.workspace) })
+        $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'web:test') })
+    }
+    else { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test') }) }
+    foreach ($script in @('lint', 'web:build')) { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) }) }
+    if ($Plan.mode -ceq 'full') {
+        foreach ($path in @('FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj',
+            'games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj',
+            'games/HiLo/tests/FortuneForge.Games.HiLo.Engine.Tests/FortuneForge.Games.HiLo.Engine.Tests.csproj',
+            'games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests/FortuneForge.Games.HiLo.Server.Tests.csproj')) {
+            $commands.Add([pscustomobject]@{ Executable = 'dotnet'; Arguments = @('test', (Join-Path $Repository $path), '--configuration', 'Release') })
+        }
+    }
+    return $commands.ToArray()
+}
+
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Get-ReleaseVerificationCommands

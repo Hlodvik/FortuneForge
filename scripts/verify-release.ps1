@@ -1,12 +1,15 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$Repository = '', [string]$ExpectedSha = '', [string]$ExpectedToolingSha = '',
+    [ValidateSet('all', 'api', 'hosting')][string]$Target = 'all',
+    [string]$HostingBaseSha = '', [string]$ExpectedMode = '', [string]$ExpectedWorkspace = '',
+    [switch]$Rollback, [switch]$Adoption
+)
 
 $ErrorActionPreference = 'Stop'
-$repoRoot = Split-Path -Parent $PSScriptRoot
-$serverTests = Join-Path $repoRoot 'FortuneForge.Server.Tests\FortuneForge.Server.Tests.csproj'
-$dragonTigerTests = Join-Path $repoRoot 'games\DragonTiger\tests\FortuneForge.Games.DragonTiger.Tests\FortuneForge.Games.DragonTiger.Tests.csproj'
-$hiLoEngineTests = Join-Path $repoRoot 'games\HiLo\tests\FortuneForge.Games.HiLo.Engine.Tests\FortuneForge.Games.HiLo.Engine.Tests.csproj'
-$hiLoServerTests = Join-Path $repoRoot 'games\HiLo\tests\FortuneForge.Games.HiLo.Server.Tests\FortuneForge.Games.HiLo.Server.Tests.csproj'
+$toolingRoot = Split-Path -Parent $PSScriptRoot
+Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
+$repoRoot = if ($Repository) { (Resolve-Path -LiteralPath $Repository).Path } else { $toolingRoot }
 
 function Invoke-Checked {
     param(
@@ -30,29 +33,28 @@ function Invoke-Checked {
     }
 }
 
-Write-Host "`nVerifying source ownership and route inventory..." -ForegroundColor Yellow
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'verify:game-source')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'verify:game-routes')
-
-Write-Host "`nRunning client and game checks..." -ForegroundColor Yellow
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'games:check')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'games:build')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'test')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'lint')
-Invoke-Checked -Executable 'npm.cmd' -Arguments @('run', 'web:build')
-
-Write-Host "`nRunning server tests..." -ForegroundColor Yellow
-Invoke-Checked `
-    -Executable 'dotnet' `
-    -Arguments @('test', $serverTests, '--configuration', 'Release')
-Invoke-Checked `
-    -Executable 'dotnet' `
-    -Arguments @('test', $dragonTigerTests, '--configuration', 'Release')
-Invoke-Checked `
-    -Executable 'dotnet' `
-    -Arguments @('test', $hiLoEngineTests, '--configuration', 'Release')
-Invoke-Checked `
-    -Executable 'dotnet' `
-    -Arguments @('test', $hiLoServerTests, '--configuration', 'Release')
-
-Write-Host "`nFortune Forge release verification passed." -ForegroundColor Green
+# Current main's committed verifier may verify an explicitly selected older
+# application checkout; it never copies tooling into or changes that checkout.
+if ($Repository -or $ExpectedSha -or $ExpectedToolingSha -or $ExpectedMode -or $HostingBaseSha) {
+    Assert-ReleaseSha $ExpectedSha
+    Assert-ReleaseSha $ExpectedToolingSha
+    $activeHead = [string](& git -C $toolingRoot rev-parse --verify HEAD)
+    if ($LASTEXITCODE -ne 0 -or $activeHead.Trim() -cne $ExpectedToolingSha) { throw 'Trusted verification tooling HEAD changed.' }
+    $main = [string](& git -C $toolingRoot rev-parse --verify refs/heads/main)
+    if ($LASTEXITCODE -ne 0 -or $main.Trim() -cne $ExpectedToolingSha) { throw 'Trusted verification tooling is not current main.' }
+    Assert-ReleaseToolingMatchesCommit -Repository $toolingRoot -Sha $ExpectedToolingSha -Paths (Get-ReleaseToolPaths)
+    Assert-ReleaseCheckout -Repository $repoRoot -Sha $ExpectedSha
+    $plan = Get-ReleaseVerificationPlan -Repository $repoRoot -CandidateSha $ExpectedSha -HostingBaseSha $HostingBaseSha -Target $Target -Rollback:$Rollback -Adoption:$Adoption
+    if ($plan.mode -cne $ExpectedMode -or $plan.workspace -cne $ExpectedWorkspace) { throw 'Verification scope differs from the independently recalculated live-to-candidate plan.' }
+}
+else {
+    # Standalone npm run verify:release remains full verification.
+    $plan = New-ReleaseVerificationPlan -FullReason 'Standalone verification defaults to the full suite.'
+}
+Write-Host "`nVerification mode: $($plan.mode) $($plan.workspace)" -ForegroundColor Yellow
+Write-Host "Scope reason: $($plan.reason)"
+foreach ($command in @(Get-ReleaseVerificationCommands -Plan $plan -Repository $repoRoot)) {
+    Invoke-Checked -Executable $command.Executable -Arguments $command.Arguments
+}
+if ($ExpectedSha) { Assert-ReleaseCheckout -Repository $repoRoot -Sha $ExpectedSha }
+Write-Host "`nFortune Forge release verification passed ($($plan.mode))." -ForegroundColor Green

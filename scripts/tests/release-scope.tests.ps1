@@ -1,0 +1,138 @@
+$ErrorActionPreference = 'Stop'
+$scopeRepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+Import-Module (Join-Path $scopeRepoRoot 'scripts/ReleaseGuardrails.psm1') -Force
+
+function Assert-ScopeEqual($Actual, $Expected, [string]$Name) {
+    if ($Actual -cne $Expected) { throw "$Name expected '$Expected', got '$Actual'." }
+}
+function Assert-ScopeThrows([scriptblock]$Action, [string]$Name) {
+    $threw = $false
+    try { & $Action | Out-Null } catch { $threw = $true }
+    if (-not $threw) { throw "$Name did not reject an unsafe checkout." }
+}
+function New-ScopeChange([string]$Path, [string]$Status = 'M', [string]$OldMode = '100644', [string]$NewMode = '100644') {
+    [pscustomobject]@{ Path = $Path; Status = $Status; OldMode = $OldMode; NewMode = $NewMode }
+}
+$scopeWorkspace = 'games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client'
+$otherWorkspace = 'games/HiLo/client/FortuneForge.Games.HiLo.Client'
+$scopeWorkspaces = @(
+    [pscustomobject]@{ Path = $scopeWorkspace; Name = '@fortuneforge/games-dragon-tiger'; HasCheck = $true; HasTest = $true },
+    [pscustomobject]@{ Path = $otherWorkspace; Name = '@fortuneforge/games-hi-lo'; HasCheck = $true; HasTest = $true }
+)
+$visual = New-ScopeChange "$scopeWorkspace/src/dragonTiger.css"
+$companion = New-ScopeChange "$scopeWorkspace/src/DragonTigerGame.test.tsx"
+$scoped = New-ReleaseVerificationPlan -Target hosting -Changes @($visual, $companion, (New-ScopeChange 'docs/notes.md')) -Workspaces $scopeWorkspaces
+Assert-ScopeEqual $scoped.mode 'game-visual' 'one-game CSS plus tests and docs'
+Assert-ScopeEqual $scoped.workspace '@fortuneforge/games-dragon-tiger' 'exact affected workspace'
+foreach ($asset in @('chip.png', 'chip.svg', 'font.woff2')) {
+    $plan = New-ReleaseVerificationPlan -Target hosting -Changes @((New-ScopeChange "$scopeWorkspace/src/assets/$asset" 'A' '000000')) -Workspaces $scopeWorkspaces
+    Assert-ScopeEqual $plan.mode 'game-visual' "new visual asset $asset"
+}
+foreach ($path in @('package-lock.json', 'package.json', 'scripts/deploy.ps1',
+    'fortuneforge.client/src/wallet.ts', 'FortuneForge.Server/Program.cs',
+    "$scopeWorkspace/package.json", "$scopeWorkspace/vite.config.ts", "$scopeWorkspace/src/gateway.ts",
+    "$scopeWorkspace/src/DragonTigerGame.tsx", "$scopeWorkspace/src/data.json",
+    "$otherWorkspace/src/hiLo.css", 'games/Unknown/client/Unknown.Client/src/foo.css')) {
+    $plan = New-ReleaseVerificationPlan -Target hosting -Changes @($visual, (New-ScopeChange $path)) -Workspaces $scopeWorkspaces
+    Assert-ScopeEqual $plan.mode 'full' "shared, cross-game, or unknown path $path"
+}
+foreach ($change in @((New-ScopeChange $visual.Path 'D' '100644' '000000'),
+    (New-ScopeChange $visual.Path 'R100'), (New-ScopeChange $visual.Path 'T' '120000'),
+    (New-ScopeChange $visual.Path 'M' '100755'), (New-ScopeChange $visual.Path 'M' '100644' '120000'),
+    (New-ScopeChange $visual.Path 'M' '100644' '160000'),
+    (New-ScopeChange "$scopeWorkspace/src/../escape.css"), (New-ScopeChange "$scopeWorkspace/src/bad`nname.css"))) {
+    $plan = New-ReleaseVerificationPlan -Target hosting -Changes @($change) -Workspaces $scopeWorkspaces
+    Assert-ScopeEqual $plan.mode 'full' 'unsafe status, mode or path'
+}
+foreach ($changes in @(@(), @($companion), @((New-ScopeChange 'docs/notes.md')))) {
+    $plan = New-ReleaseVerificationPlan -Target hosting -Changes $changes -Workspaces $scopeWorkspaces
+    Assert-ScopeEqual $plan.mode 'full' 'empty or nonvisual-only change'
+}
+foreach ($target in @('api', 'all')) {
+    $plan = New-ReleaseVerificationPlan -Target $target -Changes @($visual) -Workspaces $scopeWorkspaces
+    Assert-ScopeEqual $plan.mode 'full' "$target requires full checks"
+}
+$scopedCommands = @(Get-ReleaseVerificationCommands -Plan $scoped -Repository $scopeRepoRoot)
+$scopedText = ($scopedCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+foreach ($required in @('verify:game-source', 'verify:game-routes', 'games:build', 'web:test', 'lint', 'web:build', 'check --workspace @fortuneforge/games-dragon-tiger', 'test --workspace @fortuneforge/games-dragon-tiger')) {
+    Assert-ScopeEqual $scopedText.Contains($required) $true "scoped plan retains $required"
+}
+Assert-ScopeEqual @($scopedCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 0 'scoped checks omit .NET'
+Assert-ScopeEqual $scopedText.Contains('run games:check') $false 'scoped checks omit unrelated checks'
+$fullCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'test') -Repository $scopeRepoRoot)
+Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 4 'full suite retains all four .NET projects'
+$fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
+Assert-ScopeEqual $fullText.Contains('run games:check') $true 'full suite retains all game checks'
+Assert-ScopeEqual $fullText.Contains("run test`n") $true 'full suite retains all client tests'
+$scopeDeploySource = Get-Content -LiteralPath (Join-Path $scopeRepoRoot 'scripts/deploy.ps1') -Raw
+foreach ($required in @("(Join-Path `$repoRoot 'scripts/verify-release.ps1')", "'-Repository', `$releaseCheckout",
+    "'-ExpectedSha', `$candidateSha", "'-ExpectedToolingSha', `$mainSha", 'verificationPlan = $verificationPlan',
+    "'run', 'smoke:production'", "'scripts/tests/deploy-guardrails.tests.ps1'")) {
+    Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "deployment retains $required"
+}
+Assert-ScopeEqual ((Get-ReleaseToolPaths) -contains 'scripts/tests/release-scope.tests.ps1') $true 'scope tests protected from dirty-tooling bypass'
+
+# Real Git fixture: never infer the deployment delta from just HEAD's parent.
+$scopeFixtureParent = Join-Path $scopeRepoRoot 'artifacts'
+$scopeFixture = Join-Path $scopeFixtureParent ('release-scope-tests-' + [guid]::NewGuid().ToString('N'))
+[System.IO.Directory]::CreateDirectory($scopeFixture) | Out-Null
+function Invoke-ScopeGit([string[]]$GitArguments) {
+    $output = @(& git -C $scopeFixture -c user.name=ReleaseScopeTests -c user.email=scope@example.invalid @GitArguments)
+    if ($LASTEXITCODE -ne 0) { throw "Fixture git failed: $($GitArguments -join ' ')" }
+    return ($output -join "`n")
+}
+function Write-ScopeFixture([string]$Path, [string]$Text) {
+    $absolute = Join-Path $scopeFixture $Path
+    [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($absolute)) | Out-Null
+    [System.IO.File]::WriteAllText($absolute, $Text)
+}
+function Commit-ScopeFixture([string]$Message) {
+    Invoke-ScopeGit @('add', '--all') | Out-Null
+    Invoke-ScopeGit @('commit', '-m', $Message) | Out-Null
+    return Invoke-ScopeGit @('rev-parse', 'HEAD')
+}
+try {
+    Invoke-ScopeGit @('init', '-b', 'main') | Out-Null
+    Write-ScopeFixture 'package.json' ('{"workspaces":["' + $scopeWorkspace + '"]}')
+    Write-ScopeFixture "$scopeWorkspace/package.json" '{"name":"@fortuneforge/games-dragon-tiger","scripts":{"check":"check","test":"test"}}'
+    Write-ScopeFixture "$scopeWorkspace/src/dragonTiger.css" '.game { color: red; }'
+    $base = Commit-ScopeFixture 'base'
+    Write-ScopeFixture "$scopeWorkspace/src/dragonTiger.css" '.game { color: blue; }'
+    $visualCommit = Commit-ScopeFixture 'visual'
+    $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $visualCommit -HostingBaseSha $base -Target hosting
+    Assert-ScopeEqual $plan.mode 'game-visual' 'real live-to-candidate CSS diff'
+    Assert-ReleaseCheckout -Repository $scopeFixture -Sha $visualCommit
+    Assert-ScopeThrows { Assert-ReleaseCheckout -Repository $scopeFixture -Sha $base } 'clean different HEAD'
+    Write-ScopeFixture 'FortuneForge.Server/Program.cs' '// backend changed'
+    $backendCommit = Commit-ScopeFixture 'backend'
+    Write-ScopeFixture "$scopeWorkspace/src/dragonTiger.css" '.game { color: green; }'
+    $latest = Commit-ScopeFixture 'visual after backend'
+    $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $latest -HostingBaseSha $base -Target hosting
+    Assert-ScopeEqual $plan.mode 'full' 'older live baseline includes hidden backend delta'
+    $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $latest -HostingBaseSha $backendCommit -Target hosting
+    Assert-ScopeEqual $plan.mode 'game-visual' 'already-live backend does not force unrelated tests'
+    foreach ($baseline in @('', 'bad', ('f' * 40), $latest)) {
+        $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $latest -HostingBaseSha $baseline -Target hosting
+        Assert-ScopeEqual $plan.mode 'full' 'unknown or empty diff baseline'
+    }
+    $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $base -HostingBaseSha $latest -Target hosting
+    Assert-ScopeEqual $plan.mode 'full' 'nonancestor baseline'
+    foreach ($option in @('Rollback', 'Adoption')) {
+        $options = @{ $option = $true }
+        $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $latest -HostingBaseSha $backendCommit -Target hosting @options
+        Assert-ScopeEqual $plan.mode 'full' "$option cannot scope"
+    }
+    Invoke-ScopeGit @('mv', "$scopeWorkspace/src/dragonTiger.css", "$scopeWorkspace/src/renamed.css") | Out-Null
+    $renamed = Commit-ScopeFixture 'rename'
+    $plan = Get-ReleaseVerificationPlan -Repository $scopeFixture -CandidateSha $renamed -HostingBaseSha $latest -Target hosting
+    Assert-ScopeEqual $plan.mode 'full' 'Git rename exposes deletion and fails closed'
+    Write-ScopeFixture 'untracked.txt' 'not immutable'
+    Assert-ScopeThrows { Assert-ReleaseCheckout -Repository $scopeFixture -Sha $renamed } 'untracked source mutation'
+}
+finally {
+    $resolvedFixture = [System.IO.Path]::GetFullPath($scopeFixture)
+    if ([System.IO.Path]::GetDirectoryName($resolvedFixture) -cne [System.IO.Path]::GetFullPath($scopeFixtureParent) -or
+        [System.IO.Path]::GetFileName($resolvedFixture) -cnotmatch '^release-scope-tests-[0-9a-f]{32}$') { throw 'Unsafe test-fixture cleanup path.' }
+    Remove-Item -LiteralPath $resolvedFixture -Recurse -Force
+}
+Write-Host 'Release scope classifier, Git fixture, immutable checkout and command-plan tests passed.' -ForegroundColor Green

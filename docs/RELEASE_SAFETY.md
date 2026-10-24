@@ -15,11 +15,33 @@ default users. The
 active deploy script, guard module, guard tests, and release verifier must match
 their committed versions on the current local `main` HEAD. Uncommitted release
 tooling blocks deployment, but unrelated local game edits may remain uncommitted.
-The script then runs `npm ci` and `npm run verify:release` against the selected
-immutable commit, plus the focused committed deployment guard tests, before
-touching production. Verification includes game/client/server tests, lint, and
-builds; the 250,000-spin slot Monte Carlo job is **not** part of every
+The script then runs `npm ci` and current main's committed release verifier
+against the selected immutable checkout, plus the focused committed deployment
+guard tests, before touching production. The selected source HEAD and clean
+status are checked before and after verification and before publication. This
+also supports explicitly selected older application commits without copying new
+tooling into their source trees. The 250,000-spin slot Monte Carlo job is **not** part of every
 deployment. Run `npm run verify:slot-math` separately when slot math changes.
+
+### Automatic visual-only verification
+
+For Hosting-only releases, the guard compares the actual live Hosting source
+stamp with the complete selected candidate tree, not just its latest commit.
+Exactly one registered game's CSS, image/font assets (including SVG), and
+colocated tests/docs may qualify. At least one visual change is required.
+Application TypeScript/TSX, gateways, wallet/settlement code, manifests, lockfiles,
+configuration, shared files, backend code, multiple games, deletions/renames,
+unusual file modes, or any uncertainty use the full suite. API/combined releases,
+rollbacks, adoption, and missing/unavailable baselines always use the full suite.
+There is no force-scoped override.
+
+Qualified releases run the affected game's checks/tests, every game build,
+shared web tests, lint/build, ownership/route checks, release guardrails and the
+normal full production smoke. Only unrelated game checks/tests and .NET tests
+are skipped. Clean checkouts still need every game built for package exports.
+The verifier independently recalculates the plan. The release record saves the
+baseline, candidate, tooling SHA, mode, workspace, reason, and changed paths.
+Standalone `npm run verify:release` defaults to the full suite.
 
 Hosting publishes `release.json` with the source commit. Cloud Run stores the
 same commit in the serving revision's `FF_RELEASE_SHA` environment variable.

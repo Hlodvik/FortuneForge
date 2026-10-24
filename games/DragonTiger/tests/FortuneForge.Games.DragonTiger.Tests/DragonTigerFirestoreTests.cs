@@ -6,6 +6,7 @@ using FortuneForge.Games.DragonTiger.Server;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using Grpc.Core;
+using Xunit.Abstractions;
 
 namespace FortuneForge.Games.DragonTiger.Tests;
 
@@ -13,7 +14,7 @@ namespace FortuneForge.Games.DragonTiger.Tests;
 public sealed class DragonTigerFirestoreCollection : ICollectionFixture<DragonTigerEmulator>;
 
 [Collection("Dragon Tiger Firestore")]
-public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator)
+public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator, ITestOutputHelper output)
 {
     [Fact]
     public async Task AtomicLedger_ConcurrentInstancesReplayExactlyOnceAndRecoverAfterResponseLoss()
@@ -24,7 +25,8 @@ public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator)
         var second = Service(database, CardRank.King, CardRank.Ace);
         const string key = "dragon_tiger_atomic_0001";
         var request = new CreateDragonTigerRoundRequest(10, 0, 0.50m);
-        var rounds = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => (index % 2 == 0 ? first : second).StartAsync("player", request, key)));
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(90));
+        var rounds = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => PlaceWithContentionRecovery(index)));
         Assert.Single(rounds.Select(round => round.RoundId).Distinct());
         Assert.All(rounds, round => Assert.Equal(109.50m, round.Balance));
         Assert.Single((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
@@ -45,6 +47,29 @@ public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator)
         await Assert.ThrowsAsync<DragonTigerRoundNotFoundException>(() => second.GetAsync("other", rounds[0].RoundId));
         Assert.Null(await second.LatestAsync("other"));
         Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+
+        async Task<DragonTigerRoundResponse> PlaceWithContentionRecovery(int index)
+        {
+            // All eight initial requests still race. The emulator can hold
+            // contested locks for up to 30 seconds, unlike production Firestore:
+            // https://firebase.google.com/docs/emulator-suite/connect_firestore#transactions
+            // Model the existing HTTP 503/Retry-After contract, never an entire
+            // test retry: only a definitive Aborted retries this immutable key/body.
+            const int maximumAttempts = 3;
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    return await (index % 2 == 0 ? first : second).StartAsync("player", request, key, deadline.Token);
+                }
+                catch (RpcException exception) when (exception.StatusCode == StatusCode.Aborted &&
+                    attempt < maximumAttempts && !deadline.IsCancellationRequested)
+                {
+                    output.WriteLine($"Emulator contention: caller {index}, attempt {attempt}; replaying the same request key.");
+                    await Task.Delay(1_000 + Random.Shared.Next(0, 501), deadline.Token);
+                }
+            }
+        }
     }
 
     [Fact]

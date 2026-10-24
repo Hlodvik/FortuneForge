@@ -60,8 +60,13 @@ foreach ($required in @('verify:game-source', 'verify:game-routes', 'games:build
 Assert-ScopeEqual @($scopedCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 0 'scoped checks omit .NET'
 Assert-ScopeEqual $scopedText.Contains('run games:check') $false 'scoped checks omit unrelated checks'
 $fullCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'test') -Repository $scopeRepoRoot)
-Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 4 'full suite retains all four .NET projects'
+Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 5 'full suite retains all five .NET projects'
 $fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
+foreach ($project in @('FortuneForge.Server.Tests.csproj', 'FortuneForge.Games.DragonTiger.Tests.csproj',
+    'FortuneForge.Games.HiLo.Engine.Tests.csproj', 'FortuneForge.Games.HiLo.Server.Tests.csproj',
+    'FortuneForge.Games.AndarBahar.Tests.csproj')) {
+    Assert-ScopeEqual $fullText.Contains($project) $true "full suite retains $project"
+}
 Assert-ScopeEqual $fullText.Contains('run games:check') $true 'full suite retains all game checks'
 Assert-ScopeEqual $fullText.Contains("run test`n") $true 'full suite retains all client tests'
 Assert-ReleaseTestWaiver -Target hosting

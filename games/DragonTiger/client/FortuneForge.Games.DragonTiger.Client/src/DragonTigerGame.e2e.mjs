@@ -184,6 +184,14 @@ try {
           const { top, bottom, width, height } = button.getBoundingClientRect()
           return { top, bottom, width, height }
         }),
+        betLabels: [...document.querySelectorAll('.ff-dt__bet-area')].map(area => {
+          const center = node => {
+            const rect = node.getBoundingClientRect()
+            return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+          }
+          const label = area.querySelector('.ff-dt__bet-label')
+          return { cell: center(area), label: center(label), children: [...label.children].map(center) }
+        }),
         pageHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
       }
     })
@@ -196,6 +204,11 @@ try {
     assert.ok(layout.deal.top >= layout.controls.top - 1 && layout.deal.bottom <= layout.controls.bottom + 1 && layout.deal.bottom <= layout.wallet.top + 1, `${viewport.name}: Deal intrudes into the wallet or escapes its row`)
     assert.ok(layout.selectorButtons.every(button => button.width >= 44 && button.height >= 44), `${viewport.name}: chip selector has undersized touch targets`)
     assert.ok(layout.selectorButtons.every((button, index, buttons) => index === 0 || button.top >= buttons[index - 1].bottom - 1), `${viewport.name}: chip selector targets overlap`)
+    assert.equal(layout.betLabels.length, 3, `${viewport.name}: missing betting labels`)
+    for (const label of layout.betLabels) {
+      assert.ok(Math.abs(label.cell.x - label.label.x) <= 1 && Math.abs(label.cell.y - label.label.y) <= 1, `${viewport.name}: betting label is not centered in its cell`)
+      assert.ok(label.children.every(child => Math.abs(child.x - label.label.x) <= 1), `${viewport.name}: hanzi, name, and payout are not centered together`)
+    }
     const selectorOverlapsBets = layout.selector.left < layout.bets.right && layout.selector.right > layout.bets.left && layout.selector.top < layout.bets.bottom && layout.selector.bottom > layout.bets.top
     assert.equal(selectorOverlapsBets, false, `${viewport.name}: chip selector covers a betting spot`)
     if (viewport.height > 480 || viewport.width <= 540) {

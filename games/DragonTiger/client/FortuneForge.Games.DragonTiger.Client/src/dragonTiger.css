@@ -422,6 +422,12 @@
 
 .ff-dt__reset-chips { position:absolute; left:max(72px,calc(50% - 172px)); top:50%; translate:0 -50%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; width:44px; height:44px; min-width:44px; min-height:44px; padding:3px 2px; font-size:19px; }
 .ff-dt__reset-chips > span { font-size:8px; line-height:1; letter-spacing:-.04em; white-space:nowrap; }
+
+/* Centre the whole printed label, including the hanzi, in its own betting cell.
+   The legacy hidden stake placeholder must not reserve space beside the ink. */
+.ff-dt__bet-area > .ff-dt__bet { justify-content:center; text-align:center; }
+.ff-dt__bet-label { align-items:center; width:auto; max-width:none; text-align:center; }
+.ff-dt__bet-area .ff-dt__bet-stack { display:none; }
 @container dragon-tiger-game (max-width:540px) {
   .ff-dt__reset-chips { left:67px; }
 }

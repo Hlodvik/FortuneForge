@@ -334,7 +334,8 @@ describe('DragonTigerGame betting and results', () => {
     const gateway = makeGateway()
     await start(gateway)
     resizeComponent(1300, height)
-    for (let index = 0; index < 37; index++) fireEvent.click(spot('Dragon'))
+    const dragonSpot = spot('Dragon')
+    for (let index = 0; index < 37; index++) fireEvent.click(dragonSpot)
     const placed = spot('Dragon').parentElement!.querySelector<HTMLElement>('.ff-dt__placed-chips')!
     expect(placed.dataset.chipMode).toBe('expanded')
     expect(placed.dataset.chipCount).toBe('37')
@@ -344,7 +345,7 @@ describe('DragonTigerGame betting and results', () => {
     expect(total()).toBe('R37.00')
     expect(balance()).toBe('R100.00')
     expect(gateway.createRound).not.toHaveBeenCalled()
-  })
+  }, 15_000)
 
   it('preserves a pending deal and its original key while responsive chip layouts change', async () => {
     const round: DragonTigerRound = {

@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 const casinoRoutes = [
   ['BaccaratRoute.tsx', 'Baccarat'],
   ['DragonTigerRoute.tsx', 'Dragon Tiger'],
+  ['HiLoRoute.tsx', 'Hi-Lo'],
   ['CasinoWarRoute.tsx', 'Casino War'],
   ['KenoRoute.tsx', 'Keno'],
   ['VideoPokerRoute.tsx', 'Video Poker'],

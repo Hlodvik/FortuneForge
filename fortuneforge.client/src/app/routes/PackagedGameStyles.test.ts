@@ -5,6 +5,7 @@ const packagedGameEntryPoints = [
   ['../../pages/games/asteroids/AsteroidsCompetitionPage.tsx', '@fortuneforge/games-asteroids'],
   ['./BaccaratRoute.tsx', '@fortuneforge/games-baccarat'],
   ['./DragonTigerRoute.tsx', '@fortuneforge/games-dragon-tiger'],
+  ['./HiLoRoute.tsx', '@fortuneforge/games-hi-lo'],
   ['./CasinoWarRoute.tsx', '@fortuneforge/games-casino-war'],
   ['./CrapsRoute.tsx', '@fortuneforge/games-craps'],
   ['./DropMergeRoute.tsx', '@fortuneforge/games-drop-merge'],

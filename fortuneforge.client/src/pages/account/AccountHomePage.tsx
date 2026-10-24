@@ -14,6 +14,7 @@ const cardDetails = {
   'texas-holdem': { href: '/cards/texas-holdem', image: holdemPreview },
   'three-card-poker': { href: '/cards/three-card-poker', image: holdemPreview },
   'house-holdem': { href: '/cards/house-holdem', image: holdemPreview },
+  'hi-lo': { href: '/games/hi-lo', image: holdemPreview },
   solitaire: { href: '/cards/solitaire', image: solitairePreview },
 } as const
 

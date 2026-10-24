@@ -5,12 +5,16 @@ import {
   type SlotSpinHistoryItem,
 } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
+import { CardRoomHistory } from '../../games/cards/shared/CardRoomHistory'
+import { useCardRoomHistory } from '../cards/useCardRoomHistory'
+import '../../games/cards/shared/cardRoomHeader.css'
 import '../index.css'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 
 export function AccountHistoryPage() {
   const { account, error: accountError, isLoading: isAccountLoading } = useAuthenticatedAccount()
+  const cardHistory = useCardRoomHistory()
   const [spins, setSpins] = useState<SlotSpinHistoryItem[]>([])
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
@@ -66,7 +70,7 @@ export function AccountHistoryPage() {
             <section className="history-heading">
               <p className="account-eyebrow">User history</p>
               <h1>{account.playerName}’s fortune</h1>
-              <p>Your latest authenticated spins and lifetime slot totals.</p>
+              <p>Your card-game results, latest authenticated spins, and lifetime slot totals.</p>
             </section>
 
             <section className="history-summary" aria-label="Slot history totals">
@@ -77,6 +81,11 @@ export function AccountHistoryPage() {
                 <span className="history-summary__coin-label"><ForgeCoin /> Net</span>
                 <strong className={account.slots.netCredits >= 0 ? 'is-positive' : 'is-negative'}>{account.slots.netCredits < 0 ? '-' : ''}R{numberFormatter.format(Math.abs(account.slots.netCredits))}</strong>
               </article>
+            </section>
+
+            <section className="history-list" aria-label="Card-game history">
+              <CardRoomHistory activities={cardHistory.activities} loading={cardHistory.loading}
+                error={cardHistory.error} busyId={cardHistory.busyId} onSelect={activity => void cardHistory.select(activity)} />
             </section>
 
             <section className="history-list" aria-labelledby="recent-history-title">

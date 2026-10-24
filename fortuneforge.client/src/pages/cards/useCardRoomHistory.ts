@@ -12,6 +12,7 @@ const gameHref: Record<CardRoomActivity['game'], string> = {
   'three-card-poker': '/cards/three-card-poker',
   'house-holdem': '/cards/house-holdem',
   solitaire: '/cards/solitaire',
+  'hi-lo': '/games/hi-lo',
 }
 
 export function useCardRoomHistory(onBalanceChange?: (balanceCredits: number) => void) {
@@ -255,7 +256,7 @@ function groupHistoryActivities(items: readonly CardRoomActivity[]): CardRoomAct
     const ordered = [...group].sort((left, right) => Date.parse(left.startedAtUtc) - Date.parse(right.startedAtUtc))
     const first = ordered[0]
     const last = ordered[ordered.length - 1]
-    if (first.game === 'solitaire' || first.game === 'house-holdem') return first
+    if (first.game === 'solitaire' || first.game === 'house-holdem' || first.game === 'hi-lo') return first
     const rounds = ordered.reduce((sum, item) => sum + (item.rounds ?? 1), 0)
     const label = first.game === 'texas-holdem' ? 'hands' : 'rounds'
     const wagerCredits = ordered.reduce((sum, item) => sum + (item.wagerCredits ?? 0), 0)
@@ -294,6 +295,7 @@ function gameLabel(game: CardRoomActivity['game']): string {
   if (game === 'texas-holdem') return 'Hold’em'
   if (game === 'three-card-poker') return 'Three Card Poker'
   if (game === 'house-holdem') return 'House Hold’em'
+  if (game === 'hi-lo') return 'Hi-Lo'
   return 'Solitaire'
 }
 

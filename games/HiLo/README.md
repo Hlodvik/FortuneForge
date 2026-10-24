@@ -1,6 +1,6 @@
 # FortuneForge Hi-Lo
 
-A separately packaged, single-player casino card game. The reusable client, pure .NET engine, authenticated API adapter, isolated practice sample and focused tests all live here. No central manifests, route registries, Startup, solution, release scripts or live configuration were changed.
+A separately packaged, single-player casino card game. The reusable client, pure .NET engine, authenticated API adapter, isolated practice sample and focused tests all live here. The October 23 integration connects `/games/hi-lo` to the main site's authenticated shell, account wallet, catalogue and guarded release checks.
 
 ## Review the game
 
@@ -41,4 +41,10 @@ npm run test:e2e
 
 Server tests run a private Firestore emulator, never a live database. The browser test requires the local sample/UI and an installed Chrome browser; `HILO_BROWSER_CHANNEL` and `HILO_URL` may override the defaults. It saves screenshots and a machine-readable report into `evidence/`.
 
-The package is prepared for coordinated host integration and owner review. Deployment and owner approval remain release gates.
+The owner approved the visual pass and requested the October 23 mobile, sound and gameplay audit before committing and deploying the integrated game. Deployment completion is recorded separately in the guarded release artifacts.
+
+### October 23 local visual pass
+
+The preview now uses classic green felt and black-and-gold controls in the Dragon Tiger visual family, with the real shared navbar/card faces and image-based quick wager chips. The chip picker changes the draft wager only; DEAL remains the sole start/debit action. The existing authoritative engine and recovery protocol are unchanged.
+
+The final client suite passes 83 tests, covering quick wagers, shared faces, skip/tie/cap outcomes, maintenance, uncertain-response recovery and server-confirmed outcome audio. The engine passes 35 tests. Local browser checks include a practice deal, free skip, full pre-guess stake refund, a successful call, refresh of that active round and exact cashout, plus bounded 320×568, 390×844, 844×390 and 820×1180 layouts. Mobile inputs avoid iPhone focus auto-zoom and primary targets remain at least 44 px. Hi-Lo is released separately after Dragon Tiger; no previous game's files are rolled back.

@@ -32,6 +32,7 @@
     <ProjectReference Include="..\games\Blackjack\src\FortuneForge.Games.Blackjack\FortuneForge.Games.Blackjack.csproj" />
     <ProjectReference Include="..\games\Craps\src\FortuneForge.Games.Craps\FortuneForge.Games.Craps.csproj" />
     <ProjectReference Include="..\games\DragonTiger\server\FortuneForge.Games.DragonTiger.Server\FortuneForge.Games.DragonTiger.Server.csproj" />
+    <ProjectReference Include="..\games\HiLo\server\FortuneForge.Games.HiLo.Server\FortuneForge.Games.HiLo.Server.csproj" />
     <ProjectReference Include="..\games\DropMerge\src\FortuneForge.Games.DropMerge\FortuneForge.Games.DropMerge.csproj" />
     <ProjectReference Include="..\games\Flappy\src\FortuneForge.Games.Flappy\FortuneForge.Games.Flappy.csproj" />
     <ProjectReference Include="..\games\Hearts\src\FortuneForge.Games.Hearts\FortuneForge.Games.Hearts.csproj" />

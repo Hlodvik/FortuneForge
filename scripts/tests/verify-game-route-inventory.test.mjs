@@ -11,7 +11,7 @@ const current = {
   runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
 }
 
-test('all 40 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
+test('all 42 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
   assert.doesNotThrow(() => verifyGameRouteInventory(current))
 })
 

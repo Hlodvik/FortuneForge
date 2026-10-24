@@ -5,7 +5,7 @@ import chip from './assets/audio/chip-lay-1.ogg'
 import collect from './assets/audio/chips-collide-1.ogg'
 import click from './assets/audio/chips-handle-1.ogg'
 
-const cues = { shuffle, deal, move, chip, collect, click }
+const cues = { shuffle, deal, move, chip, collect, click, miss: move }
 export type HiLoAudioCue = keyof typeof cues
 const muteKey = 'fortuneforge:hi-lo:muted'
 const activeClips = new Map<HTMLAudioElement, () => void>()

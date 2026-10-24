@@ -30,6 +30,7 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
         Assert.Single(starts.Select(value => value.Round!.RoundId).Distinct());
         Assert.All(starts, value => Assert.Equal(9900, value.WalletBalanceCents));
         Assert.Single((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        Assert.Empty((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
         Assert.Equal("operation_conflict", (await Assert.ThrowsAsync<HiLoException>(() => another.StartAsync("player", start with { WagerCents = 200 }))).Code);
         var round = starts[0].Round!;
         var won = await Service(db, CardRank.King).ActAsync("player", round.RoundId, new(Key(), 0, "higher"));
@@ -43,6 +44,19 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
         Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
         Assert.Equal(3, (await db.Collection("hiLoOperations").GetSnapshotAsync()).Count);
         Assert.Equal(3, (await db.Collection("hiLoEvents").GetSnapshotAsync()).Count);
+        var history = Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal("hi-lo-" + round.RoundId, history.Id);
+        Assert.Equal("player", history.GetValue<string>("userId"));
+        Assert.Equal("hi-lo", history.GetValue<string>("game"));
+        Assert.Equal(100L, history.GetValue<long>("wagerCents"));
+        Assert.Equal(214L, history.GetValue<long>("payoutCents"));
+        Assert.Equal(114L, history.GetValue<long>("netCents"));
+        Assert.False(history.ContainsField("roundJson"));
+        Assert.False(history.ContainsField("history"));
+        var seen = Timestamp.FromDateTime(new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc));
+        await history.Reference.UpdateAsync("seenAt", seen);
+        await another.ActAsync("player", round.RoundId, cashout);
+        Assert.Equal(seen, (await history.Reference.GetSnapshotAsync()).GetValue<Timestamp>("seenAt"));
         var restored = await new HiLoService(new HiLoFirestoreStore(db), draw: () => throw new InvalidOperationException("No RNG on reads/replay")).GetSessionAsync("player");
         Assert.False(restored.Practice); Assert.Equal("cashedOut", restored.Round!.Status); Assert.Equal(10114, restored.WalletBalanceCents);
         Assert.Null((await another.GetSessionAsync("other")).Round);
@@ -75,6 +89,9 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
         var start = await service.StartAsync("poor", new(Key(), 10));
         var loss = await service.ActAsync("poor", start.Round!.RoundId, new(Key(), 0, "higher"));
         Assert.Equal("lost", loss.Round!.Status); Assert.Equal(0, loss.Round.CurrentReturnCents);
+        var lossHistory = Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(0L, lossHistory.GetValue<long>("payoutCents"));
+        Assert.Equal(-10L, lossHistory.GetValue<long>("netCents"));
         Assert.Single((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
         await db.Collection("userBalances").Document("bad_slotsCredits").SetAsync(new Dictionary<string, object> { ["availableFractionalCents"] = 10L });
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("bad", new(Key(), 10)));
@@ -93,6 +110,8 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
             state = await Service(db, higher ? CardRank.King : CardRank.Queen).ActAsync("cap", state.Round.RoundId, new(Key(), state.Round.Revision, higher ? "higher" : "lower"));
         }
         Assert.Equal("maximumReturn", state.Round.Status); Assert.Equal(10000000, state.Round.CurrentReturnCents);
+        var cappedHistory = Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
+        Assert.Equal(10000000L, cappedHistory.GetValue<long>("payoutCents"));
         Assert.Equal(10070000, state.WalletBalanceCents);
         Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
         Assert.Equal(100700L, (await Wallet(db, "cap")).GetValue<long>("available"));
@@ -136,6 +155,7 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
         var replay = await paused.ActAsync("player", original.Round.RoundId, request);
         Assert.Equal(10000, replay.WalletBalanceCents);
         Assert.False(replay.Enabled);
+        Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
         Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
     }
 }

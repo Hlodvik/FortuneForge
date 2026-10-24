@@ -48,4 +48,10 @@ describe('card-room history API', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([result]), { status: 200 })))
     await expect(getCardRoomHistory()).resolves.toEqual([result])
   })
+
+  it('accepts settled Hi-Lo summaries with exact fractional money and no claim', async () => {
+    const result = { resultId: 'hi-lo-round-0001', game: 'hi-lo', mode: 'credit', matchId: 'round-1', startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 2.14, wagerCredits: 1, netCredits: 1.14, score: null, moves: null, schemaVersion: 1 }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([result]), { status: 200 })))
+    await expect(getCardRoomHistory()).resolves.toEqual([result])
+  })
 })

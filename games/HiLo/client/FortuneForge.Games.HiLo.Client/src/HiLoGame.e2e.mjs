@@ -19,7 +19,7 @@ await page.addInitScript(() => {
 const api = path => `${origin}/api/games/hi-lo${path}`
 const session = async () => { const response = await context.request.get(api('/session')); assert.equal(response.status(), 200); return response.json() }
 const money = cents => `R${(cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-const start = () => page.getByRole('button', { name: /Place wager|Play again/ })
+const start = () => page.getByRole('button', { name: 'Deal cards' })
 const collect = () => page.getByRole('button', { name: /^Cash out/ })
 const higher = () => page.getByRole('button', { name: /^Choose higher/ })
 const lower = () => page.getByRole('button', { name: /^Choose lower/ })
@@ -189,10 +189,10 @@ try {
       }
     })
     await soundPage.goto(origin)
-    await soundPage.getByRole('button', { name: /Place wager/ }).click()
+    await soundPage.getByRole('button', { name: 'Deal cards' }).click()
     await expect(soundPage.getByRole('button', { name: /^Cash out/ })).toBeEnabled()
     await soundPage.getByRole('button', { name: /^Cash out/ }).click()
-    await expect(soundPage.getByRole('button', { name: /Play again/ })).toBeEnabled()
+    await expect(soundPage.getByRole('button', { name: 'Deal cards' })).toBeEnabled()
     await expect.poll(() => soundPage.evaluate(() => window.__realHiLoAudio.filter(item => item.played).length)).toBeGreaterThanOrEqual(3)
     report.realAudio = await soundPage.evaluate(() => window.__realHiLoAudio)
     assert.equal(report.realAudio.every(item => item.played), true)

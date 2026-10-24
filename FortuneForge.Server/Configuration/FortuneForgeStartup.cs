@@ -21,6 +21,7 @@ using FortuneForge.Server.Cards.Baccarat;
 using FortuneForge.Server.Cards.CasinoWar;
 using FortuneForge.Server.Dice.SicBo;
 using FortuneForge.Games.DragonTiger.Server;
+using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
 
@@ -68,6 +69,20 @@ public static class FortuneForgeStartup
         {
             options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
             options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+        });
+        builder.Services.AddHiLoServer(options =>
+        {
+            options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
+            options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+            // Practice funds and recovery are account-scoped but intentionally
+            // ephemeral across host replacement; this file never holds real funds.
+            options.PracticeStorePath = Path.Combine(Path.GetTempPath(), "fortuneforge-hi-lo", "practice.json");
+            // Firebase Hosting proxies the API to a different Cloud Run host.
+            // Trust only the site's exact origins, not arbitrary forwarded headers.
+            options.AllowedOrigins = builder.Environment.IsDevelopment()
+                ? ["https://fortuneforgegame.web.app", "https://fortuneforgegame.firebaseapp.com",
+                    "http://127.0.0.1:4178", "http://localhost:4178", "http://127.0.0.1:5173", "http://localhost:5173"]
+                : ["https://fortuneforgegame.web.app", "https://fortuneforgegame.firebaseapp.com"];
         });
         builder.Services.AddSingleton<DropMergeGameService>();
         builder.Services.AddSingleton<LiarsDiceGameService>();

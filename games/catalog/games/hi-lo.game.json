@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "hi-lo",
+  "displayName": "Hi-Lo",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/hi-lo",
+  "clientPackage": "@fortuneforge/games-hi-lo",
+  "apiBasePath": "/api/games/hi-lo",
+  "capabilities": ["credits", "free-play", "history"],
+  "migrationState": "rules-pilot"
+}

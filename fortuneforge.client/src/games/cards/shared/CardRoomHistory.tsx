@@ -18,6 +18,9 @@ export function CardRoomHistory({
   const groups = [
     ['blackjack', 'Blackjack'],
     ['texas-holdem', 'Texas Hold’em'],
+    ['three-card-poker', 'Three Card Poker'],
+    ['house-holdem', 'House Hold’em'],
+    ['hi-lo', 'Hi-Lo'],
     ['solitaire', 'Solitaire'],
   ] as const
 

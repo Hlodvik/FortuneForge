@@ -19,6 +19,18 @@ const activities: readonly CardRoomActivity[] = [
 ]
 
 describe('CardRoomHistory', () => {
+  it('shows Hi-Lo beside the already-supported single-player card games', () => {
+    const markup = renderToStaticMarkup(<CardRoomHistory activities={[{
+      id: 'hi-lo-round-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won',
+      startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true,
+      requiresClaim: false, winningsCredits: 2.14, wagerCredits: 1, netCredits: 1.14,
+    }]} loading={false} error={null} busyId={null} onSelect={() => undefined} />)
+    expect(markup).toContain('Hi-Lo game')
+    expect(markup).toContain('R2.14 won')
+    expect(markup).toContain('Three Card Poker')
+    expect(markup).toContain('House Hold’em')
+  })
+
   it('keeps unseen finished games in Active until they are opened', () => {
     const markup = renderToStaticMarkup(
       <CardRoomHistory activities={activities} loading={false} error={null} busyId={null} onSelect={() => undefined} />,

@@ -1,0 +1,278 @@
+@font-face { font-family:'FF HiLo UI'; src:url('./assets/fonts/sora-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 800; font-display:swap; }
+@font-face { font-family:'FF HiLo Display'; src:url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
+
+/* The shared game shell supplies the height below navigation. No second
+   viewport subtraction or fixed minimum height can push controls off-screen. */
+.ff-hilo { --hilo-text:#f6edda; --hilo-muted:#adc0ae; --hilo-gold:#dfc68d; --hilo-green:#91d0a4; --hilo-font-ui:'FF HiLo UI',sans-serif; --hilo-font-display:'FF HiLo Display',Georgia,serif; display:grid; grid-template-columns:228px minmax(0,1fr); grid-template-rows:minmax(0,1fr); width:100%; height:100%; min-width:0; min-height:0; max-height:100%; margin:0; border:0; border-radius:0; background:#07140e; color:var(--hilo-text); box-shadow:none; overflow:hidden; font-family:var(--hilo-font-ui); container-type:size; container-name:hilo-game; }
+.ff-hilo button, .ff-hilo input { font-family:var(--hilo-font-ui); }
+.ff-hilo button:focus-visible, .ff-hilo input:focus-visible { outline:3px solid #ffe3a0; outline-offset:3px; }
+.hilo-rail { position:relative; z-index:3; display:flex; flex-direction:column; gap:20px; min-height:0; min-width:0; padding:22px 20px 14px; border-right:1px solid #a98c493d; background:linear-gradient(120deg,#101b15,#080f0d); }
+.hilo-eyebrow { color:#b9a778; font-size:7px; letter-spacing:.13em; }
+.hilo-rail-game { margin-top:5px; color:#ead8aa; font:650 31px/1.1 var(--hilo-font-display); letter-spacing:-.035em; }
+.hilo-rail-game i { color:#c5a86a; font-size:21px; }
+.hilo-wallet { position:static; display:flex; flex-direction:column; gap:5px; }
+.hilo-wallet > span { color:#aabdac; font-size:9px; }
+.hilo-wallet strong { color:#f6e9cb; font-size:23px; font-weight:600; letter-spacing:-.025em; }
+.hilo-wallet small { color:#a3aa8b; font-size:8px; line-height:1.35; }
+.hilo-bet-controls { position:relative; display:grid; grid-template-columns:60px minmax(0,1fr); grid-template-rows:16px 44px 132px; align-items:center; min-width:0; gap:7px 12px; padding:0; background:none; border:0; }
+.hilo-bet-controls label { grid-column:1 / -1; grid-row:1; display:flex; align-items:center; justify-content:space-between; margin:0; color:#d2d5bd; font-size:9px; }
+.hilo-bet-controls label span { color:#b9a778; }
+.hilo-wager-input { grid-column:1 / -1; grid-row:2; display:flex; width:100%; height:44px; min-width:0; border:1px solid #a1915c; border-radius:6px; background:#07170f; }
+.hilo-wager-input:focus-within { outline:3px solid #ffe3a0; outline-offset:2px; }
+.hilo-wager-input input { min-width:0; width:100%; padding:8px; color:#fcf1d5; font-size:14px; }
+.hilo-wager-input button { flex:0 0 44px; min-width:44px; min-height:44px; padding:0; border-left:1px solid #75814f77; background:#193024; color:#dfcca1; font-size:13px; }
+.hilo-rail-info { flex:1; min-height:0; margin:0; padding-top:17px; border-top:1px solid #b8a16b24; overflow:hidden; }
+.hilo-rail-info > span { color:#c8b98f; font-size:7px; }
+.hilo-rail-info p { margin:10px 0; color:#92aa94; font-size:10px; line-height:1.8; }
+.hilo-rank-key { margin-top:17px; gap:9px; }
+.hilo-rank-key b { color:#e6d6b2; font:600 22px/1 var(--hilo-font-display); }
+.hilo-rank-key span { color:#9cae93; font-size:6px; }
+.hilo-rank-key i { color:#a49365; }
+.hilo-utilities { display:flex; align-items:center; justify-content:space-between; flex-shrink:0; gap:8px; margin:0; padding:0; border-top:1px solid #b8a16b24; background:none; }
+.hilo-utilities button { display:flex; align-items:center; justify-content:center; min-width:44px; min-height:44px; padding:4px; gap:5px; color:#c7d1b8; background:none; font-size:8px; }
+.hilo-utilities svg { width:20px; height:20px; }
+.hilo-utilities button[aria-label="How to play Hi-Lo"] > span { display:block; font-size:23px; font-weight:650; line-height:1; }
+
+.hilo-table { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:74px minmax(0,1fr) 44px 25px; min-height:0; min-width:0; background:radial-gradient(ellipse at 50% 37%,transparent 20%,#001a0e50 100%),url('./assets/classic-green-felt.webp') center / 100% 100% no-repeat,#073a20; }
+.hilo-table::before { content:none; }
+.hilo-table-header { grid-row:1; min-height:0; padding:10px 28px; border-bottom:1px solid #ddca8e16; }
+.hilo-table-tag { left:22px; top:22px; color:#a9bb9d; font-size:7px; letter-spacing:.12em; }
+.hilo-table h1 { color:#e6d5a6; font:680 39px/1 var(--hilo-font-display); letter-spacing:-.04em; text-shadow:0 2px 7px #0005; }
+.hilo-table h1 span { margin:0 5px; font-size:24px; vertical-align:4px; color:#caaf74; }
+.hilo-streak { right:23px; top:19px; gap:8px; }
+.hilo-streak span { color:#aabb9e; font-size:7px; letter-spacing:.12em; }
+.hilo-streak strong { color:#efdfb8; font:600 27px/1 var(--hilo-font-display); }
+.hilo-arena { grid-row:2; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:47px minmax(0,1fr) 53px 80px; align-items:center; justify-items:center; min-width:0; min-height:0; gap:8px; padding:10px 23px; }
+.hilo-multiplier { grid-column:1; grid-row:1; display:flex; align-items:center; flex-direction:column; gap:3px; margin:0; }
+.hilo-multiplier > span { color:#b5c6a9; font-size:7px; letter-spacing:.15em; }
+.hilo-multiplier > strong { color:#efd79b; font:600 28px/1.1 var(--hilo-font-display); letter-spacing:-.025em; }
+.hilo-card-row { grid-column:1; grid-row:2; display:flex; align-items:center; justify-content:center; gap:clamp(24px,3.4vw,52px); width:100%; height:100%; min-height:0; container-type:size; }
+.hilo-card-stage { --ff-card-width:calc(min(255px,max(0px,100cqh - 12px)) * .7142857); position:relative; width:auto; height:min(255px,max(0px,100cqh - 12px)); aspect-ratio:5 / 7; flex:0 0 auto; }
+.hilo-card-face-host { display:block; width:100%; height:100%; container-type:inline-size; }
+.hilo-card-face-host > .ff-playing-card { width:100%; height:100%; }
+.hilo-deck-shadow { inset:3px -1px -3px 1px; border:1px solid #d5caa5; background:#b9b69e; box-shadow:0 3px #656d57,0 9px 17px #0005; }
+.hilo-playing-card { color:#1c2d23; background:linear-gradient(145deg,#fffef5,#e9e6db); border-color:#f6efd8; font-family:var(--hilo-font-display); }
+.hilo-playing-card--back { padding:7px; background:#ede4c9; }
+.hilo-playing-card--back > div { color:#d8c088; border-color:#b79a58; background:repeating-linear-gradient(45deg,transparent 0 7px,#b8a27014 7px 8px),repeating-linear-gradient(-45deg,#12221b 0 7px,#bea87914 7px 8px),#0a1b12; box-shadow:inset 0 0 0 4px #15281c,inset 0 0 0 5px #a7915c88; }
+.hilo-playing-card--back b { font-family:var(--hilo-font-display); }
+.hilo-skip { right:-16px; top:-10px; min-width:44px; min-height:44px; padding:5px 8px; border:1px solid #beab73; border-radius:7px; color:#dfd3aa; background:#102c1f; box-shadow:0 3px 7px #0005; }
+.hilo-skip svg { width:18px; height:18px; }
+.hilo-choice-wrap { width:108px; flex:0 0 auto; }
+.hilo-choice-label { color:#d1d8bb; font-size:10px; letter-spacing:.13em; margin-bottom:9px; }
+.hilo-choice { gap:7px; width:100%; min-height:89px; border:1px solid #c5ad72; border-radius:9px; color:#f2e7c8; background:linear-gradient(145deg,#28553b,#113823); box-shadow:inset 0 1px #f4e4ac44,0 3px 0 #061e12,0 6px 12px #0004; }
+.hilo-choice:hover:enabled { transform:translateY(-2px); filter:brightness(1.1); }
+.hilo-choice svg { width:30px; height:30px; }
+.hilo-choice strong { font-size:12px; }
+.hilo-choice-return { gap:4px; margin-top:11px; }
+.hilo-choice-return strong { color:#f3dfaa; font-size:14px; }
+.hilo-choice-return strong { max-width:100%; overflow-wrap:anywhere; }
+.hilo-choice-return span { color:#c1d0b4; font-size:10px; }
+.hilo-trail { grid-column:1; grid-row:3; width:min(100%,520px); height:100%; min-height:0; margin:0; gap:5px; }
+.hilo-trail-empty { color:#a9bb9c; font-size:9px; }
+.hilo-trail-item { width:31px; flex-basis:31px; gap:3px; }
+.hilo-trail-item > span { height:35px; padding:4px 2px; color:#223629; background:#eee9d9; }
+.hilo-trail-item > small { height:13px; padding:2px 0; color:#d1dcc6; background:#496249; }
+.hilo-trail-item.is-win > small { color:#e8fff1; background:#327047; }
+.hilo-trail-item.is-loss > small { color:#ffede4; background:#8c4140; }
+.hilo-collect-area { grid-column:1; grid-row:4; width:244px; margin:0; text-align:center; }
+.hilo-collect { min-height:57px; padding:8px 17px; border:1px solid #b3d69c; border-radius:8px; color:#f0ffe2; background:linear-gradient(145deg,#4b945b,#24653d); box-shadow:0 3px 0 #123f23,inset 0 1px #e4ffd663; }
+.hilo-collect span { font-size:10px; }
+.hilo-collect strong { font-size:22px; }
+.hilo-return-label { display:block; margin-top:7px; min-height:10px; color:#bbcaad; font-size:7px; line-height:1.2; }
+.hilo-result-seal { font-size:11px; padding:6px 12px; }
+.hilo-notice { grid-row:3; min-height:0; gap:9px; padding:0 16px; color:#cfdbbd; background:#05180d66; font-size:10px; line-height:1.3; }
+.hilo-notice--error { color:#ffdbc8; background:#5721218c; }
+.hilo-notice button { min-height:44px; flex-shrink:0; padding:5px 10px; color:#f0dfb2; border-color:#bca76f; background:#163f29; font-size:9px; }
+.hilo-table-footer { grid-row:4; align-items:center; padding:3px 19px; color:#a7b797; font-size:7px; letter-spacing:.06em; border-color:#deca8c20; }
+.hilo-table-footer i { color:#a28f5e; }
+
+/* Numbered project-owned chip artwork chooses a wager; it is not a side bet. */
+.hilo-chip-picker { --hilo-picker-chip:44px; grid-column:1; grid-row:3; position:relative; z-index:20; display:grid; grid-template-columns:44px; grid-template-rows:44px 44px 44px; align-items:center; justify-content:center; width:44px; height:132px; margin:auto; padding:0; background:none; border:0; }
+.hilo-chip-step, .hilo-selected-chip { display:grid; place-items:center; width:44px; height:44px; min-width:44px; min-height:44px; padding:0; border:0; border-radius:50%; color:#e9d092; background:none; }
+.hilo-chip-step svg { width:22px; height:22px; stroke-width:2.5; }
+.hilo-chip-step.is-up svg { translate:0 10px; }
+.hilo-chip-step.is-down svg { translate:0 -10px; }
+.hilo-selected-chip img { display:block; width:var(--hilo-picker-chip); height:var(--hilo-picker-chip); object-fit:contain; filter:drop-shadow(0 2px 3px #0008); }
+.hilo-selected-chip[aria-expanded=true] { outline:2px solid #e8cd8c; outline-offset:2px; }
+.hilo-chip-options { position:absolute; z-index:50; left:calc(100% + 8px); top:50%; translate:0 -50%; display:flex; align-items:center; flex-wrap:wrap; gap:5px; width:max-content; max-width:calc(100cqw - 90px); padding:7px; border:1px solid #ba9e60; border-radius:24px; background:#0a1911f5; box-shadow:0 6px 25px #0008; }
+.hilo-chip-options button { display:grid; place-items:center; width:44px; height:44px; min-width:44px; min-height:44px; flex:0 0 44px; padding:0; border:0; border-radius:50%; background:none; }
+.hilo-chip-options button img { display:block; width:44px; height:44px; object-fit:contain; }
+.hilo-chip-options button[aria-pressed=true] { outline:2px solid #e8cd8c; outline-offset:0; }
+.hilo-bet-controls > .hilo-start { position:relative; grid-column:2; grid-row:3; display:grid; place-items:center; width:88px; height:88px; min-width:88px; min-height:88px; justify-self:center; margin:0; padding:0; border:2px solid #dfc184; border-radius:50%; color:#382617; background:radial-gradient(circle at 32% 24%,#fff0bf,#e2c27c 50%,#ac7733 95%); box-shadow:inset 0 0 0 4px #93642d,inset 0 0 0 6px #f7dda0,0 5px 12px #0006; font:750 17px/1 var(--hilo-font-ui); letter-spacing:.08em; }
+.hilo-bet-controls > .hilo-start::after { content:''; position:absolute; inset:12px; border:1px solid #ae7e3f; border-radius:50%; box-shadow:inset 0 1px 0 #fff0b2; pointer-events:none; }
+.hilo-bet-controls > .hilo-start span { font-size:8px; }
+.hilo-rules { overflow:auto; overscroll-behavior:contain; max-height:calc(100dvh - 30px); padding:26px; border-color:#a88e57; color:#eee6ce; background:#102219; font:12px/1.7 var(--hilo-font-ui); }
+.hilo-rules h2 { font:650 27px/1.2 var(--hilo-font-display); color:#ead5a4; }
+.hilo-rules h3 { color:#d8bf85; }
+.hilo-rules p, .hilo-rules li { color:#bfccb5; }
+.hilo-rules-close { width:44px; height:44px; min-width:44px; min-height:44px; color:#ead6a4; }
+.hilo-rules .hilo-start { width:100%; min-height:44px; border-color:#bca36a; background:#d6bb7b; color:#1d3323; box-shadow:none; }
+
+@container hilo-game (max-height:650px) and (min-width:761px) {
+  .hilo-rail { gap:14px; padding:15px 17px 10px; }
+  .hilo-rail-info { padding-top:10px; }
+  .hilo-rail-info p { margin-block:6px; font-size:9px; }
+  .hilo-rank-key { margin-top:10px; }
+  .hilo-table { grid-template-rows:61px minmax(0,1fr) 44px 23px; }
+  .hilo-arena { grid-template-rows:39px minmax(0,1fr) 43px 71px; gap:6px; padding:8px 19px; }
+  .hilo-trail-item > span { height:28px; padding-block:3px; font-size:11px; }
+  .hilo-trail-item > small { height:12px; font-size:5px; }
+}
+
+@media(max-width:760px) {
+  .ff-hilo { grid-template-columns:minmax(0,1fr); grid-template-rows:minmax(0,1fr) 146px; height:100%; min-height:0; border-radius:0; }
+}
+@container hilo-game (max-width:760px) {
+  .hilo-rail { display:contents; }
+  .hilo-rail-heading, .hilo-rail-info { display:none; }
+  .hilo-table { grid-column:1; grid-row:1; grid-template-rows:55px minmax(0,1fr) 44px 21px; min-height:0; }
+  .hilo-table-header { min-height:0; padding:6px 10px; }
+  .hilo-table h1 { font-size:31px; }
+  .hilo-table h1 span { font-size:20px; margin-inline:3px; }
+  .hilo-table-tag { display:none; }
+  .hilo-streak { right:12px; top:13px; flex-direction:column; gap:2px; }
+  .hilo-streak span { font-size:6px; }
+  .hilo-streak strong { font-size:21px; }
+  .hilo-wallet { position:absolute; z-index:4; top:11px; left:13px; gap:3px; }
+  .hilo-wallet > span { font-size:7px; }
+  .hilo-wallet strong { font-size:16px; }
+  .hilo-wallet small { display:none; }
+  .hilo-arena { grid-template-rows:34px minmax(0,1fr) 41px 69px; gap:6px; padding:5px 10px 7px; }
+  .hilo-multiplier > span { font-size:6px; }
+  .hilo-multiplier > strong { font-size:23px; }
+  .hilo-card-row { gap:14px; }
+  .hilo-card-stage { --ff-card-width:calc(min(210px,max(0px,100cqh - 10px)) * .7142857); height:min(210px,max(0px,100cqh - 10px)); }
+  .hilo-choice-wrap { width:65px; }
+  .hilo-choice-label { margin-bottom:5px; font-size:8px; letter-spacing:.08em; }
+  .hilo-choice { min-height:65px; gap:5px; }
+  .hilo-choice svg { width:25px; height:25px; }
+  .hilo-choice strong { font-size:10px; }
+  .hilo-choice-return { gap:3px; margin-top:7px; }
+  .hilo-choice-return strong { font-size:11px; }
+  .hilo-choice-return span { font-size:8px; }
+  .hilo-skip { min-width:44px; min-height:44px; right:-13px; top:-6px; padding:5px; }
+  .hilo-skip span { display:none; }
+  .hilo-trail { gap:4px; }
+  .hilo-trail-item { width:25px; flex-basis:25px; gap:2px; }
+  .hilo-trail-item > span { height:27px; padding:3px 1px; font-size:10px; }
+  .hilo-trail-item i { font-size:11px; }
+  .hilo-trail-item > small { height:11px; padding:1px; font-size:5px; }
+  .hilo-trail-empty { font-size:8px; }
+  .hilo-collect-area { width:215px; }
+  .hilo-collect { min-height:52px; padding:7px 14px; }
+  .hilo-collect span { font-size:9px; }
+  .hilo-collect strong { font-size:19px; }
+  .hilo-return-label { margin-top:6px; font-size:6px; }
+  .hilo-notice { min-height:0; padding:0 9px; font-size:8px; }
+  .hilo-notice button { min-height:44px; padding-inline:7px; font-size:8px; }
+  .hilo-table-footer { padding:3px 9px; font-size:5px; }
+  .hilo-bet-controls { grid-column:1; grid-row:2; display:block; min-width:0; min-height:0; padding:0; border-top:1px solid #8d854e66; background:linear-gradient(125deg,#102119,#09160e); }
+  .hilo-bet-controls label { position:absolute; top:6px; left:50%; translate:-50% 0; display:flex; width:104px; height:12px; margin:0; font-size:8px; }
+  .hilo-wager-input { position:absolute; left:50%; top:22px; translate:-50% 0; width:104px; height:44px; }
+  .hilo-wager-input input { padding-inline:8px; font-size:16px; text-align:center; }
+  .hilo-wager-input button { display:none; }
+  .hilo-chip-picker { --hilo-picker-chip:40px; position:absolute; top:50%; left:13px; translate:0 -50%; margin:0; }
+  .hilo-chip-options { max-width:calc(100cqw - 90px); }
+  .hilo-bet-controls > .hilo-start { position:absolute; left:50%; bottom:5px; translate:-50% 0; width:74px; height:74px; min-width:74px; min-height:74px; font-size:15px; }
+  .hilo-bet-controls > .hilo-start::after { inset:10px; }
+  .hilo-utilities { position:absolute; z-index:5; right:12px; bottom:26px; display:flex; flex-direction:column; gap:4px; width:44px; height:92px; padding:0; border:0; background:none; }
+  .hilo-utilities button { width:44px; height:44px; min-width:44px; min-height:44px; padding:0; }
+  .hilo-utilities button span { display:none; }
+  .hilo-utilities svg { width:20px; height:20px; }
+}
+@container hilo-game (max-height:580px) and (max-width:760px) {
+  .hilo-table { grid-template-rows:49px minmax(0,1fr) 44px 18px; }
+  .hilo-arena { grid-template-rows:30px minmax(0,1fr) 32px 62px; gap:4px; padding:4px 8px; }
+  .hilo-choice-wrap { width:59px; }
+  .hilo-choice { min-height:56px; gap:3px; }
+  .hilo-choice svg { width:22px; height:22px; }
+  .hilo-choice-return { margin-top:5px; gap:2px; }
+  .hilo-choice-return strong { font-size:10px; }
+  .hilo-choice-return span { font-size:7px; }
+  .hilo-card-row { gap:12px; }
+  .hilo-trail-item > span { height:21px; padding:2px 1px; font-size:9px; }
+  .hilo-trail-item > small { height:9px; padding:1px; font-size:4px; }
+  .hilo-collect { min-height:47px; padding-block:5px; }
+  .hilo-collect strong { font-size:17px; }
+  .hilo-return-label { margin-top:4px; }
+}
+
+/* On short portrait screens, history yields space to the playable card.
+   Normal phones retain their approved spacing and full history strip. */
+@container hilo-game (max-height:480px) and (max-width:540px) {
+  .hilo-table { grid-template-rows:38px minmax(0,1fr) 28px 16px; }
+  .hilo-table:has(.hilo-notice button) { grid-template-rows:38px minmax(0,1fr) 44px 16px; }
+  .hilo-table-header { padding-block:3px; }
+  .hilo-table h1 { font-size:27px; }
+  .hilo-table h1 span { font-size:17px; vertical-align:2px; }
+  .hilo-wallet { top:5px; gap:2px; }
+  .hilo-wallet strong { font-size:14px; }
+  .hilo-streak { top:5px; gap:1px; }
+  .hilo-streak strong { font-size:18px; }
+  .hilo-arena { grid-template-rows:24px minmax(0,1fr) 0 62px; gap:4px; padding:4px 8px; }
+  .hilo-multiplier { flex-direction:row; gap:6px; }
+  .hilo-multiplier > strong { font-size:20px; }
+  .hilo-trail { display:none; }
+  .hilo-notice { padding-block:0; font-size:8px; line-height:1.25; }
+  .hilo-table-footer { padding-block:1px; }
+  .hilo-result-seal { font-size:8px; padding:4px 8px; }
+}
+
+@media(max-height:500px) and (min-width:541px) {
+  .ff-hilo { grid-template-columns:176px minmax(0,1fr); grid-template-rows:minmax(0,1fr); height:100%; min-height:0; }
+}
+@container hilo-game (max-height:480px) and (min-width:541px) {
+  .hilo-rail { display:flex; flex-direction:column; gap:10px; padding:12px 11px 7px; }
+  .hilo-rail-heading, .hilo-rail-info { display:none; }
+  .hilo-wallet { position:static; gap:3px; }
+  .hilo-wallet > span { font-size:7px; }
+  .hilo-wallet strong { font-size:17px; }
+  .hilo-wallet small { display:none; }
+  .hilo-bet-controls { position:relative; display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:12px 44px 44px 64px; min-height:0; gap:4px; padding:0; border:0; background:none; }
+  .hilo-bet-controls label { position:static; grid-column:1; grid-row:1; width:100%; height:auto; translate:none; font-size:8px; }
+  .hilo-wager-input { position:static; grid-column:1; grid-row:2; width:100%; height:44px; translate:none; }
+  .hilo-wager-input input { text-align:left; font-size:16px; padding:7px; }
+  .hilo-wager-input button { display:block; min-width:44px; flex-basis:44px; }
+  .hilo-chip-picker { position:relative; grid-column:1; grid-row:3; top:auto; left:auto; translate:none; display:grid; grid-template-columns:repeat(3,44px); grid-template-rows:44px; width:132px; height:44px; margin:auto; }
+  .hilo-chip-step.is-up svg, .hilo-chip-step.is-down svg { translate:none; }
+  .hilo-chip-options { max-width:calc(100cqw - 186px); }
+  .hilo-bet-controls > .hilo-start { position:relative; grid-column:1; grid-row:4; top:auto; left:auto; bottom:auto; translate:none; justify-self:center; width:64px; height:64px; min-width:64px; min-height:64px; font-size:13px; }
+  .hilo-bet-controls > .hilo-start::after { inset:8px; }
+  .hilo-utilities { position:static; display:flex; flex-direction:row; width:auto; height:44px; min-height:44px; margin-top:auto; border-top:1px solid #b8a16b24; }
+  .hilo-table { grid-column:2; grid-row:1; grid-template-rows:40px minmax(0,1fr) 44px 19px; }
+  .hilo-table-header { min-height:0; padding:3px 10px; }
+  .hilo-table h1 { font-size:25px; }
+  .hilo-table h1 span { font-size:17px; vertical-align:2px; }
+  .hilo-table-tag { display:none; }
+  .hilo-streak { right:12px; top:10px; flex-direction:row; gap:5px; }
+  .hilo-streak span { font-size:5px; }
+  .hilo-streak strong { font-size:17px; }
+  .hilo-arena { display:grid; grid-template-columns:minmax(0,1fr) 132px; grid-template-rows:29px minmax(0,1fr); gap:4px 7px; padding:4px 11px 5px; }
+  .hilo-multiplier { grid-column:1; grid-row:1; flex-direction:row; gap:6px; margin:0; }
+  .hilo-multiplier > span { font-size:5px; }
+  .hilo-multiplier > strong { font-size:19px; }
+  .hilo-card-row { grid-column:1; grid-row:2; height:100%; min-height:0; align-self:stretch; margin:0; gap:9px; }
+  .hilo-card-stage { --ff-card-width:calc(min(154px,max(0px,100cqh - 12px)) * .7142857); height:min(154px,max(0px,100cqh - 12px)); }
+  .hilo-choice-wrap { width:54px; }
+  .hilo-choice-label { margin-bottom:4px; font-size:7px; }
+  .hilo-choice { min-height:51px; gap:2px; }
+  .hilo-choice svg { width:21px; height:21px; }
+  .hilo-choice strong { font-size:8px; }
+  .hilo-choice-return { margin-top:5px; gap:2px; }
+  .hilo-choice-return strong { font-size:9px; }
+  .hilo-choice-return span { font-size:6px; }
+  .hilo-skip { min-width:44px; min-height:44px; right:-10px; top:-4px; }
+  .hilo-trail { grid-column:2; grid-row:1 / 3; align-self:start; width:132px; height:35px; margin:15px 0 0; justify-content:flex-end; }
+  .hilo-trail-item { width:21px; flex-basis:21px; }
+  .hilo-trail-item > span { height:23px; font-size:9px; padding:2px 1px; }
+  .hilo-trail-item > small { height:9px; font-size:4px; }
+  .hilo-trail-empty { font-size:7px; }
+  .hilo-collect-area { grid-column:2; grid-row:2; align-self:center; width:132px; margin:42px 0 0; }
+  .hilo-collect { min-height:50px; padding:6px 9px; }
+  .hilo-collect span { font-size:8px; }
+  .hilo-collect strong { font-size:16px; }
+  .hilo-return-label { margin-top:5px; font-size:6px; line-height:1.3; }
+  .hilo-notice { min-height:0; font-size:8px; padding-inline:9px; }
+  .hilo-table-footer { padding:2px 9px; font-size:5px; }
+}
+@media(prefers-reduced-motion:reduce) { .ff-hilo *, .ff-hilo *::before, .ff-hilo *::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }

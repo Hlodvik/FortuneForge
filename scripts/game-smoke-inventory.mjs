@@ -27,6 +27,7 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/games/casino-war' },
   { smokePath: '/games/baccarat' },
   { smokePath: '/games/dragon-tiger' },
+  { smokePath: '/games/hi-lo' },
   { smokePath: '/games/video-poker' },
   { smokePath: '/games/roulette' },
   { smokePath: '/games/craps' },

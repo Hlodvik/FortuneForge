@@ -19,6 +19,7 @@ const AuthenticatedTwentyFortyEightRoute = lazy(() => import('./routes/TwentyFor
 const AuthenticatedDropMergeRoute = lazy(() => import('./routes/DropMergeRoute').then((module) => ({ default: module.AuthenticatedDropMergeRoute })))
 const AuthenticatedBaccaratRoute = lazy(() => import('./routes/BaccaratRoute').then((module) => ({ default: module.AuthenticatedBaccaratRoute })))
 const AuthenticatedDragonTigerRoute = lazy(() => import('./routes/DragonTigerRoute').then((module) => ({ default: module.AuthenticatedDragonTigerRoute })))
+const AuthenticatedHiLoRoute = lazy(() => import('./routes/HiLoRoute').then((module) => ({ default: module.AuthenticatedHiLoRoute })))
 const AuthenticatedCasinoWarRoute = lazy(() => import('./routes/CasinoWarRoute').then((module) => ({ default: module.AuthenticatedCasinoWarRoute })))
 const AuthenticatedKenoRoute = lazy(() => import('./routes/KenoRoute').then((module) => ({ default: module.AuthenticatedKenoRoute })))
 const AuthenticatedSicBoRoute = lazy(() => import('./routes/SicBoRoute').then((module) => ({ default: module.AuthenticatedSicBoRoute })))
@@ -72,6 +73,7 @@ export function AppRoutes({
   else if (pathname === '/games/drop-merge') route = <AuthenticatedDropMergeRoute />
   else if (pathname === '/games/baccarat') route = <AuthenticatedBaccaratRoute />
   else if (pathname === '/games/dragon-tiger') route = <AuthenticatedDragonTigerRoute />
+  else if (pathname === '/games/hi-lo') route = <AuthenticatedHiLoRoute />
   else if (pathname === '/games/casino-war') route = <AuthenticatedCasinoWarRoute />
   else if (pathname === '/games/keno') route = <AuthenticatedKenoRoute />
   else if (pathname === '/games/sic-bo') route = <AuthenticatedSicBoRoute />

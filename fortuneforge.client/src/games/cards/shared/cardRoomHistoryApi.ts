@@ -2,7 +2,7 @@ import { fetchWithAccountSession } from '../../../features/account/services/acco
 
 export type CardRoomHistoryResult = Readonly<{
   resultId: string
-  game: 'blackjack' | 'texas-holdem' | 'three-card-poker' | 'house-holdem' | 'solitaire'
+  game: 'blackjack' | 'texas-holdem' | 'three-card-poker' | 'house-holdem' | 'solitaire' | 'hi-lo'
   mode: string
   matchId: string
   startedAtUtc: string
@@ -47,7 +47,7 @@ export async function markCardRoomResultSeen(resultId: string): Promise<void> {
 function isHistoryResult(value: unknown): value is CardRoomHistoryResult {
   if (!isRecord(value)) return false
   return typeof value.resultId === 'string'
-    && (value.game === 'blackjack' || value.game === 'texas-holdem' || value.game === 'three-card-poker' || value.game === 'house-holdem' || value.game === 'solitaire')
+    && (value.game === 'blackjack' || value.game === 'texas-holdem' || value.game === 'three-card-poker' || value.game === 'house-holdem' || value.game === 'solitaire' || value.game === 'hi-lo')
     && typeof value.mode === 'string'
     && typeof value.matchId === 'string'
     && isIsoDate(value.startedAtUtc)

@@ -1,5 +1,15 @@
 # Hi-Lo digital reference review
 
+## October 23 classic-casino refinement
+
+The professional reference was checked again against Hacksaw's official Hi-Lo page and its published desktop game screen. Its central card, adjacent directional choices, quoted returns and collect action remain the useful composition; its extra color bets and same-rank rules are not copied into our strictly higher/lower variant.
+
+The owner requested Dragon Tiger's visual family with traditional casino styling instead of Asian motifs. The local refinement therefore reuses FortuneForge's approved fine-grained Baccarat green felt, black shared navigation, local Sora/Fraunces fonts, normalized numbered chip PNGs, standard shared card faces and a gold round DEAL control. The existing engine, wager limits, quoted payouts, skips and recovery protocol are unchanged.
+
+`assets/classic-green-felt.webp` is a format-only encoding of FortuneForge's existing Baccarat v3 material: 1672×941, 170,538 bytes. No new image generation, third-party artwork extraction, color change or resampling was needed. Original indigo source artwork remains preserved but is no longer loaded by the runtime stylesheet. Font copies retain their OFL files.
+
+The chip picker offers quick wager amounts; it does not place or debit a bet. Only DEAL submits the selected wager, in integer cents. The standalone preview uses the actual shared InGameShell and PlayingCard renderer, while the published package includes a matching scoped fallback face.
+
 The pure engine passed its first 34 tests **before** digital-screen review began on October 20, 2026. The final engine suite contains 35 tests, including independent rational payout checks. Reference inspection used real browser screenshots of provider-published digital game screens, rather than relying on descriptions or live-dealer footage.
 
 ## Inspected screens

@@ -77,6 +77,19 @@ public sealed class HttpTests
         Assert.Equal(HttpStatusCode.Conflict, (await alice.PostAsJsonAsync($"/api/games/hi-lo/rounds/{state.Round.RoundId}/actions", new HiLoActionRequest(Guid.NewGuid().ToString("N"), 9, "cashout"))).StatusCode);
     }
 
+    [Theory]
+    [InlineData("https://fortuneforgegame.web.app", HttpStatusCode.OK)]
+    [InlineData("https://fortuneforgegame.firebaseapp.com", HttpStatusCode.OK)]
+    [InlineData("https://fortuneforgegame.web.app.hostile.example", HttpStatusCode.Forbidden)]
+    public async Task Hosting_proxy_trusts_only_exact_allowlisted_origins(string origin, HttpStatusCode expected)
+    {
+        await using var app = await App(allowedOrigins: ["https://fortuneforgegame.web.app", "https://fortuneforgegame.firebaseapp.com"]);
+        var client = app.GetTestClient();
+        client.DefaultRequestHeaders.Add("X-FortuneForge-Game", "hi-lo");
+        client.DefaultRequestHeaders.Add("Origin", origin);
+        Assert.Equal(expected, (await client.PostAsJsonAsync("/api/games/hi-lo/rounds", new HiLoStartRequest(Guid.NewGuid().ToString("N"), 100))).StatusCode);
+    }
+
     [Fact]
     public async Task MaintenanceMode_AllowsReadCashoutAndExactAcceptedReplay_BlocksNewWagersGuessesAndSkips()
     {
@@ -119,11 +132,11 @@ public sealed class HttpTests
 
     private static HttpClient Client(WebApplication app)
     { var client = app.GetTestClient(); client.DefaultRequestHeaders.Add("X-FortuneForge-Game", "hi-lo"); client.DefaultRequestHeaders.Add("Origin", "http://localhost"); return client; }
-    private static async Task<WebApplication> App(bool enabled = true, bool authenticated = true)
+    private static async Task<WebApplication> App(bool enabled = true, bool authenticated = true, string[]? allowedOrigins = null)
     {
         var builder = WebApplication.CreateBuilder(); builder.WebHost.UseTestServer();
         builder.Configuration["Features:HiLoEnabled"] = enabled.ToString();
-        builder.Services.AddHiLoServer(options => { options.ForcePractice = true; options.PracticeStorePath = Path.Combine(Path.GetTempPath(), "hilo-http-" + Guid.NewGuid().ToString("N") + ".json"); });
+        builder.Services.AddHiLoServer(options => { options.ForcePractice = true; options.PracticeStorePath = Path.Combine(Path.GetTempPath(), "hilo-http-" + Guid.NewGuid().ToString("N") + ".json"); options.AllowedOrigins = allowedOrigins ?? []; });
         var app = builder.Build();
         app.MapHiLo((context, ct) => Task.FromResult<HiLoAccount?>(authenticated ? new(context.Request.Headers["Test-Account"].FirstOrDefault() ?? "alice") : null));
         await app.StartAsync(); return app;

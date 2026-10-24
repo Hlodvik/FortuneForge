@@ -1,7 +1,7 @@
 export type CardRoomActivity = Readonly<{
   id: string
   matchId: string
-  game: 'blackjack' | 'texas-holdem' | 'three-card-poker' | 'house-holdem' | 'solitaire'
+  game: 'blackjack' | 'texas-holdem' | 'three-card-poker' | 'house-holdem' | 'solitaire' | 'hi-lo'
   gameLabel: string
   title: string
   summary: string

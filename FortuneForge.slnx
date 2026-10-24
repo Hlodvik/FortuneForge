@@ -35,6 +35,13 @@
   <Folder Name="/Games/Hearts/">
     <Project Path="games/Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
   </Folder>
+  <Folder Name="/Games/Hi-Lo/">
+    <Project Path="games/HiLo/src/FortuneForge.Games.HiLo/FortuneForge.Games.HiLo.csproj" />
+    <Project Path="games/HiLo/server/FortuneForge.Games.HiLo.Server/FortuneForge.Games.HiLo.Server.csproj" />
+    <Project Path="games/HiLo/samples/FortuneForge.Games.HiLo.Web/FortuneForge.Games.HiLo.Web.csproj" />
+    <Project Path="games/HiLo/tests/FortuneForge.Games.HiLo.Engine.Tests/FortuneForge.Games.HiLo.Engine.Tests.csproj" />
+    <Project Path="games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests/FortuneForge.Games.HiLo.Server.Tests.csproj" />
+  </Folder>
   <Folder Name="/Games/Horse Flight/">
     <Project Path="games/HorseFlight/src/FortuneForge.Games.HorseFlight/FortuneForge.Games.HorseFlight.csproj" />
   </Folder>

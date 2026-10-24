@@ -57,6 +57,18 @@ describe('Hi-Lo audio controls', () => {
     expect(clips.every(clip => clip.pause.mock.calls.length === 1)).toBe(true)
   })
 
+  it('uses the existing natural card slide for a miss and honors mute for the new cue', () => {
+    const clips = installAudio()
+    playHiLoAudio('miss', true)
+    expect(clips).toHaveLength(0)
+    playHiLoAudio('miss', false)
+    expect(clips).toHaveLength(1)
+    expect(clips[0].src).toContain('card-slide-1.ogg')
+    expect(clips[0].volume).toBe(.28)
+    expect(clips[0].play).toHaveBeenCalledOnce()
+    clips[0].dispatchEvent(new Event('ended'))
+  })
+
   it('releases finished and failed clips instead of retaining them until a later mute', () => {
     const clips = installAudio()
     playHiLoAudio('shuffle', false)

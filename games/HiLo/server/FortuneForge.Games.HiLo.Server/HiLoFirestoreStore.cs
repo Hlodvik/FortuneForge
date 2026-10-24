@@ -42,15 +42,36 @@ public sealed class HiLoFirestoreStore(FirestoreDb database) : IHiLoStore
                     throw new InvalidOperationException("The Hi-Lo operation audit is corrupt.");
                 if (delta != 0) ValidateLedger(documents[3], userId, command.OperationId, delta, response.WalletBalanceCents,
                     delta < 0 ? "hi-lo-wager" : "hi-lo-payout");
+                if (response.Round!.Status != "active")
+                    ValidateHistory(await transaction.GetSnapshotAsync(Result(response.Round.RoundId), cancellationToken), userId, response.Round);
                 return response;
             }
             if (documents[3].Exists || documents[4].Exists) throw new InvalidOperationException("A Hi-Lo ledger or event exists without its operation.");
             var mutation = HiLoMutations.Apply(state, command, draw, false, allowNewMutations);
+            var publicRound = mutation.Response.Round!;
+            var startedAt = command.Kind == "start" ? Timestamp.FromDateTime(now.UtcDateTime)
+                : documents[0].TryGetValue<Timestamp>("roundStartedAt", out var savedStart) ? savedStart
+                : documents[0].GetValue<Timestamp>("updatedAt");
+            var settled = publicRound.Status != "active";
+            var result = settled ? Result(publicRound.RoundId) : null;
+            if (result is not null && (await transaction.GetSnapshotAsync(result, cancellationToken)).Exists)
+                throw new InvalidOperationException("A Hi-Lo history result already exists before this settlement.");
             transaction.Set(Head(userId), new Dictionary<string, object>
             {
                 ["schemaVersion"] = 1L, ["userId"] = userId, ["roundJson"] = JsonSerializer.Serialize(mutation.State.Round),
                 ["updatedAt"] = Timestamp.FromDateTime(now.UtcDateTime),
+                ["roundStartedAt"] = startedAt,
             });
+            if (result is not null)
+                transaction.Create(result, new Dictionary<string, object>
+                {
+                    ["resultId"] = result.Id, ["game"] = "hi-lo", ["mode"] = "credit", ["userId"] = userId,
+                    ["matchId"] = publicRound.RoundId, ["wagerCents"] = publicRound.WagerCents,
+                    ["payoutCents"] = publicRound.CurrentReturnCents,
+                    ["netCents"] = checked(publicRound.CurrentReturnCents - publicRound.WagerCents),
+                    ["outcome"] = publicRound.Status, ["settlementStatus"] = "paid", ["claimStatus"] = "completed",
+                    ["startedAt"] = startedAt, ["completedAt"] = Timestamp.FromDateTime(now.UtcDateTime), ["schemaVersion"] = 1L,
+                });
             if (mutation.WalletDeltaCents != 0)
             {
                 transaction.Set(Wallet(userId), new Dictionary<string, object>
@@ -84,6 +105,15 @@ public sealed class HiLoFirestoreStore(FirestoreDb database) : IHiLoStore
     }
     private DocumentReference Head(string userId) => database.Collection("hiLoPlayers").Document(HiLoService.Hash(userId));
     private DocumentReference Wallet(string userId) => database.Collection("userBalances").Document(userId + "_" + Currency);
+    private DocumentReference Result(string roundId) => database.Collection("cardGameResults").Document("hi-lo-" + roundId);
+    private static void ValidateHistory(DocumentSnapshot result, string userId, HiLoRoundResponse round)
+    {
+        if (!result.Exists || Required<string>(result, "userId") != userId || Required<string>(result, "game") != "hi-lo" ||
+            Required<string>(result, "matchId") != round.RoundId || Required<long>(result, "wagerCents") != round.WagerCents ||
+            Required<long>(result, "payoutCents") != round.CurrentReturnCents ||
+            Required<long>(result, "netCents") != checked(round.CurrentReturnCents - round.WagerCents))
+            throw new InvalidOperationException("The Hi-Lo settled history is corrupt.");
+    }
     private static HiLoStoredState ReadState(DocumentSnapshot head, DocumentSnapshot wallet, string userId)
     {
         var balance = 0L;

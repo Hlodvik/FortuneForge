@@ -13,6 +13,7 @@
     "games/HorseFlight/client/FortuneForge.Games.HorseFlight.Client",
     "games/Snake/client/FortuneForge.Games.Snake.Client",
     "games/Hearts/client/FortuneForge.Games.Hearts.Client",
+    "games/HiLo/client/FortuneForge.Games.HiLo.Client",
     "games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client",
     "games/Roulette/client/FortuneForge.Games.Roulette.Client",
     "games/Keno/client/FortuneForge.Games.Keno.Client",

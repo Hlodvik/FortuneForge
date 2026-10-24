@@ -1,0 +1,26 @@
+.hi-lo-page {
+  background: #050505;
+}
+
+.hi-lo-page > .in-game-navbar {
+  border-bottom-color: rgb(215 180 110 / 30%);
+  background: #050505;
+}
+
+.hi-lo-page > .in-game-shell__body {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  background: #000;
+}
+
+.hi-lo-page .player-shell-menu > nav {
+  border-color: rgb(215 180 110 / 30%);
+  background: #101010;
+}
+
+.hi-lo-page .player-shell-menu--balance > summary,
+.hi-lo-page .player-shell-menu--more > summary {
+  background: #101010;
+}

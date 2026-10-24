@@ -6,7 +6,7 @@ import { gameSmokeRoutes, nonSlotSmokeInventory, slotSmokeInventory } from './ga
 const root = fileURLToPath(new URL('../', import.meta.url))
 export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runtimeCatalog }) {
 
-assert(gameSmokeRoutes.length === 41, `expected 41 smoke routes, found ${gameSmokeRoutes.length}`)
+assert(gameSmokeRoutes.length === 42, `expected 42 smoke routes, found ${gameSmokeRoutes.length}`)
 assert(new Set(gameSmokeRoutes).size === gameSmokeRoutes.length, 'smoke routes must be unique')
 assert(slotSmokeInventory.length === 20, `expected 20 slot contracts, found ${slotSmokeInventory.length}`)
 
@@ -23,7 +23,7 @@ if (runtimeGames) {
     ...slotSmokeInventory.map(([route]) => `/slots/${route}`),
     ...nonSlotSmokeInventory.map(({ smokePath, catalogPath = smokePath }) => catalogPath),
   ]
-  assert(runtimeGames.size === 41, `expected 41 runtime catalogue routes, found ${runtimeGames.size}`)
+  assert(runtimeGames.size === 42, `expected 42 runtime catalogue routes, found ${runtimeGames.size}`)
   for (const route of expectedPaths) assert(runtimeGames.has(route), `${route} is missing from the runtime catalogue`)
   for (const [route] of slotSmokeInventory) assert(runtimeGames.get(`/slots/${route}`) === true, `/slots/${route} must be listed by default`)
 }

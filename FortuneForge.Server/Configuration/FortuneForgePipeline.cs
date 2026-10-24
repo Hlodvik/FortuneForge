@@ -2,6 +2,7 @@ using FortuneForge.Server.Accounts.Development;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Games.DragonTiger.Server;
+using FortuneForge.Games.HiLo.Server;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -45,6 +46,12 @@ public static class FortuneForgePipeline
             return profile.Value is { } account
                 ? new DragonTigerAccount(account.UserId, account.Balances.SlotsCredits)
                 : null;
+        });
+        app.MapHiLo(async (context, cancellationToken) =>
+        {
+            var profile = await context.RequestServices.GetRequiredService<AccountService>()
+                .GetProfileAsync(AccountSessionCookie.Read(context.Request), cancellationToken);
+            return profile.Value is { } account ? new HiLoAccount(account.UserId) : null;
         });
         app.MapFallbackToFile("/index.html");
 

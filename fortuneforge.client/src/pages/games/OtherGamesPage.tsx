@@ -67,6 +67,7 @@ const casinoGames: readonly CatalogGame[] = [
   { name: 'Dragon Tiger', category: 'Casino card game', href: '/games/dragon-tiger', icon: '♠', summary: 'Choose Dragon, Tiger, or Tie in a two-card showdown.', tone: 'baccarat' },
   cardGames[7]!,
   cardGames[8]!,
+  { name: 'Hi-Lo', category: 'Casino card game', href: '/games/hi-lo', icon: '↕', summary: 'Call the next card higher or lower, then collect your streak.', tone: 'poker' },
 ]
 
 const arcadeGames: readonly CatalogGame[] = [
@@ -118,7 +119,9 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
     })
   }
   for (const activity of cardHistory.activities) {
-    const game = activity.game === 'blackjack'
+    const game = activity.game === 'hi-lo'
+      ? casinoGames.find(entry => entry.href === '/games/hi-lo')!
+      : activity.game === 'blackjack'
       ? cardGames[0]!
       : activity.game === 'texas-holdem'
         ? cardGames[1]!

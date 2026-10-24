@@ -1,5 +1,17 @@
 # Hi-Lo verification
 
+## October 23 final audit and host integration
+
+The approved classic green/gold presentation is now connected to the main site's authenticated route, shared navigation/card faces and account-mode wallet. Final isolated client checks pass **83 tests**, with TypeScript, package build and smoke-script syntax checks passing; the pure engine passes **35 tests**. The guarded release additionally verifies host/backend integration and every existing catalogue route before publication.
+
+The sound audit moved collection audio after confirmed cashout rather than before the request, added the same natural chip cue for automatic cap settlement, and uses a restrained card-sweep cue for accepted losses. Regression coverage checks uncertain/definitive failures, late mute, exact-once successful cues and silent refresh/replay. No synthetic music or remote sound dependency was added.
+
+Actual local browser checks verified phone 320×568 and 390×844, landscape 844×390, and tablet 820×1180 with no document overflow. Primary game controls and every expanded chip option remain at least 44 px; all seven chips fit the smallest phone popup. The help dialog stays within the viewport and scrolls internally. The wager field uses 16 px mobile text to avoid iOS focus auto-zoom. These are viewport/browser checks, not a claim of physical-iPhone testing.
+
+A real isolated practice run debited R2.00, correctly increased the quoted return to R4.29 after a successful call, survived refresh with the same card/streak/wallet, and credited exactly R4.29 at cashout. Other checks covered skip, pre-guess refund and an actual losing call. No production wager was made. The runtime felt is the approved 1672×941 green WebP (170,538 bytes), replacing the old bundled indigo material; local Sora/Fraunces and shared numbered chips are reused.
+
+The original package-only verification below is retained as historical evidence; its pending-integration wording and older test/bundle counts are superseded by this audit and the final guarded release record.
+
 Verified on October 20, 2026, in the existing main working tree. Package ownership is limited to `games/HiLo`; central integration is documented in `INTEGRATION.md`. No root dependency install, branch/worktree operation, commit, push, deployment, live configuration change or production wager was performed.
 
 ## Automated checks
@@ -30,6 +42,6 @@ Audio control assertions use an instrumented media stub for repeatability. A sep
 
 The original imagegen indigo cloth and final prompt are documented in `VISUAL_REFERENCE.md`. Runtime WebP is 413022 bytes; the lossless generated source is preserved. The built reusable package emits 122550 bytes of JavaScript and 638247 bytes of CSS (approximately 66.53 KB and 471.11 KB gzip, respectively). It embeds only the runtime material and required font/audio resources. No provider assets were extracted.
 
-## Remaining release work
+## October 23 release gate
 
-The isolated package is ready for owner hands-on review and coordinated integration. The central authenticated route, workspace/solution references, catalogue entry, shared smoke inventory and production feature configuration are intentionally pending the parent integration chat. Follow `INTEGRATION.md`, validate the integrated route against isolated emulator accounts, and obtain owner review before release. No owner approval or deployment is claimed by these checks.
+Owner visual approval and the final mobile/sound/gameplay audit are complete. The central authenticated route, workspace/solution references, catalogue entry, shared smoke inventory, trusted Hosting origins and production feature configuration are integrated and covered by focused host tests. Shared player/admin history includes settled paid rounds; practice never writes paid history. The integrated local route renders the approved board in the actual shared shell. Commit/push and the guarded API+Hosting deployment are explicitly authorized; only its final release record confirms live publication.

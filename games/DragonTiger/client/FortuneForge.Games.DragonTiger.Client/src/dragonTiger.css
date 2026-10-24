@@ -24,6 +24,7 @@
 
 /* Bounded table layout: the host supplies the height below its shared navbar. */
 .ff-dt {
+  box-sizing:border-box;
   --dt-chip-size:50px;
   --dt-printed-line:rgb(233 205 151 / 52%);
   display:grid;
@@ -56,7 +57,7 @@
 .ff-dt__arena { grid-column:1; grid-row:2; display:flex; min-width:0; min-height:0; gap:clamp(28px,5vw,92px); padding:3px 12px; container-type:size; }
 .ff-dt__hand { min-height:0; flex:0 0 auto; }
 .ff-dt__hand h2 { margin:0 0 7px; font:650 11px/1.2 var(--dt-font-ui,sans-serif); letter-spacing:.19em; }
-.ff-dt__card-wrap { --ff-card-width:calc(min(170px,max(0px,100cqh - 39px)) * .7142857); width:auto; height:min(170px,max(0px,100cqh - 39px)); aspect-ratio:5 / 7; flex-shrink:0; }
+.ff-dt__card-wrap { --ff-card-width:calc(min(210px,max(0px,100cqh - 39px)) * .7142857); width:auto; height:min(210px,max(0px,100cqh - 39px)); aspect-ratio:5 / 7; flex-shrink:0; }
 .ff-dt__card { font-family:var(--dt-font-display,Georgia,serif); }
 .ff-dt__card-index { font-size:clamp(15px,13cqh,25px); }
 .ff-dt__card-index b { font-size:.8em; }
@@ -248,8 +249,11 @@
 /* Single-chip denomination picker with independent, full-size step controls. */
 .ff-dt__arena { gap:clamp(22px,3vw,58px); }
 .ff-dt__bets { width:min(86%,760px); }
-.ff-dt__table { grid-template-rows:28px minmax(0,1fr) 51px 112px 25px 144px 18px 58px; }
-.ff-dt__betting-controls { display:block; position:relative; padding:0; }
+.ff-dt__table { grid-template-rows:28px minmax(0,1fr) 51px 112px 25px 132px auto 58px; }
+/* Keep the control targets on the felt; only the actual wallet footer is a
+   shaded bottom bar. Empty feedback must not reserve another console row. */
+.ff-dt__betting-controls { display:block; position:relative; padding:0; background:none; border-top:0; }
+.ff-dt__feedback:empty { display:none; }
 .ff-dt__chip-selector { --dt-picker-chip:50px; position:absolute; z-index:30; left:max(14px,calc(50% - 230px)); top:50%; translate:0 -50%; display:grid; grid-template-columns:var(--dt-picker-chip); grid-template-rows:44px var(--dt-picker-chip) 44px; justify-content:center; align-items:center; width:calc(var(--dt-picker-chip) + 14px); height:calc(var(--dt-picker-chip) + 90px); padding:0 6px; border:1px solid #b79358; border-radius:36px; background:#170f16e8; box-shadow:inset 0 1px 0 #e8ca8040,0 4px 13px #0006; }
 .ff-dt__chip-step { display:grid; place-items:center; justify-self:center; width:44px; height:44px; min-width:44px; min-height:44px; padding:10px; border:0; border-radius:50%; color:#edd19a; background:none; }
 .ff-dt__chip-step svg { display:block; width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2.7; stroke-linecap:round; stroke-linejoin:round; }
@@ -274,10 +278,10 @@
 .ff-dt__versus small { font-family:var(--dt-font-ui,sans-serif); }
 
 @container dragon-tiger-game (max-height:700px) and (min-width:541px) {
-  .ff-dt__table { grid-template-rows:24px minmax(0,1fr) 42px 96px 20px 144px 16px 50px; }
+  .ff-dt__table { grid-template-rows:18px minmax(0,1fr) 36px 96px 18px 132px auto 44px; }
 }
 @container dragon-tiger-game (max-width:540px) {
-  .ff-dt__table { grid-template-rows:23px minmax(0,1fr) 42px 98px 22px 138px 16px 51px; }
+  .ff-dt__table { grid-template-rows:23px minmax(0,1fr) 42px 98px 22px 138px auto 51px; }
   .ff-dt__arena { gap:22px; }
   .ff-dt__bets { width:calc(100% - 18px); grid-template-columns:repeat(3,minmax(0,1fr)); }
   .ff-dt__bet-area > .ff-dt__bet { min-height:44px; flex-direction:row; align-items:center; justify-content:flex-start; padding:5px 4px; }
@@ -297,10 +301,10 @@
   .ff-dt__rebet { left:calc(50% + 62px); }
 }
 @container dragon-tiger-game (max-height:620px) and (max-width:540px) {
-  .ff-dt__table { grid-template-rows:20px minmax(0,1fr) 30px 76px 18px 134px 12px 42px; }
+  .ff-dt__table { grid-template-rows:20px minmax(0,1fr) 30px 76px 18px 134px auto 42px; }
 }
 @container dragon-tiger-game (max-height:480px) and (min-width:541px) {
-  .ff-dt__table { grid-template-columns:42% minmax(0,1fr); grid-template-rows:18px minmax(20px,1fr) 70px 17px 56px 12px 40px; }
+  .ff-dt__table { grid-template-columns:42% minmax(0,1fr); grid-template-rows:18px minmax(20px,1fr) 70px 17px 64px auto 40px; }
   .ff-dt__arena { padding-left:74px; padding-right:5px; gap:12px; }
   .ff-dt__betting-controls { min-height:0; }
   .ff-dt__chip-selector { --dt-picker-chip:44px; left:7px; top:auto; bottom:0; translate:none; }

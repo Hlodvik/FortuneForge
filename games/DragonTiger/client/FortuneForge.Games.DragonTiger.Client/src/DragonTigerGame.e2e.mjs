@@ -144,7 +144,7 @@ try {
   assert.equal((await readStatus()).balance, lostRound.balance)
   assert.equal(await page.evaluate(() => localStorage.getItem('fortuneforge:dragon-tiger:pending:standalone-practice')), null)
 
-  const viewports = [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'portrait', width: 390, height: 844 }, { name: 'landscape', width: 844, height: 390 }, { name: 'small-portrait', width: 320, height: 640 }]
+  const viewports = [{ name: 'desktop', width: 1440, height: 1000 }, { name: 'zoom-sized-desktop', width: 1280, height: 686 }, { name: 'large-desktop', width: 1920, height: 1030 }, { name: 'portrait', width: 390, height: 844 }, { name: 'landscape', width: 844, height: 390 }, { name: 'small-portrait', width: 320, height: 640 }]
   for (const viewport of viewports) {
     await page.setViewportSize({ width: viewport.width, height: viewport.height })
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${viewport.name}: horizontal result overflow`)
@@ -157,6 +157,55 @@ try {
     await page.setViewportSize({ width: viewport.width, height: viewport.height })
     await expect(dragon()).toBeVisible()
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true, `${viewport.name}: horizontal page overflow`)
+    const layout = await page.evaluate(() => {
+      const element = selector => {
+        const node = document.querySelector(selector)
+        if (!node) throw new Error(`Missing layout element: ${selector}`)
+        return node
+      }
+      const rect = selector => {
+        const { top, right, bottom, left, width, height } = element(selector).getBoundingClientRect()
+        return { top, right, bottom, left, width, height }
+      }
+      const controls = element('.ff-dt__betting-controls')
+      const wallet = element('.ff-dt__wallet')
+      const arenaStyle = getComputedStyle(element('.ff-dt__arena'))
+      return {
+        table: rect('.ff-dt__table'), controls: rect('.ff-dt__betting-controls'),
+        wallet: rect('.ff-dt__wallet'), selector: rect('.ff-dt__chip-selector'),
+        deal: rect('.ff-dt__actions > .ff-dt__deal'), bets: rect('.ff-dt__bets'),
+        arena: rect('.ff-dt__arena'), card: rect('.ff-dt__card-wrap'),
+        arenaPaddingY: parseFloat(arenaStyle.paddingTop) + parseFloat(arenaStyle.paddingBottom),
+        feedbackHeight: rect('.ff-dt__feedback').height,
+        controlBackground: getComputedStyle(controls).backgroundColor,
+        controlBackgroundImage: getComputedStyle(controls).backgroundImage,
+        walletBackground: getComputedStyle(wallet).backgroundColor,
+        selectorButtons: [...element('.ff-dt__chip-selector').querySelectorAll(':scope > button')].map(button => {
+          const { top, bottom, width, height } = button.getBoundingClientRect()
+          return { top, bottom, width, height }
+        }),
+        pageHeight: Math.max(document.documentElement.scrollHeight, document.body.scrollHeight),
+      }
+    })
+    assert.ok(layout.pageHeight <= viewport.height + 1 && layout.table.bottom <= viewport.height + 1, `${viewport.name}: vertical page overflow`)
+    assert.ok(Math.abs(layout.wallet.bottom - (layout.table.bottom - 1)) <= 1, `${viewport.name}: wallet is not flush with the bottom of the table`)
+    assert.equal(layout.feedbackHeight, 0, `${viewport.name}: empty feedback reserves a bottom-bar row`)
+    assert.equal(layout.controlBackgroundImage, 'none', `${viewport.name}: control console has an oversized tinted background`)
+    assert.equal(layout.controlBackground, 'rgba(0, 0, 0, 0)', `${viewport.name}: control console is not transparent`)
+    assert.notEqual(layout.walletBackground, 'rgba(0, 0, 0, 0)', `${viewport.name}: actual bottom wallet lost its tint`)
+    assert.ok(layout.deal.top >= layout.controls.top - 1 && layout.deal.bottom <= layout.controls.bottom + 1 && layout.deal.bottom <= layout.wallet.top + 1, `${viewport.name}: Deal intrudes into the wallet or escapes its row`)
+    assert.ok(layout.selectorButtons.every(button => button.width >= 44 && button.height >= 44), `${viewport.name}: chip selector has undersized touch targets`)
+    assert.ok(layout.selectorButtons.every((button, index, buttons) => index === 0 || button.top >= buttons[index - 1].bottom - 1), `${viewport.name}: chip selector targets overlap`)
+    const selectorOverlapsBets = layout.selector.left < layout.bets.right && layout.selector.right > layout.bets.left && layout.selector.top < layout.bets.bottom && layout.selector.bottom > layout.bets.top
+    assert.equal(selectorOverlapsBets, false, `${viewport.name}: chip selector covers a betting spot`)
+    if (viewport.height > 480 || viewport.width <= 540) {
+      // Short landscape intentionally places the selector above the console in its left gutter.
+      assert.ok(layout.selector.top >= layout.controls.top - 1 && layout.selector.bottom <= layout.controls.bottom + 1, `${viewport.name}: chip selector escapes its reserved control zone`)
+    }
+    if (viewport.width > 540 && viewport.height > 480) {
+      assert.ok(Math.abs(layout.controls.height - 132) <= 1, `${viewport.name}: control console expanded beyond its 132px touch-target budget`)
+      assert.ok(layout.card.height >= Math.min(210, Math.max(0, layout.arena.height - layout.arenaPaddingY - 39)) - 1, `${viewport.name}: cards are needlessly small for the available arena`)
+    }
     for (const spot of [dragon(), tiger(), tie()]) {
       const box = await spot.boundingBox()
       assert.ok(box && box.x >= 0 && box.x + box.width <= viewport.width + 1 && box.height >= 44, `${viewport.name}: betting spot has an unusable size or clips offscreen`)

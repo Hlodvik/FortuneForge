@@ -18,6 +18,25 @@ function LobbyHarness({ initialAmount, ...props }: HarnessProps) {
 }
 
 describe('HoldemLobby', () => {
+  it('offers all three production stake levels with their independent buy-in limits', () => {
+    const rules = [
+      { ...testRule, id: 'friendly', name: 'Friendly', smallBlindCredits: .25, bigBlindCredits: .5, maximumTableStackCredits: 25 },
+      testRule,
+      { ...testRule, id: 'bold', name: 'Bold', smallBlindCredits: 2, bigBlindCredits: 5, maximumTableStackCredits: 500 },
+    ]
+    const onSelectRule = vi.fn(), onJoin = vi.fn()
+    const props = { rules, selectedRuleId: 'standard', balanceCredits: 1000, busy: false, onSelectRule, onJoin }
+    const { rerender } = render(<LobbyHarness {...props}/>)
+    expect(screen.getAllByRole('radio')).toHaveLength(3)
+    expect(screen.getByRole('radio', { name: /^Friendly/ })).toBeTruthy()
+    expect(screen.getByRole('radio', { name: /^Standard/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('radio', { name: /^Bold/ }))
+    expect(onSelectRule).toHaveBeenCalledWith('bold')
+    rerender(<LobbyHarness {...props} selectedRuleId="bold"/>)
+    fireEvent.click(screen.getByRole('button', { name: 'Join Bold · R500.00' }))
+    expect(onJoin).toHaveBeenCalledWith(rules[2], 500)
+  })
+
   it('uses decimal credit amounts and returns the selected authoritative rule on join', () => {
     const onJoin = vi.fn(), onSelectRule = vi.fn()
     render(<LobbyHarness rules={[testRule, highRule]} selectedRuleId="high" balanceCredits={25} busy={false} onSelectRule={onSelectRule} onJoin={onJoin} />)

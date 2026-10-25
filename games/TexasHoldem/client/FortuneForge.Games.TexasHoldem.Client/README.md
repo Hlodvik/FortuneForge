@@ -14,7 +14,7 @@
 
 The player chooses a whole-cent buy-in between the table's big blind and its maximum initial stack, subject to their account balance. Joining reserves that amount once; blinds and subsequent bets move reserved table chips, not the account wallet. Chips and winnings remain at the table between hands, without automatic rebuying or clipping winnings to the initial buy-in maximum. Canceling a queued reservation returns it; leaving or being released for inactivity returns uncommitted table chips once. Leaving during a live hand folds it and does not return chips already committed to the pot.
 
-Matching searches existing eligible live tables first, admits a waiting player at a hand boundary, and otherwise waits through the human grace period before shared managed-player filling. An unadmitted reservation expires and refunds after five minutes. The server retains the old accounting model only for already-persisted legacy tables; new escrow tables use a separate queue partition.
+The application host owns matchmaking and seat admission. This presentation package only displays its authoritative queue and table responses. An unadmitted reservation expires and refunds after five minutes. The server retains the old accounting model only for already-persisted legacy tables; new escrow tables use a separate queue partition.
 
 ## Development
 

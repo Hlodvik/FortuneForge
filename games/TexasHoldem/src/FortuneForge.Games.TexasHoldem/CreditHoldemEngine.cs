@@ -276,8 +276,8 @@ internal static class CreditHoldemEngine
     {
         if (match.UsesBuyInEscrow)
         {
-            // Managed seats are house-funded table chips. A human's cashable stack
-            // receives the actual award, not only the human-funded fraction of a pot.
+            // Cashable stacks receive the actual award, including contributions
+            // from table-only seats, not just the account-funded fraction of a pot.
             var escrowPayouts = match.Players.Where(player => player.IsAccountBacked)
                 .ToDictionary(player => player.ActorId, player => (long)player.WonHandChips, StringComparer.Ordinal);
             var escrowCommitted = match.Players.Where(player => player.IsAccountBacked)

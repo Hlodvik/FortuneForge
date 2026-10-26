@@ -22,7 +22,7 @@ const nonSlotComponents: Readonly<Record<string, string>> = {
 }
 
 describe('C game loading presentations', () => {
-  it('covers exactly its twelve assigned games with eighteen unique existing route aliases', () => {
+  it('covers twelve assigned games and eighteen aliases without enabling the separate Mines integration', () => {
     expect(LOADING_PRESENTATIONS_C.map((entry) => entry.id)).toEqual(assignedIds)
     expect(new Set(LOADING_PRESENTATIONS_C.map((entry) => entry.id)).size).toBe(12)
     const routes = LOADING_PRESENTATIONS_C.flatMap((entry) => entry.routes)
@@ -36,6 +36,9 @@ describe('C game loading presentations', () => {
       if (slot) {
         expect(entry.title).toBe(slot.title)
         expect(entry.routes).toEqual([slot.playPath, slot.demoPath].filter((route) => route !== null))
+      } else if (entry.id === 'mines') {
+        // Artwork is ready independently of the paid game's production integration.
+        expect(entry.routes).toEqual(['/games/mines'])
       } else {
         const paths = appMappings
           .filter((match) => match[2] === nonSlotComponents[entry.id])

@@ -1,0 +1,30 @@
+{
+  "id": "texas-holdem",
+  "title": "Texas Hold’em",
+  "file": "texas-holdem-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 40268,
+  "prompt": "Use case: precise-object-edit\nAsset type: finished wide 2:1 Texas Hold’em catalogue title card.\nInput image 1 is the edit target. Change only framing and outer background.\nPreserve the exact existing \"Texas Hold’em\" title, illustrated emerald-and-gold style, exact five-card board, separate ace hole-card pair, and chip arrangement. Scale the ENTIRE existing title-and-props composition uniformly down to 70% of its present size and center it in the canvas. Extend the emerald felt and dark forest-green background seamlessly into all newly exposed outer margins. The final canvas must stay true 2:1 landscape. This is essential: every letter of the title and every essential card must fit fully within the central 80% width and central 70% height, so leave at least 15% empty space above the title and 15% below the cards. Do not crop, add, relabel, duplicate, or redesign props. No extra text, logo, watermark, UI, slogans or people. Keep the title high-contrast and readable at 256x128. One image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium casino catalogue title-card illustration.\nPrimary request: One beautiful finished title card for Texas Hold’em, a recognizably communal poker-table scene rather than a generic card fan.\nScene/backdrop: rich emerald felt with a dark forest-green vignette and a subtle curved brass table rail, elegant premium casino collection identity.\nSubject: a straight horizontal row of exactly five ivory community cards on the felt, ranks 2 clubs, 7 diamonds, 9 clubs, 4 hearts, 10 spades; in front of that board, a separate close overlapping pair of hole cards, ace of spades and ace of hearts. Modest red, green and charcoal chip stacks gathered as a central pot. Clear card geometry and standard consistent corner indices, with single large central suit emblems as in a modern simple deck, no portrait court cards.\nStyle/medium: sophisticated illustrated game key art, subtly painted material textures, controlled dimensional highlights and clean shapes. Warm ivory cards, restrained antique gold, emerald shadows, small red accents. Polished, no photoreal money piles.\nComposition/framing: true 2:1 landscape canvas. The exact title is large and centered in the upper half, with the board and hole-card arrangement filling the lower middle. Keep the entire title and essential card subjects within x=12% to 88%, y=17% to 82%; quiet generous outer margins. All five board cards countable. Avoid a fan composition. Clear title-first hierarchy at a 256x128 thumbnail.\nText (verbatim): \"Texas Hold’em\". Render these words once as large crisp gold serif lettering on two balanced lines, preserve the apostrophe in Hold’em. No subtitle or other wording.\nConstraints: no people, no character portraits, no game UI, no buttons, no payout slogans or betting labels, no watermark, no logos or currency. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-9c90e693-0983-4732-992f-640c1323fdc7.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "fortuneforge.client/src/pages/cards/texasHoldem/texasHoldem.css",
+    "games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client/src/holdem.css",
+    "fortuneforge.client/src/assets/cards/previews/holdem-game.png",
+    "games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client/src/HoldemTableSurface.tsx",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-d3a6d3c3-7383-41ff-abad-30f800929f30.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and runtime export. Exact curly-apostrophe title is correct, five separate community cards and two separate ace hole cards are countable, with no court portraits or interface elements.",
+    "thumbnail": "Inspected at 256x128. Texas Hold’em remains clear; communal board and foreground hole cards provide a distinct poker-table silhouette.",
+    "crop": "Second generation reduces the full composition, keeping title and essential cards inside central 80% width / 70% height.",
+    "compression": "WebP quality 84; 40,268 bytes, below 120 KB ideal target.",
+    "revision": "Original master retained outside runtime assets; v2 is selected after a framing-only edit."
+  },
+  "status": "ready-for-parent-review"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "nordic-legends",
+  "title": "Nordic Legends",
+  "file": "nordic-legends-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 67692,
+  "prompt": "Use case: precise-object-edit\nEdit target: the supplied Nordic Legends catalogue illustration.\nChange only composition scale: uniformly shrink the whole foreground by 33% around the canvas center, including Valkyrie, full winged helmet, all feathers/shoulders, longship and its complete mast, both title lines and ornament. Extend the same cold fjord, snowy mountain and aurora background around it.\nAll title lettering and main subjects, especially the top helmet feather and bottom title ornament, must fit ENTIRELY within x=15%-85%, y=18%-82%, with generous quiet background around all four sides. Keep the title strongly readable at 256x128.\nPreserve exact wording \"Nordic Legends\", same clear typography, character face/design, blue/gold armor, ship, steel/seafoam palette, lighting and professional illustrated finish. Do not add or remove props. Wide 2:1. No extra words, UI, brands, payout copy or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6468d618-e2e4-4d50-be7a-60c1c5cdc1f5.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/nordicLegends/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-fjord-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-dragon-prow-longship-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-winged-valkyrie-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-mjolnir-thunder-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-a6c3076e-92a6-4171-ab26-36b0320e99e5.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Full title Nordic Legends is prominent and legible in clear steel/ivory-gold lettering. Winged-helm Valkyrie, blue/ivory dragon-prow longship, seafoam aurora and cold fjord match existing identity.",
+    "Selected v2 places complete helmet feathers, shoulders, ship and both title lines/ornament inside central 80% width / 70% height.",
+    "No new deity, horned helmet, unrelated motifs, UI, payout copy, third-party logos or watermarks. 67,692 bytes at WebP quality 84, under ideal 120 KB.",
+    "Retained nordic-legends-title-v1.webp (72,714 bytes); v2 is selected. Artwork files only, no uploads or wiring."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-a6c3076e-92a6-4171-ab26-36b0320e99e5.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: professionally illustrated key art for Nordic Legends retaining its aurora-lit fjords, winged Valkyrie, dragon-prow longship and weathered gold/steel identity.\nScene/backdrop: cool midnight fjord, distant snowy peaks and soft seafoam aurora, atmospheric and low contrast in the broad outer margins.\nSubject: an original adult blonde winged Valkyrie in an elegant winged metal helm, blue-and-weathered-gold armor and pale feather mantle; composed calm heroic expression, viewed as a carefully framed head-and-shoulders character vignette with the shoulders fully contained in the central composition. Beside the character, a smaller golden dragon-prow wooden longship with blue/ivory sail crosses a short arc of dark fjord water. No horned helmet. Use fresh original character and ship designs, not copies.\nStyle/medium: premium professionally illustrated fantasy game key art, sculpted metal and feathers, painterly 3D polish, controlled depth, restrained aurora and metal edge lighting. Rich detail without clutter.\nComposition/framing: wide 2:1. LARGE two-line title balances the compact Valkyrie-and-ship vignette. All title letters, complete helmet, face, shoulders, feather edges and ship must fit ENTIRELY inside the middle x=21%-79%, y=23%-77% rectangle, with generous quiet atmospheric margins. Keep the title prominent and readable at 256x128; no subject or text close to an image edge.\nColor palette: cold navy #102d46, steel blue #477b8e, deep #102535, seafoam #80dfca, weathered gold #d5b766, mint glow #8fffe2, pale ivory title.\nLighting/mood: aurora rim light, gentle blue/gold armor highlights, heroic calm, crisp contrast.\nText (verbatim): \"Nordic Legends\" exactly once, Nordic on first line and Legends on second, large clear bold carved-metal serif display type with pale steel/ivory faces and weathered-gold bevels. Ordinary readable Latin letters, no pseudo-rune lettering.\nConstraints: no other words, slogans, payout claims, reels, numbers, buttons, fake UI, brand logos or watermarks. Do not add unrelated religious or cultural motifs, new deities, horned helmets, blood or gore. Single original finished catalogue illustration."
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "keno",
+  "title": "Keno",
+  "file": "keno-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 45574,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino catalogue title card.\nPrimary request: Create ONE original polished Keno game title card, wide 2:1 landscape (1536x768 composition), opaque.\nScene/backdrop: midnight navy with deep teal depth, refined cyan rim lighting and restrained champagne-gold accents, matching a sophisticated modern Keno theme. Abstract dark illuminated atmosphere, no screen or room clutter.\nSubject: a compact beautifully illustrated cluster of FOUR spherical Keno draw balls, with glossy teal, warm gold and ivory material finishes, each with one clear circular ivory number medallion. The four numbers are exactly 7, 23, 48, 80, one unique number on each ball, all within valid Keno range 1–80. Numbers printed cleanly in dark ink and facing camera. Subtle shallow arc of teal light behind the balls suggests a number draw; no machine or control panels.\nStyle/medium: premium professionally painted game key art, dimensional materials, controlled studio-like lighting, crisp numerals, no clipart or photoreal money piles.\nComposition/framing: wide 2:1 with generous quiet navy margins. Large title balanced against the ball cluster. Keep ALL title letters and every numbered ball inside central 80% width and central 70% height, with 10% side and 15% vertical safe margins. Clear readable title and distinct balls at 240px thumbnail width.\nText (verbatim): \"Keno\". Exactly once, capital K, large elegant cream-gold serif lettering with understated dimensional edges and strong contrast.\nConstraints: no other words, no extra numbers beyond 7,23,48,80 on balls, no lottery ticket, no grid, no buttons, no fake interface, no payout claims/slogans, no cards, dice, coins, logos or watermarks. Do not imply a payout. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-7c918488-1ae7-4d2b-bd0b-cbe6eac09944.png",
+  "referencePaths": [
+    "games/Keno/client/FortuneForge.Games.Keno.Client/src/kenoViewport.css",
+    "games/Keno/client/FortuneForge.Games.Keno.Client/src/keno.css"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact Keno title with four unique clear draw-ball numbers 7,23,48,80, all valid 1–80. Midnight navy/teal/cyan/gold identity matches active theme. No ticket grid, fake UI, slogans or payout claim. Title and numbered faces are crop safe.",
+    "thumbnail": "Inspected 240x120: title and all four numbers are readable.",
+    "compression": "45,574 bytes; WebP quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

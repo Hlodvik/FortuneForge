@@ -1,0 +1,28 @@
+{
+  "id": "pirates-fortune",
+  "title": "Pirates' Fortune",
+  "file": "pirates-fortune-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 81300,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is Pirates' Fortune catalogue key art. Change ONLY framing of the title and foreground treasure group. Uniformly scale the complete \"Pirates' Fortune\" gold lettering, purse, chest, gems and foreground doubloons to 80% of their current size and center their full group within the same true 2:1 canvas. Continue the moonlit cove, water and rocks naturally around them; preserve ship, moon, palms, colours, lighting, materials and illustration style. Preserve exact title with apostrophe AFTER the s in \"Pirates'\". Every title letter and the full purse/chest must fit central 80% width / 70% height with generous quiet margins; no essential prop near canvas edges. Do not add, remove, relabel or redesign any subject. No other words, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot catalogue title card.\nPrimary request: one beautiful finished Pirates' Fortune title card preserving its moonlit tropical cove and Doubloon Purse treasure identity.\nScene/backdrop: a calm deep-blue tropical cove at night, a soft moon reflection on teal water, rocky island silhouettes and a few dark palm fronds framing outer corners. A black-sailed wooden pirate ship with warm amber cabin lanterns sits in the middle distance.\nSubject: a rich brown leather doubloon purse with stitched edges, red drawstrings and gold tips, a few embossed compass-star gold doubloons peeking from its open mouth. Beside it, a small wooden treasure chest with restrained gold hardware and a few ruby, sapphire, emerald and amber gems; no gigantic money pile. The purse is the foreground focal prop; ship is atmospheric, not a second dominant subject.\nStyle/medium: premium professionally illustrated adventure-game key art, painterly but polished and detailed, controlled highlights and depth, crisp silhouettes. Deep navy, turquoise seawater, weathered brown leather/wood, warm amber and antique gold.\nComposition/framing: TRUE wide 2:1 landscape. Foreground purse/chest group balances the large title on the opposite side, with the ship sitting behind in the cove. Title remains on quiet dark sky/water. Keep entire title and essential purse/chest subjects inside x=15%–85%, y=20%–80%, and give them generous surrounding breathing room; central 80% width / 70% height must contain all essential details. No title/object overlap. Strong readability at 256x128.\nText (verbatim): \"Pirates' Fortune\". Exactly these words once, TWO lines: \"Pirates'\" above \"Fortune\". The apostrophe comes AFTER the s in Pirates'. Large substantial weathered gold serif display lettering, restrained bevel and dark shadow.\nConstraints: no human characters, no new cultural/religious motifs, no extra wording or slogans, payouts, slot reels, spin buttons, fake UI, brands, logos or watermark. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-b8767166-1ea6-4ee4-9c56-27b366f45032.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/piratesFortune/catalog.ts",
+    "fortuneforge.client/src/games/slots/piratesFortune/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/piratesFortune/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/pirates-fortune/optimized/pirates-cove.png",
+    "fortuneforge.client/src/assets/slots/games/pirates-fortune/optimized/doubloon-purse.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-88acd6ae-6f33-4431-92f5-68fbc2da3e23.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact full title with apostrophe after Pirates; moonlit cove, black-sailed ship, stitched brown purse with red drawstrings, compass-star doubloons, chest and four coloured gems preserve current identity. No game UI or claims.",
+    "thumbnail": "Inspected at 256x128. Both title words and apostrophe remain visible; purse/chest focal group and moonlit ship remain identifiable.",
+    "crop": "Framing-only v2 brings title, full purse/chest and gems within central 80% width / 70% height. Secondary ship, moon and palms form the background.",
+    "compression": "WebP quality 84; 81,300 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

@@ -1,0 +1,28 @@
+{
+  "id": "samurai-fortune",
+  "title": "Samurai Fortune",
+  "file": "samurai-fortune-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 85780,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Samurai Fortune\" key-art image, wide 2:1 landscape, opaque.\nScene/backdrop: lantern-lit Japanese blossom garden at warm sunset, red arched wooden bridge across a misty stream, distant layered mountain castle, rose-pink cherry blossoms framing edges. Burgundy/crimson and charcoal shadows, warm amber/gold light, secondary jade accents. Match the existing game's established bridge/castle/blossom identity; no new religious imagery.\nSubject: ONE elegant forged katana displayed on a low dark-lacquer sword stand, polished gently curved steel blade, navy-blue and gold diamond-wrapped handle, circular ornate gold guard and small red tassel. Full blade tip, hilt and tassel visible, detailed yet restrained. No warrior, no person, no masks or extra weapons.\nComposition/framing: WIDE2:1. Large two-line title centered in upper-middle over quiet dark burgundy mist. Compact katana/stand lies diagonally across lower-middle below words, as supporting focal subject. All title letters and entire katana/stand fit inside x15–85%, y22–80%; wide generous outer margins. Never crop the sword or title. Background bridge and blossom branches create scene depth and may extend to edges.\nStyle/medium: original sophisticated professionally painted game key art, refined craftsmanship, tangible lacquer, silk, steel and petals, soft atmospheric depth and restrained cinematic highlights, cohesive premium catalogue.\nText (verbatim): \"Samurai Fortune\". Exactly these two words once, on two centered lines, large cream-gold serif lettering with restrained carved/beveled edges and strong contrast; readable at256x128. No Japanese letters or other writing on lanterns, blade or buildings.\nConstraints: no extra slogans, payout claims, reels/spin buttons/fake UI, logos/watermarks, cash or coin piles, no unrelated cultural additions. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Samurai Fortune title card.\nChange ONLY the katana, its tassel and dark-lacquer display stand as one group: shrink them to90% of current size around the group's center, preserving angle and position, so the entire blade tip, handle, tassel and stand fit x18–86%, y55–82%. Repaint exposed stone shelf and reflections to match. Preserve exact title \"Samurai Fortune\" and its size/position, cherry blossoms, red bridge, castle, lantern light, palette and wide 2:1 opaque canvas unchanged. No new props, words, logos or characters."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-25d33983-48e6-4adf-87da-19bd22266538.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-fc6f4175-754f-4dd6-b51a-997667743754.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/samuraiFortune/definition.ts",
+    "fortuneforge.client/src/games/slots/samuraiFortune/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/samurai-fortune/optimized/samurai-fortune-bridge-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/samurai-fortune/optimized/samurai-fortune-forged-katana-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP. Exact Samurai Fortune title; forged katana with navy/gold hilt and red tassel, blossom garden, red bridge, lanterns and mountain castle preserve existing identity. No new warrior/deity, writing on lanterns, extra copy, fake UI or claims.",
+    "thumbnail256x128": "Inspected256x128. Both title words crisp and katana/stand readable as distinct focal prop.",
+    "crop": "Title and entire sword, blade tip, handle, stand and tassel fit central80%width/70%height after targeted group-size edit.",
+    "compression": "85,780 bytes; quality84; below120KB ideal."
+  },
+  "status": "ready-for-parent-review"
+}

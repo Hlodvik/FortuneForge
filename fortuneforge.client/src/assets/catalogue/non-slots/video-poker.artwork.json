@@ -1,0 +1,30 @@
+{
+  "id": "video-poker",
+  "title": "Video Poker",
+  "file": "video-poker-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 44440,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino catalogue title card.\nPrimary request: Create ONE original professionally illustrated Video Poker title card, wide 2:1 landscape (1536x768 composition), opaque.\nScene/backdrop: rich royal-blue and midnight navy gaming-console materials, subtle brushed-silver and champagne-gold trim along the outer edges, softly lit blue depth. No actual screen, controls or interface.\nSubject: an elegant fan of EXACTLY FIVE ivory playing cards, ordered left to right 10 of spades, Jack of spades, Queen of spades, King of spades, Ace of spades. Cards overlap naturally so all FIVE separate top-left rank/spade indices are clearly visible (10, J, Q, K, A), with the Ace of Spades fully visible in front and one large black central spade. Clean matching reversed lower-right index on the ace. The other four central faces are mostly hidden by overlap. If any court icon is visible use ONLY a simple flat single-black-ink symbol: Jack upright sword, Queen arched crown, King pointed crown. Never any human portraits, faces, clothes or multicolor court illustrations.\nStyle/medium: polished painted luxury game key art with ivory paper texture, crisp edges, gold reflected accents and controlled lighting, coherent premium casino collection feel.\nComposition/framing: wide 2:1, five-card fan as one compact focal cluster beside a large two-line title, generous quiet navy space behind letters. Keep full title and five rank indices within central 80% width and central 70% height; crop-safe generous margins. Title must remain dominant at 240px thumbnail width.\nText (verbatim): \"Video Poker\". Exactly these two words once, Video above Poker, large cream-gold serif typography with restrained dimensional edge and excellent contrast.\nConstraints: no green felt, no jokers, no sixth card, no duplicated ranks, no payout table, no slot reels, no buttons, no logos or watermark, no slogans or payout claims, no currency/money piles. No extra copy beyond exact title and authentic card indices. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit.\nImage 1 is the edit target: Video Poker title card.\nMake these precise production corrections while preserving the navy/royal blue, silver/gold framing and illustrated premium style:\n1. Reduce the whole central title-and-five-card composition to about 80% of its present size, centered on the same wide 2:1 opaque canvas. Keep every title letter and entire fan inside the central 80% width and central 70% height. Leave visible quiet blue margins all around, especially at left. Preserve the exact two-line text \"Video Poker\", same lettering style.\n2. On the Queen and King cards, replace the crown currently beneath each upper-left letter with one SMALL BLACK SPADE suit index, so all five upper-left indices consistently show 10 spade, J spade, Q spade, K spade, A spade. If any central court art remains visible, use simple single-black-ink icons only: Jack upright sword, Queen rounded ARCHED crown, King pointed crown. Do not put an icon in the suit-index position. No human portraits.\n3. Correct the front ace's lower-right capital A so it is rotated 180 degrees, matching the inverted small spade above it; exact rotated copy of the top-left A/spade pair.\nMaintain EXACTLY FIVE cards and their order 10,J,Q,K,A of spades. No sixth card, no extra words, no UI, no controls, no payout text, no new props. Preserve background and canvas proportions.",
+    "Use case: precise-object-edit. Image 1 is the edit target. Make ONLY this tiny correction: On the Queen card and King card, the small suit mark directly beneath Q and K must be a plain solid BLACK SPADE (one pointed teardrop leaf with two lobes at its base and a short stem), exactly matching the clean spade beneath the adjacent J. Remove the club-like round lobes under Q and remove the extra dots/ornament inside and around the spade under K. Both small marks must simply be identical to the small spade under J. Keep the letters Q and K unchanged. Preserve EVERYTHING ELSE exactly: five-card fan, 10 J Q K A order, ace, sword, exact Video Poker title, navy background, silver/gold border, card sizes, composition and 2:1 canvas. Do not add anything or alter other details."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-fb384a72-bca7-4cb2-af57-5087435f9d54.png",
+  "intermediateMasterPaths": [
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-316ea6bc-eda6-41f0-8af4-76dee1250dbf.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-2e1755ec-3354-4646-871d-4ebb7b0ab6fe.png"
+  ],
+  "referencePaths": [
+    ".artifacts/ux-cycle/video-poker/desktop-betting.png",
+    "games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client/src/videoPoker.css",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP after edits. Exact Video Poker title; blue/navy/gold/silver theme; exactly five cards 10/J/Q/K/A of spades. Clean indices, inverted ace lower index, simple single-ink jack sword, other central courts hidden by overlap; no portraits. Spacing edit gives safe title margins and safe card ranks. No paytable, UI or extra copy.",
+    "thumbnail": "Inspected at 240x120. Title remains strong; five-card fan, black suits and all five ranks remain distinct.",
+    "compression": "44,440 bytes; quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

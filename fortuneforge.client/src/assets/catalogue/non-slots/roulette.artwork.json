@@ -1,0 +1,30 @@
+{
+  "id": "roulette",
+  "title": "Roulette",
+  "file": "roulette-title-v3.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 29024,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is the simplified single-zero Roulette key art. Change ONLY framing. Reduce the ENTIRE existing title, ornaments, wheel and chips uniformly to 80% of the current size and center the full group in the same true 2:1 landscape canvas. Fill new margins seamlessly with quiet matching emerald felt. Preserve exactly \"Roulette\", all existing type, walnut/silver wheel, the ONE green pocket marked 0, unlabeled red/black pockets, ONE ivory ball, chips and illustration style. All title letters and the complete wheel MUST fit within the central 80% width and central 70% height, leaving at least 15% empty felt above essential lettering and below the wheel. Do not redesign anything or add any labels, text, objects, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium casino catalogue title-card illustration.\nPrimary request: one polished original Roulette key-art card with an authentic European single-zero wheel as the dominant game object.\nScene/backdrop: rich emerald felt with a softly darkened forest-green vignette, restrained warm gold accents, no printed betting grid.\nSubject: a beautiful fully visible roulette wheel in a slightly elevated oblique three-quarter view, warm lacquered walnut bowl with subtle burl grain, dark charcoal outer rim, silver spindle and fine silver pocket separators. Alternating red and black pockets, exactly ONE green zero pocket and no double-zero. An ivory roulette ball is visible on the outer track, not a second ball. The small pocket numerals may be softened by gentle illustrated motion, while the single green 0 remains clear. European clockwise sequence if numerals are shown: 0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26. A few small red and charcoal chips with white edge inserts are secondary.\nStyle/medium: sophisticated premium illustrated casino game key art, clean controlled forms, subtly painted materials, refined dimensional lighting, restrained sheen. Emerald, walnut, ivory, silver, antique gold, small crimson accents. Not a photograph.\nComposition/framing: true wide 2:1 landscape canvas. Large elegant title balanced with the wheel across the central composition, no overlap. Keep the complete title and ENTIRE wheel inside the central 75% width and 60% height, with abundant quiet felt surrounding it; every essential object and letter comfortably inside central 80% width / 70% height. Do not make a giant wheel that reaches any canvas edge. Strong readability at 256x128.\nText (verbatim): \"Roulette\". Exactly once in large crisp antique-gold serif lettering. No other headline, label or slogan.\nConstraints: one wheel, one ball, one green zero, no 00, no people, no hands, no fake UI, buttons, payout claims, brand marks, watermark, currency or extra titles. Opaque background. One image only.",
+  "correctionPrompt": "Use case: precise-object-edit\nInput image 1 is the Roulette catalogue title card. Make a final production correction while preserving the exact beautiful gold \"Roulette\" title, emerald felt, walnut/silver materials, chips, lighting and illustrated style.\nThe roulette wheel must be a clean stylized illustration: remove ALL white pocket numerals other than the single \"0\" on the single green pocket. Keep alternating red and black pocket surfaces with silver separators; render the ordinary red/black pockets UNLABELED, deliberately simplified key art, not a simulation or diagram. There must be exactly one green zero pocket, no 00, and exactly one ivory ball on the track. No duplicate zeros or second ball.\nFor crop safety, uniformly scale the full title/wheel/chip group down to 72% of its current size and center it in the same true 2:1 canvas, filling all outer margins seamlessly with quiet emerald felt. Every title letter and the full wheel must fit within the central 80% width and 70% height, with at least 15% quiet space above the title and below the wheel. Preserve the relative title-above-wheel arrangement.\nNo added words, buttons, UI, claims, currency, logos, watermark, people or other objects. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-5398d74a-a68d-438a-8f66-a62bb0e9b315.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "games/Roulette/client/FortuneForge.Games.Roulette.Client/src/RouletteWheel.tsx",
+    "games/Roulette/client/FortuneForge.Games.Roulette.Client/src/assets/roulette-walnut-lacquer-v1.webp",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-6b91287b-6d44-4e1e-944a-23b4935d7212.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-0d70137f-3593-4082-b76a-f7b87629f221.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and runtime export. Exact title; walnut bowl, charcoal rim, silver spindle/separators, one ivory ball and one green zero pocket. Red/black pockets deliberately unnumbered in the simplified illustration to avoid erroneous generated number sequences; no 00 or fake interface.",
+    "thumbnail": "Inspected at 256x128. Roulette remains readable and the wheel/ball silhouette is clear.",
+    "crop": "Final framing-only edit places full wheel and title inside central 80% width / 70% height with generous quiet felt margins.",
+    "compression": "WebP quality 84; 29,024 bytes, below 120 KB ideal target.",
+    "revision": "Earlier masters retained outside runtime imports. V2 removes incorrect pocket numbers; v3 is the selected framing refinement."
+  },
+  "status": "ready-for-parent-review"
+}

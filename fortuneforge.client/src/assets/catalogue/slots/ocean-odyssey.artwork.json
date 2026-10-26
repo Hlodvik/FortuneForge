@@ -1,0 +1,28 @@
+{
+  "id": "ocean-odyssey",
+  "title": "Ocean Odyssey",
+  "file": "ocean-odyssey-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 117316,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Ocean Odyssey\" key-art image, WIDE 2:1 landscape, opaque.\nScene/backdrop: an ancient submerged pearl palace with weathered sweeping stone arch, sapphire-blue water, turquoise caustic light, lilac and cyan coral gardens, soft descending shafts of underwater light. Keep a quiet dark-blue clearing behind the title. No deity/human character or new religious imagery.\nSubject: one luminous iridescent pearl, pink/lilac/sea-blue sheen, nestled in an open scalloped ivory shell with ornate warm-gold edges and restrained turquoise jewel accents. Shell rests naturally on a coral-covered stone shelf; small air bubbles and delicate water movement. Entire shell and pearl compact, about 50% of canvas height, not a full-canvas close-up.\nComposition/framing: panoramic 2:1, large two-line title balanced with shell/pearl vignette, generous quiet water margins. Place the whole title and main shell/pearl within x13–87%, y20–80%. Complete shell top and bottom visible, no clipped gold edges. Corals/arch may continue to image edges. Focal pearl and title must remain clear at 256x128.\nStyle/medium: professional original fantasy game illustration, luxurious nacre and gold material detail, elegant painterly depth, controlled luminous highlights, cohesive premium catalogue.\nText (verbatim): \"Ocean Odyssey\". Exactly these two words once, two lines, large cream-pearl serif letters with subtle gold bevel and cool cyan reflected edges, excellent contrast and clean readable letter shapes.\nConstraints: no other text, no payout claims/slogans, no reels/spin buttons/interface, no logos or watermark, no money piles, no unrelated cultural motifs. One title-card image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Ocean Odyssey title card.\nChange ONLY the main gold-edged shell and pearl group: shrink it to 88% of its current size around its center, and move it slightly left so the entire shell fits within x63–88% of image width, y28–78% of image height. Repaint exposed areas as matching coral-covered stone shelf and blue water. Preserve exact \"Ocean Odyssey\" title unchanged, lettering size, underwater palace arch/background, palette, light rays, detail and wide 2:1 opaque canvas. No new words or subjects."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-717a4f8f-86d2-4fd0-8b83-66477173a719.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-3a135ec5-0539-4dbd-a5da-5de52cfc293f.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/oceanOdyssey/definition.ts",
+    "fortuneforge.client/src/games/slots/oceanOdyssey/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/ocean-odyssey/optimized/ocean-odyssey-pearl-kingdom-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/ocean-odyssey/optimized/ocean-odyssey-royal-ocean-pearl-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP. Exact Ocean Odyssey title. Iridescent pearl, scalloped gold-edged shell, cyan/sapphire water, lilac coral and submerged palace arch preserve identity. No deity characters, extra copy, fake UI or claims.",
+    "thumbnail256x128": "Inspected at256x128. Exact title legible and shell/pearl clearly recognizable.",
+    "crop": "Title and full main pearl/shell are inside central80% width/70% height after targeted shell size edit.",
+    "compression": "117,316 bytes; quality84; below120KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

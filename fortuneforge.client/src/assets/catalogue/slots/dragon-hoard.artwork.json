@@ -1,0 +1,33 @@
+{
+  "id": "dragon-hoard",
+  "title": "Dragon Hoard",
+  "file": "dragon-hoard-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 56558,
+  "prompt": "Use case: precise-object-edit\nEdit target: the supplied Dragon Hoard catalogue illustration.\nChange only composition scale: uniformly shrink the entire central foreground by 31% around the canvas center, including complete dragon horns/head/neck/wings/claw, both title lines and ornament, treasure chest, jewels, small coins and supporting rock vignette. Extend the same smoky ember-lit mountain/castle background around it naturally. Every title letter, horn and wing tip and all main treasure props must fit entirely within x=15%-85%, y=18%-82%, with generous quiet margin.\nPreserve exact readable title wording \"Dragon Hoard\", same typography, original red dragon anatomy/design, chest, gold/crimson/amber palette, throat glow and premium illustrated finish. Keep title strong at 256x128 thumbnail. Keep wide 2:1.\nNo new objects, extra text, labels, UI, brands, payout claims or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-799347b9-c6d4-4946-9594-4210eed4388f.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/dragonHoard/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/dragon-hoard/optimized/dragon-hoard-ember-vault-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/dragon-hoard/optimized/dragon-hoard-ancient-dragon-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/dragon-hoard/optimized/dragon-hoard-mountain-king-castle-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/dragon-hoard/optimized/dragon-hoard-enchanted-treasure-chest-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-b65fabfc-343a-467a-84a9-7cdbaab6447e.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Full title Dragon Hoard is correctly spelled, prominent and readable in warm gold/crimson fantasy lettering.",
+    "Original red Western fire dragon with folded wings, antique red/gold jeweled chest, royal ruby, blue jewel and restrained illustrated treasure retain the existing ember-vault identity; distant mountain keep remains atmospheric.",
+    "Selected v2 keeps all main horn/wing tips, title/ornament and chest/jewels inside central 80% width / 70% height. No UI, slogans, payout copy, unrelated motifs, third-party brands or watermarks.",
+    "56,558 bytes at WebP quality 84, below ideal 120 KB. Retained dragon-hoard-title-v1.webp (61,072 bytes); v2 is selected. Artwork files only, no uploads or wiring."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-b65fabfc-343a-467a-84a9-7cdbaab6447e.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: professionally illustrated key art for Dragon Hoard using its existing crimson fire dragon, ember-lit mountain keep, enchanted treasure chest and royal gemstone identity.\nScene/backdrop: deep blood-red and charcoal volcanic mountain keep at dusk, distant castle towers with restrained ember windows, soft smoky clouds and a few subdued embers. Broad dark quiet outer margins.\nSubject: a compact original Western fantasy red dragon head-and-upper-neck vignette with two horns and folded batlike wings, richly sculpted crimson scales, amber eyes and a subtle warm ember glow in its throat. Below it, one small ornate red-and-gold treasure chest containing a royal ruby, blue jewel and a restrained scattering of illustrated gold treasure coins. Dragon looks alert and protective rather than violent; claw rests naturally on the chest edge. Keep anatomy convincing, one coherent dragon and two folded wings. Fresh original designs.\nStyle/medium: premium professionally illustrated fantasy 3D key art, detailed scales, antique royal gold, faceted gemstones, controlled warm lighting and atmospheric depth, polished cohesive collection finish. Not a screenshot, existing franchise creature or photorealistic money pile.\nComposition/framing: wide 2:1. Very LARGE two-line title balances the compact dragon-and-chest vignette. The full title and all main horn tips, wing edges, dragon neck and chest must fit ENTIRELY inside the middle rectangle x=22%-78%, y=24%-76%. Intentionally leave generous quiet background on ALL four sides. Title unmistakable and readable at 256x128 thumbnail, no title letters hidden by props.\nColor palette: blood-dark #2f0a0a, crimson #9b2b1e, deep #300d09, amber #e99b31, gold #f2ce67, restrained ember glow #ff6b32, warm ivory/gold title faces.\nLighting/mood: warm ember rim light and soft gold reflections, majestic and protective, premium depth without excessive fire.\nText (verbatim): \"Dragon Hoard\" exactly once, Dragon on first line and Hoard on second, very large clear bold fantasy serif display lettering with pale warm-gold faces, dark crimson shadow and restrained gold bevel.\nConstraints: no other words, slogans, payout promises, reels, numbers, fake UI, spin buttons, brand logos or watermarks. No additional cultural/religious motifs, Chinese dragon styling, people, weapons, gore or extra creatures. Single original finished catalogue illustration."
+    }
+  ]
+}

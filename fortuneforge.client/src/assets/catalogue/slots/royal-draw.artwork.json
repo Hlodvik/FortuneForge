@@ -1,0 +1,28 @@
+{
+  "id": "royal-draw",
+  "title": "Royal Draw",
+  "file": "royal-draw-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 52708,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is Royal Draw catalogue key art. Change ONLY framing. Uniformly reduce the complete five-card fan, chips, gold \"Royal Draw\" title and flourishes to 85% of their present size and center the full group in the same true 2:1 landscape canvas. Continue the existing burgundy velvet table and dark salon naturally into the extra margins. Preserve exactly \"Royal Draw\", five cards with spade/heart/club/diamond/spade emblems, all black/crimson/gold/jewel details, chips, chandelier atmosphere, palette and polished illustration style. Full card tips and all title letters/ornaments must fit central 80% width / 70% height, leaving at least 15% quiet background above and below the essential group. Do not add or remove subjects, words, card ranks, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: one beautiful finished Royal Draw key-art card preserving its luxurious burgundy poker-salon identity and decorative gold-suit cards.\nScene/backdrop: a refined dark burgundy poker salon, subtle black-purple shadows, warm brass architectural trim and soft distant chandelier light. A burgundy velvet tabletop with a narrow gold edge, spacious and elegant, no people.\nSubject: a graceful fan of FIVE decorative black-and-crimson playing cards, ornate fine gold borders and small ruby details, each with ONE oversized gold suit emblem. Use spade, heart, club, diamond, spade across the fan; these are stylized slot-symbol cards, with NO ranks, numerals, court portraits or fake printed words. A small tidy group of red, emerald, charcoal and gold poker chips rests below the fan.\nStyle/medium: premium professionally illustrated casino game key art, sophisticated painted velvet, lacquer, gilding and crisp card geometry, controlled warm lighting. Burgundy, near-black purple, antique gold with restrained emerald and ruby highlights. Polished and original, not a screenshot or photoreal money pile.\nComposition/framing: TRUE wide 2:1 landscape. Large two-line title and decorative card fan balance across a compact central arrangement. The entire title, all five complete cards and essential chip group MUST fit within x=15%–85%, y=20%–80%, with generous empty dark salon/velvet margins surrounding them. Do not zoom in; show breathing room around the complete hero group. Readable at 256x128, no title/card overlap.\nText (verbatim): \"Royal Draw\". Exactly once, Royal above Draw in large substantial elegant antique-gold serif letters with a restrained burgundy shadow. Both words equally prominent.\nConstraints: no extra text, card ranks, payout slogans, currency labels, slot reels, spin buttons, fake UI, other brands, logos or watermark. No human or court portraits, new cultural/religious motifs or unrelated props. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-8acf7bf0-71e8-4ea5-b023-295bc69d6e04.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/royalDraw/catalog.ts",
+    "fortuneforge.client/src/games/slots/royalDraw/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/royalDraw/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/royal-draw/optimized/royal-draw-poker-salon-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/royal-draw/optimized/royal-draw-royal-flush-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-45984751-8843-426e-ae21-09a97c346560.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact title, five ornate black/crimson cards with spade/heart/club/diamond/spade gold suit emblems, small ruby/emerald details and tidy chips match current slot identity. Burgundy salon and chandelier preserve current theme. No ranks, court portraits, fake UI or payout claims.",
+    "thumbnail": "Inspected at 256x128. Both title words remain clearly readable; five-card fan and gold suits remain distinct.",
+    "crop": "Framing-only v2 keeps full card tips, title/flourishes and essential chips inside central 80% width / 70% height, with dark salon/velvet margins.",
+    "compression": "WebP quality 84; 52,708 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

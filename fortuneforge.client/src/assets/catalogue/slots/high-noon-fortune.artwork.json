@@ -1,0 +1,28 @@
+{
+  "id": "high-noon-fortune",
+  "title": "High Noon Fortune",
+  "file": "high-noon-fortune-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 94948,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is High Noon Fortune catalogue key art. Change ONLY framing. Uniformly scale the complete central coach, luggage, lasso, title plaque, sheriff star and nugget group down to 70% of its current size and center it in the same true 2:1 canvas. Extend the existing frontier town, turquoise sky and dusty street naturally around the smaller group. Preserve exact full title \"High Noon Fortune\", all gold/turquoise western letterforms, red/gold stagecoach details, plausible wheels, lasso shape, lighting, palette and premium illustration style. The complete coach roof/luggage, all title letters and lasso must fit central 80% width / 70% height, with at least 15% open background above and below the essential group. No added words, human figures, horses, weapons, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: one polished original High Noon Fortune title card preserving its frontier-town, stagecoach and golden-lasso theme.\nScene/backdrop: a warm golden-hour frontier main street with weathered timber storefronts, red-rock mesas, hints of desert cactus and a turquoise-blue sky. Storefronts have NO readable signs or writing. Spacious depth with a soft dust haze.\nSubject: a compact ornate red-and-gold wooden stagecoach in three-quarter view, black leather roof, warm brass lanterns, luggage strapped on top, four plausible wooden spoked wheels. A looping golden rope lasso sweeps behind/around the coach as a restrained compositional arc, with a small silver sheriff star and a few gold nuggets as secondary details. No horses, driver, human characters or weapons.\nStyle/medium: premium professionally illustrated western-adventure game key art, polished painterly wood, leather, brass and dust textures, clean silhouette and controlled lighting. Rust red, dark brown, sandstone gold and turquoise accents. No photorealism or explosion.\nComposition/framing: TRUE wide 2:1 landscape. Large title and stagecoach balance across a compact central arrangement; lasso adds a flowing arc without crossing lettering. Complete title, coach and essential lasso loop must fit inside x=15%–85%, y=20%–80%, with generous quiet background margins. All essential art inside central 80% width / 70% height. Title clear at 256x128.\nText (verbatim): \"High Noon Fortune\". Exactly these full three words once in substantial western slab-serif display letters, two or three compact lines allowed. Warm gold/ivory with a subtle dark-brown shadow and restrained turquoise detailing. Every word prominent, no tiny subtitle.\nConstraints: no extra words, wanted posters, slogans, payout promises, numbers, currency labels, reels, spin buttons, fake UI, other brands, logos or watermark. No unrelated cultural/religious symbols. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-df88c498-e5ad-46fb-95ce-0e5dbb0e12f9.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/highNoonFortune/catalog.ts",
+    "fortuneforge.client/src/games/slots/highNoonFortune/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/highNoonFortune/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/high-noon-fortune/optimized/high-noon-town-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/high-noon-fortune/optimized/high-noon-stagecoach-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-2e546928-9cae-42c2-882c-31bb3f6fef6f.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact full title in western slab lettering; ornate red/gold stagecoach with luggage, lanterns and plausible wheels, golden lasso, sheriff star and nuggets retain existing identity. Frontier buildings have no added readable signs. No human figures, UI or claims.",
+    "thumbnail": "Inspected at 256x128. All three title words remain readable and coach/lasso silhouette remains recognizable.",
+    "crop": "Framing-only v2 puts full roof luggage, coach, title plaque and lasso inside central 80% width / 70% height, with quiet street/sky margins.",
+    "compression": "WebP quality 84; 94,948 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

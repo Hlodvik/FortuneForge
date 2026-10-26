@@ -1,20 +1,65 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const state = vi.hoisted(() => ({ hidden: [] as string[], loading: false, error: '' }))
 
 vi.mock('../../features/account/useOptionalAccountSession', () => ({
   useOptionalAccountSession: () => ({ account: null, isLoading: false }),
+}))
+vi.mock('../../features/catalog/catalogVisibility', () => ({
+  useCatalogueVisibility: () => ({ loading: state.loading, error: state.error, isVisible: (route: string) => !state.hidden.includes(route) }),
 }))
 
 import { LandingPage } from './LandingPage'
 
 describe('public landing page', () => {
-  it('focuses on the game collection and never renders the Wukong mascot showcase', () => {
+  beforeEach(() => { state.hidden = []; state.loading = false; state.error = '' })
+
+  it('uses the approved dark hero and updated headline without How it works', () => {
     const markup = renderToStaticMarkup(createElement(LandingPage))
 
-    expect(markup).toContain('Find your fortune')
-    expect(markup).toContain('slots, card tables, and arcade games')
+    expect(markup).toContain('Your next game')
+    expect(markup).toContain('starts here.')
+    expect(markup).toContain('fortune-forge-hero-v1.webp')
+    expect(markup).toContain('fetchPriority="high"')
+    expect(markup).not.toContain('How it works')
+    expect(markup).not.toContain('A little instinct')
+    expect(markup).toContain('href="/create-account"')
+    expect(markup).toContain('href="/login"')
+    expect(markup).toContain('href="#discover-games"')
     expect(markup).not.toContain('Wukong')
     expect(markup).not.toContain('landing-showcase')
+    expect(markup).not.toContain('Play demo')
+    expect(markup).not.toContain('How it works')
+  })
+
+  it('shows selected title artwork and functional category controls', () => {
+    const markup = renderToStaticMarkup(createElement(LandingPage))
+    expect(markup.match(/class="ff-landing__game-card"/g)).toHaveLength(4)
+    expect(markup.match(/aria-pressed="/g)).toHaveLength(5)
+    expect(markup).toContain('blackjack-title-v2.webp')
+    expect(markup).toContain('dragon-tiger-title-v1.webp')
+    expect(markup).toContain('mines-title-v2.webp')
+    expect(markup).toContain('cosmic-fortune-title-v1.webp')
+    expect(markup).toContain('loading="lazy" decoding="async"')
+    expect(markup).not.toContain('player count')
+  })
+
+  it('honours catalogue hiding and fills the row from remaining verified games', () => {
+    state.hidden = ['/games/mines', '/games/dragon-tiger']
+    const markup = renderToStaticMarkup(createElement(LandingPage))
+    expect(markup).not.toContain('href="/games/mines"')
+    expect(markup).not.toContain('href="/games/dragon-tiger"')
+    expect(markup).toContain('href="/games/baccarat"')
+    expect(markup.match(/class="ff-landing__game-card"/g)).toHaveLength(4)
+  })
+
+  it('does not invent games when visibility is unavailable', () => {
+    state.hidden = ['/cards/blackjack', '/games/dragon-tiger', '/games/mines', '/slots/cosmic-fortune', '/games/baccarat', '/games/roulette', '/games/craps', '/slots/rainbow-realm', '/games/2048', '/games/drop-merge']
+    state.error = 'Offline'
+    const markup = renderToStaticMarkup(createElement(LandingPage))
+    expect(markup).toContain('Games could not be checked')
+    expect(markup).not.toContain('class="ff-landing__game-card"')
   })
 })

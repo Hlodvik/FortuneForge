@@ -1,0 +1,24 @@
+{
+  "id": "craps",
+  "title": "Craps",
+  "file": "craps-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 36616,
+  "prompt": "Use case: stylized-concept\nAsset type: original premium casino catalogue title-card illustration.\nPrimary request: one polished, immediately recognizable Craps game key-art card.\nScene/backdrop: open rich emerald felt with a forest-green vignette, two restrained curved ivory/gold table lines without words or betting numbers, subtle antique-gold edge detail.\nSubject: exactly TWO warm ivory casino dice captured in a gentle tumble just above the felt, clear cube geometry and softly rounded edges, small dark charcoal circular pips aligned correctly on each face. One die shows a top face with THREE pips in a diagonal, adjacent faces ONE and TWO. The other shows a top face with FOUR pips in a square, adjacent faces FIVE in a quincunx and SIX as two columns of three. Values 1/2/3 are adjacent on one cube and 4/5/6 adjacent on the other; do not repeat a value on adjacent faces, do not use seven or more pips on any face. Very soft short shadows anchor the dice, slight restrained motion emphasis. A small orderly stack of red and charcoal chips with white edge inserts is secondary.\nStyle/medium: premium professionally illustrated casino game key art, soft painted felt/ivory materials and crisp clean dice silhouettes, tasteful dimensional lighting and warm antique-gold typography. Refined, no photorealism, no explosion or gaudy glow.\nComposition/framing: true wide 2:1 landscape canvas. Large title balanced beside the two dice across the middle, no overlap. Compact full composition occupying ONLY the central 70% width and 60% height, with quiet generous felt margins. Complete title and both whole dice fully inside central 80% width / 70% height. Keep all pips clear and the title readable at 256x128.\nText (verbatim): \"Craps\". Exactly once in large elegant crisp gold serif lettering. No other words or numerals outside the dice pips.\nConstraints: exactly two dice, no cards, no hands or people, no fake interface, betting labels, buttons, currency, payout claims, slogans, watermark or logos. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-21e3f8fb-a218-49f4-a5e7-d2d6e1779b99.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "games/Craps/client/FortuneForge.Games.Craps.Client/src/crapsCasino.css",
+    "games/Craps/client/FortuneForge.Games.Craps.Client/src/assets/dice/dice-throw-1.png",
+    "games/Craps/client/FortuneForge.Games.Craps.Client/src/assets/chips/chip-5.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and runtime export. Exact title and exactly two ivory dice, with correct distinct adjacent faces: 3/1/2 on one die and 4/5/6 on the other. Dark pips are aligned correctly, no invalid face counts. Restrained open felt lines and red/charcoal chips match current theme; no fake UI or payout language.",
+    "thumbnail": "Inspected at 256x128. Craps remains readable and the two-dice silhouette and pips remain distinct.",
+    "crop": "Complete title and both full dice sit inside central 80% width / 70% height. Secondary outer chip stacks and felt curves are expendable in responsive crops.",
+    "compression": "WebP quality 84; 36,616 bytes, below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

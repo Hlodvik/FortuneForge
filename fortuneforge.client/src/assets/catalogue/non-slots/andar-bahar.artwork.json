@@ -1,0 +1,27 @@
+{
+  "id": "andar-bahar",
+  "title": "Andar Bahar",
+  "file": "andar-bahar-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 71376,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino game catalogue title card.\nPrimary request: Create ONE original polished title card for Andar Bahar, wide 2:1 landscape (1536x768 composition), opaque background.\nScene/backdrop: a refined emerald-felt palace card table with antique gold scalloped arches, fine jali lattice, delicate paisley botanical corner ornaments, and a subtle curved black-leather lower rail. Preserve the current game's palace identity, abstract ornament only, no new religious imagery or temples.\nSubject: a small elegant arrangement of ivory playing cards below the title, showing a large central Ace of Spades flanked by one face-down patterned card to either side, suggesting two dealing sides. Card backs deep emerald with fine gold geometric linework. One black spade only at the center of the ace, A and small black spade corner indices; no court portraits. A few discreet casino chips with edge stripes, no currency or denomination text, can rest near the side cards.\nStyle/medium: professionally painted luxury game key art with precise card edges, rich material depth and restrained warm gold highlights; not a screenshot or crude clipart.\nComposition/framing: wide 2:1. Large clear centered title in the upper-middle and cards in the lower-middle, all title letters and focal cards within central 80% width and central 70% height. Gold palace ornament frames edges, with quiet emerald space behind title. Generous crop-safe margins.\nText (verbatim): \"Andar Bahar\". Render exactly these two words once, large cream-gold serif lettering with strong contrast, title case, readable at thumbnail size.\nConstraints: no other words, no Joker/jester character, no extra text, no sacred symbols, no people, no logos, no watermark, no buttons or fake UI, no payout claims, no coins or money piles. Only one title-card image.",
+  "editPrompts": [
+    "Use case: precise-object-edit.\nImage 1 is the edit target, an Andar Bahar catalogue title card.\nChange ONLY the small ink details of the central ivory Ace of Spades card: make the upper-left index exactly one clean black capital A above one small black spade. Make the lower-right index an exact 180-degree rotated copy of that A and spade. Remove the tiny stray black mark beside the top A and the tiny stray ink marks below the lower index. Preserve the large central spade, card geometry, lighting, title \"Andar Bahar\" exactly as shown, gold palace arch, lattice, paisley ornaments, emerald felt, other cards, chips, composition, opaque background and wide 2:1 canvas unchanged. No other changes or new text."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-93640516-8590-4e91-8d30-0069104ccfa9.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-41a89d8b-435e-4688-841e-d952934cb2bc.png",
+  "referencePaths": [
+    "games/AndarBahar/client/FortuneForge.Games.AndarBahar.Client/src/assets/palace-emerald-table.webp",
+    "games/AndarBahar/client/FortuneForge.Games.AndarBahar.Client/src/assets/palace-table-frame-v2.webp",
+    "games/AndarBahar/client/FortuneForge.Games.AndarBahar.Client/src/assets/PALACE_FRAME.md",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and final 768x384 WebP. Exact title, palace arches/jali/paisley, emerald table and central Ace of Spades with two card backs. Targeted edit cleaned stray index ink. No religious additions, no extra slogans or UI. Title and focal cards are crop safe.",
+    "thumbnail": "Inspected at 240x120; title and central ace remain readable.",
+    "compression": "71,376 bytes; WebP quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

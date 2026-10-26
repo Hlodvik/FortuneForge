@@ -1,0 +1,35 @@
+{
+  "id": "hearts",
+  "title": "Hearts",
+  "file": "hearts-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 32028,
+  "generationPrompt": "Use case: precise-object-edit\nAsset type: premium 2:1 Hearts game catalogue title card.\nInput images: Image 1 is the Hearts illustration edit target; Image 2 is the exact approved queen-crown symbol reference.\nChange only the black crown printed in the center of the Queen of Spades card in Image 1. Replace it with the EXACT single-ink arched queen-crown silhouette in Image 2, keeping its rounded arches, two long hollow side openings, small cross at the top and separate curved base band. Treat it as a flat black printed icon on ivory. It must not have pointed king-crown spikes, ornamental diamonds, portraits, people or extra details.\nPreserve ALL other parts of Image 1 unchanged: the Ace of Hearts, Queen of Spades and Ten of Hearts cards and indices; the compact central composition, emerald felt, table rail, lighting, title size, title lettering and placement.\nText invariant: \"Hearts\" exactly once and completely unchanged.\nConstraints: wide 2:1, existing generous crop margins, no new props, no extra text, no logos, no UI, no watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-c7c31c72-f5cb-4acd-b11d-e45b8cad3be2.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/Hearts/client/FortuneForge.Games.Hearts.Client/src/hearts.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/app/routes/HeartsRoute.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/cards/shared/PlayingCard.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/shared/visuals/emerald-felt-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/Hearts/client/FortuneForge.Games.Hearts.Client/src/assets/chip-10.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-98b8bde0-b2c7-4701-b985-f895eaeb346b.png"
+  ],
+  "referenceNotes": "The exact approved queen branch from CourtCardSymbol.tsx was rasterized in memory and supplied as Image 2 in the final edit; no extra reference file was written. Shared chip was inspected for collection styling but not pictured.",
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact title Hearts is readable and correct. Emerald felt, ivory cards, warm gold/rose accents and subdued brown/gold rail retain game identity.",
+    "Selected v2 Queen of Spades uses the approved rounded arched single-ink queen crown with open side arches and curved base band; no portrait. Ace/10 hearts have single central suit icons.",
+    "Title and main cards stay within central 80% width / 70% height. No UI, payout copy, logos or watermarks.",
+    "32,028 bytes at quality 84. Retained hearts-title-v1.webp (33,114 bytes) as earlier crown version; v2 is selected for review."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-98b8bde0-b2c7-4701-b985-f895eaeb346b.png",
+      "generationPrompt": "Use case: stylized-concept\nAsset type: original premium game catalogue title card, one wide 2:1 landscape image.\nPrimary request: beautiful professionally illustrated key art for Hearts using the current game's emerald felt, ivory cards and muted rose heart accents.\nScene/backdrop: deep textured emerald felt with a soft oval pool of light and a very understated dark brown / brass table-edge suggestion far in the background.\nSubject: a compact elegant three-card fan, Ace of Hearts, Queen of Spades, Ten of Hearts. Cards are warm ivory with simple red/black corner ranks and suits. Each numeral or ace card has ONE large central heart suit, not multiple pips. The Queen of Spades has a SINGLE flat black arched queen-crown icon in its center, with Q and spade corner indices. The crown is a simple monochrome symbol: two rounded arched sides, central arch, curved base band. NO human portrait, face, bust or figure. Gently stagger the cards so the queen and the red hearts are clearly visible.\nStyle/medium: refined professionally illustrated 3D game key art, sculpted ivory card edges, soft contact shadows, restrained material detail, premium collection finish.\nComposition/framing: centered compact card fan above a prominent standalone title. All main cards and title fit inside a compact rectangle covering ONLY x=22%-78%, y=22%-78% of the full canvas. This is crucial: leave generous empty felt margins around every side; do not enlarge the subjects to fill the frame. Title near the lower portion of this central rectangle, all cards fully visible, no overlap over title letters. Wide 2:1 landscape.\nLighting/mood: warm ivory highlights, soft rose reflections, calm strategic atmosphere, rich controlled depth.\nText (verbatim): \"Hearts\" exactly once in large, elegant bold cream-gold display lettering, crisp and readable at 240px-wide thumbnail size.\nConstraints: no other words except correct card ranks. No slogans, payout claims, watermarks, logos, buttons, fake UI, chips, cash, characters or court portraits. No unrelated cultural or religious motifs."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "id": "casino-war",
+  "title": "Casino War",
+  "file": "casino-war-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 50460,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino catalogue title card.\nPrimary request: Create ONE original polished Casino War title-card image, wide 2:1 landscape (1536x768 composition), opaque.\nScene/backdrop: luxurious emerald-green casino felt within a curved brown leather and polished antique-gold table rail. Restrained burgundy ambience beyond the rail. Warm ivory and champagne gold highlights.\nSubject: exactly TWO opposed warm-ivory playing cards, one Ace of Spades and one Ace of Hearts, angled inward toward one another as an elegant head-to-head card duel. Clean black spade on one, deep red heart on the other, single large central suit symbols and matching A/suit corner indices upper-left and rotated lower-right. No court portraits or people. A few discreet casino chips with cream edge stripes accent the bottom of the scene, no numbers.\nStyle/medium: sophisticated professionally illustrated game key art, precise readable cards, softly modeled materials and restrained lighting. Premium collection quality; not screenshot, UI mockup, clipart or piles of money.\nComposition/framing: wide 2:1. Two large inward-angled cards flank a central two-line title with quiet dark felt behind its letters. Keep BOTH entire cards and ALL letters within central 80% width / central 70% height, with at least 10% horizontal and 15% vertical safe margins. Strong central hierarchy; readable at 240px width.\nText (verbatim): \"Casino War\". Render exactly these two words once in large cream-gold serif letters on two lines, Casino above War, restrained beveled edges, strong contrast.\nConstraints: no other words, no swords, shields, battlefield or military props, no flames, no religious motifs, no logos, no watermark, no payout claims/slogans, no buttons or fake interface. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-13aa58a2-2461-45cd-9363-ee7b50473657.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "games/CasinoWar/client/FortuneForge.Games.CasinoWar.Client/src/casinoWar.css",
+    "games/HiLo/client/FortuneForge.Games.HiLo.Client/src/assets/chip-5.png",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and final 768x384 WebP. Exact Casino War title, two coherent opposed aces (spades/hearts) with clean matching indices, emerald felt and brown/gold rail. No military props, court portraits, slogans or UI. Title and card faces remain safe in central composition; chips are decorative edge elements.",
+    "thumbnail": "Inspected at 240x120. Exact two-line title and opposing ace symbols read clearly.",
+    "compression": "50,460 bytes; WebP quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

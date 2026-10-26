@@ -1,0 +1,29 @@
+{
+  "id": "three-card-poker",
+  "title": "Three Card Poker",
+  "file": "three-card-poker-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 41188,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is the edit target, Three Card Poker catalogue key art. Preserve the exact title \"Three Card Poker\", title position, all composition, three-card arrangement, emerald felt, gold diamond motif, chips, lighting and illustration style. Change ONLY the three playing-card face designs to match the app's modern simple deck: on each card remove all repeated central heart pips and use exactly ONE large red heart centered on that ivory card. Keep one small correct rank and heart at the visible top-left corner of each card: 5 on the left card, 6 on the middle card, 7 on the right card. No other numbers or pips required. The three central hearts should be clean, flat, single-ink red symbols, not portraits or shiny jewels. Keep all other artwork unchanged and the full 2:1 landscape framing. No extra text, objects, UI, watermark, logo or slogan. One image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium casino game catalogue title-card illustration.\nPrimary request: one polished, distinct key-art card for Three Card Poker.\nScene/backdrop: rich emerald felt with a subtle deep teal/cyan undertone and soft forest-green vignette. A faint brass-edged diamond motif is pressed into the felt behind the props, not a betting layout or interface.\nSubject: exactly three prominent ivory playing cards in a clean stepped diagonal arrangement, evenly angled rather than a circular fan: five of hearts, six of hearts, seven of hearts. All three top corner rank-and-suit indices are visible and correct. Modern simple card faces with clean red suit symbols and no court portraits. A small restrained group of red chips with white edge inserts and charcoal chips sits near the trio. Only these three cards; no community board.\nStyle/medium: premium illustrated game key art, clean silhouette, soft painterly materials, controlled dimensional highlights, restrained gold ornament. Coherent emerald/antique-gold/ivory collection; no photorealism or excessive effects.\nComposition/framing: true 2:1 landscape. Title and three-card group balance across the center. CRITICAL crop safety: keep the complete title and all three cards inside x=15% to 85% and y=20% to 80%, with generous quiet felt margins beyond that region. The title must remain large, clearly readable at 256x128. Title and cards must not overlap.\nText (verbatim): \"Three Card Poker\". Render exactly these words once in strong elegant gold serif letters, three compact lines are allowed: Three / Card / Poker. No other wording.\nConstraints: no portraits, people, large money piles, currency, payout claims, extra titles, slogans, watermarks, logos, buttons, fake UI or detailed printed betting table. Chips are secondary. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-a4d60dd2-8bc7-4a0f-b2b7-cb2659d51c77.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/ThreeCardPokerPage.tsx",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/threeCardPoker.css",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",
+    "fortuneforge.client/src/games/cards/shared/PlayingCard.tsx",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-6600d65f-5e88-4b50-bc17-870f79564111.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and runtime export. Exact three-line title is correct. Exactly three face-up cards, 5/6/7 hearts, use one central red heart each to match current simple deck styling; no repeated-pip ambiguity, court portraits, board or interface.",
+    "thumbnail": "Inspected at 256x128. Title and three-card count remain immediately clear; stepped trio and diamond felt ornament distinguish this from Hold’em.",
+    "crop": "Title and three full card silhouettes sit inside central 80% width / 70% height. Only secondary chips and the background motif extend beyond the essential safe area.",
+    "compression": "WebP quality 84; 41,188 bytes, below 120 KB ideal target.",
+    "revision": "Initial master retained outside runtime assets; v2 selected after simplifying only the card faces."
+  },
+  "status": "ready-for-parent-review"
+}

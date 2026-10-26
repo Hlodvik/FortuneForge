@@ -1,0 +1,33 @@
+{
+  "id": "desert-treasures",
+  "title": "Desert Treasures",
+  "file": "desert-treasures-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 54390,
+  "prompt": "Use case: precise-object-edit\nEdit target: the supplied Desert Treasures catalogue illustration.\nMake only one composition correction: reduce the golden PYRAMID behind the title by about 25%, anchoring its base in the same position behind the title and rebuilding its natural triangular silhouette and sealed doorway. Its peak must sit no higher than 19% down from the top of the image; extend the same amber dusk sky into the new space above it. Keep the pyramid a convincing sandstone pyramid with straight sloping edges.\nPreserve everything else exactly, including the large exact title \"Desert Treasures\", its typography, dimensions and placement; the sphinx, winged turquoise scarab, stone base, amber dunes, distant palms, lighting, colors and illustration quality. Do not shrink or move the title or sphinx. Main title and subjects must remain inside central 80% width / 70% height. Wide 2:1. No new props, words, UI, logos or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-2f358120-d74e-4284-bb64-2127471553e5.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/desertTreasures/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-sun-dunes-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-great-golden-pyramid-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-guardian-sphinx-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-jeweled-scarab-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-2a2a35d4-b167-4ab4-96e4-51bd11e4bf32.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Exact full title Desert Treasures is prominent, correctly spelled and readable. Golden pyramid, blue/gold guardian sphinx, winged turquoise scarab, amber dunes and distant oasis match existing Egyptian expedition identity.",
+    "Selected v2 lowers only the pyramid peak. All focal title letters, pyramid, sphinx and scarab fit central 80% width / 70% height.",
+    "No new deities or unrelated motifs, slogans, payout copy, UI, spin buttons, brand logos or watermarks. 54,390 bytes at quality 84, under ideal 120 KB.",
+    "Retained desert-treasures-title-v1.webp (58,410 bytes); v2 is selected. Artwork files only, no uploads or wiring."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-2a2a35d4-b167-4ab4-96e4-51bd11e4bf32.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: professionally illustrated key art for Desert Treasures using its existing ancient Egyptian desert-expedition identity: golden pyramid, guardian sphinx, jeweled scarab, dunes and turquoise relic accents.\nScene/backdrop: warm amber dunes beneath a burnt-brown dusk sky, a faint turquoise star glow and subtle distant oasis palms. Broad quiet atmospheric outer margins, low contrast.\nSubject: a compact golden pyramid with an old sealed doorway and one guardian sphinx in blue-and-gold striped headdress, plus a small jeweled winged scarab with blue/turquoise enamel and gold trim as a foreground accent. Fresh original designs. Use only these existing theme motifs, no new deities or religious/cultural symbols.\nStyle/medium: sophisticated professionally illustrated fantasy game key art, sculpted sandstone and antiqued gold, controlled fine detail, subtle turquoise enamel, soft atmospheric depth and restrained warm light; polished original collection quality, not a photo, screenshot or flat clip art.\nComposition/framing: wide 2:1; balance a very LARGE two-line title with a compact pyramid-and-sphinx vignette and small scarab accent. Keep the ENTIRE focal composition including all letters and main pyramid/sphinx/scarab silhouettes fully within x=22%-78% and y=24%-76%. Intentionally leave generous empty dusk/dune background beyond those bounds on every side. Do not let the pyramid peak or title ornament approach the frame edge. Strong title legibility at 256x128 thumbnail.\nColor palette: burnt brown #4f2610, sand orange #d7862f, ochre #b97822, deep brown #3b210f, turquoise #29a9a0, pale gold #ffe18a, amber glow #ffbd47.\nLighting/mood: low warm sunset light, controlled turquoise relic glints, rich golden discovery atmosphere.\nText (verbatim): \"Desert Treasures\" exactly once, Desert on first line and Treasures on second, very large clear bold carved-gold serif display type, pale gold/ivory faces with dark brown contrast shadow. Correct ordinary Latin letters.\nConstraints: no other words, pseudo-writing, slogans, payout promises, numbers, reels, fake UI, spin buttons, brand logos or watermarks. No money piles, extra gods, unrelated motifs or people. Single finished original catalogue illustration."
+    }
+  ]
+}

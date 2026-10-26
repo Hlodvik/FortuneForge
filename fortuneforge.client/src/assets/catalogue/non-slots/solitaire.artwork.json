@@ -1,0 +1,33 @@
+{
+  "id": "solitaire",
+  "title": "Competitive Solitaire",
+  "file": "solitaire-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 32258,
+  "generationPrompt": "Use case: precise-object-edit\nAsset type: original 2:1 premium Competitive Solitaire catalogue title card.\nEdit target: the provided Competitive Solitaire illustration.\nKeep the same beautiful deep emerald felt, exact title typography, ivory card shapes, navy/gold lattice card back, arrangement, lighting and professional quality.\nChange only two details:\n1. Match the real game's simplified card faces: on the 9 clubs, 8 hearts and 7 clubs, replace each multi-pip arrangement with exactly ONE large central suit symbol (black club, red heart, black club respectively), retaining correct small corner rank and suit indices. All four aces also each use only one central suit. No court cards, no portraits.\n2. Uniformly shrink the entire foreground title-and-cards composition 22% around the canvas center, extending the existing quiet felt around it. All title letters and complete cards must fit within the middle 76% width and middle 64% height; at least 12% empty margin left/right and 18% top/bottom. Keep both title lines prominent and readable at 240px image width.\nText (verbatim): \"Competitive Solitaire\" exactly once, on the same two lines.\nConstraints: wide 2:1 landscape; no new props, words, UI, logos, watermarks, slogans or money.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-54f0db69-95ca-4550-ac69-12730bf102b2.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/cards/solitaire/SolitaireBoard.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/pages/cards/solitaire/solitaire.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/cards/shared/playingCards.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/shared/visuals/emerald-felt-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-801f2e66-723a-41d7-84c4-91a6d8707412.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact two-line title Competitive Solitaire is readable and correctly spelled.",
+    "Selected v2 matches the real single-suit-center card design. Descending 9 clubs, 8 hearts, 7 clubs run, four distinct aces and navy/gold stock stack; no court portraits.",
+    "Title and complete focal cards lie within central 80% width / 70% height. No UI, payout text, watermarks or logos.",
+    "32,258 bytes at quality 84. Retained solitaire-title-v1.webp (41,064 bytes) as earlier revision; v2 is selected for review."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-801f2e66-723a-41d7-84c4-91a6d8707412.png",
+      "generationPrompt": "Use case: stylized-concept\nAsset type: original premium game catalogue title card, one single wide 2:1 landscape illustration.\nPrimary request: professionally illustrated key art for Competitive Solitaire, based on its ivory playing cards and deep emerald felt.\nScene/backdrop: softly textured rich emerald casino felt, quiet dark green vignette and subtle warm edge light.\nSubject: a graceful sculptural cascade of ivory solitaire cards: a clearly descending alternating-color run of 9 of clubs, 8 of hearts, 7 of clubs, plus a small fan of the four aces and one neat navy card-back stock stack. Correct restrained red and black suit pips; navy card backs have delicate gold lattice and thin gold frames. Suggest solitaire tableau rhythm through the card arrangement without drawing an interface. No court cards needed.\nStyle/medium: polished professionally illustrated 3D key art with elegant geometry, finely shaded ivory edges and soft natural shadows. Sophisticated restrained premium collection style, not a photograph, screenshot or clip art.\nComposition/framing: wide 2:1 composition with large two-line title in one clear region and the compact cascading card vignette beside it; keep EVERY title letter and every focal card fully inside x=12%-88% and y=18%-82% of the canvas. Extra quiet felt around all four sides. The title must carry equal visual weight to the cards and be readable at a 240px-wide thumbnail.\nLighting/mood: soft warm card highlights against deep emerald felt, calm strategic atmosphere, controlled depth.\nText (verbatim): \"Competitive Solitaire\" exactly once, with Competitive on the first line and Solitaire on the second; large elegant bold cream display type, crisp strokes and generous spacing. Spell Competitive C-o-m-p-e-t-i-t-i-v-e and Solitaire S-o-l-i-t-a-i-r-e.\nConstraints: no other words, no logos, no watermarks, no buttons, no fake UI, no scoring, no payout slogans, no money, no trophies, no people. Card ranks and suits are permitted. Court portraits are forbidden. Original good-looking finished key art."
+    }
+  ]
+}

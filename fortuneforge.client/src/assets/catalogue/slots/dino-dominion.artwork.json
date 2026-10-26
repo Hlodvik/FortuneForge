@@ -1,0 +1,29 @@
+{
+  "id": "dino-dominion",
+  "title": "Dino Dominion",
+  "file": "dino-dominion-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 109724,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Dino Dominion\" key-art image, wide 2:1 landscape, opaque.\nScene/backdrop: primeval river valley with lush olive-green ferns and palms, a far-off smoking volcano against amber sunset clouds, a stone arch and small waterfall half lost in mist. Earth brown, forest green, antique gold and warm fiery orange with subtle turquoise water.\nSubject: a mighty brown Tyrannosaurus roaring from a mossy stone ledge, amber eye, pebbled scales and natural powerful anatomy, two small two-finger arms, two sturdy hind legs, a curved balancing tail. Original professional fantasy illustration inspired by the game's brown rex. No humans or new cultural props.\nComposition/framing: spacious 2:1 catalogue key art with two-line title and compact full-body rex as balanced focal group. Entire rex including tail fits inside x55–87% and y21–80%; no cropped limbs or tail, do not fill the whole canvas with it. All title letters fit x13–53%, y25–72%, against quiet dark valley mist. Foliage frames edges without obscuring words. Keep main title/subject within central 80% width /70% height.\nStyle/medium: sophisticated painted game illustration, rich natural textures, convincing depth and controlled cinematic rim light, coherent premium collection feel.\nText (verbatim): \"Dino Dominion\". Exactly these two words once, on two lines, large warm cream-gold adventure serif letters with subtle carved stone and gold edges. Strong contrast and legible at 256x128.\nConstraints: no other writing, no reels, buttons, fake interface, logos/watermarks, slogans or payout promises, no money piles, no cartoon clipart. No unrelated religious/cultural additions. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Dino Dominion title card.\nThe art is approved in subject and style; change ONLY crop-safe spacing. Scale BOTH the full title \"Dino Dominion\" and the complete Tyrannosaurus together to 80% of their current sizes, preserving their relative arrangement, centered in the canvas. Repaint newly exposed areas with matching prehistoric valley, mist and ledge. All title letters and the ENTIRE rex from skull to toes to tail tip must now fit within x12–88%, y17–83%. Keep the exact readable title, carved gold lettering, rex anatomy and brown scales, sunset volcano, ferns, arch and waterfalls, same lighting and wide 2:1 opaque canvas. No new creatures, no extra words or UI."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-63fc2acc-88c7-47c3-b098-5fd9722c35b9.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-c39ca33f-d806-4514-9467-a7b616870556.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/dinoDominion/catalog.ts",
+    "fortuneforge.client/src/games/slots/dinoDominion/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/dinoDominion/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/dino-dominion/optimized/dino-dominion-valley-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/dino-dominion/optimized/dino-dominion-mighty-tyrannosaurus-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact Dino Dominion title; brown roaring rex, sunset volcano, ferns, river, arch and waterfall preserve identity. Complete limbs and tail. No extra text/UI/claims.",
+    "thumbnail256x128": "Inspected 256x128; title remains legible and rex distinct against sunset mist.",
+    "crop": "Targeted spacing edit places full title and entire rex inside central 80% width /70% height.",
+    "compression": "109,724 bytes; quality 84; below ideal 120 KB."
+  },
+  "status": "ready-for-parent-review"
+}

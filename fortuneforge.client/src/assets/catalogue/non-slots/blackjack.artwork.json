@@ -1,0 +1,30 @@
+{
+  "id": "blackjack",
+  "title": "Fortune Blackjack",
+  "file": "blackjack-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 49106,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is the Fortune Blackjack title-card edit target. Change only framing: scale the entire existing title, two-card hand, chips and decorative flourishes uniformly to 84% of their current size and center that group in the same true 2:1 canvas. Seamlessly extend the emerald felt and subtle brass rail/background around the reduced composition. Preserve exactly \"Fortune Blackjack\", the ace of spades and ten of hearts, all colors, typography, illustrated materials and layout relationships. Every letter and both full cards must be safely within the central 80% width and 70% height. Leave quiet outer margins, including at least 10% on left and right and 15% above and below essential subjects. Keep title readable at thumbnail size. No new objects, extra text, UI, logo, slogan or watermark. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-59c46df7-f803-4ace-9824-90ef8a6df5db.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "fortuneforge.client/src/pages/cards/blackjack/blackjack.css",
+    "fortuneforge.client/src/assets/cards/previews/blackjack-game.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",
+    "fortuneforge.client/src/games/cards/shared/PlayingCard.tsx",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-5a2d005b-e7f5-451b-9b3c-884aecb37b9d.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected generated master and 768x384 export. Exact title is clear; ace of spades and ten of hearts form the blackjack motif; suit/rank markings and chip styling are consistent. Preview screenshot was used only for table theme, never for retired court art.",
+    "thumbnail": "Inspected at 256x128. Both title lines remain clearly readable, and the two-card hand is recognizable.",
+    "crop": "Framing-only v2 edit reduces the central group; complete title and both cards sit inside the central 80% width / 70% height.",
+    "compression": "WebP quality 84; 49,106 bytes, below 120 KB ideal target.",
+    "revision": "Original v1 WebP and generated master retained; v2 is the selected export."
+  },
+  "status": "ready-for-parent-review",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium casino game catalogue title-card illustration.\nPrimary request: Create one finished wide 2:1 landscape key-art card for Fortune Blackjack, professionally illustrated, elegant and immediately recognizable at thumbnail size.\nScene/backdrop: rich emerald green felt fading into a deep forest-green vignette, a restrained curved brass table edge near the bottom, delicate felt texture and soft illustrated depth.\nSubject: exactly two ivory playing cards, an ace of spades and a ten of hearts, arranged as a crisp overlapping blackjack hand, with a small orderly stack of classic red and charcoal casino chips with white edge inlays. The cards have standard clear corner indices and one large central suit symbol, not detailed court art.\nStyle/medium: premium hand-finished editorial game illustration with clean shapes, subtly painted materials and controlled dimensional lighting, polished rather than photorealistic. Warm ivory, emerald, black and restrained antique gold. No gaudy glow.\nComposition/framing: true wide 2:1 canvas. Large elegantly weighted gold serif title and the two-card focal group balance each other, both entirely inside the central 80% width and 70% height. Ample quiet outer margins for responsive cropping. Cards clearly separated from the title. Strong hierarchy at 256x128.\nText (verbatim): \"Fortune Blackjack\". Render exactly these words once, with Fortune above Blackjack, no additional wording. Large readable elegant gold serif letters with a restrained dark shadow.\nConstraints: original key art, no people, no portraits, no fake game interface, no buttons, no borders resembling a UI panel, no brand logo, no watermark, no currency, no payout slogans, no extra game titles. Card corners must be plausible and suit symbols consistent. Do not draw retired illustrated court portraits. Opaque background. One image only."
+}

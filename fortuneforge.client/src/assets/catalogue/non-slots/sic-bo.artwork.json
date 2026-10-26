@@ -1,0 +1,25 @@
+{
+  "id": "sic-bo",
+  "title": "Sic Bo",
+  "file": "sic-bo-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 30774,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino catalogue title card.\nPrimary request: Create ONE original polished Sic Bo title card, wide 2:1 landscape (1536x768 composition), opaque.\nScene/backdrop: refined burgundy/crimson lacquer and deep wine-red felt, black accents and restrained antique-gold trim. Rich tactile casino materials with controlled warm illumination. Match the existing Sic Bo red/ivory/gold theme.\nSubject: EXACTLY THREE separate ivory six-sided dice grouped under ONE clear curved glass dome on a low polished gold-and-black base. Dice are large and readable with genuine black circular recessed pips. Arrange front faces as standard 2, 3, and 5: two diagonal pips; three diagonal pips; four corner pips plus center. Any additional visible top/side faces must have conventional 1–6 pip layouts, never more than six. No printed numerals on dice. Dome glass is subtly translucent and thin enough that all three dice remain unobscured. No fourth die or reflected duplicate dice. A small subtle gold dome finial is okay.\nStyle/medium: professionally painted luxury game key art, crisp cube geometry, elegant glass reflections and softly modeled depth, premium collection feel. Not photoreal money piles or crude clipart.\nComposition/framing: wide 2:1, large clear title balanced beside the compact dice-dome focal group. Keep ALL title letters and all three dice with dome inside central 80% width and central 70% height; generous crop-safe margins and quiet burgundy behind text. Title dominant and legible at 240px thumbnail width.\nText (verbatim): \"Sic Bo\". Exactly once, capital S and B, large cream-gold serif lettering with restrained beveled edges.\nConstraints: no extra words or numbers, no dragon/tiger or religious imagery, no cards/chips/coins/cash piles, no green felt, no buttons, paytable or fake interface, no payout claims or slogans, no logos, no watermark. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit.\nImage 1 is the edit target: Sic Bo catalogue title card.\nMake these precise corrections:\n1. On ONLY the RIGHTMOST die, change its TOP face from five pips to ONE single centered black pip. Preserve its front face of FIVE pips. The other two dice stay unchanged: left front two/top one; middle front three/top five. Exactly three dice, standard physical cubes.\n2. Remove background lanterns, lattice panels and flowering branches. Replace those room props with a simple refined deep-burgundy lacquer/velvet gradient with quiet subtle texture. Retain the red felt tabletop and warm gold curved table rail. No cultural/religious ornaments.\n3. Reduce the combined title and dome group uniformly to about 90% of current size and center it on the same canvas so the full title and full dome/base sit within central 80% width / 70% height with generous margins. Preserve exact title \"Sic Bo\" and its font style.\nPreserve premium illustration, gold/black dome base, clear glass, ivory/black dice, restrained lighting and wide 2:1 opaque canvas. No new props, no extra dice, no extra words/numerals, no interface or buttons."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-2d7aa732-fa2e-42fd-a1a8-1a63af5aafee.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-beee0a91-bc8a-4f88-b32d-4438505317e8.png",
+  "referencePaths": [
+    "games/SicBo/client/FortuneForge.Games.SicBo.Client/src/sicBo.css",
+    "games/SicBo/client/FortuneForge.Games.SicBo.Client/src/sicBoPresentation.ts"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP. Exact Sic Bo title; exactly three ivory dice beneath clear dome on black/gold base. Front pips 2/3/5, top pips 1/5/1, physically possible adjacent faces with standard pip layouts. Targeted edit removed unsupported background ornament and corrected repeated adjacent die face. Red/ivory/gold theme, safe central title/dome composition. No extra copy, UI, religious additions or payout slogans.",
+    "thumbnail": "Inspected at 240x120. Title readable and all three dice remain separate under dome.",
+    "compression": "30,774 bytes; WebP quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

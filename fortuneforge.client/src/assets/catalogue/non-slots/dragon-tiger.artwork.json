@@ -1,0 +1,22 @@
+{
+  "id": "dragon-tiger",
+  "title": "Dragon Tiger",
+  "file": "dragon-tiger-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 95228,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino game catalogue title card.\nPrimary request: Create ONE original polished title-card image for Dragon Tiger, wide 2:1 landscape (1536x768 composition), opaque background.\nScene/backdrop: deep oxblood red lacquer and velvet, faint traditional cloud scrolls and restrained antique-gold corner linework. Match the existing game's red/gold dragon-versus-tiger identity.\nSubject: a magnificent sinuous Asian dragon on the left and a powerful striped tiger on the right, facing each other, rendered as beautifully modeled antique-gold engraved relief with refined scale/fur detail and restrained depth, not crude clipart. Their heads and shoulders form a balanced frame around the title, not obscuring it.\nStyle/medium: professionally painted luxury game key art, sophisticated illustration, elegant material highlights, controlled warm lighting; coherent premium casino collection feel.\nComposition/framing: wide 2:1, big central title with clear quiet red space behind it. Keep ALL title letters and both focal heads within central 80% width and central 70% height; generous 10% side and 15% vertical safe margins. Decorative tails/clouds may extend toward edges. No important features clipped.\nText (verbatim): \"Dragon Tiger\". Render exactly these two words once, on two centered lines in large exceptionally readable cream-gold serif lettering with subtle dimensional gold edges, strong contrast, title case.\nConstraints: no other words, no Chinese lettering, no religious symbols, no cards needed, no logos, no watermark, no buttons, no game interface, no payout slogans, no coins or money piles, no excessive sparks or glow. Only one title-card image.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-e5d20de1-c49e-435a-8065-afed74163bf4.png",
+  "referencePaths": [
+    "games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client/src/assets/dragon-tiger-felt.webp",
+    "games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client/src/assets/chip-25.png",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected generated master and final 768x384 WebP. Exact Dragon Tiger title, red/gold engraved dragon facing striped tiger, no extra copy or fake UI. Both faces and full title remain inside the crop-safe central area; ornamental bodies extend to edges.",
+    "thumbnail": "Inspected at 240x120. Title is clearly readable and both creatures remain distinct.",
+    "compression": "95,228 bytes; WebP quality 84; below the 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

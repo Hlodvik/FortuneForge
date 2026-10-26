@@ -1,0 +1,30 @@
+{
+  "id": "house-holdem",
+  "title": "House Hold’em",
+  "file": "house-holdem-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 34808,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is the House Hold’em title-card edit target. Change ONLY framing. Uniformly reduce the ENTIRE existing title-and-cards-and-chips composition to 80% of its current size, centered in the same true 2:1 landscape canvas. Extend the emerald felt and subtle gold table trim seamlessly into the new outer margins. Preserve exactly \"House Hold’em\", all letterforms, the two blue dealer card backs, the five-card row, the two player aces, chips, single-symbol card faces, current layout relationships, colors and illustration style. All letters and all nine cards must fit fully inside the central 80% width and central 70% height, leaving at least 15% clear space above the top pair and below the bottom pair. Do not crop, change card ranks, duplicate cards, add or remove props, or add wording. No UI, logo, watermark, slogans or people. Opaque background. One image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium casino catalogue title-card illustration.\nPrimary request: one finished, beautiful House Hold’em title card, with a distinctive dealer-versus-player table composition.\nScene/backdrop: rich emerald felt with deep teal shadows, restrained warm antique-gold table trim and a softly darkened forest-green perimeter. Polished casino collection identity.\nSubject: an orderly miniature dealer-versus-player arrangement seen from a slightly elevated oblique angle. At the back, exactly two overlapping face-down blue cards with elegant gold geometric backs, no logo. Across the middle, a straight row of exactly five small ivory community cards: 3 hearts, 5 clubs, 7 diamonds, 9 spades, 2 hearts. At the front, a separate slightly overlapping pair of face-up aces, ace of hearts and ace of clubs. All face-up cards use a simple modern deck: one large central suit symbol per card and small matching rank/suit corner indices, NEVER repeated pip patterns. A few restrained red and charcoal chips sit alongside the front pair; no sprawling pot.\nStyle/medium: premium professionally illustrated game key art, subtly painterly felt and ivory surfaces, crisp silhouettes, controlled dimensional highlights, tasteful restrained gold. No people or portraits.\nComposition/framing: true wide 2:1 canvas. The table-card arrangement occupies one side of the central composition and the large two-line title balances it on the other side, without overlap. Clearly show separate dealer pair, five-card row, and player pair, not a generic fan. Keep the complete title and all essential cards inside x=15% to 85%, y=20% to 80%, with generous quiet empty felt margins on all sides. Do not fill the canvas with props. Title must read clearly at 256x128.\nText (verbatim): \"House Hold’em\". Exactly these words once in large elegant gold serif type, House above Hold’em. Preserve the curly apostrophe. No other wording.\nConstraints: no game interface, buttons, betting labels, payout claims, slogans, brand marks, watermark, currency, human characters, court portraits, palace/castle or unrelated symbolic props. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-8afc616c-e9d0-4d0d-9989-c39220773d2a.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "fortuneforge.client/src/pages/cards/houseHoldem/HouseHoldemPage.tsx",
+    "fortuneforge.client/src/pages/cards/houseHoldem/houseHoldem.css",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/threeCardPoker.css",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
+    "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",
+    "fortuneforge.client/src/games/cards/shared/PlayingCard.tsx",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-fd58c986-82dc-46b2-af2d-761e4c97871f.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 export. Exact curly-apostrophe title; two blue dealer backs, five separate community cards and two foreground aces. Each visible card uses one central suit symbol and matching corner rank/suit; no court portraits or fake interface.",
+    "thumbnail": "Inspected at 256x128. Title remains readable, dealer/board/player structure remains distinct from the Texas Hold’em pot composition and Three Card Poker trio.",
+    "crop": "Framing-only v2 edit brings complete title and all nine cards into central 80% width / 70% height. Outer gold rail is expendable.",
+    "compression": "WebP quality 84; 34,808 bytes, below 120 KB ideal target.",
+    "revision": "Original master retained outside runtime imports; v2 is selected after a framing-only edit."
+  },
+  "status": "ready-for-parent-review"
+}

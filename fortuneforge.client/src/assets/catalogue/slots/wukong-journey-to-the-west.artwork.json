@@ -1,0 +1,29 @@
+{
+  "id": "wukong-journey-to-the-west",
+  "title": "Wukong's Journey to the West",
+  "file": "wukong-journey-to-the-west-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 60630,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is the Wukong's Journey to the West title-card edit target. Change ONLY framing: uniformly reduce the complete gold title, monkey hero, staff, tail and hero's nimbus cloud to 75% of their current size and center that group within the same true 2:1 landscape canvas. Seamlessly extend the indigo/plum jewel-cloud sky around the reduced group. Preserve the exact complete title \"Wukong's Journey to the West\", its readable line arrangement, all character details, expression, pose, staff, red/gold/turquoise palette and premium illustration style. Every title letter, staff end and the full hero must fit comfortably inside the central 80% width and 70% height. Leave at least 15% clear sky above the hero's hair and below the essential nimbus cloud. No new subjects, symbols, words, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: create one beautiful finished key-art card for \"Wukong's Journey to the West\", preserving the existing playful celestial adventure identity.\nScene/backdrop: deep midnight indigo and plum sky, soft curled nimbus clouds with restrained cyan, magenta and golden rim light; spacious, atmospheric, not a busy landscape.\nSubject: a friendly small golden-furred monkey hero with expressive amber eyes, a curved tail, a delicate gold circlet, ornate red-and-gold armour with small turquoise panels, holding one red staff with gold ends. Original three-quarter pose riding a softly curled nimbus cloud, confident and inviting. Match a polished cute adventure-game character rather than a fierce human warrior. No other characters, temples or deities.\nStyle/medium: premium professionally painted game key art, sophisticated cartoon illustration, beautifully controlled materials and depth, crisp readable silhouette. Red, warm gold, turquoise highlights against indigo/plum clouds. Restrained sparkle.\nComposition/framing: TRUE wide 2:1 landscape. Large gold title and monkey hero balance across the center, title on the left and hero on the right, no overlap. IMPORTANT: keep the ENTIRE TITLE and the complete hero including staff ends and tail within x=12%–88%, y=18%–82%, leaving broad quiet sky/cloud margins around them. Do not fill canvas to edges. Hero and lettering remain clear at 256x128.\nText (verbatim): \"Wukong's Journey to the West\". Exactly this complete title once, with the apostrophe after Wukong. Elegant substantial gold display serif type, three readable lines: \"Wukong's\" / \"Journey to the\" / \"West\". The middle line must be large enough to read in a catalogue thumbnail, not tiny subtitle text.\nConstraints: no added words, slogans, payout promises, numbers, money piles, slot reels, spin buttons, fake UI, other brands, logos or watermark. No cultural/religious additions beyond the established monkey, circlet, staff and nimbus-cloud motif. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-65b2417e-cd1d-4167-84e6-dfd6318d342d.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/wukong/catalog.ts",
+    "fortuneforge.client/src/games/slots/wukong/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/wukong/manifest.ts",
+    "fortuneforge.client/src/assets/slots/games/wukong/mascot/wukong-idle-staff.png",
+    "fortuneforge.client/src/assets/slots/symbols/wukong/celestial-staff.png",
+    "fortuneforge.client/src/assets/slots/backgrounds/optimized/neon-jewel-clouds-gold.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-f81c6092-402b-467f-b037-4cff63db8a76.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected generated master and 768x384 WebP. Complete title reads correctly, including possessive apostrophe and 'Journey to the West'. Friendly golden monkey, red/gold staff, circlet, turquoise/red armour and jewel clouds preserve existing identity without added religious subjects or game UI.",
+    "thumbnail": "Inspected at 256x128. Full title remains readable in three lines and monkey/staff silhouette is clear.",
+    "crop": "Framing-only v2 keeps full title, monkey, both staff ends, tail and main nimbus within central 80% width / 70% height.",
+    "compression": "WebP quality 84; 60,630 bytes, under 120 KB ideal target.",
+    "revision": "Initial generated master retained outside src; v2 selects the crop-safety refinement. Artwork files only; no runtime integration."
+  },
+  "status": "ready-for-parent-review"
+}

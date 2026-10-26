@@ -1,0 +1,24 @@
+{
+  "id": "hi-lo",
+  "title": "Hi-Lo",
+  "file": "hi-lo-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 40592,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated casino catalogue title card.\nPrimary request: Create ONE original polished Hi-Lo title card, wide 2:1 landscape (1536x768 composition), opaque.\nScene/backdrop: rich emerald felt fading to dark forest green, restrained champagne-gold line accents and subtle table edge. Sophisticated classic casino mood.\nSubject: ONE large warm-ivory Ace of Spades playing card standing at a slight elegant tilt, accompanied by two sculptural gold arrow forms, one sweeping upward and one downward. Arrows are free-standing illustration motifs with gentle curves, never inside buttons or panels. Ace face has clean black A/spade indices top-left and rotated lower-right and ONE large central black spade, rounded ivory edges. Subtle card deck beneath it. No other face-up cards. A couple of small red-and-cream striped chips beside the deck.\nStyle/medium: polished professionally painted game key art, tangible materials, soft controlled highlights and depth, clean silhouettes. Premium collection feel, not photoreal money, not icons or clipart.\nComposition/framing: wide 2:1. Large title and separate card/arrow vignette form a balanced central composition. ALL title letters, ace and arrow heads within central 80% width and central 70% height; generous margins and quiet felt behind the title. Title must dominate and be readable at 240px thumbnail width.\nText (verbatim): \"Hi-Lo\". Exact spelling and hyphen, capital H and L, once only, large cream-gold serif type with understated beveled gold edge.\nConstraints: no extra words or numbers outside authentic A indices, no jokers or court cards, no portraits, no interface/buttons/paytable, no payouts/slogans, no coins or piles of money, no logos, no watermark, no excessive light rays or sparks. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-a4daf292-6904-4d69-9ce0-8ebf90dd4ed6.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "games/HiLo/client/FortuneForge.Games.HiLo.Client/src/assets/chip-5.png",
+    "games/HiLo/client/FortuneForge.Games.HiLo.Client/src/hiloCasino.css",
+    ".tmp/hi-lo-review-20261023/classic-casino.jpg",
+    "fortuneforge.client/src/games/cards/shared/CourtCardSymbol.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and final 768x384 WebP. Exact Hi-Lo spelling/hyphen, clear ace, free-standing up/down arrows, emerald felt, restrained red chips. Screenshot used only for palette, not retired card styling. No fake UI or extra copy. Title fully inside central safe region; card remains legible under cropping.",
+    "thumbnail": "Inspected 240x120: large title, ace and both arrow directions read clearly.",
+    "compression": "40,592 bytes; quality 84; below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

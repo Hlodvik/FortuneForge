@@ -1,0 +1,30 @@
+{
+  "id": "arcane-archives",
+  "title": "Arcane Archives",
+  "file": "arcane-archives-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 82960,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished key-art image for \"Arcane Archives\", wide 2:1 landscape, opaque.\nScene/backdrop: a magnificent enchanted midnight library, towering shadowy bookshelves, distant tall arched windows with moonlit violet glass, subtle warm candlelight. Existing identity: deep purple and midnight blue, antique gold, restrained mint aether glow.\nSubject: a wise cream-and-brown archivist owl with bright amber eyes and a dark blue-violet star-dotted cape, perched on two aged books beside a closed navy grimoire with ornate gold corners, a gold crescent clasp, purple jewel and violet bookmark ribbon. Professionally painted tangible feather, leather and gilded details. Gentle arcane motes, no excessive particles.\nComposition/framing: WIDE 2:1 catalogue card. Large two-line title in quiet dark space balanced with a compact owl-and-grimoire vignette. IMPORTANT: keep ALL title letters and ALL of the owl/book focal group in central 76% width and 64% height (x12–88%, y18–82%). Generous empty margins, no cut-off owl wings or title. Background shelves may extend to edges.\nStyle/medium: sophisticated original fantasy game key art, lush painterly illustration, carefully modeled depth, restrained cinematic lighting, cohesive premium casino collection.\nText (verbatim): \"Arcane Archives\". Exactly these two words once, on two lines, large highly legible cream-gold fantasy serif lettering with refined dimensional edges. Title must be crisp and readable at 256x128.\nConstraints: no other writing, no slogans or payout promises, no reels, no buttons, no fake interface, no logo/watermark, no additional characters, no unrelated cultural or religious motifs, no pile of money. One image for this game only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Arcane Archives title card.\nChange ONLY the size and position of the owl-and-books focal group on the right. Scale the entire owl, cape, two stacked books and upright grimoire together to 75% of their current size, with the group centered vertically and its base resting slightly farther back on the library floor. The full owl tuft must begin below 18% of image height, and the full bottom book/ribbon must end above 82% of image height. The complete group must fit inside x55–87% of image width. Repaint exposed areas as matching background library/floor. Preserve exact title \"Arcane Archives\", lettering size and position, background architecture, palette, lighting and wide 2:1 opaque canvas. No new subjects or text."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-58500046-9fb1-46e7-bdd9-b0cdc3ba2c00.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-1f970e7f-ff11-4c71-ade7-291f5304cd88.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/arcaneArchives/catalog.ts",
+    "fortuneforge.client/src/games/slots/arcaneArchives/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/arcaneArchives/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/arcane-archives/optimized/arcane-archives-library-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/arcane-archives/optimized/arcane-archives-grand-grimoire-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/arcane-archives/optimized/arcane-archives-owl-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected generated final master and 768x384 WebP. Exact title, ornate violet library, caped amber-eyed archivist owl and crescent grimoire preserve existing identity. No extra slogans, interface or unrelated motifs.",
+    "thumbnail256x128": "Inspected at 256x128. Both words legible and owl/book silhouette distinct.",
+    "crop": "Title and complete owl/book group sit within central 80% width / 70% height after targeted group-size edit.",
+    "compression": "82,960 bytes; WebP quality 84; below ideal 120 KB."
+  },
+  "status": "ready-for-parent-review"
+}

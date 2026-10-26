@@ -1,0 +1,24 @@
+{
+  "id": "drop-merge",
+  "title": "Drop Merge",
+  "file": "drop-merge-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 19498,
+  "generationPrompt": "Use case: stylized-concept\nAsset type: original premium game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: polished professionally illustrated key art for Drop Merge using its actual pastel numbered square tiles dropping into dark teal vertical channels.\nScene/backdrop: deep midnight teal/navy background, soft focused light and gentle vignette. A compact dark teal physical rack with exactly SEVEN equal vertical drop channels, softly rounded rims, no labels or interface controls. Channels are continuous dark teal, no checkerboard floor grid.\nSubject: a few short growing stacks of rounded-square number tiles in the channels. One lime tile marked \"8\" is descending directly above another lime \"8\" in the same central channel, suggesting their merge. Other tiles use exact current game colors: \"2\" sky blue, \"4\" soft pink, \"16\" lavender, \"32\" peach and \"64\" mint. Every colored tile has a correct power-of-two numeral centered in bold DARK NAVY ink and a thin dark border. Tile faces are square with modest depth, softly rounded corners and subtle ivory edge highlights, not fruit, gems or unnumbered blocks.\nStyle/medium: sophisticated professionally illustrated 3D puzzle-game key art, premium sculpted forms, crisp legible numbers, controlled shadows, restrained glow, coherent premium collection finish. No screenshot or fake interface.\nComposition/framing: wide 2:1. Large title balanced with a compact rack-and-falling-tiles vignette, all inside ONLY x=22%-78% and y=23%-77% of the full canvas. Leave generous quiet dark background around every side. No title or tile clipped by an edge. Keep the falling tile and matching tile visibly separate. Title large and highly readable at 240px-wide thumbnail.\nLighting/mood: clean cool teal edge light, soft warm-ivory title highlights, playful but refined, no excessive particles or motion blur.\nText (verbatim): \"Drop Merge\" exactly once, large elegant bold warm-ivory display lettering, may use two balanced lines. Supporting tile numerals only.\nConstraints: no other words, slogans, payout claims, logos, watermarks, buttons, arrows, scores, fake UI, money, cards, human characters or gem motifs. Preserve sky-blue/pink/lime/lavender/peach/mint tile colors, DARK numeral ink and dark teal channels. Do not use 2048's brown board or golden/orange palette.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-29c3d1c4-0eb8-4580-abad-8b715d8179d5.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/DropMerge/client/FortuneForge.Games.DropMerge.Client/src/dropMergePalette.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/DropMerge/client/FortuneForge.Games.DropMerge.Client/src/dropMergeColumns.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/DropMerge/client/FortuneForge.Games.DropMerge.Client/src/dropMergeColumnSurface.css"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact title Drop Merge is readable and correctly spelled. Seven continuous dark teal vertical channels match current drop-column identity.",
+    "Actual rounded square number tiles: 2 sky blue, 4 pink, 8 lime, 16 lavender, 32 peach and 64 mint, with dark navy numerals/borders. A descending 8 sits above a matching 8 in the same channel.",
+    "Title, rack and falling tile fit central 80% width / 70% height. No UI labels, fake scores, buttons, payout copy, logos or watermarks.",
+    "19,498 bytes at quality 84; selected v1."
+  ],
+  "status": "ready-for-parent-review"
+}

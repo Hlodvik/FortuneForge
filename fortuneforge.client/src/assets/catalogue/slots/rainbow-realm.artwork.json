@@ -1,0 +1,28 @@
+{
+  "id": "rainbow-realm",
+  "title": "Rainbow Realm",
+  "file": "rainbow-realm-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 106336,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is Rainbow Realm title-card artwork. Change ONLY framing of the central title-and-basket group. Uniformly scale the complete \"Rainbow Realm\" lettering and the full fruit basket, fruit and lining to 75% of their current size and center the reduced group in the same true 2:1 landscape canvas. Seamlessly continue the existing orchard, meadow, sky and rainbow in the extra space. Preserve exact title spelling, bold gold/ivory letters with purple shadows, all fruit varieties and their shapes, basket material, warm sunlight, palette and premium illustration style. The topmost title letter must be at least 15% below the top edge and the full basket at least 15% above the bottom edge, every essential element inside central 80% width / 70% height. Background trees/rainbow may reach canvas edges. No added text, people, props, UI, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: one polished original Rainbow Realm key-art image, preserving its bright classic-fruit orchard identity.\nScene/backdrop: a magical sunlit orchard with rounded emerald-green hills, glossy rounded fruit-tree canopies at the sides, warm golden sky and one rich multicoloured rainbow arch in the background. Painterly, spacious and inviting.\nSubject: a beautiful small wicker harvest basket with a red-and-white gingham lining, containing cherries, an orange, a lemon, a purple grape bunch, a glossy apple and a prominent red watermelon wedge with green rind. Fruit looks luscious, crisp and jewel-bright, not plastic. Basket is the clear lower-middle focal object, with restrained leaf details; no characters.\nStyle/medium: sophisticated premium cartoon game illustration, softly painted textures, controlled dimensional highlights, strong clean silhouette. Coral reds, green orchard, purple grapes, sunshine gold and cyan rainbow accents. A cohesive high-quality game-cover finish, no photorealism.\nComposition/framing: TRUE wide 2:1 landscape canvas. Title centered above a compact centered basket, background trees frame the sides; this is a balanced triangular composition. Keep complete title and entire fruit basket comfortably inside the central 75% width and 65% height, with generous quiet margins beyond; all essential artwork must fit central 80% width / 70% height. The rainbow and trees may extend into the background margins. No title-fruit overlap. Readable at 256x128.\nText (verbatim): \"Rainbow Realm\". Exactly once, on two large balanced lines, substantial rounded gold/ivory display lettering with a subtle deep-purple shadow for excellent contrast against the warm sky. Both words prominent and crisp.\nConstraints: no leprechauns, pots of gold, coins, added cultural symbols, extra wording, slogans, payouts, reels, fake game interface, buttons, logos, other brands or watermark. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-276de550-4a05-4fc3-925d-99452c282457.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/rainbowRealm/catalog.ts",
+    "fortuneforge.client/src/games/slots/rainbowRealm/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/rainbowRealm/symbols.ts",
+    "fortuneforge.client/src/assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.png",
+    "fortuneforge.client/src/assets/slots/games/rainbow-realm/optimized/wicker-fruit-basket.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-e4f2c1c9-a2f4-4aa6-ae0b-fbd2113a2176.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact title, orchard rainbow, rounded green hills and gingham-lined wicker basket with existing fruit identities including watermelon. No added character, cultural motif, slogan or interface.",
+    "thumbnail": "Inspected at 256x128. Both title words remain clear with purple-shadow contrast and fruit basket remains recognizable.",
+    "crop": "Framing-only v2 keeps complete title and basket within central 80% width / 70% height. Background orchard/rainbow fills outer margins.",
+    "compression": "WebP quality 84; 106,336 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "robot-revolution",
+  "title": "Robot Revolution",
+  "file": "robot-revolution-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 104396,
+  "prompt": "Use case: precise-object-edit\nEdit target: the supplied Robot Revolution catalogue illustration.\nChange only framing: uniformly shrink the entire central foreground composition by 27% around the canvas center, including the complete yellow mech, its upper handle/frame and claw, silver service android, both title lines and their metal/cyan base. Extend the same midnight-blue megacity and dark pavement naturally around it. ALL main foreground parts must fit entirely within x=14%-86%, y=18%-82%.\nPreserve exact title wording \"Robot Revolution\", same large metallic sans-serif lettering, original machine designs, yellow/white/chrome colors, cyan lights, optimistic industrial mood and premium illustration quality. Keep title prominent and clear at 256x128.\nKeep wide 2:1. No new props, words, labels, numbers, logos, UI, payout claims or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-d0b31992-13a8-4e1b-b132-135f0824eb57.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/robotRevolution/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-megacity-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-titan-construction-mech-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-service-android-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-sentient-ai-core-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6f199ca8-7f4f-40f4-8cbb-ba44b197504e.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Exact full title Robot Revolution is prominent, correctly spelled and clearly readable in metallic sans-serif lettering.",
+    "Original yellow construction mech with utility claw, silver/white blue-visored service android, cyan conduits and midnight-blue megacity retain existing industrial identity.",
+    "Selected v2 fits title, upper mech frame, claw and both robot vignettes inside central 80% width / 70% height. No UI, slogans, payout claims, brands, labels or watermarks.",
+    "104,396 bytes at WebP quality 84, under ideal 120 KB. Retained robot-revolution-title-v1.webp (97,826 bytes); v2 is selected. Artwork files only, no uploads or wiring."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6f199ca8-7f4f-40f4-8cbb-ba44b197504e.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: professionally illustrated key art for Robot Revolution, retaining the chrome megacity, yellow construction mech, silver service android and cyan fusion-light identity.\nScene/backdrop: a softly focused midnight-blue futuristic industrial city with restrained cyan power conduits, warm yellow workshop lights and dark reflective pavement; broad quiet outer margins.\nSubject: a compact original yellow-and-gunmetal construction mech with a heavy industrial claw on one articulated utility arm, sturdy proportions and cyan sensor/core lights. Beside it, a smaller original silver/white service android with a smooth blue visor. Friendly capable industrial machines, no weapons. Use original designs with clean readable silhouettes, unmarked panels and mechanically plausible joints.\nStyle/medium: premium professionally illustrated 3D sci-fi game key art, brushed chrome and painted industrial yellow, restrained scratches, crisp sculpted forms and controlled cinematic depth; polished original collection quality, not a photo, screenshot, flat clip art or existing franchise character.\nComposition/framing: wide 2:1. A LARGE two-line title balances the compact two-robot vignette. Keep every title letter and both complete focal robot silhouettes including the mech's claw within x=22%-78%, y=24%-76% of the canvas. Deliberately leave broad dark city background around ALL four sides. Title extremely clear and readable at 256x128 thumbnail.\nColor palette: midnight navy #07142d, blue #237fa7, deep #092138, electric mint #34e0b8, yellow #ffd54c, cyan glow #37ddff, pale metal/ivory lettering.\nLighting/mood: controlled cyan rim light and warm yellow accents, optimistic industrial intelligence, premium metallic depth.\nText (verbatim): \"Robot Revolution\" exactly once, Robot on first line and Revolution on second, very large bold futuristic sans-serif display letters with pale brushed-metal faces, fine yellow-gold bevel and navy contrast shadow. Keep ordinary readable Latin letters.\nConstraints: no other words or numbers, labels, slogans, payout claims, reels, fake interfaces, spin buttons, brand logos or watermarks. No red dystopian eyes, weapons, destruction or unrelated motifs. Single original finished catalogue illustration."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "id": "liars-dice",
+  "title": "Liar’s Dice",
+  "file": "liars-dice-title-v3.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 29176,
+  "generationPrompt": "Use case: precise-object-edit\nEdit target: provided Liar’s Dice title card.\nMake ONE tiny correction only. Locate the middle die immediately in front of the cup opening, the die whose TOP face has TWO pips. Its visible LEFT/front side currently also has two pips, which is wrong. Change ONLY that left/front face to THREE pips by adding one dark recessed central pip between its two existing diagonal pips. The TOP face must remain TWO pips, and the right side must remain SIX pips. The corrected die therefore shows 2 on top, 3 on left/front and 6 on right.\nPreserve everything else exactly, including the five-dice count, other four dice, cup, composition scale, navy background, exact title \"Liar’s Dice\", typography and lighting. No new objects or other changes. Wide 2:1 image.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-70d52135-87a1-4c27-9ca0-bf298318253d.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client/src/liarsDice.css",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client/src/LiarsDiceGame.tsx",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/LiarsDice/client/FortuneForge.Games.LiarsDice.Client/src/assets/dice/dice-throw-1.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-3d4038d2-a121-46b6-9811-10a6932273bf.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact title Liar’s Dice is readable with curly apostrophe. Midnight/slate blue, warm ivory dice, neutral pips and restrained brass match current game identity.",
+    "Exactly five six-sided dice. Top faces show 1, 2, 3, 4, 5; v3 corrects the middle die's duplicate side to three pips. Unmarked cup illustrates the game's private-cup mechanic.",
+    "Title, cup and dice fit central 80% width / 70% height. No green felt, UI, payout copy, portraits, logos or watermarks.",
+    "29,176 bytes at quality 84. Retained v1 (31,544 bytes) and v2 (31,412 bytes); v3 is selected for review."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-8d90f89e-ec27-4e1f-ae65-e8348d484f7c.png",
+      "generationPrompt": "Use case: stylized-concept\nAsset type: original premium game catalogue title card, one wide 2:1 landscape image.\nPrimary request: professionally illustrated key art for Liar’s Dice retaining the existing midnight/navy and slate-blue game identity, ivory dice with dark neutral pips and restrained warm brass accents.\nScene/backdrop: deep midnight-blue table, softly textured, gradient #23476b to #122a45 to #081628, gentle vignette, no emerald green.\nSubject: exactly FIVE warm ivory six-sided dice resting in an elegant compact loose cluster beside a simple tipped slate-blue dice cup with subtle brass rim. Dice have rounded cubical edges and ordinary dark charcoal recessed pips, accurate standard pip patterns; emphasize top faces showing 1, 2, 3, 4 and 5, with understated side faces. No numerals on dice, no seven-pip or novelty dice. The cup is unmarked.\nStyle/medium: sophisticated professionally illustrated 3D game key art, clean sculpted forms, soft contact shadows, restrained material detail and premium collection finish.\nComposition/framing: clear two-part composition, title balanced with the cup-and-five-dice vignette. IMPORTANT: entire title and every complete die and cup must fit well inside x=18%-82%, y=22%-78% of the full image, leaving broad quiet blue margins on all sides. Keep title large, high contrast and easily readable at 240px-wide thumbnail. Wide 2:1 landscape.\nLighting/mood: cool soft blue edge light, gentle warm ivory highlights, measured suspenseful atmosphere.\nText (verbatim): \"Liar’s Dice\" exactly once. Use the curly apostrophe after Liar. Large elegant bold cream-gold display type with crisp readable letter shapes; may be on two balanced lines.\nConstraints: no other words, slogans, payout claims, logos, watermarks, buttons, fake UI, money, cards, pirates, skulls, people or symbols on the cup. No green felt. Original refined illustration, not screenshot, clip art or casino photo."
+    },
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-3d4038d2-a121-46b6-9811-10a6932273bf.png",
+      "generationPrompt": "Use case: precise-object-edit\nAsset type: original premium 2:1 Liar’s Dice catalogue title card.\nEdit target: provided Liar’s Dice illustration.\nKeep the same exact title \"Liar’s Dice\", typography, midnight blue table, simple navy/brass cup, five ivory dice, lighting and professional illustrated quality.\nMake two precise changes:\n1. Uniformly shrink the entire foreground title-plus-cup-and-dice composition 22% around the canvas center and extend the same quiet blue table around it. ALL title letters and every complete die and cup must fit within x=14%-86% and y=18%-82%. Keep the title readable.\n2. Correct the five dice to ordinary six-sided dice with accurate pip patterns and no duplicate values on adjacent faces. Keep the top faces 1, 2, 3, 4, 5 respectively. The three visible faces of each die should be these valid combinations: top 1 with side 2 and side 3; top 2 with side 3 and side 6; top 3 with side 2 and side 6; top 4 with side 2 and side 1; top 5 with side 4 and side 1. Use standard pip layouts: 1 central dot, 2 diagonal dots, 3 diagonal plus center, 4 square corners, 5 corners plus center, 6 two columns of three. Keep exactly five dice.\nConstraints: change no other details, no extra props or words, no UI, no watermarks or logos. Wide 2:1."
+    }
+  ]
+}

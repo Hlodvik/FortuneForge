@@ -1,0 +1,22 @@
+{
+  "id": "2048",
+  "title": "2048",
+  "file": "2048-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 19532,
+  "generationPrompt": "Use case: stylized-concept\nAsset type: original premium game catalogue title card, one wide 2:1 landscape illustration.\nPrimary request: attractive professionally illustrated key art for 2048, using its actual rounded square number tiles, warm brown four-by-four board and navy surroundings.\nScene/backdrop: deep navy #101722 with a soft warm glow, a compact warm brown #8d6c3e board with exactly four rows and four columns of recessed square cells, viewed in tasteful shallow perspective as a physical illustrated game object.\nSubject: one large luminous GOLD rounded-square tile marked \"2048\" as the dominant foreground title focal point, accompanied by a compact handful of smaller real number tiles on the board. Smaller tiles marked \"2\" in cream #eee4d4, \"4\" beige #ead9b8, \"8\" orange #e79857, \"16\" burnt orange #df7145, \"32\" red-orange #d9593e, and \"1024\" deep gold #a96d20. All tiles square with softly rounded corners, subtle bevels, crisp centered serif numerals and dark brown or warm ivory ink appropriate to contrast. Every visible tile has a real power-of-two numeral, no blank decorative cubes.\nStyle/medium: sophisticated professionally illustrated 3D game key art with clean sculpted shapes, restrained gloss and warm contact shadows, premium collection finish. Not a screenshot, not a flat icon and not a UI mockup.\nComposition/framing: landscape 2:1. The gold title tile faces nearly forward for excellent reading; small board and supporting tiles create a complementary diagonal behind it. Keep ALL title and focal objects inside ONLY the central rectangle x=22%-78%, y=23%-77%, leaving generous empty navy margin around every side. The gold 2048 tile should still be large enough for the numeral to be extremely readable at 240px-wide thumbnail size.\nLighting/mood: softly radiant golden title tile, warm highlights against cool navy, focused and clever atmosphere without excessive sparkles.\nText (verbatim): \"2048\" exactly once on the large gold title tile; make these four digits the unmistakable game title. Only the specified smaller tile numerals may appear elsewhere.\nConstraints: no words, slogans, payout claims, logos, watermarks, buttons, arrows, fake scores, fake UI, money, cards, gems, characters, neon city or unsupported motifs. Do not use pastel cyan/pink puzzle blocks; preserve the existing warm cream/orange/gold number-tile identity.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-9fcc6906-031b-476c-977b-247c6963c43a.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/TwentyFortyEight/client/FortuneForge.Games.TwentyFortyEight.Client/src/twentyFortyEight.css"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact title 2048 is prominently readable on a luminous gold rounded square tile. Supporting tiles use real power-of-two values, cream/beige/orange/red/deep gold palette and serif numerals.",
+    "Warm brown four-by-four recessed board and navy surroundings reflect the live game's visual identity; board is an illustrated physical object without interface elements.",
+    "All title and main tile/board objects fit central 80% width / 70% height. No fake scores, buttons, slogans, payout copy, logos or watermarks.",
+    "19,532 bytes at quality 84; selected v1."
+  ],
+  "status": "ready-for-parent-review"
+}

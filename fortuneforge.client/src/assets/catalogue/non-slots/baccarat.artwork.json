@@ -1,0 +1,25 @@
+{
+  "id": "baccarat",
+  "title": "Baccarat",
+  "file": "baccarat-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 31102,
+  "prompt": "Use case: stylized-concept\nAsset type: original premium casino catalogue title-card illustration.\nPrimary request: one elegant finished Baccarat game title card with two opposing Punto Banco hands and a calm, refined table identity.\nScene/backdrop: rich emerald felt fading to forest green, a narrow softly lit black leather table rail with subtle antique-gold trim, a small warm wooden chip tray as a secondary detail.\nSubject: exactly four ivory playing cards in TWO distinct opposing two-card hands, clearly separated across the felt: one hand is 4 hearts plus 5 clubs, the other is 2 diamonds plus 6 spades. No five-card board or poker fan. Each card uses the modern simple deck design: ONE large flat single-ink suit emblem in the center, small correct matching rank-and-suit corner indices, no repeated central pip patterns and no court portraits. A small orderly wooden tray holding a few red, green and blue chips with white edge inlays sits subtly behind the hands.\nStyle/medium: premium professionally illustrated game key art with softly painted textures, clean shapes and controlled material depth. Emerald, warm ivory, crimson, charcoal, restrained antique gold. Quiet confident lighting, no flashy glow or photoreal money piles.\nComposition/framing: true 2:1 landscape. One large centered title in the upper-middle area, the two distinct card hands balanced below it. Entire title and both hands must occupy ONLY the central 70% width and 60% height; leave abundant quiet felt margins around all essential artwork. Every letter and all four cards comfortably inside central 80% width / 70% height. Clear title at 256x128. No title/card overlap. The cards should be large enough to see the opposing pairs, but not reach edges.\nText (verbatim): \"Baccarat\". Render exactly once in elegant substantial antique-gold serif lettering. No additional wording or hand labels.\nConstraints: no people, portraits, crowns, palace props, fake UI, buttons, score labels, betting labels, payout slogans, watermarks, currency, logos or extra titles. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-af2136ac-6ef2-4263-85c5-0f3ebd65f541.png",
+  "referencePaths": [
+    "games/shared/visuals/emerald-felt-v2.webp",
+    "games/Baccarat/client/FortuneForge.Games.Baccarat.Client/src/baccaratTable.css",
+    "games/Baccarat/client/FortuneForge.Games.Baccarat.Client/src/baccarat-banker-rack.png",
+    "games/Baccarat/client/FortuneForge.Games.Baccarat.Client/src/baccarat-black-leather-generated.png",
+    "fortuneforge.client/src/games/cards/shared/PlayingCard.tsx"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and runtime export. Exact title is correct; two clearly separated two-card hands (4 hearts/5 clubs and 2 diamonds/6 spades), correct simple single-symbol faces with matching corner indices. Natural totals 9 and 8 are plausible Baccarat hands. Restrained wooden chip tray and leather rail match current material references.",
+    "thumbnail": "Inspected at 256x128. Baccarat remains clear, opposing hands remain identifiable, with no board or poker fan.",
+    "crop": "Complete title and both full hands fit central 80% width / 70% height. The secondary chip tray and leather rail are background details outside that safe zone.",
+    "compression": "WebP quality 84; 31,102 bytes, below 120 KB ideal target."
+  },
+  "status": "ready-for-parent-review"
+}

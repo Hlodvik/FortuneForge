@@ -1,0 +1,31 @@
+{
+  "id": "mines",
+  "title": "Mines",
+  "file": "mines-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 48422,
+  "generationPrompt": "Use case: precise-object-edit\nAsset type: premium 2:1 game catalogue title card.\nEdit target: the provided Mines illustration.\nChange only composition scale: retain the same excellent slate, bright green gems, mine design, title typography, colors, lighting and visual style, but uniformly reduce the entire foreground composition (title, all gems, mine and focal opened slate tile) about 18% and center it on the canvas. Extend the quiet dark slate background to fill the surrounding area. Every title letter and every main gemstone and mine must fit entirely within x=12% to 88% and y=17% to 83% of the image. The top gemstone must have a generous dark margin above it.\nText (verbatim): \"Mines\" exactly once, clean and fully readable at thumbnail size.\nConstraints: preserve wide 2:1 ratio. No new props or words, no slogans, no logos, no watermarks, no UI. Do not redesign the art or change the existing title.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-8a7e98e6-45f3-47ec-b6d3-951d34501505.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/Mines/client/FortuneForge.Games.Mines.Client/src/assets/mines-symbols.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/Mines/evidence/desktop-active.png",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/games/Mines/client/FortuneForge.Games.Mines.Client/src/mines.css",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-0506f06b-7913-4a48-ae39-b5918220be28.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 240x120 thumbnail.",
+    "Exact title Mines is clear and correctly spelled. Dark slate, emerald facets and short-lug metal mine match current game identity; no felt or unrelated props.",
+    "Selected v2 reduces foreground scale; title, gems and mine fit inside central 80% width / 70% height.",
+    "No UI, payout copy, logos or watermarks. 48,422 bytes at WebP quality 84.",
+    "Retained mines-title-v1.webp (55,410 bytes) as the earlier framing version; v2 is the selected review candidate."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-0506f06b-7913-4a48-ae39-b5918220be28.png",
+      "generationPrompt": "Use case: stylized-concept\nAsset type: premium illustrated game catalogue title card, one single image, wide 2:1 landscape.\nPrimary request: original polished key art for the game Mines, retaining its actual dark slate and bright emerald-gem identity.\nScene/backdrop: deep blue-black slate stone with a few bevelled square slate tiles receding in shallow perspective, understated texture and dark vignette.\nSubject: one large brilliant-cut emerald-green diamond gemstone hovering just above an opened slate tile; two smaller emerald gems and one dark spherical metal mine, the mine with short cylindrical lugs, subtle copper collars and a restrained orange-red central light. Keep the gems dominant.\nStyle/medium: sophisticated professionally illustrated 3D game key art, crisp sculpted shapes, controlled material detail, premium depth, restrained lighting, not a screenshot and not clip art.\nComposition/framing: wide 2:1; balanced title and gemstone vignette; place all title lettering and main gemstone/mine within the central 80% of width and central 70% of height, with generous quiet outer margins. No cut-off title or props.\nLighting/mood: cool soft slate edge light with localized green gemstone glow, quietly suspenseful.\nColor palette: slate navy #0d1b26, blue-gray stone, vivid emerald and lime gem facets, pale warm silver lettering.\nText (verbatim): \"Mines\" exactly once, prominent large elegant bold display typography, high contrast, clean readable at 240px thumbnail width.\nConstraints: exact title; no other words, no numerals, no slogans, no payout claims, no logos, no watermarks, no buttons, no fake UI. No felt, no cards, no money piles, no treasure chests, no characters. Original attractive coherent premium collection art."
+    }
+  ]
+}

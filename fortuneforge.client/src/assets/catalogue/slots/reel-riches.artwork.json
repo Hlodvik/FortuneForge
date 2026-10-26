@@ -1,0 +1,28 @@
+{
+  "id": "reel-riches",
+  "title": "Reel Riches",
+  "file": "reel-riches-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 105422,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is Reel Riches catalogue key art. Change ONLY framing. Uniformly reduce the complete \"Reel Riches\" lettering and main leaping blue marlin/water-curl group to 85% of their current size and center them in the same true 2:1 landscape canvas. Continue the existing lake, sunrise sky and distant mountains naturally into the extra space. Preserve exact title spelling, gold/navy lettering, fish anatomy including the complete long bill and tail, blue/silver/gold palette, clear splash, cabin, pier, rowboat and subtle tackle details. Every title letter, bill end, tail and essential splash must sit inside central 80% width / 70% height, at least 15% below the top and above the bottom. Do not add or remove subjects, words, UI, slogans, logos or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: one beautiful finished Reel Riches title card preserving the current fishing-adventure identity.\nScene/backdrop: tranquil sunrise mountain lake, misty pine shores, distant timber fishing cabin and pier, a small wooden rowboat as a quiet background detail. Teal-blue water with a coral-gold dawn reflection.\nSubject: one magnificent stylized blue marlin leaping in a graceful diagonal arc from a crisp curl of water, cobalt dorsal fin, silver-blue body with warm gold highlights and a clearly recognizable long pointed bill. The fish is lively and polished rather than photorealistic. One modest red/white fishing bobber and a subtle net detail near the lower side can support the fishing theme; no person or large tackle clutter.\nStyle/medium: premium professionally painted fishing-game key art, sophisticated illustrative materials and soft atmospheric depth, clear fish silhouette and controlled sparkling water. Deep teal, navy, turquoise, silver and warm sunrise gold/coral.\nComposition/framing: TRUE wide 2:1 landscape. Large title across the upper-middle and the leaping fish sweeping below it, airy sweeping diagonal composition. The complete fish including bill and tail, main water curl and entire title must fit inside x=15%–85%, y=20%–80%, with broad quiet sky/water margins. Do not make the fish or title touch any canvas edge. Full title readable at 256x128.\nText (verbatim): \"Reel Riches\". Exactly once, two large balanced words in substantial elegant warm-gold/ivory display lettering with a deep navy shadow. One line or compact two-line layout as needed, no tiny subtitle.\nConstraints: no added words, slogans, payouts, coins, money piles, slot reels, spin buttons, fake UI, other brands, logos or watermark. No humans, sharks, mermaids or unrelated fantasy props. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-653ce992-ffe0-42a6-b7f9-21f3e55de764.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/reelRiches/catalog.ts",
+    "fortuneforge.client/src/games/slots/reelRiches/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/reelRiches/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/reel-riches/optimized/reel-riches-lake-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-2f38ebd4-c2d9-4cfd-a94a-a5636c8ca210.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Exact title and recognizable leaping blue marlin with long bill, cobalt fin, silver/blue/gold body. Sunrise mountain lake, timber cabin/pier, rowboat and modest bobber/net preserve current catalogue theme. No UI, payouts or unrelated props.",
+    "thumbnail": "Inspected at 256x128. Reel Riches remains clear in a single line; fish, bill and water arc retain a strong silhouette.",
+    "crop": "Framing-only v2 keeps title, full fish/bill/tail and essential splash inside central 80% width / 70% height. Background tackle and cabin are secondary.",
+    "compression": "WebP quality 84; 105,422 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

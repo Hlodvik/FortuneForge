@@ -1,0 +1,28 @@
+{
+  "id": "gods-of-olympus",
+  "title": "Gods of Olympus",
+  "file": "gods-of-olympus-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 100104,
+  "prompt": "Use case: precise-object-edit\nInput image 1 is Gods of Olympus catalogue artwork. Change ONLY framing of the foreground gauntlet and title group. Scale the complete golden-blue gauntlet (including its full wrist cuff and all five fingers), nearby lightning glow, and complete \"Gods of Olympus\" lettering/ornament uniformly to 75% of their current size and center their whole group in the same true 2:1 canvas. Seamlessly extend the existing marble terrace, cloud-palace, sky and clouds into the freed space. Preserve exact title wording, all five-finger glove anatomy, gold/cobalt/laurel details, title style, palette, lighting and illustration quality. Every letter and the whole gauntlet must fit within central 80% width / 70% height, at least 15% below top and above bottom. Do not add or remove objects, religious figures, other words, UI, logos, slogans or watermark. One opaque image only.",
+  "initialGenerationPrompt": "Use case: stylized-concept\nAsset type: original premium illustrated slot-game catalogue title card.\nPrimary request: one beautiful finished Gods of Olympus key-art card based on its established cloud-palace and Zeus-gauntlet theme.\nScene/backdrop: a white-marble and gold Olympian terrace above soft clouds, distant classical Greek palace, indigo-blue sky, a few restrained electric-blue lightning arcs and hints of purple drapery at the outer edges. Airy depth, not clutter.\nSubject: an ornate golden armoured gauntlet with deep cobalt-blue enamel panels and small gold laurel motifs, posed reaching forward as a magical collector artifact, lit by restrained blue lightning. Clean readable five-finger glove anatomy, no human body or face. Gauntlet is the sole main foreground subject, cloud-palace architecture stays atmospheric.\nStyle/medium: premium professionally painted fantasy game key art, polished illustrated gold/marble/enamel materials, controlled dramatic lighting and clear silhouette. Indigo, purple, warm ivory and gold with electric-blue accents; no excessive glow.\nComposition/framing: TRUE wide 2:1 landscape. Dynamic gauntlet occupies the left side of the central composition while large title balances on the right, without overlap. Keep full title and the complete gauntlet comfortably inside x=15%–85%, y=20%–80%; use broad quiet cloud/sky margins around the compact focal group. All essential lettering/subject must fit central 80% width / 70% height. Readable at 256x128.\nText (verbatim): \"Gods of Olympus\". Exactly these three words once, two substantial lines: \"Gods of\" above \"Olympus\". Elegant monumental gold/ivory serif lettering with a subtle deep-indigo shadow for excellent contrast. The word \"of\" must remain readable.\nConstraints: no added deities, other religious/cultural symbols or human portraits; use only established Greek cloud-palace, gauntlet, laurel and lightning motifs. No extra wording, slogans, payout claims, currency, reels, buttons, fake UI, logos, brands or watermark. Opaque background. One image only.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-6798fc66-b863-4f47-9bbc-baf5183c2fc3.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/godsOfOlympus/catalog.ts",
+    "fortuneforge.client/src/games/slots/godsOfOlympus/cabinetTheme.ts",
+    "fortuneforge.client/src/games/slots/godsOfOlympus/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/gods-of-olympus/optimized/olympus-terrace.png",
+    "fortuneforge.client/src/assets/slots/games/gods-of-olympus/optimized/zeus-gauntlet.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-371517cd-481f-4498-a0c3-fc3b74d31954.png"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected master and 768x384 WebP. Complete title correct; gold/cobalt five-finger gauntlet, blue lightning, laurel details and white/gold cloud-palace preserve existing theme. No added deity portraits, unrelated cultural motifs or fake interface.",
+    "thumbnail": "Inspected at 256x128. All title words including 'of' remain clear; gauntlet and lightning silhouette remain distinct against cloud architecture.",
+    "crop": "Framing-only v2 puts title and whole gauntlet inside central 80% width / 70% height; architectural columns and drapery are background framing.",
+    "compression": "WebP quality 84; 100,104 bytes, under 120 KB ideal target.",
+    "revision": "Original master retained outside src; v2 selects the crop-safety refinement. Artwork files only."
+  },
+  "status": "ready-for-parent-review"
+}

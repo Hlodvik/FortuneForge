@@ -1,0 +1,28 @@
+{
+  "id": "jungle-jackpot",
+  "title": "Jungle Jackpot",
+  "file": "jungle-jackpot-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 122304,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Jungle Jackpot\" key-art image, wide 2:1 landscape, opaque.\nScene/backdrop: lush emerald and forest-green rainforest clearing with sunlit gold haze, vines, broad glossy leaves, scarlet tropical flowers, a distant waterfall and overgrown stone-and-gold temple with small rounded gold domes/spires and a broad stairway. Preserve the existing fantasy temple identity; no Mayan/Aztec pyramid, deity, new sacred iconography or unrelated cultural motifs.\nSubject: one magnificent golden spotted jaguar with turquoise eyes, crouched alertly on a mossy stone ledge, natural feline anatomy and long curling tail. Detailed rosette coat, focused face and elegant paws. Professional painted illustration, no human explorer or extra animals.\nComposition/framing: spacious WIDE 2:1. Compact complete jaguar group on the LEFT (x15–45%, y25–79%), large two-line title on the RIGHT (x49–86%, y28–67%), quiet dark green foliage behind the words. Complete main animal and all letters strictly inside central80% width/70% height, generous margins. Jaguar should occupy about HALF the image height, never fill whole canvas. Temple secondary in hazy distance.\nStyle/medium: luxurious original fantasy game key art, lush painterly materials, restrained warm sunbeams and rim light, coherent premium collection. No crude clipart or excessive glow.\nText (verbatim): \"Jungle Jackpot\". Exactly these words once on two lines, large warm cream-gold adventure serif lettering with refined dimensional gold edges, extremely legible at 256x128.\nConstraints: no other copy, no payouts or extra slogans, no reels, spin buttons, fake interface, logo/watermark, no piles of money. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Jungle Jackpot title card.\nChange ONLY crop-safe spacing: reduce the jaguar (including complete tail and paws) AND exact two-line title \"Jungle Jackpot\" together to 80% of current sizes, preserving relative left/right arrangement and centering the group. Entire main jaguar and every title letter must fit x12–88%, y17–83%. Repaint exposed areas as matching leaves, mossy ledge and rainforest mist. Keep turquoise eyes, spotted golden coat, gold title style, temple domes/stairway, waterfalls, flowers, lighting and palette unchanged. No new subjects, extra writing, symbols or UI. Preserve wide 2:1 opaque canvas."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-c6da821f-8651-4c7e-a049-fda7e48459fa.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-cb5810a3-41ab-41b1-aed5-12fc9a18a264.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/jungleJackpot/definition.ts",
+    "fortuneforge.client/src/games/slots/jungleJackpot/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/jungle-jackpot/optimized/jungle-jackpot-temple-clearing-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/jungle-jackpot/optimized/jungle-jackpot-rainforest-jaguar-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP. Exact Jungle Jackpot title; golden rosette jaguar with turquoise eyes, lush emerald foliage, flowers, waterfalls and existing domed temple identity. No unrelated iconography, extra copy, UI or payout claims.",
+    "thumbnail256x128": "Inspected 256x128. Both title words and spotted jaguar read clearly.",
+    "crop": "Targeted edit puts complete jaguar/tail and title within central80% width/70% height. Secondary temple and foliage extend toward edges.",
+    "compression": "122,304 bytes (119.4 KiB); quality84; under120KiB and below180KB hard limit."
+  },
+  "status": "ready-for-parent-review"
+}

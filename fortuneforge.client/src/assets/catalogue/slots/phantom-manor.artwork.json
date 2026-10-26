@@ -1,0 +1,33 @@
+{
+  "id": "phantom-manor",
+  "title": "Phantom Manor",
+  "file": "phantom-manor-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 45004,
+  "prompt": "Use case: precise-object-edit\nEdit target: the provided Phantom Manor catalogue illustration.\nChange only framing: uniformly shrink the complete central foreground composition by about 32% around the canvas center, including the whole manor and highest spire, raven, title and all its ornamental flourishes, key and associated mint wisp. Extend the same atmospheric midnight/violet forest and mist naturally around it. The entire focal cluster must fit within x=16%-84%, y=18%-82%. The tallest spire needs generous sky above it.\nPreserve exact readable title \"Phantom Manor\", same typography, ivory/antique-gold materials, Gothic manor design, raven, key, violet/mint lighting and premium illustrated quality. The title should remain high contrast and legible at 256x128.\nKeep wide 2:1 image. No new subjects, words, logos, UI, payout copy or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-ea4c903b-f1f9-45cb-8091-07ffeec5c0ce.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/phantomManor/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-gates-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-moonlit-manor-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-restless-phantom-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-cabinet-emblem-v2.webp",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-162248ee-818c-4675-b0e8-36347a4eb176.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Exact full title Phantom Manor is correctly spelled and legible in ivory/antique-gold Gothic lettering.",
+    "Moonlit manor, raven, skeleton key, violet mist and mint spirit-wisp retain the existing haunted-estate identity. All focal subjects including highest spire fit central 80% width / 70% height in selected v2.",
+    "No extra slogans, payout copy, UI, spin buttons, third-party logos or watermarks. 45,004 bytes at WebP quality 84, below ideal 120 KB.",
+    "Retained phantom-manor-title-v1.webp (49,916 bytes); v2 is selected. Artwork files only, no uploads or wiring."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-162248ee-818c-4675-b0e8-36347a4eb176.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape image.\nPrimary request: professionally illustrated key art for Phantom Manor, retaining its moonlit Gothic estate, midnight raven, violet mist and spectral mint highlights.\nScene/backdrop: midnight blue/violet sky, softly glowing moon behind distant clouds, faint bare branches and mist. Keep the outer margins dark and quiet.\nSubject: a compact original Gothic manor vignette with steep roofs, tall narrow warm amber windows, wrought-iron gate hints and a midnight raven perched near the front. A subtle translucent mint spirit-wisp curls around one antique skeleton key near the manor; no human figures. Architectural and prop designs must be original rather than a copy of existing art.\nStyle/medium: polished professionally illustrated fantasy 3D key art with delicate carved-stone detail, subtle antique gold, controlled depth and soft atmospheric light; premium, mysterious and restrained. Not flat clip art, a screenshot or a photorealistic horror still.\nComposition/framing: wide 2:1. A LARGE two-line title balances the compact manor-and-raven vignette. Keep all title letters and every main subject, including roofs, raven and key, inside a compact central rectangle x=23%-77%, y=25%-75%; intentionally leave broad dark atmospheric background beyond this rectangle on all sides. Title and manor must remain recognizable and clear at 256x128 thumbnail.\nColor palette: midnight #0d1028, deep violet #151329, violet #5b4a8d, spectral mint #73d0ba, antique gold #c8b47a, lavender glow #a58cff, ivory silver lettering.\nLighting/mood: cool moonlight, restrained violet/mint mist, warm window pinlights, elegant haunted mystery.\nText (verbatim): \"Phantom Manor\" exactly once, Phantom on first line and Manor on second, large clear bold Gothic-inspired serif typography with ivory faces and fine antique-gold edge. Keep letter forms readable, not distorted or overdecorated.\nConstraints: no other words, slogans, payout claims, reels, buttons, fake UI, brand logos, watermarks, money, blood, gore, additional religious or cultural motifs. Single original finished game catalogue image."
+    }
+  ]
+}

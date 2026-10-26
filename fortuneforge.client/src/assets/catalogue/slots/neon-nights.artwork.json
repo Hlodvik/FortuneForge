@@ -1,0 +1,28 @@
+{
+  "id": "neon-nights",
+  "title": "Neon Nights",
+  "file": "neon-nights-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 88164,
+  "prompt": "Use case: stylized-concept.\nAsset type: premium illustrated slot-game catalogue title card.\nPrimary request: Create ONE original polished \"Neon Nights\" key-art image, WIDE 2:1 landscape, opaque.\nScene/backdrop: retro-futurist waterfront boulevard at midnight, Art Deco facades outlined in electric cyan and magenta neon, distant violet skyline, silhouetted palms, rain-wet pavement reflecting pink/cyan light. Deep navy-purple shadows with restrained amber accents. Background architecture has no lettered shop signs.\nSubject: one ORIGINAL unbranded low wedge-shaped midnight-blue sports car with polished black glass, neon magenta/cyan reflections and subtle cyan underglow, three-quarter front view, wheels and full body visible. Compact, at most 35% image width, situated in lower-middle-right, fully inside x55–87%, y48–78%. No people, no license plate writing, no brand emblem.\nComposition/framing: spacious wide2:1, large two-line title in quiet navy sky at x15–54%, y26–62%, balanced with car. All title and car entirely within central 80% width /70% height; generous scene margins. Reflected neon adds depth without obscuring title. No big oversized close-up.\nStyle/medium: sophisticated original illustrated game key art, painterly polished surfaces, crisp silhouette and carefully controlled neon glow. Premium cohesive catalogue feel, not a screenshot or crude clipart.\nText (verbatim): \"Neon Nights\". Exactly these two words once, large elegant retro Art Deco lettering with bright pale-pink letter faces, magenta outer glow and thin cyan dimensional edges, readable and uncluttered at 256x128.\nConstraints: no extra text or numerals, no slogans/payout promises, no reels, fake interface, buttons, logos or watermark, no money piles, no unrelated cultural/religious imagery. One image only.",
+  "editPrompts": [
+    "Use case: precise-object-edit. Image 1 is the edit target, Neon Nights title card.\nChange ONLY the sports car: remove the tiny badge/emblem at the center of its hood and any wheel-center badges so all panels and hubs are plain and unbranded. Scale the whole car to 90% of its current size, preserving angle and position center, so the car fits fully inside x45–88% width and y55–82% height. Repaint exposed pavement/reflections consistently. Preserve exact neon \"Neon Nights\" title and its size/position, blue/magenta/cyan palette, boulevard, palms, skyline, lighting, opaque wide 2:1 canvas. No new lettering or logos."
+  ],
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-653c5f68-842f-4a32-987e-6e28049a4528.png",
+  "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-c66ed0be-f5cf-491c-a811-4f4b468d78c6.png",
+  "referencePaths": [
+    "fortuneforge.client/src/games/slots/neonNights/definition.ts",
+    "fortuneforge.client/src/games/slots/neonNights/symbols.ts",
+    "fortuneforge.client/src/assets/slots/games/neon-nights/optimized/neon-nights-boulevard-v2.webp",
+    "fortuneforge.client/src/assets/slots/games/neon-nights/optimized/neon-nights-sports-car-v2.webp"
+  ],
+  "visualCheck": {
+    "fullSize": "Inspected final master and 768x384 WebP. Exact Neon Nights lettering, pink/cyan neon palette, Art Deco waterfront/palms and unbranded low wedge sports car preserve identity. Removed generated hood/hub emblem; no extra signage, UI or claims.",
+    "thumbnail256x128": "Inspected 256x128. Both title words clear, car silhouette distinct.",
+    "crop": "Title and full car fit central 80% width /70% height after car reduction; reflections and city continue to edges.",
+    "compression": "88,164 bytes; quality 84; below ideal 120 KB."
+  },
+  "status": "ready-for-parent-review"
+}

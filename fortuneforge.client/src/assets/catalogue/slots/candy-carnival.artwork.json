@@ -1,0 +1,33 @@
+{
+  "id": "candy-carnival",
+  "title": "Candy Carnival",
+  "file": "candy-carnival-title-v2.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 69400,
+  "prompt": "Use case: precise-object-edit\nEdit target: the supplied Candy Carnival catalogue illustration.\nChange only framing. Uniformly shrink the ENTIRE foreground composition by 27% around the canvas center: both title lines and their ornamental base, the complete carousel including its top candy ball, both horses, complete lollipop and cupcake and small surrounding candies. Extend the existing soft-focus plum/rose carnival background around the composition.\nEvery title letter and ALL main subjects must fit entirely inside x=14%-86% and y=18%-82%, including the carousel's top candy and the lollipop's right edge. Leave broad quiet margins. Keep the title prominent and clearly readable at 256x128 thumbnail.\nPreserve exact text \"Candy Carnival\", same spelling, typography, cream/pink/turquoise/gold colors, lighting, professional illustrated finish and all recognizable props. Do not add anything. Wide 2:1. No new text, brands, UI, payout copy or watermarks.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-ca3df2c9-84d0-4060-94c9-a14b47c7a88c.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/candyCarnival/definition.ts",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/candy-carnival-fair-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/candy-carnival-cabinet-emblem-v2.webp",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/rainbow-lollipop.png",
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/golden-candy-carousel.png",
+    "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-b522114b-cde5-463c-b851-fe89e0af12e0.png"
+  ],
+  "visualCheck": [
+    "Inspected generated master, final 768x384 WebP and 256x128 thumbnail.",
+    "Exact full title Candy Carnival is readable and correctly spelled. Pink/turquoise/gold carousel with ornamental horses, rainbow lollipop, cupcake, plum/rose fairground retain current identity.",
+    "Selected v2 shrinks the foreground so complete title, carousel topper and sweets fit inside central 80% width / 70% height.",
+    "No slogans, payout claims, UI, spin buttons, third-party marks or watermarks. Compressed at quality 84 to 69,400 bytes, below the ideal 120 KB.",
+    "Retained candy-carnival-title-v1.webp (73,358 bytes); v2 is selected. Artwork files only; no wiring or uploads."
+  ],
+  "status": "ready-for-parent-review",
+  "generationHistory": [
+    {
+      "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-b522114b-cde5-463c-b851-fe89e0af12e0.png",
+      "prompt": "Use case: stylized-concept\nAsset type: original premium slot-game catalogue title card, one wide 2:1 landscape image.\nPrimary request: beautiful professionally illustrated key art for Candy Carnival, retaining its striped candy fairground, golden candy carousel and rainbow sweets.\nScene/backdrop: a softly focused magical candy fair at dusk, deep plum and rose sky, subtle pink-and-turquoise striped big-top shapes and delicate warm carnival lights. Keep the background low contrast.\nSubject: a compact elegant pink/turquoise/gold candy carousel with two small ornamental carousel horses, a glossy rainbow spiral lollipop and one frosted cupcake, arranged as polished original illustrated key art. These are sculpted candy-fair props, no people. Do not reuse or copy an existing image.\nStyle/medium: premium professionally illustrated 3D fantasy game key art, refined sugar-glass surfaces, warm gold trim, crisp silhouettes, restrained sparkle and controlled depth. Rich, not cluttered; no flat clip art, screenshot or photorealistic product pile.\nComposition/framing: wide 2:1. Balance a LARGE two-line title with the compact carousel-and-sweets vignette. IMPORTANT: keep every title letter and all complete focal subjects inside ONLY x=20%-80%, y=22%-78% of the canvas, with broad quiet dark-plum margins. Title must dominate at 256x128 thumbnail size and must not be hidden by props.\nColor palette: rich plum #351047, bright pink #ff5eaa, turquoise #60e2e8, warm golden yellow #ffe26d, soft cream lettering; preserve each color's separation.\nLighting/mood: warm fairground glow, soft candy-pink highlights, polished whimsical excitement, restrained lighting.\nText (verbatim): \"Candy Carnival\" exactly once, Candy on first line and Carnival on second, large clear bold playful display lettering with cream faces, pink shadow and subtle gold edge. All letters clean, correct and readable.\nConstraints: no other words, slogans, payout claims, reel symbols, fake UI, spin buttons, numbers, logos, watermarks, brand names or unrelated cultural/religious motifs. No cash or coins. Original single finished catalogue image, not a collage."
+    }
+  ]
+}

@@ -5,7 +5,9 @@ import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 export function AuthenticatedBlackjackRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/cards/blackjack')
 
-  if (isLoading || (account === null && error === null)) return null
+  if (isLoading || (account === null && error === null)) {
+    return <AuthenticatedRouteState error={null} loadingLabel="Opening the live Blackjack table…" errorTitle="The Blackjack table could not be opened." onRetry={reload} />
+  }
   if (account === null) {
     return <AuthenticatedRouteState error={error} loadingLabel="" errorTitle="The Blackjack table could not be opened." onRetry={reload} />
   }

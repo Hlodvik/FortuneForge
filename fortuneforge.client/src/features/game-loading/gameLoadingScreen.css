@@ -1,0 +1,125 @@
+.ff-game-loading {
+  box-sizing: border-box;
+  display: grid;
+  flex: 1;
+  place-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 100svh;
+  padding: clamp(1rem, 4vw, 3rem);
+  background:
+    radial-gradient(ellipse at 50% 35%, color-mix(in srgb, var(--game-loading-accent) 10%, transparent), transparent 68%),
+    var(--game-loading-background);
+  color: #f5eee1;
+  font-family: inherit;
+  color-scheme: dark;
+  isolation: isolate;
+}
+
+.in-game-shell__body .ff-game-loading {
+  min-block-size: 100%;
+}
+
+.ff-game-loading__content {
+  display: grid;
+  justify-items: center;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  inline-size: min(100%, 64rem, max(12rem, calc((100svh - 14rem) * 2)));
+  min-inline-size: 0;
+}
+
+.ff-game-loading__artwork {
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  inline-size: 100%;
+  min-inline-size: 0;
+  aspect-ratio: 2 / 1;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--game-loading-accent) 22%, transparent);
+  border-radius: clamp(.8rem, 2vw, 1.4rem);
+  background: #08090d;
+  box-shadow: 0 1.5rem 4rem #0005;
+}
+
+.ff-game-loading__image {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  min-inline-size: 0;
+  object-fit: contain;
+}
+
+.ff-game-loading__fallback-title {
+  max-inline-size: 26ch;
+  margin: 0;
+  padding: 1.25rem;
+  color: #f5eee1;
+  font-family: inherit;
+  font-size: clamp(1.15rem, 3.5vw, 2.5rem);
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.ff-game-loading__status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  max-inline-size: 100%;
+  margin: 0;
+  color: #e3ded5;
+  font-size: clamp(.8rem, 1.5vw, .95rem);
+  font-weight: 450;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.ff-game-loading__status > :last-child {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.ff-game-loading__indicator {
+  box-sizing: border-box;
+  flex: 0 0 1.1rem;
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  border: 2px solid color-mix(in srgb, var(--game-loading-accent) 22%, transparent);
+  border-top-color: var(--game-loading-accent);
+  border-radius: 50%;
+  animation: ff-game-loading-turn 1.1s linear infinite;
+}
+
+.ff-game-loading__sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@keyframes ff-game-loading-turn {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .ff-game-loading {
+    padding: .8rem 1rem;
+  }
+
+  .ff-game-loading__content {
+    gap: .75rem;
+    inline-size: min(100%, calc((100svh - 10rem) * 2));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-game-loading__indicator {
+    animation: none;
+  }
+}

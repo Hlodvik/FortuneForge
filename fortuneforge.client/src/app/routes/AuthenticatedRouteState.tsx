@@ -1,3 +1,6 @@
+import { GameLoadingScreen } from '../../features/game-loading/GameLoadingScreen'
+import { useGameLoadingEntry } from '../../features/game-loading/gameLoadingContext'
+
 export function AuthenticatedRouteState({
   error,
   loadingLabel,
@@ -9,6 +12,9 @@ export function AuthenticatedRouteState({
   errorTitle: string
   onRetry: () => void
 }) {
+  const entry = useGameLoadingEntry()
+  if (error === null && entry) return <GameLoadingScreen entry={entry} />
+
   return (
     <div className="player-page">
       <main className="player-main">

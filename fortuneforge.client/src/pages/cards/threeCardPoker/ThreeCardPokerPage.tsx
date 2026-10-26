@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
+import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   ThreeCardPokerRequestError, cancelThreeCardPokerQueue, getThreeCardPokerSnapshot,
@@ -149,7 +151,7 @@ type ContentProps = Readonly<{
 }>
 export function ThreeCardPokerContent(props: ContentProps) {
   const { availability } = props
-  if (availability.kind === 'loading') return <main className="blackjack-main blackjack-state" role="status">Opening Three Card Poker…</main>
+  if (availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/three-card-poker')} />
   if (availability.kind !== 'ready') return <main className="blackjack-main blackjack-state" role={availability.kind === 'error' ? 'alert' : 'status'}><h1>{availability.kind === 'error' ? 'The table is offline.' : 'Three Card Poker is unavailable.'}</h1><p>{availability.message}</p><button type="button" onClick={props.onRefresh}>Try again</button></main>
   const { session, status } = availability
   if (session.kind === 'idle') {

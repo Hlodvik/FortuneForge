@@ -9,7 +9,9 @@ describe('Casino War route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./CasinoWarRoute.tsx')
 
-    expect(renderRoute('/games/casino-war')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/games/casino-war')
+    expect(pending).toContain('data-game-loading="casino-war"')
+    expect(pending).toContain('Loading Casino War…')
     expect(routesSource).toContain("import('./routes/CasinoWarRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/casino-war')")
     expect(routeSource).toContain("new HttpCasinoWarGateway('/api/games/casino-war', fetchWithAccountSession)")

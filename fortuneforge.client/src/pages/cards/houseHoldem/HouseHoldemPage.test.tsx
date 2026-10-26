@@ -22,6 +22,33 @@ function render(current: HouseHoldemRound | null, props: Partial<Parameters<type
 }
 
 describe('House Hold’em table', () => {
+  it('shows its title artwork only while the initial table snapshot is pending', () => {
+    const pending = render(null, { loadState: { kind: 'loading' } })
+    expect(pending).toContain('data-game-loading="house-holdem"')
+    expect(pending).toContain('Loading House Hold’em…')
+    expect(pending).toContain('role="status"')
+    expect(pending).not.toMatch(/<button|role="alert"|ff-playing-card/)
+    expect(render(null)).not.toContain('data-game-loading')
+  })
+
+  it('preserves the offline error and retry control instead of showing loading artwork', () => {
+    const markup = render(null, { loadState: { kind: 'error', message: 'The table could not be reached. No new wager was accepted.' } })
+    expect(markup).toContain('role="alert"')
+    expect(markup).toContain('<h1>The table is offline.</h1>')
+    expect(markup).toContain('The table could not be reached. No new wager was accepted.')
+    expect(markup).toContain('>Try again</button>')
+    expect(markup).not.toContain('data-game-loading')
+  })
+
+  it('keeps a disabled table unavailable with its existing refresh control', () => {
+    const markup = render(null, { loadState: { kind: 'disabled', message: 'The table is unavailable.' } })
+    expect(markup).toContain('role="status"')
+    expect(markup).toContain('<h1>The table is unavailable.</h1>')
+    expect(markup).toContain('<p>The table is unavailable.</p>')
+    expect(markup).toContain('>Try again</button>')
+    expect(markup).not.toMatch(/data-game-loading|role="alert"|aria-label="Deal"/)
+  })
+
   it('keeps chip betting on the felt and does not introduce a multiplayer queue', () => {
     const markup = render(null)
     expect(markup).toContain('Place chip on Ante')

@@ -9,7 +9,9 @@ describe('Video Poker route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./VideoPokerRoute.tsx')
 
-    expect(renderRoute('/games/video-poker')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/games/video-poker')
+    expect(pending).toContain('data-game-loading="video-poker"')
+    expect(pending).toContain('Loading Video Poker…')
     expect(routesSource).toContain("import('./routes/VideoPokerRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/video-poker')")
     expect(routeSource).toContain("new HttpVideoPokerGateway('/api/games/video-poker', fetchWithAccountSession)")

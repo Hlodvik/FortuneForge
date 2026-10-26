@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
+import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   actHouseHoldemRound, advanceHouseHoldemRound, affordableHouseHoldemAction, getHouseHoldemRound, getHouseHoldemStatus,
@@ -268,7 +270,7 @@ type ContentProps = Readonly<{
 
 export function HouseHoldemContent(props: ContentProps) {
   const { loadState, round } = props
-  if (loadState.kind === 'loading') return <main className="blackjack-main blackjack-state" role="status">Opening table…</main>
+  if (loadState.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/house-holdem')} />
   if (loadState.kind !== 'ready') return <main className="blackjack-main blackjack-state" role={loadState.kind === 'error' ? 'alert' : 'status'}><h1>{loadState.kind === 'error' ? 'The table is offline.' : 'The table is unavailable.'}</h1><p>{loadState.message}</p><button type="button" onClick={props.onRefresh}>Try again</button></main>
   const status = loadState.status
   const waitingForDeal = props.pending?.fingerprint.startsWith('deal:') ?? false

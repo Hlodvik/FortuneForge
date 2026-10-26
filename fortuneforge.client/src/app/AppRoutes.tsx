@@ -1,4 +1,7 @@
 import { Component, lazy, Suspense, type ReactNode } from 'react'
+import { GameLoadingScreen } from '../features/game-loading/GameLoadingScreen'
+import { GameLoadingRouteProvider } from '../features/game-loading/GameLoadingRouteContext'
+import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingRegistry'
 import type { SlotRouteDefinition } from '../games/slots'
 
 const LandingPage = lazy(() => import('../pages/landing/LandingPage').then((module) => ({ default: module.LandingPage })))
@@ -57,6 +60,7 @@ export function AppRoutes({
   slotRoute: SlotRouteDefinition | null
   onSpinStateChange: (isSpinning: boolean) => void
 }) {
+  const loadingEntry = resolveGameLoadingEntry(pathname)
   const invoiceMatch = pathname.match(/^\/home\/invoices\/([A-Za-z0-9]+)$/)
   const adminInvoiceMatch = pathname.match(/^\/admin\/invoices\/([A-Za-z0-9]+)$/)
   let route: ReactNode
@@ -112,9 +116,11 @@ export function AppRoutes({
   else route = <NotFoundPage />
 
   return (
-    <RouteErrorBoundary key={pathname}>
-      <Suspense fallback={<RouteLoadingState />}>{route}</Suspense>
-    </RouteErrorBoundary>
+    <GameLoadingRouteProvider entry={loadingEntry}>
+      <RouteErrorBoundary key={pathname}>
+        <Suspense fallback={loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}>{route}</Suspense>
+      </RouteErrorBoundary>
+    </GameLoadingRouteProvider>
   )
 }
 

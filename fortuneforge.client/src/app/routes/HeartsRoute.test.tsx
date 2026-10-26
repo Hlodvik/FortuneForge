@@ -9,7 +9,9 @@ describe('Hearts route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./HeartsRoute.tsx')
 
-    expect(renderRoute('/cards/hearts')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/cards/hearts')
+    expect(pending).toContain('data-game-loading="hearts"')
+    expect(pending).toContain('Loading Hearts…')
     expect(routesSource).toContain("import('./routes/HeartsRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/cards/hearts')")
     expect(routeSource).toContain("new HttpHeartsGateway('/api/games/hearts', fetchWithAccountSession)")

@@ -6,6 +6,33 @@ import { validThreeCardPokerWager } from '../../../games/cards/threeCardPoker/th
 import { ThreeCardPokerContent, ThreeCardPokerHowToPlay } from './ThreeCardPokerPage'
 
 describe('Three Card Poker table', () => {
+  it('shows its title artwork only while the initial table snapshot is pending', () => {
+    const pending = render(session, { availability: { kind: 'loading' } })
+    expect(pending).toContain('data-game-loading="three-card-poker"')
+    expect(pending).toContain('Loading Three Card Poker…')
+    expect(pending).toContain('role="status"')
+    expect(pending).not.toMatch(/<button|role="alert"|ff-playing-card/)
+    expect(render(session)).not.toContain('data-game-loading')
+  })
+
+  it('preserves the offline error and retry control instead of showing loading artwork', () => {
+    const markup = render(session, { availability: { kind: 'error', message: 'The Three Card Poker table could not be reached. No wager was accepted.' } })
+    expect(markup).toContain('role="alert"')
+    expect(markup).toContain('<h1>The table is offline.</h1>')
+    expect(markup).toContain('The Three Card Poker table could not be reached. No wager was accepted.')
+    expect(markup).toContain('>Try again</button>')
+    expect(markup).not.toContain('data-game-loading')
+  })
+
+  it('keeps a disabled table unavailable with its existing refresh control', () => {
+    const markup = render(session, { availability: { kind: 'disabled', message: 'The Three Card Poker table is currently unavailable.' } })
+    expect(markup).toContain('role="status"')
+    expect(markup).toContain('<h1>Three Card Poker is unavailable.</h1>')
+    expect(markup).toContain('The Three Card Poker table is currently unavailable.')
+    expect(markup).toContain('>Try again</button>')
+    expect(markup).not.toMatch(/data-game-loading|role="alert"|aria-label="Deal"/)
+  })
+
   it('starts a private player-versus-dealer table without a multiplayer lobby', () => {
     const idle = render({ contractVersion: 'cards.three-card-poker.table.v1', kind: 'idle', version: 0 })
     expect(idle).toContain('Three Card Poker')

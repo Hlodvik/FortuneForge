@@ -9,7 +9,9 @@ describe('Keno route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./KenoRoute.tsx')
 
-    expect(renderRoute('/games/keno')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/games/keno')
+    expect(pending).toContain('data-game-loading="keno"')
+    expect(pending).toContain('Loading Keno…')
     expect(routesSource).toContain("import('./routes/KenoRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/keno')")
     expect(routeSource).toContain("new HttpKenoGateway('/api/games/keno', fetchWithAccountSession)")

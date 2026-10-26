@@ -9,7 +9,9 @@ describe('Baccarat route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./BaccaratRoute.tsx')
 
-    expect(renderRoute('/games/baccarat')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/games/baccarat')
+    expect(pending).toContain('data-game-loading="baccarat"')
+    expect(pending).toContain('Loading Baccarat…')
     expect(routesSource).toContain("import('./routes/BaccaratRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/baccarat')")
     expect(routeSource).toContain("new HttpBaccaratGateway('/api/games/baccarat', fetchWithAccountSession)")

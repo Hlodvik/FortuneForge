@@ -5,6 +5,34 @@ import type { BlackjackTableStatus } from '../../../games/cards/blackjack/blackj
 import { BlackjackHowToPlay, BlackjackTableContent } from './BlackjackTablePage'
 
 describe('Blackjack table composition', () => {
+  it('shows its title artwork only while the initial table snapshot is pending', () => {
+    const pending = render({ kind: 'loading' })
+    expect(pending).toContain('data-game-loading="blackjack"')
+    expect(pending).toContain('Loading Fortune Blackjack…')
+    expect(pending).toContain('role="status"')
+    expect(pending).not.toMatch(/<button|role="alert"|ff-playing-card/)
+    const ready = render({ kind: 'ready', status, session: { contractVersion: 'cards.blackjack.table.v2', kind: 'idle', version: 0 } })
+    expect(ready).not.toContain('data-game-loading')
+    expect(ready).toContain('Join live table')
+  })
+
+  it('preserves the offline error and retry control instead of showing loading artwork', () => {
+    const markup = render({ kind: 'error', message: 'The Blackjack table could not be reached. No wager was accepted.' })
+    expect(markup).toContain('role="alert"')
+    expect(markup).toContain('<h1>The table is offline.</h1>')
+    expect(markup).toContain('The Blackjack table could not be reached. No wager was accepted.')
+    expect(markup).toContain('>Try again</button>')
+    expect(markup).not.toContain('data-game-loading')
+  })
+
+  it('keeps a disabled table unavailable without a loader or play controls', () => {
+    const markup = render({ kind: 'disabled', message: 'The table is disabled.' })
+    expect(markup).toContain('role="status"')
+    expect(markup).toContain('<h1>Blackjack table is coming soon.</h1>')
+    expect(markup).toContain('The table is disabled.')
+    expect(markup).not.toMatch(/data-game-loading|<button|role="alert"/)
+  })
+
   it('renders a clean live-table lobby', () => {
     const markup = render({
       kind: 'ready',

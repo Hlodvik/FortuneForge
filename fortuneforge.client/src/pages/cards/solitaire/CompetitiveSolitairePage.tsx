@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
+import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import {
   cancelSolitaireQueue,
   claimSolitaireResult,
@@ -817,7 +819,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
 export function SolitaireContent(props: SolitaireContentProps) {
   if (props.freeGame !== null) return <FreePanel {...props} game={props.freeGame} />
   const { availability } = props
-  if (availability.kind === 'loading') return <main className="solitaire-state" role="status">Checking competitive Solitaire…</main>
+  if (availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/solitaire')} />
   if (availability.kind === 'disabled') {
     return (
       <main className="solitaire-state solitaire-state--disabled" role="status">

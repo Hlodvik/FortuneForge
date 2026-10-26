@@ -98,6 +98,9 @@ describe('account home', () => {
     expect(markup).toContain('Find your next favourite')
     expect(markup).not.toContain('Recently played')
     expect(markup).not.toContain('Last played')
+    expect(markup).not.toContain('Pick up where you left off, or find something new.')
+    expect(markup).not.toContain('Something new')
+    expect(markup).not.toContain('home-lobby__discover')
   })
 
   it('shows the real balance only in the body and keeps account/funding/history actions', () => {
@@ -125,7 +128,7 @@ describe('account home', () => {
     const spotlight = markup.slice(markup.indexOf('home-lobby__spotlights'), markup.indexOf('home-lobby__games'))
     expect(spotlight).toContain(slot.shortTitle)
     expect(spotlight).toContain('Last played')
-    const recentRow = markup.slice(markup.indexOf('home-lobby__game-grid'), markup.indexOf('home-lobby__discover'))
+    const recentRow = markup.slice(markup.indexOf('home-lobby__game-grid'))
     expect(recentRow.indexOf(slot.shortTitle)).toBeLessThan(recentRow.indexOf('mines'))
     expect(recentRow.match(/href="\/games\/mines"/g)).toHaveLength(1)
     expect(recentRow.match(/home-lobby__game-card/g)).toHaveLength(3)

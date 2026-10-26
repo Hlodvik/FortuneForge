@@ -2,6 +2,8 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, ty
 import { HoldemActionBar, HoldemLobby, HoldemQueue, HoldemTableSurface } from '@fortuneforge/games-texas-holdem'
 import '@fortuneforge/games-texas-holdem/styles.css'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
+import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import { getCurrentAccount, type AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
@@ -177,7 +179,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   }, [pending, refresh])
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
-  if (availability.kind === 'loading') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Opening the table…" body="Connecting to the dealer." /></div></InGameShell>
+  if (availability.kind === 'loading') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><GameLoadingScreen entry={resolveGameLoadingEntry('/cards/texas-holdem')} /></div></InGameShell>
   if (availability.kind === 'disabled') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div></InGameShell>
   if (availability.kind === 'error') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div></InGameShell>
 

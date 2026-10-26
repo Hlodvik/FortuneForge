@@ -91,10 +91,6 @@ export function HomePage() {
   const filteredGames = visibleGames.filter(game => (category === 'All games' || game.category === category)
     && `${game.title} ${game.category}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
   const rowGames = browsing ? filteredGames : recentGames.length ? recentGames.slice(0, 4) : visibleGames.slice(0, 4)
-  const cosmic = slotGames.find(game => /cosmic/i.test(game.title))
-  const discoveries = [nonSlotGames.find(game => game.href === '/games/mines'), cosmic,
-    ...visibleGames].filter((game): game is LobbyGame => !!game && visibility.isVisible(game.href))
-    .filter((game, index, games) => games.findIndex(entry => entry.href === game.href) === index).slice(0, 2)
   const openHelp = () => helpDialog.current?.showModal()
 
   return (
@@ -121,7 +117,7 @@ export function HomePage() {
           <section className="home-lobby__dashboard" aria-label={`${account.playerName}'s game dashboard`}>
             <section className="home-lobby__welcome">
               <img className="home-lobby__hero-art" src={heroArtwork} alt="" width="1600" height="640" decoding="async" fetchPriority="high" />
-              <div className="home-lobby__greeting"><h1>Welcome back<span className="home-lobby__sr-only">, {account.playerName}</span>.</h1><p>Pick up where you left off, or find something new.</p></div>
+              <div className="home-lobby__greeting"><h1>Welcome back<span className="home-lobby__sr-only">, {account.playerName}</span>.</h1></div>
               <section className="home-lobby__balance" aria-label="Your balance"><div><span>Your balance</span><strong>R{account.balances.slotsCredits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></div><a className="home-lobby__gold-button" href="/home/rand">Add funds</a><a className="home-lobby__history-link" href="/home/history">View history <span aria-hidden="true">→</span></a></section>
             </section>
 
@@ -141,7 +137,6 @@ export function HomePage() {
                 : <p className="home-lobby__notice" role="status">{visibility.loading ? 'Checking the catalogue…' : browsing ? 'No games match. Try another name or category.' : 'Games will appear here when they are available.'}</p>}
             </section>
 
-            {!browsing && discoveries.length > 0 && <section className="home-lobby__discover" aria-labelledby="home-lobby-discover-title"><div className="home-lobby__section-heading"><div><h2 id="home-lobby-discover-title">Something new</h2><p>Fresh picks, ready when you are.</p></div></div><div className="home-lobby__discover-grid">{discoveries.map(game => <a className="home-lobby__discovery" href={game.href} key={game.href}><LobbyArtwork game={game} /><div><h3>{game.title}</h3><p>{game.summary}</p></div><span className="home-lobby__round-arrow" aria-hidden="true">→</span></a>)}</div></section>}
           </section>
         )}
       </main>

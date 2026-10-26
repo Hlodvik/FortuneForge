@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
+import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import {
   BlackjackTableRequestError,
@@ -264,7 +266,7 @@ type ContentProps = Readonly<{
 }>
 
 export function BlackjackTableContent(props: ContentProps) {
-  if (props.availability.kind === 'loading') return <main className="blackjack-main blackjack-state" role="status">Opening the live Blackjack table…</main>
+  if (props.availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/blackjack')} />
   if (props.availability.kind === 'disabled') return <main className="blackjack-main blackjack-state" role="status"><h1>Blackjack table is coming soon.</h1><p>{props.availability.message}</p></main>
   if (props.availability.kind === 'error') return <main className="blackjack-main blackjack-state" role="alert"><h1>The table is offline.</h1><p>{props.availability.message}</p><button type="button" onClick={props.onRefresh}>Try again</button></main>
 

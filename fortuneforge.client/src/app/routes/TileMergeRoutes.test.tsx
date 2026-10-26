@@ -34,6 +34,7 @@ describe('tile merge routes', () => {
       onSpinStateChange: () => undefined,
     }))
 
-    expect(markup).toContain('Opening Fortune Forge…')
+    expect(markup).toContain('data-game-loading="2048"')
+    expect(markup).toContain('Loading 2048…')
   })
 })

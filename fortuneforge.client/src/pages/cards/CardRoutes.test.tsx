@@ -10,18 +10,19 @@ import { CardGameLibraryPage } from './CardGameLibraryPage'
 describe('card game route integration', () => {
   beforeEach(useVerifiedTestCatalogue)
   it('keeps the Blackjack demo as a lazy deep link', () => {
-    expect(renderRoute('/demo/cards/blackjack')).toContain('Opening Fortune Forge…')
+    expectGameLoading('/demo/cards/blackjack', 'blackjack', 'Fortune Blackjack')
   })
 
   it('keeps Hold’em lazy in demo and authenticated rooms', () => {
-    expect(renderRoute('/demo/cards/texas-holdem')).toContain('Opening Fortune Forge…')
-    expect(renderRoute('/cards/texas-holdem')).toContain('Opening Fortune Forge…')
+    expectGameLoading('/demo/cards/texas-holdem', 'texas-holdem', 'Texas Hold’em')
+    expectGameLoading('/cards/texas-holdem', 'texas-holdem', 'Texas Hold’em')
   })
 
   it('lazy-loads gated Blackjack and competitive Solitaire wrappers', () => {
-    expect(renderRoute('/cards/blackjack')).toContain('Opening Fortune Forge…')
-    expect(renderRoute('/cards/solitaire')).toContain('Opening Fortune Forge…')
-    expect(renderRoute('/cards/three-card-poker')).toContain('Opening Fortune Forge…')
+    expectGameLoading('/cards/blackjack', 'blackjack', 'Fortune Blackjack')
+    expectGameLoading('/cards/solitaire', 'solitaire', 'Competitive Solitaire')
+    expectGameLoading('/cards/three-card-poker', 'three-card-poker', 'Three Card Poker')
+    expectGameLoading('/cards/house-holdem', 'house-holdem', 'House Hold’em')
   })
 
   it('isolates authenticated Blackjack from the internal single-hand demo client', () => {
@@ -128,6 +129,13 @@ function renderRoute(pathname: string): string {
     slotRoute: null,
     onSpinStateChange: () => undefined,
   }))
+}
+
+function expectGameLoading(pathname: string, id: string, title: string) {
+  const markup = renderRoute(pathname)
+  expect(markup).toContain(`data-game-loading="${id}"`)
+  expect(markup).toContain(`Loading ${title}…`)
+  expect(markup).toContain('role="status"')
 }
 
 function source(relativePath: string): string {

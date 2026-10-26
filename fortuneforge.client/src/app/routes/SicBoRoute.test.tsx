@@ -9,7 +9,9 @@ describe('Sic Bo route integration', () => {
     const routesSource = source('../AppRoutes.tsx')
     const routeSource = source('./SicBoRoute.tsx')
 
-    expect(renderRoute('/games/sic-bo')).toContain('Opening Fortune Forge…')
+    const pending = renderRoute('/games/sic-bo')
+    expect(pending).toContain('data-game-loading="sic-bo"')
+    expect(pending).toContain('Loading Sic Bo…')
     expect(routesSource).toContain("import('./routes/SicBoRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/sic-bo')")
     expect(routeSource).toContain("new HttpSicBoGateway('/api/games/sic-bo', fetchWithAccountSession)")

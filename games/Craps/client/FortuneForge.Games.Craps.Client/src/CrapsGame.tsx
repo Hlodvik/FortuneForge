@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import type { CrapsExtraBetRequest, CrapsGateway, CrapsRound } from './contracts'
 import { DiceThrow } from './DiceThrow'
+import { CrapsBetControls } from './CrapsBetControls'
 import { disposeCrapsAudio, getCrapsMuted, playCrapsClick, playCrapsResult, playCrapsRoll, setCrapsMuted } from './crapsAudio'
-import defaultTableArtwork from './assets/craps-table-backdrop.jpg'
 import chip025 from './assets/chips/chip-025.png'
 import chip050 from './assets/chips/chip-050.png'
 import chip1 from './assets/chips/chip-1.png'
@@ -17,6 +17,7 @@ import { useCrapsTable } from './useCrapsTable'
 import './craps.css'
 import './crapsEnhancements.css'
 import './crapsViewport.css'
+import './crapsCasino.css'
 
 export type CrapsGameProps = Readonly<{
   gateway: CrapsGateway; playerId?: string; showTitle?: boolean; tableArtworkUrl?: string
@@ -29,7 +30,7 @@ const chipPictures: Record<number, string> = { .25: chip025, .5: chip050, 1: chi
 // Existing PNGs have different transparent margins; match visible chip diameters.
 const chipArtScale = (picture: string) => picture === chip50 ? 1.2 : picture === chip025 ? 60 / 53 : picture === chip050 ? 60 / 58 : 1
 
-export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl = defaultTableArtwork, isYourTurn = true, activePlayerName = 'Another player', onRoundChange }: CrapsGameProps) {
+export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl, isYourTurn = true, activePlayerName = 'Another player', onRoundChange }: CrapsGameProps) {
   const table = useCrapsTable(gateway, playerId, isYourTurn, onRoundChange)
   const { status, round, busy, motion, pendingRound, error, recovery } = table
   const [stake, setStake] = useState('10')
@@ -48,6 +49,11 @@ export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl
   const primary = useRef<HTMLButtonElement>(null)
   const returnFocus = useRef(false)
   const disabled = busy || !status?.available || !isYourTurn || recovery !== 'ready'
+  const chipOptions = useMemo(() => [.25, .5, 1, 2, 5, 10, 25, 50].filter(value => validStake(value, status))
+    .map(value => ({ value, picture: chipPictures[value], artScale: chipArtScale(chipPictures[value]) })), [status])
+  useEffect(() => {
+    if (chipOptions.length && !chipOptions.some(item => item.value === selectedChip)) setSelectedChip(chipOptions[0].value)
+  }, [chipOptions, selectedChip])
   const extras = draftExtras ?? selectedExtras.map(kind => ({ kind, stake: Number(extraStake) }))
   const draftValid = stake.trim() !== '' && validStake(Number(stake), status) && extras.every(bet => validStake(bet.stake, status))
   const oddsValid = oddsStake.trim() !== '' && validStake(Number(oddsStake), status)
@@ -108,17 +114,14 @@ export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl
   }}><main className="ff-craps-main">
     <header className="ff-craps-title">
       {showTitle && <h1>Craps</h1>}
+      <span className="ff-craps-mode">Free play</span>
       <span className="ff-craps-limits">{status ? money(status.minimumStake) + '–' + money(status.maximumStake) + ' per bet' : 'Connecting to table'}</span>
-      <div className="ff-craps-summary" aria-label="Hand totals">
-        <span>Bet <b>{money(totals?.stake ?? (Number.isFinite(draftTotal) ? draftTotal : 0))}</b></span>
-        <span>{round?.phase === 'resolved' ? 'Total return' : 'Returned'} <b>{money(totals?.returned ?? 0)}</b></span>
-      </div>
       <nav aria-label="Craps details">
         <button className="ff-craps-sound" type="button" aria-label={muted ? 'Unmute Craps sounds' : 'Mute Craps sounds'} aria-pressed={muted} onClick={() => { setCrapsMuted(!muted); setMuted(!muted) }}><ControlIcon kind={muted ? 'muted' : 'sound'} /></button>
         {(['bets', 'history', 'tips'] as const).map(value => <button type="button" aria-expanded={panel === value} aria-controls="ff-craps-details" onClick={event => open(value, event.currentTarget)} key={value}>{value === 'bets' ? 'Bets' : value === 'history' ? 'Rolls' : 'Tips'}</button>)}
       </nav>
     </header>
-    <section className="ff-craps-table" aria-label="Craps table" style={tableStyle}>
+    <section className={`ff-craps-table${!tableArtworkUrl ? ' ff-craps-table--default-art' : ''}`} aria-label="Craps table" style={tableStyle}>
       <div className="ff-craps-table__felt"><div className="ff-craps-board">
         <div className="ff-craps-point-row" aria-label={round?.phase === 'point' ? 'Point ' + round.point + ' is on' : 'Point is off'}>
           <span className="ff-craps-puck">OFF</span>
@@ -159,20 +162,20 @@ export function CrapsGame({ gateway, playerId, showTitle = true, tableArtworkUrl
         </button>
       </div></div>
       <div className="ff-craps-controls">
-        {!round ? <>
-          <div className="ff-craps-control-actions">
-            <button type="button" aria-label="Undo last chip" title="Undo last chip" disabled={disabled || !draftHistory.length} onClick={undoDraft}><ControlIcon kind="undo" /></button>
-            <button type="button" aria-label="Clear bets" title="Clear bets" disabled={disabled || !(Number(stake) || extras.length)} onClick={clearDraft}><ControlIcon kind="clear" /></button>
-          </div>
-          <div className="ff-craps-chip-row" aria-label="Select chip value">{[1, 2, 5, 10, 25, 50].filter(value => validStake(value, status)).map(value => <button type="button" disabled={disabled} aria-label={'Select ' + chip(value) + ' chip'} aria-pressed={selectedChip === value} onClick={() => { setSelectedChip(value); setDraftError(null) }} key={value}><img src={chipPictures[value]} alt="" draggable={false} width="52" height="52" style={{ '--chip-art-scale': chipArtScale(chipPictures[value]) } as CSSProperties} /></button>)}</div>
-
-        </> : <div className="ff-craps-hand-actions">
+        {!round ? <CrapsBetControls denominations={chipOptions} selectedChip={selectedChip} disabled={disabled}
+          canUndo={draftHistory.length > 0} canClear={!!(Number(stake) || extras.length)}
+          onSelectChip={value => { setSelectedChip(value); setDraftError(null) }} onUndo={undoDraft} onClear={clearDraft}/>
+        : <div className="ff-craps-hand-actions">
           {round.phase === 'resolved' ? <button type="button" disabled={disabled} onClick={edit}>Edit bet</button> : <><span>Working <b>{money(totals!.workingStake)}</b></span>{canOdds && <button type="button" disabled={disabled} aria-expanded={panel === 'odds'} onClick={event => open('odds', event.currentTarget)}>Add odds</button>}</>}
         </div>}
         <button className="ff-craps-primary" ref={primary} type="button" aria-label={busy ? motion === 'idle' ? 'Checking…' : 'Rolling…' : !isYourTurn ? 'Waiting' : !round ? 'Bet ' + chip(Number(stake) || 0) + ' on Pass Line' : round.phase === 'resolved' ? 'Repeat ' + chip(round.stake + repeatExtras.reduce((sum, bet) => sum + bet.stake, 0)) : round.phase === 'come-out' ? 'Roll come-out' : 'Roll point ' + round.point} disabled={disabled || (!round && !draftValid) || (round?.phase === 'resolved' && !repeatValid)} onClick={primaryAction}>
-          <ControlIcon kind={!round || round.phase === 'resolved' ? 'deal' : 'dice'} /><strong>{busy ? motion === 'idle' ? 'Checking…' : 'Rolling…' : !isYourTurn ? 'Waiting' : !round ? 'Place bets' : round.phase === 'resolved' ? 'Repeat bet' : 'Roll dice'}</strong><small>{!round ? money(Number.isFinite(draftTotal) ? draftTotal : 0) : round.phase === 'resolved' ? money(round.stake + repeatExtras.reduce((sum, bet) => sum + bet.stake, 0)) : round.phase === 'point' ? 'POINT ' + round.point : 'COME-OUT'}</small>
+          <ControlIcon kind={!round || round.phase === 'resolved' ? 'deal' : 'dice'} /><strong>{busy ? motion === 'idle' ? 'Checking…' : 'Rolling…' : !isYourTurn ? 'Waiting' : !round ? 'BET' : round.phase === 'resolved' ? 'REBET' : 'ROLL'}</strong><small>{!round ? money(Number.isFinite(draftTotal) ? draftTotal : 0) : round.phase === 'resolved' ? money(round.stake + repeatExtras.reduce((sum, bet) => sum + bet.stake, 0)) : round.phase === 'point' ? 'POINT ' + round.point : 'COME-OUT'}</small>
         </button>
       </div>
+      <footer className="ff-craps-summary" aria-label="Hand totals">
+        <span>Bet <b>{money(totals?.stake ?? (Number.isFinite(draftTotal) ? draftTotal : 0))}</b></span>
+        <span>Win <b>{money(totals?.returned ?? 0)}</b></span>
+      </footer>
     </section>
     <div className="ff-craps-notice" role={error || draftError ? 'alert' : undefined}>
       <span>{error ?? draftError ?? (invalidDraft ? 'Enter a valid bet: ' + limitCopy : '')}</span>

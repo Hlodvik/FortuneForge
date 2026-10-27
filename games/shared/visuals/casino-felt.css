@@ -1,0 +1,6 @@
+/* One approved material for every green-felt table, including standalone clients. */
+:root {
+  --ff-casino-felt-image: url('./emerald-felt-v2.webp');
+  --ff-casino-felt-shade: linear-gradient(#00150c2b, #00150c2b);
+  --ff-casino-felt-material: var(--ff-casino-felt-shade), #004b31 var(--ff-casino-felt-image) center / cover no-repeat;
+}

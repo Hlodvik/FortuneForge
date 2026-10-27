@@ -54,10 +54,7 @@
 button:disabled, input:disabled { cursor: not-allowed; filter: grayscale(.7); opacity: .45; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 2px solid #fff0a9; outline-offset: .2rem; }
 
-.blackjack-table { --ff-card-width: clamp(3.8rem, min(6vw, 9vh), 5.8rem); position: relative; display: grid; min-height: min(47rem, calc(100svh - 7.5rem)); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; padding: clamp(.65rem, 1.4vw, 1.2rem); border: clamp(.55rem, 1vw, .8rem) solid #422b18; border-radius: 46% 46% 7% 7% / 17% 17% 5% 5%; background:
-  radial-gradient(ellipse at 50% 42%, rgb(36 148 103 / 38%), transparent 42%),
-  repeating-radial-gradient(ellipse at 50% 45%, transparent 0 2.8rem, rgb(255 255 255 / 1.5%) 2.85rem 2.95rem),
-  linear-gradient(165deg, #0c6549, #073d2f 58%, #04281f);
+.blackjack-table { --ff-card-width: clamp(3.8rem, min(6vw, 9vh), 5.8rem); position: relative; display: grid; min-height: min(47rem, calc(100svh - 7.5rem)); grid-template-rows: auto minmax(0, 1fr) auto; overflow: hidden; padding: clamp(.65rem, 1.4vw, 1.2rem); border: clamp(.55rem, 1vw, .8rem) solid #422b18; border-radius: 46% 46% 7% 7% / 17% 17% 5% 5%; background: var(--ff-casino-felt-material, #0c6549);
   box-shadow: 0 2rem 5rem rgb(0 0 0 / 55%), inset 0 0 0 .2rem #b78342, inset 0 0 0 .36rem rgb(39 19 8 / 65%), inset 0 0 5rem rgb(0 16 10 / 58%); isolation: isolate; }
 .blackjack-table::before { position: absolute; inset: 12% 7% 11%; z-index: -1; border: 2px solid rgb(244 220 151 / 17%); border-radius: 50%; content: ''; }
 .blackjack-table__round { position: relative; z-index: 4; display: flex; min-height: 1.8rem; align-items: end; justify-content: space-between; gap: .75rem; padding: .45rem clamp(4rem, 12vw, 14rem) 0; color: #e6d08b; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }

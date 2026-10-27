@@ -39,14 +39,28 @@ afterEach(() => {
 })
 
 describe('Craps table visual interaction safety', () => {
-  it('includes the table artwork by default, including when the host supplies no art prop', async () => {
+  it('uses the borderless default without bundling the old wood-frame artwork', async () => {
     const server = fakeServer()
     render(<CrapsGame gateway={server.gateway} />)
     await readyToBet()
     const board = screen.getByRole('region', { name: 'Craps table' })
-    expect(board.getAttribute('style')).toContain('craps-table-backdrop')
+    expect(board.classList.contains('ff-craps-table--default-art')).toBe(true)
+    expect(board.style.getPropertyValue('--ff-craps-table-art')).toBe('')
+    expect(screen.getByLabelText('Hand totals').parentElement).toBe(board)
+    expect(screen.getByLabelText('Hand totals').textContent).toBe('Bet R10.00Win R0.00')
+    expect(screen.getByText('Free play').className).toBe('ff-craps-mode')
+    expect(screen.getByRole('button', { name: 'Bet R10 on Pass Line' }).querySelector('strong')?.textContent).toBe('BET')
     expect(server.gateway.startRound).not.toHaveBeenCalled()
     expect(server.gateway.roll).not.toHaveBeenCalled()
+  })
+
+  it('preserves an explicitly supplied custom table artwork', async () => {
+    const server = fakeServer()
+    render(<CrapsGame gateway={server.gateway} tableArtworkUrl="/custom-table.webp" />)
+    await readyToBet()
+    const board = screen.getByRole('region', { name: 'Craps table' })
+    expect(board.classList.contains('ff-craps-table--default-art')).toBe(false)
+    expect(board.getAttribute('style')).toContain('/custom-table.webp')
   })
 
   it('uses existing chip pictures in the selector and builds an aligned image stack on the felt', async () => {
@@ -54,7 +68,10 @@ describe('Craps table visual interaction safety', () => {
     render(<CrapsGame gateway={server.gateway} />)
     await readyToBet()
     const selector = screen.getByLabelText('Select chip value')
-    const buttons = selector.querySelectorAll('button')
+    expect(selector.querySelectorAll('img')).toHaveLength(1)
+    expect(screen.queryByRole('group', { name: 'Chip denominations' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Chip options, selected R5' }))
+    const buttons = screen.getByRole('group', { name: 'Chip denominations' }).querySelectorAll('button')
     expect(buttons.length).toBeGreaterThanOrEqual(5)
     for (const button of buttons) {
       expect(button.querySelector('img')?.getAttribute('src')).toMatch(/chip-(?:1|2|5|10|25|50)\.png/)
@@ -62,7 +79,7 @@ describe('Craps table visual interaction safety', () => {
     }
     fireEvent.click(screen.getByRole('button', { name: 'Select R2 chip' }))
     expect(screen.getByLabelText('Hand totals').textContent).toContain('R10.00')
-    expect(screen.getByRole('button', { name: 'Select R2 chip' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Chip options, selected R2' }).getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R2' }))
     fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R2' }))
     const stack = screen.getByLabelText('R14.00 on Pass Line')
@@ -81,9 +98,9 @@ describe('Craps table visual interaction safety', () => {
     render(<CrapsGame gateway={server.gateway} />)
     await readyToBet()
     fireEvent.click(screen.getByRole('button', { name: 'Clear bets' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Select R2 chip' }))
+    chooseChip(2)
     for (let index = 0; index < 3; index++) fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R2' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Select R5 chip' }))
+    chooseChip(5)
     fireEvent.click(screen.getByRole('button', { name: /^Field, add R5,/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Field, add R5,/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Any Seven, add R5,/ }))
@@ -105,6 +122,22 @@ describe('Craps table visual interaction safety', () => {
     expect(server.gateway.roll).not.toHaveBeenCalled()
   })
 
+  it('offers quarter-Rand chips only when authoritative table limits allow those wagers', async () => {
+    const server = fakeServer({ ...status, minimumStake: .25, stakeIncrement: .25 })
+    render(<CrapsGame gateway={server.gateway} />)
+    await readyToBet()
+    fireEvent.click(screen.getByRole('button', { name: 'Clear bets' }))
+    chooseChip(.25)
+    fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R0.25' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Increase chip value' }))
+    expect(screen.getByRole('button', { name: 'Chip options, selected R0.5' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R0.5' }))
+    expect(screen.getByLabelText('Hand totals').textContent).toBe('Bet R0.75Win R0.00')
+    fireEvent.click(screen.getByRole('button', { name: 'Bet R0.75 on Pass Line' }))
+    await screen.findByRole('button', { name: 'Roll come-out' })
+    expect(server.gateway.startRound.mock.calls[0]?.[0]).toBe(.75)
+  })
+
   it('clears all draft wagers and restores the whole draft one change at a time with Undo', async () => {
     const server = fakeServer()
     render(<CrapsGame gateway={server.gateway} />)
@@ -112,7 +145,7 @@ describe('Craps table visual interaction safety', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Clear bets' }))
     expect((screen.getByRole('button', { name: 'Bet R0 on Pass Line' }) as HTMLButtonElement).disabled).toBe(true)
     expect(screen.queryByLabelText(/^R[\d.]+ on Pass Line$/)).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Select R1 chip' }))
+    chooseChip(1)
     fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R1' }))
     fireEvent.click(screen.getByRole('button', { name: /^Field, add R1,/ }))
     fireEvent.click(screen.getByRole('button', { name: /^Any Seven, add R1,/ }))
@@ -136,7 +169,7 @@ describe('Craps table visual interaction safety', () => {
     const server = fakeServer()
     render(<CrapsGame gateway={server.gateway} />)
     await readyToBet()
-    fireEvent.click(screen.getByRole('button', { name: 'Select R50 chip' }))
+    chooseChip(50)
     fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R50' }))
     fireEvent.click(screen.getByRole('button', { name: 'Pass Line, add R50' }))
     expect(screen.getByRole('alert').textContent).toContain('Bet limit: R1.00–R100.00')
@@ -183,7 +216,8 @@ describe('Craps table visual interaction safety', () => {
     expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
     expect(bet.disabled).toBe(true)
     expect((screen.getByRole('button', { name: /^Pass Line, add R/ }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: 'Select R5 chip' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Chip options, selected R5' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByRole('group', { name: 'Chip denominations' })).toBeNull()
     expect(sounds.roll).not.toHaveBeenCalled()
     await act(async () => pending.resolve(readyRound()))
     await waitFor(() => expect((screen.getByRole('button', { name: 'Roll come-out' }) as HTMLButtonElement).disabled).toBe(false))
@@ -248,9 +282,18 @@ describe('Craps table visual interaction safety', () => {
     expect(sounds.click).not.toHaveBeenCalled()
     expect(sounds.roll).not.toHaveBeenCalled()
     expect(sounds.result).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Chip options, selected R5' }).querySelector('img')!)
+    expect(sounds.click).toHaveBeenCalledTimes(1)
     const chipButton = screen.getByRole('button', { name: 'Select R2 chip' })
     fireEvent.click(chipButton.querySelector('img')!)
-    expect(sounds.click).toHaveBeenCalledTimes(1)
+    expect(sounds.click).toHaveBeenCalledTimes(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Increase chip value' }).querySelector('path')!)
+    expect(sounds.click).toHaveBeenCalledTimes(3)
+    fireEvent.click(screen.getByRole('button', { name: 'Decrease chip value' }).querySelector('path')!)
+    expect(sounds.click).toHaveBeenCalledTimes(4)
+    const beforeUndo = sounds.click.mock.calls.length
+    fireEvent.click(screen.getByRole('button', { name: 'Undo last chip' }))
+    expect(sounds.click).toHaveBeenCalledTimes(beforeUndo)
     fireEvent.click(screen.getByRole('button', { name: 'Bet R10 on Pass Line' }))
     const comeOut = await screen.findByRole('button', { name: 'Roll come-out' })
     expect(sounds.roll).not.toHaveBeenCalled()
@@ -313,6 +356,11 @@ async function readyToBet(): Promise<HTMLButtonElement> {
   const button = await screen.findByRole('button', { name: /^Bet R/ }) as HTMLButtonElement
   await waitFor(() => expect(button.disabled).toBe(false))
   return button
+}
+
+function chooseChip(value: number) {
+  fireEvent.click(screen.getByRole('button', { name: /^Chip options, selected R/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Select R' + Number(value.toFixed(2)) + ' chip' }))
 }
 
 function restore(server: ReturnType<typeof fakeServer>, round: CrapsRound) {

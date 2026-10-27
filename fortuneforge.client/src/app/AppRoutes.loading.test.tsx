@@ -9,18 +9,22 @@ import type { SlotRouteDefinition } from '../games/slots/routeRegistry'
 const chunks = vi.hoisted(() => {
   let resolveBlackjack!: (module: { AuthenticatedBlackjackRoute: () => ReactNode }) => void
   let resolveSlot!: (module: { SlotGameRoute: () => ReactNode }) => void
+  let resolveHome!: (module: { HomePage: () => ReactNode }) => void
   return {
     blackjack: new Promise<{ AuthenticatedBlackjackRoute: () => ReactNode }>((resolve) => { resolveBlackjack = resolve }),
     slot: new Promise<{ SlotGameRoute: () => ReactNode }>((resolve) => { resolveSlot = resolve }),
+    home: new Promise<{ HomePage: () => ReactNode }>((resolve) => { resolveHome = resolve }),
     login: new Promise<never>(() => {}),
     unknown: new Promise<never>(() => {}),
     finishBlackjack: (module: { AuthenticatedBlackjackRoute: () => ReactNode }) => resolveBlackjack(module),
     finishSlot: (module: { SlotGameRoute: () => ReactNode }) => resolveSlot(module),
+    finishHome: (module: { HomePage: () => ReactNode }) => resolveHome(module),
   }
 })
 
 vi.mock('./routes/BlackjackRoute', () => chunks.blackjack)
 vi.mock('./routes/SlotGameRoute', () => chunks.slot)
+vi.mock('../pages/account/AccountHomePage', () => chunks.home)
 vi.mock('../pages/auth/LoginPage', () => chunks.login)
 vi.mock('../pages/not-found/NotFoundPage', () => chunks.unknown)
 vi.mock('./routes/HeartsRoute', () => ({
@@ -50,6 +54,17 @@ const renderRoute = (pathname: string, slotRoute: SlotRouteDefinition | null = n
 })
 
 describe('game route loading integration', () => {
+  it('keeps home loading artwork-free and removes the status as soon as the home chunk is ready', async () => {
+    vi.useFakeTimers()
+    await renderRoute('/home')
+    expect(host.querySelector('main.route-state[role="status"]')?.textContent).toBe('Opening Fortune Forge…')
+    expect(host.querySelector('img, video, [data-game-loading]')).toBeNull()
+    await act(async () => { chunks.finishHome({ HomePage: () => <main className="home-lobby">Home ready</main> }) })
+    expect(host.textContent).toBe('Home ready')
+    expect(host.querySelector('[role="status"]')).toBeNull()
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
   it('shows recognised game artwork only while its lazy chunk is pending, then renders ready without a timer', async () => {
     vi.useFakeTimers()
     await renderRoute('/cards/blackjack')

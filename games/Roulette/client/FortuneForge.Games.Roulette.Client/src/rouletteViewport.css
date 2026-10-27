@@ -24,7 +24,7 @@
   .ff-roulette-table { grid-template-columns:1fr; padding:8px 20px; }
   .ff-roulette-wheel,.ff-roulette-track { display:none; }
   .ff-roulette-felt { height:100%; transform:none; display:block; border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; }
-  .ff-roulette-table { background:radial-gradient(ellipse at 50% 40%,#288964,#136746); }
+  .ff-roulette-table { background:var(--ff-casino-felt-material); }
   .ff-roulette-board { height:100%; aspect-ratio:auto; grid-template-columns:30px minmax(0,1fr) 32px; grid-template-rows:minmax(0,1fr) 27px 27px; }
   .ff-roulette-board button { font-size:clamp(12px,2vw,17px); }
   .ff-roulette-board .number.zero { font-size:22px; }
@@ -45,7 +45,7 @@
 }
 @media(max-width:499px) {
   .ff-roulette-main { grid-template-rows:minmax(0,1fr) 110px 45px; }
-  .ff-roulette-table { display:block; padding:14px 16px; background:radial-gradient(ellipse at 50% 35%,#2a8c62,#126745); }
+  .ff-roulette-table { display:block; padding:14px 16px; background:var(--ff-casino-felt-material); }
   .ff-roulette-wheel,.ff-roulette-track { display:none; }
   .ff-roulette-felt { display:block; height:100%; transform:none; border:0; border-radius:0; padding:0; box-shadow:none; background:transparent; }
   .ff-roulette-board { height:100%; aspect-ratio:auto; grid-template-columns:44px 38px minmax(0,1fr); grid-template-rows:28px minmax(0,1fr) 28px; background:transparent; }
@@ -144,4 +144,4 @@
  .ff-roulette-result.is-settled>div>span { font-size:10px; }
 }
 
-@media(max-width:900px) { .ff-roulette-felt::before { opacity:.25; }.ff-roulette-felt::after { display:none; } }
+@media(max-width:900px) { .ff-roulette-felt::after { display:none; } }

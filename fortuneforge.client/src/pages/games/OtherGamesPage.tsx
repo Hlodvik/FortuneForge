@@ -110,7 +110,7 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
   const recentEntries: RecentCatalogGame[] = []
 
   for (const slotGame of recentSlot.games) {
-    const href = slotGame.game.playHref ?? '/slots'
+    const href = slotGame.game.playHref ?? '/home?category=Slots#home-lobby-games-title'
     if (seen.has(href)) continue
     seen.add(href)
     recentEntries.push({

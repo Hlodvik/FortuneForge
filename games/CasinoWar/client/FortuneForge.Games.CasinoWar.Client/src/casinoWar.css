@@ -1,3 +1,5 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
 * { box-sizing: border-box; }
 
 .ff-casino-war {
@@ -34,9 +36,7 @@
   overflow: hidden;
   border: clamp(.35rem, .7vw, .65rem) solid #69431f;
   border-radius: 48% 48% 2.4rem 2.4rem / 16% 16% 2.4rem 2.4rem;
-  background:
-    radial-gradient(ellipse at 50% 43%, #0d7959 0, var(--war-felt) 38%, var(--war-deep-felt) 78%),
-    var(--war-deep-felt);
+  background: var(--ff-casino-felt-material);
   box-shadow:
     0 1rem 2.2rem #000c,
     inset 0 0 0 2px #d8a34d,

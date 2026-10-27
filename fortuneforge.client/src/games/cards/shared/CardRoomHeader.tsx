@@ -34,7 +34,7 @@ export function CardRoomHeader({
         <a className="card-room-header__brand" href="/home" aria-label="Fortune Forge home">
           <span className="card-room-header__spark" aria-hidden="true">✦</span><strong>Fortune Forge</strong>
         </a>
-        {showOtherGames && <a className="card-room-header__other-games" href="/games">Other games</a>}
+        {showOtherGames && <a className="card-room-header__other-games" href="/home#home-lobby-games-title">Other games</a>}
         <details className="card-room-history" onToggle={handleToggle}>
           <summary className="card-room-header__icon" aria-label={`Game history${unseenCount > 0 ? `, ${unseenCount} new` : ''}`} title="Game history">
             <HistoryIcon />

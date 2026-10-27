@@ -975,19 +975,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell__background-video {
+  .app-shell--wukong-clouds > .app-shell__background-video {
     display: none;
-  }
-
-  .app-shell::before {
-    background-image:
-      linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)),
-      url('../../../../assets/slots/backgrounds/background-clouds-poster.webp');
-  }
-
-  .app-shell--themed-slot-backdrop::before {
-    background: #0a051c;
-    background-image: none;
   }
 
   .slots-page {

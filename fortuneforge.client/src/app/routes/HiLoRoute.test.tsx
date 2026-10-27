@@ -80,7 +80,7 @@ describe('Hi-Lo connected route', () => {
     render()
     expect(host.querySelector('.hi-lo-page [data-game-navbar]')).not.toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
-    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/games')
+    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
     expect(host.querySelector('.in-game-navbar__title')?.textContent).toBe('Hi-Lo')
     expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
     expect(host.querySelector('.player-shell-menu--more nav[aria-label="Account menu"]')).not.toBeNull()

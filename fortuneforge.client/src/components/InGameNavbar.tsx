@@ -25,7 +25,7 @@ export function InGameNavExits({ authenticated = false, className, onNavigate }:
       <span className="player-shell-header__spark" aria-hidden="true">✦</span>
       <strong>Fortune Forge</strong>
     </a>
-    <a className="player-shell-header__games" href={authenticated ? '/games' : '/demo'} onClick={onNavigate}>Other Games</a>
+    <a className="player-shell-header__games" href={authenticated ? '/home#home-lobby-games-title' : '/demo'} onClick={onNavigate}>Other Games</a>
   </nav>
 }
 

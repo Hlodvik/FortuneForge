@@ -64,7 +64,7 @@
 .ff-landing__footer .ff-landing__brand { font-size: .85rem; }
 .ff-landing__footer .ff-landing__brand svg { width: 25px; height: 25px; }
 .ff-landing__footer nav { display: flex; gap: 1.7rem; font-size: .7rem; color: #aaa5b6; }
-.ff-landing--opening { display: grid; place-items: center; }
+.ff-landing--opening { display: grid; place-items: center; background: var(--ff-home-background); }
 @media (min-width: 1700px) { .ff-landing__hero { min-height: 37rem; } }
 @media (max-width: 1000px) {
   .ff-landing__header, .ff-landing__discover, .ff-landing__invite, .ff-landing__footer { width: calc(100% - 3rem); }

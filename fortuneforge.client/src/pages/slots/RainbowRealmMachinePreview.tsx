@@ -36,7 +36,7 @@ export function RainbowRealmMachinePreview() {
           <span>Fortune Forge</span>
         </a>
         <nav className="landing-nav" aria-label="Game navigation">
-          <a className="landing-nav__link" href="/slots">All games</a>
+          <a className="landing-nav__link" href="/home#home-lobby-games-title">All games</a>
           <a className="landing-nav__link" href="/home">Home</a>
         </nav>
       </header>

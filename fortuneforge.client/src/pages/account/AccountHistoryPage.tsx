@@ -99,7 +99,7 @@ export function AccountHistoryPage() {
                   <span aria-hidden="true">✦</span>
                   <strong>No tracked spins yet</strong>
                   <p>Play Fortune Slots while logged in and your results will appear here.</p>
-                  <a className="landing-button landing-button--primary" href="/slots">Play slots</a>
+                  <a className="landing-button landing-button--primary" href="/home?category=Slots#home-lobby-games-title">Play slots</a>
                 </div>
               )}
               {spins.length > 0 && (

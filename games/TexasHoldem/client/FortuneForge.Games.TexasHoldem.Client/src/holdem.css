@@ -1,3 +1,5 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
 @font-face {
   font-family: FFHoldemSans;
   src: url('./assets/fonts/sora-latin-variable.woff2') format('woff2');
@@ -22,7 +24,7 @@
   min-height: 0;
   overflow: auto;
   color: var(--hh-ivory);
-  background: linear-gradient(#00150c2b, #00150c2b), #004b31 url('./assets/emerald-felt-v2.webp') center / cover no-repeat;
+  background: var(--ff-casino-felt-material);
   font-family: FFHoldemSans, sans-serif;
   isolation: isolate;
 }

@@ -2,10 +2,10 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const state = vi.hoisted(() => ({ hidden: [] as string[], loading: false, error: '' }))
+const state = vi.hoisted(() => ({ hidden: [] as string[], loading: false, error: '', signedIn: false }))
 
 vi.mock('../../features/account/useOptionalAccountSession', () => ({
-  useOptionalAccountSession: () => ({ account: null, isLoading: false }),
+  useOptionalAccountSession: () => ({ account: state.signedIn ? {} : null, isLoading: false }),
 }))
 vi.mock('../../features/catalog/catalogVisibility', () => ({
   useCatalogueVisibility: () => ({ loading: state.loading, error: state.error, isVisible: (route: string) => !state.hidden.includes(route) }),
@@ -14,7 +14,15 @@ vi.mock('../../features/catalog/catalogVisibility', () => ({
 import { LandingPage } from './LandingPage'
 
 describe('public landing page', () => {
-  beforeEach(() => { state.hidden = []; state.loading = false; state.error = '' })
+  beforeEach(() => { state.hidden = []; state.loading = false; state.error = ''; state.signedIn = false })
+
+  it('keeps the signed-in handoff lightweight while redirecting to home', () => {
+    state.signedIn = true
+    const markup = renderToStaticMarkup(createElement(LandingPage))
+    expect(markup).toContain('class="ff-landing ff-landing--opening" role="status"')
+    expect(markup).toContain('Opening your home…')
+    expect(markup).not.toMatch(/<img|<video|ff-landing__hero/)
+  })
 
   it('uses the approved dark hero and updated headline without How it works', () => {
     const markup = renderToStaticMarkup(createElement(LandingPage))
@@ -28,6 +36,8 @@ describe('public landing page', () => {
     expect(markup).toContain('href="/create-account"')
     expect(markup).toContain('href="/login"')
     expect(markup).toContain('href="#discover-games"')
+    expect(markup).toContain('href="/home#home-lobby-games-title"')
+    expect(markup).not.toContain('href="/games"')
     expect(markup).not.toContain('Wukong')
     expect(markup).not.toContain('landing-showcase')
     expect(markup).not.toContain('Play demo')

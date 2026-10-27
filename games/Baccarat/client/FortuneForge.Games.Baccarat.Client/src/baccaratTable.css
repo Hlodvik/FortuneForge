@@ -1,3 +1,5 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
 /* The game surface follows the shape of a printed baccarat table.  Keep all
    stakes and cards in their existing game state; this sheet only owns layout. */
 .ff-baccarat {
@@ -239,14 +241,14 @@
 .ff-baccarat__play-surface {
   position: relative; display: block; grid-column: 2; grid-row: 1; min-width: 0;
   padding: 0; overflow: hidden; container-type: size;
-  background: #005305;
+  background: #004b31;
 }
 .ff-baccarat__play-surface::before {
   position: absolute; z-index: 0; top: 50%; left: 50%;
   width: max(100cqw, 157.377cqh); height: max(100cqh, 63.542cqw);
   transform: translate(-50%, -50%);
-  background: radial-gradient(ellipse at 48% 50%, transparent 25%, #001a0830 100%), url('./baccarat-felt-generated-v3.png') center / 100% 100% no-repeat;
-  filter: blur(.1vmin); content: ''; pointer-events: none;
+  background: var(--ff-casino-felt-material);
+  filter: none; content: ''; pointer-events: none;
 }
 .ff-baccarat__play-surface::after { display: none; }
 .ff-baccarat__felt-lines { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; fill: none; stroke: #d4e3cd; stroke-opacity: .37; stroke-width: 2; filter: blur(.32px); pointer-events: none; }

@@ -1,3 +1,5 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
 @font-face { font-family:'FF HiLo UI'; src:url('./assets/fonts/sora-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 800; font-display:swap; }
 @font-face { font-family:'FF HiLo Display'; src:url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
 
@@ -33,7 +35,7 @@
 .hilo-utilities svg { width:20px; height:20px; }
 .hilo-utilities button[aria-label="How to play Hi-Lo"] > span { display:block; font-size:23px; font-weight:650; line-height:1; }
 
-.hilo-table { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:74px minmax(0,1fr) 44px 25px; min-height:0; min-width:0; background:radial-gradient(ellipse at 50% 37%,transparent 20%,#001a0e50 100%),url('./assets/classic-green-felt.webp') center / 100% 100% no-repeat,#073a20; }
+.hilo-table { display:grid; grid-template-columns:minmax(0,1fr); grid-template-rows:74px minmax(0,1fr) 44px 25px; min-height:0; min-width:0; background:var(--ff-casino-felt-material); }
 .hilo-table::before { content:none; }
 .hilo-table-header { grid-row:1; min-height:0; padding:10px 28px; border-bottom:1px solid #ddca8e16; }
 .hilo-table-tag { left:22px; top:22px; color:#a9bb9d; font-size:7px; letter-spacing:.12em; }

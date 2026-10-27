@@ -4,6 +4,7 @@ import slotBackgroundVideoWebm from '../assets/slots/backgrounds/background-clou
 import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
+import { useGamePresence } from '../features/catalog/useGamePresence'
 import './styles/index.css'
 
 export default function App() {
@@ -21,10 +22,12 @@ export default function App() {
   const usesThemeSpecificSlotBackdrop =
     slotRoute?.shellBackdrop === 'theme'
   const shouldRenderDefaultShellVideo =
-    slotRoute?.shellBackdrop === 'default-clouds'
+    slotRoute?.id === 'wukong-journey-to-the-west' && slotRoute.shellBackdrop === 'default-clouds'
   const appShellClassName = [
     'app-shell',
     pathname === '/' ? 'app-shell--landing' : '',
+    pathname === '/home' || pathname.startsWith('/home/') ? 'app-shell--home' : '',
+    shouldRenderDefaultShellVideo ? 'app-shell--wukong-clouds' : '',
     isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
     pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
@@ -51,6 +54,7 @@ export default function App() {
   )
 
   usePageTitle(pathname)
+  useGamePresence(pathname)
 
   useEffect(() => {
     if (!isPlayableGameRoute) return undefined

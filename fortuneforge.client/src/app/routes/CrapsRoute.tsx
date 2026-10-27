@@ -13,7 +13,7 @@ export function AuthenticatedCrapsRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Craps…" errorTitle="Craps could not be opened." onRetry={reload} />
   }
 
-  return <InGameShell account={account} title="Craps" theme="casino" className="player-page">
-    <CrapsGame key={account.userId} playerId={account.userId} gateway={gateway} showTitle={false} />
+  return <InGameShell account={account} title="Craps" theme="casino" className="craps-page" bodyClassName="craps-route__body">
+    <CrapsGame key={account.userId} playerId={account.userId} gateway={gateway} />
   </InGameShell>
 }

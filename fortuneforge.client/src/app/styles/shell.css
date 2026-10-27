@@ -1,8 +1,12 @@
+:root {
+  --ff-home-background: #090a0d;
+}
+
 .app-shell {
   position: relative;
   min-height: 100svh;
   overflow-x: hidden;
-  background: #0a051c;
+  background: var(--ff-home-background);
   isolation: isolate;
 }
 
@@ -41,14 +45,20 @@ body.ff-game-active img {
   position: fixed;
   z-index: 0;
   inset: 0;
+  background: none;
+  backface-visibility: hidden;
+  contain: strict;
+  content: none;
+  pointer-events: none;
+  transform: translateZ(0);
+}
+
+/* Legacy cloud artwork is an explicit Wukong-only opt-in, never a site default. */
+.app-shell--wukong-clouds::before {
   background:
     linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)) center / cover no-repeat,
     url('../../assets/slots/backgrounds/background-clouds-poster.webp') center bottom / cover no-repeat;
-  backface-visibility: hidden;
-  contain: strict;
   content: '';
-  pointer-events: none;
-  transform: translateZ(0);
 }
 
 .app-shell__background-video {
@@ -66,15 +76,20 @@ body.ff-game-active img {
 }
 
 .app-shell--themed-slot-backdrop::before {
-  background: #0a051c;
+  background: none;
+  content: none;
 }
 
-.app-shell--landing::before {
-  background:
-    radial-gradient(circle at 14% 16%, rgb(53 231 255 / 16%), transparent 28rem),
-    radial-gradient(circle at 84% 20%, rgb(239 61 255 / 18%), transparent 32rem),
-    radial-gradient(ellipse at 50% 100%, rgb(255 184 34 / 16%), transparent 42rem),
-    linear-gradient(180deg, #0b0929, #160d3c 58%, #0c0829);
+.app-shell--landing,
+.app-shell--home {
+  background: var(--ff-home-background);
+}
+
+/* Apply before either lazy page loads, so the account handoff has no cloud flash. */
+.app-shell--landing::before,
+.app-shell--home::before {
+  background: none;
+  content: none;
 }
 
 .app-shell--card-room {
@@ -85,6 +100,7 @@ body.ff-game-active img {
   background:
     radial-gradient(circle at 50% -20%, rgb(55 151 116 / 24%), transparent 48%),
     linear-gradient(180deg, #073d31, #041f1a 72%);
+  content: '';
 }
 
 .app-shell--card-room > .player-page {

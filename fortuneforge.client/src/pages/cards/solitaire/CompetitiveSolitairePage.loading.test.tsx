@@ -37,7 +37,7 @@ afterEach(() => { act(() => root.unmount()); host.remove(); vi.unstubAllGlobals(
 const render = () => act(async () => { root.render(<CompetitiveSolitairePage account={account} />) })
 const assertNavigation = () => {
   expect(host.querySelector('[data-game-navbar] a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
-  expect(host.querySelector('[data-game-navbar] a.player-shell-header__games')?.getAttribute('href')).toBe('/games')
+  expect(host.querySelector('[data-game-navbar] a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
   expect(host.querySelectorAll('[data-game-navbar]')).toHaveLength(1)
 }
 

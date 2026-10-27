@@ -6,6 +6,7 @@ import { pageTitleForPath } from '../app/usePageTitle'
 import { CardGameLibraryPage } from './cards/CardGameLibraryPage'
 import { OtherGamesPage } from './games/OtherGamesPage'
 import { DemoSlotsLibraryPage, SlotsLibraryPage } from './slots/SlotsLibraryPage'
+import { GameTypeMenu } from '../components/GameTypeMenu'
 
 const account = {
   userId: 'layout-test',
@@ -26,6 +27,17 @@ const account = {
 
 describe('game category menus', () => {
   beforeEach(useVerifiedTestCatalogue)
+  it('sends authenticated category links to the home catalogue filters', () => {
+    const markup = renderToStaticMarkup(createElement(GameTypeMenu, { active: 'all' }))
+    expect(markup).toContain('href="/home#home-lobby-games-title"')
+    expect(markup).toContain('href="/home?category=Slots#home-lobby-games-title"')
+    expect(markup).toContain('href="/home?category=Cards#home-lobby-games-title"')
+    expect(markup).not.toMatch(/href="\/(games|cards|slots)"/)
+    for (const pathname of ['/games', '/cards', '/slots']) {
+      expect(pageTitleForPath(pathname)).toBe('Home — Fortune Forge')
+    }
+  })
+
   it('renders the slot menu with all twenty demo games and a card-room link', () => {
     const markup = renderToStaticMarkup(createElement(DemoSlotsLibraryPage))
     const demoLinks = markup.match(/aria-label="Play demo:/g) ?? []
@@ -66,7 +78,7 @@ describe('game category menus', () => {
   it('omits recently played when the authenticated game browser has no history', () => {
     const markup = renderToStaticMarkup(createElement(OtherGamesPage, { account }))
 
-    expect(markup).toContain('href="/games" aria-current="page"')
+    expect(markup).toContain('href="/home#home-lobby-games-title" aria-current="page"')
     expect(markup).toContain('All games')
     expect(markup).toContain('>Popular</h2>')
     expect(markup).not.toContain('>Recently played</h2>')
@@ -82,6 +94,7 @@ describe('game category menus', () => {
     expect(markup).toContain('href="/games/liars-dice"')
     expect(markup).toContain('href="/games/roulette"')
     expect(markup).toContain('href="/games/craps"')
+    expect(markup).toContain('href="/games/mines"')
     expect(markup).toContain('href="/games/asteroids"')
     expect(markup).not.toContain('href="/games/horse-flight"')
     expect(markup).toContain('href="/games/2048"')
@@ -123,6 +136,7 @@ describe('game category menus', () => {
     expect(pageTitleForPath('/games/video-poker')).toBe('Video Poker — Fortune Forge')
     expect(pageTitleForPath('/games/roulette')).toBe('Roulette — Fortune Forge')
     expect(pageTitleForPath('/games/craps')).toBe('Craps — Fortune Forge')
+    expect(pageTitleForPath('/games/mines')).toBe('Mines — Fortune Forge')
     expect(pageTitleForPath('/cards/hearts')).toBe('Hearts — Fortune Forge')
   })
 })

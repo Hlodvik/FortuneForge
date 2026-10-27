@@ -1,3 +1,5 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
 @font-face { font-family:'FF Craps UI'; src:url('./assets/fonts/sora-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
 @font-face { font-family:'FF Craps Felt'; src:url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2'); font-style:normal; font-weight:100 900; font-display:swap; }
 
@@ -62,7 +64,7 @@
 .ff-craps-proposition.is-any-craps { grid-column:2; grid-row:3; border-left:2px solid var(--ff-craps-line); border-block:2px solid var(--ff-craps-line); }
 .ff-craps-proposition strong { font:680 clamp(17px,2vw,25px)/1.05 'FF Craps Felt',Georgia,serif; letter-spacing:.02em; }
 .ff-craps-proposition small, .ff-craps-proposition__payout, .ff-craps-proposition__caption { font-size:9px; line-height:1.2; letter-spacing:.06em; }
-.ff-craps-proposition > span:not(.ff-craps-chip-stack):not(.ff-craps-field-numbers):not(.ff-craps-proposition__numbers) { font-size:10px; }
+.ff-craps-proposition > span:not(.ff-craps-chip-stack):not(.ff-craps-field-numbers):not(.ff-craps-proposition__numbers):not(.ff-craps-proposition__caption) { font-size:10px; }
 .ff-craps-field-numbers { display:flex; justify-content:center; align-items:center; gap:clamp(7px,1.5vw,22px); width:100%; color:#eee5b9; font:660 clamp(20px,2.5vw,33px)/1 'FF Craps Felt',Georgia,serif; }
 .ff-craps-field-numbers > span { display:grid; place-items:center; min-width:24px; }
 .ff-craps-field-numbers > .is-double { width:1.55em; height:1.55em; border:1px solid var(--ff-craps-line); border-radius:50%; }

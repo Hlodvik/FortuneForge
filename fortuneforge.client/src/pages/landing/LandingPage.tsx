@@ -77,7 +77,7 @@ export function LandingPage() {
           </nav>
           <div className="ff-landing__section-heading">
             <h2 id="discover-title">Find your next favourite</h2>
-            <a href="/games">View all games <Arrow /></a>
+            <a href="/home#home-lobby-games-title">View all games <Arrow /></a>
           </div>
           <div className="ff-landing__game-grid" aria-live="polite" aria-busy={visibility.loading}>
             {games.map(game => {

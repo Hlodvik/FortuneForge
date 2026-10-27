@@ -21,11 +21,12 @@ describe('InGameNavbar', () => {
     expect(markup).toContain('aria-haspopup="dialog"')
     expect(renderToStaticMarkup(<InGameNavbar title="Public demo" />)).not.toContain('Report this game')
   })
-  it('always supplies the canonical home and game-library exits', () => {
+  it('always supplies home and its game catalogue as the authenticated exits', () => {
     const markup = renderToStaticMarkup(<InGameNavbar account={account} title="Asteroids" />)
     expect(markup).toContain('href="/home"')
     expect(markup).toContain('Fortune Forge home')
-    expect(markup).toContain('href="/games"')
+    expect(markup).toContain('href="/home#home-lobby-games-title"')
+    expect(markup).not.toContain('href="/games"')
     expect(markup).toContain('Other Games')
   })
 

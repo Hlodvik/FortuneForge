@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react'
 import { GameLoadingScreen } from '../features/game-loading/GameLoadingScreen'
 import { GameLoadingRouteProvider } from '../features/game-loading/GameLoadingRouteContext'
 import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingRegistry'
@@ -9,9 +9,6 @@ const DemoSlotsLibraryPage = lazy(() => import('../pages/slots/SlotsLibraryPage'
 const DemoCardLibraryPage = lazy(() => import('../pages/cards/CardGameLibraryPage').then((module) => ({ default: module.CardGameLibraryPage })))
 const DemoBlackjackPage = lazy(() => import('../pages/cards/blackjack/BlackjackPage').then((module) => ({ default: module.BlackjackPage })))
 const DemoTexasHoldemPage = lazy(() => import('../pages/cards/texasHoldem/TexasHoldemPage').then((module) => ({ default: module.TexasHoldemPage })))
-const AuthenticatedSlotsLibraryRoute = lazy(() => import('./routes/SlotsLibraryRoute').then((module) => ({ default: module.AuthenticatedSlotsLibraryRoute })))
-const AuthenticatedCardLibraryRoute = lazy(() => import('./routes/CardLibraryRoute').then((module) => ({ default: module.AuthenticatedCardLibraryRoute })))
-const AuthenticatedGameHubRoute = lazy(() => import('./routes/GameHubRoute').then((module) => ({ default: module.AuthenticatedGameHubRoute })))
 const AuthenticatedBlackjackRoute = lazy(() => import('./routes/BlackjackRoute').then((module) => ({ default: module.AuthenticatedBlackjackRoute })))
 const AuthenticatedThreeCardPokerRoute = lazy(() => import('./routes/ThreeCardPokerRoute').then((module) => ({ default: module.AuthenticatedThreeCardPokerRoute })))
 const AuthenticatedHouseHoldemRoute = lazy(() => import('./routes/HouseHoldemRoute').then((module) => ({ default: module.AuthenticatedHouseHoldemRoute })))
@@ -70,9 +67,9 @@ export function AppRoutes({
   else if (pathname === '/demo/cards') route = <DemoCardLibraryPage demoMode />
   else if (pathname === '/demo/cards/blackjack') route = <DemoBlackjackPage demoMode />
   else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage />
-  else if (pathname === '/slots') route = <AuthenticatedSlotsLibraryRoute />
-  else if (pathname === '/cards') route = <AuthenticatedCardLibraryRoute />
-  else if (pathname === '/games') route = <AuthenticatedGameHubRoute />
+  else if (pathname === '/slots') route = <CatalogueHomeRedirect href="/home?category=Slots#home-lobby-games-title" />
+  else if (pathname === '/cards') route = <CatalogueHomeRedirect href="/home?category=Cards#home-lobby-games-title" />
+  else if (pathname === '/games') route = <CatalogueHomeRedirect href="/home#home-lobby-games-title" />
   else if (pathname === '/games/asteroids') route = <AuthenticatedAsteroidsRoute />
   else if (pathname === '/games/2048') route = <AuthenticatedTwentyFortyEightRoute />
   else if (pathname === '/games/drop-merge') route = <AuthenticatedDropMergeRoute />
@@ -122,6 +119,11 @@ export function AppRoutes({
       </RouteErrorBoundary>
     </GameLoadingRouteProvider>
   )
+}
+
+function CatalogueHomeRedirect({ href }: { href: string }) {
+  useEffect(() => { window.location.replace(href) }, [href])
+  return <main className="route-state" role="status">Opening your home…</main>
 }
 
 function RouteLoadingState() {

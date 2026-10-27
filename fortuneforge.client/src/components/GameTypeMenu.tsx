@@ -5,12 +5,12 @@ export function GameTypeMenu({
   active: 'all' | 'cards' | 'slots' | 'other'
   demoMode?: boolean
 }) {
-  const slotsHref = demoMode ? '/demo' : '/slots'
-  const cardsHref = demoMode ? '/demo/cards' : '/cards'
+  const slotsHref = demoMode ? '/demo' : '/home?category=Slots#home-lobby-games-title'
+  const cardsHref = demoMode ? '/demo/cards' : '/home?category=Cards#home-lobby-games-title'
 
   return (
     <nav className="game-hub-sidebar" aria-label="Game categories">
-      {!demoMode && <a className={active === 'all' ? 'is-active' : ''} href="/games"
+      {!demoMode && <a className={active === 'all' ? 'is-active' : ''} href="/home#home-lobby-games-title"
         aria-current={active === 'all' ? 'page' : undefined}>All games</a>}
       <a
         className={active === 'slots' ? 'is-active' : ''}
@@ -26,7 +26,7 @@ export function GameTypeMenu({
       >
         Card room
       </a>
-      {!demoMode && <a className={active === 'other' ? 'is-active' : ''} href="/games"
+      {!demoMode && <a className={active === 'other' ? 'is-active' : ''} href="/home#home-lobby-games-title"
         aria-current={active === 'other' ? 'page' : undefined}>Other games</a>}
     </nav>
   )

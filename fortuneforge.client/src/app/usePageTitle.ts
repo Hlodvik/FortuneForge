@@ -3,10 +3,10 @@ import { findSlotRoute } from '../games/slots'
 
 const pageTitles: Record<string, string> = {
   '/': 'Fortune Forge — Play Your Way',
-  '/slots': 'Choose a Slot Machine — Fortune Forge',
+  '/slots': 'Home — Fortune Forge',
   '/demo': 'Choose a Demo — Fortune Forge',
-  '/cards': 'Choose a Card Game — Fortune Forge',
-  '/games': 'Other Games — Fortune Forge',
+  '/cards': 'Home — Fortune Forge',
+  '/games': 'Home — Fortune Forge',
   '/games/asteroids': 'Asteroid Blaster — Fortune Forge',
   '/games/2048': '2048 — Fortune Forge',
   '/games/drop-merge': 'Drop Merge — Fortune Forge',

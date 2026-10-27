@@ -170,7 +170,7 @@ function holdemActivity(session: Awaited<ReturnType<
     id: session.ticketId,
     matchId: session.ticketId,
     game: 'texas-holdem',
-    gameLabel: 'Hold’em',
+    gameLabel: 'Texas Hold’em',
     title: 'Waiting for a table',
     summary: `${session.players.length} player${session.players.length === 1 ? '' : 's'} ready`,
     startedAtUtc: session.joinedAtUtc,
@@ -184,7 +184,7 @@ function holdemActivity(session: Awaited<ReturnType<
     id: session.table.matchId,
     matchId: session.table.matchId,
     game: 'texas-holdem',
-    gameLabel: 'Hold’em',
+    gameLabel: 'Texas Hold’em',
     title: `Table · hand ${session.table.handNumber}`,
     summary: `Pot R${(session.table.pot / 100).toFixed(2)} · current bet R${(session.table.currentBet / 100).toFixed(2)}`,
     startedAtUtc: session.table.startedAtUtc,
@@ -293,7 +293,7 @@ function money(value: number): string {
 
 function gameLabel(game: CardRoomActivity['game']): string {
   if (game === 'blackjack') return 'Blackjack'
-  if (game === 'texas-holdem') return 'Hold’em'
+  if (game === 'texas-holdem') return 'Texas Hold’em'
   if (game === 'three-card-poker') return 'Three Card Poker'
   if (game === 'house-holdem') return 'House Hold’em'
   if (game === 'hi-lo') return 'Hi-Lo'

@@ -231,6 +231,10 @@ test('Three Card Poker keeps a result available until the player dismisses it', 
   await expect(result).toBeVisible()
   await page.getByRole('button', { name: 'Dismiss round result' }).click({ position: { x: 5, y: 5 } })
   await expect(result).toHaveCount(0)
+  fixture.settleNextRound()
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')))
+  await expect(result).toBeVisible()
+  await expect(result).toContainText('−R1.00')
 })
 
 async function mockTable(page: Page) {
@@ -277,8 +281,18 @@ async function mockTable(page: Page) {
     if (path.endsWith('/session')) return send({ kind: 'idle' })
     return send({})
   })
-  return { ...fixture, advanceToNextRound: () => {
-    if (session.kind !== 'table') throw new Error('No active table to advance')
-    session = { ...table, version: session.version + 1, table: { ...table.table, round: session.table.round + 1 } }
-  } }
+  return {
+    ...fixture,
+    advanceToNextRound: () => {
+      if (session.kind !== 'table') throw new Error('No active table to advance')
+      session = { ...table, version: session.version + 1, table: { ...table.table, round: session.table.round + 1 } }
+    },
+    settleNextRound: () => {
+      if (session.kind !== 'table') throw new Error('No active table to settle')
+      session = { ...session, version: session.version + 1, table: {
+        ...session.table, phase: 'settled', transition: null, activeSeat: null, legalActions: [],
+        seats: session.table.seats.map((seat) => ({ ...seat, status: 'completed', ante: 1, totalWager: 1, payout: 0, outcome: 'fold', lastAction: 'fold' })),
+      } }
+    },
+  }
 }

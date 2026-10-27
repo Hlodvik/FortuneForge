@@ -218,7 +218,7 @@ function TablePanel(props: ContentProps & { status: ThreeCardPokerStatus; sessio
   const [playPlacements, setPlayPlacements] = useState<ChipValue[]>([])
   const [selectedChip, setSelectedChip] = useState<ChipValue>(1)
   const [chipPickerOpen, setChipPickerOpen] = useState(false)
-  const [visibleResult, setVisibleResult] = useState<ThreeCardPokerSeat | null>(null)
+  const [visibleResult, setVisibleResult] = useState<{ roundKey: string; seat: ThreeCardPokerSeat } | null>(null)
   const shownResultKey = useRef<string | null>(null)
   const dismissedResultKey = useRef<string | null>(null)
   const decisionRef = useRef<HTMLDivElement>(null)
@@ -234,13 +234,13 @@ function TablePanel(props: ContentProps & { status: ThreeCardPokerStatus; sessio
   useEffect(() => {
     if (table.phase !== 'settled' || !current?.outcome || shownResultKey.current === resultKey || dismissedResultKey.current === resultKey) return
     shownResultKey.current = resultKey
-    setVisibleResult(current)
+    setVisibleResult({ roundKey: resultKey, seat: current })
   }, [table.phase, current, resultKey])
   useEffect(() => {
     if (actionTurn) decisionRef.current?.focus()
   }, [actionTurn, table.round])
   const dismissResult = () => {
-    dismissedResultKey.current = resultKey
+    dismissedResultKey.current = visibleResult?.roundKey ?? resultKey
     setVisibleResult(null)
   }
   const placeChip = (spot: ChipPlacement['spot']) => {
@@ -292,7 +292,7 @@ function TablePanel(props: ContentProps & { status: ThreeCardPokerStatus; sessio
     previousPhase.current = table.phase
   }, [count, table.phase])
   const blocked = (fingerprint: string) => props.busy || (props.pending !== null && props.pending.fingerprint !== fingerprint)
-  const resultSeat = visibleResult ?? (table.phase === 'settled' && dismissedResultKey.current !== resultKey ? current : null)
+  const resultSeat = visibleResult?.seat ?? (table.phase === 'settled' && dismissedResultKey.current !== resultKey ? current : null)
   return <main className="blackjack-main blackjack-game"><section className="blackjack-table" aria-label="Three Card Poker table" data-phase={table.phase}>
     <p className="three-card-poker-sr-only" role="status">{actionTurn ? `Your turn. Add chips to Wager until it matches your ${money(playTarget)} Ante, then Play or Fold.` : wagerTurn ? 'Place your Ante and optional Pair Plus, then Deal.' : ''}</p>
     <div className="blackjack-playfield">

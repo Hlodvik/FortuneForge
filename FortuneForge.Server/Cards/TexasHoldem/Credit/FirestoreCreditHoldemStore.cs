@@ -690,7 +690,10 @@ internal sealed class FirestoreCreditHoldemStore(
                 return await database.RunTransactionAsync(callback, cancellationToken: cancellationToken);
             }
             catch (RpcException exception) when (
-                exception.StatusCode == StatusCode.Aborted && attempt < maximumAttempts)
+                (exception.StatusCode == StatusCode.Aborted ||
+                 exception.StatusCode == StatusCode.InvalidArgument &&
+                 exception.Status.Detail.Contains("Transaction is invalid or closed", StringComparison.OrdinalIgnoreCase)) &&
+                attempt < maximumAttempts)
             {
                 var exponential = Math.Min(500, 20 * (1 << Math.Min(attempt - 1, 5)));
                 var backoffMilliseconds = exponential + Random.Shared.Next(25, 126);

@@ -8,7 +8,7 @@ type LoadingStyle = CSSProperties & {
 }
 
 /** Render only while the caller has genuine pending work; this view owns no timers. */
-export function GameLoadingScreen({ entry }: { entry?: GameLoadingEntry }) {
+export function GameLoadingScreen({ entry, statusLabel }: { entry?: GameLoadingEntry; statusLabel?: string }) {
   const titleId = useId()
   const [failedImage, setFailedImage] = useState<string | null>(null)
   const showArtwork = Boolean(entry?.image && failedImage !== entry.image)
@@ -50,7 +50,7 @@ export function GameLoadingScreen({ entry }: { entry?: GameLoadingEntry }) {
         </div>
         <p className="ff-game-loading__status" role="status" aria-live="polite" aria-atomic="true">
           <span className="ff-game-loading__indicator" aria-hidden="true" />
-          <span>{entry ? `Loading ${entry.title}…` : 'Loading game…'}</span>
+          <span>{statusLabel ?? (entry ? `Loading ${entry.title}…` : 'Loading game…')}</span>
         </p>
       </div>
     </section>

@@ -163,7 +163,7 @@ type ContentProps = Readonly<{
 }>
 export function ThreeCardPokerContent(props: ContentProps) {
   const { availability } = props
-  if (availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/three-card-poker')} />
+  if (availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/three-card-poker')} statusLabel="Loading" />
   if (availability.kind !== 'ready') return <main className="blackjack-main blackjack-state" role={availability.kind === 'error' ? 'alert' : 'status'}><h1>{availability.kind === 'error' ? 'The table is offline.' : 'Three Card Poker is unavailable.'}</h1><p>{availability.message}</p><button type="button" onClick={props.onRefresh}>Try again</button></main>
   const { session, status } = availability
   if (session.kind === 'idle') {
@@ -366,7 +366,7 @@ function RoundResult({ seat, onDismiss }: { seat: ThreeCardPokerSeat; onDismiss:
   </div>
 }
 function CardStackIcon() {
-  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#062c37" stroke="#c8fff8" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4fcf6" stroke="#0d5560" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#267797"/><path d="M36 24l7 9-7 9-7-9z" fill="#bce9ee"/></svg>
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#123d29" stroke="#edf2e4" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4f5eb" stroke="#52715b" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#879b7c"/><path d="M36 24l7 9-7 9-7-9z" fill="#edf1e2"/></svg>
 }
 function CloseIcon() {
   return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M21 21 43 43M43 21 21 43" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" /></svg>

@@ -6,7 +6,7 @@
 .three-card-poker-shell .blackjack-help__panel h2 { font-weight: 750; letter-spacing: -.04em; }
 .three-card-poker-page {
   background: #041b15;
-  color: #e9ffff;
+  color: #f4f5ea;
   font-family: var(--three-card-ui-font);
 }
 .three-card-poker-page .blackjack-title h1,
@@ -30,27 +30,27 @@
 }
 .three-card-poker-limits {
   position: absolute; z-index: 2; top: 1.5%; left: 50%;
-  color: #d4f9fc; font-size: clamp(.58rem, .95vw, .78rem); font-weight: 700; letter-spacing: .07em;
-  text-align: center; text-shadow: 0 1px 3px #003142; white-space: nowrap; transform: translateX(-50%);
+  color: #f0f2e9; font-size: clamp(.58rem, .95vw, .78rem); font-weight: 700; letter-spacing: .07em;
+  text-align: center; text-shadow: 0 1px 3px #18372a; white-space: nowrap; transform: translateX(-50%);
 }
-.three-card-poker-limits span { padding-inline: .5rem; color: #84dfe4; }
+.three-card-poker-limits span { padding-inline: .5rem; color: #e2e8da; }
 .three-card-poker-page .blackjack-dealer { top: 6%; left: 50%; width: min(38%, 22rem); transform: translateX(-50%); }
 .three-card-poker-page .blackjack-dealer .blackjack-hand__heading { margin-bottom: .35rem; }
 .three-card-poker-page .blackjack-dealer .blackjack-hand__heading h2 {
-  color: #edffff; font: 750 clamp(.82rem, 1.3vw, 1.05rem)/1 var(--three-card-ui-font);
-  letter-spacing: .085em; text-shadow: 0 1px .55rem #00303e; text-transform: uppercase;
+  color: #f4f5e9; font: 750 clamp(.82rem, 1.3vw, 1.05rem)/1 var(--three-card-ui-font);
+  letter-spacing: .085em; text-shadow: 0 1px .55rem #18372a; text-transform: uppercase;
 }
-.three-card-poker-page .blackjack-dealer.is-active { filter: drop-shadow(0 0 .75rem rgb(118 239 245 / 38%)); }
-.three-card-poker-page .blackjack-dealer.is-active .blackjack-hand__heading h2 { color: #e8ffff; }
+.three-card-poker-page .blackjack-dealer.is-active { filter: drop-shadow(0 0 .75rem rgb(237 241 221 / 26%)); }
+.three-card-poker-page .blackjack-dealer.is-active .blackjack-hand__heading h2 { color: #f6f6ec; }
 .three-card-poker-page .blackjack-dealer.is-active .blackjack-hand__cards { box-shadow: none; }
 .three-card-poker-page .blackjack-hand__cards { gap: clamp(.4rem, 1vw, .85rem); min-height: calc(var(--ff-card-width) / .704); padding: 0; }
 .three-card-poker-page .blackjack-hand__cards .ff-card-slot + .ff-card-slot { margin-left: 0; }
 .three-card-poker-card-outline {
   display: block; width: var(--ff-card-width); height: calc(var(--ff-card-width) / .704); flex: 0 0 var(--ff-card-width);
-  border: 2px solid rgb(56 201 217 / 75%); border-radius: .58rem; background: rgb(0 70 91 / 8%);
-  box-shadow: inset 0 0 0 1px rgb(143 251 249 / 16%), 0 0 .85rem rgb(4 211 228 / 10%);
+  border: 2px solid rgb(237 241 225 / 74%); border-radius: .58rem; background: rgb(237 241 225 / 3%);
+  box-shadow: inset 0 0 0 1px rgb(244 245 232 / 13%), 0 0 .7rem rgb(236 242 225 / 9%);
 }
-.three-card-poker-page .blackjack-hand__heading small { color: #e2fcff; font-size: .62rem; letter-spacing: .05em; text-transform: uppercase; }
+.three-card-poker-page .blackjack-hand__heading small { color: #f0f3e8; font-size: .62rem; letter-spacing: .05em; text-transform: uppercase; }
 .three-card-poker-felt {
   position: absolute; top: 39%; left: 50%; display: grid; width: min(90%, 30rem); justify-items: center; gap: .25rem;
   color: rgb(65 200 215 / 76%); text-align: center; text-shadow: 0 0 1rem rgb(17 199 219 / 15%);
@@ -58,7 +58,7 @@
 }
 .three-card-poker-felt strong { font: italic 900 clamp(1.15rem, 2.5vw, 2.55rem)/1.05 Georgia, "Trebuchet MS", serif; letter-spacing: -.08em; white-space: nowrap; }
 .three-card-poker-felt span {
-  display: block; width: min(100%, 24rem); padding: .22rem .45rem .15rem; border-bottom: 2px solid rgb(61 190 207 / 75%);
+  display: block; width: min(100%, 24rem); padding: .22rem .45rem .15rem; border-bottom: 2px solid rgb(235 239 223 / 68%);
   border-radius: 0 0 50% 50%; font-size: clamp(.45rem, 1vw, .74rem); font-weight: 650;
   letter-spacing: .035em; text-transform: uppercase; white-space: nowrap;
 }
@@ -80,7 +80,7 @@
 .three-card-poker-player .blackjack-seat__hands > div { flex: 1; }
 .three-card-poker-player .blackjack-hand { --blackjack-card-size: var(--ff-card-width); }
 .three-card-poker-player .blackjack-hand__cards { margin-top: clamp(.5rem, calc(12.5vh - 4.6875rem), 1.875rem); }
-.three-card-poker-player .blackjack-seat__money { color: #e1f8fb; font-size: .68rem; }
+.three-card-poker-player .blackjack-seat__money { color: #f0f2e8; font-size: .68rem; }
 .three-card-poker-bets {
   position: absolute; z-index: 5; top: 84%; left: 50%; display: flex; width: min(38%, 23rem);
   align-items: center; justify-content: center; gap: clamp(.35rem, 1vw, 1rem); transform: translate(-50%, -50%);
@@ -88,19 +88,17 @@
 .three-card-poker-bet-spot {
   position: relative; display: block; width: clamp(4.2rem, 6.3vw, 5.2rem); height: clamp(4.2rem, 6.3vw, 5.2rem);
   flex: 0 1 auto; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none;
-  color: #e2ffff; font: 700 .72rem/1 var(--three-card-ui-font); text-align: center;
-  text-shadow: 0 1px .3rem #002e3c; text-transform: uppercase;
+  color: #f4f5e9; font: 700 .72rem/1 var(--three-card-ui-font); text-align: center;
+  text-shadow: 0 1px .3rem #18372a; text-transform: uppercase;
 }
 .three-card-poker-bet-spot::before {
-  position: absolute; inset: .75rem; border: 2px solid rgb(73 184 194 / 68%); border-radius: .08rem;
-  box-shadow: inset 0 0 0 1px rgb(0 49 65 / 34%);
+  position: absolute; inset: .75rem; border: 2px solid rgb(233 239 224 / 68%); border-radius: .08rem;
+  box-shadow: inset 0 0 0 1px rgb(13 51 36 / 34%);
   content: ''; transform: rotate(45deg); transition: border-color .16s;
 }
-.three-card-poker-bet-spot--pair-plus::before { border-color: rgb(203 174 108 / 70%); }
-.three-card-poker-bet-spot[data-active="true"]::before { border-color: rgb(112 210 212 / 86%); }
-.three-card-poker-bet-spot--pair-plus[data-active="true"]::before { border-color: rgb(230 195 119 / 86%); }
+.three-card-poker-bet-spot[data-empty="false"]::before { border-color: rgb(249 249 235 / 88%); }
 .three-card-poker-bets button.three-card-poker-bet-spot:not(:disabled) { cursor: pointer; }
-.three-card-poker-bets button.three-card-poker-bet-spot:not(:disabled):hover::before { border-color: #dcffff; }
+.three-card-poker-bets button.three-card-poker-bet-spot:not(:disabled):hover::before { border-color: #fffef3; }
 .three-card-poker-bet-spot:focus-visible { outline: 2px solid #fff; outline-offset: .18rem; }
 .three-card-poker-page .three-card-poker-bets button.three-card-poker-bet-spot:disabled {
   cursor: default; filter: none; opacity: 1;
@@ -118,7 +116,7 @@
   position: absolute; z-index: var(--chip-index); bottom: calc(var(--chip-index) * var(--chip-step)); left: 0;
   display: block; width: 100%; height: 100%; filter: drop-shadow(0 .15rem .12rem rgb(0 24 36 / 55%)); transform: none;
 }
-.three-card-poker-page .blackjack-actions {
+.three-card-poker-page.blackjack-table-page .blackjack-actions {
   position: relative; z-index: 6; display: block; height: 7.5rem; padding: 0; border: 0; border-radius: 0;
   background: linear-gradient(180deg, transparent, rgb(0 25 14 / 40%)); box-shadow: none; overflow: visible;
 }
@@ -164,7 +162,7 @@
 .three-card-poker-chip-picker__selected img,
 .three-card-poker-chip-option img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .three-card-poker-chip-picker__selected:hover:not(:disabled) { filter: brightness(1.1); }
-.three-card-poker-chip-picker__selected[aria-expanded="true"] { filter: drop-shadow(0 0 .5rem rgb(131 248 248 / 80%)); }
+.three-card-poker-chip-picker__selected[aria-expanded="true"] { filter: drop-shadow(0 0 .5rem rgb(245 245 226 / 76%)); }
 .three-card-poker-chip-picker__options {
   position: absolute; z-index: 13; top: 50%; left: calc(100% + 8px); display: flex;
   width: max-content; max-width: calc(100vw - 70px); flex-wrap: wrap;
@@ -183,42 +181,42 @@
 @keyframes three-card-poker-chips-open { from { opacity: 0; transform: translateY(-50%) scale(.82); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
 .three-card-poker-page .blackjack-actions .three-card-poker-action-orb {
   display: grid; width: 3.6rem; height: 3.6rem; min-width: 0; min-height: 0; place-items: center; padding: .2rem;
-  border: .22rem solid #15363f; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #162a31, #020e14 72%);
-  box-shadow: inset 0 0 0 1px rgb(178 246 246 / 22%), 0 .28rem .55rem rgb(0 11 17 / 45%);
-  color: #faffff; font: 900 2.5rem/1 "Trebuchet MS", sans-serif;
+  border: .22rem solid #29483a; border-radius: 50%; background: radial-gradient(circle at 35% 25%, #1b3025, #06130c 72%);
+  box-shadow: inset 0 0 0 1px rgb(242 244 223 / 22%), 0 .28rem .55rem rgb(0 11 8 / 45%);
+  color: #fafaf0; font: 900 2.5rem/1 "Trebuchet MS", sans-serif;
 }
 .three-card-poker-page .blackjack-actions .three-card-poker-action-orb--deal {
-  border-color: #277e7f;
-  box-shadow: inset 0 0 0 1px rgb(197 255 246 / 32%), 0 0 .65rem rgb(24 213 182 / 49%), 0 .25rem .6rem rgb(0 12 18 / 52%);
+  border-color: #b9c6af;
+  box-shadow: inset 0 0 0 1px rgb(246 247 230 / 30%), 0 0 .65rem rgb(237 240 212 / 28%), 0 .25rem .6rem rgb(0 12 8 / 52%);
 }
 .three-card-poker-action-orb svg { display: block; width: 2.3rem; height: 2.3rem; }
-.three-card-poker-page .blackjack-actions .three-card-poker-action-orb:hover:not(:disabled) { border-color: #afffff; background: #063645; }
+.three-card-poker-page .blackjack-actions .three-card-poker-action-orb:hover:not(:disabled) { border-color: #f4f4e6; background: #153d2d; }
 .three-card-poker-page .blackjack-actions .three-card-poker-action-orb:disabled { opacity: .45; }
 .three-card-poker-action-stats {
   position: absolute; right: 20%; bottom: .35rem; left: 20%; display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)); color: #bfeaf1;
+  grid-template-columns: repeat(3, minmax(0, 1fr)); color: #dce7d8;
   font-size: clamp(.62rem, .9vw, .79rem); font-weight: 600; font-variant-numeric: tabular-nums; pointer-events: none;
 }
 .three-card-poker-action-stats span { display: grid; gap: .1rem; text-align: center; }
-.three-card-poker-action-stats strong { color: #f5ffff; font-size: 1.12em; font-weight: 750; }
+.three-card-poker-action-stats strong { color: #f4f5e9; font-size: 1.12em; font-weight: 750; }
 .three-card-poker-page .blackjack-leave--corner {
   top: .5rem; right: .5rem; bottom: auto; min-width: 0; min-height: 1.7rem; padding: .3rem .45rem;
-  border: 1px solid rgb(101 202 212 / 43%); border-radius: .3rem; background: rgb(0 40 54 / 72%);
-  box-shadow: none; color: #d3f8fa; font: 700 .6rem/1 var(--three-card-ui-font); letter-spacing: .015em;
+  border: 1px solid rgb(229 238 218 / 45%); border-radius: .3rem; background: rgb(0 38 24 / 72%);
+  box-shadow: none; color: #f0f2e5; font: 700 .6rem/1 var(--three-card-ui-font); letter-spacing: .015em;
 }
 .three-card-poker-result-backdrop { position: absolute; z-index: 19; inset: 0; width: 100%; height: 100%; border: 0; background: rgb(0 17 11 / 40%); cursor: default; }
 .three-card-poker-result {
   position: absolute; z-index: 20; top: 44%; left: 50%; width: min(33rem, calc(100% - 1.4rem));
   max-height: 70%; overflow: auto; padding: clamp(.85rem, 2vw, 1.45rem);
-  border: 1px solid rgb(107 221 233 / 36%); border-radius: 1.6rem; background: rgb(0 12 21 / 96%);
-  box-shadow: 0 1rem 3rem rgb(0 13 23 / 58%); color: #f2ffff;
+  border: 1px solid rgb(229 238 218 / 36%); border-radius: 1.6rem; background: rgb(0 17 12 / 96%);
+  box-shadow: 0 1rem 3rem rgb(0 13 9 / 58%); color: #f2f4e8;
   text-align: center; transform: translate(-50%, -50%); animation: three-card-poker-result-in .22s ease-out both;
 }
 .three-card-poker-result__close { position: absolute; top: .45rem; right: .65rem; border: 0; background: transparent; color: #fff; font-size: 1.6rem; line-height: 1; cursor: pointer; }
 .three-card-poker-result__title { display: block; margin: 0 0 .65rem; color: #fff; font-size: clamp(1.8rem, 3.4vw, 2.7rem); font-weight: 800; letter-spacing: -.055em; }
 .three-card-poker-result dl { display: grid; gap: .55rem; margin: 0; }
 .three-card-poker-result dl > div { display: flex; justify-content: space-between; gap: 1rem; font-size: clamp(.8rem, 1.3vw, 1.1rem); }
-.three-card-poker-result dt { color: #56cad7; }
+.three-card-poker-result dt { color: #dfe8d6; }
 .three-card-poker-result dd { margin: 0; font-variant-numeric: tabular-nums; }
 .three-card-poker-result__net { display: block; margin: .8rem 0 0; font-size: clamp(1.6rem, 3.3vw, 2.6rem); font-variant-numeric: tabular-nums; }
 .three-card-poker-result--win .three-card-poker-result__net { color: #81f6bf; }
@@ -232,7 +230,7 @@
   .three-card-poker-player { top: 53%; width: min(84%, 23rem); }
   .three-card-poker-bets { top: 86%; width: min(95%, 21rem); gap: .15rem; }
   .three-card-poker-bet-spot { width: clamp(4rem, 21vw, 5rem); height: clamp(4rem, 21vw, 5rem); }
-  .three-card-poker-page .blackjack-actions { height: 6.8rem; }
+  .three-card-poker-page.blackjack-table-page .blackjack-actions { height: 6.8rem; }
   .three-card-poker-page .blackjack-leave--corner { top: .35rem; }
 }
 @media (max-width: 430px) {
@@ -271,7 +269,7 @@
   .three-card-poker-bet-spot__label { top: -.58rem; font-size: .53rem; }
   .three-card-poker-bet-spot__amount { bottom: -.1rem; font-size: .62rem; }
   .three-card-poker-chip-stack { --chip-step: .098rem; top: .45rem; width: 2.01rem; height: 2.01rem; }
-  .three-card-poker-page .blackjack-actions { height: 3.8rem; }
+  .three-card-poker-page.blackjack-table-page .blackjack-actions { height: 3.8rem; }
   .three-card-poker-wager-wrap, .three-card-poker-decision-actions { top: -.85rem; }
   .three-card-poker-chip-picker { left: 7px; bottom: calc(100% - 2rem); }
   .three-card-poker-page .blackjack-actions .three-card-poker-action-orb { width: 2.55rem; height: 2.55rem; font-size: 1.9rem; }

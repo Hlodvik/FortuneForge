@@ -10,8 +10,8 @@
   gap: 1rem;
   margin-inline: auto;
   padding: 0.55rem max(0.75rem, calc((100vw - 76rem) / 2));
-  border-bottom: 1px solid rgb(53 231 255 / 22%);
-  background: linear-gradient(105deg, rgb(7 26 67 / 96%), rgb(38 10 70 / 95%));
+  border-bottom: 1px solid rgb(227 197 141 / 24%);
+  background: #0d0f13;
   font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
 }
 
@@ -29,14 +29,14 @@
 .card-room-account-menu > summary::-webkit-details-marker,
 .card-room-more-menu > summary::-webkit-details-marker { display: none; }
 .card-room-account-menu > nav,
-.card-room-more-menu > nav { position: absolute; z-index: 35; top: calc(100% + 0.45rem); right: 0; display: grid; min-width: 12rem; padding: 0.35rem; border: 1px solid rgb(53 231 255 / 25%); border-radius: 0.7rem; background: rgb(18 9 55 / 97%); box-shadow: 0 1rem 2rem rgb(0 0 0 / 42%); }
+.card-room-more-menu > nav { position: absolute; z-index: 35; top: calc(100% + 0.45rem); right: 0; display: grid; min-width: 12rem; padding: 0.35rem; border: 1px solid rgb(227 197 141 / 25%); border-radius: 0.7rem; background: rgb(17 18 23 / 97%); box-shadow: 0 1rem 2rem rgb(0 0 0 / 42%); }
 .card-room-account-menu nav a,
 .card-room-more-menu nav a,
 .card-room-more-menu nav button { padding: 0.58rem 0.65rem; border: 0; border-radius: 0.45rem; background: transparent; color: #f7efd0; cursor: pointer; font: 700 0.68rem/1.2 inherit; text-align: left; text-decoration: none; }
 .card-room-account-menu nav a:hover,
 .card-room-more-menu nav a:hover,
 .card-room-more-menu nav button:hover { background: rgb(230 207 132 / 10%); }
-.card-room-more-menu > summary { display: grid; width: 2.55rem; aspect-ratio: 1; place-content: center; gap: 0.2rem; border: 1px solid rgb(53 231 255 / 28%); border-radius: 50%; background: rgb(20 12 59 / 82%); }
+.card-room-more-menu > summary { display: grid; width: 2.55rem; aspect-ratio: 1; place-content: center; gap: 0.2rem; border: 1px solid rgb(227 197 141 / 28%); border-radius: 50%; background: #16171d; }
 .card-room-more-menu > summary span { width: 0.95rem; height: 2px; border-radius: 2px; background: #f5e6af; }
 
 .card-room-header__navigation {
@@ -51,10 +51,10 @@
   text-decoration: none;
 }
 
-.card-room-header__brand { gap: 0.5rem; margin-right: 0.35rem; font-size: 0.9rem; font-weight: 900; letter-spacing: 0.06em; text-transform: uppercase; }
-.card-room-header__brand strong { background: linear-gradient(90deg, #35e7ff, #fff8ff 38%, #f98cff 70%, #ffc63d); background-clip: text; color: transparent; }
-.card-room-header__spark { display: grid; width: 1.9rem; aspect-ratio: 1; place-items: center; border: 1px solid rgb(255 198 61 / 62%); border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff8ff, #ffc63d 25%, #ef3dff 66%, #351160); box-shadow: 0 0 1rem rgb(239 61 255 / 34%), inset 0 0 0 2px rgb(44 11 74 / 45%); color: #32104b; font-size: 0.85rem; text-shadow: 0 1px #fff8ff; }
-.card-room-header__other-games { min-height: 2.25rem; padding-inline: 0.8rem; border: 1px solid rgb(53 231 255 / 25%); border-radius: 999px; color: #d9d1ef; font-size: 0.7rem; font-weight: 800; }
+.card-room-header__brand { gap: 0.5rem; margin-right: 0.35rem; font: 500 1.05rem/1 Georgia, 'Times New Roman', serif; letter-spacing: 0.12em; text-transform: uppercase; }
+.card-room-header__brand strong { color: #e3c58d; font-weight: 500; }
+.card-room-header__spark { display: block; width: 1.8rem; aspect-ratio: 1; flex: 0 0 auto; background: #e3c58d; font-size: 0; -webkit-mask: url('../../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat; mask: url('../../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat; }
+.card-room-header__other-games { min-height: 2.25rem; padding-inline: 0.8rem; border: 1px solid rgb(227 197 141 / 27%); border-radius: 999px; color: #e4dccb; font-size: 0.7rem; font-weight: 800; }
 .card-room-header__other-games:hover,
 .card-room-header__other-games:focus-visible { border-color: #f4d579; color: #fff7d6; outline: none; }
 
@@ -65,9 +65,9 @@
   aspect-ratio: 1;
   place-items: center;
   padding: 0;
-  border: 1px solid rgb(53 231 255 / 34%);
+  border: 1px solid rgb(227 197 141 / 34%);
   border-radius: 50%;
-  background: linear-gradient(180deg, rgb(43 26 91 / 92%), rgb(18 15 62 / 94%));
+  background: #16171d;
   box-shadow: 0 0.3rem 0.75rem rgb(0 10 8 / 32%);
   color: #fff1b9;
   cursor: pointer;
@@ -83,7 +83,7 @@
 .card-room-header__icon:focus-visible,
 .card-room-history[open] > .card-room-header__icon {
   border-color: #ffe18a;
-  background: linear-gradient(180deg, #66349e, #27206f);
+  background: #242018;
   outline: none;
 }
 
@@ -106,7 +106,7 @@
   height: 1.2rem;
   place-items: center;
   padding-inline: 0.25rem;
-  border: 2px solid #171447;
+  border: 2px solid #0d0f13;
   border-radius: 999px;
   background: #ffcf4d;
   color: #271900;
@@ -118,9 +118,9 @@
   gap: 0.75rem;
   min-width: 0;
   padding: 0.42rem 0.65rem 0.42rem 0.9rem;
-  border: 1px solid rgb(53 231 255 / 26%);
+  border: 1px solid rgb(227 197 141 / 26%);
   border-radius: 999px;
-  background: rgb(20 12 59 / 78%);
+  background: #16171d;
   box-shadow: 0 0.3rem 0.8rem rgb(2 2 22 / 32%);
 }
 
@@ -146,9 +146,9 @@
   max-height: min(38rem, calc(100svh - 5rem));
   overflow: auto;
   padding: 0.85rem;
-  border: 1px solid rgb(53 231 255 / 28%);
+  border: 1px solid rgb(227 197 141 / 28%);
   border-radius: 1rem;
-  background: rgb(18 9 55 / 98%);
+  background: rgb(17 18 23 / 98%);
   box-shadow: 0 1rem 2.4rem rgb(2 1 22 / 62%);
   color: #f9f5df;
 }

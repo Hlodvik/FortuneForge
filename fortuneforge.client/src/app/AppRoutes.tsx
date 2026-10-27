@@ -1,4 +1,5 @@
 import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { InGameShell } from '../components/InGameShell'
 import { GameLoadingScreen } from '../features/game-loading/GameLoadingScreen'
 import { GameLoadingRouteProvider } from '../features/game-loading/GameLoadingRouteContext'
 import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingRegistry'
@@ -115,7 +116,9 @@ export function AppRoutes({
   return (
     <GameLoadingRouteProvider entry={loadingEntry}>
       <RouteErrorBoundary key={pathname}>
-        <Suspense fallback={loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}>{route}</Suspense>
+        <Suspense fallback={pathname === '/cards/three-card-poker'
+          ? <InGameShell authenticated title="Three Card Poker" theme="cards" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body"><GameLoadingScreen entry={loadingEntry} statusLabel="Loading" /></InGameShell>
+          : loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}>{route}</Suspense>
       </RouteErrorBoundary>
     </GameLoadingRouteProvider>
   )

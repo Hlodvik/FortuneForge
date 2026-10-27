@@ -89,19 +89,19 @@ describe('Three Card Poker table', () => {
     expect(markup).not.toContain('ff-playing-card--face')
     expect(markup).not.toContain('ff-playing-card--back')
   })
-  it('blocks wagers beyond the balance or R500 spot cap and requires a R1 Ante', () => {
+  it('blocks wagers beyond the balance or R50 spot cap and requires a R1 Ante', () => {
     const betting = { ...session, table: { ...session.table, phase: 'betting', transition: 'human-wager', wagerDeadlineAtUtc: deadline } }
     expect(render(betting, { ante: 20, pairPlus: 10, balanceCredits: 25 })).toMatch(/aria-label="Deal" disabled=""/)
     expect(render(betting, { ante: 6, pairPlus: 0, balanceCredits: 10 })).toMatch(/aria-label="Deal" disabled=""/)
-    expect(render(betting, { ante: 501, balanceCredits: 1000 })).toMatch(/aria-label="Deal" disabled=""/)
+    expect(render(betting, { ante: 51, balanceCredits: 1000 })).toMatch(/aria-label="Deal" disabled=""/)
     expect(render(betting, { ante: 0 })).toMatch(/aria-label="Deal" disabled=""/)
     expect(validThreeCardPokerWager(0, status, true)).toBe(true)
     expect(validThreeCardPokerWager(0, status)).toBe(false)
     expect(validThreeCardPokerWager(NaN, status, true)).toBe(false)
     expect(validThreeCardPokerWager(.75, status)).toBe(false)
     expect(validThreeCardPokerWager(1, status)).toBe(true)
-    expect(validThreeCardPokerWager(500, status)).toBe(true)
-    expect(validThreeCardPokerWager(501, status)).toBe(false)
+    expect(validThreeCardPokerWager(50, status)).toBe(true)
+    expect(validThreeCardPokerWager(51, status)).toBe(false)
   })
   it('renders server settlement including independent Pair Plus after a fold', () => {
     const settled = { ...session, table: { ...session.table, phase: 'settled', legalActions: [], activeSeat: null, seats: [{ ...current, lastAction: 'fold', outcome: 'fold', pairPlus: 5, totalWager: 10, payout: 10, pairPlusPayout: 10 }] } }
@@ -128,7 +128,7 @@ describe('Three Card Poker table', () => {
 })
 const date = '2026-10-12T12:00:00Z'
 const deadline = '2026-10-12T12:00:30Z'
-const status: ThreeCardPokerStatus = { available: true, minimumWager: 1, maximumWager: 500, wagerIncrement: 1, minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 30, dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true, anteBonusPaytable: 'Straight 1:1; trips 4:1; straight flush 5:1', pairPlusPaytable: 'Pair 1:1; flush 3:1; straight 6:1; trips 30:1; straight flush 40:1', pairPlusPaysOnFold: true }
+const status: ThreeCardPokerStatus = { available: true, minimumWager: 1, maximumWager: 50, wagerIncrement: 1, minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 30, dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true, anteBonusPaytable: 'Straight 1:1; trips 4:1; straight flush 5:1', pairPlusPaytable: 'Pair 1:1; flush 3:1; straight 6:1; trips 30:1; straight flush 40:1', pairPlusPaysOnFold: true }
 const current: ThreeCardPokerSeat = { seatId: 'seat-1', displayName: 'Ada', seat: 0, status: 'playing', ante: 5, pairPlus: 0, playWager: 0, totalWager: 5, payout: 0, anteBonusPayout: 0, pairPlusPayout: 0, hand: { cards: [{ hidden: false, rank: 'Q', suit: 'spades' }, { hidden: false, rank: '6', suit: 'hearts' }, { hidden: false, rank: '4', suit: 'diamonds' }], rank: 'high-card' }, isCurrentPlayer: true }
 const session: ThreeCardPokerPlaySession = { contractVersion: 'cards.three-card-poker.table.v1', kind: 'table', version: 8, table: { tableId: 'table-1', phase: 'active', round: 1, dealer: { cards: [{ hidden: true }, { hidden: true }, { hidden: true }], rank: null }, seats: [current], activeSeat: 0, legalActions: ['play', 'fold'], createdAtUtc: date, updatedAtUtc: date, actionDeadlineAtUtc: deadline, wagerDeadlineAtUtc: null, transition: null, nextTransitionAtUtc: null, remainingActionMilliseconds: 10_000, remainingWagerMilliseconds: 0, remainingTransitionMilliseconds: 0 } }
 function render(currentSession: ThreeCardPokerSession, overrides: Partial<Parameters<typeof ThreeCardPokerContent>[0]> = {}) {

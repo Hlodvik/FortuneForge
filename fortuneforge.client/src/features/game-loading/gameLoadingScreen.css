@@ -16,6 +16,10 @@
   isolation: isolate;
 }
 
+.ff-game-loading[data-game-loading="three-card-poker"] {
+  background: var(--game-loading-background);
+}
+
 .in-game-shell__body .ff-game-loading {
   min-block-size: 100%;
 }

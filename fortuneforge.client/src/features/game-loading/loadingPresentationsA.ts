@@ -37,8 +37,8 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
     title: "Three Card Poker",
     routes: ["/cards/three-card-poker"],
     image: threeCardPokerArt,
-    background: '#002e3c',
-    accent: '#84dfe4',
+    background: '#000000',
+    accent: '#eee9dd',
   },
   {
     id: "house-holdem",

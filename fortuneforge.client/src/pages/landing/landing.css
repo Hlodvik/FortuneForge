@@ -46,37 +46,42 @@
   justify-content: space-between;
   margin-inline: auto;
   padding-block: 1.25rem;
-  border-bottom: 1px solid rgb(53 231 255 / 20%);
+  border-bottom: 1px solid rgb(227 197 141 / 24%);
+}
+
+.landing-bar::before {
+  position: absolute;
+  z-index: -1;
+  inset-block: 0;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: #0d0f13;
+  content: '';
 }
 
 .landing-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  background: linear-gradient(90deg, #35e7ff, #fff8ff 42%, #f98cff 74%, #ffc63d);
-  background-clip: text;
-  color: transparent;
-  font-size: clamp(1.05rem, 2vw, 1.45rem);
-  font-weight: 950;
-  letter-spacing: 0.08em;
+  gap: 0.5rem;
+  color: #e3c58d;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1rem, 1.7vw, 1.25rem);
+  font-weight: 500;
+  letter-spacing: 0.12em;
   text-decoration: none;
   text-transform: uppercase;
 }
 
 .landing-brand__spark {
-  display: grid;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border: 1px solid rgb(255 198 61 / 62%);
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff8ff, #ffc63d 25%, #ef3dff 66%, #351160);
-  box-shadow:
-    0 0 1.2rem rgb(239 61 255 / 38%),
-    inset 0 0 0 2px rgb(44 11 74 / 45%);
-  color: #32104b;
-  font-size: 0.95rem;
-  text-shadow: 0 1px #fff8ff;
+  display: block;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 auto;
+  background: #e3c58d;
+  font-size: 0;
+  -webkit-mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
+  mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
 }
 
 .landing-nav {

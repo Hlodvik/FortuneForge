@@ -4,7 +4,7 @@ internal static class ThreeCardPokerMoney
 {
     public const long CentsPerRand = 100;
     public const long MinimumWagerCents = 100;
-    public const long MaximumWagerCents = 50_000;
+    public const long MaximumWagerCents = 5_000;
     public const long WagerIncrementCents = 100;
 
     public static decimal ToRand(long cents) => cents / (decimal)CentsPerRand;

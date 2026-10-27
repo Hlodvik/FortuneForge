@@ -66,12 +66,10 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.8rem clamp(1rem, 4vw, 3.5rem);
-  border-bottom: 1px solid var(--slot-topbar-border-color);
-  background: var(--slot-topbar-background);
+  border-bottom: 1px solid rgb(227 197 141 / 24%);
+  background: #0d0f13;
   box-shadow:
-    0 0.7rem 2.5rem var(--slot-topbar-shadow-color),
-    0 0.15rem 1.2rem var(--slot-topbar-accent-color);
-  backdrop-filter: blur(0.9rem) saturate(1.08);
+    0 0.7rem 2.5rem var(--slot-topbar-shadow-color);
 }
 
 .slots-page__brand-cluster {

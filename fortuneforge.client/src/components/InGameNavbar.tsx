@@ -6,6 +6,7 @@ import './InGameNavbar.css'
 
 export type InGameNavbarProps = Readonly<{
   account?: AccountSummary
+  authenticated?: boolean
   title?: string
   theme?: 'arcade' | 'casino' | 'cards' | 'slots'
   actions?: ReactNode
@@ -30,13 +31,13 @@ export function InGameNavExits({ authenticated = false, className, onNavigate }:
 }
 
 /** Host-owned game chrome. The home and library exits are intentionally not configurable. */
-export function InGameNavbar({ account, title, theme = 'arcade', actions, className }: InGameNavbarProps) {
+export function InGameNavbar({ account, authenticated = false, title, theme = 'arcade', actions, className }: InGameNavbarProps) {
   const classes = ['player-shell-header', 'in-game-navbar', `in-game-navbar--${theme}`, className]
     .filter(Boolean)
     .join(' ')
 
   return <header className={classes} data-game-navbar>
-    <InGameNavExits authenticated={account !== undefined} />
+    <InGameNavExits authenticated={authenticated || account !== undefined} />
     {title && <strong className="in-game-navbar__title">{title}</strong>}
     {actions && <div className="in-game-navbar__actions">{actions}</div>}
     {account && <div className="in-game-navbar__account-tools"><GameReportControl key={account.userId} gameTitle={title}/><PlayerAccountMenus account={account} showBalance={false} /></div>}

@@ -9,13 +9,13 @@ import {
 
 afterEach(() => vi.unstubAllGlobals())
 describe('Three Card Poker API boundary', () => {
-  it('accepts whole-rand wagers from R1 through R500', () => {
+  it('accepts whole-rand wagers from R1 through R50', () => {
     expect(validThreeCardPokerWager(1, status)).toBe(true)
     expect(validThreeCardPokerWager(27, status)).toBe(true)
-    expect(validThreeCardPokerWager(500, status)).toBe(true)
+    expect(validThreeCardPokerWager(50, status)).toBe(true)
     expect(validThreeCardPokerWager(.5, status)).toBe(false)
     expect(validThreeCardPokerWager(1.5, status)).toBe(false)
-    expect(validThreeCardPokerWager(501, status)).toBe(false)
+    expect(validThreeCardPokerWager(51, status)).toBe(false)
   })
   it('reads the solo table gate and server paytables', async () => {
     const fetch = successfulFetch(status)
@@ -92,7 +92,7 @@ describe('Three Card Poker API boundary', () => {
 })
 
 const status: ThreeCardPokerStatus = {
-  available: true, minimumWager: 1, maximumWager: 500, wagerIncrement: 1,
+  available: true, minimumWager: 1, maximumWager: 50, wagerIncrement: 1,
   minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 0,
   dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true,
   anteBonusPaytable: 'Straight 1:1; three of a kind 4:1; straight flush 5:1',

@@ -11,18 +11,18 @@ public sealed class ThreeCardPokerTableStateTests
     private static readonly DateTime Start = new(2026, 10, 12, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
-    public void WagerLimitsUseWholeRandBetsFromOneToFiveHundred()
+    public void WagerLimitsUseWholeRandBetsFromOneToFifty()
     {
         var status = ThreeCardPokerTableController.StatusContract();
-        Assert.Equal((1m, 500m, 1m),
+        Assert.Equal((1m, 50m, 1m),
             (status.MinimumWager, status.MaximumWager, status.WagerIncrement));
         Assert.Equal(100, ThreeCardPokerMoney.ToWagerCents(1m));
         Assert.Equal(200, ThreeCardPokerMoney.ToWagerCents(2m));
-        Assert.Equal(50_000, ThreeCardPokerMoney.ToWagerCents(500m));
+        Assert.Equal(5_000, ThreeCardPokerMoney.ToWagerCents(50m));
 
         Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(0.50m));
         Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(1.50m));
-        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(501m));
+        Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(51m));
         Assert.Throws<ArgumentOutOfRangeException>(() => ThreeCardPokerMoney.ToWagerCents(1.005m));
     }
 

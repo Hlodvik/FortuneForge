@@ -249,6 +249,8 @@ describe('KenoGame', () => {
     expect(createRound.mock.calls[1]?.[1]?.idempotencyKey).not.toBe(createRound.mock.calls[0]?.[1]?.idempotencyKey)
   })
 
+  // The draw and automatic clearing have separate 5s and 3s wait budgets.
+  // The whole interaction must allow both, plus accessible DOM queries.
   it('clears drawn states after a completed round while keeping the ticket selected', async () => {
     const user = userEvent.setup()
     render(<KenoGame gateway={fakeGateway()} initialSelection={[3, 7, 15]} />)
@@ -261,7 +263,7 @@ describe('KenoGame', () => {
     expect(screen.queryByRole('button', { name: 'Number 3, hit' })).toBeNull()
     expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3)
     expect(screen.getByRole('button', { name: 'Draw again' })).toBeTruthy()
-  })
+  }, 15_000)
 })
 
 const availableStatus: KenoStatus = {

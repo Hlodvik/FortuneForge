@@ -18,6 +18,8 @@ configure({ asyncUtilTimeout: 2_500 })
 afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.unstubAllGlobals() })
 
 describe('Baccarat wager accessibility and round controls', () => {
+  // This exercises the real deal animation plus four accessible user clicks.
+  // Allow headroom when the complete release suite shares the machine.
   it('keeps chip selections locked until the completed hand is left with New Bet', async () => {
     const user = userEvent.setup()
     render(<BaccaratGame gateway={gateway()} />)
@@ -33,7 +35,7 @@ describe('Baccarat wager accessibility and round controls', () => {
     expect(chip.disabled).toBe(true)
     await user.click(screen.getByRole('button', { name: 'New Bet' }))
     expect(chip.disabled).toBe(false)
-  })
+  }, 15_000)
 
   it('shows five chip denominations at once and scrolls from R0.25 through R50', async () => {
     const user = userEvent.setup()

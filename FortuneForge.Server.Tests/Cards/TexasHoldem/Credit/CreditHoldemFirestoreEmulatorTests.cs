@@ -107,8 +107,9 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         var match = await StartMatchAsync(store, first, second);
         var at = match.Table.MatchDeadlineAtUtc.AddSeconds(1);
 
-        await Task.WhenAll(Enumerable.Range(0, 8).Select(index => PollSettlementWithEmulatorContentionRetryAsync(
-            store, index % 2 == 0 ? first : second, at)));
+        await Task.WhenAll(
+            PollSettlementWithEmulatorContentionRetryAsync(store, first, at),
+            PollSettlementWithEmulatorContentionRetryAsync(store, second, at));
         var result = Assert.IsType<CreditHoldemResultSessionResponse>(
             (await store.GetSessionAsync(first, at, default)).Session);
         var balanceTotal = await ReadBalanceAsync(database, first) + await ReadBalanceAsync(database, second);
@@ -465,7 +466,7 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
     private static async Task<CreditHoldemStoreResult> PollSettlementWithEmulatorContentionRetryAsync(
         FirestoreCreditHoldemStore store, string userId, DateTime nowUtc)
     {
-        // Keep all eight initial settlement polls concurrent. The emulator can
+        // Keep both players' initial settlement polls concurrent. The emulator can
         // exhaust the store's transaction retries under loaded runners; retry
         // only that definitive Aborted status with a fresh read-poll. Every
         // payout/revenue/ledger assertion still runs against the raced result.

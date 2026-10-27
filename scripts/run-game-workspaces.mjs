@@ -21,9 +21,16 @@ for (const workspace of workspaces.filter((path) => path.startsWith('games/'))) 
   }
 
   console.log(`\n> ${packageJson.name} ${task}`)
+  const args = ['run', task, '--workspace', packageJson.name]
+  // UI suites include real deal/reveal animations and large accessible boards.
+  // Their combined interaction budget needs headroom on a busy release host;
+  // retain every assertion and a finite timeout, without automatic retries.
+  if (task === 'test' && packageJson.scripts[task].trim() === 'vitest run') {
+    args.push('--', '--testTimeout', '15000')
+  }
   const result = spawnSync(
     'npm',
-    ['run', task, '--workspace', packageJson.name],
+    args,
     { cwd: repositoryRoot, stdio: 'inherit', shell: process.platform === 'win32' },
   )
 

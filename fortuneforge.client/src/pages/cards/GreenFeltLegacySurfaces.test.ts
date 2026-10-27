@@ -35,11 +35,11 @@ describe('legacy host green table materials', () => {
     expect(backgrounds.every(block => block.includes('--ff-casino-felt-material'))).toBe(true)
   })
 
-  it('preserves the independent teal backgrounds inherited by Three Card Poker and House Hold’em', () => {
-    const tealTable = declarations('./threeCardPoker/threeCardPoker.css', '.three-card-poker-page .blackjack-table')
+  it('uses the shared green felt on Three Card Poker and the House Hold’em table that inherits it', () => {
+    const table = declarations('./threeCardPoker/threeCardPoker.css', '.three-card-poker-page .blackjack-table')
       .find(block => /\bbackground\s*:/.test(block))
-    expect(tealTable).toContain('#07506a')
-    expect(tealTable).not.toContain('--ff-casino-felt-material')
+    expect(table).toContain('var(--ff-casino-felt-material,')
+    expect(table).not.toContain('#07506a')
     expect(source('./houseHoldem/HouseHoldemPage.tsx')).toContain('three-card-poker-page house-holdem-page')
     expect(source('./houseHoldem/HouseHoldemPage.tsx')).toContain("import '../threeCardPoker/threeCardPoker.css'")
   })

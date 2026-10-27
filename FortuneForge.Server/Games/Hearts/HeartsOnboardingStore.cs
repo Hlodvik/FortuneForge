@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 
 namespace FortuneForge.Server.Games.Hearts;
 
@@ -34,7 +35,28 @@ internal sealed class FirestoreHeartsOnboardingStore(FirestoreDb database) : IHe
         return CompleteAsync(userId, "trial-completed", trialMatchId, nowUtc, cancellationToken);
     }
 
-    private Task CompleteAsync(string userId, string reason, Guid? trialMatchId, DateTime nowUtc, CancellationToken cancellationToken) =>
+    private async Task CompleteAsync(string userId, string reason, Guid? trialMatchId, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        // Concurrent confirmations can exhaust Firestore's internal transaction retries
+        // while waiting for the same onboarding document. Re-read it on a fresh attempt.
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                await CompleteOnceAsync(userId, reason, trialMatchId, nowUtc, cancellationToken);
+                return;
+            }
+            catch (RpcException exception) when (
+                exception.StatusCode == StatusCode.Aborted &&
+                exception.Status.Detail.Contains("Transaction lock timeout", StringComparison.OrdinalIgnoreCase) &&
+                attempt < 3)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(Random.Shared.Next(30, 120) * (attempt + 1)), cancellationToken);
+            }
+        }
+    }
+
+    private Task CompleteOnceAsync(string userId, string reason, Guid? trialMatchId, DateTime nowUtc, CancellationToken cancellationToken) =>
         database.RunTransactionAsync(async transaction =>
         {
             var reference = Account(userId);

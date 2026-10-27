@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "cardGameResults",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userGameHash", "order": "ASCENDING" },
+        { "fieldPath": "completedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "solitaireMatchPlayers",
       "queryScope": "COLLECTION",
       "fields": [

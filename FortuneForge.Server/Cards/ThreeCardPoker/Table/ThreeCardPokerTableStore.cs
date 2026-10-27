@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using FortuneForge.Server.Bots.ThreeCardPoker;
 
 namespace FortuneForge.Server.Cards.ThreeCardPoker.Table;
 
@@ -101,6 +102,9 @@ internal static class ThreeCardPokerTableProjection
         var reveal = settled || table.Phase == ThreeCardPokerTablePhases.Dealer && table.DealerVisibleCardCount == 3;
         var dealer = Hand(table.DealerCards, !reveal);
         var betting = table.Phase == ThreeCardPokerTablePhases.Betting;
+        var actionDeadline = table.Players.Count == 1 && !ThreeCardPokerManagedSeat.IsManaged(table.Players[0])
+            ? null
+            : table.ActionDeadlineAtUtc;
         var seats = table.Players.OrderBy(player => player.Seat).Select(player => new ThreeCardPokerTableSeatResponse(
             player.PublicSeatId, player.DisplayName, player.Seat, player.Status,
             ThreeCardPokerMoney.ToRand(betting ? player.NextWagerCents : player.WagerCents),
@@ -114,9 +118,9 @@ internal static class ThreeCardPokerTableProjection
         var viewer = table.Players.Single(player => player.ActorId == userId);
         return new ThreeCardPokerTableResponse(table.TableId, settled ? ThreeCardPokerTablePhases.Settled : table.Phase,
             table.RoundNumber, dealer, seats, table.ActiveSeat, ThreeCardPokerTableEngine.LegalActions(table, viewer),
-            table.CreatedAtUtc, table.UpdatedAtUtc, table.ActionDeadlineAtUtc, table.WagerDeadlineAtUtc,
+            table.CreatedAtUtc, table.UpdatedAtUtc, actionDeadline, table.WagerDeadlineAtUtc,
             table.Transition, table.NextTransitionAtUtc,
-            Remaining(table.ActionDeadlineAtUtc, nowUtc), Remaining(table.WagerDeadlineAtUtc, nowUtc),
+            Remaining(actionDeadline, nowUtc), Remaining(table.WagerDeadlineAtUtc, nowUtc),
             Remaining(table.NextTransitionAtUtc, nowUtc));
     }
 

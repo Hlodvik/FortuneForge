@@ -251,6 +251,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
     {
         var snapshots = await database.Collection("cardGameResults")
             .WhereEqualTo("userGameHash", ThreeCardPokerTableIds.Hash($"{userId}\nthree-card-poker\ncredit-table"))
+            .OrderByDescending("completedAt")
             .Limit(Math.Min(limit, 50))
             .GetSnapshotAsync(cancellationToken);
         return snapshots.Documents

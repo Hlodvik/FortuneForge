@@ -16,6 +16,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
     private static readonly TimeSpan MinimumManagedWagerPause = TimeSpan.FromMilliseconds(700);
     private static readonly TimeSpan MaximumManagedWagerPause = TimeSpan.FromMilliseconds(1_800);
+    internal static readonly TimeSpan SoloActionDuration = TimeSpan.FromMinutes(30);
     private const long ManagedWagerAdjustmentCents = 50;
     private readonly Func<IReadOnlyList<string>> createDeck = deckFactory ?? ThreeCardPokerRules.CreateShuffledDeck;
     private readonly Func<ulong> createSeed = seedFactory ??
@@ -327,7 +328,9 @@ internal sealed class ThreeCardPokerTableCoordinator(
             }
             if (table.Phase is ThreeCardPokerTablePhases.Dealing or ThreeCardPokerTablePhases.Active or ThreeCardPokerTablePhases.Dealer)
                 ThreeCardPokerTableEngine.AdvanceAutomatedTurns(table, nowUtc);
-            if (IsSoloTable(table)) table.ActionDeadlineAtUtc = null;
+            if (IsSoloTable(table) && table.Phase == ThreeCardPokerTablePhases.Active &&
+                table.ActiveSeat is not null && table.Transition is null)
+                table.ActionDeadlineAtUtc = table.UpdatedAtUtc.Add(SoloActionDuration);
             AdvanceManagedPlayerTurns(table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Settlement) CompleteSettlement(state, balances, journal, table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Betting && table.Transition == "next-round-countdown" &&

@@ -386,7 +386,7 @@ public sealed class ThreeCardPokerTableStateTests
     }
 
     [Fact]
-    public async Task SoloWagerAndPlayChoicesDoNotExpireWhileThePlayerIsAway()
+    public async Task SoloWagerRemainsOpenButAbandonedHandFoldsAndSettlesAfterThirtyMinutes()
     {
         var (store, initial, actor, now) = await AllHumanTable();
         Assert.Null(initial.Table.WagerDeadlineAtUtc);
@@ -396,13 +396,35 @@ public sealed class ThreeCardPokerTableStateTests
         Assert.Null(later.Table.WagerDeadlineAtUtc);
         Assert.Single(later.Table.Seats);
 
-        var (roundStore, active, roundActor, activeAt) = await WagerAndDeal();
+        var (roundStore, active, roundActor, _) = await WagerAndDeal();
         Assert.Null(active.Table.ActionDeadlineAtUtc);
+        var internalDeadline = Assert.IsType<DateTime>(roundStore.TableForTest(active.Table.TableId).ActionDeadlineAtUtc);
+        Assert.Equal(ThreeCardPokerTableCoordinator.SoloActionDuration,
+            internalDeadline - roundStore.TableForTest(active.Table.TableId).UpdatedAtUtc);
         var stillActive = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await roundStore.GetSessionAsync(
-            roundActor, activeAt.AddHours(3), default)).Session);
+            roundActor, internalDeadline.AddTicks(-1), default)).Session);
         Assert.Equal(ThreeCardPokerTablePhases.Active, stillActive.Table.Phase);
         Assert.Contains(ThreeCardPokerActions.Play, stillActive.Table.LegalActions);
         Assert.Null(stillActive.Table.ActionDeadlineAtUtc);
+        Assert.Equal(0, stillActive.Table.RemainingActionMilliseconds);
+
+        await roundStore.SweepAsync(internalDeadline, default);
+        var folded = roundStore.TableForTest(active.Table.TableId).Players.Single();
+        Assert.Equal("folded", folded.Status);
+        Assert.Equal(0, folded.PlayWagerCents);
+        Assert.Equal(9_800, roundStore.Balance(roundActor));
+
+        var settledAt = internalDeadline.Add(ThreeCardPokerTableEngine.ActionSettleDuration)
+            .Add(ThreeCardPokerTableEngine.DealerCardDuration);
+        await roundStore.SweepAsync(internalDeadline.Add(ThreeCardPokerTableEngine.ActionSettleDuration), default);
+        await roundStore.SweepAsync(settledAt, default);
+        await roundStore.SweepAsync(settledAt.AddSeconds(1), default);
+        Assert.Equal(10_000, roundStore.Balance(roundActor));
+        Assert.Equal(2, roundStore.Ledger.Count);
+        Assert.Single(roundStore.Revenue);
+        var history = Assert.Single(await roundStore.GetHistoryAsync(roundActor, 10, default));
+        Assert.Equal(2m, history.WagerCredits);
+        Assert.Equal(2m, history.PayoutCredits);
     }
     [Fact]
     public async Task UnaffordablePlayCanStillFoldWithoutLosingTheDecisionOrTakingAnotherDebit()

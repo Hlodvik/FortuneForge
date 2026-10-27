@@ -169,6 +169,79 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
             entry => Assert.Equal("alice", entry.GetValue<string>("userId")));
         Assert.Empty((await database.Collection("managedPlayerAssignments").GetSnapshotAsync()).Documents);
     }
+
+    [Fact]
+    public async Task HistoryLimitReturnsTheMostRecentlyCompletedRounds()
+    {
+        var (database, store, _) = CreateStores();
+        var results = database.Collection("cardGameResults");
+        var userGameHash = ThreeCardPokerTableIds.Hash("alice\nthree-card-poker\ncredit-table");
+        await Task.WhenAll(Enumerable.Range(0, 5).Select(index =>
+            results.Document($"history-{index:00}").SetAsync(new Dictionary<string, object>
+            {
+                ["resultId"] = $"history-{index:00}",
+                ["userGameHash"] = userGameHash,
+                ["game"] = "three-card-poker",
+                ["mode"] = "credit-table",
+                ["matchId"] = "table",
+                ["tableId"] = "table",
+                ["round"] = (long)index,
+                ["wagerCents"] = 100L,
+                ["payoutCents"] = 0L,
+                ["netCents"] = -100L,
+                ["claimStatus"] = "completed",
+                ["settlementStatus"] = "paid",
+                ["completedAt"] = Timestamp.FromDateTime(Start.AddMinutes(index))
+            })));
+
+        var history = await store.GetHistoryAsync("alice", 2, default);
+        Assert.Equal(new[] { "history-04", "history-03" }, history.Select(item => item.ResultId));
+    }
+
+    [Fact]
+    public async Task AbandonedSoloHandUsesDurableDeadlineAndSettlesOnWorkerSweep()
+    {
+        var (database, store, _) = CreateStores();
+        await SeedPlayers(database);
+        var joined = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.JoinAsync(
+            "alice", "Player", 0, Key("abandoned-join"), Start, default)).Session);
+        var tableId = joined.Table.TableId;
+        await store.WagerAsync("alice", tableId, 100, 100, joined.Version, Key("abandoned-wager"), Start, default);
+
+        var now = Start;
+        ThreeCardPokerTablePlaySessionResponse? active = null;
+        for (var step = 0; step < 100; step++)
+        {
+            now = now.AddMilliseconds(200);
+            var session = Assert.IsType<ThreeCardPokerTablePlaySessionResponse>((await store.GetSessionAsync(
+                "alice", now, default)).Session);
+            if (session.Table.Phase != ThreeCardPokerTablePhases.Active || session.Table.Transition is not null) continue;
+            active = session;
+            break;
+        }
+        Assert.NotNull(active);
+        Assert.Null(active.Table.ActionDeadlineAtUtc);
+        var deadline = Assert.IsType<DateTime>((await ReadTable(database, tableId)).ActionDeadlineAtUtc);
+        var route = await database.Collection("threeCardPokerTableSessions")
+            .Document(ThreeCardPokerTableIds.Hash("alice")).GetSnapshotAsync();
+        var shard = await database.Collection("threeCardPokerTableState")
+            .Document(route.GetValue<string>("stateId")).GetSnapshotAsync();
+        Assert.Equal(deadline, shard.GetValue<Timestamp>("nextDeadlineAt").ToDateTime());
+
+        await store.SweepAsync(deadline, default);
+        Assert.Equal("folded", Assert.Single((await ReadTable(database, tableId)).Players).Status);
+        Assert.Equal(9_800, await ReadBalance(database, "alice"));
+        await store.SweepAsync(deadline.Add(ThreeCardPokerTableEngine.ActionSettleDuration), default);
+        var settledAt = deadline.Add(ThreeCardPokerTableEngine.ActionSettleDuration)
+            .Add(ThreeCardPokerTableEngine.DealerCardDuration);
+        await store.SweepAsync(settledAt, default);
+        await store.SweepAsync(settledAt.AddSeconds(1), default);
+        Assert.Equal(10_000, await ReadBalance(database, "alice"));
+        Assert.Single(await store.GetHistoryAsync("alice", 10, default));
+        Assert.Single((await database.Collection("threeCardPokerTableRoundRevenue").GetSnapshotAsync()).Documents);
+        Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+    }
+
     private (FirestoreDb Database, FirestoreThreeCardPokerTableStore First, FirestoreThreeCardPokerTableStore Second) CreateStores()
     {
         var database = new FirestoreDbBuilder

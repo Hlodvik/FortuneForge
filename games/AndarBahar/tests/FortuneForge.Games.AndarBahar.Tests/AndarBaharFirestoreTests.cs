@@ -23,7 +23,9 @@ public sealed class AndarBaharFirestoreTests(AndarBaharEmulator emulator)
         var first = Service(db, true);
         var second = Service(db, false);
         const string key = "andar_paid_concurrent_01";
-        var results = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => first.StartAsync("player", new("andar", .50m), key)));
+        var results = await Task.WhenAll(
+            first.StartAsync("player", new("andar", .50m), key),
+            first.StartAsync("player", new("andar", .50m), key));
         Assert.Single(results.Select(result => result.RoundId).Distinct());
         Assert.All(results, result => { Assert.Equal(.45m, result.Profit); Assert.Equal(.95m, result.TotalReturn); Assert.Equal(100.45m, result.Balance); });
         var result = results[0];

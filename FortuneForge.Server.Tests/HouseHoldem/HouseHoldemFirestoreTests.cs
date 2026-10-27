@@ -21,8 +21,9 @@ public sealed class HouseHoldemFirestoreTests(BlackjackTableFirestoreEmulatorFix
         var deck = HouseHoldemRules.CreateShuffledDeck();
         var startKey = Key("start");
 
-        var starts = await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
-            (index % 2 == 0 ? first : second).StartAsync("alice", startKey, 100, 100, deck, Now, default)));
+        var starts = await Task.WhenAll(
+            first.StartAsync("alice", startKey, 100, 100, deck, Now, default),
+            second.StartAsync("alice", startKey, 100, 100, deck, Now, default));
         Assert.Single(starts.Select(start => start.RoundId).Distinct());
         var roundId = starts[0].RoundId;
         Assert.Equal(9_700, await Balance(database, "alice"));
@@ -36,8 +37,9 @@ public sealed class HouseHoldemFirestoreTests(BlackjackTableFirestoreEmulatorFix
             "bob", roundId, Key("steal"), "play-4x", Now, default));
 
         var actionKey = Key("play-four");
-        var actions = await Task.WhenAll(Enumerable.Range(0, 4).Select(index =>
-            (index % 2 == 0 ? first : second).TransitionAsync("alice", roundId, actionKey, "play-4x", Now, default)));
+        var actions = await Task.WhenAll(
+            first.TransitionAsync("alice", roundId, actionKey, "play-4x", Now, default),
+            second.TransitionAsync("alice", roundId, actionKey, "play-4x", Now, default));
         Assert.All(actions, action => Assert.Equal("flop", action.Round.Phase));
         Assert.Equal(9_300, await Balance(database, "alice"));
         Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents.Count);

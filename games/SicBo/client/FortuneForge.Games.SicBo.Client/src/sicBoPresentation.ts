@@ -76,7 +76,7 @@ export function availableChipValues(status: SicBoStatus | null): number[] {
   const limits = stakeLimits(status)
   if (!limits) return []
   const last = limits.minimum + Math.floor((limits.maximum - limits.minimum) / limits.increment) * limits.increment
-  return [...new Set([limits.minimum / 100, last / 100, 1, 5, 10, 25, 50, 100])]
+  return [...new Set([limits.minimum / 100, last / 100, 1, 2, 5, 10, 25, 50, 100])]
     .filter(value => validStake(value, status)).sort((left, right) => left - right)
 }
 
@@ -97,7 +97,22 @@ export function legalSlip(bets: readonly SicBoBetRequest[], status: SicBoStatus 
   return status?.available === true && Number.isSafeInteger(status.maximumBetsPerRound) && status.maximumBetsPerRound >= 1
     && bets.length >= 1 && bets.length <= status.maximumBetsPerRound && available !== null && available >= 0
     && bets.every(bet => validBetShape(bet) && validStake(bet.stake, status))
+    && withinSpotLimit(bets, status)
     && total !== null && total <= available
+}
+
+function withinSpotLimit(bets: readonly SicBoBetRequest[], status: SicBoStatus): boolean {
+  const limits = stakeLimits(status)
+  if (limits === null) return false
+  const totals = new Map<string, number>()
+  for (const bet of bets) {
+    const target = betTargets.find(candidate => sameSelection(candidate, bet))
+    if (target === undefined) return false
+    const next = (totals.get(target.id) ?? 0) + moneyCents(bet.stake)!
+    if (next > limits.maximum) return false
+    totals.set(target.id, next)
+  }
+  return true
 }
 
 export function validBetShape(value: unknown): value is SicBoBetRequest {

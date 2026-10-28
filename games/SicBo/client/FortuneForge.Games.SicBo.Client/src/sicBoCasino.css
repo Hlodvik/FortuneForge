@@ -1,0 +1,550 @@
+@import '../../../../shared/visuals/casino-felt.css';
+
+@font-face {
+  font-family: 'FF Sic Bo UI';
+  src: url('../../../../Craps/client/FortuneForge.Games.Craps.Client/src/assets/fonts/sora-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'FF Sic Bo Display';
+  src: url('../../../../Craps/client/FortuneForge.Games.Craps.Client/src/assets/fonts/fraunces-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.ff-sic-bo {
+  --sic-ivory: #f4efd9;
+  --sic-muted: #bdcdbb;
+  --sic-gold: #e5cf91;
+  --sic-gold-soft: #bda567;
+  --sic-line: rgb(225 226 189 / 53%);
+  --sic-deep: #061b13;
+  --sic-panel: #0a211af0;
+  width: min(100%, 1600px);
+  grid-template-rows: 44px minmax(0, 1fr) 86px 22px;
+  gap: 4px;
+  padding: 4px 10px;
+  color: var(--sic-ivory);
+  background: var(--ff-casino-felt-material);
+  font: 500 12px/1.3 'FF Sic Bo UI', sans-serif;
+}
+
+.ff-sic-bo::before {
+  display: none;
+}
+
+.ff-sic-bo__header {
+  padding-inline: 6px;
+}
+
+.ff-sic-bo__header h1 {
+  color: var(--sic-gold);
+  font: 680 clamp(24px, 2.5vw, 32px)/1 'FF Sic Bo Display', Georgia, serif;
+  letter-spacing: -.025em;
+  text-shadow: 0 2px 6px #00160f;
+}
+
+.ff-sic-bo__header button,
+.ff-sic-bo__details button {
+  min-height: 34px;
+  border: 1px solid rgb(223 211 163 / 42%);
+  color: var(--sic-ivory);
+  background: #0b261de8;
+  box-shadow: none;
+}
+
+.ff-sic-bo__header button:not(:disabled):hover,
+.ff-sic-bo__details button:not(:disabled):hover {
+  border-color: var(--sic-gold);
+  background: #173d2e;
+}
+
+.ff-sic-bo__layout {
+  grid-template-rows: 98px minmax(0, 1fr);
+  gap: 9px;
+  padding: 5px 0 7px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ff-sic-bo__layout::before,
+.ff-sic-bo__layout::after,
+.ff-sic-bo__stage-flare,
+.ff-sic-bo__dice-plinth::before,
+.ff-sic-bo__dice-plinth::after,
+.ff-sic-bo__dice::before,
+.ff-sic-bo__dice::after {
+  display: none;
+}
+
+.ff-sic-bo__roll-area {
+  gap: clamp(14px, 3.5vw, 42px);
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--sic-line);
+  background: transparent;
+}
+
+.ff-sic-bo__dice-plinth {
+  padding: 0;
+}
+
+.ff-sic-bo__dice {
+  width: auto;
+  height: auto;
+  min-height: 70px;
+  padding: 9px 18px;
+  gap: 10px;
+  border: 1px solid rgb(217 212 169 / 45%);
+  border-radius: 15px;
+  background: rgb(2 23 15 / 52%);
+  box-shadow: inset 0 1px rgb(255 255 255 / 9%), 0 5px 12px #00150c72;
+}
+
+.ff-sic-bo__die {
+  border-color: #cfc9ab;
+  background: linear-gradient(145deg, #fffef8 8%, #eee8d8 72%, #d2c9ad);
+}
+
+.ff-sic-bo__die i {
+  background: #17211b;
+}
+
+.ff-sic-bo__roll-total {
+  min-width: 68px;
+  padding: 4px 14px;
+  border-color: var(--sic-line);
+}
+
+.ff-sic-bo__roll-total strong {
+  color: var(--sic-gold);
+  font: 720 38px/1 'FF Sic Bo Display', Georgia, serif;
+  text-shadow: 0 2px 7px #00140c;
+}
+
+.ff-sic-bo__roll-total span {
+  color: var(--sic-muted);
+}
+
+.ff-sic-bo__return {
+  width: clamp(116px, 14vw, 190px);
+  gap: 5px;
+  color: var(--sic-ivory);
+}
+
+.ff-sic-bo__return strong {
+  font: 620 15px/1.2 'FF Sic Bo Display', Georgia, serif;
+}
+
+.ff-sic-bo__board {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--sic-line);
+  border-radius: 24px;
+  background: rgb(1 37 23 / 11%);
+  box-shadow: inset 0 1px rgb(241 231 176 / 8%);
+}
+
+.ff-sic-bo__board-left,
+.ff-sic-bo__board-right,
+.ff-sic-bo__faces,
+.ff-sic-bo__quick,
+.ff-sic-bo__face-row,
+.ff-sic-bo__totals,
+.ff-sic-bo__combinations {
+  gap: 0;
+}
+
+.ff-sic-bo__board-left {
+  grid-template-rows: 1fr 3fr;
+  border-right: 1px solid var(--sic-line);
+}
+
+.ff-sic-bo__board-right {
+  grid-template-rows: 2fr 3fr;
+}
+
+.ff-sic-bo__quick,
+.ff-sic-bo__totals {
+  border-bottom: 1px solid var(--sic-line);
+}
+
+.ff-sic-bo__face-row:not(:last-child),
+.ff-sic-bo__combinations .ff-sic-bo__cell:nth-child(-n + 10),
+.ff-sic-bo__totals .ff-sic-bo__cell:nth-child(-n + 7) {
+  border-bottom: 1px solid var(--sic-line);
+}
+
+.ff-sic-bo__face-row {
+  grid-template-columns: clamp(46px, 5vw, 72px) repeat(6, minmax(0, 1fr));
+}
+
+.ff-sic-bo__face-row > span {
+  border: 0;
+  border-right: 1px solid var(--sic-line);
+  border-radius: 0;
+  color: var(--sic-gold);
+  background: rgb(2 25 17 / 21%);
+  font: 690 clamp(8px, .75vw, 11px)/1.1 'FF Sic Bo UI', sans-serif;
+  letter-spacing: .05em;
+}
+
+.ff-sic-bo__cell {
+  gap: 3px;
+  border: 0;
+  border-right: 1px solid var(--sic-line);
+  border-radius: 0;
+  color: var(--sic-ivory);
+  background: transparent;
+  box-shadow: none;
+  transition: background-color .15s ease, filter .15s ease;
+}
+
+.ff-sic-bo__quick .ff-sic-bo__cell:last-child,
+.ff-sic-bo__face-row .ff-sic-bo__cell:last-child,
+.ff-sic-bo__totals .ff-sic-bo__cell:nth-child(7n),
+.ff-sic-bo__combinations .ff-sic-bo__cell:nth-child(5n) {
+  border-right: 0;
+}
+
+.ff-sic-bo__cell::before {
+  display: none;
+}
+
+.ff-sic-bo__quick .ff-sic-bo__cell,
+.ff-sic-bo__quick .ff-sic-bo__cell[data-kind='any-triple'] {
+  border-color: var(--sic-line);
+  background: transparent;
+}
+
+.ff-sic-bo__cell:not(:disabled):hover {
+  border-color: var(--sic-line);
+  background: rgb(229 213 152 / 14%);
+  box-shadow: inset 0 0 0 1px rgb(239 226 179 / 50%);
+  filter: none;
+}
+
+.ff-sic-bo__cell:active:not(:disabled) {
+  transform: none;
+  background: rgb(237 219 152 / 22%);
+}
+
+.ff-sic-bo__cell:disabled {
+  opacity: .6;
+}
+
+.ff-sic-bo__cell strong,
+.ff-sic-bo__totals .ff-sic-bo__cell strong {
+  color: var(--sic-ivory);
+  font: 710 clamp(14px, 1.35vw, 20px)/1 'FF Sic Bo Display', Georgia, serif;
+}
+
+.ff-sic-bo__quick strong {
+  font: 650 clamp(12px, 1.3vw, 19px)/1 'FF Sic Bo Display', Georgia, serif;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+
+.ff-sic-bo__cell small {
+  color: #d6d5b5;
+  font: 570 clamp(8px, .75vw, 10px)/1 'FF Sic Bo UI', sans-serif;
+  letter-spacing: -.015em;
+}
+
+.ff-sic-bo__bet-dice .ff-sic-bo__die.is-small { width: clamp(25px, 2.45vw, 36px); padding: 5px; }
+.ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,
+.ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die { width: clamp(23px, 2.1vw, 31px); }
+.ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die { width: clamp(20px, 1.8vw, 27px); padding: 4px; }
+
+.ff-sic-bo__cell.has-bet {
+  border-color: var(--sic-line);
+  background: rgb(239 222 159 / 10%);
+  box-shadow: inset 0 0 0 1px rgb(245 226 169 / 60%);
+}
+
+.ff-sic-bo__cell.is-win {
+  border-color: var(--sic-line);
+  background: rgb(212 227 159 / 15%);
+  box-shadow: inset 0 0 0 1px #e7e9b0;
+}
+
+.ff-sic-bo__cell.is-loss {
+  filter: saturate(.7) brightness(.8);
+}
+
+.ff-sic-bo__marker {
+  z-index: 4;
+  top: 1px;
+  right: 1px;
+  display: block;
+  width: 30px;
+  min-width: 0;
+  height: 31px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: #fff4cf;
+  background: transparent;
+  box-shadow: none;
+}
+
+.ff-sic-bo__marker img {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px #0009);
+}
+
+.ff-sic-bo__marker img:nth-child(2) { top: 3px; }
+.ff-sic-bo__marker img:nth-child(3) { top: 6px; }
+
+.ff-sic-bo__marker b {
+  position: absolute;
+  right: -1px;
+  bottom: -2px;
+  z-index: 5;
+  padding: 0 2px;
+  border-radius: 3px;
+  color: #fff6d9;
+  background: #071b16e8;
+  font: 700 8px/1.25 'FF Sic Bo UI', sans-serif;
+  white-space: nowrap;
+}
+
+.ff-sic-bo__win-flash::before { background: radial-gradient(ellipse, rgb(225 214 147 / 29%), transparent 70%); }
+.ff-sic-bo__win-flash strong {
+  border: 1px solid #e6d89f;
+  color: #fff3cd;
+  background: #0a2b20f5;
+  box-shadow: 0 10px 28px #00140cb0, 0 0 22px #e0d58d44;
+  font-family: 'FF Sic Bo Display', Georgia, serif;
+  text-shadow: none;
+}
+
+.ff-sic-bo__controls {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 195px) minmax(190px, 250px);
+  gap: 12px;
+  border: 1px solid rgb(215 208 158 / 30%);
+  border-radius: 11px;
+  background: #061b16dc;
+  box-shadow: 0 5px 16px #00160c42;
+}
+
+.ff-sic-bo__stake label {
+  color: var(--sic-gold);
+}
+
+.ff-sic-bo__stake input {
+  width: 68px;
+  border-color: rgb(224 215 168 / 43%);
+  color: var(--sic-ivory);
+  background: #102b22;
+}
+
+.ff-sic-bo__chips {
+  align-items: center;
+  gap: 3px;
+}
+
+.ff-sic-bo__chips button,
+.ff-sic-bo__chips button[aria-pressed='true'] {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  padding: 2px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  color: var(--sic-ivory);
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.ff-sic-bo__chips button[aria-pressed='true'] {
+  border-color: var(--sic-gold);
+  box-shadow: 0 0 0 2px #00180e, 0 0 12px #e9df9a4d;
+}
+
+.ff-sic-bo__chips button img {
+  display: block;
+  width: 39px;
+  height: 39px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px #0009);
+}
+
+.ff-sic-bo__summary span {
+  color: var(--sic-muted);
+}
+
+.ff-sic-bo__summary b {
+  color: var(--sic-ivory);
+}
+
+.ff-sic-bo__actions button {
+  border-color: rgb(219 210 165 / 42%);
+  color: var(--sic-ivory);
+  background: #102a21;
+}
+
+.ff-sic-bo__actions button:not(:disabled):hover {
+  border-color: var(--sic-gold);
+  background: #193c2c;
+}
+
+.ff-sic-bo__primary {
+  border-color: #ecddaa !important;
+  border-radius: 9px !important;
+  color: #1b2b1d !important;
+  background: linear-gradient(#f7e9bd, #c8ab63) !important;
+  box-shadow: inset 0 1px #fffae3, 0 4px 9px #0006;
+  font: 720 15px/1 'FF Sic Bo Display', Georgia, serif !important;
+  letter-spacing: .035em !important;
+}
+
+.ff-sic-bo__notice {
+  color: var(--sic-muted);
+}
+
+.ff-sic-bo__notice button {
+  border-color: var(--sic-line);
+  color: var(--sic-ivory);
+  background: #102c21;
+}
+
+.ff-sic-bo__details {
+  border-color: #c6b885;
+  color: var(--sic-ivory);
+  background: #0b261df8;
+}
+
+.ff-sic-bo__details::backdrop { background: #010e09c9; }
+.ff-sic-bo__details header,
+.ff-sic-bo__panel-body dl div,
+.ff-sic-bo__history > li { border-color: rgb(224 214 161 / 29%); }
+.ff-sic-bo__details h2,
+.ff-sic-bo__panel-body dd,
+.ff-sic-bo__history-dice strong { color: var(--sic-gold); font-family: 'FF Sic Bo Display', Georgia, serif; }
+.ff-sic-bo__panel-body p,
+.ff-sic-bo__slip small,
+.ff-sic-bo__history > li > span { color: var(--sic-muted); }
+.ff-sic-bo__slip > li { border-color: rgb(224 214 161 / 29%); background: #051a13b5; }
+
+@media (max-width: 900px) {
+  .ff-sic-bo__controls { grid-template-columns: minmax(0, 1fr) 138px 180px; gap: 6px; }
+  .ff-sic-bo__bet-dice .ff-sic-bo__die.is-small { width: 25px; padding: 4px; }
+  .ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,
+  .ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die { width: 22px; }
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die { width: 19px; padding: 3px; }
+  .ff-sic-bo__chips button,
+  .ff-sic-bo__chips button[aria-pressed='true'] { width: 38px; height: 38px; }
+  .ff-sic-bo__chips button img { width: 35px; height: 35px; }
+}
+
+@media (max-width: 700px) {
+  .ff-sic-bo { grid-template-rows: 42px minmax(0, 1fr) 106px 26px; padding: 3px 5px; }
+  .ff-sic-bo__header h1 { font-size: 25px; }
+  .ff-sic-bo__header button { min-height: 32px; }
+  .ff-sic-bo__layout { grid-template-rows: 62px minmax(0, 1fr); gap: 6px; padding: 0 0 4px; }
+  .ff-sic-bo__roll-area { gap: 8px; padding-bottom: 4px; }
+  .ff-sic-bo__dice { width: auto; height: auto; min-height: 48px; padding: 5px 8px; gap: 5px; border-radius: 9px; }
+  .ff-sic-bo__die { width: 31px; padding: 5px; }
+  .ff-sic-bo__roll-total { width: 50px; min-width: 50px; padding: 2px 5px; }
+  .ff-sic-bo__roll-total strong { font-size: 29px; }
+  .ff-sic-bo__return { width: 95px; font-size: 9px; }
+  .ff-sic-bo__return strong { font-size: 11px; }
+  .ff-sic-bo__board { grid-template-columns: minmax(0, 1fr); grid-template-rows: 4fr 5fr; gap: 0; border-radius: 15px; }
+  .ff-sic-bo__board-left { border-right: 0; border-bottom: 1px solid var(--sic-line); }
+  .ff-sic-bo__face-row { grid-template-columns: 47px repeat(6, minmax(0, 1fr)); }
+  .ff-sic-bo__face-row > span { font-size: 8px; }
+  .ff-sic-bo__cell { gap: 1px; padding: 1px; border-radius: 0; }
+  .ff-sic-bo__cell strong,
+  .ff-sic-bo__totals .ff-sic-bo__cell strong { font-size: 13px; }
+  .ff-sic-bo__quick strong { font-size: 10px; }
+  .ff-sic-bo__cell small { font-size: 8px; }
+  .ff-sic-bo__bet-dice .ff-sic-bo__die.is-small { width: 21px; padding: 3px; }
+  .ff-sic-bo__bet-dice.is-specific-double .ff-sic-bo__die,
+  .ff-sic-bo__bet-dice.is-combination .ff-sic-bo__die { width: 18px; padding: 2px; }
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die { width: 15px; padding: 2px; }
+  .ff-sic-bo__marker { width: 24px; height: 25px; }
+  .ff-sic-bo__marker img { width: 21px; height: 21px; }
+  .ff-sic-bo__marker b { font-size: 7px; }
+  .ff-sic-bo__controls { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); grid-template-rows: 41px 47px; gap: 4px 6px; padding: 5px; }
+  .ff-sic-bo__stake { grid-column: 1 / 3; gap: 5px; }
+  .ff-sic-bo__stake input { width: 56px; height: 34px; }
+  .ff-sic-bo__chips button,
+  .ff-sic-bo__chips button[aria-pressed='true'] { width: 37px; height: 37px; }
+  .ff-sic-bo__chips button img { width: 33px; height: 33px; }
+  .ff-sic-bo__summary { font-size: 10px; }
+  .ff-sic-bo__actions button { height: 43px; }
+  .ff-sic-bo__details { inset: 75px 6px 150px 6px; }
+}
+
+@media (max-width: 350px) {
+  .ff-sic-bo__return { width: 76px; font-size: 8px; }
+  .ff-sic-bo__return strong { font-size: 9px; }
+  .ff-sic-bo__dice { padding-inline: 5px; }
+  .ff-sic-bo__die { width: 26px; padding: 4px; }
+  .ff-sic-bo__face-row { grid-template-columns: 38px repeat(6, minmax(0, 1fr)); }
+  .ff-sic-bo__bet-dice.is-specific-triple .ff-sic-bo__die { width: 12px; }
+  .ff-sic-bo__chips button,
+  .ff-sic-bo__chips button[aria-pressed='true'] { width: 32px; height: 32px; }
+  .ff-sic-bo__chips button img { width: 29px; height: 29px; }
+}
+
+@media (max-height: 450px) {
+  .ff-sic-bo { grid-template-rows: 28px minmax(0, 1fr) 68px 20px; padding: 2px 5px; }
+  .ff-sic-bo__header h1 { font-size: 20px; }
+  .ff-sic-bo__header button { min-height: 26px; }
+  .ff-sic-bo__layout { grid-template-rows: 36px minmax(0, 1fr); gap: 3px; padding: 0 0 3px; }
+  .ff-sic-bo__roll-area { padding-bottom: 2px; }
+  .ff-sic-bo__dice { min-height: 30px; padding: 2px 5px; }
+  .ff-sic-bo__die { width: 23px; padding: 3px; }
+  .ff-sic-bo__roll-total { width: 55px; min-width: 55px; }
+  .ff-sic-bo__roll-total strong { font-size: 22px; }
+  .ff-sic-bo__return { width: 125px; }
+  .ff-sic-bo__board { grid-template-columns: 1fr 1.08fr; grid-template-rows: minmax(0, 1fr); }
+  .ff-sic-bo__board-left { border-right: 1px solid var(--sic-line); border-bottom: 0; }
+  .ff-sic-bo__face-row { grid-template-columns: 35px repeat(6, minmax(0, 1fr)); }
+  .ff-sic-bo__face-row > span { font-size: 7px; }
+  .ff-sic-bo__cell strong,
+  .ff-sic-bo__totals .ff-sic-bo__cell strong { font-size: 11px; }
+  .ff-sic-bo__quick strong { font-size: 9px; }
+  .ff-sic-bo__cell small { font-size: 7px; }
+  .ff-sic-bo__marker { width: 18px; height: 19px; }
+  .ff-sic-bo__marker img { width: 17px; height: 17px; }
+  .ff-sic-bo__marker b { display: none; }
+  .ff-sic-bo__controls { grid-template-columns: minmax(0, 1fr) 205px; grid-template-rows: 28px 30px; gap: 1px 6px; padding: 3px 5px; }
+  .ff-sic-bo__stake { grid-column: 1; justify-content: flex-start; gap: 3px; }
+  .ff-sic-bo__stake input { width: 46px; height: 27px; }
+  .ff-sic-bo__chips button,
+  .ff-sic-bo__chips button[aria-pressed='true'] { width: 27px; height: 27px; }
+  .ff-sic-bo__chips button img { width: 24px; height: 24px; }
+  .ff-sic-bo__summary { grid-row: 2; flex-direction: row; }
+  .ff-sic-bo__actions { grid-column: 2; grid-row: 1 / 3; }
+  .ff-sic-bo__actions button { height: 46px; }
+  .ff-sic-bo__details { inset: 65px 6px 90px auto; }
+}
+
+@media (max-height: 450px) and (max-width: 600px) {
+  .ff-sic-bo__controls { grid-template-columns: minmax(0, 1fr) 160px; }
+  .ff-sic-bo__chips button,
+  .ff-sic-bo__chips button[aria-pressed='true'] { width: 23px; height: 23px; }
+  .ff-sic-bo__chips button img { width: 20px; height: 20px; }
+  .ff-sic-bo__face-row { grid-template-columns: 29px repeat(6, minmax(0, 1fr)); }
+  .ff-sic-bo__cell strong,
+  .ff-sic-bo__totals .ff-sic-bo__cell strong { font-size: 9px; }
+  .ff-sic-bo__quick strong { font-size: 8px; }
+}

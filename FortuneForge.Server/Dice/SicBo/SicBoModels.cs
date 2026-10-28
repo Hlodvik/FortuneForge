@@ -22,7 +22,9 @@ internal sealed class SicBoInsufficientCreditsException(long availableCents, lon
 internal static class SicBoMoney
 {
     public const long MinimumStakeCents = 100;
-    public const long MaximumStakeCents = 10_000;
+    public const long MaximumStakeCents = 1_000;
+    // Rounds saved before the R10 table limit must remain readable and auditable.
+    public const long LegacyMaximumStakeCents = 10_000;
     public const long StakeIncrementCents = 100;
     public const int MaximumBetsPerRound = 20;
 
@@ -30,7 +32,11 @@ internal static class SicBoMoney
     {
         if (requests is null || requests.Count is < 1 or > MaximumBetsPerRound)
             throw new ArgumentOutOfRangeException(nameof(requests), $"Submit one through {MaximumBetsPerRound} Sic Bo bets.");
-        return requests.Select(ParseBet).ToArray();
+        var bets = requests.Select(ParseBet).ToArray();
+        if (bets.GroupBy(bet => (bet.Kind, bet.Face, bet.Total, bet.FirstFace, bet.SecondFace))
+            .Any(spot => spot.Sum(bet => bet.StakeCents) > MaximumStakeCents))
+            throw new ArgumentOutOfRangeException(nameof(requests), "A Sic Bo betting spot cannot exceed R10.00.");
+        return bets;
     }
 
     public static SicBoStoredBet ParseBet(SicBoBetRequest request)
@@ -56,16 +62,16 @@ internal static class SicBoMoney
 
     public static SicBoBet ToDomain(SicBoStoredBet bet) => ParseKind(bet.Kind) switch
     {
-        SicBoBetKind.Small => SicBoBet.Small(ToRand(StakeCents(ToRand(bet.StakeCents)))),
-        SicBoBetKind.Big => SicBoBet.Big(ToRand(StakeCents(ToRand(bet.StakeCents)))),
-        SicBoBetKind.Odd => SicBoBet.Odd(ToRand(StakeCents(ToRand(bet.StakeCents)))),
-        SicBoBetKind.Even => SicBoBet.Even(ToRand(StakeCents(ToRand(bet.StakeCents)))),
-        SicBoBetKind.AnyTriple => SicBoBet.AnyTriple(ToRand(StakeCents(ToRand(bet.StakeCents)))),
-        SicBoBetKind.SingleNumber => SicBoBet.SingleNumber(ToRand(StakeCents(ToRand(bet.StakeCents))), bet.Face ?? throw CorruptBet()),
-        SicBoBetKind.SpecificDouble => SicBoBet.SpecificDouble(ToRand(StakeCents(ToRand(bet.StakeCents))), bet.Face ?? throw CorruptBet()),
-        SicBoBetKind.SpecificTriple => SicBoBet.SpecificTriple(ToRand(StakeCents(ToRand(bet.StakeCents))), bet.Face ?? throw CorruptBet()),
-        SicBoBetKind.Total => SicBoBet.ForTotal(ToRand(StakeCents(ToRand(bet.StakeCents))), bet.Total ?? throw CorruptBet()),
-        SicBoBetKind.TwoNumberCombination => SicBoBet.TwoNumberCombination(ToRand(StakeCents(ToRand(bet.StakeCents))), bet.FirstFace ?? throw CorruptBet(), bet.SecondFace ?? throw CorruptBet()),
+        SicBoBetKind.Small => SicBoBet.Small(StoredStakeRand(bet.StakeCents)),
+        SicBoBetKind.Big => SicBoBet.Big(StoredStakeRand(bet.StakeCents)),
+        SicBoBetKind.Odd => SicBoBet.Odd(StoredStakeRand(bet.StakeCents)),
+        SicBoBetKind.Even => SicBoBet.Even(StoredStakeRand(bet.StakeCents)),
+        SicBoBetKind.AnyTriple => SicBoBet.AnyTriple(StoredStakeRand(bet.StakeCents)),
+        SicBoBetKind.SingleNumber => SicBoBet.SingleNumber(StoredStakeRand(bet.StakeCents), bet.Face ?? throw CorruptBet()),
+        SicBoBetKind.SpecificDouble => SicBoBet.SpecificDouble(StoredStakeRand(bet.StakeCents), bet.Face ?? throw CorruptBet()),
+        SicBoBetKind.SpecificTriple => SicBoBet.SpecificTriple(StoredStakeRand(bet.StakeCents), bet.Face ?? throw CorruptBet()),
+        SicBoBetKind.Total => SicBoBet.ForTotal(StoredStakeRand(bet.StakeCents), bet.Total ?? throw CorruptBet()),
+        SicBoBetKind.TwoNumberCombination => SicBoBet.TwoNumberCombination(StoredStakeRand(bet.StakeCents), bet.FirstFace ?? throw CorruptBet(), bet.SecondFace ?? throw CorruptBet()),
         _ => throw CorruptBet(),
     };
 
@@ -76,11 +82,15 @@ internal static class SicBoMoney
         if (cents != decimal.Truncate(cents)) throw new ArgumentOutOfRangeException(nameof(stake), "A Sic Bo stake cannot include a fraction of a cent.");
         var value = checked((long)cents);
         if (value < MinimumStakeCents || value > MaximumStakeCents || value % StakeIncrementCents != 0)
-            throw new ArgumentOutOfRangeException(nameof(stake), "Choose a whole-rand Sic Bo stake from R1.00 through R100.00.");
+            throw new ArgumentOutOfRangeException(nameof(stake), "Choose a whole-rand Sic Bo stake from R1.00 through R10.00.");
         return value;
     }
 
     public static decimal ToRand(long cents) => RandMoney.CentsToRand(cents);
+    private static decimal StoredStakeRand(long cents) =>
+        cents >= MinimumStakeCents && cents <= LegacyMaximumStakeCents && cents % StakeIncrementCents == 0
+            ? ToRand(cents)
+            : throw CorruptBet();
     public static SicBoBetKind ParseKind(string? value) => value?.Trim().ToLowerInvariant() switch
     {
         "small" => SicBoBetKind.Small, "big" => SicBoBetKind.Big, "odd" => SicBoBetKind.Odd, "even" => SicBoBetKind.Even,

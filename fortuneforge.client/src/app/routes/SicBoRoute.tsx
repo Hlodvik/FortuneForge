@@ -5,7 +5,6 @@ import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 import './SicBoRoute.css'
 
@@ -39,7 +38,7 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
     }).catch(() => undefined)
   }, [initialAccount.userId])
 
-  return <InGameShell account={account} title="Sic Bo" theme="casino" className="player-page sic-bo-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/sic-bo" />}>
-    <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} roundOwnerId={account.userId} recoveryMode={practiceMode ? 'practice' : 'account'} showTitle={false} onBalanceChange={practiceMode ? undefined : refreshBalance} />
+  return <InGameShell account={account} title="Sic Bo" theme="casino" className="player-page sic-bo-page">
+    <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} roundOwnerId={account.userId} recoveryMode={practiceMode ? 'practice' : 'account'} showTitle onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </InGameShell>
 }

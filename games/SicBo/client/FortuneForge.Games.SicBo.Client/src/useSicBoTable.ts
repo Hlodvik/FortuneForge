@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { SicBoGatewayError, type SicBoBetRequest, type SicBoGateway, type SicBoRound, type SicBoStatus } from './contracts'
-import { appendRollHistory, createTargetBet, historyStorageKey, legalSlip, parsePendingRoll, parseRollHistory, parseStake, pendingStorageKey, totalStake, type SicBoHistoryEntry, type SicBoPendingRoll } from './sicBoPresentation'
+import { appendRollHistory, betTargets, createTargetBet, historyStorageKey, legalSlip, parsePendingRoll, parseRollHistory, parseStake, pendingStorageKey, totalStake, type SicBoHistoryEntry, type SicBoPendingRoll } from './sicBoPresentation'
 
 export type SicBoRecoveryMode = 'account' | 'practice'
 type Phase = 'loading' | 'ready' | 'requesting' | 'revealing' | 'settled' | 'recovering' | 'retry' | 'read-failed'
@@ -58,7 +58,8 @@ export function useSicBoTable({gateway,scope,roundOwnerId,recoveryMode,onBalance
   },[gateway,scope,roundOwnerId,recoveryMode])
   const unlocked=model.phase==='ready'&&model.status?.available===true&&!model.pending
   const stake=model.status?parseStake(model.stake,model.status):null
-  const canAdd=unlocked&&stake!==null&&model.balance!==null&&legalSlip([...model.slip,createTargetBet('small',stake)!],model.status!,model.balance)
+  const canPlace=(targetId:string)=>{const bet=stake===null?null:createTargetBet(targetId,stake);return unlocked&&bet!==null&&model.balance!==null&&legalSlip([...model.slip,bet],model.status!,model.balance)}
+  const canAdd=betTargets.some(target=>canPlace(target.id))
   const canRoll=model.status?.available===true&&(model.phase==='retry'?!!model.pending&&recoveryMode==='account':model.phase==='ready'&&!model.pending&&model.balance!==null&&legalSlip(model.slip,model.status,model.balance))
   function add(targetId: string) {const state=current.current;if(state.phase!=='ready'||state.pending||!state.status?.available||state.balance===null)return;const stake=parseStake(state.stake,state.status);const bet=stake===null?null:createTargetBet(targetId,stake);if(!bet||!legalSlip([...state.slip,bet],state.status,state.balance))return;publish({slip:[...state.slip,bet],error:null})}
   function remove(index: number) {const state=current.current;if(state.phase!=='ready'||state.pending)return;publish({slip:state.slip.filter((_,i)=>i!==index),error:null})}
@@ -86,7 +87,7 @@ export function useSicBoTable({gateway,scope,roundOwnerId,recoveryMode,onBalance
     finally {requests.current.delete(request)}
   }
   function prepare(repeat: boolean) {const state=current.current;if(state.phase!=='settled'||!state.round||!state.status||state.balance===null)return;const slip=repeat?state.slip:[];if(repeat&&!legalSlip(slip,state.status,state.balance))return;publish({round:null,slip,phase:'ready',revealed:0,error:null})}
-  return {...model,unlocked,stakeValue:stake,canAdd,canRoll,totalStake:totalStake(model.slip),canRepeat:model.phase==='settled'&&!!model.status&&model.balance!==null&&legalSlip(model.slip,model.status,model.balance),add,remove,clear,roll,prepare,restore,loadStatus,setStake:(stake:string)=>{if(current.current.phase==='ready'&&!current.current.pending)publish({stake,error:null})}}
+  return {...model,unlocked,stakeValue:stake,canAdd,canPlace,canRoll,totalStake:totalStake(model.slip),canRepeat:model.phase==='settled'&&!!model.status&&model.balance!==null&&legalSlip(model.slip,model.status,model.balance),add,remove,clear,roll,prepare,restore,loadStatus,setStake:(stake:string)=>{if(current.current.phase==='ready'&&!current.current.pending)publish({stake,error:null})}}
 }
 function sameSlip(a: readonly SicBoBetRequest[],b: readonly SicBoBetRequest[]) {return a.length===b.length&&a.every((bet,i)=>{const other=b[i];return other&&bet.kind===other.kind&&bet.stake===other.stake&&bet.face===other.face&&bet.total===other.total&&bet.firstFace===other.firstFace&&bet.secondFace===other.secondFace})}
 function message(reason: unknown) {return reason instanceof Error?reason.message:'Connection failed.'}

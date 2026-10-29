@@ -59,7 +59,7 @@ describe('Sic Bo table',()=>{
   },10_000)
   it('aggregates markers while retaining duplicate slip entries',async()=>{
     render(<SicBoGame gateway={fakeGateway()}/>);await ready();add('Small');stake('5');add('Small')
-    expect(within(screen.getByRole('button',{name:'Add Small bet'})).getByLabelText(money(6)+' staked')).toBeTruthy()
+    expect(within(betButton('Small')).getByLabelText(money(6)+' staked')).toBeTruthy()
     click('Slip 2');const panel=within(screen.getByRole('dialog'))
     expect(panel.getAllByText('Small')).toHaveLength(2);expect(panel.getByText(money(1))).toBeTruthy();expect(panel.getByText(money(5))).toBeTruthy()
   })
@@ -85,7 +85,7 @@ describe('Sic Bo table',()=>{
   it('sets a chip without placing a bet',async()=>{const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();click('Set stake '+money(25));expect((screen.getByRole('textbox',{name:'Stake'}) as HTMLInputElement).value).toBe('25');expect(screen.getByRole('button',{name:'Slip 0'})).toBeTruthy();expect(gateway.createRound).not.toHaveBeenCalled()})
   it('enforces bet count synchronously during same-tick additions',async()=>{
     render(<SicBoGame gateway={fakeGateway({getStatus:vi.fn().mockResolvedValue({...status,maximumBetsPerRound:1})})}/>);await ready()
-    const button=screen.getByRole('button',{name:'Add Small bet'});act(()=>{button.click();button.click()})
+    const button=betButton('Small');act(()=>{button.click();button.click()})
     expect(screen.getByRole('button',{name:'Slip 1'})).toBeTruthy();expect(disabled('Add Big bet')).toBe(true);expect(disabled('Roll dice')).toBe(false)
   })
   it('prevents overspending and permits a slip equal to balance',async()=>{
@@ -96,7 +96,7 @@ describe('Sic Bo table',()=>{
     const user=userEvent.setup();render(<SicBoGame gateway={fakeGateway()}/>);await ready();await user.click(screen.getByRole('button',{name:'Rules'}))
     const panel=within(screen.getByRole('dialog'));expect(panel.getByRole('heading',{name:'Rules & payouts'})).toBeTruthy()
     expect(panel.getByText(/Small, Big, Odd and Even lose on triples/)).toBeTruthy();expect(panel.getByText('11.5:1')).toBeTruthy();expect(panel.getByText('195:1')).toBeTruthy()
-    expect(panel.getByText('Profit odds. A winning return includes the stake.')).toBeTruthy();expect(panel.getByText('Min '+money(1)+' · Max '+money(100)+' · Step '+money(1)+' · 20 bets.')).toBeTruthy()
+    expect(panel.getByText('Profit odds. A winning return includes the stake.')).toBeTruthy();expect(panel.getByText('Min '+money(1)+' · Max '+money(100)+' per spot · Step '+money(1)+' · 20 bets.')).toBeTruthy()
     await user.keyboard('{Escape}');expect((screen.getByRole('dialog',{hidden:true}) as HTMLDialogElement).open).toBe(false);expect(document.activeElement).toBe(screen.getByRole('button',{name:'Rules'}))
   })
   it('keeps the table mounted and shows authoritative dice and settlement totals',async()=>{
@@ -148,8 +148,8 @@ describe('Sic Bo table',()=>{
     render(<SicBoGame gateway={fakeGateway({createRound:vi.fn().mockResolvedValue(triple)})}/>);await ready()
     ;['Small','Any Triple','Triple 2','Single 2','Double 2','Total 6'].forEach(add);click('Roll dice');await screen.findByRole('button',{name:'New round'})
     expect(screen.getByRole('img',{name:'Dice 2, 2, 2'})).toBeTruthy();expect(screen.getByText('Triple')).toBeTruthy();expect(screen.getByText(money(274.5))).toBeTruthy()
-    expect(within(screen.getByRole('button',{name:'Add Small bet'})).getByLabelText('Losing bet')).toBeTruthy()
-    expect(within(screen.getByRole('button',{name:'Add Any Triple bet'})).getByLabelText('Winning bet')).toBeTruthy()
+    expect(within(betButton('Small')).getByLabelText('Losing bet')).toBeTruthy()
+    expect(within(betButton('Any Triple')).getByLabelText('Winning bet')).toBeTruthy()
     click('Slip 6');expect(within(screen.getByRole('dialog')).getByText('Won · '+money(196)+' return')).toBeTruthy();expect(within(screen.getByRole('dialog')).getByText('Won · '+money(12.5)+' return')).toBeTruthy()
   })
 })
@@ -263,9 +263,10 @@ describe('Sic Bo availability',()=>{
 
 function click(name:string){fireEvent.click(screen.getByRole('button',{name}))}
 function clickAfter(node:HTMLElement){fireEvent.click(node)}
-function add(label:string){click('Add '+label+' bet')}
+function betButton(label:string){const prefix='Add '+label+' bet';return screen.getByRole('button',{name:name=>name===prefix||name.startsWith(prefix+', ')})}
+function add(label:string){fireEvent.click(betButton(label))}
 function stake(value:string){fireEvent.change(screen.getByRole('textbox',{name:'Stake'}),{target:{value}})}
-function disabled(name:string){return screen.getByRole('button',{name}).hasAttribute('disabled')}
+function disabled(name:string){return (name.startsWith('Add ')&&name.endsWith(' bet')?betButton(name.slice(4,-4)):screen.getByRole('button',{name})).hasAttribute('disabled')}
 function money(value:number){return 'R'+value.toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2})}
 async function ready(){await waitFor(()=>expect(disabled('Add Small bet')).toBe(false))}
 function motion(reduce:boolean){vi.stubGlobal('matchMedia',(query:string)=>({matches:reduce&&query.includes('prefers-reduced-motion'),media:query,onchange:null,addListener:vi.fn(),removeListener:vi.fn(),addEventListener:vi.fn(),removeEventListener:vi.fn(),dispatchEvent:vi.fn()}))}

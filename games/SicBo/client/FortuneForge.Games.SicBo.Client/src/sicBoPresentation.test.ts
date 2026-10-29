@@ -97,8 +97,8 @@ describe('exact stake drafts and affordable ordered slips', () => {
   })
 
   it('offers legal chips including the last reachable endpoint, without a wallet clamp', () => {
-    expect(availableChipValues(status)).toEqual([1, 5, 10, 25, 50, 100])
-    expect(availableChipValues({ ...status, balance: 0 })).toEqual([1, 5, 10, 25, 50, 100])
+    expect(availableChipValues(status)).toEqual([1, 2, 5, 10, 25, 50, 100])
+    expect(availableChipValues({ ...status, balance: 0 })).toEqual([1, 2, 5, 10, 25, 50, 100])
     expect(availableChipValues(null)).toEqual([])
     expect(availableChipValues({ ...status, available: false })).toEqual([])
     expect(availableChipValues({ ...status, stakeIncrement: 0 })).toEqual([])

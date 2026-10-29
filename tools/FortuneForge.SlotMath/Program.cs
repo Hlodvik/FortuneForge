@@ -235,7 +235,8 @@ long RunSpin(bool isFreeSpin, string? freeSpinFeatureMode)
             sealCollections,
             result.SealsAwarded,
             result.WagerPoints,
-            energy.MultiplierApplied);
+            energy.MultiplierApplied,
+            result.SpinId);
     sealCollections = specialRounds.Collections;
     lastFreeSpinsAwarded = checked(result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
     lastFreeSpinFeatureMode = lastFreeSpinsAwarded > 0

@@ -90,7 +90,8 @@ public sealed class DemoSlotsController(
                     request.SealCollections ?? [],
                     result.SealsAwarded,
                     result.WagerPoints,
-                    energy.MultiplierApplied);
+                    energy.MultiplierApplied,
+                    result.SpinId);
             var freeSpinsRemaining = checked(
                 request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
                 result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
@@ -102,6 +103,11 @@ public sealed class DemoSlotsController(
             {
                 SlotsCreditsBalance = null,
                 Payout = energy.Payout,
+                FreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? checked(result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded)
+                    : result.FreeSpinsAwarded,
+                CollectionFreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? specialRounds.FreeSpinsAwarded : 0,
                 IsFreeSpin = request.UseFreeSpin,
                 FreeSpinsRemaining = freeSpinsRemaining,
                 FreeSpinWagerPoints = freeSpinWagerPoints,

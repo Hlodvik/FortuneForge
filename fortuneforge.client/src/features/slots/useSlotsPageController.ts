@@ -746,6 +746,36 @@ export function useSlotsPageController({
       return
     }
 
+    const collectionFreeSpinsAwarded = collectionFeature.presentation === 'gem-hoard'
+      ? result.collectionFreeSpinsAwarded ?? 0
+      : result.freeSpinsAwarded
+    const awardedModes = new Set(result.freeSpinFeatureMode?.split('-') ?? [])
+    const awardedCollectionId = collectionFeature.presentation === 'gem-hoard' &&
+      collectionFreeSpinsAwarded > 0
+      ? collectionFeature.entries.find((entry) =>
+        awardedModes.has(entry.id) && (result.sealsAwarded[entry.symbol] ?? 0) > 0,
+      )?.id ?? null
+      : null
+    const presentCollectionAward = (collectionId: string | null) => {
+      if (!collectionId || !collectionFeature.completionDialog || !isCurrentPresentation(signal)) {
+        return
+      }
+      setIsAutoSpinning(false)
+      stopLoop(soundSet.events.ambience)
+      if (soundSet.events.autoSpinAmbience !== undefined) {
+        stopLoop(soundSet.events.autoSpinAmbience)
+      }
+      setHasSpecialRoundStarted(true)
+      setHeldCompletedCollectionId(collectionId)
+      setSpecialRoundGemCount(0)
+      setSpecialRoundWinnings(0)
+      setCollectionAwardPresentation({
+        collectionId,
+        freeSpins: collectionFreeSpinsAwarded,
+        featureMode: result.freeSpinFeatureMode,
+      })
+    }
+
     const collectionsBySymbol = new Map(
       collectionFeature.entries.map((collection) => [collection.symbol, collection]),
     )
@@ -764,6 +794,7 @@ export function useSlotsPageController({
       signal.aborted
     ) {
       settleSeals()
+      if (!signal.aborted) presentCollectionAward(awardedCollectionId)
       return
     }
 
@@ -776,6 +807,7 @@ export function useSlotsPageController({
       : false
     if (!frameCompleted) {
       settleSeals()
+      if (!signal.aborted) presentCollectionAward(awardedCollectionId)
       return
     }
 
@@ -785,14 +817,16 @@ export function useSlotsPageController({
     const finalCollections = new Map(
       result.sealCollections.map((collection) => [collection.sealId, collection]),
     )
-    let completedCollectionId: string | null = null
+    // A gem feature can trigger before the last gem on a reel is collected, so
+    // the final count may still exceed the starting count after its reset.
+    let completedCollectionId: string | null = awardedCollectionId
 
     for (const [index, position] of sealPositions.entries()) {
       const source = document.querySelector<HTMLElement>(
         `.slot-symbol[data-symbol="${position.symbol}"][data-reel-index="${position.reel}"][data-row-index="${position.row}"]`,
       )
       const destinationSelector = collectionFeature.presentation === 'gem-hoard'
-        ? `.slots-page__seal-collection[data-seal-id="${position.collection.id}"] .slots-page__treasure-chest`
+        ? `.slots-page__seal-collection[data-seal-id="${position.collection.id}"] .slots-page__pirate-gem-pile`
         : `.slots-page__seal-collection[data-seal-id="${position.collection.id}"]`
       const destination = document.querySelector<HTMLElement>(destinationSelector)
       const sourceRect = source?.getBoundingClientRect()
@@ -831,7 +865,7 @@ export function useSlotsPageController({
 
       const currentCount = animatedCounts.get(position.collection.id) ?? 0
       const finalCollection = finalCollections.get(position.collection.id)
-      if (finalCollection && finalCollection.count < currentCount) {
+      if (collectionFreeSpinsAwarded > 0 && finalCollection && finalCollection.count < currentCount) {
         completedCollectionId ??= position.collection.id
       }
       const nextCount = finalCollection && finalCollection.count >= currentCount
@@ -859,27 +893,7 @@ export function useSlotsPageController({
     }
 
     settleSeals()
-    if (
-      completedCollectionId &&
-      collectionFeature.completionDialog &&
-      result.freeSpinsAwarded > 0 &&
-      isCurrentPresentation(signal)
-    ) {
-      setIsAutoSpinning(false)
-      stopLoop(soundSet.events.ambience)
-      if (soundSet.events.autoSpinAmbience !== undefined) {
-        stopLoop(soundSet.events.autoSpinAmbience)
-      }
-      setHasSpecialRoundStarted(true)
-      setHeldCompletedCollectionId(completedCollectionId)
-      setSpecialRoundGemCount(0)
-      setSpecialRoundWinnings(0)
-      setCollectionAwardPresentation({
-        collectionId: completedCollectionId,
-        freeSpins: result.freeSpinsAwarded,
-        featureMode: result.freeSpinFeatureMode,
-      })
-    }
+    presentCollectionAward(completedCollectionId)
   }
 
   async function animateNumberValue(

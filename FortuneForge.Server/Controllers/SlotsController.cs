@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Spins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -121,6 +122,11 @@ public sealed class SlotsController(
             {
                 SlotsCreditsBalance = settlement.SlotsCreditsBalance,
                 Payout = settlement.Payout,
+                FreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? checked(result.FreeSpinsAwarded + settlement.SealFreeSpinsAwarded)
+                    : result.FreeSpinsAwarded,
+                CollectionFreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? settlement.SealFreeSpinsAwarded : 0,
                 IsFreeSpin = admission.IsFreeSpin,
                 FreeSpinsRemaining = settlement.FreeSpinsRemaining,
                 FreeSpinWagerPoints = settlement.FreeSpinWagerPoints,

@@ -32,7 +32,7 @@ export function SlotPlayGuide({
     ? getSlotSymbolDefinition(symbolSet, winningMatch.symbolId)
     : null
   const tier = getWinPresentationTier(lastWin, selectedWager)
-  const chestTarget = collections?.entries[0]?.requiredCount
+  const hasGemCollection = collections?.presentation === 'gem-hoard' && collections.entries.length > 0
 
   return (
     <aside className="slots-page__play-guide" aria-live="polite" aria-label="Pirates' Fortune game guide">
@@ -58,8 +58,8 @@ export function SlotPlayGuide({
 
       <ul>
         <li><b>Jolly Roger</b> wilds can complete a five-symbol route.</li>
-        {chestTarget && specialRound && (
-          <li><b>Treasure chests:</b> fill any chest with {chestTarget} matching gems for {specialRound.title}.</li>
+        {hasGemCollection && specialRound && (
+          <li><b>Treasure gems:</b> collect matching gems to build the chance of {specialRound.title}.</li>
         )}
       </ul>
 

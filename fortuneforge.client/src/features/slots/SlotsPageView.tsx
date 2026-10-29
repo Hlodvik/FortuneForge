@@ -116,12 +116,15 @@ export function SlotsPageView(controller: SlotsPageController) {
     ? collectionFeature.entries.find((entry) => entry.id === collectionAwardPresentation.collectionId)
     : undefined
   const completedFeatureDetail = specialRound && collectionAwardPresentation?.featureMode
-    ? specialRound.activeModes[collectionAwardPresentation.featureMode] ?? null
+    ? getSpecialRoundLabel(specialRound, collectionAwardPresentation.featureMode)
     : null
   const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
+  const completedGemImage = isPiratesFortune && completedCollection
+    ? getSlotSymbolDefinition(symbolSet, completedCollection.symbol).image
+    : null
   const topbarStyle = cabinetTheme.topbar
     ? ({
         '--slot-topbar-background': cabinetTheme.topbar.background,
@@ -266,7 +269,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     presentation={collectionFeature.presentation ?? 'seal-pile'}
                     showCount={collectionFeature.presentation !== 'gem-hoard'}
                     statusDetail={
-                      isSpecialGameActive &&
+                      !isPiratesFortune && isSpecialGameActive &&
                       heldCompletedCollectionId === collection.sealId &&
                       specialRoundGemCount > 0
                         ? `${specialRoundGemCount} gems banked`
@@ -508,18 +511,22 @@ export function SlotsPageView(controller: SlotsPageController) {
             aria-live="assertive"
             aria-labelledby="collection-award-title"
           >
-            {completedChestImage && (
+            {completedGemImage ? (
+              <span className="slots-page__collection-award-gems" aria-hidden="true">
+                {Array.from({ length: 5 }, (_, index) => <img src={completedGemImage} alt="" key={index} />)}
+              </span>
+            ) : completedChestImage && (
               <img className="slots-page__collection-award-chest" src={completedChestImage} alt="" aria-hidden="true" />
             )}
             <span className="slots-page__collection-award-kicker">
-              {isPiratesFortune ? 'Treasure chest filled' : isWukong ? 'Celestial seal awakened' : 'Collection complete'}
+              {isPiratesFortune ? 'Treasure feature unlocked' : isWukong ? 'Celestial seal awakened' : 'Collection complete'}
             </span>
             <h2 id="collection-award-title">{completedCollection?.label ?? 'Gem collection'} complete</h2>
             <p>
               {collectionAwardPresentation.freeSpins} {specialRound?.title ?? 'free game'}
               {collectionAwardPresentation.freeSpins === 1 ? ' is' : 's are'} now loaded.
               {' '}{isPiratesFortune
-                ? 'The chest stays full while any new gems are banked for the next run.'
+                ? 'Your gem pile glows while new gems build toward the next run.'
                 : isWukong
                   ? 'The seal stays awakened while matching seals are banked for the next quest.'
                   : 'New collection pieces are banked for the next run.'}

@@ -13,7 +13,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.CosmicFortuneGameId, 3, 6, 24, 7)]
     [InlineData(SlotSpecialRoundProfiles.HighNoonFortuneGameId, 3, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.GodsOfOlympusGameId, 4, 6, 28, 6)]
-    [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId, 3, 7, 15, 10)]
+    [InlineData(SlotSpecialRoundProfiles.PiratesFortuneGameId, 3, 7, 25, 10)]
     [InlineData(SlotSpecialRoundProfiles.RoyalDrawGameId, 3, 6, 24, 7)]
     [InlineData(SlotSpecialRoundProfiles.SamuraiFortuneGameId, 4, 6, 26, 7)]
     [InlineData(SlotSpecialRoundProfiles.RobotRevolutionGameId, 3, 7, 24, 8)]

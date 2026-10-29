@@ -67,7 +67,8 @@ public sealed record SlotSpinSettlement(
     decimal PayoutMultiplier,
     long? FreeSpinWagerPoints,
     IReadOnlyList<SlotSealCollection> SealCollections,
-    string? FreeSpinFeatureMode);
+    string? FreeSpinFeatureMode,
+    int SealFreeSpinsAwarded = 0);
 
 public sealed record SlotStateResponse(
     int FreeSpinsRemaining,

@@ -100,5 +100,10 @@ export function getSpecialRoundLabel(
   feature: SlotSpecialRoundFeature,
   mode: string | null,
 ): string {
-  return mode ? feature.activeModes[mode] ?? feature.title : feature.title
+  if (!mode) return feature.title
+  const directLabel = feature.activeModes[mode]
+  if (directLabel) return directLabel
+  const modes = mode.split('-')
+  const labels = modes.map((part) => feature.activeModes[part])
+  return modes.length > 1 && labels.every(Boolean) ? labels.join(' · ') : feature.title
 }

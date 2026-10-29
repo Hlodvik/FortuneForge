@@ -94,16 +94,16 @@ public static class SlotSpecialRoundProfiles
                 PiratesFortuneGameId,
                 3,
                 7,
-                15,
+                PiratesGemBonus.MaximumGems,
                 10,
                 true,
                 false,
                 true,
                 null,
-                "paw",
+                null,
                 PiratesFortuneBaseReelSet.Id,
                 0.32m,
-                PayoutMultiplier: 0.724m),
+                PayoutMultiplier: 0.665m),
             [RoyalDrawGameId] = new(
                 RoyalDrawGameId, 3, 6, 24, 7, true, true, true, null, "rows-rand",
                 PayoutMultiplier: 0.942m),
@@ -179,12 +179,18 @@ public static class SlotSpecialRoundProfiles
         IReadOnlyList<SlotSealCollection> current,
         IReadOnlyDictionary<string, int> awarded,
         long wagerPoints,
-        bool energyCompleted)
+        bool energyCompleted,
+        Guid spinId = default)
     {
         if (!profile.UsesCollections)
         {
             return new SlotSpecialRoundProgress(0, null, []);
         }
+
+        // Historic demo evidence keeps its frozen fifteen-gem profile and rule.
+        if (profile.GameId == PiratesFortuneGameId &&
+            profile.CollectionTarget == PiratesGemBonus.MaximumGems)
+            return SettlePiratesDemo(profile, current, awarded, wagerPoints, spinId);
 
         var states = Modes.ToDictionary(mode => mode, mode => new RoundState(), StringComparer.Ordinal);
         foreach (var collection in current.Where(collection => states.ContainsKey(collection.SealId)))
@@ -219,6 +225,47 @@ public static class SlotSpecialRoundProfiles
         return new SlotSpecialRoundProgress(
             freeSpins,
             featureMode,
+            Modes.Select(mode => states[mode].ToCollection(mode, profile.CollectionTarget)).ToArray());
+    }
+
+    private static SlotSpecialRoundProgress SettlePiratesDemo(
+        SlotSpecialRoundProfile profile,
+        IReadOnlyList<SlotSealCollection> current,
+        IReadOnlyDictionary<string, int> awarded,
+        long wagerPoints,
+        Guid spinId)
+    {
+        var states = Modes.ToDictionary(mode => mode, mode => new RoundState(), StringComparer.Ordinal);
+        foreach (var collection in current.Where(collection => states.ContainsKey(collection.SealId)))
+            states[collection.SealId] = new RoundState(collection.Count, collection.AverageWagerPoints);
+
+        var awardedByMode = Modes.ToDictionary(mode => mode, _ => 0, StringComparer.Ordinal);
+        foreach (var (sealId, count) in awarded)
+        {
+            if (count > 0 && ModesBySeal.TryGetValue(sealId, out var mode))
+                awardedByMode[mode] = checked(awardedByMode[mode] + count);
+        }
+
+        var freeSpins = 0;
+        string? featureMode = null;
+        foreach (var mode in Modes)
+        {
+            var state = states[mode];
+            var progress = PiratesGemBonus.Advance(spinId, mode, state.Count,
+                checked(state.AverageWagerPoints * state.Count), awardedByMode[mode], wagerPoints);
+            if (progress.Awards.Count > 0)
+            {
+                freeSpins = checked(freeSpins +
+                    progress.Awards.Count * profile.CollectionAwardedSpins);
+                featureMode = PiratesGemBonus.AddFeatureMode(featureMode, mode);
+            }
+            var average = progress.Count == 0 ? 0 :
+                (long)Math.Round(progress.WagerTotal / (decimal)progress.Count,
+                    MidpointRounding.AwayFromZero);
+            states[mode] = new RoundState(progress.Count, average);
+        }
+
+        return new SlotSpecialRoundProgress(freeSpins, featureMode,
             Modes.Select(mode => states[mode].ToCollection(mode, profile.CollectionTarget)).ToArray());
     }
 

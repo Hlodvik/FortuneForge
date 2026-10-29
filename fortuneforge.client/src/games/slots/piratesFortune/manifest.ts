@@ -4,10 +4,7 @@ import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { PIRATES_FORTUNE_CABINET_THEME } from './cabinetTheme'
 import { PIRATES_FORTUNE_CATALOG } from './catalog'
-import { PIRATES_FORTUNE_CHEST_PROGRESSIONS } from './chestProgressions'
 import { PIRATES_FORTUNE_SYMBOLS } from './symbols'
-
-const { emerald, lapis, ruby, topaz } = PIRATES_FORTUNE_CHEST_PROGRESSIONS
 
 const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
   collections: {
@@ -17,24 +14,20 @@ const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
     completionDialog: true,
     entries: [
       {
-        id: 'sync', label: 'Matching reel', displayLabel: 'Match Reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15,
-        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, one reel is copied to match the winning setup.',
-        containerImage: ruby.empty,
+        id: 'sync', label: 'Matching reel', displayLabel: 'Match Reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 25,
+        rewardDescription: 'Matching gems build the chance of 10 free games. During every free game, one reel is copied to match the winning setup.',
       },
       {
-        id: 'rows', label: 'Extra rows', displayLabel: 'Extra Rows', shortLabel: 'Lapis', symbol: 'SEAL_ROWS', requiredCount: 15,
-        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, two extra reel rows open for more winning ways.',
-        containerImage: lapis.empty,
+        id: 'rows', label: 'Extra rows', displayLabel: 'Extra Rows', shortLabel: 'Lapis', symbol: 'SEAL_ROWS', requiredCount: 25,
+        rewardDescription: 'Matching gems build the chance of 10 free games. During every free game, two extra reel rows open for more winning ways.',
       },
       {
-        id: 'paw', label: 'Stronger purse hauls', displayLabel: 'Purse Hauls', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 15,
-        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, Doubloon Purse hauls become stronger.',
-        containerImage: topaz.empty,
+        id: 'paw', label: 'Stronger purse hauls', displayLabel: 'Purse Hauls', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 25,
+        rewardDescription: 'Matching gems build the chance of 10 free games. During every free game, Doubloon Purse hauls become stronger.',
       },
       {
-        id: 'rand', label: 'Prize multiplier column', displayLabel: 'Multiplier', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 15,
-        rewardDescription: 'Fill this chest to launch 10 free games. During every free game, a prize multiplier column appears.',
-        containerImage: emerald.empty,
+        id: 'rand', label: 'Prize multiplier column', displayLabel: 'Multiplier', shortLabel: 'Emerald', symbol: 'SEAL_RAND', requiredCount: 25,
+        rewardDescription: 'Matching gems build the chance of 10 free games. During every free game, a prize multiplier column appears.',
       },
     ],
   },
@@ -46,8 +39,8 @@ const PIRATES_FORTUNE_FEATURES: SlotFeatureSet = {
   },
   specialRound: {
     id: 'pirates-broadside', title: 'Free Game',
-    earnLabel: 'Land 3 Treasure Maps for 7 Island Search bonus rounds, or complete 15 matching gems for 10 free games.',
-    earnStyle: 'buckets', earnHint: 'Ruby, lapis, orange, and emerald gems tumble into four treasure chests. Fill one chest to launch 10 free games with that chest\'s special feature.',
+    earnLabel: 'Land 3 Treasure Maps for 7 Island Search bonus rounds, or collect matching gems for a chance at 10 free games.',
+    earnStyle: 'buckets', earnHint: 'Ruby, lapis, orange, and emerald gems build four treasure meters. Each matching gem brings its feature closer.',
     activeModes: {
       sync: 'Matching Reel · one reel is copied to match the winning setup', rows: 'Extra Rows · two extra reel rows open',
       paw: 'Stronger Purse Hauls · Doubloon Purse hauls are boosted', rand: 'Prize Multiplier Column · a prize multiplier column appears',
@@ -74,7 +67,7 @@ const PIRATES_FORTUNE_HELP: SlotHelpDefinition = {
     {
       badge: 'GEMS',
       title: 'Treasure gem collections',
-      body: 'Ruby, lapis, orange, and emerald gems collect from anywhere visible. A completed 15-gem chest awards 10 free games with that chest\'s special feature, tied to the collection\'s average wager.',
+      body: 'Ruby, lapis, orange, and emerald gems collect from anywhere visible. Each matching gem builds the chance of 10 free games with that gem\'s special feature, tied to the collection\'s average wager.',
     },
   ],
 }

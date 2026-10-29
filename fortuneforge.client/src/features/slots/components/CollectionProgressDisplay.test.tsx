@@ -48,63 +48,64 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).toContain('aria-hidden="true">Paw Rush</strong>')
   })
 
-  it('fills the transparent Pirate chest with cumulative gem pieces', () => {
+  it('grows the Pirate gem piles without exposing a fixed collection target', () => {
     const cases = [
       [0, 0],
       [1, 1],
       [3, 2],
-      [4, 3],
-      [7, 5],
-      [8, 6],
-      [11, 8],
-      [12, 8],
-      [15, 10],
+      [4, 2],
+      [7, 3],
+      [10, 5],
+      [15, 7],
+      [21, 9],
+      [24, 10],
       [30, 10],
     ] as const
 
     for (const [count, expectedVisibleGems] of cases) {
       const markup = renderToStaticMarkup(
         <CollectionProgressDisplay
-          collection={{ sealId: 'sync', count, averageWagerPoints: 50, requiredCount: 15 }}
-          definition={{ id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15 }}
+          collection={{ sealId: 'sync', count, averageWagerPoints: 50, requiredCount: 25 }}
+          definition={{ id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 25 }}
           image="/ruby.png"
           isImpacting
           itemLabel="gems"
-          containerImage="/ruby-empty.png"
           presentation="gem-hoard"
         />,
       )
 
-      expect(markup).toContain('slots-page__treasure-chest--impact')
-      expect(markup).toContain('src="/ruby-empty.png"')
+      expect(markup).toContain('slots-page__pirate-gem-pile')
+      expect(markup).toContain('slots-page__pirate-gem-meter')
+      expect(markup).not.toContain('treasure-chest')
+      expect(markup).not.toContain('25 collected')
+      expect(markup).not.toContain('aria-valuenow')
       expect(markup.match(/class="is-visible"/g) ?? []).toHaveLength(expectedVisibleGems)
       expect(markup).toContain('draggable="false"')
     }
   })
 
-  it('can hide the numeric progress beside a Pirate chest without hiding its accessible progress value', () => {
+  it('describes the Pirate reward without showing a numeric gem count', () => {
     const markup = renderToStaticMarkup(
       <CollectionProgressDisplay
-        collection={{ sealId: 'sync', count: 9, averageWagerPoints: 50, requiredCount: 15 }}
+        collection={{ sealId: 'sync', count: 9, averageWagerPoints: 50, requiredCount: 25 }}
         definition={{
-          id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15,
-          rewardDescription: 'Fill this chest to launch 10 free games. During every free game, one reel is copied to match the winning setup.',
+          id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 25,
+          rewardDescription: 'Matching gems build the chance of 10 free games. During every free game, one reel is copied to match the winning setup.',
         }}
         image="/ruby.png"
         isImpacting={false}
         itemLabel="gems"
-        containerImage="/ruby-empty.png"
         presentation="gem-hoard"
-        showCount={false}
       />,
     )
 
     expect(markup).not.toContain('slots-page__collection-count')
-    expect(markup).toContain('aria-valuenow="9"')
+    expect(markup).not.toContain('aria-valuenow')
+    expect(markup).not.toContain('/25')
     expect(markup).not.toContain('title=')
     expect(markup).toContain('Collection reward')
     expect(markup).toContain('Land Ruby gems anywhere on the reels to bank them.')
-    expect(markup).toContain('Fill this chest to launch 10 free games.')
+    expect(markup).toContain('Matching gems build the chance of 10 free games.')
     expect(markup).toContain('During every free game, one reel is copied to match the winning setup.')
     expect(markup).toContain('tabindex="0"')
   })
@@ -112,14 +113,14 @@ describe('CollectionProgressDisplay', () => {
   it('uses compact cabinet copy without replacing the full accessible collection label', () => {
     const markup = renderToStaticMarkup(
       <CollectionProgressDisplay
-        collection={{ sealId: 'paw', count: 4, averageWagerPoints: 50, requiredCount: 15 }}
+        collection={{ sealId: 'paw', count: 4, averageWagerPoints: 50, requiredCount: 25 }}
         definition={{
           id: 'paw',
           label: 'Stronger purse hauls',
           displayLabel: 'Purse Hauls',
           shortLabel: 'Orange',
           symbol: 'SEAL_PAW',
-          requiredCount: 15,
+          requiredCount: 25,
         }}
         image="/orange.png"
         isImpacting={false}
@@ -132,17 +133,16 @@ describe('CollectionProgressDisplay', () => {
     expect(markup).toContain('aria-hidden="true">Purse Hauls</strong>')
   })
 
-  it('keeps a completed chest visually full while showing special-game gems separately', () => {
+  it('keeps a completed gem meter visually full during the reward animation', () => {
     const markup = renderToStaticMarkup(
       <CollectionProgressDisplay
-        collection={{ sealId: 'sync', count: 3, averageWagerPoints: 50, requiredCount: 15 }}
-        definition={{ id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15 }}
+        collection={{ sealId: 'sync', count: 3, averageWagerPoints: 50, requiredCount: 25 }}
+        definition={{ id: 'sync', label: 'Matching reel', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 25 }}
         image="/ruby.png"
         isCelebrating
         isImpacting={false}
         itemLabel="gems"
-        containerImage="/ruby-empty.png"
-        displayCount={15}
+        displayCount={25}
         presentation="gem-hoard"
         showCount={false}
         statusDetail="3 gems banked"
@@ -150,9 +150,10 @@ describe('CollectionProgressDisplay', () => {
     )
 
     expect(markup).toContain('slots-page__seal-collection--celebrating')
-    expect(markup).toContain('src="/ruby-empty.png"')
+    expect(markup).toContain('slots-page__pirate-gem-pile')
+    expect(markup).toContain('--collection-progress:100%')
     expect(markup.match(/class="is-visible"/g)).toHaveLength(10)
     expect(markup).toContain('3 gems banked')
-    expect(markup).toContain('aria-valuenow="3"')
+    expect(markup).not.toContain('aria-valuenow')
   })
 })

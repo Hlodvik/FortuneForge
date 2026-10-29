@@ -273,7 +273,7 @@ test('ordinary Wukong and Pirates spins do not mount a status panel', async ({ p
   }
 })
 
-test('Pirates controls, chest hints, and interaction guards stay intact', async ({ page }) => {
+test('Pirates controls, gem hints, and interaction guards stay intact', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 768 })
   await mockDemoApi(page)
   await openStableSlot(page, '/slots/pirates-fortune/demo')
@@ -281,13 +281,14 @@ test('Pirates controls, chest hints, and interaction guards stay intact', async 
   await expect(page.locator('.slots-page__balance-label')).toHaveText('Balance')
   await expect(page.getByText('Demo balance', { exact: true })).toHaveCount(0)
 
-  const chests = page.locator('.slots-page__seal-collection')
-  const chestTops = await chests.locator('.slots-page__treasure-chest').evaluateAll((elements) => (
+  const collections = page.locator('.slots-page__seal-collection')
+  const pileTops = await collections.locator('.slots-page__pirate-gem-pile').evaluateAll((elements) => (
     elements.map((element) => Math.round(element.getBoundingClientRect().top))
   ))
-  expect(new Set(chestTops).size).toBe(1)
+  expect(pileTops).toHaveLength(4)
+  expect(new Set(pileTops).size).toBe(1)
 
-  const chestLabels = await chests.locator('.slots-page__seal-title').evaluateAll((labels) => (
+  const gemLabels = await collections.locator('.slots-page__seal-title').evaluateAll((labels) => (
     labels.map((label) => {
       const style = getComputedStyle(label)
       return {
@@ -298,7 +299,7 @@ test('Pirates controls, chest hints, and interaction guards stay intact', async 
       }
     })
   ))
-  for (const label of chestLabels) {
+  for (const label of gemLabels) {
     expect(label.horizontalOverflow).toBeLessThanOrEqual(1)
     expect(label.verticalOverflow).toBeLessThanOrEqual(1)
     expect(label.overflow).toBe('visible')
@@ -313,8 +314,8 @@ test('Pirates controls, chest hints, and interaction guards stay intact', async 
   expect(navStyles.color).not.toBe('rgb(85, 26, 139)')
   expect(navStyles.textDecoration).toBe('none')
 
-  await chests.nth(1).hover()
-  const tooltip = chests.nth(1).locator('.slots-page__collection-tooltip')
+  await collections.nth(1).hover()
+  const tooltip = collections.nth(1).locator('.slots-page__collection-tooltip')
   await expect(tooltip).toBeVisible()
   const tooltipBox = await tooltip.boundingBox()
   expect(tooltipBox?.y ?? -1).toBeGreaterThanOrEqual(0)
@@ -346,11 +347,42 @@ test('Pirates controls, chest hints, and interaction guards stay intact', async 
 
   expect(await page.locator('.slots-page__special-round').count()).toBe(0)
   expect(await page.locator('body').evaluate((body) => getComputedStyle(body).userSelect)).toBe('none')
-  expect(await page.locator('.slots-page__treasure-chest-art').first().getAttribute('draggable')).toBe('false')
+  expect(await page.locator('.slots-page__pirate-gem-pile img').first().getAttribute('draggable')).toBe('false')
+  await expect(page.locator('.slots-page__treasure-chest-art')).toHaveCount(0)
   const nativeDragAllowed = await page.locator('.slot-symbol__image').first().evaluate((image) => (
     image.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true }))
   ))
   expect(nativeDragAllowed).toBe(false)
+})
+
+test('Pirates gem rail remains legible on desktop and mobile', async ({ page }) => {
+  await mockDemoApi(page)
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await openStableSlot(page, '/slots/pirates-fortune/demo')
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+
+    const rail = page.locator('.slots-page__seal-collections')
+    const metrics = await rail.evaluate((element) => {
+      const railRect = element.getBoundingClientRect()
+      const labels = Array.from(element.querySelectorAll('.slots-page__seal-title'))
+      const meters = Array.from(element.querySelectorAll('.slots-page__pirate-gem-meter'))
+      return {
+        railLeft: railRect.left,
+        railRight: railRect.right,
+        labelOverflow: Math.max(...labels.map((label) => label.scrollWidth - label.clientWidth)),
+        meterCount: meters.length,
+        minFontSize: Math.min(...labels.map((label) => Number.parseFloat(getComputedStyle(label).fontSize))),
+      }
+    })
+    expect(metrics.railLeft).toBeGreaterThanOrEqual(0)
+    expect(metrics.railRight).toBeLessThanOrEqual(viewport.width)
+    expect(metrics.labelOverflow).toBeLessThanOrEqual(1)
+    expect(metrics.meterCount).toBe(4)
+    expect(metrics.minFontSize).toBeGreaterThanOrEqual(8)
+    await expect(rail).toHaveScreenshot(`pirates-gem-rail-${viewport.width}.png`)
+  }
 })
 
 test('legacy saved mute state no longer makes a slot launch muted', async ({ page }) => {

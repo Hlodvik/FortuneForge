@@ -12,23 +12,24 @@ const symbolSet = {
 }
 
 describe('SlotPlayGuide', () => {
-  it('makes the default winning rules and chest reward clear before the first spin', () => {
+  it('makes the default winning rules and gem reward clear before the first spin', () => {
     const markup = renderToStaticMarkup(
       <SlotPlayGuide
         bestWin={null}
-        collections={{ ariaLabel: 'Treasure chests', entries: [{ id: 'ruby', label: 'Ruby chest', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 15 }] }}
+        collections={{ ariaLabel: 'Treasure gems', presentation: 'gem-hoard', entries: [{ id: 'ruby', label: 'Ruby gems', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 25 }] }}
         help={{ paylineCount: 21 }}
         lastWin={0}
         onOpenHelp={() => undefined}
         selectedWager={5}
-        specialRound={{ id: 'broadside', title: 'Broadside Runs', earnLabel: 'Fill a chest', activeModes: {} }}
+        specialRound={{ id: 'broadside', title: 'Broadside Runs', earnLabel: 'Collect gems', activeModes: {} }}
         symbolSet={symbolSet}
         winningPaylineCount={0}
       />,
     )
 
     expect(markup).toContain('Match 3 or more of the same symbol from the first reel')
-    expect(markup).toContain('fill any chest with 15 matching gems for Broadside Runs')
+    expect(markup).toContain('collect matching gems to build the chance of Broadside Runs')
+    expect(markup).not.toContain('25 matching gems')
     expect(markup).toContain('View all 21 winning routes')
   })
 

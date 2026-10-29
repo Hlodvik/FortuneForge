@@ -6,6 +6,7 @@ import {
 import '../../features/slots/styles/page.css'
 import '../../features/slots/styles/dialogs.css'
 import '../../features/slots/styles/pageOverrides.css'
+import '../../features/slots/styles/piratesGemMeter.css'
 
 export function SlotsPage(props: SlotsPageProps) {
   const controller = useSlotsPageController(props)

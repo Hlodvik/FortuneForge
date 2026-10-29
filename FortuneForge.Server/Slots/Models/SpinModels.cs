@@ -66,5 +66,6 @@ public sealed record SpinResult(
     public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } =
         new Dictionary<string, int>(StringComparer.Ordinal);
     public IReadOnlyList<SlotSealCollection> SealCollections { get; init; } = [];
+    public int CollectionFreeSpinsAwarded { get; init; }
     public string? FreeSpinFeatureMode { get; init; }
 }

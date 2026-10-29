@@ -81,9 +81,9 @@ export const PIRATES_FORTUNE_SYMBOLS: SlotSymbolSet = {
       secondValue: 'collects every coin',
       artworkValueLabel: '',
     },
-    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 15', secondLabel: 'Award', secondValue: '10 free games' },
-    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 15', secondLabel: 'Award', secondValue: '10 free games' },
-    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 15', secondLabel: 'Award', secondValue: '10 free games' },
-    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'collect 15', secondLabel: 'Award', secondValue: '10 free games' },
+    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
+    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
+    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
+    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'builds chance', secondLabel: 'Feature', secondValue: '10 free games' },
   ],
 }

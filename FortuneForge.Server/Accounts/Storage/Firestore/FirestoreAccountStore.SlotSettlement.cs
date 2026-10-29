@@ -94,7 +94,8 @@ public sealed partial class FirestoreAccountStore
                                 result.PointValueInCents)
                             : null,
                         existingSealCollections,
-                        ReadString(guardSnapshot, "freeSpinFeatureMode"));
+                        ReadString(guardSnapshot, "freeSpinFeatureMode"),
+                        checked((int)ReadLong(existingResult, "sealFreeSpinsAwarded")));
                 }
 
                 if (availableCents < chargedWagerCents)
@@ -385,7 +386,8 @@ public sealed partial class FirestoreAccountStore
                     energyBonus.PayoutMultiplier,
                     nextFreeSpinWagerPoints > 0 ? nextFreeSpinWagerPoints : null,
                     sealSettlement.Collections,
-                    nextFreeSpinFeatureMode);
+                    nextFreeSpinFeatureMode,
+                    sealSettlement.FreeSpinsAwarded);
             },
             cancellationToken: cancellationToken);
     }

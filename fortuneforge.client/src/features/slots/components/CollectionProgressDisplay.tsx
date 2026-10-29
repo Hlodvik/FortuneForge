@@ -32,6 +32,19 @@ const pileLayout = [
   { x: 0.44, y: -1.42, rotate: 6, scale: 0.81 },
 ] as const
 
+const piratePileLayout = [
+  { x: 0, y: 0, rotate: -5, scale: 0.85 },
+  { x: -1.12, y: -0.02, rotate: -20, scale: 0.73 },
+  { x: 1.1, y: -0.04, rotate: 18, scale: 0.74 },
+  { x: -0.62, y: -0.48, rotate: -8, scale: 0.8 },
+  { x: 0.58, y: -0.51, rotate: 9, scale: 0.81 },
+  { x: -1.48, y: -0.65, rotate: -25, scale: 0.68 },
+  { x: 1.46, y: -0.69, rotate: 23, scale: 0.69 },
+  { x: -0.94, y: -1.04, rotate: -14, scale: 0.76 },
+  { x: 0.89, y: -1.07, rotate: 13, scale: 0.76 },
+  { x: 0, y: -1.34, rotate: 2, scale: 0.83 },
+] as const
+
 const orbitSteps = Array.from({ length: 10 }, (_, index) => index)
 
 export function CollectionProgressDisplay({
@@ -40,7 +53,6 @@ export function CollectionProgressDisplay({
   image,
   isImpacting,
   itemLabel,
-  containerImage,
   displayCount,
   isCelebrating = false,
   presentation,
@@ -48,15 +60,21 @@ export function CollectionProgressDisplay({
   statusDetail,
 }: CollectionProgressDisplayProps) {
   const visualCount = displayCount ?? collection.count
-  const progress = Math.min(100, visualCount / collection.requiredCount * 100)
-  const visiblePieceCount = visualCount === 0
-    ? 0
-    : Math.max(1, Math.ceil(progress / 10))
-  const isGemChest = presentation === 'gem-hoard'
-  const collectionName = isGemChest ? `${definition.shortLabel} chest` : definition.label
-  const collectible = isGemChest ? `${definition.shortLabel} gems` : itemLabel
+  const isGemHoard = presentation === 'gem-hoard'
+  const progress = isGemHoard
+    ? displayCount !== undefined || isCelebrating
+      ? 100
+      : Number((94 * (1 - Math.exp(-Math.max(0, visualCount) / 8))).toFixed(1))
+    : Math.min(100, visualCount / collection.requiredCount * 100)
+  const visiblePieceCount = isGemHoard
+    ? Math.min(piratePileLayout.length, Math.ceil(Math.max(0, visualCount) / 2.4))
+    : visualCount === 0 ? 0 : Math.max(1, Math.ceil(progress / 10))
+  const collectionName = isGemHoard ? `${definition.shortLabel} gems` : definition.label
+  const collectible = isGemHoard ? `${definition.shortLabel} gems` : itemLabel
   const rewardDescription = definition.rewardDescription ?? 'Fill it to unlock a special round.'
-  const collectionHint = `${collectionName}: land ${collectible} anywhere on the reels to ${isGemChest ? 'fill' : 'complete'} it. ${collection.count} of ${collection.requiredCount} collected; ${rewardDescription}`
+  const collectionHint = isGemHoard
+    ? `${collectionName}: land matching gems anywhere on the reels to grow the pile and build the chance of a feature. ${rewardDescription}`
+    : `${collectionName}: land ${collectible} anywhere on the reels to complete it. ${collection.count} of ${collection.requiredCount} collected; ${rewardDescription}`
   const tooltipId = `slot-collection-hint-${collection.sealId}`
 
   return (
@@ -64,12 +82,12 @@ export function CollectionProgressDisplay({
       className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId} slots-page__seal-collection--${presentation}${isImpacting ? ' slots-page__seal-collection--impact' : ''}${isCelebrating ? ' slots-page__seal-collection--celebrating' : ''}`}
       data-seal-id={collection.sealId}
       data-collection-presentation={presentation}
-      role="progressbar"
+      role={isGemHoard ? 'img' : 'progressbar'}
       aria-label={`${definition.label}: ${collectionHint}`}
       aria-describedby={tooltipId}
-      aria-valuemin={0}
-      aria-valuemax={collection.requiredCount}
-      aria-valuenow={collection.count}
+      aria-valuemin={isGemHoard ? undefined : 0}
+      aria-valuemax={isGemHoard ? undefined : collection.requiredCount}
+      aria-valuenow={isGemHoard ? undefined : collection.count}
       tabIndex={0}
       style={{ '--collection-progress': `${progress}%` } as CSSProperties}
     >
@@ -103,44 +121,24 @@ export function CollectionProgressDisplay({
             </span>
             <img className="slots-page__collection-garnish" src={image} alt="" />
           </>
-        ) : presentation === 'gem-hoard' && containerImage ? (
-          <span className={`slots-page__treasure-chest${isImpacting ? ' slots-page__treasure-chest--impact' : ''}`}>
-            <img className="slots-page__treasure-chest-art" src={containerImage} alt="" draggable={false} />
-            <span className="slots-page__treasure-chest-gems">
-              {orbitSteps.map((index) => (
-                <img
-                  className={index < visiblePieceCount ? 'is-visible' : ''}
-                  key={index}
-                  src={image}
-                  alt=""
-                  draggable={false}
-                />
-              ))}
-            </span>
+        ) : isGemHoard ? (
+          <span className="slots-page__pirate-gem-pile">
+            {piratePileLayout.map((layout, index) => (
+              <img
+                className={index < visiblePieceCount ? 'is-visible' : ''}
+                key={index}
+                src={image}
+                alt=""
+                draggable={false}
+                style={{
+                  '--collection-piece-x': `${layout.x * 16}%`,
+                  '--collection-piece-y': `${layout.y * 24}%`,
+                  '--collection-piece-rotate': `${layout.rotate}deg`,
+                  '--collection-piece-scale': layout.scale,
+                } as CSSProperties}
+              />
+            ))}
           </span>
-        ) : presentation === 'gem-hoard' ? (
-          <>
-            <span className="slots-page__gem-bucket">
-              <span className="slots-page__gem-bucket-fill" style={{ height: `${progress}%` }}>
-                {pileLayout.map((layout, index) => (
-                  <img
-                    className="slots-page__gem-bucket-piece"
-                    key={index}
-                    src={image}
-                    alt=""
-                    style={{
-                      '--collection-piece-x': `${layout.x}rem`,
-                      '--collection-piece-y': `${layout.y}rem`,
-                      '--collection-piece-rotate': `${layout.rotate}deg`,
-                      '--collection-piece-scale': layout.scale,
-                      '--collection-piece-visible': index < visiblePieceCount ? 1 : 0,
-                    } as CSSProperties}
-                  />
-                ))}
-              </span>
-            </span>
-            <img className="slots-page__collection-garnish" src={image} alt="" />
-          </>
         ) : (
           <>
             <span className="slots-page__collection-pile">
@@ -169,7 +167,10 @@ export function CollectionProgressDisplay({
         <strong className="slots-page__seal-title" aria-hidden={definition.displayLabel ? true : undefined}>
           {definition.displayLabel ?? definition.label}
         </strong>
-        {showCount && (
+        {isGemHoard && (
+          <span className="slots-page__pirate-gem-meter" aria-hidden="true"><span /></span>
+        )}
+        {showCount && !isGemHoard && (
           <span className="slots-page__collection-count" aria-hidden="true">
             <b>{collection.count}</b>
             <small>/{collection.requiredCount}</small>
@@ -186,7 +187,9 @@ export function CollectionProgressDisplay({
         <span className="slots-page__collection-tooltip-kicker">Collection reward</span>
         <strong>{collectionName}</strong>
         <span className="slots-page__collection-tooltip-copy">Land {collectible} anywhere on the reels to bank them.</span>
-        <span className="slots-page__collection-tooltip-progress"><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</span>
+        <span className="slots-page__collection-tooltip-progress">
+          {isGemHoard ? rewardDescription : <><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</>}
+        </span>
       </span>
     </div>
   )

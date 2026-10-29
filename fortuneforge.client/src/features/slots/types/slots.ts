@@ -72,6 +72,7 @@ export type SpinResult = {
   fiveMatchPityTriggered: boolean
   isFreeSpin: boolean
   freeSpinsAwarded: number
+  collectionFreeSpinsAwarded?: number
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   specialPointsAwarded: number

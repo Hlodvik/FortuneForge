@@ -134,7 +134,8 @@ function renderRoute(pathname: string): string {
 function expectGameLoading(pathname: string, id: string, title: string) {
   const markup = renderRoute(pathname)
   expect(markup).toContain(`data-game-loading="${id}"`)
-  expect(markup).toContain(`Loading ${title}…`)
+  expect(markup).toContain(`>${title}</h1>`)
+  expect(markup).toContain(id === 'three-card-poker' ? '>Loading</span>' : `>Loading ${title}…</span>`)
   expect(markup).toContain('role="status"')
 }
 

@@ -307,6 +307,7 @@ describe('slot game manifests', () => {
 
     expect(collections?.ariaLabel).toBe('Treasure gem collections')
     expect(collections?.itemLabel).toBe('gems')
+    expect(collections?.presentation).toBe('gem-hoard')
     expect(collections?.entries.map((collection) => collection.id)).toEqual([
       'sync',
       'rows',
@@ -319,14 +320,9 @@ describe('slot game manifests', () => {
       'Orange',
       'Emerald',
     ])
-    expect(collections?.entries.map((collection) => collection.containerImage)).toEqual([
-      expect.stringContaining('/chests/ruby/empty.png'),
-      expect.stringContaining('/chests/lapis/empty.png'),
-      expect.stringContaining('/chests/topaz/empty.png'),
-      expect.stringContaining('/chests/emerald/empty.png'),
-    ])
+    expect(collections?.entries.every((collection) => !collection.containerImage)).toBe(true)
     expect(existsSync(new URL('../../assets/slots/games/pirates-fortune/optimized/chests/ruby/level-1.png', import.meta.url))).toBe(false)
-    expect(collections?.entries.every((collection) => collection.requiredCount === 15)).toBe(true)
+    expect(collections?.entries.every((collection) => collection.requiredCount === 25)).toBe(true)
     expect(existsSync(new URL('../../assets/slots/games/pirates-fortune/chests', import.meta.url))).toBe(false)
     expect(moneyGrab?.collectorSymbol).toBe('PAW')
     expect(PIRATES_FORTUNE_SLOT_GAME.experience.symbols.definitions.PAW?.label).toContain('Purse')
@@ -346,7 +342,7 @@ describe('slot game manifests', () => {
       [COSMIC_FORTUNE_SLOT_GAME, 'cosmic-orbit', 'cosmic-fortune-audio-v1', 24, 3, 6, true],
       [HIGH_NOON_FORTUNE_SLOT_GAME, 'high-noon-showdown', 'high-noon-fortune-audio-v1', 20, 3, 5, false],
       [GODS_OF_OLYMPUS_SLOT_GAME, 'olympus-trial', 'gods-of-olympus-audio-v1', 28, 4, 6, true],
-      [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v9', 15, 3, 7, true],
+      [PIRATES_FORTUNE_SLOT_GAME, 'pirates-broadside', 'pirates-fortune-audio-v9', 25, 3, 7, true],
       [ROYAL_DRAW_SLOT_GAME, 'royal-high-stakes', 'royal-draw-audio-v1', 24, 3, 6, true],
     ] as const
 

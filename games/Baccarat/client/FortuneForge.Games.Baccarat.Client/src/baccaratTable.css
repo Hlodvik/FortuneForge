@@ -628,12 +628,12 @@
 .ff-baccarat__bet-cell.is-tie { top: 62.732240%; height: 9.180328%; }
 .ff-baccarat__bet-cell.is-banker { top: 71.912568%; height: 10.819672%; }
 .ff-baccarat__bet-cell.is-player { top: 82.732240%; height: 12.349727%; }
-.ff-baccarat__bet strong { font-size: 1.805556cqw; }
-.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: .763889cqw; }
+.ff-baccarat__bet strong { font-size: clamp(.875rem, 1.805556cqw, 1.7rem); }
+.ff-baccarat__bet span:not(.ff-baccarat__placed-chip) { font-size: clamp(.5625rem, .763889cqw, .85rem); }
 .ff-baccarat__bet.is-player-pair strong,
-.ff-baccarat__bet.is-banker-pair strong { font-size: 1.25cqw; }
-.ff-baccarat__bet.is-banker strong { font-size: 2.152778cqw; }
-.ff-baccarat__bet.is-player strong { font-size: 2.430556cqw; }
+.ff-baccarat__bet.is-banker-pair strong { font-size: clamp(.6875rem, 1.25cqw, 1.15rem); }
+.ff-baccarat__bet.is-banker strong { font-size: clamp(1rem, 2.152778cqw, 2rem); }
+.ff-baccarat__bet.is-player strong { font-size: clamp(1rem, 2.430556cqw, 2.25rem); }
 .ff-baccarat__bet.is-player-pair,
 .ff-baccarat__bet.is-banker-pair { grid-template-rows: 1.388889cqw .833333cqw var(--ff-board-chip-size); }
 .ff-baccarat__icon-action { display: grid; place-items: center; }
@@ -661,4 +661,73 @@
   .ff-baccarat__round-head span:not(.ff-baccarat__place-bets) { font-size: .82rem; }
   .ff-baccarat__round-head strong { font-size: .9rem; }
   .ff-baccarat__round-head small { font-size: .5rem; }
+}
+
+/* The deal control matches Three Card Poker's card-stack orb. Its own row
+   keeps it centered over the three wallet totals at every table width. */
+.ff-baccarat__rail {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(3.6rem, 1fr) auto;
+  justify-content: stretch;
+  justify-items: center;
+  align-content: center;
+  gap: 0;
+  padding-block: .15rem .35rem;
+}
+.ff-baccarat__table-totals { grid-row: 2; width: 100%; flex: none; }
+.ff-baccarat__wager-row {
+  position: relative;
+  grid-row: 1;
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  min-width: 0;
+  place-items: center;
+  margin: 0;
+  flex: none;
+}
+.ff-baccarat__wager-row .ff-baccarat__primary,
+.ff-baccarat__rail > .ff-baccarat__primary {
+  display: grid;
+  grid-row: 1;
+  width: 3.6rem;
+  min-width: 3.6rem;
+  height: 3.6rem;
+  min-height: 3.6rem;
+  place-items: center;
+  padding: .2rem;
+  border: .22rem solid #b9c6af;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #1b3025, #06130c 72%);
+  box-shadow: inset 0 0 0 1px rgb(246 247 230 / 30%), 0 0 .65rem rgb(237 240 212 / 28%), 0 .25rem .6rem rgb(0 12 8 / 52%);
+  color: #fafaf0;
+}
+.ff-baccarat__wager-row .ff-baccarat__primary:hover:not(:disabled) { border-color: #f4f4e6; background: #153d2d; }
+.ff-baccarat__wager-row .ff-baccarat__primary:disabled { opacity: .45; }
+.ff-baccarat__wager-row .ff-baccarat__action-icon,
+.ff-baccarat__rail > .ff-baccarat__primary .ff-baccarat__action-icon {
+  width: 2.3rem;
+  height: 2.3rem;
+  stroke: none;
+}
+.ff-baccarat__wager-row .ff-baccarat__clear-wagers {
+  position: absolute;
+  top: 50%;
+  right: calc(100% + .65rem);
+  transform: translateY(-50%);
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .ff-baccarat__table { grid-template-rows: minmax(0, 1fr) 4.75rem; }
+  .ff-baccarat__rail { grid-template-rows: 3.25rem auto; padding-block: 0 .2rem; }
+  .ff-baccarat__wager-row { width: 3.25rem; height: 3.25rem; }
+  .ff-baccarat__wager-row .ff-baccarat__primary,
+  .ff-baccarat__rail > .ff-baccarat__primary { width: 3.25rem; min-width: 3.25rem; height: 3.25rem; min-height: 3.25rem; }
+  .ff-baccarat__wager-row .ff-baccarat__action-icon,
+  .ff-baccarat__rail > .ff-baccarat__primary .ff-baccarat__action-icon { width: 2.1rem; height: 2.1rem; }
+  .ff-baccarat__wager-row .ff-baccarat__clear-wagers { width: 3rem; min-width: 3rem; height: 3rem; }
+  .ff-baccarat__header { top: auto; bottom: 1.55rem; left: auto; right: .35rem; width: auto; gap: .2rem; }
+  .ff-baccarat__header .ff-baccarat__info:first-of-type { margin-left: 0; }
+  .ff-baccarat__chips { top: 0; }
 }

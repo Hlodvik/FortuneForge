@@ -179,7 +179,7 @@ describe('BaccaratGame', () => {
     expect(gateway.createRound).toHaveBeenCalledTimes(1)
 
     resolveRound?.(settledRound)
-    await screen.findByRole('button', { name: 'Deal Again' })
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
   })
 
   it('puts a losing profit sign before the Rand symbol', async () => {
@@ -205,7 +205,7 @@ describe('BaccaratGame', () => {
     expect((screen.getByRole('button', { name: 'Select R0.25 chip' }) as HTMLButtonElement).disabled).toBe(true)
     expect((screen.getByRole('button', { name: /^Banker, / }) as HTMLButtonElement).disabled).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Retry Deal' }))
-    await screen.findByRole('button', { name: 'Deal Again' })
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
 
     expect(createRound.mock.calls[1]?.[2]?.idempotencyKey).toBe(createRound.mock.calls[0]?.[2]?.idempotencyKey)
   })
@@ -217,14 +217,14 @@ describe('BaccaratGame', () => {
     const createRound = vi.fn().mockResolvedValue(settledRound)
     render(<BaccaratGame playerId="player-7" gateway={fakeGateway({ createRound })} />)
 
-    expect(await screen.findByRole('button', { name: 'Deal Again' })).toBeTruthy()
+    expect(await screen.findByRole('dialog', { name: 'Baccarat result' })).toBeTruthy()
     expect(createRound).toHaveBeenCalledWith('banker', 10, expect.objectContaining({
       idempotencyKey: 'baccarat-recovery-0001', signal: expect.any(AbortSignal),
       playerPairStake: .25, bankerPairStake: .5,
     }))
   })
 
-  it('shows gateway errors and Deal Again immediately repeats the settled bet with a new request key', async () => {
+  it('closes the result into a clean board and lets the player place a fresh wager', async () => {
     const user = userEvent.setup()
     const createRound = vi.fn().mockRejectedValueOnce(new BaccaratGatewayError('Table closed.', 'table-closed', 503)).mockResolvedValue(settledRound)
     const gateway = fakeGateway({ createRound })
@@ -237,12 +237,26 @@ describe('BaccaratGame', () => {
     expect((await screen.findByRole('alert')).textContent).toContain('Table closed.')
 
     await user.click(screen.getByRole('button', { name: 'Retry Deal' }))
-    await user.click(await screen.findByRole('button', { name: 'Deal Again' }))
-    expect(await screen.findByRole('button', { name: 'Deal Again' })).toBeTruthy()
+    const result = await screen.findByRole('dialog', { name: 'Baccarat result' })
+    expect(screen.getAllByLabelText('eight of spades')).toHaveLength(2)
+    await user.click(result.querySelector('button')!)
+    expect(screen.queryByRole('dialog', { name: 'Baccarat result' })).toBeNull()
+    expect(screen.queryAllByLabelText('eight of spades')).toHaveLength(0)
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Balance R1,009.50')
+    expect(screen.getByRole('button', { name: /^Banker, / }).querySelectorAll('.ff-baccarat__chip-pile img')).toHaveLength(0)
+    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: /^Banker, / }))
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(await screen.findByRole('dialog', { name: 'Baccarat result' })).toBeTruthy()
     expect(createRound).toHaveBeenCalledTimes(3)
     expect(createRound.mock.calls[2]?.[0]).toBe('banker')
     expect(createRound.mock.calls[2]?.[1]).toBe(10)
     expect(createRound.mock.calls[2]?.[2]?.idempotencyKey).not.toBe(createRound.mock.calls[1]?.[2]?.idempotencyKey)
+    await user.click(screen.getByLabelText('Table amounts'))
+    expect(screen.queryByRole('dialog', { name: 'Baccarat result' })).toBeNull()
+    expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
   })
 })
 

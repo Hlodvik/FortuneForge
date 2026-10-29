@@ -58,7 +58,7 @@ it('appends different clicked denominations and clears the stack', async () => {
   expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.00')
 })
 
-it('keeps clicked chips through settlement and Deal Again', async () => {
+it('keeps clicked chips through settlement, then clears them with the result', async () => {
   const user = userEvent.setup()
   const createRound = vi.fn().mockResolvedValue(settledRound)
   render(<BaccaratGame gateway={{ ...gateway(), createRound }} />)
@@ -68,11 +68,11 @@ it('keeps clicked chips through settlement and Deal Again', async () => {
   expect(chipSources(player)).toEqual(['chip-025', 'chip-025'])
 
   await user.click(screen.getByRole('button', { name: 'Deal' }))
-  await screen.findByRole('button', { name: 'Deal Again' })
+  await screen.findByRole('dialog', { name: 'Baccarat result' })
   expect(chipSources(player)).toEqual(['chip-025', 'chip-025'])
-  await user.click(screen.getByRole('button', { name: 'Deal Again' }))
-  await waitFor(() => expect(createRound).toHaveBeenCalledTimes(2))
-  expect(chipSources(player)).toEqual(['chip-025', 'chip-025'])
+  await user.click(screen.getByRole('button', { name: 'Continue' }))
+  await waitFor(() => expect(chipSources(player)).toEqual([]))
+  expect(createRound).toHaveBeenCalledTimes(1)
 })
 
 it('restores a saved click sequence for an in-flight deal', async () => {

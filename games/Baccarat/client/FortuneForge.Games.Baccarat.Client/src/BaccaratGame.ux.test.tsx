@@ -20,7 +20,7 @@ afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.un
 describe('Baccarat wager accessibility and round controls', () => {
   // This exercises the real deal animation plus four accessible user clicks.
   // Allow headroom when the complete release suite shares the machine.
-  it('keeps chip selections locked until the completed hand is left with New Bet', async () => {
+  it('keeps chip selections locked until the result is dismissed', async () => {
     const user = userEvent.setup()
     render(<BaccaratGame gateway={gateway()} />)
 
@@ -31,9 +31,9 @@ describe('Baccarat wager accessibility and round controls', () => {
     await user.click(screen.getByRole('button', { name: 'Deal' }))
 
     expect(chip.disabled).toBe(true)
-    await screen.findByRole('button', { name: 'Deal Again' })
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
     expect(chip.disabled).toBe(true)
-    await user.click(screen.getByRole('button', { name: 'New Bet' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(chip.disabled).toBe(false)
   }, 15_000)
 
@@ -132,7 +132,7 @@ describe('Baccarat wager accessibility and round controls', () => {
 
     await act(async () => { fireEvent.click(deal); await Promise.resolve() })
 
-    expect(screen.getByRole('button', { name: 'Deal Again' })).toBeTruthy()
+    expect(screen.getByRole('dialog', { name: 'Baccarat result' })).toBeTruthy()
     expect(screen.getAllByLabelText('eight of spades')).toHaveLength(2)
   })
 
@@ -158,7 +158,7 @@ describe('Baccarat wager accessibility and round controls', () => {
     await user.click(screen.getByRole('button', { name: 'Select R2.00 chip' }))
     await user.click(player)
     await user.click(screen.getByRole('button', { name: 'Deal' }))
-    await screen.findByRole('button', { name: 'Deal Again' })
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
     expect(createRound.mock.calls[1]?.[1]).toBe(2)
     expect(createRound.mock.calls[1]?.[2]?.idempotencyKey).not.toBe(createRound.mock.calls[0]?.[2]?.idempotencyKey)
   })

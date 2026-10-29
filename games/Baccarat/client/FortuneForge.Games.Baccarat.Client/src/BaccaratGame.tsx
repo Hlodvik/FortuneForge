@@ -5,6 +5,7 @@ import {
 } from './contracts'
 import { HttpBaccaratGateway } from './httpBaccaratGateway'
 import { buildBigRoad, buildDerivedRoads, type BaccaratHistoryItem } from './baccaratRoad'
+import { playBaccaratChip, readBaccaratMuted, stopBaccaratAudio, writeBaccaratMuted } from './baccaratAudio'
 import chip025 from './chip-025.png'
 import chip050 from './chip-050.png'
 import chip1 from './chip-1.png'
@@ -20,6 +21,8 @@ import './baccaratRoad.css'
 import './baccaratViewport.css'
 import './baccaratTable.css'
 import './baccaratBankerRack.css'
+import './baccaratResult.css'
+import './baccaratAudio.css'
 
 export type BaccaratGameProps = Readonly<{
   gateway?: BaccaratGateway
@@ -52,6 +55,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const [bankerPairStake, setBankerPairStake] = useState(0)
   const [placedChips, setPlacedChips] = useState<PlacedChips>(emptyPlacedChips)
   const [selectedChipValue, setSelectedChipValue] = useState<ChipValue>(.25)
+  const [muted, setMuted] = useState(readBaccaratMuted)
   const [chipWindowStart, setChipWindowStart] = useState(0)
   const [compactChipSelector, setCompactChipSelector] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -61,11 +65,11 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
-  const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>(() => readHistory(playerId))
+  const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>([])
   const [revealedCards, setRevealedCards] = useState(0)
   const [revealFinished, setRevealFinished] = useState(false)
-  const [shoeUsed, setShoeUsed] = useState(() => readShoeUsed(playerId))
-  const [shoeRemaining, setShoeRemaining] = useState(() => 416 - readShoeUsed(playerId))
+  const [shoeUsed, setShoeUsed] = useState(0)
+  const [shoeRemaining, setShoeRemaining] = useState(416)
   const [shoeVerified, setShoeVerified] = useState(false)
   const [lastBalance, setLastBalance] = useState<number | null>(null)
   const [activePanel, setActivePanel] = useState<string | null>(null)
@@ -75,7 +79,9 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const playSurfaceRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef(history)
   const shoeUsedRef = useRef(shoeUsed)
-  const recordedRounds = useRef(new Set(history.map(item => item.roundId)))
+  const recordedRounds = useRef(new Set<string>())
+
+  useEffect(() => () => stopBaccaratAudio(), [])
 
   useEffect(() => {
     const surface = playSurfaceRef.current
@@ -161,14 +167,15 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   }, [gateway, playerId, recoveryAttempt])
 
   useEffect(() => {
-    const storedHistory = readHistory(playerId)
-    const used = readShoeUsed(playerId)
-    historyRef.current = storedHistory
-    shoeUsedRef.current = used
-    recordedRounds.current = new Set(storedHistory.map(item => item.roundId))
-    setHistory(storedHistory)
-    setShoeUsed(used)
-    setShoeRemaining(416 - used)
+    // Roads belong to the open table. A new visit starts a fresh display;
+    // pending paid deals still recover separately via sessionStorage.
+    clearStoredRoadmap(playerId)
+    historyRef.current = []
+    shoeUsedRef.current = 0
+    recordedRounds.current = new Set()
+    setHistory([])
+    setShoeUsed(0)
+    setShoeRemaining(416)
     setShoeVerified(false)
   }, [playerId])
 
@@ -211,19 +218,13 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
       setShoeUsed(used)
       setShoeRemaining(round.shoeCardsRemaining ?? 416 - used)
       setShoeVerified(serverShoeUsed !== undefined)
-      writeShoeUsed(playerId, used)
     }
     if (alreadyRecorded) return
     recordedRounds.current.add(round.roundId)
     const next = [{ roundId: round.roundId, outcome: round.outcome, cardsUsed, natural: round.endedOnNatural }, ...historyRef.current].slice(0, 120)
     historyRef.current = next
     setHistory(next)
-    writeHistory(playerId, next)
   }, [completed, round, onBalanceChange, playerId])
-  useEffect(() => {
-    if (completed && document.activeElement === document.body) gameRef.current?.querySelector<HTMLButtonElement>('.ff-baccarat__round-actions button:not(:disabled)')?.focus()
-  }, [completed])
-
   const balance = round?.balance ?? lastBalance ?? status?.balance ?? null
   const displayedBalance = lastBalance ?? status?.balance ?? null
   const totalStake = round?.totalStake ?? centsToMoney(moneyToCents(Number.isFinite(stake) ? stake : 0) + moneyToCents(playerPairStake) + moneyToCents(bankerPairStake))
@@ -260,6 +261,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         ? [...reconcileChipStack(current.main, stake, status.maximumStake), selectedChipValue]
         : [selectedChipValue] }))
     }
+    playBaccaratChip(muted)
   }
   const clearWagers = () => { if (stakeLocked) return; setStake(0); setPlayerPairStake(0); setBankerPairStake(0); setPlacedChips(emptyPlacedChips()) }
 
@@ -291,24 +293,32 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
     const idempotencyKey = dealRequestKey.current ??= createRequestKey()
     submitDeal(pendingBet.current ?? { side: betSide, stake, playerPairStake, bankerPairStake }, idempotencyKey)
   }
-  const dealAgain = () => {
-    if (busy || recovery !== 'ready' || !status?.available || !round || !completed || (round.totalStake ?? round.stake) > round.balance) return
-    const bet = { side: round.betSide, stake: round.stake, playerPairStake: round.playerPairStake ?? 0, bankerPairStake: round.bankerPairStake ?? 0 }
-    setActivePanel(null)
-    setLastBalance(round.balance)
-    setRound(null); setBetSide(bet.side); setStake(bet.stake); setPlayerPairStake(bet.playerPairStake); setBankerPairStake(bet.bankerPairStake)
-    const idempotencyKey = createRequestKey()
-    dealRequestKey.current = idempotencyKey
-    submitDeal(bet, idempotencyKey)
-  }
-  const newBet = () => {
+  const closeResult = () => {
     if (!round || !completed || busy || recovery !== 'ready') return
     setLastBalance(round.balance)
     setActivePanel(null)
-    setRound(null); setError(null); setStake(0); setPlayerPairStake(0); setBankerPairStake(0)
+    setRound(null); setError(null); setBetSide('player'); setStake(0); setPlayerPairStake(0); setBankerPairStake(0)
     setPlacedChips(emptyPlacedChips())
     window.requestAnimationFrame(() => gameRef.current?.querySelector<HTMLButtonElement>('.ff-baccarat__chips button[aria-pressed="true"]')?.focus())
   }
+  useEffect(() => {
+    if (!completed || activePanel !== null) return
+    const dismissOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      closeResult()
+    }
+    const dismissOnOutside = (event: PointerEvent) => {
+      const result = gameRef.current?.querySelector('.ff-baccarat__result')
+      if (event.target instanceof Node && !result?.contains(event.target)) closeResult()
+    }
+    document.addEventListener('keydown', dismissOnEscape)
+    document.addEventListener('pointerdown', dismissOnOutside)
+    return () => {
+      document.removeEventListener('keydown', dismissOnEscape)
+      document.removeEventListener('pointerdown', dismissOnOutside)
+    }
+  }, [completed, activePanel, round, busy, recovery])
   const retryStatus = () => { setStatusError(null); setTableUnavailable(false); setStatusLoadAttempt(attempt => attempt + 1) }
   const retryRestoration = () => { setError(null); setRecoveryAttempt(attempt => attempt + 1) }
   const road = <BaccaratRoad history={history} shoeUsed={shoeUsed} shoeRemaining={shoeRemaining} shoeVerified={shoeVerified} />
@@ -328,6 +338,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         <p>The roads summarize completed hands. Session shoe estimates use cards shown on this device until server shoe data arrives.</p>
         <p>Blue marks Player, red marks Banker and green marks Tie on the Bead plate and Big Road. Big Eye Boy, Small Road and Cockroach Pig describe streak patterns; their colors do not identify a winning side or predict the next hand.</p>
       </InfoPanel>
+      <button className="ff-baccarat__sound" type="button" aria-label={muted ? 'Turn sound on' : 'Mute sound'} aria-pressed={!muted} onClick={() => { const next = !muted; setMuted(next); writeBaccaratMuted(next) }}><SoundIcon muted={muted} /></button>
     </header>
     <section className="ff-baccarat__table" data-bet-side={betSide} aria-label="Baccarat table">
       <div className="ff-baccarat__inline-road" role="region" aria-label="Recent Baccarat history" tabIndex={0}>{road}</div>
@@ -346,11 +357,6 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         </div>
         <button className="ff-baccarat__chip-arrow" type="button" aria-label="Show higher chip values" disabled={visibleChipWindowStart >= maxChipWindowStart} onClick={() => setChipWindowStart(start => Math.min(maxChipWindowStart, Math.min(start, maxChipWindowStart) + 1))}><svg viewBox="0 0 48 30" aria-hidden="true"><path d="M5 5 24 24 43 5" /></svg></button>
       </div>
-      <div className="ff-baccarat__round-head" role="status">{completed && <>
-        {round.endedOnNatural && <small>Natural</small>}
-        <span>{outcomeLabel(round.outcome)}</span>
-        <strong className={'is-' + round.disposition}>{formatSignedMoney(round.combinedProfit ?? round.profit, currencySymbol)}</strong>
-      </>}</div>
       <div className="ff-baccarat__hands">
         <Hand label="Player" cards={round?.playerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'player').length} total={completed ? round.playerTotal : null} winner={completed && (round.outcome === 'player' || round.outcome === 'tie')} renderCardFace={renderCardFace} />
         <Hand label="Banker" cards={round?.bankerCards ?? []} count={dealOrder.slice(0, revealedCards).filter(card => card.side === 'banker').length} total={completed ? round.bankerTotal : null} winner={completed && (round.outcome === 'banker' || round.outcome === 'tie')} renderCardFace={renderCardFace} />
@@ -362,6 +368,14 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         <div className="ff-baccarat__bet-cell is-banker"><BetButton side="banker" selected={betSide === 'banker' && stake > 0} label="Banker" payout="0.95:1" disabled={stakeLocked} onSelect={() => addChip('banker')} stake={betSide === 'banker' ? stake : 0} placedChips={betSide === 'banker' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'banker'} /></div>
         <div className="ff-baccarat__bet-cell is-player"><BetButton side="player" selected={betSide === 'player' && stake > 0} label="Player" payout="1:1" disabled={stakeLocked} onSelect={() => addChip('player')} stake={betSide === 'player' ? stake : 0} placedChips={betSide === 'player' ? placedChips.main : []} maxStake={status?.maximumStake ?? 0} currencySymbol={currencySymbol} winner={completed && round?.outcome === 'player'} /></div>
       </div>
+      {completed && round && <div className="ff-baccarat__result-layer" onClick={event => { if (event.target === event.currentTarget) closeResult() }}>
+        <section className="ff-baccarat__result" role="dialog" aria-modal="false" aria-label="Baccarat result" onClick={event => event.stopPropagation()}>
+          {round.endedOnNatural && <span className="ff-baccarat__result-natural">Natural</span>}
+          <h2>{outcomeLabel(round.outcome)}</h2>
+          <div className="ff-baccarat__result-amounts"><span>Net <strong>{formatSignedMoney(round.combinedProfit ?? round.profit, currencySymbol)}</strong></span><span>Returned <strong>{formatMoney(round.combinedTotalReturn ?? round.totalReturn, currencySymbol)}</strong></span></div>
+          <button type="button" onClick={closeResult} autoFocus>Continue</button>
+        </section>
+      </div>}
       <svg className="ff-baccarat__table-edge" viewBox="0 0 1440 915" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs>
         <pattern id="baccarat-black-leather" patternUnits="userSpaceOnUse" width="360" height="240"><image href={blackLeather} width="360" height="240" preserveAspectRatio="xMidYMid slice"/></pattern>
         <linearGradient id="baccarat-leather-shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#030505" stopOpacity=".15"/><stop offset=".45" stopColor="#000" stopOpacity=".4"/><stop offset="1" stopColor="#020403" stopOpacity=".75"/></linearGradient>
@@ -384,18 +398,11 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
         </div> : !round ? <>
           <div className="ff-baccarat__wager-row">
             <button className="ff-baccarat__clear-wagers" type="button" aria-label="Clear Baccarat bets" disabled={stakeLocked || Number.isFinite(stake) && totalStake === 0} onClick={clearWagers}>×</button>
-            <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label={busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingBet.current && (!stakeIsValid || !stakeAffordable))} onClick={deal}><RedealIcon /><span className="ff-baccarat__sr-only">{busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'}</span></button>
+            <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label={busy ? 'Dealing…' : pendingBet.current ? 'Retry Deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingBet.current && (!stakeIsValid || !stakeAffordable))} onClick={deal}><CardStackIcon /></button>
           </div>
         </> : <>
           <span className="ff-baccarat__ticket">{capitalize(round.betSide)} · {formatMoney(round.stake, currencySymbol)}</span>
-          {completed ? <div className="ff-baccarat__round-actions">
-            {status?.available ? <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Deal Again" disabled={busy || recovery !== 'ready' || (round.totalStake ?? round.stake) > round.balance} onClick={dealAgain}><RedealIcon /><span className="ff-baccarat__sr-only">Deal Again</span></button> : !status && statusError && !tableUnavailable ? <button className="ff-baccarat__primary" aria-label="Retry connection" onClick={retryStatus}>Retry connection</button> : <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Deal Again" disabled><RedealIcon /><span className="ff-baccarat__sr-only">Deal Again</span></button>}
-            <button className="ff-baccarat__secondary" aria-label="New Bet" disabled={busy} onClick={newBet}>New Bet</button>
-            <InfoPanel label="Baccarat round details" trigger="Details" activePanel={activePanel} onPanelChange={setActivePanel}>
-              <h2>Round details</h2>
-              <dl className="ff-baccarat__settlement"><div><dt>Bet</dt><dd>{capitalize(round.betSide)} · {formatMoney(round.stake, currencySymbol)}</dd></div><div><dt>Result</dt><dd className={'is-' + round.disposition}>{capitalize(round.disposition)}</dd></div>{(round.playerPairStake ?? 0) > 0 && <div><dt>Player Pair</dt><dd>{formatSignedMoney(round.playerPairProfit ?? 0, currencySymbol)}</dd></div>}{(round.bankerPairStake ?? 0) > 0 && <div><dt>Banker Pair</dt><dd>{formatSignedMoney(round.bankerPairProfit ?? 0, currencySymbol)}</dd></div>}<div><dt>Profit</dt><dd>{formatSignedMoney(round.combinedProfit ?? round.profit, currencySymbol)}</dd></div><div><dt>Total return</dt><dd>{formatMoney(round.combinedTotalReturn ?? round.totalReturn, currencySymbol)}</dd></div></dl>
-            </InfoPanel>
-          </div> : <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Dealing…" disabled><RedealIcon /><span className="ff-baccarat__sr-only">Dealing…</span></button>}
+          {!completed && <button className="ff-baccarat__primary ff-baccarat__icon-action" aria-label="Dealing…" disabled><CardStackIcon /></button>}
         </>}
       </div>
     </section>
@@ -444,8 +451,8 @@ function reconcileChipStack(placed: readonly ChipValue[], stake: number, maxStak
   // A restored round may have no click history; infer only that baseline.
   return visibleChips(stake, maxStake).map(chip => chip.value)
 }
-function RedealIcon() {
-  return <svg className="ff-baccarat__action-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5" /><path d="M19.4 11a7.5 7.5 0 1 0-1.9 6.6" /></svg>
+function CardStackIcon() {
+  return <svg className="ff-baccarat__action-icon" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#123d29" stroke="#edf2e4" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4f5eb" stroke="#52715b" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#879b7c"/><path d="M36 24l7 9-7 9-7-9z" fill="#edf1e2"/></svg>
 }
 
 function Hand({ label, cards, count, total, winner, renderCardFace }: Readonly<{ label: string; cards: readonly BaccaratCard[]; count: number; total: number | null; winner: boolean; renderCardFace?: BaccaratGameProps['renderCardFace'] }>) {
@@ -532,10 +539,15 @@ function parsePlacedChips(value: unknown, stake: number, playerPairStake: number
 }
 function storePendingDeal(playerId: string | undefined, deal: StoredPendingDeal) { if (!playerId) return; try { sessionStorage.setItem(pendingDealKey(playerId), JSON.stringify(deal)) } catch { /* session storage is optional */ } }
 function clearPendingDeal(playerId: string | undefined) { if (!playerId) return; try { sessionStorage.removeItem(pendingDealKey(playerId)) } catch { /* session storage is optional */ } }
-function historyKey(playerId: string | undefined) { return `fortuneforge:baccarat:history:${playerId ?? 'guest'}` }
-function shoeKey(playerId: string | undefined) { return `fortuneforge:baccarat:shoe:${playerId ?? 'guest'}` }
-function readHistory(playerId: string | undefined): readonly BaccaratHistoryItem[] { try { const value = JSON.parse(localStorage.getItem(historyKey(playerId)) ?? '[]'); return Array.isArray(value) ? value.filter(isHistoryItem).slice(0, 120) : [] } catch { return [] } }
-function writeHistory(playerId: string | undefined, history: readonly BaccaratHistoryItem[]): void { try { localStorage.setItem(historyKey(playerId), JSON.stringify(history)) } catch { /* optional storage */ } }
-function isHistoryItem(value: unknown): value is BaccaratHistoryItem { if (!value || typeof value !== 'object') return false; const item = value as Record<string, unknown>; return typeof item.roundId === 'string' && (item.outcome === 'player' || item.outcome === 'banker' || item.outcome === 'tie') && Number.isInteger(item.cardsUsed) && typeof item.natural === 'boolean' }
-function readShoeUsed(playerId: string | undefined): number { try { const value = Number(localStorage.getItem(shoeKey(playerId))); return Number.isInteger(value) && value >= 0 && value <= 416 ? value : 0 } catch { return 0 } }
-function writeShoeUsed(playerId: string | undefined, used: number): void { try { localStorage.setItem(shoeKey(playerId), String(used)) } catch { /* optional storage */ } }
+function clearStoredRoadmap(playerId: string | undefined) {
+  // Remove history and shoe estimates written by older clients. They no longer
+  // persist between visits; pending wagers use their own recovery key above.
+  try {
+    const suffix = playerId ?? 'guest'
+    localStorage.removeItem(`fortuneforge:baccarat:history:${suffix}`)
+    localStorage.removeItem(`fortuneforge:baccarat:shoe:${suffix}`)
+  } catch { /* storage may be unavailable */ }
+}
+function SoundIcon({ muted }: Readonly<{ muted: boolean }>) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 9h4l5-4v14l-5-4H3z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />{muted ? <path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /> : <><path d="M15 8q4 4 0 8M18 5q7 7 0 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></>}</svg>
+}

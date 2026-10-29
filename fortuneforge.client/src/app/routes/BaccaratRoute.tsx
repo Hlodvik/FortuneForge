@@ -8,7 +8,6 @@ import { PlayingCard } from '../../games/cards/shared/PlayingCard'
 import type { CardRank } from '../../games/cards/shared/cards'
 import '../../games/cards/shared/playingCards.css'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 import './BaccaratRoute.css'
 
@@ -40,7 +39,7 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <InGameShell account={account} title="Baccarat" theme="casino" className="baccarat-page" bodyClassName="baccarat-route__body" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/baccarat" />}>
+  return <InGameShell account={account} title="Baccarat" theme="casino" className="baccarat-page" bodyClassName="baccarat-route__body">
     <BaccaratGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} renderCardFace={renderCardFace} />
   </InGameShell>
 }

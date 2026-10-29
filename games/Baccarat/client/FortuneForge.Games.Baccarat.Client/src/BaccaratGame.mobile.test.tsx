@@ -38,18 +38,18 @@ describe('Baccarat mobile-safe board presentation', () => {
     expect(screen.getByLabelText('Table amounts').textContent).toContain('Bet R0.50')
   })
 
-  it('uses a real centered vector deal/redeal icon rather than platform-dependent recycle glyphs', async () => {
+  it('uses the same card-stack deal icon as Three Card Poker', async () => {
     vi.stubGlobal('matchMedia', vi.fn().mockReturnValue({ matches: true }))
     render(<BaccaratGame gateway={gateway} />)
     const player = screen.getByRole('button', { name: /^Player,/ }) as HTMLButtonElement
     await waitFor(() => expect(player.disabled).toBe(false))
     const deal = screen.getByRole('button', { name: 'Deal' })
     expect(deal.querySelector('svg.ff-baccarat__action-icon')).not.toBeNull()
-    expect(deal.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 24 24')
+    expect(deal.querySelector('svg')?.getAttribute('viewBox')).toBe('0 0 64 64')
     fireEvent.click(player)
     fireEvent.click(deal)
-    const redeal = await screen.findByRole('button', { name: 'Deal Again' })
-    expect(redeal.querySelector('svg.ff-baccarat__action-icon')).not.toBeNull()
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
+    expect(screen.queryByRole('button', { name: 'Deal Again' })).toBeNull()
   })
 
   it('uses the supplied shared face renderer for every revealed card without changing unrevealed backs', async () => {
@@ -61,7 +61,7 @@ describe('Baccarat mobile-safe board presentation', () => {
     expect(renderCardFace).not.toHaveBeenCalled()
     fireEvent.click(player)
     fireEvent.click(screen.getByRole('button', { name: 'Deal' }))
-    await screen.findByRole('button', { name: 'Deal Again' })
+    await screen.findByRole('dialog', { name: 'Baccarat result' })
     expect(screen.getAllByTestId('canonical-card-face')).toHaveLength(4)
     expect(document.querySelectorAll('.ff-baccarat__corner')).toHaveLength(0)
     expect(document.querySelector('.ff-baccarat__shared-card-face')?.textContent).toBe('nine of hearts')

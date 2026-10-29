@@ -68,24 +68,6 @@ const previewGateway: BaccaratGateway = {
   },
 }
 
-if (new URLSearchParams(window.location.search).has('mock')) {
-  // Fill the preview roadmap so its density can be checked without wagering
-  // through dozens of demonstration hands. Production history is untouched.
-  const key = 'fortuneforge:baccarat:history:guest'
-  try {
-    const existing = JSON.parse(localStorage.getItem(key) ?? '[]') as unknown
-    if (!Array.isArray(existing) || existing.length < 10) {
-      const pattern = ['banker', 'banker', 'player', 'banker', 'tie', 'player', 'player', 'banker', 'player', 'tie', 'banker', 'player'] as const
-      localStorage.setItem(key, JSON.stringify(Array.from({ length: 58 }, (_, index) => ({
-        roundId: `preview-history-${index}`,
-        outcome: pattern[index % pattern.length],
-        cardsUsed: index % 4 === 0 ? 5 : 4,
-        natural: index % 6 === 0,
-      }))))
-    }
-  } catch { /* preview still works when storage is unavailable */ }
-}
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <InGameShell theme="casino" title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">

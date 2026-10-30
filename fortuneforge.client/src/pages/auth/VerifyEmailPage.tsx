@@ -1,4 +1,4 @@
-import wukongMedallion from '../../assets/slots/symbols/wukong/wukong-medallion.png'
+import '@fontsource-variable/sora'
 import '../index.css'
 
 export function VerifyEmailPage() {
@@ -6,7 +6,9 @@ export function VerifyEmailPage() {
     <div className="account-page">
       <header className="landing-bar">
         <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
+          <svg className="account-brand__spade" viewBox="0 0 48 48" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
+            <path d="M24 2C20 11 5 17 5 27c0 9 10 13 17 5-1 7-5 11-10 13h24c-5-2-9-6-10-13 7 8 17 4 17-5C43 17 28 11 24 2Z" />
+          </svg>
           <span>Fortune Forge</span>
         </a>
         <a className="landing-nav__link" href="/login">Log in</a>
@@ -14,10 +16,6 @@ export function VerifyEmailPage() {
 
       <main className="account-main">
         <section className="account-card" aria-labelledby="verify-email-title">
-          <div className="account-card__symbol" aria-hidden="true">
-            <img src={wukongMedallion} alt="" draggable="false" />
-          </div>
-
           <div className="account-success" role="status">
             <span className="account-success__icon" aria-hidden="true">✓</span>
             <p className="account-eyebrow">Verification complete</p>

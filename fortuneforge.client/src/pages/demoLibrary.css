@@ -1,0 +1,236 @@
+/* The two public demo directories share the current charcoal and brass site theme. */
+.app-shell--card-room:has(> .demo-library-page) {
+  background: #0b0c10;
+}
+
+.app-shell--card-room:has(> .demo-library-page)::before {
+  background: none;
+}
+
+.demo-library-page {
+  min-height: 100svh;
+  overflow-x: hidden;
+  background: #0b0c10;
+  color: #f5f0e7;
+  cursor: auto;
+}
+
+.app-shell--card-room > .demo-library-page {
+  background: #0b0c10;
+}
+
+.demo-library-page::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0, rgb(215 189 136 / 7%), transparent 48rem);
+  content: '';
+}
+
+.app-shell--card-room > .demo-library-page::before {
+  background: radial-gradient(ellipse at 50% 0, rgb(215 189 136 / 7%), transparent 48rem);
+}
+
+.demo-library-page a,
+.demo-library-page button {
+  cursor: pointer;
+}
+
+.demo-library-page .landing-bar {
+  width: min(100% - 2rem, 86rem);
+  border-bottom-color: rgb(215 189 136 / 18%);
+}
+
+.demo-library-page .landing-bar::before {
+  background: #101115;
+}
+
+.demo-library-page .landing-brand {
+  color: #e3c58d;
+}
+
+.demo-library-page .demo-mode-badge {
+  border-color: rgb(215 189 136 / 35%);
+  background: #1b1a19;
+  color: #ddc99c;
+}
+
+.demo-library-page .landing-nav__link {
+  border-color: rgb(215 189 136 / 35%);
+  background: #15161a;
+  color: #f5f0e7;
+  box-shadow: none;
+}
+
+.demo-library-page .landing-nav__link:hover {
+  border-color: #e3c58d;
+  box-shadow: none;
+}
+
+.demo-library-page .game-picker-main {
+  width: min(100% - 2rem, 86rem);
+  padding-block: clamp(2rem, 5vw, 4rem) 5rem;
+}
+
+.demo-library-page .game-hub-sidebar {
+  display: flex;
+  width: fit-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: clamp(2rem, 5vw, 3.5rem);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgb(215 189 136 / 18%);
+  background: none;
+}
+
+.demo-library-page .game-hub-sidebar a {
+  padding: 0.75rem 0 0.85rem;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
+  color: #aaa69f;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.demo-library-page .game-hub-sidebar a:hover,
+.demo-library-page .game-hub-sidebar a.is-active {
+  border-bottom-color: #e3c58d;
+  background: none;
+  color: #e3c58d;
+}
+
+.demo-library-page .game-hub-sidebar a:focus-visible,
+.demo-library-page a.machine-card:focus-visible {
+  outline: 2px solid #e3c58d;
+  outline-offset: 0.25rem;
+}
+
+.demo-library-page .game-picker-heading {
+  max-width: 64rem;
+}
+
+.demo-library-page .game-picker-heading .account-eyebrow {
+  color: #c9aa73;
+}
+
+.demo-library-page .game-picker-heading h1 {
+  background: none;
+  color: #f5f0e7;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(2.6rem, 5.5vw, 5rem);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.05;
+}
+
+.demo-library-page .game-picker-heading > p:last-child {
+  color: #aaa8a4;
+}
+
+.demo-library-page .machine-library,
+.demo-library-page .card-game-library {
+  margin-top: clamp(1.8rem, 4vw, 3rem);
+}
+
+.demo-library-page .card-game-library {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.demo-library-page .machine-card {
+  border-color: rgb(215 189 136 / 19%);
+  border-radius: 1rem;
+  background: #17181b;
+  box-shadow: 0 0.9rem 2rem rgb(0 0 0 / 20%);
+  color: #f5f0e7;
+}
+
+.demo-library-page .machine-card--coming::after {
+  background: linear-gradient(145deg, transparent 55%, rgb(0 0 0 / 22%));
+}
+
+.demo-library-page .machine-card--available:hover {
+  border-color: rgb(227 197 141 / 70%);
+  box-shadow: 0 1.1rem 2.2rem rgb(0 0 0 / 30%);
+}
+
+.demo-library-page .machine-card__art,
+.demo-library-page .machine-card--cover .machine-card__art {
+  border-color: rgb(215 189 136 / 16%);
+  background:
+    linear-gradient(180deg, rgb(0 0 0 / 12%), rgb(0 0 0 / 24%)),
+    var(--machine-card-slot-background),
+    #242423;
+  background-position: center;
+  background-size: auto, cover, auto;
+}
+
+.demo-library-page .card-game-card__preview {
+  border-color: rgb(215 189 136 / 16%);
+  background: #222321;
+  box-shadow: none;
+}
+
+.demo-library-page .machine-card__status {
+  color: #c9aa73;
+}
+
+.demo-library-page .machine-card > strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+}
+
+.demo-library-page .machine-card p {
+  color: #aaa8a4;
+}
+
+.demo-library-page .machine-card__action {
+  border-color: rgb(215 189 136 / 40%);
+  background: rgb(215 189 136 / 9%);
+  color: #e3c58d;
+}
+
+.demo-library-page .machine-card__action:hover,
+.demo-library-page .machine-card__action:focus-visible {
+  background: #e3c58d;
+  box-shadow: none;
+  color: #17181b;
+}
+
+@media (max-width: 900px) {
+  .demo-library-page .machine-library,
+  .demo-library-page .card-game-library {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 540px) {
+  .demo-library-page .landing-bar,
+  .demo-library-page .game-picker-main {
+    width: calc(100% - 1.5rem);
+  }
+
+  .demo-library-page .landing-bar__account {
+    gap: 0.35rem;
+  }
+
+  .demo-library-page .demo-mode-badge {
+    padding: 0.45rem 0.55rem;
+    font-size: 0.55rem;
+  }
+
+  .demo-library-page .game-hub-sidebar {
+    gap: 1.25rem;
+  }
+
+  .demo-library-page .machine-library,
+  .demo-library-page .card-game-library {
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+}

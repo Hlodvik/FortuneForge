@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import '@fontsource-variable/sora'
 import { ForgeCreditAmount } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -11,6 +12,7 @@ import {
   type PaymentCheckout,
 } from '../../features/payments/services/paymentsApi'
 import '../index.css'
+import './invoiceTheme.css'
 
 const creditsFormatter = new Intl.NumberFormat('en-US')
 
@@ -106,7 +108,7 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
     ].some((value) => value.trim() !== '')
 
   return (
-    <div className="player-page player-page--credits">
+    <div className="player-page player-page--credits player-page--invoice">
       <header className="landing-bar">
         <a className="landing-brand" href="/" aria-label="Fortune Forge home"><span className="landing-brand__spark" aria-hidden="true">✦</span><span>Fortune Forge</span></a>
         <div className="landing-bar__account">

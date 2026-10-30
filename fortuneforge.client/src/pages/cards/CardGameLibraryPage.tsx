@@ -6,6 +6,7 @@ import holdemPreview from '../../assets/cards/previews/holdem-game.png'
 import solitairePreview from '../../assets/cards/previews/solitaire-game.png'
 import { CardRoomNavigation } from './CardRoomNavigation'
 import '../index.css'
+import '../demoLibrary.css'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 
@@ -40,7 +41,7 @@ export function CardGameLibraryPage({
   }, [account])
 
   return (
-    <div className="player-page game-picker-page">
+    <div className={`player-page game-picker-page${demoMode ? ' demo-library-page' : ''}`}>
       {demoMode ? (
         <header className="landing-bar">
           <a className="landing-brand" href="/" aria-label="Fortune Forge home">

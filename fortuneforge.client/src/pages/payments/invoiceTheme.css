@@ -1,0 +1,315 @@
+.player-page--invoice {
+  min-height: 100dvh;
+  overflow-y: auto;
+  color: #f4f1e9;
+  background: #0d0f13;
+  cursor: auto;
+  font-family: 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+.player-page--invoice::before {
+  background: radial-gradient(ellipse at 50% 0, rgb(213 180 119 / 0.065), transparent 42rem);
+}
+
+.player-page--invoice a,
+.player-page--invoice button,
+.player-page--invoice input {
+  cursor: pointer;
+}
+
+.player-page--invoice .landing-bar {
+  width: min(100% - 2rem, 76rem);
+  border-bottom-color: #2a2931;
+}
+
+.player-page--invoice .landing-bar::before {
+  background: #0d0f13;
+}
+
+.player-page--invoice .landing-brand {
+  color: #d5b477;
+}
+
+.player-page--invoice .landing-brand__spark {
+  background: #d5b477;
+}
+
+.player-page--invoice .landing-nav__link {
+  border-color: #4b3d2c;
+  color: #d5b477;
+  background: #17171c;
+  box-shadow: none;
+}
+
+.player-page--invoice .landing-nav__link:hover {
+  border-color: #d5b477;
+  background: #222026;
+}
+
+.player-page--invoice .forge-credit-amount {
+  border: 0;
+  padding: 0;
+  color: #f4f1e9;
+  background: transparent;
+  box-shadow: none;
+}
+
+.player-page--invoice .forge-credit-amount .forge-coin {
+  display: none;
+}
+
+.player-page--invoice .forge-credit-amount strong {
+  font: 600 clamp(0.85rem, 1.4vw, 1.05rem) / 1 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+.player-page--invoice .forge-credit-amount strong::before {
+  content: 'R';
+}
+
+.player-page--invoice .invoice-main {
+  width: min(76rem, calc(100% - 2rem));
+  padding: 2rem 0 4rem;
+}
+
+.player-page--invoice .invoice-page__navigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.player-page--invoice .invoice-page__navigation a {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  color: #d5b477;
+  font-size: 0.76rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.player-page--invoice .invoice-page__navigation a:hover {
+  color: #f3d8a5;
+}
+
+.player-page--invoice .payment-alerts > summary {
+  border-color: #5b5144;
+  color: #d5b477;
+  background: #1a1a20;
+  cursor: pointer;
+}
+
+.player-page--invoice .payment-alerts[open] > summary,
+.player-page--invoice .payment-alerts > summary:hover {
+  border-color: #d5b477;
+  background: #252129;
+}
+
+.player-page--invoice .payment-alerts__panel {
+  border-color: #51463e;
+  color: #f4f1e9;
+  background: #18171c;
+}
+
+.player-page--invoice .payment-alerts__panel header small,
+.player-page--invoice .payment-alerts__panel li small {
+  color: #b0adb8;
+}
+
+.player-page--invoice .invoice-sheet,
+.player-page--invoice .invoice-list {
+  border-color: #343036;
+  border-radius: 0.8rem;
+  color: #eeeae4;
+  background: #121318;
+  box-shadow: 0 1.2rem 3rem rgb(0 0 0 / 0.2);
+}
+
+.player-page--invoice .invoice-sheet__header,
+.player-page--invoice .invoice-list > header {
+  border-bottom-color: #343036;
+  background: #18171b;
+}
+
+.player-page--invoice .account-eyebrow {
+  color: #d5b477;
+}
+
+.player-page--invoice .invoice-sheet__header h1,
+.player-page--invoice .invoice-list h1,
+.player-page--invoice .invoice-receipt h2,
+.player-page--invoice .invoice-bank h2 {
+  color: #f4f1e9;
+}
+
+.player-page--invoice .invoice-sheet__id,
+.player-page--invoice .invoice-status span,
+.player-page--invoice .invoice-sheet__parties span,
+.player-page--invoice .invoice-receipt__heading span,
+.player-page--invoice .invoice-bank p:not(.account-eyebrow),
+.player-page--invoice .invoice-list > header p:last-child,
+.player-page--invoice .invoice-list__empty,
+.player-page--invoice .invoice-list__row small,
+.player-page--invoice .invoice-sheet__parties small,
+.player-page--invoice .invoice-status small {
+  color: #b0adb8;
+}
+
+.player-page--invoice .invoice-status {
+  border-color: #5d503e;
+  background: #28231c;
+}
+
+.player-page--invoice .invoice-status strong {
+  color: #edcf97;
+}
+
+.player-page--invoice .invoice-status--completed {
+  border-color: #35664d;
+  background: #15251c;
+}
+
+.player-page--invoice .invoice-status--completed strong {
+  color: #8bd4a4;
+}
+
+.player-page--invoice .invoice-status--failed,
+.player-page--invoice .invoice-status--expired {
+  border-color: #794245;
+  background: #291a1d;
+}
+
+.player-page--invoice .invoice-status--failed strong,
+.player-page--invoice .invoice-status--expired strong {
+  color: #efaaa9;
+}
+
+.player-page--invoice .invoice-sheet__parties {
+  border-color: #373238;
+  background: #373238;
+}
+
+.player-page--invoice .invoice-sheet__parties section {
+  background: #1a1a20;
+}
+
+.player-page--invoice .invoice-sheet__parties strong,
+.player-page--invoice .invoice-list__row,
+.player-page--invoice .invoice-bank dd {
+  color: #eeeae4;
+}
+
+.player-page--invoice .invoice-progress > div,
+.player-page--invoice .invoice-progress small,
+.player-page--invoice .invoice-receipt__row--head,
+.player-page--invoice .invoice-bank dt {
+  color: #aaa7af;
+}
+
+.player-page--invoice .invoice-progress i {
+  border-color: #58545e;
+  color: #eeeae4;
+}
+
+.player-page--invoice .invoice-progress > span {
+  background: #58545e;
+}
+
+.player-page--invoice .invoice-progress > span.is-reached,
+.player-page--invoice .invoice-progress > div.is-reached i {
+  background: #d5b477;
+}
+
+.player-page--invoice .invoice-progress > div.is-reached i {
+  border-color: #d5b477;
+  color: #18151a;
+}
+
+.player-page--invoice .invoice-receipt__row,
+.player-page--invoice .invoice-bank,
+.player-page--invoice .invoice-bank dl > div,
+.player-page--invoice .invoice-sheet__actions {
+  border-color: #343036;
+}
+
+.player-page--invoice .invoice-sheet__actions {
+  background: #18171b;
+}
+
+.player-page--invoice .invoice-list__row:hover {
+  background: #211e24;
+}
+
+.player-page--invoice .admin-invoices__search {
+  border-color: #343036;
+  background: #18171b;
+}
+
+.player-page--invoice .admin-invoices__search label span {
+  color: #b0adb8;
+}
+
+.player-page--invoice .admin-invoices__search input {
+  border-color: #4b4246;
+  color: #f4f1e9;
+  background: #101115;
+}
+
+.player-page--invoice .player-state {
+  border-color: #343036;
+  color: #dfd9dd;
+  background: #17171c;
+}
+
+.player-page--invoice .player-state > span:first-child {
+  color: #d5b477;
+}
+
+.player-page--invoice .landing-button--secondary {
+  border-color: #5c4b42;
+  color: #e5d4be;
+  background: #211c1c;
+}
+
+.player-page--invoice .landing-button--gold {
+  border-color: #d5b477;
+  color: #241c16;
+  background: linear-gradient(#edcf97, #bc965f);
+}
+
+@media (max-width: 600px) {
+  .player-page--invoice .landing-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.8rem;
+    width: calc(100% - 1rem);
+  }
+
+  .player-page--invoice .landing-bar__account {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .player-page--invoice .landing-nav {
+    margin-left: auto;
+  }
+
+  .player-page--invoice .landing-nav__link {
+    padding-inline: 0.6rem;
+  }
+
+  .player-page--invoice .invoice-main {
+    width: min(76rem, calc(100% - 1rem));
+    padding-top: 0.75rem;
+  }
+}
+
+
+@media print {
+  .player-page--invoice .landing-bar { display: none !important; }
+  .player-page--invoice,
+  .player-page--invoice .invoice-sheet { color: #111; background: #fff; }
+  .player-page--invoice .invoice-main { width: 100%; padding: 0; }
+}

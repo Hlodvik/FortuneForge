@@ -1,0 +1,74 @@
+/* Keep the administration tools in the same charcoal and gold family as the player lobby. */
+.admin-portal {
+  --admin-bg: #0b0c10;
+  --admin-card: #17181d;
+  --admin-line: #38363b;
+  --admin-muted: #b3aeb2;
+  --admin-accent: #e5c489;
+  color: #f2eee6;
+}
+
+.admin-portal :focus-visible { outline-color: #e8c58b; }
+.admin-portal a { color: #e8c58b; }
+.admin-portal button { border-color: #5b5144; background: #242228; color: #f4ead9; }
+.admin-portal button:hover:not(:disabled) { border-color: #c8a970; background: #302b2b; }
+.admin-portal input,
+.admin-portal select,
+.admin-portal textarea { border-color: #514a49; background: #101115; color: #f4f0e8; }
+.admin-portal code { color: #d9c8ae; }
+.admin-portal .admin-eyebrow { color: #d4b57a !important; }
+.admin-portal .admin-sidebar { background: #111216; }
+.admin-portal .admin-brand { color: #e8c58b !important; }
+.admin-portal .admin-brand > span { background: #332b22; color: #e8c58b; }
+.admin-portal .admin-brand small,
+.admin-portal .admin-sidebar__footer small { color: #a69d98; }
+.admin-portal .admin-sidebar nav button { color: #cbc4ba; }
+.admin-portal .admin-sidebar nav button > span { color: #b9a68b; }
+.admin-portal .admin-sidebar nav button[aria-current] { border-color: #8f7650; background: #2d271f; color: #f4e7cf; }
+.admin-portal .admin-sidebar nav button[aria-current] > span { color: #e8c58b; }
+.admin-portal .admin-sidebar__footer a { color: #cdb895; }
+.admin-portal .admin-badge { border-color: #796648; color: #e8c58b; }
+.admin-portal th { background: #222126; color: #d8c5a9; }
+.admin-portal .admin-status { border-color: #625748; background: #27242a; color: #e8d9c1; }
+.admin-portal .admin-tabs button[aria-pressed='true'] { border-color: #a48b60; background: #33291f; color: #f0d9ad; }
+.admin-portal .admin-record p { color: #d0c9c0; }
+.admin-portal .admin-global-control { border-color: #7f6745; background: #211d18; }
+.admin-portal .admin-global-control p { color: #c8b9a1; }
+.admin-portal .admin-confirm { border-color: #8b785b; background: #1b1a1e; color: #f2eee6; }
+.admin-portal .admin-confirm::backdrop { background: #050508c9; }
+.admin-portal .admin-report-detail { border-color: #5b5144; background: #17181d; }
+.admin-portal .admin-report-detail dt { color: #b9b1aa; }
+.admin-portal .admin-report-detail__message { border-color: #4d4640; background: #101115; }
+.admin-portal .admin-report-detail select,
+.admin-portal .admin-report-detail textarea { border-color: #625649; background: #101115; }
+.admin-portal .admin-evidence { border-color: #494440; background: #17181d; }
+.admin-portal .admin-evidence pre { background: #0e0f12; color: #e4ddd2; }
+.admin-portal .admin-evidence small { color: #b2aaa3; }
+.admin-portal .admin-incident-form { border-color: #514942; background: #1a191d; }
+.admin-portal .admin-incident-form input,
+.admin-portal .admin-incident-form select,
+.admin-portal .admin-incident-form textarea { border-color: #554d44; background: #101115; }
+
+.operations-page { background: #0b0c10; color: #f2eee6; }
+.operations-page .operations-header { border-color: #51483e; background: #17181d; }
+.operations-page .operations-header p,
+.operations-page .operations-section-heading p,
+.operations-page .operations-metric span,
+.operations-page .operations-metric small,
+.operations-page .operations-list span,
+.operations-page .operations-list small,
+.operations-page .operations-empty { color: #b3aeb2; }
+.operations-page .operations-controls label { color: #d1bf9f; }
+.operations-page .operations-controls select,
+.operations-page .operations-controls button,
+.operations-page .operations-controls a,
+.operations-page .operations-state button { border-color: #756348; background: #29251f; color: #f3e9d6; }
+.operations-page .operations-metric,
+.operations-page .operations-list article,
+.operations-page .operations-state,
+.operations-page .operations-warning { border-color: #45403c; background: #17181d; }
+.operations-page .operations-bots { border-color: #6a5d4b; background: #181719; }
+.operations-page .operations-bots .operations-metric { border-color: #514a43; background: #201f21; }
+.operations-page .operations-pill--pass { background: #284734; color: #c0eacb; }
+.operations-page .operations-pill--fail { background: #5a2927; color: #ffcbc5; }
+.admin-portal .admin-overview .operations-bots { background: #1b1a1c; }

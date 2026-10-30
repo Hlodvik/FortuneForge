@@ -1,0 +1,197 @@
+.account-page {
+  min-height: 100svh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #0b0c10;
+  color: #f4f0e8;
+  color-scheme: dark;
+  font-family: 'Sora Variable', 'Segoe UI Variable', sans-serif;
+  cursor: auto;
+}
+
+.account-page::before {
+  background: radial-gradient(ellipse at 50% 32%, #292015 0, #17151a 35%, #0b0c10 72%);
+}
+
+.account-page a,
+.account-page button,
+.account-page input { cursor: pointer; }
+.account-page input { cursor: text; }
+
+.account-page .landing-bar {
+  width: min(calc(100% - 3rem), 87rem);
+  min-height: 5rem;
+  padding-block: .75rem;
+  border-color: #2b2a2d;
+}
+.account-page .landing-bar::before { background: #0b0c10; }
+.account-page .landing-brand {
+  color: #e8c58b;
+  font: 500 clamp(.9rem, 1.65vw, 1.3rem)/1 Georgia, serif;
+  letter-spacing: .12em;
+}
+.account-page .landing-brand__spark { background: #e8c58b; }
+.account-page .account-brand__spade {
+  display: block;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: none;
+  color: #e8c58b;
+}
+.account-page .landing-nav__link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: .7rem 1rem;
+  border: 1px solid #4b4337;
+  border-radius: .55rem;
+  background: #14151b;
+  box-shadow: none;
+  color: #eee5d4;
+  font-size: .74rem;
+  font-weight: 600;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+.account-page .landing-nav__link:hover { border-color: #d7bd88; box-shadow: none; }
+
+.account-page .account-main {
+  min-height: calc(100svh - 5rem);
+  padding: clamp(2rem, 5vw, 4rem) 1.5rem;
+}
+.account-page .account-card {
+  width: min(100%, 47rem);
+  padding: clamp(1.6rem, 4vw, 3rem);
+  border: 1px solid #403b34;
+  border-radius: .9rem;
+  background: linear-gradient(145deg, #191a20, #111216 72%);
+  box-shadow: 0 1.5rem 4rem #0007, inset 0 1px #fff1;
+}
+.account-page .account-eyebrow {
+  color: #d9b578;
+  font-size: .67rem;
+  font-weight: 600;
+  letter-spacing: .19em;
+}
+.account-page .account-card h1 {
+  max-width: none;
+  background: none;
+  color: #f8f2e7;
+  font: 500 clamp(2.15rem, 4.5vw, 3.7rem)/1.1 Georgia, serif;
+  letter-spacing: -.045em;
+}
+.account-page .account-card__intro,
+.account-page .account-success > p:not(.account-eyebrow) {
+  color: #c3bec0;
+  font-size: .91rem;
+  line-height: 1.75;
+}
+.account-page .account-form { gap: 1.1rem; }
+.account-page .account-form label {
+  color: #ddd2bb;
+  font-size: .69rem;
+  font-weight: 600;
+  letter-spacing: .13em;
+}
+.account-page .account-form input:not([type='checkbox']) {
+  min-height: 3.2rem;
+  border: 1px solid #444448;
+  border-radius: .52rem;
+  background: #0c0d12;
+  box-shadow: inset 0 1px 2px #0005;
+  color: #f5f0e9;
+  font-size: .9rem;
+  font-weight: 450;
+}
+.account-page .account-form input::placeholder { color: #908d91; }
+.account-page .account-form input:focus { border-color: #d9b578; box-shadow: 0 0 0 3px #d9b57824; }
+.account-page .account-form .account-form__remember { letter-spacing: normal; font-weight: 400; }
+.account-page .account-form__remember input { accent-color: #d9b578; }
+.account-page .account-form__remember strong { color: #eee9e1; font-weight: 600; }
+.account-page .account-form__remember small,
+.account-page .account-card__fine-print { color: #aaa4a2; }
+.account-page .landing-button {
+  min-height: 3.15rem;
+  border-radius: .55rem;
+  font-size: .8rem;
+  font-weight: 650;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+.account-page .landing-button--primary {
+  border: 1px solid #dfc395;
+  background: linear-gradient(160deg, #f0d49b, #cda568);
+  box-shadow: inset 0 1px #fff7, 0 .35rem 1rem #0004;
+  color: #221a10;
+}
+.account-page .landing-button--secondary {
+  border: 1px solid #645843;
+  background: #202025;
+  box-shadow: none;
+  color: #efdfc2;
+}
+.account-page .landing-button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.account-page .account-form__error { border-color: #9c564e; background: #4d242322; color: #ffc8be; }
+.account-page .account-success__icon { border-color: #c6a66e; background: #4a37231f; box-shadow: none; color: #e4c386; }
+.account-page .account-verification-note { border-color: #5e523e; background: #211e1c; color: #d8cbb3; }
+.account-page .account-verification-message,
+.account-page .account-verification-resend p { color: #d5b97e; }
+.account-page .account-card__fine-print a { color: #ebcd96; font-weight: 600; text-underline-offset: .2rem; }
+
+.account-page--create .account-card--create {
+  display: grid;
+  width: min(100%, 67rem);
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1fr);
+  gap: 0 clamp(2rem, 5vw, 4.25rem);
+  align-items: center;
+}
+.account-page--create .account-card__symbol {
+  position: static;
+  display: block;
+  width: 3.15rem;
+  height: 3.15rem;
+  grid-column: 1;
+  margin-bottom: 1.4rem;
+  border: 0;
+  border-radius: 0;
+  background: #e8c58b;
+  box-shadow: none;
+  -webkit-mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
+  mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
+}
+.account-page--create .account-card__heading { grid-column: 1; align-self: start; }
+.account-page--create .account-card__heading h1 { max-width: 9ch; }
+.account-page--create .account-card__intro { margin-bottom: 0; }
+.account-page--create .account-card__fields {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  padding-left: clamp(1.5rem, 4vw, 3.5rem);
+  border-left: 1px solid #3d3b39;
+}
+.account-page--create .account-form__split { grid-template-columns: 1fr; }
+.account-page--create .account-card__fine-print { text-align: left; }
+.account-page--create .account-card--create.is-complete {
+  display: block;
+  width: min(100%, 45rem);
+}
+.account-page--create .is-complete .account-card__symbol { margin-bottom: .8rem; }
+
+@media (max-width: 760px) {
+  .account-page--create .account-card--create { grid-template-columns: 1fr; gap: 0; }
+  .account-page--create .account-card__fields {
+    grid-column: 1;
+    grid-row: auto;
+    margin-top: 1.8rem;
+    padding: 1.6rem 0 0;
+    border-left: 0;
+    border-top: 1px solid #3d3b39;
+  }
+  .account-page--create .account-card__heading h1 { max-width: none; }
+}
+@media (max-width: 560px) {
+  .account-page .landing-bar { width: calc(100% - 2rem); }
+  .account-page .account-main { padding: 2.2rem 1rem; }
+  .account-page .account-card { padding: 1.45rem; }
+  .account-page .account-card h1 { font-size: clamp(2rem, 9vw, 2.7rem); }
+  .account-page--create .account-card__symbol { width: 2.5rem; height: 2.5rem; margin-bottom: 1rem; }
+}

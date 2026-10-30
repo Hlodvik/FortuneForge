@@ -141,17 +141,17 @@ body.ff-game-active img {
   justify-items: center;
   gap: 0.8rem;
   padding: 2rem;
-  color: #fff8ff;
+  color: #f4f1e9;
   text-align: center;
 }
 
 .route-state--error button,
 .route-state--error a {
-  border: 1px solid rgb(255 255 255 / 38%);
-  border-radius: 999px;
+  border: 1px solid #6a5c45;
+  border-radius: 0.55rem;
   padding: 0.65rem 1rem;
-  color: inherit;
-  background: rgb(34 16 67 / 82%);
+  color: #eed6a9;
+  background: #17171c;
   text-decoration: none;
 }
 

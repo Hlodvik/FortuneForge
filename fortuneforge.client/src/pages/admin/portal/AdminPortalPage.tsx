@@ -4,6 +4,7 @@ import { adminPortalApi, AdminPortalError, type AdminPortalApi, type AdminPage, 
 import { getOperationsDashboard, type OperationsDashboard } from '../../../features/admin/operations/operationsApi'
 import { AdminOperationsDashboardView } from '../operations/AdminOperationsPage'
 import './adminPortal.css'
+import '../adminTheme.css'
 import { adminMoney, purchaseAmount } from '../../../features/admin/portal/adminFormatting'
 import { notifyCatalogueChanged } from '../../../features/catalog/catalogVisibility'
 import { AdminGameReportsPanel } from './AdminGameReportsPanel'

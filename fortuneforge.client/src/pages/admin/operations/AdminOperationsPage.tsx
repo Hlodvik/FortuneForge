@@ -4,6 +4,7 @@ import {
   type OperationsDashboard,
 } from '../../../features/admin/operations/operationsApi'
 import './adminOperations.css'
+import '../adminTheme.css'
 
 const money = new Intl.NumberFormat('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const dateTime = new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium', timeStyle: 'short' })

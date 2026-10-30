@@ -4,6 +4,7 @@ import { GameTypeMenu } from '../../components/GameTypeMenu'
 import { PlayerHeader } from '../../components/PlayerHeader'
 import { SLOT_GAME_CATALOG, type SlotGameCatalogEntry } from '../../games/slots/catalog'
 import '../index.css'
+import '../demoLibrary.css'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
 
@@ -34,7 +35,7 @@ export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
 
 export function DemoSlotsLibraryPage() {
   return (
-    <div className="player-page game-picker-page">
+    <div className="player-page game-picker-page demo-library-page">
       <header className="landing-bar">
         <a className="landing-brand" href="/" aria-label="Fortune Forge home">
           <span className="landing-brand__spark" aria-hidden="true">✦</span>

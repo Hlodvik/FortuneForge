@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import wukongMedallion from '../../assets/slots/symbols/wukong/wukong-medallion.png'
+import '@fontsource-variable/sora'
 import {
   createAccount,
   resendVerification,
@@ -66,20 +66,20 @@ export function CreateAccountPage() {
   }
 
   return (
-    <div className="account-page">
+    <div className="account-page account-page--create">
       <header className="landing-bar">
         <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
+          <svg className="account-brand__spade" viewBox="0 0 48 48" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
+            <path d="M24 2C20 11 5 17 5 27c0 9 10 13 17 5-1 7-5 11-10 13h24c-5-2-9-6-10-13 7 8 17 4 17-5C43 17 28 11 24 2Z" />
+          </svg>
           <span>Fortune Forge</span>
         </a>
         <a className="landing-nav__link" href="/">Back home</a>
       </header>
 
       <main className="account-main">
-        <section className="account-card" aria-labelledby="account-title">
-          <div className="account-card__symbol" aria-hidden="true">
-            <img src={wukongMedallion} alt="" draggable="false" />
-          </div>
+        <section className={'account-card account-card--create' + (registration !== null ? ' is-complete' : '')} aria-labelledby="account-title">
+          <span className="account-card__symbol" aria-hidden="true" />
 
           {registration !== null ? (
             <div className="account-success" role="status">
@@ -87,8 +87,8 @@ export function CreateAccountPage() {
               <p className="account-eyebrow">One last step</p>
               <h1 id="account-title">Check your inbox.</h1>
               <p>
-                Welcome, {registration.account.playerName}. Firebase is verifying{' '}
-                <strong>{registrationEmail}</strong> before the account can be used.
+                Welcome, {registration.account.playerName}. Please verify{' '}
+                <strong>{registrationEmail}</strong> before logging in.
               </p>
               <p className="account-verification-note">
                 {verificationSent
@@ -112,49 +112,52 @@ export function CreateAccountPage() {
             </div>
           ) : (
             <>
-              <p className="account-eyebrow">Public access</p>
-              <h1 id="account-title">Create your account</h1>
-              <p className="account-card__intro">
-                Choose your player name and enter the Fortune Forge public preview.
-              </p>
-
-              <form className="account-form" onSubmit={handleSubmit}>
-                <div className="account-form__split">
+              <div className="account-card__heading">
+                <p className="account-eyebrow">Your player profile</p>
+                <h1 id="account-title">Create your account</h1>
+                <p className="account-card__intro">
+                  Join Fortune Forge. Choose a player name and we’ll send a verification link to your email.
+                </p>
+              </div>
+              <div className="account-card__fields">
+                <form className="account-form" onSubmit={handleSubmit}>
+                  <div className="account-form__split">
+                    <label>
+                      Player name
+                      <input name="playerName" autoComplete="nickname" placeholder="Choose a player name" minLength={3} maxLength={24} required />
+                    </label>
+                    <label>
+                      Email
+                      <input name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
+                    </label>
+                  </div>
                   <label>
-                    Player name
-                    <input name="playerName" autoComplete="nickname" placeholder="LuckyCloud" minLength={3} maxLength={24} required />
+                    Password
+                    <input
+                      name="password"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="At least 8 characters"
+                      minLength={8}
+                      required
+                    />
                   </label>
-                  <label>
-                    Email
-                    <input name="email" type="email" autoComplete="email" placeholder="you@example.com" required />
-                  </label>
-                </div>
-                <label>
-                  Password
-                  <input
-                    name="password"
-                    type="password"
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters"
-                    minLength={8}
-                    required
-                  />
-                </label>
-                {submitError !== null && (
-                  <p className="account-form__error" role="alert">{submitError}</p>
-                )}
-                <button
-                  className="landing-button landing-button--primary account-form__submit"
-                  type="submit"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating account…' : 'Create Account'}
-                  {!isSubmitting && <span aria-hidden="true">→</span>}
-                </button>
-              </form>
-              <p className="account-card__fine-print">
-                New accounts must verify their email before login or gameplay is unlocked.
-              </p>
+                  {submitError !== null && (
+                    <p className="account-form__error" role="alert">{submitError}</p>
+                  )}
+                  <button
+                    className="landing-button landing-button--primary account-form__submit"
+                    type="submit"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'Creating account…' : 'Create account'}
+                    {!isSubmitting && <span aria-hidden="true">→</span>}
+                  </button>
+                </form>
+                <p className="account-card__fine-print">
+                  Verify your email before logging in. Already have an account? <a href="/login">Log in</a>
+                </p>
+              </div>
             </>
           )}
         </section>

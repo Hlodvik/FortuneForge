@@ -1,0 +1,79 @@
+.not-found-page {
+  box-sizing: border-box;
+  min-height: 100svh;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  background: #0b0c10;
+  color: #f4f0e8;
+  font-family: 'Sora Variable', 'Segoe UI Variable', sans-serif;
+}
+
+.not-found-page__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 44px;
+  color: #e8c58b;
+  font: 500 clamp(.85rem, 2vw, 1.1rem)/1 Georgia, serif;
+  letter-spacing: .13em;
+  text-decoration: none;
+}
+
+.not-found-page__spade {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+  background: currentColor;
+  -webkit-mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
+  mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
+}
+
+.not-found-page__card {
+  box-sizing: border-box;
+  width: min(100%, 42rem);
+  margin: clamp(4rem, 14vh, 10rem) auto 0;
+  padding: clamp(1.7rem, 5vw, 3.4rem);
+  border: 1px solid #403b34;
+  border-radius: .9rem;
+  background: #16171c;
+  box-shadow: 0 1.5rem 4rem #0007;
+}
+
+.not-found-page__eyebrow {
+  margin: 0 0 1.1rem;
+  color: #d9b578;
+  font-size: .7rem;
+  font-weight: 650;
+  letter-spacing: .17em;
+  text-transform: uppercase;
+}
+
+.not-found-page__card h1 {
+  margin: 0;
+  font: 500 clamp(2rem, 5vw, 3.5rem)/1.1 Georgia, serif;
+  letter-spacing: -.045em;
+}
+
+.not-found-page__card > p:not(.not-found-page__eyebrow) {
+  max-width: 31rem;
+  margin: 1.2rem 0 2rem;
+  color: #bab6b8;
+  line-height: 1.7;
+}
+
+.not-found-page__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  min-height: 48px;
+  padding: .65rem 1.1rem;
+  border: 1px solid #dfc395;
+  border-radius: .55rem;
+  background: linear-gradient(160deg, #f0d49b, #cda568);
+  color: #221a10;
+  font-size: .8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.not-found-page a:focus-visible { outline: 2px solid #e8c58b; outline-offset: 4px; }

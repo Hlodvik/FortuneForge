@@ -458,15 +458,38 @@ export function useSlotsPageController({
     // autoplay start immediately; restrictive browsers retry on any trusted
     // interaction. Listeners remain available because a click made while the
     // player has muted effects must not consume the only unlock attempt.
-    startLoop(soundSet.events.ambience)
-    const unlockAudio = () => startLoop(soundSet.events.ambience)
+    const specialAmbienceCue = soundSet.events.specialAmbience
+    const playSpecialAmbience = specialAmbienceCue !== undefined &&
+      (useFreeGameForNextSpin || isSpecialSpinInProgress)
+    const activeAmbienceCue = playSpecialAmbience && specialAmbienceCue !== undefined
+      ? specialAmbienceCue
+      : soundSet.events.ambience
+    if (playSpecialAmbience) {
+      stopLoop(soundSet.events.ambience)
+      if (soundSet.events.autoSpinAmbience !== undefined) {
+        stopLoop(soundSet.events.autoSpinAmbience)
+      }
+    } else if (specialAmbienceCue !== undefined) {
+      stopLoop(specialAmbienceCue)
+    }
+    startLoop(activeAmbienceCue)
+    const unlockAudio = () => startLoop(activeAmbienceCue)
     window.addEventListener('pointerdown', unlockAudio)
     window.addEventListener('keydown', unlockAudio)
     return () => {
       window.removeEventListener('pointerdown', unlockAudio)
       window.removeEventListener('keydown', unlockAudio)
     }
-  }, [audioPreferences.mode, soundSet.events.ambience, startLoop])
+  }, [
+    audioPreferences.mode,
+    isSpecialSpinInProgress,
+    soundSet.events.ambience,
+    soundSet.events.autoSpinAmbience,
+    soundSet.events.specialAmbience,
+    startLoop,
+    stopLoop,
+    useFreeGameForNextSpin,
+  ])
 
   useEffect(() => {
     if (isSpecialGameActive) {
@@ -726,6 +749,7 @@ export function useSlotsPageController({
     result: SpinResult,
     isFastAutoSpin: boolean,
     signal: AbortSignal,
+    isFeatureCast: boolean,
   ) {
     const settleSeals = () => {
       if (!isCurrentPresentation(signal)) {
@@ -881,6 +905,9 @@ export function useSlotsPageController({
       )
       setSealFlyover(null)
       setSealImpactId(position.collection.id)
+      if (gameId === 'reel-riches-v1' && isFeatureCast && index === 0 && soundSet.events.specialCollect) {
+        playCue(soundSet.events.specialCollect)
+      }
       const impactCompleted = await waitForPresentation(
         isFastAutoSpin ? 45 : 105,
         signal,
@@ -1531,7 +1558,9 @@ export function useSlotsPageController({
           ? result.sealCollections.find((collection) => collection.sealId === heldCompletedCollectionId)
           : undefined
         setSpecialRoundGemCount(heldCollection?.count ?? 0)
-      } else if (result.freeSpinsAwarded > 0) {
+      } else if (result.freeSpinsAwarded > 0 || (
+        gameId === 'reel-riches-v1' && result.freeSpinsRemaining > freeSpinsRemaining
+      )) {
         setSpecialRoundWinnings(0)
       }
       setLastFreeSpinsAwarded(result.freeSpinsAwarded)
@@ -1546,7 +1575,9 @@ export function useSlotsPageController({
       )
       setFreeSpinFeatureMode(result.freeSpinFeatureMode)
       let resultSoundEvent: SlotResultSoundEvent | null = winSoundCue
-      if (result.freeSpinsAwarded > 0) {
+      if (result.freeSpinsAwarded > 0 || (
+        gameId === 'reel-riches-v1' && !expectedFreeSpin && result.freeSpinsRemaining > freeSpinsRemaining
+      )) {
         resultSoundEvent = 'bonus'
       } else if (result.payout.totalPoints === 0) {
         mascotOutcome = 'loss'
@@ -1575,7 +1606,7 @@ export function useSlotsPageController({
         isFastAutoSpin,
         presentationSignal,
       )
-      await animateSealCollection(result, isFastAutoSpin, presentationSignal)
+      await animateSealCollection(result, isFastAutoSpin, presentationSignal, expectedFreeSpin)
       await animateEnergyCollection(result, isFastAutoSpin, presentationSignal)
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {

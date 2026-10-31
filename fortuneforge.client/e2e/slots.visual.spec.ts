@@ -8,7 +8,7 @@ type SpinRequest = {
   freeSpinWagerPoints: number | null
 }
 
-type SpinKind = 'bonus' | 'loss' | 'win'
+type SpinKind = 'bonus' | 'collection' | 'loss' | 'win'
 
 type DemoApiOptions = {
   kind?: SpinKind
@@ -56,6 +56,51 @@ test('idle cabinet', async ({ page }) => {
   await openStableSlot(page, '/slots/reel-riches/demo')
 
   await expect(page).toHaveScreenshot('idle-reel-riches-cabinet.png')
+})
+
+test('Reel Riches bonus entry and active casts remain playable on desktop and mobile', async ({ page }) => {
+  test.setTimeout(90_000)
+  await mockDemoApi(page, { kind: 'bonus' })
+
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await openStableSlot(page, '/slots/reel-riches/demo')
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+    const intro = page.locator('.reel-riches__bonus-intro')
+    await expect(intro).toBeVisible()
+    await expect(intro).toContainText('Trophy Catch')
+    const introBox = await intro.boundingBox()
+    expect(introBox?.x ?? -1).toBeGreaterThanOrEqual(0)
+    expect((introBox?.x ?? 9999) + (introBox?.width ?? 9999)).toBeLessThanOrEqual(viewport.width)
+    expect(introBox?.y ?? -1).toBeGreaterThanOrEqual(0)
+    expect((introBox?.y ?? 9999) + (introBox?.height ?? 9999)).toBeLessThanOrEqual(viewport.height)
+    await expect(page.locator('.slots-page')).toHaveScreenshot(`reel-riches-bonus-intro-${viewport.width}.png`)
+
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(intro).toHaveCount(0)
+    await expect(page.locator('.reel-riches__bonus-hud')).toBeVisible()
+    await expect(page.locator('.slots-page--special-game')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+    await expect(page.locator('.slots-page')).toHaveScreenshot(`reel-riches-active-casts-${viewport.width}.png`)
+    const metrics = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      spinBottom: document.querySelector('.spin-button')?.getBoundingClientRect().bottom ?? Infinity,
+    }))
+    expect(metrics.width).toBeLessThanOrEqual(viewport.width + 1)
+    expect(metrics.spinBottom).toBeLessThanOrEqual(viewport.height)
+  }
+})
+
+test('Reel Riches badge collection opens the legendary feature', async ({ page }) => {
+  await mockDemoApi(page, { kind: 'collection' })
+  await openStableSlot(page, '/slots/reel-riches/demo')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+  const intro = page.locator('.reel-riches__bonus-intro')
+  await expect(intro).toBeVisible()
+  await expect(intro).toContainText('Legendary Catch')
+  await expect(intro).toContainText('10 free casts')
 })
 
 test('rules and payline guide', async ({ page }) => {
@@ -444,8 +489,10 @@ async function mockDemoApi(page: Page, options: DemoApiOptions = {}) {
 
 function spinFixture(request: SpinRequest, kind: SpinKind) {
   const isBonus = kind === 'bonus'
+  const isCollection = kind === 'collection'
   const isWin = kind === 'win'
   const isFreeSpin = request.useFreeSpin
+  const freeSpinsAwarded = request.gameId === 'reel-riches-v1' ? 5 : 6
   const reels = isBonus
     ? reelRows.map((reel, index) => index < 3 ? ['FREE', ...reel.slice(1)] : [...reel])
     : isWin
@@ -453,11 +500,17 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
       : reelRows.map((reel) => [...reel])
   const positions = reels.map((_, reel) => ({ reel, row: 0 }))
   const remainingFreeSpins = isBonus
-    ? 6
+    ? freeSpinsAwarded
+    : isCollection
+      ? 10
     : isFreeSpin
       ? Math.max(0, request.freeSpinsRemaining - 1)
       : 0
-  const featureMode = isBonus || isFreeSpin ? 'paw-rand' : null
+  const featureMode = isCollection
+    ? 'sync-rows-rand'
+    : (isBonus || isFreeSpin) && request.gameId !== 'reel-riches-v1'
+      ? 'paw-rand'
+      : null
 
   return {
     spinId: '00000000-0000-4000-8000-000000000001',
@@ -472,7 +525,7 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
     consecutiveFiveMisses: 0,
     fiveMatchPityTriggered: false,
     isFreeSpin,
-    freeSpinsAwarded: isBonus ? 6 : 0,
+    freeSpinsAwarded: isBonus ? freeSpinsAwarded : 0,
     freeSpinsRemaining: remainingFreeSpins,
     freeSpinWagerPoints: remainingFreeSpins > 0
       ? request.freeSpinWagerPoints ?? request.wagerPoints
@@ -486,7 +539,7 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
     monkeyPawCount: 0,
     moneyGrabPoints: 0,
     bananaBonusPoints: 0,
-    sealsAwarded: {},
+    sealsAwarded: isCollection ? { SEAL_SYNC: 1 } : {},
     sealCollections: [
       { sealId: 'sync', count: 14, averageWagerPoints: request.wagerPoints, requiredCount: 28 },
       { sealId: 'rows', count: 8, averageWagerPoints: request.wagerPoints, requiredCount: 28 },

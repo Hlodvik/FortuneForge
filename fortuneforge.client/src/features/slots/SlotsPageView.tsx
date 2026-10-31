@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
+import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
 import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameNavExits } from '../../components/InGameNavbar'
@@ -118,9 +120,19 @@ export function SlotsPageView(controller: SlotsPageController) {
   const completedFeatureDetail = specialRound && collectionAwardPresentation?.featureMode
     ? getSpecialRoundLabel(specialRound, collectionAwardPresentation.featureMode)
     : null
-  const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
+  const isReelRiches = cabinetTheme.id === 'reel-riches-cabinet-v1'
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
+  const reelRichesIntroVisible = isReelRiches && freeSpinsRemaining > 0 &&
+    !isSpecialGameActive && !isSpinning
+  const reelRichesBonusVisible = isReelRiches && (reelRichesIntroVisible || isSpecialGameActive)
+  const reelRichesFeatureLabel = isReelRiches && specialRound
+    ? getSpecialRoundLabel(specialRound, controller.freeSpinFeatureMode)
+    : null
+  const [reelRichesFeatureName, reelRichesFeatureDetail] =
+    reelRichesFeatureLabel?.split(' · ', 2) ?? ['Trophy Catch', undefined]
+  const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null ||
+    reelRichesIntroVisible
   const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
   const completedGemImage = isPiratesFortune && completedCollection
     ? getSlotSymbolDefinition(symbolSet, completedCollection.symbol).image
@@ -136,7 +148,13 @@ export function SlotsPageView(controller: SlotsPageController) {
   const pageStyle = {
     ...pageBackdropStyle,
     ...topbarStyle,
-  }
+    ...(reelRichesBonusVisible
+      ? { '--slot-page-backdrop': `url("${reelRichesBonusLake}")` }
+      : {}),
+  } as CSSProperties
+  const activeCabinetTheme = reelRichesBonusVisible
+    ? { ...cabinetTheme, visualsBackdropImage: reelRichesBonusLake }
+    : cabinetTheme
   const bestWinMatch = bestWin?.matches.reduce((best, candidate) => (
     candidate.amountPoints > best.amountPoints ? candidate : best
   ))
@@ -163,7 +181,8 @@ export function SlotsPageView(controller: SlotsPageController) {
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
-  const showOutcomeBanner = slotOutcome.tone !== 'neutral'
+  const showOutcomeBanner = slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
+    !(isReelRiches && isSpecialGameActive && slotOutcome.label === 'Free game ready')
 
   return (
     <div
@@ -173,6 +192,9 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-slot-celebration={cabinetTheme.celebrationEffect}
       data-special-round={specialRound?.id}
       data-special-earn-style={specialRound?.earnStyle}
+      data-reel-riches-intro={reelRichesIntroVisible ? 'true' : undefined}
+      data-reel-riches-bonus={reelRichesBonusVisible ? 'true' : undefined}
+      data-reel-riches-win={isReelRiches && isSpecialGameActive ? lastSpinOutcome?.kind : undefined}
     >
       <header className="slots-page__topbar" data-game-navbar>
         <div className="slots-page__brand-cluster">
@@ -272,7 +294,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                       !isPiratesFortune && isSpecialGameActive &&
                       heldCompletedCollectionId === collection.sealId &&
                       specialRoundGemCount > 0
-                        ? `${specialRoundGemCount} gems banked`
+                        ? `${specialRoundGemCount} ${isReelRiches ? 'catches' : 'gems'} banked`
                         : undefined
                     }
                   />
@@ -317,7 +339,18 @@ export function SlotsPageView(controller: SlotsPageController) {
             </div>
             )}
 
-            {isSpecialGameActive && specialRound && (
+            {isSpecialGameActive && specialRound && isReelRiches && (
+              <aside className="reel-riches__bonus-hud" aria-live="polite">
+                <span className="reel-riches__bonus-hud-title">Bonus round</span>
+                <strong>{reelRichesFeatureName}</strong>
+                {reelRichesFeatureDetail && <small className="reel-riches__bonus-hud-detail">{reelRichesFeatureDetail}</small>}
+                <div className="reel-riches__bonus-hud-stats">
+                  <span>Free casts left <b>{freeSpinsRemaining}</b></span>
+                  <span>Feature win <b>{formatRand(specialRoundWinnings)}</b></span>
+                </div>
+              </aside>
+            )}
+            {isSpecialGameActive && specialRound && !isReelRiches && (
               <aside className="slots-page__special-game-tally" aria-live="polite">
                 <span>{specialRoundLabel ?? specialRound.title} winnings</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
@@ -335,7 +368,7 @@ export function SlotsPageView(controller: SlotsPageController) {
 
           <div className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
             <SlotMachine
-              cabinetTheme={cabinetTheme}
+              cabinetTheme={activeCabinetTheme}
               reelCount={displayedReels.length}
               renderReel={(reelIndex) => (
               <div
@@ -489,7 +522,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       </main>
 
-      {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && (
+      {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && !reelRichesBonusVisible && (
         <div
           key={resultAtmosphereId}
           className="slots-page__result-atmosphere"
@@ -502,7 +535,34 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      {isSpecialGameActive && <div className="slots-page__special-game-dimmer" aria-hidden="true" />}
+      {isReelRiches && isSpecialGameActive && lastSpinOutcome &&
+        lastSpinOutcome.kind !== 'loss' && lastSpinOutcome.kind !== 'bonus' && (
+          <div
+            key={resultAtmosphereId}
+            className="reel-riches__catch-burst"
+            data-outcome={lastSpinOutcome.kind}
+            aria-hidden="true"
+          >
+            {Array.from({ length: 14 }, (_, index) => <i key={index} />)}
+          </div>
+      )}
+
+      {(isSpecialGameActive || reelRichesIntroVisible) && (
+        <div className="slots-page__special-game-dimmer" aria-hidden="true" />
+      )}
+
+      {reelRichesIntroVisible && (
+        <section className="reel-riches__bonus-intro" role="status" aria-live="polite">
+          <img src={reelRichesMarlin} alt="" aria-hidden="true" />
+          <div className="reel-riches__bonus-intro-copy">
+            <span>Feature unlocked</span>
+            <h2>{reelRichesFeatureName}</h2>
+            <p>{freeSpinsRemaining} free casts are ready</p>
+            {reelRichesFeatureDetail && <small>{reelRichesFeatureDetail}</small>}
+            <b>Press Spin to cast</b>
+          </div>
+        </section>
+      )}
 
       {collectionAwardPresentation && (
           <section

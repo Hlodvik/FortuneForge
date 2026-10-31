@@ -631,35 +631,6 @@
   background: #fff2b1;
 }
 
-.slots-page__seal-collection--tackle-creel .slots-page__collection-visual::before,
-.slots-page__seal-collection--tackle-creel .slots-page__collection-visual::after {
-  position: absolute;
-  right: 5%;
-  bottom: 0;
-  left: 5%;
-  height: 1.75rem;
-  border: 0.12rem solid #f0bd56;
-  border-radius: 0.35rem 0.35rem 1.05rem 1.05rem;
-  background:
-    repeating-linear-gradient(9deg, transparent 0 0.32rem, rgb(255 241 172 / 34%) 0.34rem 0.39rem),
-    linear-gradient(180deg, #a76a2e, #5a3216);
-  content: '';
-}
-
-.slots-page__seal-collection--tackle-creel .slots-page__collection-visual::before {
-  z-index: 1;
-  bottom: 0.85rem;
-  height: 2.1rem;
-  border-width: 0.2rem;
-  border-bottom: 0;
-  border-radius: 50% 50% 0 0;
-  background: transparent;
-}
-
-.slots-page__seal-collection--tackle-creel .slots-page__collection-visual::after {
-  z-index: 4;
-}
-
 .slots-page__seal-collection--frontier-trail .slots-page__collection-visual::before {
   position: absolute;
   z-index: 1;

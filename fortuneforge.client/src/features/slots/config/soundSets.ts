@@ -23,6 +23,13 @@ import pirateSeagullWinSource from '../../../assets/slots/audio/pirate-seagull-w
 import pirateBeachWavesSource from '../../../assets/slots/audio/pirate-wave-ambience.flac'
 import reelSpinSource from '../../../assets/slots/audio/reel-spin.ogg'
 import reelStopSource from '../../../assets/slots/audio/reel-stop.wav'
+import reelRichesCastLandSource from '../../../assets/slots/audio/reel-riches-cast-land.wav'
+import reelRichesLineTensionSource from '../../../assets/slots/audio/reel-riches-line-tension.wav'
+import reelRichesSmallCatchSource from '../../../assets/slots/audio/reel-riches-small-catch.wav'
+import reelRichesSpecialCollectSource from '../../../assets/slots/audio/reel-riches-special-collect.wav'
+import reelRichesTrophyAwardSource from '../../../assets/slots/audio/reel-riches-trophy-award.wav'
+import reelRichesTrophyLoopSource from '../../../assets/slots/audio/reel-riches-trophy-loop.wav'
+import reelRichesTrophyWinSource from '../../../assets/slots/audio/reel-riches-trophy-win.wav'
 import wukongCelestialChimeSource from '../../../assets/slots/audio/wukong-celestial-chime.wav'
 import wukongCloudRushSource from '../../../assets/slots/audio/wukong-cloud-rush.wav'
 import wukongGongWinSource from '../../../assets/slots/audio/wukong-gong-win.wav'
@@ -40,6 +47,8 @@ export type SlotSoundCueId =
   | 'reel-stop'
   | 'special-reel-spin'
   | 'special-reel-stop'
+  | 'special-ambience'
+  | 'special-collect'
   | 'special-low-win'
   | 'special-premium-win'
   | 'special-five-casino-win'
@@ -73,6 +82,8 @@ export type SlotSoundSet = {
     reelStop: SlotSoundCueId
     specialReelSpin?: SlotSoundCueId
     specialReelStop?: SlotSoundCueId
+    specialAmbience?: SlotSoundCueId
+    specialCollect?: SlotSoundCueId
     results: Readonly<Record<SlotResultSoundEvent, readonly SlotSoundCueId[]>>
     specialResults?: Readonly<Record<SlotResultSoundEvent, readonly SlotSoundCueId[]>>
   }
@@ -90,6 +101,8 @@ export const DEFAULT_SLOT_SOUNDS: SlotSoundSet = {
     'reel-stop': { source: reelStopSource, baseVolume: 0.22, category: 'effect' },
     'special-reel-spin': { source: reelSpinSource, baseVolume: 0.18, category: 'effect', loop: true },
     'special-reel-stop': { source: reelStopSource, baseVolume: 0.3, category: 'effect' },
+    'special-ambience': { source: casinoRockSource, baseVolume: 0.055, category: 'effect', loop: true },
+    'special-collect': { source: fiveTwinkleSource, baseVolume: 0.26, category: 'effect' },
     'special-low-win': { source: fiveJewelSource, baseVolume: 0.4, category: 'result' },
     'special-premium-win': { source: fiveCasinoWinSource, baseVolume: 0.46, category: 'result' },
     'special-five-casino-win': { source: premiumWinSource, baseVolume: 0.48, category: 'result' },
@@ -346,8 +359,45 @@ export const DINO_DOMINION_SOUNDS = createThemedSlotSounds('dino-dominion-audio-
   bonus: ['five-casino-win', 'five-jewel'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
 })
 
-export const REEL_RICHES_SOUNDS = createThemedSlotSounds('reel-riches-audio-v1', {
+const reelRichesBaseSounds = createThemedSlotSounds('reel-riches-audio-v3', {
   ambienceSource: pirateVoyageSource, ambienceVolume: 0.045,
   leverSource: leverRegisterSource, leverVolume: 0.3,
-  bonus: ['five-jewel', 'five-twinkle'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
+  bonus: ['five-casino-win'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
 })
+
+export const REEL_RICHES_SOUNDS: SlotSoundSet = {
+  ...reelRichesBaseSounds,
+  cues: {
+    ...reelRichesBaseSounds.cues,
+    // The feature arrangement replaces the lake voyage only during free casts.
+    'special-ambience': { source: reelRichesTrophyLoopSource, baseVolume: 0.13, category: 'effect', loop: true },
+    'special-reel-spin': { source: reelRichesLineTensionSource, baseVolume: 0.12, category: 'effect', loop: true },
+    'special-reel-stop': { source: reelRichesCastLandSource, baseVolume: 0.25, category: 'effect' },
+    'special-collect': { source: reelRichesSpecialCollectSource, baseVolume: 0.27, category: 'effect' },
+    'five-casino-win': { source: reelRichesTrophyAwardSource, baseVolume: 0.4, category: 'result' },
+    'special-low-win': { source: reelRichesSmallCatchSource, baseVolume: 0.24, category: 'result' },
+    'special-premium-win': { source: reelRichesTrophyWinSource, baseVolume: 0.38, category: 'result' },
+    'special-five-casino-win': { source: reelRichesTrophyWinSource, baseVolume: 0.43, category: 'result' },
+    'special-five-jewel': { source: reelRichesTrophyWinSource, baseVolume: 0.34, category: 'result' },
+    'special-five-twinkle': { source: reelRichesTrophyWinSource, baseVolume: 0.32, category: 'result' },
+    'special-soft-miss': { source: noWinWaterDropSource, baseVolume: 0.14, category: 'result' },
+  },
+  events: {
+    ...reelRichesBaseSounds.events,
+    specialAmbience: 'special-ambience',
+    specialReelSpin: 'special-reel-spin',
+    specialReelStop: 'special-reel-stop',
+    specialCollect: 'special-collect',
+    results: {
+      ...reelRichesBaseSounds.events.results,
+      bonus: ['five-casino-win'],
+    },
+    specialResults: {
+      bonus: ['special-five-casino-win'],
+      five: ['special-five-casino-win'],
+      'no-win': ['special-soft-miss'],
+      premium: ['special-premium-win'],
+      'single-three': ['special-low-win'],
+    },
+  },
+}

@@ -53,6 +53,7 @@ export function CollectionProgressDisplay({
   image,
   isImpacting,
   itemLabel,
+  containerImage,
   displayCount,
   isCelebrating = false,
   presentation,
@@ -61,11 +62,15 @@ export function CollectionProgressDisplay({
 }: CollectionProgressDisplayProps) {
   const visualCount = displayCount ?? collection.count
   const isGemHoard = presentation === 'gem-hoard'
+  const isTackleMound = presentation === 'tackle-creel' && Boolean(containerImage)
   const progress = isGemHoard
     ? displayCount !== undefined || isCelebrating
       ? 100
       : Number((94 * (1 - Math.exp(-Math.max(0, visualCount) / 8))).toFixed(1))
     : Math.min(100, visualCount / collection.requiredCount * 100)
+  const tackleReveal = progress === 0
+    ? 0
+    : Math.min(100, 25 + 75 * Math.sqrt(progress / 100))
   const visiblePieceCount = isGemHoard
     ? Math.min(piratePileLayout.length, Math.ceil(Math.max(0, visualCount) / 2.4))
     : visualCount === 0 ? 0 : Math.max(1, Math.ceil(progress / 10))
@@ -138,6 +143,21 @@ export function CollectionProgressDisplay({
                 } as CSSProperties}
               />
             ))}
+          </span>
+        ) : isTackleMound ? (
+          <span className="slots-page__tackle-mound">
+            {visualCount > 0 && (
+              <>
+                <img className="slots-page__tackle-mound-underlay" src={containerImage} alt="" />
+                <img
+                  className="slots-page__tackle-mound-fill"
+                  src={containerImage}
+                  alt=""
+                  style={{ '--tackle-reveal': `${tackleReveal}%` } as CSSProperties}
+                />
+              </>
+            )}
+            <img className="slots-page__collection-emblem" src={image} alt="" />
           </span>
         ) : (
           <>

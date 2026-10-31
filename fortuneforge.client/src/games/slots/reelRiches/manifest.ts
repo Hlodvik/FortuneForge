@@ -5,18 +5,22 @@ import { defineSlotGame } from '../shared/slotGameManifest'
 import { REEL_RICHES_CABINET_THEME } from './cabinetTheme'
 import { REEL_RICHES_CATALOG } from './catalog'
 import { REEL_RICHES_SYMBOLS } from './symbols'
+import crimsonMound from '../../../assets/slots/games/reel-riches/optimized/reel-riches-progress-mound-crimson-v1.webp'
+import sapphireMound from '../../../assets/slots/games/reel-riches/optimized/reel-riches-progress-mound-sapphire-v1.webp'
+import amberMound from '../../../assets/slots/games/reel-riches/optimized/reel-riches-progress-mound-amber-v1.webp'
+import emeraldMound from '../../../assets/slots/games/reel-riches/optimized/reel-riches-progress-mound-emerald-v1.webp'
 
 const FEATURES: SlotFeatureSet = {
-  energy: { label: 'Tide charge', symbol: 'BOLT' },
+  energy: { label: 'Gem Multiplier', symbol: 'BOLT' },
   collections: {
     ariaLabel: 'Tackle badge collections',
     itemLabel: 'badges',
     presentation: 'tackle-creel',
     entries: [
-      { id: 'sync', label: 'Perfect cast', shortLabel: 'Lure', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Rising tide', shortLabel: 'Wave', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Net frenzy', shortLabel: 'Net', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Jackpot hook', shortLabel: 'Hook', symbol: 'SEAL_RAND', requiredCount: 40 },
+      { id: 'sync', label: 'Perfect cast', shortLabel: 'Lure', symbol: 'SEAL_SYNC', requiredCount: 40, containerImage: crimsonMound },
+      { id: 'rows', label: 'Rising tide', shortLabel: 'Wave', symbol: 'SEAL_ROWS', requiredCount: 40, containerImage: sapphireMound },
+      { id: 'paw', label: 'Net frenzy', shortLabel: 'Net', symbol: 'SEAL_PAW', requiredCount: 40, containerImage: amberMound },
+      { id: 'rand', label: 'Jackpot hook', shortLabel: 'Hook', symbol: 'SEAL_RAND', requiredCount: 40, containerImage: emeraldMound },
     ],
   },
   moneyGrab: {
@@ -30,7 +34,7 @@ const FEATURES: SlotFeatureSet = {
     title: 'Trophy Catch',
     earnLabel: 'Land 3 moonlit piers for 5 casts, or complete 40 tackle badges for 10 enhanced casts.',
     earnStyle: 'buckets',
-    earnHint: 'Every tackle badge fills its own creel. Complete one 40-badge creel to launch ten Trophy Catch spins.',
+    earnHint: 'Every tackle badge grows its own prize pile. Complete one 40-badge collection to launch ten Trophy Catch spins.',
     activeModes: {
       sync: 'Perfect Cast · one reel mirrors another',
       rows: 'Rising Tide · two extra rows open',
@@ -54,7 +58,7 @@ const HELP: SlotHelpDefinition = {
     {
       badge: 'TACKLE',
       title: 'Legendary tackle collections',
-      body: 'Collect 40 lure, wave, net, or hook badges to unlock ten special free spins. Tide charge improves badge odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest tackle track.',
+      body: 'Collect 40 lure, wave, net, or hook badges to unlock ten special free spins. The Gem Multiplier meter improves badge odds at each quarter; when full, it boosts the next paying spin by 1.5× and completes the nearest tackle track.',
     },
   ],
 }

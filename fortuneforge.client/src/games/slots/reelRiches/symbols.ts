@@ -39,7 +39,7 @@ export const REEL_RICHES_SYMBOLS = createThemedSymbolSet({
     SEAL_RAND: { label: 'Emerald jackpot-hook badge', image: emeraldHookBadge },
   },
   valueToken: { label: 'pearl token', image: pearlCoralToken },
-  energyEarnLabel: '+1 tide charge',
+  energyEarnLabel: '+1 Gem Multiplier point',
   collectorFirstValue: 'nets pearl tokens',
   collectorSecondValue: 'double haul',
   collectionAwardLabels: {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { PIRATES_FORTUNE_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
+import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
 
 const pirateEventCueIds = [
   PIRATES_FORTUNE_SOUNDS.events.ambience,
@@ -76,5 +76,19 @@ describe('Wukong sound set', () => {
     expect(WUKONG_TREASURES_SOUNDS.cues['reel-stop'].source)
       .not.toBe(WUKONG_TREASURES_SOUNDS.cues['soft-miss'].source)
     expect(WUKONG_TREASURES_SOUNDS.events.results['no-win']).toEqual(['soft-miss'])
+  })
+})
+
+describe('Reel Riches sound set', () => {
+  it('keeps the bonus music and collection hit out of ordinary spins', () => {
+    const { cues, events } = REEL_RICHES_SOUNDS
+    const specialResultIds = Object.values(events.specialResults ?? {}).flat()
+
+    expect(cues[events.ambience].source).toContain('pirate-voyage')
+    expect(cues[events.specialAmbience ?? 'ambience'].source).toContain('reel-riches-trophy-loop')
+    expect(cues[events.specialReelSpin ?? 'reel-spin'].source).toContain('reel-riches-line-tension')
+    expect(cues[events.specialCollect ?? 'ambience'].source).toContain('reel-riches-special-collect')
+    expect(events.results['single-three']).not.toContain('special-low-win')
+    expect(specialResultIds.every((cueId) => cueId.startsWith('special-'))).toBe(true)
   })
 })

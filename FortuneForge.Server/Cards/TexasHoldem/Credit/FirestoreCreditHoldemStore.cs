@@ -3,6 +3,8 @@ using System.Security.Cryptography;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Games.Abstractions.Analytics;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
@@ -128,6 +130,7 @@ internal sealed class FirestoreCreditHoldemStore(
                             WriteReservation(transaction, ticket, balance, nowUtc);
                             transaction.Create(TicketDocument(ticketId), TicketData(pending));
                             transaction.Set(MatchDocument(activeMatchId), MatchData(openMatch), SetOptions.MergeAll);
+                            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, openMatch, nowUtc, "seat-reserved");
                             transaction.Set(SessionDocument(userId), SessionData(
                                 userId,
                                 CreditHoldemSessionKinds.Queue,
@@ -230,7 +233,10 @@ internal sealed class FirestoreCreditHoldemStore(
                     nowUtc), SetOptions.MergeAll);
             }
             else if (pendingMatch is not null)
+            {
                 transaction.Set(MatchDocument(pendingMatch.MatchId), MatchData(pendingMatch), SetOptions.MergeAll);
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, pendingMatch, nowUtc, "seat-cancelled");
+            }
             transaction.Set(SessionDocument(userId), SessionData(
                 userId, CreditHoldemSessionKinds.Idle, null, null, null, 0, nowUtc), SetOptions.MergeAll);
             transaction.Create(GuardDocument(userId, idempotencyKey), GuardData(userId, "cancel", ticketId, detail, nowUtc));
@@ -372,6 +378,7 @@ internal sealed class FirestoreCreditHoldemStore(
                 ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
             }, SetOptions.MergeAll);
             transaction.Set(MatchDocument(matchId), MatchData(next), SetOptions.MergeAll);
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, next, nowUtc, "hand-started");
             WriteActiveHistory(transaction, next);
             transaction.Create(GuardDocument(userId, idempotencyKey), GuardData(userId, "next-hand", matchId, detail, nowUtc));
             return true;
@@ -572,6 +579,7 @@ internal sealed class FirestoreCreditHoldemStore(
                         ["updatedAt"] = Timestamp.FromDateTime(nowUtc)
                     }, SetOptions.MergeAll);
                     transaction.Set(MatchDocument(matchId), MatchData(next), SetOptions.MergeAll);
+                    FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, next, nowUtc, "hand-started-automatically");
                     WriteActiveHistory(transaction, next);
                     var remaining = next.Players.Where(TexasHoldemManagedPlayers.IsManaged)
                         .Select(player => player.ActorId).ToHashSet(StringComparer.Ordinal);
@@ -773,7 +781,7 @@ internal sealed class FirestoreCreditHoldemStore(
     {
         if (match.Status != "active" && !match.AccountingSettled)
         {
-            var settlement = CreditHoldemEngine.ApplyFinancialSettlement(match);
+            var settlement = CreditHoldemEngine.ApplyFinancialSettlement(match, nowUtc);
             foreach (var payout in settlement.HumanPayoutsCents.Where(value => !match.UsesBuyInEscrow && value.Value > 0))
             {
                 var before = balances.GetValueOrDefault(payout.Key);
@@ -803,6 +811,18 @@ internal sealed class FirestoreCreditHoldemStore(
                 ["schemaVersion"] = match.UsesBuyInEscrow ? 3L : 2L
             });
             WriteCompletedHistory(transaction, match, settlement);
+            if (match.Players.Any(player => player.IsAccountBacked))
+            {
+                var audit = HoldemRoundAudit.Capture(match, nowUtc);
+                RoundAuditFirestore.Write(transaction, database, audit);
+                foreach (var player in match.Players.Where(player => player.IsAccountBacked))
+                {
+                    var analytics = GameAnalyticsOutbox.Create(new("texas-holdem", revenueId, player.ActorId,
+                        "paid", true, match.CompletedAtUtc ?? nowUtc, match.StartedAtUtc,
+                        player.CommittedHand, player.AccountPayoutCents, "gameRoundAudits", audit.Summary.Id))!;
+                    transaction.Set(database.Collection(GameAnalyticsOutbox.CollectionName).Document(analytics.Id), analytics.Fields);
+                }
+            }
             foreach (var human in match.Players.Where(player => player.IsAccountBacked && !match.LeavingActorIds.Contains(player.ActorId)))
                 transaction.Set(SessionDocument(human.ActorId), SessionData(
                     human.ActorId, CreditHoldemSessionKinds.Result, null, match.MatchId, null, match.Version, nowUtc), SetOptions.MergeAll);
@@ -829,6 +849,7 @@ internal sealed class FirestoreCreditHoldemStore(
         }
         WriteEscrowCashouts(transaction, match, balances.ToDictionary(StringComparer.Ordinal), nowUtc);
         transaction.Set(MatchDocument(match.MatchId), MatchData(match), SetOptions.MergeAll);
+        FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, match, nowUtc);
     }
 
     private async Task<bool> CreateMatchAsync(
@@ -870,6 +891,7 @@ internal sealed class FirestoreCreditHoldemStore(
         WriteBlindCommitments(transaction, match, balances, "initial-deal", nowUtc);
         WriteActiveHistory(transaction, match);
         transaction.Create(MatchDocument(matchId), MatchData(match));
+        FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, match, nowUtc, "hand-dealt");
         var ids = selected.Select(ticket => ticket.TicketId).ToHashSet(StringComparer.Ordinal);
         foreach (var ticket in selected)
         {
@@ -997,6 +1019,7 @@ internal sealed class FirestoreCreditHoldemStore(
         }
         match.PendingTakeovers.Clear();
         transaction.Set(MatchDocument(match.MatchId), MatchData(match), SetOptions.MergeAll);
+        FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, match, nowUtc, "table-closed");
         transaction.Set(MatchDocument(match.MatchId), new Dictionary<string, object>
         {
             ["managedPlayersReleasedAt"] = Timestamp.FromDateTime(nowUtc),
@@ -1037,6 +1060,7 @@ internal sealed class FirestoreCreditHoldemStore(
             {
                 pendingMatch.PendingTakeovers.RemoveAll(value => value.TicketId == ticketId);
                 transaction.Set(MatchDocument(pendingMatch.MatchId), MatchData(pendingMatch), SetOptions.MergeAll);
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Holdem(transaction, database, pendingMatch, nowUtc, "seat-expired");
             }
             else
             {

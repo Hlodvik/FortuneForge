@@ -70,6 +70,7 @@ public static class BlackjackTableEngine
         ValidateDeck(deck);
 
         table.RoundNumber = checked(table.RoundNumber + 1);
+        table.RoundStartedAtUtc = nowUtc;
         table.RoundSeed = roundSeed;
         table.Deck = deck.ToArray();
         table.NextCardIndex = 0;

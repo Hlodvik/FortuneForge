@@ -1,4 +1,5 @@
 using FortuneForge.Games.Hearts;
+using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
@@ -98,7 +99,7 @@ internal sealed partial class FirestorePaidHeartsStore
         else Schedule(match, now);
         match.Version++;
         match.UpdatedAtUtc = now;
-        Write(tx, match);
+        Write(tx, match, now);
     }
 
     private async Task ExpireQueueAsync(string id, DateTime now, CancellationToken ct, bool legacySeats = false)
@@ -126,7 +127,7 @@ internal sealed partial class FirestorePaidHeartsStore
                 ? "This older queue was closed and your entry refunded. Join again to choose human players or explicit house opponents."
                 : "No table filled within two minutes. Your entry was refunded; you can search again.";
             match.Version++;
-            Write(tx, match);
+            Write(tx, match, now);
             return true;
         }, ct);
     }
@@ -154,7 +155,7 @@ internal sealed partial class FirestorePaidHeartsStore
                 match.Version++;
             }
             match.LeaseRenewalAtUtc = now.AddMinutes(3);
-            Write(tx, match);
+            Write(tx, match, now);
             return true;
         }, ct);
     }
@@ -171,7 +172,7 @@ internal sealed partial class FirestorePaidHeartsStore
             var latest = Read(await tx.GetSnapshotAsync(Match(id), ct));
             if (!latest.ReleasePending) return false;
             latest.ReleasePending = false;
-            Write(tx, latest);
+            Write(tx, latest, now);
             return true;
         }, ct);
     }
@@ -313,7 +314,15 @@ internal sealed partial class FirestorePaidHeartsStore
         {
             var data = Data(match);
             data["userId"] = player.UserId;
-            tx.Set(database.Collection("heartsPaidHistory").Document(PaidHeartsIds.Hash($"{match.Id}\n{player.UserId}")), data);
+            var historyId = PaidHeartsIds.Hash($"{match.Id}\n{player.UserId}");
+            tx.Set(database.Collection("heartsPaidHistory").Document(historyId), data);
+            var analytics = GameAnalyticsOutbox.Create(new GameAnalyticsSettlement(
+                "hearts", match.Id, player.UserId, "paid", true, now,
+                player.JoinedAtUtc.Kind == DateTimeKind.Utc ? player.JoinedAtUtc : null,
+                match.EntryCents, player.PayoutCents, "heartsPaidHistory", historyId))!;
+            tx.Set(database.Collection(GameAnalyticsOutbox.CollectionName).Document(analytics.Id), analytics.Fields);
         }
+        FortuneForge.Server.RoundAudit.RoundAuditFirestore.Write(tx, database,
+            PaidHeartsRoundAudit.Capture(match, abandoned, now));
     }
 }

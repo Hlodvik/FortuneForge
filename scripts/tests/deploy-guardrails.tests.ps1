@@ -46,6 +46,14 @@ Assert-LiveReleaseSource -Repository $repoRoot -CandidateSha $parent -Target 'Ho
     -LiveSha $head -AllowRollback -RollbackReason 'Intentional verified rollback'
 
 Assert-Equal (Get-ReleaseTextHash 'abc') 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad' 'SHA-256'
+Assert-Equal (Get-FirestoreRulesHash "rules_version = '2';`r`n") (Get-FirestoreRulesHash "rules_version = '2';`n") 'Firestore rules line endings'
+$beforeRules = [pscustomobject]@{ ReleaseName = ''; RulesetName = ''; ContentHash = '' }
+Assert-FirestoreRulesUnchanged -Before $beforeRules -Now ([pscustomobject]@{ ReleaseName = ''; RulesetName = ''; ContentHash = '' })
+Assert-Throws {
+    Assert-FirestoreRulesUnchanged -Before $beforeRules -Now ([pscustomobject]@{
+        ReleaseName = 'projects/example/releases/cloud.firestore'; RulesetName = 'projects/example/rulesets/new'; ContentHash = 'new'
+    })
+} 'concurrent Firestore rules publication'
 $oldSpa = '<html>old SPA fallback</html>'
 Assert-Equal (Get-HostingSourceSha -ResponseBody $oldSpa -IndexBody $oldSpa) '' 'unstamped Hosting fallback'
 Assert-Equal (Get-HostingSourceSha -ResponseBody '' -MarkerAbsent) '' 'missing Hosting marker'
@@ -100,20 +108,59 @@ $solitaireIndexName = 'projects/fortuneforgegame/databases/(default)/collectionG
 $otherIndexName = 'projects/fortuneforgegame/databases/(default)/collectionGroups/arcadeCompetitions/indexes/other'
 Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $solitaireIndexName -Project 'fortuneforgegame' -Group 'solitaireMatchPlayers') $true 'correct Firestore group'
 Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $otherIndexName -Project 'fortuneforgegame' -Group 'solitaireMatchPlayers') $false 'other Firestore group excluded'
+$expectedField = [pscustomobject]@{ collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @() }
+Assert-SupportedFirestoreFieldOverrides -Definitions @($expectedField)
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @([pscustomobject]@{ order = 'ASCENDING' })
+    })
+} 'unsupported indexed field override'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'
+    })
+} 'missing field override indexes'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @(); ttl = $true
+    })
+} 'unverified field override setting'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @($expectedField, $expectedField)
+} 'duplicate field override'
+$actualField = [pscustomobject]@{ collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson';
+    usesAncestorConfig = $false; reverting = $false; indexes = @() }
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 0 'ready field exemption'
+$actualField.usesAncestorConfig = $true
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'inherited field indexes are not exempt'
+$actualField.usesAncestorConfig = $false
+$actualField.reverting = $true
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'reverting field exemption is not ready'
+$actualField.reverting = $false
+$actualField.indexes = @([pscustomobject]@{ state = 'READY' })
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'explicit field index is not exempt'
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @()).Count 1 'missing field exemption'
 
 # Keep the traffic preconditions adjacent to the actual traffic command. These
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
 $firebaseAccountFlag = "'--account', " + '$firebaseAccount'
-Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 2 'explicit account for both Firebase publications'
+Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 3 'explicit account for all Firebase publications'
 $trafficCommand = $deploySource.LastIndexOf("'run', 'services', 'update-traffic'")
 if ($trafficCommand -lt 0) { throw 'API traffic command is missing from the deploy script.' }
 $readinessCheck = $deploySource.LastIndexOf('Wait-FirestoreIndexesReady -Expected $expectedIndexes', $trafficCommand)
+$fieldReadinessCheck = $deploySource.LastIndexOf('Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides', $trafficCommand)
+$rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")
+$rulesRead = $deploySource.LastIndexOf('$rulesAtTrafficSwitch = Get-LiveFirestoreRules', $trafficCommand)
+$rulesGuard = $deploySource.LastIndexOf('Assert-FirestoreRulesUnchanged -Before $rulesAfterPublication -Now $rulesAtTrafficSwitch', $trafficCommand)
 $revisionRead = $deploySource.LastIndexOf('$apiAtTrafficSwitch = Get-LiveApi', $trafficCommand)
 $revisionGuard = $deploySource.LastIndexOf('Assert-ServingApiUnchanged -Before $apiBefore -Now $apiAtTrafficSwitch', $trafficCommand)
-if ($readinessCheck -lt 0 -or $revisionRead -le $readinessCheck -or
+if ($readinessCheck -lt 0 -or $fieldReadinessCheck -le $readinessCheck -or
+    $rulesPublication -lt 0 -or $rulesPublication -ge $fieldReadinessCheck -or
+    $rulesRead -le $fieldReadinessCheck -or $rulesGuard -le $rulesRead -or
+    $revisionRead -le $rulesGuard -or
     $revisionGuard -le $revisionRead -or $revisionGuard -gt $trafficCommand) {
-    throw 'API traffic command is missing its immediately preceding index and live-revision checks.'
+    throw 'API traffic command is missing its immediately preceding index, field, rules and live-revision checks.'
 }
 
 & (Join-Path $PSScriptRoot 'release-scope.tests.ps1')

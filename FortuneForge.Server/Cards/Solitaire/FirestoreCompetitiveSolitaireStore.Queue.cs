@@ -97,6 +97,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             var matchId = selectedMatch?.MatchId ?? CreateLookupKey($"solitaire-match\n{partitionKey}\n{ticketId}");
             var seat = selectedMatch is null ? 1 : selectedMatch.PlayerIds.Count + 1;
             var seed = selectedMatch?.DealSeed ?? dealSeed;
+            var existingPlayerSnapshots = selectedMatch is null ? [] : await Task.WhenAll(selectedMatch.PlayerIds.Select(id =>
+                transaction.GetSnapshotAsync(PlayerDocument(matchId, id), cancellationToken)));
+            var existingPlayers = selectedMatch is null ? [] : existingPlayerSnapshots.Select(snapshot => ReadPlayer(snapshot, selectedMatch)).ToArray();
             var ticket = new SolitaireTicket(
                 ticketId, userId, displayName, playerCount, buyInCents,
                 partitionKey, MatchedStatus, nowUtc, matchId) { DrawCount = drawCount };
@@ -104,13 +107,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             ticketData["dealSeed"] = (long)seed;
             transaction.Create(ticketReference, ticketData);
             var game = SolitaireEngine.CreateGame(seed, drawCount);
-            transaction.Create(PlayerDocument(matchId, userId), PlayerData(new SolitairePlayerState(
+            var joinedPlayer = new SolitairePlayerState(
                 matchId, userId, displayName, seat, SolitairePlayerStatuses.Playing,
                 game, 1, null, null, 0, false)
             {
                 StartedAtUtc = nowUtc,
                 DeadlineAtUtc = nowUtc.Add(SolitaireCompetitionRules.MatchDuration)
-            }));
+            };
+            transaction.Create(PlayerDocument(matchId, userId), PlayerData(joinedPlayer));
 
             if (selectedMatch is null)
             {
@@ -134,6 +138,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 matchData["nextSweepAt"] = Timestamp.FromDateTime(
                     nowUtc.Add(SolitaireCompetitionRules.MatchDuration));
                 transaction.Create(MatchDocument(matchId), matchData);
+                WriteSecurityState(transaction, match, [joinedPlayer], nowUtc, "human-entry");
                 transaction.Create(HouseFundingDocument(matchId), new Dictionary<string, object>
                 {
                     ["matchId"] = matchId,
@@ -154,6 +159,15 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var previousSweepAt = ReadOptionalTimestamp(
                     matchSnapshots.First(snapshot => snapshot.Id == matchId), "nextSweepAt");
                 var playerDeadline = nowUtc.Add(SolitaireCompetitionRules.MatchDuration);
+                WriteSecurityState(transaction, selectedMatch with
+                {
+                    PlayerIds = selectedMatch.PlayerIds.Append(userId).ToArray(),
+                    DisplayNames = selectedMatch.DisplayNames.Append(displayName).ToArray(),
+                    TicketIds = selectedMatch.TicketIds.Append(ticketId).ToArray(),
+                    JoinedAtUtc = selectedMatch.JoinedAtUtc.Append(nowUtc).ToArray(),
+                    PrizePoolCents = pool, WinnerPayoutCents = payout, PlatformFeeCents = checked(pool - payout),
+                    HumanEntryCents = checked(selectedMatch.HumanEntryCents + buyInCents), SeatsFilled = seat == playerCount
+                }, existingPlayers.Append(joinedPlayer).ToArray(), nowUtc, "human-entry");
                 transaction.Update(MatchDocument(matchId), new Dictionary<string, object>
                 {
                     ["playerIds"] = selectedMatch.PlayerIds.Append(userId).ToArray(),

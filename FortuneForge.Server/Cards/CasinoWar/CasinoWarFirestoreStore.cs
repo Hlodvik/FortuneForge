@@ -26,7 +26,11 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             {
                 var existing = ReadRound(reads[0]);
                 if (existing.UserId != userId || ToCents(existing.Round.PrimaryStake) != primaryStakeCents || ToCents(existing.TieSettlement?.Stake ?? 0m) != tieStakeCents) throw new CasinoWarRoundConflictException("This Idempotency-Key was already used with different Casino War stakes.");
-                var tieReturn = ToCents(existing.TieSettlement?.TotalReturn ?? 0m); var primaryReturn = ToCents(existing.Round.Settlement?.TotalReturn ?? 0m);
+                var tieReturn = ToCents(existing.TieSettlement?.TotalReturn ?? 0m);
+                // A later tie decision has its own payout ledger. Replaying the
+                // opening request must verify only the original opening award.
+                var opening = CasinoWarRoundEngine.Start(existing.Deck, existing.Round.PrimaryStake);
+                var primaryReturn = ToCents(opening.Settlement?.TotalReturn ?? 0m);
                 if (!reads[2].Exists || !reads[5].Exists || (tieReturn > 0) != reads[3].Exists || (primaryReturn > 0) != reads[4].Exists) throw new InvalidOperationException("A recorded Casino War opening is missing its ledger.");
                 return new CasinoWarStoreResult(existing, balance);
             }
@@ -38,11 +42,18 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             var tieReturnCents = ToCents(tie?.TotalReturn ?? 0m); var primaryReturnCents = ToCents(round.Settlement?.TotalReturn ?? 0m);
             var afterCharge = checked(balance - openingCharge); var finalBalance = checked(afterCharge + tieReturnCents + primaryReturnCents);
             var stored = new CasinoWarStoreRound(roundId, userId, round, tie, shuffledShoe.Take(10).ToArray());
+            if (round.Phase != CasinoWarRoundPhase.Completed)
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "casino-war", roundId,
+                    0, nowUtc.UtcDateTime, stored, [userId], "opening");
             transaction.Create(roundRef, RoundData(stored, idempotencyKey, nowUtc)); transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerRef, Ledger(wagerRef.Id, userId, -openingCharge, afterCharge, "casino-war-opening-wager", idempotencyKey, nowUtc));
             if (tieReturnCents > 0) transaction.Create(tiePayoutRef, Ledger(tiePayoutRef.Id, userId, tieReturnCents, checked(afterCharge + tieReturnCents), "casino-war-tie-payout", $"{idempotencyKey}-tie-payout", nowUtc));
             if (primaryReturnCents > 0) transaction.Create(primaryPayoutRef, Ledger(primaryPayoutRef.Id, userId, primaryReturnCents, finalBalance, "casino-war-primary-payout", $"{idempotencyKey}-primary-payout", nowUtc));
             transaction.Create(eventRef, Event(roundId, userId, "opening", idempotencyKey, nowUtc));
+            if (round.Phase == CasinoWarRoundPhase.Completed)
+                FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                    "casino-war", roundId, userId, openingCharge, checked(tieReturnCents + primaryReturnCents),
+                    nowUtc.UtcDateTime, nowUtc.UtcDateTime, "casinoWarRounds", roundId, stored, "casino-war-cards-and-decision-v1");
             return new CasinoWarStoreResult(stored, finalBalance);
         }, cancellationToken: cancellationToken);
     }
@@ -74,6 +85,11 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             if (balance < extraCharge) throw new CasinoWarInsufficientCreditsException(balance, extraCharge);
             var completed = CasinoWarRoundEngine.Decide(stored.Round, decision); var payoutCents = ToCents(completed.Settlement!.TotalReturn); var afterCharge = checked(balance - extraCharge); var finalBalance = checked(afterCharge + payoutCents);
             var updated = stored with { Round = completed };
+            FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                "casino-war", roundId, userId, checked(ToCents(completed.PrimaryStake) + ToCents(stored.TieSettlement?.Stake ?? 0m) + extraCharge),
+                checked(payoutCents + ToCents(stored.TieSettlement?.TotalReturn ?? 0m)),
+                reads[0].GetValue<Timestamp>("createdAt").ToDateTime(), nowUtc.UtcDateTime,
+                "casinoWarRounds", roundId, updated, "casino-war-cards-and-decision-v1");
             transaction.Update(roundRef, DecisionData(completed, idempotencyKey, nowUtc));
             if (extraCharge > 0) transaction.Create(extraWagerRef, Ledger(extraWagerRef.Id, userId, -extraCharge, afterCharge, "casino-war-war-wager", idempotencyKey, nowUtc));
             if (payoutCents > 0) transaction.Create(payoutRef, Ledger(payoutRef.Id, userId, payoutCents, finalBalance, "casino-war-primary-payout", $"{idempotencyKey}-primary-payout", nowUtc));
@@ -95,6 +111,11 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
         var primary = CasinoWarMoney.PrimaryCents(CasinoWarMoney.ToRand(primaryCents)); var tieStake = CasinoWarMoney.TieCents(CasinoWarMoney.ToRand(tieCents)); var deck = ReadStringArray(snapshot, "deck").Select(CardCode.Parse).ToArray(); if (deck.Length != 10) throw new InvalidOperationException("The Casino War deck is corrupt.");
         var round = CasinoWarRoundEngine.Start(deck, CasinoWarMoney.ToRand(primary)); var tie = tieStake == 0 ? null : CasinoWarTieBetPaytable.Settle(round.Opening, CasinoWarMoney.ToRand(tieStake));
         if (phase == "awaiting-tie-decision") { if (round.Phase != CasinoWarRoundPhase.AwaitingTieDecision) throw new InvalidOperationException("The Casino War phase is corrupt."); return new CasinoWarStoreRound(id, user, round, tie, deck); }
+        if (round.Phase == CasinoWarRoundPhase.Completed)
+        {
+            if (snapshot.ContainsField("decision")) throw new InvalidOperationException("A non-tied Casino War opening cannot have a tie decision.");
+            return new CasinoWarStoreRound(id, user, round, tie, deck);
+        }
         if (!snapshot.TryGetValue<string>("decision", out var rawDecision) || !snapshot.TryGetValue<string>("decisionIdempotencyKey", out var decisionKey) || string.IsNullOrWhiteSpace(decisionKey)) throw new InvalidOperationException("The Casino War decision is corrupt.");
         round = CasinoWarRoundEngine.Decide(round, CasinoWarService.ParseDecision(rawDecision)); if (!snapshot.TryGetValue<long>("primaryReturnCents", out var returnCents) || returnCents != ToCents(round.Settlement!.TotalReturn) || !snapshot.TryGetValue<string>("primaryOutcome", out var outcome) || outcome != CasinoWarService.RoundOutcomeName(round.Settlement.Outcome)) throw new InvalidOperationException("The Casino War settlement is corrupt.");
         return new CasinoWarStoreRound(id, user, round, tie, deck);

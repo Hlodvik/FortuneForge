@@ -101,6 +101,23 @@ function Get-ReleaseTextHash {
     }
 }
 
+function Get-FirestoreRulesHash {
+    param([Parameter(Mandatory)][string]$Text)
+
+    # Windows checkouts and the Rules API may differ only in line endings.
+    return Get-ReleaseTextHash ($Text.Replace("`r`n", "`n").Replace("`r", "`n"))
+}
+
+function Assert-FirestoreRulesUnchanged {
+    param([Parameter(Mandatory)]$Before, [Parameter(Mandatory)]$Now)
+
+    if ($Before.ReleaseName -cne $Now.ReleaseName -or
+        $Before.RulesetName -cne $Now.RulesetName -or
+        $Before.ContentHash -cne $Now.ContentHash) {
+        throw 'Firestore rules changed during release preparation. Refusing to overwrite that release.'
+    }
+}
+
 function Get-HostingSourceSha {
     param(
         [Parameter(Mandatory)][AllowEmptyString()][string]$ResponseBody,
@@ -214,6 +231,50 @@ function Get-UnreadyFirestoreIndexes {
         [pscustomobject]@{
             collectionGroup = [string]$definition.collectionGroup
             fields = (@($definition.fields | ForEach-Object { $_.fieldPath }) -join ',')
+            state = $state
+        }
+    }
+}
+
+function Assert-SupportedFirestoreFieldOverrides {
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Definitions)
+
+    $seen = @{}
+    foreach ($definition in $Definitions) {
+        if ([string]::IsNullOrWhiteSpace($definition.collectionGroup) -or
+            [string]::IsNullOrWhiteSpace($definition.fieldPath) -or
+            -not ($definition.PSObject.Properties.Name -contains 'indexes') -or
+            @($definition.PSObject.Properties.Name | Where-Object { $_ -cnotin @('collectionGroup', 'fieldPath', 'indexes') }).Count -gt 0 -or
+            @($definition.indexes | Where-Object { $_ }).Count -ne 0) {
+            throw 'The release readiness gate supports only explicit empty-index fieldOverrides.'
+        }
+        $key = "$($definition.collectionGroup)`n$($definition.fieldPath)"
+        if ($seen.ContainsKey($key)) { throw "Duplicate Firestore field override: $key" }
+        $seen[$key] = $true
+    }
+}
+
+function Get-UnreadyFirestoreFieldOverrides {
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Expected,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Actual
+    )
+
+    foreach ($definition in $Expected) {
+        $matching = @($Actual | Where-Object {
+            $_.collectionGroup -ceq $definition.collectionGroup -and $_.fieldPath -ceq $definition.fieldPath
+        })
+        if ($matching.Count -eq 1 -and $matching[0].usesAncestorConfig -ceq $false -and
+            $matching[0].reverting -ceq $false -and
+            @($matching[0].indexes | Where-Object { $_ }).Count -eq 0) { continue }
+        $state = if ($matching.Count -eq 0) { 'MISSING' }
+            elseif ($matching.Count -gt 1) { 'AMBIGUOUS' }
+            elseif ($matching[0].reverting) { 'REVERTING' }
+            elseif ($matching[0].usesAncestorConfig) { 'INHERITED' }
+            else { 'INDEXED' }
+        [pscustomobject]@{
+            collectionGroup = [string]$definition.collectionGroup
+            fieldPath = [string]$definition.fieldPath
             state = $state
         }
     }
@@ -388,4 +449,4 @@ function Get-ReleaseVerificationCommands {
     return $commands.ToArray()
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands

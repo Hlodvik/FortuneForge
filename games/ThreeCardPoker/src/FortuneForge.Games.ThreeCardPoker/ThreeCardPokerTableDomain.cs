@@ -20,6 +20,7 @@ public sealed class ThreeCardPokerTableState
     public string Phase { get; set; } = ThreeCardPokerTablePhases.Betting;
     public int Version { get; set; } = 1;
     public int RoundNumber { get; set; }
+    public DateTime? RoundStartedAtUtc { get; set; }
     public ulong RoundSeed { get; set; }
     public IReadOnlyList<string> Deck { get; set; } = [];
     public int NextCardIndex { get; set; }

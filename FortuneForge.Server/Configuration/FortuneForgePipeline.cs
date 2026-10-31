@@ -4,6 +4,8 @@ using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.AndarBahar.Server;
+using FortuneForge.Server.Activity;
+using FortuneForge.Server.Risk;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -38,6 +40,8 @@ public static class FortuneForgePipeline
         });
         app.UseRateLimiter();
         app.UseAuthorization();
+        FortuneForge.Server.SecurityAudit.GameSecurityRequestConfiguration.UseGameSecurityRequests(app);
+        app.UsePlayerRiskEnforcement();
 
         app.MapControllers();
         app.MapDragonTiger(async (context, cancellationToken) =>

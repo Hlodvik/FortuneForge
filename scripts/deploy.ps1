@@ -8,6 +8,7 @@ param(
     [string]$ExpectedHostingRelease = '',
     [string]$ExpectedHostingIndexSha = '',
     [string]$ExpectedApiRevision = '',
+    [switch]$ContinuousAudit,
     [switch]$AllowRollback,
     [string]$RollbackReason = '',
     [switch]$SkipTestSuites,
@@ -23,6 +24,9 @@ $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
 Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason
+if ($ContinuousAudit -and $Target -eq 'hosting') {
+    throw '-ContinuousAudit applies only to an API release.'
+}
 
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory)
@@ -109,6 +113,46 @@ function Get-LiveApi {
     }
 }
 
+function Get-LiveFirestoreRules {
+    $token = [string](& gcloud.cmd auth print-access-token)
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($token)) {
+        throw 'Cannot authenticate the Firestore rules release check.'
+    }
+    $headers = @{ Authorization = "Bearer $($token.Trim())"; 'x-goog-user-project' = $project }
+    $uri = "https://firebaserules.googleapis.com/v1/projects/$project/releases/cloud.firestore"
+    try { $release = Invoke-RestMethod -Method Get -Uri $uri -Headers $headers }
+    catch {
+        if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {
+            return [pscustomobject]@{ ReleaseName = ''; RulesetName = ''; ContentHash = '' }
+        }
+        throw
+    }
+    if ([string]::IsNullOrWhiteSpace($release.name) -or [string]::IsNullOrWhiteSpace($release.rulesetName)) {
+        throw 'The Firestore rules release has no ruleset identity.'
+    }
+    $ruleset = Invoke-RestMethod -Method Get -Uri "https://firebaserules.googleapis.com/v1/$($release.rulesetName)" -Headers $headers
+    $files = @($ruleset.source.files | Where-Object { $_ })
+    if ($files.Count -ne 1 -or [string]::IsNullOrWhiteSpace($files[0].content)) {
+        throw 'The Firestore ruleset is not a single readable rules file.'
+    }
+    return [pscustomobject]@{
+        ReleaseName = [string]$release.name
+        RulesetName = [string]$release.rulesetName
+        ContentHash = Get-FirestoreRulesHash ([string]$files[0].content)
+    }
+}
+
+function Get-ExpectedFirestoreRulesHash {
+    param([string]$Checkout)
+    $path = Join-Path $Checkout 'firestore.rules'
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+        throw 'The selected commit has no firestore.rules; API traffic cannot be released.'
+    }
+    $content = Get-Content -LiteralPath $path -Raw
+    if ([string]::IsNullOrWhiteSpace($content)) { throw 'The selected Firestore rules file is empty.' }
+    return Get-FirestoreRulesHash $content
+}
+
 function Get-ExpectedFirestoreIndexes {
     param([string]$Checkout)
     $path = Join-Path $Checkout 'firestore.indexes.json'
@@ -116,13 +160,47 @@ function Get-ExpectedFirestoreIndexes {
         throw 'The selected commit has no firestore.indexes.json; API traffic cannot be released.'
     }
     $definitions = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -ErrorAction Stop
-    if (@($definitions.fieldOverrides | Where-Object { $_ }).Count -gt 0) {
-        throw 'The release readiness gate does not support fieldOverrides yet; add a verified readiness check before releasing them.'
-    }
     if (@($definitions.indexes | ForEach-Object { $_.fields } | Where-Object { $_ -and $_.vectorConfig }).Count -gt 0) {
         throw 'The release readiness gate does not support vector indexes yet; add a verified readiness check before releasing them.'
     }
     return @($definitions.indexes | Where-Object { $_ })
+}
+
+function Get-ExpectedFirestoreFieldOverrides {
+    param([string]$Checkout)
+    $path = Join-Path $Checkout 'firestore.indexes.json'
+    $definitions = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json -ErrorAction Stop
+    $overrides = @($definitions.fieldOverrides | Where-Object { $_ })
+    Assert-SupportedFirestoreFieldOverrides -Definitions $overrides
+    return $overrides
+}
+
+function Get-CurrentFirestoreFieldOverrides {
+    param([object[]]$Expected)
+    if ($Expected.Count -eq 0) { return @() }
+    $token = [string](& gcloud.cmd auth print-access-token)
+    if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($token)) {
+        throw 'Cannot authenticate the Firestore field override readiness check.'
+    }
+    $headers = @{ Authorization = "Bearer $($token.Trim())"; 'x-goog-user-project' = $project }
+    foreach ($definition in $Expected) {
+        $group = [System.Uri]::EscapeDataString([string]$definition.collectionGroup)
+        $field = [System.Uri]::EscapeDataString([string]$definition.fieldPath)
+        $name = "projects/$project/databases/(default)/collectionGroups/$group/fields/$field"
+        try { $current = Invoke-RestMethod -Method Get -Uri "https://firestore.googleapis.com/v1/$name" -Headers $headers }
+        catch {
+            if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) { continue }
+            throw
+        }
+        if ($current.name -cne $name) { throw "Firestore returned an unexpected field configuration for $name." }
+        [pscustomobject]@{
+            collectionGroup = [string]$definition.collectionGroup
+            fieldPath = [string]$definition.fieldPath
+            usesAncestorConfig = [bool]$current.indexConfig.usesAncestorConfig
+            reverting = [bool]$current.indexConfig.reverting
+            indexes = @($current.indexConfig.indexes | Where-Object { $_ })
+        }
+    }
 }
 
 function Get-CurrentFirestoreIndexes {
@@ -178,6 +256,32 @@ function Wait-FirestoreIndexesReady {
     } while ($true)
 }
 
+function Wait-FirestoreFieldOverridesReady {
+    param([object[]]$Expected, [int]$TimeoutSeconds = 900)
+    if ($Expected.Count -eq 0) { return }
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $actual = @(Get-CurrentFirestoreFieldOverrides -Expected $Expected)
+        $unready = @(Get-UnreadyFirestoreFieldOverrides -Expected $Expected -Actual $actual)
+        if ($unready.Count -eq 0) { return }
+        $summary = ($unready | ForEach-Object { "$($_.collectionGroup).$($_.fieldPath): $($_.state)" }) -join '; '
+        if ([DateTime]::UtcNow -ge $deadline) { throw "Firestore field exemptions are not ready after $TimeoutSeconds seconds: $summary" }
+        Write-Host "Waiting for Firestore field exemptions: $summary" -ForegroundColor Yellow
+        Start-Sleep -Seconds 15
+    } while ($true)
+}
+
+function Wait-FirestoreRulesPublished {
+    param([string]$ExpectedHash, [int]$TimeoutSeconds = 90)
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    do {
+        $current = Get-LiveFirestoreRules
+        if ($current.ContentHash -ceq $ExpectedHash) { return $current }
+        if ([DateTime]::UtcNow -ge $deadline) { throw 'The committed Firestore rules are not the published rules after deployment.' }
+        Start-Sleep -Seconds 3
+    } while ($true)
+}
+
 function Assert-LiveTargets {
     param([string]$CandidateSha, $Hosting, $Api)
     if ($Target -in @('all', 'hosting')) {
@@ -197,7 +301,7 @@ function Assert-LiveTargets {
 }
 
 function Assert-UnchangedLiveTargets {
-    param($BeforeHosting, $BeforeApi)
+    param($BeforeHosting, $BeforeApi, $BeforeRules)
     if ($Target -in @('all', 'hosting')) {
         $now = Get-LiveHosting
         if ($now.ReleaseName -cne $BeforeHosting.ReleaseName -or
@@ -210,6 +314,7 @@ function Assert-UnchangedLiveTargets {
     if ($Target -in @('all', 'api')) {
         $now = Get-LiveApi
         Assert-ServingApiUnchanged -Before $BeforeApi -Now $now
+        Assert-FirestoreRulesUnchanged -Before $BeforeRules -Now (Get-LiveFirestoreRules)
     }
 }
 
@@ -228,8 +333,12 @@ if ($AllowRollback -and [string]::IsNullOrWhiteSpace($RollbackReason)) {
 
 $hostingBefore = $null
 $apiBefore = $null
+$rulesBefore = $null
 if ($Target -in @('all', 'hosting')) { $hostingBefore = Get-LiveHosting }
-if ($Target -in @('all', 'api')) { $apiBefore = Get-LiveApi }
+if ($Target -in @('all', 'api')) {
+    $apiBefore = Get-LiveApi
+    $rulesBefore = Get-LiveFirestoreRules
+}
 
 if ($InspectLive) {
     if ($hostingBefore) {
@@ -241,6 +350,8 @@ if ($InspectLive) {
     if ($apiBefore) {
         Write-Host "API source SHA: $($apiBefore.SourceSha)"
         Write-Host "API serving revision: $($apiBefore.RevisionName)"
+        Write-Host "Firestore rules release: $($rulesBefore.ReleaseName)"
+        Write-Host "Firestore rules SHA-256: $($rulesBefore.ContentHash)"
     }
     return
 }
@@ -281,14 +392,17 @@ $record = [ordered]@{
     toolingSha = $mainSha
     verificationPlan = $verificationPlan
     testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }
+    continuousAudit = [bool]$ContinuousAudit
     startedAtUtc = [DateTime]::UtcNow.ToString('o')
     adoption = [bool]$AdoptUnstampedLive
     rollbackReason = $RollbackReason
     previousHostingRelease = if ($hostingBefore) { $hostingBefore.ReleaseName } else { '' }
     previousHostingVersion = if ($hostingBefore) { $hostingBefore.VersionName } else { '' }
     previousApiRevision = if ($apiBefore) { $apiBefore.RevisionName } else { '' }
+    previousFirestoreRulesRelease = if ($rulesBefore) { $rulesBefore.ReleaseName } else { '' }
     newHostingRelease = ''
     newApiRevision = ''
+    newFirestoreRulesRelease = ''
     status = 'preflight'
 }
 
@@ -338,11 +452,14 @@ try {
         throw 'Local main moved during release verification. Restart against the new committed history.'
     }
     Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $mainSha -Paths $releaseToolPaths
-    Assert-UnchangedLiveTargets -BeforeHosting $hostingBefore -BeforeApi $apiBefore
+    Assert-UnchangedLiveTargets -BeforeHosting $hostingBefore -BeforeApi $apiBefore -BeforeRules $rulesBefore
 
     if ($Target -in @('all', 'api')) {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         $expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)
+        $expectedFieldOverrides = @(Get-ExpectedFirestoreFieldOverrides -Checkout $releaseCheckout)
+        $expectedRulesHash = if ($AllowRollback) { '' }
+            else { Get-ExpectedFirestoreRulesHash -Checkout $releaseCheckout }
         $indexesChanged = $true
         if (-not [string]::IsNullOrWhiteSpace($apiBefore.SourceSha)) {
             & git -C $repoRoot diff --quiet $apiBefore.SourceSha $candidateSha -- firestore.indexes.json
@@ -352,7 +469,9 @@ try {
         $currentIndexes = @(Get-CurrentFirestoreIndexes -Expected $expectedIndexes)
         $missingIndexes = @(Get-UnreadyFirestoreIndexes -Expected $expectedIndexes -Actual $currentIndexes |
             Where-Object { $_.state -ceq 'MISSING' })
-        if ($indexesChanged -and -not $AllowRollback -and $missingIndexes.Count -gt 0) {
+        $currentFieldOverrides = @(Get-CurrentFirestoreFieldOverrides -Expected $expectedFieldOverrides)
+        $unreadyFieldOverrides = @(Get-UnreadyFirestoreFieldOverrides -Expected $expectedFieldOverrides -Actual $currentFieldOverrides)
+        if (-not $AllowRollback -and ($missingIndexes.Count -gt 0 -or $unreadyFieldOverrides.Count -gt 0)) {
             Write-Host "`nDeploying committed Firestore indexes before the API..." -ForegroundColor Yellow
             Invoke-Checked -Executable 'npx.cmd' -Arguments @(
                 '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'firestore:indexes',
@@ -367,15 +486,32 @@ try {
         }
 
         # Firebase accepting an index definition does not mean its backfill has
-        # completed. Never route the candidate API until its indexes are READY.
+        # completed. Field exemptions must also be visible before API traffic.
         Wait-FirestoreIndexesReady -Expected $expectedIndexes
+        Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides
+
+        Assert-FirestoreRulesUnchanged -Before $rulesBefore -Now (Get-LiveFirestoreRules)
+        if (-not $AllowRollback -and $rulesBefore.ContentHash -cne $expectedRulesHash) {
+            Write-Host "`nDeploying committed Firestore rules before the API..." -ForegroundColor Yellow
+            Invoke-Checked -Executable 'npx.cmd' -Arguments @(
+                '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'firestore:rules',
+                '--project', $project, '--account', $firebaseAccount, '--non-interactive'
+            ) -WorkingDirectory $releaseCheckout
+        }
+        elseif ($AllowRollback) {
+            Write-Warning 'Keeping existing Firestore rules during source rollback; database rules are not rolled back automatically.'
+        }
+        $rulesAfterPublication = if ($AllowRollback) { Get-LiveFirestoreRules }
+            else { Wait-FirestoreRulesPublished -ExpectedHash $expectedRulesHash }
+        $record.newFirestoreRulesRelease = $rulesAfterPublication.ReleaseName
+        Write-ReleaseRecord -Record $record -Path $recordPath
 
         $apiImmediatelyBefore = Get-LiveApi
         Assert-ServingApiUnchanged -Before $apiBefore -Now $apiImmediatelyBefore
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
 
         Write-Host "`nBuilding a non-serving Cloud Run revision..." -ForegroundColor Yellow
-        Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
+        $runDeployArguments = @(
             'run', 'deploy', $serviceName,
             '--source', $releaseCheckout,
             '--region', $region, '--project', $project,
@@ -383,7 +519,13 @@ try {
             "--update-env-vars=FF_RELEASE_SHA=$candidateSha",
             "--update-labels=ff-source-sha=$candidateSha",
             '--quiet'
-        ) -WorkingDirectory $releaseCheckout
+        )
+        if ($ContinuousAudit) {
+            # The auditor is a hosted background worker. Request-only CPU and scale-to-zero
+            # cannot guarantee that its database queue advances between game requests.
+            $runDeployArguments += @('--min-instances', '1', '--no-cpu-throttling')
+        }
+        Invoke-Checked -Executable 'gcloud.cmd' -Arguments $runDeployArguments -WorkingDirectory $releaseCheckout
 
         $service = Get-CloudRunService
         $newApiRevision = [string]$service.status.latestCreatedRevisionName
@@ -397,9 +539,15 @@ try {
         $record.newApiRevision = $newApiRevision
         Write-ReleaseRecord -Record $record -Path $recordPath
 
-        # A Cloud Run source build may take minutes. Verify both index readiness
+        # A Cloud Run source build may take minutes. Verify database prerequisites
         # and the serving revision again immediately before moving traffic.
         Wait-FirestoreIndexesReady -Expected $expectedIndexes
+        Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides
+        $rulesAtTrafficSwitch = Get-LiveFirestoreRules
+        Assert-FirestoreRulesUnchanged -Before $rulesAfterPublication -Now $rulesAtTrafficSwitch
+        if (-not $AllowRollback -and $rulesAtTrafficSwitch.ContentHash -cne $expectedRulesHash) {
+            throw 'Firestore rules no longer match the committed candidate before API traffic switch.'
+        }
         $apiAtTrafficSwitch = Get-LiveApi
         Assert-ServingApiUnchanged -Before $apiBefore -Now $apiAtTrafficSwitch
 

@@ -1,4 +1,25 @@
+using System.Text.Json.Serialization;
+using FortuneForge.Server.Slots.Bonuses;
+
 namespace FortuneForge.Server.Slots.Models;
+
+// The private, versioned inputs used by the outcome engine. A copy is written with
+// the paid round so later audits do not depend on the current slot configuration.
+public sealed record SlotSpinEngineAudit(
+    string EngineVersion,
+    DateTime GeneratedAtUtc,
+    GameDefinition BaseGame,
+    GameDefinition EffectiveGame,
+    ReelSetDefinition ReelSet,
+    SymbolSetDefinition SymbolSet,
+    PaytableDefinition Paytable,
+    SlotSpecialRoundProfile? FeatureProfile,
+    int PityMissesBefore,
+    long EnergyBalanceBefore,
+    string? FreeSpinFeatureMode,
+    int GenerationAttempts,
+    IReadOnlyList<IReadOnlyList<string>> RawGeneratedReels,
+    IReadOnlyList<IReadOnlyList<string>> ReelsAfterFreeGameFrequency);
 
 public readonly record struct GridPosition(int Reel, int Row);
 
@@ -52,6 +73,8 @@ public sealed record SpinResult(
     int EnergyAwarded,
     bool SpecialBoostApplied)
 {
+    [JsonIgnore]
+    public SlotSpinEngineAudit? EngineAudit { get; init; }
     public decimal? SlotsCreditsBalance { get; init; }
     public bool IsFreeSpin { get; init; }
     public int FreeSpinsRemaining { get; init; }

@@ -8,6 +8,14 @@ namespace FortuneForge.Games.HiLo.Server;
 public sealed class HiLoFirestoreStore(FirestoreDb database) : IHiLoStore
 {
     private const string Currency = "slotsCredits";
+    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
+    {
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
+        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
+    }
+
     public bool Practice => false;
     public Task<HiLoSessionResponse> GetSessionAsync(string userId, CancellationToken cancellationToken = default) =>
         database.RunTransactionAsync(async transaction =>
@@ -56,6 +64,21 @@ public sealed class HiLoFirestoreStore(FirestoreDb database) : IHiLoStore
             var result = settled ? Result(publicRound.RoundId) : null;
             if (result is not null && (await transaction.GetSnapshotAsync(result, cancellationToken)).Exists)
                 throw new InvalidOperationException("A Hi-Lo history result already exists before this settlement.");
+            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
+                "hi-lo", publicRound.RoundId, publicRound.Revision, now.UtcDateTime, mutation.State.Round!, [userId], command.Kind);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
+                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("hi-lo", publicRound.RoundId)),
+                new Dictionary<string, object> { ["gameId"] = "hi-lo", ["instanceId"] = publicRound.RoundId,
+                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
+            if (settled)
+            {
+                var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
+                    "hi-lo", publicRound.RoundId, userId, publicRound.WagerCents, publicRound.CurrentReturnCents,
+                    startedAt.ToDateTime(), now.UtcDateTime, "cardGameResults", result!.Id,
+                    mutation.State.Round!, "hi-lo-revealed-cards-and-choices-v1");
+                WriteRoundRecord(transaction, analytics);
+            }
             transaction.Set(Head(userId), new Dictionary<string, object>
             {
                 ["schemaVersion"] = 1L, ["userId"] = userId, ["roundJson"] = JsonSerializer.Serialize(mutation.State.Round),

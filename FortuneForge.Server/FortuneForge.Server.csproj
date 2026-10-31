@@ -41,6 +41,7 @@
     <ProjectReference Include="..\games\LiarsDice\src\FortuneForge.Games.LiarsDice\FortuneForge.Games.LiarsDice.csproj" />
     <ProjectReference Include="..\games\Keno\src\FortuneForge.Games.Keno\FortuneForge.Games.Keno.csproj" />
     <ProjectReference Include="..\games\Roulette\src\FortuneForge.Games.Roulette\FortuneForge.Games.Roulette.csproj" />
+    <ProjectReference Include="..\games\Snake\src\FortuneForge.Games.Snake\FortuneForge.Games.Snake.csproj" />
     <ProjectReference Include="..\games\SicBo\src\FortuneForge.Games.SicBo\FortuneForge.Games.SicBo.csproj" />
     <ProjectReference Include="..\games\Solitaire\src\FortuneForge.Games.Solitaire\FortuneForge.Games.Solitaire.csproj" />
     <ProjectReference Include="..\games\TexasHoldem\src\FortuneForge.Games.TexasHoldem\FortuneForge.Games.TexasHoldem.csproj" />

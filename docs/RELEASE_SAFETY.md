@@ -66,18 +66,22 @@ unless `-AllowRollback -RollbackReason '...'` is supplied. That override is
 recorded locally in `artifacts/releases/` along with the old and new platform
 revision identifiers.
 
-When index definitions changed, the API release publishes them first,
-waits for every composite index required by the candidate to reach Firestore's
-`READY` state, then creates a non-serving Cloud Run revision. It checks the new
-revision's source stamp, rechecks index readiness and the currently serving API
-revision immediately before routing traffic to that exact revision. Unsupported
-single-field overrides and vector indexes block the release until their
-readiness checks are added.
+The API release publishes missing composite indexes and explicit single-field
+exemptions from the committed `firestore.indexes.json`, then waits for every
+required composite index to reach Firestore's `READY` state. Each exemption must
+read back with no indexes, no inherited configuration and no reversion in
+progress. Field overrides that define indexes and vector indexes remain blocked.
+Before creating a non-serving Cloud Run revision, it also publishes the committed
+`firestore.rules` if necessary and reads back the exact rules content. The script
+records the previous and new rules releases, and stops if another publication
+changes the rules during preparation. It checks the new revision's source stamp,
+rechecks database prerequisites and the currently serving API revision immediately
+before routing traffic to that exact revision.
 Hosting publishes the verified build with its stamp. A production smoke runs
 afterward. A failed smoke does **not** silently roll back database changes or
-traffic; inspect the recorded previous Firebase version and Cloud Run revision
-before an explicit rollback. Source rollbacks keep existing indexes rather than
-deleting them automatically.
+traffic; inspect the recorded previous Firebase version, Firestore rules release
+and Cloud Run revision before an explicit rollback. Source rollbacks keep existing
+indexes and rules rather than reverting database security settings automatically.
 
 ## First guarded release from today's unstamped production
 

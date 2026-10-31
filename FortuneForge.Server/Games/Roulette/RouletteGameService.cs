@@ -4,6 +4,11 @@ using FortuneForge.Games.Roulette;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Roulette;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Server.Activity;
+using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Games.Abstractions.Auditing;
+using System.Text.Json;
 
 namespace FortuneForge.Server.Games.Roulette;
 
@@ -22,18 +27,25 @@ public sealed class RouletteGameService
     private static readonly TimeSpan ManagedBettingDuration = TimeSpan.FromSeconds(3);
     private static readonly TimeSpan ManagedSettlementDuration = TimeSpan.FromSeconds(2);
     private readonly object gate = new();
+    private readonly SemaphoreSlim auditGate = new(1, 1);
     private readonly Dictionary<Guid, RouletteTable> tables = [];
     private readonly IMultiplayerMatchmaker matchmaking;
     private readonly IManagedTablePopulationDirector population;
+    private readonly IGameAnalyticsSink? analytics;
+    private readonly IGameSecurityEventSink? securityEvents;
 
     public RouletteGameService() : this(new MultiplayerMatchmaker(), new ManagedTablePopulationDirector()) { }
 
     internal RouletteGameService(
         IMultiplayerMatchmaker matchmaking,
-        IManagedTablePopulationDirector? managedPopulationDirector = null)
+        IManagedTablePopulationDirector? managedPopulationDirector = null,
+        IGameAnalyticsSink? analytics = null,
+        IGameSecurityEventSink? securityEvents = null)
     {
         this.matchmaking = matchmaking;
         population = managedPopulationDirector ?? new ManagedTablePopulationDirector();
+        this.analytics = analytics;
+        this.securityEvents = securityEvents;
     }
 
     public RouletteStatusResponse Status() => new(
@@ -81,6 +93,76 @@ public sealed class RouletteGameService
         }
     }
 
+    public Task<RouletteRoundResponse> StartAuditedAsync(string userId, string? displayName = null, CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => Start(userId, displayName), "joined", cancellationToken);
+
+    public Task<RouletteRoundResponse> GetAuditedAsync(string userId, Guid roundId, CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => Get(userId, roundId), "observed", cancellationToken);
+
+    public Task<RouletteRoundResponse> PlaceBetAuditedAsync(string userId, Guid roundId, PlaceRouletteBetRequest request,
+        CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => PlaceBet(userId, roundId, request), "bet-placed", cancellationToken);
+
+    public Task<RouletteRoundResponse> RemoveBetAuditedAsync(string userId, Guid roundId, int betIndex,
+        CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => RemoveBet(userId, roundId, betIndex), "bet-removed", cancellationToken);
+
+    public Task<RouletteRoundResponse> ClearBetsAuditedAsync(string userId, Guid roundId, CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => ClearBets(userId, roundId), "bets-cleared", cancellationToken);
+
+    public Task<RouletteRoundResponse> SpinAuditedAsync(string userId, Guid roundId, CancellationToken cancellationToken = default) =>
+        AuditResponseAsync(() => Spin(userId, roundId), "spun", cancellationToken);
+
+    private async Task<RouletteRoundResponse> AuditResponseAsync(Func<RouletteRoundResponse> action,
+        string eventKind, CancellationToken cancellationToken)
+    {
+        await auditGate.WaitAsync(cancellationToken);
+        try
+        {
+            var response = action();
+            RouletteAuditSnapshot snapshot;
+            lock (gate)
+            {
+                if (!tables.TryGetValue(response.RoundId, out var table))
+                    throw new GameSecurityRecordingException(new InvalidOperationException("The Roulette table was removed before audit capture."));
+                snapshot = Capture(table, eventKind);
+            }
+            await WriteAsync(snapshot, cancellationToken);
+            return response;
+        }
+        finally { auditGate.Release(); }
+    }
+
+    private RouletteAuditSnapshot Capture(RouletteTable table, string eventKind)
+    {
+        var version = ++table.EventVersion;
+        var instanceId = $"{table.Id:N}:{table.RoundNumber}";
+        var players = table.Players.Select(player => new { player.UserId, player.SeatId, player.DisplayName,
+            player.IsManaged, player.JoinedRound, player.DepartureRound, player.LastSeenAtUtc }).ToArray();
+        var payload = new { table.Id, table.RoundNumber, table.RoundStartedAtUtc, table.RoundCompletedAtUtc,
+            state = NormalizeState(table.State), players, balances = new Dictionary<string, decimal>(table.Balances, StringComparer.Ordinal),
+            humanParticipants = table.HumanParticipants.Order(StringComparer.Ordinal).ToArray() };
+        RoundAuditCapture? completion = null;
+        if (table.State.Phase == RouletteRoundPhase.Settled && table.HumanParticipants.Count > 0)
+            completion = RoundAuditCapture.Create("roulette", instanceId, table.Id.ToString("N"), table.RoundNumber,
+                table.RoundStartedAtUtc, table.RoundCompletedAtUtc ?? DateTime.UtcNow, payload,
+                "roulette-private-table-v1", PracticeOutcomeAudit.RouletteVersion,
+                table.HumanParticipants.Order(StringComparer.Ordinal).Select(id => new RoundAuditParticipant(id, id, true, 0, 0, 0)).ToArray(),
+                PracticeOutcomeAudit.Check(table.State));
+        return new(instanceId, table.Id.ToString("N"), version, DateTime.UtcNow, payload,
+            table.HumanParticipants.Concat(players.Where(player => !player.IsManaged).Select(player => player.UserId))
+                .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(), eventKind, completion);
+    }
+
+    private Task WriteAsync(RouletteAuditSnapshot snapshot, CancellationToken cancellationToken) =>
+        GameSecurityEventSink.WriteAsync(securityEvents, "roulette", snapshot.InstanceId, snapshot.Version,
+            snapshot.OccurredAtUtc, snapshot.State, snapshot.ParticipantIds, snapshot.EventKind,
+            snapshot.TableId, snapshot.Completion, cancellationToken);
+
+    private sealed record RouletteAuditSnapshot(string InstanceId, string TableId, long Version,
+        DateTime OccurredAtUtc, object State, string[] ParticipantIds, string EventKind,
+        RoundAuditCapture? Completion);
+
     public RouletteRoundResponse Get(string userId, Guid roundId) =>
         Read(userId, roundId, ToResponse);
 
@@ -102,6 +184,7 @@ public sealed class RouletteGameService
                 request.Number,
                 request.Numbers?.ToImmutableArray() ?? []);
             table.State = RouletteEngine.PlaceBet(table.State, bet);
+            table.HumanParticipants.Add(userId);
             table.Balances[userId] -= bet.Stake;
         });
 
@@ -145,6 +228,7 @@ public sealed class RouletteGameService
             foreach (var returns in result.Settlements.GroupBy(settlement => settlement.PlayerId))
                 if (table.Balances.ContainsKey(returns.Key))
                     table.Balances[returns.Key] += returns.Sum(settlement => settlement.TotalReturn);
+            RecordCompletion(table, DateTime.UtcNow);
         });
 
     private RouletteRoundResponse Change(
@@ -224,6 +308,7 @@ public sealed class RouletteGameService
                     table.State = result.State;
                     foreach (var returns in result.Settlements.GroupBy(item => item.PlayerId))
                         table.Balances[returns.Key] += returns.Sum(item => item.TotalReturn);
+                    RecordCompletion(table, nowUtc);
                     table.Touch(nowUtc);
                 }
                 else if (table.State.Phase == RouletteRoundPhase.Settled &&
@@ -236,6 +321,61 @@ public sealed class RouletteGameService
                 }
             }
             foreach (var table in closing.Distinct()) Close(table, nowUtc);
+        }
+    }
+
+    public async Task SweepAuditedAsync(DateTime nowUtc, CancellationToken cancellationToken = default)
+    {
+        await auditGate.WaitAsync(cancellationToken);
+        try
+        {
+            Dictionary<Guid, (RouletteTable Table, string Fingerprint)> before;
+            lock (gate) before = tables.ToDictionary(pair => pair.Key,
+                pair => (pair.Value, Fingerprint(pair.Value)));
+            Exception? failure = null;
+            try { Sweep(nowUtc); }
+            catch (Exception exception) { failure = exception; }
+            List<RouletteAuditSnapshot> changed = [];
+            lock (gate)
+            {
+                foreach (var pair in tables)
+                    if (!before.TryGetValue(pair.Key, out var previous) || previous.Fingerprint != Fingerprint(pair.Value))
+                        changed.Add(Capture(pair.Value, "background-transition"));
+                foreach (var pair in before.Where(pair => !tables.ContainsKey(pair.Key)))
+                    changed.Add(Capture(pair.Value.Table, "table-closed"));
+            }
+            foreach (var snapshot in changed) await WriteAsync(snapshot, cancellationToken);
+            if (failure is not null) throw failure;
+        }
+        finally { auditGate.Release(); }
+    }
+
+    private static string Fingerprint(RouletteTable table) => GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(new
+    {
+        table.RoundNumber, state = NormalizeState(table.State),
+        balances = table.Balances.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToArray(),
+        players = table.Players.Select(player => new { player.UserId, player.IsManaged, player.DepartureRound }).ToArray()
+    }));
+
+    private static object NormalizeState(RouletteRoundState state) => new
+    {
+        state.RoundId, state.Phase,
+        bets = state.Bets.Select(bet => new { bet.PlayerId, bet.Kind, bet.Stake, bet.Number,
+            numbers = bet.Numbers.IsDefault ? Array.Empty<int>() : bet.Numbers.ToArray() }).ToArray(),
+        state.WinningPocket, state.Settlements
+    };
+
+    private void RecordCompletion(RouletteTable table, DateTime completedAtUtc)
+    {
+        table.RoundCompletedAtUtc ??= completedAtUtc;
+        var roundId = $"{table.Id:N}:{table.RoundNumber}";
+        foreach (var userId in table.State.Bets.Select(bet => bet.PlayerId).Distinct(StringComparer.Ordinal))
+        {
+            if (!table.HumanParticipants.Contains(userId) || table.RecordedParticipants.Contains(userId)) continue;
+            if (analytics?.TryEnqueuePractice(new GameAnalyticsSettlement(
+                "roulette", roundId, userId, "practice", true, table.RoundCompletedAtUtc.Value, table.RoundStartedAtUtc,
+                0, 0, "in-memory-roulette-rounds", roundId)) == true)
+                table.RecordedParticipants.Add(userId);
         }
     }
 
@@ -415,6 +555,11 @@ public sealed class RouletteGameService
         public DateTime CreatedAtUtc { get; } = DateTime.UtcNow;
         public DateTime UpdatedAtUtc { get; private set; } = DateTime.UtcNow;
         public int RoundNumber { get; private set; } = 1;
+        public long EventVersion { get; set; }
+        public DateTime RoundStartedAtUtc { get; private set; } = DateTime.UtcNow;
+        public DateTime? RoundCompletedAtUtc { get; set; }
+        public HashSet<string> HumanParticipants { get; } = new(StringComparer.Ordinal);
+        public HashSet<string> RecordedParticipants { get; } = new(StringComparer.Ordinal);
         public RouletteRoundState State { get; set; } =
             RouletteEngine.OpenRound(Guid.NewGuid().ToString("N"));
         public List<RoulettePlayer> Players { get; } = [];
@@ -463,6 +608,10 @@ public sealed class RouletteGameService
         public void BeginNextRound(DateTime? nowUtc = null)
         {
             RoundNumber = checked(RoundNumber + 1);
+            RoundStartedAtUtc = nowUtc ?? DateTime.UtcNow;
+            RoundCompletedAtUtc = null;
+            HumanParticipants.Clear();
+            RecordedParticipants.Clear();
             State = RouletteEngine.OpenRound(Guid.NewGuid().ToString("N"));
             Touch(nowUtc ?? DateTime.UtcNow);
         }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Google.Cloud.Firestore;
+using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Solitaire;
 
@@ -214,6 +215,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 players[playerIndex] = updated;
                 var match = graph.Match;
 
+                WriteSecurityState(transaction, match, players, nowUtc, "human-command");
+
                 transaction.Create(
                     actionReference,
                     ActionData(userId, "command", matchId, detail, nowUtc));
@@ -327,6 +330,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var players = graph.Players.ToArray();
                 players[playerIndex] = updated;
                 var match = graph.Match;
+                WriteSecurityState(transaction, match, players, nowUtc, "human-forfeit");
                 transaction.Create(
                     actionReference,
                     ActionData(userId, "forfeit", matchId, detail, nowUtc));
@@ -400,6 +404,12 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 {
                     throw new SolitaireConflictException("The Solitaire game is not ready to close.");
                 }
+
+                var otherSnapshots = await Task.WhenAll(match.PlayerIds.Where(id => id != userId).Select(id =>
+                    transaction.GetSnapshotAsync(PlayerDocument(matchId, id), cancellationToken)));
+                var acknowledgedPlayers = otherSnapshots.Select(snapshot => ReadPlayer(snapshot, match))
+                    .Append(player with { Acknowledged = true }).ToArray();
+                WriteSecurityState(transaction, match, acknowledgedPlayers, nowUtc, "result-dismissed");
 
                 transaction.Update(playerReference, new Dictionary<string, object>
                 {
@@ -480,6 +490,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 matchChanges["nextSweepAt"] = Timestamp.FromDateTime(nextSweepAt);
             if (newlyFinished.Length > 0 && !graph.ManagedPlayersReleasePending)
                 matchChanges["managedPlayersReleasePending"] = true;
+            if (matchChanges.Count > 0 || !players.SequenceEqual(graph.Players))
+                WriteSecurityState(transaction, match, players, nowUtc, "managed-or-timeout-progression");
             if (matchChanges.Count > 0)
                 transaction.Update(MatchDocument(matchId), matchChanges);
             return new ManagedAssignmentState(assignmentId,
@@ -503,6 +515,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     .ToHashSet(StringComparer.Ordinal);
                 if (graph.Players.Any(player => !player.IsAccountBacked &&
                     IsTerminal(player) && !released.Contains(player.UserId))) return false;
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "solitaire", matchId,
+                    graph.Players.Sum(player => (long)player.Version), nowUtc,
+                    new { graph.Match, graph.Players, managedPlayersReleasePending = false },
+                    graph.Players.Where(player => player.IsAccountBacked).Select(player => player.UserId), "managed-assignment-released");
                 transaction.Update(MatchDocument(matchId), new Dictionary<string, object>
                 {
                     ["managedPlayersReleasePending"] = false
@@ -564,6 +580,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 };
             }).ToArray();
             if (!changed) return false;
+            WriteSecurityState(transaction, graph.Match, players, nowUtc, "managed-assignment-lost");
             if (CanSettle(graph.Match, players, nowUtc))
                 ApplySettlement(transaction, graph.Match, players, graph.BalanceSnapshots,
                     graph.SessionSnapshots, nowUtc);
@@ -685,6 +702,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     CardGameResultDocument(match.MatchId, player.UserId),
                     ClaimableResultData(match, settledPlayer, payout, completedAtUtc),
                     SetOptions.MergeAll);
+                var analytics = GameAnalyticsOutbox.Create(new GameAnalyticsSettlement(
+                    "solitaire", match.MatchId, player.UserId, "paid", true, completedAtUtc,
+                    player.StartedAtUtc.Kind == DateTimeKind.Utc ? player.StartedAtUtc : null,
+                    match.BuyInCents, payout, "cardGameResults", CardGameResultDocument(match.MatchId, player.UserId).Id))!;
+                transaction.Set(database.Collection(GameAnalyticsOutbox.CollectionName).Document(analytics.Id), analytics.Fields);
             }
             else
             {
@@ -695,12 +717,20 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             }
         }
 
-        var settledData = MatchData(match with
+        var settledMatch = match with
         {
             Status = SettledMatchStatus,
             CompletedAtUtc = completedAtUtc,
             WinnerUserId = winner.UserId
-        });
+        };
+        var settledPlayers = players.Select(player => player with
+        {
+            PayoutCents = player.UserId == winner.UserId ? match.WinnerPayoutCents : 0
+        }).ToArray();
+        var settledData = MatchData(settledMatch);
+        WriteSecurityState(transaction, settledMatch, settledPlayers, completedAtUtc, "settlement");
+        FortuneForge.Server.RoundAudit.RoundAuditFirestore.Write(transaction, database,
+            CompetitiveSolitaireRoundAudit.Capture(settledMatch, settledPlayers, completedAtUtc));
         settledData["nextSweepAt"] = FieldValue.Delete;
         settledData["managedPlayersReleasePending"] = players.Any(player => !player.IsAccountBacked);
         var isHouseFunded = match.FinancialModel == HouseFundedPoolModel;

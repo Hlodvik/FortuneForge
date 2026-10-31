@@ -1,3 +1,4 @@
+using FortuneForge.Games.Abstractions.Auditing;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.Solitaire;
@@ -18,6 +19,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
         var resultReference = CardGameResultDocument(matchId, userId);
         var balanceReference = BalanceDocument(userId);
         var sessionReference = SessionDocument(userId);
+        var auditReference = database.Collection(RoundAuditDocuments.Summaries)
+            .Document(CreateLookupKey($"solitaire\n{matchId}"));
 
         await database.RunTransactionAsync(
             async transaction =>
@@ -28,7 +31,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     transaction.GetSnapshotAsync(playerReference, cancellationToken),
                     transaction.GetSnapshotAsync(resultReference, cancellationToken),
                     transaction.GetSnapshotAsync(balanceReference, cancellationToken),
-                    transaction.GetSnapshotAsync(sessionReference, cancellationToken));
+                    transaction.GetSnapshotAsync(sessionReference, cancellationToken),
+                    transaction.GetSnapshotAsync(auditReference, cancellationToken));
                 if (snapshots[0].Exists)
                 {
                     VerifyAction(snapshots[0], "claim", matchId, string.Empty);
@@ -55,6 +59,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                         "This Solitaire result has already been claimed.");
                 }
 
+                var otherPlayerSnapshots = await Task.WhenAll(match.PlayerIds.Where(id => id != userId).Select(id =>
+                    transaction.GetSnapshotAsync(PlayerDocument(matchId, id), cancellationToken)));
+                var claimedPlayers = otherPlayerSnapshots.Select(snapshot => ReadPlayer(snapshot, match))
+                    .Append(player with { Acknowledged = true }).ToArray();
+                WriteSecurityState(transaction, match, claimedPlayers, nowUtc, "payout-claimed");
                 var finalBalance = ReadBalanceCents(snapshots[4]);
                 if (player.PayoutCents > 0)
                 {
@@ -100,6 +109,13 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 transaction.Create(
                     actionReference,
                     ActionData(userId, "claim", matchId, string.Empty, nowUtc));
+                if (snapshots[6].Exists)
+                    transaction.Update(auditReference, new Dictionary<string, object>
+                    {
+                        ["securityAuditPending"] = true,
+                        ["securityAuditNextAttemptAtUtc"] = Timestamp.FromDateTime(nowUtc),
+                        ["securityAuditGeneration"] = FieldValue.Increment(1)
+                    });
                 return true;
             },
             cancellationToken: cancellationToken);

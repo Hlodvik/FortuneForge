@@ -2,6 +2,7 @@ namespace FortuneForge.Games.TexasHoldem;
 
 internal static class CreditHoldemEngine
 {
+    internal const string AuditEngineVersion = "credit-holdem-engine-v1";
     public static readonly TimeSpan HumanGrace = TimeSpan.FromSeconds(5);
     public static readonly TimeSpan ActionDuration = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan MatchDuration = TimeSpan.FromMinutes(5);
@@ -121,7 +122,8 @@ internal static class CreditHoldemEngine
         string actorId,
         string action,
         int? raiseTo,
-        DateTime nowUtc)
+        DateTime nowUtc,
+        string? source = null)
     {
         if (match.Status != "active") throw new CreditHoldemConflictException("This Hold'em hand has finished.");
         if (nowUtc >= match.MatchDeadlineAtUtc) throw new CreditHoldemConflictException("The hand deadline has passed.");
@@ -129,6 +131,7 @@ internal static class CreditHoldemEngine
             ?? throw new CreditHoldemNotFoundException("This player does not have a seat at the table.");
         if (player.Seat != match.ActiveSeat) throw new CreditHoldemConflictException("It is not this seat's turn.");
         action = action.Trim().ToLowerInvariant();
+        source ??= player.IsAccountBacked ? "account-action" : "automated-seat-action";
         if (!LegalActions(match, player).Contains(action))
             throw new CreditHoldemIllegalActionException("That Hold'em action is not legal now.");
 
@@ -186,7 +189,11 @@ internal static class CreditHoldemEngine
             player.PublicSeatId,
             player.DisplayName,
             action,
-            player.CommittedHand - before));
+            player.CommittedHand - before,
+            nowUtc,
+            source));
+        Record(match, nowUtc, "action-accepted", source, player, action,
+            raiseTo, player.CommittedHand - before);
         player.BetWhenLastActed = match.CurrentBet;
         player.ReopenRaiseIncrement = match.MinimumRaise;
         match.Version = checked(match.Version + 1);
@@ -200,7 +207,9 @@ internal static class CreditHoldemEngine
         if (match.Status != "active") return false;
         if (nowUtc >= match.MatchDeadlineAtUtc)
         {
-            ForceComplete(match, nowUtc);
+            Record(match, nowUtc, "match-deadline-expired", "server-timeout",
+                detail: match.MatchDeadlineAtUtc.ToString("O"));
+            ForceComplete(match, nowUtc, reason: "match-deadline");
             return true;
         }
         var current = match.Players.Single(player => player.Seat == match.ActiveSeat);
@@ -208,7 +217,9 @@ internal static class CreditHoldemEngine
         var automatic = match.CurrentBet == current.CommittedRound
             ? CreditHoldemActions.Check
             : CreditHoldemActions.Fold;
-        _ = ApplyAction(match, current.ActorId, automatic, null, nowUtc);
+        Record(match, nowUtc, "action-deadline-expired", "server-timeout", current,
+            detail: match.ActionDeadlineAtUtc?.ToString("O") ?? "legacy-deadline-unavailable");
+        _ = ApplyAction(match, current.ActorId, automatic, null, nowUtc, "server-timeout");
         return true;
     }
 
@@ -217,6 +228,7 @@ internal static class CreditHoldemEngine
         var player = match.Players.SingleOrDefault(value => value.ActorId == actorId && value.IsAccountBacked)
             ?? throw new CreditHoldemNotFoundException("This player does not have a seat at the table.");
         match.LeavingActorIds.Add(actorId);
+        Record(match, nowUtc, "leave-requested", "account-action", player);
         if (match.Status == "active" && player.Status is "active" or "all-in")
         {
             var wasActive = player.Seat == match.ActiveSeat;
@@ -229,29 +241,35 @@ internal static class CreditHoldemEngine
                 player.PublicSeatId,
                 player.DisplayName,
                 "left",
-                0));
+                0,
+                nowUtc,
+                "account-action"));
+            Record(match, nowUtc, "action-accepted", "account-action", player, "left", amountCents: 0);
             player.HasActed = true;
             player.CanRaise = false;
             match.Version = checked(match.Version + 1);
             match.UpdatedAtUtc = nowUtc;
-            if (AllAccountPlayersFolded(match)) ForceComplete(match, nowUtc, incrementVersion: false);
+            if (AllAccountPlayersFolded(match)) ForceComplete(match, nowUtc, incrementVersion: false, reason: "all-account-seats-folded");
             else if (match.Players.Count(value => value.Status != "folded") == 1) AwardUncontested(match, nowUtc);
             else if (wasActive) Progress(match, nowUtc);
         }
     }
 
-    public static void ForceComplete(CreditHoldemMatch match, DateTime nowUtc, bool incrementVersion = true)
+    public static void ForceComplete(CreditHoldemMatch match, DateTime nowUtc, bool incrementVersion = true,
+        string reason = "host-request")
     {
         if (match.Status != "active") return;
-        while (match.Community.Count < 5) DealNextStreet(match);
+        Record(match, nowUtc, "forced-completion", "server-progress", detail: reason);
+        while (match.Community.Count < 5) DealNextStreet(match, nowUtc);
         foreach (var player in match.Players.Where(player => player.Status != "folded"))
             player.RevealAtShowdown = true;
-        SettleShowdown(match);
+        SettleShowdown(match, nowUtc);
         if (incrementVersion) match.Version = checked(match.Version + 1);
         Complete(match, nowUtc);
     }
 
-    public static CreditHoldemFinancialSettlement ApplyFinancialSettlement(CreditHoldemMatch match)
+    public static CreditHoldemFinancialSettlement ApplyFinancialSettlement(CreditHoldemMatch match,
+        DateTime? settledAtUtc = null)
     {
         if (match.Status != "completed")
             throw new InvalidOperationException("A running Hold'em hand cannot be financially settled.");
@@ -269,6 +287,13 @@ internal static class CreditHoldemEngine
             player.AccountPayoutCents = payout;
         }
         match.AccountingSettled = true;
+        var observedAt = settledAtUtc ?? match.CompletedAtUtc ?? match.UpdatedAtUtc;
+        var timeBasis = settledAtUtc is null ? "stored-round-completion-time" : "supplied-settlement-time";
+        foreach (var player in match.Players.Where(value => value.IsAccountBacked))
+            Record(match, observedAt, "financial-payout-recognized", "server-settlement", player,
+                amountCents: player.AccountPayoutCents, detail: timeBasis);
+        Record(match, observedAt, "financial-settlement-completed", "server-settlement",
+            amountCents: match.HouseNetCents, detail: timeBasis);
         return settlement;
     }
 
@@ -390,10 +415,26 @@ internal static class CreditHoldemEngine
             CurrentBet = rule.BigBlindCents,
             MinimumRaise = rule.BigBlindCents,
             Version = version,
-            HandNumber = handNumber
+            HandNumber = handNumber,
+            EventTimelineVersion = 1
         };
-        match.ActionLog.Add(new CreditHoldemActionLogEntry(1, handNumber, "preflop", players[smallBlindIndex].PublicSeatId, players[smallBlindIndex].DisplayName, "small-blind", players[smallBlindIndex].CommittedHand));
-        match.ActionLog.Add(new CreditHoldemActionLogEntry(2, handNumber, "preflop", players[bigBlindIndex].PublicSeatId, players[bigBlindIndex].DisplayName, "big-blind", players[bigBlindIndex].CommittedHand));
+        Record(match, nowUtc, "hand-started", "server-deal",
+            detail: $"{AuditEngineVersion};table-rule={rule.Id};buy-in-escrow={usesBuyInEscrow}");
+        Record(match, nowUtc, "deck-created", "server-deal");
+        var dealtIndex = 0;
+        for (var round = 0; round < 2; round++)
+            for (var offset = 0; offset < players.Count; offset++)
+            {
+                var player = players[(firstToDeal + offset) % players.Count];
+                Record(match, nowUtc, "hole-card-dealt", "server-deal", player,
+                    card: deck[dealtIndex], deckIndex: dealtIndex++);
+            }
+        match.ActionLog.Add(new CreditHoldemActionLogEntry(1, handNumber, "preflop", players[smallBlindIndex].PublicSeatId, players[smallBlindIndex].DisplayName, "small-blind", players[smallBlindIndex].CommittedHand, nowUtc, "server-deal"));
+        Record(match, nowUtc, "wager-committed", "server-deal", players[smallBlindIndex],
+            "small-blind", rule.SmallBlindCents, players[smallBlindIndex].CommittedHand);
+        match.ActionLog.Add(new CreditHoldemActionLogEntry(2, handNumber, "preflop", players[bigBlindIndex].PublicSeatId, players[bigBlindIndex].DisplayName, "big-blind", players[bigBlindIndex].CommittedHand, nowUtc, "server-deal"));
+        Record(match, nowUtc, "wager-committed", "server-deal", players[bigBlindIndex],
+            "big-blind", rule.BigBlindCents, players[bigBlindIndex].CommittedHand);
         SetActionDeadline(match, nowUtc);
         return match;
     }
@@ -402,7 +443,7 @@ internal static class CreditHoldemEngine
     {
         if (AllAccountPlayersFolded(match))
         {
-            ForceComplete(match, nowUtc, incrementVersion: false);
+            ForceComplete(match, nowUtc, incrementVersion: false, reason: "all-account-seats-folded");
             return;
         }
         var contenders = match.Players.Where(value => value.Status != "folded").ToArray();
@@ -415,13 +456,13 @@ internal static class CreditHoldemEngine
         {
             if (match.Street == "river" || contenders.Count(value => value.Status == "active") <= 1)
             {
-                while (match.Community.Count < 5) DealNextStreet(match);
+                while (match.Community.Count < 5) DealNextStreet(match, nowUtc);
                 foreach (var player in contenders) player.RevealAtShowdown = true;
-                SettleShowdown(match);
+                SettleShowdown(match, nowUtc);
                 Complete(match, nowUtc);
                 return;
             }
-            DealNextStreet(match);
+            DealNextStreet(match, nowUtc);
             foreach (var player in match.Players)
             {
                 player.CommittedRound = 0;
@@ -445,11 +486,17 @@ internal static class CreditHoldemEngine
         var pot = Pot(match);
         winner.Stack = checked(winner.Stack + pot);
         winner.WonHandChips = checked(winner.WonHandChips + pot);
+        Record(match, nowUtc, "pot-awarded", "server-progress", winner,
+            amountCents: pot, detail: "uncontested");
         Complete(match, nowUtc);
     }
 
-    private static void SettleShowdown(CreditHoldemMatch match)
+    private static void SettleShowdown(CreditHoldemMatch match, DateTime nowUtc)
     {
+        Record(match, nowUtc, "showdown-started", "server-progress");
+        foreach (var player in match.Players.Where(player => player.RevealAtShowdown))
+            Record(match, nowUtc, "showdown-revealed", "server-progress", player,
+                detail: string.Join(",", player.HoleCards));
         var levels = match.Players.Select(value => value.CommittedHand).Where(value => value > 0).Distinct().Order().ToArray();
         var previous = 0;
         foreach (var level in levels)
@@ -467,8 +514,11 @@ internal static class CreditHoldemEngine
                 var award = share + (index < remainder ? 1 : 0);
                 winners[index].Stack = checked(winners[index].Stack + award);
                 winners[index].WonHandChips = checked(winners[index].WonHandChips + award);
+                Record(match, nowUtc, "pot-awarded", "server-progress", winners[index],
+                    amountCents: award, detail: $"contribution-level={level};pot={pot}");
             }
         }
+        Record(match, nowUtc, "showdown-completed", "server-progress");
     }
 
     private static CreditHoldemPlayer[] Winners(CreditHoldemMatch match, IReadOnlyCollection<CreditHoldemPlayer> eligible)
@@ -488,6 +538,7 @@ internal static class CreditHoldemEngine
         match.ActionDeadlineAtUtc = null;
         match.CompletedAtUtc = nowUtc;
         match.UpdatedAtUtc = nowUtc;
+        Record(match, nowUtc, "hand-completed", "server-progress");
     }
 
     private static bool BettingRoundComplete(CreditHoldemMatch match) => match.Players
@@ -510,12 +561,24 @@ internal static class CreditHoldemEngine
         throw new InvalidOperationException("No active Hold'em player remains.");
     }
 
-    private static void DealNextStreet(CreditHoldemMatch match)
+    private static void DealNextStreet(CreditHoldemMatch match, DateTime nowUtc)
     {
+        var nextStreet = match.Community.Count switch { 0 => "flop", 3 => "turn", 4 => "river", _ => match.Street };
+        match.Street = nextStreet;
+        Record(match, nowUtc, "card-burned", "server-deal",
+            card: match.Deck[match.NextCardIndex], deckIndex: match.NextCardIndex, detail: nextStreet);
         match.NextCardIndex++;
         var count = match.Community.Count == 0 ? 3 : 1;
-        for (var index = 0; index < count; index++) match.Community.Add(match.Deck[match.NextCardIndex++]);
+        for (var index = 0; index < count; index++)
+        {
+            var deckIndex = match.NextCardIndex++;
+            var card = match.Deck[deckIndex];
+            match.Community.Add(card);
+            Record(match, nowUtc, "community-card-dealt", "server-deal",
+                card: card, deckIndex: deckIndex, detail: nextStreet);
+        }
         match.Street = match.Community.Count switch { 3 => "flop", 4 => "turn", 5 => "river", _ => match.Street };
+        Record(match, nowUtc, "street-started", "server-progress");
     }
 
     private static ulong HandScore(CreditHoldemMatch match, CreditHoldemPlayer player) =>
@@ -538,6 +601,21 @@ internal static class CreditHoldemEngine
     private static void SetActionDeadline(CreditHoldemMatch match, DateTime nowUtc)
     {
         match.ActionDeadlineAtUtc = nowUtc.Add(ActionDuration);
+        Record(match, nowUtc, "turn-started", "server-progress",
+            match.Players.Single(player => player.Seat == match.ActiveSeat),
+            detail: match.ActionDeadlineAtUtc.Value.ToString("O"));
+    }
+
+    private static void Record(CreditHoldemMatch match, DateTime nowUtc, string kind, string source,
+        CreditHoldemPlayer? player = null, string? action = null, int? requestedRaiseTo = null,
+        long? amountCents = null, string? card = null, int? deckIndex = null, string? detail = null)
+    {
+        var moneySnapshot = action is not null || kind is "pot-awarded" or "financial-payout-recognized";
+        match.EventTimeline.Add(new(match.EventTimeline.Count + 1, match.HandNumber, nowUtc, kind,
+            match.Street, source, player?.ActorId, player?.PublicSeatId, action, requestedRaiseTo, amountCents,
+            moneySnapshot ? player?.Stack : null, moneySnapshot ? player?.CommittedRound : null,
+            moneySnapshot ? player?.CommittedHand : null, moneySnapshot ? match.CurrentBet : null,
+            card, deckIndex, detail));
     }
 
     private static CreditHoldemSeatAssignment AccountSeat(

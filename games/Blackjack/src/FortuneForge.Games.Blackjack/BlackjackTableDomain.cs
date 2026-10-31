@@ -20,6 +20,7 @@ public sealed class BlackjackTableState
     public string Phase { get; set; } = BlackjackTablePhases.Betting;
     public int Version { get; set; } = 1;
     public int RoundNumber { get; set; }
+    public DateTime? RoundStartedAtUtc { get; set; }
     public ulong RoundSeed { get; set; }
     public IReadOnlyList<string> Deck { get; set; } = [];
     public int NextCardIndex { get; set; }

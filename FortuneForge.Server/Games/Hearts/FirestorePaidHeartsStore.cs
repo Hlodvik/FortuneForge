@@ -185,7 +185,7 @@ internal sealed partial class FirestorePaidHeartsStore
                 batch.Set(Session(userId), new Dictionary<string, object> { ["matchId"] = match.Id, ["updatedAt"] = Timestamp.FromDateTime(now) });
                 if (house is null)
                     batch.Set(Partition(cents), new Dictionary<string, object> { ["matchId"] = match.Status == "queue" ? match.Id : "" });
-                Write(batch, match);
+                Write(batch, match, now);
                 if (deal) WriteFunding(batch, match, now);
                 var receipt = GuardData("join", "", detail, now);
                 if (notice is not null) receipt["notice"] = notice;
@@ -251,7 +251,7 @@ internal sealed partial class FirestorePaidHeartsStore
             Start(match, now, shuffleSeed);
             WriteFunding(tx, match, now);
             tx.Set(Partition(match.EntryCents), new Dictionary<string, object> { ["matchId"] = "" });
-            Write(tx, match);
+            Write(tx, match, now);
             tx.Create(Guard(userId, key), GuardData("play-house", id, detail, now));
             return true;
         }, ct);
@@ -339,7 +339,7 @@ internal sealed partial class FirestorePaidHeartsStore
             }
             match.Version++;
             match.UpdatedAtUtc = now;
-            Write(tx, match);
+            Write(tx, match, now);
             tx.Create(Guard(userId, key), GuardData(operation, id, detail, now));
             return false;
         }, ct);
@@ -404,8 +404,10 @@ internal sealed partial class FirestorePaidHeartsStore
     private DocumentReference Guard(string userId, string key) => database.Collection("heartsPaidCommands").Document(PaidHeartsIds.Hash($"{userId}\n{key}"));
     private static PaidHeartsMatch Read(DocumentSnapshot snapshot) => JsonSerializer.Deserialize<PaidHeartsMatch>(Text(snapshot, "matchJson"), Json)
         ?? throw new InvalidOperationException("The stored Hearts match is invalid.");
-    private void Write(Transaction tx, PaidHeartsMatch match)
+    private void Write(Transaction tx, PaidHeartsMatch match, DateTime now)
     {
+        FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(tx, database, "hearts", match.Id,
+            match.Version, now, match, match.Players.Where(player => player.IsAccountBacked).Select(player => player.UserId));
         tx.Set(Match(match.Id), Data(match));
         // Availability is a transactionally maintained, entry-partitioned index.
         // Document IDs preserve creation order without a composite index or

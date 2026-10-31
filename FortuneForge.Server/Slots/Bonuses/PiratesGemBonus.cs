@@ -95,3 +95,13 @@ internal sealed record PiratesGemProgress(
     IReadOnlyList<PiratesGemAward> Awards);
 
 internal sealed record PiratesGemAward(int GemCount, long WagerTotal);
+
+internal sealed record PiratesGemSettlementEvidence(
+    string RuleVersion,
+    Dictionary<string, long> CountsBefore,
+    Dictionary<string, long> WagerCentsBefore,
+    Dictionary<string, long> CountsAfter,
+    Dictionary<string, long> WagerCentsAfter,
+    int FreeSpinsAwarded,
+    string? FeatureMode,
+    long FreeSpinWagerPoints);

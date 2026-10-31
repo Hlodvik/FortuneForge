@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using FortuneForge.Server.Arcade;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Arcade.Asteroids;
@@ -66,6 +67,8 @@ public sealed class FirestoreAsteroidsFreeRunService
                 ["rulesVersion"] = AsteroidsReplayEvaluator.RulesVersion,
                 ["schemaVersion"] = 1L,
             });
+            ArcadeRunSecurityAudit.Started(transaction, database, "asteroids", runId, authenticatedPlayerId,
+                startedAtUtc.UtcDateTime, new { runId, seed = run.Seed, rulesVersion = AsteroidsReplayEvaluator.RulesVersion });
             return new AsteroidsFreeRunStartResult(run, startedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }
@@ -111,6 +114,12 @@ public sealed class FirestoreAsteroidsFreeRunService
                 ["terminal"] = state.Terminal.ToString().ToLowerInvariant(),
                 ["completedAt"] = Timestamp.FromDateTime(completedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
+            ArcadeRunSecurityAudit.Completed(transaction, database, "asteroids", runId, authenticatedPlayerId,
+                stored.StartedAtUtc.UtcDateTime, completedAtUtc.UtcDateTime, 0,
+                CollectionName, reference.Id,
+                new { runId, seed = stored.Run.Seed, rulesVersion = AsteroidsReplayEvaluator.RulesVersion,
+                    replayCanonical = canonical, replaySha256 = digest, score = state.Score,
+                    terminal = state.Terminal.ToString().ToLowerInvariant() }, "asteroids-replay-v1");
             return new AsteroidsFreeRunCompletionResult(runId, state.Score, state.Terminal, completedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }

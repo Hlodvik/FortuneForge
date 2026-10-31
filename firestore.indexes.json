@@ -4,8 +4,14 @@
       "collectionGroup": "cardGameResults",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userGameHash", "order": "ASCENDING" },
-        { "fieldPath": "completedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "userGameHash",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
@@ -39,7 +45,524 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "gameId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "gamePlayerPresence"
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "retentionState",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "evidenceDeleteAfterUtc",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "gameRoundAudits"
+    },
+    {
+      "collectionGroup": "gameRoundAudits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "retentionState",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "retentionReviewNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameRoundAudits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "securityAuditPending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "securityAuditNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameRoundAudits",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "retentionState",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "rawEvidencePurgePending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "rawEvidenceNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "gameId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAtUtc",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "gameRoundAudits"
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "auditStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAtUtc",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "gameRoundAudits"
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "gameId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "auditStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "completedAtUtc",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "gameRoundAudits"
+    },
+    {
+      "collectionGroup": "playerRiskIncidents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "userId"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "createdAtUtc"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "playerRiskIncidents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "contributesToRestrictions",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAtUtc",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameSecurityEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gameId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "instanceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameSecurityRequestIntents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "gameId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "instanceId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameSecurityRequestIntents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "orphanRetentionPending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "orphanRetentionNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gameSecurityRequestRetentionQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "pending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "nextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "playerRiskIncidents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "investigationPending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "investigationNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditInvestigations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "purgePending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleteAfterUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditInvestigations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "createdAtUtc",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditInvestigationInstances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditInvestigationInstances",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "capturePending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "captureNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditInvestigationEvidence",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "caseId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "auditId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditPairAnalysisQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "retentionPending",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "releaseAfterUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "securityAuditPairAnalysisQueue",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "balanceTransactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roundId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "balanceTransactions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "idempotencyKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "hiLoEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roundId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "houseHoldemRoundEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "roundId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "slotSpinAdmissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "auditObserved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "slotSpinAdmissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "auditObserved",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "auditNextAttemptAtUtc",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "gameRoundEvidence",
+      "fieldPath": "payloadJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "gameRoundAudits",
+      "fieldPath": "participants",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "gameRoundAudits",
+      "fieldPath": "findings",
+      "indexes": []
+    },
+    {
+      "fieldPath": "incidentJson",
+      "collectionGroup": "playerRiskIncidents",
+      "indexes": []
+    },
+    {
+      "fieldPath": "stateJson",
+      "collectionGroup": "playerRiskStates",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "gameAnalyticsBuckets",
+      "indexes": [],
+      "fieldPath": "games"
+    },
+    {
+      "collectionGroup": "gameAnalyticsBuckets",
+      "indexes": [],
+      "fieldPath": "totals"
+    },
+    {
+      "collectionGroup": "gamePlayerPresence",
+      "indexes": [],
+      "fieldPath": "pendingTime"
+    },
+    {
+      "collectionGroup": "gameSecurityEvents",
+      "fieldPath": "payloadJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "gameSecurityRequestIntents",
+      "fieldPath": "observationJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "gameSecurityRequestResults",
+      "fieldPath": "observationJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "securityAuditInvestigationEvidence",
+      "fieldPath": "originalFields",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "securityAuditInvestigations",
+      "fieldPath": "caseJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "securityAuditPairAnalysisQueue",
+      "fieldPath": "networkContextJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "securityAuditPairAnalysisQueue",
+      "fieldPath": "strategyComparisonJson",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "securityAuditPairAnalysisQueue",
+      "fieldPath": "signalsJson",
+      "indexes": []
+    }
+  ]
 }

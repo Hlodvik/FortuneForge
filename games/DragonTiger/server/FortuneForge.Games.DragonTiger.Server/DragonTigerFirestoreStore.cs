@@ -8,6 +8,14 @@ namespace FortuneForge.Games.DragonTiger.Server;
 public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTigerStore
 {
     private const string CurrencyId = "slotsCredits";
+    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
+    {
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
+        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
+    }
+
     public Task<DragonTigerStoreResult> StartAsync(string userId, string idempotencyKey, DragonTigerWagers wagers,
         IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
     {
@@ -50,7 +58,19 @@ public sealed class DragonTigerFirestoreStore(FirestoreDb database) : IDragonTig
             var totalReturn = TotalReturn(stored);
             var afterWager = checked(balanceCents - wagers.TotalCents);
             var finalBalance = checked(afterWager + totalReturn);
+            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
+                "dragon-tiger", roundId, nextIndex, nowUtc.UtcDateTime, new { stored, shoe = shoe.Cards, nextIndex }, [userId], "settlement");
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
+                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("dragon-tiger", roundId)),
+                new Dictionary<string, object> { ["gameId"] = "dragon-tiger", ["instanceId"] = roundId,
+                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
             transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc, afterWager, finalBalance));
+            var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
+                "dragon-tiger", roundId, userId, wagers.TotalCents, totalReturn, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
+                "dragonTigerRounds", roundId, stored, "dragon-tiger-cards-and-wagers-v1",
+                DragonTigerOutcomeAudit.Verify(stored, wagers.TotalCents, totalReturn), DragonTigerOutcomeAudit.Version);
+            WriteRoundRecord(transaction, analytics);
             transaction.Set(shoeReference, new Dictionary<string, object>
             {
                 ["userId"] = userId, ["cards"] = shoe.Cards.Select(CardCode.Format).ToArray(),

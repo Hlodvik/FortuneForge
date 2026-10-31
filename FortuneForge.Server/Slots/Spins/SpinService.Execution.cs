@@ -16,7 +16,8 @@ public sealed partial class SpinService
         string playerId,
         bool specialBoostApplied,
         long currentEnergyBalance = 0,
-        string? freeSpinFeatureMode = null)
+        string? freeSpinFeatureMode = null,
+        int? persistedPityMisses = null)
     {
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
@@ -48,6 +49,12 @@ public sealed partial class SpinService
 
         lock (pityState.SyncRoot)
         {
+            if (persistedPityMisses is { } persisted)
+            {
+                if (persisted < 0)
+                    throw new ArgumentOutOfRangeException(nameof(persistedPityMisses));
+                pityState.ConsecutiveFiveMisses = persisted;
+            }
             return SpinWithPity(
                 game,
                 effectiveReelSet,
@@ -77,13 +84,20 @@ public sealed partial class SpinService
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
             pityState.ConsecutiveFiveMisses >= pityLimit;
         var maximumAttempts = pityTriggered ? MaximumPityGenerationAttempts : 1;
+        var pityMissesBefore = pityState.ConsecutiveFiveMisses;
+        SlotSpecialRoundProfiles.TryGet(game.Id, out var featureProfile);
         ReelOutcome? outcome = null;
+        ReelOutcome? rawOutcome = null;
+        ReelOutcome? frequencyOutcome = null;
         IReadOnlyList<PaylineEvaluation>? evaluations = null;
+        var generationAttempts = 0;
 
         for (var attempt = 0; attempt < maximumAttempts; attempt++)
         {
-            outcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
-            outcome = FreeGameFrequency.Apply(outcome, effectiveGame, random);
+            generationAttempts++;
+            rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
+            frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
+            outcome = frequencyOutcome;
             outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
@@ -92,7 +106,7 @@ public sealed partial class SpinService
             }
         }
 
-        if (outcome is null || evaluations is null ||
+        if (outcome is null || rawOutcome is null || frequencyOutcome is null || evaluations is null ||
             (pityTriggered && !HasPayingFullMatch(evaluations, effectiveGame, paytable)))
         {
             throw new InvalidOperationException(
@@ -135,6 +149,11 @@ public sealed partial class SpinService
             energyAwarded,
             specialBoostApplied)
         {
+            EngineAudit = new SlotSpinEngineAudit(
+                AuditEngineVersion, DateTime.UtcNow, game, effectiveGame, reelSet,
+                symbolSet, paytable, featureProfile, pityMissesBefore,
+                currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
+                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels),
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,

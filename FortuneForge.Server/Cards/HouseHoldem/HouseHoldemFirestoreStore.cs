@@ -56,6 +56,8 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
                 throw new HouseHoldemInsufficientCreditsException(balanceCents, minimumHandExposureCents);
             var remainingCents = checked(balanceCents - wagerCents);
             transaction.Create(roundReference, RoundData(roundId, userId, round, shuffledDeck, idempotencyKey, nowUtc));
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "house-holdem", roundId,
+                0, nowUtc.UtcDateTime, new { round, deck = shuffledDeck, steps = Array.Empty<string>() }, [userId], "deal");
             transaction.Set(activeReference, ActiveRoundData(roundId, nowUtc));
             transaction.Set(balanceReference, BalanceData(remainingCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(wagerReference.Id, userId,
@@ -147,6 +149,9 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
             var finalBalanceCents = checked(afterDebitCents + payoutCents);
             var updatedSteps = stored.Steps.Append(command).ToArray();
             transaction.Update(roundReference, UpdatedRoundData(stored.Round, updatedSteps, nowUtc));
+            if (stored.Round.Settlement is null)
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "house-holdem", roundId,
+                    updatedSteps.Length, nowUtc.UtcDateTime, new { stored.Round, steps = updatedSteps }, [userId], command);
             transaction.Create(eventReference, EventData(roundId, userId, command, idempotencyKey, nowUtc));
             if (debitCents > 0)
                 transaction.Create(debitReference, BalanceTransactionData(debitReference.Id, userId,
@@ -158,6 +163,10 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
                 transaction.Set(balanceReference, BalanceData(finalBalanceCents, nowUtc), SetOptions.MergeAll);
             if (stored.Round.Settlement is not null)
             {
+                FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                    "house-holdem", roundId, userId, stored.Round.TotalWagerCents, payoutCents,
+                    stored.CreatedAt.UtcDateTime, nowUtc.UtcDateTime, "houseHoldemRounds", roundId,
+                    new { stored.Round, steps = updatedSteps }, "house-holdem-cards-and-actions-v1");
                 transaction.Create(resultReference, ResultData(roundId, userId, stored.Round,
                     stored.CreatedAt, nowUtc));
                 transaction.Set(activeReference, ActiveRoundData(string.Empty, nowUtc));

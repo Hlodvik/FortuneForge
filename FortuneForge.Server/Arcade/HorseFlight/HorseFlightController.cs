@@ -5,6 +5,7 @@ using FortuneForge.Games.HorseFlight;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Arcade;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -74,6 +75,7 @@ public sealed class HorseFlightFirestoreStore(FirestoreDb database)
         ValidateKey(idempotencyKey);
         var runId = $"horse_flight_free_{Hash($"{userId}\n{idempotencyKey}")}";
         var runRef = RunDocument(runId); var eventRef = EventDocument(runId, "started");
+        var startedAtUtc = DateTime.UtcNow;
         return database.RunTransactionAsync(async transaction =>
         {
             var reads = await Task.WhenAll(transaction.GetSnapshotAsync(runRef, cancellationToken), transaction.GetSnapshotAsync(eventRef, cancellationToken));
@@ -85,8 +87,11 @@ public sealed class HorseFlightFirestoreStore(FirestoreDb database)
             }
             if (reads[1].Exists) throw new HorseFlightRunConflictException("A Horse Flight event exists without its run.");
             var seed = (uint)RandomNumberGenerator.GetInt32(1, int.MaxValue);
-            transaction.Create(runRef, new Dictionary<string, object> { ["runId"] = runId, ["userId"] = userId, ["seed"] = (long)seed, ["phase"] = "running", ["rulesVersion"] = (long)HorseFlightEngine.CurrentRulesVersion, ["startIdempotencyKey"] = idempotencyKey, ["createdAt"] = Timestamp.GetCurrentTimestamp(), ["schemaVersion"] = 1L });
+            transaction.Create(runRef, new Dictionary<string, object> { ["runId"] = runId, ["userId"] = userId, ["seed"] = (long)seed, ["phase"] = "running", ["rulesVersion"] = (long)HorseFlightEngine.CurrentRulesVersion, ["startIdempotencyKey"] = idempotencyKey, ["createdAt"] = Timestamp.FromDateTime(startedAtUtc), ["schemaVersion"] = 1L });
             transaction.Create(eventRef, Event(runId, userId, "started", idempotencyKey));
+            ArcadeRunSecurityAudit.Started(transaction, database, "horse-flight", runId, userId,
+                startedAtUtc, new { runId, seed, rulesVersion = HorseFlightEngine.CurrentRulesVersion,
+                    tickMilliseconds = HorseFlightEngine.TickMilliseconds });
             return new HorseFlightStartResponse(runId, seed, HorseFlightEngine.TickMilliseconds);
         }, cancellationToken: cancellationToken);
     }
@@ -95,6 +100,7 @@ public sealed class HorseFlightFirestoreStore(FirestoreDb database)
     {
         ValidateId(runId); ValidateKey(idempotencyKey); ArgumentNullException.ThrowIfNull(request);
         var runRef = RunDocument(runId); var balanceRef = BalanceDocument(userId); var eventRef = EventDocument(runId, "completed");
+        var completedAtUtc = DateTime.UtcNow;
         return database.RunTransactionAsync(async transaction =>
         {
             var reads = await Task.WhenAll(transaction.GetSnapshotAsync(runRef, cancellationToken), transaction.GetSnapshotAsync(balanceRef, cancellationToken), transaction.GetSnapshotAsync(eventRef, cancellationToken));
@@ -113,8 +119,14 @@ public sealed class HorseFlightFirestoreStore(FirestoreDb database)
                 RulesVersion = run.RulesVersion,
             });
             var completed = run with { Completed = true, TotalTicks = request.TotalTicks, JumpTicks = jumps, RightClickTicks = rightClicks, Score = replay.Snapshot.Score, Phase = replay.Snapshot.Phase };
-            transaction.Update(runRef, new Dictionary<string, object> { ["phase"] = PhaseName(completed.Phase), ["rulesVersion"] = (long)completed.RulesVersion, ["totalTicks"] = completed.TotalTicks, ["jumpTicks"] = completed.JumpTicks, ["rightClickTicks"] = completed.RightClickTicks, ["score"] = completed.Score, ["completionIdempotencyKey"] = idempotencyKey, ["completedAt"] = Timestamp.GetCurrentTimestamp() });
+            transaction.Update(runRef, new Dictionary<string, object> { ["phase"] = PhaseName(completed.Phase), ["rulesVersion"] = (long)completed.RulesVersion, ["totalTicks"] = completed.TotalTicks, ["jumpTicks"] = completed.JumpTicks, ["rightClickTicks"] = completed.RightClickTicks, ["score"] = completed.Score, ["completionIdempotencyKey"] = idempotencyKey, ["completedAt"] = Timestamp.FromDateTime(completedAtUtc) });
             transaction.Create(eventRef, Event(runId, userId, "completed", idempotencyKey));
+            ArcadeRunSecurityAudit.Completed(transaction, database, "horse-flight", runId, userId,
+                reads[0].GetValue<Timestamp>("createdAt").ToDateTime(), completedAtUtc, 0,
+                "horseFlightRuns", runRef.Id,
+                new { runId, run.Seed, run.RulesVersion, request.TotalTicks, jumpTicks = jumps,
+                    rightClickTicks = rightClicks, replay.Snapshot.Score, phase = PhaseName(replay.Snapshot.Phase) },
+                "horse-flight-replay-v1");
             return ToResponse(completed, balance, wasReplay: false);
         }, cancellationToken: cancellationToken);
     }

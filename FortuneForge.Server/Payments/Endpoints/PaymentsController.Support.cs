@@ -32,6 +32,8 @@ public sealed partial class PaymentsController
 
     private ObjectResult FromError(PaymentError error) => error switch
     {
+        PaymentError.WithdrawalsRestricted => StatusCode(StatusCodes.Status403Forbidden, new
+        { code = "withdrawals_restricted", error = "Withdrawals are unavailable while your account is reviewed." }),
         PaymentError.UnsupportedMarket => Problem(
             statusCode: StatusCodes.Status400BadRequest,
             title: "Unsupported payment market",

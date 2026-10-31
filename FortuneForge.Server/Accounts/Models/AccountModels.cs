@@ -55,7 +55,13 @@ public sealed record SlotSpinAdmission(
     int SpecialPointsRemaining,
     TimeSpan? CooldownRemaining,
     long EnergyBalance,
-    string? FreeSpinFeatureMode);
+    string? FreeSpinFeatureMode)
+{
+    public Guid AdmissionId { get; init; }
+    public DateTime StartedAtUtc { get; init; }
+    public string? RequestId { get; init; }
+    public int PityMissesBefore { get; init; }
+}
 
 public sealed record SlotSpinSettlement(
     decimal SlotsCreditsBalance,

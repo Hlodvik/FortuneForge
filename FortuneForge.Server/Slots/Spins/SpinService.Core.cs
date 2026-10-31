@@ -15,6 +15,7 @@ public sealed partial class SpinService(
     IPayoutCalculator payoutCalculator,
     IRandomIndexSource random)
 {
+    public const string AuditEngineVersion = "shared-slots-engine-v1";
     private const int MaximumPityGenerationAttempts = 10_000;
     private const string MonkeyPawSymbolId = "PAW";
     private const string BananaSymbolId = "BANANA";

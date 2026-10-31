@@ -56,6 +56,8 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             var round = VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered);
             var remainingCents = checked(balanceCents - wagerCents);
             transaction.Create(roundReference, RoundData(roundId, userId, round, idempotencyKey, nowUtc));
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "video-poker", roundId,
+                0, nowUtc.UtcDateTime, round, [userId], "deal");
             transaction.Set(balanceReference, BalanceUpdate(remainingCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(
                 wagerReference.Id, userId, -wagerCents, remainingCents, "video-poker-wager", idempotencyKey, nowUtc));
@@ -123,6 +125,10 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             var payoutCents = checked(completed.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
             var finalBalanceCents = checked(balanceCents + payoutCents);
             transaction.Update(roundReference, CompletedRoundData(completed, idempotencyKey, nowUtc));
+            FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                "video-poker", roundId, userId, VideoPokerMoney.WagerCents(completed.CoinsWagered, completed.HandCount), payoutCents,
+                snapshots[0].GetValue<Timestamp>("createdAt").ToDateTime(), nowUtc.UtcDateTime,
+                "videoPokerRounds", roundId, completed, "video-poker-deal-holds-and-draw-v1");
             transaction.Create(drawnEventReference, RoundEventData(roundId, userId, "draw", idempotencyKey, nowUtc));
             if (payoutCents > 0)
             {

@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Risk;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -10,7 +11,8 @@ namespace FortuneForge.Server.Controllers;
 [Route("api/accounts")]
 public sealed class AccountsController(
     AccountService accountService,
-    IWebHostEnvironment environment) : ControllerBase
+    IWebHostEnvironment environment,
+    IRiskStateReader risks) : ControllerBase
 {
     [HttpPost]
     [EnableRateLimiting(RateLimitPolicies.AccountCreation)]
@@ -38,14 +40,23 @@ public sealed class AccountsController(
             return FromError(result.Error);
         }
 
+        // Check before serializing AuthenticationResponse: it includes wallet
+        // balances, which a restricted account must not receive even at login.
+        var restriction = await risks.GetStateAsync(result.Value.Account.UserId, cancellationToken);
+
         AccountSessionCookie.Write(
             Response,
             result.Value.Token,
             result.Value.ExpiresAtUtc,
             !environment.IsDevelopment(),
             request.RemainLoggedIn);
-        return Ok(result.Value);
+        return Ok(LoginBody(result.Value, restriction));
     }
+
+    internal static object LoginBody(AuthenticationResponse value, PlayerRiskState restriction) => restriction.AccountRestricted
+        ? new { account = (object?)null, value.Token, value.ExpiresAtUtc,
+            restriction = new { code = "account_restricted", reviewPath = "/account/review" } }
+        : value;
 
     [HttpPost("resend-verification")]
     [EnableRateLimiting(RateLimitPolicies.EmailVerification)]
@@ -153,7 +164,7 @@ public sealed class AccountsController(
         AccountError.InvalidPassword => Problem(
             statusCode: StatusCodes.Status400BadRequest,
             title: "Invalid password",
-            detail: "Passwords must be between 8 and 128 characters."),
+            detail: "Passwords must be 8–128 characters and include a capital letter, a number, and a symbol."),
         AccountError.InvalidCredentials => Problem(
             statusCode: StatusCodes.Status401Unauthorized,
             title: "Unable to sign in",

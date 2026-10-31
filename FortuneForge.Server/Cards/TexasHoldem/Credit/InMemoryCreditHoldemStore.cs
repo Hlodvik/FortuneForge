@@ -1,6 +1,8 @@
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Games.Abstractions.Auditing;
 
 namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
@@ -23,6 +25,7 @@ internal sealed class InMemoryCreditHoldemStore(
     private readonly Dictionary<string, CreditHoldemHistoryRecord> history = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> activeMatchIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> closedEscrowMatchIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RoundAuditCapture> roundAudits = new(StringComparer.Ordinal);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     private readonly IManagedTablePopulationDirector population =
@@ -41,6 +44,7 @@ internal sealed class InMemoryCreditHoldemStore(
     internal int LedgerCount { get { lock (gate) return ledgerIds.Count; } }
     internal int RevenueCount { get { lock (gate) return revenueIds.Count; } }
     internal CreditHoldemMatch MatchForTest(string matchId) { lock (gate) return matches[matchId]; }
+    internal IReadOnlyList<RoundAuditCapture> AuditsForTest() { lock (gate) return roundAudits.Values.ToArray(); }
 
     public Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
     {
@@ -510,6 +514,11 @@ internal sealed class InMemoryCreditHoldemStore(
         }
         revenueIds.Add($"{match.MatchId}-hand-{match.HandNumber}");
         WriteCompletedHistory(match, settlement);
+        if (match.Players.Any(player => player.IsAccountBacked))
+        {
+            var capture = HoldemRoundAudit.Capture(match, nowUtc);
+            roundAudits.TryAdd(capture.Summary.Id, capture);
+        }
         foreach (var human in match.Players.Where(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)))
             sessions[human.ActorId] = new(CreditHoldemSessionKinds.Result, null, match.MatchId);
         if (match.Players.Count(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)) < CreditHoldemMoney.MaximumSeats)

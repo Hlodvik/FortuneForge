@@ -3,6 +3,7 @@ using System.Text;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
+using FortuneForge.Games.Abstractions.Auditing;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
@@ -21,6 +22,9 @@ public sealed partial class FirestoreAccountStore
         TimeSpan cooldown,
         CancellationToken cancellationToken)
     {
+        var admissionId = Guid.NewGuid();
+        var admissionReference = SlotSpinAdmissionDocument(admissionId);
+        var requestObservation = GameSecurityContext.Current;
         var guardReference = SlotSpinGuardDocument(userId, gameId);
         var slotsCreditsReference = BalanceDocument(userId, SlotsCreditsCurrencyId);
         var freeGamesCurrencyId = GameCurrencyId(FreeGamesCurrencyId, gameId);
@@ -44,6 +48,9 @@ public sealed partial class FirestoreAccountStore
                     transaction.GetSnapshotAsync(specialPointsReference, cancellationToken),
                     transaction.GetSnapshotAsync(energyReference, cancellationToken));
                 var guardSnapshot = snapshots[0];
+                var pityMissesBefore = checked((int)ReadLong(guardSnapshot, "consecutiveFiveMisses"));
+                if (pityMissesBefore < 0)
+                    throw new InvalidOperationException("Slot pity state is invalid.");
                 var slotsCreditsSnapshot = snapshots[1];
                 var freeGamesSnapshot = snapshots[2];
                 var freeGamesAvailable = ReadLong(freeGamesSnapshot, "available");
@@ -55,6 +62,9 @@ public sealed partial class FirestoreAccountStore
                     guardSnapshot.TryGetValue<Timestamp>("lastSpinStartedAt", out var lastStartedAt))
                 {
                     var nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(cooldown);
+                    var pendingAdmission = ReadString(guardSnapshot, "activeAdmissionId");
+                    if (!string.IsNullOrEmpty(pendingAdmission))
+                        nextAllowedAtUtc = lastStartedAt.ToDateTime().AddSeconds(30);
                     if (nextAllowedAtUtc > startedAtUtc)
                     {
                         return new SlotSpinAdmission(
@@ -177,6 +187,7 @@ public sealed partial class FirestoreAccountStore
                 {
                     ["userId"] = userId,
                     ["lastSpinStartedAt"] = Timestamp.FromDateTime(startedAtUtc),
+                    ["activeAdmissionId"] = admissionId.ToString("N"),
                     ["freeSpinWagerPoints"] = remainingAfterAdmission > 0
                         ? effectiveWagerPoints
                         : 0,
@@ -188,6 +199,37 @@ public sealed partial class FirestoreAccountStore
                         : string.Empty,
                     ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc)
                 }, SetOptions.MergeAll);
+                transaction.Create(admissionReference, new Dictionary<string, object>
+                {
+                    ["admissionId"] = admissionId.ToString("N"),
+                    ["userId"] = userId,
+                    ["gameId"] = gameId,
+                    ["requestedWagerPoints"] = wagerPoints,
+                    ["effectiveWagerPoints"] = effectiveWagerPoints,
+                    ["chargedWagerCents"] = chargedWagerCents,
+                    ["isFreeSpin"] = useFreeSpin,
+                    ["specialBoostApplied"] = useSpecialBoost,
+                    ["specialBoostCost"] = useSpecialBoost ? specialBoostCost : 0,
+                    ["freeGameUseTransactionId"] = useFreeSpin
+                        ? freeGameUseTransactionReference.Id : string.Empty,
+                    ["specialPointUseTransactionId"] = useSpecialBoost
+                        ? specialPointUseTransactionReference.Id : string.Empty,
+                    ["freeSpinFeatureMode"] = activeFreeSpinFeatureMode ?? string.Empty,
+                    ["freeSpinsBefore"] = freeGamesAvailable,
+                    ["specialPointsBefore"] = specialPointsAvailable,
+                    ["energyBalanceBefore"] = energyBalance,
+                    ["pityMissesBefore"] = pityMissesBefore,
+                    ["slotsCreditsBeforeCents"] = availableCents,
+                    ["requestId"] = requestObservation?.RequestId ?? string.Empty,
+                    ["requestObservedAtUtc"] = requestObservation is null
+                        ? null! : Timestamp.FromDateTime(requestObservation.ReceivedAtUtc),
+                    ["ipAddress"] = requestObservation?.IpAddress ?? string.Empty,
+                    ["sessionId"] = requestObservation?.SessionId ?? string.Empty,
+                    ["status"] = "admitted",
+                    ["auditObserved"] = false,
+                    ["auditNextAttemptAtUtc"] = Timestamp.FromDateTime(startedAtUtc.AddMinutes(2)),
+                    ["startedAtUtc"] = Timestamp.FromDateTime(startedAtUtc)
+                });
                 return new SlotSpinAdmission(
                     effectiveWagerPoints,
                     chargedWagerCents,
@@ -197,7 +239,13 @@ public sealed partial class FirestoreAccountStore
                     checked((int)specialPointsAfterAdmission),
                     null,
                     energyBalance,
-                    activeFreeSpinFeatureMode);
+                    activeFreeSpinFeatureMode)
+                {
+                    AdmissionId = admissionId,
+                    StartedAtUtc = startedAtUtc,
+                    RequestId = requestObservation?.RequestId,
+                    PityMissesBefore = pityMissesBefore
+                };
             },
             cancellationToken: cancellationToken);
     }

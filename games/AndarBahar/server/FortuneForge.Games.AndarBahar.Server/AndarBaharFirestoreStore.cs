@@ -7,6 +7,14 @@ namespace FortuneForge.Games.AndarBahar.Server;
 public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBaharStore
 {
     private const string Currency = "slotsCredits";
+    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
+    {
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
+        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
+    }
+
     public async Task<long> BalanceAsync(string userId, CancellationToken cancellationToken) =>
         ReadBalance(await BalanceDocument(userId).GetSnapshotAsync(cancellationToken));
 
@@ -40,6 +48,13 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
             var afterWager = checked(balance - stakeCents);
             var finalBalance = checked(afterWager + returned);
             var stored = new AndarBaharStoredRound(id, userId, key, side, stakeCents, round, afterWager, finalBalance, nowUtc);
+            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
+                "andar-bahar", id, 1, nowUtc.UtcDateTime, new { stored, deck = shuffledDeck }, [userId], "settlement");
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
+                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("andar-bahar", id)),
+                new Dictionary<string, object> { ["gameId"] = "andar-bahar", ["instanceId"] = id,
+                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
             transaction.Create(roundRef, new Dictionary<string, object>
             {
                 ["roundId"] = id, ["userId"] = userId, ["schemaVersion"] = 2L,
@@ -53,6 +68,11 @@ public sealed class AndarBaharFirestoreStore(FirestoreDb database) : IAndarBahar
             transaction.Create(wagerRef, Ledger(wagerRef.Id, userId, id, -stakeCents, afterWager, "wager", key, nowUtc));
             if (returned > 0) transaction.Create(payoutRef, Ledger(payoutRef.Id, userId, id, returned, finalBalance, "payout", $"{key}-payout", nowUtc));
             transaction.Create(historyRef, History(historyRef.Id, stored));
+            var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
+                "andar-bahar", id, userId, stakeCents, returned, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
+                "andarBaharRounds", id, stored, "andar-bahar-deal-sequence-v1",
+                AndarBaharOutcomeAudit.Verify(stored, returned), AndarBaharOutcomeAudit.Version);
+            WriteRoundRecord(transaction, analytics);
             transaction.Create(eventRef, new Dictionary<string, object>
             {
                 ["roundId"] = id, ["userId"] = userId, ["event"] = "settled", ["idempotencyKey"] = key,

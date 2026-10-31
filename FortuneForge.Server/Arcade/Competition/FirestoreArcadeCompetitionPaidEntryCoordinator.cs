@@ -2,6 +2,7 @@ using Google.Cloud.Firestore;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Arcade.HorseFlight;
+using FortuneForge.Server.Arcade;
 using FortuneForge.Games.Flappy;
 using FortuneForge.Games.HorseFlight;
 using System.Collections;
@@ -132,6 +133,15 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 ["completedAt"] = Timestamp.FromDateTime(request.CompletedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
             transaction.Set(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(completed));
+            ArcadeRunSecurityAudit.Completed(transaction, database, "asteroids", request.RunId,
+                attempt.PlayerId, attempt.EnteredAtUtc.UtcDateTime, request.CompletedAtUtc.UtcDateTime,
+                attempt.EntryFeeCents, "asteroidsRuns", runReference.Id,
+                new { runId = request.RunId, run.Run.Seed, attempt.AttemptId,
+                    competitionId = request.Competition.DocumentId,
+                    feeLedgerId = $"arcade-competition-{attempt.DocumentId}-entry",
+                    rulesVersion = AsteroidsReplayEvaluator.RulesVersion,
+                    replayCanonical = canonical, replaySha256 = digest, score = state.Score,
+                    terminal = state.Terminal.ToString().ToLowerInvariant() }, "asteroids-paid-replay-v1");
             return new AsteroidsReplayCompletionResult(completed, state.Score, state.Terminal, false);
         }, cancellationToken: cancellationToken);
     }
@@ -190,6 +200,14 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 ["completedAt"] = Timestamp.FromDateTime(request.CompletedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
             transaction.Set(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(completed));
+            ArcadeRunSecurityAudit.Completed(transaction, database, "flappy", request.RunId,
+                attempt.PlayerId, attempt.EnteredAtUtc.UtcDateTime, request.CompletedAtUtc.UtcDateTime,
+                attempt.EntryFeeCents, "flappyRuns", runReference.Id,
+                new { runId = request.RunId, run.Run.Seed, attempt.AttemptId,
+                    competitionId = request.Competition.DocumentId,
+                    feeLedgerId = $"arcade-competition-{attempt.DocumentId}-entry",
+                    replayVersion = 1, replayCanonical = canonical, replaySha256 = digest,
+                    score = result.Snapshot.Score, terminal }, "flappy-paid-replay-v1");
             return new FlappyPaidReplayCompletionResult(completed, result.Snapshot.Score, terminal, false);
         }, cancellationToken: cancellationToken);
     }
@@ -255,6 +273,16 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
                 ["completedAt"] = Timestamp.FromDateTime(request.CompletedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
             transaction.Set(attemptReference, ArcadeCompetitionFirestoreDocuments.AttemptData(completed));
+            ArcadeRunSecurityAudit.Completed(transaction, database, "horse-flight", request.RunId,
+                attempt.PlayerId, attempt.EnteredAtUtc.UtcDateTime, request.CompletedAtUtc.UtcDateTime,
+                attempt.EntryFeeCents, "horseFlightRuns", runReference.Id,
+                new { runId = request.RunId, run.Run.Seed, run.RulesVersion, attempt.AttemptId,
+                    competitionId = request.Competition.DocumentId,
+                    feeLedgerId = $"arcade-competition-{attempt.DocumentId}-entry",
+                    request.Replay.TotalTicks, jumpTicks = request.Replay.JumpTicks.ToArray(),
+                    rightClickTicks = request.Replay.RightClickTicks.ToArray(),
+                    score = replayResult.Snapshot.Score, phase = HorseFlightPhaseName(replayResult.Snapshot.Phase) },
+                "horse-flight-paid-replay-v1");
             return new HorseFlightPaidReplayCompletionResult(
                 completed,
                 replayResult.Snapshot.Score,
@@ -366,16 +394,31 @@ internal sealed class FirestoreArcadeCompetitionPaidEntryCoordinator : IArcadeCo
             {
                 createdRun = new AsteroidsRunRecord(proposedRun, requested);
                 transaction.Create(runReference, AsteroidsRunData(createdRun));
+                ArcadeRunSecurityAudit.Started(transaction, database, "asteroids", proposedRun.RunId,
+                    requested.PlayerId, requested.EnteredAtUtc.UtcDateTime,
+                    new { runId = proposedRun.RunId, proposedRun.Seed, requested.AttemptId,
+                        competitionId = request.Competition.DocumentId, entryFeeCents, feeLedgerId = entryReference.Id,
+                        rulesVersion = AsteroidsReplayEvaluator.RulesVersion });
             }
             if (proposedFlappyRun is not null && runReference is not null)
             {
                 createdFlappyRun = new FlappyPaidRunRecord(proposedFlappyRun, requested);
                 transaction.Create(runReference, FlappyRunData(createdFlappyRun));
+                ArcadeRunSecurityAudit.Started(transaction, database, "flappy", proposedFlappyRun.RunId,
+                    requested.PlayerId, requested.EnteredAtUtc.UtcDateTime,
+                    new { runId = proposedFlappyRun.RunId, proposedFlappyRun.Seed, requested.AttemptId,
+                        competitionId = request.Competition.DocumentId, entryFeeCents, feeLedgerId = entryReference.Id,
+                        replayVersion = 1 });
             }
             if (proposedHorseFlightRun is not null && runReference is not null)
             {
                 createdHorseFlightRun = new HorseFlightPaidRunRecord(proposedHorseFlightRun, requested);
                 transaction.Create(runReference, HorseFlightRunData(createdHorseFlightRun));
+                ArcadeRunSecurityAudit.Started(transaction, database, "horse-flight", proposedHorseFlightRun.RunId,
+                    requested.PlayerId, requested.EnteredAtUtc.UtcDateTime,
+                    new { runId = proposedHorseFlightRun.RunId, proposedHorseFlightRun.Seed, requested.AttemptId,
+                        competitionId = request.Competition.DocumentId, entryFeeCents, feeLedgerId = entryReference.Id,
+                        rulesVersion = HorseFlightEngine.CurrentRulesVersion, tickMilliseconds = HorseFlightEngine.TickMilliseconds });
             }
             return new PaidEntryOutcome(new ArcadeCompetitionPaidEntryResult(requested, WasAlreadyRecorded: false), createdRun, createdFlappyRun, createdHorseFlightRun);
         }, cancellationToken: cancellationToken);

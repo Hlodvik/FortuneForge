@@ -11,6 +11,8 @@ namespace FortuneForge.Server.Accounts;
 
 public sealed partial class AccountService
 {
+    private static readonly object RequestAuthenticationKey = new();
+    private sealed record RequestAuthentication(string Token, StoredAccount Account);
     private async Task<AuthenticationResponse> IssueSessionAsync(
         AccountSummary account,
         CancellationToken cancellationToken)
@@ -37,6 +39,12 @@ public sealed partial class AccountService
             return null;
         }
 
+        // Middleware and the endpoint authenticate the same cookie. Reuse only
+        // within this request, never across requests or for a different token.
+        var context = httpContextAccessor.HttpContext;
+        if (context?.Items[RequestAuthenticationKey] is RequestAuthentication saved && saved.Token == token)
+            return saved.Account;
+
         var userId = await accountStore.ResolveSessionAsync(
             HashToken(token),
             DateTime.UtcNow,
@@ -48,7 +56,9 @@ public sealed partial class AccountService
         }
 
         var account = await accountStore.FindByIdAsync(userId, cancellationToken);
-        return account is { Status: ActiveStatus, Deactivated: false } ? account : null;
+        if (account is not { Status: ActiveStatus, Deactivated: false }) return null;
+        if (context is not null) context.Items[RequestAuthenticationKey] = new RequestAuthentication(token, account);
+        return account;
     }
 
     private string? GetClientIpAddress()
@@ -96,7 +106,7 @@ public sealed partial class AccountService
     }
 
     private static bool IsValidPassword(string? value) =>
-        value is not null && value.Length is >= MinimumPasswordLength and <= MaximumPasswordLength;
+        AccountPasswordPolicy.IsValidNewPassword(value);
 
     private static string CreateToken() => Convert
         .ToBase64String(RandomNumberGenerator.GetBytes(32))

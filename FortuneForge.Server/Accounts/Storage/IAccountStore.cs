@@ -69,10 +69,8 @@ public interface IAccountStore
     Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,
         SpinResult result,
-        long chargedWagerCents,
-        bool isFreeSpin,
-        string? activeFreeSpinFeatureMode,
-        DateTime createdAtUtc,
+        SlotSpinAdmission admission,
+        DateTime settledAtUtc,
         CancellationToken cancellationToken);
 
     Task<SlotStateResponse> GetSlotStateAsync(

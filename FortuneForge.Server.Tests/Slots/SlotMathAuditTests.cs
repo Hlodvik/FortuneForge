@@ -7,6 +7,7 @@ using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
+using FortuneForge.Server.RoundAudit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -62,6 +63,7 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
                 new CombinationEvaluator(),
                 new PayoutCalculator(),
                 random),
+            new NoOpDemoAuditStore(),
             NullLogger<DemoSlotsController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
@@ -117,8 +119,13 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
             state.FreeSpinWagerPoints,
             state.EnergyBalance,
             state.Collections,
-            state.FreeSpinFeatureMode));
+            state.FreeSpinFeatureMode), CancellationToken.None).GetAwaiter().GetResult();
         return Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(action).Value);
+    }
+
+    private sealed class NoOpDemoAuditStore : IDemoSlotAuditStore
+    {
+        public Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private static AuditState UpdateState(SpinResult result) => new(

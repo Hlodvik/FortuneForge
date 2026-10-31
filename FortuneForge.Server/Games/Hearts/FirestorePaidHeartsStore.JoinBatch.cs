@@ -42,12 +42,20 @@ internal sealed partial class FirestorePaidHeartsStore
         // Explicitly limited to derived availability by the only caller below;
         // DocumentReference.Path is fully qualified, not collection-relative.
         public void SetDerived(DocumentReference reference, Dictionary<string, object> data) => writes.Set(reference, data);
+        public void MergeDerived(DocumentReference reference, Dictionary<string, object> data) =>
+            writes.Set(reference, data, SetOptions.MergeAll);
         public void Delete(DocumentReference reference) => writes.Delete(reference);
         public Task CommitAsync(CancellationToken ct) => writes.CommitAsync(ct);
     }
 
-    private void Write(PaidHeartsJoinBatch batch, PaidHeartsMatch match)
+    private void Write(PaidHeartsJoinBatch batch, PaidHeartsMatch match, DateTime now)
     {
+        var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture("hearts", match.Id,
+            match.Version, now, match, match.Players.Where(player => player.IsAccountBacked).Select(player => player.UserId));
+        batch.SetDerived(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
+        batch.MergeDerived(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
+                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("hearts", match.Id)),
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.ManifestFields("hearts", match.Id, observation.Id));
         batch.Set(Match(match.Id), Data(match));
         if (HasJoinableHouseSeat(match))
             batch.SetDerived(HouseTable(match), new Dictionary<string, object> { ["matchId"] = match.Id });

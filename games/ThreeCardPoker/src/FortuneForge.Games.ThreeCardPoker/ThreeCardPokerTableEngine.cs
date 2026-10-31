@@ -62,6 +62,7 @@ public static class ThreeCardPokerTableEngine
         foreach (var card in deck) _ = ThreeCardPokerRules.ParseCard(card);
         PrepareForBetting(table);
         table.RoundNumber = checked(table.RoundNumber + 1);
+        table.RoundStartedAtUtc = nowUtc;
         table.RoundSeed = roundSeed;
         table.Deck = deck.ToArray();
         table.RoundAccountingSettled = false;

@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 using FortuneForge.Games.Flappy;
+using FortuneForge.Server.Arcade;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Arcade.Flappy;
@@ -68,6 +69,8 @@ public sealed class FirestoreFlappyFreeRunService
                 ["startedAt"] = Timestamp.FromDateTime(startedAtUtc.UtcDateTime),
                 ["schemaVersion"] = 1L,
             });
+            ArcadeRunSecurityAudit.Started(transaction, database, "flappy", runId, authenticatedPlayerId,
+                startedAtUtc.UtcDateTime, new { runId, seed = run.Seed, replayVersion = 1 });
             return new FlappyFreeRunStartResult(run, startedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }
@@ -111,6 +114,11 @@ public sealed class FirestoreFlappyFreeRunService
                 ["terminal"] = terminal,
                 ["completedAt"] = Timestamp.FromDateTime(completedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
+            ArcadeRunSecurityAudit.Completed(transaction, database, "flappy", runId, authenticatedPlayerId,
+                stored.StartedAtUtc.UtcDateTime, completedAtUtc.UtcDateTime, 0,
+                CollectionName, reference.Id,
+                new { runId, seed = stored.Run.Seed, replayVersion = 1, replayCanonical = canonical,
+                    replaySha256 = digest, score = result.Snapshot.Score, terminal }, "flappy-replay-v1");
             return new FlappyFreeRunCompletionResult(runId, result.Snapshot.Score, terminal, completedAtUtc, false);
         }, cancellationToken: cancellationToken);
     }

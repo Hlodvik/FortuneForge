@@ -13,6 +13,7 @@ using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.Games.TwentyFortyEight;
+using FortuneForge.Server.Games.Snake;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Bots.LiarsDice;
@@ -26,6 +27,7 @@ using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.AndarBahar.Server;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.Activity;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -60,12 +62,21 @@ public static class FortuneForgeStartup
         builder.Services.AddAdminPlayers(builder.Configuration);
         builder.Services.AddAdminManagement(builder.Configuration);
         builder.Services.AddGameReports(builder.Configuration, builder.Environment.IsDevelopment());
+        builder.Services.AddGameActivity();
+        builder.Services.AddSingleton<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink,
+            FortuneForge.Server.SecurityAudit.FirestoreGameSecurityEventSink>();
+        FortuneForge.Server.SecurityAudit.GameSecurityRequestConfiguration.AddGameSecurityRequests(builder.Services, builder.Configuration);
+        FortuneForge.Server.SecurityAudit.SecurityAuditInvestigationConfiguration.AddSecurityAuditInvestigations(builder.Services, builder.Configuration);
+        FortuneForge.Server.Risk.RiskConfiguration.AddPlayerRiskEnforcement(builder.Services);
+        FortuneForge.Server.RoundAudit.GameRoundAuditConfiguration.AddGameRoundAuditing(builder.Services, builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
         builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
         builder.Services.AddPaidHearts(builder.Configuration);
         builder.Services.AddSingleton(provider => new RouletteGameService(
             provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
-            provider.GetRequiredService<IManagedTablePopulationDirector>()));
+            provider.GetRequiredService<IManagedTablePopulationDirector>(),
+            provider.GetRequiredService<FortuneForge.Server.Activity.IGameAnalyticsSink>(),
+            provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>()));
         builder.Services.AddHostedService<RouletteTableWorker>();
         builder.Services.AddSingleton<CrapsGameService>();
         builder.Services.AddDragonTigerServer(options =>
@@ -99,6 +110,7 @@ public static class FortuneForgeStartup
         builder.Services.AddSingleton<DropMergeGameService>();
         builder.Services.AddSingleton<LiarsDiceGameService>();
         builder.Services.AddSingleton<TwentyFortyEightGameService>();
+        builder.Services.AddSingleton<FirestoreSnakeGameService>();
         builder.Services.AddSingleton<PracticeVideoPokerStore>();
         builder.Services.AddSingleton<PracticeBaccaratStore>();
         builder.Services.AddSingleton<PracticeCasinoWarStore>();

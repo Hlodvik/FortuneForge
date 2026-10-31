@@ -303,34 +303,6 @@
       ]
     },
     {
-      "collectionGroup": "securityAuditInvestigations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "createdAtUtc",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "securityAuditInvestigationInstances",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "caseId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "securityAuditInvestigationInstances",
       "queryScope": "COLLECTION",
       "fields": [
@@ -372,76 +344,6 @@
         },
         {
           "fieldPath": "releaseAfterUtc",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "securityAuditPairAnalysisQueue",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "balanceTransactions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roundId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "balanceTransactions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "idempotencyKey",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "hiLoEvents",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roundId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "houseHoldemRoundEvents",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "roundId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ]

@@ -104,6 +104,55 @@ $creatingIndex.state = 'READY'
 Assert-Equal @(Get-UnreadyFirestoreIndexes -Expected @($expectedIndex) -Actual @($creatingIndex)).Count 0 'READY index can serve'
 $creatingIndex.fields[1].order = 'ASCENDING'
 Assert-Equal @(Get-UnreadyFirestoreIndexes -Expected @($expectedIndex) -Actual @($creatingIndex)).Count 1 'wrong index order is not ready'
+$redundantCases = @(
+    @('securityAuditInvestigations', 'createdAtUtc', 'DESCENDING'),
+    @('securityAuditInvestigationInstances', 'caseId', 'ASCENDING'),
+    @('securityAuditPairAnalysisQueue', 'status', 'ASCENDING'),
+    @('balanceTransactions', 'roundId', 'ASCENDING'),
+    @('balanceTransactions', 'idempotencyKey', 'ASCENDING'),
+    @('hiLoEvents', 'roundId', 'ASCENDING'),
+    @('houseHoldemRoundEvents', 'roundId', 'ASCENDING')
+)
+$redundantIndexes = @($redundantCases | ForEach-Object {
+    [pscustomobject]@{
+        collectionGroup = $_[0]; queryScope = 'COLLECTION'; fields = @(
+            [pscustomobject]@{ fieldPath = $_[1]; order = $_[2] },
+            [pscustomobject]@{ fieldPath = '__name__'; order = $_[2] }
+        )
+    }
+})
+try {
+    Assert-NonRedundantFirestoreCompositeIndexes -Definitions $redundantIndexes
+    throw 'Redundant Firestore composite indexes were not rejected.'
+}
+catch {
+    foreach ($case in $redundantCases) {
+        if ($_.Exception.Message -cnotlike "*$($case[0]).$($case[1])*") {
+            throw "The redundant-index validation did not identify $($case[0]).$($case[1])."
+        }
+    }
+}
+Assert-Throws {
+    Assert-NonRedundantFirestoreCompositeIndexes -Definitions @([pscustomobject]@{
+        collectionGroup = 'oneField'; queryScope = 'COLLECTION'; fields = @(
+            [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' }
+        )
+    })
+} 'single ordered field cannot be a composite index'
+Assert-NonRedundantFirestoreCompositeIndexes -Definitions @(
+    [pscustomobject]@{ collectionGroup = 'oppositeNameOrder'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' },
+        [pscustomobject]@{ fieldPath = '__name__'; order = 'ASCENDING' }
+    ) },
+    [pscustomobject]@{ collectionGroup = 'twoRegularFields'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'status'; order = 'ASCENDING' },
+        [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' }
+    ) },
+    [pscustomobject]@{ collectionGroup = 'arrayField'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'players'; arrayConfig = 'CONTAINS' },
+        [pscustomobject]@{ fieldPath = '__name__'; order = 'ASCENDING' }
+    ) }
+)
 $solitaireIndexName = 'projects/fortuneforgegame/databases/(default)/collectionGroups/solitaireMatchPlayers/indexes/CICAgOjXh4EK'
 $otherIndexName = 'projects/fortuneforgegame/databases/(default)/collectionGroups/arcadeCompetitions/indexes/other'
 Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $solitaireIndexName -Project 'fortuneforgegame' -Group 'solitaireMatchPlayers') $true 'correct Firestore group'
@@ -174,6 +223,13 @@ Assert-Throws {
 # Keep the traffic preconditions adjacent to the actual traffic command. These
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
+$expectedIndexRead = $deploySource.IndexOf('$expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)')
+$redundantIndexGuard = $deploySource.IndexOf('Assert-NonRedundantFirestoreCompositeIndexes -Definitions $expectedIndexes', $expectedIndexRead)
+$currentIndexRead = $deploySource.IndexOf('$currentIndexes = @(Get-CurrentFirestoreIndexes -Expected $expectedIndexes)', $expectedIndexRead)
+if ($expectedIndexRead -lt 0 -or $redundantIndexGuard -le $expectedIndexRead -or
+    $currentIndexRead -le $redundantIndexGuard) {
+    throw 'Redundant Firestore composite indexes must be rejected before reading or publishing production indexes.'
+}
 $firebaseAccountFlag = "'--account', " + '$firebaseAccount'
 Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 3 'explicit account for all Firebase publications'
 $indexPublication = $deploySource.IndexOf("'--only', 'firestore:indexes'")

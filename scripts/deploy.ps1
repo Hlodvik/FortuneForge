@@ -485,6 +485,7 @@ try {
     if ($Target -in @('all', 'api')) {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         $expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)
+        Assert-NonRedundantFirestoreCompositeIndexes -Definitions $expectedIndexes
         $expectedFieldOverrides = @(Get-ExpectedFirestoreFieldOverrides -Checkout $releaseCheckout)
         $expectedRulesHash = if ($AllowRollback) { '' }
             else { Get-ExpectedFirestoreRulesHash -Checkout $releaseCheckout }

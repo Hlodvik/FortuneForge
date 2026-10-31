@@ -216,6 +216,26 @@ function Test-FirestoreIndexBelongsToGroup {
     return $Name.StartsWith($prefix, [System.StringComparison]::Ordinal)
 }
 
+function Assert-NonRedundantFirestoreCompositeIndexes {
+    param([Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Definitions)
+
+    $redundant = [System.Collections.Generic.List[string]]::new()
+    foreach ($definition in $Definitions) {
+        $fields = @($definition.fields | Where-Object { $_ })
+        if ($fields.Count -lt 1 -or $fields.Count -gt 2) { continue }
+        $first = $fields[0]
+        if ($first.fieldPath -ceq '__name__' -or $first.order -cnotin @('ASCENDING', 'DESCENDING')) {
+            continue
+        }
+        if ($fields.Count -eq 2 -and ($fields[1].fieldPath -cne '__name__' -or
+            $fields[1].order -cne $first.order)) { continue }
+        $redundant.Add("$($definition.collectionGroup).$($first.fieldPath) $($first.order)")
+    }
+    if ($redundant.Count -gt 0) {
+        throw "Firestore rejected redundant composite indexes that require single-field index controls instead: $($redundant -join '; '). Remove these composite definitions before publication."
+    }
+}
+
 function Get-UnreadyFirestoreIndexes {
     param(
         [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$Expected,
@@ -288,6 +308,7 @@ function New-FirestoreIndexPublicationPlan {
         [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ActualFieldOverrides
     )
 
+    Assert-NonRedundantFirestoreCompositeIndexes -Definitions $ExpectedIndexes
     Assert-SupportedFirestoreFieldOverrides -Definitions $ExpectedFieldOverrides
     $missingIndexes = [System.Collections.Generic.List[object]]::new()
     for ($index = 0; $index -lt $ExpectedIndexes.Count; $index++) {
@@ -488,4 +509,4 @@ function Get-ReleaseVerificationCommands {
     return $commands.ToArray()
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, New-FirestoreIndexPublicationPlan, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Assert-NonRedundantFirestoreCompositeIndexes, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, New-FirestoreIndexPublicationPlan, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands

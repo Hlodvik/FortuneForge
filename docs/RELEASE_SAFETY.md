@@ -66,9 +66,14 @@ unless `-AllowRollback -RollbackReason '...'` is supplied. That override is
 recorded locally in `artifacts/releases/` along with the old and new platform
 revision identifiers.
 
-The API release publishes missing composite indexes and explicit single-field
-exemptions from the committed `firestore.indexes.json`, then waits for every
-required composite index to reach Firestore's `READY` state. Each exemption must
+The API release reads production first, writes a temporary Firebase config with
+only missing composite indexes and unready explicit single-field exemptions from
+the committed `firestore.indexes.json`, and publishes that subset without `--force`.
+Firebase CLI's noninteractive mode leaves other live indexes and exemptions in
+place. The release then waits for every composite index in the full committed
+definition to reach Firestore's `READY` state. It does not POST an index that is
+already `CREATING` or `READY`; a failed existing index blocks on the readiness check.
+The temporary config is removed after the attempt. Each exemption must
 read back with no indexes, no inherited configuration and no reversion in
 progress. Field overrides that define indexes and vector indexes remain blocked.
 Before creating a non-serving Cloud Run revision, it also publishes the committed

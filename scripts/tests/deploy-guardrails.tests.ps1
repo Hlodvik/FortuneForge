@@ -140,17 +140,55 @@ $actualField.reverting = $false
 $actualField.indexes = @([pscustomobject]@{ state = 'READY' })
 Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'explicit field index is not exempt'
 Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @()).Count 1 'missing field exemption'
+$creatingIndex.fields[1].order = 'DESCENDING'
+$explicitNameIndex = [pscustomobject]@{
+    collectionGroup = 'solitaireMatchPlayers'; queryScope = 'COLLECTION'
+    fields = @($expectedIndex.fields + $creatingIndex.fields[-1])
+}
+$actualField.indexes = @()
+$actualField.usesAncestorConfig = $true
+$missingComposite = [pscustomobject]@{
+    collectionGroup = 'gameRoundAudits'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'reviewPending'; order = 'ASCENDING' },
+        [pscustomobject]@{ fieldPath = 'completedAtUtc'; order = 'ASCENDING' }
+    )
+}
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex, $missingComposite) `
+    -ActualIndexes @($creatingIndex) -ExpectedFieldOverrides @($expectedField) -ActualFieldOverrides @($actualField)
+Assert-Equal $publicationPlan.Indexes.Count 1 'only missing composite index is published'
+Assert-Equal $publicationPlan.Indexes[0].collectionGroup 'gameRoundAudits' 'existing composite index is excluded'
+Assert-Equal $publicationPlan.FieldOverrides.Count 1 'only unready field exemption is published'
+$creatingIndex.state = 'CREATING'
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex) -ActualIndexes @($creatingIndex) `
+    -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+Assert-Equal $publicationPlan.Indexes.Count 0 'creating composite index is not recreated'
+$actualField.usesAncestorConfig = $false
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @() -ActualIndexes @() `
+    -ExpectedFieldOverrides @($expectedField) -ActualFieldOverrides @($actualField)
+Assert-Equal $publicationPlan.FieldOverrides.Count 0 'ready field exemption is not patched again'
+Assert-Throws {
+    New-FirestoreIndexPublicationPlan -ExpectedIndexes @($expectedIndex, $explicitNameIndex) -ActualIndexes @() `
+        -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+} 'duplicate committed composite index'
 
 # Keep the traffic preconditions adjacent to the actual traffic command. These
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
 $firebaseAccountFlag = "'--account', " + '$firebaseAccount'
 Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 3 'explicit account for all Firebase publications'
+$indexPublication = $deploySource.IndexOf("'--only', 'firestore:indexes'")
+$indexConfig = $deploySource.IndexOf("'--config', " + '$temporaryIndexConfig.ConfigPath', $indexPublication)
+$indexNonInteractive = $deploySource.IndexOf("'--non-interactive'", $indexConfig)
+$rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")
+if ($indexPublication -lt 0 -or $indexConfig -le $indexPublication -or
+    $indexNonInteractive -le $indexConfig -or $indexNonInteractive -ge $rulesPublication -or
+    $deploySource.Substring($indexPublication, $rulesPublication - $indexPublication).Contains("'--force'")) {
+    throw 'Filtered Firestore index publication must use a temporary config, noninteractive mode and no force deletion.'
+}
 $trafficCommand = $deploySource.LastIndexOf("'run', 'services', 'update-traffic'")
 if ($trafficCommand -lt 0) { throw 'API traffic command is missing from the deploy script.' }
 $readinessCheck = $deploySource.LastIndexOf('Wait-FirestoreIndexesReady -Expected $expectedIndexes', $trafficCommand)
 $fieldReadinessCheck = $deploySource.LastIndexOf('Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides', $trafficCommand)
-$rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")
 $rulesRead = $deploySource.LastIndexOf('$rulesAtTrafficSwitch = Get-LiveFirestoreRules', $trafficCommand)
 $rulesGuard = $deploySource.LastIndexOf('Assert-FirestoreRulesUnchanged -Before $rulesAfterPublication -Now $rulesAtTrafficSwitch', $trafficCommand)
 $revisionRead = $deploySource.LastIndexOf('$apiAtTrafficSwitch = Get-LiveApi', $trafficCommand)

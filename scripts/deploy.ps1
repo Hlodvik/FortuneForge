@@ -324,6 +324,33 @@ function Write-ReleaseRecord {
     [System.IO.File]::WriteAllText($Path, $json, [System.Text.UTF8Encoding]::new($false))
 }
 
+function New-TemporaryFirestoreIndexConfig {
+    param([Parameter(Mandatory)]$PublicationPlan, [Parameter(Mandatory)][string]$Directory)
+
+    $suffix = [guid]::NewGuid().ToString('N')
+    $indexesPath = Join-Path $Directory "firestore-indexes-$suffix.json"
+    $configPath = Join-Path $Directory "firebase-indexes-$suffix.json"
+    if ((Test-Path -LiteralPath $indexesPath) -or (Test-Path -LiteralPath $configPath)) {
+        throw 'The generated Firestore publication files already exist.'
+    }
+    try {
+        Write-ReleaseRecord -Path $indexesPath -Record ([ordered]@{
+            indexes = @($PublicationPlan.Indexes)
+            fieldOverrides = @($PublicationPlan.FieldOverrides)
+        })
+        Write-ReleaseRecord -Path $configPath -Record ([ordered]@{
+            firestore = [ordered]@{ indexes = [System.IO.Path]::GetFileName($indexesPath) }
+        })
+        return [pscustomobject]@{ ConfigPath = $configPath; IndexesPath = $indexesPath }
+    }
+    catch {
+        foreach ($path in @($configPath, $indexesPath)) {
+            if (Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force }
+        }
+        throw
+    }
+}
+
 if ($AdoptUnstampedLive -and $AllowRollback) {
     throw 'Use either first-release adoption or an explicit rollback, not both.'
 }
@@ -385,6 +412,8 @@ $checkoutName = 'FortuneForge-release-' + [guid]::NewGuid().ToString('N')
 $releaseCheckout = Join-Path $checkoutParent $checkoutName
 $checkoutCreated = $false
 $recordPath = ''
+$recordDirectory = Join-Path $repoRoot 'artifacts\releases'
+$temporaryIndexConfig = $null
 $record = [ordered]@{
     schemaVersion = 1
     target = $Target
@@ -411,7 +440,6 @@ try {
     Invoke-Checked -Executable 'git' -Arguments @('-C', $repoRoot, 'worktree', 'add', '--detach', $releaseCheckout, $candidateSha) -WorkingDirectory $repoRoot
     $checkoutCreated = $true
 
-    $recordDirectory = Join-Path $repoRoot 'artifacts\releases'
     [System.IO.Directory]::CreateDirectory($recordDirectory) | Out-Null
     $recordPath = Join-Path $recordDirectory (([DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fff')) + '-' + $candidateSha.Substring(0, 12) + '-' + [guid]::NewGuid().ToString('N').Substring(0, 8) + '.json')
     Write-ReleaseRecord -Record $record -Path $recordPath
@@ -460,28 +488,27 @@ try {
         $expectedFieldOverrides = @(Get-ExpectedFirestoreFieldOverrides -Checkout $releaseCheckout)
         $expectedRulesHash = if ($AllowRollback) { '' }
             else { Get-ExpectedFirestoreRulesHash -Checkout $releaseCheckout }
-        $indexesChanged = $true
-        if (-not [string]::IsNullOrWhiteSpace($apiBefore.SourceSha)) {
-            & git -C $repoRoot diff --quiet $apiBefore.SourceSha $candidateSha -- firestore.indexes.json
-            if ($LASTEXITCODE -eq 0) { $indexesChanged = $false }
-            elseif ($LASTEXITCODE -ne 1) { throw 'Cannot compare committed Firestore index definitions.' }
-        }
         $currentIndexes = @(Get-CurrentFirestoreIndexes -Expected $expectedIndexes)
-        $missingIndexes = @(Get-UnreadyFirestoreIndexes -Expected $expectedIndexes -Actual $currentIndexes |
-            Where-Object { $_.state -ceq 'MISSING' })
         $currentFieldOverrides = @(Get-CurrentFirestoreFieldOverrides -Expected $expectedFieldOverrides)
-        $unreadyFieldOverrides = @(Get-UnreadyFirestoreFieldOverrides -Expected $expectedFieldOverrides -Actual $currentFieldOverrides)
-        if (-not $AllowRollback -and ($missingIndexes.Count -gt 0 -or $unreadyFieldOverrides.Count -gt 0)) {
-            Write-Host "`nDeploying committed Firestore indexes before the API..." -ForegroundColor Yellow
+        $publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes $expectedIndexes `
+            -ActualIndexes $currentIndexes -ExpectedFieldOverrides $expectedFieldOverrides `
+            -ActualFieldOverrides $currentFieldOverrides
+        if (-not $AllowRollback -and ($publicationPlan.Indexes.Count -gt 0 -or $publicationPlan.FieldOverrides.Count -gt 0)) {
+            # Firebase CLI 14.4.0 does not delete definitions absent from a subset
+            # when --non-interactive is used without --force. Filter out existing
+            # indexes because its own matcher drops explicit __name__ fields.
+            $temporaryIndexConfig = New-TemporaryFirestoreIndexConfig -PublicationPlan $publicationPlan -Directory $recordDirectory
+            Write-Host "`nDeploying $($publicationPlan.Indexes.Count) missing Firestore indexes and $($publicationPlan.FieldOverrides.Count) unready field exemptions before the API..." -ForegroundColor Yellow
             Invoke-Checked -Executable 'npx.cmd' -Arguments @(
                 '--yes', 'firebase-tools@14.4.0', 'deploy', '--only', 'firestore:indexes',
+                '--config', $temporaryIndexConfig.ConfigPath,
                 '--project', $project, '--account', $firebaseAccount, '--non-interactive'
             ) -WorkingDirectory $releaseCheckout
         }
-        elseif ($indexesChanged -and $AllowRollback) {
+        elseif ($AllowRollback) {
             Write-Warning 'Keeping existing Firestore indexes during source rollback; database indexes are not rolled back automatically.'
         }
-        elseif ($indexesChanged) {
+        else {
             Write-Host 'Required Firestore index definitions already exist; preserving them and checking readiness.' -ForegroundColor Yellow
         }
 
@@ -625,6 +652,19 @@ catch {
     throw
 }
 finally {
+    if ($temporaryIndexConfig) {
+        foreach ($path in @($temporaryIndexConfig.ConfigPath, $temporaryIndexConfig.IndexesPath)) {
+            $fullPath = [System.IO.Path]::GetFullPath($path)
+            $directory = [System.IO.Path]::GetFullPath($recordDirectory).TrimEnd('\')
+            if ([System.IO.Path]::GetDirectoryName($fullPath).TrimEnd('\') -cne $directory -or
+                [System.IO.Path]::GetFileName($fullPath) -cnotmatch '^(firebase|firestore)-indexes-[0-9a-f]{32}\.json$') {
+                Write-Warning "Refusing to remove unexpected Firestore publication file $fullPath."
+                continue
+            }
+            try { if (Test-Path -LiteralPath $fullPath) { Remove-Item -LiteralPath $fullPath -Force -ErrorAction Stop } }
+            catch { Write-Warning "Could not remove temporary Firestore publication file $fullPath." }
+        }
+    }
     if ($checkoutCreated) {
         $resolvedParent = [System.IO.Path]::GetFullPath($checkoutParent).TrimEnd('\')
         $resolvedCheckout = [System.IO.Path]::GetFullPath($releaseCheckout)

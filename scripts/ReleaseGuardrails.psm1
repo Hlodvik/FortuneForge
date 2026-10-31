@@ -280,6 +280,45 @@ function Get-UnreadyFirestoreFieldOverrides {
     }
 }
 
+function New-FirestoreIndexPublicationPlan {
+    param(
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ExpectedIndexes,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ActualIndexes,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ExpectedFieldOverrides,
+        [Parameter(Mandatory)][AllowEmptyCollection()][object[]]$ActualFieldOverrides
+    )
+
+    Assert-SupportedFirestoreFieldOverrides -Definitions $ExpectedFieldOverrides
+    $missingIndexes = [System.Collections.Generic.List[object]]::new()
+    for ($index = 0; $index -lt $ExpectedIndexes.Count; $index++) {
+        $definition = $ExpectedIndexes[$index]
+        for ($prior = 0; $prior -lt $index; $prior++) {
+            if ((Test-FirestoreIndexDefinitionMatches -Expected $definition -Actual $ExpectedIndexes[$prior]) -or
+                (Test-FirestoreIndexDefinitionMatches -Expected $ExpectedIndexes[$prior] -Actual $definition)) {
+                throw "Duplicate committed Firestore composite index in $($definition.collectionGroup)."
+            }
+        }
+        $present = @($ActualIndexes | Where-Object {
+            Test-FirestoreIndexDefinitionMatches -Expected $definition -Actual $_
+        }).Count -gt 0
+        # CREATING and failed indexes already have an identity: never POST them again.
+        # The full readiness gate will wait for CREATING or reject NEEDS_REPAIR.
+        if (-not $present) { $missingIndexes.Add($definition) }
+    }
+
+    $unreadyFields = @(Get-UnreadyFirestoreFieldOverrides -Expected $ExpectedFieldOverrides -Actual $ActualFieldOverrides)
+    $fieldsToPublish = @($ExpectedFieldOverrides | Where-Object {
+        $definition = $_
+        @($unreadyFields | Where-Object {
+            $_.collectionGroup -ceq $definition.collectionGroup -and $_.fieldPath -ceq $definition.fieldPath
+        }).Count -gt 0
+    })
+    return [pscustomobject]@{
+        Indexes = $missingIndexes.ToArray()
+        FieldOverrides = $fieldsToPublish
+    }
+}
+
 function Get-ReleaseToolPaths {
     @('scripts/deploy.ps1', 'scripts/ReleaseGuardrails.psm1',
       'scripts/tests/deploy-guardrails.tests.ps1', 'scripts/tests/release-scope.tests.ps1',
@@ -449,4 +488,4 @@ function Get-ReleaseVerificationCommands {
     return $commands.ToArray()
 }
 
-Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands
+Export-ModuleMember -Function Assert-ReleaseSha, Assert-CommitOnMain, Assert-ReleaseToolingMatchesCommit, Assert-LiveReleaseSource, Assert-HostingAdoptionRelease, Get-ReleaseTextHash, Get-FirestoreRulesHash, Assert-FirestoreRulesUnchanged, Get-HostingSourceSha, Get-ServingApiRevision, Get-ApiRevisionSourceSha, Assert-ServingApiUnchanged, Test-FirestoreIndexDefinitionMatches, Test-FirestoreIndexBelongsToGroup, Get-UnreadyFirestoreIndexes, Assert-SupportedFirestoreFieldOverrides, Get-UnreadyFirestoreFieldOverrides, New-FirestoreIndexPublicationPlan, Get-ReleaseToolPaths, Assert-ReleaseCheckout, New-ReleaseVerificationPlan, Get-ReleaseVerificationPlan, Assert-ReleaseTestWaiver, Get-ReleaseVerificationCommands

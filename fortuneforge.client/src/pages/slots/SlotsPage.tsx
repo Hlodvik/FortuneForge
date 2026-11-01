@@ -8,6 +8,8 @@ import '../../features/slots/styles/dialogs.css'
 import '../../features/slots/styles/pageOverrides.css'
 import '../../features/slots/styles/piratesGemMeter.css'
 import '../../features/slots/styles/reelRichesFeature.css'
+import '../../features/slots/styles/piratesSpinControls.css'
+import '../../features/slots/styles/piratesRelease.css'
 
 export function SlotsPage(props: SlotsPageProps) {
   const controller = useSlotsPageController(props)

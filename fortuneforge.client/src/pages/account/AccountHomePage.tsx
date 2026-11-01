@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import '@fontsource-variable/sora'
 import heroArtwork from '../../assets/branding/fortune-forge-hero-v1.webp'
-import { PlayerAccountMenus } from '../../components/PlayerHeader'
+import { HomeSidebar, SiteNavbar } from '../../components/SiteNavbar'
 import { GameReportControl } from '../../components/GameReportControl'
 import { GameCatalogueRail } from '../../components/GameCatalogueRail'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -13,7 +13,6 @@ import { HOME_CATEGORIES, HOME_GAME_CATALOG, parseHomeCategory, type CategoryFil
 import './homeLobby.css'
 
 const catalogueAnchor = 'home-lobby-games-title'
-const catalogueHref = `/home#${catalogueAnchor}`
 
 function initialCategory(): CategoryFilter {
   return parseHomeCategory(typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('category'))
@@ -44,26 +43,9 @@ export function HomePage() {
 
   return (
     <div className="home-lobby">
-      <aside className="home-lobby__sidebar">
-        <a className="home-lobby__brand" href="/home" aria-label="Fortune Forge home">
-          <svg className="home-lobby__brand-spade" viewBox="0 0 48 48" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
-            <path d="M24 2C20 11 5 17 5 27c0 9 10 13 17 5-1 7-5 11-10 13h24c-5-2-9-6-10-13 7 8 17 4 17-5C43 17 28 11 24 2Z" />
-          </svg>
-          <strong>FORTUNE<br />FORGE</strong>
-        </a>
-        <nav className="home-lobby__navigation" aria-label="Player navigation">
-          <LobbyNav href="/home" icon="home" current>Home</LobbyNav>
-          <LobbyNav href={catalogueHref} icon="games" onClick={browseAll}>Games</LobbyNav>
-          <LobbyNav href="/home/history" icon="history">History</LobbyNav>
-          <LobbyNav href="/home/settings" icon="account">Account</LobbyNav>
-        </nav>
-        <button className="home-lobby__help" type="button" aria-label="Help" onClick={openHelp}><LobbyIcon name="help" /> <span>Help</span></button>
-      </aside>
+      <HomeSidebar activeNav="home" onGamesClick={browseAll} onHelp={openHelp} />
       <main className="home-lobby__main">
-        <header className="home-lobby__topbar">
-          {account && <a className="home-lobby__header-balance" href="/home/rand" aria-label={`Balance R${account.balances.slotsCredits.toFixed(2)}. Add funds`}><span>Balance</span><strong>R{account.balances.slotsCredits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></a>}
-          {account && <div className="home-lobby__account"><span className="home-lobby__avatar" aria-hidden="true">{account.playerName.slice(0, 1).toLocaleUpperCase()}</span><PlayerAccountMenus account={account} showBalance={false} /></div>}
-        </header>
+        <SiteNavbar mode="home" account={account} />
         {isLoading && <AccountLoading label="Opening your account…" />}
         {!isLoading && error !== null && <AccountError message={error} onRetry={reload} />}
         {!isLoading && account !== null && (
@@ -108,14 +90,6 @@ function LobbyArtwork({ game, priority = false }: { game: LobbyGame; priority?: 
   const artwork = getCataloguePresentationArt(game.href)
   const src = artwork?.src ?? game.image
   return src ? <img className={`home-lobby__game-art${game.imagePresentation === 'contain' && !artwork ? ' home-lobby__game-art--contain' : ''}`} src={src} alt="" width={artwork?.width ?? 768} height={artwork?.height ?? 384} loading={priority ? 'eager' : 'lazy'} decoding="async" draggable="false" /> : <span className="home-lobby__art-fallback" aria-hidden="true">✧</span>
-}
-
-function LobbyNav({ href, icon, current, children, onClick }: { href: string; icon: string; current?: boolean; children: ReactNode; onClick?: () => void }) {
-  return <a href={href} onClick={onClick} aria-label={typeof children === 'string' ? children : undefined} aria-current={current ? 'page' : undefined}><LobbyIcon name={icon} /><span>{children}</span></a>
-}
-
-function LobbyIcon({ name }: { name: string }) {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{name === 'home' ? <><path d="m3 10 9-7 9 7v10H5V10" /><path d="M9 20v-7h6v7" /></> : name === 'games' ? <><path d="M7 7h10c3 0 5 11 2 12l-4-4H9l-4 4C2 18 4 7 7 7Z" /><path d="M7 9v5m-2.5-2.5h5m6.5-1h.01m2 3h.01" /></> : name === 'history' ? <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></> : name === 'account' ? <><circle cx="12" cy="7" r="4" /><path d="M5 21v-3c0-6 14-6 14 0v3Z" /></> : name === 'search' ? <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></> : <><circle cx="12" cy="12" r="9" /><path d="M9.8 8a2.4 2.4 0 0 1 4.5 1.2c0 2-2.3 2-2.3 4M12 17h.01" /></>}</svg>
 }
 
 function AccountLoading({ label }: { label: string }) {

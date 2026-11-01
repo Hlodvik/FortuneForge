@@ -1037,7 +1037,8 @@ export function useSlotsPageController({
     const frameRect = document.querySelector<HTMLElement>('.slot-game-frame')?.getBoundingClientRect()
     const stageRect = document.querySelector<HTMLElement>('.slots-page__stage')?.getBoundingClientRect()
     const sourceRect = frameRect ?? stageRect
-    const destinationRect = creditTileRef.current?.getBoundingClientRect()
+    const balanceTarget = creditTileRef.current ?? document.querySelector<HTMLElement>('.slots-page__purchase-credits')
+    const destinationRect = balanceTarget?.getBoundingClientRect()
     const startLeft = sourceRect ? sourceRect.left + sourceRect.width / 2 : window.innerWidth / 2
     const startTop = sourceRect ? sourceRect.top + sourceRect.height * 0.38 : window.innerHeight * 0.38
     const destinationLeft = destinationRect
@@ -1811,6 +1812,7 @@ export function useSlotsPageController({
   }
 
   return {
+    account,
     balanceActionHref,
     balanceRecoveryHref,
     balanceRecoveryLabel,
@@ -1864,6 +1866,7 @@ export function useSlotsPageController({
     help,
     moneyGrabPresentation,
     pageBackdropStyle,
+    pointValueInCents,
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,

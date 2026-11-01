@@ -17,7 +17,7 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
-vi.mock('../../components/PlayerHeader', () => ({ PlayerAccountMenus: ({ showBalance }: { showBalance: boolean }) =>
+vi.mock('../../components/PlayerAccountMenus', () => ({ PlayerAccountMenus: ({ showBalance }: { showBalance: boolean }) =>
   <details data-show-balance={showBalance}><summary>Account menu</summary><button>Log out</button></details>,
 }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: (returnPath: string) => {
@@ -41,9 +41,9 @@ describe('account home', () => {
     const host = staticHome()
     expect(host.querySelector('.home-lobby__brand-spade')?.getAttribute('fill')).toBe('currentColor')
     expect(host.querySelector('h1')?.textContent).toBe('Welcome back, Avery')
-    expect(host.querySelector('.home-lobby__header-balance')?.getAttribute('href')).toBe('/home/rand')
+    expect(host.querySelector('.site-header-balance')?.getAttribute('href')).toBe('/home/rand')
     expect(host.querySelector('.home-lobby__topbar')?.textContent).toContain('R139,174.75')
-    expect(host.innerHTML.match(/R139,174\.75/g)).toHaveLength(1)
+    expect(host.querySelectorAll('.site-header-balance__full')).toHaveLength(1)
     expect(host.innerHTML).toContain('data-show-balance="false"')
     expect(host.querySelector('.home-lobby__balance, input[type="search"], .home-lobby__browse, .home-lobby__top-help')).toBeNull()
     expect(host.querySelectorAll('button[aria-label="Help"]')).toHaveLength(1)
@@ -130,7 +130,7 @@ describe('account home', () => {
   it('keeps loading and error states truthful with retry', () => {
     state.signedOut = true; state.loading = true
     expect(staticHome().textContent).toContain('Opening your account')
-    expect(staticHome().querySelector('.home-lobby__header-balance')).toBeNull()
+    expect(staticHome().querySelector('.site-header-balance')).toBeNull()
     state.loading = false; state.error = 'Your session needs attention.'
     expect(staticHome().textContent).toContain('Your session needs attention.')
     state.signedOut = false; state.error = null; state.recentError = 'Unavailable'; state.popularityError = 'Unavailable'

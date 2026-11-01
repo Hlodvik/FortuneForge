@@ -12,7 +12,7 @@ const state = vi.hoisted(() => ({
   popularity: [] as CataloguePopularityGame[],
 }))
 
-vi.mock('../../components/PlayerHeader', () => ({
+vi.mock('../../components/PlayerAccountMenus', () => ({
   PlayerAccountMenus: ({ showBalance }: { showBalance: boolean }) => <div data-testid="account-menu" data-show-balance={showBalance}>Player menu</div>,
 }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({

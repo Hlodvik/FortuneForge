@@ -2,10 +2,10 @@ import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
 import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
-import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
-import { InGameNavExits } from '../../components/InGameNavbar'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
+import { PiratesSpinControls } from './components/PiratesSpinControls'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
 import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
@@ -183,6 +183,19 @@ export function SlotsPageView(controller: SlotsPageController) {
   // spin. Reserve this extra panel for wins, features, and actionable errors.
   const showOutcomeBanner = slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
     !(isReelRiches && isSpecialGameActive && slotOutcome.label === 'Free game ready')
+  const pirateUtilityButtons = <div className="slots-page__pirate-utility-buttons" role="group" aria-label="Game options">
+    <button className="slots-page__help-button" type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={isHelpOpen}
+      onClick={() => { setIsAutoSpinning(false); setIsHelpOpen(true) }}>
+      <span aria-hidden="true">?</span>
+    </button>
+    <button className="slots-page__settings-button" type="button" aria-label="Open settings" aria-haspopup="dialog" aria-expanded={isSettingsOpen}
+      onClick={() => { setIsAutoSpinning(false); setIsSettingsOpen(true) }}>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m9 4 .8-2h4.4L15 4l2 .9 2.1-.2 2.2 3.8-1.3 1.8v2.3l1.3 1.8-2.2 3.8-2.1-.2-2 .9-.8 2H9.8l-.8-2-2-.9-2.1.2L2.7 14.4 4 12.6v-2.3L2.7 8.5l2.2-3.8 2.1.2Z" />
+        <circle cx="12" cy="11.5" r="3" />
+      </svg>
+    </button>
+  </div>
 
   return (
     <div
@@ -196,43 +209,17 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-reel-riches-bonus={reelRichesBonusVisible ? 'true' : undefined}
       data-reel-riches-win={isReelRiches && isSpecialGameActive ? lastSpinOutcome?.kind : undefined}
     >
-      <header className="slots-page__topbar" data-game-navbar>
-        <div className="slots-page__brand-cluster">
-          <InGameNavExits
-            authenticated={balanceActionHref !== null}
-            className="slots-page__navigation"
-            onNavigate={() => setIsAutoSpinning(false)}
-          />
-          <div className="slots-page__game-identity">
-            <span>{cabinetTheme.eyebrow}</span>
-            <h1>{cabinetTheme.title}</h1>
-            <small>{cabinetTheme.subtitle}</small>
-          </div>
-        </div>
-        <span className="slots-page__brand-actions">
-            {balanceActionHref === null ? (
-              <span
-                className="slots-page__purchase-credits slots-page__purchase-credits--static"
-                aria-label={`Balance: ${formatRand(balance)}`}
-              >
-                <ForgeCoin className="slots-page__purchase-credits-coin" />
-                <span>{formatRand(balance)}</span>
-              </span>
-            ) : (
-              <>
-                <a
-                  className="slots-page__purchase-credits"
-                  href={balanceActionHref}
-                  aria-label={`Balance: ${formatRand(balance)}. Open recharge.`}
-                  onClick={() => setIsAutoSpinning(false)}
-                >
-                  <ForgeCoin className="slots-page__purchase-credits-coin" />
-                  <span>{formatRand(balance)}</span>
-                </a>
-                <PaymentAlertsMenu />
-              </>
-            )}
-            <button
+      <SiteNavbar
+        mode="game"
+        theme="slots"
+        account={controller.account}
+        authenticated={balanceActionHref !== null}
+        reportTitle={cabinetTheme.title}
+        balance={balance}
+        onNavigate={() => setIsAutoSpinning(false)}
+        actions={<>
+          {balanceActionHref !== null && <PaymentAlertsMenu />}
+          {!isPiratesFortune && <><button
               className="slots-page__help-button"
               type="button"
               aria-label="How to win"
@@ -258,12 +245,12 @@ export function SlotsPageView(controller: SlotsPageController) {
               }}
             >
               <span aria-hidden="true">&#9881;</span>
-            </button>
-        </span>
-
-      </header>
+            </button></>}
+        </>}
+      />
 
       <main className="slots-page__main">
+        <h1 className="slots-page__accessible-title">{cabinetTheme.title}</h1>
         <div className="slots-page__layout">
           <div className="slots-page__stage">
           {(collectionFeature || energyFeature || isSpecialGameActive) && (
@@ -406,15 +393,15 @@ export function SlotsPageView(controller: SlotsPageController) {
             />
           </div>
 
-          <div className="slots-page__playbar" aria-label="Balance, wager, and spin controls">
-            <SymbolValueGuide
+          <div className="slots-page__playbar" aria-label={isPiratesFortune ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
+            {!isPiratesFortune && <SymbolValueGuide
               symbolSet={symbolSet}
               showSidePanel={isPiratesFortune}
               sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
               showValueTokens={Boolean(moneyGrabFeature)}
-            />
+            />}
 
-            <div
+            {!isPiratesFortune && <div
               ref={creditTileRef}
               className="slots-page__balance slots-page__control-tile"
               aria-label={`Balance: ${formatRand(balance)}`}
@@ -423,9 +410,26 @@ export function SlotsPageView(controller: SlotsPageController) {
               <span className="slots-page__balance-line">
                 <span className="slots-page__balance-value">{formatRand(balance)}</span>
               </span>
-            </div>
+            </div>}
 
-            <div
+            {isPiratesFortune ? <PiratesSpinControls
+              activeWager={activeWagerDisplay}
+              disabled={isDemoSpinDisabled}
+              freeSpinsRemaining={freeSpinsRemaining}
+              isAutoSpinning={isAutoSpinning}
+              isFreeSpinBadgePopping={isFreeSpinBadgePopping}
+              isSpinning={isSpinning}
+              isStopRequested={isStopRequested}
+              onAutoSpinChange={(active) => { setSpinError(null); setIsAutoSpinning(active) }}
+              onSelectWager={controller.selectWager}
+              onSpin={handleSpinButtonClick}
+              pointValueInCents={controller.pointValueInCents}
+              showFreeSpinBadge={showFreeSpinBadge}
+              specialControlsActive={specialControlsActive}
+              specialRoundLabel={specialRoundLabel}
+              wagerIndex={wagerIndex}
+              wagerOptions={wagerOptions}
+            /> : <div
               className={`slots-page__spin-controls${specialControlsActive ? ' slots-page__spin-controls--special' : ''}`}
               aria-label={specialControlsActive ? 'Special game spin control' : 'Spin, autospin, and wager controls'}
             >
@@ -492,7 +496,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                   </div>
                 )}
               </div>
-            </div>
+            </div>}
 
             {isPiratesFortune && createPortal(
               <SlotPlayGuide
@@ -521,6 +525,9 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
         </div>
       </main>
+
+      {isPiratesFortune && <SymbolValueGuide symbolSet={symbolSet} showSidePanel showValueTokens={Boolean(moneyGrabFeature)} />}
+      {isPiratesFortune && pirateUtilityButtons}
 
       {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && !reelRichesBonusVisible && (
         <div

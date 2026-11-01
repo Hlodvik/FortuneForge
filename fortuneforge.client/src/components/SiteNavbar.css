@@ -1,0 +1,133 @@
+.site-navbar {
+  --site-nav-gold: #e3c58d;
+  position: relative;
+  z-index: 30;
+  min-height: 3.75rem;
+  align-items: center;
+  background: #0d0f13;
+  color: var(--site-nav-gold);
+  font-family: 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+}
+
+.site-navbar:not(.site-navbar--home) {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) auto auto;
+  gap: .8rem;
+  padding: .55rem max(1rem, calc((100vw - 86rem) / 2));
+  border-bottom: 1px solid rgb(227 197 141 / 24%);
+}
+.site-navbar__leading { display: flex; grid-column: 1; min-width: 0; align-items: center; gap: .7rem; }
+.site-navbar__actions, .site-navbar__account-tools, .in-game-navbar__account-tools { display: flex; min-width: 0; align-items: center; gap: .7rem; }
+.site-navbar__actions { grid-column: 3; flex-wrap: wrap; }
+.site-navbar.site-navbar--game { grid-template-columns: minmax(max-content, 1fr) auto auto; }
+.site-navbar--game .site-navbar__actions { grid-column: 2; flex-wrap: nowrap; }
+.site-navbar--game .in-game-navbar__account-tools { grid-column: 3; }
+.site-navbar__account-tools, .in-game-navbar__account-tools { grid-column: 4; justify-content: flex-end; }
+.site-navbar__brand, .site-navbar__brand:visited { display: inline-flex; min-width: 0; align-items: center; gap: .55rem; color: var(--site-nav-gold, #e3c58d); text-decoration: none; }
+.site-navbar__brand strong { color: inherit; font: 500 clamp(.9rem, 1.25vw, 1.15rem)/1.05 Georgia, 'Times New Roman', serif; letter-spacing: .12em; white-space: nowrap; }
+.site-navbar__spade { display: block; width: 2rem; height: 2rem; flex: 0 0 auto; }
+.site-navbar .in-game-navbar__title { grid-column: 2; min-width: 0; overflow: hidden; color: #f8f2df; font-size: .78rem; letter-spacing: .08em; text-align: center; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.site-navbar .player-shell-header__games { flex: 0 0 auto; padding: .58rem .8rem; border: 1px solid rgb(227 197 141 / 27%); border-radius: 999px; color: #e4dccb; font-size: .7rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.site-navbar .player-shell-header__games:hover { border-color: #e3c58d; color: #fff8dc; }
+.site-navbar__public-links { display: flex; grid-column: 4; align-items: center; gap: clamp(.7rem, 2vw, 1.8rem); }
+.site-navbar__public-links a { color: #ece5d8; font-size: .76rem; font-weight: 650; text-decoration: none; white-space: nowrap; }
+.site-navbar__public-links a:hover { color: #fff; }
+.site-navbar__public-links .site-navbar__public-cta { padding: .65rem 1rem; border: 1px solid #d8ba83; border-radius: .4rem; background: linear-gradient(#ead09d, #bd9862); color: #211911; }
+.site-navbar__public-links .site-navbar__public-cta:hover { color: #211911; filter: brightness(1.07); }
+.site-navbar__brand:focus-visible, .site-navbar a:focus-visible { outline: 2px solid #e3c58d; outline-offset: 3px; }
+.site-navbar--restricted { grid-template-columns: minmax(0, 1fr) auto !important; }
+.site-navbar--restricted .site-navbar__actions { grid-column: 2; }
+.site-navbar__brand--static { cursor: default; }
+.site-navbar--home { min-height: 3rem; background: transparent; }
+.site-navbar__avatar-account { position: relative; display: flex; width: 45px; height: 45px; flex: 0 0 auto; align-items: center; }
+.site-navbar__avatar-letter { position: absolute; inset: 0; display: grid; place-items: center; border-radius: 50%; background: #342354; color: #f1e7ff; font-size: 1rem; font-weight: 600; pointer-events: none; }
+.site-navbar__avatar-account .player-shell-header__menus { gap: 0; }
+.site-navbar__avatar-account .player-shell-menu--more > summary { position: relative; width: 45px; height: 45px; min-height: 45px; border-color: #543479; background: transparent; }
+.site-navbar__avatar-account .player-shell-menu--more > summary > span { visibility: hidden; }
+.site-navbar__avatar-account .player-shell-menu--more > summary:focus-visible { outline: 2px solid #c6a2ff; outline-offset: 3px; }
+.site-navbar__avatar-account .player-shell-menu > nav { z-index: 40; border-color: #393040; background: #15131c; color: #f4f1e9; }
+.site-navbar__avatar-account .player-shell-menu > nav a:hover,
+.site-navbar__avatar-account .player-shell-menu > nav button:hover { background: #272032; }
+.site-navbar:not(.site-navbar--home) :is(.site-navbar__account-tools, .in-game-navbar__account-tools) .site-header-balance { white-space: nowrap; }
+
+.player-shell-header__menus {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+
+.player-shell-menu { position: relative; }
+.player-shell-menu > summary { list-style: none; }
+.player-shell-menu > summary::-webkit-details-marker { display: none; }
+.player-shell-menu--more > summary { display: grid; width: 2.6rem; aspect-ratio: 1; place-content: center; gap: 0.23rem; border: 1px solid rgb(227 197 141 / 28%); border-radius: 50%; background: #16171d; }
+.player-shell-menu--more > summary span { display: block; width: 1rem; height: 2px; border-radius: 2px; background: #f5e5ae; }
+.player-shell-menu > nav { position: absolute; z-index: 40; top: calc(100% + 0.5rem); right: 0; display: grid; width: min(18rem, calc(100vw - 1rem)); overflow: hidden; padding: 0.4rem; border: 1px solid rgb(227 197 141 / 25%); border-radius: 0.85rem; background: rgb(17 18 23 / 97%); box-shadow: 0 1rem 2.5rem rgb(0 0 0 / 45%); }
+.player-shell-menu nav a,
+.player-shell-menu nav button { display: grid; gap: 0.12rem; padding: 0.7rem; border: 0; border-radius: 0.55rem; background: transparent; color: #f7f1d8; font: inherit; text-align: left; text-decoration: none; }
+.player-shell-menu nav a:hover,
+.player-shell-menu nav button:hover { background: rgb(231 205 127 / 10%); }
+.player-shell-menu nav strong { font-size: 0.76rem; }
+.player-shell-menu nav small { color: #9db3ac; font-size: 0.62rem; }
+
+
+@media (max-width: 960px) {
+  .site-navbar--game .site-header-balance { gap: 0; }
+  .site-navbar--game .site-header-balance > span { display: none; }
+}
+@media (max-width: 720px) {
+  .site-navbar:not(.site-navbar--home) { min-height: 3.35rem; gap: .45rem; padding: .4rem .65rem; }
+  .site-navbar__brand strong { font-size: .83rem; letter-spacing: .08em; }
+  .site-navbar__spade { width: 1.8rem; height: 1.8rem; }
+  .site-navbar .player-shell-header__games { padding: .4rem .55rem; font-size: .62rem; }
+  .site-navbar__public-links { gap: .5rem; }
+  .site-navbar__public-links a { font-size: .66rem; }
+  .site-navbar__public-links .site-navbar__public-cta { padding: .5rem .6rem; }
+}
+@media (max-width: 680px) {
+  .site-navbar__avatar-letter { font-size: 14px; }
+  .site-navbar__avatar-account { width: 42px; height: 42px; }
+  .site-navbar__avatar-account .player-shell-menu--more > summary { width: 42px; height: 42px; min-height: 42px; }
+}
+@media (min-width: 561px) and (max-width: 720px) {
+  .site-navbar.site-navbar--game { gap: .25rem; padding-inline: .5rem; }
+  .site-navbar--game .site-navbar__leading,
+  .site-navbar--game .in-game-navbar__account-tools { gap: .35rem; }
+  .site-navbar--game .site-navbar__brand { gap: .35rem; }
+  .site-navbar--game .site-navbar__brand strong { font-size: .73rem; letter-spacing: .06em; }
+  .site-navbar--game .site-navbar__spade { width: 1.6rem; height: 1.6rem; }
+  .site-navbar--game .player-shell-header__games { padding-inline: .4rem; font-size: .6rem; }
+  .site-navbar--game .site-header-balance > strong { font-size: clamp(14px, 2.5vw, 18px); }
+}
+@media (max-width: 560px) {
+  .site-navbar:not(.site-navbar--home) { grid-template-columns: minmax(0, 1fr) auto; }
+  .site-navbar__leading { grid-column: 1; grid-row: 1; flex-wrap: wrap; gap: .4rem; }
+  .site-navbar .in-game-navbar__title { display: none; }
+  .site-navbar__actions { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; }
+  .site-navbar--game .site-navbar__actions { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; }
+  .site-navbar--game .in-game-navbar__account-tools { grid-column: 2; }
+  .site-navbar__account-tools, .in-game-navbar__account-tools { grid-column: 2; grid-row: 1; gap: .45rem; }
+  .site-navbar:not(.site-navbar--home) :is(.site-navbar__account-tools, .in-game-navbar__account-tools) .site-header-balance { gap: 0; padding: 0; }
+  .site-navbar:not(.site-navbar--home) :is(.site-navbar__account-tools, .in-game-navbar__account-tools) .site-header-balance > span { display: none; }
+  .site-navbar:not(.site-navbar--home) :is(.site-navbar__account-tools, .in-game-navbar__account-tools) .site-header-balance > strong { font-size: clamp(13px, 3.6vw, 16px); }
+  .site-navbar__public-links { grid-column: 2; }
+  .site-navbar__public-links a[href='/#discover-games'] { display: none; }
+}
+@media (max-width: 520px) {
+  .site-navbar:not(.site-navbar--home) .site-navbar__brand strong { display: none; }
+  .site-navbar--game .player-shell-header__games { display: none; }
+  .site-navbar--game .in-game-navbar__account-tools { gap: .25rem; }
+}
+@media (max-width: 360px) {
+  .site-navbar:not(.site-navbar--home) { padding-inline: .5rem; }
+  .site-navbar__brand { gap: .35rem; }
+  .site-navbar__brand strong { font-size: .73rem; letter-spacing: .06em; }
+  .site-navbar__spade { width: 1.6rem; height: 1.6rem; }
+  .site-navbar__public-links { gap: .4rem; }
+  .site-navbar__public-links a { font-size: .6rem; }
+  .site-navbar__public-links .site-navbar__public-cta { padding-inline: .4rem; }
+}
+@media (max-height: 500px) {
+  .site-navbar:not(.site-navbar--home) { min-height: 2.8rem; padding-block: .22rem; }
+  .site-navbar__avatar-account { width: 2.15rem; height: 2.15rem; }
+  .site-navbar .player-shell-menu--more > summary { width: 2.15rem; height: 2.15rem; min-height: 2.15rem; }
+}

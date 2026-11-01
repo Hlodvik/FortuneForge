@@ -1,48 +1,27 @@
-/* Pirates' jewel rail keeps collection progress on the cabinet, above the reels. */
+/* The rail is cut from the approved Pirates mockup; the meters remain live. */
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collections {
   position: relative;
+  z-index: 2;
   align-items: stretch;
   gap: 0;
-  padding: 0.18rem 0.32rem 0.3rem;
-  border: 2px solid #c58a39;
-  border-radius: 0.9rem 0.9rem 0.58rem 0.58rem;
-  background:
-    linear-gradient(180deg, rgb(255 221 143 / 15%), transparent 22% 73%, rgb(0 0 0 / 37%)),
-    repeating-linear-gradient(92deg, rgb(255 222 158 / 4%) 0 2px, transparent 2px 11px),
-    linear-gradient(180deg, #573018, #24120c 58%, #3b1d0d);
-  box-shadow:
-    inset 0 1px #ffe2a9a3,
-    inset 0 -2px #0c0705,
-    0 0.18rem 0.3rem #0009;
-}
-
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collections::before {
-  position: absolute;
-  right: 0.45rem;
-  bottom: 0.15rem;
-  left: 0.45rem;
-  height: 1px;
-  background: #e9bc6999;
-  content: '';
-  pointer-events: none;
+  margin-top: 0.55rem;
+  padding: 0 2% 0 3.5%;
+  aspect-ratio: 660 / 90;
+  border: 0;
+  background: url('../../../assets/slots/games/pirates-fortune/gem-rail-reference.png') center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0.22rem 0.24rem #000b);
 }
 
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard {
   --pirate-gem-color: #e23548;
   --pirate-gem-light: #ff9b91;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(2.4rem, 2.75rem) auto;
-  justify-items: stretch;
-  align-items: stretch;
-  gap: 0;
-  min-height: 4.25rem;
-  padding: 0.08rem clamp(0.15rem, 0.65vw, 0.42rem) 0.16rem;
-  border-right: 1px solid #a0703ca8;
-  background: radial-gradient(ellipse at 50% 10%, color-mix(in srgb, var(--pirate-gem-color) 22%, transparent), transparent 68%);
-}
-
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard:last-child {
-  border-right: 0;
+  position: relative;
+  display: block;
+  min-height: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
 }
 
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--rows { --pirate-gem-color: #1688e5; --pirate-gem-light: #9bdcff; }
@@ -50,9 +29,11 @@
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--rand { --pirate-gem-color: #12ab6c; --pirate-gem-light: #96f6b7; }
 
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__collection-visual {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
-  height: 2.75rem;
+  height: 100%;
   max-height: none;
   aspect-ratio: auto;
   overflow: visible;
@@ -68,26 +49,26 @@
 
 .slots-page__pirate-gem-pile::before {
   position: absolute;
-  right: 17%;
-  bottom: 3%;
-  left: 17%;
-  height: 0.36rem;
+  right: 16%;
+  bottom: 2%;
+  left: 16%;
+  height: 0.42rem;
   border-radius: 50%;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--pirate-gem-color) 60%, #ffbd6b) 0, #0008 58%, transparent 72%);
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--pirate-gem-color) 45%, #ffbd6b) 0, #0009 58%, transparent 72%);
   filter: blur(0.1rem);
   content: '';
 }
 
 .slots-page__pirate-gem-pile img {
   position: absolute;
-  bottom: calc(4% - var(--collection-piece-y));
+  bottom: calc(52% - var(--collection-piece-y));
   left: calc(50% + var(--collection-piece-x));
-  width: clamp(1.45rem, 3vw, 2.1rem);
-  height: auto;
+  width: clamp(1.15rem, 2.4vw, 1.8rem);
+  height: clamp(1.15rem, 2.4vw, 1.8rem);
   opacity: 0;
   object-fit: contain;
   transform: translateX(-50%) rotate(var(--collection-piece-rotate)) scale(0.5);
-  filter: drop-shadow(0 0.13rem 0.1rem #000b) drop-shadow(0 0 0.13rem var(--pirate-gem-color));
+  filter: drop-shadow(0 0.14rem 0.11rem #000c) drop-shadow(0 0 0.13rem var(--pirate-gem-color));
   transition: opacity 260ms ease, transform 340ms cubic-bezier(0.16, 0.87, 0.25, 1.25);
 }
 
@@ -105,22 +86,20 @@
 }
 
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__seal-details {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto 0.48rem;
-  align-content: end;
-  justify-items: stretch;
-  gap: 0.13rem;
+  position: absolute;
+  inset: 0;
+  display: block;
   width: 100%;
+  height: 100%;
   padding: 0;
 }
 
 .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__seal-title {
-  display: block;
+  display: none;
   overflow: visible;
   min-height: 0;
-  color: #fff1cc;
-  font: 900 clamp(0.48rem, 0.9vw, 0.66rem)/1.05 Inter, ui-sans-serif, system-ui, sans-serif;
+  color: transparent;
+  font: 900 clamp(0.59rem, 1vw, 0.76rem)/1.05 Inter, ui-sans-serif, system-ui, sans-serif;
   letter-spacing: 0.035em;
   text-align: center;
   text-overflow: clip;
@@ -129,10 +108,13 @@
 }
 
 .slots-page__pirate-gem-meter {
-  position: relative;
+  position: absolute;
   display: block;
-  width: 100%;
-  height: 0.48rem;
+  right: 4%;
+  bottom: 11%;
+  left: 2%;
+  width: auto;
+  height: 16%;
   overflow: hidden;
   border: 1px solid #ad7237;
   border-radius: 999px;
@@ -186,22 +168,23 @@
 
 @media (max-width: 560px) {
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collections {
-    padding: 0.12rem 0.1rem 0.22rem;
-    border-width: 1px;
-    border-radius: 0.55rem;
+    margin-top: 0;
+    padding: 0 2% 0 3.5%;
   }
 
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard {
-    grid-template-rows: 2rem auto;
-    min-height: 3.22rem;
-    padding: 0.04rem 0.12rem 0.12rem;
+    min-height: 0;
+    padding: 0;
   }
 
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__collection-visual {
-    height: 2rem;
+    height: 100%;
   }
 
-  .slots-page__pirate-gem-pile img { width: clamp(1.06rem, 5vw, 1.4rem); }
+  .slots-page__pirate-gem-pile img {
+    width: clamp(0.8rem, 3.8vw, 1.15rem);
+    height: clamp(0.8rem, 3.8vw, 1.15rem);
+  }
 
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__seal-title {
     font-size: clamp(0.56rem, 1.9vw, 0.66rem);
@@ -213,17 +196,16 @@
     gap: 0.08rem;
   }
 
-  .slots-page__pirate-gem-meter { height: 0.38rem; }
+  .slots-page__pirate-gem-meter { height: 16%; }
 }
 
 @media (min-width: 561px) and (max-height: 840px) {
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard {
-    grid-template-rows: 2.25rem auto;
-    min-height: 3.65rem;
+    min-height: 0;
   }
 
   .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-collection--gem-hoard .slots-page__collection-visual {
-    height: 2.25rem;
+    height: 100%;
   }
 }
 

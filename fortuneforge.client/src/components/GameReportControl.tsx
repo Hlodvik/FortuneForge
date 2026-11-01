@@ -43,7 +43,7 @@ export function GameReportControl({ gameTitle, send = sendGameReport }: { gameTi
     if (receipt) { setReceipt(''); setMessage(''); setCategory('bug'); setError('') }
     setOpen(true)
   }
-  return <><button ref={trigger} type="button" className="in-game-navbar__report" aria-label="Report this game" aria-haspopup="dialog" onClick={begin}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 21V4m0 0c5-5 9 5 14 0v10c-5 5-9-5-14 0"/></svg><span>Report</span></button>
+  return <><button ref={trigger} type="button" className="in-game-navbar__report" aria-label="Report this game" title="Report this game" aria-haspopup="dialog" onClick={begin}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="M5 21V4m0 0c5-5 9 5 14 0v10c-5 5-9-5-14 0"/></svg></button>
     {open && <dialog ref={dialog} className="game-report-dialog" aria-labelledby="game-report-title" onCancel={event => { event.preventDefault(); close() }} onClick={event => { if (event.target === event.currentTarget) close() }}><div>
       <button type="button" className="game-report-dialog__close" aria-label="Close report" disabled={busy} onClick={close}>×</button>
       <p className="game-report-dialog__eyebrow">HELP US MAKE IT BETTER</p><h2 id="game-report-title">Report {gameTitle || 'this game'}</h2>

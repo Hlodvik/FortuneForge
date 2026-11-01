@@ -33,16 +33,16 @@ const pileLayout = [
 ] as const
 
 const piratePileLayout = [
-  { x: 0, y: 0, rotate: -5, scale: 0.85 },
-  { x: -1.12, y: -0.02, rotate: -20, scale: 0.73 },
-  { x: 1.1, y: -0.04, rotate: 18, scale: 0.74 },
-  { x: -0.62, y: -0.48, rotate: -8, scale: 0.8 },
-  { x: 0.58, y: -0.51, rotate: 9, scale: 0.81 },
-  { x: -1.48, y: -0.65, rotate: -25, scale: 0.68 },
-  { x: 1.46, y: -0.69, rotate: 23, scale: 0.69 },
-  { x: -0.94, y: -1.04, rotate: -14, scale: 0.76 },
-  { x: 0.89, y: -1.07, rotate: 13, scale: 0.76 },
-  { x: 0, y: -1.34, rotate: 2, scale: 0.83 },
+  { x: 0, y: -0.64, rotate: -5, scale: 0.96 },
+  { x: -0.95, y: 0, rotate: -20, scale: 0.73 },
+  { x: 0.95, y: -0.04, rotate: 18, scale: 0.74 },
+  { x: -0.53, y: -0.45, rotate: -8, scale: 0.8 },
+  { x: 0.55, y: -0.48, rotate: 9, scale: 0.81 },
+  { x: -1.34, y: -0.61, rotate: -25, scale: 0.68 },
+  { x: 1.31, y: -0.67, rotate: 23, scale: 0.69 },
+  { x: -0.83, y: -1.02, rotate: -14, scale: 0.76 },
+  { x: 0.84, y: -1.05, rotate: 13, scale: 0.76 },
+  { x: 0, y: -1.27, rotate: 2, scale: 0.83 },
 ] as const
 
 const orbitSteps = Array.from({ length: 10 }, (_, index) => index)
@@ -71,8 +71,9 @@ export function CollectionProgressDisplay({
   const tackleReveal = progress === 0
     ? 0
     : Math.min(100, 25 + 75 * Math.sqrt(progress / 100))
+  // The rail artwork already includes the starting gems; these are earned overlays.
   const visiblePieceCount = isGemHoard
-    ? Math.min(piratePileLayout.length, Math.ceil(Math.max(0, visualCount) / 2.4))
+    ? Math.min(5, Math.round(progress / 18))
     : visualCount === 0 ? 0 : Math.max(1, Math.ceil(progress / 10))
   const collectionName = isGemHoard ? `${definition.shortLabel} gems` : definition.label
   const collectible = isGemHoard ? `${definition.shortLabel} gems` : itemLabel

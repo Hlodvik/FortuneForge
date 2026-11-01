@@ -49,9 +49,12 @@
 .house-holdem-bet-spot-wrap:last-child .house-holdem-bet-spot__help:is(:hover, :focus-visible) + .house-holdem-bet-spot__tip { transform: translateY(0); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-empty="false"]::before { border-color: rgb(203 174 108 / 70%); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-active="true"][data-empty="false"]::before { border-color: rgb(230 195 119 / 86%); }
+.house-holdem-page.blackjack-table-page .blackjack-actions { height: 100%; min-height: 0; }
 .house-holdem-page .three-card-poker-action-stats { pointer-events: none; }
-.house-holdem-page .three-card-poker-chip-picker {
-  position: relative; inset: auto; display: block; flex: 0 0 44px; width: 44px; height: 44px;
+.house-holdem-page .three-card-poker-wager-wrap { --house-holdem-control-size: 3.6rem; }
+.house-holdem-page .three-card-poker-chip-picker { position: static; display: block; }
+.house-holdem-page .blackjack-actions .three-card-poker-wager-wrap :is(.three-card-poker-chip-picker, .three-card-poker-chip-picker__selected, .three-card-poker-action-orb) {
+  flex: 0 0 var(--house-holdem-control-size); width: var(--house-holdem-control-size); height: var(--house-holdem-control-size); min-width: 0; min-height: 0;
 }
 .house-holdem-page .three-card-poker-chip-picker__options {
   top: auto; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); animation: none;
@@ -109,6 +112,7 @@
   .house-holdem-page .three-card-poker-bets { top: 92%; }
 }
 @media (max-width: 700px) {
+  .house-holdem-page .three-card-poker-action-stats { right: .5rem; left: .5rem; }
   .house-holdem-page .blackjack-table { --ff-card-width: clamp(2.8rem, 16.2vw, 4.8rem); }
   .house-holdem-page .blackjack-dealer { top: 5%; width: min(92%, 22rem); }
   .house-holdem-page .house-holdem-board { top: 30%; width: 96%; }
@@ -144,6 +148,7 @@
   .house-holdem-page .house-holdem-action svg { width: 1.55rem; height: 1.55rem; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
+  .house-holdem-page .three-card-poker-wager-wrap { --house-holdem-control-size: 2.75rem; }
   .house-holdem-page .blackjack-table { --ff-card-width: clamp(1.85rem, 5.5vh, 2.35rem); }
   .house-holdem-page .blackjack-dealer { top: 5%; left: 23%; width: 35%; }
   .house-holdem-page .house-holdem-board { top: 5%; left: 69%; width: 54%; }

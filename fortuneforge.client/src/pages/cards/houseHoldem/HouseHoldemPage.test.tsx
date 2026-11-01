@@ -53,7 +53,7 @@ describe('House Hold’em table', () => {
     const markup = render(null)
     expect(markup).toContain('Place chip on Ante')
     expect(markup).toContain('Place chip on Trips')
-    expect(markup).toContain('Blind wager')
+    expect(markup).toContain('aria-label="Place chip on Blind"')
     expect(markup).toContain('Wager spot')
     expect(markup).toContain('aria-label="Deal"')
     expect(markup).toContain('aria-label="Choose chip value, currently R1.00" aria-expanded="false"')
@@ -62,7 +62,10 @@ describe('House Hold’em table', () => {
   })
 
   it('marks Trips as empty until a chip is placed', () => {
-    expect(render(null, { trips: 0, placements: [] })).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="true"/)
+    const withoutTrips = render(null, { trips: 0, placements: [] })
+    expect(withoutTrips).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="true"/)
+    expect(withoutTrips).not.toMatch(/aria-label="Deal" disabled=""/)
+    for (const label of ['Ante', 'Blind']) expect(withoutTrips).toContain(`aria-label="Place chip on ${label}"`)
     expect(render(null, { trips: 1, placements: [{ spot: 'trips', value: 1 }] })).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="false"/)
   })
 

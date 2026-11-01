@@ -284,6 +284,7 @@ export function HouseHoldemContent(props: ContentProps) {
   const anteChips = betting ? props.placements.filter((item) => item.spot === 'ante').map((item) => item.value) : chipsForAmount(round.ante)
   const tripsChips = betting ? props.placements.filter((item) => item.spot === 'trips').map((item) => item.value) : chipsForAmount(round.trips)
   const canPlaceAnte = betting && !props.busy && !props.pending && shownAnte + props.selectedChip <= status.maximumAnte && cents(minimumHouseHoldemBankroll(Math.max(shownAnte + props.selectedChip, status.minimumAnte), shownTrips)) <= cents(props.balance)
+  const onPlaceMainBet = canPlaceAnte ? () => props.onPlace('ante') : undefined
   const canPlaceTrips = betting && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
   const canDeal = betting && !props.busy && !props.pending && validHouseHoldemAnte(props.ante, status) && validHouseHoldemTrips(props.trips, status) && cents(minimumHouseHoldemBankroll(props.ante, props.trips)) <= cents(props.balance)
   const controls = dealing || waitingForDeal ? [] : round?.allowedActions ?? []
@@ -300,8 +301,8 @@ export function HouseHoldemContent(props: ContentProps) {
       <div className="three-card-poker-player" role="group" aria-label="Your hand"><CardGroup label="" cards={shownRound?.playerCards ?? []} showBacks={!!dealing} visibleCount={playerVisibleCount} concealCards={!!dealing} count={2} scope="player" handLabel={dealing ? null : shownRound?.playerHand ?? null} /></div>
       <div className="three-card-poker-bets" aria-label="Betting spots">
         <BetSpot kind="trips" label="Trips" amount={shownTrips} chips={tripsChips} onPlace={canPlaceTrips ? () => props.onPlace('trips') : undefined} disabled={!canPlaceTrips} />
-        <BetSpot kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={canPlaceAnte ? () => props.onPlace('ante') : undefined} disabled={!canPlaceAnte} />
-        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind)} disabled />
+        <BetSpot kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
+        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind)} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
         <BetSpot kind="play" label="Wager" amount={shownRound?.play ?? 0} chips={chipsForAmount(shownRound?.play ?? 0)} disabled />
       </div>
     </div>
@@ -340,8 +341,8 @@ function BetSpot({ kind, label, amount, chips, onPlace, disabled }: { kind: 'tri
   const tipId = useId()
   const help = {
     trips: 'Optional side bet on your final five-card hand. It can pay even if you fold.',
-    ante: 'Your required opening bet against the dealer. Blind automatically matches it.',
-    blind: 'Automatically matches your Ante. A strong hand that beats the dealer can earn a bonus.',
+    ante: 'Your required opening bet against the dealer. Blind automatically matches it; Trips is optional.',
+    blind: 'Automatically matches your Ante. Place chips on Ante or Blind to increase both wagers. A strong hand that beats the dealer can earn a bonus.',
     play: 'Your Play bet: 3× or 4× Ante before the flop, 2× after it, or 1× at the river.',
   }[kind]
   const contents = <><span className="three-card-poker-chip-stack" aria-hidden="true">{chips.slice(-4).map((value, index) => <img className="three-card-poker-chip" src={art[value]} alt="" style={{ '--chip-index': index } as CSSProperties} key={`${kind}-${index}-${value}`} />)}</span><strong className="three-card-poker-bet-spot__amount">{money(amount)}</strong></>

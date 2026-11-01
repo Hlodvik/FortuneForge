@@ -50,6 +50,12 @@
 .house-holdem-page .house-holdem-bet-spot--trips[data-empty="false"]::before { border-color: rgb(203 174 108 / 70%); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-active="true"][data-empty="false"]::before { border-color: rgb(230 195 119 / 86%); }
 .house-holdem-page .three-card-poker-action-stats { pointer-events: none; }
+.house-holdem-page .three-card-poker-chip-picker {
+  position: relative; inset: auto; display: block; flex: 0 0 44px; width: 44px; height: 44px;
+}
+.house-holdem-page .three-card-poker-chip-picker__options {
+  top: auto; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); animation: none;
+}
 .house-holdem-decision-actions {
   position: absolute; z-index: 2; top: .35rem; left: 50%; display: flex; align-items: center; justify-content: center;
   gap: clamp(.45rem, 1vw, .85rem); transform: translateX(-50%);
@@ -118,7 +124,8 @@
 }
 @media (max-width: 430px) {
   .house-holdem-guide-paytables { grid-template-columns: 1fr; gap: .4rem; }
-  .house-holdem-page .blackjack-table { --ff-card-width: clamp(2.55rem, 16vw, 3.8rem); }
+  /* Reserve vertical room for the hand headings, table title, and betting labels. */
+  .house-holdem-page .blackjack-table { --ff-card-width: clamp(2rem, min(16vw, calc(18svh - 4.5rem)), 3.8rem); }
   .house-holdem-page .three-card-poker-limits { top: .5%; }
   .house-holdem-page .blackjack-dealer { top: 4.5%; }
   .house-holdem-page .house-holdem-board { top: 26.5%; }

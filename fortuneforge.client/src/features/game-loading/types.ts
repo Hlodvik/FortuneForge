@@ -4,6 +4,7 @@ export interface GameLoadingEntry {
   readonly title: string
   readonly routes: readonly string[]
   readonly image: string
+  readonly imageSrcSet?: string
   readonly background: string
   readonly accent: string
   readonly objectPosition?: string

@@ -81,7 +81,7 @@ afterEach(() => {
 })
 
 describe('Hi-Lo quick wagers and shared card faces', () => {
-  it('offers all seven image-only chip values and sets rather than adds the wager without touching the wallet', async () => {
+  it('offers only image-only chip values up to R5 and sets rather than adds the wager without touching the wallet', async () => {
     const api = gateway(), changed = vi.fn(), user = userEvent.setup()
     render(<HiLoGame gateway={api} playerId="alice:practice" onBalanceChange={changed}/>)
     expect(wagerChip()).toHaveProperty('disabled', true)
@@ -95,8 +95,8 @@ describe('Hi-Lo quick wagers and shared card faces', () => {
     expect(screen.queryByRole('group', { name: 'Choose wager chip' })).toBeNull()
     await user.click(wagerChip())
     const picker = screen.getByRole('group', { name: 'Choose wager chip' })
-    expect(within(picker).getAllByRole('button')).toHaveLength(7)
-    for (const value of [.5, 1, 2, 5, 10, 25, 50]) {
+    expect(within(picker).getAllByRole('button')).toHaveLength(4)
+    for (const value of [.5, 1, 2, 5]) {
       const option = within(picker).getByRole('button', { name: `R${value.toFixed(2)} chip` })
       expect(option.childNodes).toHaveLength(1)
       expect(option.firstElementChild?.tagName).toBe('IMG')
@@ -104,6 +104,7 @@ describe('Hi-Lo quick wagers and shared card faces', () => {
       expect(option.querySelector('img')?.getAttribute('src')).toContain(`chip-${value === .5 ? '050' : value}.png`)
     }
     await user.click(within(picker).getByRole('button', { name: 'R5.00 chip' }))
+    expect(playHiLoAudio).toHaveBeenCalledWith('chip', false)
     expect(wagerInput().value).toBe('5.00')
     expect(wagerChip().getAttribute('aria-label')).toBe('Choose wager chip, currently R5.00')
     expect(screen.queryByRole('group', { name: 'Choose wager chip' })).toBeNull()
@@ -126,21 +127,44 @@ describe('Hi-Lo quick wagers and shared card faces', () => {
     await user.click(decrease)
     expect(wagerInput().value).toBe('0.50')
     expect(decrease).toHaveProperty('disabled', true)
-    for (const value of [1, 2, 5, 10, 25, 50]) {
+    for (const value of [1, 2, 5]) {
       await user.click(increase)
       expect(wagerInput().value).toBe(value.toFixed(2))
       expect(wagerChip().getAttribute('aria-label')).toBe(`Choose wager chip, currently R${value.toFixed(2)}`)
     }
     expect(increase).toHaveProperty('disabled', true)
     await user.click(increase)
-    expect(wagerInput().value).toBe('50.00')
+    expect(wagerInput().value).toBe('5.00')
     await user.click(screen.getByRole('button', { name: 'Half wager' }))
-    expect(wagerInput().value).toBe('25.00')
+    expect(wagerInput().value).toBe('2.50')
     await user.click(screen.getByRole('button', { name: 'Double wager' }))
-    expect(wagerInput().value).toBe('50.00')
+    expect(wagerInput().value).toBe('5.00')
     expect(balance()).toBe('R100.00')
     expect(api.startRound).not.toHaveBeenCalled()
     expect(api.act).not.toHaveBeenCalled()
+  })
+
+  it('rejects a newly entered wager above R5 even if an old replay reports the former limit', async () => {
+    const api = gateway({ ...idle, limits: { ...idle.limits, maxWagerCents: 100000 } }), user = userEvent.setup()
+    render(<HiLoGame gateway={api} playerId="alice:practice"/>)
+    await enabledStart()
+    await user.clear(wagerInput())
+    await user.type(wagerInput(), '5.01')
+    await user.click(screen.getByRole('button', { name: 'Deal cards' }))
+    expect(screen.getByRole('alert').textContent).toContain('R5.00')
+    expect(api.startRound).not.toHaveBeenCalled()
+  })
+
+  it('shows a saved old wager while active, then resets the next-entry amount to R5 after cashout', async () => {
+    const oldRound: HiLoRound = { ...startedRound, wagerCents: 100000, currentReturnCents: 100000 }
+    const api = gateway({ ...idle, round: oldRound }), user = userEvent.setup()
+    api.act.mockResolvedValueOnce({ ...idle, round: { ...oldRound, revision: 1, status: 'cashedOut',
+      canCashOut: false, canSkip: false, higher: { ...oldRound.higher, available: false }, lower: { ...oldRound.lower, available: false } } })
+    render(<HiLoGame gateway={api} playerId="alice:practice"/>)
+    await waitFor(() => expect(wagerInput().value).toBe('1000.00'))
+    await user.click(cashout())
+    await waitFor(() => expect(wagerInput().value).toBe('5.00'))
+    expect(wagerChip().getAttribute('aria-label')).toBe('Choose wager chip, currently R5.00')
   })
 
   it('sends the selected quick wager once as integer cents only when DEAL is pressed', async () => {
@@ -257,14 +281,14 @@ describe('Hi-Lo quick wagers and shared card faces', () => {
     await user.click(wagerChip())
     expect(playHiLoAudio).toHaveBeenCalledWith('click', false)
     await user.click(screen.getByRole('button', { name: 'R5.00 chip' }))
-    expect(playHiLoAudio).toHaveBeenCalledWith('move', false)
+    expect(playHiLoAudio).toHaveBeenCalledWith('chip', false)
     await user.click(screen.getByRole('button', { name: 'Mute sound' }))
     vi.mocked(playHiLoAudio).mockClear()
     await user.click(wagerChip())
     await user.click(screen.getByRole('button', { name: 'R2.00 chip' }))
     expect(playHiLoAudio).toHaveBeenCalledWith('click', true)
-    expect(playHiLoAudio).toHaveBeenCalledWith('move', true)
-    expect(playHiLoAudio).not.toHaveBeenCalledWith('move', false)
+    expect(playHiLoAudio).toHaveBeenCalledWith('chip', true)
+    expect(playHiLoAudio).not.toHaveBeenCalledWith('chip', false)
     expect(api.startRound).not.toHaveBeenCalled()
   })
 })

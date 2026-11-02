@@ -12,7 +12,7 @@ vi.mock('./andarBaharAudio', () => ({ playAndarBaharAudio: vi.fn(), stopAndarBah
 const player = 'review-player'
 const pendingKey = (user = player) => `fortuneforge:andar-bahar:pending:${user}`
 const status: AndarBaharStatus = {
-  available: true, minimumStake: .5, maximumStake: 100, stakeIncrement: .5,
+  available: true, minimumStake: .5, maximumStake: 50, stakeIncrement: .5,
   balance: 100, mode: 'development-practice-andar-first',
 }
 const settled: AndarBaharRound = {
@@ -50,6 +50,30 @@ afterEach(() => {
 })
 
 describe('Andar Bahar wager recovery and response isolation', () => {
+  it('clears the settled board on result dismissal while retaining balance, history, and rebet', async () => {
+    const api = gateway()
+    const { result } = renderHook(() => useAndarBaharTable(api, player))
+    await waitFor(() => expect(result.current.phase).toBe('betting'))
+    act(() => result.current.place('andar'))
+    await act(async () => { await result.current.submit() })
+    act(() => result.current.skip())
+    expect(result.current.resultOpen).toBe(true)
+
+    act(() => result.current.closeResult())
+    expect(result.current.phase).toBe('betting')
+    expect(result.current.resultOpen).toBe(false)
+    expect(result.current.round).toBeNull()
+    expect(result.current.visible).toBe(0)
+    expect(result.current.chips).toEqual([])
+    expect(result.current.status?.balance).toBe(104.5)
+    expect(result.current.history).toHaveLength(1)
+    expect(result.current.canRebet).toBe(true)
+
+    act(() => result.current.rebet())
+    expect(result.current.stake).toBe(5)
+    expect(result.current.side).toBe('andar')
+  })
+
   it('does not let a delayed rejection balance refresh overwrite a later settled wager', async () => {
     const delayedStatus = deferred<AndarBaharStatus>()
     const api = gateway()

@@ -1,27 +1,79 @@
 # Release safety
 
-`main` is the only release history. A deployment selects a commit on that history,
-checks it out temporarily without creating a branch, and builds from that clean
-checkout. Edits in the normal working tree stay local. A push does not deploy.
+`main` is the only release history. Deployment uses the **existing checkout** at
+its exact committed `main` HEAD. It never creates a worktree, repository copy or
+branch, switches commits, stashes/resets/cleans source, or deletes a release folder.
+A push does not deploy.
 
 ## Normal release
 
-After committing the intended change to `main`, run `npm run deploy`, or use
-`npm run deploy:hosting` / `npm run deploy:api`. To deploy an earlier commit on
-the same main history, call `scripts/deploy.ps1 -Commit SHA` explicitly. The
+After reconciling and committing the intended change to `main`, reserve this
+checkout exclusively for the release and first run:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/deploy.ps1 -PreflightOnly
+```
+
+This local-only check runs before any credential, live-service, install or build
+command. Dirty tracked/staged/untracked files, a different candidate, detached
+HEAD, another branch, hidden index flags, and uncommitted tooling refuse the
+release without changing source. `-Commit SHA` must resolve to that same active
+`main` HEAD; an older application commit cannot be paired with newer tooling.
+Prepare a reviewed revert commit for a rollback rather than switching this
+checkout during deployment. The script never reconciles source automatically.
+
+Once the exact committed candidate passes preflight, run `npm run deploy`, or
+use `npm run deploy:hosting` / `npm run deploy:api`. The
 Firebase commands use the active gcloud account, which must also already be
 signed in to Firebase CLI, so the two tools cannot silently choose different
 default users. The
 active deploy script, guard module, guard tests, and release verifier must match
-their committed versions on the current local `main` HEAD. Uncommitted release
-tooling blocks deployment, but unrelated local game edits may remain uncommitted.
-The script then runs `npm ci` and current main's committed release verifier
-against the selected immutable checkout, plus the focused committed deployment
-guard tests, before touching production. The selected source HEAD and clean
-status are checked before and after verification and before publication. This
-also supports explicitly selected older application commits without copying new
-tooling into their source trees. The 250,000-spin slot Monte Carlo job is **not** part of every
+their committed versions on the candidate, including the navbar/CI guards and
+upload exclusions. **All source must be clean**; unrelated development edits
+cannot remain in this checkout during a release. The script takes a cooperative
+release lock, then holds Windows read-share handles for every tracked regular
+source file. These handles deny writes/deletes throughout verification and
+publication. Symlinks/submodules, masked index entries and locked bytes that
+do not match their Git objects fail closed. No unlocked publication fallback is
+provided on other operating systems; the existing `.cmd` tooling path and file
+locking publication path are Windows-specific.
+
+The script runs `npm ci` and the exact candidate's committed verifier, plus its
+deployment guard tests. Candidate HEAD/branch/cleanliness is checked around each
+verification command and before publication. The release record includes source
+mode, commit, Git tree, an ordinal path/size/SHA-256 byte-manifest digest and file
+count. Source and workspace handles are disposed on success and failure. Prior
+release directories are preserved. Tests use synthetic Git responses and tiny
+plain-text lock fixtures, never new repositories or worktrees.
+
+Local auto-loaded `.env*` files (except `.env.example`), local server settings,
+and external `VITE_` variables are refused as implicit build inputs at every
+command boundary and immediately before stamping/publication, including files
+added after initial preflight. Use reviewed committed code
+configuration. `.gcloudignore` includes the committed root `.gitignore` and
+explicit nested sample-store exclusions. The local SDK selector preserves
+those exclusions, and every selected upload file must also be a tracked,
+locked candidate file. Unknown/ignored extras fail rather than being uploaded.
+The script generates a strict ignore allowlist for that exact intersection:
+all other files, including new siblings created after inventory, are excluded.
+Unsupported glob-like filenames fail closed. The generated allowlist has its
+own read-share handle and recorded byte hash until the release finishes.
+Reproducibility still relies on trusted tooling/dependencies and
+the checkout being reserved against other build processes; the guard is not a
+general operating-system sandbox.
+
+The 250,000-spin slot Monte Carlo job is **not** part of every
 deployment. Run `npm run verify:slot-math` separately when slot math changes.
+
+Hosting-only releases also inspect the serving API source stamp. The API must
+already be at the candidate, or be a locally available ancestor whose complete
+delta contains only explicitly allowed frontend/test/documentation/tooling
+paths. Backend, catalogue, deployment-runtime or unknown paths require a combined
+API-and-Hosting release. Missing stamps/objects and divergent history fail
+closed. A paid Craps frontend cannot be published alone while its required API
+changes are absent. Immediately before Hosting publication the API identity is
+rechecked; a combined release must be serving the exact stamped candidate API.
+No test-suite waiver bypasses this compatibility gate.
 
 ### Automatic visual-only verification
 
@@ -32,7 +84,7 @@ colocated tests/docs may qualify. At least one visual change is required.
 Application TypeScript/TSX, gateways, wallet/settlement code, manifests, lockfiles,
 configuration, shared files, backend code, multiple games, deletions/renames,
 unusual file modes, or any uncertainty use the full suite. API/combined releases,
-rollbacks, adoption, and missing/unavailable baselines always use the full suite.
+rollbacks, adoption, and missing/unavailable baselines default to the full suite.
 There is no force-scoped override.
 
 Qualified releases run the affected game's checks/tests, every game build,
@@ -47,8 +99,8 @@ Standalone `npm run verify:release` defaults to the full suite.
 
 When the owner explicitly requests deployment without application test suites,
 use `scripts/deploy.ps1 -Target hosting -SkipTestSuites -TestWaiverReason 'Owner requested skipping test suites for the reviewed visual change.'`.
-Both flags are required together, and API/combined releases reject a waiver
-before reading live services. This is not a force-scoped override: the live-to-candidate
+Both flags are required together. API/combined releases reject this waiver
+unless the separate explicit live-playtest mode below is supplied, before reading live services. This is not a force-scoped override: the live-to-candidate
 plan is still independently calculated and may remain `full`. Only application
 npm test suites and .NET test runs are omitted. Type checks, every game build,
 lint, web build, ownership/route checks, focused deployment guard tests, immutable
@@ -56,6 +108,43 @@ source/main/ancestry/live-race checks, release stamps and production smoke remai
 The release record stores `testSuiteWaiver.skipped` and its reason; output says
 application tests were **NOT RUN**, never that they passed. Standalone verification
 does not accept this waiver.
+
+### Explicit matched live playtest
+
+For an owner-authorized incremental API/Hosting playtest while broad assurance
+is deferred, use the exact committed candidate on clean current main:
+
+```powershell
+$candidate = (git rev-parse HEAD).Trim()
+.\scripts\deploy.ps1 -Target all -Commit $candidate -PreflightOnly
+.\scripts\deploy.ps1 -Target all -Commit $candidate -LivePlaytest -SkipTestSuites -TestWaiverReason 'Owner authorized incremental matched live playtest; broad suites and CI deferred until all slot adjustments are accepted.'
+```
+
+`-LivePlaytest` requires API/all scope, `-SkipTestSuites`, a nonblank reason,
+and immutable guarded verification. Both entry points independently calculate
+the `live-playtest` plan. It retains source/route/navbar/CI-order policy checks,
+all game type checks/builds, lint, the web production build, and a fresh Release
+build of the server test project. Six fixed server test scopes then run: Slots,
+paid Craps store, paid Craps replay/financial audit, Activity, card history, and
+investigation. There is no caller-supplied filter or evidence-reuse override.
+Every scope must produce a fresh nonempty TRX report with every test passed;
+zero matches, missing reports, skips, failures and aborted runs refuse publication.
+Reports remain under the unique ignored `artifacts/releases/focused-*` directory.
+Broad npm application tests and the five full .NET project suites are deferred;
+this mode does not establish full-suite or slot calibration acceptance.
+
+The release record stores the mode, waiver reason, deferred broad suites, fixed
+focused scopes and their status. Default releases retain full verification.
+Every clean-source/upload/private-file guard, missing-only database publication
+and readiness check, immutable image digest, live-target race guard, matched API
+before Hosting requirement, release stamp and production smoke remains mandatory.
+
+The deploy scripts do not query GitHub CI status and never claim it passed.
+The current workflow runs on main pushes, pull requests and manual dispatch.
+GitHub supports `[skip ci]` in the pushed commit message for push/PR workflows;
+it does not suppress manual dispatch, and skipped required checks can remain
+pending. Record CI as deferred/skipped when used; do not bypass repository
+protection or report skipped CI as green. See [GitHub's skip-workflow documentation](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs).
 
 Hosting publishes `release.json` with the source commit. Cloud Run stores the
 same commit in the serving revision's `FF_RELEASE_SHA` environment variable.
@@ -66,22 +155,74 @@ unless `-AllowRollback -RollbackReason '...'` is supplied. That override is
 recorded locally in `artifacts/releases/` along with the old and new platform
 revision identifiers.
 
-When index definitions changed, the API release publishes them first,
-waits for every composite index required by the candidate to reach Firestore's
-`READY` state, then creates a non-serving Cloud Run revision. It checks the new
-revision's source stamp, rechecks index readiness and the currently serving API
-revision immediately before routing traffic to that exact revision. Unsupported
-single-field overrides and vector indexes block the release until their
-readiness checks are added.
-Hosting publishes the verified build with its stamp. A production smoke runs
+The API release publishes only missing composite indexes and unready explicit
+single-field exemptions from the committed `firestore.indexes.json`. Existing
+composite identities are excluded even while `CREATING` or `NEEDS_REPAIR`; they
+are never submitted again as new indexes. A run-owned Firebase config references
+only this subset. Both generated JSON files are hashed in the release record and
+held with read-share locks until cleanup. Publication uses the pinned Firebase
+CLI in noninteractive mode without `--force`, so definitions that exist only in
+the live database are preserved. No index deletion or field-exemption removal is
+part of a source release.
+
+The manifest rejects a single ordered field plus its implicit same-direction
+`__name__` order as a redundant composite. The investigation case listing uses
+the default descending `createdAtUtc` index; the instance and pair-analysis
+pages use default `caseId` and `status` indexes with document-name pagination.
+Balance-transaction lookups by `roundId` or `idempotencyKey`, and Hi-Lo/House
+Hold'em event lookups by `roundId`, likewise use default single-field indexes.
+These query fields have no committed indexing exemption. The two-key
+`caseId` + `auditId` evidence index remains a composite. Standalone release
+verification checks this manifest before executing build commands.
+
+The script then waits for every required composite index to reach Firestore's
+`READY` state; a failed index still blocks release. Each exemption must
+read back with no indexes, no inherited configuration and no reversion in
+progress. Field overrides that define indexes and vector indexes remain blocked.
+Before creating a non-serving Cloud Run revision, it also publishes the committed
+`firestore.rules` if necessary and reads back the exact rules content. The script
+records the previous and new rules releases, and stops if another publication
+changes the rules during preparation. It checks the new revision's source stamp,
+rechecks database prerequisites and the currently serving API revision immediately
+before routing traffic to that exact revision.
+The API image is built with `gcloud builds submit --ignore-file` using that
+locked allowlist and a unique candidate tag. This supported command is used
+instead of `run deploy --source`, whose installed SDK implementation cannot
+accept an ignore-file override. `--suppress-logs` keeps remote build logs out
+of the JSON result. Build status must be `SUCCESS`, with a valid build ID and
+exactly one image result matching the requested tag and a valid SHA-256 digest.
+The mutable tag is never resolved later. Cloud Run deploys only the image digest
+returned in that build's result, with no traffic; its created revision must
+read back that exact digest and the candidate source stamp. Build ID, requested
+tag, immutable image reference/digest and upload manifest/ignore hashes are
+saved in the release record.
+
+The preconfigured Docker Artifact Registry repository `cloud-run-source-deploy`
+in the release region is required; `-ArtifactRepository NAME` selects another
+already configured repository. Its identity and format are checked. Missing
+repositories or permissions stop the release; the script never creates registry
+repositories or grants IAM permissions. CLI source archive packaging is a build
+artifact from the existing checkout, not another repository or worktree.
+Hosting freezes its verified built files and candidate stamp before the API
+build begins. Only that captured manifest is streamed into a unique run-owned
+build-artifact directory; no checkout or source repository is copied. Copied
+bytes must reproduce the original manifest, then staged assets and the stamp
+are held under read-share handles through publication. A generated, hashed,
+read-locked Firebase config uses the absolute artifact directory, preserves the
+candidate's headers/rewrites/original exclusions, and adds exact per-directory
+ignore complements. Firebase14.4's glob implementation does not support ordinary
+Git-style negation allowlists; tested negative-extglob complements exclude new
+unmanifested siblings and directories instead. Unsupported filename segments or
+oversized patterns refuse publication. The release record saves the staged
+manifest and config hashes. A production smoke runs
 afterward. A failed smoke does **not** silently roll back database changes or
-traffic; inspect the recorded previous Firebase version and Cloud Run revision
-before an explicit rollback. Source rollbacks keep existing indexes rather than
-deleting them automatically.
+traffic; inspect the recorded previous Firebase version, Firestore rules release
+and Cloud Run revision before an explicit rollback. Source rollbacks keep existing
+indexes and rules rather than reverting database security settings automatically.
 
-## First guarded release from today's unstamped production
+## First guarded release when production is unstamped
 
-The current live site was not built from a recorded source commit. Do not infer
+If the live site has no recorded source commit, do not infer
 its code from `HEAD`, `origin/main`, or a local `dist` folder. Preserve the
 current Firebase Hosting version and Cloud Run revision, and compare the proposed
 build with the actual live game bundles and behavior first. Use:

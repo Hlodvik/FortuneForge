@@ -1,0 +1,1008 @@
+{
+  "scenario": "collection-rows",
+  "source": {
+    "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
+    "seed": 29,
+    "engineVersion": "shared-slots-engine-v1",
+    "gameId": "ocean-odyssey-v1",
+    "noHttpServerOrAccountSettlement": true,
+    "replayMatchesExceptSpinId": true,
+    "deterministicCaveat": "Public response replay compared field-for-field except fresh response.spinId."
+  },
+  "wagerPoints": 2,
+  "initialState": {
+    "initialCollectionMode": "rows",
+    "initialEnergy": 0,
+    "collectionCount": 27
+  },
+  "steps": [
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": false,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "energyBalance": 0,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 27,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": null,
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "d0736780-74da-4ad4-a0cf-6959df218817",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          56,
+          20,
+          2,
+          47,
+          19
+        ],
+        "reels": [
+          [
+            "BOLT",
+            "2",
+            "POWER",
+            "3"
+          ],
+          [
+            "4",
+            "3",
+            "3",
+            "ACE"
+          ],
+          [
+            "3",
+            "2",
+            "SEAL_ROWS",
+            "5"
+          ],
+          [
+            "BANANA",
+            "POWER",
+            "BANANA",
+            "3"
+          ],
+          [
+            "4",
+            "2",
+            "4",
+            "BANANA"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 1,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": false,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 1,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_ROWS": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 1,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "03b4e44f-46fe-4c9e-85a5-a0a07d49c585",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          9,
+          3,
+          62,
+          29,
+          34
+        ],
+        "reels": [
+          [
+            "4",
+            "2",
+            "6",
+            "5"
+          ],
+          [
+            "4",
+            "2",
+            "3",
+            "3"
+          ],
+          [
+            "7",
+            "3",
+            "3",
+            "POWER"
+          ],
+          [
+            "7",
+            "3",
+            "3",
+            "POWER"
+          ],
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 2,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 1,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 1,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "e2fea071-7d48-406d-993f-948f303da8bc",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          11,
+          55,
+          42,
+          35,
+          27
+        ],
+        "reels": [
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ],
+          [
+            "BOLT",
+            "6",
+            "5",
+            "2"
+          ],
+          [
+            "6",
+            "3",
+            "3",
+            "2"
+          ],
+          [
+            "4",
+            "POWER",
+            "5",
+            "SEAL_RAND"
+          ],
+          [
+            "4",
+            "POWER",
+            "5",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 3,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_RAND": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "32c9806e-3251-4b5b-9ec1-d6b8f8def040",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          45,
+          35,
+          12,
+          21,
+          13
+        ],
+        "reels": [
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ],
+          [
+            "5",
+            "3",
+            "4",
+            "POWER"
+          ],
+          [
+            "3",
+            "2",
+            "4",
+            "2"
+          ],
+          [
+            "6",
+            "2",
+            "5",
+            "2"
+          ],
+          [
+            "BANANA",
+            "2",
+            "5",
+            "2"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 4,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "0f34bcd8-8b82-4bf0-9147-1baa251860e5",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          25,
+          0,
+          58,
+          27,
+          56
+        ],
+        "reels": [
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ],
+          [
+            "5",
+            "7",
+            "POWER",
+            "4"
+          ],
+          [
+            "5",
+            "7",
+            "POWER",
+            "4"
+          ],
+          [
+            "3",
+            "2",
+            "7",
+            "3"
+          ],
+          [
+            "2",
+            "4",
+            "POWER",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 5,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "d8832f89-51aa-457c-b36b-958e41451420",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          8,
+          4,
+          36,
+          9,
+          54
+        ],
+        "reels": [
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ],
+          [
+            "2",
+            "3",
+            "3",
+            "6"
+          ],
+          [
+            "POWER",
+            "FREE",
+            "2",
+            "4"
+          ],
+          [
+            "6",
+            "4",
+            "5",
+            "6"
+          ],
+          [
+            "POWER",
+            "FREE",
+            "BANANA",
+            "SEAL_SYNC"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 6,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_SYNC": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "ocean-odyssey-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "a604ee04-90ed-4f46-9316-9c8bba9ff831",
+        "gameId": "ocean-odyssey-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          62,
+          61,
+          43,
+          32,
+          42
+        ],
+        "reels": [
+          [
+            "5",
+            "3",
+            "SEAL_ROWS",
+            "4"
+          ],
+          [
+            "2",
+            "3",
+            "3",
+            "5"
+          ],
+          [
+            "3",
+            "BANANA",
+            "2",
+            "4"
+          ],
+          [
+            "ACE",
+            "ACE",
+            "ACE",
+            "ACE"
+          ],
+          [
+            "2",
+            "3",
+            "3",
+            "5"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 7,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_ROWS": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 28
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": null,
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    }
+  ]
+}

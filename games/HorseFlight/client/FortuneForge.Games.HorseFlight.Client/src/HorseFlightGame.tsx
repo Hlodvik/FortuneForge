@@ -6,6 +6,9 @@ import { HorseBiomeScenery } from './HorseBiomeScenery'
 import { HorseBiomeObstacleArt, isHorseBiomeObstacleKind } from './HorseBiomeObstacleArt'
 import { CaptureHorseArtwork, CaptureThrowArtwork } from './HorseCaptureArtwork'
 import { horseSpriteScale, jumpSpriteGeometry, terminalGroundBaseline, terminalSpriteGeometry } from './horseSpriteScale'
+import { horseFlightReceiptMatches, maximumRecordedJumps, maximumRecordedRightClicks, maximumRecordedTicks,
+  newHorseFlightRecovery, readHorseFlightRecovery, validIssuedFlight, validRecoveryScope, writeHorseFlightRecovery,
+  type HorseFlightRecovery } from './horseFlightRecovery'
 import horseDashSpriteSheet from './horse-flight-dash-sprite-sheet-v1.png?no-inline'
 import horseCrashSpriteSheet from './horse-flight-crash-sprite-sheet-v2.png?no-inline'
 import horseJumpSpriteSheet from './horse-flight-jump-sprite-sheet-v3.png?no-inline'
@@ -226,7 +229,7 @@ export type HorseFlightGameProps = Readonly<{
   renderLaunchScreen?: (state: HorseFlightLaunchScreenState) => ReactNode
 }>
 
-export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gateway = defaultGateway, onResult, renderEndScreen, renderLaunchScreen }: HorseFlightGameProps) {
+export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gateway = defaultGateway, onResult, playerId, renderEndScreen, renderLaunchScreen }: HorseFlightGameProps) {
   const [status, setStatus] = useState<HorseFlightStatus | null>(null)
   const [game, setGame] = useState<HorseState | null>(null)
   const [result, setResult] = useState<HorseFlightResult | null>(null)
@@ -255,6 +258,17 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   const startRequestKey = useRef<string | null>(null)
   const completionRequestKey = useRef<string | null>(null)
   const autoStartRequested = useRef(false)
+  const recovery = useRef<HorseFlightRecovery | null>(null)
+  const recoveryLoaded = useRef('')
+  const recoveryBlocked = useRef(false)
+  const [recoveryHeld, setRecoveryHeld] = useState(false)
+  const [pendingStart, setPendingStart] = useState(false)
+  const [starting, setStarting] = useState(false)
+  const requestBusy = useRef(false)
+  const lifetime = useRef(0)
+  const request = useRef<AbortController | null>(null)
+  const activeOwner = useRef(playerId)
+  const priorGamepad = useRef({ jump: false, dash: false, pause: false })
   // The game package is prebuilt for the app, so its own Vite DEV flag is
   // always false even when the consuming app runs locally. The route supplies
   // the DEV-gated prop; the loopback check keeps this test hook local-only.
@@ -266,23 +280,85 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
     setGame(next)
   }, [])
 
+  const holdRecovery = useCallback((message: string) => {
+    recoveryBlocked.current = true; setRecoveryHeld(true); setError(message); setPaused(true)
+  }, [])
+  const persistRecovery = useCallback(() => {
+    if (!recovery.current || writeHorseFlightRecovery(recovery.current)) return true
+    holdRecovery('This browser could not save flight recovery. Keep this page open; another flight cannot be admitted safely.')
+    return false
+  }, [holdRecovery])
+
+  useEffect(() => {
+    lifetime.current++
+    requestBusy.current = false; setStarting(false)
+    if (activeOwner.current !== playerId) {
+      activeOwner.current = playerId; recovery.current = null; recoveryLoaded.current = ''
+      recoveryBlocked.current = false; setRecoveryHeld(false); setPendingStart(false)
+      gameRef.current = null; setGame(null); setResult(null); runId.current = null
+      requestBusy.current = false; setStarting(false); submitted.current = false; jumps.current = []; rightClicks.current = []
+      startRequestKey.current = null; completionRequestKey.current = null; autoStartRequested.current = false
+    }
+    return () => { lifetime.current++; request.current?.abort() }
+  }, [playerId])
+
   useEffect(() => {
     const controller = new AbortController()
+    let live = true
     void gateway.getStatus(controller.signal).then(nextStatus => {
+      if (!live) return
       setStatus(nextStatus)
       setTableUnavailable(!nextStatus.available)
-      setError(nextStatus.available ? null : 'Horse Flight is temporarily unavailable. Please choose another game.')
+      if (!nextStatus.available) setError('Horse Flight is temporarily unavailable. Please choose another game.')
+      else if (!recoveryBlocked.current && !['starting', 'saving'].includes(recovery.current?.state ?? '')) setError(null)
     }).catch(reason => {
+      if (!live) return
       if (reason instanceof DOMException && reason.name === 'AbortError') return
       const unavailable = isTableUnavailable(reason)
       setTableUnavailable(unavailable)
       setError(unavailable ? 'Horse Flight is temporarily unavailable. Please choose another game.' : messageForError(reason, 'Horse Flight is unavailable.'))
     })
-    return () => controller.abort()
+    return () => { live = false; controller.abort() }
   }, [gateway, statusLoadAttempt])
 
+  useEffect(() => {
+    if (!playerId || !status?.recoveryMode || !validRecoveryScope(status.recoveryScope, status.recoveryMode)) return
+    const identity = JSON.stringify([playerId, status.recoveryMode])
+    if (recoveryLoaded.current === identity) return
+    recoveryLoaded.current = identity
+    const restored = readHorseFlightRecovery(playerId, status.recoveryMode, status.recoveryScope)
+    recovery.current = restored.record
+    if (restored.error) { holdRecovery(restored.error); return }
+    const record = restored.record
+    if (!record || record.state === 'debug' || record.scope !== status.recoveryScope) return
+    startRequestKey.current = record.startKey; completionRequestKey.current = record.finishKey
+    if (!record.run) {
+      setPendingStart(true); setError('The previous flight start is unconfirmed. Retry the same request when ready.'); return
+    }
+    runId.current = record.run.runId; jumps.current = [...record.jumps]; rightClicks.current = [...record.rights]
+    submitted.current = record.state === 'saved'; setResult(record.result)
+    if (restored.game) {
+      accept(restored.game); setOpeningPose(false); setPaused(restored.game.phase === 'running')
+      if (restored.game.phase !== 'running' && record.state !== 'saved') setError('The previous score save is unconfirmed. Retry the same flight when ready.')
+    }
+  }, [accept, holdRecovery, playerId, status])
+
   const start = useCallback(async () => {
-    if (!status?.available) return
+    if (!status?.available || requestBusy.current || recoveryBlocked.current) return
+    if (recovery.current?.run && !['saved', 'debug'].includes(recovery.current.state)) return
+    requestBusy.current = true; setStarting(true)
+    const epoch = lifetime.current, abort = new AbortController(); request.current = abort
+    try {
+      if (playerId && status.recoveryMode && validRecoveryScope(status.recoveryScope, status.recoveryMode)) {
+        if (recovery.current?.state !== 'starting') recovery.current = newHorseFlightRecovery(playerId,
+          status.recoveryMode, status.recoveryScope, key('start'), key('complete'))
+        if (!persistRecovery()) { requestBusy.current = false; setStarting(false); return }
+        startRequestKey.current = recovery.current.startKey; setPendingStart(true)
+      }
+    } catch {
+      holdRecovery('The flight owner or recovery scope could not be verified. No flight was admitted.')
+      requestBusy.current = false; setStarting(false); return
+    }
     setError(null)
     setResult(null)
     submitted.current = false
@@ -299,23 +375,33 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
     setPaused(false)
     const idempotencyKey = startRequestKey.current ??= key('start')
     try {
-      const run = await gateway.start({ idempotencyKey })
+      const run = await gateway.start({ idempotencyKey, signal: abort.signal, recoveryScope: recovery.current?.scope })
+      if (lifetime.current !== epoch) return
+      if (recovery.current) {
+        if (!validIssuedFlight(run) || (run.recoveryScope !== undefined && !validRecoveryScope(run.recoveryScope, recovery.current.mode))) throw new Error('The issued flight could not be verified.')
+        recovery.current.run = run; recovery.current.scope = run.recoveryScope ?? recovery.current.scope
+        recovery.current.state = 'active'; recovery.current.rulesVersion = startHorse(run.seed).rulesVersion
+        if (!persistRecovery()) return
+      }
       startRequestKey.current = null
-      completionRequestKey.current = null
+      completionRequestKey.current = recovery.current?.finishKey ?? null
       runId.current = run.runId
+      setPendingStart(false)
       setOpeningPose(true)
       accept(startHorse(run.seed))
       requestAnimationFrame(() => field.current?.focus())
     } catch (reason) {
-      setError(messageForError(reason, 'Horse Flight could not start.'))
+      if (lifetime.current === epoch) setError(messageForError(reason, 'Horse Flight could not start. Retry the same flight request.'))
+    } finally {
+      if (lifetime.current === epoch) { requestBusy.current = false; setStarting(false); request.current = null }
     }
-  }, [accept, gateway, status?.available])
+  }, [accept, gateway, holdRecovery, persistRecovery, playerId, status])
 
   useEffect(() => {
-    if (!autoStart || autoStartRequested.current || !status?.available || game !== null) return
+    if (!autoStart || autoStartRequested.current || !status?.available || game !== null || pendingStart || recovery.current?.state === 'starting' || recoveryBlocked.current) return
     autoStartRequested.current = true
     void start()
-  }, [autoStart, game, start, status?.available])
+  }, [autoStart, game, pendingStart, start, status?.available])
 
   useEffect(() => {
     if (game?.phase !== 'running') {
@@ -324,6 +410,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
       return undefined
     }
 
+    if (recovery.current?.ticks) { setOpeningPose(false); return }
     setOpeningPose(true)
     setRearingFrame(0)
     const startedAt = Date.now()
@@ -373,6 +460,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
 
   useEffect(() => {
     if (game?.phase === 'running' && !paused) return
+    queuedJump.current = false; queuedRightClick.current = false; dashHeld.current = false
     fastModeHeld.current = false
     setFastMode(false)
   }, [game?.phase, paused])
@@ -416,7 +504,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   }, [game?.phase, openingPose, paused])
 
   const complete = useCallback((terminal: HorseState) => {
-    if (terminal.phase === 'running') return
+    if (terminal.phase === 'running' || recoveryBlocked.current || requestBusy.current) return
     const currentRunId = runId.current
     if (submitted.current || currentRunId === null) return
     submitted.current = true
@@ -442,53 +530,90 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
       rightClickTicks: [...rightClicks.current],
       idempotencyKey,
     }
-    void gateway.complete(submission.runId, submission.totalTicks, submission.jumpTicks, { idempotencyKey }, submission.rightClickTicks).then(response => {
+    const record = recovery.current
+    if (record) { record.state = 'saving'; if (!persistRecovery()) { submitted.current = false; return } }
+    const epoch = lifetime.current, abort = new AbortController(); request.current = abort; requestBusy.current = true
+    void gateway.complete(submission.runId, submission.totalTicks, submission.jumpTicks,
+      { idempotencyKey, signal: abort.signal, recoveryScope: record?.scope }, submission.rightClickTicks).then(response => {
+      if (lifetime.current !== epoch) return
+      if (record) {
+        if (!horseFlightReceiptMatches(record, terminal, response)) throw new Error('The score receipt did not match this flight.')
+        record.result = response; record.state = 'saved'; persistRecovery()
+      }
       completionRequestKey.current = null
       setResult(response)
-      setError(null)
+      if (!recoveryBlocked.current) setError(null)
       onResult?.(response)
     }).catch(reason => {
+      if (lifetime.current !== epoch) return
       submitted.current = false
       setError(messageForError(reason, 'Horse Flight score could not be recorded.'))
-    })
-  }, [canDebugFreePlay, gateway, onResult, status?.balance])
+    }).finally(() => { if (lifetime.current === epoch) { requestBusy.current = false; request.current = null } })
+  }, [canDebugFreePlay, gateway, onResult, persistRecovery, status?.balance])
 
   useEffect(() => {
     if (!status || !game || game.phase !== 'running' || openingPose || paused) return undefined
     const timer = window.setInterval(() => {
       const current = gameRef.current
-      if (!current || current.phase !== 'running') return
+      if (!current || current.phase !== 'running' || recoveryBlocked.current) return
       const wantsDash = dashHeld.current || queuedRightClick.current
       const debug = canDebugFreePlay
         ? { godMode: godModeEnabled.current, speedMultiplier: fastModeHeld.current ? 3 as const : undefined }
         : undefined
       const next = stepHorse(current, queuedJump.current, wantsDash, debug)
+      if (recovery.current && !usedDebugMode.current && (next.state.tick > maximumRecordedTicks ||
+        (next.jumped && jumps.current.length >= maximumRecordedJumps) ||
+        ((next.slid || next.fastFell) && rightClicks.current.length >= maximumRecordedRightClicks))) {
+        holdRecovery('The flight reached its recording limit. It cannot be saved as a ranked result.'); return
+      }
       queuedJump.current = false
       queuedRightClick.current = false
       if (next.jumped) jumps.current.push(current.tick)
       if (next.slid || next.fastFell) rightClicks.current.push(current.tick)
+      if (recovery.current) {
+        recovery.current.ticks = usedDebugMode.current ? 0 : next.state.tick
+        recovery.current.jumps = usedDebugMode.current ? [] : [...jumps.current]
+        recovery.current.rights = usedDebugMode.current ? [] : [...rightClicks.current]
+        recovery.current.state = usedDebugMode.current ? 'debug' : 'active'
+        if (!persistRecovery()) return
+      }
       accept(next.state)
       if (next.state.phase !== 'running') complete(next.state)
     }, status.tickMilliseconds)
     return () => window.clearInterval(timer)
-  }, [accept, canDebugFreePlay, complete, game?.phase, openingPose, paused, status])
+  }, [accept, canDebugFreePlay, complete, game?.phase, holdRecovery, openingPose, paused, persistRecovery, status])
+
+  useEffect(() => {
+    const pause = () => {
+      if (!recovery.current || gameRef.current?.phase !== 'running') return
+      queuedJump.current = false; queuedRightClick.current = false; dashHeld.current = false
+      setPaused(true); persistRecovery()
+    }
+    const visibility = () => { if (document.hidden) pause() }
+    window.addEventListener('blur', pause); document.addEventListener('visibilitychange', visibility)
+    return () => { window.removeEventListener('blur', pause); document.removeEventListener('visibilitychange', visibility) }
+  }, [persistRecovery])
+
+  useEffect(() => {
+    if (godMode && recovery.current) { recovery.current.state = 'debug'; persistRecovery() }
+  }, [godMode, persistRecovery])
 
   useEffect(() => {
     if (game?.phase !== 'running') return
     let frame = 0
-    let prior = ''
     const poll = () => {
       const pad = navigator.getGamepads?.()[0]
       const jumpPressed = Boolean(pad?.buttons[0]?.pressed)
       const dashPressed = Boolean(pad?.buttons[1]?.pressed || pad?.buttons[7]?.pressed)
       const pausePressed = Boolean(pad?.buttons[9]?.pressed)
-      const current = `${jumpPressed}:${dashPressed}:${pausePressed}`
-      if (current !== prior) {
-        if (jumpPressed) jump()
-        if (dashPressed) beginDash(); else endDash()
-        if (pausePressed) setPaused(value => !value)
-        prior = current
+      const prior = priorGamepad.current
+      if (!document.hidden && document.hasFocus()) {
+        if (jumpPressed && !prior.jump) jump()
+        if (dashPressed && !prior.dash) beginDash()
+        else if (!dashPressed && prior.dash) endDash()
+        if (pausePressed && !prior.pause) setPaused(value => !value)
       }
+      priorGamepad.current = { jump: jumpPressed, dash: dashPressed, pause: pausePressed }
       frame = window.requestAnimationFrame(poll)
     }
     frame = window.requestAnimationFrame(poll)
@@ -496,7 +621,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   })
 
   const jump = () => {
-    if (!openingPose && gameRef.current?.phase === 'running') {
+    if (!paused && !openingPose && gameRef.current?.phase === 'running') {
       queuedJump.current = true
       queuedRightClick.current = false
       dashHeld.current = false
@@ -504,7 +629,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   }
 
   const beginDash = () => {
-    if (!openingPose && gameRef.current?.phase === 'running') {
+    if (!paused && !openingPose && gameRef.current?.phase === 'running') {
       dashHeld.current = true
       queuedRightClick.current = true
       queuedJump.current = false
@@ -514,7 +639,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   const endDash = () => { dashHeld.current = false }
 
   const beginFastMode = () => {
-    if (!canDebugFreePlay || !godModeEnabled.current || openingPose || gameRef.current?.phase !== 'running') return
+    if (!canDebugFreePlay || !godModeEnabled.current || paused || openingPose || gameRef.current?.phase !== 'running') return
     fastModeHeld.current = true
     usedDebugMode.current = true
     setFastMode(true)
@@ -526,7 +651,7 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
   }
 
   const retryStatus = () => {
-    setError(null)
+    if (!recoveryBlocked.current) setError(null)
     setTableUnavailable(false)
     setStatusLoadAttempt(attempt => attempt + 1)
   }
@@ -586,19 +711,21 @@ export function HorseFlightGame({ autoStart = false, debugFreePlay = false, gate
       <div className="ff-horse-flight__lobby-scene" style={{ backgroundImage: `linear-gradient(180deg, rgb(5 11 23 / 36%) 0%, rgb(5 11 23 / 58%) 54%, rgb(5 11 23 / 86%) 100%), url(${horseMountainBackground})` }}>
         {renderLaunchScreen
           ? renderLaunchScreen({
-            available: status?.available === true,
-            connecting: status === null && error === null,
+            available: status?.available === true && !recoveryHeld && !pendingStart && !starting,
+            connecting: starting || (status === null && error === null),
             error,
             retryConnection: retryStatus,
           })
           : <DefaultLaunchScreen
-            available={status?.available === true}
-            connecting={status === null && error === null}
+            available={status?.available === true && !recoveryHeld && !pendingStart && !starting}
+            connecting={starting || (status === null && error === null)}
             error={error}
             onRetry={retryStatus}
             onStart={() => void start()}
             unavailable={tableUnavailable}
           />}
+        {pendingStart && !recoveryHeld && <button type="button" disabled={starting} onClick={() => void start()}>Retry flight start</button>}
+        {recoveryHeld && <p role="alert">{error}</p>}
       </div>
     </section>}
     {game && <>

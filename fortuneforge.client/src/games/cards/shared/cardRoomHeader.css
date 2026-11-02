@@ -1,63 +1,3 @@
-.card-room-header {
-  position: relative;
-  z-index: 20;
-  display: flex;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 3.5rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-inline: auto;
-  padding: 0.55rem max(0.75rem, calc((100vw - 76rem) / 2));
-  border-bottom: 1px solid rgb(227 197 141 / 24%);
-  background: #0d0f13;
-  font-family: 'Avenir Next', 'Trebuchet MS', 'Segoe UI Variable', 'Segoe UI', sans-serif;
-}
-
-.card-room-header__navigation,
-.card-room-header__account {
-  display: flex;
-  align-items: center;
-}
-
-.card-room-header__menus { display: flex; align-items: center; justify-content: flex-end; gap: 0.45rem; }
-.card-room-account-menu,
-.card-room-more-menu { position: relative; }
-.card-room-account-menu > summary,
-.card-room-more-menu > summary { cursor: pointer; list-style: none; }
-.card-room-account-menu > summary::-webkit-details-marker,
-.card-room-more-menu > summary::-webkit-details-marker { display: none; }
-.card-room-account-menu > nav,
-.card-room-more-menu > nav { position: absolute; z-index: 35; top: calc(100% + 0.45rem); right: 0; display: grid; min-width: 12rem; padding: 0.35rem; border: 1px solid rgb(227 197 141 / 25%); border-radius: 0.7rem; background: rgb(17 18 23 / 97%); box-shadow: 0 1rem 2rem rgb(0 0 0 / 42%); }
-.card-room-account-menu nav a,
-.card-room-more-menu nav a,
-.card-room-more-menu nav button { padding: 0.58rem 0.65rem; border: 0; border-radius: 0.45rem; background: transparent; color: #f7efd0; cursor: pointer; font: 700 0.68rem/1.2 inherit; text-align: left; text-decoration: none; }
-.card-room-account-menu nav a:hover,
-.card-room-more-menu nav a:hover,
-.card-room-more-menu nav button:hover { background: rgb(230 207 132 / 10%); }
-.card-room-more-menu > summary { display: grid; width: 2.55rem; aspect-ratio: 1; place-content: center; gap: 0.2rem; border: 1px solid rgb(227 197 141 / 28%); border-radius: 50%; background: #16171d; }
-.card-room-more-menu > summary span { width: 0.95rem; height: 2px; border-radius: 2px; background: #f5e6af; }
-
-.card-room-header__navigation {
-  gap: 0.55rem;
-}
-
-.card-room-header__brand,
-.card-room-header__other-games {
-  display: inline-flex;
-  align-items: center;
-  color: #fff7d6;
-  text-decoration: none;
-}
-
-.card-room-header__brand { gap: 0.5rem; margin-right: 0.35rem; font: 500 1.05rem/1 Georgia, 'Times New Roman', serif; letter-spacing: 0.12em; text-transform: uppercase; }
-.card-room-header__brand strong { color: #e3c58d; font-weight: 500; }
-.card-room-header__spark { display: block; width: 1.8rem; aspect-ratio: 1; flex: 0 0 auto; background: #e3c58d; font-size: 0; -webkit-mask: url('../../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat; mask: url('../../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat; }
-.card-room-header__other-games { min-height: 2.25rem; padding-inline: 0.8rem; border: 1px solid rgb(227 197 141 / 27%); border-radius: 999px; color: #e4dccb; font-size: 0.7rem; font-weight: 800; }
-.card-room-header__other-games:hover,
-.card-room-header__other-games:focus-visible { border-color: #f4d579; color: #fff7d6; outline: none; }
-
 .card-room-header__icon {
   position: relative;
   display: grid;
@@ -111,26 +51,6 @@
   background: #ffcf4d;
   color: #271900;
   font: 800 0.68rem/1 system-ui, sans-serif;
-}
-
-.card-room-header__account {
-  justify-content: flex-end;
-  gap: 0.75rem;
-  min-width: 0;
-  padding: 0.42rem 0.65rem 0.42rem 0.9rem;
-  border: 1px solid rgb(227 197 141 / 26%);
-  border-radius: 999px;
-  background: #16171d;
-  box-shadow: 0 0.3rem 0.8rem rgb(2 2 22 / 32%);
-}
-
-.card-room-header__account > strong {
-  overflow: hidden;
-  max-width: 13rem;
-  color: #fffbe9;
-  font-size: 0.88rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .card-room-history {
@@ -271,33 +191,7 @@
 .card-room-history-stats dd.is-negative { color: #f6a1a1; }
 
 @media (max-width: 560px) {
-  .card-room-header {
-    width: 100%;
-    gap: 0.5rem;
-    padding-block: 0.4rem;
-  }
-
-  .card-room-header__navigation {
-    gap: 0.35rem;
-  }
-
-  .card-room-header__brand strong { display: none; }
-  .card-room-header__other-games { padding-inline: 0.55rem; }
-
-  .card-room-header__icon {
-    width: 2.45rem;
-  }
-
-  .card-room-header__account {
-    gap: 0.4rem;
-    padding: 0.32rem 0.45rem 0.32rem 0.65rem;
-  }
-
-  .card-room-header__account > strong {
-    max-width: 7.25rem;
-    font-size: 0.78rem;
-  }
-
+  .card-room-header__icon { width: 2.45rem; }
   .card-room-history__panel {
     position: fixed;
     top: 3.65rem;
@@ -306,5 +200,12 @@
     left: 0.4rem;
     width: auto;
     max-height: none;
+  }
+}
+
+@media (min-width: 561px) {
+  .card-room-local-controls .card-room-history__panel {
+    right: 0;
+    left: auto;
   }
 }

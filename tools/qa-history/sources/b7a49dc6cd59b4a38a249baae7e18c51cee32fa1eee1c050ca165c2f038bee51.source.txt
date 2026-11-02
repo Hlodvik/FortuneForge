@@ -1,0 +1,25 @@
+import http from 'node:http'
+import { nonSlotSmokeInventory, slotSmokeInventory } from '../../../scripts/game-smoke-inventory.mjs'
+
+// Test-only account; every operation terminates here, with no database/upstream.
+const routes = [...nonSlotSmokeInventory.map(item => item.catalogPath ?? item.smokePath), ...slotSmokeInventory.map(([id]) => `/slots/${id}`)]
+const recent = ['house-holdem', 'andar-bahar', 'blackjack', 'mines', 'three-card-poker', 'hi-lo', 'solitaire']
+  .map((gameId, index) => ({ gameId, playedAtUtc: new Date(Date.UTC(2026, 10, 1, 12, 0) - index * 60_000).toISOString() }))
+http.createServer((request, response) => {
+  response.setHeader('Content-Type', 'application/json')
+  response.setHeader('Cache-Control', 'no-store')
+  const path = new URL(request.url, 'http://127.0.0.1').pathname
+  const json = value => response.end(JSON.stringify(value))
+  if (path === '/api/accounts/me') return json({ userId: 'navbar-manual-fixture', playerName: 'Shared Player', email: 'navbar@example.test', role: 'player', createdAtUtc: '2026-01-01T00:00:00Z', balances: { slotsCredits: 1234.56, freeGames: 0 }, slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 } })
+  if (path === '/api/catalog/visibility') return json({ version: 1, games: routes.map((route, index) => ({ id: `game-${index}`, route, visible: true })) })
+  if (path === '/api/catalog/popularity') return json({ metric: 'recorded-plays', trackingStartedAtUtc: null, games: [] })
+  if (path === '/api/catalog/recent-games') return json({ games: recent })
+  if (request.method === 'GET' && path === '/api/accounts/me/history') return json({ spins: [] })
+  if (request.method === 'GET' && path === '/api/cards/history') return json(recent.map((play, index) => ({
+    resultId: `home-fixture-${index}`, game: play.gameId, mode: 'fixture', matchId: `completed-${index}`,
+    startedAtUtc: play.playedAtUtc, completedAtUtc: play.playedAtUtc, unseen: false, requiresClaim: false,
+    winningsCredits: 0, wagerCredits: 0, netCredits: 0, score: null, moves: null, schemaVersion: 1,
+  })))
+  response.statusCode = 503
+  return json({ code: 'navbar-fixture-unavailable', message: 'Gameplay and external submissions are disabled in this local fixture.' })
+}).listen(5302, '127.0.0.1', () => console.log('Navbar test account fixture: http://127.0.0.1:5302'))

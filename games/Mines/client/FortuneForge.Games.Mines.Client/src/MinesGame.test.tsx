@@ -5,23 +5,24 @@ import { MinesGame } from './MinesGame'
 import { MinesGatewayError, type MinesGateway, type MinesRound, type MinesSession } from './contracts'
 import { pendingKey, savePending } from './pendingCommand'
 import { playMinesAudio, unlockMinesAudio } from './minesAudio'
+import { minesMultiplierQuote } from './minesPayoutQuote'
 
 vi.mock('./minesAudio', () => ({ playMinesAudio: vi.fn(), unlockMinesAudio: vi.fn() }))
 
-const idle: MinesSession = { balanceCents: 10000, practice: true, round: null, minimumWagerCents: 10, maximumWagerCents: 10000, houseEdgeBasisPoints: 100 }
+const idle: MinesSession = { balanceCents: 10000, practice: true, round: null, minimumWagerCents: 100, maximumWagerCents: 500, houseEdgeBasisPoints: 1000, payoutPolicyVersion: 2 }
 function round(overrides: Partial<MinesRound> = {}): MinesRound {
   return { roundId: 'round-client-1', wagerCents: 100, mineCount: 3, status: 'active', safeReveals: 0, gemsRemaining: 22,
-    currentMultiplier: 1, nextMultiplier: 1.125, cashOutCents: 0, canCashOut: false, payoutCents: 0,
+    currentMultiplier: 1, nextMultiplier: 45 / 44, cashOutCents: 0, canCashOut: false, payoutCents: 0, houseEdgeBasisPoints: 1000, payoutPolicyVersion: 2, nextMinePayoutCents: 0,
     tiles: Array.from({ length: 25 }, (_, index) => ({ index, isRevealed: false, kind: 'hidden' as const })), ...overrides }
 }
 function gemRound(): MinesRound {
-  return round({ safeReveals: 1, gemsRemaining: 21, currentMultiplier: 1.125, nextMultiplier: 1.2857142857142858, cashOutCents: 112, canCashOut: true,
+  return round({ safeReveals: 1, gemsRemaining: 21, currentMultiplier: 45 / 44, nextMultiplier: 90 / 77, cashOutCents: 102, canCashOut: true,
     tiles: round().tiles.map(tile => tile.index === 4 ? { ...tile, kind: 'gem', isRevealed: true } : tile) })
 }
 function terminalRound(status: 'cashed-out' | 'lost' | 'cleared' = 'cashed-out'): MinesRound {
   const won = status !== 'lost'
-  return { ...gemRound(), status, nextMultiplier: null, currentMultiplier: won ? 1.125 : 0,
-    canCashOut: false, cashOutCents: 0, payoutCents: won ? 112 : 0,
+  return { ...gemRound(), status, nextMultiplier: null, currentMultiplier: won ? 45 / 44 : 0,
+    canCashOut: false, cashOutCents: 0, payoutCents: won ? 102 : 0,
     tiles: round().tiles.map(tile => ({ ...tile, kind: tile.index < 3 ? 'mine' : 'gem', isRevealed: tile.index === 4 || !won && tile.index === 0 })) }
 }
 function gateway(initial = idle) {
@@ -58,6 +59,204 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals() })
 
 describe('MinesGame server state and normal play', () => {
+  it('keeps the stretched tail playable through all remaining gems, then naturally pays a full clear', async () => {
+    const lateTiles = (depth: number) => Array.from({ length: 25 }, (_, index) => ({
+      index, kind: index >= 21 && index < 21 + depth ? 'gem' as const : 'hidden' as const,
+      isRevealed: index >= 21 && index < 21 + depth,
+    }))
+    const late = round({ mineCount: 21, safeReveals: 2, gemsRemaining: 2, currentMultiplier: 45,
+      nextMultiplier: 47.5, cashOutCents: 4500, canCashOut: true, nextMinePayoutCents: 4476, tiles: lateTiles(2) })
+    const fake = gateway({ ...idle, balanceCents: 9900, round: late })
+    await open(fake)
+    expect(screen.getByTestId('mines-next-mine-return').textContent).toBe('R44.76')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toBe('NEXT GEM47.50×4 GEMS50.00×')
+    expect(screen.getAllByRole('button', { name: /^Tile / }).filter(button => !(button as HTMLButtonElement).disabled)).toHaveLength(23)
+    expect(tile(23)).toHaveProperty('disabled', false)
+    fake.execute.mockImplementationOnce(async () => {
+      const value = { ...idle, balanceCents: 9900, round: { ...late, safeReveals: 3, gemsRemaining: 1,
+        currentMultiplier: 47.5, nextMultiplier: 50, cashOutCents: 4750, nextMinePayoutCents: 4738, tiles: lateTiles(3) } }
+      fake.set(value); return value
+    })
+    fireEvent.click(tile(23)); await flush()
+    expect(screen.queryByText('CASHED OUT')).toBeNull()
+    expect(tile(24)).toHaveProperty('disabled', false)
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toBe('NEXT GEM50.00×')
+    fake.execute.mockImplementationOnce(async () => {
+      const value = { ...idle, balanceCents: 14900, round: { ...late, status: 'cleared' as const,
+        safeReveals: 4, gemsRemaining: 0, currentMultiplier: 50, nextMultiplier: null,
+        cashOutCents: 0, canCashOut: false, payoutCents: 5000, nextMinePayoutCents: 0,
+        tiles: lateTiles(4).map(t => ({ ...t, kind: t.index < 21 ? 'mine' as const : 'gem' as const })) } }
+      fake.set(value); return value
+    })
+    fireEvent.click(tile(24)); await flush()
+    expect(screen.getByText('ALL GEMS FOUND')).toBeTruthy()
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R50.00')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toBe('')
+    expect(fake.execute).toHaveBeenCalledTimes(2)
+  })
+
+  it.each([93, 100, 200])('discloses the server mine return and presents a %s-cent consolation without claiming everything was lost', async payoutCents => {
+    const current = { ...gemRound(), nextMinePayoutCents: payoutCents }
+    const fake = gateway({ ...idle, balanceCents: 9900, round: current })
+    const view = await open(fake)
+    expect(screen.getByTestId('mines-next-mine-return').textContent).toBe(`R${(payoutCents / 100).toFixed(2)}`)
+    expect(view.container.textContent).toContain('If you hit a mine:')
+    fake.execute.mockImplementationOnce(async () => {
+      const value = { ...idle, balanceCents: 9900 + payoutCents, round: { ...terminalRound('lost'),
+        status: 'consolation' as const, currentMultiplier: payoutCents / 100, payoutCents,
+        nextMinePayoutCents: 0 } }
+      fake.set(value); return value
+    })
+    fireEvent.click(tile(0)); await flush()
+    expect(screen.getByText('MINE HIT')).toBeTruthy()
+    expect(view.container.querySelector('.ff-mines__result--consolation')?.textContent).toContain('Returned')
+    expect(screen.queryByText(/wager lost/)).toBeNull()
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe(`R${(payoutCents / 100).toFixed(2)}`)
+    expect(screen.queryByTestId('mines-next-mine-return')).toBeNull()
+    expect(playMinesAudio).toHaveBeenCalledWith(payoutCents > 100 ? 'cashout' : 'mine', false)
+    if (payoutCents <= 100) expect(playMinesAudio).not.toHaveBeenCalledWith('cashout', false)
+  })
+
+  it('never substitutes the new policy for a missing-policy accepted legacy round', async () => {
+    const accepted = round({ payoutPolicyVersion: undefined, nextMinePayoutCents: undefined,
+      mineCount: 12, safeReveals: 12, gemsRemaining: 1, currentMultiplier: minesMultiplierQuote(12, 12, 1000, 1),
+      nextMultiplier: 4680270, canCashOut: true,
+      tiles: round().tiles.map(t => ({ ...t, kind: t.index < 12 ? 'gem' : 'hidden', isRevealed: t.index < 12 })) })
+    const view = await open(gateway({ ...idle, round: accepted }))
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('4,680,270.00×')
+    expect(view.container.querySelector('.ff-mines__rules')?.textContent).toContain('This accepted round keeps its original rules.')
+    expect(screen.queryByTestId('mines-next-mine-return')).toBeNull()
+  })
+
+  it('restricts new wagers to R1–R5 and clamps halve/double controls to the same limits', async () => {
+    const view = await open()
+    expect(view.container.querySelector('.ff-mines__limits')?.textContent).toBe('R1.00 – R5.00')
+    fireEvent.click(screen.getByRole('button', { name: 'Halve wager' }))
+    expect(wager()).toHaveProperty('value', '1.00')
+    fireEvent.change(wager(), { target: { value: '4.00' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Double wager' }))
+    expect(wager()).toHaveProperty('value', '5.00')
+    for (const value of ['0.99', '5.01', '100.00']) {
+      fireEvent.change(wager(), { target: { value } })
+      expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', true)
+      expect(screen.getByText('Enter R1.00–R5.00, with up to two decimal places.')).toBeTruthy()
+    }
+    for (const value of ['1.00', '5.00']) {
+      fireEvent.change(wager(), { target: { value } })
+      expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', false)
+    }
+  })
+
+  it('uses R1–R5 fallback limits even before a session becomes available', async () => {
+    const fake = gateway()
+    fake.getSession.mockRejectedValueOnce(new TypeError('Table unavailable'))
+    const view = await open(fake)
+    expect(view.container.querySelector('.ff-mines__limits')?.textContent).toBe('R1.00 – R5.00')
+    expect(view.container.querySelector('.ff-mines__rules')?.textContent).toContain('Wagers: R1.00–R5.00.')
+    expect(fake.execute).not.toHaveBeenCalled()
+  })
+
+  it('keeps a grandfathered R100 round cashable at its original 99% return under R5 new-wager limits', async () => {
+    const accepted = { ...gemRound(), wagerCents: 10_000, currentMultiplier: 1.125,
+      nextMultiplier: 9 / 7, cashOutCents: 11250, houseEdgeBasisPoints: 100, payoutPolicyVersion: 1 }
+    const fake = gateway({ ...idle, balanceCents: 90000, round: accepted })
+    const view = await open(fake)
+    expect(wager()).toHaveProperty('value', '100.00')
+    expect(wager()).toHaveProperty('disabled', true)
+    expect(screen.getByRole('button', { name: /Cash out.*R112.50/ })).toHaveProperty('disabled', false)
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.29×')
+    expect(view.container.querySelector('.ff-mines__rules')?.textContent).toContain('Maximum gross return: R514,829,700.00.')
+    expect(view.container.querySelector('.ff-mines__rules')?.textContent).toContain('Your accepted R100.00 wager keeps its original terms. New wagers must be R1.00–R5.00.')
+    fake.execute.mockImplementationOnce(async command => {
+      expect(command).toMatchObject({ action: 'cashout', roundId: accepted.roundId })
+      const value = { ...idle, balanceCents: 101250, round: { ...terminalRound(),
+        wagerCents: 10_000, currentMultiplier: 1.125, payoutCents: 11250, houseEdgeBasisPoints: 100, payoutPolicyVersion: 1 } }
+      fake.set(value); return value
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Cash out/ })); await flush()
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R112.50')
+    expect(balance()).toBe('R1,012.50')
+    expect(screen.getByRole('button', { name: /Bet again/ })).toHaveProperty('disabled', true)
+    fireEvent.change(wager(), { target: { value: '5.00' } })
+    expect(screen.getByRole('button', { name: /Bet again/ })).toHaveProperty('disabled', false)
+  })
+
+  it('quotes and discloses 90% nominal RTP and the reduced maximum for a new wager', async () => {
+    const view = await open()
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.02×')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('NEXT GEM1.02×')
+    expect(view.container.querySelector('.ff-mines__footer')?.textContent).toContain('90% nominal RTP')
+    const rules = view.container.querySelector('.ff-mines__rules')?.textContent
+    expect(rules).toContain('Nominal RTP: 90%. Nominal house edge: 10%.')
+    expect(rules).toContain('The gem curve rises normally, then stretches toward a maximum of 50×')
+    expect(rules).toContain('Largest possible multiplier: 50×.')
+    expect(rules).toContain('Wagers: R1.00–R5.00.')
+    expect(rules).toContain('Maximum gross return: R250.00.')
+    expect(rules).toContain('There is no early automatic cash-out.')
+    expect(rules).not.toContain('4,680,270')
+    expect(rules).toContain('With 1 or 2 mines, the first safe cash-out can return less than your original wager.')
+    fireEvent.change(mines(), { target: { value: '1' } })
+    expect(screen.getByTestId('mines-next').textContent).toBe('0.94×')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('NEXT GEM0.94×')
+    fireEvent.change(mines(), { target: { value: '2' } })
+    expect(screen.getByTestId('mines-next').textContent).toBe('0.98×')
+  })
+
+  it('uses the table-advertised rule for idle quotes rather than assuming a multiplier', async () => {
+    await open(gateway({ ...idle, houseEdgeBasisPoints: 100, payoutPolicyVersion: 1 })) // Legacy session/replay.
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.13×')
+  })
+
+  it('allows an authoritative first-gem cash-out below the wager without clamping or inventing a profit', async () => {
+    const lowMineRound = round({ mineCount: 1, safeReveals: 1, gemsRemaining: 23,
+      currentMultiplier: .9375, nextMultiplier: 45 / 46, cashOutCents: 93, canCashOut: true,
+      tiles: gemRound().tiles })
+    const fake = gateway({ ...idle, balanceCents: 9900, round: lowMineRound })
+    await open(fake)
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R0.93')
+    expect(screen.getByRole('button', { name: /Cash out.*R0.93/ })).toHaveProperty('disabled', false)
+    fake.execute.mockImplementationOnce(async () => {
+      const value = { ...idle, balanceCents: 9993, round: { ...lowMineRound, status: 'cashed-out' as const,
+        nextMultiplier: null, cashOutCents: 0, canCashOut: false, payoutCents: 93,
+        tiles: lowMineRound.tiles.map(t => ({ ...t, kind: t.index === 0 ? 'mine' as const : 'gem' as const })) } }
+      fake.set(value); return value
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Cash out/ })); await flush()
+    expect(balance()).toBe('R99.93')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R0.93')
+    expect(screen.getByText('CASHED OUT')).toBeTruthy()
+  })
+
+  it.each([undefined, 100])('resumes a frozen legacy 99% round (%s metadata) without repricing its rail, balance or settlement', async edge => {
+    const { houseEdgeBasisPoints: _edge, ...currentRound } = gemRound()
+    const legacyRound: MinesRound = { ...currentRound, currentMultiplier: 1.125, nextMultiplier: 9 / 7,
+      cashOutCents: 112, payoutPolicyVersion: 1, ...(edge === undefined ? {} : { houseEdgeBasisPoints: edge }) }
+    const fake = gateway({ ...idle, balanceCents: 9900, round: legacyRound })
+    const view = await open(fake)
+    expect(balance()).toBe('R99.00')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.12')
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.29×')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('NEXT GEM1.29×')
+    expect(view.container.querySelector('.ff-mines__footer')?.textContent).toContain('99% nominal RTP')
+    expect(view.container.querySelector('.ff-mines__rules')?.textContent).toContain('New wagers use 90% nominal RTP and 10% nominal house edge.')
+    const settled: MinesRound = { ...terminalRound(), houseEdgeBasisPoints: edge, currentMultiplier: 1.125, payoutCents: 112, payoutPolicyVersion: 1 }
+    fake.execute.mockImplementationOnce(async () => {
+      const value = { ...idle, balanceCents: 10012, round: settled }; fake.set(value); return value
+    })
+    fireEvent.click(screen.getByRole('button', { name: /Cash out/ })); await flush()
+    expect(balance()).toBe('R100.12')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.12')
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('NEXT GEM1.29×')
+    // An editable next-wager mine count must not reprice the completed board's rail.
+    fireEvent.change(mines(), { target: { value: '12' } })
+    expect(screen.getByLabelText('Upcoming gem multipliers').textContent).toContain('NEXT GEM1.29×')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear board' }))
+    expect(view.container.querySelector('.ff-mines__footer')?.textContent).toContain('90% nominal RTP')
+    fireEvent.change(mines(), { target: { value: '3' } })
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.02×')
+    expect(fake.execute).toHaveBeenCalledOnce()
+  })
+
   it('requires a loaded wallet and valid affordable wager before starting', async () => {
     const fake = gateway({ ...idle, balanceCents: 50 })
     await open(fake)
@@ -71,6 +270,10 @@ describe('MinesGame server state and normal play', () => {
     fireEvent.change(wager(), { target: { value: '0.101' } })
     expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', true)
     fireEvent.change(wager(), { target: { value: '0.50' } })
+    expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', true)
+    fake.set({ ...idle, balanceCents: 200 })
+    fireEvent(window, new Event('focus')); await flush()
+    fireEvent.change(wager(), { target: { value: '1.00' } })
     expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', false)
     expect(fake.execute).not.toHaveBeenCalled()
     expect(tile(0)).toHaveProperty('disabled', true)
@@ -98,19 +301,19 @@ describe('MinesGame server state and normal play', () => {
     fireEvent.click(tile(4)); await flush()
     expect(tile(4)).toHaveProperty('disabled', true)
     expect(tile(4).getAttribute('aria-label')).toContain('gem, revealed')
-    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.12')
-    expect(screen.getByTestId('mines-next').textContent).toBe('1.29×')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.02')
+    expect(screen.getByTestId('mines-next').textContent).toBe('1.17×')
     expect(playMinesAudio).toHaveBeenCalledWith('gem', false)
     fake.execute.mockImplementationOnce(async command => {
       expect(command).toMatchObject({ action: 'cashout', roundId: 'round-client-1' })
-      const next = { ...idle, balanceCents: 10012, round: terminalRound() }; fake.set(next); return next
+      const next = { ...idle, balanceCents: 10002, round: terminalRound() }; fake.set(next); return next
     })
     fireEvent.click(screen.getByRole('button', { name: /Cash out/ })); await flush()
-    expect(balance()).toBe('R100.12')
-    expect(changed).toHaveBeenLastCalledWith(10012)
+    expect(balance()).toBe('R100.02')
+    expect(changed).toHaveBeenLastCalledWith(10002)
     expect(screen.getByText('CASHED OUT')).toBeTruthy()
     expect(screen.getByTestId('mines-next').textContent).toBe('—')
-    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.12')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.02')
     expect(playMinesAudio).toHaveBeenCalledWith('cashout', false)
     expect(tile(0).getAttribute('aria-label')).toContain('mine')
     expect(tile(0)).toHaveProperty('disabled', true)
@@ -142,7 +345,7 @@ describe('MinesGame server state and normal play', () => {
   })
 
   it('does not replay result sounds when restoring an already terminal round', async () => {
-    await open(gateway({ ...idle, balanceCents: 10012, round: terminalRound('cleared') }))
+    await open(gateway({ ...idle, balanceCents: 10002, round: terminalRound('cleared') }))
     expect(screen.getByText('ALL GEMS FOUND')).toBeTruthy()
     expect(playMinesAudio).not.toHaveBeenCalled()
   })
@@ -180,7 +383,7 @@ describe('MinesGame command recovery', () => {
     fireEvent.click(screen.getByRole('button', { name: /Restore round/ })); await flush()
     expect(fake.execute.mock.calls[1][0]).toEqual(original)
     expect(tile(4).getAttribute('aria-label')).toContain('gem, revealed')
-    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.12')
+    expect(screen.getByTestId('mines-cashout-value').textContent).toBe('R1.02')
     expect(balance()).toBe('R99.00')
     expect(localStorage.getItem(pendingKey('player-a'))).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
@@ -194,12 +397,12 @@ describe('MinesGame command recovery', () => {
     const original = fake.execute.mock.calls[0][0]
     expect(original.action).toBe('cashout')
     first.unmount()
-    fake.set({ ...idle, balanceCents: 10012, round: terminalRound() })
+    fake.set({ ...idle, balanceCents: 10002, round: terminalRound() })
     await open(fake)
     expect(fake.execute).toHaveBeenCalledTimes(2)
     expect(fake.execute.mock.calls[1][0]).toEqual(original)
     expect(screen.getByText('CASHED OUT')).toBeTruthy()
-    expect(balance()).toBe('R100.12')
+    expect(balance()).toBe('R100.02')
     expect(localStorage.getItem(pendingKey('player-a'))).toBeNull()
     expect(playMinesAudio).not.toHaveBeenCalled()
   })
@@ -248,6 +451,10 @@ describe('MinesGame command recovery', () => {
     expect(screen.queryByRole('button', { name: /Restore round/ })).toBeNull()
     expect(localStorage.getItem(pendingKey('player-a'))).toBeNull()
     fireEvent.change(wager(), { target: { value: '0.50' } })
+    expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', true)
+    fake.set({ ...idle, balanceCents: 200 })
+    fireEvent(window, new Event('focus')); await flush()
+    fireEvent.change(wager(), { target: { value: '1.00' } })
     expect(screen.getByRole('button', { name: /Place wager/ })).toHaveProperty('disabled', false)
     expect(fake.execute).toHaveBeenCalledOnce()
   })
@@ -319,13 +526,13 @@ describe('MinesGame command recovery', () => {
   })
 
   it('restores a new active round from another tab even after the previous board was cleared', async () => {
-    const fake = gateway({ ...idle, balanceCents: 10012, round: terminalRound() })
+    const fake = gateway({ ...idle, balanceCents: 10002, round: terminalRound() })
     await open(fake)
     fireEvent.click(screen.getByRole('button', { name: 'Clear board' }))
     expect(screen.getByRole('button', { name: /Place wager/ })).toBeTruthy()
-    fake.set({ ...idle, balanceCents: 9912, round: round({ roundId: 'new-round-from-another-tab' }) })
+    fake.set({ ...idle, balanceCents: 9902, round: round({ roundId: 'new-round-from-another-tab' }) })
     fireEvent(window, new Event('focus')); await flush()
-    expect(balance()).toBe('R99.12')
+    expect(balance()).toBe('R99.02')
     expect(wager()).toHaveProperty('disabled', true)
     expect(mines()).toHaveProperty('disabled', true)
     expect(screen.getByRole('button', { name: /Cash out/ })).toHaveProperty('disabled', true)
@@ -334,12 +541,12 @@ describe('MinesGame command recovery', () => {
   })
 
   it('preserves the next wager settings when a focus refresh returns the same completed round', async () => {
-    const fake = gateway({ ...idle, balanceCents: 10012, round: terminalRound() })
+    const fake = gateway({ ...idle, balanceCents: 10002, round: terminalRound() })
     await open(fake)
     fireEvent.click(screen.getByRole('button', { name: 'Clear board' }))
     fireEvent.change(wager(), { target: { value: '2.50' } })
     fireEvent.change(mines(), { target: { value: '5' } })
-    fake.set({ ...idle, balanceCents: 10012, round: terminalRound() }) // Fresh response, same completed round ID.
+    fake.set({ ...idle, balanceCents: 10002, round: terminalRound() }) // Fresh response, same completed round ID.
     fireEvent(window, new Event('focus')); await flush()
     expect(wager()).toHaveProperty('value', '2.50')
     expect(mines()).toHaveProperty('value', '5')

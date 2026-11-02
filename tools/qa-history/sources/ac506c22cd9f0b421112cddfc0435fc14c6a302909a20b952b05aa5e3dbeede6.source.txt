@@ -1,0 +1,30 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import postcss from 'postcss'
+
+const root = process.cwd()
+const out = path.join(root, 'output/maintenance-2026-11-01/navbar-consistency')
+const files = fs.readFileSync(path.join(out, 'runtime-candidate-css-files.txt'), 'utf8').replace(/^\uFEFF/, '').trim().split(/\r?\n/)
+const globals = [], reserved = [], imports = []
+let rules = 0
+for (const file of files) {
+  const ast = postcss.parse(fs.readFileSync(path.join(root, file), 'utf8'), { from: file })
+  ast.walkAtRules('import', rule => imports.push({ file, line: rule.source.start.line, import: rule.params }))
+  ast.walkRules(rule => {
+    if (rule.parent?.type === 'atrule' && /keyframes$/i.test(rule.parent.name)) return
+    rules++
+    const media = []
+    for (let parent = rule.parent; parent; parent = parent.parent)
+      if (parent.type === 'atrule') media.push(`@${parent.name} ${parent.params}`)
+    for (const selector of rule.selectors) {
+      const row = { file, line: rule.source.start.line, selector, media,
+        declarations: rule.nodes.filter(node => node.type === 'decl').map(node => `${node.prop}: ${node.value}${node.important ? ' !important' : ''}`) }
+      if (/(?:site-navbar|site-header-balance|player-shell-(?:header|menu)|in-game-navbar|data-(?:site|game)-navbar)/.test(selector)) reserved.push(row)
+      if (!/[.#][a-z_-][\w-]*|\[[^\]]+\]/i.test(selector) ||
+        /(^|[\s>+~,(])(?:html|body|:root|#root|:global)(?=$|[\s:>+~.#),(])/.test(selector)) globals.push(row)
+    }
+  })
+}
+fs.writeFileSync(path.join(out, 'css-inventory.json'), JSON.stringify({ cssFiles: files.length, rules, globals, reserved, imports }, null, 2))
+console.log(JSON.stringify({ cssFiles: files.length, rules, globalSelectors: globals.length, reservedSelectors: reserved.length,
+  gameGlobalFiles: [...new Set(globals.filter(row => row.file.startsWith('games\\')).map(row => row.file))] }, null, 2))

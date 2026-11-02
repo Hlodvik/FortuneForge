@@ -97,7 +97,8 @@ public sealed record BlackjackTableResponse(
     DateTime? NextTransitionAtUtc,
     long RemainingActionMilliseconds,
     long RemainingWagerMilliseconds,
-    long RemainingTransitionMilliseconds);
+    long RemainingTransitionMilliseconds,
+    string Mode);
 
 public sealed record BlackjackTablePlaySessionResponse(
     BlackjackTableResponse Table,
@@ -206,6 +207,7 @@ internal sealed record BlackjackManagedPlayerRelease(string ProfileId, string As
 
 internal sealed class BlackjackTableJournal
 {
+    public List<FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture> RoundAudits { get; } = [];
     public List<BlackjackTableLedgerEntry> Ledger { get; } = [];
     public List<BlackjackTableRevenueEntry> Revenue { get; } = [];
     public List<BlackjackTableResultEntry> Results { get; } = [];

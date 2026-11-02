@@ -1,0 +1,12 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "free-solitaire",
+  "displayName": "Solitaire",
+  "category": "card",
+  "packageVersion": "0.4.1",
+  "clientRoute": "/cards/free-solitaire",
+  "apiBasePath": "/api/solitaire",
+  "capabilities": ["free-play", "history"],
+  "migrationState": "package-backed"
+}

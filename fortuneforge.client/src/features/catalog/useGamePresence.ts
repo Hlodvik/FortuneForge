@@ -3,7 +3,7 @@ import { fetchWithAccountSession, getCurrentAccount } from '../account/services/
 import { SLOT_ROUTE_DEFINITIONS } from '../../games/slots/routeRegistry'
 import { isGameActivityApiEnabled } from './gameActivityCapability'
 
-const cardGames = ['blackjack', 'texas-holdem', 'solitaire', 'three-card-poker', 'house-holdem', 'hearts']
+const cardGames = ['blackjack', 'texas-holdem', 'solitaire', 'free-solitaire', 'three-card-poker', 'house-holdem', 'hearts']
 const otherGames = ['dragon-tiger', 'mines', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker', 'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge']
 const gameRoutes = new Map([
   ...cardGames.map(id => [`/cards/${id}`, id] as const),

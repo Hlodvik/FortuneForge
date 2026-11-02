@@ -10,7 +10,7 @@ const tileMotionDuration = 180
 const bestScoreKey = 'fortuneforge:2048:best-score'
 const swipeThreshold = 28
 
-export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local free play', embedded = false }: TwentyFortyEightGameProps) {
+export function TwentyFortyEightGame({ gateway, embedded = false }: TwentyFortyEightGameProps) {
   const [game, setGame] = useState<TwentyFortyEightGameState | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -98,7 +98,6 @@ export function TwentyFortyEightGame({ gateway, backHref = '/', playerName = 'Pl
   }
 
   return <div className={`ff-2048-page${embedded ? ' ff-2048-page--embedded' : ''}`}>
-    {!embedded && <header className="ff-2048-header"><a className="ff-2048-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a><a className="ff-2048-games" href={backHref}>Other games</a><div className="ff-2048-account"><strong>{playerName}</strong><span>{tableLabel}</span></div></header>}
     <main className="ff-2048-main">
       <section className="ff-2048-title"><div><small>Number combo game</small><h1>2048</h1><p>Slide matching tiles together until you reach the golden 2048.</p></div><div className="ff-2048-actions"><button type="button" onClick={newGame} disabled={busy}>{busy ? 'Working…' : 'New game'}</button><button type="button" onClick={undo} disabled={busy || !game?.canUndo}>Undo</button></div></section>
       {game ? <div className="ff-2048-gameplay">

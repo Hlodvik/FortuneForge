@@ -20,6 +20,30 @@ function picker() { return screen.getByRole('group', { name: 'Select chip value'
 function open(selected = 'R2') { fireEvent.click(control(`Chip options, selected ${selected}`)) }
 
 describe('compact Craps bet controls', () => {
+  it('opens exact amounts without changing the selected chip or placing a chip', () => {
+    const onEditAmounts = vi.fn()
+    const input = props({ onEditAmounts })
+    const view = render(<CrapsBetControls {...input}/> )
+    const editor = control('Edit amounts')
+    fireEvent.click(editor)
+    expect(onEditAmounts).toHaveBeenCalledExactlyOnceWith(editor)
+    expect(input.onSelectChip).not.toHaveBeenCalled()
+    expect(input.onUndo).not.toHaveBeenCalled()
+    expect(input.onClear).not.toHaveBeenCalled()
+    view.rerender(<CrapsBetControls {...input} disabled/> )
+    fireEvent.click(control('Edit amounts'))
+    expect(onEditAmounts).toHaveBeenCalledTimes(1)
+  })
+
+  it('labels a legal denomination without borrowing artwork for a different value', () => {
+    render(<CrapsBetControls {...props({ denominations: [{ value: 7.5 }], selectedChip: 7.5 })}/> )
+    const selected = control('Chip options, selected R7.5')
+    expect(selected.querySelector('img')).toBeNull()
+    expect(selected.querySelector('.ff-craps-custom-chip')?.textContent).toBe('R7.5')
+    expect(control('Increase chip value').disabled).toBe(true)
+    expect(control('Decrease chip value').disabled).toBe(true)
+  })
+
   it('shows just the selected asset until the player opens the denominations', () => {
     render(<CrapsBetControls {...props({ selectedChip: .5 })}/> )
     expect(picker().querySelectorAll('img')).toHaveLength(1)

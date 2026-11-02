@@ -54,7 +54,7 @@ function AsteroidsCompetitionSession({ initialAccount }: Readonly<{ initialAccou
     }
   }, [])
 
-  return <InGameShell account={currentAccount} className="asteroid-blaster-shell" title="Asteroid Blaster" theme="arcade">
+  return <InGameShell account={currentAccount} className="asteroid-blaster-shell" title="Asteroid Blaster">
     <GameAmbientMusic game="asteroids" />
     <AsteroidsCompetitionPage account={currentAccount} gateway={gateway} onPaidAccountRefresh={refreshAccount} />
   </InGameShell>

@@ -107,12 +107,12 @@ internal sealed partial class FirestorePaymentStore
         var snapshot = await database
             .Collection("slotCreditPurchases")
             .WhereEqualTo("userId", userId)
+            .OrderByDescending("createdAt")
+            .Limit(limit)
             .GetSnapshotAsync(cancellationToken);
         return snapshot.Documents
             .Select(ToStored)
             .OfType<StoredPaymentCheckout>()
-            .OrderByDescending(checkout => checkout.CreatedAtUtc)
-            .Take(limit)
             .ToArray();
     }
 

@@ -589,6 +589,179 @@ public sealed class CreditHoldemFirestoreEmulatorTests : IClassFixture<CreditHol
         Assert.Equal("real-human-wager-v2", Field<string>(revenue, "financialClassification"));
     }
 
+    [Fact]
+    public async Task ProductionStore_NextHandCannotBypassTheResultInactivityDeadline()
+    {
+        var (database, store, suffix) = CreateStore();
+        string first = $"late-next-a-{suffix}", second = $"late-next-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var started = await StartMatchAsync(store, first, second);
+        var completedAt = started.Table.MatchDeadlineAtUtc;
+        var result = Assert.IsType<CreditHoldemResultSessionResponse>((await store.GetSessionAsync(first, completedAt, default)).Session);
+        var expires = completedAt.Add(CreditHoldemTableCoordinator.ResultInactivityDuration);
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.NextHandAsync(
+            first, result.MatchId, result.Version, "late-next", 202, expires, default));
+        Assert.IsType<CreditHoldemIdleSessionResponse>((await store.GetSessionAsync(first, expires, default)).Session);
+        Assert.Single((await store.HistoryAsync(first, 50, default)).Items);
+    }
+
+    [Fact]
+    public async Task ProductionStore_ClosedTableWithAStaleSessionCannotResumeButKeepsOwnedHistory()
+    {
+        var (database, _, suffix) = CreateStore();
+        var store = new FirestoreCreditHoldemStore(database, managedPopulationDirector: new CloseWithoutHumans());
+        string first = $"closed-a-{suffix}", second = $"closed-b-{suffix}", stranger = $"closed-other-{suffix}";
+        await SeedPlayersAsync(database, first, second, stranger);
+        var started = await StartMatchAsync(store, first, second);
+        var completedAt = started.Table.MatchDeadlineAtUtc;
+        var result = Assert.IsType<CreditHoldemResultSessionResponse>((await store.GetSessionAsync(first, completedAt, default)).Session);
+        var sessionDocument = database.Collection("creditHoldemSessions").Document(CreditHoldemIds.Hash(first));
+        var staleSession = (await sessionDocument.GetSnapshotAsync()).ToDictionary();
+        var expires = completedAt.Add(CreditHoldemTableCoordinator.ResultInactivityDuration);
+        Assert.IsType<CreditHoldemIdleSessionResponse>((await store.GetSessionAsync(first, expires, default)).Session);
+        var matchDocument = database.Collection("creditHoldemMatches").Document(result.MatchId);
+        var closed = await matchDocument.GetSnapshotAsync();
+        Assert.True(closed.ContainsField("managedPlayersReleasedAt"));
+        var closedJson = Field<string>(closed, "matchJson");
+        var ledgerCount = (await LedgerAsync(database)).Count;
+        var balance = await ReadBalanceAsync(database, first);
+
+        // A legacy saved pointer must not make an explicitly closed table playable again.
+        await sessionDocument.SetAsync(staleSession);
+        store = new FirestoreCreditHoldemStore(database);
+        var at = expires.AddSeconds(1);
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.NextHandAsync(
+            first, result.MatchId, result.Version, "closed-next", 203, at, default));
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.ActionAsync(
+            first, result.MatchId, new(CreditHoldemActions.Check, result.Version), "closed-action", at, default));
+        await Assert.ThrowsAsync<CreditHoldemNotFoundException>(() => store.NextHandAsync(
+            stranger, result.MatchId, result.Version, "foreign-next", 204, at, default));
+        await Assert.ThrowsAsync<CreditHoldemNotFoundException>(() => store.ActionAsync(
+            stranger, result.MatchId, new(CreditHoldemActions.Check, result.Version), "foreign-action", at, default));
+        Assert.IsType<CreditHoldemIdleSessionResponse>((await store.GetSessionAsync(first, at, default)).Session);
+        Assert.Equal("idle", Field<string>(await sessionDocument.GetSnapshotAsync(), "kind"));
+        Assert.Equal(closedJson, Field<string>(await matchDocument.GetSnapshotAsync(), "matchJson"));
+        Assert.Equal(balance, await ReadBalanceAsync(database, first));
+        Assert.Equal(ledgerCount, (await LedgerAsync(database)).Count);
+        var history = Assert.Single((await store.HistoryAsync(first, 50, default)).Items);
+        Assert.Equal(result.MatchId, history.MatchId);
+        Assert.Empty((await store.HistoryAsync(stranger, 50, default)).Items);
+        await Assert.ThrowsAsync<CreditHoldemNotFoundException>(() => store.MarkHistorySeenAsync(stranger, history.EventId, at, default));
+        _ = await store.MarkHistorySeenAsync(first, history.EventId, at, default);
+        _ = await store.JoinAsync(first, "Alice", 0, "new-table-first", 205, at.AddSeconds(1), default, buyInCents: 100);
+        _ = await store.JoinAsync(stranger, "Other", 0, "new-table-other", 206, at.AddSeconds(1), default, buyInCents: 100);
+        var fresh = Assert.IsType<CreditHoldemMatchSessionResponse>((await store.GetSessionAsync(
+            first, at.AddSeconds(1).Add(CreditHoldemEngine.HumanGrace), default)).Session);
+        Assert.NotEqual(result.MatchId, fresh.Table.MatchId);
+    }
+
+    [Fact]
+    public async Task ProductionStore_ClosureMarkerBlocksPlayWithoutDiscardingAnUnconfirmedCashout()
+    {
+        var (database, store, suffix) = CreateStore();
+        string first = $"unconfirmed-a-{suffix}", second = $"unconfirmed-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var started = await StartMatchAsync(store, first, second);
+        var matchDocument = database.Collection("creditHoldemMatches").Document(started.Table.MatchId);
+        var before = await matchDocument.GetSnapshotAsync();
+        var sessionDocument = database.Collection("creditHoldemSessions").Document(CreditHoldemIds.Hash(first));
+        var balance = await ReadBalanceAsync(database, first);
+        var ledgerCount = (await LedgerAsync(database)).Count;
+        // Even inconsistent legacy data is not permission to resume a closed table
+        // or silently drop the only pointer to an unconfirmed escrow cash-out.
+        await matchDocument.SetAsync(new Dictionary<string, object>
+        {
+            ["managedPlayersReleasedAt"] = Timestamp.FromDateTime(Start.AddSeconds(6)),
+            ["acceptingHumans"] = false
+        }, SetOptions.MergeAll);
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.ActionAsync(
+            first, started.Table.MatchId, new(CreditHoldemActions.Check, started.Version), "unconfirmed-action", Start.AddSeconds(7), default));
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.NextHandAsync(
+            first, started.Table.MatchId, started.Version, "unconfirmed-next", 501, Start.AddSeconds(7), default));
+        await Assert.ThrowsAsync<CreditHoldemConflictException>(() => store.GetSessionAsync(first, Start.AddSeconds(7), default));
+        Assert.Equal("match", Field<string>(await sessionDocument.GetSnapshotAsync(), "kind"));
+        Assert.Equal(Field<string>(before, "matchJson"), Field<string>(await matchDocument.GetSnapshotAsync(), "matchJson"));
+        Assert.Equal(balance, await ReadBalanceAsync(database, first));
+        Assert.Equal(ledgerCount, (await LedgerAsync(database)).Count);
+    }
+
+    [Fact]
+    public async Task ProductionStore_PrivateHandEvidenceSurvivesNextDealAndSettlementRetries()
+    {
+        var (database, store, suffix) = CreateStore();
+        string first = $"evidence-a-{suffix}", second = $"evidence-b-{suffix}";
+        await SeedPlayersAsync(database, first, second);
+        var started = await StartMatchAsync(store, first, second);
+        var at = started.Table.MatchDeadlineAtUtc;
+        var result = Assert.IsType<CreditHoldemResultSessionResponse>((await store.GetSessionAsync(first, at, default)).Session);
+        var balancesAtSettlement = await Task.WhenAll(new[] { first, second }.Select(user => ReadBalanceAsync(database, user)));
+        var ledgerCount = (await LedgerAsync(database)).Count;
+        var retries = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => store.GetSessionAsync(first, at, default)));
+        Assert.All(retries, retry =>
+        {
+            var repeated = Assert.IsType<CreditHoldemResultSessionResponse>(retry.Session);
+            Assert.Equal(result.Version, repeated.Version);
+            Assert.Equal(result.HumanCommittedCredits, repeated.HumanCommittedCredits);
+            Assert.Equal(result.HumanPayoutCredits, repeated.HumanPayoutCredits);
+            Assert.Equal(result.HouseNetCredits, repeated.HouseNetCredits);
+        });
+        Assert.Equal(balancesAtSettlement,
+            await Task.WhenAll(new[] { first, second }.Select(user => ReadBalanceAsync(database, user))));
+        Assert.Equal(ledgerCount, (await LedgerAsync(database)).Count);
+        var summary = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        Assert.Equal(summary.Id, evidence.Id);
+        Assert.Equal("texas-holdem", summary.GetValue<string>("gameId"));
+        Assert.Equal("passed", summary.GetValue<string>("auditStatus"));
+        Assert.Null(summary.GetValue<object>("evidenceDeleteAfterUtc"));
+        var payload = evidence.GetValue<string>("payloadJson");
+        var digest = evidence.GetValue<string>("sha256");
+        Assert.Equal(summary.GetValue<string>("evidenceSha256"), digest);
+        using (var json = JsonDocument.Parse(payload))
+        {
+            Assert.Equal(52, json.RootElement.GetProperty("deck").GetArrayLength());
+            Assert.Equal(5, json.RootElement.GetProperty("community").GetArrayLength());
+            Assert.True(json.RootElement.GetProperty("actions").GetArrayLength() >= 2);
+            Assert.All(json.RootElement.GetProperty("players").EnumerateArray(), player =>
+                Assert.Equal(2, player.GetProperty("holeCards").GetArrayLength()));
+            var events = json.RootElement.GetProperty("events").EnumerateArray().ToArray();
+            var expired = Assert.Single(events, entry => entry.GetProperty("kind").GetString() == "match-deadline-expired");
+            Assert.Equal("server-timeout", expired.GetProperty("source").GetString());
+            Assert.Equal(at, expired.GetProperty("occurredAtUtc").GetDateTime());
+            Assert.Equal(at.ToString("O"), expired.GetProperty("detail").GetString());
+            var completion = Assert.Single(events, entry => entry.GetProperty("kind").GetString() == "forced-completion");
+            Assert.Equal("match-deadline", completion.GetProperty("detail").GetString());
+            Assert.Equal(expired.GetProperty("sequence").GetInt32() + 1, completion.GetProperty("sequence").GetInt32());
+        }
+        var outbox = (await database.Collection("gameAnalyticsSettlementOutbox").GetSnapshotAsync()).Documents;
+        Assert.Equal(2, outbox.Count);
+        Assert.All(outbox, item => Assert.Contains(item.GetValue<string>("userId"), new[] { first, second }));
+        Assert.Single(outbox.Select(item => item.GetValue<string>("roundId")).Distinct());
+        var nextAt = at.AddSeconds(1);
+        var next = Assert.IsType<CreditHoldemMatchSessionResponse>((await store.NextHandAsync(
+            first, result.MatchId, result.Version, "evidence-next", 901, nextAt, default)).Session);
+        _ = await store.NextHandAsync(first, result.MatchId, result.Version, "evidence-next", 901, nextAt, default);
+        Assert.Equal(payload, (await evidence.Reference.GetSnapshotAsync()).GetValue<string>("payloadJson"));
+        Assert.Equal(digest, (await evidence.Reference.GetSnapshotAsync()).GetValue<string>("sha256"));
+        Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        _ = await store.GetSessionAsync(first, next.Table.MatchDeadlineAtUtc, default);
+        _ = await store.GetSessionAsync(second, next.Table.MatchDeadlineAtUtc, default);
+        Assert.Equal(2, (await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Count);
+        Assert.All((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents,
+            item => Assert.Equal("passed", item.GetValue<string>("auditStatus")));
+        Assert.Equal(payload, (await evidence.Reference.GetSnapshotAsync()).GetValue<string>("payloadJson"));
+        Assert.Equal(digest, (await evidence.Reference.GetSnapshotAsync()).GetValue<string>("sha256"));
+        Assert.Equal(4, (await database.Collection("gameAnalyticsSettlementOutbox").GetSnapshotAsync()).Count);
+    }
+
+    private sealed class CloseWithoutHumans : IManagedTablePopulationDirector
+    {
+        private readonly ManagedTablePopulationDirector inner = new();
+        public ManagedTablePopulationDecision Observe(ManagedTablePopulationObservation observation) =>
+            observation.HumanPlayers == 0 ? new(false, 0, true) : inner.Observe(observation);
+        public void Close(string gameId, string tableId) => inner.Close(gameId, tableId);
+    }
+
     private (FirestoreDb Database, FirestoreCreditHoldemStore Store, string Suffix) CreateStore()
     {
         var suffix = Guid.NewGuid().ToString("N");

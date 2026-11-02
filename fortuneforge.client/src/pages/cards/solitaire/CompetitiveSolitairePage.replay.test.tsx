@@ -12,7 +12,7 @@ import {
   startSolitaireFreeRun,
   type SolitaireFreeRun,
 } from '../../../games/cards/solitaire/solitaireFreeRunApi'
-import { CompetitiveSolitairePage, SolitaireHistoryPanel } from './CompetitiveSolitairePage'
+import { CompetitiveSolitairePage, FreeSolitairePage, SolitaireHistoryPanel } from './CompetitiveSolitairePage'
 
 vi.mock('../../../games/cards/solitaire/solitaireApi', async (importOriginal) => ({
   ...await importOriginal<typeof import('../../../games/cards/solitaire/solitaireApi')>(),
@@ -89,23 +89,48 @@ function tableauLayout(): string[] {
 }
 
 describe('free Solitaire Replay', () => {
+  it('opens its own single-player lobby without reading a paid session or showing wagers', async () => {
+    await act(async () => root!.render(<FreeSolitairePage account={account} />))
+
+    expect(getSolitaireSession).not.toHaveBeenCalled()
+    expect(host.querySelector('#solitaire-free-lobby-title')?.textContent).toContain('Solitaire')
+    expect(host.querySelectorAll('.solitaire-lobby select')).toHaveLength(1)
+    expect(host.querySelector('.solitaire-lobby')?.textContent).not.toMatch(/buy-in|balance|join match/i)
+    expect([...host.querySelectorAll('button')].some((item) => item.textContent?.includes('Match history'))).toBe(false)
+
+    await click('Play Solitaire')
+    expect(startSolitaireFreeRun).toHaveBeenCalledWith(3, expect.any(String), undefined, 'free-solitaire')
+    expect(getSolitaireSession).not.toHaveBeenCalled()
+    expect(host.querySelector('.solitaire-board')).not.toBeNull()
+
+    await click('Submit game')
+    await click('Back to start')
+    expect(host.querySelector('#solitaire-free-lobby-title')).not.toBeNull()
+    expect(getSolitaireSession).not.toHaveBeenCalled()
+  })
+
+  it('keeps the game name off the shared navbar', async () => {
+    await act(async () => root!.render(<CompetitiveSolitairePage account={account} />))
+    expect(host.querySelector('.in-game-navbar__title')).toBeNull()
+  })
+
   it('creates a new run from the original layout while New game starts independently', async () => {
     await act(async () => root!.render(<CompetitiveSolitairePage account={account} />))
     await click('Play free')
     const originalLayout = tableauLayout()
     expect(originalLayout.length).toBeGreaterThan(0)
-    expect(vi.mocked(startSolitaireFreeRun).mock.calls[0]).toEqual([3, expect.any(String), undefined])
+    expect(vi.mocked(startSolitaireFreeRun).mock.calls[0]).toEqual([3, expect.any(String), undefined, 'solitaire'])
 
     await click('Submit game')
     await click('Replay')
-    expect(vi.mocked(startSolitaireFreeRun).mock.calls[1]).toEqual([3, expect.any(String), firstRun.runId])
+    expect(vi.mocked(startSolitaireFreeRun).mock.calls[1]).toEqual([3, expect.any(String), firstRun.runId, 'solitaire'])
     expect(replayRun.runId).not.toBe(firstRun.runId)
     expect(tableauLayout()).toEqual(originalLayout)
 
     await click('Submit game')
     await click('New game')
     await click('Start new game')
-    expect(vi.mocked(startSolitaireFreeRun).mock.calls[2]).toEqual([3, expect.any(String), undefined])
+    expect(vi.mocked(startSolitaireFreeRun).mock.calls[2]).toEqual([3, expect.any(String), undefined, 'solitaire'])
     expect(tableauLayout()).not.toEqual(originalLayout)
   })
 

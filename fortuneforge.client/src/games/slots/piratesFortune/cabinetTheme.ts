@@ -1,5 +1,5 @@
-import goldPirateCoin from '../../../assets/slots/games/pirates-fortune/optimized/gold-pirate-coin.png'
-import pearl from '../../../assets/slots/games/pirates-fortune/optimized/pearl.png'
+import goldPirateCoin from '../../../assets/slots/games/pirates-fortune/optimized/responsive/192/gold-pirate-coin.webp'
+import pearl from '../../../assets/slots/games/pirates-fortune/optimized/responsive/192/pearl.webp'
 import piratesCove from '../../../assets/slots/games/pirates-fortune/optimized/pirates-cove.png'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 

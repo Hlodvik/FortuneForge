@@ -57,6 +57,7 @@ describe('game route loading integration', () => {
   it('keeps home loading artwork-free and removes the status as soon as the home chunk is ready', async () => {
     vi.useFakeTimers()
     await renderRoute('/home')
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('main.route-state[role="status"]')?.textContent).toBe('Opening Fortune Forge…')
     expect(host.querySelector('img, video, [data-game-loading]')).toBeNull()
     await act(async () => { chunks.finishHome({ HomePage: () => <main className="home-lobby">Home ready</main> }) })
@@ -68,6 +69,7 @@ describe('game route loading integration', () => {
   it('shows recognised game artwork only while its lazy chunk is pending, then renders ready without a timer', async () => {
     vi.useFakeTimers()
     await renderRoute('/cards/blackjack')
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     const entry = resolveGameLoadingEntry('/cards/blackjack')!
     expect(host.querySelector('[data-game-loading]')?.getAttribute('data-game-loading')).toBe('blackjack')
     expect(host.querySelector('img')?.getAttribute('src')).toBe(entry.image)
@@ -91,6 +93,7 @@ describe('game route loading integration', () => {
       serverGameIds: ['cosmic-fortune-v1'], shellBackdrop: 'theme', load: vi.fn(),
     }
     await renderRoute('/slots/cosmic-fortune', definition)
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('[data-game-loading]')?.getAttribute('data-game-loading')).toBe('cosmic-fortune')
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Loading Cosmic Fortune…')
     expect(definition.load).not.toHaveBeenCalled()
@@ -101,6 +104,7 @@ describe('game route loading integration', () => {
 
   it.each(['/login', '/a-route-that-does-not-exist'])('retains the existing generic Suspense fallback for %s', async pathname => {
     await renderRoute(pathname)
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('main.route-state[role="status"]')?.textContent).toBe('Opening Fortune Forge…')
     expect(host.querySelector('[data-game-loading], img')).toBeNull()
   })
@@ -108,6 +112,7 @@ describe('game route loading integration', () => {
   it('keeps the error boundary alert, reload and return-home controls instead of a loading screen', async () => {
     const reported = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     await renderRoute('/cards/hearts')
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     const alert = host.querySelector('main.route-state--error[role="alert"]')!
     expect(alert.textContent).toContain('This page could not be loaded.')
     expect(alert.textContent).toContain('Check your connection, then try loading the page again.')

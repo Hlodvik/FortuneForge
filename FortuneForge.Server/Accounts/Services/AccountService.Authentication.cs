@@ -17,8 +17,6 @@ public sealed partial class AccountService(
 {
     private const string ActiveStatus = "active";
     private const string PendingEmailVerificationStatus = "pending-email-verification";
-    private const int MinimumPasswordLength = 8;
-    private const int MaximumPasswordLength = 128;
     private static readonly TimeSpan SessionLifetime = TimeSpan.FromDays(30);
 
     public async Task<AccountResult<CreateAccountResponse>> CreateAsync(

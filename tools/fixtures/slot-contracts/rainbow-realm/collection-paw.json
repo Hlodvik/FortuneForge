@@ -1,0 +1,1748 @@
+{
+  "scenario": "collection-paw",
+  "source": {
+    "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
+    "seed": 1,
+    "engineVersion": "shared-slots-engine-v1",
+    "gameId": "rainbow-realm-fruits-v1",
+    "noHttpServerOrAccountSettlement": true,
+    "replayMatchesExceptSpinId": true,
+    "deterministicCaveat": "Public response replay compared field-for-field except fresh response.spinId."
+  },
+  "wagerPoints": 2,
+  "initialState": {
+    "initialCollectionMode": "paw",
+    "initialEnergy": 0,
+    "collectionCount": 59
+  },
+  "steps": [
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": false,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "energyBalance": 0,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 59,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": null,
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "0070075c-383f-487c-8050-702db310df52",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          15,
+          7,
+          29,
+          49,
+          42
+        ],
+        "reels": [
+          [
+            "RAND_05",
+            "4",
+            "3",
+            "POWER"
+          ],
+          [
+            "6",
+            "POWER",
+            "3",
+            "3"
+          ],
+          [
+            "3",
+            "2",
+            "POWER",
+            "6"
+          ],
+          [
+            "2",
+            "3",
+            "BANANA",
+            "SEAL_PAW"
+          ],
+          [
+            "2",
+            "2",
+            "4",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 1,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": false,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 0,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_PAW": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 0,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "e4bc1d71-2983-466f-abef-4df568de2e17",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          60,
+          5,
+          10,
+          24,
+          51
+        ],
+        "reels": [
+          [
+            "6",
+            "2",
+            "5",
+            "3"
+          ],
+          [
+            "3",
+            "3",
+            "6",
+            "POWER"
+          ],
+          [
+            "5",
+            "2",
+            "3",
+            "2"
+          ],
+          [
+            "6",
+            "6",
+            "2",
+            "3"
+          ],
+          [
+            "BOLT",
+            "POWER",
+            "7",
+            "POWER"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 2,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 1,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 1,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "6c4b4311-f259-4e02-9282-b7deac13898c",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          56,
+          35,
+          45,
+          44,
+          0
+        ],
+        "reels": [
+          [
+            "BOLT",
+            "RAND_1",
+            "POWER",
+            "3"
+          ],
+          [
+            "5",
+            "3",
+            "4",
+            "POWER"
+          ],
+          [
+            "BANANA",
+            "4",
+            "7",
+            "POWER"
+          ],
+          [
+            "RAND_05",
+            "3",
+            "5",
+            "2"
+          ],
+          [
+            "2",
+            "RAND_2",
+            "4",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 3,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "ef83bff9-6940-4857-8bfd-c2be01f7c020",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          43,
+          43,
+          30,
+          15,
+          22
+        ],
+        "reels": [
+          [
+            "2",
+            "PAW",
+            "5",
+            "7"
+          ],
+          [
+            "POWER",
+            "POWER",
+            "SEAL_SYNC",
+            "4"
+          ],
+          [
+            "2",
+            "POWER",
+            "BANANA",
+            "6"
+          ],
+          [
+            "4",
+            "BANANA",
+            "RAND_1",
+            "POWER"
+          ],
+          [
+            "3",
+            "4",
+            "3",
+            "PAW"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 4,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 4,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 3,
+                    "positions": [
+                      {
+                        "reel": 0,
+                        "row": 1
+                      },
+                      {
+                        "reel": 4,
+                        "row": 3
+                      },
+                      {
+                        "reel": 3,
+                        "row": 2
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 4
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 4,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 7,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 2,
+        "moneyGrabPoints": 4,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_SYNC": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 7,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "0485b4d5-556d-45b2-a8c2-c8f9b498205d",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          19,
+          35,
+          19,
+          63,
+          56
+        ],
+        "reels": [
+          [
+            "4",
+            "2",
+            "3",
+            "RAND_05"
+          ],
+          [
+            "5",
+            "3",
+            "BANANA",
+            "POWER"
+          ],
+          [
+            "POWER",
+            "PAW",
+            "5",
+            "7"
+          ],
+          [
+            "3",
+            "7",
+            "5",
+            "4"
+          ],
+          [
+            "BANANA",
+            "4",
+            "POWER",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 1,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 1,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 2,
+                    "positions": [
+                      {
+                        "reel": 2,
+                        "row": 1
+                      },
+                      {
+                        "reel": 0,
+                        "row": 3
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 1,
+                  "amountPoints": 1
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 5,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 1,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "8ed801c9-fffa-437c-b94a-c7cd8545cfb4",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          7,
+          31,
+          20,
+          4,
+          30
+        ],
+        "reels": [
+          [
+            "POWER",
+            "3",
+            "4",
+            "2"
+          ],
+          [
+            "SEAL_RAND",
+            "6",
+            "2",
+            "6"
+          ],
+          [
+            "2",
+            "5",
+            "7",
+            "3"
+          ],
+          [
+            "2",
+            "3",
+            "3",
+            "RAND_2"
+          ],
+          [
+            "2",
+            "7",
+            "POWER",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 6,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_RAND": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "fb3f08df-2815-461e-8420-171648f38f78",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          30,
+          19,
+          7,
+          8,
+          23
+        ],
+        "reels": [
+          [
+            "3",
+            "POWER",
+            "3",
+            "6"
+          ],
+          [
+            "3",
+            "PAW",
+            "RAND_05",
+            "3"
+          ],
+          [
+            "POWER",
+            "4",
+            "4",
+            "5"
+          ],
+          [
+            "4",
+            "6",
+            "4",
+            "5"
+          ],
+          [
+            "4",
+            "3",
+            "5",
+            "5"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 1,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 1,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 2,
+                    "positions": [
+                      {
+                        "reel": 1,
+                        "row": 1
+                      },
+                      {
+                        "reel": 1,
+                        "row": 2
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 1,
+                  "amountPoints": 1
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 7,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 1,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "576934f7-c7bb-4e93-8cdb-6d6a48bdbfbc",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          11,
+          8,
+          54,
+          63,
+          20
+        ],
+        "reels": [
+          [
+            "6",
+            "PAW",
+            "RAND_05",
+            "PAW"
+          ],
+          [
+            "POWER",
+            "3",
+            "3",
+            "2"
+          ],
+          [
+            "3",
+            "4",
+            "BOLT",
+            "RAND_15"
+          ],
+          [
+            "3",
+            "7",
+            "5",
+            "4"
+          ],
+          [
+            "2",
+            "4",
+            "3",
+            "SEAL_ROWS"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 8,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 8,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 4,
+                    "positions": [
+                      {
+                        "reel": 0,
+                        "row": 1
+                      },
+                      {
+                        "reel": 0,
+                        "row": 3
+                      },
+                      {
+                        "reel": 0,
+                        "row": 2
+                      },
+                      {
+                        "reel": 2,
+                        "row": 3
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 4,
+                  "amountPoints": 8
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 8,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 3,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 2,
+        "moneyGrabPoints": 8,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_ROWS": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 3,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "fbd8f269-ecb9-47f8-bd0c-ebc98dd3abb7",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          52,
+          63,
+          7,
+          54,
+          44
+        ],
+        "reels": [
+          [
+            "POWER",
+            "2",
+            "POWER",
+            "POWER"
+          ],
+          [
+            "3",
+            "RAND_05",
+            "7",
+            "POWER"
+          ],
+          [
+            "POWER",
+            "BANANA",
+            "SEAL_SYNC",
+            "5"
+          ],
+          [
+            "4",
+            "2",
+            "POWER",
+            "2"
+          ],
+          [
+            "4",
+            "3",
+            "6",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 9,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 3,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_SYNC": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 3,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "5487ba4f-fc2a-45a4-9c07-3ccd05da743f",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          39,
+          38,
+          11,
+          37,
+          43
+        ],
+        "reels": [
+          [
+            "POWER",
+            "BANANA",
+            "5",
+            "3"
+          ],
+          [
+            "POWER",
+            "4",
+            "7",
+            "5"
+          ],
+          [
+            "RAND_1",
+            "3",
+            "2",
+            "4"
+          ],
+          [
+            "5",
+            "3",
+            "3",
+            "POWER"
+          ],
+          [
+            "2",
+            "4",
+            "3",
+            "PAW"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 2,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 2,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 2,
+                    "positions": [
+                      {
+                        "reel": 4,
+                        "row": 3
+                      },
+                      {
+                        "reel": 2,
+                        "row": 0
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 1,
+                  "amountPoints": 2
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 10,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 3,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 2,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "paw",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 3,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "freeSpinFeatureMode": "paw",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "7669a575-b85e-4004-952f-9572cbbc184a",
+        "gameId": "rainbow-realm-fruits-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          52,
+          44,
+          19,
+          54,
+          55
+        ],
+        "reels": [
+          [
+            "POWER",
+            "2",
+            "POWER",
+            "POWER"
+          ],
+          [
+            "POWER",
+            "4",
+            "4",
+            "5"
+          ],
+          [
+            "POWER",
+            "2",
+            "5",
+            "7"
+          ],
+          [
+            "RAND_05",
+            "4",
+            "POWER",
+            "2"
+          ],
+          [
+            "4",
+            "2",
+            "4",
+            "POWER"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 4,
+          "paylines": [
+            {
+              "paylineId": 1,
+              "amountPoints": 4,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 1,
+                    "symbolId": "POWER",
+                    "matchLength": 3,
+                    "positions": [
+                      {
+                        "reel": 0,
+                        "row": 0
+                      },
+                      {
+                        "reel": 1,
+                        "row": 0
+                      },
+                      {
+                        "reel": 2,
+                        "row": 0
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 2,
+                  "amountPoints": 4
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 11,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 1,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "specialPointsBalance": 0,
+        "energyBalance": 3,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rows",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 60
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": null,
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    }
+  ]
+}

@@ -215,13 +215,15 @@ internal sealed class FirestoreAdminPlayersStore(FirestoreDb database, IOptions<
     private static AdminPlayerMatch? CardMatch(DocumentSnapshot document)
     {
         var game = Text(document, "game");
-        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar")) return null;
+        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar" or "mines")) return null;
         var wager = Cents(document, "wagerCents") ?? Cents(document, "buyInCents");
         var paid = Cents(document, "payoutCents");
         var complete = Time(document, "completedAt") ?? Time(document, "settledAt") ?? Time(document, "recognizedAt");
+        var mode = Text(document, "mode");
         return new(Text(document, "matchId", Text(document, "tableId", document.Id)), game,
             Text(document, "settlementStatus", Text(document, "claimStatus", "recorded")), Time(document, "startedAt") ?? complete,
-            complete, wager, paid, Cents(document, "netCents") ?? (paid - wager));
+            complete, wager, paid, Cents(document, "netCents") ?? (paid - wager),
+            Mode: mode is "practice" or "credit" ? mode : null);
     }
 
     private static AdminPlayerMatch? HeartsMatch(DocumentSnapshot document, string userId)

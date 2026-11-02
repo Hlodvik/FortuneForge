@@ -14,7 +14,8 @@ public static class BlackjackTableConfiguration
                 null,
                 null,
                 provider.GetRequiredService<IMultiplayerMatchmaker>(),
-                provider.GetRequiredService<IManagedTablePopulationDirector>()));
+                provider.GetRequiredService<IManagedTablePopulationDirector>(),
+                provider.GetRequiredService<IConfiguration>().GetValue("Features:BlackjackMultiplayerEnabled", false)));
         services.AddSingleton<BlackjackTableService>();
         services.AddHostedService<BlackjackTableWorker>();
         return services;

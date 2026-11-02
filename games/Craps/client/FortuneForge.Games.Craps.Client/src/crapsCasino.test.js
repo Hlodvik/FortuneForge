@@ -19,6 +19,18 @@ function media(query) {
 }
 
 describe('open-felt Craps presentation guards', () => {
+  it('overrides legacy viewport action placement and separates the paid bet and odds controls', () => {
+    const legacy = source('./crapsViewport.css')
+    expect(legacy).toContain('.ff-craps-controls:has(.ff-craps-hand-actions) .ff-craps-hand-actions')
+    // Three class selectors match the legacy rule's specificity; the final stylesheet wins.
+    const actionGrid = declarations(base, '.ff-craps-controls .ff-craps-hand-actions.is-adjustable')
+    for (const rule of ['grid-column:1 / -1', 'grid-row:1', 'grid-template-columns:subgrid']) expect(actionGrid).toContain(rule)
+    const first = declarations(base, '.ff-craps-hand-actions.is-adjustable > button')
+    const last = declarations(base, '.ff-craps-hand-actions.is-adjustable > button:last-child')
+    expect(first).toContain('grid-column:1')
+    expect(first).toContain('min-height:44px')
+    expect(last).toContain('grid-column:3')
+  })
   it('loads the final casino overrides after legacy viewport styles and uses the shared felt without a wood frame', () => {
     const imports = [...game.matchAll(/import\s+['"]([^'"]+\.css)['"]/g)].map(match => match[1])
     expect(imports.at(-1)).toBe('./crapsCasino.css')
@@ -63,7 +75,7 @@ describe('open-felt Craps presentation guards', () => {
     expect(styles).not.toMatch(/\.ff-craps-(?:proposition(?:\.is-field)?|field-numbers)\s*\{[^}]*overflow:\s*(?:hidden|clip)/)
     expect(declarations(base, '.ff-craps-page')).toContain('overflow:auto')
     const landscape = media('(max-height:500px) and (min-width:600px)')
-    expect(declarations(landscape, '.ff-craps-main')).toMatch(/min-height:\d+px/)
+    expect(declarations(landscape, '.ff-craps-main')).toContain('min-height:0')
     const rows = declarations(landscape, '.ff-craps-board').match(/grid-template-rows:minmax\((\d+)px,1fr\) \d+px (\d+)px \d+px/)
     expect(rows).not.toBeNull()
     expect(Number(rows[1])).toBeGreaterThanOrEqual(95)
@@ -79,16 +91,23 @@ describe('open-felt Craps presentation guards', () => {
     expect(declarations(base, '.ff-craps-point-row > span:not(.ff-craps-puck)')).not.toMatch(/cursor:\s*pointer/)
   })
 
-  it('uses the same real navbar and shell classes in the standalone preview and production route', () => {
+  it('keeps preview and production inside the canonical shell without game-owned navbar overrides', () => {
     const preview = source('./dev/main.tsx')
-    const route = source('../../../../../fortuneforge.client/src/app/routes/CrapsRoute.tsx')
-    for (const code of [preview, route]) {
-      expect(code).toContain('InGameShell')
-      for (const attribute of ['title="Craps"', 'theme="casino"', 'className="craps-page"', 'bodyClassName="craps-route__body"']) expect(code).toContain(attribute)
+    const routePath = '../../../../../fortuneforge.client/src/app/routes/CrapsRoute.tsx'
+    const canonicalShell = new URL('../../../../../fortuneforge.client/src/components/InGameShell', import.meta.url).href
+    for (const [path, code] of [['./dev/main.tsx', preview], [routePath, source(routePath)]]) {
+      const importedShell = code.match(/import\s+\{\s*InGameShell\s*\}\s+from\s+['"]([^'"]+)['"]/)?.[1]
+      expect(importedShell).toBeDefined()
+      expect(new URL(importedShell, new URL(path, import.meta.url)).href).toBe(canonicalShell)
+      const shells = [...code.matchAll(/<InGameShell\b[^>]*>/g)].map(match => match[0])
+      expect(shells).toHaveLength(1)
+      for (const attribute of ['title="Craps"', 'className="craps-page"', 'bodyClassName="craps-route__body"']) expect(shells[0]).toContain(attribute)
+      expect(shells[0]).not.toMatch(/\b(?:theme|actions|header|navbar)\s*=/)
+      expect(code).not.toMatch(/<(?:InGameNavbar|SiteNavbar|header)\b/)
       expect(code).not.toContain('showTitle={false}')
     }
     expect(preview).not.toMatch(/<InGameShell[^>]*\baccount=/)
-    expect(styles).toContain('.in-game-shell:has(.ff-craps-page) .in-game-navbar__title { display:none; }')
+    expect(styles).not.toMatch(/\.(?:in-game-navbar|site-navbar)\b/)
     expect(styles).not.toMatch(/(?:^|\n)\.in-game-navbar(?:__title)?\s*\{/)
   })
 })

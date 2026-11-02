@@ -14,6 +14,20 @@ public sealed class PracticeTests : IDisposable
     private static string Json(object value) => JsonSerializer.Serialize(value);
 
     [Fact]
+    public async Task NewWagerCapRejectsOverFiveRandBeforeDrawing()
+    {
+        var draws = 0;
+        var service = Service(() => { draws++; return Card(CardRank.Seven); });
+        Assert.Equal(500, (await service.GetSessionAsync("alice")).Limits.MaxWagerCents);
+        var rejection = await Assert.ThrowsAsync<HiLoException>(() => service.StartAsync("alice", new(Key(), 501)));
+        Assert.Equal("invalid_request", rejection.Code);
+        Assert.Equal(400, rejection.StatusCode);
+        Assert.Equal(0, draws);
+        Assert.Null((await service.GetSessionAsync("alice")).Round);
+        Assert.Equal(500, (await service.StartAsync("alice", new(Key(), 500))).Round!.WagerCents);
+    }
+
+    [Fact]
     public async Task Restart_RecoversUnfinishedRoundAndExactOperationResponses_AndDoesNotDrawOnReplay()
     {
         var draws = 0;
@@ -114,13 +128,13 @@ public sealed class PracticeTests : IDisposable
         Assert.Equal(99900, state.WalletBalanceCents);
         state = await service.ActAsync("skip", state.Round.RoundId, new(Key(), 52, "cashout"));
         // Queen->King (12.87), King->Queen(1.0725), Queen->King(12.87) repeated reaches1000x cap.
-        var cap = await service.StartAsync("cap", new(Key(), 1000));
+        var cap = await service.StartAsync("cap", new(Key(), 500));
         while (cap.Round!.Status == "active")
             cap = await service.ActAsync("cap", cap.Round.RoundId, new(Key(), cap.Round.Revision, cap.Round.CurrentCard.Rank == "queen" ? "higher" : "lower"));
         Assert.Equal("maximumReturn", cap.Round.Status);
         Assert.Equal(1000, cap.Round.Multiplier);
-        Assert.Equal(1000000, cap.Round.CurrentReturnCents);
-        Assert.Equal(1099000, cap.WalletBalanceCents);
+        Assert.Equal(500000, cap.Round.CurrentReturnCents);
+        Assert.Equal(599500, cap.WalletBalanceCents);
         Assert.False(cap.Round.CanCashOut);
     }
     public void Dispose() { if (Directory.Exists(folder)) Directory.Delete(folder, true); }

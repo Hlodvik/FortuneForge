@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { ResponsiveSlotImage } from './ResponsiveSlotImage'
+import { useCallback, useRef, useState, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { getSlotSymbolDefinition, type SlotSymbolSet } from '../config/symbolSets'
+import { getSlotSymbolDefinition, getSlotSymbolImageSrcSet, type SlotSymbolSet } from '../config/symbolSets'
+import { useSlotDialog, type SlotDialogTheme } from '../hooks/useSlotDialog'
+import { SlotDialogCloseIcon } from './SlotDialogCloseIcon'
 
 function SymbolValuePanel({
   className,
@@ -8,18 +11,25 @@ function SymbolValuePanel({
   onClose,
   showValueTokens,
   symbolSet,
+  panelRef,
+  theme,
 }: {
   className: string
   headingId?: string
   onClose?: () => void
   showValueTokens: boolean
   symbolSet: SlotSymbolSet
+  panelRef?: RefObject<HTMLElement | null>
+  theme?: SlotDialogTheme
 }) {
   const guideEntries = showValueTokens
     ? symbolSet.guideEntries
     : symbolSet.guideEntries.filter(({ symbol }) => !getSlotSymbolDefinition(symbolSet, symbol).wagerMultiplier)
   return (
     <aside
+      ref={panelRef}
+      tabIndex={headingId ? -1 : undefined}
+      data-slot-dialog-theme={headingId ? theme : undefined}
       className={`symbol-value-guide ${className}`}
       aria-label={headingId ? undefined : 'Symbol values'}
       aria-labelledby={headingId}
@@ -31,10 +41,9 @@ function SymbolValuePanel({
           className="symbol-value-guide__close"
           type="button"
           aria-label="Close symbol values"
-          autoFocus
           onClick={onClose}
         >
-          ×
+          <SlotDialogCloseIcon />
         </button>
       )}
       <div className="symbol-value-guide__heading">
@@ -61,7 +70,7 @@ function SymbolValuePanel({
                 className="symbol-value-guide__artwork"
                 data-value-label={artworkValueLabel ?? definition.valueLabel}
               >
-                <img src={definition.image} alt="" aria-hidden="true" />
+                <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(definition.responsiveImages)} src={definition.image} alt="" aria-hidden="true" />
               </div>
               <span className="symbol-value-guide__name">{definition.label}</span>
               <span><b>{firstLabel}</b> {firstValue}</span>
@@ -70,6 +79,7 @@ function SymbolValuePanel({
           )
         })}
       </div>
+      {symbolSet.guideNote && <small>{symbolSet.guideNote}</small>}
       {showValueTokens && <small>Rand values multiply the selected wager.</small>}
     </aside>
   )
@@ -80,34 +90,27 @@ export function SymbolValueGuide({
   showSidePanel = false,
   sidePanelClassName = '',
   showValueTokens = true,
+  isOpen: controlledIsOpen,
+  onOpenChange,
+  theme,
 }: {
   symbolSet: SlotSymbolSet
   showSidePanel?: boolean
   sidePanelClassName?: string
   showValueTokens?: boolean
+  isOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  theme?: SlotDialogTheme
 }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [internalIsOpen, setInternalIsOpen] = useState(false)
+  const isOpen = controlledIsOpen ?? internalIsOpen
   const triggerRef = useRef<HTMLButtonElement>(null)
-
-  const closeGuide = () => {
-    setIsOpen(false)
-    window.requestAnimationFrame(() => triggerRef.current?.focus())
-  }
-
-  useEffect(() => {
-    if (!isOpen) {
-      return
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        closeGuide()
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen])
+  const setOpen = useCallback((open: boolean) => {
+    if (controlledIsOpen === undefined) setInternalIsOpen(open)
+    onOpenChange?.(open)
+  }, [controlledIsOpen, onOpenChange])
+  const closeGuide = () => setOpen(false)
+  const dialogRef = useSlotDialog(isOpen, closeGuide)
 
   return (
     <>
@@ -124,16 +127,24 @@ export function SymbolValueGuide({
         ref={triggerRef}
         className="symbol-value-guide__trigger"
         type="button"
+        aria-label="Symbol values"
+        title="Symbol values"
         aria-expanded={isOpen}
         aria-haspopup="dialog"
-        onClick={() => setIsOpen(true)}
+        onClick={() => setOpen(true)}
       >
-        <span aria-hidden="true">◆</span>
-        Symbol values
+        {theme === 'midnight-vault' ? (
+          <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="24" height="24"
+            fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v6M12 7h.01" />
+          </svg>
+        ) : <><span aria-hidden="true">◆</span>Symbol values</>}
       </button>
 
-      {isOpen && (
+      {isOpen && createPortal(
         <div
+          data-slot-dialog-theme={theme}
           className="symbol-value-guide__backdrop"
           role="presentation"
           onMouseDown={(event) => {
@@ -148,8 +159,11 @@ export function SymbolValueGuide({
             onClose={closeGuide}
             showValueTokens={showValueTokens}
             symbolSet={symbolSet}
+            panelRef={dialogRef}
+            theme={theme}
           />
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

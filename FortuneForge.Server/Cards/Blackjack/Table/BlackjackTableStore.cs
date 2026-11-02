@@ -207,7 +207,8 @@ internal static class BlackjackTableProjection
                 : 0,
             table.NextTransitionAtUtc is { } transitionDeadline
                 ? Math.Max(0, (long)(transitionDeadline - nowUtc).TotalMilliseconds)
-                : 0);
+                : 0,
+            table.SoloMode ? "solo" : "multiplayer");
     }
 
     private static BlackjackTableHandResponse EmptyHand() => new([], null, false, false, false);

@@ -20,6 +20,11 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals())
 
 describe('pending Mines commands', () => {
+  it.each([10, 100, 500, 10_000])('retains an uncertain accepted %s-cent start for server receipt reconciliation after limits change', wagerCents => {
+    const command = { ...start, wagerCents }
+    savePending('player-a', command)
+    expect(readPending('player-a')).toEqual(command)
+  })
   it.each([start, reveal, cashout])('round-trips the original $action command without changing its requestId', command => {
     savePending('player-a', command)
     expect(storage.setItem).toHaveBeenCalledWith(pendingKey('player-a'), JSON.stringify(command))

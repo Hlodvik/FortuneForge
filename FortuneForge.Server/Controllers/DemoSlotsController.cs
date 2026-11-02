@@ -1,7 +1,9 @@
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Spins;
+using FortuneForge.Server.RoundAudit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -15,12 +17,14 @@ public sealed record DemoSpinRequest(
     long? FreeSpinWagerPoints,
     long EnergyBalance,
     IReadOnlyList<SlotSealCollection>? SealCollections = null,
-    string? FreeSpinFeatureMode = null);
+    string? FreeSpinFeatureMode = null,
+    MidnightVaultDemoState? MidnightBonusState = null);
 
 [ApiController]
 [Route("api/slots/demo")]
 public sealed class DemoSlotsController(
     SpinService spinService,
+    IDemoSlotAuditStore auditStore,
     ILogger<DemoSlotsController> logger) : ControllerBase
 {
     private const string DemoPlayerId = "public-demo";
@@ -45,7 +49,7 @@ public sealed class DemoSlotsController(
 
     [HttpPost("spins")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public ActionResult Spin(DemoSpinRequest request)
+    public async Task<ActionResult> Spin(DemoSpinRequest request, CancellationToken cancellationToken)
     {
         try
         {
@@ -66,11 +70,14 @@ public sealed class DemoSlotsController(
                 throw new ArgumentException("No demo free spins are available.", nameof(request));
             }
 
+            if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
+                return await SpinMidnight(request, cancellationToken);
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
             var usesEnergy = profile?.UsesEnergy != false;
             var currentEnergy = usesEnergy ? request.EnergyBalance : 0;
-            var result = spinService.Spin(
+            var startedAtUtc = DateTime.UtcNow;
+            var engineResult = spinService.Spin(
                 request.GameId,
                 request.WagerPoints,
                 DemoPlayerId,
@@ -81,32 +88,32 @@ public sealed class DemoSlotsController(
                     : null);
             var energy = EnergyBonus.Settle(
                 currentEnergy,
-                result.EnergyAwarded,
-                result.Payout);
+                engineResult.EnergyAwarded,
+                engineResult.Payout);
             var specialRounds = profile is null
                 ? new SlotSpecialRoundProgress(0, null, [])
                 : SlotSpecialRoundProfiles.SettleDemo(
                     profile,
                     request.SealCollections ?? [],
-                    result.SealsAwarded,
-                    result.WagerPoints,
+                    engineResult.SealsAwarded,
+                    engineResult.WagerPoints,
                     energy.MultiplierApplied,
-                    result.SpinId);
+                    engineResult.SpinId);
             var freeSpinsRemaining = checked(
                 request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
-                result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
+                engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
                 ? request.FreeSpinWagerPoints ?? request.WagerPoints
                 : null;
 
-            return Ok(result with
+            var responseResult = engineResult with
             {
                 SlotsCreditsBalance = null,
                 Payout = energy.Payout,
-                FreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
-                    ? checked(result.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded)
-                    : result.FreeSpinsAwarded,
-                CollectionFreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                FreeSpinsAwarded = engineResult.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? checked(engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded)
+                    : engineResult.FreeSpinsAwarded,
+                CollectionFreeSpinsAwarded = engineResult.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? specialRounds.FreeSpinsAwarded : 0,
                 IsFreeSpin = request.UseFreeSpin,
                 FreeSpinsRemaining = freeSpinsRemaining,
@@ -117,10 +124,13 @@ public sealed class DemoSlotsController(
                 SealCollections = specialRounds.Collections,
                 FreeSpinFeatureMode = freeSpinsRemaining > 0
                     ? specialRounds.FeatureMode ??
-                        (result.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
+                        (engineResult.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
                         (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
                     : null
-            });
+            };
+            await auditStore.RecordAsync(new DemoSlotAuditEntry(request, engineResult,
+                responseResult, startedAtUtc, DateTime.UtcNow), cancellationToken);
+            return Ok(responseResult);
         }
         catch (KeyNotFoundException exception)
         {
@@ -144,4 +154,73 @@ public sealed class DemoSlotsController(
             return BadRequest(new { error = exception.Message });
         }
     }
+
+    private async Task<ActionResult> SpinMidnight(DemoSpinRequest request, CancellationToken cancellationToken)
+    {
+        var state = CreateMidnightState(request);
+        MidnightVaultBonusRounds.Validate(state.Rounds);
+        if (state.Rounds.Sum(round => (long)round.RemainingSpins) > 1_000)
+            throw new ArgumentException("The demo bonus queue exceeds its allowed size.");
+        var head = state.Rounds.FirstOrDefault();
+        if (request.FreeSpinsRemaining != (head?.RemainingSpins ?? 0) ||
+            request.UseFreeSpin != (head is not null))
+            throw new ArgumentException("Finish the active demo bonus round before placing another bet.");
+        var wager = head?.WagerPoints ?? request.WagerPoints;
+        if (request.WagerPoints != wager)
+            throw new ArgumentException("The bonus round uses its locked wager.");
+        spinService.ValidateRequest(request.GameId, wager, head is not null);
+        var startedAt = DateTime.UtcNow;
+        var engine = spinService.SpinMidnightDemo(wager, DemoPlayerId, head);
+        var progress = MidnightVaultBonusRounds.Advance(
+            head is null ? state.Rounds : MidnightVaultBonusRounds.Consume(state.Rounds),
+            state.CollectionCounts, state.CollectionWagerPoints, engine.SealsAwarded,
+            wager, engine.FreeSpinsAwarded, engine.EngineAudit!.FeatureProfile?.ScatterFeatureMode,
+            engine.PaytableId, engine.SpinId);
+        var next = progress.Rounds.FirstOrDefault();
+        var response = engine with
+        {
+            FreeSpinsRemaining = next?.RemainingSpins ?? 0,
+            FreeSpinWagerPoints = next?.WagerPoints,
+            FreeSpinFeatureMode = next?.FeatureMode,
+            BonusRound = next,
+            QueuedBonusRounds = progress.Rounds.Skip(1).ToArray(),
+            AwardedBonusRounds = progress.AwardedRounds,
+            CollectionFreeSpinsAwarded = progress.AwardedRounds.Where(round => round.FeatureMode == "rows-paw").Sum(round => round.TotalSpins),
+            SealCollections = CreateMidnightCollections(progress.CollectionCounts, progress.CollectionWagerPoints),
+            MidnightBonusState = new(progress.Rounds, progress.CollectionCounts, progress.CollectionWagerPoints)
+        };
+        await auditStore.RecordAsync(new DemoSlotAuditEntry(request, engine, response, startedAt, DateTime.UtcNow), cancellationToken);
+        return Ok(response);
+    }
+
+    internal static MidnightVaultDemoState CreateMidnightState(DemoSpinRequest request)
+    {
+        if (request.MidnightBonusState is { } state) return state;
+        // Compatibility for an older local demo client. All newly returned state
+        // carries exact totals and the complete ordered round queue.
+        var rounds = new List<MidnightVaultBonusRound>();
+        var remaining = request.FreeSpinsRemaining;
+        for (var index = 0; remaining > 0; index++)
+        {
+            var spins = Math.Min(10, remaining);
+            rounds.Add(new($"demo-carry:{index}", 10, spins,
+                request.FreeSpinWagerPoints ?? request.WagerPoints, request.FreeSpinFeatureMode,
+                MidnightVaultSlotDefinitions.PaytableId));
+            remaining -= spins;
+        }
+        var collections = request.SealCollections ?? [];
+        var counts = collections.ToDictionary(entry => entry.SealId, entry => (long)entry.Count, StringComparer.Ordinal);
+        var totals = collections.ToDictionary(entry => entry.SealId,
+            entry => checked(entry.Count * (entry.AverageWagerPoints > 0 ? entry.AverageWagerPoints : request.WagerPoints)), StringComparer.Ordinal);
+        return new(rounds, counts, totals);
+    }
+
+    internal static IReadOnlyList<SlotSealCollection> CreateMidnightCollections(
+        IReadOnlyDictionary<string, long> counts, IReadOnlyDictionary<string, long> totals) =>
+        new[] { "sync", "rows", "paw", "rand" }.Select(mode =>
+        {
+            var count = counts.GetValueOrDefault(mode);
+            return new SlotSealCollection(mode, checked((int)count),
+                count > 0 ? checked((totals.GetValueOrDefault(mode) + count / 2) / count) : 0, 30);
+        }).ToArray();
 }

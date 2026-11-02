@@ -86,6 +86,20 @@ describe('Craps rule descriptions', () => {
 })
 
 describe('Craps server-return totals', () => {
+  it('excludes refunded replacements from stake, working chips and profit', () => {
+    const round: CrapsRound = {
+      ...ready, phase: 'resolved',
+      lastOutcome: { first: 3, second: 4, total: 7, result: 'seven-out', isTerminal: true, totalReturn: 0 },
+      extraBets: [
+        { kind: 'odds', stake: 100, resolved: true, won: false, totalReturn: 0, cancelled: true },
+        { kind: 'odds', stake: 2, resolved: true, won: false, totalReturn: 0 },
+        { kind: 'field', stake: 5, resolved: true, won: true, totalReturn: 10 },
+        { kind: 'field', stake: 3, resolved: true, won: false, totalReturn: 0 },
+      ],
+    }
+    expect(roundTotals(round)).toEqual({ stake: 20, returned: 10, workingStake: 0, net: -10 })
+    expect(roundTotals({ ...round, totalWagerCents: 2000, totalReturnCents: 1000 })).toEqual(roundTotals(round))
+  })
   it('keeps an unopened come-out stake working rather than reporting it as lost', () => {
     expect(roundTotals(ready)).toEqual({ stake: 10, returned: 0, net: null, workingStake: 10 })
     expect(roundTotals({ ...ready, extraBets: undefined })).toEqual(roundTotals(ready))

@@ -5,7 +5,8 @@ namespace FortuneForge.Server.Cards.Blackjack.Table;
 internal sealed class InMemoryBlackjackTableStore(
     Func<IReadOnlyList<string>>? deckFactory = null,
     Func<ulong>? seedFactory = null,
-    IManagedTablePopulationDirector? managedPopulationDirector = null) : IBlackjackTableStore
+    IManagedTablePopulationDirector? managedPopulationDirector = null,
+    bool multiplayerEnabled = true) : IBlackjackTableStore
 {
     private readonly object gate = new();
     private readonly BlackjackTableLobbyState state = new();
@@ -16,7 +17,8 @@ internal sealed class InMemoryBlackjackTableStore(
     private readonly BlackjackTableCoordinator coordinator = new(
         deckFactory,
         seedFactory,
-        managedPopulationDirector: managedPopulationDirector);
+        managedPopulationDirector: managedPopulationDirector,
+        multiplayerEnabled: multiplayerEnabled);
 
     internal void SetBalance(string userId, long cents)
     {

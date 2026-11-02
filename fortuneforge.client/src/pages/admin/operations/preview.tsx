@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import type { OperationsDashboard } from '../../../features/admin/operations/operationsApi'
 import { AdminOperationsDashboardView } from './AdminOperationsPage'
+import { SiteNavbar } from '../../../components/SiteNavbar'
 import './adminOperations.css'
 
 const now = new Date().toISOString()
@@ -44,4 +45,4 @@ const dashboard: OperationsDashboard = {
   ] },
 }
 
-createRoot(document.getElementById('root')!).render(<StrictMode><main className="operations-page"><AdminOperationsDashboardView dashboard={dashboard} /></main></StrictMode>)
+createRoot(document.getElementById('root')!).render(<StrictMode><SiteNavbar mode="account" authenticated title="Operations" /><main className="operations-page"><AdminOperationsDashboardView dashboard={dashboard} /></main></StrictMode>)

@@ -25,6 +25,22 @@ describe('Blackjack table API boundary', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/cards/blackjack/table/status')
   })
 
+  it('accepts the single-player status with no turn deadlines', async () => {
+    vi.stubGlobal('fetch', successfulFetch({
+      ...statusResponse,
+      minimumStartOccupancy: 1,
+      tableCapacity: 1,
+      humanGraceSeconds: 0,
+      actionDeadlineSeconds: 0,
+    }))
+
+    await expect(getBlackjackTableStatus()).resolves.toMatchObject({
+      minimumStartOccupancy: 1,
+      tableCapacity: 1,
+      actionDeadlineSeconds: 0,
+    })
+  })
+
   it('queues for free with only version and an idempotency header', async () => {
     const fetchMock = successfulFetch(idleMutation)
     vi.stubGlobal('fetch', fetchMock)
@@ -80,6 +96,26 @@ describe('Blackjack table API boundary', () => {
       contractVersion: 'cards.blackjack.table.v2',
       kind: 'table',
       table: { legalActions: ['hit', 'stand'] },
+    })
+  })
+
+  it('accepts a solo table with one seat and no deadlines', async () => {
+    vi.stubGlobal('fetch', successfulFetch({
+      ...tableSession,
+      table: {
+        ...tableSession.table,
+        mode: 'solo',
+        seats: [tableSession.table.seats[0]],
+        actionDeadlineAtUtc: null,
+        wagerDeadlineAtUtc: null,
+        remainingActionMilliseconds: 0,
+        remainingWagerMilliseconds: 0,
+      },
+    }))
+
+    await expect(getBlackjackTableSession()).resolves.toMatchObject({
+      kind: 'table',
+      table: { mode: 'solo', seats: [{ isCurrentPlayer: true }], actionDeadlineAtUtc: null },
     })
   })
 
@@ -163,6 +199,7 @@ const tableSession = {
   version: 8,
   table: {
     tableId: 'table-public-1',
+    mode: 'multiplayer',
     phase: 'active',
     round: 2,
     dealer: {

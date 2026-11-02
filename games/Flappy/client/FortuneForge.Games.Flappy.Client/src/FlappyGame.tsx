@@ -4,7 +4,7 @@ import { keyboardFlapIntent, pointerFlapIntent } from './flappyControls'
 
 export type FlappyGameProps = Readonly<{ gateway: FlappyGateway; backHref?: string }>
 
-export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
+export function FlappyGame({ gateway }: FlappyGameProps) {
   const [status, setStatus] = useState<FlappyStatus | null>(null)
   const [game, setGame] = useState<FlappyGameState | null>(null)
   const [started, setStarted] = useState(false)
@@ -85,7 +85,6 @@ export function FlappyGame({ gateway, backHref = '/' }: FlappyGameProps) {
   }
 
   return <div className="ff-flappy-page">
-    <header className="ff-flappy-header"><a href={backHref}>✦ Fortune Forge</a><span>Local sample</span></header>
     <main className="ff-flappy-main">
       <div className="ff-flappy-title"><div><small>Classic arcade</small><h1>Flappy</h1><p>Thread the bird through each opening for as long as you can.</p></div><button type="button" onClick={() => void start()}>{game ? 'New course' : 'Prepare course'}</button></div>
       <p className="ff-flappy-instructions"><strong>Space or click/tap starts the run and flaps in one action.</strong> Gravity begins on your first input.</p>

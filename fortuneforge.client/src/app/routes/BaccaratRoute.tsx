@@ -39,7 +39,7 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <InGameShell account={account} title="Baccarat" theme="casino" className="baccarat-page" bodyClassName="baccarat-route__body">
+  return <InGameShell account={account} title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">
     <BaccaratGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} renderCardFace={renderCardFace} />
   </InGameShell>
 }

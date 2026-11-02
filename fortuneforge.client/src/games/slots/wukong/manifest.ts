@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { WUKONG_TREASURES_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -70,7 +71,7 @@ const WUKONG_HELP: SlotHelpDefinition = {
   ],
 }
 
-export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = {
+export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'fortune-forge-wukong-v1',
   cabinet: WUKONG_CABINET_THEME,
   features: WUKONG_FEATURES,
@@ -88,7 +89,7 @@ export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = {
       ['PAW', '7', 'ACE', 'POWER'],
     ],
   }),
-}
+})
 
 export const WUKONG_SLOT_GAME = defineSlotGame({
   id: 'wukong-journey-to-the-west',

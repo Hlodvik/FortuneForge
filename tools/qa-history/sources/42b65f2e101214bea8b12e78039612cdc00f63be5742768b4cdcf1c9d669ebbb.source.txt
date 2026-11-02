@@ -1,0 +1,60 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.Slots.Spins;
+using Microsoft.Extensions.Options;
+
+if (args.Length != 2) throw new ArgumentException("Usage: exporter <repository-root> <new-output-directory>");
+var repository = Path.GetFullPath(args[0]);
+var output = Path.GetFullPath(args[1]);
+var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+var configuration = Path.Combine(repository, "FortuneForge.Server/appsettings.json");
+var sourcePaths = Directory.GetFiles(Path.Combine(repository, "FortuneForge.Server/Slots"), "*.cs", SearchOption.AllDirectories)
+    .Append(configuration).Order(StringComparer.Ordinal).ToArray();
+var hashes = sourcePaths.ToDictionary(path => Path.GetRelativePath(repository, path).Replace('\\', '/'), Hash);
+using var document = JsonDocument.Parse(File.ReadAllText(configuration));
+var options = document.RootElement.GetProperty("Slots").Deserialize<SlotsOptions>(json)!;
+var validation = new SlotsOptionsValidator().Validate(null, options);
+if (validation.Failed) throw new InvalidOperationException(string.Join("\n", validation.Failures));
+var provider = new OptionsSlotsDefinitionProvider(Options.Create(options));
+var registry = File.ReadAllText(Path.Combine(repository, "fortuneforge.client/src/games/slots/routeRegistry.ts"));
+var routePattern = "id: '([^']+)', title: (?:'([^']*)'|\"([^\"]*)\"),.*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
+var routes = Regex.Matches(registry, routePattern, RegexOptions.Singleline).Select(match => new {
+    id = match.Groups[1].Value, gameId = match.Groups[6].Value,
+}).ToArray();
+if (routes.Length != 20 || routes.Select(route => route.gameId).Distinct().Count() != 20) throw new InvalidOperationException("Expected all twenty distinct slot profiles");
+Directory.CreateDirectory(output);
+foreach (var route in routes)
+{
+    var game = provider.GetGame(route.gameId) ?? throw new InvalidOperationException(route.gameId);
+    if (!SlotSpecialRoundProfiles.TryGet(route.gameId, out var profile)) throw new InvalidOperationException(route.gameId);
+    var paytable = provider.GetPaytable(game.Math.PaytableId) ?? throw new InvalidOperationException(game.Math.PaytableId);
+    var symbolSet = provider.GetSymbolSet(game.Symbols.SymbolSetId) ?? throw new InvalidOperationException(game.Symbols.SymbolSetId);
+    var reels = provider.GetReelSet(game.Math.ReelSetId) ?? throw new InvalidOperationException(game.Math.ReelSetId);
+    if (paytable.SymbolSetId != symbolSet.Id || reels.SymbolSetId != symbolSet.Id) throw new InvalidOperationException("Inconsistent effective definitions");
+    var directory = Path.Combine(output, route.id);
+    Directory.CreateDirectory(directory);
+    WriteNew(Path.Combine(directory, "contract.json"), new {
+        gameId = game.Id, profile, layout = game.Layout, symbols = game.Symbols,
+        wagering = game.Wagering, math = game.Math, specialPoints = game.SpecialPoints,
+        paylines = game.Paylines, paytable = paytable.Rules,
+    });
+}
+foreach (var path in sourcePaths)
+    if (hashes[Path.GetRelativePath(repository, path).Replace('\\', '/')] != Hash(path)) throw new InvalidOperationException("Sources changed during effective-contract export");
+WriteNew(Path.Combine(output, "index.json"), new { exportedUtc = DateTime.UtcNow, games = routes.Select(route => new { route }) });
+WriteNew(Path.Combine(output, "source-provenance.json"), new {
+    source = "Freshly compiled in-process OptionsSlotsDefinitionProvider; no client manifests used to derive rules",
+    assemblySha256 = Hash(typeof(SpinService).Assembly.Location), sourceSha256 = hashes,
+});
+Console.WriteLine($"Exported {routes.Length} effective engine contracts; source hashes stable.");
+
+void WriteNew(string path, object value)
+{
+    using var file = new FileStream(path, FileMode.CreateNew, FileAccess.Write);
+    JsonSerializer.Serialize(file, value, json);
+}
+static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();

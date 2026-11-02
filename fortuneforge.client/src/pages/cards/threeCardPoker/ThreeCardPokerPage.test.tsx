@@ -9,7 +9,9 @@ describe('Three Card Poker table', () => {
   it('shows its title artwork only while the initial table snapshot is pending', () => {
     const pending = render(session, { availability: { kind: 'loading' } })
     expect(pending).toContain('data-game-loading="three-card-poker"')
-    expect(pending).toContain('>Loading</span>')
+    expect(pending).toContain('>Three Card Poker</h1>')
+    expect(pending).toContain('class="ff-game-loading__image"')
+    expect(pending).toMatch(/<p[^>]*role="status"[^>]*>[\s\S]*?<span>Loading<\/span><\/p>/)
     expect(pending).toContain('role="status"')
     expect(pending).not.toMatch(/<button|role="alert"|ff-playing-card/)
     expect(render(session)).not.toContain('data-game-loading')

@@ -31,7 +31,7 @@ describe('app shell slot media isolation', () => {
   })
 
   it.each([
-    '/home', '/home/history', '/home/settings', '/home/rand', '/home/credits',
+    '/home', '/home/history', '/home/settings', '/home/change-password', '/balance', '/home/rand', '/home/credits',
     '/home/invoices', '/home/invoices/123', '/login', '/create-account', '/verify-email',
     '/admin', '/admin/operations', '/admin/invoices', '/admin/invoices/123',
     '/games', '/cards', '/slots', '/demo', '/demo/cards', '/unknown',
@@ -40,7 +40,7 @@ describe('app shell slot media isolation', () => {
     const markup = renderApp(pathname)
     expect(markup).not.toContain('app-shell--wukong-clouds')
     expect(markup).not.toContain('app-shell__background-video')
-    if (pathname === '/home' || pathname.startsWith('/home/')) {
+    if (pathname === '/home' || pathname.startsWith('/home/') || pathname === '/balance') {
       expect(markup).toContain('app-shell--home')
     }
   })
@@ -81,6 +81,7 @@ describe('app shell slot media isolation', () => {
   it('uses the home background before the lazy landing and home pages have loaded', () => {
     expect(renderApp('/')).toContain('app-shell--landing')
     expect(renderApp('/home')).toContain('app-shell--home')
+    expect(renderApp('/balance')).toContain('app-shell--home')
     expect(renderApp('/home/')).toContain('app-shell--home')
     expect(renderApp('/home')).not.toContain('app-shell__background-video')
     expect(renderApp('/slots/wukong')).not.toContain('app-shell--home')
@@ -96,10 +97,12 @@ describe('app shell slot media isolation', () => {
     expect(landingStyles).toMatch(/\.ff-landing--opening\s*\{[^}]*background: var\(--ff-home-background\)/)
   })
 
-  it('keeps the Asteroids route root above shell backdrops', () => {
+  it('keeps the shared game shell above shell backdrops', () => {
     const shellStyles = readFileSync(new URL('./styles/shell.css', import.meta.url), 'utf8')
 
-    expect(shellStyles).toContain('.app-shell > .asteroids-competition-page,')
+    const gameLayer = shellStyles.match(/\.app-shell > \.in-game-shell,[\s\S]*?\{([^}]*)\}/)?.[1]
+    expect(gameLayer).toContain('position: relative')
+    expect(gameLayer).toContain('z-index: 1')
   })
 
   it('marks playable routes without constraining game libraries or account pages', () => {

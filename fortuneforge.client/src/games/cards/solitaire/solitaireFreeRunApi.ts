@@ -13,6 +13,7 @@ export type SolitaireFreeRun = Readonly<{
   drawCount: SolitaireDrawCount
   startedAtUtc: string
   wasAlreadyStarted: boolean
+  gameId?: 'solitaire' | 'free-solitaire'
 }>
 
 export type SolitaireFreeRunCompletion = Readonly<{
@@ -25,6 +26,7 @@ export type SolitaireFreeRunCompletion = Readonly<{
   terminal: 'won' | 'submitted'
   completedAtUtc: string
   wasAlreadyCompleted: boolean
+  gameId?: 'solitaire' | 'free-solitaire'
 }>
 
 export type SolitaireFreeRunPause = Readonly<{
@@ -41,6 +43,7 @@ export async function startSolitaireFreeRun(
   drawCount: SolitaireDrawCount,
   idempotencyKey: string,
   replayRunId?: string,
+  gameId: 'solitaire' | 'free-solitaire' = 'solitaire',
 ): Promise<SolitaireFreeRun> {
   const response = await fetchWithAccountSession('/api/solitaire/free/runs', {
     method: 'POST',
@@ -48,7 +51,8 @@ export async function startSolitaireFreeRun(
       'Content-Type': 'application/json',
       'Idempotency-Key': idempotencyKey,
     }),
-    body: JSON.stringify(replayRunId === undefined ? { drawCount } : { drawCount, replayRunId }),
+    body: JSON.stringify({ drawCount, ...(replayRunId === undefined ? {} : { replayRunId }),
+      ...(gameId === 'free-solitaire' ? { gameId } : {}) }),
   })
   return readFreeResponse(response, isStartResponse, 'Solitaire free-run start')
 }
@@ -109,6 +113,7 @@ function isStartResponse(value: unknown): value is SolitaireFreeRun {
     && isDrawCount(value.drawCount)
     && typeof value.startedAtUtc === 'string'
     && typeof value.wasAlreadyStarted === 'boolean'
+    && isGameIdOrMissing(value.gameId)
 }
 
 function isCompletionResponse(value: unknown): value is SolitaireFreeRunCompletion {
@@ -122,6 +127,7 @@ function isCompletionResponse(value: unknown): value is SolitaireFreeRunCompleti
     && (value.terminal === 'won' || value.terminal === 'submitted')
     && typeof value.completedAtUtc === 'string'
     && typeof value.wasAlreadyCompleted === 'boolean'
+    && isGameIdOrMissing(value.gameId)
 }
 
 function isPauseResponse(value: unknown): value is SolitaireFreeRunPause {
@@ -138,6 +144,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isDrawCount(value: unknown): value is SolitaireDrawCount {
   return value === 1 || value === 3
+}
+
+function isGameIdOrMissing(value: unknown): value is 'solitaire' | 'free-solitaire' | undefined {
+  return value === undefined || value === 'solitaire' || value === 'free-solitaire'
 }
 
 function isUint32(value: unknown): value is number {

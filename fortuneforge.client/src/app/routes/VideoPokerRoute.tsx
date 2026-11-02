@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { HttpVideoPokerGateway, VideoPokerGame } from '@fortuneforge/games-video-poker'
 import '@fortuneforge/games-video-poker/styles.css'
-import './VideoPokerRoute.css'
 import { renderStandardCardFace } from '../../games/cards/shared/renderStandardCardFace'
 import '../../games/cards/shared/playingCards.css'
 import '../../games/cards/shared/packagedCardFaces.css'
@@ -9,7 +8,6 @@ import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedVideoPokerRoute() {
@@ -32,7 +30,7 @@ function VideoPokerSession({ initialAccount }: Readonly<{ initialAccount: Accoun
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <InGameShell account={account} title="Video Poker" theme="casino" className="player-page video-poker-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/video-poker" />}>
+  return <InGameShell account={account} title="Video Poker" className="player-page video-poker-page">
     <VideoPokerGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} renderCardFace={renderStandardCardFace} />
   </InGameShell>
 }

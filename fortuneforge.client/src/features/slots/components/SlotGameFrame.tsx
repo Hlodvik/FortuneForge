@@ -17,9 +17,9 @@ export function SlotGameFrame({ cabinetTheme, children, title }: SlotGameFramePr
     '--cabinet-accent': cabinetTheme.palette.accent,
     '--cabinet-glow': cabinetTheme.palette.glow,
     '--cabinet-text': cabinetTheme.palette.text,
-    '--cabinet-visuals-backdrop': cabinetTheme.visualsBackdropImage
+    '--cabinet-visuals-backdrop': cabinetTheme.backdropImageSet ?? (cabinetTheme.visualsBackdropImage
       ? `url("${cabinetTheme.visualsBackdropImage}")`
-      : 'linear-gradient(transparent, transparent)',
+      : 'linear-gradient(transparent, transparent)'),
   }
 
   return (

@@ -23,6 +23,15 @@ public sealed class FirestoreEmulatorConfigurationTests
     [InlineData("fortuneforgegame", "127.0.0.1:8787")]
     [InlineData("demo-fortuneforge-e2e", "firestore.googleapis.com:443")]
     [InlineData("demo-fortuneforge-e2e", "127.0.0.1:0")]
+    [InlineData("demo-fortuneforge-e2e", "localhost")]
+    [InlineData("demo-fortuneforge-e2e", "127.0.0.1")]
+    [InlineData("demo-fortuneforge-e2e", "[::1]")]
+    [InlineData("demo-fortuneforge-e2e", "user:password@localhost:8787")]
+    [InlineData("demo-fortuneforge-e2e", "localhost:8787#fragment")]
+    [InlineData("demo-fortuneforge-e2e", "localhost:8787?database=other")]
+    [InlineData("demo-fortuneforge-e2e", "localhost:8787/private")]
+    [InlineData("demo-fortuneforge-e2e", "http://localhost:8787")]
+    [InlineData("demo-fortuneforge-e2e", "localhost:65536")]
     public void EmulatorEndpointRejectsCloudProjectsAndNonLocalTargets(
         string projectId,
         string endpoint)

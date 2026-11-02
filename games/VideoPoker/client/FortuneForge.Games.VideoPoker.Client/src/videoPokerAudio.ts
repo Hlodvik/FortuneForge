@@ -1,3 +1,5 @@
+import chipSound from './assets/chip-lay-1.ogg'
+
 type AudioWindow = Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }
 
 let context: AudioContext | null = null
@@ -30,6 +32,15 @@ export function playVideoPokerClick() {
   const audio = audioContext()
   if (!audio) return
   tone(185, audio.currentTime, 0.045, 0.035, 'triangle')
+}
+
+export function playVideoPokerChip() {
+  if (typeof Audio === 'undefined') return
+  try {
+    const audio = new Audio(chipSound)
+    audio.volume = .23
+    void audio.play()?.catch(() => undefined)
+  } catch { /* Media restrictions must not affect wagering. */ }
 }
 
 export function playVideoPokerWin(payout: number) {

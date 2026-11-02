@@ -28,9 +28,9 @@
 .ff-video-poker__header, .ff-video-poker__console, .ff-video-poker__error { width: min(100%, 76rem); margin-inline: auto; }
 .ff-video-poker__header { display: flex; min-height: 44px; align-items: center; gap: .4rem; }
 .ff-video-poker__header h1 { margin: 0 auto 0 0; color: #ffe69b; font: 900 1.4rem Copperplate, "Arial Black", sans-serif; letter-spacing: .055em; text-transform: uppercase; }
-.ff-video-poker__balance { display: flex; min-width: 9.5rem; align-items: baseline; gap: .55rem; margin-right: auto; padding: .42rem .78rem; border: 1px solid #f0ca6970; border-radius: 999px; background: #06112cd9; box-shadow: inset 0 1px #ffffff12, 0 .25rem .8rem #0007; }
-.ff-video-poker__balance span { color: #bfcde1; font-size: .61rem; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
-.ff-video-poker__balance strong { color: #fff0ad; font-size: .96rem; font-variant-numeric: tabular-nums; }
+.ff-video-poker__balance { display: flex; min-width: 0; align-items: baseline; gap: 12px; margin-right: auto; padding: 8px 0; white-space: nowrap; }
+.ff-video-poker__balance span { color: #b0adb8; font-size: 10px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; }
+.ff-video-poker__balance strong { color: #f4f1e9; font-size: clamp(18px, 1.7vw, 24px); font-weight: 600; letter-spacing: -.025em; font-variant-numeric: tabular-nums; }
 .ff-video-poker button, .ff-video-poker select { font: inherit; touch-action: manipulation; }
 .ff-video-poker button { cursor: pointer; user-select: none; -webkit-user-select: none; }
 .ff-video-poker button:disabled { cursor: default; opacity: .52; }

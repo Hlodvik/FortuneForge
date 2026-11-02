@@ -12,6 +12,14 @@ public sealed class FirestoreMinesStore(FirestoreDb database) : IMinesStore
 {
     public bool Practice => false;
     private const string CurrencyId = "slotsCredits";
+    private void WriteRoundRecord(Transaction transaction, FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord record)
+    {
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName).Document(record.Settlement.Id), record.Settlement.Fields);
+        var documents = FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Create(record.Audit);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Summaries).Document(record.Audit.Summary.Id), documents.Summary);
+        transaction.Create(database.Collection(FortuneForge.Games.Abstractions.Auditing.RoundAuditDocuments.Evidence).Document(record.Audit.Summary.Id), documents.Evidence);
+    }
+
 
     public Task<MinesTransactionSnapshot> ReadAsync(string userId, CancellationToken cancellationToken = default) =>
         database.RunTransactionAsync(async transaction =>
@@ -43,12 +51,34 @@ public sealed class FirestoreMinesStore(FirestoreDb database) : IMinesStore
             if (mutation.Replay) return mutation.Response;
             var round = mutation.Round ?? throw new InvalidOperationException("A Mines command must save a round.");
             round.Validate(userId);
-            if (mutation.Response.Practice || mutation.Response.BalanceCents != checked(balance + mutation.BalanceDeltaCents) || mutation.Response.BalanceCents < 0)
+            if (mutation.Response.Practice != Practice || mutation.Response.BalanceCents != checked(balance + mutation.BalanceDeltaCents) || mutation.Response.BalanceCents < 0)
                 throw new InvalidOperationException("The Mines wallet mutation is invalid.");
             var ledgerReference = Ledger(commandId);
             var ledgerSnapshot = await transaction.GetSnapshotAsync(ledgerReference, cancellationToken);
             if (ledgerSnapshot.Exists) throw new InvalidOperationException("A Mines wallet ledger exists without its command receipt.");
+            var result = round.State.Status == MinesRoundStatus.Active ? null : Result(round.RoundId);
+            if (result is not null && (await transaction.GetSnapshotAsync(result, cancellationToken)).Exists)
+                throw new InvalidOperationException("A Mines result already exists before this settlement.");
             // All reads above precede all writes, including on transaction retries.
+            var observation = FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.Capture(
+                "mines", round.RoundId, round.Version, round.UpdatedAt.UtcDateTime, round, [userId]);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.CollectionName).Document(observation.Id), observation.Fields);
+            transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestCollectionName)
+                .Document(FortuneForge.Games.Abstractions.Auditing.GameSecurityEventDocuments.ManifestId("mines", round.RoundId)),
+                new Dictionary<string, object> { ["gameId"] = "mines", ["instanceId"] = round.RoundId,
+                    ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
+            var participation = FortuneForge.Games.Abstractions.Analytics.AcceptedGameParticipationDocuments.Create(userId, "mines", round.UpdatedAt.UtcDateTime);
+            transaction.Set(database.Collection("catalogPlayerActivity").Document(participation.DocOwnerKey)
+                .Collection("games").Document(participation.GameId), participation.Fields, SetOptions.MergeAll);
+            if (result is not null)
+            {
+                var analytics = FortuneForge.Games.Abstractions.Analytics.SinglePlayerRoundRecord.Create(
+                    "mines", round.RoundId, userId, round.State.WagerCents, round.State.PayoutCents,
+                    round.CreatedAt.UtcDateTime, round.UpdatedAt.UtcDateTime, "minesRounds", round.RoundId,
+                    round, "mines-private-board-and-reveals-v1",
+                    MinesOutcomeAudit.Verify(round, mutation.BalanceDeltaCents), MinesOutcomeAudit.Version);
+                WriteRoundRecord(transaction, analytics);
+            }
             if (mutation.BalanceDeltaCents != 0)
             {
                 transaction.Set(Balance(userId), new Dictionary<string, object>
@@ -67,6 +97,17 @@ public sealed class FirestoreMinesStore(FirestoreDb database) : IMinesStore
                     ["createdAt"] = Timestamp.FromDateTime(round.UpdatedAt.UtcDateTime),
                 });
             }
+            if (result is not null)
+                transaction.Create(result, new Dictionary<string, object>
+                {
+                    ["resultId"] = result.Id, ["game"] = "mines", ["mode"] = "credit", ["userId"] = userId,
+                    ["matchId"] = round.RoundId, ["wagerCents"] = round.State.WagerCents, ["payoutCents"] = round.State.PayoutCents,
+                    ["netCents"] = checked(round.State.PayoutCents - round.State.WagerCents),
+                    ["houseEdgeBasisPoints"] = round.State.HouseEdgeBasisPoints, ["payoutPolicyVersion"] = round.State.PayoutPolicyVersion,
+                    ["outcome"] = mutation.Response.Round!.Status, ["settlementStatus"] = "paid", ["claimStatus"] = "completed",
+                    ["startedAt"] = Timestamp.FromDateTime(round.CreatedAt.UtcDateTime),
+                    ["completedAt"] = Timestamp.FromDateTime(round.UpdatedAt.UtcDateTime), ["schemaVersion"] = 1L,
+                });
             transaction.Set(Round(round.RoundId), new Dictionary<string, object>
             {
                 ["roundId"] = round.RoundId, ["userId"] = userId, ["version"] = round.Version,
@@ -132,6 +173,7 @@ public sealed class FirestoreMinesStore(FirestoreDb database) : IMinesStore
     private DocumentReference Round(string id) => database.Collection("minesRounds").Document(id);
     private DocumentReference Command(string id) => database.Collection("minesCommands").Document(id);
     private DocumentReference Ledger(string id) => database.Collection("balanceTransactions").Document($"mines-{id}");
+    private DocumentReference Result(string id) => database.Collection("cardGameResults").Document($"mines-{id}");
     private static string RequiredString(DocumentSnapshot snapshot, string field) => snapshot.TryGetValue<string>(field, out var value) && !string.IsNullOrWhiteSpace(value)
         ? value : throw new InvalidOperationException($"The Mines record is missing {field}.");
     private static long RequiredLong(DocumentSnapshot snapshot, string field) => snapshot.TryGetValue<long>(field, out var value)

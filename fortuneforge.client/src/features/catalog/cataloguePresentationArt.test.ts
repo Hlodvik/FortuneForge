@@ -20,6 +20,7 @@ const nonSlotRoutes: Readonly<Record<string, string>> = {
   'sic-bo': '/games/sic-bo',
   mines: '/games/mines',
   solitaire: '/cards/solitaire',
+  'free-solitaire': '/cards/free-solitaire',
   hearts: '/cards/hearts',
   'liars-dice': '/games/liars-dice',
   '2048': '/games/2048',
@@ -43,9 +44,9 @@ const selectedMetadata = ['non-slots', 'slots'].flatMap(group => {
 })
 
 describe('landing and home catalogue presentation art', () => {
-  it('selects exactly the forty unique metadata-approved exports with a bounded image budget', () => {
-    expect(selectedMetadata).toHaveLength(40)
-    expect(new Set(selectedMetadata.map(({ metadata }) => metadata.id)).size).toBe(40)
+  it('selects every unique metadata-approved export with a bounded image budget', () => {
+    expect(selectedMetadata).toHaveLength(41)
+    expect(new Set(selectedMetadata.map(({ metadata }) => metadata.id)).size).toBe(41)
     const slotRoutes = new Map(SLOT_ROUTE_DEFINITIONS.map(definition => [definition.id, definition.playPath]))
     const selectedSources = new Set<string>()
     let totalBytes = 0
@@ -68,7 +69,7 @@ describe('landing and home catalogue presentation art', () => {
       totalBytes += metadata.bytes
     }
 
-    expect(selectedSources.size).toBe(40)
+    expect(selectedSources.size).toBe(41)
     expect(totalBytes).toBeLessThan(3_000_000)
   })
 
@@ -82,9 +83,9 @@ describe('landing and home catalogue presentation art', () => {
     }
   })
 
-  it('covers the twenty non-slot play routes and only the two real internal card demo aliases', () => {
+  it('covers the non-slot play routes and only the two real internal card demo aliases', () => {
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
-    expect(Object.keys(nonSlotRoutes)).toHaveLength(20)
+    expect(Object.keys(nonSlotRoutes)).toHaveLength(21)
     for (const route of Object.values(nonSlotRoutes)) {
       // Mines art can be prepared before its separately reviewed host integration ships.
       // Presentation metadata must not force an unrelated game release.
@@ -106,11 +107,11 @@ describe('landing and home catalogue presentation art', () => {
     }
   })
 
-  it('imports only forty selected image URLs, with no playable game code or archived integration', () => {
+  it('imports only selected image URLs, with no playable game code or archived integration', () => {
     const source = readFileSync(new URL('./cataloguePresentationArt.ts', import.meta.url), 'utf8')
     const imports = [...source.matchAll(/^import .+ from '([^']+)'$/gm)].map(match => match[1])
-    expect(imports).toHaveLength(40)
-    expect(new Set(imports).size).toBe(40)
+    expect(imports).toHaveLength(41)
+    expect(new Set(imports).size).toBe(41)
     for (const path of imports) expect(path).toMatch(/^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/[a-z0-9-]+\.webp$/)
     expect(source).not.toContain('import(')
     expect(source).not.toContain('nonSlotCatalogueArt')

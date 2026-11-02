@@ -119,14 +119,8 @@ body.ff-game-active img {
 }
 
 .app-shell > .in-game-shell,
-.app-shell > .landing-page,
 .app-shell > .account-page,
 .app-shell > .player-page,
-.app-shell > .blackjack-page,
-.app-shell > .credit-holdem-page,
-.app-shell > .holdem-page,
-.app-shell > .solitaire-page,
-.app-shell > .asteroids-competition-page,
 .app-shell > .slots-page,
 .app-shell > .route-state {
   position: relative;
@@ -144,6 +138,11 @@ body.ff-game-active img {
   color: #f4f1e9;
   text-align: center;
 }
+
+.site-route-state { display: flex; min-height: 100svh; flex-direction: column; }
+.site-route-state > .route-state { min-height: 0; flex: 1; }
+.route-state-shell .in-game-shell__body { overflow: auto; }
+.route-state-shell .player-page { min-height: 100%; }
 
 .route-state--error button,
 .route-state--error a {

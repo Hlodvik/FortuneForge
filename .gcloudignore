@@ -16,3 +16,16 @@ fortuneforge.client
 FortuneForge.AppHost
 artifacts
 tmp
+
+# Reusing the existing checkout must not upload ignored local configuration or
+# build/test artifacts that a fresh committed checkout would not contain.
+#!include:.gitignore
+
+# Nested sample applications have additional local private stores. Root include
+# rules do not recursively include their .gitignore files.
+**/.practice/**
+**/.data/**
+**/App_Data/**
+**/.test-temp/**
+**/.test-tmp/**
+**/.e2e-artifacts/**

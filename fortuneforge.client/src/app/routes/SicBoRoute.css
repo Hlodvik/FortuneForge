@@ -1,12 +1,1 @@
 .sic-bo-page .in-game-shell__body { overflow: hidden; background: #052d21; }
-.sic-bo-page > .in-game-navbar {
-  border-bottom-color: rgb(189 161 90 / 40%);
-  background: #080b09;
-}
-.sic-bo-page .in-game-navbar__title { display: none; }
-@media (max-height: 450px) and (max-width: 700px) {
-  .sic-bo-page .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto auto; }
-}
-@media (max-height: 450px) and (max-width: 420px) {
-  .sic-bo-page .in-game-navbar { grid-template-columns: minmax(0, 1fr) auto; }
-}

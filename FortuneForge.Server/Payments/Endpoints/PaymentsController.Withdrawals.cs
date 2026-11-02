@@ -10,6 +10,22 @@ namespace FortuneForge.Server.Controllers;
 
 public sealed partial class PaymentsController
 {
+    [HttpGet("withdrawals")]
+    [EnableRateLimiting(RateLimitPolicies.PaymentReads)]
+    [ProducesResponseType<PaymentWithdrawalListResponse>(StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListWithdrawals(
+        [FromQuery] int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var account = await AuthenticatedAccountAsync(cancellationToken);
+        return account is null
+            ? UnauthorizedProblem()
+            : Ok(await paymentService.ListWithdrawalsAsync(
+                account.UserId,
+                limit,
+                cancellationToken));
+    }
+
     [HttpPost("withdrawals")]
     [EnableRateLimiting(RateLimitPolicies.PaymentWrites)]
     [ProducesResponseType<PaymentWithdrawalResponse>(StatusCodes.Status201Created)]

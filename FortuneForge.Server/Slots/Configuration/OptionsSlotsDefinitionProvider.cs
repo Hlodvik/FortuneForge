@@ -28,10 +28,22 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     }
 
     public SymbolSetDefinition? GetSymbolSet(string id) =>
-        options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
+        string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
+            ? MidnightVaultSlotDefinitions.CreateSymbolSet()
+            : options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
 
     public ReelSetDefinition? GetReelSet(string id)
     {
+        if (string.Equals(id, MidnightVaultBaseReelSet.Id, StringComparison.Ordinal))
+        {
+            var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
+                string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
+            var source = prototype is null
+                ? null
+                : options.Value.ReelSets.SingleOrDefault(set =>
+                    string.Equals(set.Id, prototype.Math.ReelSetId, StringComparison.Ordinal));
+            return source is null ? null : MidnightVaultBaseReelSet.Create(source);
+        }
         if (string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal))
         {
             return PiratesFortuneBaseReelSet.Definition;
@@ -50,8 +62,15 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         return options.Value.ReelSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
     }
 
-    public PaytableDefinition? GetPaytable(string id) =>
-        options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
+    public PaytableDefinition? GetPaytable(string id)
+    {
+        if (string.Equals(id, MidnightVaultSlotDefinitions.PaytableId, StringComparison.Ordinal))
+            return MidnightVaultSlotDefinitions.CreatePaytable();
+        if (string.Equals(id, MidnightVaultSlotDefinitions.LegacyPaytableId, StringComparison.Ordinal))
+            return MidnightVaultSlotDefinitions.CreateLegacyPaytable();
+
+        return options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
+    }
 
     private static GameDefinition ClonePrototype(GameDefinition source, SlotSpecialRoundProfile profile)
     {
@@ -70,7 +89,9 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
                     VisibleRows = source.Layout.VisibleRows,
                     PaylineCount = paylineIndexes.Length
                 },
-            Symbols = source.Symbols,
+            Symbols = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
+                ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
+                : source.Symbols,
             Matching = source.Matching,
             Math = CloneMath(source.Math, profile, paylineIndexes),
             Wagering = source.Wagering,
@@ -91,7 +112,9 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         IReadOnlyList<int>? paylineIndexes) => new()
     {
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
-        PaytableId = source.PaytableId,
+        PaytableId = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
+            ? MidnightVaultSlotDefinitions.PaytableId
+            : source.PaytableId,
         PayoutMultiplier = profile.PayoutMultiplier,
         PaylinePayoutSteps = paylineIndexes is null
             ? source.PaylinePayoutSteps

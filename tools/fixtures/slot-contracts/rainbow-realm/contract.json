@@ -1,0 +1,575 @@
+{
+  "schemaVersion": 1,
+  "route": {
+    "id": "rainbow-realm",
+    "title": "Rainbow Realm",
+    "playPath": "/slots/rainbow-realm",
+    "demoPath": "/slots/rainbow-realm/demo",
+    "gameId": "rainbow-realm-fruits-v1"
+  },
+  "gameId": "rainbow-realm-fruits-v1",
+  "profile": {
+    "gameId": "rainbow-realm-fruits-v1",
+    "scatterRequiredSymbols": 3,
+    "scatterAwardedSpins": 10,
+    "collectionTarget": 60,
+    "collectionAwardedSpins": 10,
+    "usesCollections": true,
+    "usesEnergy": true,
+    "usesDirectValueTokens": true,
+    "scatterFeatureMode": null,
+    "collectionFeatureMode": null,
+    "baseReelSetId": null,
+    "targetHitRate": null,
+    "paylinePatternIds": null,
+    "payoutMultiplier": 1
+  },
+  "layout": {
+    "reelCount": 5,
+    "visibleRows": 4,
+    "paylineCount": 23
+  },
+  "symbols": {
+    "symbolSetId": "wukong-treasures-v3",
+    "wildSymbolId": "ACE",
+    "nativeWildMatchLengths": [
+      3,
+      5
+    ],
+    "wildSubstitutionMatchLengths": [
+      5
+    ]
+  },
+  "symbolSet": {
+    "id": "wukong-treasures-v3",
+    "symbols": [
+      {
+        "id": "2"
+      },
+      {
+        "id": "3"
+      },
+      {
+        "id": "4"
+      },
+      {
+        "id": "5"
+      },
+      {
+        "id": "6"
+      },
+      {
+        "id": "7"
+      },
+      {
+        "id": "ACE"
+      },
+      {
+        "id": "FREE"
+      },
+      {
+        "id": "POWER"
+      },
+      {
+        "id": "BOLT"
+      },
+      {
+        "id": "BANANA"
+      },
+      {
+        "id": "PAW"
+      },
+      {
+        "id": "RAND_05"
+      },
+      {
+        "id": "RAND_1"
+      },
+      {
+        "id": "RAND_15"
+      },
+      {
+        "id": "RAND_2"
+      },
+      {
+        "id": "RAND_3"
+      },
+      {
+        "id": "RAND_4"
+      },
+      {
+        "id": "RAND_5"
+      },
+      {
+        "id": "SEAL_SYNC"
+      },
+      {
+        "id": "SEAL_ROWS"
+      },
+      {
+        "id": "SEAL_PAW"
+      },
+      {
+        "id": "SEAL_RAND"
+      }
+    ]
+  },
+  "matching": {
+    "minimumRunLength": 3,
+    "allowMultipleRunsPerPayline": true
+  },
+  "wagering": {
+    "pointValueInCents": 25,
+    "minimumWagerPoints": 2,
+    "maximumWagerPoints": 2000,
+    "wagerIncrementPoints": 2,
+    "allowedWagerPoints": []
+  },
+  "freeGames": {
+    "symbolId": "FREE",
+    "requiredSymbols": 3,
+    "awardedSpins": 10,
+    "visibleFrequencyDivisor": 4
+  },
+  "energy": {
+    "symbolId": "BOLT",
+    "pointsPerVisibleSymbol": 1
+  },
+  "specialPoints": {
+    "symbolId": "POWER",
+    "threeMatchPoints": 1,
+    "fiveMatchPoints": 2,
+    "activationCost": 8,
+    "commonSymbolIds": [
+      "2",
+      "3",
+      "4"
+    ]
+  },
+  "math": {
+    "reelSetId": "classic-reels-v4",
+    "paytableId": "classic-paytable-v4",
+    "payoutMultiplier": 1,
+    "paylinePayoutSteps": [
+      2,
+      2,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "fiveMatchPityMissLimit": 12,
+    "targets": {
+      "rtp": 0.88,
+      "hitRate": 0.30,
+      "volatility": null
+    }
+  },
+  "paylines": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      1,
+      2,
+      3,
+      2,
+      1
+    ],
+    [
+      3,
+      2,
+      1,
+      2,
+      3
+    ],
+    [
+      2,
+      1,
+      0,
+      1,
+      2
+    ],
+    [
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    [
+      1,
+      2,
+      2,
+      2,
+      1
+    ],
+    [
+      2,
+      3,
+      3,
+      3,
+      2
+    ],
+    [
+      3,
+      2,
+      2,
+      2,
+      3
+    ],
+    [
+      2,
+      1,
+      1,
+      1,
+      2
+    ],
+    [
+      0,
+      0,
+      1,
+      2,
+      3
+    ],
+    [
+      3,
+      3,
+      2,
+      1,
+      0
+    ],
+    [
+      0,
+      1,
+      2,
+      3,
+      3
+    ],
+    [
+      3,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      1,
+      2,
+      1,
+      2,
+      1
+    ],
+    [
+      2,
+      3,
+      2,
+      3,
+      2
+    ],
+    [
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      2,
+      1,
+      2,
+      1,
+      2
+    ],
+    [
+      3,
+      2,
+      3,
+      2,
+      3
+    ]
+  ],
+  "paytable": [
+    {
+      "symbolId": "2",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "2",
+      "matchLength": 5,
+      "multiplier": 4
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 5,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 5,
+      "multiplier": 7
+    },
+    {
+      "symbolId": "5",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "5",
+      "matchLength": 5,
+      "multiplier": 6
+    },
+    {
+      "symbolId": "6",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "6",
+      "matchLength": 5,
+      "multiplier": 8
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 3,
+      "multiplier": 3
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 5,
+      "multiplier": 11
+    },
+    {
+      "symbolId": "ACE",
+      "matchLength": 3,
+      "multiplier": 5
+    },
+    {
+      "symbolId": "ACE",
+      "matchLength": 5,
+      "multiplier": 18
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 5,
+      "multiplier": 4
+    }
+  ],
+  "observedRows": [
+    4,
+    6
+  ],
+  "observedActiveModes": [
+    null,
+    "sync",
+    "rows",
+    "paw",
+    "rand"
+  ],
+  "statusEndpoint": 204,
+  "scenarios": [
+    {
+      "scenario": "base-loss",
+      "seed": 0,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "base-win",
+      "seed": 2,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "scatter",
+      "seed": 106,
+      "responses": 21,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 10,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-sync",
+      "seed": 13,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": "sync",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-rows",
+      "seed": 15,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        6
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": "rows",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-paw",
+      "seed": 1,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": "paw",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-rand",
+      "seed": 3,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": "rand",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "energy-completion",
+      "seed": 6,
+      "responses": 21,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": "sync",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "direct-token-award",
+      "seed": 2,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    }
+  ],
+  "missingScenarios": [],
+  "unavailable": []
+}

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CasinoWarGame } from './CasinoWarGame'
 import { CasinoWarGatewayError, type CasinoWarGateway, type CasinoWarRound, type CasinoWarStatus } from './contracts'
 
@@ -35,7 +35,8 @@ const completedWarRound: CasinoWarRound = {
   primarySettlement: { disposition: 'win', outcome: 'player-war-win', totalWagered: 20, totalReturn: 30, profit: 10 },
 }
 
-afterEach(() => { cleanup(); sessionStorage.clear() })
+beforeEach(() => { vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue() })
+afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.restoreAllMocks() })
 
 describe('CasinoWarGame', () => {
   it('uses injected shared faces without rendering hidden opening cards', async () => {
@@ -44,6 +45,7 @@ describe('CasinoWarGame', () => {
     render(<CasinoWarGame gateway={fakeGateway()} renderCardFace={renderCardFace} />)
     const deal = await screen.findByRole('button', { name: 'Deal' })
     expect(renderCardFace).not.toHaveBeenCalled()
+    await placeChip(user, 'Main', 1)
     await user.click(deal)
     await waitFor(() => expect(document.querySelectorAll('[data-shared-face]')).toHaveLength(2))
     expect(renderCardFace.mock.calls.every(([card]) => card === immediateRound.playerOpeningCard || card === immediateRound.dealerOpeningCard)).toBe(true)
@@ -92,29 +94,41 @@ describe('CasinoWarGame', () => {
     expect(screen.queryByRole('button', { name: 'Retry connection' })).toBeNull()
   })
 
-  it('requires nonzero Tie stakes to align to the table increment from zero', async () => {
+  it('places the selected chip on either diamond and respects the Tie cap', async () => {
     const user = userEvent.setup()
     render(<CasinoWarGame gateway={fakeGateway()} />)
-
-    const tie = await screen.findByRole('spinbutton', { name: 'Tie bet' })
-    await user.clear(tie)
-    await user.type(tie, '1.5')
+    await screen.findByRole('button', { name: 'Place Main bet chip' })
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
-
-    await user.clear(tie)
-    await user.type(tie, '2')
+    await placeChip(user, 'Main', 1)
+    await placeChip(user, 'Tie', 25)
+    expect((screen.getByRole('button', { name: 'Place Tie bet chip' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Remove last Tie bet chip' }) as HTMLButtonElement).disabled).toBe(false)
+    await user.click(screen.getByRole('button', { name: 'Place Tie bet chip' }))
+    expect(document.querySelector('.ff-casino-war__bet-spot--tie .ff-casino-war__bet-amount')?.textContent).toBe('R25.00')
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('keeps a cleared wager blank and prevents an invalid deal', async () => {
+  it('lets a player remove a chip from the diamond before dealing', async () => {
     const user = userEvent.setup()
     render(<CasinoWarGame gateway={fakeGateway()} />)
-
-    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
-    await user.clear(primary)
-
-    expect((primary as HTMLInputElement).value).toBe('')
+    await placeChip(user, 'Main', 1)
+    await user.click(screen.getByRole('button', { name: 'Remove last Main bet chip' }))
+    expect(screen.queryByRole('button', { name: 'Remove last Main bet chip' })).toBeNull()
+    expect(document.querySelector('.ff-casino-war__bet-spot--main .ff-casino-war__bet-amount')?.textContent).toBe('R0.00')
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  it('plays the chip-lay sound on placement and honors the mute control', async () => {
+    const user = userEvent.setup()
+    render(<CasinoWarGame gateway={fakeGateway()} />)
+    const play = vi.mocked(HTMLMediaElement.prototype.play)
+
+    await placeChip(user, 'Main', 1)
+    expect(play).toHaveBeenCalledTimes(1)
+    await user.click(screen.getByRole('button', { name: 'Mute sound' }))
+    await placeChip(user, 'Main', 2)
+    expect(play).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem('fortuneforge:casino-war:muted')).toBe('true')
   })
 
   it('prevents wagers and tie decisions that the current balance cannot cover', async () => {
@@ -123,13 +137,13 @@ describe('CasinoWarGame', () => {
     const gateway = fakeGateway({ getStatus: vi.fn().mockResolvedValue(lowBalanceStatus), createRound: vi.fn().mockResolvedValue({ ...awaitingTieRound, balance: 5 }) })
     render(<CasinoWarGame gateway={gateway} />)
 
-    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
-    await user.clear(primary)
-    await user.type(primary, '6')
-    expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
-
-    await user.clear(primary)
-    await user.type(primary, '1')
+    await placeChip(user, 'Main', 5)
+    await placeChip(user, 'Main', 1)
+    expect(document.querySelector('.ff-casino-war__bet-spot--main .ff-casino-war__bet-amount')?.textContent).toBe('R5.00')
+    await placeChip(user, 'Tie', 5)
+    expect(document.querySelector('.ff-casino-war__bet-spot--tie .ff-casino-war__bet-amount')?.textContent).toBe('R0.00')
+    await user.click(screen.getByRole('button', { name: 'Remove last Main bet chip' }))
+    await placeChip(user, 'Main', 1)
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     expect((await screen.findByRole('button', { name: 'Go to War' }) as HTMLButtonElement).disabled).toBe(true)
   })
@@ -139,12 +153,8 @@ describe('CasinoWarGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(immediateRound) })
     render(<CasinoWarGame gateway={gateway} />)
 
-    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
-    await user.clear(primary)
-    await user.type(primary, '10')
-    const tie = screen.getByRole('spinbutton', { name: 'Tie bet' })
-    await user.clear(tie)
-    await user.type(tie, '2')
+    await placeChip(user, 'Main', 10)
+    await placeChip(user, 'Tie', 2)
     await user.click(screen.getByRole('button', { name: 'Deal' }))
 
     expect(gateway.createRound).toHaveBeenCalledWith(10, 2, expect.objectContaining({ idempotencyKey: expect.stringMatching(/^casino-war-opening-/) }))
@@ -159,6 +169,7 @@ describe('CasinoWarGame', () => {
     const onBalanceChange = vi.fn()
     render(<CasinoWarGame gateway={fakeGateway({ createRound: vi.fn().mockResolvedValue(immediateRound) })} onBalanceChange={onBalanceChange} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect(screen.getByText('R1,000.00')).toBeTruthy()
     expect(onBalanceChange).not.toHaveBeenCalled()
@@ -167,8 +178,9 @@ describe('CasinoWarGame', () => {
     await waitFor(() => expect(screen.getByText('R1,008.00')).toBeTruthy())
     expect(onBalanceChange).toHaveBeenCalledWith(1_008)
 
-    await user.click(screen.getByRole('button', { name: 'Change bet' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(screen.getByText('R1,008.00')).toBeTruthy()
+    expect(screen.queryByText('Change bet')).toBeNull()
   })
 
   it('renders an opening tie and sends the surrender decision', async () => {
@@ -181,6 +193,7 @@ describe('CasinoWarGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(awaitingTieRound), decide: vi.fn().mockResolvedValue(surrendered) })
     render(<CasinoWarGame gateway={gateway} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect(await screen.findByRole('button', { name: 'Surrender' })).toBeTruthy()
     expect(screen.getByText(/Tie bet \+R20.00/)).toBeTruthy()
@@ -195,6 +208,7 @@ describe('CasinoWarGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockResolvedValue(awaitingTieRound), decide: vi.fn().mockResolvedValue(completedWarRound) })
     render(<CasinoWarGame gateway={gateway} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect(await screen.findByText('Tie')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Go to War' }))
@@ -212,12 +226,13 @@ describe('CasinoWarGame', () => {
     const gateway = fakeGateway({ createRound: vi.fn().mockReturnValue(pending) })
     render(<CasinoWarGame gateway={gateway} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect((screen.getByRole('button', { name: 'Dealing…' }) as HTMLButtonElement).disabled).toBe(true)
     expect(gateway.createRound).toHaveBeenCalledTimes(1)
 
     resolveRound?.(immediateRound)
-    await screen.findByRole('button', { name: 'Change bet' })
+    await screen.findByRole('button', { name: 'Continue' })
   })
 
   it('repeats the settled stakes without making the player re-enter them', async () => {
@@ -225,12 +240,8 @@ describe('CasinoWarGame', () => {
     const createRound = vi.fn().mockResolvedValue(immediateRound)
     render(<CasinoWarGame gateway={fakeGateway({ createRound })} />)
 
-    const primary = await screen.findByRole('spinbutton', { name: 'Main bet' })
-    await user.clear(primary)
-    await user.type(primary, '10')
-    const tie = screen.getByRole('spinbutton', { name: 'Tie bet' })
-    await user.clear(tie)
-    await user.type(tie, '2')
+    await placeChip(user, 'Main', 10)
+    await placeChip(user, 'Tie', 2)
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     await user.click(await screen.findByRole('button', { name: 'Deal again' }))
 
@@ -261,21 +272,22 @@ describe('CasinoWarGame', () => {
     }))
   })
 
-  it('shows gateway errors and Change bet returns to the stake controls', async () => {
+  it('shows gateway errors and result dismissal returns to a fresh wager', async () => {
     const user = userEvent.setup()
     const gateway = fakeGateway({ createRound: vi.fn().mockRejectedValueOnce(new CasinoWarGatewayError('Table closed.', 'table-closed', 503)).mockResolvedValueOnce(immediateRound) })
     render(<CasinoWarGame gateway={gateway} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     expect((await screen.findByRole('alert')).textContent).toContain('Table closed.')
-    expect((screen.getByRole('spinbutton', { name: 'Main bet' }) as HTMLInputElement).disabled).toBe(true)
-    expect((screen.getByRole('spinbutton', { name: 'Tie bet' }) as HTMLInputElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Place Main bet chip' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Place Tie bet chip' }) as HTMLButtonElement).disabled).toBe(true)
 
-    await user.click(screen.getByRole('button', { name: 'Retry' }))
-    await user.click(await screen.findByRole('button', { name: 'Change bet' }))
+    await user.click(screen.getByRole('button', { name: 'Retry deal' }))
+    await user.click(await screen.findByRole('button', { name: 'Continue' }))
     const calls = vi.mocked(gateway.createRound).mock.calls
     expect(calls[1]?.[2]?.idempotencyKey).toBe(calls[0]?.[2]?.idempotencyKey)
-    expect(screen.getByRole('spinbutton', { name: 'Main bet' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Place.*Main bet/ })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Deal' })).toBeTruthy()
   })
 
@@ -287,18 +299,28 @@ describe('CasinoWarGame', () => {
     })
     render(<CasinoWarGame gateway={gateway} />)
 
+    await placeChip(user, 'Main', 1)
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     await user.click(await screen.findByRole('button', { name: 'Go to War' }))
     expect((await screen.findByRole('alert')).textContent).toContain('Connection interrupted.')
     expect((screen.getByRole('button', { name: 'Surrender' }) as HTMLButtonElement).disabled).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Retry Go to War' }))
 
-    await screen.findByRole('button', { name: 'Change bet' })
+    await screen.findByRole('button', { name: 'Continue' })
     const calls = vi.mocked(gateway.decide).mock.calls
     expect(calls[1]?.[1]).toBe('go-to-war')
     expect(calls[1]?.[2]?.idempotencyKey).toBe(calls[0]?.[2]?.idempotencyKey)
   })
 })
+
+async function placeChip(user: ReturnType<typeof userEvent.setup>, kind: 'Main' | 'Tie', value: 1 | 2 | 5 | 10 | 25 | 50) {
+  const place = await screen.findByRole('button', { name: `Place ${kind} bet chip` }) as HTMLButtonElement
+  const selector = screen.getByRole('button', { name: /Select chip value, currently/ }) as HTMLButtonElement
+  await waitFor(() => expect(selector.disabled).toBe(false))
+  await user.click(selector)
+  await user.click(screen.getByRole('button', { name: `Select R${value.toFixed(2)} chip` }))
+  await user.click(place)
+}
 
 function fakeGateway(overrides: Partial<CasinoWarGateway> = {}): CasinoWarGateway {
   return {

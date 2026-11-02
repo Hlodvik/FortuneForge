@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync } from 'node:fs'
+
+const root = new URL('../../../', import.meta.url)
+const evidence = JSON.parse(readFileSync(new URL('before-source-evidence.json', import.meta.url), 'utf8'))
+const source = readFileSync(new URL(evidence.path, root), 'utf8').replaceAll('\r\n', '\n')
+const helperPath = 'fortuneforge.client/src/features/slots/audio/audioPreferences.ts'
+const helper = readFileSync(new URL(helperPath, root), 'utf8').replaceAll('\r\n', '\n')
+const imports = "import { loadAudioPreferences, saveAudioPreferences, type AudioPreferences } from '../audio/audioPreferences'\nexport type { AudioMode, AudioPreferences } from '../audio/audioPreferences'\n\n"
+assert(source.includes(imports))
+assert(source.includes('    saveAudioPreferences(preferences)'))
+const reconstructed = source.replace(imports, evidence.originalBlock)
+  .replace('    saveAudioPreferences(preferences)', evidence.persistBlock)
+assert.equal(createHash('sha256').update(reconstructed).digest('hex'), evidence.normalizedSha256)
+assert(source.includes(evidence.preexistingGate))
+
+const loadBlock = helper.slice(0, helper.indexOf('export function saveAudioPreferences'))
+  .replace('export function loadAudioPreferences', 'function loadAudioPreferences')
+assert.equal(loadBlock, evidence.originalBlock)
+const saveBody = helper.slice(helper.indexOf('export function saveAudioPreferences'))
+  .replace(/^export function saveAudioPreferences\(preferences: AudioPreferences\): void \{\n/, '').replace(/\n\}\n$/, '')
+assert.equal(saveBody, evidence.persistBlock.split('\n').map(line => line.slice(2)).join('\n'))
+
+const result = {
+  unchangedReadPolicyAndTypes: true,
+  unchangedWritePolicy: true,
+  unchangedPlaybackAndExistingDirtyGate: true,
+  oldPublicTypeExportsPreserved: true,
+  source: evidence.path,
+  helper: helperPath,
+}
+writeFileSync(new URL('extraction-preservation.json', import.meta.url), JSON.stringify(result, null, 2) + '\n')
+console.log(JSON.stringify(result))

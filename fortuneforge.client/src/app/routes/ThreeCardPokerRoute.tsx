@@ -8,7 +8,7 @@ import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 export function AuthenticatedThreeCardPokerRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/cards/three-card-poker')
   if (isLoading || (account === null && error === null)) {
-    return <InGameShell authenticated title="Three Card Poker" theme="cards" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body">
+    return <InGameShell authenticated title="Three Card Poker" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body">
       <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/three-card-poker')} statusLabel="Loading" />
     </InGameShell>
   }

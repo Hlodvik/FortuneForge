@@ -1,25 +1,57 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.RoundAudit;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
 
 public sealed partial class FirestoreAccountStore
 {
-    internal const long SlotOutcomeSchemaVersion = 5;
+    internal const long SlotOutcomeSchemaVersion = 7;
 
     public Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,
         SpinResult result,
-        long chargedWagerCents,
-        bool isFreeSpin,
-        string? activeFreeSpinFeatureMode,
+        SlotSpinAdmission admission,
         DateTime createdAtUtc,
         CancellationToken cancellationToken)
     {
+        if (admission.AdmissionId == Guid.Empty || result.EngineAudit is null ||
+            result.WagerPoints != admission.WagerPoints ||
+            result.SpecialBoostApplied != admission.SpecialBoostApplied ||
+            result.EngineAudit.PityMissesBefore != admission.PityMissesBefore ||
+            result.EngineAudit.EnergyBalanceBefore != admission.EnergyBalance ||
+            result.EngineAudit.GeneratedAtUtc < admission.StartedAtUtc ||
+            createdAtUtc < result.EngineAudit.GeneratedAtUtc)
+        {
+            throw new InvalidOperationException("Slot outcome has no matching admission or engine audit.");
+        }
+        if (admission.MathModelId is not null &&
+            (result.PaytableId != admission.MathModelId ||
+             result.EngineAudit.BaseGame.Math.PaytableId != admission.MathModelId ||
+             result.IsFreeSpin != admission.IsFreeSpin ||
+             result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin))
+            throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
+        var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+        if (isMidnightGame &&
+            (admission.IsFreeSpin != (admission.BonusRound is not null) ||
+             admission.BonusRound?.FeatureMode != admission.FreeSpinFeatureMode ||
+             result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode))
+            throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted bonus mode.");
+        var engineOutcomeSha256 = isMidnightGame ? MidnightEngineOutcomeSha256(result) : null;
+
+        var chargedWagerCents = admission.ChargedWagerCents;
+        var isFreeSpin = admission.IsFreeSpin;
+        var activeFreeSpinFeatureMode = admission.FreeSpinFeatureMode;
+        var admissionReference = SlotSpinAdmissionDocument(admission.AdmissionId);
+        var rulesSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(
+            JsonSerializer.Serialize(new { result.EngineAudit.BaseGame, result.EngineAudit.EffectiveGame,
+                result.EngineAudit.ReelSet, result.EngineAudit.SymbolSet, result.EngineAudit.Paytable,
+                result.EngineAudit.FeatureProfile }))));
         var resultReference = SlotSpinResultDocument(result.SpinId);
         var statisticsReference = StatisticsDocument(userId);
         var slotsCreditsReference = BalanceDocument(userId, SlotsCreditsCurrencyId);
@@ -48,6 +80,40 @@ public sealed partial class FirestoreAccountStore
                 var existingResult = await transaction.GetSnapshotAsync(
                     resultReference,
                     cancellationToken);
+                var admissionSnapshot = await transaction.GetSnapshotAsync(
+                    admissionReference,
+                    cancellationToken);
+                if (!admissionSnapshot.Exists ||
+                    admissionSnapshot.GetValue<string>("userId") != userId ||
+                    admissionSnapshot.GetValue<string>("gameId") != result.GameId ||
+                    admissionSnapshot.GetValue<long>("effectiveWagerPoints") != result.WagerPoints ||
+                    admissionSnapshot.GetValue<long>("chargedWagerCents") != chargedWagerCents ||
+                    admissionSnapshot.GetValue<bool>("isFreeSpin") != isFreeSpin ||
+                    admissionSnapshot.GetValue<bool>("specialBoostApplied") != result.SpecialBoostApplied ||
+                    (ReadString(admissionSnapshot, "mathModelId") ?? string.Empty) != (admission.MathModelId ?? string.Empty) ||
+                    (isMidnightGame && ReadString(admissionSnapshot, "freeSpinFeatureMode") != admission.FreeSpinFeatureMode) ||
+                    admissionSnapshot.GetValue<long>("pityMissesBefore") != admission.PityMissesBefore)
+                {
+                    throw new InvalidOperationException("Slot admission receipt does not match the engine result.");
+                }
+                var admissionStatus = admissionSnapshot.GetValue<string>("status");
+                if (admissionStatus != "admitted" &&
+                    !(admissionStatus == "settled" && existingResult.Exists &&
+                        admissionSnapshot.GetValue<string>("spinId") == result.SpinId.ToString("N")))
+                {
+                    throw new InvalidOperationException("Slot admission has already been used.");
+                }
+                if (isMidnightGame && existingResult.Exists)
+                {
+                    if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
+                        ReadString(existingResult, "admissionId") != admission.AdmissionId.ToString("N") ||
+                        ReadString(existingResult, "gameId") != result.GameId ||
+                        ReadString(existingResult, "engineOutcomeSha256") != engineOutcomeSha256 ||
+                        ReadString(existingResult, "midnightSettlementJson") is not { } frozenJson)
+                        throw new InvalidOperationException("The Midnight Vault retry differs from its original engine outcome or has no frozen settlement.");
+                    return JsonSerializer.Deserialize<SlotSpinSettlement>(frozenJson)
+                        ?? throw new InvalidOperationException("The original Midnight Vault settlement is invalid.");
+                }
                 var slotsCreditsSnapshot = await transaction.GetSnapshotAsync(
                     slotsCreditsReference,
                     cancellationToken);
@@ -98,6 +164,12 @@ public sealed partial class FirestoreAccountStore
                         checked((int)ReadLong(existingResult, "sealFreeSpinsAwarded")));
                 }
 
+                if (ReadString(guardSnapshot, "activeAdmissionId") != admission.AdmissionId.ToString("N") ||
+                    ReadLong(guardSnapshot, "consecutiveFiveMisses") != admission.PityMissesBefore)
+                {
+                    throw new InvalidOperationException("Slot spin guard no longer matches the admitted spin.");
+                }
+
                 if (availableCents < chargedWagerCents)
                 {
                     throw new InsufficientSlotCreditsException(
@@ -110,11 +182,41 @@ public sealed partial class FirestoreAccountStore
                     specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
                     result.EnergyAwarded,
                     result.Payout);
-                var sealSettlement = SettleSealCollections(
-                    guardSnapshot,
-                    result,
-                    energyBonus.MultiplierApplied);
+                var piratesGemCountsBefore = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
+                    ? ReadLongMap(guardSnapshot, "sealCounts") : null;
+                var piratesGemWagerCentsBefore = piratesGemCountsBefore is not null
+                    ? ReadSealWagerCents(guardSnapshot) : null;
+                var isMidnight = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+                SealCollectionSettlement sealSettlement;
+                if (isMidnight)
+                {
+                    var before = ReadMidnightRoundsField(admissionSnapshot, "midnightBonusRoundsBefore");
+                    var afterConsumption = ReadMidnightRoundsField(admissionSnapshot, "midnightBonusRoundsAfter");
+                    var selected = admissionSnapshot.GetValue<bool>("isFreeSpin")
+                        ? ReadMidnightRound(admissionSnapshot.GetValue<Dictionary<string, object>>("midnightAdmittedRound")) : null;
+                    var storedQueue = ReadMidnightBonusRounds(guardSnapshot, currentFreeGames, result.PointValueInCents);
+                    if (!before.SequenceEqual(admission.BonusRoundsBeforeAdmission) || selected != admission.BonusRound ||
+                        selected?.FeatureMode != admission.FreeSpinFeatureMode ||
+                        result.EngineAudit.FreeSpinFeatureMode != selected?.FeatureMode ||
+                        !storedQueue.SequenceEqual(afterConsumption))
+                        throw new InvalidOperationException("The admitted Midnight Vault bonus round does not match its saved queue.");
+                    sealSettlement = SettleMidnightBonusRounds(guardSnapshot, result, before, afterConsumption, selected);
+                }
+                else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied);
+                PiratesGemSettlementEvidence? piratesGemEvidence = piratesGemCountsBefore is null
+                    ? null
+                    : new(
+                        PiratesGemBonus.RuleVersion,
+                        piratesGemCountsBefore,
+                        piratesGemWagerCentsBefore!,
+                        new Dictionary<string, long>(sealSettlement.SealCounts, StringComparer.Ordinal),
+                        new Dictionary<string, long>(sealSettlement.SealWagerCents, StringComparer.Ordinal),
+                        sealSettlement.FreeSpinsAwarded,
+                        sealSettlement.FreeSpinFeatureMode,
+                        sealSettlement.FreeSpinWagerPoints);
                 var settledPayout = energyBonus.Payout;
+                var outcomeFindings = SlotRoundAudit.Check(result, settledPayout);
+                var outcomeVerified = !outcomeFindings.Any(finding => finding.Severity == "error");
                 var payoutCents = RandMoney.PointsToCents(
                     settledPayout.TotalPoints,
                     result.PointValueInCents);
@@ -129,13 +231,16 @@ public sealed partial class FirestoreAccountStore
                 var balanceAfterPayoutRand = RandMoney.CentsToRand(balanceAfterPayoutCents);
                 var totalFreeSpinsAwarded = checked(
                     result.FreeSpinsAwarded + sealSettlement.FreeSpinsAwarded);
-                var freeGamesRemaining = checked(
-                    (isFreeSpin ? currentFreeGames : 0) + totalFreeSpinsAwarded);
+                var midnightProgress = sealSettlement.MidnightProgress;
+                var freeGamesRemaining = midnightProgress is null
+                    ? checked((isFreeSpin ? currentFreeGames : 0) + totalFreeSpinsAwarded)
+                    : midnightProgress.Rounds.Sum(round => (long)round.RemainingSpins);
                 var specialPointsBalance = checked(currentSpecialPoints + result.SpecialPointsAwarded);
                 var energyBalance = energyBonus.FinalEnergyBalance;
                 var nextFreeSpinFeatureMode = freeGamesRemaining > 0
                     ? sealSettlement.FreeSpinFeatureMode ?? (isFreeSpin ? activeFreeSpinFeatureMode : null)
                     : null;
+                if (midnightProgress is not null) nextFreeSpinFeatureMode = midnightProgress.Rounds.FirstOrDefault()?.FeatureMode;
                 var nextFreeSpinWagerPoints = freeGamesRemaining > 0
                     ? sealSettlement.FreeSpinWagerPoints > 0
                         ? sealSettlement.FreeSpinWagerPoints
@@ -146,15 +251,60 @@ public sealed partial class FirestoreAccountStore
                         nextFreeSpinWagerPoints,
                         result.PointValueInCents)
                     : 0;
+                var midnightSettlement = midnightProgress is null ? null : new SlotSpinSettlement(
+                    balanceAfterPayoutRand, midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
+                    checked((int)specialPointsBalance), energyBalance, settledPayout, energyBonus.MultiplierApplied,
+                    energyBonus.PayoutMultiplier, nextFreeSpinWagerPoints > 0 ? nextFreeSpinWagerPoints : null,
+                    sealSettlement.Collections, nextFreeSpinFeatureMode, sealSettlement.FreeSpinsAwarded)
+                {
+                    BonusRound = midnightProgress.Rounds.FirstOrDefault(),
+                    QueuedBonusRounds = midnightProgress.Rounds.Skip(1).ToArray(),
+                    AwardedBonusRounds = midnightProgress.AwardedRounds
+                };
 
-                transaction.Create(resultReference, new Dictionary<string, object>
+                if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId))
+                    FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                        catalogueGameId, result.SpinId.ToString("N"), userId, chargedWagerCents, payoutCents,
+                        admission.StartedAtUtc, createdAtUtc, "slotSpinResults", result.SpinId.ToString("N"),
+                        new { result, admissionId = admission.AdmissionId, admission.StartedAtUtc,
+                            admission.RequestId, engineAudit = result.EngineAudit, rulesSha256,
+                            settledPayout, isFreeSpin, activeFreeSpinFeatureMode,
+                            admittedMathModelId = admission.MathModelId,
+                             midnightBonusEvidence = sealSettlement.MidnightEvidence,
+                            energyBonus.PayoutMultiplier, piratesGemEvidence,
+                            outcomeSchemaVersion = SlotOutcomeSchemaVersion },
+                        "slot-reels-paylines-and-features-v1", outcomeVerified,
+                        SlotRoundAudit.AuditorVersion, outcomeFindings);
+
+                if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var activityGameId))
+                {
+                    var participation = FortuneForge.Games.Abstractions.Analytics.AcceptedGameParticipationDocuments.Create(
+                        userId, activityGameId, createdAtUtc);
+                    transaction.Set(database.Collection("catalogPlayerActivity").Document(participation.DocOwnerKey)
+                        .Collection("games").Document(participation.GameId), participation.Fields, SetOptions.MergeAll);
+                }
+
+                transaction.Update(admissionReference, new Dictionary<string, object>
+                {
+                    ["status"] = "settled",
+                    ["spinId"] = result.SpinId.ToString("N"),
+                    ["engineGeneratedAtUtc"] = Timestamp.FromDateTime(result.EngineAudit.GeneratedAtUtc),
+                    ["settledAtUtc"] = Timestamp.FromDateTime(createdAtUtc),
+                    ["pityMissesAfter"] = result.ConsecutiveFiveMisses,
+                    ["rulesSha256"] = rulesSha256
+                });
+
+                var resultData = new Dictionary<string, object>
                 {
                     ["spinId"] = result.SpinId.ToString("N"),
+                    ["admissionId"] = admission.AdmissionId.ToString("N"),
+                    ["requestId"] = admission.RequestId ?? string.Empty,
                     ["userId"] = userId,
                     ["gameId"] = result.GameId,
                     ["reelSetId"] = result.ReelSetId,
                     ["symbolSetId"] = result.SymbolSetId,
                     ["paytableId"] = result.PaytableId,
+                    ["mathModelId"] = admission.MathModelId ?? string.Empty,
                     ["reelStops"] = result.ReelStops.Select(static stop => (long)stop).ToArray(),
                     ["visibleSymbolWindow"] = CreateVisibleSymbolWindowData(result.Reels),
                     ["payoutBreakdown"] = CreatePayoutBreakdownData(settledPayout),
@@ -180,10 +330,21 @@ public sealed partial class FirestoreAccountStore
                     ["specialBoostApplied"] = result.SpecialBoostApplied,
                     ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
                     ["fiveMatchPityTriggered"] = result.FiveMatchPityTriggered,
+                    ["pityMissesBefore"] = admission.PityMissesBefore,
                     ["outcomeSchemaVersion"] = SlotOutcomeSchemaVersion,
+                    ["engineVersion"] = result.EngineAudit.EngineVersion,
+                    ["rulesSha256"] = rulesSha256,
+                    ["admittedAtUtc"] = Timestamp.FromDateTime(admission.StartedAtUtc),
+                    ["engineGeneratedAtUtc"] = Timestamp.FromDateTime(result.EngineAudit.GeneratedAtUtc),
                     ["result"] = isWin ? "win" : "loss",
                     ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
-                });
+                };
+                if (midnightSettlement is not null)
+                {
+                    resultData["engineOutcomeSha256"] = engineOutcomeSha256!;
+                    resultData["midnightSettlementJson"] = JsonSerializer.Serialize(midnightSettlement);
+                }
+                transaction.Create(resultReference, resultData);
                 transaction.Update(slotsCreditsReference, new Dictionary<string, object>
                 {
                     ["available"] = balanceAfterPayoutCents / RandMoney.CentsPerRand,
@@ -266,17 +427,20 @@ public sealed partial class FirestoreAccountStore
                             createdAtUtc));
                 }
 
-                if (totalFreeSpinsAwarded > 0 ||
+                if (midnightProgress is not null || totalFreeSpinsAwarded > 0 ||
                     sealSettlement.SealsChanged ||
                     (!isFreeSpin && currentFreeGames > 0) ||
                     (isFreeSpin && currentFreeGames == 0 && !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode)))
                 {
-                    transaction.Set(guardReference, new Dictionary<string, object>
+                    var guardData = new Dictionary<string, object>
                     {
                         ["userId"] = userId,
                         ["freeSpinWagerPoints"] = nextFreeSpinWagerPoints,
                         ["freeSpinWagerCents"] = nextFreeSpinWagerCents,
                         ["freeSpinFeatureMode"] = nextFreeSpinFeatureMode ?? string.Empty,
+                        ["freeSpinMathModelId"] = freeGamesRemaining > 0 ? admission.MathModelId ?? string.Empty : string.Empty,
+                        ["activeAdmissionId"] = string.Empty,
+                        ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
                         ["sealCounts"] = sealSettlement.SealCounts.ToDictionary(
                             pair => pair.Key,
                             pair => (object)pair.Value,
@@ -285,6 +449,18 @@ public sealed partial class FirestoreAccountStore
                             pair => pair.Key,
                             pair => (object)pair.Value,
                             StringComparer.Ordinal),
+                        ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
+                    };
+                    if (midnightProgress is not null)
+                        foreach (var pair in MidnightBonusGuardData(midnightProgress.Rounds, result.PointValueInCents)) guardData[pair.Key] = pair.Value;
+                    transaction.Set(guardReference, guardData, SetOptions.MergeAll);
+                }
+                else
+                {
+                    transaction.Set(guardReference, new Dictionary<string, object>
+                    {
+                        ["activeAdmissionId"] = string.Empty,
+                        ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
                         ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
                     }, SetOptions.MergeAll);
                 }
@@ -376,9 +552,10 @@ public sealed partial class FirestoreAccountStore
                             createdAtUtc));
                 }
 
+                if (midnightSettlement is not null) return midnightSettlement;
                 return new SlotSpinSettlement(
                     balanceAfterPayoutRand,
-                    checked((int)freeGamesRemaining),
+                    midnightProgress is null ? checked((int)freeGamesRemaining) : midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
                     checked((int)specialPointsBalance),
                     energyBalance,
                     settledPayout,
@@ -387,10 +564,27 @@ public sealed partial class FirestoreAccountStore
                     nextFreeSpinWagerPoints > 0 ? nextFreeSpinWagerPoints : null,
                     sealSettlement.Collections,
                     nextFreeSpinFeatureMode,
-                    sealSettlement.FreeSpinsAwarded);
+                    sealSettlement.FreeSpinsAwarded)
+                {
+                    BonusRound = midnightProgress?.Rounds.FirstOrDefault(),
+                    QueuedBonusRounds = midnightProgress?.Rounds.Skip(1).ToArray() ?? [],
+                    AwardedBonusRounds = midnightProgress?.AwardedRounds ?? []
+                };
             },
             cancellationToken: cancellationToken);
     }
+
+    private static string MidnightEngineOutcomeSha256(SpinResult result) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+        {
+            result.SpinId, result.GameId, result.ReelSetId, result.SymbolSetId, result.PaytableId,
+            result.WagerPoints, result.PointValueInCents, result.ReelStops, result.Reels, result.Payout,
+            result.ConsecutiveFiveMisses, result.FiveMatchPityTriggered, result.FreeSpinsAwarded,
+            result.SpecialPointsAwarded, result.EnergyAwarded, result.SpecialBoostApplied,
+            result.MonkeyPawCount, result.MoneyGrabPoints, result.BananaBonusPoints,
+            SealsAwarded = result.SealsAwarded.OrderBy(pair => pair.Key, StringComparer.Ordinal),
+            EngineAudit = result.EngineAudit
+        }))));
 
     internal static Dictionary<string, object> CreateVisibleSymbolWindowData(
         IReadOnlyList<IReadOnlyList<string>> reels) => new()

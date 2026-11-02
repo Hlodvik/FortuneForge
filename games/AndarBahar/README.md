@@ -26,7 +26,7 @@ This solo variant accepts one main-side wager before turning over the Joker. The
 | Andar, dealt first | 0.9:1 | R19 | 429/833 | 97.8511404562% |
 | Bahar, dealt second | 1:1 | R20 | 404/833 | 96.9987995198% |
 
-Winning returns include the stake. Losing bets return zero. Wagers are R0.50–R100 in R0.50 increments; all accounting uses exact integer cents, including the R0.95 return on a winning R0.50 Andar wager. [Engine documentation](src/FortuneForge.Games.AndarBahar/README.md) includes the authoritative rule source, combinatorial derivation, house edges, ordering and settlement contract.
+Winning returns include the stake. Losing bets return zero. New wagers are R0.50–R50 in R0.50 increments; all accounting uses exact integer cents, including the R0.95 return on a winning R0.50 Andar wager. [Engine documentation](src/FortuneForge.Games.AndarBahar/README.md) includes the authoritative rule source, combinatorial derivation, house edges, ordering and settlement contract.
 
 ## Digital reference and presentation
 

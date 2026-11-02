@@ -10,6 +10,7 @@ export type SlotCollectionDefinition = {
   requiredCount: number
   /** Plain-language outcome shown when players inspect this collection. */
   rewardDescription?: string
+  progressDescription?: string
   containerImage?: string
 }
 
@@ -17,6 +18,7 @@ export type SlotCollectionPresentation =
   | 'seal-pile'
   | 'juice-glass'
   | 'gem-hoard'
+  | 'vault-access'
   | 'divine-offering'
   | 'tackle-creel'
   | 'frontier-trail'
@@ -84,9 +86,12 @@ export type SlotHelpSection = {
 export type SlotHelpDefinition = {
   paylineCount: number
   paylinePatternIds?: readonly number[]
+  fiveMatchPayoutNote?: string
+  fourMatchPayoutNote?: string
   freeGames?: {
     awardedSpins: number
     requiredSymbols: number
+    badge?: string
     title?: string
     symbolLabel?: string
     awardLabel?: string

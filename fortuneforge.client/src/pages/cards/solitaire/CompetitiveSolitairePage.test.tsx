@@ -33,8 +33,8 @@ describe('Solitaire presentation', () => {
 
   it('defaults the pre-game choice to draw 3 and offers draw 1', () => {
     const markup = render({ kind: 'ready', session: { kind: 'idle' } })
-    expect(markup).toContain('<option value="3" selected="">Turn 3</option>')
-    expect(markup).toContain('<option value="1">Turn 1</option>')
+    expect(markup).toContain('<option value="3" selected="">Draw 3</option>')
+    expect(markup).toContain('<option value="1">Draw 1</option>')
     expect(markup).toContain('Play free')
   })
 
@@ -104,7 +104,7 @@ describe('Solitaire presentation', () => {
     expect(markup.indexOf('solitaire-match__status')).toBeLessThan(markup.indexOf('solitaire-board'))
     expect(markup.indexOf('aria-label="Board controls"')).toBeLessThan(markup.indexOf('solitaire-board'))
     expect(markup.match(/aria-label="Undo"/g)).toHaveLength(1)
-    expect(markup.match(/aria-label="Hint"/g)).toHaveLength(1)
+    expect(markup).not.toContain('aria-label="Hint"')
     expect(markup.indexOf('solitaire-board')).toBeLessThan(markup.indexOf('Pause · 10:00 left'))
     expect(markup.indexOf('Pause · 10:00 left')).toBeLessThan(markup.indexOf('Submit game'))
     expect(markup).not.toMatch(/authoritative/i)
@@ -230,6 +230,7 @@ describe('Solitaire presentation', () => {
       { freeGame: createLocalSolitaireGame(42, 3), freeComplete: true },
     )
     expect(markup).toContain('Game complete')
+    expect(markup).toContain('aria-label="Hint"')
     expect(markup).toContain('Deck cleared')
     expect(markup).toContain('Every card reached a foundation')
     expect(markup).toContain('Replay')
@@ -273,7 +274,7 @@ describe('Solitaire presentation', () => {
       },
     )
     expect(markup).toContain('Choose your draw')
-    expect(markup).toContain('Turn 1')
+    expect(markup).toContain('Draw 1')
     expect(markup).toContain('aria-pressed="true"')
     expect(markup).toContain('Start new game')
   })

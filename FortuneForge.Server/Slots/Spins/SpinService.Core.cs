@@ -15,6 +15,7 @@ public sealed partial class SpinService(
     IPayoutCalculator payoutCalculator,
     IRandomIndexSource random)
 {
+    public const string AuditEngineVersion = "shared-slots-engine-v1";
     private const int MaximumPityGenerationAttempts = 10_000;
     private const string MonkeyPawSymbolId = "PAW";
     private const string BananaSymbolId = "BANANA";
@@ -53,7 +54,7 @@ public sealed partial class SpinService(
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
     }
 
-    public void ValidateRequest(string gameId, long wagerPoints)
+    public void ValidateRequest(string gameId, long wagerPoints, bool useFreeSpin = false)
     {
         if (string.IsNullOrWhiteSpace(gameId))
         {
@@ -62,7 +63,10 @@ public sealed partial class SpinService(
 
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        ValidateWager(game, wagerPoints);
+        if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
+            MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else
+            ValidateWager(game, wagerPoints);
     }
 
     public int GetSpecialBoostCost(string gameId)

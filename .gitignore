@@ -25,7 +25,28 @@ coverage/
 **/.artifacts/
 /tmp/
 /.tmp/
+**/.tmp/
+**/.test-temp/
+**/.test-tmp/
+**/.e2e-artifacts/
+**/.vite-temp/
 /.baccarat-test-temp/
+
+# Reviewed historical captures. Authored sources are retained in tools/qa-history;
+# active fixtures and approved artwork inputs are retained under tools/.
+# Keep these exact directories on disk; future output directories stay visible.
+/output/artwork/hero/
+/output/artwork/midnight-vault-2026-10-31/
+/output/design-previews/dark-pages/
+/output/game-loading-review/parent/
+/output/home-catalogue-review/
+/output/home-navigation-review/
+/output/home-transition-review/
+/output/maintenance-2026-10-31/
+/output/maintenance-2026-11-01/
+/output/release-readiness-2026-11-02/
+/output/integration-2026-11-02/
+/output/maintenance-2026-11-02/midnight-vault-integer-math/
 
 # Logs and local process output
 *.log

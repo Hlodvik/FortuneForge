@@ -2,6 +2,7 @@ import type {
   SlotSymbolDefinition,
   SlotSymbolGuideEntry,
   SlotSymbolSet,
+  SlotResponsiveImages,
 } from '../../../features/slots/config/symbolSets'
 import type { SlotSymbolId } from '../../../features/slots/types/slots'
 
@@ -25,11 +26,13 @@ const STATIC_THEME_SYMBOL_IDS = [
 ] as const satisfies readonly SlotSymbolId[]
 
 type StaticThemeSymbolId = (typeof STATIC_THEME_SYMBOL_IDS)[number]
+export type AdditionalThemeSymbolId = '8'
 type CollectionSymbolId = 'SEAL_SYNC' | 'SEAL_ROWS' | 'SEAL_PAW' | 'SEAL_RAND'
 type RandSymbolId = 'RAND_05' | 'RAND_1' | 'RAND_15' | 'RAND_2' | 'RAND_3' | 'RAND_4' | 'RAND_5'
 
 type ThemedSymbolSpec = {
   image: string
+  responsiveImages?: SlotResponsiveImages
   label: string
 }
 
@@ -37,6 +40,8 @@ export type ThemedSymbolSetOptions = {
   id: string
   serverSymbolSetId: string
   symbols: Readonly<Record<StaticThemeSymbolId, ThemedSymbolSpec>>
+  /** Extra ordinary symbols are registered only by games that supply their artwork. */
+  additionalSymbols?: Readonly<Partial<Record<AdditionalThemeSymbolId, ThemedSymbolSpec>>>
   valueToken: ThemedSymbolSpec
   energyEarnLabel: string
   collectorFirstValue: string
@@ -65,7 +70,18 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
       id,
       label: symbol.label,
       image: symbol.image,
+      ...(symbol.responsiveImages ? { responsiveImages: symbol.responsiveImages } : {}),
       animatedImage: symbol.image,
+    }
+  }
+  const additional = options.additionalSymbols?.['8']
+  if (additional) {
+    definitions['8'] = {
+      id: '8',
+      label: additional.label,
+      image: additional.image,
+      ...(additional.responsiveImages ? { responsiveImages: additional.responsiveImages } : {}),
+      animatedImage: additional.image,
     }
   }
   for (const [id, wagerMultiplier] of randSymbols) {
@@ -73,6 +89,7 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
       id,
       label: `${wagerMultiplier}× wager ${options.valueToken.label}`,
       image: options.valueToken.image,
+      ...(options.valueToken.responsiveImages ? { responsiveImages: options.valueToken.responsiveImages } : {}),
       animatedImage: options.valueToken.image,
       wagerMultiplier,
     }

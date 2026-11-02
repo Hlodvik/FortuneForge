@@ -1,0 +1,9 @@
+{
+  "name": "fortuneforge-catalogue-art-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "fortune-forge-workspace": "file:../..",
+    "sharp": "0.35.5"
+  }
+}

@@ -22,7 +22,7 @@ public sealed class AndarBaharHttpTests
             var client = app.GetTestClient();
             var status = await client.GetFromJsonAsync<AndarBaharStatusResponse>($"{Api}/status");
             Assert.Equal(.50m, status!.MinimumStake);
-            Assert.Equal(100m, status.MaximumStake);
+            Assert.Equal(50m, status.MaximumStake);
             Assert.Equal("development-practice-andar-first", status.Mode);
             Assert.Equal(HttpStatusCode.NoContent, (await client.GetAsync($"{Api}/rounds/latest")).StatusCode);
             client.DefaultRequestHeaders.Add("Idempotency-Key", "andar_http_fullflow_01");

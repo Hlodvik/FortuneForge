@@ -39,7 +39,6 @@
 }
 
 @media (max-height: 500px) {
-  .ff-2048-header { min-height: 2.8rem; padding-block: .3rem; }
   .ff-2048-title { padding-block: .25rem; }
   .ff-2048-title > div:first-child { display: none; }
   .ff-2048-title { justify-content: end; }

@@ -1,0 +1,37 @@
+import { readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
+import { resolve, relative } from 'node:path'
+
+const root = process.cwd()
+const output = resolve(root, 'output/maintenance-2026-11-01/craps-usability')
+const packageRoot = 'games/Craps/client/FortuneForge.Games.Craps.Client/src/'
+const owned = [
+  ...['CrapsGame.tsx', 'CrapsBetControls.tsx', 'CrapsGame.visual.test.tsx', 'CrapsBetControls.test.tsx',
+    'crapsCasino.css', 'crapsCasino.test.js', 'useCrapsTable.ts', 'useCrapsTable.behavior.test.tsx'].map(file => packageRoot + file),
+  'fortuneforge.client/e2e/ux-cycle/craps-betting.ux.spec.ts',
+]
+const hash = bytes => createHash('sha256').update(bytes).digest('hex')
+const before = JSON.parse((await readFile(resolve(output, 'before-source-hashes.json'), 'utf8')).replace(/^\uFEFF/, ''))
+const ownedSet = new Set(owned.map(file => file.toLowerCase()))
+const sourceComparison = []
+for (const item of before) {
+  const file = relative(root, item.Path).replaceAll('\\', '/')
+  const current = hash(await readFile(item.Path))
+  sourceComparison.push({ path: file, before: item.Hash.toLowerCase(), after: current, changed: current !== item.Hash.toLowerCase(), owned: ownedSet.has(file.toLowerCase()) })
+}
+const sourceHashes = await Promise.all(owned.map(async path => ({ path, sha256: hash(await readFile(resolve(root, path))) })))
+const git = args => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim()
+const result = {
+  capturedUtc: new Date().toISOString(), branch: git(['branch', '--show-current']), head: git(['rev-parse', 'HEAD']),
+  ownedFiles: sourceHashes, preExistingClientFilesChecked: sourceComparison.length,
+  unchangedUnownedClientFiles: sourceComparison.filter(file => !file.owned && !file.changed).length,
+  unexpectedClientChanges: sourceComparison.filter(file => !file.owned && file.changed),
+  sourceComparison,
+  limits: 'No whole-repository clean-tree assertion: the checkout contains extensive pre-existing/concurrent edits. This comparison covers the captured Craps client source/assets only.',
+}
+await writeFile(resolve(output, 'final-source-scope.json'), JSON.stringify(result, null, 2) + '\n')
+console.log(JSON.stringify({ branch: result.branch, head: result.head, ownedFiles: owned.length,
+  checked: result.preExistingClientFilesChecked, unchangedUnowned: result.unchangedUnownedClientFiles,
+  unexpectedChanges: result.unexpectedClientChanges }, null, 2))
+if (result.unexpectedClientChanges.length) process.exitCode = 1

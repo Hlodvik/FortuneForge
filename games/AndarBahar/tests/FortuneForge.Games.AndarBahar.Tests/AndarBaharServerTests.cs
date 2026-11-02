@@ -97,7 +97,7 @@ public sealed class AndarBaharServerTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync("player", new("andar", .50m), "andar_deleted_ledger_01"));
     }
     [Theory]
-    [InlineData("andar", 0)] [InlineData("andar", -.5)] [InlineData("andar", .25)] [InlineData("andar", 100.5)] [InlineData("tie", 1)] [InlineData("Andar", 1)]
+    [InlineData("andar", 0)] [InlineData("andar", -.5)] [InlineData("andar", .25)] [InlineData("andar", 50.5)] [InlineData("andar", 100.5)] [InlineData("tie", 1)] [InlineData("Andar", 1)]
     public async Task InvalidWagerNeverCreatesPracticeState(string side, double stake)
     {
         var path = NewPath();

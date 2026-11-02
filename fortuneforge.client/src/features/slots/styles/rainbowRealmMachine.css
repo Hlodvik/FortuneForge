@@ -365,13 +365,6 @@
   pointer-events: none;
 }
 
-.rainbow-realm-preview__navbar {
-  z-index: 12;
-  width: min(100% - clamp(1.25rem, 6vw, 6rem), 86rem);
-  padding-block: 0.9rem;
-  border-bottom-color: rgb(255 240 163 / 38%);
-}
-
 .rainbow-realm-preview__flower {
   position: absolute;
   z-index: 2;
@@ -724,16 +717,6 @@
 @media (max-width: 700px) {
   .rainbow-realm-preview__machine-wrap { width: 94vw; }
   .rainbow-realm-preview__flower { display: none; }
-
-  .rainbow-realm-preview__navbar {
-    width: calc(100% - 1.25rem);
-    padding-block: 0.65rem;
-  }
-
-  .rainbow-realm-preview__navbar .landing-brand { font-size: 0.78rem; }
-  .rainbow-realm-preview__navbar .landing-brand__spark { width: 1.65rem; height: 1.65rem; }
-  .rainbow-realm-preview__navbar .landing-nav { gap: 0.35rem; }
-  .rainbow-realm-preview__navbar .landing-nav__link { padding: 0.5rem 0.58rem; font-size: 0.58rem; }
 
   .rainbow-realm-machine__playfield { bottom: 36%; }
 

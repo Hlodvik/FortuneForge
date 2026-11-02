@@ -1,0 +1,182 @@
+.account-settings {
+  width: min(100%, 940px);
+  margin: clamp(32px, 5vw, 72px) auto 70px;
+}
+.account-settings--password { width: min(100%, 660px); }
+.home-lobby .account-settings__back-link { justify-self: start; color: #d5b477; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+
+.account-settings__heading { margin-bottom: 29px; }
+.account-settings__eyebrow,
+.account-settings__profile-label {
+  margin: 0 0 9px;
+  color: #c3a5e8;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.account-settings__heading h1 {
+  margin: 0;
+  color: #f5f1e9;
+  font-size: clamp(34px, 4vw, 52px);
+  font-weight: 600;
+  letter-spacing: -.045em;
+  line-height: 1.1;
+}
+.account-settings__heading > p:last-child { margin: 12px 0 0; color: #aaa6b3; font-size: 14px; }
+
+.account-settings__profile {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+  padding: 24px 27px;
+  border: 1px solid #34303b;
+  border-radius: 10px;
+  background: #14141a;
+}
+.account-settings__profile-avatar {
+  display: grid;
+  flex: 0 0 65px;
+  width: 65px;
+  height: 65px;
+  place-items: center;
+  border: 1px solid #765296;
+  border-radius: 50%;
+  color: #f3e5ff;
+  background: #322249;
+  font-family: Georgia, serif;
+  font-size: 26px;
+}
+.account-settings__profile > div { min-width: 0; }
+.account-settings__profile-label { display: block; }
+.account-settings__profile strong,
+.account-settings__profile small { display: block; overflow-wrap: anywhere; }
+.account-settings__profile strong { color: #faf5eb; font-size: 21px; font-weight: 600; }
+.account-settings__profile small { margin-top: 3px; color: #aaa6b3; font-size: 13px; }
+
+.account-settings__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+  margin-top: 20px;
+}
+.account-settings__actions > button,
+.account-settings__actions > a {
+  display: grid;
+  grid-template-columns: 43px minmax(0, 1fr) 15px;
+  align-items: center;
+  gap: 13px;
+  min-height: 104px;
+  padding: 18px;
+  border: 1px solid #34303b;
+  border-radius: 10px;
+  background: #14141a;
+  color: #f7f1e9;
+  text-align: left;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+.account-settings__actions > button:hover,
+.account-settings__actions > a:hover,
+.account-settings__actions > button[aria-expanded="true"] {
+  border-color: #8f769b;
+  background: #1d1a23;
+}
+.account-settings__action-icon {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  place-items: center;
+  border: 1px solid #45404c;
+  border-radius: 9px;
+  background: #211c29;
+  color: #d9b87e;
+  font-size: 21px;
+  line-height: 1;
+}
+.account-settings__actions strong,
+.account-settings__actions small { display: block; }
+.account-settings__actions strong { font-size: 14px; font-weight: 650; }
+.account-settings__actions small { margin-top: 5px; color: #aaa6b3; font-size: 11px; line-height: 1.4; }
+.account-settings__chevron { color: #c7aee3; font-size: 23px; }
+.account-settings__action--danger .account-settings__action-icon { color: #e3a5ad; }
+
+.account-settings__panel {
+  display: grid;
+  gap: 16px;
+  max-width: 100%;
+  margin-top: 20px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid #4b4053;
+  border-radius: 10px;
+  background: #19161e;
+}
+.account-settings__panel h2 { margin: 0; color: #f6f0e9; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
+.account-settings__panel > p { margin: 0; color: #b9b2be; font-size: 13px; line-height: 1.55; }
+.account-settings__panel label { display: grid; gap: 8px; color: #d7cfda; font-size: 11px; font-weight: 650; letter-spacing: .1em; text-transform: uppercase; }
+.account-settings__panel input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 14px;
+  border: 1px solid #4b4353;
+  border-radius: 7px;
+  outline: 0;
+  background: #101015;
+  color: #f8f4ec;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.account-settings__panel input:focus { border-color: #b795d9; box-shadow: 0 0 0 3px #b795d933; }
+.account-settings__form-split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 15px; }
+.account-settings__password-field { display: grid; align-content: start; gap: 12px; }
+.account-settings__panel > .password-match { color: #d9ac9f; }
+.account-settings__panel > .password-match.is-met { color: #8cdaa0; }
+.account-settings__hint { color: #a9a1af; font-size: 11px; line-height: 1.5; }
+.account-settings__form-error { padding: 11px 13px; border: 1px solid #8b4e59; border-radius: 7px; background: #3a2028; color: #ffd2d4 !important; }
+.account-settings__submit {
+  justify-self: start;
+  min-height: 43px;
+  padding: 10px 22px;
+  border: 1px solid #e0c18e;
+  border-radius: 7px;
+  color: #201a14;
+  background: linear-gradient(#edcf97, #bc965f);
+  font-size: 13px;
+  font-weight: 700;
+}
+.account-settings__submit:hover { filter: brightness(1.08); }
+.account-settings__submit:disabled { cursor: not-allowed; opacity: .65; }
+.account-settings__panel--danger { border-color: #65404a; }
+.account-settings__submit--danger { border-color: #b66875; color: #ffe8e9; background: #793847; }
+.account-settings__toast {
+  position: fixed;
+  z-index: 30;
+  right: 20px;
+  bottom: 20px;
+  max-width: calc(100vw - 40px);
+  padding: 12px 18px;
+  border: 1px solid #a98b60;
+  border-radius: 9px;
+  color: #f6e9d0;
+  background: #1e1920;
+  box-shadow: 0 10px 30px #0008;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  .account-settings { margin: 27px auto 35px; }
+  .account-settings__actions { grid-template-columns: 1fr; }
+  .account-settings__actions > button,
+  .account-settings__actions > a { min-height: 78px; }
+  .account-settings__form-split { grid-template-columns: 1fr; }
+  .account-settings__toast { bottom: calc(91px + env(safe-area-inset-bottom)); }
+}
+@media (max-width: 430px) {
+  .account-settings__profile { padding: 19px; }
+  .account-settings__profile-avatar { flex-basis: 52px; width: 52px; height: 52px; font-size: 21px; }
+  .account-settings__actions > button,
+  .account-settings__actions > a { padding: 14px; }
+}

@@ -142,8 +142,8 @@ public sealed partial class SpinService
         var normalizedRoll = Math.Clamp(roll, 0, 99);
         if (string.Equals(gameId, SlotSpecialRoundProfiles.PiratesFortuneGameId, StringComparison.Ordinal))
         {
-            // Fifteen-gem chests and twice-common gems make Broadside Runs much
-            // more frequent, so direct doubloon tokens stay deliberately rare.
+            // Variable gem triggers average about fifteen gems per feature, so
+            // direct doubloon tokens stay deliberately rare.
             return normalizedRoll switch
             {
                 < 91 => 0,
@@ -198,9 +198,8 @@ public sealed partial class SpinService
     {
         if (string.Equals(gameId, SlotSpecialRoundProfiles.PiratesFortuneGameId, StringComparison.Ordinal))
         {
-            // Pirates has no energy meter. Its 50% fixed gem chance keeps the
-            // smaller fifteen-gem chests meaningfully faster than the previous
-            // twenty-two-gem setup while keeping the feature RTP sustainable.
+            // Pirates has no energy meter. Its fixed 50% gem appearance chance
+            // feeds the separate, variable feature-trigger roll.
             return 50;
         }
 

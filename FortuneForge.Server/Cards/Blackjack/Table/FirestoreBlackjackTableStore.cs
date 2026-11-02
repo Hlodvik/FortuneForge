@@ -20,6 +20,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private readonly Func<ulong>? seedFactory;
     private readonly IMultiplayerMatchmaker matchmaking;
     private readonly IManagedTablePopulationDirector population;
+    private readonly bool multiplayerEnabled;
     private readonly string leaseOwner = $"blackjack-table-worker-{Guid.NewGuid():N}";
 
     public FirestoreBlackjackTableStore(FirestoreDb database) : this(database, null, null, null, null)
@@ -31,13 +32,15 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         Func<IReadOnlyList<string>>? deckFactory,
         Func<ulong>? seedFactory,
         IMultiplayerMatchmaker? multiplayerMatchmaker = null,
-        IManagedTablePopulationDirector? managedPopulationDirector = null)
+        IManagedTablePopulationDirector? managedPopulationDirector = null,
+        bool multiplayerEnabled = true)
     {
         this.database = database;
         this.deckFactory = deckFactory;
         this.seedFactory = seedFactory;
         matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
         population = managedPopulationDirector ?? new ManagedTablePopulationDirector();
+        this.multiplayerEnabled = multiplayerEnabled;
     }
 
     public async Task<BlackjackTableStoreResult> GetSessionAsync(
@@ -113,15 +116,16 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         var excluded = new HashSet<string>(StringComparer.Ordinal);
         for (var attempt = 0; attempt < 8; attempt++)
         {
-            var stateId = await FindAcceptingStateIdAsync(excluded, cancellationToken)
-                ?? CohortStateId(nowUtc, attempt);
+            var stateId = multiplayerEnabled
+                ? await FindAcceptingStateIdAsync(excluded, cancellationToken) ?? CohortStateId(nowUtc, attempt)
+                : BlackjackTableIds.Hash($"blackjack-solo-state\n{userId}\n{idempotencyKey}");
             try
             {
                 return await ExecuteRoutedAsync(
                     stateId,
                     userId,
                     idempotencyKey,
-                    true,
+                    multiplayerEnabled,
                     Command,
                     nowUtc,
                     cancellationToken);
@@ -367,7 +371,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -450,7 +454,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -603,9 +607,19 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             }
 
             foreach (var tableId in prior.TableIds.Except(state.Tables.Keys, StringComparer.Ordinal))
+            {
+                var previous = prior.TableSnapshots[tableId];
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "blackjack",
+                    $"{tableId}-round-{previous.RoundNumber}", previous.Version, nowUtc,
+                    new { previous, removed = true }, previous.Players.Where(player => !BlackjackManagedSeat.IsManaged(player)).Select(player => player.ActorId),
+                    "table-removed", tableId);
                 transaction.Delete(TableDocument(tableId));
+            }
             foreach (var table in state.Tables.Values)
             {
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "blackjack",
+                    $"{table.TableId}-round-{table.RoundNumber}", table.Version, nowUtc, table,
+                    table.Players.Where(player => !BlackjackManagedSeat.IsManaged(player)).Select(player => player.ActorId), "engine-state", table.TableId);
                 transaction.Set(TableDocument(table.TableId), new Dictionary<string, object>
                 {
                     ["stateId"] = stateId,
@@ -666,6 +680,20 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             transaction.Create(LedgerDocument(entry.Id), LedgerData(entry));
         foreach (var entry in journal.Revenue)
             transaction.Create(RevenueDocument(entry.RoundId), RevenueData(entry));
+        foreach (var audit in journal.RoundAudits)
+        {
+            FortuneForge.Server.RoundAudit.RoundAuditFirestore.Write(transaction, database, audit);
+            var startKnown = !audit.Summary.Findings.Any(finding => finding.Code == "round-start-unavailable");
+            foreach (var player in audit.Summary.Participants.Where(player => player.IsAccountBacked))
+            {
+                var analytics = FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.Create(new(
+                    audit.Summary.GameId, audit.Summary.RoundId, player.ActorId, "paid", true,
+                    audit.Summary.CompletedAtUtc, startKnown ? audit.Summary.StartedAtUtc : null,
+                    player.WagerCents, player.PayoutCents, "gameRoundAudits", audit.Summary.Id))!;
+                transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName)
+                    .Document(analytics.Id), analytics.Fields);
+            }
+        }
         foreach (var result in journal.Results)
         {
             transaction.Create(CardGameResultDocument(result.ResultId), CardGameResultData(result));
@@ -769,6 +797,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     }
 
     private static bool CanAcceptHuman(BlackjackTableLobbyState state) =>
+        state.Tables.Values.All(table => !table.SoloMode) &&
         state.Tables.Count <= 1 && ActiveHumanCount(state) < BlackjackManagedTablePolicy.MaximumOccupiedSeats;
 
     private static int ActiveHumanCount(BlackjackTableLobbyState state) => state.Sessions.Count(pair =>
@@ -962,14 +991,17 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private sealed record StateReferences(
         IReadOnlySet<string> TableIds,
         IReadOnlySet<string> TicketIds,
-        IReadOnlySet<string> UserIds)
+        IReadOnlySet<string> UserIds,
+        IReadOnlyDictionary<string, BlackjackTableState> TableSnapshots)
     {
         public static StateReferences Capture(BlackjackTableLobbyState state, string? requestedUserId) => new(
             state.Tables.Keys.ToHashSet(StringComparer.Ordinal),
             state.Tickets.Select(ticket => ticket.TicketId).ToHashSet(StringComparer.Ordinal),
             state.Sessions.Keys.Append(requestedUserId ?? string.Empty)
                 .Where(value => !string.IsNullOrEmpty(value))
-                .ToHashSet(StringComparer.Ordinal));
+                .ToHashSet(StringComparer.Ordinal),
+            state.Tables.ToDictionary(pair => pair.Key,
+                pair => JsonSerializer.Deserialize<BlackjackTableState>(JsonSerializer.Serialize(pair.Value, JsonOptions), JsonOptions)!, StringComparer.Ordinal));
     }
 }
 

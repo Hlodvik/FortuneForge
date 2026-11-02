@@ -1,0 +1,8 @@
+{
+  "name": "fortuneforge-midnight-vault-art-tools",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "sharp": "0.35.5"
+  }
+}

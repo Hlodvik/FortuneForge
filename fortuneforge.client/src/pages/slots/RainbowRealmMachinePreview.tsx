@@ -1,4 +1,4 @@
-import orchardBase from '../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.png'
+import orchardBase from '../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.webp'
 import pinwheelFlower from '../../assets/slots/backgrounds/optimized/rainbow-realm-pinwheel-flower.png'
 import energyBolt from '../../assets/slots/symbols/optimized/celestial-lightning-bolt.png'
 import cherry from '../../assets/slots/symbols/cherry.gif'
@@ -10,6 +10,7 @@ import orange from '../../assets/slots/symbols/orange.gif'
 import powerCoin from '../../assets/slots/symbols/optimized/rainbow-realm-power-coin.png'
 import watermelon from '../../assets/slots/symbols/watermelon-slice.gif'
 import { RainbowRealmMachine } from '../../features/slots/components/RainbowRealmMachine'
+import { InGameShell } from '../../components/InGameShell'
 import '../index.css'
 
 const previewReels = [
@@ -29,18 +30,7 @@ const rainbowRealmHud = {
 
 export function RainbowRealmMachinePreview() {
   return (
-    <div className="rainbow-realm-preview">
-      <header className="landing-bar rainbow-realm-preview__navbar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
-          <span>Fortune Forge</span>
-        </a>
-        <nav className="landing-nav" aria-label="Game navigation">
-          <a className="landing-nav__link" href="/home#home-lobby-games-title">All games</a>
-          <a className="landing-nav__link" href="/home">Home</a>
-        </nav>
-      </header>
-
+    <InGameShell reportTitle="Rainbow Realm" className="rainbow-realm-preview">
       <main className="rainbow-realm-preview__scene">
         <img className="rainbow-realm-preview__backdrop" src={orchardBase} alt="" />
         <img
@@ -137,6 +127,6 @@ export function RainbowRealmMachinePreview() {
           />
         </div>
       </main>
-    </div>
+    </InGameShell>
   )
 }

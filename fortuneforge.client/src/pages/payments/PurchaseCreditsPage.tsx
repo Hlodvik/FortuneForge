@@ -1,6 +1,7 @@
 import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { ForgeCoin, ForgeCreditAmount } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
+import { AccountLobbyShell } from '../account/AccountLobbyShell'
+import { BalanceTransactionHistory } from './BalanceTransactionHistory'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { creditsFormatter, errorMessage, formatMoney } from '../../features/payments/paymentPresentation'
 import { WithdrawalRequestCard } from '../../features/payments/WithdrawalRequestCard'
@@ -10,11 +11,21 @@ import {
 } from '../../features/payments/services/paymentsApi'
 import type { PaymentMarketOption } from '../../features/payments/services/paymentsApi'
 import '../index.css'
+import './balancePage.css'
 
+type BalanceSection = 'deposit' | 'withdrawal' | 'history' | null
+
+function sectionFromHash(): BalanceSection {
+  if (window.location.hash === '#withdrawal-request') return 'withdrawal'
+  if (window.location.hash === '#deposit') return 'deposit'
+  if (window.location.hash === '#transactions') return 'history'
+  return null
+}
 
 export function PurchaseCreditsPage() {
   const { account, error: accountError, isLoading: isAccountLoading, reload } =
-    useAuthenticatedAccount('/home/rand')
+    useAuthenticatedAccount('/balance')
+  const [section, setSection] = useState<BalanceSection>(sectionFromHash)
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof getPaymentCatalog>> | null>(null)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [selectedMarketCode, setSelectedMarketCode] = useState('')
@@ -30,6 +41,18 @@ export function PurchaseCreditsPage() {
   const [accountType, setAccountType] = useState('Cheque')
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() => {
+    const updateSection = () => setSection(sectionFromHash())
+    window.addEventListener('hashchange', updateSection)
+    return () => window.removeEventListener('hashchange', updateSection)
+  }, [])
+
+  function chooseSection(nextSection: Exclude<BalanceSection, null>) {
+    setSection(nextSection)
+    const hash = nextSection === 'withdrawal' ? '#withdrawal-request' : nextSection === 'history' ? '#transactions' : '#deposit'
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${hash}`)
+  }
 
   useEffect(() => {
     if (account === null) {
@@ -161,65 +184,58 @@ export function PurchaseCreditsPage() {
   }
 
   return (
-    <div className="player-page player-page--credits">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
-          <span>Fortune Forge</span>
-        </a>
-        <div className="landing-bar__account">
-          {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
-          <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Rand account navigation">
-            <a className="landing-nav__link" href="/home">Home</a>
-            <a className="landing-nav__link" href="#withdrawal-request">Withdraw</a>
-            <a className="landing-nav__link" href="/slots">Games</a>
-          </nav>
-        </div>
-      </header>
-
-      <main className="reload-main">
+    <AccountLobbyShell account={account} activeNav={null}>
+      <div className="balance-page">
         {isAccountLoading && <PageState label="Opening your Rand balance…" />}
         {!isAccountLoading && accountError !== null && (
           <PageError message={accountError} onRetry={reload} />
         )}
-        {!isAccountLoading && account !== null && catalog === null && catalogError === null && (
-          <PageState label="Loading regional payment options…" />
-        )}
-        {!isAccountLoading && account !== null && catalogError !== null && (
-          <PageError message={catalogError} onRetry={() => window.location.reload()} />
-        )}
-        {!isAccountLoading && account !== null && catalog !== null && market !== null && (
+        {!isAccountLoading && account !== null && (
           <>
-          <article className="reload-card" id="purchase-credits">
-            <section className="reload-card__hero">
-              <div className="reload-card__hero-copy">
-                <p className="account-eyebrow">Add Rand</p>
-                <h1>Refill your fortune.</h1>
-                <p className="reload-card__intro">
-                  Enter the exact whole-number amount you want to load. The server creates a
-                  persistent invoice linked to your account and adds the same Rand amount after payment.
-                </p>
-                {catalog.isMock && (
-                  <div className="reload-card__preview-note" role="note">
-                    <span aria-hidden="true">⚠</span>
-                    <p><strong>Mock checkout</strong>Do not send real money to the test bank details.</p>
-                  </div>
-                )}
+            <header className="balance-page__heading">
+              <div>
+                <p className="balance-page__eyebrow">Your account</p>
+                <h1>Balance</h1>
+                <p>Manage your Rand and review account transactions.</p>
               </div>
-              <div className="reload-card__coin-vault" aria-hidden="true">
-                <span className="reload-card__orbit reload-card__orbit--outer" />
-                <span className="reload-card__orbit reload-card__orbit--inner" />
-                <span className="reload-card__coin"><ForgeCoin /></span>
-                <small>South African rand</small>
-              </div>
+              <div className="balance-page__alerts"><PaymentAlertsMenu /></div>
+            </header>
+
+            <section className="balance-page__available" aria-label="Available balance">
+              <span>Available balance</span>
+              <strong>R{creditsFormatter.format(account.balances.slotsCredits)}</strong>
+              <small>South African rand</small>
             </section>
 
-            <section className="reload-card__balances" aria-label="Current purchase context">
-              <article><span>Current balance</span><strong>R{creditsFormatter.format(account.balances.slotsCredits)}</strong><small>South African rand</small></article>
-              <article><span>Selected market</span><strong>{market.code}</strong><small>{market.displayName}</small></article>
-              <article><span>Payment currency</span><strong>{market.currency}</strong><small>Recorded on the invoice</small></article>
-            </section>
+            <nav className="balance-page__actions" aria-label="Balance actions">
+              <button type="button" aria-pressed={section === 'deposit'} onClick={() => chooseSection('deposit')}>
+                <span className="balance-page__action-icon" aria-hidden="true">↓</span>
+                <span><strong>Deposit</strong><small>Add Rand to your balance</small></span>
+                <span className="balance-page__action-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button type="button" aria-pressed={section === 'withdrawal'} onClick={() => chooseSection('withdrawal')}>
+                <span className="balance-page__action-icon" aria-hidden="true">↑</span>
+                <span><strong>Withdrawal</strong><small>Request a bank payout</small></span>
+                <span className="balance-page__action-arrow" aria-hidden="true">↗</span>
+              </button>
+              <button type="button" aria-pressed={section === 'history'} onClick={() => chooseSection('history')}>
+                <span className="balance-page__action-icon" aria-hidden="true">◷</span>
+                <span><strong>Transaction history</strong><small>Deposits and withdrawals</small></span>
+                <span className="balance-page__action-arrow" aria-hidden="true">↗</span>
+              </button>
+            </nav>
+
+            {section === 'deposit' && <section className="balance-page__panel" id="deposit" aria-labelledby="balance-deposit-title">
+              <div className="balance-page__panel-heading">
+                <p className="balance-page__eyebrow">Deposit</p>
+                <h2 id="balance-deposit-title">Add to your balance</h2>
+                <p>Choose your payment details and amount below.</p>
+              </div>
+              {catalog === null && catalogError === null && <PageState label="Loading payment options…" />}
+              {catalogError !== null && <PageError message={catalogError} onRetry={() => window.location.reload()} />}
+              {catalog !== null && market === null && <PageError message="No payment markets are available." onRetry={() => window.location.reload()} />}
+              {catalog !== null && market !== null && <>
+              {catalog.isMock && <div className="balance-page__preview-note" role="note"><strong>Mock checkout</strong><span>Do not send real money to the test bank details.</span></div>}
 
             <form className="payment-form" noValidate onSubmit={(event) => void handleCreateCheckout(event)}>
               <section className="reload-card__section" aria-labelledby="payment-market-title">
@@ -452,36 +468,38 @@ export function PurchaseCreditsPage() {
                   <button className="reload-card__checkout" type="submit" disabled={!canSubmit}>
                     {isSubmitting ? 'Submitting payment…' : 'Submit payment'}
                   </button>
-                  <small>After the API receives the order, you’ll be redirected to its invoice.</small>
+                  <small>You'll be taken to your payment instructions after submitting.</small>
                 </section>
               </div>
 
               {checkoutError !== null && <p className="payment-checkout__error" role="alert">{checkoutError}</p>}
             </form>
-
-            <footer className="reload-card__assurances">
-              <span><i>1</i><strong>Rand for Rand</strong>The API validates the amount and adds the same number of Rand.</span>
-              <span><i>2</i><strong>Duplicate-safe requests</strong>Each checkout uses an idempotency key.</span>
-              <span><i>3</i><strong>Completion-only funding</strong>Received or processing invoices never change the balance.</span>
-            </footer>
-          </article>
-          <WithdrawalRequestCard account={account} catalog={catalog} onAccountReload={reload} />
+              </>}
+            </section>}
+            {section === 'withdrawal' && (
+              <div className="balance-page__panel balance-page__panel--withdrawal">
+                {catalog === null && catalogError === null && <PageState label="Loading withdrawal options…" />}
+                {catalogError !== null && <PageError message={catalogError} onRetry={() => window.location.reload()} />}
+                {catalog !== null && <WithdrawalRequestCard account={account} catalog={catalog} onAccountReload={reload} />}
+              </div>
+            )}
+            {section === 'history' && <section className="balance-page__panel balance-page__panel--history" id="transactions"><BalanceTransactionHistory /></section>}
           </>
         )}
-      </main>
-    </div>
+      </div>
+    </AccountLobbyShell>
   )
 }
 
 function PageState({ label }: { label: string }) {
-  return <div className="player-state" role="status"><span aria-hidden="true">✦</span>{label}</div>
+  return <div className="balance-page__state" role="status">{label}</div>
 }
 
 function PageError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
-    <div className="player-state player-state--error" role="alert">
-      <strong>The Rand funding page could not be opened.</strong><span>{message}</span>
-      <button className="landing-button landing-button--secondary" type="button" onClick={onRetry}>Try again</button>
+    <div className="balance-page__state balance-page__state--error" role="alert">
+      <strong>Balance is unavailable right now.</strong><span>{message}</span>
+      <button type="button" onClick={onRetry}>Try again</button>
       <a href="/home">Return home</a>
     </div>
   )

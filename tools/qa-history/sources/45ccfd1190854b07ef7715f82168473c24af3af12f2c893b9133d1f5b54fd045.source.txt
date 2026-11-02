@@ -1,0 +1,169 @@
+"""Deterministic delivery exports and QA sheets; never changes game files or masters."""
+import csv
+import hashlib
+import io
+import json
+import shutil
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+OUT = Path(__file__).resolve().parent
+OLD = Path('C:/Users/Lctiv/Documents/Codex/2026-10-31/task/FortuneForge-midnight-vault')
+OLD_ART = OLD / '.artifacts/midnight-vault'
+OLD_MASTERS = OLD_ART / 'generated-loot'
+ROLES = {
+    'brass-token': '2', 'pocket-watch': '3', 'ruby-ring': '4', 'jewel-case': '5',
+    'diamond-necklace': '6', 'vault-door': '7', 'master-key': 'ACE', 'vault-bonus': 'FREE',
+    'black-diamond': 'POWER', 'access-pulse': 'BOLT', 'triple-diamonds': 'BANANA',
+    'loot-case': 'PAW', 'ruby-access': 'SEAL_SYNC', 'sapphire-access': 'SEAL_ROWS',
+    'amber-access': 'SEAL_PAW', 'emerald-access': 'SEAL_RAND', 'vault-token': 'VALUE',
+}
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def generated_path(item):
+    return Path(item.get('generated_path') or item.get('sourceMasterPath') or
+                item['output_hint'].split(' as ', 1)[1].split(' by default.', 1)[0])
+
+def font(size):
+    for name in ['C:/Windows/Fonts/segoeui.ttf', 'C:/Windows/Fonts/arial.ttf']:
+        if Path(name).exists():
+            return ImageFont.truetype(name, size)
+    return ImageFont.load_default()
+
+def framed(path, size):
+    im = Image.open(path).convert('RGBA')
+    # Ignore nearly invisible generation specks for framing only, preserve edge alpha.
+    bounds = im.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox()
+    if not bounds:
+        raise ValueError(f'No visible alpha: {path}')
+    im = ImageOps.contain(im.crop(bounds), (round(size * .88), round(size * .88)), Image.Resampling.LANCZOS)
+    result = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    result.alpha_composite(im, ((size - im.width) // 2, (size - im.height) // 2))
+    return result
+
+def save_webp(im, dest, budget=None, start_quality=88):
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    quality = start_quality
+    while True:
+        buf = io.BytesIO()
+        im.save(buf, 'WEBP', quality=quality, method=6, exact=True)
+        data = buf.getvalue()
+        if not budget or len(data) <= budget or quality <= 80:
+            break
+        quality -= 2
+    dest.write_bytes(data)
+    return quality
+
+def record(slug, role, src, dest, quality, prompt_file, kind):
+    with Image.open(dest) as im:
+        alpha = im.getchannel('A').getextrema() if 'A' in im.getbands() else None
+        row = dict(slug=slug, role=role, kind=kind, path=dest.relative_to(OUT).as_posix(),
+                   width=im.width, height=im.height, bytes=dest.stat().st_size,
+                   format=im.format, alpha_min=alpha[0] if alpha else '', alpha_max=alpha[1] if alpha else '',
+                   webp_quality=quality, sha256=sha(dest), source_master=str(src),
+                   source_sha256=sha(src), prompt_file=prompt_file)
+        rows.append(row)
+
+if shutil.disk_usage(OUT).free < 12 * 1024 * 1024:
+    raise RuntimeError('Less than12MiB free; refusing delivery writes.')
+
+sources = {}
+old_prompts = json.loads((OLD_ART / 'loot-art-prompts.json').read_text(encoding='utf-8'))
+(OUT / 'reused-symbol-prompts.json').write_text(json.dumps(old_prompts, indent=2), encoding='utf-8')
+for item in old_prompts['assets']:
+    slug = item['slug']
+    sources[slug] = (OLD_MASTERS / f'midnight-vault-{slug}-v1.png', 'reused-symbol-prompts.json')
+for name in ['root-symbol-prompts.json', 'agent-access-prompts.json']:
+    for item in json.loads((OUT / name).read_text(encoding='utf-8-sig'))['assets']:
+        sources[item['slug']] = (generated_path(item), name)
+assert set(sources) == set(ROLES), (set(sources), set(ROLES))
+rows = []
+for slug, role in ROLES.items():
+    src, provenance = sources[slug]
+    for size in [96, 192, 320]:
+        im = framed(src, size)
+        dest = OUT / 'symbols' / str(size) / f'midnight-vault-{slug}.webp'
+        quality = save_webp(im, dest, budget=30 * 1024 if size == 320 else None)
+        record(slug, role, src, dest, quality, provenance, 'reel-symbol')
+
+presentation = {a['id']: a for a in json.loads((OUT / 'presentation-prompts.json').read_text(encoding='utf-8-sig'))['assets']}
+for key, dims in [('catalogue-title', [(384,192),(768,384),(1024,512)]),
+                  ('backdrop', [(1440,810),(1672,941)])]:
+    src = generated_path(presentation[key])
+    for w,h in dims:
+        im = ImageOps.fit(Image.open(src).convert('RGB'), (w,h), method=Image.Resampling.LANCZOS)
+        dest = OUT / 'presentation' / f'midnight-vault-{key}-{w}x{h}.webp'
+        q = save_webp(im, dest, start_quality=86 if key == 'catalogue-title' else 82)
+        record(key, 'TITLE_CARD' if key == 'catalogue-title' else 'BACKDROP', src, dest, q, 'presentation-prompts.json', 'presentation')
+src = generated_path(presentation['cabinet-emblem-optional'])
+for size in [96,192,320]:
+    dest = OUT / 'presentation' / f'midnight-vault-cabinet-emblem-{size}.webp'
+    q = save_webp(framed(src,size), dest, budget=30*1024)
+    record('cabinet-emblem', 'CABINET_EMBLEM', src, dest, q, 'presentation-prompts.json', 'optional-presentation')
+
+def symbol(slug, pixels):
+    # Use delivery file, never the master, for actual-size visual QA.
+    side = 96 if pixels <= 96 else 192 if pixels <= 192 else 320
+    return Image.open(OUT / 'symbols' / str(side) / f'midnight-vault-{slug}.webp').convert('RGBA').resize((pixels,pixels), Image.Resampling.LANCZOS)
+
+preview = OUT / 'previews'
+preview.mkdir(exist_ok=True)
+# Labeled delivery contact sheet at96px and45px, with quiet real reel-well colors.
+sheet = Image.new('RGB',(1000,1060),'#081321')
+d = ImageDraw.Draw(sheet)
+d.text((24,16),'MIDNIGHT VAULT / artwork inventory',font=font(27),fill='#ead5ac')
+d.text((24,55),'17 original symbols - 96px delivery view / 45px gameplay check',font=font(17),fill='#a6bacd')
+for i,(slug,role) in enumerate(ROLES.items()):
+    x=20+(i%4)*245; y=96+(i//4)*188
+    d.rounded_rectangle((x,y,x+232,y+172),radius=9,fill='#0b192a',outline='#344354')
+    sheet.paste(symbol(slug,96),(x+12,y+10),symbol(slug,96))
+    sheet.paste(symbol(slug,45),(x+164,y+42),symbol(slug,45))
+    d.text((x+12,y+113),role,font=font(15),fill='#e9c684')
+    d.text((x+12,y+138),slug,font=font(15),fill='#c5d6e7')
+sheet.save(preview/'symbol-contact-sheet.jpg',quality=91,subsampling=0,optimize=True)
+
+def reel_preview(width):
+    height=round(width/1.56)
+    bg=ImageOps.fit(Image.open(OUT/'presentation/midnight-vault-backdrop-1672x941.webp').convert('RGBA'),(width,height),method=Image.Resampling.LANCZOS)
+    draw=ImageDraw.Draw(bg)
+    pad=round(width*.02); gap=round(width*.008)
+    cw=(width-2*pad-4*gap)/5; ch=(height-2*pad-3*gap)/4
+    pixels=round(min(cw,ch)*.82)
+    order=list(ROLES)+['ruby-ring','master-key','vault-bonus']
+    for i,slug in enumerate(order):
+        c=i%5; r=i//5
+        x=round(pad+c*(cw+gap)); y=round(pad+r*(ch+gap))
+        # A restrained transparent well approximates the dark-well review concept.
+        well=Image.new('RGBA',bg.size,(0,0,0,0)); wd=ImageDraw.Draw(well)
+        wd.rounded_rectangle((x,y,x+round(cw),y+round(ch)),radius=max(2,round(width*.005)),fill=(3,10,20,145),outline=(139,119,79,85))
+        bg=Image.alpha_composite(bg,well)
+        art=symbol(slug,pixels)
+        bg.alpha_composite(art,(round(x+(cw-pixels)/2),round(y+(ch-pixels)/2)))
+    return bg.convert('RGB'),pixels
+
+fit=Image.new('RGB',(1180,770),'#06101b'); d=ImageDraw.Draw(fit)
+d.text((20,16),'ARTWORK FIT REVIEW / CSS-derived sizes',font=font(25),fill='#ead5ac')
+d.text((20,53),'Illustrative dark-well composite; no source integration or browser measurement',font=font(17),fill='#a5b8cc')
+for width,x,y in [(736,20,116),(390,776,116)]:
+    board,px=reel_preview(width)
+    fit.paste(board,(x,y))
+    d.text((x,y-27),f'{width}px frame / {px}px image box',font=font(16),fill='#dec18b')
+title=Image.open(OUT/'presentation/midnight-vault-catalogue-title-384x192.webp')
+fit.paste(title,(776,440))
+d.text((20,618),'Wild: diagonal key  |  Bonus: brass sunburst vault',font=font(19),fill='#dec18b')
+d.text((20,650),'Review necklace at45px: delicate chain remains visible; pendant is the focal mass.',font=font(16),fill='#a5b8cc')
+d.text((20,680),'Value token stays blank for existing dynamic payout overlays.',font=font(16),fill='#a5b8cc')
+fit.save(preview/'gameplay-fit-review.jpg',quality=92,subsampling=0,optimize=True)
+
+manifest=dict(project='Midnight Vault',date='2026-10-31',scope='artwork only; Dragon Hoard replacement proposal; no game integration',
+              generator='built-in image_gen',export='Pillow WebP; visible alpha>8 framing;88% silhouette-safe box; no creative retouching',
+              assets=rows,total_delivery_bytes=sum(r['bytes'] for r in rows))
+(OUT/'asset-inventory.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
+with (OUT/'asset-inventory.csv').open('w',encoding='utf-8',newline='') as f:
+    writer=csv.DictWriter(f,fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+summary={k:sum(r['bytes'] for r in rows if r['kind']==k) for k in {r['kind'] for r in rows}}
+print(json.dumps(dict(files=len(rows),delivery_bytes=sum(r['bytes'] for r in rows),groups=summary,
+                     symbols_320=[dict(slug=r['slug'],bytes=r['bytes'],quality=r['webp_quality']) for r in rows if r['kind']=='reel-symbol' and r['width']==320],
+                     disk_free=shutil.disk_usage(OUT).free),indent=2))

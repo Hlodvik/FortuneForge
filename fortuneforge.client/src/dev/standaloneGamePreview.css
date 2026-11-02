@@ -1,0 +1,7 @@
+/* Isolated game previews: the host owns chrome and the remaining viewport. */
+.standalone-game-preview__body { overflow: auto; }
+.standalone-game-preview__body > .ff-asteroids-page,
+.standalone-game-preview__body > .ff-2048-page,
+.standalone-game-preview__body > .ff-drop-merge-page,
+.standalone-game-preview__body > .ff-flappy-page { height: 100%; min-height: 0; }
+.standalone-game-preview__body > .ff-drop-merge-page { padding-bottom: 0; }

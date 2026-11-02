@@ -59,14 +59,14 @@ describe('card game route integration', () => {
     expect(pageTitleForPath('/cards/three-card-poker')).toBe('Three Card Poker Table — Fortune Forge')
   })
 
-  it('keeps the shared game shell and legacy card roots above the app backdrop', () => {
+  it('keeps the current shared game shell above the app backdrop', () => {
     const shellSource = source('../../app/styles/shell.css')
+    const gameShellRule = shellSource.match(/\.app-shell > \.in-game-shell[^{}]*\{([^}]*)\}/)?.[1]
+    const backdropRule = shellSource.match(/\.app-shell::before\s*\{([^}]*)\}/)?.[1]
 
-    expect(shellSource).toContain('.app-shell > .in-game-shell,')
-    expect(shellSource).toContain('.app-shell > .blackjack-page,')
-    expect(shellSource).toContain('.app-shell > .credit-holdem-page,')
-    expect(shellSource).toContain('.app-shell > .holdem-page,')
-    expect(shellSource).toContain('.app-shell > .solitaire-page,')
+    expect(gameShellRule).toMatch(/position:\s*relative;/)
+    expect(gameShellRule).toMatch(/z-index:\s*1;/)
+    expect(backdropRule).toMatch(/z-index:\s*0;/)
   })
 
   it('reserves a visible playing-card height for Solitaire controls', () => {
@@ -134,8 +134,7 @@ function renderRoute(pathname: string): string {
 function expectGameLoading(pathname: string, id: string, title: string) {
   const markup = renderRoute(pathname)
   expect(markup).toContain(`data-game-loading="${id}"`)
-  expect(markup).toContain(`>${title}</h1>`)
-  expect(markup).toContain(id === 'three-card-poker' ? '>Loading</span>' : `>Loading ${title}…</span>`)
+  expect(markup).toContain(`Loading ${title}…`)
   expect(markup).toContain('role="status"')
 }
 

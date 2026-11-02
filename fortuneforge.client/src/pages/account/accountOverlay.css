@@ -1,0 +1,60 @@
+.home-lobby__overlay {
+  width: min(940px, calc(100vw - 44px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: clamp(20px, 3vw, 32px);
+  overflow: auto;
+  border: 1px solid #48404d;
+  border-radius: 15px;
+  background: #0e0e13;
+  color: var(--home-ink, #f4f1e9);
+  box-shadow: 0 30px 90px #000c;
+}
+
+.home-lobby__overlay--history {
+  width: min(1180px, calc(100vw - 44px));
+}
+
+.home-lobby__overlay::backdrop {
+  background: #050508c9;
+  backdrop-filter: blur(6px);
+}
+
+.home-lobby__overlay-close {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  place-items: center;
+  border: 1px solid #514a59;
+  border-radius: 50%;
+  background: #201b25;
+  color: #f4f1e9;
+  font-size: 25px;
+  line-height: 1;
+}
+
+.home-lobby__overlay-close:hover {
+  background: #302637;
+}
+
+.home-lobby__overlay .account-settings {
+  margin: 0 auto 24px;
+}
+
+.home-lobby__overlay .account-history {
+  padding: 0 0 24px;
+}
+
+@media (max-width: 680px) {
+  .home-lobby__overlay,
+  .home-lobby__overlay--history {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 20px);
+    padding: 16px;
+    border-radius: 12px;
+  }
+}

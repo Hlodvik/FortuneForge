@@ -15,7 +15,29 @@ const choose = (n, k) => {
   for (let i = 1; i <= Math.min(k, n - k); i++) value = value * BigInt(n - Math.min(k, n - k) + i) / BigInt(i)
   return value
 }
-const exactReturn = round => Number(BigInt(round.wagerCents) * 99n * choose(25, round.safeReveals) / (100n * choose(25 - round.mineCount, round.safeReveals)))
+// Independent rational oracle, including the frozen legacy curve and full-board v2 tail.
+const quoteFraction = (round, picks) => {
+  const safe = 25 - round.mineCount
+  const raw = depth => [BigInt(10000 - (round.houseEdgeBasisPoints ?? 100)) * choose(25, depth), 10000n * choose(safe, depth)]
+  if ((round.payoutPolicyVersion ?? 1) === 1) return raw(picks)
+  let anchor = 0, value = raw(0)
+  for (let depth = 1; depth <= safe; depth++) {
+    const candidate = raw(depth)
+    if (candidate[0] > 50n * candidate[1]) break
+    anchor = depth; value = candidate
+  }
+  if (picks <= anchor || anchor === safe) return raw(picks)
+  return [value[0] * BigInt(safe - anchor) + (50n * value[1] - value[0]) * BigInt(picks - anchor), value[1] * BigInt(safe - anchor)]
+}
+const exactReturn = round => {
+  let [numerator, denominator] = quoteFraction(round, round.safeReveals)
+  if (round.status === 'consolation') {
+    const [nextN, nextD] = quoteFraction(round, round.safeReveals + 1)
+    numerator = numerator * nextD * BigInt(25 - round.safeReveals) - nextN * denominator * BigInt(25 - round.mineCount - round.safeReveals)
+    denominator *= nextD * BigInt(round.mineCount)
+  }
+  return Number(BigInt(round.wagerCents) * numerator / denominator)
+}
 let browser
 try {
   browser = await chromium.launch({ headless: true, ...(process.env.MINES_BROWSER_CHANNEL ? { channel: process.env.MINES_BROWSER_CHANNEL } : {}) })
@@ -73,7 +95,7 @@ const begin = async (mines = 1, amount = '1.00') => {
   assert.equal(result.value.round.mineCount, mines)
   assert.equal(result.value.balanceCents, before.balanceCents - Math.round(Number(amount) * 100))
   assert.equal(result.value.round.tiles.filter(tile => tile.kind === 'hidden').length, 25)
-  assert.deepEqual(Object.keys(result.value.round).sort(), ['roundId', 'wagerCents', 'mineCount', 'status', 'safeReveals', 'gemsRemaining', 'currentMultiplier', 'nextMultiplier', 'cashOutCents', 'canCashOut', 'payoutCents', 'tiles'].sort())
+  assert.deepEqual(Object.keys(result.value.round).sort(), ['roundId', 'wagerCents', 'mineCount', 'status', 'safeReveals', 'gemsRemaining', 'currentMultiplier', 'nextMultiplier', 'cashOutCents', 'canCashOut', 'payoutCents', 'tiles', 'houseEdgeBasisPoints', 'payoutPolicyVersion', 'nextMinePayoutCents'].sort())
   return result.value
 }
 const firstGem = async () => {
@@ -150,7 +172,7 @@ try {
   // A real server chooses every board. High mine count makes the loss path efficient without any client-known layout.
   let lost
   for (let attempt = 0; attempt < 8; attempt++) {
-    await begin(24, '0.10')
+    await begin(24, '1.00')
     lost = (await confirmed(() => tile(0).click())).value
     if (lost.round.status === 'lost') break
     assert.equal(lost.round.status, 'cleared')
@@ -276,7 +298,8 @@ try {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.getByRole('button', { name: 'How to play Mines' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
-  await expect(page.getByRole('dialog')).toContainText('rounding can increase the effective edge above 1%')
+  await expect(page.getByRole('dialog')).toContainText('90%')
+  await expect(page.getByRole('dialog')).toContainText('round down')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('dialog')).not.toBeVisible()
   await expect(page.getByRole('button', { name: 'How to play Mines' })).toBeFocused()

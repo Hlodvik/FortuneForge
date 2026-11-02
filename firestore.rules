@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // The website talks to the authenticated .NET API, never directly to Firestore.
+    // This includes Mines' fixed hidden boards, wallets, sessions and receipts.
+    // Server SDK access is separately controlled by Google Cloud IAM.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

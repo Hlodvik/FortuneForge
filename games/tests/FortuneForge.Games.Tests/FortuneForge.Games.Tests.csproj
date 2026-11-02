@@ -22,6 +22,7 @@
     <ProjectReference Include="../../shared/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />
     <ProjectReference Include="../../Hearts/src/FortuneForge.Games.Hearts/FortuneForge.Games.Hearts.csproj" />
     <ProjectReference Include="../../LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
+    <ProjectReference Include="../../Mines/src/FortuneForge.Games.Mines/FortuneForge.Games.Mines.csproj" />
     <ProjectReference Include="../../Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
     <ProjectReference Include="../../Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj" />
     <ProjectReference Include="../../TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />

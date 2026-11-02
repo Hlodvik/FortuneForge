@@ -20,7 +20,7 @@ public sealed record AdminPlayerGamingEvent(string EventId, string UserId, strin
 public sealed record AdminPlayerMatchParticipant(string? UserId, string? DisplayName, bool? IsBot);
 public sealed record AdminPlayerMatch(string MatchId, string Game, string Status,
     DateTime? StartedAtUtc, DateTime? CompletedAtUtc, decimal? WageredCredits,
-    decimal? PaidCredits, decimal? NetCredits, IReadOnlyList<AdminPlayerMatchParticipant>? Players = null);
+    decimal? PaidCredits, decimal? NetCredits, IReadOnlyList<AdminPlayerMatchParticipant>? Players = null, string? Mode = null);
 
 internal interface IAdminPlayersStore
 {

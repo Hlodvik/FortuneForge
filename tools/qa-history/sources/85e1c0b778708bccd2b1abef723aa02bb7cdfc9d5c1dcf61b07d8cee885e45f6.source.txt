@@ -1,0 +1,37 @@
+from pathlib import Path
+import hashlib
+import json
+
+root = Path(__file__).parent
+capture = root / "current"
+index = json.loads((capture / "index.json").read_text())
+assert index["gameCount"] == 20
+scenarios = responses = 0
+for game in index["games"]:
+    game_dir = capture / game["route"]["id"]
+    contract = json.loads((game_dir / "contract.json").read_text())
+    assert contract["statusEndpoint"] == 204
+    assert not contract["missingScenarios"]
+    names = {item["scenario"] for item in contract["scenarios"]}
+    assert {"base-win", "base-loss"} <= names
+    for item in contract["scenarios"]:
+        data = json.loads((game_dir / (item["scenario"] + ".json")).read_text())
+        assert len(data["steps"]) == item["responses"]
+        assert data["steps"][-1]["response"]["freeSpinsRemaining"] == 0
+        for step in data["steps"]:
+            request, response = step["request"], step["response"]
+            assert request["gameId"] == response["gameId"] == game["route"]["gameId"]
+            assert request["wagerPoints"] == response["wagerPoints"]
+            assert response["slotsCreditsBalance"] is None
+            assert "engineAudit" not in response
+            assert response["payout"]["totalPoints"] == sum(p["amountPoints"] for p in response["payout"]["paylines"])
+        scenarios += 1
+        responses += len(data["steps"])
+assert scenarios == index["scenarioCount"] == 138
+assert responses == index["responseCount"] == 919
+files = {str(path.relative_to(root)).replace("\\", "/"): hashlib.sha256(path.read_bytes()).hexdigest()
+         for path in sorted(capture.rglob("*.json"))}
+result = {"verified": True, "games": 20, "scenarios": scenarios, "responses": responses,
+          "captureJsonFiles": len(files), "sha256": files}
+(root / "artifact-integrity.json").write_text(json.dumps(result, indent=2))
+print(json.dumps({key: value for key, value in result.items() if key != "sha256"}))

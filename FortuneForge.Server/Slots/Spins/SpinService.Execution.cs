@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
@@ -16,11 +17,49 @@ public sealed partial class SpinService
         string playerId,
         bool specialBoostApplied,
         long currentEnergyBalance = 0,
-        string? freeSpinFeatureMode = null)
+        string? freeSpinFeatureMode = null,
+        int? persistedPityMisses = null) => SpinCore(gameId, wagerPoints, playerId,
+            specialBoostApplied, currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, false, null);
+
+    public SpinResult SpinAdmitted(string gameId, SlotSpinAdmission admission, string playerId)
+    {
+        if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
+            throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
+        var derived = gameId == SlotSpecialRoundProfiles.DragonHoardGameId && admission.IsFreeSpin;
+        var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
+            admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
+            derived, admission.MathModelId);
+        return result with
+        {
+            IsFreeSpin = admission.IsFreeSpin,
+            EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = derived }
+        };
+    }
+
+    internal SpinResult SpinMidnightDemo(long wagerPoints, string playerId, MidnightVaultBonusRound? round)
+    {
+        var result = SpinCore(SlotSpecialRoundProfiles.DragonHoardGameId, wagerPoints, playerId,
+            false, 0, round?.FeatureMode, null, round is not null,
+            round?.MathModelId ?? MidnightVaultSlotDefinitions.PaytableId);
+        return result with
+        {
+            IsFreeSpin = round is not null,
+            EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = round is not null }
+        };
+    }
+
+    private SpinResult SpinCore(string gameId, long wagerPoints, string playerId,
+        bool specialBoostApplied, long currentEnergyBalance, string? freeSpinFeatureMode,
+        int? persistedPityMisses, bool derivedFreeSpin, string? mathModelId)
     {
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        ValidateWager(game, wagerPoints);
+        if (mathModelId is not null)
+            game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, mathModelId);
+        if (derivedFreeSpin)
+            MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else
+            ValidateWager(game, wagerPoints);
         if (string.IsNullOrWhiteSpace(playerId))
         {
             throw new ArgumentException("An authenticated player id is required.", nameof(playerId));
@@ -48,6 +87,12 @@ public sealed partial class SpinService
 
         lock (pityState.SyncRoot)
         {
+            if (persistedPityMisses is { } persisted)
+            {
+                if (persisted < 0)
+                    throw new ArgumentOutOfRangeException(nameof(persistedPityMisses));
+                pityState.ConsecutiveFiveMisses = persisted;
+            }
             return SpinWithPity(
                 game,
                 effectiveReelSet,
@@ -77,13 +122,29 @@ public sealed partial class SpinService
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
             pityState.ConsecutiveFiveMisses >= pityLimit;
         var maximumAttempts = pityTriggered ? MaximumPityGenerationAttempts : 1;
+        var pityMissesBefore = pityState.ConsecutiveFiveMisses;
+        SlotSpecialRoundProfiles.TryGet(game.Id, out var featureProfile);
+        if (game.Id == SlotSpecialRoundProfiles.DragonHoardGameId && featureProfile is not null)
+            featureProfile = featureProfile with
+            {
+                PayoutMultiplier = game.Math.PayoutMultiplier,
+                ScatterAwardedSpins = game.FreeGames!.AwardedSpins,
+                CollectionAwardedSpins = game.Math.PaytableId == MidnightVaultSlotDefinitions.LegacyPaytableId
+                    ? MidnightVaultSlotDefinitions.LegacyCollectionAwardedSpins
+                    : MidnightVaultSlotDefinitions.BonusRoundSpins
+            };
         ReelOutcome? outcome = null;
+        ReelOutcome? rawOutcome = null;
+        ReelOutcome? frequencyOutcome = null;
         IReadOnlyList<PaylineEvaluation>? evaluations = null;
+        var generationAttempts = 0;
 
         for (var attempt = 0; attempt < maximumAttempts; attempt++)
         {
-            outcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
-            outcome = FreeGameFrequency.Apply(outcome, effectiveGame, random);
+            generationAttempts++;
+            rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
+            frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
+            outcome = frequencyOutcome;
             outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
@@ -92,7 +153,7 @@ public sealed partial class SpinService
             }
         }
 
-        if (outcome is null || evaluations is null ||
+        if (outcome is null || rawOutcome is null || frequencyOutcome is null || evaluations is null ||
             (pityTriggered && !HasPayingFullMatch(evaluations, effectiveGame, paytable)))
         {
             throw new InvalidOperationException(
@@ -135,6 +196,11 @@ public sealed partial class SpinService
             energyAwarded,
             specialBoostApplied)
         {
+            EngineAudit = new SlotSpinEngineAudit(
+                AuditEngineVersion, DateTime.UtcNow, game, effectiveGame, reelSet,
+                symbolSet, paytable, featureProfile, pityMissesBefore,
+                currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
+                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels),
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,

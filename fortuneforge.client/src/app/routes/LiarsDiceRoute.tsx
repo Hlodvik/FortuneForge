@@ -14,7 +14,7 @@ export function AuthenticatedLiarsDiceRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Liar’s Dice…" errorTitle="Liar’s Dice could not be opened." onRetry={reload} />
   }
 
-  return <InGameShell account={account} title="Liar’s Dice" theme="casino" className="player-page">
+  return <InGameShell account={account} title="Liar’s Dice" className="player-page">
     <GameAmbientMusic game="liars-dice" />
     <LiarsDiceGame key={account.userId} gateway={gateway} playerId={account.userId} showTitle={false} />
   </InGameShell>

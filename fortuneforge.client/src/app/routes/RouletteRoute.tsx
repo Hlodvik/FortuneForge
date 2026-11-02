@@ -14,7 +14,7 @@ export function AuthenticatedRouletteRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Roulette…" errorTitle="Roulette could not be opened." onRetry={reload} />
   }
 
-  return <InGameShell account={account} title="Roulette" theme="casino" className="player-page">
+  return <InGameShell account={account} title="Roulette" className="player-page">
     <RouletteGame key={account.userId} gateway={gateway} playerId={account.userId} showTitle={false} />
   </InGameShell>
 }

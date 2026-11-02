@@ -173,10 +173,10 @@ test('Three Card Poker chip picker stays one chip wide until expanded', async ({
   await page.getByRole('button', { name: 'Increase chip value' }).click()
   await expect(page.getByRole('button', { name: 'Choose chip value, currently R25.00' })).toBeVisible()
   await expect(page.locator('.three-card-poker-chip-picker__options')).toHaveCount(0)
-  await expect(page.getByText('MAX BET R500.00')).toBeVisible()
+  await expect(page.getByText('MAX BET R50.00')).toBeVisible()
   const anteSpot = page.getByRole('button', { name: 'Place chip on Ante' })
-  for (let index = 0; index < 20; index++) await anteSpot.click()
-  await expect(anteSpot).toContainText('R500.00')
+  for (let index = 0; index < 2; index++) await anteSpot.click()
+  await expect(anteSpot).toContainText('R50.00')
   await expect(anteSpot).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Place chip on Pair Plus' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Deal', exact: true })).toBeEnabled()
@@ -260,7 +260,7 @@ async function mockTable(page: Page) {
     const method = route.request().method()
     const send = (json: unknown) => route.fulfill({ json })
     if (path === '/api/accounts/me') return send({ userId: 'table-player', playerName: 'Ada', email: 'ada@example.test', createdAtUtc: date, role: 'Player', balances: { slotsCredits: balance, freeGames: 0 }, slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 } })
-    if (path === `${base}/status`) return send({ available: true, minimumWager: 1, maximumWager: 500, wagerIncrement: 1, minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 60, dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true, anteBonusPaytable: 'Straight 1:1; trips 4:1; straight flush 5:1', pairPlusPaytable: 'Pair 1:1; flush 3:1; straight 6:1; trips 30:1; straight flush 40:1', pairPlusPaysOnFold: true })
+    if (path === `${base}/status`) return send({ available: true, minimumWager: 1, maximumWager: 50, wagerIncrement: 1, minimumStartOccupancy: 1, tableCapacity: 1, humanGraceSeconds: 0, actionDeadlineSeconds: 60, dealerRule: 'Queen high or better qualifies', pairPlusAllowed: true, anteBonusPaytable: 'Straight 1:1; trips 4:1; straight flush 5:1', pairPlusPaytable: 'Pair 1:1; flush 3:1; straight 6:1; trips 30:1; straight flush 40:1', pairPlusPaysOnFold: true })
     if (path === `${base}/queue` && method === 'POST') {
       session = table
     } else if (path.endsWith('/wagers')) {

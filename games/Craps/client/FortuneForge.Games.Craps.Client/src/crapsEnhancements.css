@@ -1,5 +1,5 @@
 /* Real chip artwork is shared by the selector and every printed betting spot. */
-.ff-craps-chip-row img, .ff-craps-chip-stack img { transform:scale(var(--chip-art-scale,1)); transform-origin:center; }
+.ff-craps-chip-stack img { transform:scale(var(--chip-art-scale,1)); transform-origin:center; }
 .ff-craps-limits { color:#a9bba5; font-size:10px; white-space:nowrap; }
 .ff-craps-callout > small { color:#b6c4a8; font-size:9px; font-weight:650; letter-spacing:.13em; }
 .ff-craps-point-row > span:nth-child(4) strong, .ff-craps-point-row > span:nth-child(6) strong { font-size:.64em; letter-spacing:-.025em; }
@@ -23,7 +23,6 @@
 .ff-craps-pass-line > .ff-craps-chip-stack > b { bottom:0; }
 .ff-craps-proposition:not(:disabled):hover, .ff-craps-pass-line:not(:disabled):hover { background:rgb(235 224 164 / 9%); }
 .ff-craps-proposition:not(:disabled):active, .ff-craps-pass-line:not(:disabled):active { background:rgb(235 224 164 / 15%); }
-.ff-craps-chip-row button:not(:disabled):hover img { filter:drop-shadow(0 3px 6px #ead18c65); }
 .ff-craps-primary:not(:disabled):hover { background:linear-gradient(#fff0bf,#ddbd70); }
 .ff-craps-control-actions button:not(:disabled):hover, .ff-craps-title button:hover { color:#fff4c6; border-color:#c3b47c; background:#1c3827; }
 .ff-craps-page button:focus-visible, .ff-craps-page input:focus-visible { outline:3px solid #fff1b2; outline-offset:3px; }

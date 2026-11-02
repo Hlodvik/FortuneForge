@@ -69,6 +69,14 @@ describe('HttpHiLoGateway', () => {
     expect(isHiLoSession({ ...session, round: { ...session.round!, higher: { probability: 0, multiplier: 0, projectedReturnCents: 0, available: false } } })).toBe(true)
   })
 
+  it('accepts older rounds above the new entry cap so they can be settled', () => {
+    const legacy = { ...session, round: { ...session.round!, wagerCents: 100000, currentReturnCents: 100000, canCashOut: true } }
+    expect(isHiLoSession(legacy)).toBe(true)
+    expect(isHiLoSession({ ...legacy, round: { ...legacy.round, wagerCents: 100001 } })).toBe(false)
+    expect(isHiLoSession({ ...legacy, round: { ...legacy.round, status: 'cashedOut', canCashOut: false, canSkip: false,
+      higher: { ...legacy.round.higher, available: false }, lower: { ...legacy.round.lower, available: false } } })).toBe(true)
+  })
+
   it('preserves an optional maintenance flag and rejects an unusable maintenance value', async () => {
     const disabled = { ...session, enabled: false }
     const { gateway } = make(disabled)

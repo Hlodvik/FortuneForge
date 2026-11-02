@@ -3,6 +3,8 @@ using FortuneForge.Server.Bots;
 using FortuneForge.Server.Cards.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
+using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Abstractions.Auditing;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Solitaire;
@@ -294,6 +296,21 @@ public sealed class CompetitiveSolitaireBotFillFirestoreTests
         var revenue = Assert.Single((await database.Collection("solitaireMatchRevenue").GetSnapshotAsync()).Documents);
         Assert.Equal(0, Field<long>(revenue, "platformFeeCents"));
         Assert.Equal(500, Field<long>(revenue, "humanPayoutCents"));
+        var analytics = Assert.Single((await database.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        Assert.Equal(first.MatchId, Field<string>(analytics, "roundId"));
+        Assert.Equal("alice", Field<string>(analytics, "userId"));
+        Assert.Equal("solitaire", Field<string>(analytics, "gameId"));
+        Assert.Equal("paid", Field<string>(analytics, "mode"));
+        Assert.Equal(500L, Field<long>(analytics, "wagerCents"));
+        Assert.Equal(500L, Field<long>(analytics, "payoutCents"));
+        var audit = Assert.Single((await database.Collection(RoundAuditDocuments.Summaries).GetSnapshotAsync()).Documents);
+        Assert.Equal("solitaire", audit.GetValue<string>("gameId"));
+        Assert.Equal(first.MatchId, audit.GetValue<string>("roundId"));
+        Assert.Equal("incomplete", audit.GetValue<string>("auditStatus"));
+        Assert.Single(audit.GetValue<object[]>("participants"));
+        var privateEvidence = await database.Collection(RoundAuditDocuments.Evidence).Document(audit.Id).GetSnapshotAsync();
+        Assert.True(privateEvidence.Exists);
+        Assert.Contains("sourceCollection", privateEvidence.GetValue<string>("payloadJson"));
     }
 
     [Fact]

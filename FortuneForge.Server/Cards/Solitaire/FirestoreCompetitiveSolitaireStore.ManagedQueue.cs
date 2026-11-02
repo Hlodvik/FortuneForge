@@ -217,6 +217,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     ["schemaVersion"] = 1L
                 });
                 var game = SolitaireEngine.CreateGame(seed, match.DrawCount);
+                var securityPlayers = new List<SolitairePlayerState>();
                 for (var index = 0; index < humans.Count; index++)
                 {
                     var ticket = humans[index];
@@ -224,12 +225,14 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     {
                         ["status"] = MatchedStatus, ["matchId"] = matchId
                     });
-                    transaction.Create(PlayerDocument(matchId, ticket.UserId), PlayerData(new SolitairePlayerState(
+                    var humanPlayer = new SolitairePlayerState(
                         matchId, ticket.UserId, ticket.DisplayName, index + 1, SolitairePlayerStatuses.Playing,
                         game, 1, null, null, 0, false)
                     {
                         StartedAtUtc = nowUtc, DeadlineAtUtc = match.DeadlineAtUtc
-                    }));
+                    };
+                    securityPlayers.Add(humanPlayer);
+                    transaction.Create(PlayerDocument(matchId, ticket.UserId), PlayerData(humanPlayer));
                     transaction.Set(SessionDocument(ticket.UserId),
                         SessionData(ticket.UserId, SolitaireSessionKinds.Match, null, matchId, nowUtc),
                         SetOptions.MergeAll);
@@ -239,8 +242,10 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     var player = SolitaireManagedPlayerProgression.Initialize(match,
                         SolitaireManagedPlayerPolicy.Start(match, humans.Count + index + 1, managedProfiles[index]));
                     player.HostMetadata[ManagedAssignmentMetadataKey] = currentAssignmentId;
+                    securityPlayers.Add(player);
                     transaction.Create(PlayerDocument(matchId, player.UserId), PlayerData(player));
                 }
+                WriteSecurityState(transaction, match, securityPlayers, nowUtc, "managed-match-start");
                 var selected = selectedIds.ToHashSet(StringComparer.Ordinal);
                 var remainingIds = tickets.Where(ticket => !selected.Contains(ticket.TicketId))
                     .Select(ticket => ticket.TicketId).ToArray();
@@ -483,6 +488,9 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     fundingReference, cancellationToken);
                 var humanCount = latest.TicketIds.Count(id => !string.IsNullOrEmpty(id));
                 var managedCount = latest.PlayerIds.Count - humanCount;
+                var priorPlayerSnapshots = await Task.WhenAll(latest.PlayerIds.Select(id =>
+                    transaction.GetSnapshotAsync(PlayerDocument(latest.MatchId, id), cancellationToken)));
+                var priorPlayers = priorPlayerSnapshots.Select(snapshot => ReadPlayer(snapshot, latest)).ToArray();
                 if (!funding.Exists ||
                     latest.HumanEntryCents != checked(humanCount * latest.BuyInCents) ||
                     latest.HouseFundedEntryCents != checked(managedCount * latest.BuyInCents) ||
@@ -520,6 +528,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     SolitaireManagedPlayerPolicy.Start(playerClock, latest.PlayerIds.Count + 1, proposed));
                 player.HostMetadata[ManagedAssignmentMetadataKey] = assignmentId;
 
+                WriteSecurityState(transaction, updated, priorPlayers.Append(player).ToArray(), nowUtc, "managed-seat-admitted");
                 transaction.Create(PlayerDocument(latest.MatchId, proposed.UserId), PlayerData(player));
                 var matchData = MatchData(updated);
                 var existingSweepAt = ReadOptionalTimestamp(latestSnapshot, "nextSweepAt");

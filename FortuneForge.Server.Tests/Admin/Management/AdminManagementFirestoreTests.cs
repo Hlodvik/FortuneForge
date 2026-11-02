@@ -68,6 +68,25 @@ public sealed class AdminManagementFirestoreTests(BlackjackTableFirestoreEmulato
     }
 
     [Fact]
+    public async Task Mines_can_be_hidden_and_relisted_without_enabling_bot_controls()
+    {
+        var db = Database();
+        var store = new FirestoreAdminManagementStore(db);
+        var hidden = await store.MutateAsync(Mutation("catalog-visibility", "mines", false, 0, "hide-mines-request"), default);
+        var hiddenGame = Assert.Single(hidden.Games, game => game.Id == "mines");
+        Assert.False(hiddenGame.Visible);
+        Assert.False(hiddenGame.BotsSupported);
+        Assert.False(hiddenGame.EffectiveBotsEnabled);
+        var restarted = new FirestoreAdminManagementStore(db);
+        Assert.False((await restarted.ReadAsync(default)).IsVisible(AdminManagementCatalog.Require("mines")));
+        var shown = await restarted.MutateAsync(Mutation("catalog-visibility", "mines", true, 1, "show-mines-request"), default);
+        Assert.True(Assert.Single(shown.Games, game => game.Id == "mines").Visible);
+        var audit = await restarted.AuditAsync(10, null, default);
+        Assert.Equal(2, audit.Count);
+        Assert.All(audit, item => Assert.Equal("mines", item.GameId));
+    }
+
+    [Fact]
     public async Task Concurrent_distinct_writes_at_the_same_revision_cannot_overwrite_each_other()
     {
         var db = Database();

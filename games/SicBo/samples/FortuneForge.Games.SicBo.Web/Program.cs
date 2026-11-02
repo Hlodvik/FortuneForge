@@ -14,7 +14,7 @@ app.UseCors();
 
 const decimal StartingBalance = 1_000m;
 const decimal MinimumStake = 1m;
-const decimal MaximumStakePerBet = 100m;
+const decimal MaximumStakePerBet = 10m;
 const decimal StakeIncrement = 1m;
 const int MaximumBetsPerRound = 20;
 var transactionGate = new object();
@@ -96,6 +96,9 @@ static async Task<ParsedRoundRequest> ParseRoundRequest(HttpRequest request)
             if (!parsedBet.IsSuccess) return ParsedRoundRequest.Failure(parsedBet.Code!, parsedBet.Message!);
             bets.Add(parsedBet.Bet!);
         }
+        if (bets.GroupBy(bet => (bet.Kind, bet.Face, bet.Total, bet.FirstFace, bet.SecondFace))
+            .Any(spot => spot.Sum(bet => bet.Stake) > MaximumStakePerBet))
+            return ParsedRoundRequest.Failure("sic-bo-invalid-stake", "A Sic Bo betting spot cannot exceed R10.");
 
         return ParsedRoundRequest.Success(bets);
     }
@@ -109,7 +112,7 @@ static ParsedBetResult ParseBet(JsonElement element)
     if (!element.TryGetProperty("kind", out var kindElement) || kindElement.ValueKind != JsonValueKind.String || !TryParseKind(kindElement.GetString(), out var kind))
         return ParsedBetResult.Failure("sic-bo-invalid-bet", "The Sic Bo bet kind is not supported.");
     if (!TryGetStake(element, out var stake) || stake is < MinimumStake or > MaximumStakePerBet || stake % StakeIncrement != 0m)
-        return ParsedBetResult.Failure("sic-bo-invalid-stake", "Use whole-credit Sic Bo stakes from 1 through 100.");
+        return ParsedBetResult.Failure("sic-bo-invalid-stake", "Use whole-rand Sic Bo stakes from R1 through R10.");
     if (!TryGetNullableInt(element, "face", out var face) || !TryGetNullableInt(element, "total", out var total) ||
         !TryGetNullableInt(element, "firstFace", out var firstFace) || !TryGetNullableInt(element, "secondFace", out var secondFace))
         return ParsedBetResult.Failure("sic-bo-invalid-bet", "Sic Bo selections must be integers or null.");

@@ -1,31 +1,12 @@
 .not-found-page {
   box-sizing: border-box;
   min-height: 100svh;
-  padding: clamp(1.25rem, 4vw, 3rem);
   background: #0b0c10;
   color: #f4f0e8;
   font-family: 'Sora Variable', 'Segoe UI Variable', sans-serif;
 }
 
-.not-found-page__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: .65rem;
-  min-height: 44px;
-  color: #e8c58b;
-  font: 500 clamp(.85rem, 2vw, 1.1rem)/1 Georgia, serif;
-  letter-spacing: .13em;
-  text-decoration: none;
-}
-
-.not-found-page__spade {
-  display: block;
-  width: 1.7rem;
-  height: 1.7rem;
-  background: currentColor;
-  -webkit-mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
-  mask: url('../../assets/branding/fortune-forge-spade.svg') center / contain no-repeat;
-}
+.not-found-page__main { padding: clamp(1.25rem, 4vw, 3rem); }
 
 .not-found-page__card {
   box-sizing: border-box;

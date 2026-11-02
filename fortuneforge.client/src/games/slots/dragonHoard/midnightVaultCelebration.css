@@ -1,0 +1,136 @@
+/* Original geometric jewel glints; no raster assets or additional requests. */
+.slots-page__result-atmosphere[data-celebration='vault-jewel-glint']::before {
+  content: '✦ ◇ ✧ ◇ ✦';
+  top: 21%;
+  color: #ead5ac;
+  font-size: clamp(1.8rem, 5.5vw, 4.6rem);
+  letter-spacing: clamp(0.7rem, 3vw, 2.6rem);
+  text-shadow: 0 0 0.45rem #ead5ac88, 0 0 1.1rem #87b6ce66;
+  animation-name: vault-jewel-glint;
+  animation-duration: 1.15s;
+}
+
+.slots-page__result-atmosphere[data-celebration='vault-jewel-glint']::after {
+  inset: 20% 24%;
+  border: 3px double #c8a66b;
+  border-radius: 0.2rem;
+  box-shadow: inset 0 0 1.6rem #17314966, 0 0 1.1rem #c8a66b55;
+  animation: vault-brass-frame 1.1s ease-out both;
+}
+
+.slots-page__result-atmosphere[data-celebration='vault-jewel-glint'] > span:last-child {
+  top: 19%;
+  bottom: 19%;
+  left: 17%;
+  right: 17%;
+  border-color: #dec18b;
+  animation-name: vault-brass-sweep;
+}
+
+/* Retain the historical feature ID while replacing its fire-colored styling. */
+.slots-page[data-slot-celebration='vault-jewel-glint'][data-special-round='dragon-ember-siege'] {
+  --special-round-accent: #dec18b;
+  --special-round-deep: #173149;
+  --special-round-ink: #071321;
+}
+
+.slots-page[data-slot-celebration='vault-jewel-glint'][data-special-round='dragon-ember-siege'] .slots-page__spin-controls .spin-button {
+  border-radius: 0.35rem;
+}
+
+.slots-page[data-midnight-vault-bonus='true'] .slots-page__stage {
+  position: relative;
+  z-index: 12;
+}
+
+.slots-page[data-midnight-vault-bonus='true'] .slots-page__special-game-dimmer {
+  background: radial-gradient(ellipse at 50% 48%, #17314944 0 21rem, transparent 44rem), #02050cd1;
+}
+
+.midnight-vault__bonus-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.15rem 0.65rem;
+  width: min(100%, 42rem);
+  margin-inline: auto;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #c8a66b;
+  border-radius: 0.2rem;
+  background: linear-gradient(135deg, #173149f5, #071321fa);
+  box-shadow: inset 0 0 0 2px #dec18b18, 0 0.35rem 1rem #0006;
+  color: #f7ecd5;
+}
+
+.midnight-vault__bonus-hud > span {
+  color: #dec18b;
+  font: 800 clamp(0.65rem, 1.2vw, 0.82rem)/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.midnight-vault__bonus-hud > strong {
+  font: 800 clamp(0.82rem, 1.5vw, 1rem)/1.2 Inter, system-ui, sans-serif;
+}
+
+.midnight-vault__bonus-hud > small {
+  color: #d4dddf;
+  font-size: clamp(0.58rem, 1vw, 0.7rem);
+}
+
+.midnight-vault__bonus-hud > b {
+  color: #ead5ac;
+  font-size: clamp(0.64rem, 1.1vw, 0.78rem);
+  text-align: right;
+}
+
+/* Keep winning art inside its cell, including the six-row feature. */
+.slots-page[data-slot-theme='dragon-hoard-cabinet-v1'] .slot-symbol--winner .slot-symbol__image {
+  animation-name: vault-symbol-win;
+}
+
+.slots-page[data-slot-theme='dragon-hoard-cabinet-v1'] .slot-symbol--winner::before {
+  background: radial-gradient(circle, #ead5acb3 0 10%, #c8a66b66 25%, #87b6ce33 48%, transparent 68%);
+}
+
+@keyframes vault-symbol-win {
+  0%, 100% {
+    filter: drop-shadow(0 0 0.3rem #ead5acbb) drop-shadow(0 0 0.6rem #87b6ce66);
+    transform: scale(1);
+  }
+  46% {
+    filter: drop-shadow(0 0 0.45rem #ead5acdd) drop-shadow(0 0 0.8rem #87b6ce88);
+    transform: translateY(-1%) scale(1.08);
+  }
+}
+
+@keyframes vault-jewel-glint {
+  0% { opacity: 0; transform: translateY(0.8rem) scale(0.92); }
+  25% { opacity: 0.9; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-1rem) scale(1.04); }
+}
+
+@keyframes vault-brass-frame {
+  0% { opacity: 0; transform: scale(0.78); }
+  30% { opacity: 0.55; }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+@keyframes vault-brass-sweep {
+  0% { opacity: 0; transform: scaleX(0.2); }
+  30% { opacity: 0.55; }
+  100% { opacity: 0; transform: scaleX(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slots-page[data-slot-theme='dragon-hoard-cabinet-v1'] .slot-symbol--winner .slot-symbol__image {
+    animation: none;
+    transform: none;
+    filter: drop-shadow(0 0 0.3rem #ead5ac99);
+  }
+
+  .slots-page__result-atmosphere[data-celebration='vault-jewel-glint'] {
+    display: none;
+    animation: none;
+  }
+}

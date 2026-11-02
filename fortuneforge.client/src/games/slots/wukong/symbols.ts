@@ -36,7 +36,7 @@ export const WUKONG_FEATURE_SYMBOL_IDS = [
 ] as const satisfies readonly SlotSymbolId[]
 
 const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
-  Exclude<SlotSymbolId, '2' | '3' | '4' | '5' | '6' | '7' | 'ACE' | 'FREE' | 'POWER' | 'BOLT'>,
+  (typeof WUKONG_FEATURE_SYMBOL_IDS)[number],
   SlotSymbolDefinition
 >> = {
   BANANA: { id: 'BANANA', label: 'Celestial banana bunch', image: celestialBananaBunchSymbol, animatedImage: celestialBananaBunchSymbol },

@@ -1,0 +1,2563 @@
+{
+  "scenario": "collection-rand",
+  "source": {
+    "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
+    "seed": 5,
+    "engineVersion": "shared-slots-engine-v1",
+    "gameId": "reel-riches-v1",
+    "noHttpServerOrAccountSettlement": true,
+    "replayMatchesExceptSpinId": true,
+    "deterministicCaveat": "Public response replay compared field-for-field except fresh response.spinId."
+  },
+  "wagerPoints": 2,
+  "initialState": {
+    "initialCollectionMode": "rand",
+    "initialEnergy": 0,
+    "collectionCount": 39
+  },
+  "steps": [
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": false,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "energyBalance": 0,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 39,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": null,
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "2327ee42-f694-409f-be17-2fc31fe6b9bd",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          21,
+          18,
+          16,
+          40,
+          29
+        ],
+        "reels": [
+          [
+            "3",
+            "SEAL_RAND",
+            "RAND_3",
+            "4"
+          ],
+          [
+            "2",
+            "3",
+            "4",
+            "3"
+          ],
+          [
+            "6",
+            "RAND_05",
+            "ACE",
+            "POWER"
+          ],
+          [
+            "POWER",
+            "2",
+            "4",
+            "5"
+          ],
+          [
+            "4",
+            "2",
+            "7",
+            "POWER"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 1,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": false,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 0,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_RAND": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 0,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "13c34c8d-e409-4211-8a88-bed30202df55",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          6,
+          52,
+          16,
+          30,
+          4
+        ],
+        "reels": [
+          [
+            "RAND_05",
+            "RAND_2",
+            "RAND_1",
+            "RAND_05",
+            "RAND_1",
+            "RAND_4"
+          ],
+          [
+            "2",
+            "POWER",
+            "4",
+            "BOLT",
+            "6",
+            "5"
+          ],
+          [
+            "3",
+            "3",
+            "POWER",
+            "6",
+            "3",
+            "FREE"
+          ],
+          [
+            "3",
+            "3",
+            "POWER",
+            "6",
+            "3",
+            "FREE"
+          ],
+          [
+            "3",
+            "5",
+            "7",
+            "2",
+            "2",
+            "POWER"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 2,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 1,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 1,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "6333bc8f-7cd0-4b84-a99d-00279349c559",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          21,
+          6,
+          62,
+          53,
+          34
+        ],
+        "reels": [
+          [
+            "POWER",
+            "3",
+            "4",
+            "7",
+            "3",
+            "2"
+          ],
+          [
+            "3",
+            "6",
+            "POWER",
+            "FREE",
+            "3",
+            "2"
+          ],
+          [
+            "POWER",
+            "3",
+            "4",
+            "7",
+            "3",
+            "2"
+          ],
+          [
+            "5",
+            "4",
+            "FREE",
+            "POWER",
+            "2",
+            "BOLT"
+          ],
+          [
+            "RAND_5",
+            "RAND_4",
+            "RAND_05",
+            "RAND_1",
+            "RAND_05",
+            "RAND_05"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 3,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "55befd48-4994-4b2c-bd23-487c7aa19248",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          44,
+          23,
+          1,
+          31,
+          5
+        ],
+        "reels": [
+          [
+            "RAND_3",
+            "RAND_05",
+            "RAND_3",
+            "RAND_1",
+            "RAND_05",
+            "RAND_5"
+          ],
+          [
+            "7",
+            "3",
+            "SEAL_SYNC",
+            "3",
+            "5",
+            "FREE"
+          ],
+          [
+            "7",
+            "3",
+            "2",
+            "3",
+            "5",
+            "FREE"
+          ],
+          [
+            "3",
+            "POWER",
+            "6",
+            "BANANA",
+            "FREE",
+            "POWER"
+          ],
+          [
+            "5",
+            "7",
+            "4",
+            "2",
+            "POWER",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 4,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 5,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 12,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 2,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_SYNC": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 12,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 2,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "0665dc44-21a6-49fb-9f02-4cd794e18773",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          33,
+          51,
+          58,
+          7,
+          34
+        ],
+        "reels": [
+          [
+            "4",
+            "4",
+            "BANANA",
+            "4",
+            "5",
+            "6"
+          ],
+          [
+            "4",
+            "2",
+            "POWER",
+            "4",
+            "BOLT",
+            "6"
+          ],
+          [
+            "RAND_05",
+            "RAND_4",
+            "RAND_05",
+            "RAND_1",
+            "RAND_2",
+            "RAND_1"
+          ],
+          [
+            "4",
+            "4",
+            "6",
+            "4",
+            "5",
+            "6"
+          ],
+          [
+            "3",
+            "3",
+            "5",
+            "3",
+            "4",
+            "POWER"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 5,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 11,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 3,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 11,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 3,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "139754cb-2d26-4fcf-8f2d-3fc3bcf4ed27",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          52,
+          4,
+          15,
+          38,
+          52
+        ],
+        "reels": [
+          [
+            "POWER",
+            "FREE",
+            "POWER",
+            "POWER",
+            "BOLT",
+            "2"
+          ],
+          [
+            "2",
+            "3",
+            "BANANA",
+            "6",
+            "POWER",
+            "FREE"
+          ],
+          [
+            "2",
+            "6",
+            "2",
+            "ACE",
+            "POWER",
+            "2"
+          ],
+          [
+            "2",
+            "BANANA",
+            "2",
+            "ACE",
+            "POWER",
+            "2"
+          ],
+          [
+            "RAND_05",
+            "RAND_4",
+            "RAND_1",
+            "RAND_05",
+            "RAND_15",
+            "RAND_05"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 6,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 10,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "47c1e29e-a9b3-4cba-96ca-defe755ff47c",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          58,
+          59,
+          18,
+          38,
+          15
+        ],
+        "reels": [
+          [
+            "RAND_05",
+            "RAND_1",
+            "RAND_4",
+            "RAND_05",
+            "RAND_05",
+            "RAND_05"
+          ],
+          [
+            "3",
+            "2",
+            "2",
+            "3",
+            "3",
+            "5"
+          ],
+          [
+            "3",
+            "3",
+            "POWER",
+            "2",
+            "4",
+            "5"
+          ],
+          [
+            "3",
+            "3",
+            "POWER",
+            "2",
+            "4",
+            "5"
+          ],
+          [
+            "5",
+            "2",
+            "2",
+            "4",
+            "4",
+            "2"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 7,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 9,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "1a43bfe6-2a7f-4d6e-8026-3295e0145e49",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          29,
+          6,
+          49,
+          6,
+          7
+        ],
+        "reels": [
+          [
+            "2",
+            "3",
+            "POWER",
+            "3",
+            "6",
+            "4"
+          ],
+          [
+            "3",
+            "6",
+            "POWER",
+            "2",
+            "3",
+            "2"
+          ],
+          [
+            "POWER",
+            "4",
+            "3",
+            "6",
+            "4",
+            "3"
+          ],
+          [
+            "2",
+            "SEAL_SYNC",
+            "POWER",
+            "3",
+            "6",
+            "4"
+          ],
+          [
+            "RAND_15",
+            "RAND_1",
+            "RAND_15",
+            "RAND_1",
+            "RAND_15",
+            "RAND_05"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 8,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_SYNC": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 8,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "287fcd1f-da14-4ddf-8a53-7991c45ba3bb",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          2,
+          26,
+          3,
+          60,
+          38
+        ],
+        "reels": [
+          [
+            "4",
+            "3",
+            "7",
+            "ACE",
+            "4",
+            "POWER"
+          ],
+          [
+            "4",
+            "7",
+            "6",
+            "3",
+            "3",
+            "3"
+          ],
+          [
+            "2",
+            "BANANA",
+            "5",
+            "4",
+            "POWER",
+            "4"
+          ],
+          [
+            "4",
+            "POWER",
+            "3",
+            "3",
+            "2",
+            "SEAL_PAW"
+          ],
+          [
+            "RAND_05",
+            "RAND_05",
+            "RAND_1",
+            "RAND_1",
+            "RAND_05",
+            "RAND_4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 9,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 7,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_PAW": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 7,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "6dd5637e-041d-4b47-8937-a71a5fc35c22",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          36,
+          25,
+          56,
+          5,
+          20
+        ],
+        "reels": [
+          [
+            "6",
+            "2",
+            "2",
+            "POWER",
+            "3",
+            "5"
+          ],
+          [
+            "RAND_05",
+            "RAND_15",
+            "RAND_05",
+            "RAND_2",
+            "RAND_05",
+            "RAND_15"
+          ],
+          [
+            "2",
+            "4",
+            "3",
+            "4",
+            "3",
+            "5"
+          ],
+          [
+            "3",
+            "3",
+            "4",
+            "4",
+            "6",
+            "4"
+          ],
+          [
+            "2",
+            "4",
+            "3",
+            "4",
+            "3",
+            "5"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 10,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 6,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "df8b98f6-2caa-4c28-a92d-c627c871ff4b",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          32,
+          33,
+          21,
+          5,
+          44
+        ],
+        "reels": [
+          [
+            "3",
+            "3",
+            "4",
+            "4",
+            "6",
+            "4"
+          ],
+          [
+            "RAND_2",
+            "RAND_15",
+            "RAND_1",
+            "RAND_1",
+            "RAND_1",
+            "RAND_05"
+          ],
+          [
+            "5",
+            "7",
+            "3",
+            "POWER",
+            "3",
+            "2"
+          ],
+          [
+            "3",
+            "3",
+            "4",
+            "4",
+            "6",
+            "4"
+          ],
+          [
+            "4",
+            "3",
+            "6",
+            "BANANA",
+            "6",
+            "2"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 11,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 5,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "edc353e8-552d-4a82-acaf-6111a92cdb46",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          36,
+          58,
+          27,
+          52,
+          0
+        ],
+        "reels": [
+          [
+            "6",
+            "2",
+            "2",
+            "POWER",
+            "3",
+            "5"
+          ],
+          [
+            "FREE",
+            "SEAL_RAND",
+            "2",
+            "2",
+            "3",
+            "3"
+          ],
+          [
+            "4",
+            "3",
+            "3",
+            "FREE",
+            "POWER",
+            "6"
+          ],
+          [
+            "RAND_1",
+            "RAND_05",
+            "RAND_05",
+            "RAND_1",
+            "RAND_05",
+            "RAND_5"
+          ],
+          [
+            "3",
+            "5",
+            "4",
+            "3",
+            "POWER",
+            "2"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 12,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_RAND": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 4,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "363e41cb-93f8-485b-afdc-889f8ef3ed85",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          50,
+          17,
+          47,
+          31,
+          16
+        ],
+        "reels": [
+          [
+            "RAND_1",
+            "RAND_1",
+            "RAND_2",
+            "RAND_2",
+            "RAND_1",
+            "RAND_1"
+          ],
+          [
+            "6",
+            "2",
+            "3",
+            "4",
+            "3",
+            "3"
+          ],
+          [
+            "3",
+            "POWER",
+            "6",
+            "3",
+            "3",
+            "POWER"
+          ],
+          [
+            "PAW",
+            "POWER",
+            "6",
+            "3",
+            "3",
+            "POWER"
+          ],
+          [
+            "2",
+            "2",
+            "4",
+            "3",
+            "2",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 16,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 16,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 7,
+                    "positions": [
+                      {
+                        "reel": 3,
+                        "row": 0
+                      },
+                      {
+                        "reel": 0,
+                        "row": 0
+                      },
+                      {
+                        "reel": 0,
+                        "row": 1
+                      },
+                      {
+                        "reel": 0,
+                        "row": 2
+                      },
+                      {
+                        "reel": 0,
+                        "row": 3
+                      },
+                      {
+                        "reel": 0,
+                        "row": 4
+                      },
+                      {
+                        "reel": 0,
+                        "row": 5
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 8,
+                  "amountPoints": 16
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 13,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 4,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 16,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 3,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 4,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "b360afbd-41af-4c17-9603-2ce10acc78fb",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          53,
+          49,
+          55,
+          41,
+          33
+        ],
+        "reels": [
+          [
+            "3",
+            "3",
+            "3",
+            "5",
+            "3",
+            "4"
+          ],
+          [
+            "POWER",
+            "BANANA",
+            "4",
+            "2",
+            "POWER",
+            "4"
+          ],
+          [
+            "4",
+            "BOLT",
+            "2",
+            "2",
+            "4",
+            "3"
+          ],
+          [
+            "2",
+            "4",
+            "PAW",
+            "3",
+            "3",
+            "5"
+          ],
+          [
+            "RAND_15",
+            "RAND_1",
+            "RAND_1",
+            "RAND_2",
+            "RAND_15",
+            "RAND_2"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 18,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 18,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 7,
+                    "positions": [
+                      {
+                        "reel": 3,
+                        "row": 2
+                      },
+                      {
+                        "reel": 4,
+                        "row": 0
+                      },
+                      {
+                        "reel": 4,
+                        "row": 1
+                      },
+                      {
+                        "reel": 4,
+                        "row": 2
+                      },
+                      {
+                        "reel": 4,
+                        "row": 3
+                      },
+                      {
+                        "reel": 4,
+                        "row": 4
+                      },
+                      {
+                        "reel": 4,
+                        "row": 5
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 9,
+                  "amountPoints": 18
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 14,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 1,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 5,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 18,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 2,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 5,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "17e52c8a-5f2e-438d-9658-b299cee1be05",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          18,
+          57,
+          37,
+          30,
+          29
+        ],
+        "reels": [
+          [
+            "POWER",
+            "4",
+            "2",
+            "3",
+            "4",
+            "6"
+          ],
+          [
+            "3",
+            "3",
+            "POWER",
+            "6",
+            "3",
+            "4"
+          ],
+          [
+            "RAND_05",
+            "RAND_15",
+            "RAND_05",
+            "RAND_05",
+            "RAND_15",
+            "RAND_1"
+          ],
+          [
+            "BANANA",
+            "3",
+            "POWER",
+            "6",
+            "3",
+            "4"
+          ],
+          [
+            "4",
+            "PAW",
+            "7",
+            "POWER",
+            "3",
+            "3"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 11,
+          "paylines": [
+            {
+              "paylineId": 901,
+              "amountPoints": 11,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 901,
+                    "symbolId": "PAW",
+                    "matchLength": 7,
+                    "positions": [
+                      {
+                        "reel": 4,
+                        "row": 1
+                      },
+                      {
+                        "reel": 2,
+                        "row": 0
+                      },
+                      {
+                        "reel": 2,
+                        "row": 1
+                      },
+                      {
+                        "reel": 2,
+                        "row": 2
+                      },
+                      {
+                        "reel": 2,
+                        "row": 3
+                      },
+                      {
+                        "reel": 2,
+                        "row": 4
+                      },
+                      {
+                        "reel": 2,
+                        "row": 5
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 6,
+                  "amountPoints": 11
+                }
+              ]
+            }
+          ]
+        },
+        "consecutiveFiveMisses": 15,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "specialPointsBalance": 0,
+        "energyBalance": 5,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 1,
+        "moneyGrabPoints": 11,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {},
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    },
+    {
+      "request": {
+        "gameId": "reel-riches-v1",
+        "wagerPoints": 2,
+        "useFreeSpin": true,
+        "freeSpinsRemaining": 1,
+        "freeSpinWagerPoints": 2,
+        "energyBalance": 5,
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "freeSpinFeatureMode": "sync-rows-rand",
+        "midnightBonusState": null
+      },
+      "response": {
+        "spinId": "8f89486e-590d-44b1-92de-272b3d1cf624",
+        "gameId": "reel-riches-v1",
+        "reelSetId": "classic-reels-v4",
+        "symbolSetId": "wukong-treasures-v3",
+        "paytableId": "classic-paytable-v4",
+        "wagerPoints": 2,
+        "pointValueInCents": 25,
+        "reelStops": [
+          28,
+          47,
+          50,
+          17,
+          13
+        ],
+        "reels": [
+          [
+            "3",
+            "2",
+            "3",
+            "POWER",
+            "FREE",
+            "6"
+          ],
+          [
+            "5",
+            "2",
+            "POWER",
+            "2",
+            "4",
+            "2"
+          ],
+          [
+            "RAND_2",
+            "RAND_15",
+            "RAND_2",
+            "RAND_3",
+            "RAND_2",
+            "RAND_1"
+          ],
+          [
+            "2",
+            "POWER",
+            "ACE",
+            "POWER",
+            "7",
+            "2"
+          ],
+          [
+            "6",
+            "2",
+            "SEAL_RAND",
+            "2",
+            "2",
+            "4"
+          ]
+        ],
+        "payout": {
+          "totalPoints": 0,
+          "paylines": []
+        },
+        "consecutiveFiveMisses": 16,
+        "fiveMatchPityTriggered": false,
+        "freeSpinsAwarded": 0,
+        "specialPointsAwarded": 0,
+        "energyAwarded": 0,
+        "specialBoostApplied": false,
+        "slotsCreditsBalance": null,
+        "isFreeSpin": true,
+        "freeSpinsRemaining": 0,
+        "freeSpinWagerPoints": null,
+        "specialPointsBalance": 0,
+        "energyBalance": 5,
+        "energyMultiplierApplied": false,
+        "payoutMultiplier": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
+        "bananaBonusPoints": 0,
+        "sealsAwarded": {
+          "SEAL_RAND": 1
+        },
+        "sealCollections": [
+          {
+            "sealId": "sync",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rows",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "paw",
+            "count": 1,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "rand",
+            "count": 2,
+            "averageWagerPoints": 2,
+            "requiredCount": 40
+          }
+        ],
+        "collectionFreeSpinsAwarded": 0,
+        "freeSpinFeatureMode": null,
+        "bonusRound": null,
+        "queuedBonusRounds": [],
+        "awardedBonusRounds": [],
+        "midnightBonusState": null
+      }
+    }
+  ]
+}

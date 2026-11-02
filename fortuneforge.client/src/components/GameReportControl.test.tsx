@@ -40,6 +40,16 @@ describe('shared game report control', () => {
     expect(send.mock.calls[1].slice(0, 2)).toEqual(first.slice(0, 2))
     expect(host.textContent).toContain('Your report has been saved')
   })
+  it('reports Mines through the shared control without sending practice query data', async () => {
+    history.replaceState(null, '', '/games/mines?mode=practice#private')
+    const send = vi.fn<typeof sendGameReport>().mockResolvedValue(receipt)
+    await act(async () => root.render(<GameReportControl gameTitle="Mines" send={send}/>))
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="Report this game"]')!.click())
+    expect(host.querySelector('h2')?.textContent).toBe('Report Mines')
+    await message('The cash-out button stopped responding.'); await submit()
+    expect(send.mock.calls[0][0]).toEqual({ category: 'bug', message: 'The cash-out button stopped responding.', path: '/games/mines' })
+    expect(host.textContent).toContain('Your report has been saved')
+  })
   it('lets the player correct a definitively rejected message', async () => {
     const send = vi.fn<typeof sendGameReport>().mockRejectedValueOnce(new GameReportError('Please remove the invalid character.', 400))
     await setup(send); await message('A report rejected by validation.'); await submit()

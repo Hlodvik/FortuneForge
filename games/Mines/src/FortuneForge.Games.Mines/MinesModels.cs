@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.Mines;
 
-public enum MinesRoundStatus { Active, Lost, CashedOut, Cleared }
+public enum MinesRoundStatus { Active, Lost, CashedOut, Cleared, Consolation }
 public enum MinesTileKind { Hidden, Gem, Mine }
 
 /// <summary>Private server persistence model. NEVER return this type from a player API; use MinesRoundView.</summary>
@@ -11,7 +11,9 @@ public sealed record MinesRoundState
 {
     [JsonConstructor]
     public MinesRoundState(long wagerCents, int mineCount, ImmutableArray<int> minePositions,
-        ImmutableArray<int> revealedTiles, MinesRoundStatus status, long payoutCents)
+        ImmutableArray<int> revealedTiles, MinesRoundStatus status, long payoutCents,
+        int houseEdgeBasisPoints = MinesRules.LegacyHouseEdgeBasisPoints,
+        int payoutPolicyVersion = MinesRules.LegacyPayoutPolicyVersion)
     {
         WagerCents = wagerCents;
         MineCount = mineCount;
@@ -19,6 +21,8 @@ public sealed record MinesRoundState
         RevealedTiles = revealedTiles;
         Status = status;
         PayoutCents = payoutCents;
+        HouseEdgeBasisPoints = houseEdgeBasisPoints;
+        PayoutPolicyVersion = payoutPolicyVersion;
         Validate();
     }
 
@@ -28,11 +32,17 @@ public sealed record MinesRoundState
     public ImmutableArray<int> RevealedTiles { get; }
     public MinesRoundStatus Status { get; }
     public long PayoutCents { get; }
+    /// <summary>Frozen at acceptance. Missing legacy JSON retains its original 99% schedule.</summary>
+    public int HouseEdgeBasisPoints { get; }
+    /// <summary>Missing legacy JSON keeps its uncapped schedule and zero mine returns.</summary>
+    public int PayoutPolicyVersion { get; }
     [JsonIgnore] public int SafeReveals => RevealedTiles.Count(tile => !MinePositions.Contains(tile));
 
     public void Validate()
     {
-        MinesRules.ValidateWager(WagerCents);
+        MinesRules.ValidatePayoutPolicy(HouseEdgeBasisPoints, PayoutPolicyVersion);
+        if (PayoutPolicyVersion == MinesRules.PayoutPolicyVersion) MinesRules.ValidateWager(WagerCents);
+        else MinesRules.ValidateAcceptedWager(WagerCents);
         MinesRules.ValidateMineCount(MineCount);
         if (MinePositions.IsDefault || MinePositions.Length != MineCount ||
             MinePositions.Any(tile => tile is < 0 or >= MinesRules.TileCount) ||
@@ -49,11 +59,15 @@ public sealed record MinesRoundState
         {
             MinesRoundStatus.Active => minesHit == 0 && safe < safeTotal && PayoutCents == 0,
             MinesRoundStatus.Lost => minesHit == 1 && safe < safeTotal &&
-                MinePositions.Contains(RevealedTiles[^1]) && PayoutCents == 0,
+                MinePositions.Contains(RevealedTiles[^1]) && PayoutCents == 0 &&
+                MinesRules.MineReturnCents(WagerCents, MineCount, safe, HouseEdgeBasisPoints, PayoutPolicyVersion) == 0,
             MinesRoundStatus.CashedOut => minesHit == 0 && safe > 0 && safe < safeTotal &&
-                PayoutCents == MinesRules.ReturnCents(WagerCents, MineCount, safe),
+                PayoutCents == MinesRules.ReturnCents(WagerCents, MineCount, safe, HouseEdgeBasisPoints, PayoutPolicyVersion),
             MinesRoundStatus.Cleared => minesHit == 0 && safe == safeTotal &&
-                PayoutCents == MinesRules.ReturnCents(WagerCents, MineCount, safe),
+                PayoutCents == MinesRules.ReturnCents(WagerCents, MineCount, safe, HouseEdgeBasisPoints, PayoutPolicyVersion),
+            MinesRoundStatus.Consolation => PayoutPolicyVersion == MinesRules.PayoutPolicyVersion && minesHit == 1 &&
+                safe < safeTotal && MinePositions.Contains(RevealedTiles[^1]) && PayoutCents > 0 &&
+                PayoutCents == MinesRules.MineReturnCents(WagerCents, MineCount, safe, HouseEdgeBasisPoints, PayoutPolicyVersion),
             _ => false,
         };
         if (!valid) throw new ArgumentException("The persisted round outcome or payout is invalid.", nameof(Status));
@@ -74,4 +88,7 @@ public sealed record MinesRoundView(
     long CashOutCents,
     bool CanCashOut,
     long PayoutCents,
-    ImmutableArray<MinesTileView> Tiles);
+    ImmutableArray<MinesTileView> Tiles,
+    int HouseEdgeBasisPoints = MinesRules.LegacyHouseEdgeBasisPoints,
+    int PayoutPolicyVersion = MinesRules.LegacyPayoutPolicyVersion,
+    long NextMinePayoutCents = 0);

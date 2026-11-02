@@ -5,12 +5,50 @@ using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
+using System.Text.Json;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Slots;
 
 public sealed class SlotFeatureSpinTests
 {
+    [Fact]
+    public void PaidEngineSnapshot_CapturesExactRulesInputsAndStaysPrivateFromClientResponse()
+    {
+        var service = CreateService(new QueuedRandomIndexSource());
+        var before = DateTime.UtcNow;
+
+        var result = service.Spin("wukong-journey-v1", 100, "player", false, 75, "rows");
+
+        var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
+        Assert.Equal(SpinService.AuditEngineVersion, audit.EngineVersion);
+        Assert.InRange(audit.GeneratedAtUtc, before, DateTime.UtcNow);
+        Assert.Equal(result.GameId, audit.BaseGame.Id);
+        Assert.Equal(result.ReelSetId, audit.ReelSet.Id);
+        Assert.Equal(result.SymbolSetId, audit.SymbolSet.Id);
+        Assert.Equal(result.PaytableId, audit.Paytable.Id);
+        Assert.Equal(75, audit.EnergyBalanceBefore);
+        Assert.Equal("rows", audit.FreeSpinFeatureMode);
+        Assert.Equal(audit.BaseGame.Layout.VisibleRows + 2, audit.EffectiveGame.Layout.VisibleRows);
+        Assert.Equal(0, audit.PityMissesBefore);
+        Assert.Equal(1, audit.GenerationAttempts);
+        Assert.DoesNotContain("engineAudit", JsonSerializer.Serialize(result), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void EngineSnapshot_PreservesPreSpinPityAcrossConsecutiveSpins()
+    {
+        var service = CreateService(new QueuedRandomIndexSource());
+        var first = service.Spin("wukong-journey-v1", 100, "player", false,
+            freeSpinFeatureMode: "rand");
+        var second = service.Spin("wukong-journey-v1", 100, "player", false,
+            freeSpinFeatureMode: "rand");
+
+        Assert.Equal(0, Assert.IsType<SlotSpinEngineAudit>(first.EngineAudit).PityMissesBefore);
+        Assert.Equal(first.ConsecutiveFiveMisses,
+            Assert.IsType<SlotSpinEngineAudit>(second.EngineAudit).PityMissesBefore);
+    }
+
     [Fact]
     public void DoubloonTokenFrequency_PiratesUsesACalibratedValueCadence()
     {

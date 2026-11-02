@@ -23,7 +23,7 @@ function KenoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <InGameShell account={account} title="Keno" theme="casino" className="player-page">
+  return <InGameShell account={account} title="Keno" className="player-page">
     <KenoGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />
   </InGameShell>
 }

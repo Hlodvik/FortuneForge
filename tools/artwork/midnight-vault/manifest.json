@@ -1,0 +1,1638 @@
+{
+  "kind": "Art-only ornamental-letter review revision4; no implementation or symbol-engine assignment",
+  "generatedUtc": "2026-11-01T02:36:53.526Z",
+  "background": "#071321",
+  "board": {
+    "full": "preview-board.png",
+    "width": 2040,
+    "height": 1392,
+    "preview": "preview-board-1224.png",
+    "previewWidth": 1224
+  },
+  "count": 15,
+  "revisedLetterAssets": 4,
+  "approvedUnchangedAssets": 11,
+  "originalV1AssetsRetained": 5,
+  "layout": "Five columns by three rows; captions outside art; alpha-bound contain normalization in memory only; no source image rewritten.",
+  "generation": "Four ornamental-letter sources supplied by their assigned image-generation owners; the masterA anchors their style. Eleven approved sources are reused byte-for-byte, including the approved revision2 triple-sevens.",
+  "pixelProof": {
+    "comparison": "../revision-2/preview-board.png",
+    "approvedSourceHashesMatching": 11,
+    "unchangedTopAndBottom": true,
+    "outsideLetterTilesChangedPixels": 0,
+    "letterTileChangedPixels": 202658,
+    "allowedLetterRects": [
+      {
+        "left": 60,
+        "top": 532,
+        "width": 360,
+        "height": 366
+      },
+      {
+        "left": 450,
+        "top": 532,
+        "width": 360,
+        "height": 366
+      },
+      {
+        "left": 840,
+        "top": 532,
+        "width": 360,
+        "height": 366
+      },
+      {
+        "left": 1230,
+        "top": 532,
+        "width": 360,
+        "height": 366
+      }
+    ],
+    "approvedSevensTilePixelIdentical": true,
+    "sevensTileRawSha256": "1bf9b08c374870b9a0d7c3720258d45dc863c6343e9b0192a27736235d43f335",
+    "canvasWidth": 2040,
+    "canvasHeight": 1392,
+    "previousBoardSha256": "1faa9a079577f4879aeade5d1672c5749ce9bec615dfa1feb759fc928b27ae7b",
+    "revisedBoardSha256": "57ab6bd5010d978f951743bf9a686fec740183c0718f1005369b9ad9818e8a27"
+  },
+  "assets": [
+    {
+      "index": 1,
+      "id": "ring",
+      "label": "Ring",
+      "file": "sources/ring.webp",
+      "group": "accepted",
+      "byteCount": 29936,
+      "sha256": "ccf00aff767874a2662152ebb97491d05ab51699923de095fb5a00a9212c725c",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../retained/midnight-vault-ruby-ring.webp",
+      "previousSha256": "ccf00aff767874a2662152ebb97491d05ab51699923de095fb5a00a9212c725c",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 1,
+        "id": "ring",
+        "label": "Ring",
+        "file": "../retained/midnight-vault-ruby-ring.webp",
+        "group": "accepted",
+        "byteCount": 29936,
+        "sha256": "ccf00aff767874a2662152ebb97491d05ab51699923de095fb5a00a9212c725c",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../retained/midnight-vault-ruby-ring.webp",
+        "previousSha256": "ccf00aff767874a2662152ebb97491d05ab51699923de095fb5a00a9212c725c",
+        "previousProvenance": {
+          "method": "Exact unchanged original V1 WebP copy",
+          "generatedSource": null,
+          "original": "fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-ruby-ring.webp",
+          "prompt": null,
+          "promptFile": null
+        },
+        "width": 320,
+        "height": 320,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 55573,
+        "visibleBoundsAtAlpha8": [
+          40,
+          19,
+          280,
+          301
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 320,
+      "height": 320,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 55573,
+      "visibleBoundsAtAlpha8": [
+        40,
+        19,
+        280,
+        301
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../retained/midnight-vault-ruby-ring.webp"
+    },
+    {
+      "index": 2,
+      "id": "loose-diamond",
+      "label": "Loose diamond",
+      "file": "sources/loose-diamond.png",
+      "group": "accepted",
+      "byteCount": 1382273,
+      "sha256": "ff2d331ba0dae490e1904c4775476ea0d2a10028861fe6af88c1566cc5a469cd",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../props/loose-diamond.png",
+      "previousSha256": "ff2d331ba0dae490e1904c4775476ea0d2a10028861fe6af88c1566cc5a469cd",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 2,
+        "id": "loose-diamond",
+        "label": "Loose diamond",
+        "file": "../props/loose-diamond.png",
+        "group": "accepted",
+        "byteCount": 1382273,
+        "sha256": "ff2d331ba0dae490e1904c4775476ea0d2a10028861fe6af88c1566cc5a469cd",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../props/loose-diamond.png",
+        "previousSha256": "ff2d331ba0dae490e1904c4775476ea0d2a10028861fe6af88c1566cc5a469cd",
+        "previousProvenance": {
+          "method": "Built-in image_gen; original V1 ring style reference only",
+          "generatedSource": "C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/exec-51e83b13-ca66-4545-bb23-2fa1985d6bac.png",
+          "original": null,
+          "prompt": "Use case: stylized-concept\nAsset type: ONE isolated premium casino reel-symbol illustration, individual transparent PNG, square canvas. This is an artwork preview only.\nReference image1 is the APPROVED OLD ruby-ring symbol: match its polished realistic precious-material rendering, rich but clean facets, professional3D casino finish and restrained warm gold/navy palette where appropriate. Do not copy its ring shape or turn the new object into jewelry.\nRendering: high-end realistic3D symbol illustration, crisp substantial silhouette, believable physically rendered materials, clean upper-left key light and gentle cool rim light. Fine enough to look premium but simple enough to read at90pixels. NO flat cel shading, NO thick cartoon/black outlines, NO angular vector-poster style.\nComposition: square image, one coherent isolated subject centered, occupying78–84% of canvas, with generous even transparent padding. Complete uncropped silhouette. Genuine transparent alpha background. No scene, pedestal, card, icon badge, UI, surrounding frame, ground plane, cast shadow, floating sparkle spray, text or watermark.\nSubject: ONE SINGLE LOOSE brilliant-cut CLEAR DIAMOND. Icy transparent white and subtle pale-blue facets, broad crown and pointed pavilion, slight natural three-quarter gem angle. Carefully cut optical facets, beautiful realistic internal reflections and one restrained bright highlight. NO METAL AT ALL: no gold, setting, mounting, rim, frame, base or surrounding stones. The diamond must be a complete standalone clear gemstone, not a gold jewelry medallion.\n",
+          "promptFile": "../props/loose-diamond.prompt.txt"
+        },
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 933543,
+        "visibleBoundsAtAlpha8": [
+          44,
+          202,
+          1211,
+          1082
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 933543,
+      "visibleBoundsAtAlpha8": [
+        44,
+        202,
+        1211,
+        1082
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../props/loose-diamond.png"
+    },
+    {
+      "index": 3,
+      "id": "front-vault",
+      "label": "Front vault",
+      "file": "sources/front-vault.png",
+      "group": "accepted",
+      "byteCount": 2234561,
+      "sha256": "b3cc6185d2fbcfafa307927feb7d988c3dbdb6c4009fd6c09eb55b3f697a564e",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../props/front-vault.png",
+      "previousSha256": "b3cc6185d2fbcfafa307927feb7d988c3dbdb6c4009fd6c09eb55b3f697a564e",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 3,
+        "id": "front-vault",
+        "label": "Front vault",
+        "file": "../props/front-vault.png",
+        "group": "accepted",
+        "byteCount": 2234561,
+        "sha256": "b3cc6185d2fbcfafa307927feb7d988c3dbdb6c4009fd6c09eb55b3f697a564e",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../props/front-vault.png",
+        "previousSha256": "b3cc6185d2fbcfafa307927feb7d988c3dbdb6c4009fd6c09eb55b3f697a564e",
+        "previousProvenance": {
+          "method": "Built-in image_gen; original V1 ring style reference only",
+          "generatedSource": "C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/exec-eca571b6-27e0-4ede-bd8b-6bd8d1de5b4b.png",
+          "original": null,
+          "prompt": "Use case: stylized-concept\nAsset type: ONE isolated premium casino reel-symbol illustration, individual transparent PNG, square canvas. This is an artwork preview only.\nReference image1 is the APPROVED OLD ruby-ring symbol: match its polished realistic precious-material rendering, rich but clean facets, professional3D casino finish and restrained warm gold/navy palette where appropriate. Do not copy its ring shape or turn the new object into jewelry.\nRendering: high-end realistic3D symbol illustration, crisp substantial silhouette, believable physically rendered materials, clean upper-left key light and gentle cool rim light. Fine enough to look premium but simple enough to read at90pixels. NO flat cel shading, NO thick cartoon/black outlines, NO angular vector-poster style.\nComposition: square image, one coherent isolated subject centered, occupying78–84% of canvas, with generous even transparent padding. Complete uncropped silhouette. Genuine transparent alpha background. No scene, pedestal, card, icon badge, UI, surrounding frame, ground plane, cast shadow, floating sparkle spray, text or watermark.\nSubject: ONE round heavy CLOSED BANK VAULT DOOR, precisely FRONT-FACING and bilaterally symmetrical. Brushed dark-navy steel circular face, substantial polished warm-gold circular rim, centered gold hub with six balanced spokes, and an orderly ring of realistic gold bolt heads. The door is presented straight-on with no oblique side wall or angled perspective, complete circular silhouette, no building, doorway surround or backdrop. Materials match the approved ring's gold and navy enamel quality.\n",
+          "promptFile": "../props/front-vault.prompt.txt"
+        },
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 556829,
+        "visibleBoundsAtAlpha8": [
+          65,
+          54,
+          1187,
+          1190
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 556829,
+      "visibleBoundsAtAlpha8": [
+        65,
+        54,
+        1187,
+        1190
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../props/front-vault.png"
+    },
+    {
+      "index": 4,
+      "id": "overflowing-chips",
+      "label": "Overflowing chips",
+      "file": "sources/overflowing-chips.png",
+      "group": "accepted",
+      "byteCount": 1794548,
+      "sha256": "df773f4228ff18f8b211982f3d9859bdfc51bd381b60eea3442e761c73b3f36d",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../props/overflowing-chips.png",
+      "previousSha256": "df773f4228ff18f8b211982f3d9859bdfc51bd381b60eea3442e761c73b3f36d",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 4,
+        "id": "overflowing-chips",
+        "label": "Overflowing chips",
+        "file": "../props/overflowing-chips.png",
+        "group": "accepted",
+        "byteCount": 1794548,
+        "sha256": "df773f4228ff18f8b211982f3d9859bdfc51bd381b60eea3442e761c73b3f36d",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../props/overflowing-chips.png",
+        "previousSha256": "df773f4228ff18f8b211982f3d9859bdfc51bd381b60eea3442e761c73b3f36d",
+        "previousProvenance": {
+          "method": "Built-in image_gen; original V1 ring style reference only",
+          "generatedSource": "C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/exec-46b8a63b-c9b7-43ec-ad32-eed7c22b049d.png",
+          "original": null,
+          "prompt": "Use case: stylized-concept\nAsset type: ONE isolated premium casino reel-symbol illustration, individual transparent PNG, square canvas. This is an artwork preview only.\nReference image1 is the APPROVED OLD ruby-ring symbol: match its polished realistic precious-material rendering, rich but clean facets, professional3D casino finish and restrained warm gold/navy palette where appropriate. Do not copy its ring shape or turn the new object into jewelry.\nRendering: high-end realistic3D symbol illustration, crisp substantial silhouette, believable physically rendered materials, clean upper-left key light and gentle cool rim light. Fine enough to look premium but simple enough to read at90pixels. NO flat cel shading, NO thick cartoon/black outlines, NO angular vector-poster style.\nComposition: square image, one coherent isolated subject centered, occupying78–84% of canvas, with generous even transparent padding. Complete uncropped silhouette. Genuine transparent alpha background. No scene, pedestal, card, icon badge, UI, surrounding frame, ground plane, cast shadow, floating sparkle spray, text or watermark.\nSubject: ONE coherent pile of stacked and overflowing REAL CASINO CHIPS: several short stacks in red, navy, ivory and emerald-green, with a few fallen chips at the base. Every object is a realistic ceramic casino chip with finished edges and crisp contrasting edge inserts, simple unlettered center disks. Premium tactile ceramic finish, accurate thickness, visually legible individual chips, controlled pile shape rather than a noisy heap. No gold coins, money, jewelry, containers or other props, no text or denominations.\n",
+          "promptFile": "../props/overflowing-chips.prompt.txt"
+        },
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 651820,
+        "visibleBoundsAtAlpha8": [
+          81,
+          95,
+          1181,
+          1168
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 651820,
+      "visibleBoundsAtAlpha8": [
+        81,
+        95,
+        1181,
+        1168
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../props/overflowing-chips.png"
+    },
+    {
+      "index": 5,
+      "id": "cash-briefcase",
+      "label": "Cash briefcase",
+      "file": "sources/cash-briefcase.png",
+      "group": "accepted",
+      "byteCount": 2160443,
+      "sha256": "b71d00febd07bfbb9733255f90971ec7a0b53100a72255bb79f452abe20209b3",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../props/cash-briefcase.png",
+      "previousSha256": "b71d00febd07bfbb9733255f90971ec7a0b53100a72255bb79f452abe20209b3",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 5,
+        "id": "cash-briefcase",
+        "label": "Cash briefcase",
+        "file": "../props/cash-briefcase.png",
+        "group": "accepted",
+        "byteCount": 2160443,
+        "sha256": "b71d00febd07bfbb9733255f90971ec7a0b53100a72255bb79f452abe20209b3",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../props/cash-briefcase.png",
+        "previousSha256": "b71d00febd07bfbb9733255f90971ec7a0b53100a72255bb79f452abe20209b3",
+        "previousProvenance": {
+          "method": "Built-in image_gen; original V1 ring style reference only",
+          "generatedSource": "C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/exec-e63ca6c4-e2d6-4f4e-aebe-e0b539b7686b.png",
+          "original": null,
+          "prompt": "Use case: stylized-concept\nAsset type: ONE isolated premium casino reel-symbol illustration, individual transparent PNG, square canvas. This is an artwork preview only.\nReference image1 is the APPROVED OLD ruby-ring symbol: match its polished realistic precious-material rendering, rich but clean facets, professional3D casino finish and restrained warm gold/navy palette where appropriate. Do not copy its ring shape or turn the new object into jewelry.\nRendering: high-end realistic3D symbol illustration, crisp substantial silhouette, believable physically rendered materials, clean upper-left key light and gentle cool rim light. Fine enough to look premium but simple enough to read at90pixels. NO flat cel shading, NO thick cartoon/black outlines, NO angular vector-poster style.\nComposition: square image, one coherent isolated subject centered, occupying78–84% of canvas, with generous even transparent padding. Complete uncropped silhouette. Genuine transparent alpha background. No scene, pedestal, card, icon badge, UI, surrounding frame, ground plane, cast shadow, floating sparkle spray, text or watermark.\nSubject: ONE open black/dark-navy leather attaché BRIEFCASE filled with exposed neat bundles of cash, shown at a slight three-quarter angle. Fine polished gold hinges and clasps, a sturdy handle and convincing leather. The open lid stands behind the cash-filled lower compartment. Bundles have crisp ivory paper edges, restrained green fictional banknote patterning and clean paper bands, without readable numbers, lettering or recognizable real portraits. Cohesive orderly valuable contents, no gold coins or bars, no props outside the case.\n",
+          "promptFile": "../props/cash-briefcase.prompt.txt"
+        },
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 699289,
+        "visibleBoundsAtAlpha8": [
+          60,
+          66,
+          1195,
+          1204
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 699289,
+      "visibleBoundsAtAlpha8": [
+        60,
+        66,
+        1195,
+        1204
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../props/cash-briefcase.png"
+    },
+    {
+      "index": 6,
+      "id": "ornate-A",
+      "label": "A",
+      "file": "sources/ornate-A.png",
+      "group": "revised",
+      "byteCount": 1080167,
+      "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630",
+      "method": "Built-in image_gen ornamental-letter revision; exact source/prompt records attached",
+      "previousFile": "../revision-2/letters-ak/rank-A.png",
+      "previousSha256": "a835af91875383bfe56433d2cbf1a4a785df7cba140f5a2f86985f3998f26c20",
+      "revisionProvenance": [
+        {
+          "file": "letters/A-manifest.json",
+          "sha256": "c165a7493fa6aaba0f54bb16429096c855357615873d91f10f1a966aa6c036b2",
+          "content": {
+            "letter": "A",
+            "file": "A.png",
+            "method": "Built-in image_gen edit of the native Bodoni A; ornamental engraved lettering style master",
+            "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\\exec-ecbe6d16-acb2-48d1-be27-62d59da8640e.png",
+            "editTarget": "../../revision-3/letters/bodoni/A.png",
+            "promptFile": "A.prompt.txt",
+            "prompt": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n",
+            "width": 1254,
+            "height": 1254,
+            "alphaRange": [
+              0,
+              255
+            ],
+            "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630",
+            "sourceUnmodified": true,
+            "visuallyInspected": true,
+            "observed": "Readable ivory capital A with navy engraving, curled serif tips and integrated leaf-scrolls. No gold, gemstones or thick 3D volume."
+          }
+        },
+        {
+          "file": "letters/A.prompt.txt",
+          "sha256": "c016f3e9cdb3e1e94a2fc4f1e6f70b582063b818f969de0fea5629b3762cb203",
+          "content": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n"
+        },
+        {
+          "file": "letters/J.prompt.txt",
+          "sha256": "6c023667ee94906e782fab145bf386cd9e404d491a3543725abc28071e6dae67",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase J from input1. Preserve the broad top serif, upright stem and clearly hooked bottom. Put delicate engraved leaves and inset parallel hatching down the broad ivory stem; curl the top serif tips and lower hook lightly to match master A, while keeping the normal J structure. It must read unmistakably as J.\n"
+        },
+        {
+          "file": "letters/K-manifest.json",
+          "sha256": "0938ebf08d160e84f89c7d63ea5c2b1db6e917c200fe61766057ffa685ea1598",
+          "content": {
+            "asset": "K",
+            "purpose": "Ornamental letter preview only; no implementation",
+            "method": "Built-in image_gen, one edit call, transparent_background=true",
+            "source": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-63e3-7ed1-ac3b-58f59da69340\\exec-9ec4ef57-96f5-4b62-876a-7e57ee7d9a13.png",
+            "outputFile": "K.png",
+            "promptFile": "K.prompt.txt",
+            "promptExact": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.",
+            "references": [
+              {
+                "role": "Edit target; plain Bodoni K letter bones",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/letters/bodoni/K.png"
+              },
+              {
+                "role": "Style master only; palette, engraving, curled serifs",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-4/letters/A.png"
+              }
+            ],
+            "visualReview": "Correct uppercase K, strong stem and separate diagonal arms with open negative spaces. Flat warm-ivory face, dark-navy engraved leaf scrolls and parallel pen hatching match the master A. Curled serif ends, no gold, gems, crown, plaque, 3D bevel or outside paper scene.",
+            "gameOrPublicFilesChanged": false,
+            "verification": {
+              "mode": "RGBA",
+              "dimensions": [
+                1254,
+                1254
+              ],
+              "alphaExtrema": [
+                0,
+                255
+              ],
+              "alpha128Bounds": [
+                70,
+                118,
+                1198,
+                1134
+              ],
+              "visibleHeightPercent": 81.02,
+              "rawSourceByteIdentical": true,
+              "bytes": 1308938,
+              "sha256": "6143eee7cbe3b2197b161e40e5fc151968281839e1ddb00de29b8d3c2412d429",
+              "promptSha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704"
+            }
+          }
+        },
+        {
+          "file": "letters/K.prompt.txt",
+          "sha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704",
+          "content": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.\n"
+        },
+        {
+          "file": "letters/Q.prompt.txt",
+          "sha256": "3673a36c8dcbc94c5a046e3ba75ad621b102962ba2012898cca9909efc06b06e",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase Q from input1. Preserve the large round/oval open counter and a clear diagonal lower-right tail. Follow the bowl with engraved leaf scrolls in its broad ivory strokes and small parallel hatch groups, and integrate an elegant restrained curl into the tail, all in master A's style. It must read unmistakably as Q.\n"
+        },
+        {
+          "file": "letters/QJ-manifest.json",
+          "sha256": "c8d80e5839c6927451cfa31e4e7af7dc3ffbafd04ce74235d1fd2ab481f85c5a",
+          "content": {
+            "generator": "built-in image_gen",
+            "method": "Two separate edits; input1 plain target, input2 ornamental A style. Generated PNGs copied byte-for-byte, no image postprocessing.",
+            "previewOnly": true,
+            "ownerApprovalClaimed": false,
+            "scope": "Only Q.png,J.png,Q.prompt.txt,J.prompt.txt,QJ-manifest.json in revision-4/letters. Other11 approved assets and runtime files untouched.",
+            "assets": [
+              {
+                "glyph": "Q",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-2d4a1538-f21c-495f-ab11-1c5c0ddf8740.png",
+                "sourceSha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "sha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "bytes": 1144840,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  199,
+                  113,
+                  1118,
+                  1177
+                ],
+                "heightRatio": 0.8485,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\Q.png",
+                    "sha256": "0a9ebac8c0fd0f0cd08584b732fad1c4ce63a879a7d2f31224f0c59efc0f84c5"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              },
+              {
+                "glyph": "J",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-dad4bd6b-0cb5-4259-8cdb-e83c8156975b.png",
+                "sourceSha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "sha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "bytes": 709702,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  295,
+                  116,
+                  957,
+                  1157
+                ],
+                "heightRatio": 0.8301,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\J.png",
+                    "sha256": "5cb29fde91cb807d7370b00eadc8f3a75b5534b3c453c095c493531584048073"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              }
+            ]
+          }
+        }
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 1177202,
+      "visibleBoundsAtAlpha8": [
+        61,
+        116,
+        1202,
+        1141
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "letters/A.png"
+    },
+    {
+      "index": 7,
+      "id": "ornate-K",
+      "label": "K",
+      "file": "sources/ornate-K.png",
+      "group": "revised",
+      "byteCount": 1308938,
+      "sha256": "6143eee7cbe3b2197b161e40e5fc151968281839e1ddb00de29b8d3c2412d429",
+      "method": "Built-in image_gen ornamental-letter revision; exact source/prompt records attached",
+      "previousFile": "../revision-2/letters-ak/rank-K.png",
+      "previousSha256": "d77d3f64802d569b730aee8bedf3208c10af12da267849faba3152227d8f5fd7",
+      "revisionProvenance": [
+        {
+          "file": "letters/A-manifest.json",
+          "sha256": "c165a7493fa6aaba0f54bb16429096c855357615873d91f10f1a966aa6c036b2",
+          "content": {
+            "letter": "A",
+            "file": "A.png",
+            "method": "Built-in image_gen edit of the native Bodoni A; ornamental engraved lettering style master",
+            "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\\exec-ecbe6d16-acb2-48d1-be27-62d59da8640e.png",
+            "editTarget": "../../revision-3/letters/bodoni/A.png",
+            "promptFile": "A.prompt.txt",
+            "prompt": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n",
+            "width": 1254,
+            "height": 1254,
+            "alphaRange": [
+              0,
+              255
+            ],
+            "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630",
+            "sourceUnmodified": true,
+            "visuallyInspected": true,
+            "observed": "Readable ivory capital A with navy engraving, curled serif tips and integrated leaf-scrolls. No gold, gemstones or thick 3D volume."
+          }
+        },
+        {
+          "file": "letters/A.prompt.txt",
+          "sha256": "c016f3e9cdb3e1e94a2fc4f1e6f70b582063b818f969de0fea5629b3762cb203",
+          "content": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n"
+        },
+        {
+          "file": "letters/J.prompt.txt",
+          "sha256": "6c023667ee94906e782fab145bf386cd9e404d491a3543725abc28071e6dae67",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase J from input1. Preserve the broad top serif, upright stem and clearly hooked bottom. Put delicate engraved leaves and inset parallel hatching down the broad ivory stem; curl the top serif tips and lower hook lightly to match master A, while keeping the normal J structure. It must read unmistakably as J.\n"
+        },
+        {
+          "file": "letters/K-manifest.json",
+          "sha256": "0938ebf08d160e84f89c7d63ea5c2b1db6e917c200fe61766057ffa685ea1598",
+          "content": {
+            "asset": "K",
+            "purpose": "Ornamental letter preview only; no implementation",
+            "method": "Built-in image_gen, one edit call, transparent_background=true",
+            "source": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-63e3-7ed1-ac3b-58f59da69340\\exec-9ec4ef57-96f5-4b62-876a-7e57ee7d9a13.png",
+            "outputFile": "K.png",
+            "promptFile": "K.prompt.txt",
+            "promptExact": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.",
+            "references": [
+              {
+                "role": "Edit target; plain Bodoni K letter bones",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/letters/bodoni/K.png"
+              },
+              {
+                "role": "Style master only; palette, engraving, curled serifs",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-4/letters/A.png"
+              }
+            ],
+            "visualReview": "Correct uppercase K, strong stem and separate diagonal arms with open negative spaces. Flat warm-ivory face, dark-navy engraved leaf scrolls and parallel pen hatching match the master A. Curled serif ends, no gold, gems, crown, plaque, 3D bevel or outside paper scene.",
+            "gameOrPublicFilesChanged": false,
+            "verification": {
+              "mode": "RGBA",
+              "dimensions": [
+                1254,
+                1254
+              ],
+              "alphaExtrema": [
+                0,
+                255
+              ],
+              "alpha128Bounds": [
+                70,
+                118,
+                1198,
+                1134
+              ],
+              "visibleHeightPercent": 81.02,
+              "rawSourceByteIdentical": true,
+              "bytes": 1308938,
+              "sha256": "6143eee7cbe3b2197b161e40e5fc151968281839e1ddb00de29b8d3c2412d429",
+              "promptSha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704"
+            }
+          }
+        },
+        {
+          "file": "letters/K.prompt.txt",
+          "sha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704",
+          "content": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.\n"
+        },
+        {
+          "file": "letters/Q.prompt.txt",
+          "sha256": "3673a36c8dcbc94c5a046e3ba75ad621b102962ba2012898cca9909efc06b06e",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase Q from input1. Preserve the large round/oval open counter and a clear diagonal lower-right tail. Follow the bowl with engraved leaf scrolls in its broad ivory strokes and small parallel hatch groups, and integrate an elegant restrained curl into the tail, all in master A's style. It must read unmistakably as Q.\n"
+        },
+        {
+          "file": "letters/QJ-manifest.json",
+          "sha256": "c8d80e5839c6927451cfa31e4e7af7dc3ffbafd04ce74235d1fd2ab481f85c5a",
+          "content": {
+            "generator": "built-in image_gen",
+            "method": "Two separate edits; input1 plain target, input2 ornamental A style. Generated PNGs copied byte-for-byte, no image postprocessing.",
+            "previewOnly": true,
+            "ownerApprovalClaimed": false,
+            "scope": "Only Q.png,J.png,Q.prompt.txt,J.prompt.txt,QJ-manifest.json in revision-4/letters. Other11 approved assets and runtime files untouched.",
+            "assets": [
+              {
+                "glyph": "Q",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-2d4a1538-f21c-495f-ab11-1c5c0ddf8740.png",
+                "sourceSha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "sha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "bytes": 1144840,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  199,
+                  113,
+                  1118,
+                  1177
+                ],
+                "heightRatio": 0.8485,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\Q.png",
+                    "sha256": "0a9ebac8c0fd0f0cd08584b732fad1c4ce63a879a7d2f31224f0c59efc0f84c5"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              },
+              {
+                "glyph": "J",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-dad4bd6b-0cb5-4259-8cdb-e83c8156975b.png",
+                "sourceSha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "sha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "bytes": 709702,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  295,
+                  116,
+                  957,
+                  1157
+                ],
+                "heightRatio": 0.8301,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\J.png",
+                    "sha256": "5cb29fde91cb807d7370b00eadc8f3a75b5534b3c453c095c493531584048073"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              }
+            ]
+          }
+        }
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 1035955,
+      "visibleBoundsAtAlpha8": [
+        68,
+        117,
+        1199,
+        1135
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "letters/K.png"
+    },
+    {
+      "index": 8,
+      "id": "ornate-Q",
+      "label": "Q",
+      "file": "sources/ornate-Q.png",
+      "group": "revised",
+      "byteCount": 1144840,
+      "sha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+      "method": "Built-in image_gen ornamental-letter revision; exact source/prompt records attached",
+      "previousFile": "../revision-2/letters-qj/q.png",
+      "previousSha256": "ac45778dd7c1924db4ddc2f1e61f9c525af1e1138f715ccdc2f178898dc0f1be",
+      "revisionProvenance": [
+        {
+          "file": "letters/A-manifest.json",
+          "sha256": "c165a7493fa6aaba0f54bb16429096c855357615873d91f10f1a966aa6c036b2",
+          "content": {
+            "letter": "A",
+            "file": "A.png",
+            "method": "Built-in image_gen edit of the native Bodoni A; ornamental engraved lettering style master",
+            "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\\exec-ecbe6d16-acb2-48d1-be27-62d59da8640e.png",
+            "editTarget": "../../revision-3/letters/bodoni/A.png",
+            "promptFile": "A.prompt.txt",
+            "prompt": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n",
+            "width": 1254,
+            "height": 1254,
+            "alphaRange": [
+              0,
+              255
+            ],
+            "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630",
+            "sourceUnmodified": true,
+            "visuallyInspected": true,
+            "observed": "Readable ivory capital A with navy engraving, curled serif tips and integrated leaf-scrolls. No gold, gemstones or thick 3D volume."
+          }
+        },
+        {
+          "file": "letters/A.prompt.txt",
+          "sha256": "c016f3e9cdb3e1e94a2fc4f1e6f70b582063b818f969de0fea5629b3762cb203",
+          "content": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n"
+        },
+        {
+          "file": "letters/J.prompt.txt",
+          "sha256": "6c023667ee94906e782fab145bf386cd9e404d491a3543725abc28071e6dae67",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase J from input1. Preserve the broad top serif, upright stem and clearly hooked bottom. Put delicate engraved leaves and inset parallel hatching down the broad ivory stem; curl the top serif tips and lower hook lightly to match master A, while keeping the normal J structure. It must read unmistakably as J.\n"
+        },
+        {
+          "file": "letters/K-manifest.json",
+          "sha256": "0938ebf08d160e84f89c7d63ea5c2b1db6e917c200fe61766057ffa685ea1598",
+          "content": {
+            "asset": "K",
+            "purpose": "Ornamental letter preview only; no implementation",
+            "method": "Built-in image_gen, one edit call, transparent_background=true",
+            "source": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-63e3-7ed1-ac3b-58f59da69340\\exec-9ec4ef57-96f5-4b62-876a-7e57ee7d9a13.png",
+            "outputFile": "K.png",
+            "promptFile": "K.prompt.txt",
+            "promptExact": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.",
+            "references": [
+              {
+                "role": "Edit target; plain Bodoni K letter bones",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/letters/bodoni/K.png"
+              },
+              {
+                "role": "Style master only; palette, engraving, curled serifs",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-4/letters/A.png"
+              }
+            ],
+            "visualReview": "Correct uppercase K, strong stem and separate diagonal arms with open negative spaces. Flat warm-ivory face, dark-navy engraved leaf scrolls and parallel pen hatching match the master A. Curled serif ends, no gold, gems, crown, plaque, 3D bevel or outside paper scene.",
+            "gameOrPublicFilesChanged": false,
+            "verification": {
+              "mode": "RGBA",
+              "dimensions": [
+                1254,
+                1254
+              ],
+              "alphaExtrema": [
+                0,
+                255
+              ],
+              "alpha128Bounds": [
+                70,
+                118,
+                1198,
+                1134
+              ],
+              "visibleHeightPercent": 81.02,
+              "rawSourceByteIdentical": true,
+              "bytes": 1308938,
+              "sha256": "6143eee7cbe3b2197b161e40e5fc151968281839e1ddb00de29b8d3c2412d429",
+              "promptSha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704"
+            }
+          }
+        },
+        {
+          "file": "letters/K.prompt.txt",
+          "sha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704",
+          "content": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.\n"
+        },
+        {
+          "file": "letters/Q.prompt.txt",
+          "sha256": "3673a36c8dcbc94c5a046e3ba75ad621b102962ba2012898cca9909efc06b06e",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase Q from input1. Preserve the large round/oval open counter and a clear diagonal lower-right tail. Follow the bowl with engraved leaf scrolls in its broad ivory strokes and small parallel hatch groups, and integrate an elegant restrained curl into the tail, all in master A's style. It must read unmistakably as Q.\n"
+        },
+        {
+          "file": "letters/QJ-manifest.json",
+          "sha256": "c8d80e5839c6927451cfa31e4e7af7dc3ffbafd04ce74235d1fd2ab481f85c5a",
+          "content": {
+            "generator": "built-in image_gen",
+            "method": "Two separate edits; input1 plain target, input2 ornamental A style. Generated PNGs copied byte-for-byte, no image postprocessing.",
+            "previewOnly": true,
+            "ownerApprovalClaimed": false,
+            "scope": "Only Q.png,J.png,Q.prompt.txt,J.prompt.txt,QJ-manifest.json in revision-4/letters. Other11 approved assets and runtime files untouched.",
+            "assets": [
+              {
+                "glyph": "Q",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-2d4a1538-f21c-495f-ab11-1c5c0ddf8740.png",
+                "sourceSha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "sha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "bytes": 1144840,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  199,
+                  113,
+                  1118,
+                  1177
+                ],
+                "heightRatio": 0.8485,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\Q.png",
+                    "sha256": "0a9ebac8c0fd0f0cd08584b732fad1c4ce63a879a7d2f31224f0c59efc0f84c5"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              },
+              {
+                "glyph": "J",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-dad4bd6b-0cb5-4259-8cdb-e83c8156975b.png",
+                "sourceSha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "sha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "bytes": 709702,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  295,
+                  116,
+                  957,
+                  1157
+                ],
+                "heightRatio": 0.8301,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\J.png",
+                    "sha256": "5cb29fde91cb807d7370b00eadc8f3a75b5534b3c453c095c493531584048073"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              }
+            ]
+          }
+        }
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 1117378,
+      "visibleBoundsAtAlpha8": [
+        199,
+        113,
+        1118,
+        1179
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "letters/Q.png"
+    },
+    {
+      "index": 9,
+      "id": "ornate-J",
+      "label": "J",
+      "file": "sources/ornate-J.png",
+      "group": "revised",
+      "byteCount": 709702,
+      "sha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+      "method": "Built-in image_gen ornamental-letter revision; exact source/prompt records attached",
+      "previousFile": "../revision-2/letters-qj/j.png",
+      "previousSha256": "a1dcc6c1fef56af587dc0755baf1fdad02aea91dd1b7967e7278ff14af275916",
+      "revisionProvenance": [
+        {
+          "file": "letters/A-manifest.json",
+          "sha256": "c165a7493fa6aaba0f54bb16429096c855357615873d91f10f1a966aa6c036b2",
+          "content": {
+            "letter": "A",
+            "file": "A.png",
+            "method": "Built-in image_gen edit of the native Bodoni A; ornamental engraved lettering style master",
+            "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\\exec-ecbe6d16-acb2-48d1-be27-62d59da8640e.png",
+            "editTarget": "../../revision-3/letters/bodoni/A.png",
+            "promptFile": "A.prompt.txt",
+            "prompt": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n",
+            "width": 1254,
+            "height": 1254,
+            "alphaRange": [
+              0,
+              255
+            ],
+            "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630",
+            "sourceUnmodified": true,
+            "visuallyInspected": true,
+            "observed": "Readable ivory capital A with navy engraving, curled serif tips and integrated leaf-scrolls. No gold, gemstones or thick 3D volume."
+          }
+        },
+        {
+          "file": "letters/A.prompt.txt",
+          "sha256": "c016f3e9cdb3e1e94a2fc4f1e6f70b582063b818f969de0fea5629b3762cb203",
+          "content": "Use case: precise-object-edit. Asset type: one ornamental casino card-rank LETTER on transparent background, art preview only.\nInput image 1 is the edit target: the plain Bodoni capital A. Keep it unmistakably the uppercase letter A, with strong main strokes and a large open counter, but make the typography substantially more ornamental.\nStyle: sophisticated engraved playing-card lettering, decorative copperplate penwork, finely curled serif terminals and restrained scroll flourishes integrated into the serif tips and crossbar. Use a flat warm-ivory letter body with delicate dark-navy engraved linework, inset parallel hairlines and a few small leaf-scroll details within the wide strokes. The ornament must be clearly visible while the A remains instantly readable. Think printed ornamental letterpress/card-rank artwork, not a sculpted jewel or decorative object.\nKeep a two-dimensional ink-on-card treatment. NO metallic gold, gold bevels, gems, facets, enamel, plastic, glossy highlights, shadows, extrusion, material rendering, thick sticker outlines or 3D volume. Do not put a crown, suit symbol, frame, plaque, badge, card rectangle or object around the letter. Do not add any other letter or caption. Do not add paper texture or an opaque background.\nComposition: one upright front-facing ornamental A, centered on a square canvas, complete uncropped flourishes, generous consistent transparent padding. Preserve genuine transparency. Keep the large letter skeleton dominant; ornamental strokes must complement it rather than obscure it.\n"
+        },
+        {
+          "file": "letters/J.prompt.txt",
+          "sha256": "6c023667ee94906e782fab145bf386cd9e404d491a3543725abc28071e6dae67",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase J from input1. Preserve the broad top serif, upright stem and clearly hooked bottom. Put delicate engraved leaves and inset parallel hatching down the broad ivory stem; curl the top serif tips and lower hook lightly to match master A, while keeping the normal J structure. It must read unmistakably as J.\n"
+        },
+        {
+          "file": "letters/K-manifest.json",
+          "sha256": "0938ebf08d160e84f89c7d63ea5c2b1db6e917c200fe61766057ffa685ea1598",
+          "content": {
+            "asset": "K",
+            "purpose": "Ornamental letter preview only; no implementation",
+            "method": "Built-in image_gen, one edit call, transparent_background=true",
+            "source": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-63e3-7ed1-ac3b-58f59da69340\\exec-9ec4ef57-96f5-4b62-876a-7e57ee7d9a13.png",
+            "outputFile": "K.png",
+            "promptFile": "K.prompt.txt",
+            "promptExact": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.",
+            "references": [
+              {
+                "role": "Edit target; plain Bodoni K letter bones",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/letters/bodoni/K.png"
+              },
+              {
+                "role": "Style master only; palette, engraving, curled serifs",
+                "path": "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-4/letters/A.png"
+              }
+            ],
+            "visualReview": "Correct uppercase K, strong stem and separate diagonal arms with open negative spaces. Flat warm-ivory face, dark-navy engraved leaf scrolls and parallel pen hatching match the master A. Curled serif ends, no gold, gems, crown, plaque, 3D bevel or outside paper scene.",
+            "gameOrPublicFilesChanged": false,
+            "verification": {
+              "mode": "RGBA",
+              "dimensions": [
+                1254,
+                1254
+              ],
+              "alphaExtrema": [
+                0,
+                255
+              ],
+              "alpha128Bounds": [
+                70,
+                118,
+                1198,
+                1134
+              ],
+              "visibleHeightPercent": 81.02,
+              "rawSourceByteIdentical": true,
+              "bytes": 1308938,
+              "sha256": "6143eee7cbe3b2197b161e40e5fc151968281839e1ddb00de29b8d3c2412d429",
+              "promptSha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704"
+            }
+          }
+        },
+        {
+          "file": "letters/K.prompt.txt",
+          "sha256": "c27b038628486d6709ce509d6c7af5c4ba001393711f7504ead50e24dbb2b704",
+          "content": "Use case: style-transfer.\nAsset type: one ornamental typographic uppercase K for a video-slot rank preview, genuine transparent alpha.\n\nINPUT ROLES:\nInput 1 is the EDIT TARGET: the plain warm-ivory Bodoni capital K. Preserve its unmistakable normal uppercase K letter bones: sturdy vertical left stem, distinct ascending upper-right diagonal, distinct descending lower-right diagonal, and clear open negative spaces.\nInput 2 is the STYLE MASTER ONLY: the ornamental ivory A with dark navy engraved penwork. Match THIS reference's exact flat warm-ivory body color, fine dark navy ink linework, engraved leaf-and-scroll density, thin parallel hatching, curled serif ends and two-dimensional engraved-print character. Do not copy the letter A.\n\nTransform only the K target into the matching companion letter to the master A. Integrate elegant fine navy leaf flourishes INTO the K's broad strokes, especially the left vertical stem and lower-right diagonal. Use inset fine parallel engraved lines and restrained curled serif terminals in the same scale and rhythm as the A. Ornament is printed typographic decoration within the ivory letter, never jewelry or a separate decorative object. Keep the K readable immediately at small size; do not fill its open counters/gaps or confuse it with an R, H or another letter.\n\nExactly one upright frontal capital K. Square transparent canvas; center the whole glyph at roughly 80% canvas height with generous clear safe padding and a common straight baseline. All exterior/background and interior negative spaces remain truly transparent, with clean anti-aliased edges. Flat matte ivory and navy ink only; no paper texture outside the letter.\n\nAVOID: gold, metallic gold, gemstones, diamonds, faceted shapes, crowns, suits, plaques, card rectangles, frames, background scenery, title, other letters, words, watermarks, thick sticker borders, plastic gloss, 3D extrusion, beveled metallic edges, dimensional lighting or drop shadows. The result must be ornamental TYPOGRAPHY matching input 2, not an object shaped like a K.\n\nText (verbatim): \"K\" only.\n"
+        },
+        {
+          "file": "letters/Q.prompt.txt",
+          "sha256": "3673a36c8dcbc94c5a046e3ba75ad621b102962ba2012898cca9909efc06b06e",
+          "content": "Use case: style-transfer\nAsset type: ONE transparent ornamental playing-card rank LETTER for a coordinated four-letter set. This is artwork preview only.\nInput image1 is the EDIT TARGET: a plain ivory Bodoni-style uppercase letter. Input image2 is the MASTER STYLE: the approved ornamental A. Transform only image1 into the same flat engraved typography family as image2. Do not create another A, do not place both letters together.\nMatch master A precisely: flat warm-IVORY letter body printed with fine dark-NAVY copperplate engraving, integrated small leaf scrolls, fine inset parallel lines, narrow hatching, restrained dots and curled serifs. Match its ivory/navy palette, line weight, ornament density and matte printed quality. Keep plenty of ivory negative space so the engraving remains delicate. Ornament belongs inside the letter strokes and in small integrated serif curls, never an external rectangular or oval frame.\nKeep the recognizable upright letter bones and clear open counter/negative spaces. Front-facing flat2D typographic ink, not a sculpted object. Complete flourishes must fit on a square canvas, centered, approximately80% height, consistent clear transparent margins. Genuine transparent alpha background; all counters remain transparent.\nStrictly no gems, crystals, gold, jewelry, enamel, plastic gloss, metallic bevel,3D depth, cast shadow, sticker outline, crowns, card suits, actual playing-card panel, paper rectangle, pedestal, scenery, other glyphs, numerals or watermark. The only visible object is the requested ornamental capital letter.\nExact letter: uppercase Q from input1. Preserve the large round/oval open counter and a clear diagonal lower-right tail. Follow the bowl with engraved leaf scrolls in its broad ivory strokes and small parallel hatch groups, and integrate an elegant restrained curl into the tail, all in master A's style. It must read unmistakably as Q.\n"
+        },
+        {
+          "file": "letters/QJ-manifest.json",
+          "sha256": "c8d80e5839c6927451cfa31e4e7af7dc3ffbafd04ce74235d1fd2ab481f85c5a",
+          "content": {
+            "generator": "built-in image_gen",
+            "method": "Two separate edits; input1 plain target, input2 ornamental A style. Generated PNGs copied byte-for-byte, no image postprocessing.",
+            "previewOnly": true,
+            "ownerApprovalClaimed": false,
+            "scope": "Only Q.png,J.png,Q.prompt.txt,J.prompt.txt,QJ-manifest.json in revision-4/letters. Other11 approved assets and runtime files untouched.",
+            "assets": [
+              {
+                "glyph": "Q",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-2d4a1538-f21c-495f-ab11-1c5c0ddf8740.png",
+                "sourceSha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "sha256": "6e08ccb9b4e852e334e442556e7a3434034ea674a7279ac8d5f48f6671c4217c",
+                "bytes": 1144840,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  199,
+                  113,
+                  1118,
+                  1177
+                ],
+                "heightRatio": 0.8485,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\Q.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\Q.png",
+                    "sha256": "0a9ebac8c0fd0f0cd08584b732fad1c4ce63a879a7d2f31224f0c59efc0f84c5"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              },
+              {
+                "glyph": "J",
+                "file": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.png",
+                "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a19496-4ba0-7ad1-b781-cfb20c9bbd0f\\exec-dad4bd6b-0cb5-4259-8cdb-e83c8156975b.png",
+                "sourceSha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "sha256": "d5e9a728f440dc42b5d293ad7de2b4708b41799a9d93916840eacc0da3827178",
+                "bytes": 709702,
+                "size": [
+                  1254,
+                  1254
+                ],
+                "actualAlpha": true,
+                "visibleBoundsAtAlpha16": [
+                  295,
+                  116,
+                  957,
+                  1157
+                ],
+                "heightRatio": 0.8301,
+                "prompt": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\J.prompt.txt",
+                "references": [
+                  {
+                    "role": "edit target plain letter",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-3\\letters\\bodoni\\J.png",
+                    "sha256": "5cb29fde91cb807d7370b00eadc8f3a75b5534b3c453c095c493531584048073"
+                  },
+                  {
+                    "role": "ornamental A master style",
+                    "path": "C:\\Users\\Lctiv\\source\\repos\\FortuneForge-consolidated\\output\\artwork\\midnight-vault-2026-10-31\\pro-v4-art-preview\\revision-4\\letters\\A.png",
+                    "sha256": "36bb068e630d0b80c8d4963f97d9212382613a44fe78799d655ddef735d00630"
+                  }
+                ],
+                "editedAfterGeneration": false,
+                "visualInspection": "Actual pixels inspected: flat ivory/navy engraved letter, inset hatching and integrated leaf scrolls, readable glyph; no gold/gems/3D/sticker outline."
+              }
+            ]
+          }
+        }
+      ],
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 1272700,
+      "visibleBoundsAtAlpha8": [
+        295,
+        116,
+        957,
+        1157
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "letters/J.png"
+    },
+    {
+      "index": 10,
+      "id": "triple-sevens",
+      "label": "777",
+      "file": "sources/triple-sevens.png",
+      "group": "accepted",
+      "byteCount": 1519543,
+      "sha256": "f8afd04d731425648310c19099cf6ea2a8c3be5e482d1f1d4e8e86ad48f379f3",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../revision-2/sevens/777.png",
+      "previousSha256": "f8afd04d731425648310c19099cf6ea2a8c3be5e482d1f1d4e8e86ad48f379f3",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 10,
+        "id": "triple-sevens",
+        "label": "777",
+        "file": "sevens/777.png",
+        "group": "revised",
+        "byteCount": 1519543,
+        "sha256": "f8afd04d731425648310c19099cf6ea2a8c3be5e482d1f1d4e8e86ad48f379f3",
+        "method": "Built-in image_gen revision; exact source/prompt records attached",
+        "previousFile": "../specials/triple-sevens.png",
+        "previousSha256": "58c98ad540078b89a915b06d95ee18112ed6978cd20cfc7644aedaa28e3e89fc",
+        "revisionProvenance": [
+          {
+            "file": "sevens/manifest.json",
+            "sha256": "9933fc19bda54ed2f2093fe2bef203374a92cc28fa00830e5088e96ca96b1b2f",
+            "content": {
+              "id": "777",
+              "file": "777.png",
+              "method": "Built-in image_gen edit; red gemstone faces replaced by smooth red lacquer",
+              "generatedSource": "C:\\Users\\Lctiv\\.codex\\generated_images\\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\\exec-891ef827-c96f-4bbd-ad31-dda5565b20f8.png",
+              "reference": "../../specials/triple-sevens.png",
+              "promptFile": "triple-sevens.prompt.txt",
+              "prompt": "Use case: precise-object-edit.\nAsset type: one transparent casino reel symbol, revised art preview only.\nThe input image is the exact edit target. Change ONLY the red faces of the three 7s: replace the ruby/crystal facets with continuous, opaque, smooth deep-red lacquer or painted enamel. Broad soft studio reflections are fine; there must be no crystal cuts, polygon facets, prismatic refraction, embedded gems, jewel texture, glitter or star-shaped sparkle points in the red faces.\nPreserve the existing overall silhouette, exactly three readable 7 digits, their staggered arrangement, the flowing polished gold outer borders, camera angle and three-dimensional depth. Keep the gold as solid metal trim, not gemstone. The intended result is a conventional smooth red casino triple-seven emblem, not three rubies carved into numbers.\nRemove any gem-like shine or tiny crystalline surfaces. Use restrained smooth highlights to show the solid lacquer material. Do not add any object, text, badge, setting, pedestal, background or floor. Keep the existing genuine transparent alpha background and the entire uncropped symbol.\n",
+              "width": 1254,
+              "height": 1254,
+              "alphaRange": [
+                0,
+                255
+              ],
+              "sha256": "f8afd04d731425648310c19099cf6ea2a8c3be5e482d1f1d4e8e86ad48f379f3",
+              "sourceUnmodified": true,
+              "visuallyInspected": true,
+              "observed": "Exactly three readable sevens, continuous opaque red painted faces, original gold outline retained, no gemstone facets."
+            }
+          },
+          {
+            "file": "sevens/triple-sevens.prompt.txt",
+            "sha256": "640468bd3a06d59cfde8338143b8b74ce8103f8bca741b454f501b6ab3811669",
+            "content": "Use case: precise-object-edit.\nAsset type: one transparent casino reel symbol, revised art preview only.\nThe input image is the exact edit target. Change ONLY the red faces of the three 7s: replace the ruby/crystal facets with continuous, opaque, smooth deep-red lacquer or painted enamel. Broad soft studio reflections are fine; there must be no crystal cuts, polygon facets, prismatic refraction, embedded gems, jewel texture, glitter or star-shaped sparkle points in the red faces.\nPreserve the existing overall silhouette, exactly three readable 7 digits, their staggered arrangement, the flowing polished gold outer borders, camera angle and three-dimensional depth. Keep the gold as solid metal trim, not gemstone. The intended result is a conventional smooth red casino triple-seven emblem, not three rubies carved into numbers.\nRemove any gem-like shine or tiny crystalline surfaces. Use restrained smooth highlights to show the solid lacquer material. Do not add any object, text, badge, setting, pedestal, background or floor. Keep the existing genuine transparent alpha background and the entire uncropped symbol.\n"
+          }
+        ],
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 793298,
+        "visibleBoundsAtAlpha8": [
+          34,
+          180,
+          1243,
+          1077
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Built-in image_gen revision; exact source/prompt records attached",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 793298,
+      "visibleBoundsAtAlpha8": [
+        34,
+        180,
+        1243,
+        1077
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../revision-2/sevens/777.png"
+    },
+    {
+      "index": 11,
+      "id": "faberge-egg",
+      "label": "Fabergé egg",
+      "file": "sources/faberge-egg.png",
+      "group": "accepted",
+      "byteCount": 1780336,
+      "sha256": "debbba5d9bfb3e6bc1b30f0c1c37ec7cd8351d41845a337038d7613d018b65ef",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../specials/faberge-egg.png",
+      "previousSha256": "debbba5d9bfb3e6bc1b30f0c1c37ec7cd8351d41845a337038d7613d018b65ef",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 11,
+        "id": "faberge-egg",
+        "label": "Fabergé egg",
+        "file": "../specials/faberge-egg.png",
+        "group": "accepted",
+        "byteCount": 1780336,
+        "sha256": "debbba5d9bfb3e6bc1b30f0c1c37ec7cd8351d41845a337038d7613d018b65ef",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../specials/faberge-egg.png",
+        "previousSha256": "debbba5d9bfb3e6bc1b30f0c1c37ec7cd8351d41845a337038d7613d018b65ef",
+        "previousProvenance": {
+          "method": "Built-in image_gen; original V1 ring style reference only",
+          "generatedSource": "C:/Users/Lctiv/.codex/generated_images/01a19496-80d2-7ad2-9ec0-3a6bc7dccfc2/exec-5465b7b0-d397-4fcd-a75c-a9fd7ca812ad.png",
+          "original": null,
+          "prompt": "Use case: stylized-concept.\nAsset type: ONE individual premium casino slot symbol, square canvas, truly transparent alpha background.\nReference image 1 is our ORIGINAL old Midnight Vault ruby ring, used ONLY for realistic detailed gold craftsmanship, rich jewel materials and lighting quality. Do not reproduce the ring.\nPrimary subject: one exquisite imperial Fabergé-style egg. Deep midnight-navy glossy enamel body covered with intricate fine warm-gold filigree lattice and ornamental scrolling goldwork. Tasteful small ruby-red gemstones and tiny diamond accents are set into the authentic metalwork. The egg is complete, upright, three-quarter frontal view, with small integral ornate gold feet belonging to the egg itself and a small jeweled finial.\nRendering: realistic polished luxury collectible, highly detailed craftsmanship, convincing enamel and reflective gold, dark sapphire-blue depth, clear material separation, warm upper-left studio key light and gentle cool rim light, crisp slot-symbol silhouette matching the provided ring's level of finish.\nComposition: square image, centered single complete object, vertical subject occupying about 80% of image height. Keep 8–10% clear transparent padding on all four sides. Nothing cropped.\nBackground must have genuine alpha transparency. No scene, table, floor, environment, separate pedestal, display stand or plinth, circular badge, frame, labels, letters, words, watermark, halo, floating particles, grain, glow cloud or cast shadow on a background. No flat illustration, cel shading, thick black outline, simplified vector art or cartoon.\n",
+          "promptFile": "../specials/faberge-egg.prompt.txt"
+        },
+        "width": 1254,
+        "height": 1254,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 933458,
+        "visibleBoundsAtAlpha8": [
+          227,
+          19,
+          1027,
+          1217
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 1254,
+      "height": 1254,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 933458,
+      "visibleBoundsAtAlpha8": [
+        227,
+        19,
+        1027,
+        1217
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../specials/faberge-egg.png"
+    },
+    {
+      "index": 12,
+      "id": "ruby",
+      "label": "Ruby",
+      "file": "sources/ruby.webp",
+      "group": "accepted",
+      "byteCount": 28148,
+      "sha256": "0a6796bc1b62a78bd8eaa8fb1a741e209ec6bfacee8d38583d42bea8abda99c0",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../retained/midnight-vault-ruby-access.webp",
+      "previousSha256": "0a6796bc1b62a78bd8eaa8fb1a741e209ec6bfacee8d38583d42bea8abda99c0",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 12,
+        "id": "ruby",
+        "label": "Ruby",
+        "file": "../retained/midnight-vault-ruby-access.webp",
+        "group": "accepted",
+        "byteCount": 28148,
+        "sha256": "0a6796bc1b62a78bd8eaa8fb1a741e209ec6bfacee8d38583d42bea8abda99c0",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../retained/midnight-vault-ruby-access.webp",
+        "previousSha256": "0a6796bc1b62a78bd8eaa8fb1a741e209ec6bfacee8d38583d42bea8abda99c0",
+        "previousProvenance": {
+          "method": "Exact unchanged original V1 WebP copy",
+          "generatedSource": null,
+          "original": "fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-ruby-access.webp",
+          "prompt": null,
+          "promptFile": null
+        },
+        "width": 320,
+        "height": 320,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 48197,
+        "visibleBoundsAtAlpha8": [
+          31,
+          19,
+          289,
+          301
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 320,
+      "height": 320,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 48197,
+      "visibleBoundsAtAlpha8": [
+        31,
+        19,
+        289,
+        301
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../retained/midnight-vault-ruby-access.webp"
+    },
+    {
+      "index": 13,
+      "id": "sapphire",
+      "label": "Sapphire",
+      "file": "sources/sapphire.webp",
+      "group": "accepted",
+      "byteCount": 18340,
+      "sha256": "a0e9d07dd13e8493b75613acf704f0bab8275e62c7ea727689cd040a8c830089",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../retained/midnight-vault-sapphire-access.webp",
+      "previousSha256": "a0e9d07dd13e8493b75613acf704f0bab8275e62c7ea727689cd040a8c830089",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 13,
+        "id": "sapphire",
+        "label": "Sapphire",
+        "file": "../retained/midnight-vault-sapphire-access.webp",
+        "group": "accepted",
+        "byteCount": 18340,
+        "sha256": "a0e9d07dd13e8493b75613acf704f0bab8275e62c7ea727689cd040a8c830089",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../retained/midnight-vault-sapphire-access.webp",
+        "previousSha256": "a0e9d07dd13e8493b75613acf704f0bab8275e62c7ea727689cd040a8c830089",
+        "previousProvenance": {
+          "method": "Exact unchanged original V1 WebP copy",
+          "generatedSource": null,
+          "original": "fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-sapphire-access.webp",
+          "prompt": null,
+          "promptFile": null
+        },
+        "width": 320,
+        "height": 320,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 73994,
+        "visibleBoundsAtAlpha8": [
+          74,
+          19,
+          246,
+          301
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 320,
+      "height": 320,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 73994,
+      "visibleBoundsAtAlpha8": [
+        74,
+        19,
+        246,
+        301
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../retained/midnight-vault-sapphire-access.webp"
+    },
+    {
+      "index": 14,
+      "id": "amber",
+      "label": "Amber",
+      "file": "sources/amber.webp",
+      "group": "accepted",
+      "byteCount": 26510,
+      "sha256": "3bae258cc55236a5b5a8bb88295e607ccd62bb2f17faaea4723812dd643c2cde",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../retained/midnight-vault-amber-access.webp",
+      "previousSha256": "3bae258cc55236a5b5a8bb88295e607ccd62bb2f17faaea4723812dd643c2cde",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 14,
+        "id": "amber",
+        "label": "Amber",
+        "file": "../retained/midnight-vault-amber-access.webp",
+        "group": "accepted",
+        "byteCount": 26510,
+        "sha256": "3bae258cc55236a5b5a8bb88295e607ccd62bb2f17faaea4723812dd643c2cde",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../retained/midnight-vault-amber-access.webp",
+        "previousSha256": "3bae258cc55236a5b5a8bb88295e607ccd62bb2f17faaea4723812dd643c2cde",
+        "previousProvenance": {
+          "method": "Exact unchanged original V1 WebP copy",
+          "generatedSource": null,
+          "original": "fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-amber-access.webp",
+          "prompt": null,
+          "promptFile": null
+        },
+        "width": 320,
+        "height": 320,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 59360,
+        "visibleBoundsAtAlpha8": [
+          19,
+          20,
+          301,
+          299
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 320,
+      "height": 320,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 59360,
+      "visibleBoundsAtAlpha8": [
+        19,
+        20,
+        301,
+        299
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../retained/midnight-vault-amber-access.webp"
+    },
+    {
+      "index": 15,
+      "id": "emerald",
+      "label": "Emerald",
+      "file": "sources/emerald.webp",
+      "group": "accepted",
+      "byteCount": 30174,
+      "sha256": "f125b6d691832cd57cc9c937f84a6985480f7763f7d8d918c14d2e09c299c170",
+      "method": "Accepted previous art, reused without any source modification",
+      "previousFile": "../retained/midnight-vault-emerald-access.webp",
+      "previousSha256": "f125b6d691832cd57cc9c937f84a6985480f7763f7d8d918c14d2e09c299c170",
+      "previousManifest": "../revision-2/preview-board-manifest.json",
+      "previousSourceRecord": {
+        "index": 15,
+        "id": "emerald",
+        "label": "Emerald",
+        "file": "../retained/midnight-vault-emerald-access.webp",
+        "group": "accepted",
+        "byteCount": 30174,
+        "sha256": "f125b6d691832cd57cc9c937f84a6985480f7763f7d8d918c14d2e09c299c170",
+        "method": "Accepted previous art, reused without any source modification",
+        "previousFile": "../retained/midnight-vault-emerald-access.webp",
+        "previousSha256": "f125b6d691832cd57cc9c937f84a6985480f7763f7d8d918c14d2e09c299c170",
+        "previousProvenance": {
+          "method": "Exact unchanged original V1 WebP copy",
+          "generatedSource": null,
+          "original": "fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-emerald-access.webp",
+          "prompt": null,
+          "promptFile": null
+        },
+        "width": 320,
+        "height": 320,
+        "alphaRange": [
+          0,
+          255
+        ],
+        "fullyTransparentPixels": 42199,
+        "visibleBoundsAtAlpha8": [
+          21,
+          19,
+          298,
+          301
+        ],
+        "sourceUnmodified": true
+      },
+      "previousProvenance": {
+        "method": "Accepted previous art, reused without any source modification",
+        "generatedSource": null,
+        "original": null,
+        "prompt": null,
+        "promptFile": null
+      },
+      "width": 320,
+      "height": 320,
+      "alphaRange": [
+        0,
+        255
+      ],
+      "fullyTransparentPixels": 42199,
+      "visibleBoundsAtAlpha8": [
+        21,
+        19,
+        298,
+        301
+      ],
+      "sourceUnmodified": true,
+      "originalFile": "../retained/midnight-vault-emerald-access.webp"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Cards.Solitaire;
+using FortuneForge.Games.Abstractions.Analytics;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Solitaire;
@@ -75,6 +76,40 @@ public sealed class FirestoreSolitaireFreeRunServiceTests
     }
 
     [Fact]
+    public async Task StandaloneFreeSolitaireKeepsItsOwnGameIdentityWithoutFinancialEffects()
+    {
+        var (database, service, _) = CreateService(42);
+        var started = await service.StartAsync("free-solitaire-start-0001", "user-1", 3, default,
+            gameId: FirestoreSolitaireFreeRunService.StandaloneGameId);
+        Assert.Equal("free-solitaire", started.GameId);
+        var sameRequest = await service.StartAsync("free-solitaire-start-0001", "user-1", 3, default,
+            gameId: FirestoreSolitaireFreeRunService.StandaloneGameId);
+        Assert.True(sameRequest.WasAlreadyStarted);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync(
+            "free-solitaire-start-0001", "user-1", 3, default));
+        await Assert.ThrowsAsync<ArgumentException>(() => service.StartAsync(
+            "free-solitaire-invalid-0001", "user-1", 3, default, gameId: "texas-holdem"));
+
+        var completed = await service.CompleteAsync(started.RunId, "user-1",
+            [new SolitaireFreeReplayCommand("draw", null, null, null, null)], default);
+        Assert.Equal("free-solitaire", completed.GameId);
+        var replay = await service.StartAsync("free-solitaire-replay-0001", "user-1", 3, default,
+            started.RunId, FirestoreSolitaireFreeRunService.StandaloneGameId);
+        Assert.Equal("free-solitaire", replay.GameId);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.StartAsync(
+            "free-solitaire-cross-game-0001", "user-1", 3, default, started.RunId));
+
+        var document = (await database.Collection(FirestoreSolitaireFreeRunService.CollectionName)
+            .Document(started.RunId["solitaire_free_".Length..]).GetSnapshotAsync());
+        Assert.Equal("free-solitaire", Field<string>(document, "gameId"));
+        var analytics = Assert.Single((await database.Collection(GameAnalyticsOutbox.CollectionName)
+            .GetSnapshotAsync()).Documents);
+        Assert.Equal("free-solitaire", Field<string>(analytics, "gameId"));
+        Assert.Equal(0L, Field<long>(analytics, "wagerCents"));
+        await AssertFinancialAndCompetitiveCollectionsRemainEmpty(database);
+    }
+
+    [Fact]
     public async Task ReplayStartRejectsUnfinishedForeignMissingOrMismatchedDeal()
     {
         var (database, service, _) = CreateService(42, 99);
@@ -133,6 +168,13 @@ public sealed class FirestoreSolitaireFreeRunServiceTests
         Assert.Matches("^[0-9a-f]{64}$", Field<string>(document, "replayDigest"));
         Assert.True(document.ContainsField("replayCanonical"));
         Assert.True(document.ContainsField("completedAt"));
+
+        var analytics = Assert.Single((await database.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        Assert.Equal("solitaire", Field<string>(analytics, "gameId"));
+        Assert.Equal("free", Field<string>(analytics, "mode"));
+        Assert.Equal(started.RunId, Field<string>(analytics, "roundId"));
+        Assert.Equal("user-1", Field<string>(analytics, "userId"));
+        Assert.Equal(0L, Field<long>(analytics, "wagerCents"));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CompleteAsync(
             started.RunId, "user-2", replay, default));

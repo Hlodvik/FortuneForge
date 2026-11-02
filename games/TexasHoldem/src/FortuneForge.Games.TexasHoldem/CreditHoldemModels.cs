@@ -206,6 +206,10 @@ internal sealed class CreditHoldemMatch
     public HashSet<string> EscrowCashedOutTicketIds { get; init; } = new(StringComparer.Ordinal);
     public Dictionary<string, long> HumanPayoutsCents { get; set; } = new(StringComparer.Ordinal);
     public List<CreditHoldemActionLogEntry> ActionLog { get; init; } = [];
+    // A missing version means this persisted hand predates private event capture.
+    // Do not infer old decisions or their timestamps from its final state.
+    public int EventTimelineVersion { get; init; }
+    public List<CreditHoldemAuditEvent> EventTimeline { get; init; } = [];
     public DateTime? ActionDeadlineAtUtc { get; set; }
     public DateTime? CompletedAtUtc { get; set; }
     public int NextCardIndex { get; set; }
@@ -230,7 +234,31 @@ internal sealed record CreditHoldemActionLogEntry(
     string PublicSeatId,
     string DisplayName,
     string Action,
-    int Amount);
+    int Amount,
+    DateTime? OccurredAtUtc = null,
+    string? Source = null);
+
+// Private engine evidence only. Public table responses deliberately project a
+// separate DTO and never include these card/deck or actor identifiers.
+internal sealed record CreditHoldemAuditEvent(
+    int Sequence,
+    int HandNumber,
+    DateTime OccurredAtUtc,
+    string Kind,
+    string Street,
+    string Source,
+    string? ActorId = null,
+    string? PublicSeatId = null,
+    string? Action = null,
+    int? RequestedRaiseTo = null,
+    long? AmountCents = null,
+    int? StackAfter = null,
+    int? CommittedRoundAfter = null,
+    int? CommittedHandAfter = null,
+    int? CurrentBetAfter = null,
+    string? Card = null,
+    int? DeckIndex = null,
+    string? Detail = null);
 
 internal sealed class CreditHoldemPlayer
 {

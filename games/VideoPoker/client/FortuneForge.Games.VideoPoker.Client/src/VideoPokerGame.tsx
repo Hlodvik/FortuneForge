@@ -2,22 +2,40 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { VideoPokerGatewayError, type VideoPokerCard, type VideoPokerCardPosition, type VideoPokerGateway, type VideoPokerHandCount, type VideoPokerRound, type VideoPokerStatus } from './contracts'
 import { HttpVideoPokerGateway } from './httpVideoPokerGateway'
 import { cardName, formatMoney, handLabel, paytableRows, recommendedHolds } from './videoPokerPresentation'
-import { playVideoPokerClick, playVideoPokerWin } from './videoPokerAudio'
+import { playVideoPokerChip, playVideoPokerClick, playVideoPokerWin } from './videoPokerAudio'
+import chipOne from './assets/chip-1.png'
+import chipTwo from './assets/chip-2.png'
+import chipThree from './assets/chip-3.png'
 import './videoPoker.css'
 import './videoPokerPaytable.css'
 import './videoPokerEnhancements.css'
 import './videoPokerViewport.css'
+import './videoPokerRefresh.css'
 
 export type VideoPokerGameProps = Readonly<{ gateway?: VideoPokerGateway; playerId?: string; currencySymbol?: string; onBalanceChange?: (balance: number) => void; showTitle?: boolean; renderCardFace?: (card: VideoPokerCard) => ReactNode }>
 const defaultGateway = new HttpVideoPokerGateway()
 type StoredPendingAction =
   | Readonly<{ operation: 'deal'; idempotencyKey: string; coinsWagered: number; handCount: VideoPokerHandCount }>
   | Readonly<{ operation: 'draw'; idempotencyKey: string; roundId: string; heldPositions: readonly VideoPokerCardPosition[] }>
+type ChipValue = 1 | 2 | 3
+const chipValues: readonly ChipValue[] = [1, 2, 3]
+const chipArt: Readonly<Record<ChipValue, string>> = { 1: chipOne, 2: chipTwo, 3: chipThree }
+const chipTotal = (chips: readonly ChipValue[]) => chips.reduce((total, chip) => total + chip, 0)
+const chipsForCoins = (coins: number): ChipValue[] => {
+  const result: ChipValue[] = []
+  for (let remaining = coins; remaining > 0;) {
+    const chip: ChipValue = remaining >= 3 ? 3 : remaining >= 2 ? 2 : 1
+    result.push(chip)
+    remaining -= chip
+  }
+  return result
+}
 
 export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true, renderCardFace }: VideoPokerGameProps) {
   const [status, setStatus] = useState<VideoPokerStatus | null>(null)
   const [round, setRound] = useState<VideoPokerRound | null>(null)
   const [coinsWagered, setCoinsWagered] = useState(1)
+  const [wagerChips, setWagerChips] = useState<readonly ChipValue[]>([1])
   const [handCount, setHandCount] = useState<VideoPokerHandCount>(1)
   const [heldPositions, setHeldPositions] = useState<readonly VideoPokerCardPosition[]>([])
   const [busy, setBusy] = useState(false)
@@ -48,6 +66,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
       setStatus(next)
       if (statusLoadAttempt > 0 && statusRefreshBalance.current) { statusRefreshBalance.current = false; balanceCallback.current?.(next.balance) }
       setCoinsWagered(current => current >= next.minimumCoinsWagered && current <= next.maximumCoinsWagered ? current : next.minimumCoinsWagered)
+      setWagerChips(chips => chipTotal(chips) >= next.minimumCoinsWagered && chipTotal(chips) <= next.maximumCoinsWagered ? chips : chipsForCoins(next.minimumCoinsWagered))
       setHandCount(current => (next.handCounts ?? [1, 3, 5]).includes(current) ? current : next.handCounts?.[0] ?? 1)
       setTableUnavailable(!next.available)
       setStatusError(next.available ? null : 'This table is temporarily unavailable. Please choose another game.')
@@ -67,6 +86,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   }
   const acceptRound = (next: VideoPokerRound) => {
     setRound(next); setCoinsWagered(next.coinsWagered); setHandCount(next.handCount)
+    setWagerChips(chips => chipTotal(chips) === next.coinsWagered ? chips : chipsForCoins(next.coinsWagered))
     setHeldPositions(next.phase === 'awaiting-draw' ? readHolds(playerId, next.roundId) ?? next.heldPositions : next.heldPositions)
     if (next.phase === 'awaiting-draw') storeRoundId(playerId, next.roundId)
   }
@@ -149,6 +169,27 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const affordable = balance !== null && status !== null && coinsWagered * handCount * status.coinValue <= balance
   const maxAffordable = balance !== null && status !== null && status.maximumCoinsWagered * handCount * status.coinValue <= balance
   const stakeLocked = busy || recovery !== 'ready' || !status?.available || pendingDeal.current !== null
+  const canPlaceChip = (value: ChipValue) => status !== null && !stakeLocked && (!round || completed) &&
+    coinsWagered + value <= status.maximumCoinsWagered && balance !== null &&
+    (coinsWagered + value) * handCount * status.coinValue <= balance
+  const placeChip = (value: ChipValue) => {
+    if (!canPlaceChip(value)) return
+    setWagerChips(chips => [...chips, value])
+    setCoinsWagered(coins => coins + value)
+    playVideoPokerChip()
+  }
+  const undoChip = () => {
+    if (stakeLocked || round && !completed || wagerChips.length === 0) return
+    const last = wagerChips[wagerChips.length - 1]!
+    setWagerChips(chips => chips.slice(0, -1))
+    setCoinsWagered(coins => coins - last)
+  }
+  const fillMaximum = () => {
+    if (!status || stakeLocked || !maxAffordable || round && !completed) return
+    setWagerChips(chipsForCoins(status.maximumCoinsWagered))
+    setCoinsWagered(status.maximumCoinsWagered)
+    playVideoPokerChip()
+  }
   const act = async (operation: () => Promise<void>) => {
     setBusy(true); setError(null)
     try { await operation() } catch (reason) { setError(messageForError(reason)) } finally { setBusy(false) }
@@ -159,7 +200,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
     if (!pendingDeal.current && (!counts.includes(bet.hands) || bet.coins < status.minimumCoinsWagered || bet.coins > status.maximumCoinsWagered || !Number.isInteger(bet.coins) || balance === null || bet.coins * bet.hands * status.coinValue > balance)) return
     const key = dealRequestKey.current ??= createRequestKey('video-poker-deal')
     pendingDeal.current = bet
-    setCoinsWagered(bet.coins); setHandCount(bet.hands); setActivePanel(null); setRound(null)
+    setCoinsWagered(bet.coins); setWagerChips(chips => chipTotal(chips) === bet.coins ? chips : chipsForCoins(bet.coins)); setHandCount(bet.hands); setActivePanel(null); setRound(null)
     storePendingAction(playerId, { operation: 'deal', idempotencyKey: key, coinsWagered: bet.coins, handCount: bet.hands })
     void act(async () => {
       try {
@@ -185,10 +226,12 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   }
   const newHand = () => {
     if (!round || !completed || busy || recovery !== 'ready') return
-    setLastBalance(round.balance); setCoinsWagered(status ? Math.min(status.maximumCoinsWagered, Math.max(status.minimumCoinsWagered, round.coinsWagered)) : round.coinsWagered)
+    const nextCoins = status ? Math.min(status.maximumCoinsWagered, Math.max(status.minimumCoinsWagered, round.coinsWagered)) : round.coinsWagered
+    setLastBalance(round.balance); setCoinsWagered(nextCoins)
+    setWagerChips(chips => chipTotal(chips) === nextCoins ? chips : chipsForCoins(nextCoins))
     setHandCount(counts.includes(round.handCount) ? round.handCount : counts[0]!)
     setRound(null); setHeldPositions([]); setError(null); setActivePanel(null)
-    window.requestAnimationFrame(() => gameRef.current?.querySelector<HTMLElement>('select:not(:disabled), .ff-video-poker__rail button:not(:disabled)')?.focus())
+    window.requestAnimationFrame(() => gameRef.current?.querySelector<HTMLElement>('.ff-video-poker__chip-option:not(:disabled), .ff-video-poker__rail button:not(:disabled)')?.focus())
   }
   const retryStatus = () => { setStatusError(null); setTableUnavailable(false); setStatusLoadAttempt(attempt => attempt + 1) }
   const retryRestoration = () => { setError(null); setRecoveryAttempt(attempt => attempt + 1) }
@@ -197,7 +240,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
   const visibleError = error ?? statusError
 
   return <main className="ff-video-poker" ref={gameRef} data-embedded={!showTitle} aria-busy={busy || recovery === 'recovering' || (round !== null && !revealFinished)} onClickCapture={(event) => {
-    if ((event.target as Element).closest('button, select')) playVideoPokerClick()
+    if ((event.target as Element).closest('button:not(.ff-video-poker__chip-option):not(.ff-video-poker__max-chips), select')) playVideoPokerClick()
   }}>
     <header className="ff-video-poker__header">
       {showTitle && <h1>Video Poker</h1>}
@@ -205,7 +248,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
       <InfoPanel label="Video Poker paytable" trigger="Paytable" active={activePanel} onChange={setActivePanel}>{paytable}</InfoPanel>
       <InfoPanel label="Video Poker basic guide" trigger="Guide" active={activePanel} onChange={setActivePanel}>
         <h2>How to play</h2>
-        <ol className="ff-video-poker__guide-steps"><li>Choose your coin wager and number of hands, then press Deal.</li><li>Tap the cards you want to keep. A held card stays in your final hand.</li><li>Press Draw once. Every card you did not hold is replaced.</li><li>Your final five cards win when they make a hand shown on the paytable. Jacks or Better means a pair of jacks, queens, kings, or aces.</li></ol>
+        <ol className="ff-video-poker__guide-steps"><li>Place R1, R2 or R3 chips to build a one to five coin wager, choose your number of hands, then deal.</li><li>Tap the cards you want to keep. A held card stays in your final hand.</li><li>Press Draw once. Every card you did not hold is replaced.</li><li>Your final five cards win when they make a hand shown on the paytable. Jacks or Better means a pair of jacks, queens, kings, or aces.</li></ol>
         <p>Hover or focus a hand name on the paytable for its exact card pattern.</p>
         {status && <p>One coin is {formatMoney(status.coinValue, currencySymbol)}. Total wager is coins × hands × coin value.</p>}
         <h3>Hold suggestions</h3><button className="ff-video-poker__secondary" aria-pressed={strategyHelp} onClick={() => setStrategyHelp(value => !value)}>Strategy {strategyHelp ? 'On' : 'Off'}</button>
@@ -214,7 +257,7 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
       </InfoPanel>
     </header>
     <section className="ff-video-poker__console" aria-label="Video Poker game">
-      <div className="ff-video-poker__round-head" role="status">{completed ? <strong className={round.payout! > 0 ? 'is-win' : 'is-loss'}>{round.payout === 0 ? 'No win' : formatMoney(round.payout!, currencySymbol) + ' total won'}</strong> : awaitingDraw ? <span>{heldPositions.length} held</span> : round ? <span>{round.phase === 'completed' || busy ? 'Drawing…' : 'Dealing…'}</span> : null}</div>
+      <div className="ff-video-poker__round-head" role="status">{completed ? <strong className={round.payout! > 0 ? 'is-win' : 'is-loss'}>{round.payout === 0 ? 'No win' : formatMoney(round.payout!, currencySymbol) + ' total won'}</strong> : awaitingDraw ? <span>{heldPositions.length} held</span> : round ? <span>{round.phase === 'completed' || busy ? 'Drawing…' : 'Dealing…'}</span> : <span className="ff-video-poker__table-title">VIDEO POKER <i>JACKS OR BETTER</i></span>}</div>
       <div className="ff-video-poker__screen">
         <div className="ff-video-poker__inline-paytable">{paytable}</div>
         <div className="ff-video-poker__board" data-count={round?.phase === 'completed' ? round.handCount : 1} aria-label={round?.phase === 'completed' ? 'Your final hands' : 'Your shared dealt cards'}>
@@ -237,13 +280,12 @@ export function VideoPokerGame({ gateway = defaultGateway, playerId, currencySym
           {!status && statusError && !tableUnavailable && <button className="ff-video-poker__primary" onClick={retryStatus}>Retry connection</button>}
         </div> : !round ? <>
           <div className="ff-video-poker__settings">
-            <label>Coin wager<select aria-label="Coin wager" value={coinsWagered} disabled={stakeLocked} onChange={event => setCoinsWagered(Number(event.target.value))}>
-              {status && Array.from({ length: status.maximumCoinsWagered - status.minimumCoinsWagered + 1 }, (_, index) => status.minimumCoinsWagered + index).map(value => <option key={value} value={value}>{value} {value === 1 ? 'coin' : 'coins'} · {formatMoney(value * status.coinValue, currencySymbol)}</option>)}
-            </select></label>
-            <div className="ff-video-poker__hand-count" role="group" aria-label="Hands"><span>Hands</span><div>{counts.map(value => <button className="ff-video-poker__secondary" key={value} disabled={stakeLocked} aria-pressed={handCount === value} onClick={() => setHandCount(value)}>{value}</button>)}</div></div>
+            <div className="ff-video-poker__chip-selection" role="group" aria-label="Wager chips"><span>PLACE CHIPS</span><div>{chipValues.map(value => <button className="ff-video-poker__chip-option" type="button" aria-label={`Add ${currencySymbol}${value} chip to wager`} disabled={!canPlaceChip(value)} onClick={() => placeChip(value)} key={value}><img src={chipArt[value]} alt="" /></button>)}</div></div>
+            <div className="ff-video-poker__wager-stack" aria-label={`Wager ${coinsWagered} coins`}><span>WAGER</span><div className="ff-video-poker__wager-chips" aria-hidden="true">{wagerChips.slice(-3).map((value, index) => <img src={chipArt[value]} alt="" style={{ transform: `translateY(${(2 - index) * 3}px)` }} key={`${index}-${value}`} />)}</div><strong>{status ? formatMoney(coinsWagered * status.coinValue, currencySymbol) : '—'}</strong></div>
+            <div className="ff-video-poker__hand-count" role="group" aria-label="Hands"><span>HANDS</span><div>{counts.map(value => <button className="ff-video-poker__secondary" key={value} disabled={stakeLocked} aria-pressed={handCount === value} onClick={() => setHandCount(value)}>{value}</button>)}</div></div>
           </div>
-          <div className="ff-video-poker__bet-controls"><button className="ff-video-poker__secondary" disabled={stakeLocked} onClick={() => status && setCoinsWagered(value => value >= status.maximumCoinsWagered ? status.minimumCoinsWagered : value + 1)}>Bet 1</button><button className="ff-video-poker__secondary" disabled={stakeLocked || !maxAffordable} onClick={() => status && deal(status.maximumCoinsWagered)}>Bet Max &amp; Deal</button><button className="ff-video-poker__primary" disabled={busy || recovery !== 'ready' || !status?.available || (!pendingDeal.current && (!wagerValid || !affordable))} onClick={() => deal()}>{busy ? 'Dealing…' : pendingDeal.current ? 'Retry Deal' : 'Deal'}</button></div>
-          <small className="ff-video-poker__ticket">{status ? 'Wager ' + formatMoney(coinsWagered * handCount * status.coinValue, currencySymbol) : '—'}</small>
+          <div className="ff-video-poker__bet-controls"><button className="ff-video-poker__secondary ff-video-poker__undo-chip" aria-label="Undo wager chip" disabled={stakeLocked || wagerChips.length === 0} onClick={undoChip}>UNDO</button><button className="ff-video-poker__secondary ff-video-poker__max-chips" disabled={stakeLocked || !maxAffordable || coinsWagered === status?.maximumCoinsWagered} onClick={fillMaximum}>MAX {status?.maximumCoinsWagered ?? 5}</button><button className="ff-video-poker__deal-orb" type="button" aria-label={busy ? 'Dealing' : pendingDeal.current ? 'Retry Deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingDeal.current && (!wagerValid || !affordable))} onClick={() => deal()}><CardStackIcon /></button></div>
+          <small className="ff-video-poker__ticket">{status ? `${coinsWagered} ${coinsWagered === 1 ? 'COIN' : 'COINS'} · ${formatMoney(coinsWagered * handCount * status.coinValue, currencySymbol)} TOTAL BET` : '—'}</small>
         </> : <>
           <small className="ff-video-poker__ticket">{round.coinsWagered} {round.coinsWagered === 1 ? 'coin' : 'coins'} × {round.handCount} {round.handCount === 1 ? 'hand' : 'hands'} · {formatMoney(round.wager, currencySymbol)}</small>
           <div className="ff-video-poker__round-actions">{round.phase === 'awaiting-draw' ? <button className="ff-video-poker__primary" disabled={busy || !awaitingDraw || recovery !== 'ready'} onClick={draw}>{busy ? 'Drawing…' : !awaitingDraw ? 'Dealing…' : pendingDraw.current ? 'Retry Draw' : 'Draw'}</button> : !completed ? <button className="ff-video-poker__primary" disabled>Drawing…</button> : <>
@@ -268,6 +310,9 @@ function CardFace({ card, animate = false, renderCardFace }: Readonly<{ card: Vi
   return <div className={'ff-video-poker__card' + (['diamonds', 'hearts'].includes(card.suit) ? ' is-red' : '')} role="img" aria-label={cardName(card)} data-new={animate}><span className="ff-video-poker__corner">{rank}<small>{symbol}</small></span><span className="ff-video-poker__suit" aria-hidden="true">{symbol}</span><span className="ff-video-poker__corner ff-video-poker__corner--reverse">{rank}<small>{symbol}</small></span></div>
 }
 function CardBack() { return <div className="ff-video-poker__card ff-video-poker__card--back" aria-hidden="true">FF</div> }
+function CardStackIcon() {
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#123d29" stroke="#edf2e4" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4f5eb" stroke="#52715b" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#879b7c"/><path d="M36 24l7 9-7 9-7-9z" fill="#edf1e2"/></svg>
+}
 function Paytable({ coins, round }: Readonly<{ coins: number; round: VideoPokerRound | null }>) {
   const wins = round?.handRanks?.filter((_, index) => round.handPayouts![index]! > 0).map(rank => handLabel(rank, 1)) ?? []
   const columns = [1, 2, 3, 4, 5] as const

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { getSlotAnimationSymbolIds } from './config/symbolSets'
 import {
   cancelSpinAnimation,
   finishSpinAnimation,
@@ -29,6 +30,7 @@ import {
   type SlotWinTier,
   type WinPresentationTier,
 } from './presentation/spinPresentation'
+import { getPresentedFreeSpinsAwarded } from './presentation/freeSpinAwards'
 import { slotPointsToRand } from './slotPagePresentation'
 import { getSlotKeyboardAction } from './slotKeyboard'
 import {
@@ -38,7 +40,7 @@ import {
   requestSpin,
   SpinRequestError,
 } from './services/slotsApi'
-import type { GridPosition, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
+import type { GridPosition, MidnightVaultBonusRound, MidnightVaultDemoState, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
 import type { AccountSummary } from '../account/services/accountsApi'
 
 type EnergyFlyover = {
@@ -136,8 +138,8 @@ export function useSlotsPageController({
   experienceSet,
   onSpinStateChange,
 }: SlotsPageProps) {
-  const balanceActionHref = demoMode ? null : '/home/rand'
-  const balanceRecoveryHref = demoMode ? window.location.pathname : '/home/rand'
+  const balanceActionHref = demoMode ? null : '/balance'
+  const balanceRecoveryHref = demoMode ? window.location.pathname : '/balance'
   const balanceRecoveryLabel = demoMode ? 'Reset balance' : 'Add Rand'
   // This hook coordinates gameplay. Presentation assets and tunable rules enter
   // through this single composed set rather than direct file imports.
@@ -173,8 +175,7 @@ export function useSlotsPageController({
     [featureSet.collections],
   )
   const animationSymbolIds = useMemo(
-    () => Object.values(symbolSet.definitions).flatMap((definition) =>
-      definition ? [definition.id] : []),
+    () => getSlotAnimationSymbolIds(symbolSet),
     [symbolSet],
   )
   const {
@@ -228,11 +229,15 @@ export function useSlotsPageController({
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
   const [freeSpinWagerPoints, setFreeSpinWagerPoints] = useState<number | null>(null)
   const [freeSpinFeatureMode, setFreeSpinFeatureMode] = useState<string | null>(null)
+  const [midnightBonusState, setMidnightBonusState] = useState<MidnightVaultDemoState | null>(null)
+  const [midnightBonusRound, setMidnightBonusRound] = useState<MidnightVaultBonusRound | null>(null)
+  const [midnightQueuedRounds, setMidnightQueuedRounds] = useState(0)
   const [hasSpecialRoundStarted, setHasSpecialRoundStarted] = useState(false)
   const [isSpecialSpinInProgress, setIsSpecialSpinInProgress] = useState(false)
   const [isSpecialSpinDelayActive, setIsSpecialSpinDelayActive] = useState(false)
   const [heldCompletedCollectionId, setHeldCompletedCollectionId] = useState<string | null>(null)
   const [specialRoundWinnings, setSpecialRoundWinnings] = useState(0)
+  const [rainbowBonusSummary, setRainbowBonusSummary] = useState<{ totalRand: number | null } | null>(null)
   const [specialRoundGemCount, setSpecialRoundGemCount] = useState(0)
   const [isFreeSpinBadgePopping, setIsFreeSpinBadgePopping] = useState(false)
   const [energyBalance, setEnergyBalance] = useState(0)
@@ -248,9 +253,12 @@ export function useSlotsPageController({
   const [collectionAwardPresentation, setCollectionAwardPresentation] =
     useState<CollectionAwardPresentation | null>(null)
   const [wagerIndex, setWagerIndex] = useState(0)
+  const [isSymbolGuideOpen, setIsSymbolGuideOpen] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isReloadPromptOpen, setIsReloadPromptOpen] = useState(false)
+  const audioUnlockGameRef = useRef<string | null>(null)
+  const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
   const prefersReducedMotionRef = useRef(prefersReducedMotion)
@@ -259,6 +267,9 @@ export function useSlotsPageController({
   const slotStateRevisionGuardRef = useRef(new SlotStateRevisionGuard())
   const isMountedRef = useRef(true)
   const handleSpinRef = useRef<() => Promise<void>>(async () => undefined)
+  const rainbowBonusWinningsCentsRef = useRef(0)
+  const rainbowBonusStartedHereRef = useRef(false)
+  const rainbowBonusSummaryPendingRef = useRef(false)
   const helpCloseButtonRef = useRef<HTMLButtonElement | null>(null)
   const reloadPromptCloseButtonRef = useRef<HTMLButtonElement | null>(null)
   const energyMeterRef = useRef<HTMLDivElement | null>(null)
@@ -284,6 +295,13 @@ export function useSlotsPageController({
     () => setCollectionAwardPresentation(null),
     [],
   )
+  const dismissRainbowBonusSummary = useCallback(() => {
+    rainbowBonusSummaryPendingRef.current = false
+    setRainbowBonusSummary(null)
+    setLastSpinOutcome(null)
+    setHasCompletedSpin(false)
+    setFreeSpinFeatureMode(null)
+  }, [])
 
   useEffect(() => {
     isMountedRef.current = true
@@ -368,9 +386,11 @@ export function useSlotsPageController({
       isAutoSpinCoolingDown ||
       mascotPhase !== 'idle' ||
       isHelpOpen ||
+      isSymbolGuideOpen ||
       isSettingsOpen ||
       isReloadPromptOpen ||
       collectionAwardPresentation !== null ||
+      rainbowBonusSummary !== null ||
       isSpecialGameActive
     ) {
       return undefined
@@ -393,7 +413,9 @@ export function useSlotsPageController({
     isAutoSpinning,
     isAutoSpinCoolingDown,
     collectionAwardPresentation,
+    rainbowBonusSummary,
     isHelpOpen,
+    isSymbolGuideOpen,
     isDemoSpinDisabled,
     isReloadPromptOpen,
     isSettingsOpen,
@@ -411,6 +433,7 @@ export function useSlotsPageController({
       !isSpinning &&
       mascotPhase === 'idle' &&
       !isHelpOpen &&
+      !isSymbolGuideOpen &&
       !isSettingsOpen &&
       !isReloadPromptOpen &&
       collectionAwardPresentation === null
@@ -446,6 +469,7 @@ export function useSlotsPageController({
     collectionAwardPresentation,
     freeSpinsRemaining,
     isHelpOpen,
+    isSymbolGuideOpen,
     isReloadPromptOpen,
     isSettingsOpen,
     isSpecialGameActive,
@@ -458,22 +482,52 @@ export function useSlotsPageController({
     // autoplay start immediately; restrictive browsers retry on any trusted
     // interaction. Listeners remain available because a click made while the
     // player has muted effects must not consume the only unlock attempt.
-    startLoop(soundSet.events.ambience)
-    const unlockAudio = () => startLoop(soundSet.events.ambience)
+    const specialAmbienceCue = soundSet.events.specialAmbience
+    const playSpecialAmbience = specialAmbienceCue !== undefined &&
+      (useFreeGameForNextSpin || isSpecialSpinInProgress || rainbowBonusSummary !== null)
+    const activeAmbienceCue = playSpecialAmbience && specialAmbienceCue !== undefined
+      ? specialAmbienceCue
+      : soundSet.events.ambience
+    if (playSpecialAmbience) {
+      stopLoop(soundSet.events.ambience)
+      if (soundSet.events.autoSpinAmbience !== undefined) {
+        stopLoop(soundSet.events.autoSpinAmbience)
+      }
+    } else if (specialAmbienceCue !== undefined) {
+      stopLoop(specialAmbienceCue)
+    }
+    if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(activeAmbienceCue)
+    const unlockAudio = (event: Event) => {
+      if (requiresAudioGesture && !event.isTrusted) return
+      audioUnlockGameRef.current = gameId
+      startLoop(activeAmbienceCue)
+    }
     window.addEventListener('pointerdown', unlockAudio)
     window.addEventListener('keydown', unlockAudio)
     return () => {
       window.removeEventListener('pointerdown', unlockAudio)
       window.removeEventListener('keydown', unlockAudio)
     }
-  }, [audioPreferences.mode, soundSet.events.ambience, startLoop])
+  }, [
+    audioPreferences.mode,
+    gameId,
+    requiresAudioGesture,
+    isSpecialSpinInProgress,
+    rainbowBonusSummary,
+    soundSet.events.ambience,
+    soundSet.events.autoSpinAmbience,
+    soundSet.events.specialAmbience,
+    startLoop,
+    stopLoop,
+    useFreeGameForNextSpin,
+  ])
 
   useEffect(() => {
     if (isSpecialGameActive) {
       return
     }
 
-    if (hasSpecialRoundStarted) {
+    if (hasSpecialRoundStarted && (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) {
       startLoop(soundSet.events.ambience)
     }
     setHeldCompletedCollectionId(null)
@@ -483,6 +537,8 @@ export function useSlotsPageController({
       setHasSpecialRoundStarted(false)
     }
   }, [
+    gameId,
+    requiresAudioGesture,
     hasSpecialRoundStarted,
     isSpecialGameActive,
     soundSet.events.ambience,
@@ -521,6 +577,9 @@ export function useSlotsPageController({
     slotStateRevisionGuardRef.current.advance()
     const requestedRevision = slotStateRevisionGuardRef.current.capture()
     setFreeSpinsRemaining(0)
+    setMidnightBonusState(null)
+    setMidnightBonusRound(null)
+    setMidnightQueuedRounds(0)
     setFreeSpinWagerPoints(null)
     setFreeSpinFeatureMode(null)
     setHasSpecialRoundStarted(false)
@@ -538,6 +597,11 @@ export function useSlotsPageController({
     setWinAwardFlyover(null)
     setMoneyGrabPresentation(null)
     setCollectionAwardPresentation(null)
+
+    rainbowBonusWinningsCentsRef.current = 0
+    rainbowBonusStartedHereRef.current = false
+    rainbowBonusSummaryPendingRef.current = false
+    setRainbowBonusSummary(null)
 
     if (demoMode) {
       setBalance(demoStartingBalance)
@@ -558,6 +622,8 @@ export function useSlotsPageController({
         setFreeSpinsRemaining(state.freeSpinsRemaining)
         setFreeSpinWagerPoints(state.freeSpinWagerPoints)
         setFreeSpinFeatureMode(state.freeSpinFeatureMode)
+        setMidnightBonusRound(state.bonusRound ?? null)
+        setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
         setEnergyBalance(state.energyBalance)
         setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
         if (state.freeSpinWagerPoints !== null) {
@@ -726,6 +792,7 @@ export function useSlotsPageController({
     result: SpinResult,
     isFastAutoSpin: boolean,
     signal: AbortSignal,
+    isFeatureCast: boolean,
   ) {
     const settleSeals = () => {
       if (!isCurrentPresentation(signal)) {
@@ -746,18 +813,26 @@ export function useSlotsPageController({
       return
     }
 
-    const collectionFreeSpinsAwarded = collectionFeature.presentation === 'gem-hoard'
+    const midnightAward = gameId === 'dragon-hoard-v1'
+      ? result.awardedBonusRounds?.find(round => round.id === result.bonusRound?.id && round.id.includes(':collection:'))
+      : undefined
+    const collectionFreeSpinsAwarded = gameId === 'dragon-hoard-v1'
+      ? midnightAward?.totalSpins ?? 0
+      : collectionFeature.presentation === 'gem-hoard'
       ? result.collectionFreeSpinsAwarded ?? 0
-      : result.freeSpinsAwarded
+      : getPresentedFreeSpinsAwarded(result, freeSpinsRemaining, result.isFreeSpin)
     const awardedModes = new Set(result.freeSpinFeatureMode?.split('-') ?? [])
-    const awardedCollectionId = collectionFeature.presentation === 'gem-hoard' &&
+    const awardedCollectionId = gameId === 'dragon-hoard-v1'
+      ? midnightAward?.id.split(':')[2] ?? null
+      : collectionFeature.presentation === 'gem-hoard' &&
       collectionFreeSpinsAwarded > 0
       ? collectionFeature.entries.find((entry) =>
         awardedModes.has(entry.id) && (result.sealsAwarded[entry.symbol] ?? 0) > 0,
       )?.id ?? null
       : null
     const presentCollectionAward = (collectionId: string | null) => {
-      if (!collectionId || !collectionFeature.completionDialog || !isCurrentPresentation(signal)) {
+      if (!collectionId || !collectionFeature.completionDialog || !isCurrentPresentation(signal) ||
+        gameId === 'dragon-hoard-v1' && result.isFreeSpin) {
         return
       }
       setIsAutoSpinning(false)
@@ -881,6 +956,9 @@ export function useSlotsPageController({
       )
       setSealFlyover(null)
       setSealImpactId(position.collection.id)
+      if (gameId === 'reel-riches-v1' && isFeatureCast && index === 0 && soundSet.events.specialCollect) {
+        playCue(soundSet.events.specialCollect)
+      }
       const impactCompleted = await waitForPresentation(
         isFastAutoSpin ? 45 : 105,
         signal,
@@ -1010,7 +1088,8 @@ export function useSlotsPageController({
     const frameRect = document.querySelector<HTMLElement>('.slot-game-frame')?.getBoundingClientRect()
     const stageRect = document.querySelector<HTMLElement>('.slots-page__stage')?.getBoundingClientRect()
     const sourceRect = frameRect ?? stageRect
-    const destinationRect = creditTileRef.current?.getBoundingClientRect()
+    const balanceTarget = creditTileRef.current ?? document.querySelector<HTMLElement>('.in-game-shell > [data-game-navbar] .site-header-balance')
+    const destinationRect = balanceTarget?.getBoundingClientRect()
     const startLeft = sourceRect ? sourceRect.left + sourceRect.width / 2 : window.innerWidth / 2
     const startTop = sourceRect ? sourceRect.top + sourceRect.height * 0.38 : window.innerHeight * 0.38
     const destinationLeft = destinationRect
@@ -1233,43 +1312,13 @@ export function useSlotsPageController({
   }
 
   useEffect(() => {
-    if (!isHelpOpen) {
-      return undefined
-    }
-
-    helpCloseButtonRef.current?.focus()
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsHelpOpen(false)
-      }
-    }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isHelpOpen])
-
-  useEffect(() => {
-    if (!isReloadPromptOpen) {
-      return undefined
-    }
-
-    reloadPromptCloseButtonRef.current?.focus()
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsReloadPromptOpen(false)
-      }
-    }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isReloadPromptOpen])
-
-  useEffect(() => {
     const handleKeyboardControl = (event: KeyboardEvent) => {
       const target = event.target instanceof Element ? event.target : null
       const isEditableTarget = target?.closest(
         'a, button, input, select, textarea, summary, [contenteditable="true"], [role="button"], [role="slider"]',
       ) !== null
       const action = getSlotKeyboardAction(event.key, {
-        hasOpenDialog: isHelpOpen || isSettingsOpen || isReloadPromptOpen,
+        hasOpenDialog: isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen || rainbowBonusSummary !== null,
         isEditableTarget,
         modified: event.altKey || event.ctrlKey || event.metaKey,
         repeated: event.repeat,
@@ -1296,7 +1345,8 @@ export function useSlotsPageController({
   })
 
   async function handleSpin() {
-    if (spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null) {
+    if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
+        spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null || rainbowBonusSummaryPendingRef.current) {
       return
     }
 
@@ -1371,7 +1421,7 @@ export function useSlotsPageController({
       if (isFastAutoSpin && autoSpinAmbienceCue !== undefined) {
         stopLoop(soundSet.events.ambience)
       }
-      startLoop(ambienceCue)
+      if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(ambienceCue)
     }
     startLoop(spinLoopCue)
     setIsSpinning(true)
@@ -1449,6 +1499,7 @@ export function useSlotsPageController({
     let hasStartedStoppingResult = false
     let mascotOutcome: MascotOutcome = 'neutral'
     let shouldStartAutoSpinCooldown = false
+    let completedRainbowBonus: { totalRand: number | null } | null = null
 
     try {
       const result = demoMode
@@ -1461,6 +1512,7 @@ export function useSlotsPageController({
             energyBalance,
             sealCollections,
             freeSpinFeatureMode,
+            ...(gameId === 'dragon-hoard-v1' ? { midnightBonusState } : {}),
           })
         : await requestSpin({
             gameId,
@@ -1495,10 +1547,13 @@ export function useSlotsPageController({
       }
       const awardedRand = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents)
       const wagerRand = slotPointsToRand(result.wagerPoints, result.pointValueInCents)
+      // Read the authoritative balance for presentation only. Some demo
+      // collection awards are omitted from the separate award field.
+      const presentedFreeSpinsAwarded = getPresentedFreeSpinsAwarded(result, freeSpinsRemaining, expectedFreeSpin)
       const spinOutcome = describeSpinOutcome({
         awardRand: awardedRand,
         wagerRand,
-        freeSpinsAwarded: result.freeSpinsAwarded,
+        freeSpinsAwarded: presentedFreeSpinsAwarded,
         narrative: outcomeNarrative,
       })
       const bestPayline = findBestPayline(result.payout.paylines)
@@ -1514,7 +1569,7 @@ export function useSlotsPageController({
         : []
       if (
         (result.payout.totalPoints > 0 ||
-          result.freeSpinsAwarded > 0)
+          presentedFreeSpinsAwarded > 0)
       ) {
         mascotOutcome = 'win'
       }
@@ -1527,14 +1582,32 @@ export function useSlotsPageController({
       setLastWin(spinWinnings)
       if (expectedFreeSpin) {
         setSpecialRoundWinnings((current) => current + spinWinnings)
+        if (gameId === 'rainbow-realm-fruits-v1') {
+          rainbowBonusWinningsCentsRef.current += result.payout.totalPoints * result.pointValueInCents
+          if (result.freeSpinsRemaining === 0) {
+            completedRainbowBonus = {
+              totalRand: rainbowBonusStartedHereRef.current
+                ? rainbowBonusWinningsCentsRef.current / 100
+                : null,
+            }
+          }
+        }
         const heldCollection = heldCompletedCollectionId
           ? result.sealCollections.find((collection) => collection.sealId === heldCompletedCollectionId)
           : undefined
         setSpecialRoundGemCount(heldCollection?.count ?? 0)
-      } else if (result.freeSpinsAwarded > 0) {
+      } else if (presentedFreeSpinsAwarded > 0 || (
+        gameId === 'rainbow-realm-fruits-v1' && freeSpinsRemaining === 0 && result.freeSpinsRemaining > 0
+      ) || (
+        gameId === 'reel-riches-v1' && result.freeSpinsRemaining > freeSpinsRemaining
+      )) {
         setSpecialRoundWinnings(0)
+        if (gameId === 'rainbow-realm-fruits-v1' && result.freeSpinsRemaining > 0) {
+          rainbowBonusWinningsCentsRef.current = 0
+          rainbowBonusStartedHereRef.current = true
+        }
       }
-      setLastFreeSpinsAwarded(result.freeSpinsAwarded)
+      setLastFreeSpinsAwarded(presentedFreeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
       setHasCompletedSpin(true)
       setLastSpinOutcomeKey((current) => current + 1)
@@ -1545,8 +1618,15 @@ export function useSlotsPageController({
           : null,
       )
       setFreeSpinFeatureMode(result.freeSpinFeatureMode)
+      if (gameId === 'dragon-hoard-v1') {
+        setMidnightBonusState(result.midnightBonusState ?? null)
+        setMidnightBonusRound(result.bonusRound ?? null)
+        setMidnightQueuedRounds(result.queuedBonusRounds?.length ?? 0)
+      }
       let resultSoundEvent: SlotResultSoundEvent | null = winSoundCue
-      if (result.freeSpinsAwarded > 0) {
+      if (presentedFreeSpinsAwarded > 0 || (
+        gameId === 'reel-riches-v1' && !expectedFreeSpin && result.freeSpinsRemaining > freeSpinsRemaining
+      )) {
         resultSoundEvent = 'bonus'
       } else if (result.payout.totalPoints === 0) {
         mascotOutcome = 'loss'
@@ -1575,10 +1655,11 @@ export function useSlotsPageController({
         isFastAutoSpin,
         presentationSignal,
       )
-      await animateSealCollection(result, isFastAutoSpin, presentationSignal)
+      await animateSealCollection(result, isFastAutoSpin, presentationSignal, expectedFreeSpin)
       await animateEnergyCollection(result, isFastAutoSpin, presentationSignal)
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {
+      completedRainbowBonus = null
       if (!isMountedRef.current) {
         return
       }
@@ -1643,6 +1724,11 @@ export function useSlotsPageController({
         if (expectedFreeSpin) {
           setIsSpecialSpinInProgress(false)
         }
+        if (completedRainbowBonus !== null) {
+          rainbowBonusSummaryPendingRef.current = true
+          setRainbowBonusSummary(completedRainbowBonus)
+          setIsAutoSpinning(false)
+        }
       } else {
         cancelSpinAnimation(animation)
       }
@@ -1676,7 +1762,7 @@ export function useSlotsPageController({
   })
   const pageBackdropImage = cabinetTheme.pageBackdropImage ?? cabinetTheme.visualsBackdropImage
   const pageBackdropStyle = {
-    ...(pageBackdropImage ? { '--slot-page-backdrop': `url("${pageBackdropImage}")` } : {}),
+    ...(pageBackdropImage ? { '--slot-page-backdrop': cabinetTheme.backdropImageSet ?? `url("${pageBackdropImage}")` } : {}),
     '--slot-result-primary': cabinetTheme.palette.trimBright,
     '--slot-result-secondary': cabinetTheme.palette.accent,
     '--slot-result-glow': cabinetTheme.palette.glow,
@@ -1713,6 +1799,8 @@ export function useSlotsPageController({
   }
 
   function handleSpinButtonClick() {
+    if (rainbowBonusSummaryPendingRef.current) return
+    if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen) return
     if (spinInProgressRef.current || isSpinning) {
       stopSpinRequestedRef.current = true
       if (activeSpinAnimationRef.current !== null) {
@@ -1780,6 +1868,7 @@ export function useSlotsPageController({
   }
 
   return {
+    account,
     balanceActionHref,
     balanceRecoveryHref,
     balanceRecoveryLabel,
@@ -1795,6 +1884,7 @@ export function useSlotsPageController({
     creditTileRef,
     displayedReels,
     dismissCollectionAwardPresentation,
+    dismissRainbowBonusSummary,
     demoAvailability,
     demoAvailabilityMessage,
     demoMode,
@@ -1806,6 +1896,8 @@ export function useSlotsPageController({
     energyMeterRef,
     featureSet,
     freeSpinFeatureMode,
+    midnightBonusRound,
+    midnightQueuedRounds,
     freeSpinsRemaining,
     hasCompletedSpin,
     handleSpinButtonClick,
@@ -1813,6 +1905,7 @@ export function useSlotsPageController({
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
+    isSymbolGuideOpen,
     isDemoSpinDisabled,
     isReloadPromptOpen,
     isSpecialGameActive,
@@ -1833,9 +1926,11 @@ export function useSlotsPageController({
     help,
     moneyGrabPresentation,
     pageBackdropStyle,
+    pointValueInCents,
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,
+    rainbowBonusSummary,
     resultAtmosphereId,
     reloadPromptCloseButtonRef,
     selectedWager: selectedWagerRand,
@@ -1846,6 +1941,7 @@ export function useSlotsPageController({
     specialRoundWinnings,
     setIsAutoSpinning,
     setIsHelpOpen,
+    setIsSymbolGuideOpen,
     setIsReloadPromptOpen,
     setIsSettingsOpen,
     setSpinError,

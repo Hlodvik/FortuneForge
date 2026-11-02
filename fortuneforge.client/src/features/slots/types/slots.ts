@@ -5,6 +5,7 @@ export const slotSymbolIds = [
   '5',
   '6',
   '7',
+  '8',
   'ACE',
   'FREE',
   'POWER',
@@ -58,6 +59,21 @@ export type SlotSealCollection = {
   requiredCount: number
 }
 
+export type MidnightVaultBonusRound = {
+  id: string
+  totalSpins: number
+  remainingSpins: number
+  wagerPoints: number
+  featureMode: string | null
+  mathModelId: string
+}
+
+export type MidnightVaultDemoState = {
+  rounds: MidnightVaultBonusRound[]
+  collectionCounts: Record<string, number>
+  collectionWagerPoints: Record<string, number>
+}
+
 export type SpinResult = {
   spinId: string
   gameId: string
@@ -75,6 +91,10 @@ export type SpinResult = {
   collectionFreeSpinsAwarded?: number
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
+  bonusRound?: MidnightVaultBonusRound | null
+  queuedBonusRounds?: MidnightVaultBonusRound[]
+  awardedBonusRounds?: MidnightVaultBonusRound[]
+  midnightBonusState?: MidnightVaultDemoState | null
   specialPointsAwarded: number
   specialPointsBalance: number
   energyAwarded: number

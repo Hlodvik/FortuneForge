@@ -6,12 +6,15 @@ type SpinRequest = {
   useFreeSpin: boolean
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
+  freeSpinFeatureMode?: string | null
 }
 
-type SpinKind = 'bonus' | 'loss' | 'win'
+type SpinKind = 'bonus' | 'collection' | 'loss' | 'win'
 
 type DemoApiOptions = {
   kind?: SpinKind
+  bonusSpinCount?: number
+  freeSpinPayoutPoints?: number
   onFreeSpinRequest?: () => Promise<void>
   onSpinRequest?: () => Promise<void>
 }
@@ -58,6 +61,51 @@ test('idle cabinet', async ({ page }) => {
   await expect(page).toHaveScreenshot('idle-reel-riches-cabinet.png')
 })
 
+test('Reel Riches bonus entry and active casts remain playable on desktop and mobile', async ({ page }) => {
+  test.setTimeout(90_000)
+  await mockDemoApi(page, { kind: 'bonus' })
+
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await openStableSlot(page, '/slots/reel-riches/demo')
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+    const intro = page.locator('.reel-riches__bonus-intro')
+    await expect(intro).toBeVisible()
+    await expect(intro).toContainText('Trophy Catch')
+    const introBox = await intro.boundingBox()
+    expect(introBox?.x ?? -1).toBeGreaterThanOrEqual(0)
+    expect((introBox?.x ?? 9999) + (introBox?.width ?? 9999)).toBeLessThanOrEqual(viewport.width)
+    expect(introBox?.y ?? -1).toBeGreaterThanOrEqual(0)
+    expect((introBox?.y ?? 9999) + (introBox?.height ?? 9999)).toBeLessThanOrEqual(viewport.height)
+    await expect(page.locator('.slots-page')).toHaveScreenshot(`reel-riches-bonus-intro-${viewport.width}.png`)
+
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(intro).toHaveCount(0)
+    await expect(page.locator('.reel-riches__bonus-hud')).toBeVisible()
+    await expect(page.locator('.slots-page--special-game')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+    await expect(page.locator('.slots-page')).toHaveScreenshot(`reel-riches-active-casts-${viewport.width}.png`)
+    const metrics = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      spinBottom: document.querySelector('.spin-button')?.getBoundingClientRect().bottom ?? Infinity,
+    }))
+    expect(metrics.width).toBeLessThanOrEqual(viewport.width + 1)
+    expect(metrics.spinBottom).toBeLessThanOrEqual(viewport.height)
+  }
+})
+
+test('Reel Riches badge collection opens the legendary feature', async ({ page }) => {
+  await mockDemoApi(page, { kind: 'collection' })
+  await openStableSlot(page, '/slots/reel-riches/demo')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+  const intro = page.locator('.reel-riches__bonus-intro')
+  await expect(intro).toBeVisible()
+  await expect(intro).toContainText('Legendary Catch')
+  await expect(intro).toContainText('10 free casts')
+})
+
 test('rules and payline guide', async ({ page }) => {
   await mockDemoApi(page)
   await openStableSlot(page, '/slots/pirates-fortune/demo')
@@ -87,6 +135,119 @@ test('feature transition with deterministic free spins', async ({ page }) => {
 
   await expect(page.locator('.slots-page__stage')).toHaveScreenshot('active-olympian-feature.png')
   featureGate.release()
+})
+
+test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async ({ page }, testInfo) => {
+  await mockDemoApi(page, { kind: 'bonus' })
+
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await openStableSlot(page, '/slots/rainbow-realm/demo')
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+    await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('10 bonus spins are ready')
+    await expect(page.locator('[data-rainbow-bonus="true"]')).toBeVisible()
+    await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-intro-${viewport.width}.png`), fullPage: true })
+    await page.getByRole('button', { name: 'Spin the reels' }).click()
+    await expect(page.locator('.rainbow-realm__bonus-intro')).toHaveCount(0)
+    await expect(page.locator('.slots-page--special-game')).toBeVisible()
+    await expect(page.locator('.slots-page__special-game-tally')).toBeVisible()
+    await expect(page.locator('.slots-page__special-game-tally')).toContainText('bonus spins left')
+
+    const metrics = await page.evaluate(() => {
+      const spin = document.querySelector('.spin-button')?.getBoundingClientRect()
+      const page = document.querySelector('.slots-page')
+      return {
+        background: page ? getComputedStyle(page).backgroundImage : '',
+        documentWidth: document.documentElement.scrollWidth,
+        spinBottom: spin?.bottom ?? Number.POSITIVE_INFINITY,
+        spinTop: spin?.top ?? Number.NEGATIVE_INFINITY,
+      }
+    })
+    await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-rush-${viewport.width}.png`), fullPage: true })
+    expect(metrics.background).toContain('rainbow-realm-twilight-orchard-bonus-v1.webp')
+    expect(metrics.documentWidth).toBeLessThanOrEqual(viewport.width + 1)
+    expect(metrics.spinTop).toBeGreaterThanOrEqual(0)
+    expect(metrics.spinBottom).toBeLessThanOrEqual(viewport.height)
+
+  }
+})
+
+test('Rainbow Realm filled glass shows its enhanced Orchard Rush mode', async ({ page }) => {
+  await mockDemoApi(page, { kind: 'collection' })
+  await openStableSlot(page, '/slots/rainbow-realm/demo')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+  const intro = page.locator('.rainbow-realm__bonus-intro')
+  await expect(intro).toContainText('Orchard glass filled')
+  await expect(intro).toContainText('10 bonus spins are ready')
+  await expect(intro).toContainText('Strawberry Sync')
+})
+
+test('Rainbow Realm keeps the completed bonus total until the player continues', async ({ page }) => {
+  test.setTimeout(45_000)
+  await mockDemoApi(page, { kind: 'bonus', bonusSpinCount: 2, freeSpinPayoutPoints: 8 })
+  await openStableSlot(page, '/slots/rainbow-realm/demo')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('2 bonus spins are ready')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.locator('.slots-page__special-game-tally')).toContainText('1 bonus spin left')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+  const summary = page.getByRole('dialog', { name: 'Orchard Rush' })
+  await expect(summary).toBeVisible()
+  await expect(summary).toContainText('Bonus win R4')
+  await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeDisabled()
+  await expect(page.locator('[data-rainbow-bonus="true"]')).toBeVisible()
+
+  await summary.getByRole('button', { name: 'Continue' }).click()
+  await expect(summary).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+  await expect(page.locator('[data-rainbow-bonus="true"]')).toHaveCount(0)
+})
+
+test('Rainbow Realm glass entry preserves its bonus total without a scatter award', async ({ page }) => {
+  await mockDemoApi(page, { kind: 'collection', bonusSpinCount: 1, freeSpinPayoutPoints: 8 })
+  await openStableSlot(page, '/slots/rainbow-realm/demo')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('Orchard glass filled')
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.getByRole('dialog', { name: 'Orchard Rush' })).toContainText('Bonus win R2')
+})
+
+test('Rainbow Realm and Pirates use size-matched reel artwork', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await mockDemoApi(page)
+
+  for (const path of ['/slots/rainbow-realm/demo', '/slots/pirates-fortune/demo']) {
+    for (const viewport of [{ width: 390, height: 844 }, { width: 1366, height: 768 }]) {
+      await page.setViewportSize(viewport)
+      await openStableSlot(page, path)
+      const reelImages = await page.locator('.slot-reel .slot-symbol__image').evaluateAll((images) =>
+        images.map((image) => ({
+          source: (image as HTMLImageElement).currentSrc,
+          candidates: (image as HTMLImageElement).srcset,
+        })),
+      )
+      expect(reelImages.length).toBeGreaterThan(0)
+      for (const image of reelImages) {
+        expect(image.source).toContain('/responsive/')
+        expect(image.source).toMatch(/\.webp(?:\?|$)/)
+        expect(image.candidates).toContain('96w')
+        expect(image.candidates).toContain('192w')
+        expect(image.candidates).toMatch(/(?:256|320)w/)
+      }
+
+      if (path.includes('rainbow') && viewport.width === 390) {
+        const orange = page.locator('.slot-reel [data-symbol="3"] .slot-symbol__image').first()
+        await expect(orange).toBeVisible()
+        const firstFrame = await orange.screenshot({ animations: 'allow' })
+        await page.waitForTimeout(240)
+        const nextFrame = await orange.screenshot({ animations: 'allow' })
+        expect(firstFrame.equals(nextFrame)).toBe(false)
+      }
+    }
+  }
 })
 
 test('settled win with highlighted payline and outcome', async ({ page }) => {
@@ -433,19 +594,25 @@ async function mockDemoApi(page: Page, options: DemoApiOptions = {}) {
     if (request.useFreeSpin && options.onFreeSpinRequest) {
       await options.onFreeSpinRequest()
     }
-    const kind = request.useFreeSpin ? 'loss' : options.kind ?? 'loss'
+    const kind = request.useFreeSpin && options.freeSpinPayoutPoints
+      ? 'win'
+      : request.useFreeSpin ? 'loss' : options.kind ?? 'loss'
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(spinFixture(request, kind)),
+      body: JSON.stringify(spinFixture(request, kind, options)),
     })
   })
 }
 
-function spinFixture(request: SpinRequest, kind: SpinKind) {
+function spinFixture(request: SpinRequest, kind: SpinKind, options: DemoApiOptions = {}) {
   const isBonus = kind === 'bonus'
+  const isCollection = kind === 'collection'
   const isWin = kind === 'win'
   const isFreeSpin = request.useFreeSpin
+  const isRainbowRealm = request.gameId === 'rainbow-realm-fruits-v1'
+  const freeSpinsAwarded = isRainbowRealm ? options.bonusSpinCount ?? 10 : request.gameId === 'reel-riches-v1' ? 5 : 6
+  const payoutPoints = isFreeSpin ? options.freeSpinPayoutPoints ?? 0 : isWin ? 8 : 0
   const reels = isBonus
     ? reelRows.map((reel, index) => index < 3 ? ['FREE', ...reel.slice(1)] : [...reel])
     : isWin
@@ -453,11 +620,19 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
       : reelRows.map((reel) => [...reel])
   const positions = reels.map((_, reel) => ({ reel, row: 0 }))
   const remainingFreeSpins = isBonus
-    ? 6
+    ? freeSpinsAwarded
+    : isCollection
+      ? isRainbowRealm ? options.bonusSpinCount ?? 10 : 10
     : isFreeSpin
       ? Math.max(0, request.freeSpinsRemaining - 1)
       : 0
-  const featureMode = isBonus || isFreeSpin ? 'paw-rand' : null
+  const featureMode = isCollection
+    ? isRainbowRealm ? 'sync' : 'sync-rows-rand'
+    : isFreeSpin
+      ? request.freeSpinFeatureMode ?? (isRainbowRealm || request.gameId === 'reel-riches-v1' ? null : 'paw-rand')
+      : isBonus && request.gameId !== 'reel-riches-v1' && !isRainbowRealm
+        ? 'paw-rand'
+        : null
 
   return {
     spinId: '00000000-0000-4000-8000-000000000001',
@@ -472,7 +647,7 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
     consecutiveFiveMisses: 0,
     fiveMatchPityTriggered: false,
     isFreeSpin,
-    freeSpinsAwarded: isBonus ? 6 : 0,
+    freeSpinsAwarded: isBonus ? freeSpinsAwarded : 0,
     freeSpinsRemaining: remainingFreeSpins,
     freeSpinWagerPoints: remainingFreeSpins > 0
       ? request.freeSpinWagerPoints ?? request.wagerPoints
@@ -486,25 +661,25 @@ function spinFixture(request: SpinRequest, kind: SpinKind) {
     monkeyPawCount: 0,
     moneyGrabPoints: 0,
     bananaBonusPoints: 0,
-    sealsAwarded: {},
+    sealsAwarded: isCollection ? { SEAL_SYNC: 1 } : {},
     sealCollections: [
-      { sealId: 'sync', count: 14, averageWagerPoints: request.wagerPoints, requiredCount: 28 },
-      { sealId: 'rows', count: 8, averageWagerPoints: request.wagerPoints, requiredCount: 28 },
-      { sealId: 'paw', count: 21, averageWagerPoints: request.wagerPoints, requiredCount: 28 },
-      { sealId: 'rand', count: 4, averageWagerPoints: request.wagerPoints, requiredCount: 28 },
+      { sealId: 'sync', count: 14, averageWagerPoints: request.wagerPoints, requiredCount: isRainbowRealm ? 60 : 28 },
+      { sealId: 'rows', count: 8, averageWagerPoints: request.wagerPoints, requiredCount: isRainbowRealm ? 60 : 28 },
+      { sealId: 'paw', count: 21, averageWagerPoints: request.wagerPoints, requiredCount: isRainbowRealm ? 60 : 28 },
+      { sealId: 'rand', count: 4, averageWagerPoints: request.wagerPoints, requiredCount: isRainbowRealm ? 60 : 28 },
     ],
     freeSpinFeatureMode: featureMode,
     specialBoostApplied: false,
     slotsCreditsBalance: null,
-    payout: isWin
+    payout: payoutPoints > 0
       ? {
-          totalPoints: 8,
+          totalPoints: payoutPoints,
           paylines: [{
             paylineId: 1,
-            amountPoints: 8,
+            amountPoints: payoutPoints,
             matches: [{
               multiplier: 4,
-              amountPoints: 8,
+              amountPoints: payoutPoints,
               match: {
                 paylineId: 1,
                 symbolId: '7',

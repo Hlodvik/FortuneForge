@@ -35,8 +35,6 @@
 .ff-holdem-page button:focus-visible, .ff-holdem-page input:focus-visible,
 .ff-holdem-page summary:focus-visible { outline: 2px solid #ffe0a1; outline-offset: 4px; }
 .ff-holdem-shell-body:has(.ff-holdem-page) { overflow: hidden; background: #003823; }
-.in-game-shell:has(.ff-holdem-page) .in-game-navbar { background: #080b09; border-bottom: 1px solid #bda15a66; }
-.in-game-shell:has(.ff-holdem-page) .in-game-navbar__title { display: none; }
 .ff-holdem-main { display: flex; flex: 1; flex-direction: column; min-height: 0; width: 100%; max-width: 1660px; margin: 0 auto; }
 .ff-holdem-game-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; min-height: 76px; padding: 10px 28px 2px; flex: none; }
 .ff-holdem-game-header h1 { margin: 0; color: #ffedc6; font: 650 clamp(32px, 3.6vw, 55px)/1.05 FFHoldemDisplay, Georgia, serif; letter-spacing: -.045em; }

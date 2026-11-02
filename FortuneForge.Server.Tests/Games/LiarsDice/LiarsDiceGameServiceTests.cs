@@ -1,5 +1,7 @@
 using FortuneForge.Server.Bots.LiarsDice;
 using FortuneForge.Server.Games.LiarsDice;
+using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Games.Abstractions.Auditing;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Games.LiarsDice;
@@ -127,6 +129,49 @@ public sealed class LiarsDiceGameServiceTests
         Assert.Equal(
             ["managed-liars-a", "managed-liars-b", "managed-liars-c"],
             roster.LastHeartbeatProfileIds);
+    }
+
+    [Fact]
+    public async Task Completed_match_including_scheduled_bot_actions_records_only_the_human_once()
+    {
+        var clock = new MutableTimeProvider(); var sink = new RecordingSettlementSink();
+        var security = new RecordingSecuritySink();
+        var service = new LiarsDiceGameService(new RecordingRoster(4), clock, sink, security);
+        var match = await service.StartAsync("player-a", new(21, 1));
+        Assert.Empty(sink.Events);
+        for (var action = 0; action < 500 && match.Winner is null; action++)
+        {
+            if (match.Phase == "resolved") match = await service.NextRoundAsync("player-a", match.MatchId, (uint)(action + 1));
+            else if (match.CurrentPlayerId == "you")
+                match = match.CurrentBid is null
+                    ? await service.BidAsync("player-a", match.MatchId, new(1, 1))
+                    : await service.ChallengeAsync("player-a", match.MatchId);
+            else
+            {
+                clock.Advance(TimeSpan.FromSeconds(2));
+                await service.AdvanceDueManagedTurnsAsync();
+                match = await service.GetAsync("player-a", match.MatchId);
+            }
+        }
+        Assert.NotNull(match.Winner);
+        await service.AdvanceDueManagedTurnsAsync(); await service.GetAsync("player-a", match.MatchId);
+        var recorded = Assert.Single(sink.Events);
+        Assert.Equal("player-a", recorded.UserId); Assert.Equal("liars-dice", recorded.GameId);
+        Assert.Equal("free", recorded.Mode); Assert.Equal(0, recorded.WagerCents);
+        Assert.Contains(security.Events, observation => observation.Fields["eventKind"] as string == "managed-background-turn");
+        Assert.Equal("incomplete", Assert.Single(security.Completions).Summary.AuditStatus);
+        Assert.Equal("player-a", security.Completions[0].Summary.Participants.Single().ActorId);
+    }
+
+    private sealed class RecordingSecuritySink : IGameSecurityEventSink
+    {
+        public List<GameSecurityEventDocument> Events { get; } = [];
+        public List<RoundAuditCapture> Completions { get; } = [];
+        public Task WriteAsync(GameSecurityEventDocument observation, CancellationToken cancellationToken = default)
+        { Events.Add(observation); return Task.CompletedTask; }
+        public Task WriteCompletedAsync(GameSecurityEventDocument observation, RoundAuditCapture capture,
+            CancellationToken cancellationToken = default)
+        { Events.Add(observation); Completions.Add(capture); return Task.CompletedTask; }
     }
 
     private static LiarsDiceGameService CreateService(

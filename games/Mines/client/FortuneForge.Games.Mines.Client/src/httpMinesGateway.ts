@@ -1,4 +1,6 @@
 import { MinesGatewayError,type MinesCommand,type MinesGateway,type MinesSession } from './contracts'
+import { isSupportedMinesHouseEdge,isSupportedMinesPayoutPolicy,currentMinesMaximumMultiplier } from './minesPayoutQuote'
+import { acceptedMinesMaximumWagerCents,acceptedMinesMinimumWagerCents,currentMinesMinimumWagerCents,currentMinesMaximumWagerCents } from './minesWagerLimits'
 
 export class HttpMinesGateway implements MinesGateway {
   constructor(readonly basePath='/api/games/mines',private readonly requestFn:typeof fetch=fetch){}
@@ -24,12 +26,28 @@ const cents=(v:unknown):v is number=>typeof v==='number'&&Number.isSafeInteger(v
 const positive=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>0
 const onlyKeys=(v:Record<string,unknown>,keys:string[])=>Object.keys(v).every(key=>keys.includes(key))
 export function isMinesSession(v:unknown):v is MinesSession{
-  if(!record(v)||!cents(v.balanceCents)||typeof v.practice!=='boolean'||!cents(v.minimumWagerCents)||!cents(v.maximumWagerCents)||v.minimumWagerCents<=0||v.maximumWagerCents<v.minimumWagerCents||v.houseEdgeBasisPoints!==100)return false
-  if(!onlyKeys(v,['balanceCents','practice','round','minimumWagerCents','maximumWagerCents','houseEdgeBasisPoints']))return false
+  if(!record(v)||!cents(v.balanceCents)||typeof v.practice!=='boolean'||!cents(v.minimumWagerCents)||!cents(v.maximumWagerCents)||v.minimumWagerCents<=0||v.maximumWagerCents<v.minimumWagerCents||!isSupportedMinesHouseEdge(v.houseEdgeBasisPoints))return false
+  if(!onlyKeys(v,['balanceCents','practice','round','minimumWagerCents','maximumWagerCents','houseEdgeBasisPoints','payoutPolicyVersion']))return false
+  if('payoutPolicyVersion' in v&&!isSupportedMinesPayoutPolicy(v.payoutPolicyVersion))return false
+  if(v.payoutPolicyVersion===2&&(v.houseEdgeBasisPoints!==1000||v.minimumWagerCents!==currentMinesMinimumWagerCents||v.maximumWagerCents!==currentMinesMaximumWagerCents))return false
   if(v.round===null)return true
   const r=v.round
-  if(!record(r)||typeof r.roundId!=='string'||!r.roundId||!cents(r.wagerCents)||!cents(r.mineCount)||r.mineCount<1||r.mineCount>24||!['active','lost','cashed-out','cleared'].includes(String(r.status))||!cents(r.safeReveals)||r.safeReveals>25-r.mineCount||r.gemsRemaining!==25-r.mineCount-r.safeReveals||!(r.status==='lost'?r.currentMultiplier===0:positive(r.currentMultiplier))||!(r.nextMultiplier===null||positive(r.nextMultiplier))||!cents(r.cashOutCents)||!cents(r.payoutCents)||typeof r.canCashOut!=='boolean'||!Array.isArray(r.tiles)||r.tiles.length!==25)return false
-  if(typeof r.status!=='string'||r.wagerCents<v.minimumWagerCents||r.wagerCents>v.maximumWagerCents||!onlyKeys(r,['roundId','wagerCents','mineCount','status','safeReveals','gemsRemaining','currentMultiplier','nextMultiplier','cashOutCents','canCashOut','payoutCents','tiles']))return false
+  if(!record(r)||typeof r.roundId!=='string'||!r.roundId||!cents(r.wagerCents)||!cents(r.mineCount)||r.mineCount<1||r.mineCount>24||!['active','lost','cashed-out','cleared','consolation'].includes(String(r.status))||!cents(r.safeReveals)||r.safeReveals>25-r.mineCount||r.gemsRemaining!==25-r.mineCount-r.safeReveals||!(r.status==='lost'?r.currentMultiplier===0:positive(r.currentMultiplier))||!(r.nextMultiplier===null||positive(r.nextMultiplier))||!cents(r.cashOutCents)||!cents(r.payoutCents)||typeof r.canCashOut!=='boolean'||!Array.isArray(r.tiles)||r.tiles.length!==25)return false
+  if(typeof r.status!=='string'||r.wagerCents<acceptedMinesMinimumWagerCents||r.wagerCents>acceptedMinesMaximumWagerCents||!onlyKeys(r,['roundId','wagerCents','mineCount','status','safeReveals','gemsRemaining','currentMultiplier','nextMultiplier','cashOutCents','canCashOut','payoutCents','tiles','houseEdgeBasisPoints','payoutPolicyVersion','nextMinePayoutCents']))return false
+  if('houseEdgeBasisPoints' in r&&!isSupportedMinesHouseEdge(r.houseEdgeBasisPoints))return false
+  if('payoutPolicyVersion' in r&&!isSupportedMinesPayoutPolicy(r.payoutPolicyVersion))return false
+  if('nextMinePayoutCents' in r&&!cents(r.nextMinePayoutCents))return false
+  const policy=r.payoutPolicyVersion??1,mineReturn=r.nextMinePayoutCents??0
+  if(policy===1&&(mineReturn!==0||r.status==='consolation'))return false
+  if(policy===2){
+    if(!cents(r.nextMinePayoutCents))return false
+    if(r.houseEdgeBasisPoints!==1000||r.wagerCents<currentMinesMinimumWagerCents||r.wagerCents>currentMinesMaximumWagerCents)return false
+    const ceiling=r.wagerCents*currentMinesMaximumMultiplier
+    if(Number(r.currentMultiplier)>currentMinesMaximumMultiplier||r.nextMultiplier!==null&&r.nextMultiplier>currentMinesMaximumMultiplier||r.cashOutCents>ceiling||r.payoutCents>ceiling||Number(mineReturn)>ceiling)return false
+  }
+  if(r.status!=='active'&&mineReturn!==0)return false
+  if(r.status==='consolation'&&(r.payoutCents<=0||r.safeReveals===0))return false
+  if(r.status==='active'&&r.gemsRemaining===0)return false
   if(r.status==='active'?(r.payoutCents!==0||!positive(r.nextMultiplier)):(r.nextMultiplier!==null||r.cashOutCents!==0))return false
   if(r.status==='lost'&&r.payoutCents!==0||r.status==='cleared'&&r.gemsRemaining!==0)return false
   let revealedGems=0,mines=0,revealedMines=0
@@ -42,7 +60,7 @@ export function isMinesSession(v:unknown):v is MinesSession{
     if(t.isRevealed&&t.kind==='mine')revealedMines++
     if(t.kind==='mine')mines++
   }
-  if(r.status==='lost'?revealedMines!==1:revealedMines!==0)return false
-  if((r.status==='cashed-out'||r.status==='cleared')&&r.payoutCents<=0)return false
+  if(r.status==='lost'||r.status==='consolation'?revealedMines!==1:revealedMines!==0)return false
+  if((r.status==='cashed-out'||r.status==='cleared'||r.status==='consolation')&&r.payoutCents<=0)return false
   return revealedGems===r.safeReveals&&(r.status==='active'||mines===r.mineCount)&&r.canCashOut===(r.status==='active'&&r.safeReveals>0)
 }

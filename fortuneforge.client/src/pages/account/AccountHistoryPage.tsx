@@ -1,29 +1,39 @@
 import { useEffect, useState } from 'react'
-import { ForgeCoin, ForgeCreditAmount } from '../../components/ForgeCreditAmount'
+import { ForgeCoin } from '../../components/ForgeCreditAmount'
 import {
   getSlotHistory,
+  type AccountSummary,
   type SlotSpinHistoryItem,
 } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { CardRoomHistory } from '../../games/cards/shared/CardRoomHistory'
 import { useCardRoomHistory } from '../cards/useCardRoomHistory'
+import { AccountLobbyShell } from './AccountLobbyShell'
 import '../../games/cards/shared/cardRoomHeader.css'
 import '../index.css'
+import './accountHistory.css'
 
 const numberFormatter = new Intl.NumberFormat('en-US')
 
 export function AccountHistoryPage() {
   const { account, error: accountError, isLoading: isAccountLoading } = useAuthenticatedAccount()
+
+  return (
+    <AccountLobbyShell account={account} activeNav="history">
+      {isAccountLoading && <div className="account-history"><div className="account-history__notice" role="status">Loading your history…</div></div>}
+      {accountError !== null && <div className="account-history"><div className="account-history__notice account-history__notice--error" role="alert">{accountError}</div></div>}
+      {account !== null && <AccountHistoryContent account={account} />}
+    </AccountLobbyShell>
+  )
+}
+
+export function AccountHistoryContent({ account }: { account: AccountSummary }) {
   const cardHistory = useCardRoomHistory()
   const [spins, setSpins] = useState<SlotSpinHistoryItem[]>([])
   const [historyError, setHistoryError] = useState<string | null>(null)
   const [isHistoryLoading, setIsHistoryLoading] = useState(true)
 
   useEffect(() => {
-    if (account === null) {
-      return undefined
-    }
-
     let isActive = true
     void getSlotHistory()
       .then((history) => {
@@ -45,31 +55,18 @@ export function AccountHistoryPage() {
     return () => {
       isActive = false
     }
-  }, [account])
+  }, [account.userId])
 
   return (
-    <div className="player-page">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
-          <span>Fortune Forge</span>
-        </a>
-        <div className="landing-bar__account">
-          {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
-          <a className="landing-nav__link" href="/home/settings">Back to settings</a>
-        </div>
-      </header>
-
-      <main className="history-main">
-        {(isAccountLoading || (account !== null && isHistoryLoading)) && (
-          <div className="player-state" role="status">Reading your fortune…</div>
+      <div className="account-history">
+        {isHistoryLoading && (
+          <div className="account-history__notice" role="status">Loading your history…</div>
         )}
-        {accountError !== null && <div className="player-state player-state--error" role="alert">{accountError}</div>}
-        {account !== null && !isHistoryLoading && (
+        {!isHistoryLoading && (
           <>
             <section className="history-heading">
-              <p className="account-eyebrow">User history</p>
-              <h1>{account.playerName}’s fortune</h1>
+              <p className="account-history__eyebrow">Your activity</p>
+              <h1>{account.playerName}’s history</h1>
               <p>Your card-game results, latest authenticated spins, and lifetime slot totals.</p>
             </section>
 
@@ -90,16 +87,16 @@ export function AccountHistoryPage() {
 
             <section className="history-list" aria-labelledby="recent-history-title">
               <div className="player-section-heading">
-                <p className="account-eyebrow">Most recent</p>
+                <p className="account-history__eyebrow">Most recent</p>
                 <h2 id="recent-history-title">Spin results</h2>
               </div>
-              {historyError !== null && <p className="account-form__error" role="alert">{historyError}</p>}
+              {historyError !== null && <p className="account-history__error" role="alert">{historyError}</p>}
               {historyError === null && spins.length === 0 && (
                 <div className="history-empty">
-                  <span aria-hidden="true">✦</span>
+                  <span aria-hidden="true">♠</span>
                   <strong>No tracked spins yet</strong>
                   <p>Play Fortune Slots while logged in and your results will appear here.</p>
-                  <a className="landing-button landing-button--primary" href="/home?category=Slots#home-lobby-games-title">Play slots</a>
+                  <a className="home-lobby__gold-button" href="/home?category=Slots#home-lobby-games-title">Play slots</a>
                 </div>
               )}
               {spins.length > 0 && (
@@ -118,7 +115,6 @@ export function AccountHistoryPage() {
             </section>
           </>
         )}
-      </main>
-    </div>
+      </div>
   )
 }

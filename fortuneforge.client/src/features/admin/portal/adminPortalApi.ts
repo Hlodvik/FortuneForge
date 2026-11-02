@@ -25,6 +25,7 @@ export type AdminGamingEvent = {
 export type AdminPlayerMatch = {
   matchId: string; game: string; status: string; startedAtUtc: string | null; completedAtUtc: string | null
   wageredCredits: number | null; paidCredits: number | null; netCredits: number | null
+  mode?: 'practice' | 'credit' | null
   players?: Array<{ userId: string | null; displayName: string | null; isBot: boolean | null }> | null
 }
 export type ManagedGame = { id: string; displayName: string; category: string; route: string; visible: boolean; botsSupported: boolean; botsEnabled: boolean; effectiveBotsEnabled: boolean }

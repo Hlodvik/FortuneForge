@@ -8,8 +8,17 @@ import {
   type CasinoWarStatus,
 } from './contracts'
 import { HttpCasinoWarGateway } from './httpCasinoWarGateway'
+import chip1 from './assets/chip-1.png'
+import chip2 from './assets/chip-2.png'
+import chip5 from './assets/chip-5.png'
+import chip10 from './assets/chip-10.png'
+import chip25 from './assets/chip-25.png'
+import chip50 from './assets/chip-50.png'
+import chipLay from './assets/chip-lay-1.ogg'
 import './casinoWar.css'
 import './casinoWarViewport.css'
+import './casinoWarDeal.css'
+import './casinoWarBoard.css'
 
 export type CasinoWarGameProps = Readonly<{
   gateway?: CasinoWarGateway
@@ -20,6 +29,8 @@ export type CasinoWarGameProps = Readonly<{
 }>
 
 const defaultGateway = new HttpCasinoWarGateway()
+const chipValues = [1, 2, 5, 10, 25, 50] as const
+const chipArt: Record<number, string> = { 1: chip1, 2: chip2, 5: chip5, 10: chip10, 25: chip25, 50: chip50 }
 
 type StoredPendingAction =
   | Readonly<{ operation: 'opening'; idempotencyKey: string; primaryStake: number; tieStake: number }>
@@ -28,8 +39,13 @@ type StoredPendingAction =
 export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, renderCardFace }: CasinoWarGameProps) {
   const [status, setStatus] = useState<CasinoWarStatus | null>(null)
   const [round, setRound] = useState<CasinoWarRound | null>(null)
-  const [primaryStake, setPrimaryStake] = useState(1)
+  const [primaryStake, setPrimaryStake] = useState(0)
   const [tieStake, setTieStake] = useState(0)
+  const [mainChips, setMainChips] = useState<number[]>([])
+  const [tieChips, setTieChips] = useState<number[]>([])
+  const [selectedChip, setSelectedChip] = useState<number>(1)
+  const [chipPickerOpen, setChipPickerOpen] = useState(false)
+  const [soundMuted, setSoundMuted] = useState(readSoundMuted)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tableUnavailable, setTableUnavailable] = useState(false)
@@ -61,7 +77,7 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     const controller = new AbortController()
     void gateway.getStatus(controller.signal).then(nextStatus => {
       setStatus(nextStatus)
-      setPrimaryStake(current => current >= nextStatus.minimumPrimaryStake && current <= nextStatus.maximumPrimaryStake && isIncrementAligned(current, nextStatus.minimumPrimaryStake, nextStatus.stakeIncrement) ? current : nextStatus.minimumPrimaryStake)
+      setPrimaryStake(current => current === 0 || (current >= nextStatus.minimumPrimaryStake && current <= nextStatus.maximumPrimaryStake && isIncrementAligned(current, nextStatus.minimumPrimaryStake, nextStatus.stakeIncrement)) ? current : 0)
       setTableUnavailable(!nextStatus.available)
       setError(nextStatus.available ? null : 'This table is temporarily unavailable. Please choose another game.')
     }).catch(reason => {
@@ -79,6 +95,8 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
       if (pendingAction.operation === 'opening') {
         setPrimaryStake(pendingAction.primaryStake)
         setTieStake(pendingAction.tieStake)
+        setMainChips(chipsForAmount(pendingAction.primaryStake))
+        setTieChips(chipsForAmount(pendingAction.tieStake))
       }
       const controller = new AbortController()
       setRecovery('recovering')
@@ -129,6 +147,8 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     if (!round) return
     setPrimaryStake(round.primaryStake)
     setTieStake(round.tieStake)
+    setMainChips(chips => chipTotal(chips) === round.primaryStake ? chips : chipsForAmount(round.primaryStake))
+    setTieChips(chips => chipTotal(chips) === round.tieStake ? chips : chipsForAmount(round.tieStake))
   }, [round])
 
   const balance = round?.balance ?? lastBalance ?? status?.balance ?? null
@@ -165,6 +185,32 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   const tieIsValid = status !== null && tieStake >= 0 && tieStake <= status.maximumTieStake && Number.isFinite(tieStake) &&
     (tieStake === 0 || isIncrementAligned(tieStake, 0, status.stakeIncrement))
   const stakesAffordable = balance !== null && primaryStake + tieStake <= balance
+  const canPlaceChips = !round && !busy && recovery === 'ready' && Boolean(status?.available) && pendingOpeningStakes.current === null
+  const availableChips = chipValues.filter(value => status && isIncrementAligned(value, 0, status.stakeIncrement))
+  const pickerChips = availableChips.length ? availableChips : chipValues
+  const canPlaceSelectedChip = (kind: 'main' | 'tie') => {
+    if (!canPlaceChips || !status || balance === null || !pickerChips.includes(selectedChip as typeof chipValues[number])) return false
+    const current = kind === 'main' ? primaryStake : tieStake
+    const cap = kind === 'main' ? status.maximumPrimaryStake : status.maximumTieStake
+    return roundStake(current + selectedChip) <= cap && roundStake(primaryStake + tieStake + selectedChip) <= balance
+  }
+
+  const placeChip = (kind: 'main' | 'tie') => {
+    if (!canPlaceSelectedChip(kind)) return
+    const current = kind === 'main' ? primaryStake : tieStake
+    if (kind === 'main') { setMainChips(chips => [...chips, selectedChip]); setPrimaryStake(roundStake(current + selectedChip)) }
+    else { setTieChips(chips => [...chips, selectedChip]); setTieStake(roundStake(current + selectedChip)) }
+    playChipLay(soundMuted)
+  }
+
+  const removeChip = (kind: 'main' | 'tie') => {
+    if (!canPlaceChips) return
+    const chips = kind === 'main' ? mainChips : tieChips
+    const last = chips.at(-1)
+    if (last === undefined) return
+    if (kind === 'main') { setMainChips(chips.slice(0, -1)); setPrimaryStake(value => roundStake(value - last)) }
+    else { setTieChips(chips.slice(0, -1)); setTieStake(value => roundStake(value - last)) }
+  }
 
   const act = async (operation: () => Promise<void>) => {
     setBusy(true)
@@ -209,8 +255,13 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   }
 
   const reset = () => {
-    if (busy) return
+    if (busy || recovery !== 'ready' || !round || round.phase !== 'completed' || !revealed) return
+    setLastBalance(round.balance)
     setRound(null)
+    setPrimaryStake(0)
+    setTieStake(0)
+    setMainChips([])
+    setTieChips([])
     setError(null)
     openingRequestKey.current = null
     decisionRequestKey.current = null
@@ -219,6 +270,22 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     clearPendingAction(playerId)
     clearStoredRoundId(playerId)
   }
+
+  useEffect(() => {
+    if (!round || round.phase !== 'completed' || !revealed || busy || recovery !== 'ready' || rulesOpen) return
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target
+      if (target instanceof Element && target.closest('.ff-casino-war__callout, .ff-casino-war__round-actions')) return
+      reset()
+    }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') reset() }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [round, revealed, busy, recovery, rulesOpen])
 
   const rebet = () => {
     if (!round || round.phase !== 'completed' || busy || recovery !== 'ready' || !status?.available || round.primaryStake + round.tieStake > round.balance) return
@@ -250,27 +317,38 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
     <main className="ff-casino-war" aria-busy={busy}>
       <section className="ff-casino-war__table" aria-label="Casino War table">
         <div className="ff-casino-war__table-top">
+          <button className="ff-casino-war__sound" type="button" aria-label={soundMuted ? 'Turn sound on' : 'Mute sound'} aria-pressed={!soundMuted} onClick={() => { const next = !soundMuted; setSoundMuted(next); writeSoundMuted(next) }}>{soundMuted ? '♪ Off' : '♪ On'}</button>
+          <div className="ff-casino-war__felt-title" aria-label="Casino War"><strong><span>C</span>asino <span>W</span>ar</strong><i aria-hidden="true" /></div>
           <button className="ff-casino-war__help" ref={rulesTrigger} type="button" aria-label="How to play Casino War" aria-expanded={rulesOpen} onClick={() => setRulesOpen(true)}>?</button>
         </div>
 
         <section className="ff-casino-war__arena" aria-live="polite">
           <CardSeat label="Dealer" openingLabel="Dealer opening card" openingCard={round && revealStage >= 2 ? round.dealerOpeningCard : null} warCard={round && revealStage >= 4 ? round.dealerWarCard : null} showBack={!round || revealStage < 2} renderCardFace={renderCardFace} />
-          <RoundCallout round={round} revealStage={revealStage} currencySymbol={currencySymbol} />
+          <RoundCallout round={round} revealStage={revealStage} currencySymbol={currencySymbol} onContinue={reset} />
           <CardSeat label="You" openingLabel="Player opening card" openingCard={round && revealStage >= 1 ? round.playerOpeningCard : null} warCard={round && revealStage >= 3 ? round.playerWarCard : null} showBack={!round || revealStage < 1} renderCardFace={renderCardFace} />
+        </section>
+
+        <section className="ff-casino-war__bets" aria-label="Casino War bets">
+          <BetSpot kind="main" label="Main bet" amount={primaryStake} chips={mainChips} currencySymbol={currencySymbol} placeDisabled={!canPlaceSelectedChip('main')} removeDisabled={!canPlaceChips} onPlace={() => placeChip('main')} onRemove={() => removeChip('main')} />
+          <BetSpot kind="tie" label="Tie bet" amount={tieStake} chips={tieChips} currencySymbol={currencySymbol} placeDisabled={!canPlaceSelectedChip('tie')} removeDisabled={!canPlaceChips} onPlace={() => placeChip('tie')} onRemove={() => removeChip('tie')} />
         </section>
 
         <section className="ff-casino-war__controls">
           <div className="ff-casino-war__balance"><span>Balance</span><strong>{displayedBalance === null ? '—' : formatMoney(displayedBalance, currencySymbol)}</strong></div>
           {!round && <>
-            <StakeControl label="Main bet" value={primaryStake} min={status?.minimumPrimaryStake} max={status?.maximumPrimaryStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} invalid={!primaryIsValid} onChange={setPrimaryStake} currencySymbol={currencySymbol} />
-            <StakeControl label="Tie bet" value={tieStake} min={0} max={status?.maximumTieStake} step={status?.stakeIncrement} disabled={busy || recovery !== 'ready' || !status?.available || pendingOpeningStakes.current !== null} invalid={!tieIsValid} onChange={setTieStake} currencySymbol={currencySymbol} optional />
-            <button className="ff-casino-war__primary ff-casino-war__deal" disabled={busy || recovery !== 'ready' || !status?.available || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid || !stakesAffordable))} onClick={deal}>{busy ? 'Dealing…' : pendingOpeningStakes.current ? 'Retry' : 'Deal'}</button>
+            <div className="ff-casino-war__chip-picker" aria-label="Chip selection">
+              <button type="button" className="ff-casino-war__chip-step" aria-label="Higher chip value" disabled={!canPlaceChips || pickerChips.indexOf(selectedChip as typeof chipValues[number]) >= pickerChips.length - 1} onClick={() => { setSelectedChip(pickerChips[Math.min(pickerChips.length - 1, pickerChips.indexOf(selectedChip as typeof chipValues[number]) + 1)]); setChipPickerOpen(false) }}><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 21 16 10l11 11" /></svg></button>
+              <button type="button" className="ff-casino-war__chip-current" aria-label={`Select chip value, currently ${formatMoney(selectedChip, currencySymbol)}`} aria-expanded={chipPickerOpen} disabled={!canPlaceChips} onClick={() => setChipPickerOpen(open => !open)}><img src={chipArt[selectedChip]} alt="" /></button>
+              <button type="button" className="ff-casino-war__chip-step" aria-label="Lower chip value" disabled={!canPlaceChips || pickerChips.indexOf(selectedChip as typeof chipValues[number]) <= 0} onClick={() => { setSelectedChip(pickerChips[Math.max(0, pickerChips.indexOf(selectedChip as typeof chipValues[number]) - 1)]); setChipPickerOpen(false) }}><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M5 11 16 22l11-11" /></svg></button>
+              {chipPickerOpen && <div className="ff-casino-war__chip-options" aria-label="Chip values">{pickerChips.map(value => <button type="button" key={value} aria-label={`Select ${formatMoney(value, currencySymbol)} chip`} onClick={() => { setSelectedChip(value); setChipPickerOpen(false) }}><img src={chipArt[value]} alt="" /></button>)}</div>}
+            </div>
+            <button type="button" className="ff-casino-war__primary ff-casino-war__deal" aria-label={busy ? 'Dealing…' : pendingOpeningStakes.current ? 'Retry deal' : 'Deal'} title={pendingOpeningStakes.current ? 'Retry deal' : 'Deal'} disabled={busy || recovery !== 'ready' || !status?.available || (!pendingOpeningStakes.current && (!primaryIsValid || !tieIsValid || !stakesAffordable))} onClick={deal}><CardStackIcon /></button>
           </>}
           {round?.phase === 'awaiting-tie-decision' && revealStage >= 2 && <div className="ff-casino-war__decision" aria-label="Tie decision">
             <button className="ff-casino-war__secondary" aria-label={pendingDecision.current === 'surrender' ? 'Retry Surrender' : 'Surrender'} disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'surrender')} onClick={() => decide('surrender')}><span>{pendingDecision.current === 'surrender' ? 'Retry' : 'Surrender'}</span><small>Return {formatMoney(round.primaryStake / 2, currencySymbol)}</small></button>
             <button className="ff-casino-war__primary" aria-label={pendingDecision.current === 'go-to-war' ? 'Retry Go to War' : 'Go to War'} disabled={busy || (pendingDecision.current !== null && pendingDecision.current !== 'go-to-war') || (pendingDecision.current === null && round.primaryStake > round.balance)} onClick={() => decide('go-to-war')}><span>{busy ? 'Resolving…' : pendingDecision.current === 'go-to-war' ? 'Retry War' : 'Go to War'}</span><small>Add {formatMoney(round.primaryStake, currencySymbol)}</small></button>
           </div>}
-          {round?.phase === 'completed' && revealStage >= ((round.playerWarCard || round.dealerWarCard) ? 4 : 2) && <div className="ff-casino-war__round-actions"><button className="ff-casino-war__secondary" disabled={busy} onClick={reset}>Change bet</button><button className="ff-casino-war__primary" disabled={busy || !status?.available || recovery !== 'ready' || round.primaryStake + round.tieStake > round.balance} onClick={rebet}>Deal again</button></div>}
+          {round?.phase === 'completed' && revealStage >= ((round.playerWarCard || round.dealerWarCard) ? 4 : 2) && <div className="ff-casino-war__round-actions"><button type="button" className="ff-casino-war__primary" disabled={busy || !status?.available || recovery !== 'ready' || round.primaryStake + round.tieStake > round.balance} onClick={rebet}>Deal again</button></div>}
           {recovery === 'recovering' && <span className="ff-casino-war__loading" role="status">Restoring…</span>}
           {recovery === 'failed' && <button className="ff-casino-war__secondary" type="button" onClick={() => setRecoveryAttempt(value => value + 1)}>Retry restoration</button>}
           {!status && error && !tableUnavailable && <button className="ff-casino-war__secondary" type="button" onClick={retryStatus}>Retry connection</button>}
@@ -293,15 +371,37 @@ export function CasinoWarGame({ gateway = defaultGateway, playerId, currencySymb
   )
 }
 
-function StakeControl({ label, value, min = 0, max = Number.MAX_SAFE_INTEGER, step = 1, disabled, invalid, onChange, currencySymbol, optional = false }: Readonly<{ label: string; value: number; min?: number; max?: number; step?: number; disabled: boolean; invalid: boolean; onChange: (value: number) => void; currencySymbol: string; optional?: boolean }>) {
-  const [draft, setDraft] = useState(Number.isFinite(value) ? String(value) : '')
-  useEffect(() => { setDraft(Number.isFinite(value) ? String(value) : '') }, [value])
-  const change = (next: number) => onChange(Math.min(max, Math.max(min, roundStake(next))))
-  return <div className="ff-casino-war__stake">
-    <span>{label}{optional && <small>Optional</small>}</span>
-    <div><button type="button" aria-label={`Decrease ${label}`} disabled={disabled || !Number.isFinite(value) || value <= min} onClick={() => change(value - step)}>−</button><label><span>{currencySymbol}</span><input aria-label={label} type="number" value={draft} min={min} max={max} step={step} disabled={disabled} aria-invalid={draft !== '' && invalid} onChange={event => { setDraft(event.target.value); onChange(event.target.value === '' ? Number.NaN : Number(event.target.value)) }} /></label><button type="button" aria-label={`Increase ${label}`} disabled={disabled || !Number.isFinite(value) || value >= max} onClick={() => change(value + step)}>+</button></div>
+function BetSpot({ kind, label, amount, chips, currencySymbol, placeDisabled, removeDisabled, onPlace, onRemove }: Readonly<{ kind: 'main' | 'tie'; label: string; amount: number; chips: number[]; currencySymbol: string; placeDisabled: boolean; removeDisabled: boolean; onPlace: () => void; onRemove: () => void }>) {
+  const visibleChips = chips.slice(-3)
+  return <div className={`ff-casino-war__bet-spot ff-casino-war__bet-spot--${kind}`}>
+    <span className="ff-casino-war__bet-label">{label}</span>
+    <button type="button" className="ff-casino-war__diamond" aria-label={`Place ${kind === 'main' ? 'Main' : 'Tie'} bet chip`} disabled={placeDisabled} onClick={onPlace} />
+    {chips.length > 0 && <button type="button" className="ff-casino-war__placed-chips" aria-label={`Remove last ${kind === 'main' ? 'Main' : 'Tie'} bet chip`} disabled={removeDisabled} onClick={onRemove}>
+      {visibleChips.map((value, index) => <img src={chipArt[value]} alt="" key={`${kind}-${chips.length - visibleChips.length + index}`} style={{ bottom: `${index * 3}px` }} />)}
+      {chips.length > 3 && <span className="ff-casino-war__chip-count">+{chips.length - 3}</span>}
+    </button>}
+    <strong className="ff-casino-war__bet-amount">{formatMoney(amount, currencySymbol)}</strong>
   </div>
 }
+
+function chipsForAmount(amount: number) {
+  const chips: number[] = []
+  let remaining = roundStake(amount)
+  for (const value of [...chipValues].reverse()) {
+    while (remaining >= value && chips.length < 100) { chips.push(value); remaining = roundStake(remaining - value) }
+  }
+  return chips
+}
+
+function chipTotal(chips: number[]) { return roundStake(chips.reduce((sum, chip) => sum + chip, 0)) }
+
+function playChipLay(muted: boolean) {
+  if (muted || typeof Audio === 'undefined') return
+  try { const audio = new Audio(chipLay); audio.volume = .28; void audio.play()?.catch(() => {}) } catch { /* Sound is optional when media is blocked. */ }
+}
+
+function readSoundMuted() { try { return localStorage.getItem('fortuneforge:casino-war:muted') === 'true' } catch { return false } }
+function writeSoundMuted(muted: boolean) { try { localStorage.setItem('fortuneforge:casino-war:muted', String(muted)) } catch { /* Sound preference can remain local to this visit. */ } }
 
 function CardSeat({ label, openingLabel, openingCard, warCard, showBack, renderCardFace }: Readonly<{ label: string; openingLabel: string; openingCard: CasinoWarCard | null; warCard: CasinoWarCard | null; showBack: boolean; renderCardFace?: (card: CasinoWarCard) => ReactNode }>) {
   return <section className={`ff-casino-war__seat ff-casino-war__seat--${label.toLowerCase()}`} aria-label={`${label} cards`}>
@@ -322,14 +422,18 @@ function CardFace({ card, renderCardFace }: Readonly<{ card: CasinoWarCard; rend
   return <div className={`ff-casino-war__card${red ? ' is-red' : ''}`} aria-label={`${card.rank} of ${card.suit}`}><span className="ff-casino-war__corner">{shortRank(card.rank)}<small>{symbol}</small></span><span className="ff-casino-war__suit" aria-hidden="true">{symbol}</span><span className="ff-casino-war__corner ff-casino-war__corner--reverse">{shortRank(card.rank)}<small>{symbol}</small></span></div>
 }
 
-function RoundCallout({ round, revealStage, currencySymbol }: Readonly<{ round: CasinoWarRound | null; revealStage: number; currencySymbol: string }>) {
+function RoundCallout({ round, revealStage, currencySymbol, onContinue }: Readonly<{ round: CasinoWarRound | null; revealStage: number; currencySymbol: string; onContinue: () => void }>) {
   if (!round) return <div className="ff-casino-war__crest" aria-hidden="true"><span>W</span></div>
   if (round.phase === 'awaiting-tie-decision') return revealStage >= 2 ? <div className="ff-casino-war__callout is-tie"><strong>Tie</strong>{round.tieSettlement && <small>Tie bet {formatSignedMoney(round.tieSettlement.profit, currencySymbol)}</small>}</div> : null
   const neededStage = (round.playerWarCard || round.dealerWarCard) ? 4 : 2
   if (revealStage < neededStage) return null
   const net = (round.primarySettlement?.profit ?? 0) + (round.tieSettlement?.profit ?? 0)
   const title = round.primarySettlement?.disposition === 'surrender' ? 'Surrendered' : net > 0 ? 'You win' : net < 0 ? 'Dealer wins' : 'Push'
-  return <div className={`ff-casino-war__callout is-${net > 0 ? 'win' : net < 0 ? 'loss' : 'push'}`}><strong>{title}</strong><b>{formatSignedMoney(net, currencySymbol)}</b>{round.tieSettlement && <small>Tie bet {formatSignedMoney(round.tieSettlement.profit, currencySymbol)}</small>}</div>
+  return <div className={`ff-casino-war__callout is-${net > 0 ? 'win' : net < 0 ? 'loss' : 'push'}`}><strong>{title}</strong><b>{formatSignedMoney(net, currencySymbol)}</b>{round.tieSettlement && <small>Tie bet {formatSignedMoney(round.tieSettlement.profit, currencySymbol)}</small>}<button type="button" className="ff-casino-war__continue" onClick={onContinue}>Continue</button></div>
+}
+
+function CardStackIcon() {
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#123d29" stroke="#edf2e4" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4f5eb" stroke="#52715b" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#879b7c"/><path d="M36 24l7 9-7 9-7-9z" fill="#edf1e2"/></svg>
 }
 
 function isIncrementAligned(value: number, minimum: number, increment: number) {

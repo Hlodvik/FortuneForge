@@ -1,5 +1,5 @@
 type AudioWindow = Window & { webkitAudioContext?: typeof AudioContext }
-type Cue = 'click' | 'roll' | 'result'
+type Cue = 'click' | 'chip' | 'roll' | 'result'
 type Voice = {
   cue: Cue
   nodes: Set<AudioNode>
@@ -36,6 +36,16 @@ export function playCrapsClick(): void {
     const now = audio.currentTime
     noiseContact(audio, voice, now, .024, .075, 2_400)
     tone(audio, voice, now, 680, 350, .045, .025, 'triangle')
+  })
+}
+
+/** A short, tactile chip contact when a wager is placed on the felt. */
+export function playCrapsChip(): void {
+  playGestureCue('chip', (audio, voice) => {
+    const now = audio.currentTime
+    noiseContact(audio, voice, now, .055, .12, 1_100)
+    tone(audio, voice, now, 380, 260, .07, .035, 'sine')
+    noiseContact(audio, voice, now + .028, .038, .065, 1_550)
   })
 }
 

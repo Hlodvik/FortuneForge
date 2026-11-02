@@ -6,5 +6,8 @@
     "emitDeclarationOnly": true,
     "rootDir": "src",
     "outDir": "dist"
-  }
+  },
+  "exclude": [
+    "src/dev"
+  ]
 }

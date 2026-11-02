@@ -1,4 +1,7 @@
 import type { RefObject } from 'react'
+import { createPortal } from 'react-dom'
+import { SlotDialogCloseIcon } from './components/SlotDialogCloseIcon'
+import { useSlotDialog, type SlotDialogTheme } from './hooks/useSlotDialog'
 import { formatRand } from './slotPagePresentation'
 
 type InsufficientBalanceDialogProps = {
@@ -9,6 +12,7 @@ type InsufficientBalanceDialogProps = {
   recoveryHref: string
   recoveryLabel: string
   onClose: () => void
+  theme?: SlotDialogTheme
 }
 
 export function InsufficientBalanceDialog({
@@ -19,11 +23,14 @@ export function InsufficientBalanceDialog({
   recoveryHref,
   recoveryLabel,
   onClose,
+  theme,
 }: InsufficientBalanceDialogProps) {
+  const dialogRef = useSlotDialog(isOpen, onClose, closeButtonRef)
   if (!isOpen) return null
 
-  return (
+  const content = (
     <div
+      data-slot-dialog-theme={theme}
       className="fortune-prompt__backdrop"
       role="presentation"
       onMouseDown={(event) => {
@@ -33,6 +40,9 @@ export function InsufficientBalanceDialog({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
+        data-slot-dialog-theme={theme}
         className="fortune-prompt reload-prompt"
         role="dialog"
         aria-modal="true"
@@ -45,7 +55,7 @@ export function InsufficientBalanceDialog({
           aria-label="Close insufficient fortune message"
           onClick={() => onClose()}
         >
-          ×
+          <SlotDialogCloseIcon />
         </button>
         <div className="reload-prompt__icon" aria-hidden="true">!</div>
         <p className="fortune-prompt__eyebrow">More fortune needed</p>
@@ -63,4 +73,5 @@ export function InsufficientBalanceDialog({
       </section>
     </div>
   )
+  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
 }

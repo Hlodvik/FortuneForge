@@ -4,6 +4,12 @@ import { getCardRoomHistory, markCardRoomResultSeen } from './cardRoomHistoryApi
 describe('card-room history API', () => {
   afterEach(() => vi.unstubAllGlobals())
 
+  it('accepts exact-cent paid Mines settlements without a prize claim', async () => {
+    const result = { resultId: 'mines-round-1', game: 'mines', mode: 'credit', matchId: 'mines-round-1', startedAtUtc: '2026-10-25T12:00:00Z', completedAtUtc: '2026-10-25T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 1.02, wagerCredits: 1, netCredits: .02, score: null, moves: null, schemaVersion: 1 }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([result]), { status: 200 })))
+    await expect(getCardRoomHistory()).resolves.toEqual([result])
+  })
+
   it('accepts exact-cent Andar Bahar returns without a claim operation', async () => {
     const result = { resultId: 'andar-bahar-round-1', game: 'andar-bahar', mode: 'credit', matchId: 'round-1', startedAtUtc: '2026-10-24T12:00:00Z', completedAtUtc: '2026-10-24T12:00:00Z', unseen: true, requiresClaim: false, winningsCredits: .95, wagerCredits: .5, netCredits: .45, score: null, moves: null, schemaVersion: 1 }
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify([result]), { status: 200 })))

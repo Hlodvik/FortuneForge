@@ -6,7 +6,7 @@ import { isGameActivityApiEnabled } from './gameActivityCapability'
 
 export type RecentGameActivity = Readonly<{ gameId: string; playedAtUtc: string }>
 const gameIds = new Set([
-  'blackjack', 'dragon-tiger', 'mines', 'texas-holdem', 'solitaire', 'three-card-poker',
+  'blackjack', 'dragon-tiger', 'mines', 'texas-holdem', 'solitaire', 'free-solitaire', 'three-card-poker',
   'house-holdem', 'hearts', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker',
   'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge',
   ...SLOT_ROUTE_DEFINITIONS.map((game) => game.id),

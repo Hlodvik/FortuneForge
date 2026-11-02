@@ -55,6 +55,9 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                 var finalBalanceCents = checked(afterWagerCents + game.PayoutCents);
 
                 transaction.Create(gameReference, GameData(game, idempotencyKey));
+                if (game.Status != BlackjackStatuses.Completed)
+                    FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "blackjack", gameId,
+                        game.Version, nowUtc, game, [userId], "deal");
                 transaction.Set(
                     balanceReference,
                     BalanceUpdate(finalBalanceCents, nowUtc),
@@ -82,6 +85,11 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                             $"{idempotencyKey}-payout",
                             nowUtc));
                 }
+                if (game.Status == BlackjackStatuses.Completed)
+                    FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                        "blackjack", gameId, userId, game.TotalWagerCents, game.PayoutCents,
+                        game.CreatedAtUtc, nowUtc, "blackjackGames", gameId,
+                        new { game, terminalAction = "deal" }, "legacy-blackjack-cards-and-final-action-v1");
                 return new BlackjackStoreResult(game, finalBalanceCents);
             },
             cancellationToken: cancellationToken);
@@ -177,6 +185,9 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                 var finalBalanceCents = checked(afterActionChargeCents + payoutCents);
 
                 transaction.Update(gameReference, GameUpdate(updated));
+                if (updated.Status != BlackjackStatuses.Completed)
+                    FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "blackjack", gameId,
+                        updated.Version, nowUtc, updated, [userId], normalizedAction);
                 transaction.Create(actionReference, new Dictionary<string, object>
                 {
                     ["userId"] = userId,
@@ -219,6 +230,11 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                         BalanceUpdate(finalBalanceCents, nowUtc),
                         SetOptions.MergeAll);
                 }
+                if (updated.Status == BlackjackStatuses.Completed)
+                    FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                        "blackjack", gameId, userId, updated.TotalWagerCents, payoutCents,
+                        updated.CreatedAtUtc, nowUtc, "blackjackGames", gameId,
+                        new { game = updated, terminalAction = normalizedAction }, "legacy-blackjack-cards-and-final-action-v1");
                 return new BlackjackStoreResult(updated, finalBalanceCents);
             },
             cancellationToken: cancellationToken);

@@ -188,7 +188,12 @@ async function capture(page: Page, testInfo: TestInfo, name: string) {
 function hand(ranks: string[], score: number): BlackjackTableHand {
   return { cards: ranks.map((rank, i) => ({ rank, suit: i % 2 ? 'spades' : 'hearts', hidden: false })), score, soft: false, blackjack: false, bust: false }
 }
-function initialSession(): BlackjackTablePlaySession {
+type FixtureSession = Omit<BlackjackTablePlaySession, 'version' | 'table'> & {
+  version: number
+  table: { -readonly [Key in keyof BlackjackTablePlaySession['table']]: BlackjackTablePlaySession['table'][Key] }
+}
+
+function initialSession(): FixtureSession {
   const seats: BlackjackTableSeat[] = ['Alex', 'Mina', 'Leo', 'Nora', 'Sam'].map((displayName, seat) => ({
     seatId: `ux-seat-${seat}`, displayName, seat, status: seat === 0 ? 'awaiting-wager' : 'stood',
     wager: 5, totalWager: 5, payout: 0, outcome: null, lastAction: null, isCurrentPlayer: seat === 0,
@@ -197,7 +202,7 @@ function initialSession(): BlackjackTablePlaySession {
   return {
     contractVersion: 'cards.blackjack.table.v2', kind: 'table', version: 1,
     table: {
-      tableId: 'ux-table', phase: 'betting', round: 1, seats, activeSeat: 0, legalActions: [],
+      tableId: 'ux-table', mode: 'multiplayer', phase: 'betting', round: 1, seats, activeSeat: 0, legalActions: [],
       dealer: { ...hand(['K'], 10), cards: [{ rank: 'K', suit: 'diamonds', hidden: false }, { rank: null, suit: null, hidden: true }] },
       createdAtUtc: '2026-01-01T00:00:00Z', updatedAtUtc: '2026-01-01T00:00:00Z',
       actionDeadlineAtUtc: null, wagerDeadlineAtUtc: new Date(Date.now() + 60_000).toISOString(), transition: 'human-wager',

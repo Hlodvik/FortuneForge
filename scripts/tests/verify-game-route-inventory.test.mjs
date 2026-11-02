@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { nonSlotSmokeInventory, slotSmokeInventory } from '../game-smoke-inventory.mjs'
 import { verifyGameRouteInventory } from '../verify-game-route-inventory.mjs'
 
 const source = relative => readFileSync(new URL(`../../${relative}`, import.meta.url), 'utf8')
@@ -11,15 +12,34 @@ const current = {
   runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
 }
 
-test('all 43 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
+test('all 45 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
   assert.doesNotThrow(() => verifyGameRouteInventory(current))
 })
 
-test('legacy static catalogue must omit the unlisted game entirely', () => {
+test('40 games are listed, including free Solitaire, while five games remain hidden', () => {
+  const hidden = nonSlotSmokeInventory.filter(game => game.listed === false).map(game => game.smokePath).sort()
+  assert.deepEqual(hidden, ['/games/asteroids', '/games/flappy', '/games/horse-flight', '/games/liars-dice', '/games/snake'])
+  assert.equal(nonSlotSmokeInventory.length - hidden.length + slotSmokeInventory.length, 40)
+  for (const route of ['/cards/free-solitaire', '/games/2048', '/games/drop-merge']) {
+    const listedGame = nonSlotSmokeInventory.find(game => game.smokePath === route)
+    assert.ok(listedGame, `${route} must remain in the smoke inventory`)
+    assert.equal(listedGame.listed ?? true, true)
+    assert.throws(() => verifyGameRouteInventory({
+      ...current,
+      runtimeCatalog: current.runtimeCatalog.replace(`"${route}")`, `"${route}", false)`),
+    }), /runtime default visibility must be true/)
+    assert.throws(() => verifyGameRouteInventory({
+      ...current,
+      catalog: current.catalog.split('\n').filter(line => !line.includes(`href: '${route}'`)).join('\n'),
+    }), /is missing from the game catalog/)
+  }
+})
+
+test('legacy static catalogue must omit the five unlisted games entirely', () => {
   const legacy = {
     ...current,
     runtimeCatalog: undefined,
-    catalog: current.catalog.split('\n').filter(line => !['/games/horse-flight', '/games/flappy', '/games/asteroids', '/games/drop-merge', '/games/2048', '/games/snake'].some(route => line.includes(`href: '${route}'`))).join('\n'),
+    catalog: current.catalog.split('\n').filter(line => !['/games/horse-flight', '/games/flappy', '/games/asteroids', '/games/liars-dice', '/games/snake'].some(route => line.includes(`href: '${route}'`))).join('\n'),
   }
   assert.doesNotThrow(() => verifyGameRouteInventory(legacy))
   assert.throws(() => verifyGameRouteInventory({ ...current, runtimeCatalog: undefined }), /must remain unlisted/)

@@ -81,6 +81,17 @@ public sealed class KenoContractTests
     }
 
     [Fact]
+    public void DatabaseOutcomeCheckerRecountsHitsAndGrossReturnIndependently()
+    {
+        var round = new KenoStoreRound("round", "alice", new KenoTicket([1]),
+            new KenoDraw(Enumerable.Range(1, 20)), 1, 100, 250, StandardKenoPaytable.Id);
+        Assert.True(KenoOutcomeAudit.Verify(round));
+        Assert.False(KenoOutcomeAudit.Verify(round with { HitCount = 0 }));
+        Assert.False(KenoOutcomeAudit.Verify(round with { PayoutCents = 251 }));
+        Assert.False(KenoOutcomeAudit.Verify(round with { PaytableId = "unknown" }));
+    }
+
+    [Fact]
     public async Task Service_RejectsInvalidOrChangedIdempotentTickets()
     {
         var store = new InMemoryKenoStore();

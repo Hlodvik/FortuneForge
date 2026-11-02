@@ -13,7 +13,7 @@ export function AuthenticatedDropMergeRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening Drop Merge…" errorTitle="Drop Merge could not be opened." onRetry={reload} />
   }
 
-  return <InGameShell account={account} title="Drop Merge" theme="arcade">
+  return <InGameShell account={account} title="Drop Merge">
     <DropMergeGame embedded gateway={gateway} playerName={account.playerName} tableLabel="Drop Merge" />
   </InGameShell>
 }

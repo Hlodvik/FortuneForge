@@ -7,6 +7,7 @@ const packagedGameEntryPoints = [
   ['./DragonTigerRoute.tsx', '@fortuneforge/games-dragon-tiger'],
   ['./HiLoRoute.tsx', '@fortuneforge/games-hi-lo'],
   ['./AndarBaharRoute.tsx', '@fortuneforge/games-andar-bahar'],
+  ['./MinesRoute.tsx', '@fortuneforge/games-mines'],
   ['./CasinoWarRoute.tsx', '@fortuneforge/games-casino-war'],
   ['./CrapsRoute.tsx', '@fortuneforge/games-craps'],
   ['./DropMergeRoute.tsx', '@fortuneforge/games-drop-merge'],
@@ -23,6 +24,12 @@ const packagedGameEntryPoints = [
 ] as const
 
 describe('packaged game styles', () => {
+  it('keeps the integrated Mines page slate instead of inheriting the host cloud artwork', () => {
+    const styles = readFileSync(new URL('./MinesRoute.css', import.meta.url), 'utf8')
+    expect(styles).toContain('.mines-page {')
+    expect(styles).toContain('background: #0d1b26')
+    expect(styles).not.toContain('felt')
+  })
   it('the host-owned recorded Flappy view loads its scoped styles without the standalone sample globals', () => {
     const source = readFileSync(new URL('../../pages/games/flappy/FlappyFreeRunPage.tsx', import.meta.url), 'utf8')
     expect(source).toContain("import './FlappyFreeRunPage.css'")

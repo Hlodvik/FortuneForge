@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "route": {
+    "id": "dragon-hoard",
+    "title": "Midnight Vault",
+    "playPath": "/slots/dragon-hoard",
+    "demoPath": "/slots/dragon-hoard/demo",
+    "gameId": "dragon-hoard-v1"
+  },
+  "scenarios": [
+    {
+      "scenario": "base-loss",
+      "seed": 0,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "base-win",
+      "seed": 4,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "scatter",
+      "seed": 106,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        4
+      ],
+      "triggerFreeSpinsAwarded": 10,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 10,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-sync",
+      "seed": 2,
+      "responses": 21,
+      "triggerRows": 4,
+      "continuationRows": [
+        6,
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 10,
+      "triggerRemaining": 10,
+      "triggerMode": "rows-paw",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-rows",
+      "seed": 29,
+      "responses": 11,
+      "triggerRows": 4,
+      "continuationRows": [
+        6
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 10,
+      "triggerRemaining": 10,
+      "triggerMode": "rows-paw",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-paw",
+      "seed": 2,
+      "responses": 21,
+      "triggerRows": 4,
+      "continuationRows": [
+        6,
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 10,
+      "triggerRemaining": 10,
+      "triggerMode": "rows-paw",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "collection-rand",
+      "seed": 1,
+      "responses": 21,
+      "triggerRows": 4,
+      "continuationRows": [
+        6,
+        4
+      ],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 10,
+      "triggerRemaining": 10,
+      "triggerMode": "rows-paw",
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    }
+  ],
+  "source": "Actual current in-process server demo capture; see engine-contract.json"
+}

@@ -1,17 +1,19 @@
 import type { CSSProperties } from 'react'
 import type { AccountSummary } from '../../features/account/services/accountsApi'
 import { GameTypeMenu } from '../../components/GameTypeMenu'
-import { PlayerHeader } from '../../components/PlayerHeader'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import { SLOT_GAME_CATALOG, type SlotGameCatalogEntry } from '../../games/slots/catalog'
 import '../index.css'
 import '../demoLibrary.css'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
+import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
+import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
 
 export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
   return (
     <div className="player-page game-picker-page">
-      <PlayerHeader account={account} />
+      <SiteNavbar mode="account" account={account} />
       <div className="game-hub-layout">
         <GameTypeMenu active="slots" />
         <main className="game-hub-content game-picker-main">
@@ -36,16 +38,7 @@ export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
 export function DemoSlotsLibraryPage() {
   return (
     <div className="player-page game-picker-page demo-library-page">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
-          <span>Fortune Forge</span>
-        </a>
-        <div className="landing-bar__account">
-          <span className="demo-mode-badge">Demo · R10,000</span>
-          <a className="landing-nav__link" href="/login">Log in</a>
-        </div>
-      </header>
+      <SiteNavbar mode="public" />
 
       <main className="game-picker-main">
         <GameTypeMenu active="slots" demoMode />
@@ -69,13 +62,15 @@ export function DemoSlotsLibraryPage() {
 function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; demoMode?: boolean }) {
   const visibility = useCatalogueVisibility()
   if (!visibility.isVisible(game.playHref ?? game.demoHref)) return null
-  const artStyle = game.slotDivBackgroundImage
+  const selectedArtwork = getCataloguePresentationArt(game.playHref ?? game.demoHref)
+  const responsiveArtwork = selectedArtwork?.imageSrcSet ? selectedArtwork : undefined
+  const artStyle = !responsiveArtwork && game.slotDivBackgroundImage
     ? { '--machine-card-slot-background': `url("${game.slotDivBackgroundImage}")` } as CSSProperties
     : undefined
   const cardClassName = [
     'machine-card',
     'machine-card--slot',
-    `machine-card--${game.imagePresentation}`,
+    `machine-card--${responsiveArtwork ? 'cover' : game.imagePresentation}`,
     game.imageScale === 'compact' ? 'machine-card--image-compact' : '',
     game.playHref === null ? 'machine-card--coming' : 'machine-card--available',
   ].join(' ')
@@ -86,7 +81,18 @@ function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; d
   return (
     <article className={cardClassName}>
       <span className="machine-card__art" style={artStyle} aria-hidden="true">
-        <img src={game.image} alt="" draggable="false" />
+        {responsiveArtwork ? (
+          <ResponsiveSlotImage
+            src={responsiveArtwork.src}
+            imageSrcSet={responsiveArtwork.imageSrcSet}
+            width={responsiveArtwork.width}
+            height={responsiveArtwork.height}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            draggable="false"
+          />
+        ) : <img src={game.image} alt="" draggable="false" />}
       </span>
       {statusLabel && <span className="machine-card__status">{statusLabel}</span>}
       <strong>{game.title}</strong>

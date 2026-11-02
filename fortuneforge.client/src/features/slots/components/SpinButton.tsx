@@ -6,7 +6,7 @@ type SpinButtonProps = {
   isSpinning?: boolean
   isStopRequested?: boolean
   onSpin: () => void
-  variant?: 'default' | 'pirate-helm' | 'wukong-rune'
+  variant?: 'default' | 'pirate-helm' | 'pirate-loop' | 'wukong-rune' | 'vault-dial'
 }
 
 export function SpinButton({
@@ -26,7 +26,7 @@ export function SpinButton({
 
   return (
     <button
-      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'pirate-helm' ? ' spin-button--pirate-helm' : ''}${variant === 'wukong-rune' ? ' spin-button--wukong-rune' : ''}`}
+      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'pirate-helm' ? ' spin-button--pirate-helm' : ''}${variant === 'pirate-loop' ? ' spin-button--pirate-loop' : ''}${variant === 'wukong-rune' ? ' spin-button--wukong-rune' : ''}${variant === 'vault-dial' ? ' spin-button--vault-dial' : ''}`}
       type="button"
       onClick={handleClick}
       disabled={disabled && !isActive}
@@ -53,6 +53,11 @@ export function SpinButton({
               <circle className="spin-button__helm-hub" cx="256" cy="256" r="58" />
               <circle className="spin-button__helm-boss" cx="256" cy="256" r="18" />
             </g>
+          ) : variant === 'pirate-loop' ? (
+            <g className="spin-button__pirate-loop" fill="none" stroke="currentColor" strokeWidth="45" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M393 184a157 157 0 1 0 21 114" />
+              <path d="M393 100v90h-90" />
+            </g>
           ) : variant === 'wukong-rune' ? (
             <image
               className="spin-button__wukong-staff-image"
@@ -63,6 +68,11 @@ export function SpinButton({
               height="400"
               preserveAspectRatio="xMidYMid meet"
             />
+          ) : variant === 'vault-dial' ? (
+            <g className="spin-button__vault-arrow" fill="none" stroke="currentColor" strokeWidth="32" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M390 190a154 154 0 1 0 12 108" />
+              <path d="M390 100v90H300" />
+            </g>
           ) : (
             <path
               className="spin-button__arrow-icon"

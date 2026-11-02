@@ -1,4 +1,4 @@
-:root {
+.ff-asteroids-page {
   font-family: "Arial Rounded MT Bold", "Trebuchet MS", system-ui, sans-serif;
   color: #f7fbff;
   background: #030712;
@@ -6,20 +6,18 @@
   text-rendering: optimizeLegibility;
 }
 
-* { box-sizing: border-box; }
+:where(.ff-asteroids-page), :where(.ff-asteroids-page) * { box-sizing: border-box; }
 
-html,
-body,
-#root { min-width: 320px; min-height: 100%; margin: 0; }
+.ff-asteroids-page { min-width: 320px; min-height: 100%; margin: 0; }
 
-body {
+.ff-asteroids-page {
   background:
     radial-gradient(circle at 72% 8%, #173e6459 0, transparent 28rem),
     radial-gradient(circle at 15% 85%, #55254b30 0, transparent 26rem),
     #030712;
 }
 
-button { font: inherit; }
+:where(.ff-asteroids-page) button { font: inherit; }
 
 .ff-asteroids-page {
   display: grid;

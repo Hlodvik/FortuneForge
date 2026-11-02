@@ -6,6 +6,9 @@ import {
   type CreateAccountInput,
   type CreateAccountResponse,
 } from '../../features/account/services/accountsApi'
+import { PasswordRequirements } from '../../features/account/PasswordRequirements'
+import { isValidNewPassword } from '../../features/account/passwordPolicy'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import '../index.css'
 
 export function CreateAccountPage() {
@@ -17,6 +20,10 @@ export function CreateAccountPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isResending, setIsResending] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [confirmedPassword, setConfirmedPassword] = useState('')
+
+  const passwordsMatch = confirmedPassword.length > 0 && password === confirmedPassword
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -26,6 +33,14 @@ export function CreateAccountPage() {
       playerName: String(form.get('playerName') ?? ''),
       email: String(form.get('email') ?? ''),
       password: String(form.get('password') ?? ''),
+    }
+    if (!isValidNewPassword(input.password)) {
+      setSubmitError('Choose a password that meets all four requirements.')
+      return
+    }
+    if (input.password !== String(form.get('confirmedPassword') ?? '')) {
+      setSubmitError('The passwords do not match.')
+      return
     }
     setIsSubmitting(true)
     setSubmitError(null)
@@ -67,15 +82,7 @@ export function CreateAccountPage() {
 
   return (
     <div className="account-page account-page--create">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <svg className="account-brand__spade" viewBox="0 0 48 48" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
-            <path d="M24 2C20 11 5 17 5 27c0 9 10 13 17 5-1 7-5 11-10 13h24c-5-2-9-6-10-13 7 8 17 4 17-5C43 17 28 11 24 2Z" />
-          </svg>
-          <span>Fortune Forge</span>
-        </a>
-        <a className="landing-nav__link" href="/">Back home</a>
-      </header>
+      <SiteNavbar mode="public" currentPublicPage="create-account" />
 
       <main className="account-main">
         <section className={'account-card account-card--create' + (registration !== null ? ' is-complete' : '')} aria-labelledby="account-title">
@@ -116,15 +123,15 @@ export function CreateAccountPage() {
                 <p className="account-eyebrow">Your player profile</p>
                 <h1 id="account-title">Create your account</h1>
                 <p className="account-card__intro">
-                  Join Fortune Forge. Choose a player name and we’ll send a verification link to your email.
+                  Join Fortune Forge. Choose a username and we’ll send a verification link to your email.
                 </p>
               </div>
               <div className="account-card__fields">
                 <form className="account-form" onSubmit={handleSubmit}>
                   <div className="account-form__split">
                     <label>
-                      Player name
-                      <input name="playerName" autoComplete="nickname" placeholder="Choose a player name" minLength={3} maxLength={24} required />
+                      Username
+                      <input name="playerName" autoComplete="username" placeholder="Choose a username" minLength={3} maxLength={24} required />
                     </label>
                     <label>
                       Email
@@ -137,18 +144,43 @@ export function CreateAccountPage() {
                       name="password"
                       type="password"
                       autoComplete="new-password"
-                      placeholder="At least 8 characters"
+                      placeholder="Create a password"
                       minLength={8}
+                      maxLength={128}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      aria-describedby="signup-password-requirements"
                       required
                     />
                   </label>
+                  <PasswordRequirements password={password} id="signup-password-requirements" />
+                  <label>
+                    Confirm password
+                    <input
+                      name="confirmedPassword"
+                      type="password"
+                      autoComplete="new-password"
+                      placeholder="Re-enter your password"
+                      minLength={8}
+                      maxLength={128}
+                      value={confirmedPassword}
+                      onChange={(event) => setConfirmedPassword(event.target.value)}
+                      aria-invalid={confirmedPassword.length > 0 && !passwordsMatch}
+                      required
+                    />
+                  </label>
+                  {confirmedPassword.length > 0 && (
+                    <p className={`password-match${passwordsMatch ? ' is-met' : ''}`} role="status">
+                      {passwordsMatch ? '✓ Passwords match' : 'Passwords do not match yet'}
+                    </p>
+                  )}
                   {submitError !== null && (
                     <p className="account-form__error" role="alert">{submitError}</p>
                   )}
                   <button
                     className="landing-button landing-button--primary account-form__submit"
                     type="submit"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !isValidNewPassword(password) || !passwordsMatch}
                   >
                     {isSubmitting ? 'Creating account…' : 'Create account'}
                     {!isSubmitting && <span aria-hidden="true">→</span>}

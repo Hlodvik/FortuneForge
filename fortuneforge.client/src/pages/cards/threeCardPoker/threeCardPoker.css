@@ -1,5 +1,4 @@
 .three-card-poker-shell { --three-card-ui-font: "Sora Variable", "Segoe UI", sans-serif; }
-.three-card-poker-shell .in-game-navbar__title { font-family: var(--three-card-ui-font); font-weight: 700; letter-spacing: .035em; }
 .three-card-poker-shell .blackjack-help__button,
 .three-card-poker-shell .blackjack-help__panel,
 .three-card-poker-shell .blackjack-help__panel h2 { font-family: var(--three-card-ui-font); }

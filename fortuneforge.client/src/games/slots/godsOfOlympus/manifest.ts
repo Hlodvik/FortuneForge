@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { GODS_OF_OLYMPUS_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -54,7 +55,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = {
+export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'gods-of-olympus-experience-v1',
   cabinet: GODS_OF_OLYMPUS_CABINET_THEME,
   features: FEATURES,
@@ -75,7 +76,7 @@ export const GODS_OF_OLYMPUS_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: GODS_OF_OLYMPUS_SOUNDS,
   rules: createSlotRulesSet('gods-of-olympus-v1'),
-}
+})
 
 export const GODS_OF_OLYMPUS_SLOT_GAME = defineSlotGame({
   id: 'gods-of-olympus',

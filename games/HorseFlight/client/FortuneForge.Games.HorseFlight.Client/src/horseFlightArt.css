@@ -1,30 +1,3 @@
-.ff-horse-flight__background-pan,
-.ff-horse-flight__midground-pan {
-  transform-box: fill-box;
-  transform-origin: center;
-}
-
-.ff-horse-flight__background-pan {
-  /* The 1,620px background crosses its 960px viewport (660px) in five minutes. */
-  animation: ff-horse-flight-background-pan 300s linear infinite alternate;
-  animation-play-state: running;
-}
-
-.ff-horse-flight__midground-pan {
-  /* 5,520px at 627.27s is exactly four times the background's pixel speed. */
-  animation: ff-horse-flight-midground-pan 627.273s linear infinite alternate;
-  animation-play-state: paused;
-}
-
-.ff-horse-flight__field[data-scene-moving="true"] .ff-horse-flight__midground-pan {
-  animation-play-state: running;
-}
-
-.ff-horse-flight__background-pan image,
-.ff-horse-flight__midground-pan image {
-  image-rendering: pixelated;
-}
-
 @keyframes ff-horse-flight-background-pan {
   from { transform: translateX(-330px); }
   to { transform: translateX(330px); }
@@ -33,13 +6,6 @@
 @keyframes ff-horse-flight-midground-pan {
   from { transform: translateX(0); }
   to { transform: translateX(-5520px); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ff-horse-flight__background-pan,
-  .ff-horse-flight__midground-pan {
-    animation: none;
-  }
 }
 
 .ff-horse-flight__platform {
@@ -72,47 +38,6 @@
 .ff-horse-flight__horse-reaction-art {
   filter: drop-shadow(.28rem .42rem .3rem rgb(0 0 0 / 68%));
 }
-
-.ff-horse-flight__horse-body {
-  fill: url(#horse-flight-coat);
-  stroke: #ffe5a0;
-  stroke-width: 2.3;
-  stroke-linejoin: round;
-}
-
-.ff-horse-flight__horse-tail,
-.ff-horse-flight__horse-mane {
-  fill: none;
-  stroke: #502a22;
-  stroke-width: 4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.ff-horse-flight__horse-leg {
-  fill: none;
-  stroke: #643322;
-  stroke-width: 4;
-  stroke-linecap: round;
-}
-
-.ff-horse-flight__horse-eye {
-  fill: #1c2537;
-}
-
-.ff-horse-flight__decorative-trees { pointer-events: none; }
-
-.ff-horse-flight__decorative-tree {
-  opacity: .58;
-  filter: drop-shadow(.25rem .35rem .24rem rgb(3 8 14 / 55%));
-}
-
-.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-trunk { fill: #4b3223; }
-.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-shadow { fill: #1c4d38; }
-.ff-horse-flight__decorative-tree[data-biome="mountain"] .ff-horse-flight__decorative-tree-crown { fill: #2e7150; }
-.ff-horse-flight__decorative-tree[data-biome="haunted"] .ff-horse-flight__decorative-tree-trunk { fill: #332a3c; }
-.ff-horse-flight__decorative-tree[data-biome="haunted"] .ff-horse-flight__decorative-tree-crown { fill: #4a3f61; }
-.ff-horse-flight__decorative-tree-branch { fill: none; stroke: #332a3c; stroke-width: 9; stroke-linecap: square; }
 
 
 .ff-horse-flight__horse-actor {

@@ -42,7 +42,7 @@ public static class AndarBaharEndpoints
         var options = endpoints.ServiceProvider.GetRequiredService<IOptions<AndarBaharServerOptions>>().Value;
         var api = endpoints.MapGroup("/api/games/andar-bahar");
         var status = api.MapGet("/status", (Func<HttpContext, Task<IResult>>)((HttpContext context) => Handle(context, resolveAccount, async (account, store, service, practice) =>
-            Results.Ok(new AndarBaharStatusResponse(Enabled(context), .50m, 100m, .50m,
+            Results.Ok(new AndarBaharStatusResponse(Enabled(context), .50m, AndarBaharMoney.ToRand(AndarBaharMoney.MaximumStakeCents), .50m,
                 AndarBaharMoney.ToRand(await store.BalanceAsync(account.UserId, context.RequestAborted)),
                 practice ? "development-practice-andar-first" : "andar-first")))));
         var create = api.MapPost("/rounds", (Func<HttpContext, Task<IResult>>)((HttpContext context) => Handle(context, resolveAccount, async (account, store, service, practice) =>

@@ -42,6 +42,24 @@ describe('Solitaire free-run API boundary', () => {
     expect(JSON.parse(String(init.body))).toEqual({ drawCount: 3, replayRunId: originalRunId })
   })
 
+  it('tags a standalone Solitaire run without changing the legacy free-play request', async () => {
+    const response = {
+      runId: `solitaire_free_${'c'.repeat(64)}`,
+      seed: 53,
+      drawCount: 1,
+      startedAtUtc: '2026-09-06T12:00:00Z',
+      wasAlreadyStarted: false,
+      gameId: 'free-solitaire',
+    }
+    const fetchMock = successfulFetch(response)
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(startSolitaireFreeRun(1, 'free_solitaire_start_0001', undefined, 'free-solitaire'))
+      .resolves.toEqual(response)
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(JSON.parse(String(init.body))).toEqual({ drawCount: 1, gameId: 'free-solitaire' })
+  })
+
   it('submits only the effective replay and accepts authoritative result fields', async () => {
     const runId = `solitaire_free_${'b'.repeat(64)}`
     const response = {

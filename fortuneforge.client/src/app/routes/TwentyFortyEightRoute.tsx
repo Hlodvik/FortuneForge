@@ -13,7 +13,7 @@ export function AuthenticatedTwentyFortyEightRoute() {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening 2048…" errorTitle="2048 could not be opened." onRetry={reload} />
   }
 
-  return <InGameShell account={account} title="2048" theme="arcade">
+  return <InGameShell account={account} title="2048">
     <TwentyFortyEightGame embedded gateway={gateway} playerName={account.playerName} tableLabel="2048" />
   </InGameShell>
 }

@@ -1,6 +1,8 @@
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.TexasHoldem;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Games.Abstractions.Auditing;
 
 namespace FortuneForge.Server.Cards.TexasHoldem.Credit;
 
@@ -23,6 +25,7 @@ internal sealed class InMemoryCreditHoldemStore(
     private readonly Dictionary<string, CreditHoldemHistoryRecord> history = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> activeMatchIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> closedEscrowMatchIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, RoundAuditCapture> roundAudits = new(StringComparer.Ordinal);
     private readonly IMultiplayerMatchmaker matchmaking =
         multiplayerMatchmaker ?? new MultiplayerMatchmaker();
     private readonly IManagedTablePopulationDirector population =
@@ -41,6 +44,7 @@ internal sealed class InMemoryCreditHoldemStore(
     internal int LedgerCount { get { lock (gate) return ledgerIds.Count; } }
     internal int RevenueCount { get { lock (gate) return revenueIds.Count; } }
     internal CreditHoldemMatch MatchForTest(string matchId) { lock (gate) return matches[matchId]; }
+    internal IReadOnlyList<RoundAuditCapture> AuditsForTest() { lock (gate) return roundAudits.Values.ToArray(); }
 
     public Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
     {
@@ -212,6 +216,11 @@ internal sealed class InMemoryCreditHoldemStore(
             RequireCurrentTableSession(userId, matchId);
             ExpireQueueReservations(nowUtc);
             var prior = MatchForUser(matchId, userId);
+            if (CreditHoldemTableCoordinator.ResultSeatExpired(prior, nowUtc))
+            {
+                AdvanceMatch(prior, nowUtc);
+                throw new CreditHoldemConflictException("Your Hold'em seat expired. Reconnect before joining a table.");
+            }
             SettleOnce(prior, nowUtc);
             if (prior.Status != "completed" || prior.Version != expectedVersion || !prior.AccountingSettled)
                 throw new CreditHoldemConflictException("The hand changed or is not ready for the next deal.");
@@ -358,6 +367,7 @@ internal sealed class InMemoryCreditHoldemStore(
 
     private void AdvanceMatch(CreditHoldemMatch match, DateTime nowUtc)
     {
+        if (closedEscrowMatchIds.Contains(match.MatchId)) return;
         var advance = CreditHoldemTableCoordinator.AdvanceIfDue(match, nowUtc);
         SettleOnce(match, nowUtc);
         CashOutReleasedPlayers(match);
@@ -510,6 +520,11 @@ internal sealed class InMemoryCreditHoldemStore(
         }
         revenueIds.Add($"{match.MatchId}-hand-{match.HandNumber}");
         WriteCompletedHistory(match, settlement);
+        if (match.Players.Any(player => player.IsAccountBacked))
+        {
+            var capture = HoldemRoundAudit.Capture(match, nowUtc);
+            roundAudits.TryAdd(capture.Summary.Id, capture);
+        }
         foreach (var human in match.Players.Where(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)))
             sessions[human.ActorId] = new(CreditHoldemSessionKinds.Result, null, match.MatchId);
         if (match.Players.Count(value => value.IsAccountBacked && !match.LeavingActorIds.Contains(value.ActorId)) < CreditHoldemMoney.MaximumSeats)
@@ -603,7 +618,8 @@ internal sealed class InMemoryCreditHoldemStore(
     {
         if (!sessions.TryGetValue(userId, out var session) || session.MatchId != matchId ||
             session.Kind is not CreditHoldemSessionKinds.Match and not CreditHoldemSessionKinds.Result ||
-            !matches.TryGetValue(matchId, out var match) || match.LeavingActorIds.Contains(userId))
+            closedEscrowMatchIds.Contains(matchId) || !matches.TryGetValue(matchId, out var match) ||
+            match.LeavingActorIds.Contains(userId))
             throw new CreditHoldemConflictException("You no longer have a seat at this Hold'em table.");
     }
 
@@ -664,7 +680,13 @@ internal sealed class InMemoryCreditHoldemStore(
                 ticket.Version,
                 CreditHoldemTableRules.Resolve(ticket.TableRuleId).Public), balance);
         }
-        var match = matches[session.MatchId!];
+        if (session.MatchId is not { } matchId || closedEscrowMatchIds.Contains(matchId) ||
+            !matches.TryGetValue(matchId, out var match) || match.LeavingActorIds.Contains(userId) ||
+            !match.Players.Any(player => player.IsAccountBacked && player.ActorId == userId))
+        {
+            sessions[userId] = new(CreditHoldemSessionKinds.Idle, null, null);
+            return new(new CreditHoldemIdleSessionResponse(), balance);
+        }
         var response = session.Kind == CreditHoldemSessionKinds.Result
             ? CreditHoldemProjection.Result(match, userId, nowUtc)
             : CreditHoldemProjection.Match(match, userId, nowUtc);

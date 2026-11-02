@@ -1,6 +1,26 @@
-.house-holdem-page .blackjack-table { --ff-card-width: clamp(3.6rem, min(6.4vw, 10vh), 6rem); }
-.house-holdem-page .blackjack-dealer { top: 5%; width: min(42%, 20rem); }
-.house-holdem-board { position: absolute; z-index: 2; top: 31%; left: 50%; width: min(86%, 36rem); isolation: isolate; transform: translateX(-50%); }
+.house-holdem-shell .blackjack-shell-body { overflow: auto; }
+.house-holdem-page .blackjack-table { min-height: 27rem; grid-template-rows: minmax(0, 1fr) auto; padding: .4rem; }
+/* Every section owns its height. Card size uses the felt left after the action rail,
+   so a shorter window cannot move cards into another section's labels. */
+.house-holdem-page .blackjack-playfield {
+  --house-holdem-card-max: 6rem; --house-holdem-card-rows: 3; --house-holdem-layout-overhead: 14rem;
+  --ff-card-width: min(var(--house-holdem-card-max), 14cqw, max(1.5rem, calc((100cqh - var(--house-holdem-layout-overhead)) * .704 / var(--house-holdem-card-rows))));
+  --house-holdem-bet-size: clamp(3rem, min(19cqw, 13cqh), 5.2rem);
+  --house-holdem-bet-label-height: 1.3rem;
+  container-type: size; display: grid; grid-template-areas: 'limits' 'dealer' 'board' 'title' 'player' 'bets';
+  grid-template-rows: repeat(6, auto); align-content: space-between; justify-items: center;
+  gap: .4rem; padding: .5rem .6rem .6rem; overflow: visible;
+}
+.house-holdem-page .blackjack-playfield > :is(.three-card-poker-limits, .blackjack-dealer, .house-holdem-board, .three-card-poker-felt, .three-card-poker-player, .three-card-poker-bets) {
+  position: relative; inset: auto; max-width: 100%; margin: 0; transform: none;
+}
+.house-holdem-page .three-card-poker-limits { grid-area: limits; }
+.house-holdem-page .blackjack-dealer { grid-area: dealer; width: min(100%, 20rem); }
+.house-holdem-page .blackjack-hand { min-height: 0; }
+.house-holdem-page .blackjack-hand__heading { min-height: .85rem; margin-bottom: .3rem; }
+.house-holdem-page .blackjack-hand__cards { margin: 0; }
+.house-holdem-page .three-card-poker-card-outline { box-sizing: border-box; }
+.house-holdem-board { grid-area: board; z-index: 2; width: min(100%, 36rem); isolation: isolate; }
 .house-holdem-board::before {
   position: absolute; z-index: -1; inset: -.3rem -.8rem; border: 1px solid rgb(114 228 238 / 30%); border-radius: 1rem;
   background: linear-gradient(180deg, rgb(7 99 118 / 17%), rgb(0 44 65 / 17%));
@@ -9,7 +29,8 @@
 }
 .house-holdem-board .three-card-poker-card-outline { background: rgb(0 70 91 / 18%); }
 .house-holdem-board .blackjack-hand__cards { min-height: calc(var(--ff-card-width) / .704); }
-.house-holdem-page .three-card-poker-felt { top: 56%; }
+.house-holdem-page .three-card-poker-felt { grid-area: title; width: min(90%, 30rem); }
+.house-holdem-page .house-holdem-felt strong { font-size: clamp(1.15rem, min(3vw, 5cqh), 2.55rem); }
 .house-holdem-page .house-holdem-felt strong {
   display: block; color: rgb(65 200 215 / 92%); word-spacing: .14em;
   text-shadow: 0 0 .75rem rgb(15 211 226 / 18%);
@@ -21,14 +42,27 @@
   display: block; width: min(100%, 24rem); height: .26rem; padding: 0;
   border-bottom: 2px solid rgb(61 190 207 / 75%); border-radius: 0 0 50% 50%;
 }
-.house-holdem-page .three-card-poker-player { top: 60.5%; width: min(42%, 20rem); }
-.house-holdem-page .three-card-poker-player .blackjack-hand__cards { margin-top: clamp(.2rem, 1vh, .6rem); }
-.house-holdem-page .three-card-poker-bets { top: 92%; width: min(55%, 33rem); gap: clamp(.35rem, 1vw, 1rem); }
-.house-holdem-bet-spot-wrap { position: relative; width: clamp(4.2rem, 6.3vw, 5.2rem); height: clamp(4.2rem, 6.3vw, 5.2rem); flex: 0 0 auto; }
-.house-holdem-page .house-holdem-bet-spot { width: clamp(4.2rem, 6.3vw, 5.2rem); height: clamp(4.2rem, 6.3vw, 5.2rem); }
-.house-holdem-page .house-holdem-bet-spot-wrap .house-holdem-bet-spot { width: 100%; height: 100%; }
+.house-holdem-page .three-card-poker-player { grid-area: player; width: min(100%, 20rem); }
+.house-holdem-page .three-card-poker-player .blackjack-hand__cards { margin: 0; }
+.house-holdem-page .three-card-poker-bets {
+  --house-holdem-bet-cue-animation: house-holdem-bet-breathe 2.4s ease-in-out infinite;
+  grid-area: bets; width: max-content; gap: clamp(.5rem, 2cqw, 1rem);
+}
+.house-holdem-bet-spot-wrap {
+  position: relative; display: grid; grid-template-rows: var(--house-holdem-bet-label-height) auto;
+  width: var(--house-holdem-bet-size); height: auto; flex: 0 0 auto;
+}
+.house-holdem-page .house-holdem-bet-spot-wrap .house-holdem-bet-spot {
+  display: grid; grid-row: 2; grid-template-rows: var(--house-holdem-bet-size) auto; justify-items: center; width: 100%; height: auto;
+}
+.house-holdem-page .house-holdem-bet-spot::before { inset: calc(var(--house-holdem-bet-size) * .17) auto auto 17%; width: 66%; height: calc(var(--house-holdem-bet-size) * .66); }
+.house-holdem-page .three-card-poker-chip-stack {
+  --chip-step: calc(var(--house-holdem-bet-size) * .045);
+  top: calc(var(--house-holdem-bet-size) * .2); width: 54%; height: calc(var(--house-holdem-bet-size) * .54);
+}
+.house-holdem-page .three-card-poker-bet-spot__amount { position: static; grid-row: 2; min-width: 0; font-size: clamp(.6rem, 1.5cqw, .74rem); transform: none; }
 .house-holdem-bet-spot__help {
-  top: -.65rem; min-width: 100%; padding: .25rem .1rem; border: 0; background: transparent; color: #e2ffff;
+  position: relative; inset: auto; grid-row: 1; min-width: 100%; padding: .15rem .1rem; border: 0; background: transparent; color: #e2ffff;
   font: 700 .76rem/1 var(--three-card-ui-font); text-shadow: 0 1px .3rem #002e3c;
   text-transform: uppercase; cursor: help;
 }
@@ -49,26 +83,43 @@
 .house-holdem-bet-spot-wrap:last-child .house-holdem-bet-spot__help:is(:hover, :focus-visible) + .house-holdem-bet-spot__tip { transform: translateY(0); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-empty="false"]::before { border-color: rgb(203 174 108 / 70%); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-active="true"][data-empty="false"]::before { border-color: rgb(230 195 119 / 86%); }
-.house-holdem-page .three-card-poker-action-stats { pointer-events: none; }
-.house-holdem-decision-actions {
-  position: absolute; z-index: 2; top: .35rem; left: 50%; display: flex; align-items: center; justify-content: center;
-  gap: clamp(.45rem, 1vw, .85rem); transform: translateX(-50%);
+.house-holdem-page .house-holdem-bet-spot-wrap[data-disabled="true"] .house-holdem-bet-spot--trips::before { border-color: rgb(154 163 158 / 55%); }
+.house-holdem-page .house-holdem-bet-spot-wrap[data-disabled="true"] .house-holdem-bet-spot--trips + .house-holdem-bet-spot__help { color: #9aa39e; }
+.house-holdem-page .three-card-poker-bets[data-awaiting-main-bet="true"] :is(.house-holdem-bet-spot--ante, .house-holdem-bet-spot--blind)[data-empty="true"]::before,
+.house-holdem-page .three-card-poker-bets[data-awaiting-main-bet="true"] :is(.house-holdem-bet-spot--ante, .house-holdem-bet-spot--blind) + .house-holdem-bet-spot__help { animation: var(--house-holdem-bet-cue-animation); }
+.house-holdem-page .three-card-poker-bets[data-awaiting-main-bet="true"] :is(.house-holdem-bet-spot--ante, .house-holdem-bet-spot--blind)[data-empty="true"]::before {
+  border-color: #ffe1a2; box-shadow: 0 0 .55rem rgb(245 197 82 / 28%), inset 0 0 .4rem rgb(245 197 82 / 12%);
+}
+.house-holdem-page .three-card-poker-bets[data-awaiting-main-bet="true"] :is(.house-holdem-bet-spot--ante, .house-holdem-bet-spot--blind) + .house-holdem-bet-spot__help { color: #ffe1a2; }
+.house-holdem-opening-bet-hint {
+  position: absolute; z-index: 12; top: calc(var(--house-holdem-bet-label-height) + var(--house-holdem-bet-size) * .3); left: 50%; width: max-content; max-width: 10rem; padding: .28rem .45rem;
+  border: 1px solid rgb(255 217 131 / 62%); border-radius: .45rem; background: rgb(20 35 16 / 94%); color: #ffe4a0;
+  font: 700 clamp(.58rem, .9vw, .72rem)/1.25 var(--three-card-ui-font); text-align: center;
+  transform: translate(-50%, -50%); pointer-events: none;
+}
+.house-holdem-opening-bet-hint svg { position: absolute; top: 100%; left: 0; width: 100%; height: .75rem; overflow: visible; fill: none; stroke: #ffe1a2; stroke-width: 1.5; }
+@keyframes house-holdem-bet-breathe { 0%, 100% { opacity: .6; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .house-holdem-page .three-card-poker-bets { --house-holdem-bet-cue-animation: none; }
+}
+.house-holdem-page.blackjack-table-page .blackjack-actions {
+  --house-holdem-control-size: 3.6rem;
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--house-holdem-control-size) auto; justify-items: center;
+  height: auto; min-height: 0; gap: .65rem; padding: .4rem .4rem .5rem;
+}
+.house-holdem-page .three-card-poker-action-stats { position: static; grid-row: 2; width: min(100%, 50rem); pointer-events: none; }
+.house-holdem-page .three-card-poker-wager-wrap { position: relative; inset: auto; grid-row: 1; transform: none; }
+.house-holdem-page .three-card-poker-chip-picker { position: static; display: block; }
+.house-holdem-page .blackjack-actions .three-card-poker-wager-wrap :is(.three-card-poker-chip-picker, .three-card-poker-chip-picker__selected, .three-card-poker-action-orb) {
+  flex: 0 0 var(--house-holdem-control-size); width: var(--house-holdem-control-size); height: var(--house-holdem-control-size); min-width: 0; min-height: 0;
+}
+.house-holdem-page .three-card-poker-chip-picker__options {
+  top: auto; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); animation: none;
 }
 .house-holdem-page .blackjack-actions .house-holdem-action {
-  display: grid; min-width: 3.55rem; min-height: 3.55rem; place-items: center; padding: .35rem .6rem;
-  border: .2rem solid #288a96; border-radius: 50%;
-  background: radial-gradient(circle at 34% 23%, #207282, #074353 52%, #021b2a 82%);
-  box-shadow: inset 0 0 0 1px rgb(193 253 253 / 38%), inset 0 -.3rem .65rem rgb(0 13 25 / 40%), 0 .25rem .55rem rgb(0 16 26 / 38%), 0 0 .8rem rgb(25 198 202 / 26%);
-  color: #f5ffff; font: 800 clamp(.78rem, 1.15vw, 1rem)/1 var(--three-card-ui-font);
-  white-space: nowrap; transition: border-color .16s, box-shadow .16s, transform .16s;
+  font-size: calc(var(--house-holdem-control-size) * .24); white-space: nowrap;
 }
-.house-holdem-page .blackjack-actions .house-holdem-action:hover:not(:disabled) { border-color: #b1ffff; box-shadow: inset 0 0 0 1px rgb(238 255 255 / 55%), 0 .3rem .7rem rgb(0 16 26 / 45%), 0 0 1rem rgb(77 233 236 / 55%); transform: translateY(-.12rem); }
-.house-holdem-page .blackjack-actions .house-holdem-action:focus-visible { outline: 2px solid white; outline-offset: .2rem; }
-.house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 3.55rem; width: 3.55rem; padding: .4rem; border-color: #345964; background: radial-gradient(circle at 35% 25%, #1e3844, #03151f 75%); }
-.house-holdem-page .blackjack-actions .house-holdem-action--play-4x,
-.house-holdem-page .blackjack-actions .house-holdem-action--play-2x { border-color: #69d7d9; box-shadow: inset 0 0 0 1px rgb(218 255 255 / 46%), 0 0 .8rem rgb(80 225 222 / 44%); }
-.house-holdem-page .house-holdem-action svg { width: 1.9rem; height: 1.9rem; }
-.house-holdem-page .blackjack-actions .house-holdem-action:disabled { opacity: .4; }
+.house-holdem-page .blackjack-actions .three-card-poker-action-orb:focus-visible { outline: 2px solid white; outline-offset: .2rem; }
 .house-holdem-page .three-card-poker-result { top: 44%; cursor: pointer; }
 .house-holdem-result-close {
   position: absolute; top: .55rem; right: .55rem; display: grid; width: 1.8rem; height: 1.8rem;
@@ -77,15 +128,10 @@
 }
 .house-holdem-result-close:hover, .house-holdem-result-close:focus-visible { border-color: #eaffff; background: #126473; }
 .house-holdem-result-close svg { width: 1rem; height: 1rem; }
-.house-holdem-shell .blackjack-help__panel { width: min(28rem, calc(100vw - 1rem)); }
-@media (max-width: 720px) {
-  .house-holdem-shell .blackjack-help__panel {
-    position: fixed;
-    top: 3.65rem;
-    right: .5rem;
-    width: min(28rem, calc(100vw - 1rem));
-    max-height: calc(100dvh - 4.15rem);
-  }
+.house-holdem-shell .game-support-controls { bottom: calc(3rem + env(safe-area-inset-bottom)); }
+.house-holdem-shell .game-support-controls .blackjack-help__button { width: 44px; height: 44px; min-height: 44px; }
+.house-holdem-shell .blackjack-help__panel {
+  position: absolute; top: auto; bottom: calc(100% + .65rem); width: min(28rem, calc(100vw - 1rem)); max-height: calc(100dvh - 10rem);
 }
 .house-holdem-guide-paytables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .75rem; }
 .house-holdem-guide-paytables section { min-width: 0; padding: .55rem; border: 1px solid rgb(94 198 211 / 28%); border-radius: .55rem; background: rgb(2 29 38 / 55%); }
@@ -95,65 +141,30 @@
 .house-holdem-guide-paytables dt { color: #d6eced; }
 .house-holdem-guide-paytables dd { margin: 0; color: #fff8d9; font-weight: 800; white-space: nowrap; }
 .house-holdem-guide-paytables p { margin: .42rem 0 0; color: #bcd6da; font-size: .55rem; line-height: 1.4; }
-@media (min-width: 701px) and (min-height: 501px) {
-  .house-holdem-page .blackjack-dealer { top: 5%; }
-  .house-holdem-page .house-holdem-board { top: 29.5%; }
-  .house-holdem-page .three-card-poker-felt { top: 56%; }
-  .house-holdem-page .three-card-poker-player { top: 60.5%; }
-  .house-holdem-page .three-card-poker-bets { top: 92%; }
-}
 @media (max-width: 700px) {
-  .house-holdem-page .blackjack-table { --ff-card-width: clamp(2.8rem, 16.2vw, 4.8rem); }
-  .house-holdem-page .blackjack-dealer { top: 5%; width: min(92%, 22rem); }
-  .house-holdem-page .house-holdem-board { top: 30%; width: 96%; }
+  .house-holdem-shell .game-support-controls { right: .5rem; flex-direction: column; }
   .house-holdem-board::before { inset: -.3rem -.18rem; }
-  .house-holdem-page .three-card-poker-felt { top: 49%; }
-  .house-holdem-page .three-card-poker-player { top: 56%; width: min(92%, 22rem); }
-  .house-holdem-page .three-card-poker-bets { top: 86%; width: min(97%, 27rem); gap: .15rem; }
-  .house-holdem-bet-spot-wrap { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
-  .house-holdem-page .house-holdem-bet-spot { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
-  .house-holdem-decision-actions { top: .15rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.85rem; min-height: 2.85rem; padding: .25rem .4rem; font-size: .75rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.85rem; width: 2.85rem; }
 }
 @media (max-width: 430px) {
   .house-holdem-guide-paytables { grid-template-columns: 1fr; gap: .4rem; }
-  .house-holdem-page .blackjack-table { --ff-card-width: clamp(2.55rem, 16vw, 3.8rem); }
-  .house-holdem-page .three-card-poker-limits { top: .5%; }
-  .house-holdem-page .blackjack-dealer { top: 4.5%; }
-  .house-holdem-page .house-holdem-board { top: 26.5%; }
-  .house-holdem-page .three-card-poker-felt { top: 50%; }
-  .house-holdem-page .three-card-poker-felt strong { font-size: clamp(.95rem, 5vw, 1.35rem); }
-  .house-holdem-page .three-card-poker-felt span { font-size: .43rem; }
-  .house-holdem-page .three-card-poker-player { top: 56%; }
-  .house-holdem-page .three-card-poker-bets { top: 84%; }
-  .house-holdem-bet-spot-wrap { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
-  .house-holdem-page .house-holdem-bet-spot { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
-  .house-holdem-page .house-holdem-bet-spot::before { inset: .72rem; }
-  .house-holdem-page .three-card-poker-chip-stack { top: .53rem; }
-  .house-holdem-page .three-card-poker-bet-spot__label { top: -.5rem; font-size: .62rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.65rem; min-height: 2.65rem; font-size: .69rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.65rem; width: 2.65rem; }
-  .house-holdem-page .house-holdem-action svg { width: 1.55rem; height: 1.55rem; }
+  .house-holdem-page .house-holdem-felt strong { font-size: 1.35rem; }
+  .house-holdem-page .house-holdem-bet-spot__help { font-size: .62rem; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
-  .house-holdem-page .blackjack-table { --ff-card-width: clamp(1.85rem, 5.5vh, 2.35rem); }
-  .house-holdem-page .blackjack-dealer { top: 5%; left: 23%; width: 35%; }
-  .house-holdem-page .house-holdem-board { top: 5%; left: 69%; width: 54%; }
-  .house-holdem-page .house-holdem-board .blackjack-hand__cards { --ff-card-width: clamp(1.35rem, 4.4vh, 1.9rem); gap: .2rem; }
-  .house-holdem-page .house-holdem-board .three-card-poker-card-outline { width: var(--ff-card-width); height: calc(var(--ff-card-width) / .704); flex-basis: var(--ff-card-width); }
-  .house-holdem-page .three-card-poker-felt { top: 46%; left: 69%; width: 48%; }
-  .house-holdem-page .three-card-poker-felt strong { font-size: .94rem; }
-  .house-holdem-page .three-card-poker-felt span { font-size: .4rem; }
-  .house-holdem-page .three-card-poker-player { top: 49%; left: 23%; width: 35%; }
-  .house-holdem-page .three-card-poker-bets { top: 77%; left: 69%; width: 51%; gap: 0; }
-  .house-holdem-bet-spot-wrap { width: 2.7rem; height: 2.7rem; }
-  .house-holdem-page .house-holdem-bet-spot { width: 2.7rem; height: 2.7rem; }
-  .house-holdem-page .house-holdem-bet-spot::before { inset: .4rem; }
-  .house-holdem-page .three-card-poker-chip-stack { top: .35rem; width: 1.75rem; height: 1.75rem; }
-  .house-holdem-page .three-card-poker-bet-spot__label { top: -.43rem; font-size: .4rem; }
-  .house-holdem-page .three-card-poker-bet-spot__amount { font-size: .42rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.4rem; min-height: 2.4rem; font-size: .65rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.4rem; width: 2.4rem; }
-  .house-holdem-page .house-holdem-action svg { width: 1.3rem; height: 1.3rem; }
+  .house-holdem-page .blackjack-table { min-height: 18rem; }
+  .house-holdem-page .blackjack-playfield {
+    --house-holdem-card-max: 3.5rem; --house-holdem-card-rows: 2; --house-holdem-layout-overhead: 7.5rem;
+    --house-holdem-bet-size: 2.7rem; --house-holdem-bet-label-height: .9rem;
+    grid-template-areas: 'limits limits' 'dealer board' 'player title' 'player bets';
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); grid-template-rows: repeat(4, auto);
+    gap: .3rem .6rem; padding-right: 3.4rem; align-items: center;
+  }
+  .house-holdem-opening-bet-hint { top: calc(var(--house-holdem-bet-label-height) + var(--house-holdem-bet-size) * .32); max-width: 5.4rem; padding: .1rem .25rem; font-size: .44rem; line-height: 1.1; }
+  .house-holdem-opening-bet-hint svg { height: .2rem; }
+  .house-holdem-page .three-card-poker-bets { gap: .25rem; }
+  .house-holdem-page .blackjack-hand__cards { gap: .3rem; }
+  .house-holdem-page .house-holdem-felt strong { font-size: 1rem; }
+  .house-holdem-page .house-holdem-bet-spot__help { padding-block: .1rem; font-size: .5rem; }
+  .house-holdem-page .three-card-poker-bet-spot__amount { padding: .1rem; font-size: .58rem; }
+  .house-holdem-page.blackjack-table-page .blackjack-actions { --house-holdem-control-size: 2.75rem; gap: .4rem; }
 }

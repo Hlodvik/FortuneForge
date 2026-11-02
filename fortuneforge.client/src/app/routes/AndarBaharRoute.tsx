@@ -50,7 +50,7 @@ function AndarBaharSession({ initialAccount }: Readonly<{ initialAccount: Accoun
   }, [initialAccount.userId])
   const scope = `${initialAccount.userId}:${practiceMode ? 'practice' : 'account'}`
 
-  return <InGameShell account={account} theme="casino" className="andar-bahar-page" bodyClassName="andar-bahar-route__body">
+  return <InGameShell account={account} reportTitle="Andar Bahar" className="andar-bahar-page" bodyClassName="andar-bahar-route__body">
     <AndarBaharGame key={scope} playerId={scope} gateway={gateway} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />
   </InGameShell>
 }

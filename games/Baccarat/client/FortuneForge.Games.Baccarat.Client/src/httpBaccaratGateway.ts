@@ -39,7 +39,7 @@ export class HttpBaccaratGateway implements BaccaratGateway {
       stake,
       playerPairStake: options.playerPairStake,
       bankerPairStake: options.bankerPairStake,
-    }, options.signal, options.idempotencyKey ?? createIdempotencyKey()), isRound)
+    }, options.signal, options.idempotencyKey ?? createIdempotencyKey()), isBaccaratRound)
     if (requestsPairBet && !hasRequestedPairSettlement(round, options)) {
       throw new BaccaratGatewayError('The table did not confirm the pair wagers. Retry with the same deal key.', 'baccarat-pair-response-invalid')
     }
@@ -87,7 +87,7 @@ function isStatus(value: unknown): value is BaccaratStatus {
     (value.supportsPairBets === undefined || typeof value.supportsPairBets === 'boolean')
 }
 
-function isRound(value: unknown): value is BaccaratRound {
+export function isBaccaratRound(value: unknown): value is BaccaratRound {
   if (!isRecord(value) || typeof value.roundId !== 'string' || value.roundId.trim().length === 0 ||
     !isNonNegativeFinite(value.balance) || !isBetSide(value.betSide) || !isPositiveFinite(value.stake) ||
     value.phase !== 'settled' || !isBaccaratCards(value.playerCards) || !isBaccaratCards(value.bankerCards) ||

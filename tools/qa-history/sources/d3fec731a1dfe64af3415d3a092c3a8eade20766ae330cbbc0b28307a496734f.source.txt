@@ -1,0 +1,41 @@
+from pathlib import Path
+from PIL import Image
+import hashlib
+import json
+
+root = Path(__file__).parent
+manifest = json.loads((root / 'source-manifest.json').read_text(encoding='utf-8'))
+results = []
+for item in manifest['assets']:
+    path = root / item['previewFile']
+    source = Path(item['source'])
+    image = Image.open(path)
+    assert image.mode == 'RGBA', (path.name, image.mode)
+    alpha = image.getchannel('A')
+    assert alpha.getextrema() == (0, 255), (path.name, alpha.getextrema())
+    assert image.width == image.height
+    assert path.read_bytes() == source.read_bytes(), path.name
+    bbox = alpha.point(lambda value: 255 if value >= 128 else 0).getbbox()
+    assert bbox
+    margins = [bbox[0], bbox[1], image.width - bbox[2], image.height - bbox[3]]
+    results.append({
+        'file': path.name, 'letterVisuallyVerified': item['letter'],
+        'dimensions': list(image.size), 'mode': image.mode,
+        'actualTransparency': True, 'alphaExtrema': list(alpha.getextrema()),
+        'alpha128Bounds': list(bbox), 'clearMarginsLeftTopRightBottom': margins,
+        'minimumClearMarginPercent': round(min(margins) / image.width * 100, 2),
+        'visibleWidthPercent': round((bbox[2] - bbox[0]) / image.width * 100, 2),
+        'visibleHeightPercent': round((bbox[3] - bbox[1]) / image.height * 100, 2),
+        'byteLength': path.stat().st_size,
+        'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+        'rawSourcePreservedExactly': True,
+    })
+report = {
+    'method': 'Built-in image_gen, one independent call per court-rank preview',
+    'visualInspection': 'A, K, Q and J are correct and readable; rich reflective gold and colored faceted jewel faces follow the original ring reference. No full card rectangle, character portrait, flat black outline or background scene.',
+    'framingNote': 'Raw generated framing is measured below; implementation exports should normalize common canvas fill and baseline after owner review. Raw originals are retained without edits.',
+    'previewOnly': True,
+    'assets': results,
+}
+(root / 'alpha-and-source-verification.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+print(json.dumps(report, indent=2))

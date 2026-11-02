@@ -61,7 +61,15 @@ public static class AccountServicesConfiguration
                 DatabaseId = databaseId,
                 Endpoint = endpoint,
                 ChannelCredentials = Grpc.Core.ChannelCredentials.Insecure,
-                EmulatorDetection = Google.Api.Gax.EmulatorDetection.None
+                EmulatorDetection = Google.Api.Gax.EmulatorDetection.None,
+                // Explicit endpoints bypass the SDK's automatic emulator credential setup.
+                // The emulator recognizes this owner token as the server/IAM path; browser
+                // credentials must still pass security rules. This branch is restricted above
+                // to an explicit loopback endpoint and a non-production demo-* project.
+                Settings = new Google.Cloud.Firestore.V1.FirestoreSettings
+                {
+                    CallSettings = Google.Api.Gax.Grpc.CallSettings.FromHeader("authorization", "Bearer owner")
+                }
             }.Build();
         }
 
@@ -75,10 +83,13 @@ public static class AccountServicesConfiguration
     private static bool TryValidateLocalEmulatorHost(string value, out string endpoint)
     {
         endpoint = value.Trim();
+        var portSeparator = endpoint.LastIndexOf(':');
         if (!Uri.TryCreate($"http://{endpoint}", UriKind.Absolute, out var uri) ||
             !uri.IsLoopback ||
+            portSeparator < 1 || !int.TryParse(endpoint.AsSpan(portSeparator + 1), out var explicitPort) ||
+            explicitPort != uri.Port ||
             uri.Port is < 1 or > 65535 ||
-            !string.IsNullOrEmpty(uri.PathAndQuery.Trim('/')))
+            uri.UserInfo.Length > 0 || uri.AbsolutePath != "/" || uri.Query.Length > 0 || uri.Fragment.Length > 0)
         {
             endpoint = string.Empty;
             return false;

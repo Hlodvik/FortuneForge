@@ -49,6 +49,10 @@ internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
             var finalBalance = checked(balanceAfterWager + payoutCents);
             var stored = new KenoStoreRound(roundId, userId, ticket, draw, played.Result.HitCount, wagerCents, payoutCents, outcome.PaytableId);
             transaction.Create(roundRef, RoundData(stored, idempotencyKey, nowUtc));
+            FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                "keno", roundId, userId, wagerCents, payoutCents, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
+                "kenoRounds", roundId, stored, "keno-ticket-and-draw-v1",
+                KenoOutcomeAudit.Verify(stored), KenoOutcomeAudit.Version);
             transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerRef, BalanceTransactionData(wagerRef.Id, userId, -wagerCents, balanceAfterWager, "keno-wager", idempotencyKey, nowUtc));
             if (payoutCents > 0)

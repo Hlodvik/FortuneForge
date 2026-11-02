@@ -20,9 +20,7 @@ public sealed partial class AccountService
         return accountStore.RecordSlotSpinAsync(
             userId,
             result,
-            admission.ChargedWagerCents,
-            admission.IsFreeSpin,
-            admission.FreeSpinFeatureMode,
+            admission,
             DateTime.UtcNow,
             cancellationToken);
     }

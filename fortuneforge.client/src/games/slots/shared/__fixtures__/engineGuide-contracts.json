@@ -1,0 +1,6624 @@
+{
+  "source": "Actual in-process OptionsSlotsDefinitionProvider, not client manifests",
+  "exportedUtc": "2026-11-01T23:25:40.4966064Z",
+  "assemblySha256": "2a03aee091f547739fb045eb3b408b9aa5581d5a41a7d91668b5165554283c4a",
+  "sourceSha256": {
+    "FortuneForge.Server/Slots/Bonuses/EnergyBonus.cs": "b6b9fa35a517f4aeb870b1804ac8e0cceec60f45cc4beb570bdc53b393127a31",
+    "FortuneForge.Server/Slots/Bonuses/FreeGameFrequency.cs": "7b9d1722ad1ecdb691433de55f05515806cdd4c883f4bbd9b47c0984f1b83c5c",
+    "FortuneForge.Server/Slots/Bonuses/PiratesGemBonus.cs": "4ff4997b6877f376090d64bc424d2b33b5a304fee7349289b07f20a6db8cdccd",
+    "FortuneForge.Server/Slots/Bonuses/SealCollectionRules.cs": "ed4fc36f045dd8208a8c408c224901d76cb8c4ad9ff61a0991df7a759dae10bf",
+    "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "ec976eac13528ee25f436963924e9b2975883480e92752a6d4cd363033d2b26a",
+    "FortuneForge.Server/Slots/Bonuses/SpecialPointBonus.cs": "ffecc22667a24d31c23f95c037a94163324262cc5f1b8810b847191d8d88234e",
+    "FortuneForge.Server/Slots/Configuration/ISlotsDefinitionProvider.cs": "7cff210496b23a2ed608b2f587a8455b3175d05ebd3d237d9ce36a20d5539e54",
+    "FortuneForge.Server/Slots/Configuration/MidnightVaultSlotDefinitions.cs": "fc8a6405c211c594390606659f49fde4c5d9a87e73bb8d6e6ddb90f994ba13ec",
+    "FortuneForge.Server/Slots/Configuration/OptionsSlotsDefinitionProvider.cs": "112b5ddcdd4c7dd88f653fba621c5eab04714154c03464fcb8f64c90d5f2794e",
+    "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Definitions.cs": "676e4a943dd7781eec75d5a884330c6252c9fc46bf4dd0ada0428175e95c179c",
+    "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Games.cs": "cdeea48df33a85c16a7597ed686856564af3e7030d38aedc2ad0116cc189c64b",
+    "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Paylines.cs": "e807643164f0721d8bc2a73580d91d885c3499931a72f95d23f44bc563f861c4",
+    "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Wagering.cs": "06cb704efb550832de54681981f3751b0ce00cb61639ef88b5cb09725aa31510",
+    "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.cs": "e3b23794c9d92db927e86f31f17aa9892329a579ae120d08099e12e9e544e684",
+    "FortuneForge.Server/Slots/Evaluation/CombinationEvaluator.cs": "56f2dfee9f18c5f4555fa5dc7338a7080a60c2dcd1774f589fbc4f7197e15427",
+    "FortuneForge.Server/Slots/Evaluation/ICombinationEvaluator.cs": "18be9bb79e62ce4206643755138afb4f0557d1447c50130334b40d9789888154",
+    "FortuneForge.Server/Slots/Models/SlotDefinitions.cs": "d7c4c5f985ef7fcb67f4c1a2ceee92057dab717b1d9420bb54d46fa8245f157f",
+    "FortuneForge.Server/Slots/Models/SpinModels.cs": "00ddb5801039e1d2cc2ecfd258c505407f7bf57b4fa19e691d629e5bb272ee6c",
+    "FortuneForge.Server/Slots/Payouts/IPayoutCalculator.cs": "2a112a7c3acdabc20f10726b3794e23b453eab9b3e835f269852543f1b4891ec",
+    "FortuneForge.Server/Slots/Payouts/PayoutCalculator.cs": "79640b701539ab1fe05dcaccca62c729d8009ec1ccc562b966dbb5f79bb83d26",
+    "FortuneForge.Server/Slots/Reels/CryptoRandomIndexSource.cs": "d4bee589e903bfe0ec407a4d6ff6981f3ad0dc2c94dfc450928baac79b0de716",
+    "FortuneForge.Server/Slots/Reels/CryptoReelGenerator.cs": "67cff780b60a557766c89edbd6000c1599783c9c6303783f7168f430ca6f0774",
+    "FortuneForge.Server/Slots/Reels/IRandomIndexSource.cs": "0c57f931ae2a44346f01629827a317a79ba3df62a92a962efbf88a72817f9f69",
+    "FortuneForge.Server/Slots/Reels/IReelGenerator.cs": "77cc02cc0b2e3e059155bfa51f9e59a6209c828745bdd5a8ffe63bff8d9d855a",
+    "FortuneForge.Server/Slots/Reels/MidnightVaultBaseReelSet.cs": "ff57c378fc5432a8bb94bd731ba50d34b8ac3e3580569a160c4ea2e3937e514d",
+    "FortuneForge.Server/Slots/Reels/PiratesFortuneBaseReelSet.cs": "4bc0c8e2696c85ecbf69adb2525b84089b60108e76c67989364adf7045ea3bb2",
+    "FortuneForge.Server/Slots/Reels/WukongBaseReelSet.cs": "8228446731f91899a9113bfeb87eec145dc5d0efd6d07119e848429c918a2711",
+    "FortuneForge.Server/Slots/Spins/SpinService.Core.cs": "fc8519fcd23b45cf6172328e8282879bc5e9ac7194d5df7c7203404b14e3e6c0",
+    "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "84057fc3d77aabc772fe144aad0f9b821c54704398fcb4b87b78c611479cdc98",
+    "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "73c3446b777f88ff4d6ca84be3e5a0a2e93db875ed6a70ca7f06e9e6667c52c9",
+    "FortuneForge.Server/Slots/Spins/SpinService.Payouts.cs": "48106bae2cada4361d70d4b9ac6474057c49855e67e18e5226b267eaec2793fe",
+    "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "5e3f4d65f16254bbb743c577a6811e3ec9523a21378cd6a98eb272074e3f39da",
+    "FortuneForge.Server/appsettings.json": "847626eb443d4c182f12ffa1de8f52de9f4a0bbd7c7ecc51e2049bbd48a03578"
+  },
+  "games": [
+    {
+      "gameId": "wukong-journey-v1",
+      "profile": {
+        "gameId": "wukong-journey-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 0,
+        "collectionTarget": 40,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": null,
+        "baseReelSetId": "wukong-reels-v1",
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.946
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "wukong-reels-v1",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.946,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "rainbow-realm-fruits-v1",
+      "profile": {
+        "gameId": "rainbow-realm-fruits-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 10,
+        "collectionTarget": 40,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1,
+        "paylinePayoutSteps": [
+          2,
+          2,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.88,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "pirates-fortune-v1",
+      "profile": {
+        "gameId": "pirates-fortune-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 7,
+        "collectionTarget": 25,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": null,
+        "baseReelSetId": "pirates-fortune-reels-v1",
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.665
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "pirates-fortune-reels-v1",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.665,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "gods-of-olympus-v1",
+      "profile": {
+        "gameId": "gods-of-olympus-v1",
+        "scatterRequiredSymbols": 4,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 28,
+        "collectionAwardedSpins": 6,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "paw-rand",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "reel-riches-v1",
+      "profile": {
+        "gameId": "reel-riches-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 40,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-rows-rand",
+        "baseReelSetId": null,
+        "targetHitRate": 0.29,
+        "paylinePatternIds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          21,
+          22,
+          23
+        ],
+        "payoutMultiplier": 1
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 19
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.29,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "high-noon-fortune-v1",
+      "profile": {
+        "gameId": "high-noon-fortune-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 20,
+        "collectionAwardedSpins": 8,
+        "usesCollections": false,
+        "usesEnergy": false,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": "sync",
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.105
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.105,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "royal-draw-v1",
+      "profile": {
+        "gameId": "royal-draw-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 24,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "rows-rand",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.942
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.942,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "arcane-archives-v1",
+      "profile": {
+        "gameId": "arcane-archives-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 40,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-paw-rand",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ],
+        "payoutMultiplier": 0.716
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 16
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.716,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "cosmic-fortune-v1",
+      "profile": {
+        "gameId": "cosmic-fortune-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 24,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-rows",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.856
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.856,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "dino-dominion-v1",
+      "profile": {
+        "gameId": "dino-dominion-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 40,
+        "collectionAwardedSpins": 10,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "rows-paw-rand",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23
+        ],
+        "payoutMultiplier": 0.607
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 14
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.607,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "neon-nights-v1",
+      "profile": {
+        "gameId": "neon-nights-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 26,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "jungle-jackpot-v1",
+      "profile": {
+        "gameId": "jungle-jackpot-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 22,
+        "collectionAwardedSpins": 8,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-rows-paw",
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.866
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.866,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "ocean-odyssey-v1",
+      "profile": {
+        "gameId": "ocean-odyssey-v1",
+        "scatterRequiredSymbols": 4,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 28,
+        "collectionAwardedSpins": 6,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-rand",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.071
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.071,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "samurai-fortune-v1",
+      "profile": {
+        "gameId": "samurai-fortune-v1",
+        "scatterRequiredSymbols": 4,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 26,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "sync-paw",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.057
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.057,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "candy-carnival-v1",
+      "profile": {
+        "gameId": "candy-carnival-v1",
+        "scatterRequiredSymbols": 4,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 20,
+        "collectionAwardedSpins": 8,
+        "usesCollections": false,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": "rand",
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.179
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.179,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "phantom-manor-v1",
+      "profile": {
+        "gameId": "phantom-manor-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 5,
+        "collectionTarget": 18,
+        "collectionAwardedSpins": 9,
+        "usesCollections": false,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": "paw",
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.139
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.139,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "nordic-legends-v1",
+      "profile": {
+        "gameId": "nordic-legends-v1",
+        "scatterRequiredSymbols": 4,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 28,
+        "collectionAwardedSpins": 6,
+        "usesCollections": false,
+        "usesEnergy": false,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": "sync-paw",
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.158
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.158,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "desert-treasures-v1",
+      "profile": {
+        "gameId": "desert-treasures-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 7,
+        "collectionTarget": 24,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": true,
+        "usesDirectValueTokens": true,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "rows",
+        "baseReelSetId": null,
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 0.977
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 0.977,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "robot-revolution-v1",
+      "profile": {
+        "gameId": "robot-revolution-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 7,
+        "collectionTarget": 24,
+        "collectionAwardedSpins": 8,
+        "usesCollections": false,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": "rows",
+        "collectionFeatureMode": null,
+        "baseReelSetId": null,
+        "targetHitRate": 0.32,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.126
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "wukong-treasures-v3",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "classic-reels-v4",
+        "paytableId": "classic-paytable-v4",
+        "payoutMultiplier": 1.126,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.32,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        }
+      ]
+    },
+    {
+      "gameId": "dragon-hoard-v1",
+      "profile": {
+        "gameId": "dragon-hoard-v1",
+        "scatterRequiredSymbols": 3,
+        "scatterAwardedSpins": 6,
+        "collectionTarget": 30,
+        "collectionAwardedSpins": 7,
+        "usesCollections": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
+        "scatterFeatureMode": null,
+        "collectionFeatureMode": "rows-paw",
+        "baseReelSetId": "midnight-vault-reels-v1",
+        "targetHitRate": null,
+        "paylinePatternIds": null,
+        "payoutMultiplier": 1.09
+      },
+      "layout": {
+        "reelCount": 5,
+        "visibleRows": 4,
+        "paylineCount": 23
+      },
+      "symbols": {
+        "symbolSetId": "midnight-vault-symbols-v1",
+        "wildSymbolId": "ACE",
+        "nativeWildMatchLengths": [
+          3,
+          5
+        ],
+        "wildSubstitutionMatchLengths": [
+          5
+        ]
+      },
+      "wagering": {
+        "pointValueInCents": 25,
+        "minimumWagerPoints": 2,
+        "maximumWagerPoints": 2000,
+        "wagerIncrementPoints": 2,
+        "allowedWagerPoints": []
+      },
+      "math": {
+        "reelSetId": "midnight-vault-reels-v1",
+        "paytableId": "midnight-vault-paytable-v1",
+        "payoutMultiplier": 1.09,
+        "paylinePayoutSteps": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "fiveMatchPityMissLimit": 12,
+        "targets": {
+          "rtp": 0.9,
+          "hitRate": 0.3,
+          "volatility": null
+        }
+      },
+      "specialPoints": {
+        "symbolId": "POWER",
+        "threeMatchPoints": 1,
+        "fiveMatchPoints": 2,
+        "activationCost": 8,
+        "commonSymbolIds": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "paylines": [
+        [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          2
+        ],
+        [
+          3,
+          3,
+          3,
+          3,
+          3
+        ],
+        [
+          0,
+          1,
+          2,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          0,
+          1,
+          2
+        ],
+        [
+          0,
+          1,
+          1,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          2,
+          2,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          0,
+          0,
+          1,
+          2,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          1,
+          0
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0,
+          1,
+          0
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          0,
+          1,
+          0,
+          1
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          3
+        ]
+      ],
+      "paytable": [
+        {
+          "symbolId": "2",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "2",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "3",
+          "matchLength": 5,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "4",
+          "matchLength": 5,
+          "multiplier": 7
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "5",
+          "matchLength": 5,
+          "multiplier": 6
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "6",
+          "matchLength": 5,
+          "multiplier": 8
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 3,
+          "multiplier": 3
+        },
+        {
+          "symbolId": "7",
+          "matchLength": 5,
+          "multiplier": 11
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 3,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "ACE",
+          "matchLength": 5,
+          "multiplier": 18
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 3,
+          "multiplier": 2
+        },
+        {
+          "symbolId": "POWER",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "8",
+          "matchLength": 3,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "8",
+          "matchLength": 5,
+          "multiplier": 14
+        }
+      ]
+    }
+  ]
+}

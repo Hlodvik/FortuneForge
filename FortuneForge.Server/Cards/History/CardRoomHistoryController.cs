@@ -3,6 +3,7 @@ using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
 using Google.Cloud.Firestore;
+using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -43,20 +44,24 @@ public sealed partial class CardRoomHistoryController(
         if (account is null)
             return Unauthorized(new { error = "Sign in to read card-game history." });
 
-        var snapshots = await database.Collection("cardGameResults")
-            .WhereEqualTo("userId", account.UserId)
-            .Limit(100)
-            .GetSnapshotAsync(cancellationToken);
-
-        return Ok(snapshots.Documents
-            .Select(ToPublicItem)
-            .Where(item => item is not null)
-            .Cast<CardRoomHistoryItemResponse>()
-            .OrderByDescending(item => item.CompletedAtUtc ?? item.StartedAtUtc)
-            .ThenBy(item => item.ResultId, StringComparer.Ordinal)
-            .Take(limit)
-            .ToArray());
+        try
+        {
+            return HistoryResponse(await ReadLatestHistoryAsync(
+                database, account.UserId, limit, cancellationToken));
+        }
+        catch (RpcException exception) when (exception.StatusCode is
+            Grpc.Core.StatusCode.Aborted or Grpc.Core.StatusCode.Unavailable or
+            Grpc.Core.StatusCode.DeadlineExceeded or Grpc.Core.StatusCode.ResourceExhausted or
+            Grpc.Core.StatusCode.FailedPrecondition)
+        {
+            return HistoryResponse(new HistoryQueryPage([], 0, false));
+        }
     }
+
+    internal static ActionResult HistoryResponse(HistoryQueryPage page) => page.IsComplete
+        ? new OkObjectResult(page.Items)
+        : new ObjectResult(new { error = "The latest completed games could not be loaded. Please try again." })
+            { StatusCode = 503 };
 
     [HttpPost("{resultId}/seen")]
     [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
@@ -94,7 +99,7 @@ public sealed partial class CardRoomHistoryController(
     private static CardRoomHistoryItemResponse? ToPublicItem(DocumentSnapshot snapshot)
     {
         var game = String(snapshot, "game");
-        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar")) return null;
+        if (game is not ("blackjack" or "texas-holdem" or "three-card-poker" or "house-holdem" or "solitaire" or "hi-lo" or "andar-bahar" or "mines")) return null;
 
         var claimStatus = String(snapshot, "claimStatus");
         var settlementStatus = String(snapshot, "settlementStatus");

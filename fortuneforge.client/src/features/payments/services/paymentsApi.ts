@@ -123,6 +123,18 @@ export type PaymentWithdrawal = {
   notice: string
 }
 
+export type PaymentWithdrawalSummary = {
+  withdrawalId: string
+  currency: string
+  locale: string
+  amountMinor: number
+  creditsDebited: number
+  status: string
+  statusUpdatedAtUtc: string
+  createdAtUtc: string
+  completedAtUtc: string | null
+}
+
 export type CreatePaymentWithdrawalInput = {
   market: string
   currency: string
@@ -139,6 +151,10 @@ export type CreatePaymentWithdrawalInput = {
 
 type PaymentInvoiceList = {
   invoices: PaymentCheckout[]
+}
+
+type PaymentWithdrawalList = {
+  withdrawals: PaymentWithdrawalSummary[]
 }
 
 type ProblemDetails = {
@@ -195,6 +211,14 @@ export async function listPaymentInvoices(limit = 20): Promise<PaymentCheckout[]
     { method: 'GET' },
   )
   return result.invoices
+}
+
+export async function listPaymentWithdrawals(limit = 50): Promise<PaymentWithdrawalSummary[]> {
+  const result = await paymentRequest<PaymentWithdrawalList>(
+    `/api/payments/withdrawals?limit=${encodeURIComponent(limit)}`,
+    { method: 'GET' },
+  )
+  return result.withdrawals
 }
 
 export async function listAdminPaymentInvoices(

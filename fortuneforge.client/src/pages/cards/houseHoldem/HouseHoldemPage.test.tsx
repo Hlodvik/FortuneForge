@@ -3,6 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 import type { HouseHoldemRound, HouseHoldemStatus } from '../../../games/cards/houseHoldem/houseHoldemApi'
 import { HouseHoldemContent, HouseHoldemHowToPlay } from './HouseHoldemPage'
+import chip1 from '../threeCardPoker/chip-1.png'
+import chip2 from '../threeCardPoker/chip-2.png'
+import chip5 from '../threeCardPoker/chip-5.png'
+import chip10 from '../threeCardPoker/chip-10.png'
 
 const status: HouseHoldemStatus = { available: true, balance: 100, activeRoundId: null, minimumAnte: 1, maximumAnte: 100, wagerIncrement: 1, maximumTrips: 500 }
 const card = (rank: string, suit: 'spades' | 'diamonds' | 'clubs' | 'hearts') => ({ rank, suit })
@@ -19,6 +23,12 @@ function render(current: HouseHoldemRound | null, props: Partial<Parameters<type
     dealPresentation: null, onDismissResult: vi.fn(),
     onDeal: vi.fn(), onAct: vi.fn(), onSelectChip: vi.fn(), onTogglePicker: vi.fn(), onRefresh: vi.fn(), ...props,
   }))
+}
+
+function chipSources(markup: string, spot: 'ante' | 'blind' | 'trips') {
+  const spotMarkup = markup.split(`house-holdem-bet-spot--${spot}"`)[1] ?? ''
+  const stack = spotMarkup.split('class="three-card-poker-chip-stack"')[1]?.split('</span>')[0] ?? ''
+  return [...stack.matchAll(/src="([^"]+)"/g)].map((match) => match[1])
 }
 
 describe('House Hold’em table', () => {
@@ -53,7 +63,7 @@ describe('House Hold’em table', () => {
     const markup = render(null)
     expect(markup).toContain('Place chip on Ante')
     expect(markup).toContain('Place chip on Trips')
-    expect(markup).toContain('Blind wager')
+    expect(markup).toContain('aria-label="Place chip on Blind"')
     expect(markup).toContain('Wager spot')
     expect(markup).toContain('aria-label="Deal"')
     expect(markup).toContain('aria-label="Choose chip value, currently R1.00" aria-expanded="false"')
@@ -62,7 +72,10 @@ describe('House Hold’em table', () => {
   })
 
   it('marks Trips as empty until a chip is placed', () => {
-    expect(render(null, { trips: 0, placements: [] })).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="true"/)
+    const withoutTrips = render(null, { trips: 0, placements: [] })
+    expect(withoutTrips).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="true"/)
+    expect(withoutTrips).not.toMatch(/aria-label="Deal" disabled=""/)
+    for (const label of ['Ante', 'Blind']) expect(withoutTrips).toContain(`aria-label="Place chip on ${label}"`)
     expect(render(null, { trips: 1, placements: [{ spot: 'trips', value: 1 }] })).toMatch(/house-holdem-bet-spot--trips[^>]*data-empty="false"/)
   })
 
@@ -76,6 +89,42 @@ describe('House Hold’em table', () => {
     expect(markup).toContain('Automatically matches your Ante')
     expect(markup).toContain('3× or 4× Ante before the flop')
     expect(markup.match(/role="tooltip"/g)).toHaveLength(4)
+  })
+
+  it.each([
+    { label: 'four R5 chips', values: [5, 5, 5, 5], visible: [chip5, chip5, chip5, chip5] },
+    { label: 'five mixed chips', values: [10, 5, 2, 2, 1], visible: [chip5, chip2, chip2, chip1] },
+  ] as const)('preserves $label through Deal and the hand without changing denominations', ({ values, visible }) => {
+    const placements = [
+      ...values.map((value) => ({ spot: 'ante' as const, value })),
+      ...Array.from({ length: 3 }, () => ({ spot: 'trips' as const, value: 2 as const })),
+    ]
+    const stakes = { ante: 20, trips: 6, placements }
+    const dealtRound = { ...round, ante: 20, blind: 20, trips: 6, totalWager: 46, balance: 54 }
+    const board = [card('2', 'hearts'), card('3', 'clubs'), card('4', 'diamonds'), card('5', 'spades'), card('6', 'spades')]
+    const stages = [
+      render(null, stakes),
+      render(null, { ...stakes, busy: true, pending: { fingerprint: 'deal:20:6:new', key: 'deal-key' } }),
+      ...[0, 1, 2, 3, 4].map((step) => render(dealtRound, { ...stakes, dealPresentation: { roundId: round.roundId, step } })),
+      render(dealtRound, stakes),
+      render({ ...dealtRound, phase: 'flop', board: board.slice(0, 3) }, stakes),
+      render({ ...dealtRound, phase: 'settled', board, dealerCards: [card('queen', 'spades'), card('queen', 'diamonds')], allowedActions: [], payoutBreakdown: { ante: 0, blind: 0, trips: 0, play: 0 } }, stakes),
+    ]
+    for (const markup of stages) {
+      expect(chipSources(markup, 'ante')).toEqual(visible)
+      expect(chipSources(markup, 'blind')).toEqual(visible)
+      expect(chipSources(markup, 'trips')).toEqual([chip2, chip2, chip2])
+    }
+  })
+
+  it('reconstructs resumed wagers when local chips are absent or belong to different stakes', () => {
+    const restored = { ...round, ante: 20, blind: 20, trips: 6, totalWager: 46 }
+    for (const placements of [[], [{ spot: 'ante', value: 25 }, { spot: 'trips', value: 25 }]] as const) {
+      const markup = render(restored, { placements })
+      expect(chipSources(markup, 'ante')).toEqual([chip10, chip10])
+      expect(chipSources(markup, 'blind')).toEqual([chip10, chip10])
+      expect(chipSources(markup, 'trips')).toEqual([chip5, chip1])
+    }
   })
 
   it('does not deal if the balance cannot also cover a final 1× Play', () => {

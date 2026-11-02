@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import '@fontsource-variable/sora'
+import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type MouseEvent, type SyntheticEvent } from 'react'
 import heroArtwork from '../../assets/branding/fortune-forge-hero-v1.webp'
-import { PlayerAccountMenus } from '../../components/PlayerHeader'
-import { GameReportControl } from '../../components/GameReportControl'
 import { GameCatalogueRail } from '../../components/GameCatalogueRail'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
@@ -10,10 +8,20 @@ import { getCataloguePresentationArt } from '../../features/catalog/cataloguePre
 import { orderByCataloguePopularity, useCataloguePopularity } from '../../features/catalog/catalogPopularity'
 import { useRecentGameActivity } from '../../features/catalog/recentGameActivity'
 import { HOME_CATEGORIES, HOME_GAME_CATALOG, parseHomeCategory, type CategoryFilter, type LobbyGame } from './homeGameCatalog'
-import './homeLobby.css'
+import { AccountLobbyShell } from './AccountLobbyShell'
+import './accountOverlay.css'
 
 const catalogueAnchor = 'home-lobby-games-title'
-const catalogueHref = `/home#${catalogueAnchor}`
+const AccountSettingsContent = lazy(() => import('./AccountSettingsPage').then(module => ({ default: module.AccountSettingsContent })))
+const AccountHistoryContent = lazy(() => import('./AccountHistoryPage').then(module => ({ default: module.AccountHistoryContent })))
+
+type HomeOverlay = 'history' | 'settings' | null
+
+function overlayFromPath(pathname: string): HomeOverlay {
+  if (pathname === '/home/history') return 'history'
+  if (pathname === '/home/settings') return 'settings'
+  return null
+}
 
 function initialCategory(): CategoryFilter {
   return parseHomeCategory(typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('category'))
@@ -21,21 +29,87 @@ function initialCategory(): CategoryFilter {
 
 export function HomePage() {
   const [returnPath] = useState(() => typeof window === 'undefined' ? '/home'
-    : `/home${window.location.search}${window.location.hash}`)
+    : `${window.location.pathname}${window.location.search}${window.location.hash}`)
   const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
+  const [overlay, setOverlay] = useState<HomeOverlay>(() => typeof window === 'undefined' ? null : overlayFromPath(window.location.pathname))
+  const isOverlayOpen = overlay !== null
+  const overlayDialog = useRef<HTMLDialogElement>(null)
   const recent = useRecentGameActivity(account?.userId)
   const popularity = useCataloguePopularity()
   const visibility = useCatalogueVisibility()
   const [category, setCategory] = useState<CategoryFilter>(initialCategory)
-  const helpDialog = useRef<HTMLDialogElement>(null)
   const visibleGames = HOME_GAME_CATALOG.filter(game => visibility.isVisible(game.href))
   const orderedGames = orderByCataloguePopularity(visibleGames, popularity.games)
   const categoryGames = orderedGames.filter(game => category === 'Popular' || game.category === category)
-  const gameHighlight = [...recent.games].sort((left, right) => Date.parse(right.playedAtUtc) - Date.parse(left.playedAtUtc))
-    .flatMap(play => visibleGames.find(game => game.id === play.gameId) ?? [])[0] ?? null
-  const openHelp = () => helpDialog.current?.showModal()
-  const browseAll = () => setCategory('Popular')
+  const recentGames = [...recent.games]
+    .filter(play => Number.isFinite(Date.parse(play.playedAtUtc)))
+    .sort((left, right) => Date.parse(right.playedAtUtc) - Date.parse(left.playedAtUtc) || left.gameId.localeCompare(right.gameId))
+    .flatMap(play => visibleGames.find(game => game.id === play.gameId) ?? [])
+    .filter((game, index, games) => games.findIndex(candidate => candidate.id === game.id) === index)
+  const gameHighlight = recentGames[0] ?? null
+  const otherRecentGames = recentGames.slice(1)
   const accountId = account?.userId
+
+  const openOverlay = useCallback((next: Exclude<HomeOverlay, null>) => {
+    const path = `/home/${next}`
+    if (window.location.pathname === path) {
+      setOverlay(next)
+      return
+    }
+    const existingState = window.history.state && typeof window.history.state === 'object' ? window.history.state : {}
+    if (window.location.pathname === '/home') {
+      window.history.pushState({ ...existingState, fortuneForgeHomeOverlay: true }, '', path)
+    } else {
+      window.history.replaceState(existingState, '', path)
+    }
+    setOverlay(next)
+  }, [])
+
+  const closeOverlay = useCallback(() => {
+    if (window.history.state?.fortuneForgeHomeOverlay) {
+      window.history.back()
+    } else {
+      window.history.replaceState(window.history.state, '', '/home')
+    }
+    setOverlay(null)
+  }, [])
+
+  useEffect(() => {
+    const syncOverlay = () => setOverlay(overlayFromPath(window.location.pathname))
+    window.addEventListener('popstate', syncOverlay)
+    return () => window.removeEventListener('popstate', syncOverlay)
+  }, [])
+
+  useEffect(() => {
+    const dialog = overlayDialog.current
+    if (!dialog) return
+    if (overlay) {
+      if (!dialog.open) dialog.showModal()
+      dialog.querySelector<HTMLButtonElement>('.home-lobby__overlay-close')?.focus()
+    }
+    if (!overlay && dialog.open) dialog.close()
+    document.title = overlay === 'history' ? 'User History — Fortune Forge'
+      : overlay === 'settings' ? 'Account Settings — Fortune Forge'
+        : 'Home — Fortune Forge'
+  }, [overlay])
+
+  useEffect(() => {
+    if (!isOverlayOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [isOverlayOpen])
+
+  function handleOverlayBackdrop(event: MouseEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) return
+    const bounds = event.currentTarget.getBoundingClientRect()
+    if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) closeOverlay()
+  }
+
+  function handleOverlayCancel(event: SyntheticEvent<HTMLDialogElement>) {
+    event.preventDefault()
+    closeOverlay()
+  }
 
   useEffect(() => {
     if (!accountId || isLoading || window.location.hash !== `#${catalogueAnchor}`) return
@@ -43,27 +117,7 @@ export function HomePage() {
   }, [accountId, isLoading])
 
   return (
-    <div className="home-lobby">
-      <aside className="home-lobby__sidebar">
-        <a className="home-lobby__brand" href="/home" aria-label="Fortune Forge home">
-          <svg className="home-lobby__brand-spade" viewBox="0 0 48 48" fill="currentColor" stroke="none" aria-hidden="true" focusable="false">
-            <path d="M24 2C20 11 5 17 5 27c0 9 10 13 17 5-1 7-5 11-10 13h24c-5-2-9-6-10-13 7 8 17 4 17-5C43 17 28 11 24 2Z" />
-          </svg>
-          <strong>FORTUNE<br />FORGE</strong>
-        </a>
-        <nav className="home-lobby__navigation" aria-label="Player navigation">
-          <LobbyNav href="/home" icon="home" current>Home</LobbyNav>
-          <LobbyNav href={catalogueHref} icon="games" onClick={browseAll}>Games</LobbyNav>
-          <LobbyNav href="/home/history" icon="history">History</LobbyNav>
-          <LobbyNav href="/home/settings" icon="account">Account</LobbyNav>
-        </nav>
-        <button className="home-lobby__help" type="button" aria-label="Help" onClick={openHelp}><LobbyIcon name="help" /> <span>Help</span></button>
-      </aside>
-      <main className="home-lobby__main">
-        <header className="home-lobby__topbar">
-          {account && <a className="home-lobby__header-balance" href="/home/rand" aria-label={`Balance R${account.balances.slotsCredits.toFixed(2)}. Add funds`}><span>Balance</span><strong>R{account.balances.slotsCredits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></a>}
-          {account && <div className="home-lobby__account"><span className="home-lobby__avatar" aria-hidden="true">{account.playerName.slice(0, 1).toLocaleUpperCase()}</span><PlayerAccountMenus account={account} showBalance={false} /></div>}
-        </header>
+    <AccountLobbyShell account={account} activeNav={overlay === 'history' ? 'history' : overlay === 'settings' ? 'account' : 'home'} onOpenOverlay={openOverlay} homeLayout>
         {isLoading && <AccountLoading label="Opening your account…" />}
         {!isLoading && error !== null && <AccountError message={error} onRetry={reload} />}
         {!isLoading && account !== null && (
@@ -74,11 +128,19 @@ export function HomePage() {
             </section>
 
             {visibility.error && <p className="home-lobby__notice" role="alert">{visibility.error}</p>}
-            {gameHighlight && <section className="home-lobby__spotlights" aria-label="Last played game">
-              <a className="home-lobby__continue" href={gameHighlight.href}>
+            {gameHighlight && <section className={`home-lobby__spotlights${otherRecentGames.length ? ' home-lobby__spotlights--with-recent' : ''}`} aria-label="Last played game">
+              <a className="home-lobby__featured-art" href={gameHighlight.href} aria-label={`Open ${gameHighlight.title}`}>
                 <LobbyArtwork game={gameHighlight} priority />
-                <div><small>Last played</small><h2>{gameHighlight.title}</h2><span className="home-lobby__gold-button">Play again <span aria-hidden="true">→</span></span></div>
               </a>
+              <div className="home-lobby__spotlight-content">
+                <div className="home-lobby__spotlight-copy"><small>Last played</small><h2>{gameHighlight.title}</h2><a className="home-lobby__continue home-lobby__gold-button" href={gameHighlight.href} aria-label={`Play ${gameHighlight.title} again`}>Play again <span aria-hidden="true">→</span></a></div>
+                {otherRecentGames.length > 0 && <section className="home-lobby__recent" aria-labelledby="home-lobby-recent-title">
+                  <h3 id="home-lobby-recent-title">Recently played</h3>
+                  <GameCatalogueRail label="Recently played" className="home-lobby__recent-rail" resetKey={gameHighlight.id}>
+                    {otherRecentGames.map(game => <a className="home-lobby__recent-game" key={game.href} href={game.href} aria-label={game.title}><LobbyArtwork game={game} /></a>)}
+                  </GameCatalogueRail>
+                </section>}
+              </div>
             </section>}
             {recent.error && <p className="home-lobby__inline-notice" role="status">Your recent play couldn’t be loaded. <button type="button" onClick={recent.refresh}>Try again</button></p>}
 
@@ -94,9 +156,14 @@ export function HomePage() {
 
           </section>
         )}
-      </main>
-      <dialog className="home-lobby__help-dialog" ref={helpDialog} aria-labelledby="home-lobby-help-title"><form method="dialog"><button className="home-lobby__help-close" aria-label="Close help">×</button></form><small>A little help</small><h2 id="home-lobby-help-title">What can we help with?</h2><p>Each game has its own how-to-play guide. For your account and payments, start here.</p><a href="/home/settings">Account settings <span aria-hidden="true">→</span></a><a href="/home/rand">Funds and withdrawals <span aria-hidden="true">→</span></a><a href="/home/history">Your game history <span aria-hidden="true">→</span></a><GameReportControl gameTitle="the player lobby" /></dialog>
-    </div>
+        <dialog ref={overlayDialog} className={`home-lobby__overlay home-lobby__overlay--${overlay ?? 'closed'}`} aria-label={overlay === 'history' ? 'Game history' : 'Account settings'} onClick={handleOverlayBackdrop} onCancel={handleOverlayCancel}>
+          <button className="home-lobby__overlay-close" type="button" aria-label="Close panel" onClick={closeOverlay}>×</button>
+          {account !== null && overlay !== null && <Suspense fallback={<div className="home-lobby__notice" role="status">Opening…</div>}>
+            {overlay === 'history' ? <AccountHistoryContent account={account} /> : <AccountSettingsContent account={account} reload={reload} />}
+          </Suspense>}
+          {account === null && <div className="home-lobby__notice" role={error ? 'alert' : 'status'}>{error ?? 'Opening your account…'}{error && <button type="button" onClick={reload}>Try again</button>}</div>}
+        </dialog>
+    </AccountLobbyShell>
   )
 }
 
@@ -107,15 +174,7 @@ function LobbyGameCard({ game }: { game: LobbyGame }) {
 function LobbyArtwork({ game, priority = false }: { game: LobbyGame; priority?: boolean }) {
   const artwork = getCataloguePresentationArt(game.href)
   const src = artwork?.src ?? game.image
-  return src ? <img className={`home-lobby__game-art${game.imagePresentation === 'contain' && !artwork ? ' home-lobby__game-art--contain' : ''}`} src={src} alt="" width={artwork?.width ?? 768} height={artwork?.height ?? 384} loading={priority ? 'eager' : 'lazy'} decoding="async" draggable="false" /> : <span className="home-lobby__art-fallback" aria-hidden="true">✧</span>
-}
-
-function LobbyNav({ href, icon, current, children, onClick }: { href: string; icon: string; current?: boolean; children: ReactNode; onClick?: () => void }) {
-  return <a href={href} onClick={onClick} aria-label={typeof children === 'string' ? children : undefined} aria-current={current ? 'page' : undefined}><LobbyIcon name={icon} /><span>{children}</span></a>
-}
-
-function LobbyIcon({ name }: { name: string }) {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{name === 'home' ? <><path d="m3 10 9-7 9 7v10H5V10" /><path d="M9 20v-7h6v7" /></> : name === 'games' ? <><path d="M7 7h10c3 0 5 11 2 12l-4-4H9l-4 4C2 18 4 7 7 7Z" /><path d="M7 9v5m-2.5-2.5h5m6.5-1h.01m2 3h.01" /></> : name === 'history' ? <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l4 2" /></> : name === 'account' ? <><circle cx="12" cy="7" r="4" /><path d="M5 21v-3c0-6 14-6 14 0v3Z" /></> : name === 'search' ? <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></> : <><circle cx="12" cy="12" r="9" /><path d="M9.8 8a2.4 2.4 0 0 1 4.5 1.2c0 2-2.3 2-2.3 4M12 17h.01" /></>}</svg>
+  return src ? <ResponsiveSlotImage imageSrcSet={artwork?.imageSrcSet} className={`home-lobby__game-art${game.imagePresentation === 'contain' && !artwork ? ' home-lobby__game-art--contain' : ''}`} src={src} alt="" width={artwork?.width ?? 768} height={artwork?.height ?? 384} loading={priority ? 'eager' : 'lazy'} decoding="async" draggable="false" /> : <span className="home-lobby__art-fallback" aria-hidden="true">✧</span>
 }
 
 function AccountLoading({ label }: { label: string }) {

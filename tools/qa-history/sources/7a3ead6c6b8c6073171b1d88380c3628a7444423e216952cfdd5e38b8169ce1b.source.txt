@@ -1,0 +1,210 @@
+using System.Security.Cryptography;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using FortuneForge.Server.Controllers;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.Slots.Payouts;
+using FortuneForge.Server.Slots.Reels;
+using FortuneForge.Server.Slots.Spins;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+if (args.Length != 2) throw new ArgumentException("Usage: exporter <repository-root> <output-directory>");
+var repository = Path.GetFullPath(args[0]);
+var output = Path.GetFullPath(args[1]);
+var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
+const string gameId = "dragon-hoard-v1";
+const long wager = 2;
+var configuration = Path.Combine(repository, "FortuneForge.Server", "appsettings.json");
+using var document = JsonDocument.Parse(File.ReadAllText(configuration));
+var options = document.RootElement.GetProperty("Slots").Deserialize<SlotsOptions>(json)
+    ?? throw new InvalidOperationException("Missing actual Slots options.");
+var validation = new SlotsOptionsValidator().Validate(null, options);
+if (validation.Failed) throw new InvalidOperationException(string.Join("\n", validation.Failures));
+var definitions = new OptionsSlotsDefinitionProvider(Options.Create(options));
+var game = definitions.GetGame(gameId) ?? throw new InvalidOperationException("Missing Dragon Hoard engine.");
+if (!SlotSpecialRoundProfiles.TryGet(gameId, out var profile)) throw new InvalidOperationException("Missing profile.");
+var paytable = definitions.GetPaytable(game.Math.PaytableId)!;
+var modes = new[] { "sync", "rows", "paw", "rand" };
+var seals = new[] { "SEAL_SYNC", "SEAL_ROWS", "SEAL_PAW", "SEAL_RAND" };
+Require(game.Layout.ReelCount == 5 && game.Layout.VisibleRows == 4 && game.Layout.PaylineCount == 23, "Actual base layout changed.");
+Require(profile.ScatterRequiredSymbols == 3 && profile.ScatterAwardedSpins == 6, "Actual scatter contract changed.");
+Require(profile.CollectionTarget == 30 && profile.CollectionAwardedSpins == 7 && profile.CollectionFeatureMode == "rows-paw", "Actual collection contract changed.");
+Require(!profile.UsesEnergy && !profile.UsesDirectValueTokens && game.Energy is null, "Actual disabled feature flags changed.");
+Require(game.Math.PayoutMultiplier == 1.076m, "Actual calibrated multiplier changed.");
+
+var sourcePaths = Directory.GetFiles(Path.Combine(repository, "FortuneForge.Server", "Slots"), "*.cs", SearchOption.AllDirectories)
+    .Append(Path.Combine(repository, "FortuneForge.Server", "Controllers", "DemoSlotsController.cs"))
+    .Append(configuration).Order(StringComparer.Ordinal).ToArray();
+var hashesBefore = sourcePaths.ToDictionary(path => Path.GetRelativePath(repository, path).Replace('\\', '/'), Hash);
+
+var cases = new List<FixtureCase>();
+cases.Add(Search("base-loss", null, result => result.Payout.TotalPoints == 0 && result.FreeSpinsRemaining == 0, 0, null));
+cases.Add(Search("base-win", null, result => result.Payout.TotalPoints > 0 && result.FreeSpinsRemaining == 0, 0, null));
+cases.Add(Search("scatter", null, result =>
+    result.Reels.Sum(reel => reel.Count(symbol => symbol == "FREE")) == 3 &&
+    result.FreeSpinsAwarded == 6 && result.FreeSpinsRemaining == 6 && result.FreeSpinFeatureMode is null,
+    6, null));
+for (var index = 0; index < modes.Length; index++)
+{
+    var mode = modes[index];
+    var seal = seals[index];
+    cases.Add(Search($"collection-{mode}", mode, result =>
+        result.FreeSpinsAwarded == 0 && result.FreeSpinsRemaining == 7 && result.FreeSpinFeatureMode == "rows-paw" &&
+        result.SealsAwarded.GetValueOrDefault(seal) > 0 &&
+        result.SealCollections.Single(collection => collection.SealId == mode).Count < 2,
+        7, "rows-paw"));
+}
+
+foreach (var fixture in cases)
+{
+    // Engine outcomes are seeded. Preserve real controller GUIDs; prove all other public fields reproduce.
+    var replayController = Controller(fixture.Seed);
+    foreach (var step in fixture.Steps)
+    {
+        var replay = Spin(replayController, step.Request);
+        var expectedNode = JsonSerializer.SerializeToNode(step.Response, json)!.AsObject();
+        var actualNode = JsonSerializer.SerializeToNode(replay, json)!.AsObject();
+        expectedNode.Remove("spinId"); actualNode.Remove("spinId");
+        Require(JsonNode.DeepEquals(expectedNode, actualNode), $"Non-GUID fields failed deterministic replay: {fixture.Name}.");
+    }
+}
+foreach (var path in sourcePaths)
+    Require(hashesBefore[Path.GetRelativePath(repository, path).Replace('\\', '/')] == Hash(path), "Engine source changed during export.");
+
+Directory.CreateDirectory(output);
+foreach (var fixture in cases)
+    WriteNew($"{fixture.Name}.json", new {
+        scenario = fixture.Name,
+        source = new {
+            generator = "Actual in-process DemoSlotsController + SpinService + CryptoReelGenerator",
+            fixture.Seed,
+            engineVersion = SpinService.AuditEngineVersion,
+            gameId,
+            deterministicExceptResponseSpinId = true,
+            noHttpServerOrAccountSettlement = true,
+        },
+        wagerPoints = wager,
+        steps = fixture.Steps,
+    });
+WriteNew("index.json", new {
+    schemaVersion = 1,
+    generator = "Actual in-process DemoSlotsController + SpinService + CryptoReelGenerator; no HTTP server or account settlement",
+    randomness = "System.Random(seed); each scenario has a fresh service/pity state",
+    deterministicExceptions = new[] { "response.spinId is a real newly generated server GUID" },
+    gameId, wagerPoints = wager, pointValueInCents = game.Wagering.PointValueInCents,
+    scenarios = cases.Select(fixture => new { scenario = fixture.Name, file = $"{fixture.Name}.json", fixture.Seed, responses = fixture.Steps.Count }),
+});
+WriteNew("engine-contract.json", new {
+    schemaVersion = 1,
+    gameId,
+    engineVersion = SpinService.AuditEngineVersion,
+    assemblySha256 = Hash(typeof(SpinService).Assembly.Location),
+    sourceSha256 = hashesBefore,
+    profile,
+    layout = game.Layout,
+    symbols = game.Symbols,
+    matching = game.Matching,
+    wagering = game.Wagering,
+    freeGames = game.FreeGames,
+    energy = game.Energy,
+    specialPoints = game.SpecialPoints,
+    math = new { game.Math.ReelSetId, game.Math.PaytableId, game.Math.PayoutMultiplier, game.Math.PaylinePayoutSteps, game.Math.FiveMatchPityMissLimit },
+    paytable = paytable.Rules,
+    paylines = game.Paylines,
+});
+Console.WriteLine(JsonSerializer.Serialize(new {
+    outputDirectory = output,
+    scenarios = cases.Select(fixture => new { fixture.Name, fixture.Seed, responses = fixture.Steps.Count,
+        triggerRows = fixture.Steps[0].Response.Reels[0].Count,
+        freeRows = fixture.Steps.Skip(1).Select(step => step.Response.Reels[0].Count).Distinct().ToArray(),
+        triggerFreeSpins = fixture.Steps[0].Response.FreeSpinsAwarded,
+        triggerRemaining = fixture.Steps[0].Response.FreeSpinsRemaining,
+        triggerMode = fixture.Steps[0].Response.FreeSpinFeatureMode,
+    }),
+    totalResponses = cases.Sum(fixture => fixture.Steps.Count),
+    deterministicReplayVerified = true,
+    sourceHashesUnchanged = true,
+}, json));
+
+FixtureCase Search(string name, string? nearingMode, Func<SpinResult, bool> accept, int freeSpinCount, string? expectedMode)
+{
+    for (var seed = 0; seed < 100_000; seed++)
+    {
+        var controller = Controller(seed);
+        var initial = new DemoSpinRequest(gameId, wager, false, 0, null, 0,
+            modes.Select(mode => new SlotSealCollection(mode, mode == nearingMode ? 29 : 0,
+                mode == nearingMode ? wager : 0, 30)).ToArray(), null);
+        var trigger = Spin(controller, initial);
+        if (!accept(trigger)) continue;
+        var steps = new List<FixtureStep> { new(initial, trigger) };
+        var previous = trigger;
+        var valid = true;
+        for (var freeIndex = 0; freeIndex < freeSpinCount; freeIndex++)
+        {
+            var request = new DemoSpinRequest(gameId, previous.FreeSpinWagerPoints ?? wager, true,
+                previous.FreeSpinsRemaining, previous.FreeSpinWagerPoints, previous.EnergyBalance,
+                previous.SealCollections, previous.FreeSpinFeatureMode);
+            var response = Spin(controller, request);
+            var remaining = freeSpinCount - freeIndex - 1;
+            if (response.FreeSpinsAwarded != 0 || response.FreeSpinsRemaining != remaining ||
+                response.FreeSpinFeatureMode != (remaining > 0 ? expectedMode : null)) { valid = false; break; }
+            steps.Add(new(request, response)); previous = response;
+        }
+        if (!valid) continue;
+        Console.WriteLine($"Captured {name} with seed {seed}, {steps.Count} real responses.");
+        return new FixtureCase(name, seed, steps);
+    }
+    throw new InvalidOperationException($"No actual seeded engine scenario found for {name}.");
+}
+
+DemoSlotsController Controller(int seed)
+{
+    var random = new SeededRandom(seed);
+    return new DemoSlotsController(new SpinService(definitions, new CryptoReelGenerator(random),
+        new CombinationEvaluator(), new PayoutCalculator(), random), new NoOpAudit(),
+        NullLogger<DemoSlotsController>.Instance) {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() }
+        };
+}
+
+SpinResult Spin(DemoSlotsController controller, DemoSpinRequest request)
+{
+    var action = controller.Spin(request, CancellationToken.None).GetAwaiter().GetResult();
+    var result = (action as OkObjectResult)?.Value as SpinResult
+        ?? throw new InvalidOperationException($"Actual demo controller rejected a fixture request: {action.GetType().Name}.");
+    var expectedRows = request.UseFreeSpin && request.FreeSpinFeatureMode?.Split('-').Contains("rows") == true ? 6 : 4;
+    Require(result.GameId == gameId && result.Reels.Count == 5 && result.Reels.All(reel => reel.Count == expectedRows), "Unexpected real grid contract.");
+    Require(result.EnergyAwarded == 0 && result.EnergyBalance == 0 && !result.EnergyMultiplierApplied, "Disabled energy unexpectedly active.");
+    Require(result.MoneyGrabPoints == 0 && result.MonkeyPawCount == 0 && !result.SpecialBoostApplied, "Disabled direct token/collector feature unexpectedly active.");
+    Require(result.Reels.SelectMany(reel => reel).All(symbol => symbol != "BOLT" && symbol != "PAW" && !symbol.StartsWith("RAND_", StringComparison.Ordinal)), "Inactive symbol appeared.");
+    Require(result.CollectionFreeSpinsAwarded == 0 && result.SlotsCreditsBalance is null, "Demo public response contract changed.");
+    Require(result.PayoutMultiplier == 1m, "Energy multiplier is not the game's internal calibration factor.");
+    Require(result.Payout.TotalPoints == result.Payout.Paylines.Sum(line => line.AmountPoints), "Payout total does not reconcile.");
+    foreach (var line in result.Payout.Paylines)
+    {
+        Require(line.AmountPoints == line.Matches.Sum(match => match.AmountPoints), "Payline amount does not reconcile.");
+        foreach (var match in line.Matches)
+            Require(match.AmountPoints == (long)Math.Round(request.WagerPoints * match.Multiplier * game.Math.PayoutMultiplier,
+                MidpointRounding.AwayFromZero), "Actual calibrated match amount does not reconcile.");
+    }
+    return result;
+}
+
+void WriteNew(string filename, object value)
+{
+    using var file = new FileStream(Path.Combine(output, filename), FileMode.CreateNew, FileAccess.Write);
+    JsonSerializer.Serialize(file, value, json);
+}
+static string Hash(string path) => Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
+static void Require(bool condition, string message) { if (!condition) throw new InvalidOperationException(message); }
+sealed class SeededRandom(int seed) : IRandomIndexSource { private readonly Random random = new(seed); public int Next(int maximumExclusive) => random.Next(maximumExclusive); }
+sealed class NoOpAudit : IDemoSlotAuditStore { public Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken) => Task.CompletedTask; }
+sealed record FixtureStep(DemoSpinRequest Request, SpinResult Response);
+sealed record FixtureCase(string Name, int Seed, IReadOnlyList<FixtureStep> Steps);

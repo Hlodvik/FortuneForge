@@ -18,6 +18,6 @@ The package owns the table and its game header. The host owns shared navigation/
 
 The local sample is development practice only. Run `npm run dev:api` and `npm run dev:ui`; open http://127.0.0.1:5182. The API listens on 5202 and durably stores separate no-cash-value credit. It cannot access production funds.
 
-Rules: a fresh standard 52-card deck, central Joker, Andar first then Bahar, stop on the first rank match. Andar profit pays 0.9:1; Bahar pays 1:1. A winning stake is returned in addition to profit; losing wagers return zero. R0.50–R100 in R0.50 steps, one main side per round. Skip only changes animation. See the repository's `games/AndarBahar/README.md`, `VERIFICATION.md` and `INTEGRATION.md` for exact mathematics, sources and host acceptance steps.
+Rules: a fresh standard 52-card deck, central Joker, Andar first then Bahar, stop on the first rank match. Andar profit pays 0.9:1; Bahar pays 1:1. A winning stake is returned in addition to profit; losing wagers return zero. New wagers are R0.50–R50 in R0.50 steps, one main side per round. Skip only changes animation. See the repository's `games/AndarBahar/README.md`, `VERIFICATION.md` and `INTEGRATION.md` for exact mathematics, sources and host acceptance steps.
 
 Original generated felt and approved FortuneForge chip assets are bundled. Shared card audio is CC0; see `src/assets/License.txt` included with this package.

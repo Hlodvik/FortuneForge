@@ -33,7 +33,7 @@ afterEach(() => vi.unstubAllGlobals())
 describe('HttpSicBoGateway', () => {
   it('requests status from the expected route', async () => {
     const fetchMock = vi.fn().mockResolvedValue(jsonResponse({
-      available: true, minimumStake: 1, maximumStakePerBet: 100, stakeIncrement: 1,
+      available: true, minimumStake: 1, maximumStakePerBet: 10, stakeIncrement: 1,
       maximumBetsPerRound: 10, balance: 1_000, mode: 'local-free-play',
     }))
     vi.stubGlobal('fetch', fetchMock)
@@ -261,7 +261,7 @@ describe('HttpSicBoGateway', () => {
     { balance: Infinity }, { mode: ' ' }, { serverSeed: 'secret' },
   ])('rejects malformed status %j', async change => {
     const request = vi.fn().mockResolvedValue(rawResponse({
-      available: true, minimumStake: 1, maximumStakePerBet: 100, stakeIncrement: 1,
+      available: true, minimumStake: 1, maximumStakePerBet: 10, stakeIncrement: 1,
       maximumBetsPerRound: 20, balance: 1_000, mode: 'three-dice-sic-bo', ...change,
     }))
 

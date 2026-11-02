@@ -15,7 +15,7 @@ const { createHash, webcrypto } = await import('node:' + 'crypto') as {
   createHash: (algorithm: string) => { update: (value: string) => { digest: (encoding: 'hex') => string } }
 }
 type Mode = 'account'|'practice'
-const status: SicBoStatus = { available: true, minimumStake: 1, maximumStakePerBet: 100, stakeIncrement: 1, maximumBetsPerRound: 20, balance: 100, mode: 'three-dice-sic-bo' }
+const status: SicBoStatus = { available: true, minimumStake: 1, maximumStakePerBet: 10, stakeIncrement: 1, maximumBetsPerRound: 20, balance: 100, mode: 'three-dice-sic-bo' }
 const owner='owner-7', savedKey='sic-bo-recovery-0001', uuid='4e9c20fa-1e81-455f-b3e9-26dd0c31c543', defaultId='a1'.repeat(32)
 const small=createTargetBet('small',1)!, totalNine=createTargetBet('total-9',1)!, combination=createTargetBet('two-number-combination-2-5',1)!
 beforeEach(()=>{
@@ -63,6 +63,13 @@ describe('Sic Bo table',()=>{
     click('Slip 2');const panel=within(screen.getByRole('dialog'))
     expect(panel.getAllByText('Small')).toHaveLength(2);expect(panel.getByText(money(1))).toBeTruthy();expect(panel.getByText(money(5))).toBeTruthy()
   })
+  it('stops additions at R10 on one spot while leaving other spots available',async()=>{
+    render(<SicBoGame gateway={fakeGateway()}/>);await ready();stake('5');add('Small');add('Small')
+    expect(disabled('Add Small bet')).toBe(true)
+    expect(disabled('Add Big bet')).toBe(false)
+    add('Big')
+    expect(screen.getByRole('button',{name:'Slip 3'})).toBeTruthy()
+  })
   it('removes an individual entry, undoes the last entry and clears the rest',async()=>{
     const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();['Small','Total 9','Combination 2 + 5'].forEach(add)
     click('Slip 3');click('Remove bet 2');expect(within(screen.getByRole('dialog')).queryByText('Total 9')).toBeNull()
@@ -82,10 +89,10 @@ describe('Sic Bo table',()=>{
     stake('1.75');add('Small');click('Roll dice');await waitFor(()=>expect(gateway.createRound).toHaveBeenCalled())
     expect(vi.mocked(gateway.createRound).mock.calls[0]![0]).toEqual([{...small,stake:1.75}])
   })
-  it('sets a chip without placing a bet',async()=>{const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();click('Set stake '+money(25));expect((screen.getByRole('textbox',{name:'Stake'}) as HTMLInputElement).value).toBe('25');expect(screen.getByRole('button',{name:'Slip 0'})).toBeTruthy();expect(gateway.createRound).not.toHaveBeenCalled()})
+  it('sets a chip without placing a bet',async()=>{const gateway=fakeGateway();render(<SicBoGame gateway={gateway}/>);await ready();click('Set stake '+money(10));expect((screen.getByRole('textbox',{name:'Stake'}) as HTMLInputElement).value).toBe('10');expect(screen.getByRole('button',{name:'Slip 0'})).toBeTruthy();expect(gateway.createRound).not.toHaveBeenCalled()})
   it('enforces bet count synchronously during same-tick additions',async()=>{
     render(<SicBoGame gateway={fakeGateway({getStatus:vi.fn().mockResolvedValue({...status,maximumBetsPerRound:1})})}/>);await ready()
-    const button=betButton('Small');act(()=>{button.click();button.click()})
+    const button=screen.getByRole('button',{name:'Add Small bet'});act(()=>{button.click();button.click()})
     expect(screen.getByRole('button',{name:'Slip 1'})).toBeTruthy();expect(disabled('Add Big bet')).toBe(true);expect(disabled('Roll dice')).toBe(false)
   })
   it('prevents overspending and permits a slip equal to balance',async()=>{
@@ -96,7 +103,7 @@ describe('Sic Bo table',()=>{
     const user=userEvent.setup();render(<SicBoGame gateway={fakeGateway()}/>);await ready();await user.click(screen.getByRole('button',{name:'Rules'}))
     const panel=within(screen.getByRole('dialog'));expect(panel.getByRole('heading',{name:'Rules & payouts'})).toBeTruthy()
     expect(panel.getByText(/Small, Big, Odd and Even lose on triples/)).toBeTruthy();expect(panel.getByText('11.5:1')).toBeTruthy();expect(panel.getByText('195:1')).toBeTruthy()
-    expect(panel.getByText('Profit odds. A winning return includes the stake.')).toBeTruthy();expect(panel.getByText('Min '+money(1)+' · Max '+money(100)+' per spot · Step '+money(1)+' · 20 bets.')).toBeTruthy()
+    expect(panel.getByText('Profit odds. A winning return includes the stake.')).toBeTruthy();expect(panel.getByText('Min '+money(1)+' · Max '+money(10)+' per spot · Step '+money(1)+' · 20 bets.')).toBeTruthy()
     await user.keyboard('{Escape}');expect((screen.getByRole('dialog',{hidden:true}) as HTMLDialogElement).open).toBe(false);expect(document.activeElement).toBe(screen.getByRole('button',{name:'Rules'}))
   })
   it('keeps the table mounted and shows authoritative dice and settlement totals',async()=>{

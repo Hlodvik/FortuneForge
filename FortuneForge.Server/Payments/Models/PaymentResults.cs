@@ -23,7 +23,8 @@ public enum PaymentError
     InvalidBankDetails,
     InvalidWithdrawalDetails,
     AccountNotFound,
-    AccountBalanceNotFound
+    AccountBalanceNotFound,
+    WithdrawalsRestricted
 }
 
 public sealed record PaymentResult<T>(T? Value, PaymentError Error) where T : class

@@ -1,5 +1,7 @@
 using System.Text.Json;
 using FortuneForge.Games.Cards;
+using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Hearts;
 using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
@@ -381,6 +383,20 @@ public sealed partial class PaidHeartsFirestoreTests
         Assert.Equal(humanWins ? 0L : 400L, revenue.GetValue<long>("botPrizeCents"));
         Assert.All((await db.Collection("balanceTransactions").GetSnapshotAsync()).Documents, entry => Assert.Equal("alice", entry.GetValue<string>("userId")));
         Assert.Single((await store.HistoryAsync("alice", default)).Items);
+        var analytics = Assert.Single((await db.Collection(GameAnalyticsOutbox.CollectionName).GetSnapshotAsync()).Documents);
+        Assert.Equal("alice", analytics.GetValue<string>("userId"));
+        Assert.Equal("hearts", analytics.GetValue<string>("gameId"));
+        Assert.Equal("paid", analytics.GetValue<string>("mode"));
+        Assert.Equal(100L, analytics.GetValue<long>("wagerCents"));
+        Assert.Equal(humanWins ? 400L : 0L, analytics.GetValue<long>("payoutCents"));
+        var audit = Assert.Single((await db.Collection(RoundAuditDocuments.Summaries).GetSnapshotAsync()).Documents);
+        Assert.Equal("hearts", audit.GetValue<string>("gameId"));
+        Assert.Equal(id, audit.GetValue<string>("roundId"));
+        Assert.Equal("incomplete", audit.GetValue<string>("auditStatus"));
+        Assert.Equal(4, audit.GetValue<object[]>("participants").Length);
+        var evidence = await db.Collection(RoundAuditDocuments.Evidence).Document(audit.Id).GetSnapshotAsync();
+        Assert.True(evidence.Exists);
+        Assert.Contains("payoutLedgerIds", evidence.GetValue<string>("payloadJson"));
         Assert.Empty(roster.Released);
         Assert.True((await new FirestoreHeartsOnboardingStore(db).GetAsync("alice", default)).ShouldAskPlayedBefore);
     }

@@ -3,4 +3,5 @@ import {InGameShell} from '../../../../../../fortuneforge.client/src/components/
 import {MinesGame} from '../MinesGame'
 import './preview.css'
 
-createRoot(document.getElementById('root')!).render(<InGameShell title="Mines" theme="casino" actions={<span className="mines-preview-mode">PRACTICE · PLAY CREDITS</span>}><MinesGame playerId="standalone-practice"/></InGameShell>)
+createRoot(document.getElementById('root')!).render(<InGameShell title="Mines">
+    <div className="game-local-controls"><span className="mines-preview-mode">PRACTICE · PLAY CREDITS</span></div><MinesGame playerId="standalone-practice"/></InGameShell>)

@@ -1,0 +1,28 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { createRequire } from 'node:module'
+const root=process.cwd(), req=createRequire(path.join(root,'fortuneforge.client/package.json'))
+const ts=req('typescript'), {chromium}=req('@playwright/test')
+const file=path.join(root,'fortuneforge.client/e2e/ux-cycle/blackjack.ux.spec.ts')
+const source=ts.createSourceFile(file,fs.readFileSync(file,'utf8'),ts.ScriptTarget.Latest,true,ts.ScriptKind.TS)
+const filtered=ts.factory.updateSourceFile(source,source.statements.filter(statement=>ts.isImportDeclaration(statement)||ts.isVariableStatement(statement)||ts.isFunctionDeclaration(statement)||ts.isTypeAliasDeclaration(statement)))
+const moduleText=ts.createPrinter().printFile(filtered)+'\nexports.mockTable=mockTable;'
+const code=ts.transpileModule(moduleText,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText
+const exposed={}; new Function('require','exports',code)(req,exposed)
+const browser=await chromium.launch({headless:true})
+try {
+  const page=await browser.newPage({viewport:{width:320,height:568},reducedMotion:'reduce',locale:'en-ZA'})
+  await exposed.mockTable(page)
+  await page.goto('http://127.0.0.1:4202/cards/blackjack')
+  await page.getByRole('spinbutton',{name:'Wager amount'}).waitFor()
+  await page.evaluate(()=>document.fonts.ready)
+  await page.getByRole('spinbutton',{name:'Wager amount'}).fill('5')
+  await page.getByRole('button',{name:'Wager',exact:true}).click()
+  await page.getByRole('button',{name:'Hit',exact:true}).waitFor()
+  const report=await page.evaluate(()=>{
+    const box=s=>document.querySelector(s)?.getBoundingClientRect().toJSON()
+    return {playfield:box('.blackjack-playfield'),semicircle:box('.blackjack-semicircle'),rows:getComputedStyle(document.querySelector('.blackjack-semicircle')).gridTemplateRows,padding:getComputedStyle(document.querySelector('.blackjack-semicircle')).padding,seats:[...document.querySelectorAll('.blackjack-seat')].map(e=>({name:e.querySelector('strong')?.textContent,box:e.getBoundingClientRect().toJSON(),children:[...e.children].map(c=>({class:c.className,box:c.getBoundingClientRect().toJSON()}))}))}
+  })
+  fs.writeFileSync(path.join(root,`output/maintenance-2026-11-01/navbar-consistency/blackjack-bounds-probe-${process.argv[2]??'current'}.json`),JSON.stringify(report,null,2))
+  console.log(JSON.stringify(report,null,2))
+} finally { await browser.close() }

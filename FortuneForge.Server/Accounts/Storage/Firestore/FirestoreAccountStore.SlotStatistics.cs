@@ -19,6 +19,32 @@ public sealed partial class FirestoreAccountStore
 
     private static SlotStatistics EmptySlotStatistics() => new(0, 0, 0, 0, 0, 0);
 
+    private static SealCollectionSettlement SettleMidnightBonusRounds(DocumentSnapshot guard, SpinResult result,
+        IReadOnlyList<MidnightVaultBonusRound> roundsBefore,
+        IReadOnlyList<MidnightVaultBonusRound> roundsAfterConsumption, MidnightVaultBonusRound? admittedRound)
+    {
+        var counts = ReadLongMap(guard, "sealCounts");
+        var cents = ReadSealWagerCents(guard);
+        var points = cents.ToDictionary(pair => pair.Key,
+            pair => RandMoney.CentsToPoints(pair.Value, result.PointValueInCents), StringComparer.Ordinal);
+        if (points.Any(pair => RandMoney.PointsToCents(pair.Value, result.PointValueInCents) != cents[pair.Key]))
+            throw new InvalidOperationException("The saved Midnight Vault gem wager total is invalid.");
+        var progress = MidnightVaultBonusRounds.Advance(roundsAfterConsumption, counts, points,
+            result.SealsAwarded, result.WagerPoints, result.FreeSpinsAwarded,
+            result.EngineAudit?.FeatureProfile?.ScatterFeatureMode, result.PaytableId, result.SpinId);
+        var nextCents = progress.CollectionWagerPoints.ToDictionary(pair => pair.Key,
+            pair => RandMoney.PointsToCents(pair.Value, result.PointValueInCents), StringComparer.Ordinal);
+        var nextCounts = progress.CollectionCounts.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
+        var active = progress.Rounds.FirstOrDefault();
+        var evidence = new MidnightVaultBonusEvidence(admittedRound, roundsBefore, roundsAfterConsumption,
+            progress.Rounds, counts, points, progress.CollectionCounts, progress.CollectionWagerPoints, progress.AwardedRounds);
+        return new SealCollectionSettlement(nextCounts, nextCents,
+            progress.AwardedRounds.Where(round => round.Id.Contains(":collection:", StringComparison.Ordinal)).Sum(round => round.TotalSpins),
+            active?.FeatureMode, active?.WagerPoints ?? 0,
+            CreateSealCollections(nextCounts, nextCents, result.PointValueInCents, 30), result.SealsAwarded.Any(pair => pair.Value > 0),
+            progress, evidence);
+    }
+
     private static SealCollectionSettlement SettleSealCollections(
         DocumentSnapshot guardSnapshot,
         SpinResult result,
@@ -241,5 +267,7 @@ public sealed partial class FirestoreAccountStore
         string? FreeSpinFeatureMode,
         long FreeSpinWagerPoints,
         IReadOnlyList<SlotSealCollection> Collections,
-        bool SealsChanged);
+        bool SealsChanged,
+        MidnightVaultBonusProgress? MidnightProgress = null,
+        MidnightVaultBonusEvidence? MidnightEvidence = null);
 }

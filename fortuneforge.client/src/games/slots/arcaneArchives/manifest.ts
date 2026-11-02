@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { ARCANE_ARCHIVES_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -59,7 +60,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = {
+export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'arcane-archives-experience-v1',
   cabinet: ARCANE_ARCHIVES_CABINET_THEME,
   features: FEATURES,
@@ -80,7 +81,7 @@ export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: ARCANE_ARCHIVES_SOUNDS,
   rules: createSlotRulesSet('arcane-archives-v1'),
-}
+})
 
 export const ARCANE_ARCHIVES_SLOT_GAME = defineSlotGame({
   id: 'arcane-archives',

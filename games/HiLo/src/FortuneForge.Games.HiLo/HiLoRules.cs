@@ -6,7 +6,8 @@ namespace FortuneForge.Games.HiLo;
 public static class HiLoRules
 {
     public const decimal MinimumWager = 0.10m;
-    public const decimal MaximumWager = 1000m;
+    public const decimal MaximumWager = 5m;
+    public const decimal LegacyMaximumWager = 1000m;
     public const decimal HouseEdgePerChoice = 0.01m;
     public const decimal MaximumMultiplier = 1000m;
     public const decimal MaximumPayout = 100000m;
@@ -25,7 +26,15 @@ public static class HiLoRules
     public static void ValidateWager(decimal wager)
     {
         if (wager < MinimumWager || wager > MaximumWager || decimal.Round(wager, 2) != wager)
-            throw new HiLoRuleException("invalid_wager", "Wagers must be 0.10–1000.00 credits in whole cents.");
+            throw new HiLoRuleException("invalid_wager", "Wagers must be 0.10–5.00 credits in whole cents.");
+    }
+
+    // Existing rounds were created when the entry limit was 1,000 credits. Their
+    // returns and cashouts remain valid after the lower limit for new rounds.
+    public static void ValidateExistingWager(decimal wager)
+    {
+        if (wager < MinimumWager || wager > LegacyMaximumWager || decimal.Round(wager, 2) != wager)
+            throw new HiLoRuleException("invalid_wager", "The saved Hi-Lo wager is invalid.");
     }
 
     public static HiLoOdds GetOdds(CardRank rank, HiLoDirection direction)
@@ -40,13 +49,13 @@ public static class HiLoRules
 
     public static decimal MultiplierLimit(decimal wager)
     {
-        ValidateWager(wager);
+        ValidateExistingWager(wager);
         return Math.Min(MaximumMultiplier, MaximumPayout / wager);
     }
 
     public static decimal Return(decimal wager, decimal multiplier)
     {
-        ValidateWager(wager);
+        ValidateExistingWager(wager);
         if (multiplier < 0m || multiplier > MultiplierLimit(wager))
             throw new ArgumentOutOfRangeException(nameof(multiplier));
         // A recurring decimal representation of MaximumPayout / wager must still pay the exact cap.

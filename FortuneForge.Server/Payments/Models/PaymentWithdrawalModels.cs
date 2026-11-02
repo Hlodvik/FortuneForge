@@ -34,6 +34,20 @@ public sealed record PaymentWithdrawalResponse(
     WithdrawalBankDetails Bank,
     string Notice);
 
+public sealed record PaymentWithdrawalSummaryResponse(
+    string WithdrawalId,
+    string Currency,
+    string Locale,
+    long AmountMinor,
+    long CreditsDebited,
+    string Status,
+    DateTime StatusUpdatedAtUtc,
+    DateTime CreatedAtUtc,
+    DateTime? CompletedAtUtc);
+
+public sealed record PaymentWithdrawalListResponse(
+    IReadOnlyList<PaymentWithdrawalSummaryResponse> Withdrawals);
+
 public sealed record WithdrawalBankDetails(
     string AccountHolder,
     string BankName,

@@ -2,6 +2,8 @@ using System.Collections.Concurrent;
 using FortuneForge.Games.Hearts;
 using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Games.Hearts;
+using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Games.Abstractions.Auditing;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Games.Hearts;
@@ -49,7 +51,9 @@ public sealed class HeartsTrialTests
         var store = new RecordingOnboarding();
         var clock = new Clock();
         var roster = new Roster();
-        var games = new HeartsGameService(roster, clock, store);
+        var sink = new RecordingSettlementSink();
+        var security = new RecordingSecuritySink();
+        var games = new HeartsGameService(roster, clock, store, analytics: sink, securityEvents: security);
         var trial = await games.StartTrialAsync("alice");
         var finished = await PlayUntil(games, clock, "alice", trial, value => value.Phase == "complete");
 
@@ -61,10 +65,30 @@ public sealed class HeartsTrialTests
         Assert.Equal(trial.MatchId, store.Completed["alice"]);
         Assert.Equal(1, store.Attempts);
         Assert.Equal(1, roster.Releases);
+        var recorded = Assert.Single(sink.Events);
+        Assert.Equal("hearts", recorded.GameId);
+        Assert.Equal("alice", recorded.UserId);
+        Assert.Equal("practice", recorded.Mode);
+        Assert.Equal(0, recorded.WagerCents);
+        Assert.Contains(security.Events, observation => observation.Fields["eventKind"] as string == "managed-background-turn");
+        Assert.Equal("incomplete", Assert.Single(security.Completions).Summary.AuditStatus);
+        Assert.Equal("alice", security.Completions[0].Summary.Participants.Single().ActorId);
         await Assert.ThrowsAsync<HeartsRuleException>(() => games.NextRoundAsync("alice", trial.MatchId, null));
         await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => games.GetAsync("alice", trial.MatchId)));
         await games.AdvanceDueManagedTurnsAsync();
         Assert.Equal(1, store.Attempts);
+        Assert.Single(sink.Events);
+    }
+
+    private sealed class RecordingSecuritySink : IGameSecurityEventSink
+    {
+        public List<GameSecurityEventDocument> Events { get; } = [];
+        public List<RoundAuditCapture> Completions { get; } = [];
+        public Task WriteAsync(GameSecurityEventDocument observation, CancellationToken cancellationToken = default)
+        { Events.Add(observation); return Task.CompletedTask; }
+        public Task WriteCompletedAsync(GameSecurityEventDocument observation, RoundAuditCapture capture,
+            CancellationToken cancellationToken = default)
+        { Events.Add(observation); Completions.Add(capture); return Task.CompletedTask; }
     }
 
     [Fact]

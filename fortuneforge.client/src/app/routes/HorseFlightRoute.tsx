@@ -129,7 +129,7 @@ export function AuthenticatedHorseFlightRoute() {
     </div>
   )
 
-  return <InGameShell account={account} theme="arcade" className="player-page horse-flight-page">
+  return <InGameShell account={account} reportTitle="Horse Flight" className="player-page horse-flight-page">
     <HorseFlightGame
       autoStart={session.autoStart}
       debugFreePlay={import.meta.env.DEV && session.mode.kind === 'free'}

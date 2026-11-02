@@ -17,7 +17,8 @@ function Preview() {
     balances: { slotsCredits: balance, freeGames: 0 },
     slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
   }
-  return <InGameShell account={account} title="Hi-Lo" theme="casino" className="hilo-preview" actions={<span className="hilo-preview-mode">Practice play</span>}>
+  return <InGameShell account={account} title="Hi-Lo" className="hilo-preview">
+    <div className="game-local-controls"><span className="hilo-preview-mode">Practice play</span></div>
     <HiLoGame playerId="standalone-practice" onBalanceChange={setBalance} renderCardFace={renderCardFace}/>
   </InGameShell>
 }

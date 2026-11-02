@@ -57,6 +57,13 @@
   <Folder Name="/Games/Liar's Dice/">
     <Project Path="games/LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
   </Folder>
+  <Folder Name="/Games/Mines/">
+    <Project Path="games/Mines/src/FortuneForge.Games.Mines/FortuneForge.Games.Mines.csproj" />
+    <Project Path="games/Mines/server/FortuneForge.Games.Mines.Server/FortuneForge.Games.Mines.Server.csproj" />
+    <Project Path="games/Mines/samples/FortuneForge.Games.Mines.Web/FortuneForge.Games.Mines.Web.csproj" />
+    <Project Path="games/Mines/tests/FortuneForge.Games.Mines.Tests/FortuneForge.Games.Mines.Tests.csproj" />
+    <Project Path="games/Mines/tests/FortuneForge.Games.Mines.Server.Tests/FortuneForge.Games.Mines.Server.Tests.csproj" />
+  </Folder>
   <Folder Name="/Games/Roulette/">
     <Project Path="games/Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
   </Folder>
@@ -86,6 +93,10 @@
   </Folder>
   <Folder Name="/Games/Tests/">
     <Project Path="games/tests/FortuneForge.Games.Tests/FortuneForge.Games.Tests.csproj" />
+  </Folder>
+  <Folder Name="/Tools/">
+    <Project Path="tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj" />
+    <Project Path="tools/FortuneForge.CrapsBrowserFixture/FortuneForge.CrapsBrowserFixture.csproj" />
   </Folder>
   <Project Path="FortuneForge.AppHost/FortuneForge.AppHost.csproj" />
   <Project Path="fortuneforge.client/fortuneforge.client.esproj">

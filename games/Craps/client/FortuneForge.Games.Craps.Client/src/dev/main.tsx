@@ -9,7 +9,7 @@ if (!root) throw new Error('The Craps preview root was not found.')
 
 createRoot(root).render(
   <StrictMode>
-    <InGameShell title="Craps" theme="casino" className="craps-page" bodyClassName="craps-route__body">
+    <InGameShell title="Craps" className="craps-page" bodyClassName="craps-route__body">
       <App />
     </InGameShell>
   </StrictMode>,

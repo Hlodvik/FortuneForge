@@ -338,6 +338,173 @@ async function mockBaccarat(page: Page, options: {
   return { requests, releaseRestoration: () => { blockedRestoration = false }, blockStatus: () => { blockedStatus = true }, releaseStatus: () => { blockedStatus = false }, closeTable: () => { closed = true } }
 }
 
+test('Baccarat keeps the same table on reload and resets after leaving', async ({ page }) => {
+  test.setTimeout(60_000)
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  const options = {
+    hands: ['natural-player'] as HandKind[],
+    limits: { minimumStake: .25, stakeIncrement: .25, supportsPairBets: true },
+  }
+  const fixture = await mockBaccarat(page, options)
+  await page.goto('/games/baccarat')
+  const player = page.locator('.ff-baccarat__bet.is-player')
+  const pair = page.locator('.ff-baccarat__bet.is-player-pair')
+  const chosenChip = page.getByRole('button', { name: 'Select R5.00 chip', exact: true })
+  const roadTotal = page.locator('.ff-baccarat__inline-road .ff-baccarat__road-stats span').filter({ hasText: /^Total/ }).locator('b')
+  const shoe = page.locator('.ff-baccarat__inline-road .ff-baccarat__shoe-progress strong')
+  const chipSources = () => page.locator('.ff-baccarat__bet .ff-baccarat__chip-pile img')
+    .evaluateAll(chips => chips.map(chip => chip.getAttribute('src')))
+  const cardLabels = () => page.locator('.ff-baccarat__cards .ff-playing-card--face')
+    .evaluateAll(cards => cards.map(card => card.getAttribute('aria-label')))
+
+  await expect(player).toBeEnabled()
+  await chosenChip.click()
+  await player.click()
+  await player.click()
+  await pair.click()
+  const placedChips = await chipSources()
+  expect(placedChips).toHaveLength(3)
+  expect(new Set(placedChips).size).toBe(1)
+  // Keep native navigation timing intact: Playwright's clock also replaces
+  // performance entries, which are how the table distinguishes a reload.
+  await page.addInitScript(now => { Date.now = () => now }, Date.now() + 7 * 24 * 60 * 60 * 1000)
+  await page.reload()
+  await expect(player.locator('.ff-baccarat__placed-chip em')).toHaveText('R10.00')
+  await expect(pair).toHaveAttribute('aria-pressed', 'true')
+  await expect(chosenChip).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.locator('.ff-baccarat__table-totals > span').first()).toHaveText('Bet R15.00')
+  expect(await chipSources()).toEqual(placedChips)
+  expect(fixture.requests).toHaveLength(0)
+
+  // Pair placement persistence is covered above; the shared round fixture settles main wagers.
+  await page.getByRole('button', { name: 'Clear Baccarat bets', exact: true }).click()
+  await player.click()
+  await player.click()
+  await page.getByRole('button', { name: 'Deal', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Baccarat result', exact: true })).toBeVisible()
+  await expect(roadTotal).toHaveText('1')
+  await expect(shoe).toHaveText('412 cards')
+  const dealtCards = await cardLabels()
+  expect(dealtCards).toHaveLength(4)
+  await page.reload()
+  await expect(page.getByRole('dialog', { name: 'Baccarat result', exact: true })).toBeVisible()
+  expect(await cardLabels()).toEqual(dealtCards)
+  await expect(roadTotal).toHaveText('1')
+  await expect(shoe).toHaveText('412 cards')
+  expect(fixture.requests).toHaveLength(1)
+
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await page.reload()
+  await expect(player).toBeEnabled()
+  await expect(page.getByRole('dialog', { name: 'Baccarat result', exact: true })).toHaveCount(0)
+  await expect(roadTotal).toHaveText('1')
+  await expect(shoe).toHaveText('412 cards')
+  expect(await chipSources()).toHaveLength(0)
+  expect(fixture.requests).toHaveLength(1)
+
+  const freshPage = await page.context().newPage()
+  try {
+    await mockBaccarat(freshPage, options)
+    await freshPage.goto(page.url())
+    await expect(freshPage.locator('.ff-baccarat__bet.is-player')).toBeEnabled()
+    await expect(freshPage.locator('.ff-baccarat__inline-road .ff-baccarat__road-stats')).toContainText(/Total\s*0/)
+    await expect(freshPage.locator('.ff-baccarat__inline-road .ff-baccarat__shoe-progress strong')).toHaveText('416 cards')
+    await expect(freshPage.locator('.ff-baccarat__bet .ff-baccarat__chip-pile img')).toHaveCount(0)
+  } finally { await freshPage.close() }
+  await expect(roadTotal).toHaveText('1')
+  await expect(shoe).toHaveText('412 cards')
+
+  await page.getByRole('link', { name: 'Other Games', exact: true }).click()
+  await expect(page).toHaveURL(/\/home(?:#|$)/)
+  await page.goto('/games/baccarat')
+  await expect(player).toBeEnabled()
+  await expect(roadTotal).toHaveText('0')
+  await expect(shoe).toHaveText('416 cards')
+  expect(await chipSources()).toHaveLength(0)
+})
+
+test('Baccarat keeps the full betting board above its bottom bar while resizing', async ({ page }) => {
+  test.setTimeout(90_000)
+  const sizes = [
+    { width: 1920, height: 960 }, { width: 1280, height: 720 }, { width: 1280, height: 600 },
+    { width: 1024, height: 768 }, { width: 768, height: 1024 },
+    { width: 390, height: 844 }, { width: 320, height: 568 }, { width: 375, height: 667 },
+    { width: 844, height: 390 }, { width: 667, height: 375 },
+  ]
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await mockBaccarat(page, {
+    balance: 138_506.46, hands: ['natural-player'],
+    limits: { minimumStake: .25, stakeIncrement: .25, supportsPairBets: true },
+  })
+  await page.goto('/games/baccarat')
+  const player = page.locator('.ff-baccarat__bet.is-player')
+  await expect(player).toBeEnabled()
+  await page.evaluate(() => document.fonts.ready)
+  await player.click()
+  await expect(player.locator('.ff-baccarat__placed-chip em')).toHaveText('R0.25')
+
+  const checkResizing = async (phase: string) => {
+    for (const viewport of sizes) {
+      await test.step(`${phase} at ${viewport.width}×${viewport.height}`, async () => {
+        await page.setViewportSize(viewport)
+        const geometry = await page.evaluate(() => {
+          const rect = (element: Element) => {
+            const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
+            return { left, right, top, bottom, width, height }
+          }
+          const surface = rect(document.querySelector('.ff-baccarat__play-surface')!)
+          const rail = rect(document.querySelector('.ff-baccarat__rail')!)
+          const boardContent = Array.from(document.querySelectorAll(
+            '.ff-baccarat__bet > strong, .ff-baccarat__bet > span:not(.ff-baccarat__placed-chip), .ff-baccarat__bet.is-player .ff-baccarat__placed-chip img, .ff-baccarat__bet.is-player .ff-baccarat__placed-chip em',
+          ), (element, index) => ({ name: `${element.className || element.textContent} [${index}]`, ...rect(element) }))
+          const contentBoxes = (selector: string) => Array.from(document.querySelectorAll(selector),
+            (element) => ({ name: element.getAttribute('aria-label') || element.textContent, ...rect(element) }))
+            .filter(box => box.width > 0 && box.height > 0)
+          const railContent = contentBoxes('.ff-baccarat__rail button, .ff-baccarat__table-totals > span')
+          const floatingContent = contentBoxes('.game-support-controls button' +
+            (matchMedia('(max-height: 500px) and (orientation: landscape)').matches ? ', .ff-baccarat__header button' : ''))
+          return { surface, rail, boardContent, railContent, floatingContent, width: innerWidth, height: innerHeight, scrollWidth: document.documentElement.scrollWidth }
+        })
+        const issues: string[] = []
+        for (const box of geometry.boardContent) {
+          if (box.left < geometry.surface.left - 1 || box.right > geometry.surface.right + 1
+            || box.top < geometry.surface.top - 1 || box.bottom > geometry.surface.bottom + 1
+            || box.bottom > geometry.rail.top + 1) issues.push(`${box.name} is clipped by the board or bottom bar`)
+        }
+        for (const box of geometry.railContent) {
+          if (box.left < geometry.rail.left - 1 || box.right > geometry.rail.right + 1
+            || box.top < geometry.rail.top - 1 || box.bottom > geometry.rail.bottom + 1
+            || box.bottom > geometry.height + 1) issues.push(`${box.name} is clipped in the bottom bar`)
+        }
+        for (const box of geometry.floatingContent) {
+          if (box.left < -1 || box.right > geometry.width + 1 || box.top < -1 || box.bottom > geometry.height + 1) {
+            issues.push(`${box.name} is clipped by the viewport`)
+          }
+        }
+        const bottomContent = [...geometry.railContent, ...geometry.floatingContent]
+        for (let index = 0; index < bottomContent.length; index++) {
+          const a = bottomContent[index]
+          for (const b of bottomContent.slice(index + 1)) {
+            if (Math.min(a.right, b.right) - Math.max(a.left, b.left) > 1
+              && Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top) > 1) issues.push(`${a.name} overlaps ${b.name}`)
+          }
+        }
+        expect(geometry.surface.bottom).toBeLessThanOrEqual(geometry.rail.top + 1)
+        expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.width)
+        expect(issues).toEqual([])
+      })
+    }
+  }
+
+  await checkResizing('betting')
+  await page.getByRole('button', { name: 'Deal', exact: true }).click()
+  await expect(page.getByRole('dialog', { name: 'Baccarat result' })).toBeVisible()
+  await checkResizing('settled')
+  await page.getByRole('button', { name: 'Continue', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Deal', exact: true })).toBeDisabled()
+  await checkResizing('next bet')
+})
+
 test('Baccarat survives reload during the normal card reveal and unlocks after the last entrance', async ({ page }, testInfo) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.addInitScript(() => {

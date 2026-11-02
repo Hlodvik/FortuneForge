@@ -1,0 +1,31 @@
+from pathlib import Path
+from PIL import Image
+import hashlib
+import json
+
+root = Path(__file__).parent
+origins = {
+    'q': 'exec-2d9197ac-106a-4730-ad21-187388f6a625.png',
+    'j': 'exec-f1046879-41f8-443c-9493-a29eeeab5e37.png',
+}
+records = []
+for slug, origin in origins.items():
+    path = root / f'{slug}.png'
+    with Image.open(path) as art:
+        assert art.mode == 'RGBA'
+        alpha = art.getchannel('A')
+        assert alpha.getextrema() == (0, 255)
+        bounds = alpha.point(lambda value: 255 if value >= 16 else 0).getbbox()
+        assert bounds and bounds[0] > 0 and bounds[1] > 0 and bounds[2] < art.width and bounds[3] < art.height
+        size = list(art.size)
+    records.append({'glyph': slug.upper(), 'file': str(path), 'prompt': str(root / f'{slug}.prompt.txt'),
+        'generatedSource': 'C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/' + origin,
+        'size': size, 'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+        'actualAlpha': True, 'visibleBoundsAtAlpha16': bounds,
+        'heightRatio': round((bounds[3] - bounds[1]) / size[1], 4),
+        'references': [], 'editedAfterGeneration': False,
+        'visualInspection': 'Actual source pixels inspected: plain readable uppercase painted-color letter; no gold, gem facets, ornaments or card panel.'})
+(root / 'manifest.json').write_text(json.dumps({'generator': 'built-in image_gen', 'previewOnly': True,
+    'scope': 'Q/J revision only. Ten previously accepted assets and all runtime source/public assets remain untouched.',
+    'assets': records}, indent=2))
+print(json.dumps([{'glyph': item['glyph'], 'size': item['size'], 'alpha': True, 'heightRatio': item['heightRatio']} for item in records]))

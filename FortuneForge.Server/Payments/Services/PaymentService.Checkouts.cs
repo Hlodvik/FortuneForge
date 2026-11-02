@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using FortuneForge.Server.Payments.Configuration;
 using FortuneForge.Server.Payments.Models;
 using FortuneForge.Server.Payments.Providers;
+using FortuneForge.Server.Payments.Storage;
 using Microsoft.Extensions.Options;
 
 namespace FortuneForge.Server.Payments;
@@ -11,14 +12,17 @@ namespace FortuneForge.Server.Payments;
 public sealed partial class PaymentService
 {
     private readonly IPaymentProvider _provider;
+    private readonly IWithdrawalHistoryReader _withdrawalHistory;
     private readonly PaymentsOptions _options;
 
     internal PaymentService(
         IPaymentProvider provider,
-        IOptions<PaymentsOptions> options)
+        IOptions<PaymentsOptions> options,
+        IWithdrawalHistoryReader withdrawalHistory)
     {
         _provider = provider;
         _options = options.Value;
+        _withdrawalHistory = withdrawalHistory;
     }
 
     public PaymentCatalogResponse GetCatalog() => new(

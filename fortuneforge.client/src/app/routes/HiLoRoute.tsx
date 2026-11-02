@@ -8,7 +8,6 @@ import { PlayingCard } from '../../games/cards/shared/PlayingCard'
 import type { CardRank } from '../../games/cards/shared/cards'
 import '../../games/cards/shared/playingCards.css'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 import './HiLoRoute.css'
 
@@ -42,7 +41,7 @@ function HiLoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
     }).catch(() => undefined)
   }, [initialAccount.userId])
 
-  return <InGameShell account={account} title="Hi-Lo" theme="casino" className="hi-lo-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/hi-lo" />}>
+  return <InGameShell account={account} title="Hi-Lo" className="hi-lo-page">
     <HiLoGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />
   </InGameShell>
 }

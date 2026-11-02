@@ -1,5 +1,6 @@
 import minesImage from '../../assets/catalogue/non-slots/mines-title-v2.webp'
 import solitaireImage from '../../assets/catalogue/non-slots/solitaire-title-v2.webp'
+import freeSolitaireImage from '../../assets/catalogue/non-slots/free-solitaire-title-v1.webp'
 import heartsImage from '../../assets/catalogue/non-slots/hearts-title-v2.webp'
 import liarsDiceImage from '../../assets/catalogue/non-slots/liars-dice-title-v3.webp'
 import twentyFortyEightImage from '../../assets/catalogue/non-slots/2048-title-v1.webp'
@@ -9,7 +10,7 @@ import phantomManorImage from '../../assets/catalogue/slots/phantom-manor-title-
 import nordicLegendsImage from '../../assets/catalogue/slots/nordic-legends-title-v2.webp'
 import desertTreasuresImage from '../../assets/catalogue/slots/desert-treasures-title-v2.webp'
 import robotRevolutionImage from '../../assets/catalogue/slots/robot-revolution-title-v2.webp'
-import dragonHoardImage from '../../assets/catalogue/slots/dragon-hoard-title-v2.webp'
+import dragonHoardImage from '../../assets/catalogue/slots/midnight-vault-catalogue-title-768x384.webp'
 import type { GameLoadingEntry } from './types'
 
 /** Selected catalogue artwork only; route integration belongs to the host. */
@@ -21,6 +22,10 @@ export const LOADING_PRESENTATIONS_C: readonly GameLoadingEntry[] = [
   {
     id: 'solitaire', title: 'Competitive Solitaire', routes: ['/cards/solitaire'],
     image: solitaireImage, background: '#072d23', accent: '#d5be7d',
+  },
+  {
+    id: 'free-solitaire', title: 'Solitaire', routes: ['/cards/free-solitaire'],
+    image: freeSolitaireImage, background: '#072d23', accent: '#d5be7d',
   },
   {
     id: 'hearts', title: 'Hearts', routes: ['/cards/hearts'],
@@ -64,8 +69,10 @@ export const LOADING_PRESENTATIONS_C: readonly GameLoadingEntry[] = [
     image: robotRevolutionImage, background: '#07142d', accent: '#37ddff',
   },
   {
-    id: 'dragon-hoard', title: 'Dragon Hoard',
+    id: 'dragon-hoard', title: 'Midnight Vault',
     routes: ['/slots/dragon-hoard', '/slots/dragon-hoard/demo'],
-    image: dragonHoardImage, background: '#210b09', accent: '#f2ce67',
+    image: dragonHoardImage,
+    imageSrcSet: `/assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-384x192.webp 384w, ${dragonHoardImage} 768w, /assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-1024x512.webp 1024w`,
+    background: '#071422', accent: '#c8a66b',
   },
 ]

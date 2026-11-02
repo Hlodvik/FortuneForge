@@ -46,6 +46,8 @@ const record = (v: unknown): v is Record<string, unknown> => v !== null && typeo
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 const integer = (v: unknown): v is number => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0
 const positiveInteger = (v: unknown): v is number => integer(v) && v > 0
+// A round placed before the R5 entry cap can still be resumed and cashed out.
+const legacyMaximumRoundWagerCents = 100_000
 const card = (v: unknown): v is HiLoCard => record(v) && hiLoRanks.includes(v.rank as HiLoCard['rank']) && ['clubs', 'diamonds', 'hearts', 'spades'].includes(String(v.suit))
 
 function limits(v: unknown): v is HiLoLimits {
@@ -55,7 +57,7 @@ function quote(v: unknown): v is HiLoQuote {
   return record(v) && finite(v.probability) && v.probability >= 0 && v.probability <= 1 && finite(v.multiplier) && v.multiplier >= 0 && integer(v.projectedReturnCents) && typeof v.available === 'boolean' && (!v.available || v.probability > 0 && v.multiplier > 0)
 }
 function round(v: unknown, rules: HiLoLimits): v is HiLoRound {
-  if (!record(v) || typeof v.roundId !== 'string' || !v.roundId || !integer(v.revision) || !['active', 'lost', 'cashedOut', 'maximumReturn'].includes(String(v.status)) || !positiveInteger(v.wagerCents) || v.wagerCents < rules.minWagerCents || v.wagerCents > rules.maxWagerCents || !card(v.currentCard) || !integer(v.currentReturnCents) || v.currentReturnCents > rules.maximumReturnCents || !finite(v.multiplier) || v.multiplier < 0 || v.multiplier > rules.maxMultiplier || !integer(v.streak) || v.streak > rules.maxStreak || !integer(v.skips) || v.skips > rules.maxSkips || !quote(v.higher) || !quote(v.lower) || typeof v.canCashOut !== 'boolean' || typeof v.canSkip !== 'boolean' || !Array.isArray(v.history) || v.history.length === 0) return false
+  if (!record(v) || typeof v.roundId !== 'string' || !v.roundId || !integer(v.revision) || !['active', 'lost', 'cashedOut', 'maximumReturn'].includes(String(v.status)) || !positiveInteger(v.wagerCents) || v.wagerCents < rules.minWagerCents || v.wagerCents > Math.max(rules.maxWagerCents, legacyMaximumRoundWagerCents) || !card(v.currentCard) || !integer(v.currentReturnCents) || v.currentReturnCents > rules.maximumReturnCents || !finite(v.multiplier) || v.multiplier < 0 || v.multiplier > rules.maxMultiplier || !integer(v.streak) || v.streak > rules.maxStreak || !integer(v.skips) || v.skips > rules.maxSkips || !quote(v.higher) || !quote(v.lower) || typeof v.canCashOut !== 'boolean' || typeof v.canSkip !== 'boolean' || !Array.isArray(v.history) || v.history.length === 0) return false
   if (!v.history.every((entry: unknown) => record(entry) && card(entry.card) && ['start', 'higher', 'lower', 'skip'].includes(String(entry.choice)) && (entry.won === null || typeof entry.won === 'boolean'))) return false
   const first = v.history[0], latest = v.history[v.history.length - 1]
   if (first.choice !== 'start' || first.won !== null || latest.card.rank !== v.currentCard.rank || latest.card.suit !== v.currentCard.suit) return false

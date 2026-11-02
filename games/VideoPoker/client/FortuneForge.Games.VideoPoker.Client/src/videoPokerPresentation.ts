@@ -1,7 +1,7 @@
 import type { VideoPokerCard, VideoPokerCardPosition, VideoPokerHandRank } from './contracts'
+export { formatMoney } from '@fortuneforge/client-presentation/money'
 
 export function cardName(card: VideoPokerCard) { return card.rank + ' of ' + card.suit }
-export function formatMoney(value: number, symbol: string) { return (value < 0 ? '-' : '') + symbol + Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }
 export function handLabel(rank: VideoPokerHandRank, payout: number) {
   if (rank === 'pair') return payout > 0 ? 'Jacks or Better' : 'Pair'
   return ({ 'no-win': 'No Win', 'two-pair': 'Two Pair', 'three-of-a-kind': 'Three of a Kind', straight: 'Straight', flush: 'Flush', 'full-house': 'Full House', 'four-of-a-kind': 'Four of a Kind', 'straight-flush': 'Straight Flush', 'royal-flush': 'Royal Flush' } as const)[rank]

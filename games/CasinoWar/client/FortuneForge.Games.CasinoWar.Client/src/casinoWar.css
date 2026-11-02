@@ -1,6 +1,6 @@
 @import '../../../../shared/visuals/casino-felt.css';
 
-* { box-sizing: border-box; }
+:where(.ff-casino-war), :where(.ff-casino-war) * { box-sizing: border-box; }
 
 .ff-casino-war {
   --war-cream: #fff1c2;
@@ -237,8 +237,7 @@
   box-shadow: 0 -.4rem 1.5rem #00100d70, inset 0 1px #ffffff0b;
 }
 
-.ff-casino-war__balance,
-.ff-casino-war__stake { display: grid; gap: .22rem; }
+.ff-casino-war__balance { display: grid; gap: .22rem; }
 
 .ff-casino-war__balance {
   min-width: 8rem;
@@ -246,8 +245,7 @@
   border-right: 1px solid #e7bd5850;
 }
 
-.ff-casino-war__balance span,
-.ff-casino-war__stake > span {
+.ff-casino-war__balance span {
   color: #dabe72;
   font-size: .61rem;
   font-weight: 900;
@@ -256,40 +254,6 @@
 }
 
 .ff-casino-war__balance strong { color: #fff0bd; font-size: .95rem; }
-.ff-casino-war__stake > span { display: flex; justify-content: space-between; gap: .5rem; }
-.ff-casino-war__stake > span small { color: #8eb7aa; font-size: .5rem; }
-.ff-casino-war__stake > div { display: flex; overflow: hidden; border: 1px solid #dfb55072; border-radius: .7rem; background: #010d0c; }
-
-.ff-casino-war__stake button {
-  width: 2.55rem;
-  min-height: 2.7rem;
-  border: 0;
-  background: #0b3229;
-  color: #f4d477;
-  font-size: 1.2rem;
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.ff-casino-war__stake label { display: flex; min-width: 5.2rem; align-items: center; justify-content: center; gap: .15rem; }
-.ff-casino-war__stake label span { color: #ecd27f; font-size: .8rem; font-weight: 900; }
-
-.ff-casino-war__stake input {
-  width: 4.1rem;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  color: #fff8df;
-  font-size: 1rem;
-  font-weight: 900;
-  text-align: center;
-  user-select: text;
-  appearance: textfield;
-}
-
-.ff-casino-war__stake input::-webkit-inner-spin-button,
-.ff-casino-war__stake input::-webkit-outer-spin-button { margin: 0; appearance: none; }
 
 .ff-casino-war__primary,
 .ff-casino-war__secondary {
@@ -409,9 +373,6 @@
   .ff-casino-war__round-actions { grid-column: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ff-casino-war__decision button,
   .ff-casino-war__round-actions button { min-width: 0; padding-inline: .4rem; }
-  .ff-casino-war__stake label { min-width: 0; flex: 1; }
-  .ff-casino-war__stake input { width: 3rem; }
-  .ff-casino-war__stake button { width: 2.1rem; min-height: 2.75rem; }
 }
 
 @media (min-width: 721px) {
@@ -485,12 +446,6 @@
 
   .ff-casino-war__balance { min-width: 5.7rem; padding: .25rem .4rem; }
   .ff-casino-war__balance strong { font-size: .82rem; }
-  .ff-casino-war__stake { min-width: 0; }
-  .ff-casino-war__stake > span { font-size: .52rem; }
-  .ff-casino-war__stake > div { border-radius: .55rem; }
-  .ff-casino-war__stake button { width: 2rem; min-height: 2.75rem; }
-  .ff-casino-war__stake label { min-width: 3.6rem; }
-  .ff-casino-war__stake input { width: 2.5rem; font-size: .85rem; }
   .ff-casino-war__primary,
   .ff-casino-war__secondary { min-height: 2.75rem; padding: .35rem .75rem; }
   .ff-casino-war__deal { min-width: 5rem; }

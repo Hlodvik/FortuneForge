@@ -4,7 +4,9 @@ import { GameTypeMenu } from '../../components/GameTypeMenu'
 import blackjackPreview from '../../assets/cards/previews/blackjack-game.png'
 import holdemPreview from '../../assets/cards/previews/holdem-game.png'
 import solitairePreview from '../../assets/cards/previews/solitaire-game.png'
+import freeSolitairePreview from '../../assets/catalogue/non-slots/free-solitaire-title-v1.webp'
 import { CardRoomNavigation } from './CardRoomNavigation'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import '../index.css'
 import '../demoLibrary.css'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
@@ -43,18 +45,9 @@ export function CardGameLibraryPage({
   return (
     <div className={`player-page game-picker-page${demoMode ? ' demo-library-page' : ''}`}>
       {demoMode ? (
-        <header className="landing-bar">
-          <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-            <span className="landing-brand__spark" aria-hidden="true">✦</span>
-            <span>Fortune Forge</span>
-          </a>
-          <div className="landing-bar__account">
-            <span className="demo-mode-badge">Card game preview</span>
-            <a className="landing-nav__link" href="/login">Log in</a>
-          </div>
-        </header>
+        <SiteNavbar mode="public" />
       ) : account ? (
-        <CardRoomNavigation playerName={account.playerName} balanceCredits={balanceCredits} showOtherGames={false}
+        <CardRoomNavigation account={{ ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }}
           onBalanceChange={setBalanceCredits} />
       ) : null}
 
@@ -63,6 +56,7 @@ export function CardGameLibraryPage({
         <main className={`${demoMode ? '' : 'game-hub-content '}game-picker-main`}>
           {demoMode && <GameTypeMenu active="cards" demoMode />}
           <section className="game-picker-heading game-picker-heading--compact" aria-labelledby="card-picker-title">
+            {demoMode && <span className="demo-mode-badge">Card game preview</span>}
             <p className="account-eyebrow">Table room</p>
             <h1 id="card-picker-title">Choose your card game</h1>
             <CatalogueStatus />
@@ -71,7 +65,7 @@ export function CardGameLibraryPage({
           <section className="card-game-library" aria-label="Available card games">
             <CardGameCard
               available={!demoMode && blackjackState === 'available'}
-              description="A five-seat Blackjack table with adjustable wagers, visible turns, and continuous rounds."
+              description="Play Blackjack against the house at your own pace."
               href="/cards/blackjack"
               image={blackjackPreview}
               title="Fortune Blackjack"
@@ -91,6 +85,14 @@ export function CardGameLibraryPage({
               href="/cards/solitaire"
               image={solitairePreview}
               title="Competitive Solitaire"
+              unavailableLabel={demoMode ? 'Internal route only' : undefined}
+            />
+            <CardGameCard
+              available={!demoMode}
+              description="Play a classic single-player Klondike deal at your own pace."
+              href="/cards/free-solitaire"
+              image={freeSolitairePreview}
+              title="Solitaire"
               unavailableLabel={demoMode ? 'Internal route only' : undefined}
             />
             <CardGameCard

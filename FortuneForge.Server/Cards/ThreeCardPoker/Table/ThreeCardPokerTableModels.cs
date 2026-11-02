@@ -191,6 +191,7 @@ internal sealed record ThreeCardPokerManagedPlayerRelease(string ProfileId, stri
 
 internal sealed class ThreeCardPokerTableJournal
 {
+    public List<FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture> RoundAudits { get; } = [];
     public List<ThreeCardPokerTableLedgerEntry> Ledger { get; } = [];
     public List<ThreeCardPokerTableRevenueEntry> Revenue { get; } = [];
     public List<ThreeCardPokerTableResultEntry> Results { get; } = [];

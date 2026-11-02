@@ -31,6 +31,7 @@ jobs:
         run: |
           npm run verify:game-source
           npm run verify:game-routes
+          npm run verify:ci-emulator
 
       - name: Restore .NET dependencies
         run: |
@@ -43,6 +44,12 @@ jobs:
           dotnet build FortuneForge.slnx --configuration Release --no-restore
           dotnet build games/FortuneForge.Games.slnx --configuration Release --no-restore
 
+      # Game-package Firestore tests also require the cached emulator jar.
+      - name: Install Firestore emulator CLI
+        run: |
+          npm install --global firebase-tools@14.4.0
+          firebase setup:emulators:firestore
+
       - name: Test game packages
         run: dotnet test games/FortuneForge.Games.slnx --configuration Release --no-build
 
@@ -51,11 +58,6 @@ jobs:
           while IFS= read -r project; do
             dotnet list "$project" package --vulnerable --include-transitive --no-restore
           done < <(find . -name '*.csproj' -print)
-
-      - name: Install Firestore emulator CLI
-        run: |
-          npm install --global firebase-tools@14.4.0
-          firebase setup:emulators:firestore
 
       - name: Test server
         run: |
@@ -67,6 +69,9 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm ci
+
+      - name: Verify canonical game navigation boundary
+        run: npm run verify:game-navbar
 
       - name: Check game clients and frontend
         run: |

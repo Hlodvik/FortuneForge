@@ -1,6 +1,9 @@
 using System.Collections.Immutable;
 using FortuneForge.Games.Flappy;
+using FortuneForge.Server.Arcade;
 using FortuneForge.Server.Arcade.Flappy;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -68,11 +71,29 @@ public sealed class FirestoreFlappyFreeRunServiceTests
         Assert.Equal("ground-collision", Field<string>(document, "terminal"));
         Assert.True(document.ContainsField("startedAt"));
         Assert.True(document.ContainsField("completedAt"));
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal("flappy", Field<string>(audit, "gameId"));
+        Assert.Equal(started.Run.RunId, Field<string>(audit, "roundId"));
+        Assert.Equal("incomplete", Field<string>(audit, "auditStatus"));
+        Assert.True(Field<bool>(audit, "securityAuditPending"));
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        var payload = Field<string>(evidence, "payloadJson");
+        Assert.Contains("replayCanonical", payload);
+        var summary = FirestoreGameRoundAuditStore.Summary(audit);
+        Assert.Empty(await ArcadeReplayAudit.InspectAsync(database, summary, payload, default));
+        Assert.DoesNotContain((await GameSecurityIntegrityAuditor.InspectAsync(database, summary, default)).Findings,
+            finding => finding.Severity == "error");
+        Assert.Equal(2, (await database.Collection("gameSecurityEvents").GetSnapshotAsync()).Count);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CompleteAsync(
             started.Run.RunId, "player-2", replay, default));
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CompleteAsync(
             started.Run.RunId, "player-1", new FlappyReplay(37, ImmutableArray<int>.Empty), default));
+        await document.Reference.UpdateAsync("terminal", "ceiling-collision");
+        Assert.Contains(await ArcadeReplayAudit.InspectAsync(database, summary, payload, default),
+            finding => finding.Code == "arcade-run-source-mismatch");
+        Assert.Contains((await GameSecurityIntegrityAuditor.InspectAsync(database, summary, default)).Findings,
+            finding => finding.Code == "arcade-run-source-mismatch");
     }
 
     private (FirestoreDb Database, FirestoreFlappyFreeRunService Service) CreateService(params uint[] seeds)

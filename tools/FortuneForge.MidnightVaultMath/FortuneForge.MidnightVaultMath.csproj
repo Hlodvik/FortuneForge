@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);MIDNIGHT_ORACLE_ONLY</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\FortuneForge.Server\FortuneForge.Server.csproj" />
+    <Compile Include="..\..\FortuneForge.Server.Tests\Slots\MidnightVaultIntegerPayoutTests.cs" Link="IndependentIntegerOracle.cs" />
+  </ItemGroup>
+</Project>

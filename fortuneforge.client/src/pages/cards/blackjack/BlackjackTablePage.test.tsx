@@ -46,6 +46,88 @@ describe('Blackjack table composition', () => {
     expect(markup).not.toContain('Choose your wager at the table')
   })
 
+  it('offers immediate single-player Blackjack without a queue', () => {
+    const markup = render({
+      kind: 'ready',
+      status: soloStatus,
+      session: { contractVersion: 'cards.blackjack.table.v2', kind: 'idle', version: 0 },
+    })
+
+    expect(markup).toContain('Play Blackjack')
+    expect(markup).not.toContain('Join live table')
+    expect(markup).not.toContain('Finding table')
+  })
+
+  it('centers one solo seat and leaves player actions untimed', () => {
+    const markup = render({ kind: 'ready', status: soloStatus, session: soloSession })
+
+    expect(markup).toContain('blackjack-table--solo')
+    expect(markup).toContain('blackjack-seat-slot--1 is-current-slot')
+    expect(markup).toContain('>Hit</button>')
+    expect(markup).toContain('>Stand</button>')
+    expect(markup).toContain('>Leave table</button>')
+    expect(markup).not.toContain('Open seat')
+    expect(markup).not.toContain('Mina')
+    expect(markup).not.toContain('Time remaining')
+    expect(markup).not.toContain('blackjack-action-timer')
+  })
+
+  it('keeps a preexisting multiplayer table timed after new joins switch to solo mode', () => {
+    const markup = render({ kind: 'ready', status: soloStatus, session: tableSession })
+
+    expect(markup).not.toContain('blackjack-table--solo')
+    expect(markup).toContain('Mina')
+    expect(markup).toContain('Open seat')
+    expect(markup).toContain('class="blackjack-action-timer"')
+  })
+
+  it('allows a solo wager without a countdown or sit-out button', () => {
+    const markup = render({
+      kind: 'ready', status: soloStatus,
+      session: {
+        ...soloSession,
+        table: {
+          ...soloSession.table,
+          phase: 'betting',
+          transition: 'human-wager',
+          dealer: { cards: [], score: null, soft: false, blackjack: false, bust: false },
+          activeSeat: 0,
+        },
+      },
+    })
+
+    expect(markup).toContain('Wager amount')
+    expect(markup).toContain('>Place bet</button>')
+    expect(markup).not.toContain('>Sit out</button>')
+    expect(markup).not.toContain('Time remaining')
+    expect(markup).not.toContain('Next round')
+  })
+
+  it('holds the solo round result and cards until the player chooses to play again or leave', () => {
+    const markup = render({
+      kind: 'ready', status: soloStatus,
+      session: {
+        ...soloSession,
+        table: {
+          ...soloSession.table,
+          phase: 'settlement',
+          transition: null,
+          activeSeat: null,
+          legalActions: [],
+          dealer: { cards: [{ rank: '9', suit: 'clubs', hidden: false }], score: 9, soft: false, blackjack: false, bust: false },
+          seats: [{ ...soloSession.table.seats[0], status: 'completed', outcome: 'player-win', payout: 10 }],
+        },
+      },
+    })
+
+    expect(markup).toContain('ff-card-slot')
+    expect(markup).toContain('>Won</small>')
+    expect(markup).toContain('>Play again</button>')
+    expect(markup).toContain('>Leave table</button>')
+    expect(markup).not.toContain('Next round 5')
+    expect(markup).not.toContain('Time remaining')
+  })
+
   it('keeps the finding screen while a queue ticket waits for a table', () => {
     const markup = render({
       kind: 'ready',
@@ -285,6 +367,10 @@ describe('Blackjack table composition', () => {
     expect(open).toContain('Two missed turns release your seat')
     expect(open).toContain('<dt>Double</dt><dd>Allowed</dd>')
     expect(open).toContain('<dt>Split</dt><dd>Not available</dd>')
+
+    const soloHelp = renderToStaticMarkup(createElement(BlackjackHowToPlay, { status: soloStatus, defaultOpen: true }))
+    expect(soloHelp).not.toContain('seconds')
+    expect(soloHelp).not.toContain('missed turns')
   })
 })
 
@@ -324,12 +410,20 @@ const status: BlackjackTableStatus = {
   insuranceAllowed: false,
 }
 
+const soloStatus: BlackjackTableStatus = {
+  ...status,
+  minimumStartOccupancy: 1,
+  tableCapacity: 1,
+  humanGraceSeconds: 0,
+  actionDeadlineSeconds: 0,
+}
+
 const tableSession = {
   contractVersion: 'cards.blackjack.table.v2',
   kind: 'table',
   version: 4,
   table: {
-    tableId: 'table-1', phase: 'active', round: 1,
+    tableId: 'table-1', mode: 'multiplayer', phase: 'active', round: 1,
     dealer: { cards: [{ rank: '9', suit: 'clubs', hidden: false }, { hidden: true }], score: null, soft: false, blackjack: false, bust: false },
     seats: [{
       seatId: 'seat-1', displayName: 'Ada', seat: 0, status: 'playing', wager: 5,
@@ -348,5 +442,18 @@ const tableSession = {
     transition: null, nextTransitionAtUtc: null,
     remainingActionMilliseconds: 20_000, remainingWagerMilliseconds: 0,
     remainingTransitionMilliseconds: 0,
+  },
+} as const
+
+const soloSession = {
+  ...tableSession,
+  table: {
+    ...tableSession.table,
+    mode: 'solo',
+    seats: [tableSession.table.seats[0]],
+    actionDeadlineAtUtc: null,
+    wagerDeadlineAtUtc: null,
+    remainingActionMilliseconds: 0,
+    remainingWagerMilliseconds: 0,
   },
 } as const

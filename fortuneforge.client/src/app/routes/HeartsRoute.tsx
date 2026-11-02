@@ -1,8 +1,9 @@
-import { HeartsGame, HttpHeartsGateway, type HeartsCard } from '@fortuneforge/games-hearts'
+import { HeartsGame, HttpHeartsGateway, type HeartsCard, type HeartsParticipation } from '@fortuneforge/games-hearts'
 import '@fortuneforge/games-hearts/styles.css'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { InGameShell } from '../../components/InGameShell'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
+import { useGameLeaveGuard } from '../../features/navigation/GameLeaveGuard'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 import { fetchWithAccountSession, type AccountSummary } from '../../features/account/services/accountsApi'
 import { PlayingCard } from '../../games/cards/shared/PlayingCard'
@@ -21,11 +22,24 @@ export function AuthenticatedHeartsRoute() {
 
 function HeartsSession({ initialAccount }: Readonly<{ initialAccount: AccountSummary }>) {
   const [account, setAccount] = useState(initialAccount)
+  const [participation, setParticipation] = useState<HeartsParticipation>(null)
   const gateway = useMemo(() => new HttpHeartsGateway('/api/games/hearts', fetchWithAccountSession), [])
   useEffect(() => setAccount(initialAccount), [initialAccount])
   const publishBalance = useCallback((balance: number) => setAccount(current => ({ ...current, balances: { ...current.balances, slotsCredits: balance } })), [])
-  return <InGameShell account={account} title="Hearts" theme="cards" bodyClassName="hearts-shell-body">
-    <HeartsGame key={account.userId} gateway={gateway} balance={account.balances.slotsCredits} onBalanceChange={publishBalance} renderCard={renderHeartsCard} />
+  useGameLeaveGuard(participation === null ? null : {
+    title: 'Leave Hearts?',
+    description: participation === 'paid-pending'
+      ? 'Your entry request is still being confirmed and may have been accepted. Leaving this page does not cancel it. Return to reconnect before choosing another action.'
+      : participation === 'paid-queue'
+        ? 'Your entry is reserved and the table may start while you are away. Leaving this page does not cancel the queue. Use Cancel & return entry at the table to request a refund.'
+        : participation === 'paid-match'
+          ? 'This match stays active if you leave this page. Missing a turn forfeits your entry and your chance to win the pot. Return before the turn timer expires to keep playing.'
+          : participation === 'free-pending' || participation === 'trial-pending'
+            ? 'Your practice hand is still being opened. Leaving this page may lose your progress. No account credits are at stake.'
+            : 'Leaving this page loses your current practice progress. No account credits are at stake.',
+  })
+  return <InGameShell account={account} title="Hearts" bodyClassName="hearts-shell-body">
+    <HeartsGame key={account.userId} gateway={gateway} balance={account.balances.slotsCredits} onBalanceChange={publishBalance} onParticipationChange={setParticipation} renderCard={renderHeartsCard} />
   </InGameShell>
 }
 

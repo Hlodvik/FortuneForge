@@ -8,7 +8,6 @@ import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 
 export function AuthenticatedCasinoWarRoute() {
@@ -31,7 +30,7 @@ function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: Account
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
 
-  return <InGameShell account={account} title="Casino War" theme="casino" className="player-page" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/casino-war" />}>
+  return <InGameShell account={account} reportTitle="Casino War" className="player-page">
     <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderStandardCardFace} />
   </InGameShell>
 }

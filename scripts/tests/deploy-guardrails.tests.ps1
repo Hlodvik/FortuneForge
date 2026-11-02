@@ -18,7 +18,8 @@ function Assert-Throws {
 $head = (& git -C $repoRoot rev-parse HEAD).Trim()
 $parent = (& git -C $repoRoot rev-parse 'HEAD^').Trim()
 Assert-CommitOnMain -Repository $repoRoot -Sha $head
-Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $head -Paths @('scripts/verify-release.ps1')
+# Exact tooling success/mismatch is exercised with synthetic Git object
+# responses below, so tests also run while this reviewed tooling is uncommitted.
 Assert-Throws {
     Assert-ReleaseToolingMatchesCommit -Repository $repoRoot -Sha $head -Paths @('scripts/does-not-exist.ps1')
 } 'uncommitted release tooling'
@@ -46,6 +47,14 @@ Assert-LiveReleaseSource -Repository $repoRoot -CandidateSha $parent -Target 'Ho
     -LiveSha $head -AllowRollback -RollbackReason 'Intentional verified rollback'
 
 Assert-Equal (Get-ReleaseTextHash 'abc') 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad' 'SHA-256'
+Assert-Equal (Get-FirestoreRulesHash "rules_version = '2';`r`n") (Get-FirestoreRulesHash "rules_version = '2';`n") 'Firestore rules line endings'
+$beforeRules = [pscustomobject]@{ ReleaseName = ''; RulesetName = ''; ContentHash = '' }
+Assert-FirestoreRulesUnchanged -Before $beforeRules -Now ([pscustomobject]@{ ReleaseName = ''; RulesetName = ''; ContentHash = '' })
+Assert-Throws {
+    Assert-FirestoreRulesUnchanged -Before $beforeRules -Now ([pscustomobject]@{
+        ReleaseName = 'projects/example/releases/cloud.firestore'; RulesetName = 'projects/example/rulesets/new'; ContentHash = 'new'
+    })
+} 'concurrent Firestore rules publication'
 $oldSpa = '<html>old SPA fallback</html>'
 Assert-Equal (Get-HostingSourceSha -ResponseBody $oldSpa -IndexBody $oldSpa) '' 'unstamped Hosting fallback'
 Assert-Equal (Get-HostingSourceSha -ResponseBody '' -MarkerAbsent) '' 'missing Hosting marker'
@@ -96,24 +105,189 @@ $creatingIndex.state = 'READY'
 Assert-Equal @(Get-UnreadyFirestoreIndexes -Expected @($expectedIndex) -Actual @($creatingIndex)).Count 0 'READY index can serve'
 $creatingIndex.fields[1].order = 'ASCENDING'
 Assert-Equal @(Get-UnreadyFirestoreIndexes -Expected @($expectedIndex) -Actual @($creatingIndex)).Count 1 'wrong index order is not ready'
+$redundantCases = @(
+    @('securityAuditInvestigations', 'createdAtUtc', 'DESCENDING'),
+    @('securityAuditInvestigationInstances', 'caseId', 'ASCENDING'),
+    @('securityAuditPairAnalysisQueue', 'status', 'ASCENDING'),
+    @('balanceTransactions', 'roundId', 'ASCENDING'),
+    @('balanceTransactions', 'idempotencyKey', 'ASCENDING'),
+    @('hiLoEvents', 'roundId', 'ASCENDING'),
+    @('houseHoldemRoundEvents', 'roundId', 'ASCENDING')
+)
+$redundantIndexes = @($redundantCases | ForEach-Object {
+    [pscustomobject]@{
+        collectionGroup = $_[0]; queryScope = 'COLLECTION'; fields = @(
+            [pscustomobject]@{ fieldPath = $_[1]; order = $_[2] },
+            [pscustomobject]@{ fieldPath = '__name__'; order = $_[2] }
+        )
+    }
+})
+try {
+    Assert-NonRedundantFirestoreCompositeIndexes -Definitions $redundantIndexes
+    throw 'Redundant Firestore composite indexes were not rejected.'
+}
+catch {
+    foreach ($case in $redundantCases) {
+        if ($_.Exception.Message -cnotlike "*$($case[0]).$($case[1])*") {
+            throw "The redundant-index validation did not identify $($case[0]).$($case[1])."
+        }
+    }
+}
+Assert-Throws {
+    Assert-NonRedundantFirestoreCompositeIndexes -Definitions @([pscustomobject]@{
+        collectionGroup = 'oneField'; queryScope = 'COLLECTION'; fields = @(
+            [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' }
+        )
+    })
+} 'single ordered field cannot be a composite index'
+Assert-NonRedundantFirestoreCompositeIndexes -Definitions @(
+    [pscustomobject]@{ collectionGroup = 'oppositeNameOrder'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' },
+        [pscustomobject]@{ fieldPath = '__name__'; order = 'ASCENDING' }
+    ) },
+    [pscustomobject]@{ collectionGroup = 'twoRegularFields'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'status'; order = 'ASCENDING' },
+        [pscustomobject]@{ fieldPath = 'createdAtUtc'; order = 'DESCENDING' }
+    ) },
+    [pscustomobject]@{ collectionGroup = 'arrayField'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'players'; arrayConfig = 'CONTAINS' },
+        [pscustomobject]@{ fieldPath = '__name__'; order = 'ASCENDING' }
+    ) }
+)
+$committedFirestore = Get-Content -LiteralPath (Join-Path $repoRoot 'firestore.indexes.json') -Raw | ConvertFrom-Json
+Assert-NonRedundantFirestoreCompositeIndexes -Definitions @($committedFirestore.indexes)
+foreach ($case in $redundantCases) {
+    $disabledQueryField = @($committedFirestore.fieldOverrides | Where-Object {
+        $_.collectionGroup -ceq $case[0] -and $_.fieldPath -cin @('*', $case[1])
+    })
+    Assert-Equal $disabledQueryField.Count 0 "default single-field indexing retained for $($case[0]).$($case[1])"
+}
 $solitaireIndexName = 'projects/fortuneforgegame/databases/(default)/collectionGroups/solitaireMatchPlayers/indexes/CICAgOjXh4EK'
 $otherIndexName = 'projects/fortuneforgegame/databases/(default)/collectionGroups/arcadeCompetitions/indexes/other'
 Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $solitaireIndexName -Project 'fortuneforgegame' -Group 'solitaireMatchPlayers') $true 'correct Firestore group'
 Assert-Equal (Test-FirestoreIndexBelongsToGroup -Name $otherIndexName -Project 'fortuneforgegame' -Group 'solitaireMatchPlayers') $false 'other Firestore group excluded'
+$expectedField = [pscustomobject]@{ collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @() }
+Assert-SupportedFirestoreFieldOverrides -Definitions @($expectedField)
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @([pscustomobject]@{ order = 'ASCENDING' })
+    })
+} 'unsupported indexed field override'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'
+    })
+} 'missing field override indexes'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @([pscustomobject]@{
+        collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson'; indexes = @(); ttl = $true
+    })
+} 'unverified field override setting'
+Assert-Throws {
+    Assert-SupportedFirestoreFieldOverrides -Definitions @($expectedField, $expectedField)
+} 'duplicate field override'
+$actualField = [pscustomobject]@{ collectionGroup = 'gameRoundEvidence'; fieldPath = 'payloadJson';
+    usesAncestorConfig = $false; reverting = $false; indexes = @() }
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 0 'ready field exemption'
+$actualField.usesAncestorConfig = $true
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'inherited field indexes are not exempt'
+$actualField.usesAncestorConfig = $false
+$actualField.reverting = $true
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'reverting field exemption is not ready'
+$actualField.reverting = $false
+$actualField.indexes = @([pscustomobject]@{ state = 'READY' })
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @($actualField)).Count 1 'explicit field index is not exempt'
+Assert-Equal @(Get-UnreadyFirestoreFieldOverrides -Expected @($expectedField) -Actual @()).Count 1 'missing field exemption'
+
+$creatingIndex.fields[1].order = 'DESCENDING'
+$explicitNameIndex = [pscustomobject]@{
+    collectionGroup = 'solitaireMatchPlayers'; queryScope = 'COLLECTION'
+    fields = @($expectedIndex.fields + $creatingIndex.fields[-1])
+}
+$actualField.indexes = @()
+$actualField.usesAncestorConfig = $true
+$missingComposite = [pscustomobject]@{
+    collectionGroup = 'gameRoundAudits'; queryScope = 'COLLECTION'; fields = @(
+        [pscustomobject]@{ fieldPath = 'reviewPending'; order = 'ASCENDING' },
+        [pscustomobject]@{ fieldPath = 'completedAtUtc'; order = 'ASCENDING' }
+    )
+}
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex, $missingComposite) `
+    -ActualIndexes @($creatingIndex) -ExpectedFieldOverrides @($expectedField) -ActualFieldOverrides @($actualField)
+Assert-Equal $publicationPlan.Indexes.Count 1 'only missing composite index is published'
+Assert-Equal $publicationPlan.Indexes[0].collectionGroup 'gameRoundAudits' 'existing composite index is excluded'
+Assert-Equal $publicationPlan.FieldOverrides.Count 1 'only unready field exemption is published'
+$creatingIndex.state = 'CREATING'
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex) -ActualIndexes @($creatingIndex) `
+    -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+Assert-Equal $publicationPlan.Indexes.Count 0 'creating composite index is not recreated'
+$creatingIndex.state = 'NEEDS_REPAIR'
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex) -ActualIndexes @($creatingIndex) `
+    -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+Assert-Equal $publicationPlan.Indexes.Count 0 'failed index identity is not posted again'
+Assert-Equal @(Get-UnreadyFirestoreIndexes -Expected @($explicitNameIndex) -Actual @($creatingIndex)).Count 1 'failed index still blocks readiness'
+$unrelatedLiveIndex = [pscustomobject]@{ collectionGroup = 'liveOnly'; queryScope = 'COLLECTION'; fields = @(
+    [pscustomobject]@{ fieldPath = 'existing'; order = 'ASCENDING' },
+    [pscustomobject]@{ fieldPath = 'other'; order = 'ASCENDING' }
+); state = 'READY' }
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @($explicitNameIndex, $missingComposite) `
+    -ActualIndexes @($creatingIndex, $unrelatedLiveIndex) -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+Assert-Equal $publicationPlan.Indexes.Count 1 'unrelated existing indexes do not enter publication'
+Assert-Equal $publicationPlan.Indexes[0].collectionGroup 'gameRoundAudits' 'publication contains only the missing committed definition'
+$actualField.usesAncestorConfig = $false
+$publicationPlan = New-FirestoreIndexPublicationPlan -ExpectedIndexes @() -ActualIndexes @() `
+    -ExpectedFieldOverrides @($expectedField) -ActualFieldOverrides @($actualField)
+Assert-Equal $publicationPlan.FieldOverrides.Count 0 'ready field exemption is not patched again'
+Assert-Throws {
+    New-FirestoreIndexPublicationPlan -ExpectedIndexes @($expectedIndex, $explicitNameIndex) -ActualIndexes @() `
+        -ExpectedFieldOverrides @() -ActualFieldOverrides @()
+} 'duplicate committed composite index'
 
 # Keep the traffic preconditions adjacent to the actual traffic command. These
 # checks supplement the policy tests above; they do not call a live service.
 $deploySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/deploy.ps1') -Raw
+$verifySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/verify-release.ps1') -Raw
+foreach ($source in @($deploySource, $verifySource)) {
+    Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
+    Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'
+}
+Assert-Throws { Assert-ReleaseTestWaiver -Target all -SkipTestSuites -TestWaiverReason 'Owner request' } 'default combined release cannot waive tests'
+Assert-Throws { Assert-ReleaseTestWaiver -Target all -LivePlaytest -SkipTestSuites } 'playtest requires a recorded reason'
+Assert-ReleaseTestWaiver -Target all -LivePlaytest -SkipTestSuites -TestWaiverReason 'Explicit incremental playtest; broad assurance deferred.'
+Assert-Equal ($verifySource.IndexOf('Assert-NonRedundantFirestoreCompositeIndexes -Definitions') -lt $verifySource.IndexOf('function Invoke-Checked')) $true 'manifest validated before standalone verification commands'
+$expectedIndexRead = $deploySource.IndexOf('$expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)')
+$redundantIndexGuard = $deploySource.IndexOf('Assert-NonRedundantFirestoreCompositeIndexes -Definitions $expectedIndexes', $expectedIndexRead)
+$currentIndexRead = $deploySource.IndexOf('$currentIndexes = @(Get-CurrentFirestoreIndexes -Expected $expectedIndexes)', $expectedIndexRead)
+if ($expectedIndexRead -lt 0 -or $redundantIndexGuard -le $expectedIndexRead -or
+    $currentIndexRead -le $redundantIndexGuard) {
+    throw 'Redundant Firestore composite indexes must be rejected before reading or publishing production indexes.'
+}
 $firebaseAccountFlag = "'--account', " + '$firebaseAccount'
-Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 2 'explicit account for both Firebase publications'
+Assert-Equal ($deploySource.Split(@($firebaseAccountFlag), [System.StringSplitOptions]::None).Count - 1) 3 'explicit account for all Firebase publications'
+$indexPublication = $deploySource.IndexOf("'--only', 'firestore:indexes'")
+$indexConfig = $deploySource.IndexOf("'--config', " + '$indexContext.ConfigPath', $indexPublication)
+$indexNonInteractive = $deploySource.IndexOf("'--non-interactive'", $indexConfig)
+$rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")
+if ($indexPublication -lt 0 -or $indexConfig -le $indexPublication -or
+    $indexNonInteractive -le $indexConfig -or $indexNonInteractive -ge $rulesPublication -or
+    $deploySource.Substring($indexPublication, $rulesPublication - $indexPublication).Contains("'--force'")) {
+    throw 'Filtered Firestore index publication must use a temporary config, noninteractive mode and no force deletion.'
+}
 $trafficCommand = $deploySource.LastIndexOf("'run', 'services', 'update-traffic'")
 if ($trafficCommand -lt 0) { throw 'API traffic command is missing from the deploy script.' }
 $readinessCheck = $deploySource.LastIndexOf('Wait-FirestoreIndexesReady -Expected $expectedIndexes', $trafficCommand)
+$fieldReadinessCheck = $deploySource.LastIndexOf('Wait-FirestoreFieldOverridesReady -Expected $expectedFieldOverrides', $trafficCommand)
+$rulesPublication = $deploySource.IndexOf("'--only', 'firestore:rules'")
+$rulesRead = $deploySource.LastIndexOf('$rulesAtTrafficSwitch = Get-LiveFirestoreRules', $trafficCommand)
+$rulesGuard = $deploySource.LastIndexOf('Assert-FirestoreRulesUnchanged -Before $rulesAfterPublication -Now $rulesAtTrafficSwitch', $trafficCommand)
 $revisionRead = $deploySource.LastIndexOf('$apiAtTrafficSwitch = Get-LiveApi', $trafficCommand)
 $revisionGuard = $deploySource.LastIndexOf('Assert-ServingApiUnchanged -Before $apiBefore -Now $apiAtTrafficSwitch', $trafficCommand)
-if ($readinessCheck -lt 0 -or $revisionRead -le $readinessCheck -or
+if ($readinessCheck -lt 0 -or $fieldReadinessCheck -le $readinessCheck -or
+    $rulesPublication -lt 0 -or $rulesPublication -ge $fieldReadinessCheck -or
+    $rulesRead -le $fieldReadinessCheck -or $rulesGuard -le $rulesRead -or
+    $revisionRead -le $rulesGuard -or
     $revisionGuard -le $revisionRead -or $revisionGuard -gt $trafficCommand) {
-    throw 'API traffic command is missing its immediately preceding index and live-revision checks.'
+    throw 'API traffic command is missing its immediately preceding index, field, rules and live-revision checks.'
 }
 
 & (Join-Path $PSScriptRoot 'release-scope.tests.ps1')

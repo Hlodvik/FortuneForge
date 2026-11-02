@@ -5,11 +5,13 @@ import {
 } from '../../../features/admin/operations/operationsApi'
 import './adminOperations.css'
 import '../adminTheme.css'
+import { SiteNavbar } from '../../../components/SiteNavbar'
+import type { AccountSummary } from '../../../features/account/services/accountsApi'
 
 const money = new Intl.NumberFormat('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const dateTime = new Intl.DateTimeFormat('en-ZA', { dateStyle: 'medium', timeStyle: 'short' })
 
-export function AdminOperationsPage() {
+export function AdminOperationsPage({ account }: { account?: AccountSummary }) {
   const [dashboard, setDashboard] = useState<OperationsDashboard | null>(null)
   const [hours, setHours] = useState(24)
   const [error, setError] = useState<string | null>(null)
@@ -27,13 +29,15 @@ export function AdminOperationsPage() {
   useEffect(() => { void load() }, [load])
 
   return (
+    <div className="operations-shell">
+    <SiteNavbar mode="account" account={account} authenticated title="Operations" />
     <main className="operations-page">
       <header className="operations-header">
         <div><p>Read-only administration</p><h1>Operations</h1><span>Real-player financial activity and platform health.</span></div>
         <div className="operations-controls">
           <label>UTC window<select value={hours} onChange={(event) => setHours(Number(event.target.value))}><option value={24}>24 hours</option><option value={168}>7 days</option><option value={720}>30 days</option></select></label>
           <button type="button" onClick={() => void load()} disabled={loading}>Refresh</button>
-          <a href="/home">Home</a>
+          <a href="/admin">Admin portal</a>
         </div>
       </header>
 
@@ -41,6 +45,7 @@ export function AdminOperationsPage() {
       {error && <section className="operations-state operations-state--error" role="alert"><strong>Operations unavailable.</strong><span>{error}</span><button type="button" onClick={() => void load()}>Try again</button></section>}
       {dashboard && <AdminOperationsDashboardView dashboard={dashboard} />}
     </main>
+    </div>
   )
 }
 

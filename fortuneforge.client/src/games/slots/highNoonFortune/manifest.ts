@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { HIGH_NOON_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -42,7 +43,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const HIGH_NOON_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
+export const HIGH_NOON_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'high-noon-fortune-experience-v1',
   cabinet: HIGH_NOON_FORTUNE_CABINET_THEME,
   features: FEATURES,
@@ -63,7 +64,7 @@ export const HIGH_NOON_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: HIGH_NOON_FORTUNE_SOUNDS,
   rules: createSlotRulesSet('high-noon-fortune-v1'),
-}
+})
 
 export const HIGH_NOON_FORTUNE_SLOT_GAME = defineSlotGame({
   id: 'high-noon-fortune',

@@ -1,3 +1,4 @@
+import { InGameShell } from '../../../components/InGameShell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { createLocalSolitaireGame } from '../../../games/cards/solitaire/solitaireEngine'
@@ -9,7 +10,7 @@ const noop = () => undefined
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <div className="solitaire-page solitaire-thumbnail-preview">
+    <InGameShell title="Solitaire"><div className="solitaire-page solitaire-thumbnail-preview">
       <SolitaireContent
         availability={{ kind: 'ready', session: { kind: 'idle' } }}
         balanceCredits={100}
@@ -51,6 +52,6 @@ createRoot(document.getElementById('root')!).render(
         onExitFree={noop}
         onRefresh={noop}
       />
-    </div>
+    </div></InGameShell>
   </StrictMode>,
 )

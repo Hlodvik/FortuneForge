@@ -51,6 +51,10 @@ internal sealed class SicBoFirestoreStore(FirestoreDb database) : ISicBoStore
             var finalBalance = checked(afterWager + returned);
 
             transaction.Create(roundRef, RoundData(stored, idempotencyKey, totalStake, returned, nowUtc));
+            FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                "sic-bo", roundId, userId, totalStake, returned, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
+                "sicBoRounds", roundId, stored, "sic-bo-bets-and-dice-v1",
+                SicBoOutcomeAudit.Verify(stored, totalStake, returned), SicBoOutcomeAudit.Version);
             transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerRef, Ledger(wagerRef.Id, userId, -totalStake, afterWager, "sic-bo-wager", idempotencyKey, nowUtc));
             if (returned > 0) transaction.Create(payoutRef, Ledger(payoutRef.Id, userId, returned, finalBalance, "sic-bo-payout", $"{idempotencyKey}-payout", nowUtc));

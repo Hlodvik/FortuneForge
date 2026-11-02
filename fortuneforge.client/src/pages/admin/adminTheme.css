@@ -17,16 +17,6 @@
 .admin-portal textarea { border-color: #514a49; background: #101115; color: #f4f0e8; }
 .admin-portal code { color: #d9c8ae; }
 .admin-portal .admin-eyebrow { color: #d4b57a !important; }
-.admin-portal .admin-sidebar { background: #111216; }
-.admin-portal .admin-brand { color: #e8c58b !important; }
-.admin-portal .admin-brand > span { background: #332b22; color: #e8c58b; }
-.admin-portal .admin-brand small,
-.admin-portal .admin-sidebar__footer small { color: #a69d98; }
-.admin-portal .admin-sidebar nav button { color: #cbc4ba; }
-.admin-portal .admin-sidebar nav button > span { color: #b9a68b; }
-.admin-portal .admin-sidebar nav button[aria-current] { border-color: #8f7650; background: #2d271f; color: #f4e7cf; }
-.admin-portal .admin-sidebar nav button[aria-current] > span { color: #e8c58b; }
-.admin-portal .admin-sidebar__footer a { color: #cdb895; }
 .admin-portal .admin-badge { border-color: #796648; color: #e8c58b; }
 .admin-portal th { background: #222126; color: #d8c5a9; }
 .admin-portal .admin-status { border-color: #625748; background: #27242a; color: #e8d9c1; }

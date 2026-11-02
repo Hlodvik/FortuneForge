@@ -1,4 +1,7 @@
 import type { RefObject } from 'react'
+import { createPortal } from 'react-dom'
+import { SlotDialogCloseIcon } from './components/SlotDialogCloseIcon'
+import { useSlotDialog, type SlotDialogTheme } from './hooks/useSlotDialog'
 import { FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from './config/paylinePatterns'
 import type { SlotHelpDefinition } from './config/slotFeatures'
 import { getSlotSymbolDefinition, type SlotSymbolSet } from './config/symbolSets'
@@ -9,6 +12,7 @@ type WinHelpDialogProps = {
   help: SlotHelpDefinition
   symbolSet: SlotSymbolSet
   onClose: () => void
+  theme?: SlotDialogTheme
 }
 
 export function WinHelpDialog({
@@ -17,7 +21,9 @@ export function WinHelpDialog({
   help,
   symbolSet,
   onClose,
+  theme,
 }: WinHelpDialogProps) {
+  const dialogRef = useSlotDialog(isOpen, onClose, closeButtonRef)
   if (!isOpen) return null
   const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
   const paylinePatternIds = help.paylinePatternIds ??
@@ -30,8 +36,9 @@ export function WinHelpDialog({
     return { patternId, rows }
   })
 
-  return (
+  const content = (
     <div
+      data-slot-dialog-theme={theme}
       className="win-help__backdrop"
       role="presentation"
       onMouseDown={(event) => {
@@ -41,6 +48,9 @@ export function WinHelpDialog({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
+        data-slot-dialog-theme={theme}
         className="win-help"
         role="dialog"
         aria-modal="true"
@@ -53,7 +63,7 @@ export function WinHelpDialog({
           aria-label="Close win guide"
           onClick={() => onClose()}
         >
-          ×
+          <SlotDialogCloseIcon />
         </button>
 
         <p className="win-help__eyebrow">Fortune guide</p>
@@ -123,8 +133,9 @@ export function WinHelpDialog({
               <h3>Five symbols</h3>
               <p>
                 A matching symbol across all five reels wins on any of the game’s {help.paylineCount} full
-                payline patterns. {wildDefinition.label} symbols may substitute here, and the more central
-                patterns pay more. Four-symbol runs do not pay.
+                payline patterns. {wildDefinition.label} symbols may substitute here.
+                {' '}{help.fiveMatchPayoutNote ?? 'The more central patterns pay more.'}
+                {' '}{help.fourMatchPayoutNote ?? 'Four-symbol runs do not pay.'}
               </p>
               <div
                 className="win-help__five-pictograms"
@@ -178,7 +189,7 @@ export function WinHelpDialog({
 
           {help.freeGames && (
           <article className="win-help__rule">
-            <span className="win-help__rule-number">FREE</span>
+            <span className="win-help__rule-number">{help.freeGames.badge ?? 'FREE'}</span>
             <div>
               <h3>{help.freeGames.title ?? 'Free games'}</h3>
               <p>
@@ -208,4 +219,5 @@ export function WinHelpDialog({
       </section>
     </div>
   )
+  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
 }

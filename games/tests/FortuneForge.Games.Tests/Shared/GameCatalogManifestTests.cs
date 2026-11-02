@@ -5,6 +5,7 @@ using FortuneForge.Games.CasinoWar;
 using FortuneForge.Games.Craps;
 using FortuneForge.Games.Hearts;
 using FortuneForge.Games.LiarsDice;
+using FortuneForge.Games.Mines;
 using FortuneForge.Games.Keno;
 using FortuneForge.Games.Roulette;
 using FortuneForge.Games.SicBo;
@@ -21,6 +22,7 @@ public sealed class GameCatalogManifestTests
         CrapsModule.Descriptor,
         HeartsModule.Descriptor,
         LiarsDiceModule.Descriptor,
+        MinesModule.Descriptor,
         KenoModule.Descriptor,
         RouletteModule.Descriptor,
         SicBoModule.Descriptor,

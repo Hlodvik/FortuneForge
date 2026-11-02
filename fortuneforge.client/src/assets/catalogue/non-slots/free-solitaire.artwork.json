@@ -1,0 +1,19 @@
+{
+  "id": "free-solitaire",
+  "title": "Solitaire",
+  "file": "free-solitaire-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 23796,
+  "generationPrompt": "Edit this Fortune Forge catalogue art to create a free Solitaire variant. Preserve the emerald felt, cards, deck, gold serif style, and exact landscape composition. Replace only the left title: remove 'Competitive' and make it read exactly 'Solitaire'. No other words or watermark.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a18045-59e1-7ba0-9216-c3bc2b253454/exec-fb182865-0ffa-4e14-a575-263fedd4eba5.png",
+  "referencePaths": [
+    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/catalogue/non-slots/solitaire-title-v2.webp"
+  ],
+  "visualCheck": [
+    "Inspected generated master and final 768x384 WebP. The sole title reads Solitaire.",
+    "Emerald felt and existing card/deck composition are retained; image is 23,796 bytes."
+  ],
+  "status": "ready-for-parent-review"
+}

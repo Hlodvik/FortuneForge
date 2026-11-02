@@ -675,73 +675,6 @@
     padding: 0.75rem 0.35rem;
   }
 
-  .slots-page__topbar {
-    min-height: 0;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.55rem;
-    padding: 0.65rem 0.6rem;
-  }
-
-  .slots-page__brand-name {
-    font-size: 1rem;
-    letter-spacing: 0.03em;
-  }
-
-  .slots-page__brand {
-    width: auto;
-    gap: 0.5rem;
-  }
-
-  .slots-page__brand-actions {
-    gap: 0.3rem;
-  }
-
-  .slots-page__purchase-credits {
-    padding-inline: 0.34rem 0.52rem;
-    font-size: 0.65rem;
-  }
-
-  .slots-page__help-button {
-    width: 2.15rem;
-    height: 2.15rem;
-    font-size: 1rem;
-  }
-
-  .slots-page__settings-button {
-    width: 2.15rem;
-    height: 2.15rem;
-    font-size: 1rem;
-  }
-
-  .slots-page__machine-hud {
-    width: 100%;
-    justify-content: center;
-    gap: 0.18rem;
-  }
-
-  .slots-page__machine-hud-primary {
-    grid-template-columns:
-      minmax(5.8rem, 1.35fr)
-      minmax(3.35rem, 0.8fr)
-      minmax(2.8rem, 0.7fr)
-      minmax(6.5rem, 1.25fr);
-    gap: 0.18rem;
-  }
-
-  .slots-page__machine-hud-bonuses {
-    gap: 0.18rem;
-  }
-
-  .slots-page__machine-hud .slots-page__balance {
-    min-width: 3.35rem;
-    padding: 0.25rem 0.32rem;
-  }
-
-  .slots-page__machine-hud .slots-page__balance--win {
-    min-width: 2.8rem;
-  }
-
   .slots-page__energy-meter {
     grid-template-columns: 1.45rem minmax(3.9rem, 5rem);
     min-width: 5.8rem;
@@ -765,62 +698,12 @@
     height: 0.32rem;
   }
 
-  .slots-page__balance-label,
-  .slots-page__wager-label {
+  .slots-page__balance-label {
     font-size: 0.47rem;
   }
 
-  .slots-page__balance-value,
-  .slots-page__wager-value {
+  .slots-page__balance-value {
     font-size: 0.86rem;
-  }
-
-  .slots-page__wager {
-    grid-template-columns: 1.65rem minmax(2.5rem, auto) 1.65rem;
-    padding: 0.12rem;
-  }
-
-  .slots-page__wager-button {
-    width: 1.65rem;
-    height: 1.65rem;
-    font-size: 0.92rem;
-  }
-
-  .slots-page__free-option {
-    min-width: 3.9rem;
-    padding: 0.24rem 0.32rem;
-    font-size: 0.4rem;
-  }
-
-  .slots-page__power-meter {
-    grid-template-columns: 1.55rem auto;
-    min-width: 5.6rem;
-    column-gap: 0.2rem;
-    padding: 0.22rem 0.35rem 0.22rem 0.25rem;
-  }
-
-  .slots-page__power-meter img {
-    width: 1.55rem;
-    height: 1.55rem;
-  }
-
-  .slots-page__power-meter span,
-  .slots-page__power-meter small {
-    font-size: 0.34rem;
-  }
-
-  .slots-page__power-meter strong {
-    font-size: 0.72rem;
-  }
-
-  .slots-page__wager-button {
-    width: 2rem;
-    height: 2rem;
-    font-size: 1rem;
-  }
-
-  .slots-page__wager-readout {
-    padding-inline: 0.18rem;
   }
 
   .mascot-companion {
@@ -900,28 +783,6 @@
 }
 
 @media (max-width: 360px) {
-  .slots-page__topbar {
-    padding-inline: 0.45rem;
-  }
-
-  .slots-page__purchase-credits {
-    width: 2.15rem;
-    justify-content: center;
-    padding: 0;
-  }
-
-  .slots-page__purchase-credits > span {
-    display: none;
-  }
-
-  .slots-page__machine-hud {
-    gap: 0.2rem;
-  }
-
-  .slots-page__machine-hud-primary {
-    grid-template-columns: 1.35fr 0.8fr 0.7fr 1.25fr;
-    gap: 0.12rem;
-  }
 
   .slots-page__energy-meter {
     min-width: 0;
@@ -929,31 +790,12 @@
     padding-inline: 0.16rem;
   }
 
-  .slots-page__machine-hud .slots-page__balance {
-    min-width: 0;
-    padding-inline: 0.35rem;
-  }
-
-  .slots-page__balance-value,
-  .slots-page__wager-value {
+  .slots-page__balance-value {
     font-size: 0.78rem;
-  }
-
-  .slots-page__wager {
-    grid-template-columns: 1.6rem minmax(0, 1fr) 1.6rem;
-  }
-
-  .slots-page__wager-button {
-    width: 1.6rem;
-    height: 1.8rem;
   }
 }
 
 @media (max-height: 560px) and (orientation: landscape) {
-  .slots-page__topbar {
-    min-height: 3.35rem;
-    padding-block: 0.35rem;
-  }
 
   .slots-page__main {
     padding-block: 0.45rem;

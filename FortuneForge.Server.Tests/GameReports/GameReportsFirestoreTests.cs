@@ -19,6 +19,22 @@ public sealed class GameReportsFirestoreTests(BlackjackTableFirestoreEmulatorFix
         await Assert.ThrowsAsync<GameReportConflictException>(() => store.CreateAsync(draft with { Fingerprint = "changed-message" }, default));
     }
     [Fact]
+    public async Task Mines_submission_appears_in_the_same_durable_admin_report_feed()
+    {
+        var db = Database();
+        var service = new GameReportsService(new FirestoreGameReportsStore(db),
+            Microsoft.Extensions.Options.Options.Create(new FortuneForge.Server.Admin.Operations.AdminOperationsOptions
+                { CursorSigningKey = new string('k', 40) }));
+        var receipt = await service.CreateAsync("reporting-player", "mines-report-request-12345678",
+            new("bug", "The cash-out button stopped responding.", "/games/mines"), Now, default);
+        var persisted = Assert.Single(await new FirestoreGameReportsStore(db).ListAsync(25, null, null, default));
+        Assert.Equal(receipt.Id, persisted.Id);
+        Assert.Equal("mines", persisted.GameId);
+        Assert.Equal("Mines", persisted.GameName);
+        Assert.Equal("/games/mines", persisted.Path);
+        Assert.Equal("reporting-player", persisted.UserId);
+    }
+    [Fact]
     public async Task Status_and_private_note_update_atomically_with_revision_guard_and_audit_history()
     {
         var db = Database(); var store = new FirestoreGameReportsStore(db); var report = await store.CreateAsync(Draft(new string('a', 64)), default);

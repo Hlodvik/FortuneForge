@@ -1,3 +1,4 @@
+import { InGameShell } from '../../../components/InGameShell'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BlackjackTablePreview } from './BlackjackTablePage'
@@ -6,4 +7,4 @@ import '../../../index.css'
 const root = document.getElementById('root')
 if (root === null) throw new Error('Blackjack preview root is missing.')
 const mode = new URLSearchParams(window.location.search).get('mode') === 'betting' ? 'betting' : 'active'
-createRoot(root).render(<StrictMode><BlackjackTablePreview mode={mode} /></StrictMode>)
+createRoot(root).render(<StrictMode><InGameShell title="Fortune Blackjack"><BlackjackTablePreview mode={mode} /></InGameShell></StrictMode>)

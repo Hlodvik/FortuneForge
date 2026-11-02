@@ -70,7 +70,7 @@ const previewGateway: BaccaratGateway = {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <InGameShell theme="casino" title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">
+    <InGameShell title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">
       <BaccaratGame gateway={new URLSearchParams(window.location.search).has('mock') ? previewGateway : undefined} renderCardFace={renderCardFace} showTitle={false} />
     </InGameShell>
   </StrictMode>,

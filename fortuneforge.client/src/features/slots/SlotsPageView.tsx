@@ -1,11 +1,15 @@
+import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
 import type { CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { ForgeCoin } from '../../components/ForgeCreditAmount'
+import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
+import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
+import rainbowOrchardGate from '../../assets/slots/games/rainbow-realm/responsive/rainbow-orchard-gate-320.webp'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
-import { InGameNavExits } from '../../components/InGameNavbar'
+import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
 import { AudioSettingsDialog } from './components/AudioSettingsDialog'
+import { PiratesSpinControls } from './components/PiratesSpinControls'
 import { CollectionProgressDisplay } from './components/CollectionProgressDisplay'
 import { SlotMachine } from './components/SlotMachine'
 import { SlotPlayGuide } from './components/SlotPlayGuide'
@@ -14,13 +18,17 @@ import { SpinButton } from './components/SpinButton'
 import { SymbolValueGuide } from './components/SymbolValueGuide'
 import { TreasureGemFlyover } from './components/TreasureGemFlyover'
 import { getSpecialRoundLabel } from './config/slotFeatures'
-import { getSlotSymbolDefinition } from './config/symbolSets'
+import { getSlotSymbolDefinition, getSlotSymbolImageSrcSet } from './config/symbolSets'
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { getSlotOutcomePresentation } from './presentation/spinPresentation'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
 import { creditFormatter, formatRand, getSlotSymbolValueLabel } from './slotPagePresentation'
 import type { SlotsPageController } from './useSlotsPageController'
 import { WinHelpDialog } from './WinHelpDialog'
+import { midnightVaultGuideForModel } from '../../games/slots/dragonHoard/math'
+
+const vaultMoneyFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const formatVaultMoney = (value: number) => `R${vaultMoneyFormatter.format(value)}`
 
 export function SlotsPageView(controller: SlotsPageController) {
   const {
@@ -77,6 +85,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,
+    rainbowBonusSummary,
+    dismissRainbowBonusSummary,
     resultAtmosphereId,
     reloadPromptCloseButtonRef,
     selectedWager,
@@ -118,9 +128,32 @@ export function SlotsPageView(controller: SlotsPageController) {
   const completedFeatureDetail = specialRound && collectionAwardPresentation?.featureMode
     ? getSpecialRoundLabel(specialRound, collectionAwardPresentation.featureMode)
     : null
-  const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
+  const isReelRiches = cabinetTheme.id === 'reel-riches-cabinet-v1'
+  const isMidnightVault = cabinetTheme.id === 'dragon-hoard-cabinet-v1'
+  const activeWagerLabel = isMidnightVault
+    ? `R${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(activeWagerDisplay)}`
+    : formatRand(activeWagerDisplay)
+  const midnightVaultBonusVisible = isMidnightVault && (freeSpinsRemaining > 0 || isSpecialGameActive)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
+  const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
+  const reelRichesIntroVisible = isReelRiches && freeSpinsRemaining > 0 &&
+    !isSpecialGameActive && !isSpinning
+  const reelRichesBonusVisible = isReelRiches && (reelRichesIntroVisible || isSpecialGameActive)
+  const rainbowBonusVisible = isRainbowRealm &&
+    (freeSpinsRemaining > 0 || isSpecialGameActive || rainbowBonusSummary !== null)
+  const rainbowIntroVisible = rainbowBonusVisible && !isSpecialGameActive &&
+    !isSpinning && collectionAwardPresentation === null && rainbowBonusSummary === null
+  const rainbowFeatureLabel = isRainbowRealm && specialRound
+    ? getSpecialRoundLabel(specialRound, controller.freeSpinFeatureMode)
+    : null
+  const reelRichesFeatureLabel = isReelRiches && specialRound
+    ? getSpecialRoundLabel(specialRound, controller.freeSpinFeatureMode)
+    : null
+  const [reelRichesFeatureName, reelRichesFeatureDetail] =
+    reelRichesFeatureLabel?.split(' · ', 2) ?? ['Trophy Catch', undefined]
+  const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null ||
+    reelRichesIntroVisible || midnightVaultBonusVisible || rainbowIntroVisible || rainbowBonusSummary !== null
   const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
   const completedGemImage = isPiratesFortune && completedCollection
     ? getSlotSymbolDefinition(symbolSet, completedCollection.symbol).image
@@ -136,7 +169,13 @@ export function SlotsPageView(controller: SlotsPageController) {
   const pageStyle = {
     ...pageBackdropStyle,
     ...topbarStyle,
-  }
+    ...(reelRichesBonusVisible
+      ? { '--slot-page-backdrop': `url("${reelRichesBonusLake}")` }
+      : {}),
+  } as CSSProperties
+  const activeCabinetTheme = reelRichesBonusVisible
+    ? { ...cabinetTheme, visualsBackdropImage: reelRichesBonusLake }
+    : cabinetTheme
   const bestWinMatch = bestWin?.matches.reduce((best, candidate) => (
     candidate.amountPoints > best.amountPoints ? candidate : best
   ))
@@ -160,90 +199,100 @@ export function SlotsPageView(controller: SlotsPageController) {
     spinStage,
     freeSpinsRemaining,
     useFreeGameForNextSpin,
+    bonusName: isMidnightVault ? specialRound?.title : undefined,
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
-  const showOutcomeBanner = slotOutcome.tone !== 'neutral'
+  const showOutcomeBanner = slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
+    !rainbowIntroVisible && rainbowBonusSummary === null &&
+    !((isReelRiches || isRainbowRealm) && isSpecialGameActive && slotOutcome.label === 'Free game ready') &&
+    (!isMidnightVault || slotOutcome.tone === 'loss')
+  const utilityButtons = <div className={`slots-page__utility-buttons${isPiratesFortune ? ' slots-page__utility-buttons--pirates' : ''}`} role="group" aria-label="Game options">
+    <button
+      className="slots-page__help-button"
+      type="button"
+      aria-label="How to win"
+      aria-haspopup="dialog"
+      aria-expanded={isHelpOpen}
+      onClick={() => {
+        setIsAutoSpinning(false)
+        setIsHelpOpen(true)
+      }}
+    >
+      <span aria-hidden="true">?</span>
+      <span className="slots-page__help-button-label">How to win</span>
+    </button>
+    <button
+      className="slots-page__settings-button"
+      type="button"
+      aria-label="Open settings"
+      aria-haspopup="dialog"
+      aria-expanded={isSettingsOpen}
+      onClick={() => {
+        setIsAutoSpinning(false)
+        setIsSettingsOpen(true)
+      }}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="m9 4 .8-2h4.4L15 4l2 .9 2.1-.2 2.2 3.8-1.3 1.8v2.3l1.3 1.8-2.2 3.8-2.1-.2-2 .9-.8 2H9.8l-.8-2-2-.9-2.1.2L2.7 14.4 4 12.6v-2.3L2.7 8.5l2.2-3.8 2.1.2Z" />
+        <circle cx="12" cy="11.5" r="3" />
+      </svg>
+    </button>
+  </div>
+  const guideSymbols = isMidnightVault ? midnightVaultGuideForModel(symbolSet, controller.midnightBonusRound?.mathModelId) : symbolSet
+  const symbolValueGuide = <SymbolValueGuide
+    symbolSet={guideSymbols}
+    showSidePanel={isPiratesFortune}
+    sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
+    showValueTokens={Boolean(moneyGrabFeature)}
+    theme={isMidnightVault ? 'midnight-vault' : undefined}
+    isOpen={controller.isSymbolGuideOpen}
+    onOpenChange={controller.setIsSymbolGuideOpen}
+  />
 
   return (
+    <InGameShell
+      account={controller.account ?? undefined}
+      reportTitle={cabinetTheme.title}
+      balance={balance}
+      authenticated={balanceActionHref !== null}
+      onNavigate={() => setIsAutoSpinning(false)}
+      bodyClassName="in-game-shell__body--slots"
+    >
     <div
-      className={slotsPageClassName}
+      className={rainbowBonusVisible && !isSpecialGameActive
+        ? `${slotsPageClassName} slots-page--special-game`
+        : slotsPageClassName}
       style={pageStyle}
       data-slot-theme={cabinetTheme.id}
       data-slot-celebration={cabinetTheme.celebrationEffect}
       data-special-round={specialRound?.id}
       data-special-earn-style={specialRound?.earnStyle}
+      data-reel-riches-intro={reelRichesIntroVisible ? 'true' : undefined}
+      data-reel-riches-bonus={reelRichesBonusVisible ? 'true' : undefined}
+      data-reel-riches-win={isReelRiches && isSpecialGameActive ? lastSpinOutcome?.kind : undefined}
+      data-rainbow-intro={rainbowIntroVisible ? 'true' : undefined}
+      data-rainbow-bonus={rainbowBonusVisible ? 'true' : undefined}
+      data-midnight-vault-bonus={midnightVaultBonusVisible ? 'true' : undefined}
+      data-midnight-vault-mode={midnightVaultBonusVisible ? controller.freeSpinFeatureMode ?? 'standard' : undefined}
     >
-      <header className="slots-page__topbar" data-game-navbar>
-        <div className="slots-page__brand-cluster">
-          <InGameNavExits
-            authenticated={balanceActionHref !== null}
-            className="slots-page__navigation"
-            onNavigate={() => setIsAutoSpinning(false)}
-          />
-          <div className="slots-page__game-identity">
-            <span>{cabinetTheme.eyebrow}</span>
-            <h1>{cabinetTheme.title}</h1>
-            <small>{cabinetTheme.subtitle}</small>
-          </div>
-        </div>
-        <span className="slots-page__brand-actions">
-            {balanceActionHref === null ? (
-              <span
-                className="slots-page__purchase-credits slots-page__purchase-credits--static"
-                aria-label={`Balance: ${formatRand(balance)}`}
-              >
-                <ForgeCoin className="slots-page__purchase-credits-coin" />
-                <span>{formatRand(balance)}</span>
-              </span>
-            ) : (
-              <>
-                <a
-                  className="slots-page__purchase-credits"
-                  href={balanceActionHref}
-                  aria-label={`Balance: ${formatRand(balance)}. Open recharge.`}
-                  onClick={() => setIsAutoSpinning(false)}
-                >
-                  <ForgeCoin className="slots-page__purchase-credits-coin" />
-                  <span>{formatRand(balance)}</span>
-                </a>
-                <PaymentAlertsMenu />
-              </>
-            )}
-            <button
-              className="slots-page__help-button"
-              type="button"
-              aria-label="How to win"
-              aria-haspopup="dialog"
-              aria-expanded={isHelpOpen}
-              onClick={() => {
-                setIsAutoSpinning(false)
-                setIsHelpOpen(true)
-              }}
-            >
-              <span aria-hidden="true">?</span>
-              <span className="slots-page__help-button-label">How to win</span>
-            </button>
-            <button
-              className="slots-page__settings-button"
-              type="button"
-              aria-label="Open settings"
-              aria-haspopup="dialog"
-              aria-expanded={isSettingsOpen}
-              onClick={() => {
-                setIsAutoSpinning(false)
-                setIsSettingsOpen(true)
-              }}
-            >
-              <span aria-hidden="true">&#9881;</span>
-            </button>
-        </span>
-
-      </header>
-
       <main className="slots-page__main">
+        <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
         <div className="slots-page__layout">
           <div className="slots-page__stage">
+          {isMidnightVault && (
+            <div className="midnight-vault__masthead" aria-hidden="true">
+              <h2 className="midnight-vault__wordmark">
+                <ResponsiveSlotImage
+                  src="/assets/slots/midnight-vault/v2/midnight-vault-wordmark-384.webp"
+                  imageSrcSet="/assets/slots/midnight-vault/v2/midnight-vault-wordmark-384.webp 384w, /assets/slots/midnight-vault/v2/midnight-vault-wordmark-768.webp 768w, /assets/slots/midnight-vault/v2/midnight-vault-wordmark-1024.webp 1024w"
+                  width={1024}
+                  height={341}
+                  alt=""
+                />
+              </h2>
+            </div>
+          )}
           {(collectionFeature || energyFeature || isSpecialGameActive) && (
           <div className="slots-page__meter-stack">
             {collectionFeature && (
@@ -256,6 +305,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     collection={collection}
                     definition={seal}
                     image={getSlotSymbolDefinition(symbolSet, seal.symbol).image}
+                    imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, seal.symbol).responsiveImages)}
                     isImpacting={sealImpactId === collection.sealId}
                     itemLabel={collectionFeature.itemLabel ?? 'seals'}
                     key={collection.sealId}
@@ -272,7 +322,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                       !isPiratesFortune && isSpecialGameActive &&
                       heldCompletedCollectionId === collection.sealId &&
                       specialRoundGemCount > 0
-                        ? `${specialRoundGemCount} gems banked`
+                        ? `${specialRoundGemCount} ${isReelRiches ? 'catches' : isRainbowRealm ? 'charms' : 'gems'} banked`
                         : undefined
                     }
                   />
@@ -292,7 +342,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               aria-valuemax={energyMeterCapacity}
               aria-valuenow={Math.min(energyMeterCapacity, energyBalance)}
             >
-              <img src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image} alt="" aria-hidden="true" />
+              <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, energyFeature.symbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image} alt="" aria-hidden="true" />
               <span className="slots-page__energy-copy">
                 <span className="slots-page__energy-label">{energyFeature.label}</span>
                 <span className="slots-page__energy-track" aria-hidden="true">
@@ -317,12 +367,41 @@ export function SlotsPageView(controller: SlotsPageController) {
             </div>
             )}
 
-            {isSpecialGameActive && specialRound && (
+            {isSpecialGameActive && specialRound && isReelRiches && (
+              <aside className="reel-riches__bonus-hud" aria-live="polite">
+                <span className="reel-riches__bonus-hud-title">Bonus round</span>
+                <strong>{reelRichesFeatureName}</strong>
+                {reelRichesFeatureDetail && <small className="reel-riches__bonus-hud-detail">{reelRichesFeatureDetail}</small>}
+                <div className="reel-riches__bonus-hud-stats">
+                  <span>Free casts left <b>{freeSpinsRemaining}</b></span>
+                  <span>Feature win <b>{formatRand(specialRoundWinnings)}</b></span>
+                </div>
+              </aside>
+            )}
+            {midnightVaultBonusVisible && specialRound && (
+              <aside className="midnight-vault__bonus-hud" aria-live="polite">
+                <span>{controller.freeSpinFeatureMode === 'rows-paw' ? 'Enhanced Vault Breach' : 'Vault Breach'}</span>
+                <strong>{freeSpinsRemaining} of {controller.midnightBonusRound?.totalSpins ?? 10} spins remaining</strong>
+                <small>{controller.freeSpinFeatureMode === 'rows-paw'
+                  ? 'Six rows · extra Vault wilds'
+                  : 'Four rows'} · {formatVaultMoney(controller.activeWagerDisplay)} locked</small>
+                {controller.midnightQueuedRounds > 0 && <small>{controller.midnightQueuedRounds} bonus {controller.midnightQueuedRounds === 1 ? 'round' : 'rounds'} queued</small>}
+                {controller.midnightBonusRound?.mathModelId === 'midnight-vault-paytable-v1' && <small>Previously earned round · original payout rules</small>}
+                <b>Bonus win {formatVaultMoney(specialRoundWinnings)}</b>
+              </aside>
+            )}
+            {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && (
               <aside className="slots-page__special-game-tally" aria-live="polite">
-                <span>{specialRoundLabel ?? specialRound.title} winnings</span>
+                <span>{isRainbowRealm
+                  ? `${specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
+                  : `${specialRoundLabel ?? specialRound.title} winnings`}</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
                 <small>
-                  {isSpecialSpinDelayActive
+                  {isRainbowRealm && rainbowFeatureLabel && rainbowFeatureLabel !== specialRound.title
+                    ? rainbowFeatureLabel
+                    : isRainbowRealm
+                    ? 'Bonus winnings'
+                    : isSpecialSpinDelayActive
                     ? 'Next spin starts shortly — press Spin to continue now.'
                     : isSpinning
                       ? 'Special spin underway.'
@@ -333,9 +412,9 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
           )}
 
-          <div className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
+          <div className={`slots-page__cabinet-spotlight${collectionAwardPresentation || isSpecialGameActive || midnightVaultBonusVisible ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
             <SlotMachine
-              cabinetTheme={cabinetTheme}
+              cabinetTheme={activeCabinetTheme}
               reelCount={displayedReels.length}
               renderReel={(reelIndex) => (
               <div
@@ -373,37 +452,81 @@ export function SlotsPageView(controller: SlotsPageController) {
             />
           </div>
 
-          <div className="slots-page__playbar" aria-label="Balance, wager, and spin controls">
-            <SymbolValueGuide
-              symbolSet={symbolSet}
-              showSidePanel={isPiratesFortune}
-              sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
-              showValueTokens={Boolean(moneyGrabFeature)}
-            />
+          <div className="slots-page__playbar" aria-label={isPiratesFortune ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
+            {isMidnightVault && (
+              <div className="midnight-vault__utility-controls">
+                <button type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={isHelpOpen}
+                  onClick={() => { setIsAutoSpinning(false); setIsHelpOpen(true) }}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.7-2.5 1.8-2.5 3.8M12 16.5v.1" /></svg>
+                </button>
+                <button type="button" aria-label="Open settings" aria-haspopup="dialog" aria-expanded={isSettingsOpen}
+                  onClick={() => { setIsAutoSpinning(false); setIsSettingsOpen(true) }}>
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4 .8-2h4.4L15 4l2 .9 2.1-.2 2.2 3.8-1.3 1.8v2.3l1.3 1.8-2.2 3.8-2.1-.2-2 .9-.8 2H9.8l-.8-2-2-.9-2.1.2L2.7 14.4 4 12.6v-2.3L2.7 8.5l2.2-3.8 2.1.2Z" /><circle cx="12" cy="11.5" r="3" /></svg>
+                </button>
+                {balanceActionHref !== null && <PaymentAlertsMenu />}
+              </div>
+            )}
+            {!isPiratesFortune && symbolValueGuide}
 
-            <div
-              ref={creditTileRef}
-              className="slots-page__balance slots-page__control-tile"
-              aria-label={`Balance: ${formatRand(balance)}`}
-            >
-              <span className="slots-page__balance-label">Balance</span>
-              <span className="slots-page__balance-line">
-                <span className="slots-page__balance-value">{formatRand(balance)}</span>
-              </span>
-            </div>
+            {!isPiratesFortune && (
+              <div
+                ref={creditTileRef}
+                className="slots-page__balance slots-page__control-tile"
+                aria-label={`Balance: ${formatRand(balance)}`}
+              >
+                <span className="slots-page__balance-label">Balance</span>
+                <span className="slots-page__balance-line">
+                  <span className="slots-page__balance-value">{isMidnightVault ? formatVaultMoney(balance) : formatRand(balance)}</span>
+                </span>
+              </div>
+            )}
 
-            <div
+            {isMidnightVault && (
+              <div className="midnight-vault__last-win" aria-label={`Last win: ${formatRand(lastWin)}`}>
+                <span>Win</span>
+                <strong>{formatVaultMoney(lastWin)}</strong>
+              </div>
+            )}
+            {isMidnightVault && specialControlsActive && (
+              <div className="slots-page__wager-control midnight-vault__locked-wager" aria-label={`Locked wager: ${formatRand(activeWagerDisplay)}`}>
+                <output className="slots-page__wager-display">
+                  <span>Locked bet</span>
+                  <strong>{activeWagerLabel}</strong>
+                </output>
+              </div>
+            )}
+
+            {isPiratesFortune ? (
+              <PiratesSpinControls
+                activeWager={activeWagerDisplay}
+                disabled={isDemoSpinDisabled}
+                freeSpinsRemaining={freeSpinsRemaining}
+                isAutoSpinning={isAutoSpinning}
+                isFreeSpinBadgePopping={isFreeSpinBadgePopping}
+                isSpinning={isSpinning}
+                isStopRequested={isStopRequested}
+                onAutoSpinChange={(active) => { setSpinError(null); setIsAutoSpinning(active) }}
+                onSelectWager={controller.selectWager}
+                onSpin={handleSpinButtonClick}
+                pointValueInCents={controller.pointValueInCents}
+                showFreeSpinBadge={showFreeSpinBadge}
+                specialControlsActive={specialControlsActive}
+                specialRoundLabel={specialRoundLabel}
+                wagerIndex={wagerIndex}
+                wagerOptions={wagerOptions}
+              />
+            ) : <div
               className={`slots-page__spin-controls${specialControlsActive ? ' slots-page__spin-controls--special' : ''}`}
               aria-label={specialControlsActive ? 'Special game spin control' : 'Spin, autospin, and wager controls'}
             >
               <div className="slots-page__spin-stack">
                 <div className="slots-page__spin-button-shell">
                   <SpinButton
-                    disabled={isDemoSpinDisabled}
+                    disabled={isDemoSpinDisabled || rainbowBonusSummary !== null}
                     isSpinning={isSpinning}
                     isStopRequested={isStopRequested}
                     onSpin={handleSpinButtonClick}
-                    variant={isPiratesFortune ? 'pirate-helm' : isWukong ? 'wukong-rune' : 'default'}
+                    variant={isMidnightVault ? 'vault-dial' : isPiratesFortune ? 'pirate-helm' : isWukong ? 'wukong-rune' : 'default'}
                   />
                   {showFreeSpinBadge && !specialControlsActive && (
                     <span
@@ -418,7 +541,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                 {!specialControlsActive && (
                   <>
                     <button
-                      className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}`}
+                      className={`slots-page__auto-spin${isAutoSpinning ? ' slots-page__auto-spin--active' : ''}${isMidnightVault ? ' midnight-vault__autospin' : ''}`}
                       type="button"
                       disabled={isDemoSpinDisabled}
                       aria-pressed={isAutoSpinning}
@@ -428,7 +551,14 @@ export function SlotsPageView(controller: SlotsPageController) {
                       }}
                       aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
                     >
-                      <strong>Autospin</strong>
+                      {isMidnightVault ? (
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.9 1 6.7 2.7L21 8M21 3v5h-5" />
+                          {isAutoSpinning
+                            ? <rect className="midnight-vault__autospin-action" x="9" y="9" width="6" height="6" rx=".75" />
+                            : <path className="midnight-vault__autospin-action" d="m10 8 6 4-6 4Z" />}
+                        </svg>
+                      ) : <strong>Autospin</strong>}
                     </button>
                   </>
                 )}
@@ -445,7 +575,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                     </button>
                     <output className="slots-page__wager-display" aria-live="polite">
                       <span>Bet</span>
-                      <strong>{formatRand(activeWagerDisplay)}</strong>
+                      <strong>{activeWagerLabel}</strong>
                     </output>
                     <button
                       className="slots-page__wager-nudge"
@@ -459,7 +589,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                   </div>
                 )}
               </div>
-            </div>
+            </div>}
 
             {isPiratesFortune && createPortal(
               <SlotPlayGuide
@@ -479,17 +609,26 @@ export function SlotsPageView(controller: SlotsPageController) {
               document.body,
             )}
           </div>
-          <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
-            <span><kbd>Space</kbd> Spin / stop</span>
-            <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
-            <span><kbd>M</kbd> Mute</span>
-            <span><kbd>?</kbd> Rules</span>
-          </div>
+          {!isMidnightVault && <div className="slots-page__local-controls">
+            <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
+              <span><kbd>Space</kbd> Spin / stop</span>
+              <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
+              <span><kbd>M</kbd> Mute</span>
+              <span><kbd>?</kbd> Rules</span>
+            </div>
+            <div className="slots-page__utility-controls" aria-label="Game options">
+              {balanceActionHref !== null && <PaymentAlertsMenu />}
+              {!isPiratesFortune && utilityButtons}
+            </div>
+          </div>}
         </div>
         </div>
       </main>
 
-      {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && (
+      {isPiratesFortune && symbolValueGuide}
+      {isPiratesFortune && utilityButtons}
+
+      {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && !reelRichesBonusVisible && (
         <div
           key={resultAtmosphereId}
           className="slots-page__result-atmosphere"
@@ -502,7 +641,73 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      {isSpecialGameActive && <div className="slots-page__special-game-dimmer" aria-hidden="true" />}
+      {isReelRiches && isSpecialGameActive && lastSpinOutcome &&
+        lastSpinOutcome.kind !== 'loss' && lastSpinOutcome.kind !== 'bonus' && (
+          <div
+            key={resultAtmosphereId}
+            className="reel-riches__catch-burst"
+            data-outcome={lastSpinOutcome.kind}
+            aria-hidden="true"
+          >
+            {Array.from({ length: 14 }, (_, index) => <i key={index} />)}
+          </div>
+      )}
+
+      {(isSpecialGameActive || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
+        <div className="slots-page__special-game-dimmer" aria-hidden="true" />
+      )}
+
+      {reelRichesIntroVisible && (
+        <section className="reel-riches__bonus-intro" role="status" aria-live="polite">
+          <img src={reelRichesMarlin} alt="" aria-hidden="true" />
+          <div className="reel-riches__bonus-intro-copy">
+            <span>Feature unlocked</span>
+            <h2>{reelRichesFeatureName}</h2>
+            <p>{freeSpinsRemaining} free casts are ready</p>
+            {reelRichesFeatureDetail && <small>{reelRichesFeatureDetail}</small>}
+            <b>Press Spin to cast</b>
+          </div>
+        </section>
+      )}
+
+      {rainbowIntroVisible && (
+        <section className="rainbow-realm__bonus-intro" role="status" aria-live="polite">
+          <img src={rainbowOrchardGate} alt="" aria-hidden="true" />
+          <div className="rainbow-realm__bonus-intro-copy">
+            <span>{controller.freeSpinFeatureMode ? 'Orchard glass filled' : 'Orchard gates open'}</span>
+            <h2>Orchard Rush</h2>
+            <p>{freeSpinsRemaining} bonus spins are ready</p>
+            {rainbowFeatureLabel && rainbowFeatureLabel !== specialRound?.title &&
+              <small>{rainbowFeatureLabel}</small>}
+            <b>Press Spin to enter</b>
+          </div>
+        </section>
+      )}
+
+      {rainbowBonusSummary && (
+        <section
+          className="rainbow-realm__bonus-intro rainbow-realm__bonus-summary"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rainbow-bonus-summary-title"
+          onKeyDown={(event) => {
+            if (event.key === 'Tab') event.preventDefault()
+            if (event.key === 'Escape') dismissRainbowBonusSummary()
+          }}
+        >
+          <img src={rainbowOrchardGate} alt="" aria-hidden="true" />
+          <div className="rainbow-realm__bonus-intro-copy rainbow-realm__bonus-summary-copy">
+            <span>Bonus round complete</span>
+            <h2 id="rainbow-bonus-summary-title">Orchard Rush</h2>
+            {rainbowBonusSummary.totalRand !== null ? (
+              <p>Bonus win <strong>{formatRand(rainbowBonusSummary.totalRand)}</strong></p>
+            ) : (
+              <p>Your bonus round is complete.</p>
+            )}
+            <button type="button" autoFocus onClick={dismissRainbowBonusSummary}>Continue</button>
+          </div>
+        </section>
+      )}
 
       {collectionAwardPresentation && (
           <section
@@ -519,11 +724,11 @@ export function SlotsPageView(controller: SlotsPageController) {
               <img className="slots-page__collection-award-chest" src={completedChestImage} alt="" aria-hidden="true" />
             )}
             <span className="slots-page__collection-award-kicker">
-              {isPiratesFortune ? 'Treasure feature unlocked' : isWukong ? 'Celestial seal awakened' : 'Collection complete'}
+              {isMidnightVault ? 'Enhanced Vault Breach unlocked' : isPiratesFortune ? 'Treasure feature unlocked' : isWukong ? 'Celestial seal awakened' : isRainbowRealm ? 'Orchard glass filled' : 'Collection complete'}
             </span>
             <h2 id="collection-award-title">{completedCollection?.label ?? 'Gem collection'} complete</h2>
             <p>
-              {collectionAwardPresentation.freeSpins} {specialRound?.title ?? 'free game'}
+              {collectionAwardPresentation.freeSpins} {isMidnightVault ? 'bonus spin' : specialRound?.title ?? 'free game'}
               {collectionAwardPresentation.freeSpins === 1 ? ' is' : 's are'} now loaded.
               {' '}{isPiratesFortune
                 ? 'Your gem pile glows while new gems build toward the next run.'
@@ -532,17 +737,17 @@ export function SlotsPageView(controller: SlotsPageController) {
                   : 'New collection pieces are banked for the next run.'}
             </p>
             {completedFeatureDetail && (
-              <p>Every free game: {completedFeatureDetail}.</p>
+              <p>{isMidnightVault ? 'Every bonus spin' : 'Every free game'}: {completedFeatureDetail}.</p>
             )}
             <p className="slots-page__collection-award-hint">Press the Spin button to begin.</p>
           </section>
       )}
 
       {energyFlyover && energyFeature && (
-        <img
+        <ResponsiveSlotImage
           key={energyFlyover.id}
           className="slots-page__energy-flyover"
-          src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image}
+          imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, energyFeature.symbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image}
           alt=""
           aria-hidden="true"
           style={{
@@ -562,13 +767,14 @@ export function SlotsPageView(controller: SlotsPageController) {
           <TreasureGemFlyover
             flyover={sealFlyover}
             image={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
+                    imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).responsiveImages)}
           />
         ) : (
-          <img
+          <ResponsiveSlotImage
             key={sealFlyover.id}
             className={`slots-page__seal-flyover slots-page__seal-flyover--${sealFlyover.collectionId}`}
             data-seal-id={sealFlyover.collectionId}
-            src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
+            imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, sealFlyover.symbol).image}
             alt=""
             aria-hidden="true"
             style={{
@@ -611,14 +817,14 @@ export function SlotsPageView(controller: SlotsPageController) {
                   '--money-grab-travel-y': `${token.travelY}px`,
                 } as CSSProperties}
               >
-                <img src={definition.image} alt="" />
+                <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(definition.responsiveImages)} src={definition.image} alt="" />
               </div>
             )
           })}
 
-          <img
+          <ResponsiveSlotImage
             className="slots-page__money-grab-paw"
-            src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image}
+            imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image}
             alt=""
             aria-hidden="true"
             style={{
@@ -642,7 +848,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               animationDuration: `${moneyGrabPresentation.popupDurationMs}ms`,
             }}
           >
-            <img src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image} alt="" />
+            <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, moneyGrabFeature.collectorSymbol).image} alt="" />
             <span>
               <small>{moneyGrabFeature.awardLabel}</small>
               <strong>+{formatRand(moneyGrabPresentation.amount)}</strong>
@@ -691,6 +897,8 @@ export function SlotsPageView(controller: SlotsPageController) {
       )}
 
       <AudioSettingsDialog
+        theme={isMidnightVault ? 'midnight-vault' : undefined}
+        musicCredit={isMidnightVault ? <>Music: <a href="https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1100199" target="_blank" rel="noopener noreferrer">I Knew a Guy</a> by Kevin MacLeod (incompetech.com), licensed under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>. Recording unmodified.</> : undefined}
         isOpen={isSettingsOpen}
         preferences={audioPreferences}
         onClose={closeSettings}
@@ -700,14 +908,16 @@ export function SlotsPageView(controller: SlotsPageController) {
       />
 
       <WinHelpDialog
+        theme={isMidnightVault ? 'midnight-vault' : undefined}
         isOpen={isHelpOpen}
         closeButtonRef={helpCloseButtonRef}
-        symbolSet={symbolSet}
+        symbolSet={guideSymbols}
         help={help}
         onClose={() => setIsHelpOpen(false)}
       />
 
       <InsufficientBalanceDialog
+        theme={isMidnightVault ? 'midnight-vault' : undefined}
         isOpen={isReloadPromptOpen}
         closeButtonRef={reloadPromptCloseButtonRef}
         selectedWager={selectedWager}
@@ -727,5 +937,6 @@ export function SlotsPageView(controller: SlotsPageController) {
         />
       )}
     </div>
+    </InGameShell>
   )
 }

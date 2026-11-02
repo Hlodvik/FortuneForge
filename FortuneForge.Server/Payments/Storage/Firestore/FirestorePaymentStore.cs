@@ -5,7 +5,7 @@ using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Payments.Storage;
 
-internal sealed partial class FirestorePaymentStore(FirestoreDb database) : IPaymentStore
+internal sealed partial class FirestorePaymentStore(FirestoreDb database) : IPaymentStore, IWithdrawalHistoryReader
 {
     private const string SlotsCreditsCurrencyId = "slotsCredits";
 

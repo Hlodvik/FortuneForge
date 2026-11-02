@@ -18,7 +18,7 @@ const landingPauseMilliseconds = 100
 const chainMergePauseMilliseconds = 70
 const bestTileKey = 'fortuneforge:drop-merge:best-tile'
 
-export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', tableLabel = 'Local free play', embedded = false }: DropMergeGameProps) {
+export function DropMergeGame({ gateway, embedded = false }: DropMergeGameProps) {
   const [game, setGame] = useState<DropMergeGameState | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -231,12 +231,6 @@ export function DropMergeGame({ gateway, backHref = '/', playerName = 'Player', 
   }
 
   return <div className={`ff-drop-merge-page${embedded ? ' ff-drop-merge-page--embedded' : ''}`}>
-    {!embedded && <header className="ff-drop-merge-header">
-      <a className="ff-drop-merge-brand" href={backHref} aria-label="Fortune Forge home"><span aria-hidden="true">✦</span><strong>Fortune Forge</strong></a>
-      <a className="ff-drop-merge-games" href={backHref}>Other games</a>
-      <div className="ff-drop-merge-account"><strong>{playerName}</strong><span>{tableLabel}</span></div>
-    </header>}
-
     <main className="ff-drop-merge-main">
       <section className="ff-drop-merge-title">
         <div>

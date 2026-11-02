@@ -65,10 +65,10 @@ Base: `/api/games/andar-bahar`. All replies set `Cache-Control: no-store, max-ag
 `GET /status`:
 
 ```json
-{"available":true,"minimumStake":0.5,"maximumStake":100,"stakeIncrement":0.5,"balance":10000,"mode":"development-practice-andar-first"}
+{"available":true,"minimumStake":0.5,"maximumStake":50,"stakeIncrement":0.5,"balance":10000,"mode":"development-practice-andar-first"}
 ```
 
-Paid mode is `andar-first`. `POST /rounds` requires `Content-Type: application/json` and an `Idempotency-Key` of 16–128 ASCII letters/digits/hyphens/underscores. The body accepts exactly `side` (`andar` or `bahar`) and `stake` (R0.50–R100, R0.50 steps); unknown properties, client cards, and client outcomes are rejected.
+Paid mode is `andar-first`. `POST /rounds` requires `Content-Type: application/json` and an `Idempotency-Key` of 16–128 ASCII letters/digits/hyphens/underscores. The body accepts exactly `side` (`andar` or `bahar`) and `stake` (R0.50–R50 for new wagers, R0.50 steps); unknown properties, client cards, and client outcomes are rejected. An exact-key retry of an older settled wager above R50 remains recoverable.
 
 ```json
 {"side":"andar","stake":0.5}

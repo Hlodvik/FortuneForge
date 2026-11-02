@@ -1,0 +1,162 @@
+// Review-art layout only. Original PNG/WebP source files are never rewritten.
+import { createRequire } from 'node:module'
+import { readFile, writeFile, readdir } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { dirname, resolve, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const sharp = require('C:/Users/Lctiv/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp')
+const root = dirname(fileURLToPath(import.meta.url))
+const previousRoot = resolve(root, '../revision-2')
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex')
+const xml = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+const previousManifest = JSON.parse(await readFile(resolve(previousRoot, 'preview-board-manifest.json'), 'utf8'))
+
+const sourceList = [
+  ['ring', 'Ring', '../retained/midnight-vault-ruby-ring.webp', 'accepted'],
+  ['loose-diamond', 'Loose diamond', '../props/loose-diamond.png', 'accepted'],
+  ['front-vault', 'Front vault', '../props/front-vault.png', 'accepted'],
+  ['overflowing-chips', 'Overflowing chips', '../props/overflowing-chips.png', 'accepted'],
+  ['cash-briefcase', 'Cash briefcase', '../props/cash-briefcase.png', 'accepted'],
+  ['ornate-A', 'A', 'letters/A.png', 'revised'],
+  ['ornate-K', 'K', 'letters/K.png', 'revised'],
+  ['ornate-Q', 'Q', 'letters/Q.png', 'revised'],
+  ['ornate-J', 'J', 'letters/J.png', 'revised'],
+  ['triple-sevens', '777', '../revision-2/sevens/777.png', 'accepted'],
+  ['faberge-egg', 'Fabergé egg', '../specials/faberge-egg.png', 'accepted'],
+  ['ruby', 'Ruby', '../retained/midnight-vault-ruby-access.webp', 'accepted'],
+  ['sapphire', 'Sapphire', '../retained/midnight-vault-sapphire-access.webp', 'accepted'],
+  ['amber', 'Amber', '../retained/midnight-vault-amber-access.webp', 'accepted'],
+  ['emerald', 'Emerald', '../retained/midnight-vault-emerald-access.webp', 'accepted'],
+]
+
+async function provenance(id, file, group) {
+  const previous = previousManifest.assets.find((asset) => asset.id === id)
+  if (!previous) throw new Error(`Missing previous symbol identity: ${id}`)
+  if (group === 'accepted') return { method: 'Accepted previous art, reused without any source modification',
+    previousFile: relative(root, resolve(previousRoot, previous.file)).replaceAll('\\', '/'), previousSha256: previous.sha256,
+    previousManifest: '../revision-2/preview-board-manifest.json', previousSourceRecord: previous,
+    previousProvenance: { method: previous.method, generatedSource: previous.generatedSource ?? null,
+      original: previous.original ?? null, prompt: previous.prompt ?? null, promptFile: previous.promptFile ? `../${previous.promptFile}` : null } }
+  const folder = dirname(resolve(root, file))
+  const records = []
+  for (const name of (await readdir(folder)).filter((name) => /\.(?:json|txt)$/i.test(name)).sort()) {
+    const content = await readFile(resolve(folder, name), 'utf8')
+    records.push({ file: `${dirname(file).replaceAll('\\', '/')}/${name}`, sha256: hash(Buffer.from(content)),
+      content: name.endsWith('.json') ? JSON.parse(content) : content })
+  }
+  if (!records.length) throw new Error(`Missing exact prompt/source provenance for revised symbol: ${id}`)
+  return { method: 'Built-in image_gen ornamental-letter revision; exact source/prompt records attached', previousFile: relative(root, resolve(previousRoot, previous.file)).replaceAll('\\', '/'),
+    previousSha256: previous.sha256, revisionProvenance: records }
+}
+
+async function imageBounds(bytes) {
+  const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let left = info.width, top = info.height, right = -1, bottom = -1, transparent = 0, min = 255, max = 0
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const alpha = data[(y * info.width + x) * 4 + 3]
+      min = Math.min(min, alpha); max = Math.max(max, alpha)
+      if (alpha === 0) transparent++
+      if (alpha > 8) { left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y) }
+    }
+  }
+  if (right < left || bottom < top || min !== 0 || max !== 255) throw new Error('Missing visible art or genuine transparency')
+  return { width: info.width, height: info.height, alphaRange: [min, max], fullyTransparentPixels: transparent,
+    visibleBoundsAtAlpha8: [left, top, right + 1, bottom + 1],
+    extract: { left, top, width: right - left + 1, height: bottom - top + 1 } }
+}
+
+const assets = []
+for (let index = 0; index < sourceList.length; index++) {
+  const [id, label, file, group] = sourceList[index]
+  const originalBytes = await readFile(resolve(root, file))
+  const origin = await provenance(id, file, group)
+  const bytesHash = hash(originalBytes)
+  if (group === 'accepted' && bytesHash !== origin.previousSha256) throw new Error(`Accepted image changed: ${file}`)
+  const bounds = await imageBounds(originalBytes)
+  // Only board layout is normalized: trim invisible margins in memory and
+  // contain each subject in a common 300px square. No individual asset is saved.
+  const preview = await sharp(originalBytes).extract(bounds.extract).resize(300, 300, { fit: 'inside' }).png().toBuffer({ resolveWithObject: true })
+  assets.push({ index: index + 1, id, label, file, group, byteCount: originalBytes.length,
+    sha256: bytesHash, ...origin, ...bounds, sourceUnmodified: true, preview })
+}
+
+if (assets.length !== 15 || assets.filter((asset) => asset.group === 'accepted').length !== 11 || assets.filter((asset) => asset.group === 'revised').length !== 4) throw new Error('Expected exactly four revised letters and eleven unchanged approved assets')
+
+const width = 2040, height = 1392
+const cells = assets.map((asset, index) => {
+  const x = 60 + (index % 5) * 390, y = 142 + Math.floor(index / 5) * 390
+  return { asset, x, y }
+})
+const backgroundSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#071321"/>
+<text x="60" y="64" fill="#e7c77d" font-family="Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="3">MIDNIGHT VAULT</text>
+<text x="60" y="105" fill="#acb8c7" font-family="Arial, sans-serif" font-size="25">15-symbol art preview · original ring and four access gems retained</text>
+<text x="1980" y="68" text-anchor="end" fill="#c1ad7e" font-family="Arial, sans-serif" font-size="22" letter-spacing="2">REVIEW ONLY</text>
+${cells.map(({x,y}) => `<rect x="${x}" y="${y}" width="360" height="366" rx="16" fill="#0b1a2b" stroke="#25354a" stroke-width="2"/>`).join('')}
+<text x="60" y="1361" fill="#94a3b5" font-family="Arial, sans-serif" font-size="23">Ten new symbols for review. Source artwork remains unchanged.</text>
+</svg>`
+const composites = [{ input: Buffer.from(backgroundSvg), left: 0, top: 0 }]
+for (const {asset,x,y} of cells) composites.push({ input: asset.preview.data,
+  left: x + Math.round((360 - asset.preview.info.width) / 2), top: y + 14 + Math.round((300 - asset.preview.info.height) / 2) })
+const labelsSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+${cells.map(({asset,x,y}) => `<text x="${x+180}" y="${y+344}" text-anchor="middle" fill="#edf1f7" font-family="Arial, sans-serif" font-size="29" font-weight="600">${xml(asset.label)}</text>`).join('')}
+</svg>`
+composites.push({ input: Buffer.from(labelsSvg), left: 0, top: 0 })
+const board = await sharp({ create: { width, height, channels: 4, background: '#071321' } }).composite(composites).png().toBuffer()
+await writeFile(resolve(root, 'preview-board.png'), board)
+await sharp(board).resize(1224).png().toFile(resolve(root, 'preview-board-1224.png'))
+await sharp(board).extract({ left: 60, top: 532, width: 1530, height: 366 }).resize(1224).png().toFile(resolve(root, 'letter-strip-1224.png'))
+
+const previousBoard = await readFile(resolve(previousRoot, 'preview-board.png'))
+const currentPixels = await sharp(board).ensureAlpha().raw().toBuffer()
+const previousPixels = await sharp(previousBoard).ensureAlpha().raw().toBuffer()
+if (currentPixels.length !== previousPixels.length) throw new Error('Previous board dimensions changed')
+let outsideLetterTilesChangedPixels = 0, letterTileChangedPixels = 0
+const allowedLetterRects = [60,450,840,1230].map(left => ({ left, top:532, width:360, height:366 }))
+for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+  const offset = (y * width + x) * 4
+  let changed = false
+  for (let channel = 0; channel < 4; channel++) if (currentPixels[offset + channel] !== previousPixels[offset + channel]) { changed = true; break }
+  if (changed) {
+    const allowed = allowedLetterRects.some(rect => x>=rect.left && x<rect.left+rect.width && y>=rect.top && y<rect.top+rect.height)
+    if (allowed) letterTileChangedPixels++; else outsideLetterTilesChangedPixels++
+  }
+}
+if (outsideLetterTilesChangedPixels !== 0 || letterTileChangedPixels === 0) throw new Error(JSON.stringify({ outsideLetterTilesChangedPixels, letterTileChangedPixels }))
+const sevensRect = { left:1620, top:532, width:360, height:366 }
+const oldSevensPixels = await sharp(previousBoard).extract(sevensRect).ensureAlpha().raw().toBuffer()
+const newSevensPixels = await sharp(board).extract(sevensRect).ensureAlpha().raw().toBuffer()
+if (!oldSevensPixels.equals(newSevensPixels)) throw new Error('Approved777 tile pixels changed')
+const pixelProof = { comparison: '../revision-2/preview-board.png', approvedSourceHashesMatching: 11,
+  unchangedTopAndBottom: true, outsideLetterTilesChangedPixels, letterTileChangedPixels,
+  allowedLetterRects, approvedSevensTilePixelIdentical:true, sevensTileRawSha256:hash(newSevensPixels),
+  canvasWidth:width, canvasHeight:height,
+  previousBoardSha256: hash(previousBoard), revisedBoardSha256: hash(board) }
+await writeFile(resolve(root, 'preview-board-verification.json'), JSON.stringify(pixelProof, null, 2) + '\n')
+
+const assetRecords = assets.map(({preview,extract,...asset}) => asset)
+const manifest = { kind: 'Art-only ornamental-letter review revision4; no implementation or symbol-engine assignment', generatedUtc: new Date().toISOString(),
+  background: '#071321', board: { full: 'preview-board.png', width, height, preview: 'preview-board-1224.png', previewWidth: 1224 },
+  count: 15, revisedLetterAssets: 4, approvedUnchangedAssets: 11, originalV1AssetsRetained: 5,
+  layout: 'Five columns by three rows; captions outside art; alpha-bound contain normalization in memory only; no source image rewritten.',
+  generation: 'Four ornamental-letter sources supplied by their assigned image-generation owners; the masterA anchors their style. Eleven approved sources are reused byte-for-byte, including the approved revision2 triple-sevens.',
+  pixelProof,
+  assets: assetRecords }
+await writeFile(resolve(root, 'preview-board-manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+
+const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Midnight Vault — ornamental letter preview revision4</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071321;color:#edf1f7;font:16px/1.5 Arial,sans-serif}main{max-width:1500px;margin:auto;padding:36px 28px}h1{margin:0;color:#e7c77d;letter-spacing:.12em;font-size:28px}p{color:#acb8c7}header{margin-bottom:28px}.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}.tile{appearance:none;width:100%;border:1px solid #25354a;border-radius:12px;background:#0b1a2b;color:inherit;padding:16px 12px 18px;cursor:zoom-in;font:inherit}.tile:focus-visible{outline:3px solid #e7c77d;outline-offset:3px}.art{height:240px;display:flex;align-items:center;justify-content:center}.art img{max-width:100%;max-height:100%;object-fit:contain}.label{display:block;margin-top:15px;font-size:20px;font-weight:600}.retained{display:block;color:#91a2b6;font-size:12px;margin-top:3px}.links{margin-top:28px;display:flex;gap:22px;flex-wrap:wrap}a{color:#e7c77d}dialog{color:inherit;background:#071321;border:1px solid #496078;border-radius:12px;padding:20px;max-width:96vw;max-height:96vh;overflow:auto}dialog::backdrop{background:#02070ee8}.zoom-head{display:flex;justify-content:space-between;gap:40px;align-items:center}.zoom-head h2{margin:0}.close{background:#213247;border:1px solid #69809b;border-radius:8px;color:#fff;padding:8px 16px;font:inherit;cursor:pointer}.zoom-art{display:flex;align-items:center;justify-content:center;min-width:min(80vw,900px);min-height:55vh;margin:16px 0}.zoom-art img{display:block;max-width:88vw;max-height:76vh;object-fit:contain}@media(max-width:1000px){.grid{gap:14px}.art{height:180px}.label{font-size:17px}}@media(max-width:760px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.art{height:170px}}@media(max-width:460px){main{padding:24px 14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.art{height:180px}}
+</style><main><header><h1>MIDNIGHT VAULT</h1><p>Ornamental-letter preview revision4. Only A/K/Q/J have changed. The eleven approved symbol sources remain unchanged. Click any symbol to inspect its source.</p></header>
+<section class="grid" aria-label="Fifteen symbol previews">${assets.map((asset) => `<button class="tile" type="button" data-index="${asset.index-1}" aria-label="Inspect ${xml(asset.label)}"><span class="art"><img alt="" src="data:image/png;base64,${asset.preview.data.toString('base64')}"></span><span class="label">${xml(asset.label)}</span><span class="retained">${asset.group==='accepted'?'Approved prior art · unchanged':'Ornamental-letter preview'}</span></button>`).join('')}</section>
+<nav class="links" aria-label="Preview files"><a href="letter-strip-1224.png">Four ornamental letters</a><a href="preview-board.png">Full-size board PNG</a><a href="preview-board-manifest.json">All fifteen sources and exact prompts</a><a href="preview-board-verification.json">Eleven unchanged sources and pixel proof</a><a href="README.md">Notes</a></nav><p>Review only. Four ornamental-letter proposals plus eleven unchanged approved images. No game or engine changes.</p></main>
+<dialog id="zoom" aria-labelledby="zoom-title"><div class="zoom-head"><h2 id="zoom-title"></h2><button class="close" type="button">Close</button></div><div class="zoom-art"><img id="zoom-image" alt=""></div><a id="source-link" target="_blank" rel="noopener">Open original image at full resolution</a></dialog>
+<script>const files=${JSON.stringify(assetRecords.map(({label,file})=>({label,file})))};const dialog=document.querySelector('#zoom');let opener;document.querySelectorAll('[data-index]').forEach(button=>button.addEventListener('click',()=>{const item=files[Number(button.dataset.index)];opener=button;document.querySelector('#zoom-title').textContent=item.label;const image=document.querySelector('#zoom-image');image.src=item.file;image.alt=item.label;document.querySelector('#source-link').href=item.file;dialog.showModal();}));document.querySelector('.close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});dialog.addEventListener('close',()=>opener?.focus());</script></html>`
+await writeFile(resolve(root, 'preview-board.html'), html)
+
+for (const asset of assets) if (hash(await readFile(resolve(root, asset.file))) !== asset.sha256) throw new Error(`Source changed during board rendering: ${asset.file}`)
+console.log(JSON.stringify({ letterStrip: resolve(root, 'letter-strip-1224.png'), board: resolve(root, 'preview-board.png'), preview: resolve(root, 'preview-board-1224.png'), html: resolve(root, 'preview-board.html'), count: 15, revisedLetters: 4, approvedUnchanged: 11, allSourceHashesUnchanged: true, pixelProof, fullBytes: board.length }, null, 2))

@@ -48,11 +48,8 @@
 .ff-roulette-board .column-bets { grid-column:3; grid-row:1; display:grid; grid-template-rows:repeat(3,minmax(0,1fr)); min-height:0; }.ff-roulette-board .column-bets button { grid-row:calc(4 - var(--area)); }
 .ff-roulette-board .dozen-bets { grid-column:2; grid-row:2; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
 .ff-roulette-board .outside-grid { grid-column:2; grid-row:3; display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); }
-.ff-roulette-board .column-bets button,.ff-roulette-board .dozen-bets button,.ff-roulette-board .outside-grid button { background:transparent; }.ff-roulette-board .outside-grid .black { background:#151d17; }
-.ff-roulette-board button.selected { z-index:1; box-shadow:inset 0 0 0 2px #fff4b1; background-image:linear-gradient(#fff2,#fff2); }
-.ff-roulette-board button.winning { z-index:2; box-shadow:inset 0 0 0 3px #fff0ad,0 0 15px #f6d77c88; }
-.ff-roulette-board button.won-area { box-shadow:inset 0 0 0 1px #f4df96; }.ff-roulette-board button:hover:not(:disabled) { filter:brightness(1.2); }
-.ff-roulette-board .felt-chip,.ff-roulette-bets .mini-chip { position:absolute; z-index:3; bottom:3px; right:3px; display:grid; place-items:center; width:24px; height:24px; max-width:80%; padding:0; border:3px dashed #a8771c; border-radius:50%; background:#fbf7df; color:#263322; font:800 10px/1 'Trebuchet MS',sans-serif; text-shadow:none; box-shadow:0 1px 0 #b99c49,0 2px 0 #e6d384,1px 4px 4px #000a,inset 0 0 0 1px #f9e7b1; }
+.ff-roulette-board .column-bets button,.ff-roulette-board .dozen-bets button,.ff-roulette-board .outside-grid button { background:transparent; }.ff-roulette-board .outside-grid .black { background:#151d17; }.ff-roulette-board button:hover:not(:disabled) { filter:brightness(1.2); }
+.ff-roulette-bets .mini-chip { position:absolute; z-index:3; bottom:3px; right:3px; display:grid; place-items:center; width:24px; height:24px; max-width:80%; padding:0; border:3px dashed #a8771c; border-radius:50%; background:#fbf7df; color:#263322; font:800 10px/1 'Trebuchet MS',sans-serif; text-shadow:none; box-shadow:0 1px 0 #b99c49,0 2px 0 #e6d384,1px 4px 4px #000a,inset 0 0 0 1px #f9e7b1; }
 .ff-roulette-controls { grid-row:2; display:grid; grid-template-columns:minmax(310px,1fr) minmax(160px,.7fr) minmax(280px,.9fr); grid-template-rows:54px 22px; align-content:center; gap:6px 20px; padding:7px 20px; min-height:0; min-width:0; border-top:1px solid #b8beb354; background:linear-gradient(145deg,#3a403d,#181e1a 50%,#252c26); box-shadow:inset 0 2px 1px #ffffff18,0 -8px 16px #0003; }
 .ff-roulette-selection { display:grid; grid-template-columns:minmax(100px,1.5fr) 48px 48px; gap:6px; min-width:0; }
 .ff-roulette-selection label { align-self:center; min-width:0; }
@@ -63,7 +60,6 @@
 .ff-roulette-chip-rack { display:flex; align-items:center; justify-content:center; gap:4px; min-width:0; }
 .ff-roulette-chip-rack .denomination { --chip-color:#c5a338; flex:0 1 46px; width:46px; min-width:32px; height:46px; border:0; padding:5px; border-radius:50%; background:repeating-conic-gradient(#f0eede 0deg 30deg,var(--chip-color) 30deg 45deg); box-shadow:inset 0 0 0 1px #b4b9a9,0 2px 0 #888579,0 4px 0 #464a40,0 5px 6px #0009; transform:translateY(0); }
 .ff-roulette-chip-rack .denomination>span { display:grid; place-items:center; width:100%; height:100%; border:1px solid var(--chip-color); border-radius:50%; background:#f3f0d9; color:#17241c; font:800 15px/1 sans-serif; box-shadow:inset 0 0 0 2px #fff8; }
-.ff-roulette-chip-rack .chip-red { --chip-color:#bb3040; }.ff-roulette-chip-rack .chip-blue { --chip-color:#2286af; }.ff-roulette-chip-rack .chip-green { --chip-color:#6c9e38; }.ff-roulette-chip-rack .chip-black { --chip-color:#202824; }
 .ff-roulette-chip-rack .denomination[aria-pressed=true] { transform:translateY(-5px); outline:2px solid #f6e7a6; outline-offset:3px; }
 .ff-roulette-actions { display:grid; grid-template-columns:1fr 1fr; align-items:center; min-width:0; gap:10px; }
 .ff-roulette-controls .primary,.ff-roulette-panel .primary { min-height:44px; padding:7px 10px; border:1px solid #b6bdb0; border-radius:6px; background:linear-gradient(#56745c,#1c432b); color:#f6f2d9; font-size:14px; font-weight:800; box-shadow:inset 0 1px #fff5,0 3px 5px #0008; }

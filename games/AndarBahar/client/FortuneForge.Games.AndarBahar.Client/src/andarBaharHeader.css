@@ -7,6 +7,7 @@
 .ff-ab__tools button { width: 42px; height: 42px; padding: 0; justify-content: center; border-radius: 10px; }
 .ff-ab__tools button[aria-label='How to play'] { font-size: 20px; font-weight: 600; }
 .ff-ab__table { grid-template-rows: minmax(190px, 2.7fr) minmax(52px, .6fr) minmax(95px, 1.2fr) auto 22px 66px 28px 18px; }
+.ff-ab__joker { transform: translateY(8px); }
 
 @media (max-width: 760px) {
   .ff-ab__header { min-height: 50px; padding: 4px 6px 8px; }
@@ -38,4 +39,5 @@
   .ff-ab__chip-row { grid-row: 2; }
   .ff-ab__actions, .ff-ab__wallet { grid-row: 3; }
   .ff-ab__table-foot, .ff-ab__practice-note { grid-row: 4; }
+  .ff-ab__joker { transform: translateY(4px); }
 }

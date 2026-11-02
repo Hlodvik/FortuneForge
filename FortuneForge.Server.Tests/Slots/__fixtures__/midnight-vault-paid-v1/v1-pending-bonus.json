@@ -1,0 +1,139 @@
+{
+  "projectId": "demo-midnight-paid-9fdc8c78a1cf47cfb738fd545c209f40",
+  "response": {
+    "spinId": "a284d57b-760e-4e4f-bc87-19eeebed2fe4",
+    "gameId": "dragon-hoard-v1",
+    "reelSetId": "midnight-vault-reels-v1",
+    "symbolSetId": "midnight-vault-symbols-v1",
+    "paytableId": "midnight-vault-paytable-v1",
+    "wagerPoints": 4,
+    "pointValueInCents": 25,
+    "reelStops": [
+      8,
+      9,
+      6,
+      3,
+      0
+    ],
+    "reels": [
+      [
+        "FREE",
+        "4",
+        "2",
+        "6"
+      ],
+      [
+        "FREE",
+        "3",
+        "2",
+        "3"
+      ],
+      [
+        "FREE",
+        "5",
+        "4",
+        "4"
+      ],
+      [
+        "2",
+        "2",
+        "3",
+        "3"
+      ],
+      [
+        "2",
+        "5",
+        "4",
+        "3"
+      ]
+    ],
+    "payout": {
+      "totalPoints": 0,
+      "paylines": []
+    },
+    "consecutiveFiveMisses": 1,
+    "fiveMatchPityTriggered": false,
+    "freeSpinsAwarded": 6,
+    "specialPointsAwarded": 0,
+    "energyAwarded": 0,
+    "specialBoostApplied": false,
+    "slotsCreditsBalance": 999,
+    "isFreeSpin": false,
+    "freeSpinsRemaining": 6,
+    "freeSpinWagerPoints": 4,
+    "specialPointsBalance": 0,
+    "energyBalance": 0,
+    "energyMultiplierApplied": false,
+    "payoutMultiplier": 1,
+    "monkeyPawCount": 0,
+    "moneyGrabPoints": 0,
+    "bananaBonusPoints": 0,
+    "sealsAwarded": {},
+    "sealCollections": [
+      {
+        "sealId": "sync",
+        "count": 0,
+        "averageWagerPoints": 0,
+        "requiredCount": 30
+      },
+      {
+        "sealId": "rows",
+        "count": 0,
+        "averageWagerPoints": 0,
+        "requiredCount": 30
+      },
+      {
+        "sealId": "paw",
+        "count": 0,
+        "averageWagerPoints": 0,
+        "requiredCount": 30
+      },
+      {
+        "sealId": "rand",
+        "count": 0,
+        "averageWagerPoints": 0,
+        "requiredCount": 30
+      }
+    ],
+    "collectionFreeSpinsAwarded": 0,
+    "freeSpinFeatureMode": null
+  },
+  "audit": {
+    "summary": {
+      "id": "9b1cc8344234c136ba5e26ba59200c5bf53d0826b253ed8e04338c5379b1563e",
+      "gameId": "dragon-hoard",
+      "roundId": "a284d57b760e4e4fbc8719eeebed2fe4",
+      "tableId": "a284d57b760e4e4fbc8719eeebed2fe4",
+      "roundNumber": 1,
+      "startedAtUtc": "2026-11-02T03:26:39.87302Z",
+      "completedAtUtc": "2026-11-02T03:26:39.89066Z",
+      "auditStatus": "passed",
+      "findings": [
+        {
+          "code": "audit-scope",
+          "severity": "info",
+          "message": "Evidence integrity and any named outcome checks do not certify absence of collusion, RNG bias, or account abuse."
+        }
+      ],
+      "participants": [
+        {
+          "actorId": "v1-bonus",
+          "displayName": "v1-bonus",
+          "isAccountBacked": true,
+          "wagerCents": 100,
+          "payoutCents": 0,
+          "netCents": -100
+        }
+      ],
+      "evidencePresent": true,
+      "evidenceDeleteAfterUtc": null,
+      "auditorVersion": "slot-outcome-auditor-v1",
+      "reviewedAtUtc": null,
+      "evidenceSha256": "ddb33f243c430e18a7024c3ee335c4f71ab5b39cada89fc0d212ab7a8da8737d",
+      "evidenceKind": "slot-reels-paylines-and-features-v1"
+    },
+    "payloadJson": "{\u0022sourceCollection\u0022:\u0022slotSpinResults\u0022,\u0022sourceDocumentId\u0022:\u0022a284d57b760e4e4fbc8719eeebed2fe4\u0022,\u0022wagerCents\u0022:100,\u0022payoutCents\u0022:0,\u0022netCents\u0022:-100,\u0022data\u0022:{\u0022result\u0022:{\u0022spinId\u0022:\u0022a284d57b-760e-4e4f-bc87-19eeebed2fe4\u0022,\u0022gameId\u0022:\u0022dragon-hoard-v1\u0022,\u0022reelSetId\u0022:\u0022midnight-vault-reels-v1\u0022,\u0022symbolSetId\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022paytableId\u0022:\u0022midnight-vault-paytable-v1\u0022,\u0022wagerPoints\u0022:4,\u0022pointValueInCents\u0022:25,\u0022reelStops\u0022:[8,9,6,3,0],\u0022reels\u0022:[[\u0022FREE\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022],[\u0022FREE\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022],[\u0022FREE\u0022,\u00225\u0022,\u00224\u0022,\u00224\u0022],[\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022],[\u00222\u0022,\u00225\u0022,\u00224\u0022,\u00223\u0022]],\u0022payout\u0022:{\u0022totalPoints\u0022:0,\u0022paylines\u0022:[]},\u0022consecutiveFiveMisses\u0022:1,\u0022fiveMatchPityTriggered\u0022:false,\u0022freeSpinsAwarded\u0022:6,\u0022specialPointsAwarded\u0022:0,\u0022energyAwarded\u0022:0,\u0022specialBoostApplied\u0022:false,\u0022slotsCreditsBalance\u0022:null,\u0022isFreeSpin\u0022:false,\u0022freeSpinsRemaining\u0022:0,\u0022freeSpinWagerPoints\u0022:null,\u0022specialPointsBalance\u0022:0,\u0022energyBalance\u0022:0,\u0022energyMultiplierApplied\u0022:false,\u0022payoutMultiplier\u0022:1,\u0022monkeyPawCount\u0022:0,\u0022moneyGrabPoints\u0022:0,\u0022bananaBonusPoints\u0022:0,\u0022sealsAwarded\u0022:{},\u0022sealCollections\u0022:[],\u0022collectionFreeSpinsAwarded\u0022:0,\u0022freeSpinFeatureMode\u0022:null},\u0022admissionId\u0022:\u0022cd5eb1ba-9ea1-48e3-a011-78854e0aa159\u0022,\u0022startedAtUtc\u0022:\u00222026-11-02T03:26:39.8730203Z\u0022,\u0022requestId\u0022:null,\u0022engineAudit\u0022:{\u0022engineVersion\u0022:\u0022shared-slots-engine-v1\u0022,\u0022generatedAtUtc\u0022:\u00222026-11-02T03:26:39.8905698Z\u0022,\u0022baseGame\u0022:{\u0022id\u0022:\u0022dragon-hoard-v1\u0022,\u0022layout\u0022:{\u0022reelCount\u0022:5,\u0022visibleRows\u0022:4,\u0022paylineCount\u0022:23},\u0022symbols\u0022:{\u0022symbolSetId\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022wildSymbolId\u0022:\u0022ACE\u0022,\u0022nativeWildMatchLengths\u0022:[3,5],\u0022wildSubstitutionMatchLengths\u0022:[5]},\u0022matching\u0022:{\u0022minimumRunLength\u0022:3,\u0022allowMultipleRunsPerPayline\u0022:true},\u0022math\u0022:{\u0022reelSetId\u0022:\u0022midnight-vault-reels-v1\u0022,\u0022paytableId\u0022:\u0022midnight-vault-paytable-v1\u0022,\u0022payoutMultiplier\u0022:1.09,\u0022paylinePayoutSteps\u0022:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\u0022fiveMatchPityMissLimit\u0022:12,\u0022targets\u0022:{\u0022rtp\u0022:0.90,\u0022hitRate\u0022:0.30,\u0022volatility\u0022:null}},\u0022wagering\u0022:{\u0022pointValueInCents\u0022:25,\u0022minimumWagerPoints\u0022:2,\u0022maximumWagerPoints\u0022:2000,\u0022wagerIncrementPoints\u0022:2,\u0022allowedWagerPoints\u0022:[]},\u0022freeGames\u0022:{\u0022symbolId\u0022:\u0022FREE\u0022,\u0022requiredSymbols\u0022:3,\u0022awardedSpins\u0022:6,\u0022visibleFrequencyDivisor\u0022:2},\u0022specialPoints\u0022:{\u0022symbolId\u0022:\u0022POWER\u0022,\u0022threeMatchPoints\u0022:1,\u0022fiveMatchPoints\u0022:2,\u0022activationCost\u0022:8,\u0022commonSymbolIds\u0022:[\u00222\u0022,\u00223\u0022,\u00224\u0022]},\u0022energy\u0022:null,\u0022paylines\u0022:[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[1,2,3,2,1],[3,2,1,2,3],[2,1,0,1,2],[0,1,1,1,0],[1,2,2,2,1],[2,3,3,3,2],[3,2,2,2,3],[2,1,1,1,2],[0,0,1,2,3],[3,3,2,1,0],[0,1,2,3,3],[3,2,1,0,0],[0,1,0,1,0],[1,2,1,2,1],[2,3,2,3,2],[1,0,1,0,1],[2,1,2,1,2],[3,2,3,2,3]]},\u0022effectiveGame\u0022:{\u0022id\u0022:\u0022dragon-hoard-v1\u0022,\u0022layout\u0022:{\u0022reelCount\u0022:5,\u0022visibleRows\u0022:4,\u0022paylineCount\u0022:23},\u0022symbols\u0022:{\u0022symbolSetId\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022wildSymbolId\u0022:\u0022ACE\u0022,\u0022nativeWildMatchLengths\u0022:[3,5],\u0022wildSubstitutionMatchLengths\u0022:[5]},\u0022matching\u0022:{\u0022minimumRunLength\u0022:3,\u0022allowMultipleRunsPerPayline\u0022:true},\u0022math\u0022:{\u0022reelSetId\u0022:\u0022midnight-vault-reels-v1\u0022,\u0022paytableId\u0022:\u0022midnight-vault-paytable-v1\u0022,\u0022payoutMultiplier\u0022:1.09,\u0022paylinePayoutSteps\u0022:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],\u0022fiveMatchPityMissLimit\u0022:12,\u0022targets\u0022:{\u0022rtp\u0022:0.90,\u0022hitRate\u0022:0.30,\u0022volatility\u0022:null}},\u0022wagering\u0022:{\u0022pointValueInCents\u0022:25,\u0022minimumWagerPoints\u0022:2,\u0022maximumWagerPoints\u0022:2000,\u0022wagerIncrementPoints\u0022:2,\u0022allowedWagerPoints\u0022:[]},\u0022freeGames\u0022:{\u0022symbolId\u0022:\u0022FREE\u0022,\u0022requiredSymbols\u0022:3,\u0022awardedSpins\u0022:6,\u0022visibleFrequencyDivisor\u0022:2},\u0022specialPoints\u0022:{\u0022symbolId\u0022:\u0022POWER\u0022,\u0022threeMatchPoints\u0022:1,\u0022fiveMatchPoints\u0022:2,\u0022activationCost\u0022:8,\u0022commonSymbolIds\u0022:[\u00222\u0022,\u00223\u0022,\u00224\u0022]},\u0022energy\u0022:null,\u0022paylines\u0022:[[0,0,0,0,0],[1,1,1,1,1],[2,2,2,2,2],[3,3,3,3,3],[0,1,2,1,0],[1,2,3,2,1],[3,2,1,2,3],[2,1,0,1,2],[0,1,1,1,0],[1,2,2,2,1],[2,3,3,3,2],[3,2,2,2,3],[2,1,1,1,2],[0,0,1,2,3],[3,3,2,1,0],[0,1,2,3,3],[3,2,1,0,0],[0,1,0,1,0],[1,2,1,2,1],[2,3,2,3,2],[1,0,1,0,1],[2,1,2,1,2],[3,2,3,2,3]]},\u0022reelSet\u0022:{\u0022id\u0022:\u0022midnight-vault-reels-v1\u0022,\u0022symbolSetId\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022reels\u0022:[[\u00226\u0022,\u00224\u0022,\u00224\u0022,\u00223\u0022,\u00227\u0022,\u0022ACE\u0022,\u00224\u0022,\u00225\u0022,\u0022FREE\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022,\u00225\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022,\u00224\u0022,\u00223\u0022,\u0022POWER\u0022,\u00224\u0022,\u00222\u0022,\u00223\u0022,\u00224\u0022,\u00226\u0022,\u00224\u0022,\u00223\u0022,\u00225\u0022,\u00223\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022,\u0022POWER\u0022,\u0022FREE\u0022,\u00226\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022,\u00222\u0022,\u00222\u0022,\u00225\u0022,\u00223\u0022,\u00225\u0022,\u00223\u0022,\u00222\u0022,\u00225\u0022,\u00225\u0022,\u00227\u0022,\u00222\u0022,\u00227\u0022,\u00223\u0022,\u00223\u0022,\u00224\u0022,\u0022POWER\u0022,\u0022FREE\u0022,\u0022POWER\u0022,\u00225\u0022,\u00228\u0022,\u00222\u0022,\u0022POWER\u0022,\u00223\u0022,\u00226\u0022,\u00222\u0022,\u00225\u0022,\u00223\u0022],[\u00225\u0022,\u00227\u0022,\u00225\u0022,\u00224\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022,\u00226\u0022,\u0022POWER\u0022,\u0022FREE\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022,\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00224\u0022,\u00226\u0022,\u00222\u0022,\u00223\u0022,\u00224\u0022,\u00223\u0022,\u00223\u0022,\u0022ACE\u0022,\u0022POWER\u0022,\u00225\u0022,\u00224\u0022,\u00227\u0022,\u00226\u0022,\u00223\u0022,\u00223\u0022,\u00223\u0022,\u00226\u0022,\u0022FREE\u0022,\u00226\u0022,\u00225\u0022,\u00223\u0022,\u00224\u0022,\u00225\u0022,\u00224\u0022,\u00227\u0022,\u00225\u0022,\u00222\u0022,\u0022POWER\u0022,\u0022POWER\u0022,\u00224\u0022,\u00224\u0022,\u00225\u0022,\u00222\u0022,\u00225\u0022,\u00222\u0022,\u00224\u0022,\u00222\u0022,\u0022POWER\u0022,\u00224\u0022,\u00228\u0022,\u00226\u0022,\u00225\u0022,\u0022FREE\u0022,\u00223\u0022,\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022],[\u00224\u0022,\u00227\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022,\u00225\u0022,\u0022FREE\u0022,\u00225\u0022,\u00224\u0022,\u00224\u0022,\u00225\u0022,\u00222\u0022,\u00223\u0022,\u00222\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022,\u00222\u0022,\u0022ACE\u0022,\u0022POWER\u0022,\u00222\u0022,\u00225\u0022,\u00227\u0022,\u00223\u0022,\u0022POWER\u0022,\u00223\u0022,\u00222\u0022,\u00224\u0022,\u00223\u0022,\u00223\u0022,\u0022FREE\u0022,\u00225\u0022,\u00226\u0022,\u00226\u0022,\u00222\u0022,\u00223\u0022,\u00226\u0022,\u00223\u0022,\u00222\u0022,\u00225\u0022,\u0022POWER\u0022,\u00225\u0022,\u00226\u0022,\u00223\u0022,\u00223\u0022,\u00222\u0022,\u00224\u0022,\u00227\u0022,\u0022POWER\u0022,\u00225\u0022,\u00224\u0022,\u00223\u0022,\u00226\u0022,\u00224\u0022,\u00223\u0022,\u00224\u0022,\u00228\u0022,\u0022FREE\u0022,\u00222\u0022,\u00224\u0022,\u00223\u0022,\u00225\u0022,\u0022POWER\u0022,\u00223\u0022],[\u00227\u0022,\u00225\u0022,\u00224\u0022,\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022,\u00224\u0022,\u00224\u0022,\u00226\u0022,\u00224\u0022,\u00225\u0022,\u00226\u0022,\u00224\u0022,\u0022FREE\u0022,\u00224\u0022,\u00226\u0022,\u00222\u0022,\u00225\u0022,\u0022ACE\u0022,\u0022POWER\u0022,\u00227\u0022,\u00222\u0022,\u0022POWER\u0022,\u00226\u0022,\u00226\u0022,\u00222\u0022,\u00223\u0022,\u00222\u0022,\u00227\u0022,\u00223\u0022,\u00223\u0022,\u00225\u0022,\u00226\u0022,\u00223\u0022,\u0022FREE\u0022,\u0022POWER\u0022,\u00225\u0022,\u00223\u0022,\u00223\u0022,\u0022POWER\u0022,\u00222\u0022,\u00224\u0022,\u00225\u0022,\u00223\u0022,\u00223\u0022,\u00225\u0022,\u00222\u0022,\u00225\u0022,\u00222\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022,\u00225\u0022,\u00224\u0022,\u0022FREE\u0022,\u0022POWER\u0022,\u00222\u0022,\u00228\u0022,\u00223\u0022,\u00224\u0022,\u00223\u0022,\u00224\u0022,\u00223\u0022],[\u00222\u0022,\u00225\u0022,\u00224\u0022,\u00223\u0022,\u00223\u0022,\u00225\u0022,\u00227\u0022,\u0022FREE\u0022,\u00222\u0022,\u00225\u0022,\u00224\u0022,\u0022ACE\u0022,\u00226\u0022,\u00226\u0022,\u00222\u0022,\u00225\u0022,\u00222\u0022,\u00222\u0022,\u00224\u0022,\u0022FREE\u0022,\u00222\u0022,\u00224\u0022,\u00223\u0022,\u00224\u0022,\u00223\u0022,\u00225\u0022,\u00225\u0022,\u0022POWER\u0022,\u00223\u0022,\u00224\u0022,\u00222\u0022,\u00227\u0022,\u0022POWER\u0022,\u00223\u0022,\u00223\u0022,\u00223\u0022,\u00225\u0022,\u00223\u0022,\u00224\u0022,\u00225\u0022,\u00223\u0022,\u00223\u0022,\u00222\u0022,\u00222\u0022,\u00224\u0022,\u00223\u0022,\u00226\u0022,\u00223\u0022,\u00226\u0022,\u00222\u0022,\u00226\u0022,\u00228\u0022,\u0022POWER\u0022,\u00227\u0022,\u0022POWER\u0022,\u0022FREE\u0022,\u00222\u0022,\u00224\u0022,\u00225\u0022,\u00224\u0022,\u00226\u0022,\u0022POWER\u0022,\u00223\u0022,\u00223\u0022]]},\u0022symbolSet\u0022:{\u0022id\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022symbols\u0022:[{\u0022id\u0022:\u00222\u0022},{\u0022id\u0022:\u00223\u0022},{\u0022id\u0022:\u00224\u0022},{\u0022id\u0022:\u00225\u0022},{\u0022id\u0022:\u00226\u0022},{\u0022id\u0022:\u00227\u0022},{\u0022id\u0022:\u00228\u0022},{\u0022id\u0022:\u0022ACE\u0022},{\u0022id\u0022:\u0022FREE\u0022},{\u0022id\u0022:\u0022POWER\u0022},{\u0022id\u0022:\u0022BANANA\u0022},{\u0022id\u0022:\u0022SEAL_SYNC\u0022},{\u0022id\u0022:\u0022SEAL_ROWS\u0022},{\u0022id\u0022:\u0022SEAL_PAW\u0022},{\u0022id\u0022:\u0022SEAL_RAND\u0022}]},\u0022paytable\u0022:{\u0022id\u0022:\u0022midnight-vault-paytable-v1\u0022,\u0022symbolSetId\u0022:\u0022midnight-vault-symbols-v1\u0022,\u0022rules\u0022:[{\u0022symbolId\u0022:\u00222\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:1},{\u0022symbolId\u0022:\u00222\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:4},{\u0022symbolId\u0022:\u00223\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:1},{\u0022symbolId\u0022:\u00223\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:2},{\u0022symbolId\u0022:\u00224\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:1},{\u0022symbolId\u0022:\u00224\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:7},{\u0022symbolId\u0022:\u00225\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:2},{\u0022symbolId\u0022:\u00225\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:6},{\u0022symbolId\u0022:\u00226\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:2},{\u0022symbolId\u0022:\u00226\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:8},{\u0022symbolId\u0022:\u00227\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:3},{\u0022symbolId\u0022:\u00227\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:11},{\u0022symbolId\u0022:\u0022ACE\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:5},{\u0022symbolId\u0022:\u0022ACE\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:18},{\u0022symbolId\u0022:\u0022POWER\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:2},{\u0022symbolId\u0022:\u0022POWER\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:4},{\u0022symbolId\u0022:\u00228\u0022,\u0022matchLength\u0022:3,\u0022multiplier\u0022:4},{\u0022symbolId\u0022:\u00228\u0022,\u0022matchLength\u0022:5,\u0022multiplier\u0022:14}]},\u0022featureProfile\u0022:{\u0022gameId\u0022:\u0022dragon-hoard-v1\u0022,\u0022scatterRequiredSymbols\u0022:3,\u0022scatterAwardedSpins\u0022:6,\u0022collectionTarget\u0022:30,\u0022collectionAwardedSpins\u0022:7,\u0022usesCollections\u0022:true,\u0022usesEnergy\u0022:false,\u0022usesDirectValueTokens\u0022:false,\u0022scatterFeatureMode\u0022:null,\u0022collectionFeatureMode\u0022:\u0022rows-paw\u0022,\u0022baseReelSetId\u0022:\u0022midnight-vault-reels-v1\u0022,\u0022targetHitRate\u0022:null,\u0022paylinePatternIds\u0022:null,\u0022payoutMultiplier\u0022:1.09},\u0022pityMissesBefore\u0022:0,\u0022energyBalanceBefore\u0022:0,\u0022freeSpinFeatureMode\u0022:null,\u0022generationAttempts\u0022:1,\u0022rawGeneratedReels\u0022:[[\u0022FREE\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022],[\u0022FREE\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022],[\u0022FREE\u0022,\u00225\u0022,\u00224\u0022,\u00224\u0022],[\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022],[\u00222\u0022,\u00225\u0022,\u00224\u0022,\u00223\u0022]],\u0022reelsAfterFreeGameFrequency\u0022:[[\u0022FREE\u0022,\u00224\u0022,\u00222\u0022,\u00226\u0022],[\u0022FREE\u0022,\u00223\u0022,\u00222\u0022,\u00223\u0022],[\u0022FREE\u0022,\u00225\u0022,\u00224\u0022,\u00224\u0022],[\u00222\u0022,\u00222\u0022,\u00223\u0022,\u00223\u0022],[\u00222\u0022,\u00225\u0022,\u00224\u0022,\u00223\u0022]]},\u0022rulesSha256\u0022:\u0022fe575d866478ceaf9a42a67420d4c54b836719d43aa626871daae9beb9c30aca\u0022,\u0022settledPayout\u0022:{\u0022totalPoints\u0022:0,\u0022paylines\u0022:[]},\u0022isFreeSpin\u0022:false,\u0022activeFreeSpinFeatureMode\u0022:null,\u0022payoutMultiplier\u0022:1,\u0022piratesGemEvidence\u0022:null,\u0022outcomeSchemaVersion\u0022:6}}",
+    "retentionState": "unreviewed",
+    "retentionNote": null
+  }
+}

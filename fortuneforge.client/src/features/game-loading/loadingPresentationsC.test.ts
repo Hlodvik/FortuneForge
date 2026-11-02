@@ -7,7 +7,7 @@ import { GameLoadingScreen } from './GameLoadingScreen'
 import { LOADING_PRESENTATIONS_C } from './loadingPresentationsC'
 
 const assignedIds = [
-  'mines', 'solitaire', 'hearts', 'liars-dice', '2048', 'drop-merge',
+  'mines', 'solitaire', 'free-solitaire', 'hearts', 'liars-dice', '2048', 'drop-merge',
   'candy-carnival', 'phantom-manor', 'nordic-legends', 'desert-treasures',
   'robot-revolution', 'dragon-hoard',
 ] as const
@@ -15,6 +15,7 @@ const assignedIds = [
 const nonSlotComponents: Readonly<Record<string, string>> = {
   mines: 'AuthenticatedMinesRoute',
   solitaire: 'AuthenticatedSolitaireRoute',
+  'free-solitaire': 'AuthenticatedFreeSolitaireRoute',
   hearts: 'AuthenticatedHeartsRoute',
   'liars-dice': 'AuthenticatedLiarsDiceRoute',
   '2048': 'AuthenticatedTwentyFortyEightRoute',
@@ -22,11 +23,11 @@ const nonSlotComponents: Readonly<Record<string, string>> = {
 }
 
 describe('C game loading presentations', () => {
-  it('covers twelve assigned games and eighteen aliases without enabling the separate Mines integration', () => {
+  it('covers the assigned games and aliases without enabling the separate Mines integration', () => {
     expect(LOADING_PRESENTATIONS_C.map((entry) => entry.id)).toEqual(assignedIds)
-    expect(new Set(LOADING_PRESENTATIONS_C.map((entry) => entry.id)).size).toBe(12)
+    expect(new Set(LOADING_PRESENTATIONS_C.map((entry) => entry.id)).size).toBe(13)
     const routes = LOADING_PRESENTATIONS_C.flatMap((entry) => entry.routes)
-    expect(routes).toHaveLength(18)
+    expect(routes).toHaveLength(19)
     expect(new Set(routes).size).toBe(routes.length)
 
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
@@ -81,7 +82,12 @@ describe('C game loading presentations', () => {
       expect(html).toContain(`data-game-loading="${entry.id}"`)
       expect(html).toContain(`>${entry.title}</h1>`)
       expect(html).toContain(`Loading ${entry.title}…`)
-      expect(html).toContain(`src="${entry.image}"`)
+      if (entry.imageSrcSet) {
+        expect(entry.imageSrcSet).toContain(`${entry.image} 768w`)
+        expect(html).not.toContain('src=') // Source waits for measured sizes in the browser.
+      } else {
+        expect(html).toContain(`src="${entry.image}"`)
+      }
       expect(html).toContain('--game-loading-background:' + entry.background)
       expect(html).toContain('--game-loading-accent:' + entry.accent)
       expect(html.match(/role="status"/g)).toHaveLength(1)
@@ -93,7 +99,7 @@ describe('C game loading presentations', () => {
     const source = readFileSync(new URL('./loadingPresentationsC.ts', import.meta.url), 'utf8')
     const runtimeImports = [...source.matchAll(/^import (?!type\b).+ from '([^']+)'/gm)]
       .map((match) => match[1])
-    expect(runtimeImports).toHaveLength(12)
+    expect(runtimeImports).toHaveLength(13)
     expect(runtimeImports.every((path) => /^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/.+\.webp$/.test(path))).toBe(true)
     expect(source).toContain("import type { GameLoadingEntry } from './types'")
     expect(source).not.toMatch(/\bimport\s*\(/)

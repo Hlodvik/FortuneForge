@@ -528,9 +528,19 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             }
 
             foreach (var tableId in prior.TableIds.Except(state.Tables.Keys, StringComparer.Ordinal))
+            {
+                var previous = prior.TableSnapshots[tableId];
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "three-card-poker",
+                    $"{tableId}-round-{previous.RoundNumber}", previous.Version, nowUtc,
+                    new { previous, removed = true }, previous.Players.Where(player => !ThreeCardPokerManagedSeat.IsManaged(player)).Select(player => player.ActorId),
+                    "table-removed", tableId);
                 transaction.Delete(TableDocument(tableId));
+            }
             foreach (var table in state.Tables.Values)
             {
+                FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "three-card-poker",
+                    $"{table.TableId}-round-{table.RoundNumber}", table.Version, nowUtc, table,
+                    table.Players.Where(player => !ThreeCardPokerManagedSeat.IsManaged(player)).Select(player => player.ActorId), "engine-state", table.TableId);
                 transaction.Set(TableDocument(table.TableId), new Dictionary<string, object>
                 {
                     ["stateId"] = stateId,
@@ -591,6 +601,20 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             transaction.Create(LedgerDocument(entry.Id), LedgerData(entry));
         foreach (var entry in journal.Revenue)
             transaction.Create(RevenueDocument(entry.RoundId), RevenueData(entry));
+        foreach (var audit in journal.RoundAudits)
+        {
+            FortuneForge.Server.RoundAudit.RoundAuditFirestore.Write(transaction, database, audit);
+            var startKnown = !audit.Summary.Findings.Any(finding => finding.Code == "round-start-unavailable");
+            foreach (var player in audit.Summary.Participants.Where(player => player.IsAccountBacked))
+            {
+                var analytics = FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.Create(new(
+                    audit.Summary.GameId, audit.Summary.RoundId, player.ActorId, "paid", true,
+                    audit.Summary.CompletedAtUtc, startKnown ? audit.Summary.StartedAtUtc : null,
+                    player.WagerCents, player.PayoutCents, "gameRoundAudits", audit.Summary.Id))!;
+                transaction.Set(database.Collection(FortuneForge.Games.Abstractions.Analytics.GameAnalyticsOutbox.CollectionName)
+                    .Document(analytics.Id), analytics.Fields);
+            }
+        }
         foreach (var result in journal.Results)
         {
             transaction.Create(CardGameResultDocument(result.ResultId), CardGameResultData(result));
@@ -864,14 +888,17 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
     private sealed record StateReferences(
         IReadOnlySet<string> TableIds,
         IReadOnlySet<string> TicketIds,
-        IReadOnlySet<string> UserIds)
+        IReadOnlySet<string> UserIds,
+        IReadOnlyDictionary<string, ThreeCardPokerTableState> TableSnapshots)
     {
         public static StateReferences Capture(ThreeCardPokerTableLobbyState state, string? requestedUserId) => new(
             state.Tables.Keys.ToHashSet(StringComparer.Ordinal),
             state.Tickets.Select(ticket => ticket.TicketId).ToHashSet(StringComparer.Ordinal),
             state.Sessions.Keys.Append(requestedUserId ?? string.Empty)
                 .Where(value => !string.IsNullOrEmpty(value))
-                .ToHashSet(StringComparer.Ordinal));
+                .ToHashSet(StringComparer.Ordinal),
+            state.Tables.ToDictionary(pair => pair.Key,
+                pair => JsonSerializer.Deserialize<ThreeCardPokerTableState>(JsonSerializer.Serialize(pair.Value, JsonOptions), JsonOptions)!, StringComparer.Ordinal));
     }
 }
 

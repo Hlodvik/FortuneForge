@@ -14,7 +14,8 @@ internal sealed class BlackjackTableCoordinator(
     BlackjackManagedPlayerSupply? managedPlayerSupply = null,
     IMultiplayerMatchmaker? multiplayerMatchmaker = null,
     IManagedTablePopulationDirector? managedPopulationDirector = null,
-    bool allowManagedArrivals = true)
+    bool allowManagedArrivals = true,
+    bool multiplayerEnabled = true)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -58,9 +59,21 @@ internal sealed class BlackjackTableCoordinator(
         var current = BlackjackTableProjection.Session(state, userId, nowUtc);
         if (current.Kind != BlackjackTableSessionKinds.Idle || current.Version != expectedVersion)
             throw new BlackjackTableConflictException("The Blackjack table session changed. Reconnect before joining.");
+        if (!multiplayerEnabled)
+        {
+            var soloTicket = new BlackjackTableTicket(
+                ticketId, userId, $"seat_{Guid.NewGuid():N}", displayName.Trim(),
+                null, 0, "matched", 1, nowUtc, nowUtc);
+            var soloTable = CreateSoloTable(soloTicket, nowUtc);
+            state.Tables.Add(soloTable.TableId, soloTable);
+            state.Sessions[userId] = new(BlackjackTableSessionKinds.Table, null, soloTable.TableId);
+            state.Guards[GuardKey(userId, idempotencyKey)] = new("join", ticketId, detail, nowUtc);
+            StartIfReady(soloTable, nowUtc);
+            return Result(state, balances, userId, nowUtc, journal);
+        }
         var target = matchmaking.FindLiveTable(
             state.Tables.Values,
-            table => table.Phase != BlackjackTablePhases.Closed &&
+            table => !table.SoloMode && table.Phase != BlackjackTablePhases.Closed &&
                 table.Players.Count(player => !BlackjackManagedSeat.IsManaged(player)) < BlackjackManagedTablePolicy.MaximumOccupiedSeats &&
                 (table.Players.Count < BlackjackTableEngine.Capacity || table.Players.Any(BlackjackManagedSeat.IsManaged)),
             table => table.CreatedAtUtc,
@@ -146,6 +159,13 @@ internal sealed class BlackjackTableCoordinator(
         if (Replay(state, userId, idempotencyKey, "wager", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
         var table = OwnedTable(state, userId, tableId);
+        if (table.SoloMode && table.Phase == "settlement" && table.RoundAccountingSettled)
+        {
+            if (table.Version != expectedVersion)
+                throw new BlackjackTableConflictException("The Blackjack table changed. Reconnect before placing another wager.");
+            BeginNextRoundCountdown(state, journal, table, nowUtc);
+            expectedVersion = table.Version;
+        }
         if (table.Phase != BlackjackTablePhases.Betting ||
             table.Transition != "human-wager" ||
             table.ActiveSeat != table.Players.Single(value => value.ActorId == userId).Seat ||
@@ -199,6 +219,8 @@ internal sealed class BlackjackTableCoordinator(
             return Result(state, balances, userId, nowUtc, journal);
         var table = OwnedTable(state, userId, tableId);
         var player = table.Players.Single(value => value.ActorId == userId);
+        if (table.SoloMode)
+            throw new BlackjackTableConflictException("A solo Blackjack table waits for your next wager; leave the table to stop playing.");
         if (table.Phase != BlackjackTablePhases.Betting ||
             table.Transition != "human-wager" ||
             table.ActiveSeat != player.Seat ||
@@ -291,7 +313,14 @@ internal sealed class BlackjackTableCoordinator(
         if (table.Version != expectedVersion)
             throw new BlackjackTableConflictException("The Blackjack table changed before the seat could be left.");
         var player = table.Players.Single(value => value.ActorId == userId);
-        if (table.Phase == BlackjackTablePhases.Betting)
+        if (table.SoloMode && table.Phase == "settlement" && table.RoundAccountingSettled)
+        {
+            table.Players.Remove(player);
+            CloseTable(state, table, journal);
+            table.Version = checked(table.Version + 1);
+            table.UpdatedAtUtc = nowUtc;
+        }
+        else if (table.Phase == BlackjackTablePhases.Betting)
         {
             if (player.NextWagerCents > 0)
             {
@@ -339,8 +368,16 @@ internal sealed class BlackjackTableCoordinator(
     {
         foreach (var table in state.Tables.Values.OrderBy(value => value.CreatedAtUtc).ToArray())
         {
+            if (!multiplayerEnabled && !table.SoloMode &&
+                table.Phase == BlackjackTablePhases.Betting &&
+                table.Players.All(player => BlackjackManagedSeat.IsManaged(player) || player.NextWagerCents == 0))
+            {
+                DrainMultiplayerTable(state, table, journal);
+                continue;
+            }
             if (table.Phase is BlackjackTablePhases.Dealing or BlackjackTablePhases.Active or BlackjackTablePhases.Insurance or BlackjackTablePhases.Dealer)
                 BlackjackTableEngine.AdvanceAutomatedTurns(table, nowUtc);
+            ResolveLeavingSoloTurn(table, nowUtc);
             AdvanceManagedPlayerTurns(table, nowUtc);
             if (table.Phase == "settlement") CompleteSettlement(state, balances, journal, table, nowUtc);
             if (table.Phase == BlackjackTablePhases.Betting && table.Transition == "next-round-countdown" &&
@@ -365,7 +402,40 @@ internal sealed class BlackjackTableCoordinator(
                 ApplyWagerDeadline(state, table, nowUtc);
             }
         }
-        StartNewTables(state, balances, journal, nowUtc);
+        if (multiplayerEnabled) StartNewTables(state, balances, journal, nowUtc);
+        else StartSoloTablesForQueuedTickets(state, nowUtc);
+    }
+
+    private static void ResolveLeavingSoloTurn(BlackjackTableState table, DateTime nowUtc)
+    {
+        if (!table.SoloMode || table.Transition is not null || table.ActiveSeat is not { } seat) return;
+        var player = table.Players.SingleOrDefault(value => value.Seat == seat);
+        if (player?.LeavingAfterRound != true) return;
+        if (table.Phase is BlackjackTablePhases.Insurance or BlackjackTablePhases.Active)
+            BlackjackTableEngine.MarkLeaving(table, player, nowUtc);
+    }
+
+    private static BlackjackTableState CreateSoloTable(BlackjackTableTicket ticket, DateTime nowUtc) => new()
+    {
+        TableId = BlackjackTableIds.Hash($"blackjack-solo\n{ticket.TicketId}"),
+        Players = [Human(ticket, 0, 0)],
+        CreatedAtUtc = nowUtc,
+        UpdatedAtUtc = nowUtc,
+        Phase = BlackjackTablePhases.Betting,
+        Version = 1,
+        SoloMode = true
+    };
+
+    private void StartSoloTablesForQueuedTickets(BlackjackTableLobbyState state, DateTime nowUtc)
+    {
+        foreach (var ticket in state.Tickets.Where(value => value.Status == "queued").ToArray())
+        {
+            var table = CreateSoloTable(ticket, nowUtc);
+            state.Tables.Add(table.TableId, table);
+            MarkTicketMatched(state, ticket);
+            state.Sessions[ticket.UserId] = new(BlackjackTableSessionKinds.Table, null, table.TableId);
+            StartIfReady(table, nowUtc);
+        }
     }
 
     private static void AdvanceManagedPlayerTurns(BlackjackTableState table, DateTime nowUtc)
@@ -519,9 +589,13 @@ internal sealed class BlackjackTableCoordinator(
     {
         if (table.RoundAccountingSettled)
         {
+            if (table.SoloMode) return;
             if (table.Transition == "settlement-display" &&
                 table.NextTransitionAtUtc is { } displayEndsAt && nowUtc >= displayEndsAt)
-                BeginNextRoundCountdown(state, journal, table, displayEndsAt);
+            {
+                if (multiplayerEnabled) BeginNextRoundCountdown(state, journal, table, displayEndsAt);
+                else DrainMultiplayerTable(state, table, journal);
+            }
             return;
         }
         var roundId = $"{table.TableId}-round-{table.RoundNumber}";
@@ -576,12 +650,18 @@ internal sealed class BlackjackTableCoordinator(
                 nowUtc));
         }
         table.RoundAccountingSettled = true;
+        if (humanCount > 0) journal.RoundAudits.Add(FortuneForge.Server.RoundAudit.TableRoundAudit.Capture(table, nowUtc));
+        if (table.SoloMode && table.Players.All(player => player.LeavingAfterRound))
+        {
+            CloseTable(state, table, journal);
+            return;
+        }
         table.ActiveSeat = null;
         table.PendingSeat = null;
         table.ActionDeadlineAtUtc = null;
         table.WagerDeadlineAtUtc = null;
-        table.Transition = "settlement-display";
-        table.NextTransitionAtUtc = nowUtc.Add(BlackjackTableEngine.SettlementDisplayDuration);
+        table.Transition = table.SoloMode ? null : "settlement-display";
+        table.NextTransitionAtUtc = table.SoloMode ? null : nowUtc.Add(BlackjackTableEngine.SettlementDisplayDuration);
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
     }
@@ -608,8 +688,8 @@ internal sealed class BlackjackTableCoordinator(
         table.ActiveSeat = null;
         table.PendingSeat = null;
         table.ActionDeadlineAtUtc = null;
-        table.Transition = "next-round-countdown";
-        table.NextTransitionAtUtc = nowUtc.Add(BlackjackTableEngine.NextRoundCountdownDuration);
+        table.Transition = table.SoloMode ? null : "next-round-countdown";
+        table.NextTransitionAtUtc = table.SoloMode ? null : nowUtc.Add(BlackjackTableEngine.NextRoundCountdownDuration);
         table.WagerDeadlineAtUtc = null;
         AdmitQueuedHumansAtBoundary(state, table, journal);
         if (!ApplyPopulationDecision(state, table, journal, nowUtc)) return;
@@ -621,6 +701,7 @@ internal sealed class BlackjackTableCoordinator(
         }
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
+        if (table.SoloMode) StartIfReady(table, nowUtc);
     }
 
     private void AdmitQueuedHumansAtBoundary(
@@ -689,6 +770,19 @@ internal sealed class BlackjackTableCoordinator(
         BlackjackTableJournal journal,
         DateTime nowUtc)
     {
+        if (table.SoloMode)
+        {
+            if (table.Players.Count > 0) return true;
+            CloseTable(state, table, journal);
+            return false;
+        }
+        if (!multiplayerEnabled)
+        {
+            if (table.Players.Any(player => !BlackjackManagedSeat.IsManaged(player) && player.NextWagerCents > 0))
+                return true;
+            DrainMultiplayerTable(state, table, journal);
+            return false;
+        }
         var decision = population.Observe(PopulationObservation(table));
         if (!decision.KeepTableOpen)
         {
@@ -826,6 +920,16 @@ internal sealed class BlackjackTableCoordinator(
             ReleaseManagedPlayer(table, player, journal);
         foreach (var ticket in state.Tickets.Where(ticket => ticket.Status == "queued" && ticket.TargetTableId == table.TableId).ToArray())
             ReplaceTicket(state, ticket with { TargetTableId = null, EligibleAfterRound = 0 });
+    }
+
+    private void DrainMultiplayerTable(
+        BlackjackTableLobbyState state,
+        BlackjackTableState table,
+        BlackjackTableJournal journal)
+    {
+        foreach (var player in table.Players.Where(player => !BlackjackManagedSeat.IsManaged(player)))
+            state.Sessions[player.ActorId] = new(BlackjackTableSessionKinds.Idle, null, null);
+        CloseTable(state, table, journal);
     }
 
     private static void MarkTicketMatched(BlackjackTableLobbyState state, BlackjackTableTicket ticket) =>
@@ -995,7 +1099,7 @@ internal sealed class BlackjackTableCoordinator(
         next.Status = managed ? "considering-wager" : "choosing-wager";
         table.ActiveSeat = next.Seat;
         table.PendingSeat = next.Seat;
-        table.WagerDeadlineAtUtc = nowUtc.Add(BlackjackTableEngine.WagerDuration);
+        table.WagerDeadlineAtUtc = table.SoloMode ? null : nowUtc.Add(BlackjackTableEngine.WagerDuration);
         table.Transition = managed ? "managed-wager" : "human-wager";
         table.NextTransitionAtUtc = null;
         if (managed)

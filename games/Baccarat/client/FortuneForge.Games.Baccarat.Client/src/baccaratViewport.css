@@ -8,10 +8,6 @@
   .ff-baccarat__hand { padding: .35rem; border-radius: .7rem; }
   .ff-baccarat__hand-title { font-size: .8rem; }
   .ff-baccarat__hand-title strong { width: 1.7rem; font-size: 1.15rem; }
-  .ff-baccarat__round-head { gap: .35rem; }
-  .ff-baccarat__round-head span { font-size: .85rem; }
-  .ff-baccarat__round-head strong { font-size: 1.4rem; }
-  .ff-baccarat__round-head small { font-size: .55rem; }
   .ff-baccarat__bet { flex-direction: column; min-height: 2.9rem; gap: .1rem; padding: .25rem; }
   .ff-baccarat__bet strong { font-size: .85rem; }
   .ff-baccarat__bet span { font-size: .55rem; }
@@ -19,11 +15,9 @@
   .ff-baccarat__bet-sides { gap: .4rem; }
   .ff-baccarat__wager-row { gap: .5rem; }
   .ff-baccarat__primary { min-width: 5.5rem; padding-inline: .65rem; }
-  .ff-baccarat__stake small { font-size: .5rem; }
-  .ff-baccarat__round-actions { gap: .4rem; }
-  .ff-baccarat__round-actions > button { min-width: 0; padding-inline: .55rem; }
   .ff-baccarat__inline-road .ff-baccarat__road { grid-template-columns: minmax(0, 1fr) auto; gap: .3rem; }
-  .ff-baccarat__inline-road .ff-baccarat__big-road, .ff-baccarat__inline-road .ff-baccarat__road-stats, .ff-baccarat__inline-road .ff-baccarat__shoe small { display: none; }
+  .ff-baccarat__inline-road .ff-baccarat__big-road,
+.ff-baccarat__inline-road .ff-baccarat__road-stats { display: none; }
   .ff-baccarat__inline-road .ff-baccarat__road ol { display: flex; min-height: .9rem; gap: .15rem; }
   .ff-baccarat__inline-road .ff-baccarat__road li { flex: 0 0 .9rem; width: .9rem; font-size: .45rem; }
 }
@@ -42,15 +36,11 @@
   .ff-baccarat__card-slot { width: min(3.3rem, calc((100cqh - 1.7rem) * 5 / 7)); }
   .ff-baccarat__corner { font-size: .8rem; }
   .ff-baccarat__suit { font-size: 1.6rem; }
-  .ff-baccarat__round-head span { font-size: .75rem; }
-  .ff-baccarat__round-head strong { font-size: 1.25rem; }
   .ff-baccarat__rail:has(.ff-baccarat__bet-sides) { grid-template-columns: minmax(0, 1fr) minmax(13.5rem, .8fr); gap: .7rem; padding: .25rem .5rem; }
   .ff-baccarat__bet-sides { gap: .3rem; }
   .ff-baccarat__bet { min-height: 2.9rem; flex-direction: column; gap: .1rem; }
   .ff-baccarat__bet strong { font-size: .8rem; }
   .ff-baccarat__bet span { font-size: .5rem; }
-  .ff-baccarat__stake label { font-size: .5rem; }
-  .ff-baccarat__stake small { font-size: .45rem; }
   .ff-baccarat__wager-row { gap: .5rem; }
   .ff-baccarat__wager-row .ff-baccarat__primary { min-width: 4.5rem; }
   .ff-baccarat__ticket { font-size: .7rem; }

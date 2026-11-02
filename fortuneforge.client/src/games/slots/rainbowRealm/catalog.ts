@@ -1,4 +1,4 @@
-import watermelonSymbol from '../../../assets/slots/symbols/watermelon-slice.gif'
+import watermelonSymbol from '../../../assets/slots/games/rainbow-realm/responsive/watermelon-slice-192.webp'
 import type { SlotGameCatalogDefinition } from '../shared/slotGameManifest'
 
 export const RAINBOW_REALM_CATALOG: SlotGameCatalogDefinition = {

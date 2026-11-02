@@ -7,7 +7,7 @@ export const OCEAN_ODYSSEY_DEFINITION: ShowcaseSlotGameDefinition = {
   description: 'Descend through coral gardens and ancient currents in search of a luminous pearl kingdom.',
   serverGameId: 'ocean-odyssey-v1',
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23],
-  presentation: 'gem-hoard', collectionAriaLabel: 'Coral treasure collections', itemLabel: 'sea treasures',
+  presentation: 'star-orbit', collectionAriaLabel: 'Coral treasure collections', itemLabel: 'sea treasures',
   energyLabel: 'Tidal charge', actorName: 'The pearl-diver net', awardLabel: 'Deep-sea treasure haul',
   outcomeNarrative: {
     lossTitle: 'No deep-sea find this spin', winTitle: 'Deep-sea find', greatWinTitle: 'Oceanic reward', bigWinTitle: 'Abyssal jackpot',

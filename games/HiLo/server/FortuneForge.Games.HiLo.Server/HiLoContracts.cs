@@ -7,7 +7,7 @@ public sealed record HiLoActionRequest(string OperationId, long ExpectedRevision
 public sealed record HiLoCardResponse(string Rank, string Suit);
 public sealed record HiLoHistoryResponse(HiLoCardResponse Card, string Choice, bool? Won);
 public sealed record HiLoOfferResponse(decimal Probability, decimal Multiplier, long ProjectedReturnCents, bool Available);
-public sealed record HiLoLimits(long MinWagerCents = 10, long MaxWagerCents = 100_000,
+public sealed record HiLoLimits(long MinWagerCents = 10, long MaxWagerCents = 500,
     long MaximumReturnCents = 10_000_000, decimal MaxMultiplier = 1000, int MaxSkips = 52, int MaxStreak = 100, decimal HouseEdge = .01m);
 public sealed record HiLoRoundResponse(string RoundId, long Revision, string Status, long WagerCents,
     HiLoCardResponse CurrentCard, IReadOnlyList<HiLoHistoryResponse> History, long CurrentReturnCents,

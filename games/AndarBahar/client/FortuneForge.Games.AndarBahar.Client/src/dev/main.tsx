@@ -19,7 +19,7 @@ const renderCardFace = (card: AndarBaharCard) => <PlayingCard card={{
 // Monorepo-only preview: reuse the actual host chrome rather than a second navbar.
 // No account is fabricated. The sample API remains development-practice only.
 createRoot(document.getElementById('root')!).render(
-  <InGameShell theme="casino" className="andar-bahar-page" bodyClassName="andar-bahar-route__body">
+  <InGameShell className="andar-bahar-page" bodyClassName="andar-bahar-route__body">
     <AndarBaharGame playerId="standalone-practice" renderCardFace={renderCardFace}/>
   </InGameShell>,
 )

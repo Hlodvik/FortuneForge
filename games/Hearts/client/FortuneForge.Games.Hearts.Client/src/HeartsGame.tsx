@@ -11,10 +11,13 @@ import chip5 from './assets/chip-5.png'
 import chip10 from './assets/chip-10.png'
 import chip25 from './assets/chip-25.png'
 
+export type HeartsParticipation = 'paid-pending' | 'paid-queue' | 'paid-match' | 'free-pending' | 'free-match' | 'trial-pending' | 'trial' | null
+
 export type HeartsGameProps = Readonly<{
   gateway: HeartsGateway
   balance?: number
   onBalanceChange?: (balance: number) => void
+  onParticipationChange?: (participation: HeartsParticipation) => void
   renderCard?: (card: HeartsCard, faceDown?: boolean) => ReactNode
 }>
 type Panel = 'rules' | 'scores' | 'history' | 'leave' | null
@@ -23,7 +26,7 @@ const chipImages: Readonly<Record<number, string>> = { 1: chip1, 2: chip2, 5: ch
 const money = (value: number) => `R${value.toFixed(2)}`
 const backCard: HeartsCard = { code: 'back', rank: 'ace', suit: 'spades', label: 'A♠' }
 
-export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }: HeartsGameProps) {
+export function HeartsGame({ gateway, balance = 0, onBalanceChange, onParticipationChange, renderCard }: HeartsGameProps) {
   const [status, setStatus] = useState<HeartsStatus | null>(null)
   const [paid, setPaid] = useState<HeartsPaidSession | null>(null)
   const [practice, setPractice] = useState<HeartsMatch | null>(null)
@@ -43,6 +46,7 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   const [notice, setNotice] = useState<string | null>(null)
   const [recovery, setRecovery] = useState(false)
   const [practiceRecovery, setPracticeRecovery] = useState(false)
+  const [pendingParticipation, setPendingParticipation] = useState<HeartsParticipation>(null)
   const [passSelectionNotice, setPassSelectionNotice] = useState<string | null>(null)
   const [panel, setPanel] = useState<Panel>(null)
   const [history, setHistory] = useState<readonly HeartsPaidTable[]>([])
@@ -61,6 +65,8 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   const handGesture = useRef<{ x: number; y: number; scroll: number; moved: boolean } | null>(null)
   const balanceCallback = useRef(onBalanceChange)
   balanceCallback.current = onBalanceChange
+  const participationCallback = useRef(onParticipationChange)
+  participationCallback.current = onParticipationChange
   const { muted, toggleMute, play } = useHeartsAudio()
   const table = mode === 'paid' ? paid?.table ?? null : null
   const match = mode === 'paid' ? table?.match ?? null : practice
@@ -70,6 +76,18 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
   const trialComplete = mode === 'trial' && practice?.isTrial === true && practice.phase === 'complete' && practice.completedTricks.length === 13
   const setupResolved = !gateway.onboarding || onboarding?.shouldAskPlayedBefore === false
   const showEntryGate = mode === 'lobby' && !setupResolved
+  const participation: HeartsParticipation = mode === 'paid' && paid?.kind === 'queue'
+    ? 'paid-queue'
+    : mode === 'paid' && paid?.kind === 'match' &&
+      !table?.players.some(player => player.isCurrentPlayer && player.hasLeft)
+      ? 'paid-match'
+      : mode === 'free' && practice && !practice.winner
+        ? 'free-match'
+        : mode === 'trial' && practice && !trialComplete
+          ? 'trial'
+          : pendingParticipation
+  useEffect(() => { participationCallback.current?.(participation) }, [participation])
+  useEffect(() => () => participationCallback.current?.(null), [])
   const choices = paid?.entryOptions ?? [1, 2, 5, 10, 25]
   const wallet = paid?.balanceCredits ?? balance
   const face = (card: HeartsCard, hidden = false) => renderCard?.(card, hidden) ?? <CardFace card={card} faceDown={hidden} />
@@ -143,6 +161,7 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
     try {
       const next = await gateway.paid.getSession()
       publishPaid(next)
+      setPendingParticipation(null)
       if (next.kind !== 'idle') setMode('paid')
       setRecovery(false); setError(null)
     }
@@ -182,8 +201,10 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
     actionLock.current = true
     setBusy(true)
     setError(null)
+    setPendingParticipation(isPaid ? 'paid-pending' : practiceMode === 'trial' ? 'trial-pending' : 'free-pending')
     try {
       const next = await operation()
+      setPendingParticipation(null)
       if ('kind' in next) { publishPaid(next); setMode(next.kind === 'idle' ? 'lobby' : 'paid') }
       else { setPractice(next); setMode(practiceMode) }
       setSelected([])
@@ -191,7 +212,10 @@ export function HeartsGame({ gateway, balance = 0, onBalanceChange, renderCard }
     } catch (reason) {
       setError(errorMessage(reason))
       if (isPaid && (!(reason instanceof HeartsGatewayError) || reason.status === 0 || reason.status >= 500 || reason.status === 409)) setRecovery(true)
-      else if (!isPaid && practice) setPracticeRecovery(true)
+      else {
+        setPendingParticipation(null)
+        if (!isPaid && practice) setPracticeRecovery(true)
+      }
     } finally { actionLock.current = false; setBusy(false) }
   }
   function request(): HeartsPaidRequest { return { idempotencyKey: `hearts-${crypto.randomUUID()}`, expectedVersion: paid?.version } }

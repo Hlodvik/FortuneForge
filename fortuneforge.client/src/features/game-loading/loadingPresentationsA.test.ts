@@ -73,8 +73,12 @@ describe('A game loading presentations', () => {
     expect(manifest).not.toMatch(/\bimport\s*\(|@fortuneforge|fetch\s*\(/)
     const component = readFileSync(new URL('./GameLoadingScreen.tsx', import.meta.url), 'utf8')
     const componentImports = [...component.matchAll(/^import (?!type\b).+ from ['"]([^'"]+)['"]/gm)].map((match) => match[1])
-    expect(componentImports).toEqual(['react'])
+    expect(componentImports.sort()).toEqual(['../slots/components/ResponsiveSlotImage', 'react'])
     expect(component).not.toMatch(/\bimport\s*\(|@fortuneforge|fetch\s*\(|setTimeout|setInterval|requestAnimationFrame|window\.location/)
+    const imageHelper = readFileSync(new URL('../slots/components/ResponsiveSlotImage.tsx', import.meta.url), 'utf8')
+    const helperImports = [...imageHelper.matchAll(/^import (?!type\b).+ from ['"]([^'"]+)['"]/gm)].map((match) => match[1])
+    expect(helperImports).toEqual(['react'])
+    expect(imageHelper).not.toMatch(/\bimport\s*\(|@fortuneforge|fetch\s*\(/)
   })
 })
 

@@ -1,0 +1,113 @@
+// Typography-study layout only. Every full source canvas uses one common scale.
+import { createRequire } from 'node:module'
+import { readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const sharp = require('C:/Users/Lctiv/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp')
+const root = dirname(fileURLToPath(import.meta.url))
+const previousRoot = resolve(root, '../revision-2')
+const hash = bytes => createHash('sha256').update(bytes).digest('hex')
+const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+const sourceManifest = JSON.parse(await readFile(resolve(root, 'font-studies-manifest.json'), 'utf8'))
+const previous = JSON.parse(await readFile(resolve(previousRoot, 'preview-board-manifest.json'), 'utf8'))
+const approved = previous.assets.filter(asset => asset.group === 'accepted' || asset.id === 'triple-sevens')
+if (approved.length !== 11 || sourceManifest.families.length !== 3) throw new Error('Expected eleven approved images and three font studies')
+
+const approvedProof = []
+for (const asset of approved) {
+  const file = resolve(previousRoot, asset.file)
+  const currentSha256 = hash(await readFile(file))
+  if (currentSha256 !== asset.sha256) throw new Error(`Approved image changed: ${asset.id}`)
+  approvedProof.push({ id: asset.id, source: file, sha256: currentSha256, matchesRevision2: true, readOnly: true })
+}
+
+const glyphs = []
+for (const family of sourceManifest.families) {
+  if (family.assets.map(asset => asset.letter).join('') !== 'AKQJ') throw new Error(`Unexpected glyph order: ${family.id}`)
+  for (const item of family.assets) {
+    const source = await readFile(resolve(root, item.file))
+    if (hash(source) !== item.sha256) throw new Error(`Native glyph source changed: ${item.file}`)
+    const { data, info } = await sharp(source).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+    if (info.width !== 1254 || info.height !== 1254 || item.baseline !== 974 || family.commonBaseline !== 974) throw new Error('A common full canvas and baseline are required')
+    let minAlpha = 255, maxAlpha = 0, visible = 0
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3]
+      minAlpha = Math.min(minAlpha, alpha); maxAlpha = Math.max(maxAlpha, alpha)
+      if (alpha > 0) {
+        visible++
+        if (data[i] !== 241 || data[i+1] !== 231 || data[i+2] !== 213) throw new Error(`Non-flat RGB colour found: ${item.file}`)
+      }
+    }
+    if (minAlpha !== 0 || maxAlpha !== 255 || !visible) throw new Error(`Invalid alpha or empty glyph: ${item.file}`)
+    // Full-canvas resize: never extract, stretch or individually normalize ink.
+    const fullCanvasPreview = await sharp(source).resize(300, 300, { fit: 'contain' }).png().toBuffer()
+    glyphs.push({ familyId: family.id, familyTitle: family.title, letter: item.letter, file: item.file,
+      sourceSha256: item.sha256, width: 1254, height: 1254, baseline: 974,
+      fontSource: family.fontSource, fontSourceSha256: family.fontSourceSha256,
+      fontSize: family.fontSize, nominalCapHeight: family.nominalCapHeight,
+      visibleRGB: [241,231,213], alphaRange: [minAlpha,maxAlpha], visiblePixels: visible,
+      preview: fullCanvasPreview })
+  }
+}
+if (glyphs.length !== 12) throw new Error('Expected twelve glyph PNGs')
+
+const width = 1720, height = 1264, background = '#071321'
+const rowY = [180, 534, 888], colX = [320, 650, 980, 1310]
+const labelLines = { bodoni: ['Bodoni MT', 'Bold'], georgia: ['Georgia', 'Bold'], times: ['Times New', 'Roman Bold'] }
+const backdrop = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+<rect width="100%" height="100%" fill="${background}"/>
+<text x="60" y="61" font-family="Arial, sans-serif" font-size="37" font-weight="700" letter-spacing="2" fill="#f1e7d5">MIDNIGHT VAULT · LETTER STUDIES</text>
+<text x="60" y="101" font-family="Arial, sans-serif" font-size="24" fill="#acb8c7">Actual typefaces · flat warm ivory · no outline, bevel, shadow or texture</text>
+${['A','K','Q','J'].map((letter,column) => `<text x="${colX[column]+150}" y="150" text-anchor="middle" font-family="Arial, sans-serif" font-size="23" fill="#91a2b6">${letter}</text>`).join('')}
+${sourceManifest.families.map((family,row) => {
+  const lines = labelLines[family.id]
+  return `<text x="60" y="${rowY[row]+126}" font-family="Arial, sans-serif" font-size="29" font-weight="700" fill="#f1e7d5">${escape(lines[0])}</text><text x="60" y="${rowY[row]+165}" font-family="Arial, sans-serif" font-size="27" fill="#c2cbd7">${escape(lines[1])}</text>`
+}).join('')}
+${rowY.flatMap(y => colX.map(x => `<rect x="${x}" y="${y}" width="300" height="300" rx="12" fill="#0b1a2b" stroke="#25354a" stroke-width="2"/>`)).join('')}
+<text x="60" y="1230" font-family="Arial, sans-serif" font-size="22" fill="#91a2b6">Typography review only. The eleven approved symbol images remain unchanged.</text>
+</svg>`
+const layers = [{ input: Buffer.from(backdrop), left: 0, top: 0 }]
+for (let i = 0; i < glyphs.length; i++) layers.push({ input: glyphs[i].preview, left: colX[i%4], top: rowY[Math.floor(i/4)] })
+const board = await sharp({ create: { width, height, channels: 4, background } }).composite(layers).png().toBuffer()
+await writeFile(resolve(root, 'font-study-board.png'), board)
+await sharp(board).resize(1224).png().toFile(resolve(root, 'font-study-board-1224.png'))
+
+const strips = []
+for (const family of sourceManifest.families) {
+  const inputs = []
+  for (let i=0;i<4;i++) inputs.push({ input: await sharp(await readFile(resolve(root, family.assets[i].file))).resize(96,96,{fit:'contain'}).png().toBuffer(), left:20+i*120, top:20 })
+  const file = `${family.id}-96px-canvas-strip.png`
+  await sharp({ create: { width:496, height:136, channels:4, background } }).composite(inputs).png().toFile(resolve(root,file))
+  strips.push({ family: family.title, file, perGlyphCanvas:96, sourceCanvas:1254, cropApplied:false, baselineScale:96/1254 })
+}
+
+const records = glyphs.map(({preview,...item}) => item)
+const verification = { checkedUtc:new Date().toISOString(), kind:'Native font study packaging only',
+  approvedImagesChecked:11, allApprovedImagesMatchRevision2:true, approvedImages:approvedProof,
+  glyphsChecked:12, familyCount:3, eachFamilyOrder:'AKQJ', sourceCanvas:[1254,1254],
+  allVisiblePixelsHaveOneFlatRGB:[241,231,213], fullCanvasScale:300/1254,
+  baselineWithinEachCell:974*300/1254, individualInkCropsApplied:false, individualInkNormalizationApplied:false,
+  sourceFontFilesCopiedOrEmbedded:false, sourcePngsModified:false, imageGenerationUsed:false,
+  noGameOrProductionChanges:true }
+await writeFile(resolve(root,'font-study-verification.json'),JSON.stringify(verification,null,2)+'\n')
+const manifest = { kind:'Three native font directions for owner review; no font selected or final fifteen-symbol board created',
+  board:{full:'font-study-board.png',preview:'font-study-board-1224.png',width,height,background},
+  nativeFontSourceManifest:'font-studies-manifest.json', fill:'#f1e7d5', effects:[],
+  layout:'Three family rows and four letter columns. Entire source canvases uniformly scaled; supplied baselines and native proportions preserved.',
+  records, strips, verification:'font-study-verification.json', approvedImagesUnchanged:11 }
+await writeFile(resolve(root,'font-study-board-manifest.json'),JSON.stringify(manifest,null,2)+'\n')
+
+const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Midnight Vault — native font studies</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#071321;color:#f1e7d5;font:16px/1.5 Arial,sans-serif}main{max-width:1500px;margin:auto;padding:32px 26px}h1{margin:0;font-size:28px;letter-spacing:.08em}p{color:#acb8c7}.family{display:grid;grid-template-columns:180px repeat(4,minmax(0,1fr));gap:20px;align-items:center;margin:28px 0}.family h2{font-size:22px}.tile{appearance:none;background:#0b1a2b;border:1px solid #25354a;border-radius:10px;padding:0;cursor:zoom-in;width:100%;aspect-ratio:1}.tile img{display:block;width:100%;height:100%;object-fit:contain}.tile:focus-visible{outline:3px solid #f1e7d5;outline-offset:3px}a{color:#f1e7d5}nav{display:flex;gap:24px;flex-wrap:wrap}dialog{background:#071321;color:inherit;border:1px solid #486078;border-radius:12px;padding:20px;max-width:96vw;max-height:96vh}dialog::backdrop{background:#02070ee8}.head{display:flex;align-items:center;justify-content:space-between;gap:32px}.close{font:inherit;background:#24364c;color:#fff;border:1px solid #758aa6;padding:8px 16px;border-radius:6px;cursor:pointer}#zoom-image{display:block;max-width:88vw;max-height:76vh;object-fit:contain;margin:16px auto}.head h2{margin:0}@media(max-width:900px){.family{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.family h2{grid-column:1/-1;margin-bottom:0}}</style>
+<main><h1>MIDNIGHT VAULT · LETTER STUDIES</h1><p>Three actual typefaces, flat warm ivory and no effects. Entire source canvases share one scale; click a glyph to inspect its original1254-pixel PNG.</p>
+${sourceManifest.families.map((family,row)=>`<section class="family" aria-labelledby="${family.id}-title"><h2 id="${family.id}-title">${escape(family.title)}</h2>${family.assets.map((asset,column)=>`<button class="tile" type="button" data-index="${row*4+column}" aria-label="Inspect ${escape(family.title)} ${asset.letter}"><img src="data:image/png;base64,${glyphs[row*4+column].preview.toString('base64')}" alt="${asset.letter}"></button>`).join('')}</section>`).join('')}
+<nav><a href="font-study-board.png">Full-size board</a><a href="font-study-board-manifest.json">Font/source manifest</a><a href="font-study-verification.json">Eleven unchanged symbols and typography checks</a><a href="README.md">Notes</a></nav><p>Study only. No font is selected. The eleven approved art sources were checked read-only and remain unchanged.</p></main>
+<dialog id="zoom" aria-labelledby="zoom-title"><div class="head"><h2 id="zoom-title"></h2><button class="close" type="button">Close</button></div><img id="zoom-image" alt=""><a id="source-link" target="_blank" rel="noopener">Open original PNG</a></dialog>
+<script>const files=${JSON.stringify(records.map(item=>({label:item.familyTitle+' '+item.letter,file:item.file})))};const d=document.querySelector('#zoom');let opener;document.querySelectorAll('[data-index]').forEach(b=>b.addEventListener('click',()=>{const item=files[Number(b.dataset.index)];opener=b;document.querySelector('#zoom-title').textContent=item.label;const i=document.querySelector('#zoom-image');i.src=item.file;i.alt=item.label;document.querySelector('#source-link').href=item.file;d.showModal();}));document.querySelector('.close').addEventListener('click',()=>d.close());d.addEventListener('click',e=>{if(e.target===d)d.close();});d.addEventListener('close',()=>opener?.focus());</script></html>`
+await writeFile(resolve(root,'font-study.html'),html)
+for (const item of records) if(hash(await readFile(resolve(root,item.file)))!==item.sourceSha256) throw new Error(`Glyph changed during packaging: ${item.file}`)
+for (const item of approvedProof) if(hash(await readFile(item.source))!==item.sha256) throw new Error(`Approved source changed during packaging: ${item.id}`)
+console.log(JSON.stringify({board:resolve(root,'font-study-board.png'),preview:resolve(root,'font-study-board-1224.png'),html:resolve(root,'font-study.html'),fontFamilies:3,glyphs:12,approvedHashesMatching:11,allSourceFilesUnchanged:true,uniformWholeCanvasPlacement:true,bytes:board.length},null,2))

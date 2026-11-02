@@ -1,0 +1,366 @@
+[
+  {
+    "card": {
+      "rank": "ace",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Ace of clubs\"><span class=\"ff-playing-card__corner\"><b>A</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>A</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "two",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Two of clubs\"><span class=\"ff-playing-card__corner\"><b>2</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>2</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "three",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Three of clubs\"><span class=\"ff-playing-card__corner\"><b>3</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>3</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "four",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Four of clubs\"><span class=\"ff-playing-card__corner\"><b>4</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>4</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "five",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Five of clubs\"><span class=\"ff-playing-card__corner\"><b>5</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>5</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "six",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Six of clubs\"><span class=\"ff-playing-card__corner\"><b>6</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>6</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "seven",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Seven of clubs\"><span class=\"ff-playing-card__corner\"><b>7</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>7</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "eight",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Eight of clubs\"><span class=\"ff-playing-card__corner\"><b>8</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>8</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "nine",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Nine of clubs\"><span class=\"ff-playing-card__corner\"><b>9</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>9</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ten",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Ten of clubs\"><span class=\"ff-playing-card__corner\"><b>10</b><i>♣</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>10</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "jack",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Jack of clubs\"><span class=\"ff-playing-card__corner\"><b>J</b><i>♣</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>J</b><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>J</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "queen",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Queen of clubs\"><span class=\"ff-playing-card__corner\"><b>Q</b><i>♣</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>Q</b><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>Q</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "king",
+      "suit": "clubs"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"King of clubs\"><span class=\"ff-playing-card__corner\"><b>K</b><i>♣</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>K</b><i>♣</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>K</b><i>♣</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ace",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Ace of diamonds\"><span class=\"ff-playing-card__corner\"><b>A</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>A</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "two",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Two of diamonds\"><span class=\"ff-playing-card__corner\"><b>2</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>2</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "three",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Three of diamonds\"><span class=\"ff-playing-card__corner\"><b>3</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>3</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "four",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Four of diamonds\"><span class=\"ff-playing-card__corner\"><b>4</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>4</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "five",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Five of diamonds\"><span class=\"ff-playing-card__corner\"><b>5</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>5</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "six",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Six of diamonds\"><span class=\"ff-playing-card__corner\"><b>6</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>6</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "seven",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Seven of diamonds\"><span class=\"ff-playing-card__corner\"><b>7</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>7</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "eight",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Eight of diamonds\"><span class=\"ff-playing-card__corner\"><b>8</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>8</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "nine",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Nine of diamonds\"><span class=\"ff-playing-card__corner\"><b>9</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>9</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ten",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Ten of diamonds\"><span class=\"ff-playing-card__corner\"><b>10</b><i>♦</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>10</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "jack",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Jack of diamonds\"><span class=\"ff-playing-card__corner\"><b>J</b><i>♦</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>J</b><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>J</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "queen",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Queen of diamonds\"><span class=\"ff-playing-card__corner\"><b>Q</b><i>♦</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>Q</b><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>Q</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "king",
+      "suit": "diamonds"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"King of diamonds\"><span class=\"ff-playing-card__corner\"><b>K</b><i>♦</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>K</b><i>♦</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>K</b><i>♦</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ace",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Ace of hearts\"><span class=\"ff-playing-card__corner\"><b>A</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>A</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "two",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Two of hearts\"><span class=\"ff-playing-card__corner\"><b>2</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>2</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "three",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Three of hearts\"><span class=\"ff-playing-card__corner\"><b>3</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>3</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "four",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Four of hearts\"><span class=\"ff-playing-card__corner\"><b>4</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>4</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "five",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Five of hearts\"><span class=\"ff-playing-card__corner\"><b>5</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>5</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "six",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Six of hearts\"><span class=\"ff-playing-card__corner\"><b>6</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>6</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "seven",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Seven of hearts\"><span class=\"ff-playing-card__corner\"><b>7</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>7</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "eight",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Eight of hearts\"><span class=\"ff-playing-card__corner\"><b>8</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>8</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "nine",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Nine of hearts\"><span class=\"ff-playing-card__corner\"><b>9</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>9</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ten",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Ten of hearts\"><span class=\"ff-playing-card__corner\"><b>10</b><i>♥</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>10</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "jack",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Jack of hearts\"><span class=\"ff-playing-card__corner\"><b>J</b><i>♥</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>J</b><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>J</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "queen",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"Queen of hearts\"><span class=\"ff-playing-card__corner\"><b>Q</b><i>♥</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>Q</b><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>Q</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "king",
+      "suit": "hearts"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--red\" aria-label=\"King of hearts\"><span class=\"ff-playing-card__corner\"><b>K</b><i>♥</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>K</b><i>♥</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>K</b><i>♥</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ace",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Ace of spades\"><span class=\"ff-playing-card__corner\"><b>A</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>A</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "two",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Two of spades\"><span class=\"ff-playing-card__corner\"><b>2</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>2</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "three",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Three of spades\"><span class=\"ff-playing-card__corner\"><b>3</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>3</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "four",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Four of spades\"><span class=\"ff-playing-card__corner\"><b>4</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>4</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "five",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Five of spades\"><span class=\"ff-playing-card__corner\"><b>5</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>5</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "six",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Six of spades\"><span class=\"ff-playing-card__corner\"><b>6</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>6</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "seven",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Seven of spades\"><span class=\"ff-playing-card__corner\"><b>7</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>7</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "eight",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Eight of spades\"><span class=\"ff-playing-card__corner\"><b>8</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>8</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "nine",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Nine of spades\"><span class=\"ff-playing-card__corner\"><b>9</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>9</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "ten",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Ten of spades\"><span class=\"ff-playing-card__corner\"><b>10</b><i>♠</i></span><span class=\"ff-playing-card__center\" aria-hidden=\"true\"><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>10</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "jack",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Jack of spades\"><span class=\"ff-playing-card__corner\"><b>J</b><i>♠</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>J</b><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>J</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "queen",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"Queen of spades\"><span class=\"ff-playing-card__corner\"><b>Q</b><i>♠</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>Q</b><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>Q</b><i>♠</i></span></div>"
+  },
+  {
+    "card": {
+      "rank": "king",
+      "suit": "spades"
+    },
+    "html": "<div class=\"ff-playing-card ff-playing-card--standalone ff-playing-card--face ff-playing-card--black\" aria-label=\"King of spades\"><span class=\"ff-playing-card__corner\"><b>K</b><i>♠</i></span><span class=\"ff-playing-card__center ff-playing-card__center--court\" aria-hidden=\"true\"><b>K</b><i>♠</i></span><span class=\"ff-playing-card__corner ff-playing-card__corner--bottom\" aria-hidden=\"true\"><b>K</b><i>♠</i></span></div>"
+  }
+]

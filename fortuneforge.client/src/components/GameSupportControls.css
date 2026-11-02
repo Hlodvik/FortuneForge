@@ -1,0 +1,9 @@
+.game-support-controls {
+  position: fixed;
+  z-index: 50;
+  right: max(.75rem, env(safe-area-inset-right));
+  bottom: max(.75rem, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}

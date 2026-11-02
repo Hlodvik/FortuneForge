@@ -1,4 +1,4 @@
-import { isSlotSymbolId, type SlotSealCollection, type SpinResult } from '../types/slots'
+import { isSlotSymbolId, type MidnightVaultBonusRound, type MidnightVaultDemoState, type SlotSealCollection, type SpinResult } from '../types/slots'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
 
 type SpinRequest = {
@@ -14,9 +14,12 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
   energyBalance: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
+  midnightBonusState?: MidnightVaultDemoState | null
 }
 
 export type SlotState = {
+  bonusRound?: MidnightVaultBonusRound | null
+  queuedBonusRounds?: MidnightVaultBonusRound[]
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   specialPointsBalance: number
@@ -144,6 +147,7 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || !Array.isArray(state.sealCollections)
     || !state.sealCollections.every(isSlotSealCollection)
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
+    || !validOptionalBonusFields(state)
   ) {
     throw new Error('The slot server returned an invalid bonus state.')
   }
@@ -209,6 +213,7 @@ function isSpinResult(result: unknown): result is SpinResult {
     result.sealCollections.every(isSlotSealCollection) &&
     (result.freeSpinFeatureMode === null || typeof result.freeSpinFeatureMode === 'string') &&
     typeof result.specialBoostApplied === 'boolean' &&
+    validOptionalBonusFields(result) &&
     (result.slotsCreditsBalance === null || typeof result.slotsCreditsBalance === 'number') &&
     Array.isArray(result.reels) &&
     result.reels.length > 0 &&
@@ -222,6 +227,33 @@ function isSpinResult(result: unknown): result is SpinResult {
     Array.isArray(result.payout.paylines) &&
     result.payout.paylines.every(isPaylinePayout)
   )
+}
+
+function isMidnightRound(value: unknown): value is MidnightVaultBonusRound {
+  return isRecord(value) && typeof value.id === 'string' && value.id.length > 0 &&
+    Number.isSafeInteger(value.totalSpins) && Number(value.totalSpins) > 0 && Number(value.totalSpins) <= 1000 &&
+    Number.isSafeInteger(value.remainingSpins) && Number(value.remainingSpins) > 0 && Number(value.remainingSpins) <= Number(value.totalSpins) &&
+    Number.isSafeInteger(value.wagerPoints) && Number(value.wagerPoints) >= 2 && Number(value.wagerPoints) <= 2000 &&
+    (value.featureMode === null || typeof value.featureMode === 'string') &&
+    (value.mathModelId === 'midnight-vault-paytable-v1' || value.mathModelId === 'midnight-vault-paytable-v2')
+}
+
+function validOptionalBonusFields(value: Record<string, unknown>): boolean {
+  if (value.bonusRound != null && !isMidnightRound(value.bonusRound)) return false
+  for (const field of ['queuedBonusRounds', 'awardedBonusRounds']) {
+    if (value[field] !== undefined && (!Array.isArray(value[field]) || !value[field].every(isMidnightRound))) return false
+  }
+  if (value.midnightBonusState != null) {
+    const state = value.midnightBonusState
+    if (!isRecord(state) || !Array.isArray(state.rounds) || !state.rounds.every(isMidnightRound) ||
+      !isRecord(state.collectionCounts) || !isRecord(state.collectionWagerPoints)) return false
+    for (const field of ['collectionCounts', 'collectionWagerPoints'] as const) {
+      const amounts = state[field]
+      if (!isRecord(amounts) || !Object.entries(amounts).every(([key, amount]) => ['sync', 'rows', 'paw', 'rand'].includes(key) &&
+        Number.isSafeInteger(amount) && Number(amount) >= 0 && Number(amount) <= (field === 'collectionCounts' ? 29 : 58000))) return false
+    }
+  }
+  return true
 }
 
 function isSlotSealCollection(value: unknown): value is SlotSealCollection {

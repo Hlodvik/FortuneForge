@@ -1,7 +1,9 @@
+import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
 import { useEffect, useState, type ReactNode } from 'react'
 import heroImage from '../../assets/branding/fortune-forge-hero-v1.webp'
 import { useOptionalAccountSession } from '../../features/account/useOptionalAccountSession'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
+import { SiteBrand, SiteNavbar } from '../../components/SiteNavbar'
 import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
 import '@fontsource-variable/sora'
 import './landingRedesign.css'
@@ -33,22 +35,13 @@ export function LandingPage() {
   }, [account])
 
   if (account !== null) {
-    return <main className="ff-landing ff-landing--opening" role="status">Opening your home…</main>
+    return <div className="ff-landing ff-landing--handoff"><SiteNavbar mode="account" authenticated /><main className="ff-landing ff-landing--opening" role="status">Opening your home…</main></div>
   }
 
   return (
     <div className="ff-landing">
       <a className="ff-landing__skip" href="#landing-main">Skip to content</a>
-      <header className="ff-landing__header">
-        <a className="ff-landing__brand" href="/" aria-label="Fortune Forge home">
-          <ForgeStar /><span>Fortune Forge</span>
-        </a>
-        <nav className="ff-landing__nav" aria-label="Primary navigation">
-          <a className="ff-landing__games-link" href="#discover-games">Games</a>
-          {!isCheckingSession && <a className="ff-landing__login" href="/login">Log in</a>}
-          <a className="ff-landing__button ff-landing__button--small" href="/create-account">Create account</a>
-        </nav>
-      </header>
+      <SiteNavbar mode="public" currentPublicPage="landing" hidePublicLogin={isCheckingSession} />
 
       <main id="landing-main">
         <section className="ff-landing__hero" aria-labelledby="landing-title">
@@ -84,7 +77,7 @@ export function LandingPage() {
               const artwork = getCataloguePresentationArt(game.route)!
               return <a className="ff-landing__game-card" key={game.route} href={game.route} aria-label={'Play ' + game.title}>
                 <div className="ff-landing__game-art">
-                  <img src={artwork.src} width={artwork.width} height={artwork.height} alt="" loading="lazy" decoding="async" />
+                  <ResponsiveSlotImage imageSrcSet={artwork.imageSrcSet} src={artwork.src} width={artwork.width} height={artwork.height} alt="" loading="lazy" decoding="async" />
                   <span className="ff-landing__play-icon" aria-hidden="true"><Arrow /></span>
                 </div>
                 <strong>{game.title}</strong><span>{game.label ?? game.category}</span>
@@ -105,20 +98,13 @@ export function LandingPage() {
         </section>
       </main>
       <footer className="ff-landing__footer">
-        <a className="ff-landing__brand" href="/"><ForgeStar /><span>Fortune Forge</span></a>
+        <SiteBrand href="/" />
         <nav aria-label="Footer navigation">
           <a href="/login">Log in</a><a href="/create-account">Create account</a>
         </nav>
       </footer>
     </div>
   )
-}
-
-function ForgeStar() {
-  return <svg viewBox="0 0 40 40" width="38" height="38" fill="currentColor" aria-hidden="true">
-    <path d="m20 1 5.6 13.4L39 20l-13.4 5.6L20 39l-5.6-13.4L1 20l13.4-5.6Z" />
-    <path d="m20 11 2.7 6.3L29 20l-6.3 2.7L20 29l-2.7-6.3L11 20l6.3-2.7Z" fill="#0b0c10" opacity=".44" />
-  </svg>
 }
 
 function Arrow() {

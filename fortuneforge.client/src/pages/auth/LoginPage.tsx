@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import '@fontsource-variable/sora'
 import {
   AccountRequestError,
   loginAccount,
   resendVerification,
 } from '../../features/account/services/accountsApi'
 import { useOptionalAccountSession } from '../../features/account/useOptionalAccountSession'
+import { SiteNavbar } from '../../components/SiteNavbar'
 import '../index.css'
 
 type PendingVerificationCredentials = {
@@ -47,8 +49,8 @@ export function LoginPage() {
     setResendMessage(null)
     setPendingVerification(null)
     try {
-      await loginAccount(credentials)
-      window.location.assign(loginDestination)
+      const authentication = await loginAccount(credentials)
+      window.location.assign(authentication?.restriction?.code === 'account_restricted' ? '/account/review' : loginDestination)
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : 'Login failed. Please try again.')
       if (
@@ -86,20 +88,14 @@ export function LoginPage() {
 
   return (
     <div className="account-page">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home">
-          <span className="landing-brand__spark" aria-hidden="true">✦</span>
-          <span>Fortune Forge</span>
-        </a>
-        <a className="landing-nav__link" href="/create-account">Create account</a>
-      </header>
+      <SiteNavbar mode="public" currentPublicPage="login" />
 
       <main className="account-main">
         <section className="account-card account-card--login" aria-labelledby="login-title">
           <p className="account-eyebrow">Welcome back</p>
           <h1 id="login-title">Log in</h1>
           <p className="account-card__intro">
-            Return to your account, check your fortune, and keep playing above the clouds.
+            Your games and account are ready when you are.
           </p>
 
           <form className="account-form" autoComplete="on" onSubmit={handleSubmit}>

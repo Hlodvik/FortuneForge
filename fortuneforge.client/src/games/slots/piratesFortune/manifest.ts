@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { PIRATES_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -72,7 +73,7 @@ const PIRATES_FORTUNE_HELP: SlotHelpDefinition = {
   ],
 }
 
-export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
+export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'pirates-fortune-experience-v1',
   cabinet: PIRATES_FORTUNE_CABINET_THEME,
   features: PIRATES_FORTUNE_FEATURES,
@@ -90,7 +91,7 @@ export const PIRATES_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
       ['FREE', '7', 'ACE', 'POWER'],
     ],
   }),
-}
+})
 
 export const PIRATES_FORTUNE_SLOT_GAME = defineSlotGame({
   id: 'pirates-fortune',

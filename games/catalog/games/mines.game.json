@@ -1,0 +1,13 @@
+{
+  "$schema": "../game-manifest.schema.json",
+  "schemaVersion": 1,
+  "id": "mines",
+  "displayName": "Mines",
+  "category": "casino",
+  "packageVersion": "0.1.0",
+  "clientRoute": "/games/mines",
+  "clientPackage": "@fortuneforge/games-mines",
+  "apiBasePath": "/api/games/mines",
+  "capabilities": ["credits", "history"],
+  "migrationState": "rules-pilot"
+}

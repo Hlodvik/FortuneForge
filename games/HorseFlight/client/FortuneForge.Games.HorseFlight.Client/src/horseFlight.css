@@ -138,13 +138,10 @@
 
 .ff-horse-flight__field:focus-visible { box-shadow: 0 0 0 3px rgb(255 235 158 / 78%), 0 0.85rem 2.2rem rgb(0 0 0 / 32%); }
 .ff-horse-flight__field > svg { display: block; width: 100%; height: 100%; background: #101c31; }
-.ff-horse-flight__sky { fill: #12294a; }
 .ff-horse-flight__platform { fill: #615234; }
 .ff-horse-flight__obstacle { fill: #bd473a; }
 .ff-horse-flight__obstacle[data-clearance="ground"] { filter: drop-shadow(0 0 3px rgb(255 168 89 / 58%)); }
 .ff-horse-flight__obstacle[data-clearance="high"] { filter: drop-shadow(0 0 4px rgb(121 204 255 / 76%)); }
-.ff-horse-flight__horse { fill: #e5ae4d; }
-.ff-horse-flight__horse + circle { fill: #1c2537; }
 
 .ff-horse-flight__over {
   position: absolute;

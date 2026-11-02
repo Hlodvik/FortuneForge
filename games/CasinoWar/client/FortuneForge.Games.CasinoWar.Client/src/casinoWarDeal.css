@@ -1,0 +1,68 @@
+.ff-casino-war .ff-casino-war__controls:has(.ff-casino-war__deal) {
+  justify-content: flex-start;
+}
+
+.ff-casino-war .ff-casino-war__controls .ff-casino-war__deal {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  width: 3.6rem;
+  height: 3.6rem;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  padding: .2rem;
+  border: .22rem solid #b9c6af;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #1b3025, #06130c 72%);
+  box-shadow: inset 0 0 0 1px rgb(246 247 230 / 30%), 0 0 .65rem rgb(237 240 212 / 28%), 0 .25rem .6rem rgb(0 12 8 / 52%);
+  color: #fafaf0;
+  translate: -50% -50%;
+}
+
+.ff-casino-war .ff-casino-war__deal svg {
+  display: block;
+  width: 2.3rem;
+  height: 2.3rem;
+}
+
+.ff-casino-war .ff-casino-war__deal:hover:not(:disabled) {
+  border-color: #f4f4e6;
+  background: #153d2d;
+}
+
+.ff-casino-war .ff-casino-war__deal:focus-visible,
+.ff-casino-war .ff-casino-war__continue:focus-visible {
+  outline: 2px solid #f4f4e6;
+  outline-offset: 3px;
+}
+
+.ff-casino-war .ff-casino-war__continue {
+  margin-top: .3rem;
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: transparent;
+  color: #eef4e6;
+  font: 800 .68rem/1.2 "Trebuchet MS", sans-serif;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.ff-casino-war .ff-casino-war__continue:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .ff-casino-war .ff-casino-war__controls .ff-casino-war__deal {
+    width: 3.25rem;
+    height: 3.25rem;
+  }
+
+  .ff-casino-war .ff-casino-war__deal svg {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+}

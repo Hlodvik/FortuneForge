@@ -1,0 +1,134 @@
+// Display-only browser fixture on the already-running host Vite server.
+// No application source, server/configuration, API or wallet is changed.
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { chromium } from 'playwright'
+
+const output = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(output, '../../../..')
+const origin = process.env.SHARED_CARD_FACE_ORIGIN || 'http://127.0.0.1:5197'
+assert.match(origin, /^http:\/\/127\.0\.0\.1:\d+$/)
+const routeUrl = `${origin}/__shared-card-face-browser-verification`
+await mkdir(output, { recursive: true })
+const sha = bytes => createHash('sha256').update(bytes).digest('hex')
+const monitoredSources = [
+  'games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client/src/DefaultCardFace.tsx',
+  'games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client/src/standardCardFaces.css',
+  'games/HiLo/client/FortuneForge.Games.HiLo.Client/src/DefaultCardFace.tsx',
+  'games/HiLo/client/FortuneForge.Games.HiLo.Client/src/standardCardFaces.css',
+  'packages/client-presentation/src/StandardCardFace.tsx',
+  'packages/client-presentation/dist/index.js',
+]
+const beforeHashes = Object.fromEntries(await Promise.all(monitoredSources.map(async file => [file,sha(await readFile(resolve(repo,file)))])))
+const originals = JSON.parse(await readFile(resolve(output,'../before-card-faces.json'),'utf8'))
+assert.equal(originals.length,52)
+const mainModule = await (await fetch(`${origin}/src/main.tsx`)).text()
+const reactPath = mainModule.match(/from\s*["']([^"']*\/react\.js\?[^"']+)["']/)?.[1]
+const domPath = mainModule.match(/from\s*["']([^"']*\/react-dom_client\.js\?[^"']+)["']/)?.[1]
+assert.ok(reactPath && domPath, 'Discover existing optimized React module URLs from actual Vite main output')
+const sourcePrefix = `/@fs/${repo.replaceAll('\\','/')}/`
+const modulePaths = {
+  DragonTiger: sourcePrefix+monitoredSources[0],
+  HiLo: sourcePrefix+monitoredSources[2],
+}
+for (const path of Object.values(modulePaths)) {
+  const response = await fetch(origin+path)
+  assert.equal(response.status,200,`Existing Vite must expose the real adapter module: ${path}`)
+}
+const samples = ['ace-clubs','seven-hearts','ten-diamonds','nine-spades','jack-clubs','queen-hearts','king-spades','ace-diamonds']
+const fixture = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Actual standalone card adapters — display fixture</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#102321;color:#f7f3e8;font:16px/1.5 Arial,sans-serif}.review{padding:24px;max-width:1120px;margin:auto}.review h1{margin:0;font-size:25px}.review p{color:#c1d0c8}.consumer{margin:28px 0 36px}.consumer h2{font-size:22px;margin:0 0 16px}.card-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px;max-width:820px}.card-specimen{min-width:0}.card-slot{width:160px;max-width:100%;height:224px;--ff-card-width:160px}.card-caption{font-size:12px;margin:9px 0 0;color:#c1d0c8}body[data-selected="true"] .card-specimen[data-sample="false"]{display:none}@media(max-width:600px){.review{padding:18px}.card-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card-slot{width:calc((100vw - 52px)/2);height:calc((100vw - 52px)*.7);--ff-card-width:calc((100vw - 52px)/2)}.review h1{font-size:21px}}</style>
+<script type="module">import {injectIntoGlobalHook} from '/@react-refresh';injectIntoGlobalHook(window);window.$RefreshReg$=()=>{};window.$RefreshSig$=()=>(type)=>type;</script>
+</head><body><main id="fixture-root"></main><script type="module">
+try{
+ const reactModule=await import(${JSON.stringify(reactPath)});const React=reactModule.default??reactModule;
+ const domModule=await import(${JSON.stringify(domPath)});const createRoot=(domModule.default??domModule).createRoot;
+ const adapters={DragonTiger:(await import(${JSON.stringify(modulePaths.DragonTiger)})).DefaultCardFace,HiLo:(await import(${JSON.stringify(modulePaths.HiLo)})).DefaultCardFace};
+ const deck=${JSON.stringify(originals.map(item=>item.card))};const samples=${JSON.stringify(samples)};
+ const e=React.createElement;
+ createRoot(document.querySelector('#fixture-root')).render(e('div',{className:'review'},e('h1',{},'Actual DefaultCardFace adapters'),e('p',{},'Display fixture only: real package adapters and unchanged consumer CSS; all API requests blocked. Screenshot selections cover every suit, number cards and court ranks.'),...Object.entries(adapters).map(([game,Face])=>e('section',{className:'consumer '+(game==='DragonTiger'?'ff-dt':'ff-hilo'),'data-game':game,key:game},e('h2',{},game==='DragonTiger'?'Dragon Tiger fallback':'Hi-Lo fallback'),e('div',{className:'card-grid'},...deck.map(card=>{const id=card.rank+'-'+card.suit;return e('article',{className:'card-specimen','data-id':id,'data-sample':String(samples.includes(id)),key:id},e('div',{className:'card-slot'},e(Face,{card})),e('p',{className:'card-caption'},card.rank+' of '+card.suit));}))))));
+ window.__fixtureMounted=true;
+}catch(error){window.__fixtureError=String(error);console.error(error);}
+</script></body></html>`
+await writeFile(resolve(output,'display-fixture.html'),fixture)
+const report = {
+  checkedUtc:new Date().toISOString(), origin, existingServerOnly:true,
+  method:'Browser request interception supplies a display-only document on the existing host Vite origin. It imports the actual two DefaultCardFace modules and their own CSS. No game, injected host renderer, account or gateway is mounted.',
+  renderer:'Actual standalone DefaultCardFace fallback -> compiled shared StandardCardFace',
+  fullGamePlay:false, hostInjectedRendererVerified:false, sourceHashes:beforeHashes,
+  desktopHtmlComparisons:0, viewports:[], screenshots:[], apiAttempts:[], externalRequests:[], pageErrors:[], failedRequests:[],
+  limitations:[
+    'Host and package dev entries inject PlayingCard; their normal previews do not exercise DefaultCardFace.',
+    'Package practice UI/API pairs were not running; package e2e scripts require manual process startup and perform practice settlement. They were not launched.',
+    'This verifies actual fallback markup and browser styling in a representative display fixture, not complete game layout, reveal timing, settlement, security or gameplay.',
+    'Only the screenshot selections were visually inspected. All52 cards per adapter receive DOM/style/containment checks.',
+  ],
+}
+const browser=await chromium.launch({headless:true})
+const context=await browser.newContext({viewport:{width:1366,height:900},colorScheme:'light',reducedMotion:'reduce',serviceWorkers:'block'})
+const page=await context.newPage()
+page.on('pageerror',error=>report.pageErrors.push(error.message))
+page.on('requestfailed',request=>report.failedRequests.push({url:request.url(),error:request.failure()?.errorText}))
+await page.route('**/*',async route=>{
+  const request=route.request(), url=new URL(request.url())
+  if(url.origin!==origin){report.externalRequests.push(request.url());await route.abort();return}
+  if(url.pathname.startsWith('/api/')){report.apiAttempts.push({url:request.url(),method:request.method()});await route.fulfill({status:403,body:'API disabled for display verification'});return}
+  if(request.isNavigationRequest()&&url.pathname==='/__shared-card-face-browser-verification'){await route.fulfill({contentType:'text/html',body:fixture});return}
+  await route.continue()
+})
+try{
+ await page.goto(routeUrl)
+ await page.waitForFunction(()=>window.__fixtureMounted||window.__fixtureError)
+ assert.equal(await page.evaluate(()=>window.__fixtureError??null),null)
+ await page.locator('.ff-playing-card--standalone').last().waitFor()
+ assert.equal(await page.locator('.ff-playing-card--standalone').count(),104)
+ assert.equal(await page.locator('[data-court-symbol]').count(),0,'Host court SVGs must not masquerade as fallback verification')
+ await page.evaluate(()=>document.fonts.ready)
+ for(const game of ['DragonTiger','HiLo']){
+  const actual=await page.locator(`[data-game="${game}"] .card-slot`).evaluateAll(nodes=>nodes.map(node=>({id:node.parentElement.dataset.id,html:node.firstElementChild.outerHTML})))
+  for(let i=0;i<52;i++){assert.equal(actual[i].html,originals[i].html,`${game}: exact original markup ${actual[i].id}`);report.desktopHtmlComparisons++}
+ }
+ for(const viewport of [{name:'desktop',width:1366,height:900},{name:'phone',width:390,height:844},{name:'short-landscape',width:844,height:390}]){
+  await page.setViewportSize(viewport)
+  await page.evaluate(()=>document.body.dataset.selected='false')
+  const measurements=await page.locator('.ff-playing-card--standalone').evaluateAll(cards=>cards.map(card=>{
+   const box=card.getBoundingClientRect(),css=getComputedStyle(card),isRed=card.classList.contains('ff-playing-card--red');
+   const within=[...card.children].every(child=>{const b=child.getBoundingClientRect();return b.left>=box.left-1&&b.top>=box.top-1&&b.right<=box.right+1&&b.bottom<=box.bottom+1});
+   return {label:card.getAttribute('aria-label'),width:box.width,height:box.height,color:css.color,isRed,within,cornerCount:card.querySelectorAll('.ff-playing-card__corner').length,bottomRotation:getComputedStyle(card.querySelector('.ff-playing-card__corner--bottom')).transform,court:card.querySelector('.ff-playing-card__center--court')!==null};
+  }))
+  assert.equal(measurements.length,104)
+  assert.ok(measurements.every(item=>item.width>100&&item.height>150&&item.within&&item.cornerCount===2))
+  assert.ok(measurements.every(item=>item.color===(item.isRed?'rgb(176, 47, 54)':'rgb(23, 32, 30)')))
+  assert.ok(measurements.every(item=>item.bottomRotation==='matrix(-1, 0, 0, -1, 0, 0)'))
+  assert.equal(measurements.filter(item=>item.court).length,24)
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true)
+  report.viewports.push({...viewport,cardsMeasured:104,allCornersAndCentersContained:true,redAndBlackColorsCorrect:true,bottomCornersRotated:true,courtFaces:24,noHorizontalOverflow:true,measurements})
+  await page.evaluate(()=>document.body.dataset.selected='true')
+  for(const game of ['DragonTiger','HiLo']){
+   const consumer=page.locator(`[data-game="${game}"]`)
+   await consumer.scrollIntoViewIfNeeded()
+   await page.waitForFunction(game=>{
+    const section=document.querySelector(`[data-game="${game}"]`)
+    return section.getBoundingClientRect().height>450&&[...section.querySelectorAll('.card-specimen')].filter(node=>getComputedStyle(node).display!=='none').length===8
+   },game)
+   const file=`${game==='DragonTiger'?'dragon-tiger':'hi-lo'}-fallback-${viewport.name}.png`
+   await consumer.screenshot({path:resolve(output,file),animations:'disabled'})
+   const png=await readFile(resolve(output,file))
+   const pixelWidth=png.readUInt32BE(16),pixelHeight=png.readUInt32BE(20)
+   assert.ok(pixelHeight>450,`${game} screenshot must include the actual card gallery`)
+   report.screenshots.push({game,viewport:viewport.name,file,pixelWidth,pixelHeight,kind:'eight representative actual fallback faces, not gameplay'})
+  }
+ }
+ assert.deepEqual(report.apiAttempts,[])
+ assert.deepEqual(report.externalRequests,[])
+ assert.deepEqual(report.pageErrors,[])
+ assert.deepEqual(report.failedRequests,[])
+ for(const [file,expected] of Object.entries(beforeHashes))assert.equal(sha(await readFile(resolve(repo,file))),expected,`Source changed during verification: ${file}`)
+ report.sourceHashesStillMatch=true
+ report.passed=true
+}catch(error){report.passed=false;report.error=String(error);await page.screenshot({path:resolve(output,'failure.png'),fullPage:true});throw error}
+finally{await writeFile(resolve(output,'verification.json'),JSON.stringify(report,null,2)+'\n');await context.close();await browser.close()}
+console.log(JSON.stringify({passed:report.passed,renderer:report.renderer,htmlComparisons:report.desktopHtmlComparisons,viewports:report.viewports.length,cardsMeasuredPerViewport:104,screenshots:report.screenshots.length,apiAttempts:report.apiAttempts.length,externalRequests:report.externalRequests.length,pageErrors:report.pageErrors.length,sourceHashesStillMatch:report.sourceHashesStillMatch,fullGamePlay:false,hostInjectedRendererVerified:false},null,2))

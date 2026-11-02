@@ -23,7 +23,7 @@ public sealed class BlackjackTableController(
         var account = await AccountAsync(cancellationToken);
         return account is null
             ? Unauthorized(new { error = "Sign in to view Blackjack table availability." })
-            : Ok(StatusContract());
+            : Ok(StatusContract(configuration.GetValue("Features:BlackjackMultiplayerEnabled", false)));
     }
 
     [HttpGet("session")]
@@ -188,15 +188,15 @@ public sealed class BlackjackTableController(
     internal static bool IsEnabled(IConfiguration source) =>
         source.GetValue("Features:BlackjackTableEnabled", false);
 
-    internal static BlackjackTableStatusResponse StatusContract() => new(
+    internal static BlackjackTableStatusResponse StatusContract(bool multiplayerEnabled = true) => new(
         true,
         BlackjackMoney.ToRand(BlackjackMoney.MinimumWagerCents),
         BlackjackMoney.ToRand(BlackjackMoney.MaximumWagerCents),
         BlackjackMoney.ToRand(BlackjackMoney.WagerIncrementCents),
-        BlackjackManagedTablePolicy.MinimumStartOccupancy,
-        BlackjackTableEngine.Capacity,
-        checked((int)BlackjackTableEngine.HumanGrace.TotalSeconds),
-        checked((int)BlackjackTableEngine.ActionDuration.TotalSeconds),
+        multiplayerEnabled ? BlackjackManagedTablePolicy.MinimumStartOccupancy : 1,
+        multiplayerEnabled ? BlackjackTableEngine.Capacity : 1,
+        multiplayerEnabled ? checked((int)BlackjackTableEngine.HumanGrace.TotalSeconds) : 0,
+        multiplayerEnabled ? checked((int)BlackjackTableEngine.ActionDuration.TotalSeconds) : 0,
         1,
         "Dealer stands on all 17s",
         "3:2",

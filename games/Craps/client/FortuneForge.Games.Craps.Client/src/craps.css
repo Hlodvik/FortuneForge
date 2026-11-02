@@ -68,7 +68,6 @@
 .ff-craps-field-numbers { display:flex; justify-content:center; align-items:center; gap:clamp(7px,1.5vw,22px); width:100%; color:#eee5b9; font:660 clamp(20px,2.5vw,33px)/1 'FF Craps Felt',Georgia,serif; }
 .ff-craps-field-numbers > span { display:grid; place-items:center; min-width:24px; }
 .ff-craps-field-numbers > .is-double { width:1.55em; height:1.55em; border:1px solid var(--ff-craps-line); border-radius:50%; }
-.ff-craps-proposition__numbers { font:650 clamp(18px,2.6vw,32px)/1 'FF Craps Felt',Georgia,serif; word-spacing:.3em; }
 .ff-craps-proposition.is-selected, .ff-craps-proposition.is-working { background:rgb(235 222 158 / 7%); }
 .ff-craps-proposition.is-win { color:#fff0af; background:rgb(217 218 131 / 9%); }
 .ff-craps-proposition.is-loss { color:#d3c4ae; }
@@ -82,10 +81,6 @@
 .ff-craps-control-actions { display:flex; align-items:center; gap:6px; }
 .ff-craps-control-actions button { display:grid; place-items:center; width:44px; height:44px; flex:0 0 44px; padding:0; border:1px solid #777956; border-radius:50%; color:#e5ddbd; background:#10241a; cursor:pointer; }
 .ff-craps-control-actions button svg { width:20px; height:20px; }
-.ff-craps-chip-row { display:flex; align-items:center; justify-content:center; min-width:0; gap:6px; }
-.ff-craps-chip-row button { display:grid; position:relative; place-items:center; width:56px; height:60px; flex:0 0 56px; border:0; border-radius:50%; padding:2px; color:#fff3cf; background:transparent; cursor:pointer; }
-.ff-craps-chip-row img { display:block; width:var(--ff-craps-chip-size); height:var(--ff-craps-chip-size); object-fit:contain; filter:drop-shadow(0 3px 3px #0009); }
-.ff-craps-chip-row button[aria-pressed=true]::after { position:absolute; inset:0; border:2px solid #ead994; border-radius:50%; content:''; box-shadow:0 0 12px #edd89630; }
 .ff-craps-primary { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; min-height:58px; gap:4px; padding:9px 15px; border:1px solid #f4dfa4; border-radius:9px; color:#1d2c1c; background:linear-gradient(#f4e7b1,#c4a455); box-shadow:inset 0 1px 0 #fff7d9,0 3px 6px #0005; font-size:16px; font-weight:750; cursor:pointer; }
 .ff-craps-primary strong { font:inherit; }
 .ff-craps-primary small { font-size:11px; font-weight:550; letter-spacing:.015em; }

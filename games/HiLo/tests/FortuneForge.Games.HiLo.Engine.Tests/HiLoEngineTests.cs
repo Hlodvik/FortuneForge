@@ -8,6 +8,7 @@ public sealed class HiLoEngineTests
 {
     private static PlayingCard Card(int rank, CardSuit suit = CardSuit.Spades) => new((CardRank)rank, suit);
     private static HiLoRound Start(int rank = 7, decimal wager = 1m) => HiLoEngine.Start(Guid.NewGuid(), wager, Card(rank));
+    private static HiLoRound LegacyRound(int rank, decimal wager) => HiLoEngine.RebuildInitial(Guid.NewGuid(), wager, Card(rank));
 
     [Fact]
     public void EveryRankDirectionAndStandardDrawHasCorrectStrictOutcomeAndOdds()
@@ -56,7 +57,7 @@ public sealed class HiLoEngineTests
             if (!odds.Available) continue;
             Assert.InRange(Math.Abs(0.99m - odds.Probability * odds.RawMultiplier), 0m, 0.000000000000000000000000001m);
             Assert.Equal(12.87m / odds.WinningRanks, odds.RawMultiplier);
-            var quote = HiLoRules.Quote(Start((int)rank, 100m), direction);
+            var quote = HiLoRules.Quote(LegacyRound((int)rank, 100m), direction);
             // Compare integer-rank weights, avoiding rounding a recurring decimal probability.
             Assert.InRange(odds.WinningRanks * quote.Return, 98.99m * 13m, 99m * 13m);
         }
@@ -131,7 +132,7 @@ public sealed class HiLoEngineTests
     public void RationalReferenceMatchesCentPayoutForEveryUncappedStep(string wagerText)
     {
         var wager = decimal.Parse(wagerText, System.Globalization.CultureInfo.InvariantCulture);
-        var round = Start(1, wager);
+        var round = LegacyRound(1, wager);
         var numerator = BigInteger.One;
         var denominator = BigInteger.One;
         var wagerCents = new BigInteger(wager * 100m);
@@ -158,7 +159,7 @@ public sealed class HiLoEngineTests
         for (var path = 0; path < 2000; path++)
         {
             var wagerCents = new BigInteger(random.Next(10, 100001));
-            var round = Start(random.Next(1, 14), (decimal)wagerCents / 100m);
+            var round = LegacyRound(random.Next(1, 14), (decimal)wagerCents / 100m);
             var numerator = BigInteger.One;
             var denominator = BigInteger.One;
             while (round.Status == HiLoRoundStatus.Active)
@@ -199,7 +200,7 @@ public sealed class HiLoEngineTests
     [Fact]
     public void AbsoluteCapPaysExactAmountDespiteRecurringDecimalMultiplier()
     {
-        var round = Start(12, 300m);
+        var round = LegacyRound(12, 300m);
         round = HiLoEngine.Guess(round, HiLoDirection.Higher, Card(13));
         round = HiLoEngine.Skip(round, Card(12));
         round = HiLoEngine.Guess(round, HiLoDirection.Higher, Card(13));
@@ -245,7 +246,7 @@ public sealed class HiLoEngineTests
     [Fact]
     public void CashOutBeforeAnyChoiceReturnsOriginalWager()
     {
-        var settled = HiLoEngine.CashOut(Start(7, 13.37m));
+        var settled = HiLoEngine.CashOut(LegacyRound(7, 13.37m));
         Assert.Equal(13.37m, settled.Payout);
         Assert.Equal(1, settled.Version);
     }
@@ -269,6 +270,8 @@ public sealed class HiLoEngineTests
     [InlineData("0")]
     [InlineData("0.09")]
     [InlineData("0.101")]
+    [InlineData("5.01")]
+    [InlineData("1000")]
     [InlineData("1000.01")]
     [InlineData("79228162514264337593543950335")]
     public void InvalidWagersRejectBeforeStateExists(string wagerText)
@@ -279,11 +282,21 @@ public sealed class HiLoEngineTests
 
     [Theory]
     [InlineData("0.10")]
-    [InlineData("1000")]
+    [InlineData("5")]
     public void WagerBoundsAreInclusive(string wagerText)
     {
         var wager = decimal.Parse(wagerText, System.Globalization.CultureInfo.InvariantCulture);
         Assert.Equal(wager, Start(7, wager).Wager);
+    }
+
+    [Fact]
+    public void LegacyWagerCanStillBeRebuiltGuessedAndCashedOut()
+    {
+        var round = LegacyRound(7, 1000m);
+        Assert.Equal(1000m, HiLoEngine.CashOut(round).Payout);
+        var won = HiLoEngine.Guess(round, HiLoDirection.Higher, Card(13));
+        Assert.Equal(2145m, HiLoEngine.CashOut(won).Payout);
+        Assert.Equal("invalid_wager", Assert.Throws<HiLoRuleException>(() => Start(7, 1000m)).Code);
     }
 
     [Fact]

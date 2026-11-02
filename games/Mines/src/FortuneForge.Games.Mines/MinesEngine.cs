@@ -35,7 +35,8 @@ public sealed class MinesEngine(IMinesBoardGenerator? boardGenerator = null)
         // Validate before asking RNG to generate the board. The host accepts/debits this wager atomically.
         MinesRules.ValidateWager(wagerCents);
         MinesRules.ValidateMineCount(mineCount);
-        return new(wagerCents, mineCount, _boards.Generate(mineCount), [], MinesRoundStatus.Active, 0);
+        return new(wagerCents, mineCount, _boards.Generate(mineCount), [], MinesRoundStatus.Active, 0,
+            MinesRules.HouseEdgeBasisPoints, MinesRules.PayoutPolicyVersion);
     }
 
     public MinesRoundState Reveal(MinesRoundState round, int tileIndex)
@@ -44,12 +45,16 @@ public sealed class MinesEngine(IMinesBoardGenerator? boardGenerator = null)
         if (tileIndex is < 0 or >= MinesRules.TileCount) throw new ArgumentOutOfRangeException(nameof(tileIndex));
         if (round.RevealedTiles.Contains(tileIndex)) throw new InvalidOperationException("This tile is already revealed.");
         var revealed = round.RevealedTiles.Add(tileIndex);
-        var status = round.MinePositions.Contains(tileIndex) ? MinesRoundStatus.Lost
+        var hitMine = round.MinePositions.Contains(tileIndex);
+        var payout = hitMine ? MinesRules.MineReturnCents(round.WagerCents, round.MineCount, round.SafeReveals,
+            round.HouseEdgeBasisPoints, round.PayoutPolicyVersion)
+            : revealed.Length == MinesRules.TileCount - round.MineCount
+                ? MinesRules.ReturnCents(round.WagerCents, round.MineCount, revealed.Length, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion) : 0;
+        var status = hitMine ? payout > 0 ? MinesRoundStatus.Consolation : MinesRoundStatus.Lost
             : revealed.Length == MinesRules.TileCount - round.MineCount ? MinesRoundStatus.Cleared
             : MinesRoundStatus.Active;
-        var payout = status == MinesRoundStatus.Cleared
-            ? MinesRules.ReturnCents(round.WagerCents, round.MineCount, revealed.Length) : 0;
-        return new(round.WagerCents, round.MineCount, round.MinePositions, revealed, status, payout);
+        return new(round.WagerCents, round.MineCount, round.MinePositions, revealed, status, payout,
+            round.HouseEdgeBasisPoints, round.PayoutPolicyVersion);
     }
 
     public MinesRoundState CashOut(MinesRoundState round)
@@ -57,7 +62,8 @@ public sealed class MinesEngine(IMinesBoardGenerator? boardGenerator = null)
         EnsureActive(round);
         if (round.SafeReveals == 0) throw new InvalidOperationException("Reveal a gem before cashing out.");
         return new(round.WagerCents, round.MineCount, round.MinePositions, round.RevealedTiles,
-            MinesRoundStatus.CashedOut, MinesRules.ReturnCents(round.WagerCents, round.MineCount, round.SafeReveals));
+            MinesRoundStatus.CashedOut, MinesRules.ReturnCents(round.WagerCents, round.MineCount, round.SafeReveals, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion),
+            round.HouseEdgeBasisPoints, round.PayoutPolicyVersion);
     }
 
     public MinesRoundView Project(MinesRoundState round)
@@ -68,14 +74,18 @@ public sealed class MinesEngine(IMinesBoardGenerator? boardGenerator = null)
         var safe = round.SafeReveals;
         return new(round.WagerCents, round.MineCount, round.Status, safe,
             MinesRules.TileCount - round.MineCount - safe,
-            round.Status == MinesRoundStatus.Lost ? 0m : MinesRules.Multiplier(round.MineCount, safe),
-            active ? MinesRules.Multiplier(round.MineCount, safe + 1) : null,
-            active ? MinesRules.ReturnCents(round.WagerCents, round.MineCount, safe) : 0,
+            round.Status == MinesRoundStatus.Lost ? 0m : round.Status == MinesRoundStatus.Consolation
+                ? MinesRules.MineMultiplier(round.MineCount, safe, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion)
+                : MinesRules.Multiplier(round.MineCount, safe, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion),
+            active ? MinesRules.Multiplier(round.MineCount, safe + 1, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion) : null,
+            active ? MinesRules.ReturnCents(round.WagerCents, round.MineCount, safe, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion) : 0,
             active && safe > 0, round.PayoutCents,
             [.. Enumerable.Range(0, MinesRules.TileCount).Select(index =>
                 new MinesTileView(index, round.RevealedTiles.Contains(index),
                     active && !round.RevealedTiles.Contains(index) ? MinesTileKind.Hidden
-                    : round.MinePositions.Contains(index) ? MinesTileKind.Mine : MinesTileKind.Gem))]);
+                    : round.MinePositions.Contains(index) ? MinesTileKind.Mine : MinesTileKind.Gem))],
+            round.HouseEdgeBasisPoints, round.PayoutPolicyVersion,
+            active ? MinesRules.MineReturnCents(round.WagerCents, round.MineCount, safe, round.HouseEdgeBasisPoints, round.PayoutPolicyVersion) : 0);
     }
 
     private static void EnsureActive(MinesRoundState round)

@@ -1,0 +1,12 @@
+.admin-evidence{margin:1.5rem 0;padding:1rem;border:1px solid #34343f;border-radius:12px;background:#111117}
+.admin-evidence summary{cursor:pointer;font-weight:600}
+.admin-evidence pre{max-height:32rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:1rem;background:#08090c;color:#dadbe5;font-size:.8rem}
+.admin-evidence small{overflow-wrap:anywhere;color:#a9a7b5}
+.admin-incident-form{display:grid;gap:1rem;margin-top:1.5rem;padding:1.25rem;border:1px solid #46404d;border-radius:12px;max-width:54rem;background:#14131b}
+.admin-incident-form h3,.admin-incident-form p{margin:0}
+.admin-incident-form label{display:grid;gap:.5rem}
+.admin-incident-form textarea{min-height:7rem;resize:vertical}
+.admin-incident-form input,.admin-incident-form select,.admin-incident-form textarea{font:inherit;color:inherit;background:#0c0c12;border:1px solid #45414e;border-radius:8px;padding:.65rem;max-width:100%;min-width:0}
+.admin-incident-form .admin-ack{display:flex;align-items:center;gap:.75rem}
+.admin-review-actions{display:flex;gap:.75rem;flex-wrap:wrap;margin-top:.75rem}
+.admin-record code{overflow-wrap:anywhere}

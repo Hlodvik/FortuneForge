@@ -19,6 +19,18 @@ const activities: readonly CardRoomActivity[] = [
 ]
 
 describe('CardRoomHistory', () => {
+  it('shows settled Mines in its own group without a claim operation', () => {
+    const markup = renderToStaticMarkup(<CardRoomHistory activities={[{
+      id: 'mines-round-1', matchId: 'mines-round-1', game: 'mines', gameLabel: 'Mines', title: 'Mines game', summary: 'R1.02 won',
+      startedAtUtc: '2026-10-25T12:00:00Z', completedAtUtc: '2026-10-25T12:01:00Z', unseen: true,
+      requiresClaim: false, winningsCredits: 1.02, wagerCredits: 1, netCredits: .02,
+    }]} loading={false} error={null} busyId={null} onSelect={() => undefined} />)
+    expect(markup).toContain('Mines game')
+    expect(markup).toContain('R1.02 won')
+    expect(markup).toContain('Open result')
+    expect(markup).not.toContain('claim')
+    expect(markup).toContain('Andar Bahar')
+  })
   it('has an Andar Bahar result group without hiding existing game groups', () => {
     const markup = renderToStaticMarkup(<CardRoomHistory activities={[{
       id: 'andar-bahar-round-1', matchId: 'round-1', game: 'andar-bahar', gameLabel: 'Andar Bahar', title: 'Andar Bahar game', summary: 'R0.95 won',

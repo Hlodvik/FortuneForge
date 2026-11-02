@@ -38,7 +38,7 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
     }).catch(() => undefined)
   }, [initialAccount.userId])
 
-  return <InGameShell account={account} title="Sic Bo" theme="casino" className="player-page sic-bo-page">
+  return <InGameShell account={account} title="Sic Bo" className="player-page sic-bo-page">
     <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} roundOwnerId={account.userId} recoveryMode={practiceMode ? 'practice' : 'account'} showTitle onBalanceChange={practiceMode ? undefined : refreshBalance} />
   </InGameShell>
 }

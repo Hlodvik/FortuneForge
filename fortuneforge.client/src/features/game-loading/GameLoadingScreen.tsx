@@ -1,3 +1,4 @@
+import { ResponsiveSlotImage } from '../slots/components/ResponsiveSlotImage'
 import { useId, useState, type CSSProperties } from 'react'
 import type { GameLoadingEntry } from './types'
 import './gameLoadingScreen.css'
@@ -34,9 +35,10 @@ export function GameLoadingScreen({ entry, statusLabel }: { entry?: GameLoadingE
             {title}
           </h1>
           {showArtwork && entry && (
-            <img
+            <ResponsiveSlotImage
               className="ff-game-loading__image"
               src={entry.image}
+              imageSrcSet={entry.imageSrcSet}
               alt=""
               width={768}
               height={384}

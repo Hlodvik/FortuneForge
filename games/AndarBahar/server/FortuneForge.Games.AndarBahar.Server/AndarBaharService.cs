@@ -35,20 +35,29 @@ public interface IAndarBaharStore
 
 public static class AndarBaharMoney
 {
-    public const long MinimumStakeCents = 50, MaximumStakeCents = 10_000, StakeIncrementCents = 50;
+    public const long MinimumStakeCents = 50, MaximumStakeCents = 5_000, StakeIncrementCents = 50;
+    // Older settled rounds may exceed today's limit. Keep them readable and replayable by idempotency key.
+    private const long LegacyMaximumStakeCents = 10_000;
     public static decimal ToRand(long cents) => cents / 100m;
     public static (AndarBaharSide Side, long StakeCents) Parse(CreateAndarBaharRoundRequest request)
     {
         var side = request.Side switch { "andar" => AndarBaharSide.Andar, "bahar" => AndarBaharSide.Bahar,
             _ => throw new ArgumentException("Choose either andar or bahar.") };
-        if (request.Stake is < .50m or > 100m || request.Stake % .50m != 0)
-            throw new ArgumentException("Choose a stake in R0.50 increments from R0.50 through R100.00.");
+        // Parse the former range so a retry can recover its settled round before the new-wager cap is checked.
+        if (request.Stake < ToRand(MinimumStakeCents) || request.Stake > ToRand(LegacyMaximumStakeCents) ||
+            request.Stake % ToRand(StakeIncrementCents) != 0)
+            throw new ArgumentException("Choose a stake in R0.50 increments.");
         return (side, checked((long)(request.Stake * 100m)));
     }
     public static void Validate(AndarBaharSide side, long stakeCents)
     {
-        if (!Enum.IsDefined(side) || stakeCents is < MinimumStakeCents or > MaximumStakeCents || stakeCents % StakeIncrementCents != 0)
+        if (!Enum.IsDefined(side) || stakeCents is < MinimumStakeCents or > LegacyMaximumStakeCents || stakeCents % StakeIncrementCents != 0)
             throw new ArgumentException("The Andar Bahar wager is invalid.");
+    }
+    public static void ValidateNewStake(long stakeCents)
+    {
+        if (stakeCents > MaximumStakeCents)
+            throw new ArgumentException("Choose a stake in R0.50 increments from R0.50 through R50.00.");
     }
 }
 

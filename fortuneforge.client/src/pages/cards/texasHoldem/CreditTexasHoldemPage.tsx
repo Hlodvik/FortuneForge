@@ -4,6 +4,7 @@ import '@fortuneforge/games-texas-holdem/styles.css'
 import { InGameShell } from '../../../components/InGameShell'
 import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
 import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
+import { useGameLeaveGuard } from '../../../features/navigation/GameLeaveGuard'
 import { getCurrentAccount, type AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
@@ -128,6 +129,20 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   const waitingForTable = currentSession?.kind === 'queue'
     || (table?.status === 'active' && table.activeSeat !== currentSeat?.seat)
 
+  // Loading/error screens cannot disprove a previously accepted seat. An
+  // uncertain join also stays protected until a definitive response arrives.
+  const participation = currentSession ?? observedSession.current
+  useGameLeaveGuard(pending !== null ? {
+    title: 'Leave Texas Hold’em?',
+    description: 'Your table request is still being confirmed and may have been accepted. Leaving this page does not cancel it. Return to reconnect before choosing another action.',
+  } : participation?.kind === 'queue' ? {
+    title: 'Leave Texas Hold’em?',
+    description: 'Your buy-in is reserved and your seat may be dealt while you are away. Leaving this page does not cancel the queue. Use Cancel at the table to return your reserved buy-in.',
+  } : participation?.kind === 'match' ? {
+    title: 'Leave Texas Hold’em?',
+    description: 'Your table stays active if you leave this page. The turn timer continues and may check or fold your hand. Return to reconnect, or use Leave table to cash out your remaining stack.',
+  } : null)
+
   useEffect(() => {
     if (!currentSession || busy) return
     const interval = window.setInterval(() => void refresh(), waitingForTable ? 950 : 4200)
@@ -179,9 +194,9 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   }, [pending, refresh])
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
-  if (availability.kind === 'loading') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><GameLoadingScreen entry={resolveGameLoadingEntry('/cards/texas-holdem')} /></div></InGameShell>
-  if (availability.kind === 'disabled') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div></InGameShell>
-  if (availability.kind === 'error') return <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div></InGameShell>
+  if (availability.kind === 'loading') return <InGameShell account={navbarAccount} title="Texas Hold’em" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><GameLoadingScreen entry={resolveGameLoadingEntry('/cards/texas-holdem')} /></div></InGameShell>
+  if (availability.kind === 'disabled') return <InGameShell account={navbarAccount} title="Texas Hold’em" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Credit Hold’em is coming soon" body={availability.message} /></div></InGameShell>
+  if (availability.kind === 'error') return <InGameShell account={navbarAccount} title="Texas Hold’em" bodyClassName="ff-holdem-shell-body"><div className="ff-holdem-page" onClickCapture={onCardAudioClick}><StateCard title="Table unavailable" body={availability.message} retry={() => load()} /></div></InGameShell>
 
   const { status, session } = availability
   const tableRules = status.tableRules?.length ? status.tableRules : [legacyRule(status)]
@@ -190,7 +205,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
   const displayedBuyIn = buyInAmount ?? (maximumBuyIn >= (selectedRule.minimumBuyInCredits ?? selectedRule.bigBlindCredits) ? maximumBuyIn.toFixed(2) : '')
   const findingTable = session.kind === 'idle' && pending?.fingerprint.startsWith('join:') === true
   return (
-    <InGameShell account={navbarAccount} title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body">
+    <InGameShell account={navbarAccount} title="Texas Hold’em" bodyClassName="ff-holdem-shell-body">
       <div className="ff-holdem-page" onClickCapture={onCardAudioClick}>
       {requestError && (
         <div className="ff-holdem-error" role="alert">
@@ -440,7 +455,7 @@ function legacyRule(status: CreditHoldemStatus): CreditHoldemTableRule {
 export function CreditTexasHoldemPreview() {
   const [muted, setMuted] = useState(false)
   const cardAudioClick = useCardAudioClick()
-  return <InGameShell title="Texas Hold’em" theme="cards" bodyClassName="ff-holdem-shell-body">
+  return <InGameShell title="Texas Hold’em" bodyClassName="ff-holdem-shell-body">
     <div className="ff-holdem-page ff-holdem-preview" onClickCapture={event => { if (!muted) cardAudioClick(event) }}><main className="ff-holdem-main">
       <CreditHoldemGameHeader muted={muted} onToggleSound={() => setMuted(value => !value)}/>
       <TableView table={previewTable} version={1} busy={false} act={() => undefined} leave={() => undefined} />

@@ -1,4 +1,4 @@
-import type { SnakeDirection, SnakeEvent, SnakeGameState, SnakeGateway, SnakePhase, SnakePoint, SnakeStatus } from './contracts'
+import type { SnakeDirection, SnakeEvent, SnakeGameState, SnakeGateway, SnakeOptions, SnakePhase, SnakePoint, SnakeStatus } from './contracts'
 
 export class SnakeGatewayError extends Error {
   readonly code?: string
@@ -17,8 +17,8 @@ export class HttpSnakeGateway implements SnakeGateway {
 
   getStatus(signal?: AbortSignal) { return this.request('/status', { signal }, isStatus) }
 
-  startGame(seed?: number, signal?: AbortSignal) {
-    return this.request('/games', { method: 'POST', headers: jsonHeaders, body: JSON.stringify(seed === undefined ? {} : { seed }), signal }, isGame)
+  startGame(seed?: number, signal?: AbortSignal, options?: SnakeOptions) {
+    return this.request('/games', { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ ...(seed === undefined ? {} : { seed }), ...options }), signal }, isGame)
   }
 
   turn(gameId: string, direction: SnakeDirection, signal?: AbortSignal) {
@@ -29,8 +29,8 @@ export class HttpSnakeGateway implements SnakeGateway {
     return this.request(`/games/${encodeURIComponent(gameId)}/tick`, { method: 'POST', signal }, isGame)
   }
 
-  reset(gameId: string, seed?: number, signal?: AbortSignal) {
-    return this.request(`/games/${encodeURIComponent(gameId)}/reset`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify(seed === undefined ? {} : { seed }), signal }, isGame)
+  reset(gameId: string, seed?: number, signal?: AbortSignal, options?: SnakeOptions) {
+    return this.request(`/games/${encodeURIComponent(gameId)}/reset`, { method: 'POST', headers: jsonHeaders, body: JSON.stringify({ ...(seed === undefined ? {} : { seed }), ...options }), signal }, isGame)
   }
 
   private async request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T): Promise<T> {

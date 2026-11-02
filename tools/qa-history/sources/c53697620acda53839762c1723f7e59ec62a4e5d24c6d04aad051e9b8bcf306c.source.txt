@@ -1,0 +1,45 @@
+from pathlib import Path
+from PIL import Image
+from datetime import datetime, timezone
+import hashlib
+import json
+
+root = Path(__file__).parent
+entries = [
+    ('cash-noire-base-official.jpg', 'NetEnt', 'Cash Noire',
+     'https://netent.com/games/cash-noire',
+     'https://fan-cdn.nolimitcity.com/Cash_Noire_09_desktop_screenshot_USD_c74ebfa6e2.jpg',
+     'Actual five-reel/four-row base-game screenshot, with a tutorial overlay obscuring several central cells.'),
+    ('cash-noire-bonus-intro-official.jpg', 'NetEnt', 'Cash Noire',
+     'https://netent.com/games/cash-noire',
+     'https://fan-cdn.nolimitcity.com/Cash_Noire_03_desktop_screenshot_26186b1cec.jpg',
+     'Actual bonus-entry presentation, not a free-spin reel screen or paytable.'),
+    ('cash-noire-mystery-symbol-official.png', 'NetEnt', 'Cash Noire',
+     'https://netent.com/games/cash-noire',
+     'https://fan-cdn.nolimitcity.com/Cash_Noire_11_symbols_13_8acf351d7a.png',
+     'Publisher-isolated steel safe Mystery symbol; not a whole reel screenshot.'),
+    ('take-the-bank-heist-spins-official.jpg', 'Betsoft', 'Take The Bank',
+     'https://betsoft.com/games/take-the-bank/',
+     'https://betsoft.com/wp-content/uploads/2022/02/TakeTheBank-HeistSpins.jpg',
+     'Actual base-game feature screenshot; explosion effect obscures much of the first two reels.'),
+    ('take-the-bank-free-spins-official.jpg', 'Betsoft', 'Take The Bank',
+     'https://betsoft.com/games/take-the-bank/',
+     'https://betsoft.com/wp-content/uploads/2022/02/TakeTheBank-FreeSpins.jpg',
+     'Actual four-row free-spin gameplay; multiple moving-WILD positions and ordinary symbols are visible.'),
+]
+assets = []
+for filename, publisher, game, page, image_url, purpose in entries:
+    path = root / filename
+    with Image.open(path) as art:
+        dimensions = list(art.size)
+    assets.append({'file': filename, 'publisher': publisher, 'game': game,
+                   'primaryPublisherPage': page, 'publisherLinkedImageUrl': image_url,
+                   'observedContent': purpose, 'dimensions': dimensions,
+                   'bytes': path.stat().st_size,
+                   'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                   'sourcePixelsVisuallyInspected': True, 'edited': False,
+                   'referenceOnly': True, 'applicationAsset': False})
+(root / 'provenance.json').write_text(json.dumps({'checkedUtc': datetime.now(timezone.utc).isoformat(),
+    'method': 'Read official publisher pages; fetch their linked original images unchanged; inspect actual local pixels.',
+    'noGameInteraction': True, 'noGeneratedArt': True, 'assets': assets}, indent=2))
+print(json.dumps([{'file': a['file'], 'dimensions': a['dimensions'], 'bytes': a['bytes']} for a in assets]))

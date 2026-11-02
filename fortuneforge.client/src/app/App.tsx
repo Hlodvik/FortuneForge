@@ -5,6 +5,8 @@ import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
 import { useGamePresence } from '../features/catalog/useGamePresence'
+import { AccountAccessBoundary } from '../features/account/AccountAccessBoundary'
+import { GameLeaveGuardProvider } from '../features/navigation/GameLeaveGuard'
 import './styles/index.css'
 
 export default function App() {
@@ -26,7 +28,7 @@ export default function App() {
   const appShellClassName = [
     'app-shell',
     pathname === '/' ? 'app-shell--landing' : '',
-    pathname === '/home' || pathname.startsWith('/home/') ? 'app-shell--home' : '',
+    pathname === '/home' || pathname.startsWith('/home/') || pathname === '/balance' ? 'app-shell--home' : '',
     shouldRenderDefaultShellVideo ? 'app-shell--wukong-clouds' : '',
     isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
@@ -98,11 +100,11 @@ export default function App() {
           />
         </video>
       )}
-      <AppRoutes
+      <GameLeaveGuardProvider><AccountAccessBoundary><AppRoutes
         pathname={pathname}
         slotRoute={slotRoute}
         onSpinStateChange={handleSlotSpinStateChange}
-      />
+      /></AccountAccessBoundary></GameLeaveGuardProvider>
     </div>
   )
 }

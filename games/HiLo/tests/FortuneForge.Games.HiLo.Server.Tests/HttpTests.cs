@@ -73,6 +73,7 @@ public sealed class HttpTests
         Assert.Equal(HttpStatusCode.Conflict, (await alice.PostAsJsonAsync("/api/games/hi-lo/rounds", start with { WagerCents = 200 })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await alice.PostAsJsonAsync("/api/games/hi-lo/rounds", start with { OperationId = "short" })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await alice.PostAsJsonAsync("/api/games/hi-lo/rounds", start with { WagerCents = 100001 })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await alice.PostAsJsonAsync("/api/games/hi-lo/rounds", start with { OperationId = Guid.NewGuid().ToString("N"), WagerCents = 501 })).StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest, (await alice.PostAsync("/api/games/hi-lo/rounds", new StringContent("{", System.Text.Encoding.UTF8, "application/json"))).StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, (await alice.PostAsJsonAsync($"/api/games/hi-lo/rounds/{state.Round.RoundId}/actions", new HiLoActionRequest(Guid.NewGuid().ToString("N"), 9, "cashout"))).StatusCode);
     }

@@ -1,4 +1,7 @@
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Server.Arcade;
 using FortuneForge.Server.Arcade.Asteroids;
+using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -52,7 +55,15 @@ public sealed class FirestoreAsteroidsFreeRunServiceTests
         var replay = new AsteroidsReplay(AsteroidsReplayEvaluator.MaximumReplaySteps, []);
         var expected = AsteroidsReplayEvaluator.Evaluate(started.Run, replay);
 
-        var first = await service.CompleteAsync(started.Run.RunId, "player-1", replay, default);
+        AsteroidsFreeRunCompletionResult first;
+        using (GameSecurityContext.Push(new GameRequestObservation(
+            "asteroids-complete-request-0001", "player-1", "session-1", "203.0.113.5",
+            Start.UtcDateTime, "POST", $"/api/arcade-competitions/asteroids/free/runs/{started.Run.RunId}/replay", "asteroids",
+            started.Run.RunId, "asteroids-complete-0001", null,
+            "{\"totalSteps\":1}", "captured", "remote-address")))
+        {
+            first = await service.CompleteAsync(started.Run.RunId, "player-1", replay, default);
+        }
         var retry = await service.CompleteAsync(started.Run.RunId, "player-1", replay, default);
 
         Assert.False(first.WasAlreadyCompleted);
@@ -70,6 +81,21 @@ public sealed class FirestoreAsteroidsFreeRunServiceTests
         Assert.Equal(expected.Terminal.ToString().ToLowerInvariant(), Field<string>(document, "terminal"));
         Assert.True(document.ContainsField("startedAt"));
         Assert.True(document.ContainsField("completedAt"));
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal("asteroids", Field<string>(audit, "gameId"));
+        Assert.Equal(started.Run.RunId, Field<string>(audit, "roundId"));
+        Assert.Equal("incomplete", Field<string>(audit, "auditStatus"));
+        Assert.True(Field<bool>(audit, "securityAuditPending"));
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        Assert.Contains("replayCanonical", evidence.GetValue<string>("payloadJson"));
+        Assert.Equal("asteroids-complete-request-0001", Field<string>(evidence, "requestId"));
+        Assert.Contains("203.0.113.5", Field<string>(evidence, "requestJson"));
+        var securityEvents = (await database.Collection("gameSecurityEvents").GetSnapshotAsync()).Documents;
+        Assert.Equal(["run-completed", "run-started"], securityEvents.Select(item => Field<string>(item, "eventKind")).Order().ToArray());
+        Assert.Contains(securityEvents, item => Field<string>(item, "eventKind") == "run-completed" &&
+            Field<string>(item, "requestId") == "asteroids-complete-request-0001");
+        var summary = FirestoreGameRoundAuditStore.Summary(audit);
+        Assert.Empty(await ArcadeReplayAudit.InspectAsync(database, summary, Field<string>(evidence, "payloadJson"), default));
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.CompleteAsync(
             started.Run.RunId, "player-2", replay, default));
@@ -78,6 +104,9 @@ public sealed class FirestoreAsteroidsFreeRunServiceTests
             "player-1",
             new AsteroidsReplay(AsteroidsReplayEvaluator.MaximumReplaySteps, [new AsteroidsInputCommand(0, AsteroidsInput.Fire)]),
             default));
+        await document.Reference.UpdateAsync("score", first.Score + 1);
+        Assert.Contains(await ArcadeReplayAudit.InspectAsync(database, summary, Field<string>(evidence, "payloadJson"), default),
+            finding => finding.Code == "arcade-run-source-mismatch");
     }
 
     private (FirestoreDb Database, FirestoreAsteroidsFreeRunService Service) CreateService(params ulong[] seeds)

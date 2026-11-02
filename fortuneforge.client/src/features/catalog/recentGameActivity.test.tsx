@@ -59,10 +59,10 @@ describe('recent game activity', () => {
     expect(latest.error).toContain('temporarily unavailable')
     expect(mocks.fetch).not.toHaveBeenCalled()
   })
-  it('supports all forty canonical games and sorts real timestamps without making up activity', () => {
-    const ids = ['blackjack', 'dragon-tiger', 'mines', 'texas-holdem', 'solitaire', 'three-card-poker', 'house-holdem', 'hearts', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker', 'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge', ...SLOT_ROUTE_DEFINITIONS.map(game => game.id)]
+  it('recognizes both Solitaire games and sorts real timestamps without making up activity', () => {
+    const ids = ['blackjack', 'dragon-tiger', 'mines', 'texas-holdem', 'solitaire', 'free-solitaire', 'three-card-poker', 'house-holdem', 'hearts', 'andar-bahar', 'hi-lo', 'baccarat', 'casino-war', 'video-poker', 'roulette', 'craps', 'keno', 'sic-bo', 'liars-dice', '2048', 'drop-merge', ...SLOT_ROUTE_DEFINITIONS.map(game => game.id)]
     const result = mergeRecentGameActivity(ids.map(id => play(id)), [play('blackjack', 15), play('horse-flight', 16), { gameId: 'mines', playedAtUtc: 'invalid' }])
-    expect(result).toHaveLength(40); expect(result[0]).toEqual(play('blackjack', 15))
+    expect(result).toHaveLength(41); expect(result[0]).toEqual(play('blackjack', 15))
     expect(mergeRecentGameActivity()).toEqual([])
   })
   it('uses the authenticated endpoint and rejects malformed responses', async () => {

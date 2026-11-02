@@ -10,6 +10,30 @@ namespace FortuneForge.Server.Payments;
 
 public sealed partial class PaymentService
 {
+    public async Task<PaymentWithdrawalListResponse> ListWithdrawalsAsync(
+        string userId,
+        int limit,
+        CancellationToken cancellationToken)
+    {
+        var withdrawals = await _withdrawalHistory.ListWithdrawalsAsync(
+            userId,
+            Math.Clamp(limit, 1, 50),
+            cancellationToken);
+
+        return new PaymentWithdrawalListResponse(withdrawals
+            .Select(withdrawal => new PaymentWithdrawalSummaryResponse(
+                withdrawal.WithdrawalId,
+                withdrawal.Market.Currency,
+                withdrawal.Market.Locale,
+                withdrawal.AmountMinor,
+                withdrawal.CreditsDebited,
+                withdrawal.Status,
+                withdrawal.StatusUpdatedAtUtc,
+                withdrawal.CreatedAtUtc,
+                withdrawal.CompletedAtUtc))
+            .ToArray());
+    }
+
     public async Task<PaymentResult<PaymentWithdrawalResponse>> CreateWithdrawalAsync(
         string userId,
         string accountEmail,

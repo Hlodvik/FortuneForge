@@ -1,0 +1,28 @@
+{
+  "name": "@fortuneforge/client-presentation",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "files": ["dist", "README.md"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./money": { "types": "./dist/formatMoney.d.ts", "import": "./dist/formatMoney.js" },
+    "./game-experience": { "types": "./dist/GameExperienceContext.d.ts", "import": "./dist/GameExperienceContext.js" }
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.build.json"
+  },
+  "peerDependencies": { "react": "^19.0.0" },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  }
+}

@@ -39,9 +39,12 @@ describe('foreground game presence', () => {
     await render('/home')
     expect(mocks.account).not.toHaveBeenCalled(); expect(mocks.fetch).not.toHaveBeenCalled()
   })
-  it('maps all 40 real game routes and rejects catalogue, demo and invented routes', () => {
+  it('maps catalogue games and keeps delisted game routes available for direct play', () => {
     expect(HOME_GAME_CATALOG).toHaveLength(40)
     for (const game of HOME_GAME_CATALOG) expect(presenceGameId(game.href)).toBe(game.id)
+    expect(presenceGameId('/cards/free-solitaire')).toBe('free-solitaire')
+    expect(HOME_GAME_CATALOG.some(game => game.id === 'liars-dice')).toBe(false)
+    expect(presenceGameId('/games/liars-dice')).toBe('liars-dice')
     for (const game of SLOT_ROUTE_DEFINITIONS) expect(presenceGameId(game.demoPath)).toBeUndefined()
     for (const route of ['/home', '/cards', '/slots', '/games', '/games/unknown', '/demo/cards/blackjack', '/cards/hearts/rules'])
       expect(presenceGameId(route)).toBeUndefined()

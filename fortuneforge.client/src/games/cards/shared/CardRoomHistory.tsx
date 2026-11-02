@@ -22,6 +22,7 @@ export function CardRoomHistory({
     ['house-holdem', 'House Hold’em'],
     ['hi-lo', 'Hi-Lo'],
     ['andar-bahar', 'Andar Bahar'],
+    ['mines', 'Mines'],
     ['solitaire', 'Solitaire'],
   ] as const
 

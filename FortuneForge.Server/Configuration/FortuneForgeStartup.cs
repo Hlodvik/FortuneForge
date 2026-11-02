@@ -13,6 +13,7 @@ using FortuneForge.Server.Games.Craps;
 using FortuneForge.Server.Games.DropMerge;
 using FortuneForge.Server.Games.LiarsDice;
 using FortuneForge.Server.Games.TwentyFortyEight;
+using FortuneForge.Server.Games.Snake;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Server.Bots.LiarsDice;
@@ -24,8 +25,11 @@ using FortuneForge.Server.Dice.SicBo;
 using FortuneForge.Games.DragonTiger.Server;
 using FortuneForge.Games.HiLo.Server;
 using FortuneForge.Games.AndarBahar.Server;
+using FortuneForge.Games.Mines.Server;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Matchmaking;
+using FortuneForge.Server.Activity;
+using FortuneForge.Server.Catalog;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -59,15 +63,26 @@ public static class FortuneForgeStartup
         builder.Services.AddAdminOperations(builder.Configuration);
         builder.Services.AddAdminPlayers(builder.Configuration);
         builder.Services.AddAdminManagement(builder.Configuration);
+        builder.Services.AddCataloguePopularity();
         builder.Services.AddGameReports(builder.Configuration, builder.Environment.IsDevelopment());
+        builder.Services.AddGameActivity();
+        builder.Services.AddSingleton<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink,
+            FortuneForge.Server.SecurityAudit.FirestoreGameSecurityEventSink>();
+        FortuneForge.Server.SecurityAudit.GameSecurityRequestConfiguration.AddGameSecurityRequests(builder.Services, builder.Configuration);
+        FortuneForge.Server.SecurityAudit.SecurityAuditInvestigationConfiguration.AddSecurityAuditInvestigations(builder.Services, builder.Configuration);
+        FortuneForge.Server.Risk.RiskConfiguration.AddPlayerRiskEnforcement(builder.Services);
+        FortuneForge.Server.RoundAudit.GameRoundAuditConfiguration.AddGameRoundAuditing(builder.Services, builder.Configuration);
         builder.Services.AddSingleton<HeartsGameService>();
         builder.Services.AddSingleton<IHeartsOnboardingStore, FirestoreHeartsOnboardingStore>();
         builder.Services.AddPaidHearts(builder.Configuration);
         builder.Services.AddSingleton(provider => new RouletteGameService(
             provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
-            provider.GetRequiredService<IManagedTablePopulationDirector>()));
+            provider.GetRequiredService<IManagedTablePopulationDirector>(),
+            provider.GetRequiredService<FortuneForge.Server.Activity.IGameAnalyticsSink>(),
+            provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>()));
         builder.Services.AddHostedService<RouletteTableWorker>();
-        builder.Services.AddSingleton<CrapsGameService>();
+        builder.Services.AddSingleton(provider => new FortuneForge.Server.Games.Craps.FirestorePaidCrapsStore(
+            provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>()));
         builder.Services.AddDragonTigerServer(options =>
         {
             options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
@@ -97,8 +112,22 @@ public static class FortuneForgeStartup
                 : ["https://fortuneforgegame.web.app", "https://fortuneforgegame.firebaseapp.com"];
         });
         builder.Services.AddSingleton<DropMergeGameService>();
+        builder.Services.AddMinesServer(options =>
+        {
+            options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;
+            options.WriteRateLimitPolicy = RateLimitPolicies.SlotSpins;
+            options.AllowPracticeRequests = false;
+            // Firebase proxies retain the public browser origin while Cloud Run has a different host.
+            // This allowlist comes only from trusted deployment configuration, never forwarded headers.
+            options.AllowedOrigins = new[] { "https://fortuneforgegame.web.app", "https://fortuneforgegame.firebaseapp.com" }
+                .Concat(builder.Configuration.GetSection("Mines:AllowedOrigins").Get<string[]>() ?? [])
+                .Concat(builder.Environment.IsDevelopment()
+                    ? ["http://127.0.0.1:4178", "http://localhost:4178", "http://127.0.0.1:5173", "http://localhost:5173"]
+                    : Array.Empty<string>()).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        });
         builder.Services.AddSingleton<LiarsDiceGameService>();
         builder.Services.AddSingleton<TwentyFortyEightGameService>();
+        builder.Services.AddSingleton<FirestoreSnakeGameService>();
         builder.Services.AddSingleton<PracticeVideoPokerStore>();
         builder.Services.AddSingleton<PracticeBaccaratStore>();
         builder.Services.AddSingleton<PracticeCasinoWarStore>();

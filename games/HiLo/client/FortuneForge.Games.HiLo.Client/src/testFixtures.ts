@@ -3,7 +3,7 @@ import type { HiLoSession } from './contracts'
 export const hiLoSessionFixture: HiLoSession = {
   practice: true,
   walletBalanceCents: 999900,
-  limits: { minWagerCents: 10, maxWagerCents: 100000, maximumReturnCents: 10000000, maxMultiplier: 1000, maxSkips: 52, maxStreak: 100, houseEdge: .01 },
+  limits: { minWagerCents: 10, maxWagerCents: 500, maximumReturnCents: 10000000, maxMultiplier: 1000, maxSkips: 52, maxStreak: 100, houseEdge: .01 },
   round: {
     roundId: '00000000000000000000000000000001', revision: 0, status: 'active', wagerCents: 100,
     currentCard: { rank: 'seven', suit: 'hearts' },

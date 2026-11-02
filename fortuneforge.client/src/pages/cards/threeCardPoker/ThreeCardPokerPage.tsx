@@ -142,8 +142,8 @@ export function ThreeCardPokerPage({ account }: { account: AccountSummary }) {
   const act = (session: ThreeCardPokerPlaySession, action: ThreeCardPokerAction) => void runMutation(`action:${session.table.tableId}:${action}:${session.version}`, (key) => postThreeCardPokerAction(session.table.tableId, action, session.version, key))
   const leave = (session: ThreeCardPokerPlaySession) => void runMutation(`leave:${session.table.tableId}:${session.version}`, (key) => leaveThreeCardPokerTable(session.table.tableId, session.version, key))
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }
-  return <InGameShell account={navbarAccount} title="Three Card Poker" theme="cards" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body"
-    actions={availability.kind === 'ready' ? <ThreeCardPokerHowToPlay status={availability.status} /> : undefined}>
+  return <InGameShell account={navbarAccount} title="Three Card Poker" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body">
+    {availability.kind === 'ready' && <div className="game-local-controls"><ThreeCardPokerHowToPlay status={availability.status} /></div>}
     <div className="blackjack-page blackjack-table-page three-card-poker-page" onClickCapture={onCardAudioClick}>
       {requestError && <div className="blackjack-error" role="alert"><span>{requestError}</span><button type="button" disabled={busy} onClick={() => { setPending(null); void load() }}>Refresh table</button></div>}
       <ThreeCardPokerContent availability={availability} balanceCredits={balanceCredits} ante={ante} pairPlus={pairPlus} busy={busy} pending={pending}

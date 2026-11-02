@@ -17,7 +17,12 @@ describe('Hearts route integration', () => {
     expect(routeSource).toContain("new HttpHeartsGateway('/api/games/hearts', fetchWithAccountSession)")
     expect(routeSource).toContain('onBalanceChange={publishBalance}')
     expect(routeSource).toContain('renderCard={renderHeartsCard}')
-    expect(routeSource).toContain('<InGameShell account={account} title="Hearts" theme="cards"')
+    expect(routeSource).toContain('<InGameShell account={account} title="Hearts"')
+    const shellProps = routeSource.match(/<InGameShell\b[^>]*>/)?.[0]
+    expect(shellProps).toBeDefined()
+    expect(shellProps).not.toMatch(/\b(?:theme|actions)=/)
+    expect(routeSource).not.toContain('<SiteNavbar')
+    expect(routeSource).not.toContain('<InGameNavbar')
     expect(routeSource).toContain('<HeartsGame')
     expect(source('../../../../games/Hearts/client/FortuneForge.Games.Hearts.Client/src/HeartsGame.tsx')).not.toContain('ff-hearts-header')
   })

@@ -3,6 +3,7 @@ import { InGameShell } from '../../../components/InGameShell'
 import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
 import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
+import { useGameLeaveGuard } from '../../../features/navigation/GameLeaveGuard'
 import {
   actHouseHoldemRound, advanceHouseHoldemRound, affordableHouseHoldemAction, getHouseHoldemRound, getHouseHoldemStatus,
   houseHoldemMutationKey, isUncertainHouseHoldemFailure, startHouseHoldemRound,
@@ -55,6 +56,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
   const [placements, setPlacements] = useState<Placement[]>([])
   const [selectedChip, setSelectedChip] = useState<ChipValue>(1)
   const [chipPickerOpen, setChipPickerOpen] = useState(false)
+  const [showOpeningBetHint, setShowOpeningBetHint] = useState(true)
   const [busy, setBusy] = useState(false)
   const [pending, setPending] = useState<PendingMutation | null>(null)
   const [requestError, setRequestError] = useState<string | null>(null)
@@ -63,6 +65,15 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
   const pendingRef = useRef<PendingMutation | null>(null)
   const retryRef = useRef<{ fingerprint: string; send: (key: string) => Promise<HouseHoldemRound> } | null>(null)
   const onCardAudioClick = useCardAudioClick()
+  const hasSavedUnresolvedHand = round === null && loadState.kind !== 'ready' && readStoredRound(account.userId) !== null
+  useGameLeaveGuard((round !== null && round.phase !== 'settled') || pending !== null || hasSavedUnresolvedHand ? {
+    title: 'Leave House Hold’em?',
+    description: pending !== null
+      ? 'A table request is still being confirmed and may already have been accepted. Leaving does not cancel it; return to check or resume the hand.'
+      : hasSavedUnresolvedHand
+        ? 'Your saved wagered hand has not been reconciled yet. Leaving does not settle it; return to check its state.'
+        : 'Your wagered hand stays open when you leave. Return to resume it. Leaving this page does not fold, refund or settle the hand.',
+  } : null)
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoadState({ kind: 'loading' })
@@ -84,6 +95,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
         }
       }
       if (signal?.aborted) return
+      if (savedRound) setShowOpeningBetHint(false)
       setRound(savedRound)
       setBalance(savedRound?.balance ?? status.balance)
       setLoadState({ kind: 'ready', status })
@@ -181,6 +193,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
     const nextTrips = trips + (spot === 'trips' ? selectedChip : 0)
     if (nextAnte > status.maximumAnte || nextTrips > status.maximumTrips || cents(minimumHouseHoldemBankroll(Math.max(nextAnte, status.minimumAnte), nextTrips)) > cents(balance)) return
     setPlacements((current) => [...current, { spot, value: selectedChip }])
+    if (spot === 'ante') setShowOpeningBetHint(false)
     setAnte(nextAnte)
     setTrips(nextTrips)
   }
@@ -244,8 +257,8 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
   }, [round?.phase])
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balance } }
-  return <InGameShell account={navbarAccount} title="House Hold’em" theme="cards" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body"
-    actions={status ? <HouseHoldemHowToPlay status={status} /> : undefined}>
+  return <InGameShell account={navbarAccount} title="House Hold’em" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body"
+    supportControls={status ? <HouseHoldemHowToPlay status={status} /> : undefined}>
     <div className="blackjack-page blackjack-table-page three-card-poker-page house-holdem-page" onClickCapture={onCardAudioClick}>
       {requestError && <div className="blackjack-error" role="alert"><span>{requestError}</span><button type="button" disabled={busy} onClick={() => {
         const retry = retryRef.current
@@ -253,6 +266,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
         else void recover().then((recovered) => { if (!recovered) void load() })
       }}>{pending ? 'Retry request' : 'Refresh table'}</button></div>}
       <HouseHoldemContent loadState={loadState} round={round} balance={balance} ante={ante} trips={trips} placements={placements} selectedChip={selectedChip}
+        showOpeningBetHint={showOpeningBetHint}
         chipPickerOpen={chipPickerOpen} busy={busy} pending={pending} dealPresentation={dealPresentation}
         onDismissResult={dismissResult} onPlace={placeChip} onUndo={undo} onDeal={deal} onAct={act}
         onSelectChip={(value) => { setSelectedChip(value); setChipPickerOpen(false) }} onTogglePicker={() => setChipPickerOpen((value) => !value)} onRefresh={() => void load()} />
@@ -263,6 +277,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
 type ContentProps = Readonly<{
   loadState: LoadState; round: HouseHoldemRound | null; balance: number; ante: number; trips: number
   placements: readonly Placement[]; selectedChip: ChipValue; chipPickerOpen: boolean; busy: boolean; pending: PendingMutation | null
+  showOpeningBetHint?: boolean
   dealPresentation: DealPresentation | null; onDismissResult: () => void
   onPlace: (spot: Spot) => void; onUndo: () => void; onDeal: () => void; onAct: (action: HouseHoldemAction) => void
   onSelectChip: (value: ChipValue) => void; onTogglePicker: () => void; onRefresh: () => void
@@ -281,10 +296,14 @@ export function HouseHoldemContent(props: ContentProps) {
   const betting = round === null || round.phase === 'settled'
   const shownAnte = betting ? props.ante : round.ante
   const shownTrips = betting ? props.trips : round.trips
-  const anteChips = betting ? props.placements.filter((item) => item.spot === 'ante').map((item) => item.value) : chipsForAmount(round.ante)
-  const tripsChips = betting ? props.placements.filter((item) => item.spot === 'trips').map((item) => item.value) : chipsForAmount(round.trips)
+  const placedAnteChips = props.placements.filter((item) => item.spot === 'ante').map((item) => item.value)
+  const placedTripsChips = props.placements.filter((item) => item.spot === 'trips').map((item) => item.value)
+  const anteChips = betting ? placedAnteChips : chipsForAmount(round.ante, placedAnteChips)
+  const tripsChips = betting ? placedTripsChips : chipsForAmount(round.trips, placedTripsChips)
   const canPlaceAnte = betting && !props.busy && !props.pending && shownAnte + props.selectedChip <= status.maximumAnte && cents(minimumHouseHoldemBankroll(Math.max(shownAnte + props.selectedChip, status.minimumAnte), shownTrips)) <= cents(props.balance)
-  const canPlaceTrips = betting && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
+  const awaitingMainBet = round === null && shownAnte === 0 && canPlaceAnte
+  const onPlaceMainBet = canPlaceAnte ? () => props.onPlace('ante') : undefined
+  const canPlaceTrips = round === null && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
   const canDeal = betting && !props.busy && !props.pending && validHouseHoldemAnte(props.ante, status) && validHouseHoldemTrips(props.trips, status) && cents(minimumHouseHoldemBankroll(props.ante, props.trips)) <= cents(props.balance)
   const controls = dealing || waitingForDeal ? [] : round?.allowedActions ?? []
   return <main className="blackjack-main blackjack-game"><section className="blackjack-table" aria-label="House Hold’em table" data-phase={dealing || waitingForDeal ? 'dealing' : round?.phase ?? 'betting'} onClickCapture={round?.phase === 'settled' && !props.busy && !props.pending ? (event) => {
@@ -298,10 +317,14 @@ export function HouseHoldemContent(props: ContentProps) {
       <div className="house-holdem-board" role="group" aria-label="Community cards"><CardGroup label="" cards={shownRound?.board ?? []} count={5} scope="board" /></div>
       <div className="three-card-poker-felt house-holdem-felt" aria-hidden="true"><strong>House Hold’em</strong><span className="house-holdem-felt__underline" /></div>
       <div className="three-card-poker-player" role="group" aria-label="Your hand"><CardGroup label="" cards={shownRound?.playerCards ?? []} showBacks={!!dealing} visibleCount={playerVisibleCount} concealCards={!!dealing} count={2} scope="player" handLabel={dealing ? null : shownRound?.playerHand ?? null} /></div>
-      <div className="three-card-poker-bets" aria-label="Betting spots">
+      <div className="three-card-poker-bets" aria-label="Betting spots" data-awaiting-main-bet={awaitingMainBet}>
         <BetSpot kind="trips" label="Trips" amount={shownTrips} chips={tripsChips} onPlace={canPlaceTrips ? () => props.onPlace('trips') : undefined} disabled={!canPlaceTrips} />
-        <BetSpot kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={canPlaceAnte ? () => props.onPlace('ante') : undefined} disabled={!canPlaceAnte} />
-        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind)} disabled />
+        <BetSpot kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
+        {awaitingMainBet && props.showOpeningBetHint && <div className="house-holdem-opening-bet-hint" role="status">
+          Place chips here to play
+          <svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M50 0 20 15m0-6v6l7-1M50 0l30 15m-7-1 7 1V9" /></svg>
+        </div>}
+        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind, anteChips)} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
         <BetSpot kind="play" label="Wager" amount={shownRound?.play ?? 0} chips={chipsForAmount(shownRound?.play ?? 0)} disabled />
       </div>
     </div>
@@ -309,13 +332,13 @@ export function HouseHoldemContent(props: ContentProps) {
     <div className="blackjack-actions" aria-label="House Hold’em controls">
       <div className="three-card-poker-action-stats"><span>Bet <strong>{money(shownRound ? shownRound.totalWager : props.ante * 2 + props.trips)}</strong></span><span>Balance <strong>{money(props.balance)}</strong></span><span>Win <strong>{money(shownRound?.phase === 'settled' ? shownRound.payout : 0)}</strong></span></div>
       {betting ? <div className="three-card-poker-wager-wrap">
-        <button className="three-card-poker-action-orb three-card-poker-action-orb--undo" type="button" aria-label="Undo chip" disabled={props.busy || !!props.pending || props.placements.length === 0} onClick={props.onUndo}><CloseIcon /></button>
         <div className="three-card-poker-chip-picker" role="group" aria-label="Chips">
           <button className="three-card-poker-chip-picker__selected" type="button" aria-label={`Choose chip value, currently ${money(props.selectedChip)}`} aria-expanded={props.chipPickerOpen} disabled={props.busy || !!props.pending} onClick={props.onTogglePicker}><img src={art[props.selectedChip]} alt="" /></button>
           {props.chipPickerOpen && <div className="three-card-poker-chip-picker__options">{chipValues.map((value) => <button className={`three-card-poker-chip-option${props.selectedChip === value ? ' is-selected' : ''}`} type="button" aria-label={`Select ${money(value)} chip`} aria-pressed={props.selectedChip === value} disabled={props.busy || !!props.pending || value > Math.max(status.maximumAnte, status.maximumTrips) || value > props.balance} onClick={() => props.onSelectChip(value)} key={value}><img src={art[value]} alt="" /></button>)}</div>}
         </div>
+        <button className="three-card-poker-action-orb three-card-poker-action-orb--undo" type="button" aria-label="Undo chip" disabled={props.busy || !!props.pending || props.placements.length === 0} onClick={props.onUndo}><CloseIcon /></button>
         <button className="three-card-poker-action-orb three-card-poker-action-orb--deal" type="button" aria-label="Deal" disabled={!canDeal} onClick={props.onDeal}><CardStackIcon /></button>
-      </div> : controls.length > 0 ? <div className="house-holdem-decision-actions">{controls.map((action) => <button type="button" className={`house-holdem-action house-holdem-action--${action}`} aria-label={actionLabel(action)} disabled={props.busy || !!props.pending || !affordableHouseHoldemAction(round, action)} onClick={() => props.onAct(action)} key={action}>{action === 'fold' ? <CloseIcon /> : shortActionLabel(action)}</button>)}</div> : null}
+      </div> : controls.length > 0 ? <div className="three-card-poker-wager-wrap house-holdem-decision-actions">{controls.map((action) => <button type="button" className={`three-card-poker-action-orb${action === 'play-4x' || action === 'play-2x' ? ' three-card-poker-action-orb--deal' : ''} house-holdem-action house-holdem-action--${action}`} aria-label={actionLabel(action)} disabled={props.busy || !!props.pending || !affordableHouseHoldemAction(round, action)} onClick={() => props.onAct(action)} key={action}>{action === 'fold' ? <CloseIcon /> : shortActionLabel(action)}</button>)}</div> : null}
     </div>
   </section></main>
 }
@@ -340,15 +363,15 @@ function BetSpot({ kind, label, amount, chips, onPlace, disabled }: { kind: 'tri
   const tipId = useId()
   const help = {
     trips: 'Optional side bet on your final five-card hand. It can pay even if you fold.',
-    ante: 'Your required opening bet against the dealer. Blind automatically matches it.',
-    blind: 'Automatically matches your Ante. A strong hand that beats the dealer can earn a bonus.',
+    ante: 'Your required opening bet against the dealer. Blind automatically matches it; Trips is optional.',
+    blind: 'Automatically matches your Ante. Place chips on Ante or Blind to increase both wagers. A strong hand that beats the dealer can earn a bonus.',
     play: 'Your Play bet: 3× or 4× Ante before the flop, 2× after it, or 1× at the river.',
   }[kind]
   const contents = <><span className="three-card-poker-chip-stack" aria-hidden="true">{chips.slice(-4).map((value, index) => <img className="three-card-poker-chip" src={art[value]} alt="" style={{ '--chip-index': index } as CSSProperties} key={`${kind}-${index}-${value}`} />)}</span><strong className="three-card-poker-bet-spot__amount">{money(amount)}</strong></>
   const className = `three-card-poker-bet-spot house-holdem-bet-spot house-holdem-bet-spot--${kind}`
   const spot = onPlace ? <button className={className} type="button" aria-label={`Place chip on ${label}`} aria-describedby={tipId} disabled={disabled} onClick={onPlace} data-active="true" data-empty={chips.length === 0}>{contents}</button>
     : <div className={className} aria-label={kind === 'play' ? 'Wager spot' : `${label} wager`} aria-describedby={tipId} data-empty={chips.length === 0}>{contents}</div>
-  return <div className="house-holdem-bet-spot-wrap">
+  return <div className="house-holdem-bet-spot-wrap" data-disabled={disabled}>
     {spot}
     <button className="three-card-poker-bet-spot__label house-holdem-bet-spot__help" type="button" aria-label={`About ${label}`} aria-describedby={tipId}>{label}</button>
     <span className="house-holdem-bet-spot__tip" id={tipId} role="tooltip">{help}</span>
@@ -367,8 +390,9 @@ function RoundResult({ round, onDismiss }: { round: HouseHoldemRound; onDismiss:
   </div>
 }
 
-function chipsForAmount(amount: number): ChipValue[] {
+function chipsForAmount(amount: number, placedChips: readonly ChipValue[] = []): readonly ChipValue[] {
   if (!Number.isInteger(amount) || amount <= 0) return []
+  if (placedChips.reduce((total, value) => total + value, 0) === amount) return placedChips
   const chips: ChipValue[] = []
   let remaining = amount
   for (const value of [...chipValues].reverse()) {

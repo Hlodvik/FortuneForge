@@ -16,6 +16,7 @@ let root: Root
 
 beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  window.history.replaceState(null, '', '/cards/blackjack')
   retry.mockReset()
   host = document.createElement('div'); document.body.append(host)
   root = createRoot(host)
@@ -32,7 +33,9 @@ describe('authenticated route pending presentation', () => {
     expect(host.querySelector('[data-game-loading]')?.getAttribute('data-game-loading')).toBe('blackjack')
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Loading Fortune Blackjack…')
     expect(host.querySelector('img')?.getAttribute('src')).toBe(entry.image)
-    expect(host.querySelector('[role="alert"], button, a, progress, [role="progressbar"]')).toBeNull()
+    expect(host.querySelector('[role="alert"], button, progress, [role="progressbar"]')).toBeNull()
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(retry).not.toHaveBeenCalled()
   })
 
@@ -80,5 +83,16 @@ describe('authenticated route pending presentation', () => {
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Loading Hearts…')
     expect(host.querySelector('img')?.getAttribute('src')).toBe(hearts.image)
     expect(host.textContent).not.toContain('Fortune Blackjack')
+  })
+
+  it('keeps public slot demo exits public while their resources load', () => {
+    window.history.replaceState(null, '', '/slots/cosmic-fortune/demo/')
+    act(() => root.render(<GameLoadingRouteProvider entry={entry}><PendingState /></GameLoadingRouteProvider>))
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/')
+    expect(host.querySelector('a[href="/demo"]')).not.toBeNull()
+    act(() => root.render(<GameLoadingRouteProvider entry={entry}><PendingState error="Resources unavailable" /></GameLoadingRouteProvider>))
+    expect(host.querySelector('[role="alert"] a')?.getAttribute('href')).toBe('/')
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
   })
 })

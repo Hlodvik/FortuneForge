@@ -36,35 +36,10 @@
   cursor: pointer;
 }
 
-.demo-library-page .landing-bar {
-  width: min(100% - 2rem, 86rem);
-  border-bottom-color: rgb(215 189 136 / 18%);
-}
-
-.demo-library-page .landing-bar::before {
-  background: #101115;
-}
-
-.demo-library-page .landing-brand {
-  color: #e3c58d;
-}
-
 .demo-library-page .demo-mode-badge {
   border-color: rgb(215 189 136 / 35%);
   background: #1b1a19;
   color: #ddc99c;
-}
-
-.demo-library-page .landing-nav__link {
-  border-color: rgb(215 189 136 / 35%);
-  background: #15161a;
-  color: #f5f0e7;
-  box-shadow: none;
-}
-
-.demo-library-page .landing-nav__link:hover {
-  border-color: #e3c58d;
-  box-shadow: none;
 }
 
 .demo-library-page .game-picker-main {
@@ -210,13 +185,8 @@
 }
 
 @media (max-width: 540px) {
-  .demo-library-page .landing-bar,
   .demo-library-page .game-picker-main {
     width: calc(100% - 1.5rem);
-  }
-
-  .demo-library-page .landing-bar__account {
-    gap: 0.35rem;
   }
 
   .demo-library-page .demo-mode-badge {

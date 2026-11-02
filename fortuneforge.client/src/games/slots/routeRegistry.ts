@@ -108,7 +108,7 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
     load: () => import('./robotRevolution/manifest').then((module) => module.ROBOT_REVOLUTION_SLOT_GAME),
   },
   {
-    id: 'dragon-hoard', title: 'Dragon Hoard', shortTitle: 'Dragon Hoard',
+    id: 'dragon-hoard', title: 'Midnight Vault', shortTitle: 'Midnight Vault',
     playPath: '/slots/dragon-hoard', demoPath: '/slots/dragon-hoard/demo', serverGameIds: ['dragon-hoard-v1'], shellBackdrop: 'theme',
     load: () => import('./dragonHoard/manifest').then((module) => module.DRAGON_HOARD_SLOT_GAME),
   },

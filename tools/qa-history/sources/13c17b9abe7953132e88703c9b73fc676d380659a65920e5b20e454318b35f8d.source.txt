@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { formatMoney } from '@fortuneforge/client-presentation/money'
+
+const root = new URL('../../../', import.meta.url)
+const require = createRequire(new URL('package.json', root))
+const ts = require('typescript')
+const evidence = JSON.parse(readFileSync(new URL('before-definition-evidence.json', import.meta.url), 'utf8'))
+const fixtures = JSON.parse(readFileSync(new URL('before-money-fixtures.json', import.meta.url), 'utf8'))
+const boundaries = JSON.parse(readFileSync(new URL('before-boundary-hashes.json', import.meta.url), 'utf8'))
+const normalized = source => source.replaceAll('\r\n', '\n')
+const hash = source => createHash('sha256').update(source).digest('hex')
+const result = { unchangedOutsideFormatterEdits: [], controlledLocaleComparisons: 0, boundaryChangesOutsideScope: [] }
+
+for (const [path, before] of Object.entries(evidence.definitions)) {
+  let reconstructed = normalized(readFileSync(new URL(path, root), 'utf8'))
+  if (path.endsWith('/BaccaratGame.tsx')) {
+    const added = "import { formatMoney } from '@fortuneforge/client-presentation/money'\n"
+    assert(reconstructed.includes(added))
+    reconstructed = reconstructed.replace(added, '').replace('function formatSignedMoney(', `${before.original}\nfunction formatSignedMoney(`)
+  } else {
+    const added = "export { formatMoney } from '@fortuneforge/client-presentation/money'\n"
+    assert(reconstructed.includes(added))
+    reconstructed = reconstructed.replace(added, '').replace('export function handLabel(', `${before.original}\nexport function handLabel(`)
+  }
+  assert.equal(hash(reconstructed), before.normalizedSha256, `Non-formatter source changed: ${path}`)
+  result.unchangedOutsideFormatterEdits.push(path)
+}
+
+const videoPath = 'games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client/src/videoPokerPresentation.ts'
+const compiled = ts.transpileModule(readFileSync(new URL(videoPath, root), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+}).outputText
+const temporary = fileURLToPath(new URL('after-video-public-interface.mjs', import.meta.url))
+writeFileSync(temporary, compiled)
+const numberToLocaleString = Number.prototype.toLocaleString
+try {
+  const video = await import(pathToFileURL(temporary).href)
+  assert.equal(video.formatMoney, formatMoney)
+  result.videoPokerNamedExportPreserved = true
+  for (const { locale, valueTag, symbol, expected } of fixtures) {
+    const value = ({ MAX_SAFE_INTEGER: Number.MAX_SAFE_INTEGER, MIN_VALUE: Number.MIN_VALUE, MAX_VALUE: Number.MAX_VALUE })[valueTag] ?? Number(valueTag)
+    Number.prototype.toLocaleString = function (requestedLocale, options) {
+      assert.equal(requestedLocale, undefined)
+      return numberToLocaleString.call(this, locale, options)
+    }
+    assert.equal(formatMoney(value, symbol), expected)
+    assert.equal(video.formatMoney(value, symbol), expected)
+    result.controlledLocaleComparisons += 2
+  }
+} finally {
+  Number.prototype.toLocaleString = numberToLocaleString
+  unlinkSync(temporary)
+}
+
+for (const [path, beforeHash] of Object.entries(boundaries).filter(([path]) => /\/(?:contracts\.ts|baccarat\.css|videoPoker\.css|VideoPokerGame\.tsx|tsconfig\.build\.json)$/.test(path))) {
+  if (hash(readFileSync(new URL(path, root))) !== beforeHash) result.boundaryChangesOutsideScope.push(path)
+}
+assert(!readFileSync(new URL('packages/client-presentation/dist/formatMoney.js', root), 'utf8').includes('import '))
+result.moneyModuleImportsReact = false
+writeFileSync(new URL('money-compatibility-result.json', import.meta.url), JSON.stringify(result, null, 2) + '\n')
+console.log(JSON.stringify(result))

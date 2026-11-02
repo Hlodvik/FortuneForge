@@ -78,10 +78,19 @@ describe('Hi-Lo connected route', () => {
 
   it('uses the shared navbar with real account exits', () => {
     render()
-    expect(host.querySelector('.hi-lo-page [data-game-navbar]')).not.toBeNull()
+    expect(host.querySelectorAll('[data-game-navbar]')).toHaveLength(1)
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    const navbar = host.querySelector('[data-game-navbar]')!
+    expect(navbar.parentElement).toBe(host.querySelector('.in-game-shell'))
+    expect(navbar.closest('[data-game-surface]')).toBeNull()
+    expect(host.querySelector('.hi-lo-page')?.matches('[data-game-surface]')).toBe(true)
+    expect(navbar.querySelector('[aria-label="Balance R100.00. Add funds"]')).not.toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
-    expect(host.querySelector('.in-game-navbar__title')?.textContent).toBe('Hi-Lo')
+    expect(navbar.textContent).not.toContain('Hi-Lo')
+    expect(navbar.querySelector('[aria-label="Report this game"]')).toBeNull()
+    expect(host.querySelector('.game-support-controls [aria-label="Report this game"]')).not.toBeNull()
+    expect(host.querySelector('[data-testid="hi-lo-game"]')).not.toBeNull()
     expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
     expect(host.querySelector('.player-shell-menu--more nav[aria-label="Account menu"]')).not.toBeNull()
   })
@@ -112,7 +121,6 @@ describe('Hi-Lo connected route', () => {
     expect(headers.get('X-FortuneForge-Practice')).toBe('true')
     expect(headers.get('X-FortuneForge-Game')).toBe('hi-lo')
     expect(state.refresh).not.toHaveBeenCalled()
-    expect(host.querySelector('.in-game-navbar__actions')?.textContent).toBe('Practice active')
     expect(shellAccount().balances.slotsCredits).toBe(100)
   })
 

@@ -1,3 +1,6 @@
+import './preview.css'
+import { InGameShell } from '../../../../../../fortuneforge.client/src/components/InGameShell'
+import '../../../../../../fortuneforge.client/src/dev/standaloneGamePreview.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { DropMergeGame } from '../DropMergeGame'
@@ -13,4 +16,4 @@ import '../dropMergeViewport.css'
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Drop Merge preview root was not found.')
-createRoot(root).render(<StrictMode><DropMergeGame gateway={new HttpDropMergeGateway()} /></StrictMode>)
+createRoot(root).render(<StrictMode><InGameShell title="Drop Merge" bodyClassName="standalone-game-preview__body"><DropMergeGame embedded gateway={new HttpDropMergeGateway()} /></InGameShell></StrictMode>)

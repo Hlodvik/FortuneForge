@@ -1,0 +1,51 @@
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, extname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const evidence = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(evidence, '../../..')
+const build = join(evidence, 'build')
+const sha256 = value => createHash('sha256').update(value).digest('hex')
+const collect = directory => readdirSync(directory).flatMap(name => {
+  const path = join(directory, name)
+  return statSync(path).isDirectory() ? collect(path) : [path]
+}).sort()
+const manifest = directory => collect(directory).map(path => ({ path: relative(repo, path).replaceAll('\\', '/'), bytes: statSync(path).size, sha256: sha256(readFileSync(path)) }))
+
+// Execute the repository's actual catalogue verifier with only its output
+// directory changed in memory. Default dist and the verifier file stay intact.
+const verifier = readFileSync(join(repo, 'fortuneforge.client/scripts/verify-current-catalog-build.mjs'), 'utf8')
+const originalTarget = "const outputDirectory = resolve('dist')"
+if (verifier.split(originalTarget).length !== 2) throw new Error('Catalogue verifier target changed; review before adapting it.')
+const isolatedVerifier = verifier.replace(originalTarget, `const outputDirectory = resolve(${JSON.stringify(build)})`)
+await import(`data:text/javascript;base64,${Buffer.from(isolatedVerifier).toString('base64')}`)
+
+const files = manifest(build)
+const index = readFileSync(join(build, 'index.html'), 'utf8')
+const assetReferences = [...new Set([...index.matchAll(/(?:src|href)="(\/assets\/[^"?#]+)(?:[?#][^"]*)?"/g)].map(match => match[1]))]
+const missing = assetReferences.filter(path => !existsSync(join(build, path.slice(1))))
+const baseline = JSON.parse(readFileSync(join(evidence, 'build-preservation-before.json'), 'utf8'))
+const preserved = {}
+for (const [key, before] of Object.entries(baseline)) {
+  const current = manifest(key === 'hostDist' ? join(repo, 'fortuneforge.client/dist') : join(repo, 'FortuneForge.Server/wwwroot'))
+  const prior = new Map(before.map(file => [relative(repo, file.path).replaceAll('\\', '/').toLowerCase(), file]))
+  const after = new Map(current.map(file => [file.path.toLowerCase(), file]))
+  const absent = [...prior.keys()].filter(path => !after.has(path))
+  const changed = [...prior.keys()].filter(path => after.has(path) && (prior.get(path).sha256.toLowerCase() !== after.get(path).sha256 || prior.get(path).bytes !== after.get(path).bytes))
+  const extra = [...after.keys()].filter(path => !prior.has(path))
+  preserved[key] = { files: current.length, bytes: current.reduce((total, file) => total + file.bytes, 0), preserved: absent.length + changed.length + extra.length === 0, missing: absent, changed, extra }
+}
+const report = {
+  verifiedAtUtc: new Date().toISOString(),
+  artifactStage: 'Current isolated build after sidebar and responsive navbar work; no default artifacts or publication modified.',
+  build: { path: relative(repo, build).replaceAll('\\', '/'), files: files.length, bytes: files.reduce((total, file) => total + file.bytes, 0), indexSha256: sha256(index), manifestSha256: sha256(JSON.stringify(files)) },
+  catalogue: { passed: true, verifier: 'fortuneforge.client/scripts/verify-current-catalog-build.mjs', adaptation: 'Exact repository verifier executed in memory; only dist target changed to this isolated build.', textFiles: files.filter(file => /\.(?:html|js|css|json)$/i.test(extname(file.path))).length },
+  htmlAssets: { references: assetReferences, allExist: missing.length === 0, missing },
+  preservedDefaults: preserved,
+  passed: missing.length === 0 && Object.values(preserved).every(value => value.preserved),
+}
+writeFileSync(join(evidence, 'build-manifest.json'), JSON.stringify(files, null, 2) + '\n')
+writeFileSync(join(evidence, 'build-verification.json'), JSON.stringify(report, null, 2) + '\n')
+console.log(JSON.stringify(report, null, 2))
+if (!report.passed) process.exitCode = 1

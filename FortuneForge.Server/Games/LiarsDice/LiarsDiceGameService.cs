@@ -4,13 +4,19 @@ using FortuneForge.Games.Dice;
 using FortuneForge.Games.LiarsDice;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.LiarsDice;
+using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Server.Activity;
+using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Games.Abstractions.Auditing;
 
 namespace FortuneForge.Server.Games.LiarsDice;
 
 /// <summary>Owns account-isolated Liar's Dice matches.</summary>
 public sealed class LiarsDiceGameService(
     ILiarsDiceManagedPlayerRoster managedPlayers,
-    TimeProvider timeProvider)
+    TimeProvider timeProvider,
+    IGameAnalyticsSink? analytics = null,
+    IGameSecurityEventSink? securityEvents = null)
 {
     private const string HumanId = "you";
     private const int ManagedPlayerCount = 3;
@@ -53,6 +59,7 @@ public sealed class LiarsDiceGameService(
             matchId,
             userId,
             LiarsDiceMatchEngine.Start(seed, playerIds, dicePerPlayer),
+            seed,
             roster,
             UtcNow() + LeaseHeartbeatInterval);
         PrepareManagedTurn(session);
@@ -64,6 +71,13 @@ public sealed class LiarsDiceGameService(
                 UtcNow(),
                 cancellationToken);
             throw new InvalidOperationException("Could not open a Liar's Dice table.");
+        }
+        try { await RecordAsync(session, "started", cancellationToken); }
+        catch
+        {
+            matches.TryRemove(session.Id, out _);
+            await managedPlayers.ReleaseAsync(assignmentId, reserved.Select(profile => profile.UserId).ToArray(), UtcNow(), cancellationToken);
+            throw;
         }
         return ToResponse(session);
     }
@@ -95,33 +109,36 @@ public sealed class LiarsDiceGameService(
         ChangeAsync(userId, matchId, session => ApplyHumanAction(
             session,
             new PlaceLiarsDiceBid(HumanId, new LiarsDiceBid(request.Quantity, new DieValue(request.Face)))),
-            cancellationToken);
+            "human-bid", cancellationToken);
 
     public Task<LiarsDiceMatchResponse> ChallengeAsync(
         string userId,
         Guid matchId,
         CancellationToken cancellationToken = default) =>
         ChangeAsync(userId, matchId, session =>
-            ApplyHumanAction(session, new ChallengeLiarsDiceBid(HumanId)), cancellationToken);
+            ApplyHumanAction(session, new ChallengeLiarsDiceBid(HumanId)), "human-challenge", cancellationToken);
 
     public Task<LiarsDiceMatchResponse> SpotOnAsync(
         string userId,
         Guid matchId,
         CancellationToken cancellationToken = default) =>
         ChangeAsync(userId, matchId, session =>
-            ApplyHumanAction(session, new SpotOnLiarsDiceBid(HumanId)), cancellationToken);
+            ApplyHumanAction(session, new SpotOnLiarsDiceBid(HumanId)), "human-spot-on", cancellationToken);
 
     public Task<LiarsDiceMatchResponse> AdvanceAsync(
         string userId,
         Guid matchId,
         CancellationToken cancellationToken = default) =>
-        ChangeAsync(userId, matchId, AdvanceManagedTurn, cancellationToken);
+        ChangeAsync(userId, matchId, AdvanceManagedTurn, "managed-advance-request", cancellationToken);
 
     internal async Task AdvanceDueManagedTurnsAsync(
         CancellationToken cancellationToken = default)
     {
         foreach (var session in matches.Values)
         {
+            await session.AuditGate.WaitAsync(cancellationToken);
+            try
+            {
             string[] releaseIds = [];
             bool heartbeatDue;
             lock (session.SyncRoot)
@@ -132,6 +149,7 @@ public sealed class LiarsDiceGameService(
                     continue;
 
                 AdvanceManagedTurn(session);
+                RecordCompletion(session);
                 if (session.State.Winner is not null && !session.ManagedPlayersReleased)
                 {
                     session.ManagedPlayersReleased = true;
@@ -140,6 +158,8 @@ public sealed class LiarsDiceGameService(
                 heartbeatDue = releaseIds.Length == 0 && session.TryClaimLeaseHeartbeat(
                     UtcNow(), LeaseHeartbeatInterval);
             }
+
+            await RecordAsync(session, "managed-background-turn", cancellationToken);
 
             if (releaseIds.Length > 0)
             {
@@ -150,6 +170,8 @@ public sealed class LiarsDiceGameService(
             {
                 await HeartbeatAsync(session, session.Id, cancellationToken);
             }
+            }
+            finally { session.AuditGate.Release(); }
         }
     }
 
@@ -160,25 +182,32 @@ public sealed class LiarsDiceGameService(
         CancellationToken cancellationToken = default) =>
         ChangeAsync(userId, matchId, session =>
         {
-            session.State = LiarsDiceMatchEngine.StartNextRound(session.State, seed ?? NextSeed());
+            var roundSeed = seed ?? NextSeed();
+            session.State = LiarsDiceMatchEngine.StartNextRound(session.State, roundSeed);
+            session.RoundSeed = roundSeed;
             session.Message = $"Round {session.State.RoundNumber} begins. {DisplayName(session, session.State.CurrentPlayerId)} acts first.";
             session.ClearScheduledTurn();
             PrepareManagedTurn(session);
-        }, cancellationToken);
+        }, "next-round", cancellationToken);
 
     private async Task<LiarsDiceMatchResponse> ChangeAsync(
         string userId,
         Guid matchId,
         Action<LiarsDiceSession> action,
+        string eventKind,
         CancellationToken cancellationToken)
     {
         var session = Session(userId, matchId);
+        await session.AuditGate.WaitAsync(cancellationToken);
+        try
+        {
         LiarsDiceMatchResponse response;
         string[] releaseIds = [];
         bool heartbeatDue;
         lock (session.SyncRoot)
         {
             action(session);
+            RecordCompletion(session);
             if (session.State.Winner is not null && !session.ManagedPlayersReleased)
             {
                 session.ManagedPlayersReleased = true;
@@ -188,6 +217,7 @@ public sealed class LiarsDiceGameService(
                 UtcNow(), LeaseHeartbeatInterval);
             response = ToResponse(session);
         }
+        await RecordAsync(session, eventKind, cancellationToken);
         if (releaseIds.Length > 0)
         {
             await managedPlayers.ReleaseAsync(
@@ -198,6 +228,40 @@ public sealed class LiarsDiceGameService(
             await HeartbeatAsync(session, matchId, cancellationToken);
         }
         return response;
+        }
+        finally { session.AuditGate.Release(); }
+    }
+
+    private Task RecordAsync(LiarsDiceSession session, string eventKind, CancellationToken cancellationToken)
+    {
+        object payload;
+        long version;
+        RoundAuditCapture? completion;
+        lock (session.SyncRoot)
+        {
+            version = ++session.EventVersion;
+            payload = new { session.Id, session.StartedAtUtc, session.CompletedAtUtc, session.RoundSeed, session.State,
+                session.Message, session.NextManagedActionAtUtc,
+                managedActors = session.ManagedActors.Values.Select(actor => new
+                { actor.Profile.UserId, actor.Profile.SkillLevel, actor.DecisionSeed }).ToArray() };
+            completion = session.State.Winner is not null
+                ? GameSecurityEventSink.FreeCompletion("liars-dice", session.Id.ToString("N"), session.Id.ToString("N"),
+                    session.State.RoundNumber, session.StartedAtUtc, session.CompletedAtUtc ?? UtcNow(), payload,
+                    session.UserId, "liars-dice-private-hands-and-actions-v2")
+                : null;
+        }
+        return GameSecurityEventSink.WriteAsync(securityEvents, "liars-dice", session.Id.ToString("N"),
+            version, UtcNow(), payload, [session.UserId], eventKind,
+            completion: completion, cancellationToken: cancellationToken);
+    }
+
+    private void RecordCompletion(LiarsDiceSession session)
+    {
+        if (session.AnalyticsRecorded || session.State.Winner is null) return;
+        session.CompletedAtUtc ??= UtcNow();
+        session.AnalyticsRecorded = analytics?.TryEnqueuePractice(new GameAnalyticsSettlement(
+            "liars-dice", session.Id.ToString("N"), session.UserId, "free", true,
+            session.CompletedAtUtc.Value, session.StartedAtUtc, 0, 0, "in-memory-liars-dice-matches", session.Id.ToString("N"))) ?? false;
     }
 
     private async Task HeartbeatAsync(
@@ -337,14 +401,21 @@ public sealed class LiarsDiceGameService(
         Guid id,
         string userId,
         LiarsDiceMatchState state,
+        uint roundSeed,
         IReadOnlyDictionary<string, ManagedActor> managedActors,
         DateTime nextLeaseHeartbeatAtUtc)
     {
         private DateTime nextLeaseHeartbeatAtUtc = nextLeaseHeartbeatAtUtc;
         public Guid Id { get; } = id;
+        public DateTime StartedAtUtc { get; } = nextLeaseHeartbeatAtUtc - LeaseHeartbeatInterval;
+        public DateTime? CompletedAtUtc { get; set; }
+        public bool AnalyticsRecorded { get; set; }
         public object SyncRoot { get; } = new();
+        public SemaphoreSlim AuditGate { get; } = new(1, 1);
+        public long EventVersion { get; set; }
         public string UserId { get; } = userId;
         public LiarsDiceMatchState State { get; set; } = state;
+        public uint RoundSeed { get; set; } = roundSeed;
         public IReadOnlyDictionary<string, ManagedActor> ManagedActors { get; } = managedActors;
         public bool OpponentsThinking => ScheduledManagedPlayerId is not null;
         public string? ScheduledManagedPlayerId { get; private set; }

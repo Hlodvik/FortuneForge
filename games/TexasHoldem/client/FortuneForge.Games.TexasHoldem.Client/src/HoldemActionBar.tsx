@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { HoldemAction, HoldemTable } from './contracts'
 import { formatHoldemCents } from './holdemMoney'
+import { holdemPotRaiseTo } from './holdemRaisePresets'
 
 export type HoldemActionBarProps = Readonly<{
   table: HoldemTable
@@ -70,7 +71,7 @@ export function HoldemActionBar({ table, busy, onAction, onLeave }: HoldemAction
         <div className="ff-holdem-raise-buttons"><button type="button" aria-label="Decrease raise" disabled={!canAct || target <= minimum} onClick={() => changeRaise(target - step)}>−</button>
           <output htmlFor={raiseInputId} aria-label="Selected raise amount">{formatHoldemCents(target)}</output>
           <button type="button" aria-label="Increase raise" disabled={!canAct || target >= maximum} onClick={() => changeRaise(target + step)}>+</button></div>
-        <div className="ff-holdem-raise-shortcuts" aria-label="Raise shortcuts"><button type="button" disabled={!canAct} onClick={() => changeRaise(table.currentBet + Math.round(table.pot / 2))}>½ pot</button><button type="button" disabled={!canAct} onClick={() => changeRaise(table.currentBet + table.pot)}>Pot</button><button type="button" disabled={!canAct} onClick={() => changeRaise(maximum)}>All in</button></div>
+        <div className="ff-holdem-raise-shortcuts" aria-label="Raise shortcuts"><button type="button" disabled={!canAct} onClick={() => changeRaise(holdemPotRaiseTo(table, 0.5))}>½ pot</button><button type="button" disabled={!canAct} onClick={() => changeRaise(holdemPotRaiseTo(table, 1))}>Pot</button><button type="button" disabled={!canAct} onClick={() => changeRaise(maximum)}>All in</button></div>
       </div>}
       <button ref={leaveRef} type="button" className="ff-holdem-leave" disabled={busy || confirmLeave} onClick={requestLeave}>Leave table</button>
     {confirmLeave && <section className="ff-holdem-leave-confirm" role="alertdialog" aria-modal="true" aria-labelledby={confirmTitle} aria-describedby={confirmDescription} onKeyDown={dialogKeys}>

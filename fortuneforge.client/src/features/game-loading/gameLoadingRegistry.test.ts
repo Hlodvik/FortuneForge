@@ -23,6 +23,7 @@ const nonSlotRoutes: Readonly<Record<string, string>> = {
   'sic-bo': '/games/sic-bo',
   mines: '/games/mines',
   solitaire: '/cards/solitaire',
+  'free-solitaire': '/cards/free-solitaire',
   hearts: '/cards/hearts',
   'liars-dice': '/games/liars-dice',
   '2048': '/games/2048',
@@ -39,14 +40,14 @@ type ArtworkMetadata = {
 }
 
 describe('combined game loading registry', () => {
-  it('combines the three manifests into forty unique game identities, images, and sixty-two aliases', () => {
+  it('combines the three manifests into unique game identities, images, and aliases', () => {
     expect(GAME_LOADING_PRESENTATIONS).toEqual([...LOADING_PRESENTATIONS_A, ...LOADING_PRESENTATIONS_B, ...LOADING_PRESENTATIONS_C])
     expect(Object.isFrozen(GAME_LOADING_PRESENTATIONS)).toBe(true)
-    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(40)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(40)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(40)
+    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(41)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(41)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(41)
     const routes = GAME_LOADING_PRESENTATIONS.flatMap(entry => entry.routes)
-    expect(routes).toHaveLength(62)
+    expect(routes).toHaveLength(63)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -56,7 +57,7 @@ describe('combined game loading registry', () => {
     for (const group of ['non-slots', 'slots']) {
       const directory = new URL(`../../assets/catalogue/${group}/`, import.meta.url)
       const files = readdirSync(directory).filter(file => file.endsWith('.artwork.json'))
-      expect(files).toHaveLength(20)
+      expect(files).toHaveLength(group === 'non-slots' ? 21 : 20)
       for (const filename of files) {
         const metadata = JSON.parse(readFileSync(new URL(filename, directory), 'utf8')) as ArtworkMetadata
         expect(metadataIds.has(metadata.id)).toBe(false)
@@ -73,7 +74,7 @@ describe('combined game loading registry', () => {
         totalBytes += metadata.bytes
       }
     }
-    expect(metadataIds.size).toBe(40)
+    expect(metadataIds.size).toBe(41)
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id))).toEqual(metadataIds)
     expect(totalBytes).toBeLessThan(3_000_000)
   })
@@ -88,9 +89,9 @@ describe('combined game loading registry', () => {
     }
   })
 
-  it('prepares twenty non-slot identities without enabling a route, and matches active route aliases', () => {
+  it('prepares the non-slot identities and matches active route aliases', () => {
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
-    expect(Object.keys(nonSlotRoutes)).toHaveLength(20)
+    expect(Object.keys(nonSlotRoutes)).toHaveLength(21)
     for (const [id, route] of Object.entries(nonSlotRoutes)) {
       const entry = GAME_LOADING_PRESENTATIONS.find(entry => entry.id === id)!
       const expectedAliases = id === 'blackjack' || id === 'texas-holdem' ? [route, `/demo/cards/${id}`] : [route]

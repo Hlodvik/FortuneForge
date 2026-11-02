@@ -1,0 +1,319 @@
+[
+  {
+    "name": "missing preferences",
+    "current": null,
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "legacy muted migration keeps volume but enables sound",
+    "current": null,
+    "legacy": "{\"mode\":\"muted\",\"volume\":12.6}",
+    "expected": {
+      "mode": "all",
+      "volume": 13
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "legacy results-only migration preserves zero volume",
+    "current": null,
+    "legacy": "{\"mode\":\"results-only\",\"volume\":0}",
+    "expected": {
+      "mode": "all",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "legacy high volume clamps",
+    "current": null,
+    "legacy": "{\"mode\":\"all\",\"volume\":250}",
+    "expected": {
+      "mode": "all",
+      "volume": 100
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "legacy invalid mode and low volume",
+    "current": null,
+    "legacy": "{\"mode\":\"invalid\",\"volume\":-5}",
+    "expected": {
+      "mode": "all",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "current mute and zero volume",
+    "current": "{\"mode\":\"muted\",\"volume\":0}",
+    "legacy": "{\"mode\":\"all\",\"volume\":80}",
+    "expected": {
+      "mode": "muted",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "current results-only fractional volume",
+    "current": "{\"mode\":\"results-only\",\"volume\":25.4}",
+    "legacy": null,
+    "expected": {
+      "mode": "results-only",
+      "volume": 25
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "current all fractional volume rounds",
+    "current": "{\"mode\":\"all\",\"volume\":65.6}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 66
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "unknown current mode enables all",
+    "current": "{\"mode\":\"invalid\",\"volume\":22}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 22
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "missing mode preserves zero volume",
+    "current": "{\"volume\":0}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "string volume uses default",
+    "current": "{\"mode\":\"muted\",\"volume\":\"18\"}",
+    "legacy": null,
+    "expected": {
+      "mode": "muted",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "missing volume uses default",
+    "current": "{\"mode\":\"muted\"}",
+    "legacy": null,
+    "expected": {
+      "mode": "muted",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "current null does not revive legacy",
+    "current": "null",
+    "legacy": "{\"mode\":\"muted\",\"volume\":20}",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "malformed current does not revive legacy",
+    "current": "{bad json",
+    "legacy": "{\"mode\":\"muted\",\"volume\":20}",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "boolean stored value",
+    "current": "false",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "array stored value",
+    "current": "[]",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "numeric stored value",
+    "current": "19",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "current low volume clamps",
+    "current": "{\"mode\":\"muted\",\"volume\":-20}",
+    "legacy": null,
+    "expected": {
+      "mode": "muted",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "current high volume clamps",
+    "current": "{\"mode\":\"all\",\"volume\":1000}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 100
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "negative fraction clamps to zero",
+    "current": "{\"mode\":\"all\",\"volume\":-0.6}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "overflowing JSON number clamps high",
+    "current": "{\"mode\":\"all\",\"volume\":1e400}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 100
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "overflowing negative JSON number clamps low",
+    "current": "{\"mode\":\"all\",\"volume\":-1e400}",
+    "legacy": null,
+    "expected": {
+      "mode": "all",
+      "volume": 0
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "malformed legacy resets safely",
+    "current": null,
+    "legacy": "{bad json",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2",
+      "fortune-forge.audio-preferences"
+    ]
+  },
+  {
+    "name": "storage read blocked",
+    "current": null,
+    "legacy": null,
+    "failure": "read",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": [
+      "fortune-forge.audio-preferences.v2"
+    ]
+  },
+  {
+    "name": "storage access blocked",
+    "current": null,
+    "legacy": null,
+    "failure": "access",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": []
+  },
+  {
+    "name": "server rendering without window",
+    "current": null,
+    "legacy": null,
+    "failure": "missing-window",
+    "expected": {
+      "mode": "all",
+      "volume": 65
+    },
+    "reads": []
+  }
+]

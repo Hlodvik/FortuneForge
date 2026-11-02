@@ -1,9 +1,11 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { formatMoney } from '@fortuneforge/client-presentation/money'
 import {
   BaccaratGatewayError, type BaccaratBetSide, type BaccaratCard,
   type BaccaratGateway, type BaccaratRound, type BaccaratStatus,
 } from './contracts'
-import { HttpBaccaratGateway } from './httpBaccaratGateway'
+import { HttpBaccaratGateway, isBaccaratRound } from './httpBaccaratGateway'
+import { clearBaccaratTable, readReloadedBaccaratTable, storeBaccaratTable } from './baccaratTableSession'
 import { buildBigRoad, buildDerivedRoads, type BaccaratHistoryItem } from './baccaratRoad'
 import { playBaccaratChip, readBaccaratMuted, stopBaccaratAudio, writeBaccaratMuted } from './baccaratAudio'
 import chip025 from './chip-025.png'
@@ -46,17 +48,43 @@ type ChipValue = (typeof chipOptions)[number]['value']
 type PlacedChips = Readonly<{ main: readonly ChipValue[]; playerPair: readonly ChipValue[]; bankerPair: readonly ChipValue[] }>
 const emptyPlacedChips = (): PlacedChips => ({ main: [], playerPair: [], bankerPair: [] })
 
-export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true, renderCardFace }: BaccaratGameProps) {
+type TableSnapshot = Readonly<{
+  version: 1; round: BaccaratRound | null; betSide: BaccaratBetSide; stake: number; playerPairStake: number; bankerPairStake: number
+  placedChips: PlacedChips; selectedChipValue: ChipValue; chipWindowStart: number; history: readonly BaccaratHistoryItem[]
+  shoeUsed: number; shoeRemaining: number; shoeVerified: boolean; revealedCards: number; revealFinished: boolean; activePanel: string | null
+}>
+
+export function BaccaratGame(props: BaccaratGameProps) {
+  const [visit, setVisit] = useState(0)
+  useEffect(() => {
+    const returned = (event: PageTransitionEvent) => {
+      if (!event.persisted) return
+      clearBaccaratTable(props.playerId)
+      setVisit(value => value + 1)
+    }
+    window.addEventListener('pageshow', returned)
+    return () => window.removeEventListener('pageshow', returned)
+  }, [props.playerId])
+  return <BaccaratTable key={`${props.playerId ?? 'guest'}:${visit}`} {...props} />
+}
+
+function BaccaratTable({ gateway = defaultGateway, playerId, currencySymbol = 'R', onBalanceChange, showTitle = true, renderCardFace }: BaccaratGameProps) {
+  const [opening] = useState(() => {
+    const table = parseTableSnapshot(readReloadedBaccaratTable(playerId))
+    // An uncertain paid request always reconciles with its original key.
+    return { table, round: playerId && readPendingDeal(playerId) ? null : table?.round ?? null }
+  })
+  const initial = opening.table
   const [status, setStatus] = useState<BaccaratStatus | null>(null)
-  const [round, setRound] = useState<BaccaratRound | null>(null)
-  const [betSide, setBetSide] = useState<BaccaratBetSide>('player')
-  const [stake, setStake] = useState(0)
-  const [playerPairStake, setPlayerPairStake] = useState(0)
-  const [bankerPairStake, setBankerPairStake] = useState(0)
-  const [placedChips, setPlacedChips] = useState<PlacedChips>(emptyPlacedChips)
-  const [selectedChipValue, setSelectedChipValue] = useState<ChipValue>(.25)
+  const [round, setRound] = useState<BaccaratRound | null>(opening.round)
+  const [betSide, setBetSide] = useState<BaccaratBetSide>(initial?.betSide ?? 'player')
+  const [stake, setStake] = useState(initial?.stake ?? 0)
+  const [playerPairStake, setPlayerPairStake] = useState(initial?.playerPairStake ?? 0)
+  const [bankerPairStake, setBankerPairStake] = useState(initial?.bankerPairStake ?? 0)
+  const [placedChips, setPlacedChips] = useState<PlacedChips>(initial?.placedChips ?? emptyPlacedChips)
+  const [selectedChipValue, setSelectedChipValue] = useState<ChipValue>(initial?.selectedChipValue ?? .25)
   const [muted, setMuted] = useState(readBaccaratMuted)
-  const [chipWindowStart, setChipWindowStart] = useState(0)
+  const [chipWindowStart, setChipWindowStart] = useState(initial?.chipWindowStart ?? 0)
   const [compactChipSelector, setCompactChipSelector] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -65,21 +93,25 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const [statusLoadAttempt, setStatusLoadAttempt] = useState(0)
   const [recovery, setRecovery] = useState<'ready' | 'recovering' | 'failed'>('ready')
   const [recoveryAttempt, setRecoveryAttempt] = useState(0)
-  const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>([])
-  const [revealedCards, setRevealedCards] = useState(0)
-  const [revealFinished, setRevealFinished] = useState(false)
-  const [shoeUsed, setShoeUsed] = useState(0)
-  const [shoeRemaining, setShoeRemaining] = useState(416)
-  const [shoeVerified, setShoeVerified] = useState(false)
+  const [history, setHistory] = useState<readonly BaccaratHistoryItem[]>(initial?.history ?? [])
+  const [revealedCards, setRevealedCards] = useState(opening.round ? initial?.revealedCards ?? 0 : 0)
+  const [revealFinished, setRevealFinished] = useState(opening.round ? initial?.revealFinished ?? false : false)
+  const [shoeUsed, setShoeUsed] = useState(initial?.shoeUsed ?? 0)
+  const [shoeRemaining, setShoeRemaining] = useState(initial?.shoeRemaining ?? 416)
+  const [shoeVerified, setShoeVerified] = useState(initial?.shoeVerified ?? false)
   const [lastBalance, setLastBalance] = useState<number | null>(null)
-  const [activePanel, setActivePanel] = useState<string | null>(null)
+  const [activePanel, setActivePanel] = useState<string | null>(initial?.activePanel ?? null)
   const dealRequestKey = useRef<string | null>(null)
   const pendingBet = useRef<Readonly<{ side: BaccaratBetSide; stake: number; playerPairStake: number; bankerPairStake: number }> | null>(null)
   const gameRef = useRef<HTMLElement>(null)
   const playSurfaceRef = useRef<HTMLDivElement>(null)
   const historyRef = useRef(history)
   const shoeUsedRef = useRef(shoeUsed)
-  const recordedRounds = useRef(new Set<string>())
+  const recordedRounds = useRef(new Set(history.map(item => item.roundId)))
+  const snapshot: TableSnapshot = { version: 1, round, betSide, stake, playerPairStake, bankerPairStake, placedChips,
+    selectedChipValue, chipWindowStart, history, shoeUsed, shoeRemaining, shoeVerified, revealedCards, revealFinished, activePanel }
+  const snapshotRef = useRef(snapshot)
+  snapshotRef.current = snapshot
 
   useEffect(() => () => stopBaccaratAudio(), [])
 
@@ -90,9 +122,11 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
       const compact = window.innerWidth <= 480 || window.innerHeight <= 560 && window.innerWidth > window.innerHeight
       setCompactChipSelector(compact)
       const board = surface.querySelector<HTMLElement>('.ff-baccarat__bet-sides')
-      const { width, height } = board?.getBoundingClientRect() ?? surface.getBoundingClientRect()
+      const surfaceBounds = surface.getBoundingClientRect()
+      const { width, height } = board?.getBoundingClientRect() ?? surfaceBounds
       if (width <= 0 || height <= 0) return
       const chipSize = compact ? Math.min(40, Math.max(38, width * .1)) : Math.min(44, Math.max(40, width * .032))
+      surface.style.setProperty('--ff-play-surface-width', `${surfaceBounds.width}px`)
       surface.style.setProperty('--ff-chip-screen-size', `${chipSize}px`)
       surface.style.setProperty('--ff-board-chip-size', `${chipSize}px`)
     }
@@ -167,16 +201,13 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   }, [gateway, playerId, recoveryAttempt])
 
   useEffect(() => {
-    // Roads belong to the open table. A new visit starts a fresh display;
-    // pending paid deals still recover separately via sessionStorage.
     clearStoredRoadmap(playerId)
-    historyRef.current = []
-    shoeUsedRef.current = 0
-    recordedRounds.current = new Set()
-    setHistory([])
-    setShoeUsed(0)
-    setShoeRemaining(416)
-    setShoeVerified(false)
+    const flush = () => storeBaccaratTable(playerId, snapshotRef.current)
+    window.addEventListener('pagehide', flush)
+    return () => {
+      window.removeEventListener('pagehide', flush)
+      clearBaccaratTable(playerId)
+    }
   }, [playerId])
 
   const dealOrder: readonly Readonly<{ side: BaccaratBetSide; index: number }>[] = round ? [
@@ -187,6 +218,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   ] : []
   const completed = round !== null && revealFinished
   useEffect(() => {
+    if (round?.roundId === opening.round?.roundId && initial?.revealFinished) return
     setRevealedCards(0)
     setRevealFinished(false)
     if (!round) return
@@ -207,8 +239,10 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   useEffect(() => {
     if (!round || !completed) return
     clearPendingDeal(playerId)
-    setLastBalance(round.balance)
-    onBalanceChange?.(round.balance)
+    if (round.roundId !== opening.round?.roundId) {
+      setLastBalance(round.balance)
+      onBalanceChange?.(round.balance)
+    }
     const alreadyRecorded = recordedRounds.current.has(round.roundId)
     const cardsUsed = round.playerCards.length + round.bankerCards.length
     const serverShoeUsed = round.shoeCardsUsed ?? (round.shoeCardsRemaining === undefined ? undefined : 416 - round.shoeCardsRemaining)
@@ -295,7 +329,7 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   }
   const closeResult = () => {
     if (!round || !completed || busy || recovery !== 'ready') return
-    setLastBalance(round.balance)
+    setLastBalance(round.roundId === opening.round?.roundId ? status?.balance ?? null : round.balance)
     setActivePanel(null)
     setRound(null); setError(null); setBetSide('player'); setStake(0); setPlayerPairStake(0); setBankerPairStake(0)
     setPlacedChips(emptyPlacedChips())
@@ -322,6 +356,8 @@ export function BaccaratGame({ gateway = defaultGateway, playerId, currencySymbo
   const retryStatus = () => { setStatusError(null); setTableUnavailable(false); setStatusLoadAttempt(attempt => attempt + 1) }
   const retryRestoration = () => { setError(null); setRecoveryAttempt(attempt => attempt + 1) }
   const road = <BaccaratRoad history={history} shoeUsed={shoeUsed} shoeRemaining={shoeRemaining} shoeVerified={shoeVerified} />
+
+  useEffect(() => { storeBaccaratTable(playerId, snapshot) }, [playerId, snapshot])
 
   return <main className="ff-baccarat" ref={gameRef} data-embedded={!showTitle} aria-busy={busy || recovery === 'recovering' || (round !== null && !completed)}>
     {!status && !statusError && <span className="ff-baccarat__sr-only" role="status">Loading Baccarat table…</span>}
@@ -497,7 +533,6 @@ function shortRank(rank: BaccaratCard['rank']) { return ({ ace: 'A', two: '2', t
 function suitSymbol(suit: BaccaratCard['suit']) { return ({ clubs: '♣', diamonds: '♦', hearts: '♥', spades: '♠' } as const)[suit] }
 function outcomeLabel(outcome: BaccaratRound['outcome']) { return outcome === 'tie' ? 'Tie' : `${capitalize(outcome)} wins` }
 function capitalize(value: string) { return value[0]?.toUpperCase() + value.slice(1) }
-function formatMoney(value: number, currencySymbol: string) { return `${value < 0 ? '-' : ''}${currencySymbol}${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` }
 function formatSignedMoney(value: number, currencySymbol: string) { return `${value > 0 ? '+' : ''}${formatMoney(value, currencySymbol)}` }
 function messageForError(reason: unknown) { return reason instanceof BaccaratGatewayError ? reason.message : 'The Baccarat table is unavailable.' }
 function isTableUnavailable(reason: unknown) { return reason instanceof BaccaratGatewayError && reason.code === 'baccarat-disabled' }
@@ -511,6 +546,25 @@ function isRejectedDeal(reason: unknown) {
   )
 }
 function createRequestKey() { const random = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID().replaceAll('-', '') : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`; return `baccarat-${random}` }
+function parseTableSnapshot(value: unknown): TableSnapshot | null {
+  if (!value || typeof value !== 'object') return null
+  const table = value as Partial<TableSnapshot>
+  const isMoney = (amount: unknown): amount is number => typeof amount === 'number' && Number.isFinite(amount) && amount >= 0
+  const isCount = (count: unknown, maximum: number): count is number => typeof count === 'number' && Number.isInteger(count) && count >= 0 && count <= maximum
+  if (table.version !== 1 || table.round !== null && !isBaccaratRound(table.round) ||
+    table.betSide !== 'player' && table.betSide !== 'banker' && table.betSide !== 'tie' ||
+    !isMoney(table.stake) || !isMoney(table.playerPairStake) || !isMoney(table.bankerPairStake) ||
+    !chipOptions.some(chip => chip.value === table.selectedChipValue) || !isCount(table.chipWindowStart, chipOptions.length - 1) ||
+    !isCount(table.shoeUsed, 416) || !isCount(table.shoeRemaining, 416) || table.shoeUsed + table.shoeRemaining !== 416 ||
+    typeof table.shoeVerified !== 'boolean' || !isCount(table.revealedCards, 6) || typeof table.revealFinished !== 'boolean' ||
+    table.activePanel !== null && table.activePanel !== 'Baccarat road and shoe' && table.activePanel !== 'How to play Baccarat' ||
+    !Array.isArray(table.history) || table.history.length > 120 || table.history.some(item => !item ||
+      typeof item.roundId !== 'string' || item.outcome !== 'player' && item.outcome !== 'banker' && item.outcome !== 'tie' ||
+      !isCount(item.cardsUsed, 6) || item.cardsUsed < 4 || typeof item.natural !== 'boolean')) return null
+  const placedChips = parsePlacedChips(table.placedChips, table.stake, table.playerPairStake, table.bankerPairStake)
+  if (!placedChips || new Set(table.history.map(item => item.roundId)).size !== table.history.length) return null
+  return { ...table, placedChips } as TableSnapshot
+}
 function pendingDealKey(playerId: string) { return `fortuneforge:baccarat:pending:${playerId}` }
 function readPendingDeal(playerId: string): StoredPendingDeal | null {
   try {

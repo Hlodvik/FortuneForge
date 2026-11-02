@@ -1,0 +1,42 @@
+from pathlib import Path
+from PIL import Image
+import hashlib
+import json
+import sys
+
+root = Path(__file__).parent
+repo = root.parents[3]
+destination = repo / 'fortuneforge.client/public/assets/slots/midnight-vault/v3/symbols'
+records = []
+selected = set(sys.argv[1:])
+for source in sorted((root / 'sources').glob('*.png')):
+    art = Image.open(source).convert('RGBA')
+    assert art.getchannel('A').getextrema() == (0, 255), source
+    bbox = art.getchannel('A').getbbox()
+    assert bbox is not None
+    variants = []
+    for size in (96, 192, 320):
+        directory = destination / str(size)
+        directory.mkdir(parents=True, exist_ok=True)
+        target = directory / f'midnight-vault-{source.stem}.webp'
+        if not selected or source.stem in selected:
+            art.resize((size, size), Image.Resampling.LANCZOS).save(target, 'WEBP', quality=90, method=6)
+        assert target.exists(), target
+        exported = Image.open(target).convert('RGBA')
+        assert exported.getchannel('A').getextrema() == (0, 255)
+        variants.append({'url': '/' + target.relative_to(repo / 'fortuneforge.client/public').as_posix(),
+                         'path': str(target), 'width': size, 'height': size,
+                         'bytes': target.stat().st_size,
+                         'sha256': hashlib.sha256(target.read_bytes()).hexdigest()})
+    prompt = root / f'{source.stem}.prompt.txt'
+    assert prompt.exists(), prompt
+    records.append({'slug': source.stem, 'source': str(source), 'sourceSize': art.size,
+                    'sourceSha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                    'sourceAlphaBounds': bbox, 'preservedAlpha': True,
+                    'prompt': str(prompt), 'method': 'Built-in image_gen; deterministic Pillow resize/WebP encoding only',
+                    'styleReferences': [] if source.stem == 'brass-token' else ['sources/brass-token.png'],
+                    'variants': variants})
+(root / 'exports.json').write_text(json.dumps({'assets': records, 'count': len(records),
+    'totalVariantBytes': sum(variant['bytes'] for record in records for variant in record['variants'])}, indent=2))
+print(json.dumps({'assets': len(records), 'variants': sum(len(record['variants']) for record in records),
+                  'bytes': sum(variant['bytes'] for record in records for variant in record['variants'])}))

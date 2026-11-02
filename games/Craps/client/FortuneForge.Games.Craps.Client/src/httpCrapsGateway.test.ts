@@ -3,6 +3,7 @@ import { CrapsGatewayError, type CrapsRound, type CrapsStatus } from './contract
 import { HttpCrapsGateway } from './httpCrapsGateway'
 
 const roundId = '00000000-0000-4000-8000-000000000001'
+const operationId = '00000000-0000-4000-8000-000000000002'
 const status: CrapsStatus = { available: true, minimumStake: 1, maximumStake: 100, stakeIncrement: 1, mode: 'free-play-pass-line' }
 const open: CrapsRound = { roundId, stake: 10, phase: 'come-out', point: null, rolls: [], lastOutcome: null, extraBets: [] }
 const point: CrapsRound = {
@@ -54,6 +55,14 @@ describe('HttpCrapsGateway public recovery contract', () => {
     expect(fetcher).toHaveBeenCalledExactlyOnceWith(`/table/rounds/${roundId}`, { signal })
   })
 
+  it('finds the authenticated active paid round or an empty table', async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response(open)).mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const gateway = new HttpCrapsGateway('/table/', fetcher)
+    await expect(gateway.getActiveRound()).resolves.toEqual(open)
+    await expect(gateway.getActiveRound()).resolves.toBeNull()
+    expect(fetcher).toHaveBeenNthCalledWith(1, '/table/rounds/active', { signal: undefined })
+  })
+
   it('encodes the requested identifier instead of treating it as a URL path', async () => {
     const unusualId = 'private/round?x=1'
     const fetcher = vi.fn().mockResolvedValue(response({ ...open, roundId: unusualId }))
@@ -66,31 +75,31 @@ describe('HttpCrapsGateway public recovery contract', () => {
     const returned = { ...open, extraBets: extras.map(bet => ({ ...bet, resolved: false, won: false, totalReturn: null })) }
     const fetcher = vi.fn().mockResolvedValue(response(returned))
     const signal = new AbortController().signal
-    await expect(new HttpCrapsGateway(undefined, fetcher).startRound(10, signal, extras)).resolves.toEqual(returned)
+    await expect(new HttpCrapsGateway(undefined, fetcher).startRound(10, signal, extras, operationId)).resolves.toEqual(returned)
     expect(fetcher).toHaveBeenCalledExactlyOnceWith('/api/games/craps/rounds', {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stake: 10, extraBets: extras }), signal,
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stake: 10, extraBets: extras, operationId }), signal,
     })
   })
 
   it('sends an empty extras list when no optional wagers were selected', async () => {
     const fetcher = vi.fn().mockResolvedValue(response(open))
-    await new HttpCrapsGateway(undefined, fetcher).startRound(10)
-    expect(fetcher.mock.calls[0][1].body).toBe(JSON.stringify({ stake: 10, extraBets: [] }))
+    await new HttpCrapsGateway(undefined, fetcher).startRound(10, undefined, undefined, operationId)
+    expect(fetcher.mock.calls[0][1].body).toBe(JSON.stringify({ stake: 10, extraBets: [], operationId }))
   })
 
-  it('posts a roll once without an invented body or idempotency header', async () => {
+  it('posts a roll once with a replayable operation ID', async () => {
     const fetcher = vi.fn().mockResolvedValue(response(point))
     const signal = new AbortController().signal
-    await new HttpCrapsGateway(undefined, fetcher).roll(roundId, signal)
-    expect(fetcher).toHaveBeenCalledExactlyOnceWith(`/api/games/craps/rounds/${roundId}/roll`, { method: 'POST', signal })
+    await new HttpCrapsGateway(undefined, fetcher).roll(roundId, signal, operationId)
+    expect(fetcher).toHaveBeenCalledExactlyOnceWith(`/api/games/craps/rounds/${roundId}/roll`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operationId }), signal })
   })
 
   it('posts the exact odds stake without imposing divisibility or Pass Line ratio caps', async () => {
     const fetcher = vi.fn().mockResolvedValue(response({ ...point, extraBets: [{ kind: 'odds', stake: 100, resolved: false, won: false, totalReturn: null }] }))
     const signal = new AbortController().signal
-    await new HttpCrapsGateway(undefined, fetcher).placeOdds(roundId, 100, signal)
+    await new HttpCrapsGateway(undefined, fetcher).placeOdds(roundId, 100, signal, operationId)
     expect(fetcher).toHaveBeenCalledExactlyOnceWith(`/api/games/craps/rounds/${roundId}/odds`, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stake: 100 }), signal,
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ stake: 100, operationId }), signal,
     })
   })
 
@@ -143,6 +152,35 @@ describe('HttpCrapsGateway public recovery contract', () => {
 })
 
 describe('Craps response integrity', () => {
+  it('sends exact revision-bound wager and roll commands, including zero removal', async () => {
+    const fetcher = vi.fn().mockImplementation(async () => response(point))
+    const gateway = new HttpCrapsGateway(undefined, fetcher)
+    const context = { expectedRevision: 8, expectedRollNumber: 2 }
+    await gateway.setWager(roundId, 'field', 0, undefined, operationId, context)
+    await gateway.roll(roundId, undefined, operationId, context)
+    expect(fetcher.mock.calls[0][0]).toBe(`/api/games/craps/rounds/${roundId}/wagers`)
+    expect(JSON.parse(fetcher.mock.calls[0][1].body)).toEqual({ kind: 'field', stake: 0, operationId, ...context })
+    expect(JSON.parse(fetcher.mock.calls[1][1].body)).toEqual({ operationId, ...context })
+  })
+
+  it('accepts later-roll wagers and an unbounded cancelled history with exact net totals', async () => {
+    const extraBets = [
+      ...Array.from({ length: 12 }, (_, index) => ({ kind: 'odds' as const, stake: 2, resolved: true, won: false, totalReturn: 0, cancelled: true, wagerId: 'old-' + index, placedForRoll: 2, resolvedOnRoll: null })),
+      { kind: 'field' as const, stake: 5, resolved: true, won: false, totalReturn: 0, cancelled: false, wagerId: 'first-field', placedForRoll: 1, resolvedOnRoll: 1 },
+      { kind: 'field' as const, stake: 7, resolved: false, won: false, totalReturn: null, cancelled: false, wagerId: 'next-field', placedForRoll: 2, resolvedOnRoll: null },
+      { kind: 'odds' as const, stake: 4, resolved: false, won: false, totalReturn: null, cancelled: false, wagerId: 'new-odds', placedForRoll: 2, resolvedOnRoll: null },
+    ]
+    const value = { ...point, revision: 15, totalWagerCents: 2600, totalReturnCents: 0, extraBets }
+    await expect(gatewayFor(value).getRound(roundId)).resolves.toEqual(value)
+    for (const invalid of [
+      { ...value, totalWagerCents: 5000 },
+      { ...value, totalReturnCents: 100 },
+      { ...value, revision: -1 },
+      { ...value, extraBets: [...extraBets, extraBets.at(-1)] },
+      { ...value, extraBets: [{ ...extraBets[13], placedForRoll: 1 }] },
+      { ...value, extraBets: [{ ...extraBets[12], resolvedOnRoll: 2 }] },
+    ]) await expect(gatewayFor(invalid).getRound(roundId)).rejects.toBeInstanceOf(CrapsGatewayError)
+  })
   it.each([open, point, continuing, settled])('accepts the service phase/history/settlement contract', async value => {
     await expect(gatewayFor(value).getRound(roundId)).resolves.toEqual(value)
   })

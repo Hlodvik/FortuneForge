@@ -1,28 +1,31 @@
-import amberSunGem from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-amber-sun-gem-v2.webp'
-import dragonCabinetEmblem from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-cabinet-emblem-v2.webp'
-import ancientDragon from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-ancient-dragon-v2.webp'
-import chargingKnight from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-charging-knight-v2.webp'
-import crimsonFireGem from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-crimson-fire-gem-v2.webp'
-import dragonCoin from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-dragon-coin-v2.webp'
-import dragonfireCharge from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-dragonfire-charge-v2.webp'
-import emberLair from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-ember-lair-v2.webp'
-import emberVault from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-ember-vault-v2.webp'
-import emeraldEarthGem from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-emerald-earth-gem-v2.webp'
-import enchantedTreasureChest from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-enchanted-treasure-chest-v2.webp'
-import jeweledGoblet from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-jeweled-goblet-v2.webp'
-import knightSword from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-knight-sword-v2.webp'
-import mountainKingCastle from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-mountain-king-castle-v2.webp'
-import royalGoldCoin from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-royal-gold-coin-v2.webp'
-import royalRuby from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-royal-ruby-v2.webp'
-import royalTowerShield from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-royal-tower-shield-v2.webp'
-import sapphireFrostGem from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-sapphire-frost-gem-v2.webp'
-import tripleDragonClaws from '../../../assets/slots/games/dragon-hoard/optimized/dragon-hoard-triple-dragon-claws-v2.webp'
+const ARTWORK_BASE = '/assets/slots/midnight-vault/v1'
+const SYMBOL_ARTWORK_BASE = '/assets/slots/midnight-vault/v4'
 
-export const DRAGON_HOARD_SYMBOL_IMAGES = {
-  '2': royalGoldCoin, '3': jeweledGoblet, '4': knightSword, '5': royalTowerShield, '6': chargingKnight, '7': mountainKingCastle,
-  ACE: ancientDragon, FREE: emberLair, POWER: royalRuby, BOLT: dragonfireCharge,
-  BANANA: tripleDragonClaws, PAW: enchantedTreasureChest,
-  SEAL_SYNC: crimsonFireGem, SEAL_ROWS: sapphireFrostGem, SEAL_PAW: amberSunGem, SEAL_RAND: emeraldEarthGem,
-  VALUE: dragonCoin,
-  CABINET_EMBLEM: dragonCabinetEmblem, BACKDROP: emberVault,
+const symbolSlugs = {
+  '2': 'ornate-q', '3': 'ornate-j', '4': 'ornate-k', '5': 'ornate-a',
+  '6': 'overflowing-chips', '7': 'ruby-ring', '8': 'cash-briefcase',
+  ACE: 'front-vault', FREE: 'faberge-egg', POWER: 'loose-diamond', BANANA: 'triple-sevens',
+  // Dormant shared metadata reuses approved art; these roles stay disabled.
+  BOLT: 'front-vault', PAW: 'cash-briefcase',
+  SEAL_SYNC: 'ruby-access', SEAL_ROWS: 'sapphire-access', SEAL_PAW: 'amber-access',
+  SEAL_RAND: 'emerald-access', VALUE: 'overflowing-chips',
 } as const
+
+function symbolImage(slug: string, size: 96 | 192 | 320): string {
+  return `${SYMBOL_ARTWORK_BASE}/symbols/${size}/midnight-vault-${slug}.webp`
+}
+
+// URL metadata is inert: browsers request the selected candidate, not every variant.
+export const DRAGON_HOARD_SYMBOL_IMAGES = {
+  ...Object.fromEntries(Object.entries(symbolSlugs).map(([id, slug]) => [id, symbolImage(slug, 96)])) as
+    Record<keyof typeof symbolSlugs, string>,
+  CABINET_EMBLEM: `${ARTWORK_BASE}/presentation/midnight-vault-cabinet-emblem-96.webp`,
+  BACKDROP: `${ARTWORK_BASE}/presentation/midnight-vault-backdrop-1440x810.webp`,
+} as const
+
+export const DRAGON_HOARD_RESPONSIVE_IMAGES: Readonly<Record<string, Readonly<Record<96 | 192 | 320, string>>>> = Object.fromEntries(
+  Object.values(symbolSlugs).map((slug) => [
+    symbolImage(slug, 96),
+    { 96: symbolImage(slug, 96), 192: symbolImage(slug, 192), 320: symbolImage(slug, 320) },
+  ]),
+)

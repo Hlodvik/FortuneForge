@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { LocalSnakeGateway, SnakeGame } from '@fortuneforge/games-snake'
+import { HttpSnakeGateway, SnakeGame } from '@fortuneforge/games-snake'
 import { InGameShell } from '../../components/InGameShell'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
@@ -9,9 +9,9 @@ import './SnakeRoute.css'
 
 export function AuthenticatedSnakeRoute() {
   const { account, error, isLoading, reload } = useAuthenticatedAccount('/games/snake')
-  const gateway = useMemo(() => new LocalSnakeGateway(), [])
+  const gateway = useMemo(() => new HttpSnakeGateway(), [])
   if (isLoading || account === null) return <AuthenticatedRouteState error={error} loadingLabel="Opening Snake…" errorTitle="Snake could not be opened." onRetry={reload} />
-  return <InGameShell account={account} title="Snake" theme="arcade" className="player-page snake-page">
+  return <InGameShell account={account} title="Snake" className="player-page snake-page">
     <SnakeGame gateway={gateway} />
   </InGameShell>
 }

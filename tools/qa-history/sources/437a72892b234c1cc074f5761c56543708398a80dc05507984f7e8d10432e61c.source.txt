@@ -1,0 +1,142 @@
+// Review-art layout only. Original PNG/WebP source files are never rewritten.
+import { createRequire } from 'node:module'
+import { readFile, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { dirname, resolve, basename } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const sharp = require('C:/Users/Lctiv/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/sharp')
+const root = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(root, '../../../..')
+const hash = (bytes) => createHash('sha256').update(bytes).digest('hex')
+const xml = (value) => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;')
+const readJson = async (name) => JSON.parse(await readFile(resolve(root, name), 'utf8'))
+const props = await readJson('props/manifest.json')
+const cards = await readJson('cards/source-manifest.json')
+const specials = await readJson('specials/manifest.json')
+
+const sourceList = [
+  ['ring', 'Ring', 'retained/midnight-vault-ruby-ring.webp', 'retained'],
+  ['loose-diamond', 'Loose diamond', 'props/loose-diamond.png', 'props'],
+  ['front-vault', 'Front vault', 'props/front-vault.png', 'props'],
+  ['overflowing-chips', 'Overflowing chips', 'props/overflowing-chips.png', 'props'],
+  ['cash-briefcase', 'Cash briefcase', 'props/cash-briefcase.png', 'props'],
+  ['ornate-A', 'A', 'cards/ornate-A.png', 'cards'],
+  ['ornate-K', 'K', 'cards/ornate-K.png', 'cards'],
+  ['ornate-Q', 'Q', 'cards/ornate-Q.png', 'cards'],
+  ['ornate-J', 'J', 'cards/ornate-J.png', 'cards'],
+  ['triple-sevens', '777', 'specials/triple-sevens.png', 'specials'],
+  ['faberge-egg', 'Fabergé egg', 'specials/faberge-egg.png', 'specials'],
+  ['ruby', 'Ruby', 'retained/midnight-vault-ruby-access.webp', 'retained'],
+  ['sapphire', 'Sapphire', 'retained/midnight-vault-sapphire-access.webp', 'retained'],
+  ['amber', 'Amber', 'retained/midnight-vault-amber-access.webp', 'retained'],
+  ['emerald', 'Emerald', 'retained/midnight-vault-emerald-access.webp', 'retained'],
+]
+
+async function provenance(id, file, group) {
+  if (group === 'retained') {
+    const original = `fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/${basename(file)}`
+    const bytes = await readFile(resolve(repo, original))
+    return { method: 'Exact unchanged original V1 WebP copy', original, originalSha256: hash(bytes), prompt: null }
+  }
+  if (group === 'props') {
+    const item = props.assets.find((asset) => asset.slug === id)
+    if (!item) throw new Error(`Missing prop provenance: ${id}`)
+    return { method: 'Built-in image_gen; original V1 ring style reference only', generatedSource: item.generatedSource,
+      sourceManifest: 'props/manifest.json', promptFile: `props/${id}.prompt.txt`, prompt: await readFile(item.prompt, 'utf8') }
+  }
+  if (group === 'cards') {
+    const item = cards.assets.find((asset) => asset.asset === id)
+    if (!item) throw new Error(`Missing rank provenance: ${id}`)
+    return { method: 'Built-in image_gen; original V1 ring style reference only', generatedSource: item.source,
+      sourceManifest: 'cards/source-manifest.json', promptFile: 'cards/prompt-set.json', prompt: item.prompt }
+  }
+  const item = specials.assets.find((asset) => asset.name === id)
+  if (!item) throw new Error(`Missing special provenance: ${id}`)
+  return { method: 'Built-in image_gen; original V1 ring style reference only', generatedSource: item.generatedSource,
+    sourceManifest: 'specials/manifest.json', promptFile: `specials/${id}.prompt.txt`, prompt: await readFile(resolve(root, 'specials', item.prompt), 'utf8') }
+}
+
+async function imageBounds(bytes) {
+  const { data, info } = await sharp(bytes).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  let left = info.width, top = info.height, right = -1, bottom = -1, transparent = 0, min = 255, max = 0
+  for (let y = 0; y < info.height; y++) {
+    for (let x = 0; x < info.width; x++) {
+      const alpha = data[(y * info.width + x) * 4 + 3]
+      min = Math.min(min, alpha); max = Math.max(max, alpha)
+      if (alpha === 0) transparent++
+      if (alpha > 8) { left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y) }
+    }
+  }
+  if (right < left || bottom < top || min !== 0 || max !== 255) throw new Error('Missing visible art or genuine transparency')
+  return { width: info.width, height: info.height, alphaRange: [min, max], fullyTransparentPixels: transparent,
+    visibleBoundsAtAlpha8: [left, top, right + 1, bottom + 1],
+    extract: { left, top, width: right - left + 1, height: bottom - top + 1 } }
+}
+
+const assets = []
+for (let index = 0; index < sourceList.length; index++) {
+  const [id, label, file, group] = sourceList[index]
+  const originalBytes = await readFile(resolve(root, file))
+  const origin = await provenance(id, file, group)
+  const bytesHash = hash(originalBytes)
+  if (group === 'retained' && bytesHash !== origin.originalSha256) throw new Error(`Retained image changed: ${file}`)
+  if (group !== 'retained' && bytesHash !== hash(await readFile(origin.generatedSource))) throw new Error(`Generated source changed: ${file}`)
+  const bounds = await imageBounds(originalBytes)
+  // Only board layout is normalized: trim invisible margins in memory and
+  // contain each subject in a common 300px square. No individual asset is saved.
+  const preview = await sharp(originalBytes).extract(bounds.extract).resize(300, 300, { fit: 'inside' }).png().toBuffer({ resolveWithObject: true })
+  assets.push({ index: index + 1, id, label, file, group, byteCount: originalBytes.length,
+    sha256: bytesHash, ...origin, ...bounds, sourceUnmodified: true, preview })
+}
+
+if (assets.length !== 15 || assets.filter((asset) => asset.group === 'retained').length !== 5) throw new Error('Expected exactly ten new and five retained assets')
+
+const width = 2040, height = 1392
+const cells = assets.map((asset, index) => {
+  const x = 60 + (index % 5) * 390, y = 142 + Math.floor(index / 5) * 390
+  return { asset, x, y }
+})
+const backgroundSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="#071321"/>
+<text x="60" y="64" fill="#e7c77d" font-family="Arial, sans-serif" font-size="42" font-weight="700" letter-spacing="3">MIDNIGHT VAULT</text>
+<text x="60" y="105" fill="#acb8c7" font-family="Arial, sans-serif" font-size="25">15-symbol art preview · original ring and four access gems retained</text>
+<text x="1980" y="68" text-anchor="end" fill="#c1ad7e" font-family="Arial, sans-serif" font-size="22" letter-spacing="2">REVIEW ONLY</text>
+${cells.map(({x,y}) => `<rect x="${x}" y="${y}" width="360" height="366" rx="16" fill="#0b1a2b" stroke="#25354a" stroke-width="2"/>`).join('')}
+<text x="60" y="1361" fill="#94a3b5" font-family="Arial, sans-serif" font-size="23">Ten new symbols for review. Source artwork remains unchanged.</text>
+</svg>`
+const composites = [{ input: Buffer.from(backgroundSvg), left: 0, top: 0 }]
+for (const {asset,x,y} of cells) composites.push({ input: asset.preview.data,
+  left: x + Math.round((360 - asset.preview.info.width) / 2), top: y + 14 + Math.round((300 - asset.preview.info.height) / 2) })
+const labelsSvg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+${cells.map(({asset,x,y}) => `<text x="${x+180}" y="${y+344}" text-anchor="middle" fill="#edf1f7" font-family="Arial, sans-serif" font-size="29" font-weight="600">${xml(asset.label)}</text>`).join('')}
+</svg>`
+composites.push({ input: Buffer.from(labelsSvg), left: 0, top: 0 })
+const board = await sharp({ create: { width, height, channels: 4, background: '#071321' } }).composite(composites).png().toBuffer()
+await writeFile(resolve(root, 'preview-board.png'), board)
+await sharp(board).resize(1224).png().toFile(resolve(root, 'preview-board-1224.png'))
+
+const assetRecords = assets.map(({preview,extract,...asset}) => asset)
+const manifest = { kind: 'Art-only review board; no implementation or symbol-engine assignment', generatedUtc: new Date().toISOString(),
+  background: '#071321', board: { full: 'preview-board.png', width, height, preview: 'preview-board-1224.png', previewWidth: 1224 },
+  count: 15, newAssets: 10, retainedAssets: 5,
+  layout: 'Five columns by three rows; captions outside art; alpha-bound contain normalization in memory only; no source image rewritten.',
+  generation: 'Ten individual built-in image_gen calls; original V1 ring was the style reference. Five V1 images copied byte-for-byte.',
+  assets: assetRecords }
+await writeFile(resolve(root, 'preview-board-manifest.json'), JSON.stringify(manifest, null, 2) + '\n')
+await writeFile(resolve(root, 'retained/manifest.json'), JSON.stringify({ kind: 'Five unchanged original V1 images', assets: assetRecords.filter((asset) => asset.group === 'retained') }, null, 2) + '\n')
+
+const html = `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Midnight Vault — 15-symbol art preview</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#071321;color:#edf1f7;font:16px/1.5 Arial,sans-serif}main{max-width:1500px;margin:auto;padding:36px 28px}h1{margin:0;color:#e7c77d;letter-spacing:.12em;font-size:28px}p{color:#acb8c7}header{margin-bottom:28px}.grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}.tile{appearance:none;width:100%;border:1px solid #25354a;border-radius:12px;background:#0b1a2b;color:inherit;padding:16px 12px 18px;cursor:zoom-in;font:inherit}.tile:focus-visible{outline:3px solid #e7c77d;outline-offset:3px}.art{height:240px;display:flex;align-items:center;justify-content:center}.art img{max-width:100%;max-height:100%;object-fit:contain}.label{display:block;margin-top:15px;font-size:20px;font-weight:600}.retained{display:block;color:#91a2b6;font-size:12px;margin-top:3px}.links{margin-top:28px;display:flex;gap:22px;flex-wrap:wrap}a{color:#e7c77d}dialog{color:inherit;background:#071321;border:1px solid #496078;border-radius:12px;padding:20px;max-width:96vw;max-height:96vh;overflow:auto}dialog::backdrop{background:#02070ee8}.zoom-head{display:flex;justify-content:space-between;gap:40px;align-items:center}.zoom-head h2{margin:0}.close{background:#213247;border:1px solid #69809b;border-radius:8px;color:#fff;padding:8px 16px;font:inherit;cursor:pointer}.zoom-art{display:flex;align-items:center;justify-content:center;min-width:min(80vw,900px);min-height:55vh;margin:16px 0}.zoom-art img{display:block;max-width:88vw;max-height:76vh;object-fit:contain}@media(max-width:1000px){.grid{gap:14px}.art{height:180px}.label{font-size:17px}}@media(max-width:760px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.art{height:170px}}@media(max-width:460px){main{padding:24px 14px}.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.art{height:180px}}
+</style><main><header><h1>MIDNIGHT VAULT</h1><p>15-symbol art preview. Click any symbol to inspect the original source. Five original images are retained unchanged.</p></header>
+<section class="grid" aria-label="Fifteen symbol previews">${assets.map((asset) => `<button class="tile" type="button" data-index="${asset.index-1}" aria-label="Inspect ${xml(asset.label)}"><span class="art"><img alt="" src="data:image/png;base64,${asset.preview.data.toString('base64')}"></span><span class="label">${xml(asset.label)}</span><span class="retained">${asset.group==='retained'?'Original V1 · unchanged':'New art preview'}</span></button>`).join('')}</section>
+<nav class="links" aria-label="Preview files"><a href="preview-board.png">Full-size board PNG</a><a href="preview-board-manifest.json">All fifteen sources and exact prompts</a><a href="README.md">Notes</a></nav><p>Review only. Ten new symbols plus the original ruby ring and four access gems. No game or engine changes.</p></main>
+<dialog id="zoom" aria-labelledby="zoom-title"><div class="zoom-head"><h2 id="zoom-title"></h2><button class="close" type="button">Close</button></div><div class="zoom-art"><img id="zoom-image" alt=""></div><a id="source-link" target="_blank" rel="noopener">Open original image at full resolution</a></dialog>
+<script>const files=${JSON.stringify(assetRecords.map(({label,file})=>({label,file})))};const dialog=document.querySelector('#zoom');let opener;document.querySelectorAll('[data-index]').forEach(button=>button.addEventListener('click',()=>{const item=files[Number(button.dataset.index)];opener=button;document.querySelector('#zoom-title').textContent=item.label;const image=document.querySelector('#zoom-image');image.src=item.file;image.alt=item.label;document.querySelector('#source-link').href=item.file;dialog.showModal();}));document.querySelector('.close').addEventListener('click',()=>dialog.close());dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});dialog.addEventListener('close',()=>opener?.focus());</script></html>`
+await writeFile(resolve(root, 'preview-board.html'), html)
+
+for (const asset of assets) if (hash(await readFile(resolve(root, asset.file))) !== asset.sha256) throw new Error(`Source changed during board rendering: ${asset.file}`)
+console.log(JSON.stringify({ board: resolve(root, 'preview-board.png'), preview: resolve(root, 'preview-board-1224.png'), html: resolve(root, 'preview-board.html'), count: 15, new: 10, retained: 5, allSourceHashesUnchanged: true, fullBytes: board.length }, null, 2))

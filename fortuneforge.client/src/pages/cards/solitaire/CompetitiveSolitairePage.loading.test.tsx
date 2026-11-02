@@ -54,7 +54,7 @@ describe('Solitaire initial table loading', () => {
     await act(async () => { session.resolve({ kind: 'idle' }) })
     expect(host.querySelector('[data-game-loading]')).toBeNull()
     expect(host.querySelector('.solitaire-lobby')).not.toBeNull()
-    expect(host.textContent).toContain('Competitive · R5')
+    expect(host.querySelector('.solitaire-lobby .solitaire-primary-action')?.textContent).toBe('Join match · R5')
     expect(host.textContent).toContain('Play free')
     assertNavigation()
   })

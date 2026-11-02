@@ -1,7 +1,7 @@
 import type { SlotCabinetTheme, SlotCelebrationEffect } from '../../../features/slots/config/cabinetThemes'
 import type { SlotOutcomeNarrative } from '../../../features/slots/config/outcomeNarratives'
 import { DEFAULT_SLOT_SOUNDS, type SlotSoundSet } from '../../../features/slots/config/soundSets'
-import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
+import { createSlotRulesSet, type SlotExperienceSet, type SlotRulesSet } from '../../../features/slots/config/slotExperienceSets'
 import type {
   SlotCollectionPresentation,
   SlotFeatureSet,
@@ -9,7 +9,9 @@ import type {
   SlotSpecialRoundFeature,
 } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame, type SlotGameManifest } from './slotGameManifest'
-import { createThemedSymbolSet } from './themedSymbolSet'
+import { withEngineGuide } from './engineGuide'
+import { createThemedSymbolSet, type AdditionalThemeSymbolId } from './themedSymbolSet'
+import type { SlotResponsiveImages, SlotSymbolGuideEntry } from '../../../features/slots/config/symbolSets'
 
 const BASE_SYMBOL_IDS = [
   '2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER', 'BOLT', 'BANANA', 'PAW',
@@ -28,6 +30,7 @@ type ShowcaseSpecialRound = {
   usesEnergy?: boolean
   usesDirectValueTokens?: boolean
   earnHelp?: string
+  collectionRewardDescription?: string
 }
 
 export type ShowcaseSlotGameDefinition = {
@@ -36,6 +39,10 @@ export type ShowcaseSlotGameDefinition = {
   subtitle: string
   description: string
   serverGameId: string
+  /** Omitted themes retain their existing server symbol-set identity. */
+  serverSymbolSetId?: string
+  /** A game-specific idle grid; never changes another theme's initial symbols. */
+  initialReels?: SlotRulesSet['initialReels']
   paylinePatternIds: readonly number[]
   presentation: SlotCollectionPresentation
   collectionAriaLabel: string
@@ -48,10 +55,18 @@ export type ShowcaseSlotGameDefinition = {
   valueToken: SymbolSpec
   collectionLabels: readonly [SymbolSpec, SymbolSpec, SymbolSpec, SymbolSpec]
   symbolSpecs: Readonly<Record<BaseSymbolId, SymbolSpec>>
+  additionalSymbolSpecs?: Readonly<Partial<Record<AdditionalThemeSymbolId, SymbolSpec>>>
+  symbolGuide?: { entries: readonly SlotSymbolGuideEntry[]; note: string }
+  helpSections?: SlotHelpDefinition['extraSections']
+  fiveMatchPayoutNote?: string
+  fourMatchPayoutNote?: string
+  /** Opt-in candidates indexed by the existing fallback image URL. */
+  responsiveImages?: Readonly<Record<string, SlotResponsiveImages>>
   artwork: {
     emblem: string
     accent: string
     backdrop: string
+    backdropImageSet?: string
   }
   motif: string
   accentGlyph: string
@@ -85,27 +100,48 @@ export function createShowcaseSlotGame(
   })) as Record<BaseSymbolId, string>
   const collectionImages = definition.collectionLabels.map((spec) => spec[2])
   const valueImage = definition.valueToken[2]
-  const symbols = createThemedSymbolSet({
+  const themedSymbols = createThemedSymbolSet({
     id: `${definition.id}-symbols-v1`,
-    serverSymbolSetId: specialRound ? 'wukong-treasures-v3' : `${definition.serverGameId}-symbols`,
+    serverSymbolSetId: definition.serverSymbolSetId ??
+      (specialRound ? 'wukong-treasures-v3' : `${definition.serverGameId}-symbols`),
     symbols: {
       ...Object.fromEntries(BASE_SYMBOL_IDS.map((id) => [id, {
         label: definition.symbolSpecs[id][0],
         image: baseImages[id],
+        responsiveImages: definition.responsiveImages?.[baseImages[id]],
       }])),
       ...Object.fromEntries(collectionSymbols.map((id, index) => [id, {
         label: definition.collectionLabels[index][0],
         image: collectionImages[index],
+        responsiveImages: definition.responsiveImages?.[collectionImages[index]],
       }])),
     } as Parameters<typeof createThemedSymbolSet>[0]['symbols'],
-    valueToken: { label: definition.valueToken[0], image: valueImage },
+    ...(definition.additionalSymbolSpecs?.['8'] ? {
+      additionalSymbols: {
+        '8': {
+          label: definition.additionalSymbolSpecs['8'][0],
+          image: definition.additionalSymbolSpecs['8'][2],
+          responsiveImages: definition.responsiveImages?.[definition.additionalSymbolSpecs['8'][2]],
+        },
+      },
+    } : {}),
+    valueToken: {
+      label: definition.valueToken[0], image: valueImage,
+      responsiveImages: definition.responsiveImages?.[valueImage],
+    },
     energyEarnLabel: `+1 ${definition.energyLabel.toLowerCase()}`,
+    freeRequiredLabel: `${specialRound?.freeGames.requiredSymbols ?? 3}+`,
+    freeAwardLabel: `${specialRound?.freeGames.awardedSpins ?? 5} free games`,
+    collectionRequiredCount: specialRound?.collectionTarget ?? 40,
     collectorFirstValue: `${definition.actorName.toLowerCase()} gathers value tokens`,
     collectorSecondValue: `double ${definition.awardLabel.toLowerCase()}`,
     collectionAwardLabels: Object.fromEntries(collectionSymbols.map((id, index) =>
       [id, `${specialRound?.collectionAwardedSpins ?? 10} ${definition.collectionLabels[index][0].toLowerCase()} spins`],
     )) as Parameters<typeof createThemedSymbolSet>[0]['collectionAwardLabels'],
   })
+  const symbols = definition.symbolGuide
+    ? { ...themedSymbols, guideEntries: definition.symbolGuide.entries, guideNote: definition.symbolGuide.note }
+    : themedSymbols
   const features: SlotFeatureSet = {
     energy: usesEnergy ? { label: definition.energyLabel, symbol: 'BOLT' } : undefined,
     collections: usesCollections ? {
@@ -118,6 +154,10 @@ export function createShowcaseSlotGame(
         shortLabel: definition.collectionLabels[index][0].split(' ')[0],
         symbol,
         requiredCount: specialRound?.collectionTarget ?? 40,
+        ...(specialRound?.collectionRewardDescription
+          ? { rewardDescription: specialRound.collectionRewardDescription,
+            progressDescription: `Land matching ${definition.itemLabel} anywhere on the reels.` }
+          : {}),
       })),
     } : undefined,
     moneyGrab: usesDirectValueTokens ? {
@@ -132,7 +172,9 @@ export function createShowcaseSlotGame(
     paylineCount: definition.paylinePatternIds.length,
     paylinePatternIds: definition.paylinePatternIds,
     freeGames: specialRound?.freeGames ?? { requiredSymbols: 3, awardedSpins: 5 },
-    extraSections: [
+    ...(definition.fiveMatchPayoutNote ? { fiveMatchPayoutNote: definition.fiveMatchPayoutNote } : {}),
+    ...(definition.fourMatchPayoutNote ? { fourMatchPayoutNote: definition.fourMatchPayoutNote } : {}),
+    extraSections: definition.helpSections ?? [
       {
         badge: 'GRAB',
         title: definition.awardLabel,
@@ -160,6 +202,7 @@ export function createShowcaseSlotGame(
     backdropImage: artwork.backdrop,
     visualsBackdropImage: artwork.backdrop,
     pageBackdropImage: artwork.backdrop,
+    backdropImageSet: artwork.backdropImageSet,
     palette: {
       shellTop: colors.primary,
       shellBottom: colors.deep,
@@ -171,7 +214,7 @@ export function createShowcaseSlotGame(
       text: colors.text,
     },
   }
-  const experience: SlotExperienceSet = {
+  const experience: SlotExperienceSet = withEngineGuide({
     id: `${definition.id}-experience-v1`,
     cabinet,
     features,
@@ -181,8 +224,9 @@ export function createShowcaseSlotGame(
     symbols,
     mascot: null,
     sounds: specialRound?.sounds ?? DEFAULT_SLOT_SOUNDS,
-    rules: createSlotRulesSet(definition.serverGameId),
-  }
+    rules: createSlotRulesSet(definition.serverGameId,
+      definition.initialReels ? { initialReels: definition.initialReels } : undefined),
+  })
 
   return defineSlotGame({
     id: definition.id,

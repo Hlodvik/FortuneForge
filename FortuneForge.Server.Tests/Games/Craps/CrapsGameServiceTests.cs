@@ -13,6 +13,9 @@ public sealed class CrapsGameServiceTests
 
         Assert.Equal("come-out", round.Phase);
         Assert.Equal(10m, round.Stake);
+        Assert.Equal(1000, round.TotalWagerCents);
+        Assert.Equal(0, round.TotalReturnCents);
+        Assert.Equal(0, round.Revision);
         Assert.Throws<CrapsAccessException>(() => service.Get("player-b", round.RoundId));
     }
 
@@ -27,6 +30,9 @@ public sealed class CrapsGameServiceTests
         Assert.InRange(roll.First, 1, 6);
         Assert.InRange(roll.Second, 1, 6);
         Assert.NotNull(afterRoll.LastOutcome);
+        Assert.Equal(1, afterRoll.Revision);
+        Assert.Equal(1000, afterRoll.TotalWagerCents);
+        Assert.Equal((long)((afterRoll.LastOutcome.TotalReturn ?? 0m) * 100m), afterRoll.TotalReturnCents);
     }
 
     [Fact]
@@ -37,7 +43,10 @@ public sealed class CrapsGameServiceTests
             [new CrapsExtraBetRequest("field", 5m), new CrapsExtraBetRequest("any-seven", 2m)]));
 
         Assert.Equal(2, round.ExtraBets.Count);
+        Assert.Equal(1700, round.TotalWagerCents);
         var afterRoll = service.Roll("player-a", round.RoundId);
         Assert.All(afterRoll.ExtraBets, bet => Assert.True(bet.Resolved));
+        Assert.Equal(1700, afterRoll.TotalWagerCents);
+        Assert.Equal((long)(((afterRoll.LastOutcome!.TotalReturn ?? 0m) + afterRoll.ExtraBets.Sum(bet => bet.TotalReturn ?? 0m)) * 100m), afterRoll.TotalReturnCents);
     }
 }

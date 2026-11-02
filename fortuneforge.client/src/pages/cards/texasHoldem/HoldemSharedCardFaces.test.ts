@@ -13,7 +13,6 @@ const pageSources = [
 ] as const
 
 const tableStyles = [
-  './pokerClientHoldem.css',
   './texasHoldem.css',
   '../houseHoldem/houseHoldem.css',
   '../blackjack/blackjack.css',

@@ -1,0 +1,51 @@
+$ErrorActionPreference = 'Stop'
+$repository = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+$sources = @(
+  '.github/workflows/ci.yml',
+  'FortuneForge.Server/Games/Craps/CrapsContracts.cs',
+  'FortuneForge.Server/Games/Craps/CrapsController.cs',
+  'FortuneForge.Server/Games/Craps/FirestorePaidCrapsStore.cs',
+  'FortuneForge.Server/Games/Craps/CrapsGameService.cs',
+  'FortuneForge.Server/SecurityAudit/PaidCrapsReplayAudit.cs',
+  'FortuneForge.Server.Tests/Games/Craps/FirestorePaidCrapsStoreTests.cs',
+  'FortuneForge.Server.Tests/Games/Craps/CrapsGameServiceTests.cs',
+  'FortuneForge.Server.Tests/SecurityAudit/PaidCrapsReplayAuditTests.cs',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/README.md',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/contracts.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/httpCrapsGateway.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/httpCrapsGateway.test.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/useCrapsTable.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/useCrapsTable.behavior.test.tsx',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/CrapsGame.tsx',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/CrapsGame.visual.test.tsx',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/crapsPresentation.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/crapsPresentation.test.ts',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/crapsCasino.css',
+  'games/Craps/client/FortuneForge.Games.Craps.Client/src/crapsCasino.test.js',
+  'fortuneforge.client/e2e/ux-cycle/craps-betting.ux.spec.ts',
+  'fortuneforge.client/e2e/ux-cycle/craps-continuation.ux.spec.ts',
+  'fortuneforge.client/playwright.craps-continuation.config.ts'
+)
+$sourceHashes = @($sources | ForEach-Object {
+  $absolute = Join-Path $repository $_
+  [pscustomobject]@{ path = $_; sha256 = (Get-FileHash -LiteralPath $absolute).Hash.ToLowerInvariant() }
+})
+$apiPath = Join-Path $PSScriptRoot 'release-unit\api'
+$apiHashes = @(Get-ChildItem -LiteralPath $apiPath -File -Recurse | Sort-Object FullName | ForEach-Object {
+  [pscustomobject]@{ path = [IO.Path]::GetRelativePath($apiPath, $_.FullName).Replace('\','/'); bytes = $_.Length; sha256 = (Get-FileHash -LiteralPath $_.FullName).Hash.ToLowerInvariant() }
+})
+$apiHashes | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'release-unit\api-sha256.json')
+$sourceHashes | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'final-source-scope.json')
+[pscustomobject]@{
+  repository = $repository
+  branch = (git -C $repository branch --show-current)
+  head = (git -C $repository rev-parse HEAD)
+  sourceCount = $sources.Count
+  sources = $sourceHashes
+  apiAssemblySha256 = (Get-FileHash -LiteralPath (Join-Path $apiPath 'FortuneForge.Server.dll')).Hash.ToLowerInvariant()
+  fixtureAssemblySha256 = (Get-FileHash -LiteralPath (Join-Path $PSScriptRoot 'browser-fixture\bin\Release\net10.0\FortuneForge.Server.dll')).Hash.ToLowerInvariant()
+  frontendManifestSha256 = (Get-FileHash -LiteralPath (Join-Path $PSScriptRoot 'release-unit\hosting-sha256.json')).Hash.ToLowerInvariant()
+  frontend = 'release-unit/hosting'
+  backend = 'release-unit/api'
+  publication = 'blocked; local compatible pair only; aggregate failures and unresolved deployment-worktree policy'
+} | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'release-unit\manifest.json')

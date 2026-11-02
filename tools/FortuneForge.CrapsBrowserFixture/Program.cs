@@ -1,0 +1,83 @@
+using System.Collections.Concurrent;
+using FortuneForge.Games.Dice;
+using FortuneForge.Server.Games.Craps;
+using Google.Api.Gax;
+using Google.Cloud.Firestore;
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Server.SecurityAudit;
+
+// This harness cannot connect to a live wallet. All data lives in a fresh demo
+// project on a required loopback Firestore emulator. Only test account reads are
+// simulated; wagering and wallet writes execute the production paid store.
+var endpoint = Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST");
+if (endpoint is null || !Uri.TryCreate("http://" + endpoint, UriKind.Absolute, out var emulator) || !emulator.IsLoopback)
+    throw new InvalidOperationException("A loopback FIRESTORE_EMULATOR_HOST is required.");
+var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://127.0.0.1:5298");
+var app = builder.Build();
+app.MapGet("/__craps-fixture-health", () => Results.Ok(new { localOnly = true }));
+var sessions = new ConcurrentDictionary<string, Fixture>();
+var defaultId = "desktop-fixture";
+
+async Task<Fixture> Reset(string id, ResetRequest request)
+{
+    var database = new FirestoreDbBuilder { ProjectId = "demo-craps-browser-" + Guid.NewGuid().ToString("N"),
+        EmulatorDetection = EmulatorDetection.EmulatorOnly }.Build();
+    var sequence = new ConcurrentQueue<int[]>(request.Dice ?? [[2, 2], [3, 6], [1, 3]]);
+    var store = new FirestorePaidCrapsStore(database, () => {
+        if (!sequence.TryDequeue(out var pair)) pair = [1, 6];
+        return new(new DieValue(pair[0]), new DieValue(pair[1]));
+    });
+    var fixture = new Fixture(database, store, id);
+    var cents = request.BalanceCents ?? 100000;
+    await database.Collection("userBalances").Document(id + "_slotsCredits").SetAsync(new Dictionary<string, object> {
+        ["available"] = cents / 100, ["availableFractionalCents"] = cents % 100, ["version"] = 1L });
+    sessions[id] = fixture;
+    return fixture;
+}
+Fixture Current(HttpContext context) => sessions[context.Request.Headers["X-Craps-Fixture"].FirstOrDefault() ?? defaultId];
+await Reset(defaultId, new());
+app.Use(async (context, next) => {
+    context.Response.Headers.CacheControl = "no-store";
+    try { await next(); }
+    catch (CrapsPaidException error) { context.Response.StatusCode = error.StatusCode; await context.Response.WriteAsJsonAsync(new CrapsErrorResponse(error.Code, error.Message)); }
+    catch (CrapsAccessException error) { context.Response.StatusCode = 404; await context.Response.WriteAsJsonAsync(new CrapsErrorResponse("craps-round-not-found", error.Message)); }
+});
+app.MapPost("/fixture/{id}/reset", async (string id, ResetRequest request) => { var fixture = await Reset(id, request); return Results.Ok(new { userId = id, projectId = fixture.Database.ProjectId }); });
+app.MapGet("/fixture/state", async (HttpContext context) => {
+    var f = Current(context);
+    var ledgers = await f.Database.Collection("balanceTransactions").GetSnapshotAsync();
+    var rounds = await f.Database.Collection("crapsPaidRounds").GetSnapshotAsync();
+    return Results.Ok(new { projectId = f.Database.ProjectId, status = await f.Store.StatusAsync(f.User),
+        ledgers = ledgers.Select(d => new { d.Id, fields = d.ToDictionary() }),
+        rounds = rounds.Select(d => new { d.Id, fields = d.ToDictionary() }) });
+});
+app.MapGet("/fixture/audit", async (HttpContext context) => {
+    var f = Current(context);
+    var summaries = await f.Database.Collection(RoundAuditDocuments.Summaries).GetSnapshotAsync();
+    var results = new List<object>();
+    foreach (var document in summaries.Documents) {
+        var summary = FirestoreGameRoundAuditStore.Summary(document);
+        var assessment = await GameSecurityIntegrityAuditor.InspectAsync(f.Database, summary, default);
+        results.Add(new { summary.Id, assessment.Findings, assessment.JournalEventCount, assessment.JournalCoverage });
+    }
+    return Results.Ok(results);
+});
+app.MapGet("/api/accounts/me", async (HttpContext context) => {
+    var f = Current(context); var status = await f.Store.StatusAsync(f.User);
+    return Results.Ok(new { userId = f.User, playerName = "Craps emulator test", email = "craps@example.test",
+        createdAtUtc = "2026-01-01T00:00:00Z", role = "player", balances = new { slotsCredits = status.WalletBalanceCents / 100m, freeGames = 0 },
+        slots = new { spinsPlayed = 0, wins = 0, losses = 0, creditsWagered = 0, creditsWon = 0, netCredits = 0 } });
+});
+app.MapGet("/api/games/craps/status", async (HttpContext context) => { var f = Current(context); return Results.Ok(await f.Store.StatusAsync(f.User)); });
+app.MapGet("/api/games/craps/rounds/active", async (HttpContext context) => { var f = Current(context); var round = await f.Store.ActiveAsync(f.User); return round is null ? Results.NoContent() : Results.Ok(round); });
+app.MapGet("/api/games/craps/rounds/{id:guid}", async (HttpContext context, Guid id) => { var f = Current(context); return Results.Ok(await f.Store.GetAsync(f.User, id)); });
+app.MapPost("/api/games/craps/rounds", async (HttpContext context, StartCrapsRoundRequest request) => { var f = Current(context); return Results.Ok(await f.Store.StartAsync(f.User, request)); });
+app.MapPost("/api/games/craps/rounds/{id:guid}/roll", async (HttpContext context, Guid id, CrapsOperationRequest request) => { var f = Current(context); return Results.Ok(await f.Store.RollAsync(f.User, id, request)); });
+app.MapPost("/api/games/craps/rounds/{id:guid}/odds", async (HttpContext context, Guid id, PlaceCrapsOddsRequest request) => { var f = Current(context); return Results.Ok(await f.Store.PlaceOddsAsync(f.User, id, request)); });
+app.MapPost("/api/games/craps/rounds/{id:guid}/wagers", async (HttpContext context, Guid id, SetCrapsWagerRequest request) => { var f = Current(context); return Results.Ok(await f.Store.SetWagerAsync(f.User, id, request)); });
+app.Run();
+
+record ResetRequest(long? BalanceCents = null, int[][]? Dice = null);
+record Fixture(FirestoreDb Database, FirestorePaidCrapsStore Store, string User);

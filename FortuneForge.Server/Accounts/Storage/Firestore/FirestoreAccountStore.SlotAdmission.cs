@@ -2,7 +2,9 @@ using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
+using FortuneForge.Games.Abstractions.Auditing;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
@@ -21,6 +23,9 @@ public sealed partial class FirestoreAccountStore
         TimeSpan cooldown,
         CancellationToken cancellationToken)
     {
+        var admissionId = Guid.NewGuid();
+        var admissionReference = SlotSpinAdmissionDocument(admissionId);
+        var requestObservation = GameSecurityContext.Current;
         var guardReference = SlotSpinGuardDocument(userId, gameId);
         var slotsCreditsReference = BalanceDocument(userId, SlotsCreditsCurrencyId);
         var freeGamesCurrencyId = GameCurrencyId(FreeGamesCurrencyId, gameId);
@@ -44,6 +49,9 @@ public sealed partial class FirestoreAccountStore
                     transaction.GetSnapshotAsync(specialPointsReference, cancellationToken),
                     transaction.GetSnapshotAsync(energyReference, cancellationToken));
                 var guardSnapshot = snapshots[0];
+                var pityMissesBefore = checked((int)ReadLong(guardSnapshot, "consecutiveFiveMisses"));
+                if (pityMissesBefore < 0)
+                    throw new InvalidOperationException("Slot pity state is invalid.");
                 var slotsCreditsSnapshot = snapshots[1];
                 var freeGamesSnapshot = snapshots[2];
                 var freeGamesAvailable = ReadLong(freeGamesSnapshot, "available");
@@ -51,10 +59,16 @@ public sealed partial class FirestoreAccountStore
                 var specialPointsAvailable = ReadLong(specialPointsSnapshot, "available");
                 var energySnapshot = snapshots[4];
                 var energyBalance = ReadLong(energySnapshot, "available");
+                var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+                IReadOnlyList<MidnightVaultBonusRound> roundsBefore = isMidnight
+                    ? ReadMidnightBonusRounds(guardSnapshot, freeGamesAvailable, pointValueInCents) : [];
                 if (guardSnapshot.Exists &&
                     guardSnapshot.TryGetValue<Timestamp>("lastSpinStartedAt", out var lastStartedAt))
                 {
                     var nextAllowedAtUtc = lastStartedAt.ToDateTime().Add(cooldown);
+                    var pendingAdmission = ReadString(guardSnapshot, "activeAdmissionId");
+                    if (!string.IsNullOrEmpty(pendingAdmission))
+                        nextAllowedAtUtc = lastStartedAt.ToDateTime().AddSeconds(30);
                     if (nextAllowedAtUtc > startedAtUtc)
                     {
                         return new SlotSpinAdmission(
@@ -67,6 +81,52 @@ public sealed partial class FirestoreAccountStore
                             nextAllowedAtUtc - startedAtUtc,
                             energyBalance,
                             null);
+                    }
+                    if (isMidnight && !string.IsNullOrEmpty(pendingAdmission))
+                    {
+                        if (!Guid.TryParseExact(pendingAdmission, "N", out var expiredId))
+                            throw new InvalidOperationException("The interrupted Midnight Vault admission is invalid.");
+                        var expiredReference = SlotSpinAdmissionDocument(expiredId);
+                        var expired = await transaction.GetSnapshotAsync(expiredReference, cancellationToken);
+                        if (!expired.Exists || ReadString(expired, "status") != "admitted" ||
+                            ReadString(expired, "userId") != userId || ReadString(expired, "gameId") != gameId ||
+                            !expired.ContainsField("midnightBonusRoundsBefore") ||
+                            expired.GetValue<Timestamp>("startedAtUtc") != lastStartedAt)
+                            throw new InvalidOperationException("The interrupted Midnight Vault admission cannot be restored safely.");
+                        var restored = ReadMidnightRoundsField(expired, "midnightBonusRoundsBefore");
+                        var consumed = ReadMidnightRoundsField(expired, "midnightBonusRoundsAfter");
+                        var wasFree = expired.GetValue<bool>("isFreeSpin");
+                        var restoredCount = restored.Sum(round => (long)round.RemainingSpins);
+                        if (!roundsBefore.SequenceEqual(consumed) ||
+                            restoredCount - freeGamesAvailable != (wasFree ? 1 : 0))
+                            throw new InvalidOperationException("The interrupted Midnight Vault queue changed before recovery.");
+                        var hadBoost = expired.GetValue<bool>("specialBoostApplied");
+                        var refundBoost = hadBoost ? ReadLong(expired, "specialBoostCost") : 0;
+                        if (refundBoost < 0 || hadBoost && refundBoost == 0 ||
+                            refundBoost > ReadLong(expired, "specialPointsBefore") ||
+                            refundBoost > 0 && !specialPointsSnapshot.Exists)
+                            throw new InvalidOperationException("The interrupted Midnight Vault boost receipt is invalid.");
+                        if (wasFree)
+                        {
+                            transaction.Update(freeGamesReference, new Dictionary<string, object>
+                            { ["available"] = restoredCount, ["version"] = FieldValue.Increment(1), ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc) });
+                            var refund = BalanceTransactionDocument($"{expiredId:N}-free-game-refund");
+                            transaction.Create(refund, BalanceTransactionData(refund.Id, userId, freeGamesCurrencyId,
+                                1, restoredCount, "free-game-refund", expiredId.ToString("N"), startedAtUtc));
+                        }
+                        if (refundBoost > 0)
+                        {
+                            specialPointsAvailable = checked(specialPointsAvailable + refundBoost);
+                            transaction.Update(specialPointsReference, new Dictionary<string, object>
+                            { ["available"] = specialPointsAvailable, ["version"] = FieldValue.Increment(1), ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc) });
+                            var refund = BalanceTransactionDocument($"{expiredId:N}-special-boost-refund");
+                            transaction.Create(refund, BalanceTransactionData(refund.Id, userId, specialPointsCurrencyId,
+                                refundBoost, specialPointsAvailable, "special-boost-refund", expiredId.ToString("N"), startedAtUtc));
+                        }
+                        transaction.Update(expiredReference, new Dictionary<string, object>
+                        { ["status"] = "recovered", ["recoveredAtUtc"] = Timestamp.FromDateTime(startedAtUtc) });
+                        roundsBefore = restored;
+                        freeGamesAvailable = restoredCount;
                     }
                 }
 
@@ -100,7 +160,29 @@ public sealed partial class FirestoreAccountStore
                         ? RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents)
                         : wagerPoints
                     : wagerPoints;
-                var activeFreeSpinFeatureMode = useFreeSpin ? storedFreeSpinFeatureMode : null;
+                var admittedRound = isMidnight && useFreeSpin ? roundsBefore.FirstOrDefault() : null;
+                string? mathModelId = null;
+                if (isMidnight)
+                {
+                    if (!useFreeSpin && roundsBefore.Count > 0)
+                        throw new ArgumentException("Finish the awarded Vault Breach spins before placing another cash bet.");
+                    // Validate the actual locked server wager before consuming either
+                    // a free spin or special points. The cash menu remains even.
+                    if (useFreeSpin)
+                    {
+                        if (admittedRound is null) throw new NoFreeSpinsException();
+                        effectiveWagerPoints = admittedRound.WagerPoints;
+                        MidnightVaultBonusPolicy.ValidateDerivedWager(effectiveWagerPoints);
+                    }
+                    else
+                        MidnightVaultBonusPolicy.ValidateCashWager(effectiveWagerPoints);
+                    mathModelId = useFreeSpin
+                        ? admittedRound!.MathModelId
+                        : MidnightVaultSlotDefinitions.PaytableId;
+                }
+                var activeFreeSpinFeatureMode = useFreeSpin
+                    ? isMidnight ? admittedRound!.FeatureMode : storedFreeSpinFeatureMode : null;
+                var roundsAfter = isMidnight && useFreeSpin ? MidnightVaultBonusRounds.Consume(roundsBefore) : roundsBefore;
                 var chargedWagerCents = useFreeSpin
                     ? 0
                     : RandMoney.PointsToCents(wagerPoints, pointValueInCents);
@@ -173,10 +255,11 @@ public sealed partial class FirestoreAccountStore
                             startedAtUtc));
                 }
 
-                transaction.Set(guardReference, new Dictionary<string, object>
+                var guardData = new Dictionary<string, object>
                 {
                     ["userId"] = userId,
                     ["lastSpinStartedAt"] = Timestamp.FromDateTime(startedAtUtc),
+                    ["activeAdmissionId"] = admissionId.ToString("N"),
                     ["freeSpinWagerPoints"] = remainingAfterAdmission > 0
                         ? effectiveWagerPoints
                         : 0,
@@ -186,18 +269,70 @@ public sealed partial class FirestoreAccountStore
                     ["freeSpinFeatureMode"] = remainingAfterAdmission > 0
                         ? activeFreeSpinFeatureMode ?? string.Empty
                         : string.Empty,
+                    ["freeSpinMathModelId"] = remainingAfterAdmission > 0 ? mathModelId ?? string.Empty : string.Empty,
                     ["updatedAt"] = Timestamp.FromDateTime(startedAtUtc)
-                }, SetOptions.MergeAll);
+                };
+                if (isMidnight)
+                    foreach (var pair in MidnightBonusGuardData(roundsAfter, pointValueInCents)) guardData[pair.Key] = pair.Value;
+                transaction.Set(guardReference, guardData, SetOptions.MergeAll);
+                var admissionData = new Dictionary<string, object>
+                {
+                    ["admissionId"] = admissionId.ToString("N"),
+                    ["userId"] = userId,
+                    ["gameId"] = gameId,
+                    ["mathModelId"] = mathModelId ?? string.Empty,
+                    ["requestedWagerPoints"] = wagerPoints,
+                    ["effectiveWagerPoints"] = effectiveWagerPoints,
+                    ["chargedWagerCents"] = chargedWagerCents,
+                    ["isFreeSpin"] = useFreeSpin,
+                    ["specialBoostApplied"] = useSpecialBoost,
+                    ["specialBoostCost"] = useSpecialBoost ? specialBoostCost : 0,
+                    ["freeGameUseTransactionId"] = useFreeSpin
+                        ? freeGameUseTransactionReference.Id : string.Empty,
+                    ["specialPointUseTransactionId"] = useSpecialBoost
+                        ? specialPointUseTransactionReference.Id : string.Empty,
+                    ["freeSpinFeatureMode"] = activeFreeSpinFeatureMode ?? string.Empty,
+                    ["freeSpinsBefore"] = freeGamesAvailable,
+                    ["specialPointsBefore"] = specialPointsAvailable,
+                    ["energyBalanceBefore"] = energyBalance,
+                    ["pityMissesBefore"] = pityMissesBefore,
+                    ["slotsCreditsBeforeCents"] = availableCents,
+                    ["requestId"] = requestObservation?.RequestId ?? string.Empty,
+                    ["requestObservedAtUtc"] = requestObservation is null
+                        ? null! : Timestamp.FromDateTime(requestObservation.ReceivedAtUtc),
+                    ["ipAddress"] = requestObservation?.IpAddress ?? string.Empty,
+                    ["sessionId"] = requestObservation?.SessionId ?? string.Empty,
+                    ["status"] = "admitted",
+                    ["auditObserved"] = false,
+                    ["auditNextAttemptAtUtc"] = Timestamp.FromDateTime(startedAtUtc.AddMinutes(2)),
+                    ["startedAtUtc"] = Timestamp.FromDateTime(startedAtUtc)
+                };
+                if (isMidnight)
+                {
+                    admissionData["midnightBonusRoundsBefore"] = MidnightRoundsData(roundsBefore);
+                    admissionData["midnightBonusRoundsAfter"] = MidnightRoundsData(roundsAfter);
+                    admissionData["midnightAdmittedRound"] = admittedRound is null ? null! : MidnightRoundData(admittedRound);
+                }
+                transaction.Create(admissionReference, admissionData);
                 return new SlotSpinAdmission(
                     effectiveWagerPoints,
                     chargedWagerCents,
                     useFreeSpin,
-                    checked((int)remainingAfterAdmission),
+                    isMidnight ? roundsAfter.FirstOrDefault()?.RemainingSpins ?? 0 : checked((int)remainingAfterAdmission),
                     useSpecialBoost,
                     checked((int)specialPointsAfterAdmission),
                     null,
                     energyBalance,
-                    activeFreeSpinFeatureMode);
+                    activeFreeSpinFeatureMode)
+                {
+                    AdmissionId = admissionId,
+                    StartedAtUtc = startedAtUtc,
+                    RequestId = requestObservation?.RequestId,
+                    PityMissesBefore = pityMissesBefore,
+                    MathModelId = mathModelId,
+                    BonusRound = admittedRound,
+                    BonusRoundsBeforeAdmission = roundsBefore
+                };
             },
             cancellationToken: cancellationToken);
     }

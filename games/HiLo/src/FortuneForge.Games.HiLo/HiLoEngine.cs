@@ -11,8 +11,15 @@ public static class HiLoEngine
 {
     public static HiLoRound Start(Guid id, decimal wager, PlayingCard initialCard)
     {
-        if (id == Guid.Empty) throw new ArgumentException("A round identifier is required.", nameof(id));
         HiLoRules.ValidateWager(wager);
+        return RebuildInitial(id, wager, initialCard);
+    }
+
+    /// <summary>Rebuild a saved round's initial state, including wagers valid before the new R5 entry cap.</summary>
+    public static HiLoRound RebuildInitial(Guid id, decimal wager, PlayingCard initialCard)
+    {
+        if (id == Guid.Empty) throw new ArgumentException("A round identifier is required.", nameof(id));
+        HiLoRules.ValidateExistingWager(wager);
         _ = HiLoRules.RankValue(initialCard);
         return new(id, wager, initialCard, 1m, 0, 0, HiLoRoundStatus.Active, 0m, 0,
             ImmutableArray.Create(new HiLoHistoryEntry(initialCard, HiLoHistoryKind.Initial, null, 1m, 0)));
@@ -92,7 +99,7 @@ public static class HiLoEngine
         ArgumentNullException.ThrowIfNull(round);
         if (round.Status != HiLoRoundStatus.Active)
             throw new HiLoRuleException("round_complete", "This round has finished. Start a new round.");
-        HiLoRules.ValidateWager(round.Wager);
+        HiLoRules.ValidateExistingWager(round.Wager);
         _ = HiLoRules.RankValue(round.CurrentCard);
         if (round.Multiplier < 1m || round.Multiplier >= HiLoRules.MultiplierLimit(round.Wager)
             || round.Streak < 0 || round.Streak >= HiLoRules.MaximumStreak

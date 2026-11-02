@@ -1,46 +1,40 @@
-import { useEffect, useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { AudioPreferences } from '../hooks/useSlotAudio'
+import { useSlotDialog, type SlotDialogTheme } from '../hooks/useSlotDialog'
+import { SlotDialogCloseIcon } from './SlotDialogCloseIcon'
 
 type AudioSettingsDialogProps = {
+  musicCredit?: ReactNode
   isOpen: boolean
   onClose: () => void
   onToggleMuted: () => void
   onToggleResultsOnly: () => void
   onVolumeChange: (volume: number) => void
   preferences: AudioPreferences
+  theme?: SlotDialogTheme
 }
 
 export function AudioSettingsDialog({
+  musicCredit,
   isOpen,
   onClose,
   onToggleMuted,
   onToggleResultsOnly,
   onVolumeChange,
   preferences,
+  theme,
 }: AudioSettingsDialogProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
-
-  useEffect(() => {
-    if (!isOpen) {
-      return undefined
-    }
-
-    closeButtonRef.current?.focus()
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        onClose()
-      }
-    }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [isOpen, onClose])
+  const dialogRef = useSlotDialog(isOpen, onClose, closeButtonRef)
 
   if (!isOpen) {
     return null
   }
 
-  return (
+  const content = (
     <div
+      data-slot-dialog-theme={theme}
       className="game-settings__backdrop"
       role="presentation"
       onMouseDown={(event) => {
@@ -50,6 +44,9 @@ export function AudioSettingsDialog({
       }}
     >
       <section
+        ref={dialogRef}
+        tabIndex={-1}
+        data-slot-dialog-theme={theme}
         className="game-settings"
         role="dialog"
         aria-modal="true"
@@ -62,7 +59,7 @@ export function AudioSettingsDialog({
           aria-label="Close settings"
           onClick={onClose}
         >
-          ×
+          <SlotDialogCloseIcon />
         </button>
 
         <p className="game-settings__eyebrow">Game preferences</p>
@@ -140,8 +137,10 @@ export function AudioSettingsDialog({
             </button>
           </div>
           <p className="audio-settings__note">Audio preferences are saved on this device.</p>
+          {musicCredit && <p className="audio-settings__music-credit">{musicCredit}</p>}
         </div>
       </section>
     </div>
   )
+  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
 }

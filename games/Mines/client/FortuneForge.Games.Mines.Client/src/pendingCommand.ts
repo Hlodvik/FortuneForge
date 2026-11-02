@@ -1,4 +1,5 @@
 import type { MinesCommand } from './contracts'
+import { acceptedMinesMaximumWagerCents,acceptedMinesMinimumWagerCents } from './minesWagerLimits'
 export const pendingKey=(playerId:string)=>`fortuneforge:mines:pending:${playerId}`
 export function readPending(playerId:string):MinesCommand|null{
   const raw=localStorage.getItem(pendingKey(playerId))
@@ -8,7 +9,8 @@ export function readPending(playerId:string):MinesCommand|null{
   if(!v||typeof v!=='object')throw new Error('Your last request could not be read. Restore your round before playing again.')
   const c=v as Record<string,unknown>
   if(typeof c.requestId!=='string'||!/^[a-zA-Z0-9_-]{16,128}$/.test(c.requestId))throw new Error('Your last request could not be read. Restore your round before playing again.')
-  if(c.action==='start'&&typeof c.wagerCents==='number'&&Number.isSafeInteger(c.wagerCents)&&c.wagerCents>=10&&c.wagerCents<=10000&&typeof c.mineCount==='number'&&Number.isInteger(c.mineCount)&&c.mineCount>=1&&c.mineCount<=24)return c as MinesCommand
+  // Do not discard an old accepted start after limits change; the server reconciles its receipt.
+  if(c.action==='start'&&typeof c.wagerCents==='number'&&Number.isSafeInteger(c.wagerCents)&&c.wagerCents>=acceptedMinesMinimumWagerCents&&c.wagerCents<=acceptedMinesMaximumWagerCents&&typeof c.mineCount==='number'&&Number.isInteger(c.mineCount)&&c.mineCount>=1&&c.mineCount<=24)return c as MinesCommand
   if((c.action==='cashout'||c.action==='reveal'&&typeof c.tile==='number'&&Number.isInteger(c.tile)&&c.tile>=0&&c.tile<25)&&typeof c.roundId==='string'&&!!c.roundId)return c as MinesCommand
   throw new Error('Your last request could not be read. Restore your round before playing again.')
 }

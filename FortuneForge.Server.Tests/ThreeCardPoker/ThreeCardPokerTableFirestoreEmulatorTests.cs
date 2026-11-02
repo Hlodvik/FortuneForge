@@ -109,6 +109,14 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         var history = Assert.Single(await first.GetHistoryAsync(actor, 10, default));
         Assert.Equal(expectedWager / 100m, history.WagerCredits);
         Assert.Equal(expectedPayout / 100m, history.PayoutCredits);
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal("incomplete", audit.GetValue<string>("auditStatus"));
+        var evidence = await database.Collection("gameRoundEvidence").Document(audit.Id).GetSnapshotAsync();
+        Assert.Contains("dealerCards", evidence.GetValue<string>("payloadJson"));
+        var analytics = Assert.Single((await database.Collection("gameAnalyticsSettlementOutbox").GetSnapshotAsync()).Documents);
+        Assert.Equal(actor, analytics.GetValue<string>("userId"));
+        Assert.Equal(expectedWager, analytics.GetValue<long>("wagerCents"));
+        Assert.Equal(expectedPayout, analytics.GetValue<long>("payoutCents"));
         var allLedger = (await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents;
         Assert.Equal(allLedger.Count, allLedger.Select(item => item.Id).Distinct().Count());
         var actorLedger = allLedger.Where(item => item.GetValue<string>("userId") == actor).ToArray();
@@ -117,6 +125,8 @@ public sealed class ThreeCardPokerTableFirestoreEmulatorTests(BlackjackTableFire
         await second.GetSessionAsync(actor, now, default);
         Assert.Equal(allLedger.Count, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
         Assert.Single(await second.GetHistoryAsync(actor, 10, default));
+        Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        Assert.Single((await database.Collection("gameAnalyticsSettlementOutbox").GetSnapshotAsync()).Documents);
     }
 
     [Fact]

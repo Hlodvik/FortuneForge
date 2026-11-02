@@ -1,0 +1,83 @@
+import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const directory = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(directory, '../../..')
+const read = name => readFileSync(join(directory, name), 'utf8')
+const json = name => JSON.parse(read(name))
+const digest = bytes => createHash('sha256').update(bytes).digest('hex')
+const full = json('web-test-final-verified.json')
+if (!full.success || full.numFailedTests || full.numFailedTestSuites) throw new Error('Final full host suite is not clean.')
+for (const [log, count] of [['navbar-confirmed.log', 4], ['home-final.log', 1], ['blackjack-final.log', 8]]) {
+  if (!new RegExp(`\\b${count} passed\\b`).test(read(log))) throw new Error(`Browser verification incomplete: ${log}`)
+}
+const build = json('build-verification.json')
+if (!build.passed) throw new Error('Isolated build verification failed.')
+const sources = json('final-source-scope.json')
+const sourceDrift = sources.filter(file => digest(readFileSync(join(repo, file.path))) !== file.sha256)
+if (sourceDrift.length) throw new Error(`Source changed after capture: ${sourceDrift.map(file => file.path).join(', ')}`)
+const ports = json('ports-final.json')
+if (!ports.ownedPortsClosed) throw new Error('Task servers are still listening.')
+const routes = ['desktop', 'phone'].map(name => {
+  const data = json(`browser/${name}-routes.json`)
+  if (data.records.length !== 67) throw new Error(`${name} route matrix incomplete.`)
+  return { viewport: name, routes: data.records.length, pageErrors: data.pageErrors, evidence: `browser/${name}-routes.json` }
+})
+const preservation = json('source-preservation.json')
+const verification = {
+  status: 'complete', verifiedAtUtc: new Date().toISOString(),
+  repository: repo.replaceAll('\\', '/'),
+  branch: execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+  head: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim(),
+  implementation: [
+    'Canonical shared game navbar outside all game theme surfaces; game-specific header themes/classes/actions rejected by types, runtime and policy.',
+    'Existing game-specific guides/history/preview controls remain within the game body; authoritative account balance and demo behavior retained.',
+    'Sidebar Account, Add Funds, History; Help retained; Add Funds links to existing /balance without initiating payment.',
+    'Homepage meaningful reference differences implemented: larger featured artwork, separate Play again link and genuine recent-game thumbnail carousel with themed controls; catalogue and responsive/empty states retained.',
+  ],
+  reference: json('home-mockup-access.json'),
+  checks: {
+    fullHost: { passed: full.numPassedTests, failed: full.numFailedTests, total: full.numTotalTests, files: full.testResults.length, evidence: 'web-test-final-verified-summary.json' },
+    focused: { passed: 178, files: 6, evidence: 'focused-final-current.log' },
+    liveVisibility: { passed: 9, evidence: 'home-visibility-final.log' },
+    policy: { passed: 17, sources: 501, runtimeCss: 136, importEdges: 1101, evidence: 'guard-final-verified.log' },
+    browser: { uniqueScenariosPassed: 13, logs: ['navbar-confirmed.log', 'home-final.log', 'blackjack-final.log'], matrices: routes, homeViewports: ['1280x900', '390x844', '320x568', '844x390'] },
+    hostTypecheck: { passed: true, evidence: 'host-typecheck-final-verified.log' },
+    browserTypecheck: { passed: true, evidence: 'browser-typecheck-final.log' },
+    lint: { passed: true, evidence: 'final-current-lint.log' },
+    gameWorkspaces: json('games-check-verification.json'),
+    affectedPackageTestsAndBuilds: { passed: 115, files: 16, packages: 5, buildsPassed: 5, evidence: 'packages/summary.json' },
+    build,
+  },
+  sourceScope: { files: sources.length, manifest: 'final-source-scope.json', allCurrentHashesMatch: true, snapshotIntegrity: { checked: preservation.snapshotIntegrity.checked, passed: preservation.snapshotIntegrity.passed, failures: preservation.snapshotIntegrity.failures }, preservationEvidence: 'source-preservation.json',
+    note: 'Concurrent slot animation/copy hunks and a separately observed House Hold’em Undo button reorder are preserved and attributed separately from this task. The strict provenance flag remains false for that unattributed reorder; handlers and disabled conditions are unchanged.' },
+  limits: [
+    'The policy is a regression guard, not a security sandbox or whole-program proof. Trusted external JavaScript, arbitrary generated code/cross-module dataflow and render factories still need review and runtime style checks.',
+    'Browser game and payment APIs were mocked locally. No live wagers, real account changes, payment initiation, publication, commit, push, branch or worktree changes were performed.',
+    'Earlier failed iterations and concurrent artwork fixture failures remain in historical logs; the final full suite supersedes them.',
+  ],
+  cleanup: ports,
+}
+writeFileSync(join(directory, 'verification.json'), JSON.stringify(verification, null, 2) + '\n')
+const report = `Implemented locally on main at ${verification.head}. The game navbar is shared across ready/loading/error states and kept outside game-specific styling. Guides, history and preview controls remain in each game surface. Account balance, account menu, reporting, demo behavior and game navigation are preserved.
+
+The Home sidebar is **Account → Add Funds → History**, with Help retained. Add Funds opens the existing /balance page. The homepage follows the meaningful differences in the user-supplied PNG: larger left-hand last-played art, title and Play again at right, a genuine Recently Played strip beneath, and a gold carousel control. It keeps the full catalogue, actual account/recent data, visibility filtering and empty states, and stacks on small screens.
+
+- Full client suite: **${full.numPassedTests}/${full.numTotalTests} passed**, ${full.testResults.length} files.
+- Focused shared navbar/Home/slot/demo/rail tests: **178 passed**; live visibility checks: **9 passed**.
+- Policy: **17 passed**, covering 501 sources, 136 runtime CSS files and 1,101 import edges.
+- Browser: **13 scenarios passed** across separately logged runs, including all 67 paid/demo routes at desktop and phone widths, shared controls, sidebar/funding navigation, homepage at four sizes and all eight Blackjack regression scenarios. All API requests stayed in local fixtures.
+- Host and browser TypeScript checks, focused lint, all 20 game workspace checks, and five affected package builds/tests passed.
+- A fresh isolated client build and exact repository catalogue verifier passed. Default client dist and server wwwroot remain byte-for-byte unchanged.
+
+Current source hashes are in [final-source-scope.json](final-source-scope.json), build hashes in [build-manifest.json](build-manifest.json), and complete results in [verification.json](verification.json). The [preservation report](source-preservation.json) records preserved concurrent slot animation/copy changes and one unattributed House Hold’em Undo button reorder. Strict provenance is flagged for that reorder; reversing only its DOM move reproduces the earlier recorded hash, with handlers and conditions unchanged. Core Craps sources remain unchanged; the only difference against its prior 24-file manifest is the authorized CI guard addition.
+
+The static policy is a regression guard with documented limits, not a runtime security sandbox. Earlier failures remain as historical evidence. The final full suite supersedes those results. No publication or live payment/game actions were performed; task servers and the owned browser tab were closed.
+
+![Updated Home using a local test account](${verification.repository}/output/maintenance-2026-11-01/navbar-consistency/browser/home-recent-1280x900.png)
+`
+writeFileSync(join(directory, 'README.md'), report)
+console.log(JSON.stringify({ status: verification.status, tests: verification.checks.fullHost, sources: sources.length, buildFiles: build.build.files }, null, 2))

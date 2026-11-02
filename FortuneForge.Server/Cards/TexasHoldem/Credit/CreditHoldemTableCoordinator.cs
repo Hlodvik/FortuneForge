@@ -12,14 +12,17 @@ internal static class CreditHoldemTableCoordinator
     // who does not choose the next hand or leave is then released from the table.
     internal static readonly TimeSpan ResultInactivityDuration = TimeSpan.FromSeconds(45);
 
+    internal static bool ResultSeatExpired(CreditHoldemMatch match, DateTime nowUtc) =>
+        match.Status == "completed" &&
+        nowUtc >= (match.CompletedAtUtc ?? match.UpdatedAtUtc).Add(ResultInactivityDuration);
+
     public static CreditHoldemTableAdvance AdvanceIfDue(CreditHoldemMatch match, DateTime nowUtc)
     {
         if (match.Status == "active")
         {
             if (nowUtc >= match.MatchDeadlineAtUtc)
             {
-                CreditHoldemEngine.ForceComplete(match, nowUtc);
-                return new(true, []);
+                return new(CreditHoldemEngine.AdvanceExpiredTurn(match, nowUtc), []);
             }
 
             var active = match.Players.Single(player => player.Seat == match.ActiveSeat);
@@ -51,8 +54,7 @@ internal static class CreditHoldemTableCoordinator
             return new(true, []);
         }
 
-        if (match.Status != "completed" ||
-            nowUtc < (match.CompletedAtUtc ?? match.UpdatedAtUtc).Add(ResultInactivityDuration))
+        if (!ResultSeatExpired(match, nowUtc))
             return new(false, []);
 
         var released = match.Players

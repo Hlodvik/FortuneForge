@@ -72,7 +72,7 @@ export function TexasHoldemPage({
     : null
 
   return (
-    <InGameShell title="Texas Hold’em" theme="cards" bodyClassName="holdem-shell-body">
+    <InGameShell title="Texas Hold’em" bodyClassName="holdem-shell-body">
       <div className="holdem-page" onClickCapture={onCardAudioClick}>
         <div className="holdem-toolbar" aria-label="Texas Hold’em table tools">
           <span className="holdem-practice-badge">Practice chips · no account wagering</span>

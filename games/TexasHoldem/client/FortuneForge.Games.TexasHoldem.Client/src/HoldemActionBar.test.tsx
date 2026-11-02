@@ -94,15 +94,24 @@ describe('HoldemActionBar raise targets', () => {
     expect(screen.getByRole('button', { name: 'Raise R6.00' })).toBeTruthy()
   })
 
-  it('uses table-cent half-pot, pot and all-in targets without premature action', () => {
+  it('includes the outstanding call in table-cent half-pot and pot presets without premature action', () => {
     const { onAction } = setup()
     fireEvent.click(screen.getByRole('button', { name: '½ pot' }))
-    expect(screen.getByRole('button', { name: 'Raise R7.00' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Raise R7.50' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Pot' }))
-    expect(screen.getByRole('button', { name: 'Raise R12.00' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Raise R13.00' })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'All in' }))
     expect(screen.getByRole('button', { name: 'Raise R25.00' })).toBeTruthy()
     expect(onAction).not.toHaveBeenCalled()
+  })
+
+  it('submits a prepared pot target only after the player explicitly chooses Raise', () => {
+    const { onAction } = setup()
+    fireEvent.click(screen.getByRole('button', { name: 'Pot' }))
+    expect(onAction).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Raise R13.00' }))
+    expect(onAction).toHaveBeenCalledOnce()
+    expect(onAction).toHaveBeenCalledWith('raise', 1300)
   })
 
   it('clamps presets to the minimum and supports an exact off-step all-in maximum', () => {

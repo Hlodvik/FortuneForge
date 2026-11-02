@@ -1,0 +1,44 @@
+import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
+import { readFileSync, writeFileSync, unlinkSync } from 'node:fs'
+import { createRequire } from 'node:module'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const root = new URL('../../../', import.meta.url)
+const require = createRequire(new URL('package.json', root))
+const ts = require('typescript')
+const React = require('react')
+const { renderToStaticMarkup } = require('react-dom/server')
+const expected = JSON.parse(readFileSync(new URL('before-card-faces.json', import.meta.url), 'utf8'))
+const inputs = JSON.parse(readFileSync(new URL('before-input-hashes.json', import.meta.url), 'utf8'))
+const result = { cardComparisons: 0, matchingGameWrappers: [], unchangedBoundaryFiles: [] }
+
+for (const game of ['DragonTiger', 'HiLo']) {
+  const relative = `games/${game}/client/FortuneForge.Games.${game}.Client/src/DefaultCardFace.tsx`
+  const source = readFileSync(new URL(relative, root), 'utf8')
+  assert(source.includes("from '@fortuneforge/client-presentation'"))
+  assert(source.includes("import './standardCardFaces.css'"))
+  const js = ts.transpileModule(source.replace("import './standardCardFaces.css'", ''), {
+    compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+  }).outputText
+  const temporary = fileURLToPath(new URL(`after-${game}.mjs`, import.meta.url))
+  writeFileSync(temporary, js)
+  try {
+    const { DefaultCardFace } = await import(pathToFileURL(temporary).href)
+    for (const { card, html } of expected) {
+      assert.equal(renderToStaticMarkup(React.createElement(DefaultCardFace, { card })), html, `${game} ${card.rank} ${card.suit}`)
+      result.cardComparisons++
+    }
+    result.matchingGameWrappers.push(game)
+  } finally {
+    unlinkSync(temporary)
+  }
+}
+
+for (const [relative, beforeHash] of Object.entries(inputs).filter(([file]) => /\/(?:standardCardFaces\.css|contracts\.ts)$/.test(file))) {
+  const afterHash = createHash('sha256').update(readFileSync(new URL(relative, root))).digest('hex')
+  assert.equal(afterHash, beforeHash, relative)
+  result.unchangedBoundaryFiles.push(relative)
+}
+writeFileSync(new URL('card-compatibility-result.json', import.meta.url), JSON.stringify(result, null, 2) + '\n')
+console.log(JSON.stringify(result))

@@ -301,7 +301,7 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
         {recovery === 'failed' ? <button className="ff-keno__play" type="button" onClick={() => { setError(null); setRecoveryAttempt(value => value + 1) }}>Retry restoration</button>
           : recovery === 'recovering' ? <button className="ff-keno__play" type="button" disabled>Restoring draw…</button>
           : !status && statusError && !tableUnavailable ? <button className="ff-keno__play" type="button" onClick={retryStatus}>Retry connection</button>
-          : <button className="ff-keno__play" type="button" disabled={!canPlay} onClick={() => startRound(selectedNumbers)}>{busy ? 'Starting draw…' : isRevealing ? `Revealing ${revealedCount} of 20…` : round ? 'Draw again' : 'Draw'}</button>}
+          : <button className="ff-keno__play ff-keno__play--deal" type="button" aria-label={busy ? 'Starting draw' : isRevealing ? `Revealing ${revealedCount} of 20` : round ? 'Draw again' : 'Draw'} disabled={!canPlay} onClick={() => startRound(selectedNumbers)}><KenoDealIcon /></button>}
       </section>
 
       <aside className="ff-keno__feedback" aria-label="Keno prizes and result">
@@ -327,6 +327,10 @@ export function KenoGame({ gateway = defaultGateway, playerId, initialSelection 
       </aside>
     </section>}
   </main>
+}
+
+function KenoDealIcon() {
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#123d29" stroke="#edf2e4" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4f5eb" stroke="#52715b" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#879b7c"/><path d="M36 24l7 9-7 9-7-9z" fill="#edf1e2"/></svg>
 }
 
 function messageForError(reason: unknown) {

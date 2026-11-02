@@ -1,0 +1,324 @@
+{
+  "schemaVersion": 1,
+  "sourcePathCount": 45,
+  "distinctSources": 44,
+  "files": [
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/assembly-fixtures/exporter/EngineFixtureExporter.csproj",
+      "bytes": 426,
+      "sha256": "177ce52614bc8f2b10f8a66d93219c0a8658359a28a69e366f7ddee6080da1ec",
+      "archivePath": "tools/qa-history/sources/177ce52614bc8f2b10f8a66d93219c0a8658359a28a69e366f7ddee6080da1ec.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/assembly-fixtures/exporter/Program.cs",
+      "bytes": 12481,
+      "sha256": "7a3ead6c6b8c6073171b1d88380c3628a7444423e216952cfdd5e38b8169ce1b",
+      "archivePath": "tools/qa-history/sources/7a3ead6c6b8c6073171b1d88380c3628a7444423e216952cfdd5e38b8169ce1b.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/build-integration-report.py",
+      "bytes": 12339,
+      "sha256": "af397a7eef780ee51ee41fa55eb418685bdd70774f77a9a8b565c507af4485d7",
+      "archivePath": "tools/qa-history/sources/af397a7eef780ee51ee41fa55eb418685bdd70774f77a9a8b565c507af4485d7.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/export-artwork.py",
+      "bytes": 9486,
+      "sha256": "45ccfd1190854b07ef7715f82168473c24af3af12f2c893b9133d1f5b54fd045",
+      "archivePath": "tools/qa-history/sources/45ccfd1190854b07ef7715f82168473c24af3af12f2c893b9133d1f5b54fd045.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/export-wordmark.py",
+      "bytes": 1250,
+      "sha256": "162a3b7398f27ad7242d2fa8f0062b1fe5983b5503571fc2238f7670cc65bef3",
+      "archivePath": "tools/qa-history/sources/162a3b7398f27ad7242d2fa8f0062b1fe5983b5503571fc2238f7670cc65bef3.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-reference-v4/candidate-a/build-provenance.py",
+      "bytes": 2755,
+      "sha256": "c53697620acda53839762c1723f7e59ec62a4e5d24c6d04aad051e9b8bcf306c",
+      "archivePath": "tools/qa-history/sources/c53697620acda53839762c1723f7e59ec62a4e5d24c6d04aad051e9b8bcf306c.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v3-art/export-symbols.py",
+      "bytes": 2377,
+      "sha256": "71c702efad18286358a9d0d9dd352c93da7b948645767d8b46dd50d035b73a4c",
+      "archivePath": "tools/qa-history/sources/71c702efad18286358a9d0d9dd352c93da7b948645767d8b46dd50d035b73a4c.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v3-art/preview-symbols.py",
+      "bytes": 1202,
+      "sha256": "2f5d644c36f324af2f0aa3e027c8e3b3bc8fea8e5cfb4b9be960af696724a76e",
+      "archivePath": "tools/qa-history/sources/2f5d644c36f324af2f0aa3e027c8e3b3bc8fea8e5cfb4b9be960af696724a76e.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/cards/inspect-cards.py",
+      "bytes": 2206,
+      "sha256": "d3fec731a1dfe64af3415d3a092c3a8eade20766ae330cbbc0b28307a496734f",
+      "archivePath": "tools/qa-history/sources/d3fec731a1dfe64af3415d3a092c3a8eade20766ae330cbbc0b28307a496734f.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/props/verify-props.py",
+      "bytes": 2484,
+      "sha256": "1d15bd585a5f15b197cf77486d8c699b5e9606b5fac7dca92353fed7fdeffe71",
+      "archivePath": "tools/qa-history/sources/1d15bd585a5f15b197cf77486d8c699b5e9606b5fac7dca92353fed7fdeffe71.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/render-preview-board.mjs",
+      "bytes": 13517,
+      "sha256": "437a72892b234c1cc074f5761c56543708398a80dc05507984f7e8d10432e61c",
+      "archivePath": "tools/qa-history/sources/437a72892b234c1cc074f5761c56543708398a80dc05507984f7e8d10432e61c.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-2/letters-qj/verify-letters.py",
+      "bytes": 1763,
+      "sha256": "a7e0b32a51622a58ef3dcb213e0ca284453f1d58dd1e541909b1438e59491761",
+      "archivePath": "tools/qa-history/sources/a7e0b32a51622a58ef3dcb213e0ca284453f1d58dd1e541909b1438e59491761.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-2/render-preview-board.mjs",
+      "bytes": 14781,
+      "sha256": "b4db60446e061f2ff29dd8560b77786188845219a54ac2955a00393fb476e69b",
+      "archivePath": "tools/qa-history/sources/b4db60446e061f2ff29dd8560b77786188845219a54ac2955a00393fb476e69b.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/render-letter-studies.py",
+      "bytes": 3609,
+      "sha256": "e1540db294717bdfd33566f1c67ab929fa7bb27a8353bad7430a4feacb8560cc",
+      "archivePath": "tools/qa-history/sources/e1540db294717bdfd33566f1c67ab929fa7bb27a8353bad7430a4feacb8560cc.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-3/render-letter-study.mjs",
+      "bytes": 11779,
+      "sha256": "183f73725524748bfe5659d6abf4badc1f97c77ce4294eda8343b340878cf1a6",
+      "archivePath": "tools/qa-history/sources/183f73725524748bfe5659d6abf4badc1f97c77ce4294eda8343b340878cf1a6.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-art-preview/revision-4/render-preview-board.mjs",
+      "bytes": 15882,
+      "sha256": "57b1d31f5273e4f882d9e1368a4761e1bda31c8d45d3bfa32d98543ac39bdc23",
+      "archivePath": "tools/qa-history/sources/57b1d31f5273e4f882d9e1368a4761e1bda31c8d45d3bfa32d98543ac39bdc23.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-fixtures/exporter/EngineFixtureExporter.csproj",
+      "bytes": 426,
+      "sha256": "177ce52614bc8f2b10f8a66d93219c0a8658359a28a69e366f7ddee6080da1ec",
+      "archivePath": "tools/qa-history/sources/177ce52614bc8f2b10f8a66d93219c0a8658359a28a69e366f7ddee6080da1ec.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-fixtures/exporter/Program.cs",
+      "bytes": 13872,
+      "sha256": "00e56e70422d4410ff9b25cb4fb42e2172ebd79779d951b62ca2b9174c5a0df7",
+      "archivePath": "tools/qa-history/sources/00e56e70422d4410ff9b25cb4fb42e2172ebd79779d951b62ca2b9174c5a0df7.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-runtime/export-approved-art.mjs",
+      "bytes": 6136,
+      "sha256": "1e7ed42881c7462042ffdfbc530342f1b911c7daa90467397d1c2a9b92b84355",
+      "archivePath": "tools/qa-history/sources/1e7ed42881c7462042ffdfbc530342f1b911c7daa90467397d1c2a9b92b84355.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-runtime/guide-exporter/GuideExporter.csproj",
+      "bytes": 364,
+      "sha256": "ec951984afed93fc2d553cb0548157a4a25ebacdd6037de3cf33d34bb0a33f92",
+      "archivePath": "tools/qa-history/sources/ec951984afed93fc2d553cb0548157a4a25ebacdd6037de3cf33d34bb0a33f92.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-runtime/guide-exporter/Program.cs",
+      "bytes": 4232,
+      "sha256": "42b65f2e101214bea8b12e78039612cdc00f63be5742768b4cdcf1c9d669ebbb",
+      "archivePath": "tools/qa-history/sources/42b65f2e101214bea8b12e78039612cdc00f63be5742768b4cdcf1c9d669ebbb.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-runtime/local-preview/LocalPreview.csproj",
+      "bytes": 335,
+      "sha256": "8176e9f0de2107660747dc600ac68542e9eeb26efc32be7c9abcfc9425e7257d",
+      "archivePath": "tools/qa-history/sources/8176e9f0de2107660747dc600ac68542e9eeb26efc32be7c9abcfc9425e7257d.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/artwork/midnight-vault-2026-10-31/pro-v4-runtime/local-preview/Program.cs",
+      "bytes": 5420,
+      "sha256": "f7da0a89811461dfe8876608c942c78fd08fe365e45a5bc78a772da9ef33508a",
+      "archivePath": "tools/qa-history/sources/f7da0a89811461dfe8876608c942c78fd08fe365e45a5bc78a772da9ef33508a.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-10-31/shared-card-face/browser-verification/verify-browser.mjs",
+      "bytes": 12363,
+      "sha256": "ddd220fd5ec2ffdc4e85da6abea88be2d9c991143040d35f6d21a3770b205bdc",
+      "archivePath": "tools/qa-history/sources/ddd220fd5ec2ffdc4e85da6abea88be2d9c991143040d35f6d21a3770b205bdc.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-10-31/shared-card-face/verify-after.mjs",
+      "bytes": 2330,
+      "sha256": "be76a25056d79a3a1b69b40aed40f764501cbcef20990299d47433b2fcd1c807",
+      "archivePath": "tools/qa-history/sources/be76a25056d79a3a1b69b40aed40f764501cbcef20990299d47433b2fcd1c807.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-10-31/shared-money/verify-after.mjs",
+      "bytes": 3879,
+      "sha256": "13c17b9abe7953132e88703c9b73fc676d380659a65920e5b20e454318b35f8d",
+      "archivePath": "tools/qa-history/sources/13c17b9abe7953132e88703c9b73fc676d380659a65920e5b20e454318b35f8d.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-10-31/slot-audio-preferences/verify-extraction.mjs",
+      "bytes": 2056,
+      "sha256": "f4fea865a7ad0f2c95987b8bdeefd7026c79c3db330ce66f7ce7f49cea62716b",
+      "archivePath": "tools/qa-history/sources/f4fea865a7ad0f2c95987b8bdeefd7026c79c3db330ce66f7ce7f49cea62716b.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/craps-continuation/browser-fixture/CrapsBrowserFixture.csproj",
+      "bytes": 391,
+      "sha256": "def6b6c9da1613d53ecd0ed4b5e55c6544f6ad2be337c44a2585793fb805ccaf",
+      "archivePath": "tools/qa-history/sources/def6b6c9da1613d53ecd0ed4b5e55c6544f6ad2be337c44a2585793fb805ccaf.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/craps-continuation/browser-fixture/Program.cs",
+      "bytes": 6044,
+      "sha256": "87bc1f89e2cbae55789f62b2013771dcaf69b95849808c2aaff2edac09cb3974",
+      "archivePath": "tools/qa-history/sources/87bc1f89e2cbae55789f62b2013771dcaf69b95849808c2aaff2edac09cb3974.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/craps-continuation/write-manifest.ps1",
+      "bytes": 3522,
+      "sha256": "2755709abf997e2a23762c5e09f77e36bcbdfe22b4e06428fbad26e03bcff7b7",
+      "archivePath": "tools/qa-history/sources/2755709abf997e2a23762c5e09f77e36bcbdfe22b4e06428fbad26e03bcff7b7.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/craps-usability/capture-final-scope.mjs",
+      "bytes": 2560,
+      "sha256": "46ba20fad8587559073158690f7f5329139506cad3d0c7a7ec285eafcfe3a95f",
+      "archivePath": "tools/qa-history/sources/46ba20fad8587559073158690f7f5329139506cad3d0c7a7ec285eafcfe3a95f.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/blackjack-bounds-probe.mjs",
+      "bytes": 2440,
+      "sha256": "239f4ab6723127b5c72661b9a2c880e21a5b21dd71bd7378ec1dfe89ad912cbf",
+      "archivePath": "tools/qa-history/sources/239f4ab6723127b5c72661b9a2c880e21a5b21dd71bd7378ec1dfe89ad912cbf.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/compare-owned-css.mjs",
+      "bytes": 1659,
+      "sha256": "3ef41e2a4a4f51f4dfa67ae7760a48cc94026aed37503187b55b8e6075746da4",
+      "archivePath": "tools/qa-history/sources/3ef41e2a4a4f51f4dfa67ae7760a48cc94026aed37503187b55b8e6075746da4.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/inspect-css.mjs",
+      "bytes": 1916,
+      "sha256": "ac506c22cd9f0b421112cddfc0435fc14c6a302909a20b952b05aa5e3dbeede6",
+      "archivePath": "tools/qa-history/sources/ac506c22cd9f0b421112cddfc0435fc14c6a302909a20b952b05aa5e3dbeede6.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/manual-api-fixture.mjs",
+      "bytes": 2357,
+      "sha256": "b7a49dc6cd59b4a38a249baae7e18c51cee32fa1eee1c050ca165c2f038bee51",
+      "archivePath": "tools/qa-history/sources/b7a49dc6cd59b4a38a249baae7e18c51cee32fa1eee1c050ca165c2f038bee51.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/summarize-host-suite.mjs",
+      "bytes": 1909,
+      "sha256": "b9189873ef4f659bcfe345f0318b4e9ad865186c1df13f07e726f17b834a28d2",
+      "archivePath": "tools/qa-history/sources/b9189873ef4f659bcfe345f0318b4e9ad865186c1df13f07e726f17b834a28d2.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/verify-isolated-build.mjs",
+      "bytes": 4050,
+      "sha256": "b965694ee39cf07b0e03fa9db388a6d3431aff651dcb791dd9a32d5bd044ebec",
+      "archivePath": "tools/qa-history/sources/b965694ee39cf07b0e03fa9db388a6d3431aff651dcb791dd9a32d5bd044ebec.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/navbar-consistency/write-final-verification.mjs",
+      "bytes": 8256,
+      "sha256": "d1e6118bbf18a6c5ae97152b6c6f12dbe6f2deed6d9e2aef5fe5f5d4b6346bf1",
+      "archivePath": "tools/qa-history/sources/d1e6118bbf18a6c5ae97152b6c6f12dbe6f2deed6d9e2aef5fe5f5d4b6346bf1.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/server-release-followup/finalize-verification.mjs",
+      "bytes": 14935,
+      "sha256": "cc9a5869d276c6188d5970fab4f90773035a6a042c9edbd7b68db38f8ea7c0bf",
+      "archivePath": "tools/qa-history/sources/cc9a5869d276c6188d5970fab4f90773035a6a042c9edbd7b68db38f8ea7c0bf.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/maintenance-2026-11-01/server-release-followup/verify-current-build.mjs",
+      "bytes": 3005,
+      "sha256": "a761f65fc170bc7a758744373a9e504a1da8cddad5617bc885d33456c63a7c0b",
+      "archivePath": "tools/qa-history/sources/a761f65fc170bc7a758744373a9e504a1da8cddad5617bc885d33456c63a7c0b.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/release-readiness-2026-11-02/engine-contracts/exporter/Program.cs",
+      "bytes": 17637,
+      "sha256": "644cee728ee93bc1b5604fe14d602a5d068cdf6bcdc18902e8f556ce80315e03",
+      "archivePath": "tools/qa-history/sources/644cee728ee93bc1b5604fe14d602a5d068cdf6bcdc18902e8f556ce80315e03.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/release-readiness-2026-11-02/engine-contracts/exporter/SlotCatalogueExporter.csproj",
+      "bytes": 525,
+      "sha256": "1742b4a795f15c4111540b2878ea3e5c4192c859079d97c6c7c6287b6b641c5a",
+      "archivePath": "tools/qa-history/sources/1742b4a795f15c4111540b2878ea3e5c4192c859079d97c6c7c6287b6b641c5a.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "output/release-readiness-2026-11-02/engine-contracts/verify-artifacts.py",
+      "bytes": 1923,
+      "sha256": "85e1c0b778708bccd2b1abef723aa02bb7cdfc9d5c1dcf61b07d8cee885e45f6",
+      "archivePath": "tools/qa-history/sources/85e1c0b778708bccd2b1abef723aa02bb7cdfc9d5c1dcf61b07d8cee885e45f6.source.txt",
+      "status": "Historical exact-byte source; not executable integration input"
+    },
+    {
+      "originalPath": "scripts/create_symbol_gifs.py",
+      "bytes": 5008,
+      "sha256": "705abf2d7667feb75cc49ac6ae189331a58e2480bbb8d3bdfc73917a8800c8ca",
+      "archivePath": "tools/qa-history/sources/705abf2d7667feb75cc49ac6ae189331a58e2480bbb8d3bdfc73917a8800c8ca.source.txt",
+      "gitCommit": "4e2e9f9e491cb1d59a756c18039965c24a20b791",
+      "status": "Intentionally deleted obsolete active script; historical bytes retained"
+    },
+    {
+      "originalPath": "scripts/create_wukong_cloud_animation.py",
+      "bytes": 2643,
+      "sha256": "fcad1ac7f0c15a435eae478928178aa89cf5bd071c7260d9a2645e307f5431bb",
+      "archivePath": "tools/qa-history/sources/fcad1ac7f0c15a435eae478928178aa89cf5bd071c7260d9a2645e307f5431bb.source.txt",
+      "gitCommit": "4e2e9f9e491cb1d59a756c18039965c24a20b791",
+      "status": "Intentionally deleted obsolete active script; historical bytes retained"
+    }
+  ]
+}

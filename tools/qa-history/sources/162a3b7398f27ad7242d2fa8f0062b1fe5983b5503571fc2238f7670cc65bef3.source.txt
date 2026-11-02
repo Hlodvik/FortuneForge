@@ -1,0 +1,22 @@
+from pathlib import Path
+from PIL import Image
+import json
+import shutil
+
+root = Path(__file__).parent
+source = Path(r'C:\Users\Lctiv\.codex\generated_images\01a193b5-1d0b-7aa2-9b06-8b49e7d1845d\exec-8c77c458-6e68-40c1-b994-288b66fe2006.png')
+art = Image.open(source).convert('RGBA')
+assert art.getchannel('A').getextrema() == (0, 255), 'The wordmark must preserve genuine transparency.'
+source_copy = root / 'midnight-vault-wordmark-source-v2.png'
+if not source_copy.exists():
+    shutil.copy2(source, source_copy)
+destination = root.parents[2] / 'fortuneforge.client' / 'public' / 'assets' / 'slots' / 'midnight-vault' / 'v2'
+destination.mkdir(parents=True, exist_ok=True)
+records = []
+for width in (384, 768, 1024):
+    height = round(art.height * width / art.width)
+    target = destination / f'midnight-vault-wordmark-{width}.webp'
+    art.resize((width, height), Image.Resampling.LANCZOS).save(target, 'WEBP', quality=90, method=6)
+    records.append({'path': str(target), 'width': width, 'height': height, 'bytes': target.stat().st_size})
+(root / 'wordmark-v2-exports.json').write_text(json.dumps({'source': str(source_copy), 'sourceSize': art.size, 'alpha': True, 'variants': records}, indent=2), encoding='utf-8')
+print(json.dumps(records))

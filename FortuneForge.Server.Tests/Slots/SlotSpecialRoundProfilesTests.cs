@@ -19,7 +19,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.RobotRevolutionGameId, 3, 7, 24, 8)]
     [InlineData(SlotSpecialRoundProfiles.PhantomManorGameId, 3, 5, 18, 9)]
     [InlineData(SlotSpecialRoundProfiles.OceanOdysseyGameId, 4, 6, 28, 6)]
-    [InlineData(SlotSpecialRoundProfiles.DragonHoardGameId, 3, 6, 30, 7)]
+    [InlineData(SlotSpecialRoundProfiles.DragonHoardGameId, 3, 10, 30, 10)]
     [InlineData(SlotSpecialRoundProfiles.JungleJackpotGameId, 3, 6, 22, 8)]
     [InlineData(SlotSpecialRoundProfiles.CandyCarnivalGameId, 4, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.DesertTreasuresGameId, 3, 7, 24, 7)]
@@ -28,7 +28,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 3, 5, 40, 10)]
-    [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 5, 60, 8)]
+    [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 10, 60, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
         int scatterCount,
@@ -138,6 +138,33 @@ public sealed class SlotSpecialRoundProfilesTests
     }
 
     [Fact]
+    public void RainbowRealm_CharmGlassAndArchwaysEachAwardTenSpins()
+    {
+        Assert.True(SlotSpecialRoundProfiles.TryGet(
+            SlotSpecialRoundProfiles.RainbowRealmGameId, out var profile));
+
+        var game = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
+        {
+            GameDefinitions = [Prototype()]
+        })).GetGame(SlotSpecialRoundProfiles.RainbowRealmGameId);
+        Assert.NotNull(game);
+        Assert.Equal(3, game.FreeGames?.RequiredSymbols);
+        Assert.Equal(10, game.FreeGames?.AwardedSpins);
+
+        var completedGlass = SlotSpecialRoundProfiles.SettleDemo(
+            profile,
+            [new SlotSealCollection("sync", 59, 40, 60)],
+            new Dictionary<string, int> { ["SEAL_SYNC"] = 1 },
+            wagerPoints: 40,
+            energyCompleted: false);
+
+        Assert.Equal(10, completedGlass.FreeSpinsAwarded);
+        Assert.Equal("sync", completedGlass.FeatureMode);
+        Assert.Contains(completedGlass.Collections, collection =>
+            collection.SealId == "sync" && collection.Count == 0 && collection.RequiredCount == 60);
+    }
+
+    [Fact]
     public void OptionsProvider_AppliesThePiratesSpecificBaseReelSet()
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
@@ -193,7 +220,7 @@ public sealed class SlotSpecialRoundProfilesTests
             Assert.Single(reel, symbol => symbol == "7");
         });
         Assert.Equal("reels", rainbow.Math.ReelSetId);
-        Assert.Equal(5, rainbow.FreeGames?.AwardedSpins);
+        Assert.Equal(10, rainbow.FreeGames?.AwardedSpins);
     }
 
     [Fact]

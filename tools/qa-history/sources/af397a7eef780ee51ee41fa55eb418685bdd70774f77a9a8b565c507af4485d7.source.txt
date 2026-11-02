@@ -1,0 +1,134 @@
+from pathlib import Path
+from datetime import datetime, timezone
+import hashlib
+import json
+import re
+
+root = Path(__file__).parent
+repo = root.parents[2]
+review = root / 'pro-v2-reviewed'
+validation = root / 'assembly-validation'
+browser_log = (validation / 'pro-v2-reviewed-browser.log').read_text(encoding='utf-8-sig')
+focused_log = (validation / 'pro-v2-focused.log').read_text(encoding='utf-8-sig')
+assert re.search(r'14 passed', browser_log), 'Final browser run must finish successfully first.'
+assert re.search(r'263 passed', focused_log), 'Final focused run must finish successfully first.'
+sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+contract_path = root / 'assembly-fixtures' / 'engine-contract.json'
+contract = json.loads(contract_path.read_text(encoding='utf-8-sig'))
+source_mismatches = [path for path, expected in contract['sourceSha256'].items()
+                     if not (repo / path).is_file() or sha(repo / path).lower() != expected.lower()]
+assert not source_mismatches, source_mismatches
+aggregate = json.loads((validation / 'pro-v2-validation-summary.json').read_text(encoding='utf-8-sig'))
+networks = []
+for path in sorted(review.rglob('*-network.json')):
+    if path.name.endswith('-cold-network.json'):
+        continue
+    data = json.loads(path.read_text(encoding='utf-8-sig'))
+    requests = data['coldRequests']
+    networks.append({'device': data['device']['name'], 'bodyBytes': data['coldImageBodyBytes'],
+                     'wireBytes': data['coldImageWireBytes'], 'requests': len(requests),
+                     'uniqueUrls': len({item['url'] for item in requests}),
+                     'warmBodyBytes': data['repeatImageBodyBytes'], 'warmRequests': len(data['repeatRequests']),
+                     'record': str(path.relative_to(root)), 'sha256': sha(path)})
+assert len(networks) == 4
+assert all(item['warmBodyBytes'] == 0 for item in networks)
+shots = {}
+for label, filename in {
+    'Desktop': 'desktop-base.png', 'Phone': 'phone-base.png', 'Compact desktop': 'compact-desktop-base.png',
+    'Fullscreen': 'fullscreen-base.png', 'Normal bonus': 'scatter-step-1.png',
+    'Enhanced phone bonus': 'collection-rand-step-1.png', 'Catalogue': 'catalogue-card.png',
+    'Loading': 'loading-screen.png', 'Win guide': 'win-guide.png', 'Symbol values': 'symbol-values.png',
+    'Celebration': 'jewel-celebration.png', 'Service error': 'service-error.png',
+}.items():
+    found = list(review.rglob(filename))
+    assert len(found) == 1, filename
+    shots[label] = {'path': str(found[0].relative_to(root)).replace('\\', '/'), 'sha256': sha(found[0])}
+summary = {
+    'checkedUtc': datetime.now(timezone.utc).isoformat(), 'branch': 'main',
+    'head': '4e2e9f9e491cb1d59a756c18039965c24a20b791',
+    'build': 'pro-v2-build/index.html', 'buildIndexSha256': sha(root / 'pro-v2-build' / 'index.html'),
+    'game': {'title': 'Midnight Vault', 'historicalId': 'dragon-hoard', 'serverId': 'dragon-hoard-v1',
+             'routes': ['/slots/dragon-hoard', '/slots/dragon-hoard/demo'], 'serverCodeChangedByThisWork': False,
+             'engineSourceFilesStillMatchingExport': len(contract['sourceSha256']), 'sourceMismatches': source_mismatches,
+             'profile': {'paylines': 23, 'scatter': '3+ Vault bonuses: 6 normal four-row spins',
+                         'collection': '30 matching gems, any color: 7 rows-paw six-row spins',
+                         'energy': False, 'directValueTokens': False}},
+    'verification': {'browser': {'passed': 14, 'failed': 0, 'log': 'assembly-validation/pro-v2-reviewed-browser.log'},
+                     'focused': {'files': 30, 'passed': 263, 'failed': 0, 'log': 'assembly-validation/pro-v2-focused.log'},
+                     'aggregate': aggregate['unit'],
+                     'typecheckExit': 0, 'lintExit': 0, 'lintWarnings': 3, 'viteBuildExit': 0,
+                     'slotMath': {'paidSpins': 250000, 'resolvedSpins': 287828, 'rtpPercent': 90.220,
+                                  'hitRatePercent': 30.552, 'safeguards': 'PASS', 'equivalenceProof': False}},
+    'network': networks, 'screenshots': shots,
+    'art': {'existingV1ExportsPreserved': 59, 'wordmark': 'wordmark-v2-exports.json',
+            'method': 'Built-in image_gen edit of original catalogue art; transparent WebP derivatives',
+            'prompt': 'wordmark-v2-prompt.txt', 'thirdPartyReferenceArtShipped': False},
+    'audio': {'activeEffects': 'Existing Kenney CC0 Casino Audio', 'backgroundMusicEnabled': False,
+              'note': '../../../fortuneforge.client/src/games/slots/dragonHoard/evidence/audio-provenance.md'},
+    'preview': {'kind': 'Verified screenshots and local production build',
+                'extraBackgroundServer': 'Automatic approval review rejected launch: blocked by policy.',
+                'api': 'Playwright loopback-only replay of 41 actual local engine-controller responses; no live or paid play.'},
+    'restrictions': 'No branches, worktrees, repository copies, cleanup, commits, pushes, PRs, merges or deployment.'
+}
+(root / 'integration-verification.json').write_text(json.dumps(summary, indent=2), encoding='utf-8')
+rows = '\n'.join(f"| {item['device']} | {item['bodyBytes']:,} | {item['wireBytes']:,} | {item['requests']} / {item['uniqueUrls']} | {item['warmBodyBytes']} |" for item in networks)
+shot_links = ' · '.join(f"[{label}]({item['path']})" for label, item in shots.items())
+failures = '\n'.join(f'- `{failure}`' for failure in aggregate['unit']['failures'])
+text = f'''# Midnight Vault — final integration and visual revision
+
+The first composition repeated the room inside the reels, used a small cabinet and scattered controls, and lost the title on phones. The revised screen uses one large vault cabinet, a quiet reel surface, a persistent original wordmark, exact colored jewel tracks, explicit BONUS/WILD labels and a unified control console. The bet remains visible and locked during a bonus. Phone support text was enlarged; wager formatting is R0.50.
+
+Visual references were the official [Cash Crew](https://www.hacksawgaming.com/games/cash-crew) and [Wild Heist](https://www.thunderkick.com/games/wild-heist-at-peacock-manor/) screens. Their composition and hierarchy informed the revision. Studio artwork remains reference-only in [pro-reference](pro-reference/README.md); it is not in the application assets. The [transparent wordmark](wordmark-v2-exports.json) was edited from our original catalogue art with the built-in image tool; the exact [prompt](wordmark-v2-prompt.txt) and source PNG are retained.
+
+{shot_links}
+
+## Existing engine retained
+
+The target's historical routes, game/server/history identities, rules and settlement transport remain. This work made no server, RNG, payout, profile, settlement, authentication or security source edits. Existing unrelated dirty work was preserved. At report generation, **{len(contract['sourceSha256'])}/{len(contract['sourceSha256'])}** exported engine/controller/config hashes still matched; the separate [36-file snapshot comparison](assembly-validation/pro-v2-server-source-check.json) also had no changes. These comparisons are scoped to their capture intervals, not Git HEAD or production.
+
+The guide now reflects the actual engine: all23 paths; three scatters award6 normal four-row spins; any30-gem color awards7 enhanced six-row spins with extra key wilds. The guide uses1.076 calibration and whole-point rounding, including ordinary four-symbol payouts and the natural POWER3/5-only special-point awards. Disabled energy and direct-token claims were removed. The client reads the server's bonus balance to present collection awards; it does not change that balance, the wager or payouts.
+
+[Seven fixture scenarios](assembly-fixtures/README.md) contain41 real serialized controller responses, including all6 normal spins and all7 enhanced spins for each color. Collections start from a seeded near-complete engine track. Fresh GUIDs aside, seeded replay was checked. The browser server never proxies API requests and rejects non-target spin IDs; no live or real-money game was played.
+
+## Validation
+
+- **14/14 browser checks passed** on the final build: catalogue, loading, base win/loss, complete normal/enhanced sequences, balance reconciliation, phone,900×600 compact desktop, fullscreen, resized/DPR images, guides, audio preferences, celebration and visible service failure. [Log](assembly-validation/pro-v2-reviewed-browser.log).
+- **263/263 focused tests passed across30 files** after final polish. [Log](assembly-validation/pro-v2-focused.log).
+- Aggregate structural-revision run: **1048/1054 tests passed**, with exactly the same6 failures outside this work; no target/helper failure. [Summary](assembly-validation/pro-v2-validation-summary.json). Final focused and browser runs cover the later visual/text polish.
+- App typecheck, full lint and Vite production build passed. Lint has3 existing Fast Refresh warnings in AdminGameAnalyticsPanel; Vite retains the existing chunk-size/import diagnostics. [Typecheck](assembly-validation/pro-v2-final-type.log), [lint](assembly-validation/pro-v2-final-lint.log), [build](assembly-validation/pro-v2-build.log).
+- Targeted slot-math run:250,000 paid/287,828 resolved spins; RTP90.220%, hit rate30.552%; safeguards passed. [Raw output](assembly-engine-audit/dragon-hoard-250000-paid-spins.log). This is a simulation check, not a before/after equivalence proof.
+
+Aggregate failures retained outside the target scope:
+
+{failures}
+
+## Responsive loading on the revised composition
+
+The existing measured image loader and minmax cell fix remain. Larger visible symbols naturally select larger variants; every request is still driven by measured CSS size and DPR. Each final cold direct-route case made17 image requests for17 unique URLs, with no duplicate image-body download or old target art. Warm reloads transferred0 image-body bytes. Actual per-request CDP body and HTTP totals are recorded, excluding JavaScript, CSS, fonts, audio and API traffic. The new wordmark adds only its selected variant.
+
+| Viewport/DPR | Image body bytes | HTTP bytes | Requests / unique URLs | Warm body bytes |
+| --- | ---: | ---: | ---: | ---: |
+{rows}
+
+Raw request IDs, selected URLs, DPR/cache flags, resize/expanded states and record hashes are in [integration-verification.json](integration-verification.json) and the final screenshot/network folder. All20/30 image boxes were checked inside the reel window; the target winner pulse is capped at1.08× and reduced motion suppresses decorative movement.
+
+## Audio and review artifact
+
+Active lever/reel/result cues reuse existing Kenney CC0 assets. Background music is omitted: the source permits in-game BGM, but has a separate raw-file delivery condition. No music was repackaged or introduced. [Provenance and decision](../../../fortuneforge.client/src/games/slots/dragonHoard/evidence/audio-provenance.md). No listening audition is claimed.
+
+The local production preview build is [pro-v2-build/index.html](pro-v2-build/index.html); run it through the included loopback review server for the recorded engine scenarios. Automatic approval review rejected starting an extra persistent preview server with “blocked by policy”; verified screenshots and the build are delivered instead. The Playwright-owned server has finished.
+
+All work remains on main at4e2e9f9e491cb1d59a756c18039965c24a20b791. No branch, worktree, repository copy, cleanup, commit, push, PR, merge or deployment was performed.
+'''
+for before, after in {
+    'all23': 'all 23', 'award6': 'award 6', 'any30': 'any 30', 'awards7': 'awards 7',
+    'uses1.076': 'uses 1.076', 'POWER3/5': 'POWER 3/5', 'contain41': 'contain 41',
+    'all6': 'all 6', 'all7': 'all 7', 'across30': 'across 30', 'same6': 'same 6',
+    'has3': 'has 3', 'run:250': 'run: 250', 'RTP90': 'RTP 90', 'rate30': 'rate 30',
+    'made17': 'made 17', 'for17': 'for 17', 'transferred0': 'transferred 0',
+    'All20/30': 'All 20/30', 'at1.08': 'at 1.08', 'at4e2': 'at 4e2', 'phone,900': 'phone, 900',
+    'with exactly the same6': 'with exactly the same 6',
+}.items():
+    text = text.replace(before, after)
+(root / 'integration-verification.md').write_text(text, encoding='utf-8')
+print(json.dumps({'sourceHashesMatching': len(contract['sourceSha256']), 'network': networks, 'screenshots': len(shots)}, indent=2))

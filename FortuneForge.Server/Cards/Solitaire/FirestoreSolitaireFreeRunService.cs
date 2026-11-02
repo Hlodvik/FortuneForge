@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Google.Cloud.Firestore;
+using FortuneForge.Games.Abstractions.Analytics;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -13,6 +14,8 @@ public sealed class FirestoreSolitaireFreeRunService
 {
     internal const string CollectionName = "solitaireFreeRuns";
     private const string RunIdPrefix = "solitaire_free_";
+    internal const string LegacyGameId = "solitaire";
+    internal const string StandaloneGameId = "free-solitaire";
     // A fully populated move command is roughly 120 bytes in the JSON envelope.
     // Keep an accepted replay beneath the application's 32 KB request-body limit.
     private const int MaximumCommands = 256;
@@ -38,9 +41,11 @@ public sealed class FirestoreSolitaireFreeRunService
         string authenticatedUserId,
         int drawCount,
         CancellationToken cancellationToken,
-        string? replayRunId = null)
+        string? replayRunId = null,
+        string gameId = LegacyGameId)
     {
         ValidateUser(authenticatedUserId);
+        ValidateGameId(gameId);
         SolitaireRules.ValidateDrawCount(drawCount);
         if (string.IsNullOrWhiteSpace(idempotencyKey) || !IdempotencyKeyPattern.IsMatch(idempotencyKey))
             throw new ArgumentException("The idempotency key is invalid.", nameof(idempotencyKey));
@@ -64,10 +69,11 @@ public sealed class FirestoreSolitaireFreeRunService
                 var existing = ReadRun(snapshot, runId, authenticatedUserId);
                 if (!snapshot.TryGetValue<string>("startIdempotencyKey", out var storedKey) || storedKey != idempotencyKey ||
                     existing.DrawCount != drawCount ||
+                    existing.GameId != gameId ||
                     (snapshot.TryGetValue<string>("replayRunId", out var storedReplayRunId) ? storedReplayRunId : null) != replayRunId)
                     throw new InvalidOperationException("The Solitaire free-run idempotency record conflicts with this request.");
                 return new SolitaireFreeRunStartResult(
-                    existing.RunId, existing.Seed, existing.DrawCount, existing.StartedAtUtc, true);
+                    existing.RunId, existing.Seed, existing.DrawCount, existing.StartedAtUtc, true, existing.GameId);
             }
 
             if (replayReference is not null)
@@ -78,6 +84,8 @@ public sealed class FirestoreSolitaireFreeRunService
                     throw new InvalidOperationException("Only a completed Solitaire free run can be replayed.");
                 if (source.DrawCount != drawCount)
                     throw new InvalidOperationException("The Solitaire replay draw count must match the original run.");
+                if (source.GameId != gameId)
+                    throw new InvalidOperationException("The Solitaire replay must stay in the same game.");
                 proposedSeed = source.Seed;
             }
 
@@ -87,6 +95,7 @@ public sealed class FirestoreSolitaireFreeRunService
                 ["userId"] = authenticatedUserId,
                 ["seed"] = (long)proposedSeed,
                 ["drawCount"] = (long)drawCount,
+                ["gameId"] = gameId,
                 ["startIdempotencyKey"] = idempotencyKey,
                 ["status"] = "started",
                 ["startedAt"] = Timestamp.FromDateTime(startedAtUtc.UtcDateTime),
@@ -94,7 +103,10 @@ public sealed class FirestoreSolitaireFreeRunService
             };
             if (replayRunId is not null) document["replayRunId"] = replayRunId;
             transaction.Create(reference, document);
-            return new SolitaireFreeRunStartResult(runId, proposedSeed, drawCount, startedAtUtc, false);
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, gameId, runId,
+                0, startedAtUtc.UtcDateTime, new { seed = proposedSeed, drawCount, replayRunId, game = SolitaireEngine.CreateGame(proposedSeed, drawCount) },
+                [authenticatedUserId], "free-run-start");
+            return new SolitaireFreeRunStartResult(runId, proposedSeed, drawCount, startedAtUtc, false, gameId);
         }, cancellationToken: cancellationToken);
     }
 
@@ -146,6 +158,9 @@ public sealed class FirestoreSolitaireFreeRunService
             var terminal = SolitaireEngine.IsWon(game) ? "won" : "submitted";
             var elapsedMilliseconds = ActiveElapsedMilliseconds(stored, completedAtUtc);
             var score = SolitaireScoreRules.FinalScore(game, elapsedMilliseconds);
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, stored.GameId, runId,
+                game.Moves, completedAtUtc.UtcDateTime, new { stored, game, commands = normalized, replayDigest = digest, score, elapsedMilliseconds, terminal },
+                [authenticatedUserId], "free-replay-complete");
             transaction.Set(reference, new Dictionary<string, object>
             {
                 ["status"] = "completed",
@@ -159,9 +174,16 @@ public sealed class FirestoreSolitaireFreeRunService
                 ["pausedMilliseconds"] = TotalPausedMilliseconds(stored, completedAtUtc),
                 ["completedAt"] = Timestamp.FromDateTime(completedAtUtc.UtcDateTime),
             }, SetOptions.MergeAll);
+            if (game.Moves > 0)
+            {
+                var analytics = GameAnalyticsOutbox.Create(new GameAnalyticsSettlement(
+                    stored.GameId, runId, authenticatedUserId, "free", true, completedAtUtc.UtcDateTime,
+                    stored.StartedAtUtc.UtcDateTime, 0, 0, CollectionName, reference.Id))!;
+                transaction.Set(database.Collection(GameAnalyticsOutbox.CollectionName).Document(analytics.Id), analytics.Fields);
+            }
             return new SolitaireFreeRunCompletionResult(
                 runId, stored.Seed, stored.DrawCount, score, game.Moves,
-                elapsedMilliseconds, terminal, completedAtUtc, false);
+                elapsedMilliseconds, terminal, completedAtUtc, false, stored.GameId);
         }, cancellationToken: cancellationToken);
     }
 
@@ -210,6 +232,8 @@ public sealed class FirestoreSolitaireFreeRunService
                 PausedMilliseconds = pausedMilliseconds,
                 PauseStartedAtUtc = pause ? changedAtUtc : null,
             };
+            FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, stored.GameId, runId,
+                0, changedAtUtc.UtcDateTime, updated, [authenticatedUserId], pause ? "free-run-pause" : "free-run-resume");
             return new SolitaireFreeRunPauseResult(runId, pause, ActiveElapsedMilliseconds(updated, changedAtUtc));
         }, cancellationToken: cancellationToken);
     }
@@ -262,9 +286,13 @@ public sealed class FirestoreSolitaireFreeRunService
             !snapshot.TryGetValue<long>("schemaVersion", out var schemaVersion) || schemaVersion != 1)
             throw new InvalidOperationException("The Solitaire free run is missing, belongs to another user, or is corrupt.");
 
+        var gameId = snapshot.TryGetValue<string>("gameId", out var storedGameId)
+            ? storedGameId : LegacyGameId;
+        if (gameId is not (LegacyGameId or StandaloneGameId))
+            throw new InvalidOperationException("The Solitaire free-run game identity is corrupt.");
         var baseRun = new StoredFreeRun(
             runId, (uint)seedValue, (int)drawCountValue, status, new DateTimeOffset(startedAt.ToDateTime()),
-            string.Empty, string.Empty, 0, 0, 0, "", null, 0, false, null);
+            string.Empty, string.Empty, 0, 0, 0, "", null, 0, false, null, gameId);
         // Older free-run documents predate pause tracking and remain fully playable.
         var pausedMilliseconds = snapshot.TryGetValue<long>("pausedMilliseconds", out var storedPausedMilliseconds)
             ? storedPausedMilliseconds : 0;
@@ -308,6 +336,12 @@ public sealed class FirestoreSolitaireFreeRunService
             throw new ArgumentException("An authenticated user is required.", nameof(userId));
     }
 
+    private static void ValidateGameId(string gameId)
+    {
+        if (gameId is not (LegacyGameId or StandaloneGameId))
+            throw new ArgumentException("The Solitaire free-run game is invalid.", nameof(gameId));
+    }
+
     private static string DocumentId(string userId, string idempotencyKey) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes($"v1\n{userId}\n{idempotencyKey}")));
 
@@ -338,12 +372,13 @@ public sealed class FirestoreSolitaireFreeRunService
         DateTimeOffset? CompletedAtUtc,
         long PausedMilliseconds,
         bool IsPaused,
-        DateTimeOffset? PauseStartedAtUtc)
+        DateTimeOffset? PauseStartedAtUtc,
+        string GameId)
     {
         internal SolitaireFreeRunCompletionResult ToCompletionResult(bool replayed) => new(
             RunId, Seed, DrawCount, Score, Moves, ElapsedMilliseconds, Terminal,
             CompletedAtUtc ?? throw new InvalidOperationException("The completed Solitaire free run has no completion time."),
-            replayed);
+            replayed, GameId);
     }
 }
 
@@ -359,7 +394,8 @@ internal sealed record SolitaireFreeRunStartResult(
     uint Seed,
     int DrawCount,
     DateTimeOffset StartedAtUtc,
-    bool WasAlreadyStarted);
+    bool WasAlreadyStarted,
+    string GameId = FirestoreSolitaireFreeRunService.LegacyGameId);
 
 internal sealed record SolitaireFreeRunCompletionResult(
     string RunId,
@@ -370,7 +406,8 @@ internal sealed record SolitaireFreeRunCompletionResult(
     long ElapsedMilliseconds,
     string Terminal,
     DateTimeOffset CompletedAtUtc,
-    bool WasAlreadyCompleted);
+    bool WasAlreadyCompleted,
+    string GameId = FirestoreSolitaireFreeRunService.LegacyGameId);
 
 internal sealed record SolitaireFreeRunPauseResult(
     string RunId,

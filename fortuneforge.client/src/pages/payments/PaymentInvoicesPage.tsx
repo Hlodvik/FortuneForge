@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import '@fontsource-variable/sora'
-import { ForgeCreditAmount } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { listPaymentInvoices, type PaymentCheckout } from '../../features/payments/services/paymentsApi'
+import { AccountLobbyShell } from '../account/AccountLobbyShell'
 import '../index.css'
 import './invoiceTheme.css'
 
@@ -29,30 +28,23 @@ export function PaymentInvoicesPage() {
   }, [account, loadInvoices])
 
   return (
-    <div className="player-page player-page--credits player-page--invoice">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home"><span className="landing-brand__spark" aria-hidden="true">✦</span><span>Fortune Forge</span></a>
-        <div className="landing-bar__account">
-          {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
-          <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Invoice history navigation"><a className="landing-nav__link" href="/home/rand">Add Rand</a><a className="landing-nav__link" href="/home">Home</a></nav>
-        </div>
-      </header>
-      <main className="invoice-main">
+    <AccountLobbyShell account={account} activeNav={null}>
+      <div className="invoice-main">
+        <nav className="invoice-page__navigation" aria-label="Invoice history navigation"><a href="/balance">← Balance</a><PaymentAlertsMenu /></nav>
         {isAccountLoading && <div className="player-state" role="status">Opening your invoices…</div>}
         {!isAccountLoading && accountError !== null && <div className="player-state player-state--error" role="alert"><strong>Invoices could not be opened.</strong><span>{accountError}</span><button className="landing-button landing-button--secondary" type="button" onClick={reload}>Try again</button></div>}
         {!isAccountLoading && account !== null && invoices === null && invoiceError === null && <div className="player-state" role="status">Loading invoices…</div>}
         {!isAccountLoading && account !== null && invoiceError !== null && <div className="player-state player-state--error" role="alert"><strong>Invoices are unavailable.</strong><span>{invoiceError}</span><button className="landing-button landing-button--secondary" type="button" onClick={() => void loadInvoices()}>Try again</button></div>}
         {!isAccountLoading && account !== null && invoices !== null && (
           <section className="invoice-list" aria-labelledby="invoice-list-title">
-            <header><div><p className="account-eyebrow">Payment history</p><h1 id="invoice-list-title">Your invoices</h1><p>Open any order to view its live status and receipt.</p></div><a className="landing-button landing-button--gold" href="/home/rand">Add Rand</a></header>
+            <header><div><p className="account-eyebrow">Payment history</p><h1 id="invoice-list-title">Your invoices</h1><p>Open any order to view its live status and receipt.</p></div><a className="landing-button landing-button--gold" href="/balance">Add Rand</a></header>
             {invoices.length === 0
               ? <div className="invoice-list__empty"><strong>No invoices yet.</strong><span>Your payment orders will appear here.</span></div>
               : <div className="invoice-list__items">{invoices.map((invoice) => <InvoiceRow key={invoice.checkoutId} invoice={invoice} />)}</div>}
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </AccountLobbyShell>
   )
 }
 

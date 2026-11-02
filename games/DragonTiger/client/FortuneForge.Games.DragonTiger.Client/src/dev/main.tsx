@@ -1,3 +1,5 @@
+import { InGameShell } from '../../../../../../fortuneforge.client/src/components/InGameShell'
+import '../../../../../../fortuneforge.client/src/dev/standaloneGamePreview.css'
 import { createRoot } from 'react-dom/client'
 import { DragonTigerGame } from '../DragonTigerGame'
 import type { DragonTigerCard } from '../contracts'
@@ -16,4 +18,4 @@ const renderCardFace = (card: DragonTigerCard) => <PlayingCard card={{
   suit: card.suit,
 }}/>
 
-createRoot(document.getElementById('root')!).render(<main><DragonTigerGame playerId="standalone-practice" renderCardFace={renderCardFace}/></main>)
+createRoot(document.getElementById('root')!).render(<InGameShell title="Dragon Tiger" bodyClassName="standalone-game-preview__body"><DragonTigerGame playerId="standalone-practice" renderCardFace={renderCardFace}/></InGameShell>)

@@ -56,10 +56,18 @@ public sealed class BaccaratFirestoreEmulatorTests(BlackjackTableFirestoreEmulat
         Assert.Equal(2, entries.Count);
         Assert.Contains(entries, entry => entry.GetValue<double>("amount") == -1.0);
         Assert.Contains(entries, entry => entry.GetValue<double>("amount") == 3.49);
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal("passed", audit.GetValue<string>("auditStatus"));
+        Assert.Equal("baccarat-outcome-v1", audit.GetValue<string>("auditorVersion"));
+        Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        var analytics = Assert.Single((await database.Collection("gameAnalyticsSettlementOutbox").GetSnapshotAsync()).Documents);
+        Assert.Equal(100, analytics.GetValue<long>("wagerCents"));
+        Assert.Equal(349, analytics.GetValue<long>("payoutCents"));
 
         await Assert.ThrowsAsync<BaccaratRoundConflictException>(() => second.StartAsync(
             userId, request with { BankerPairStake = 0m }, key, CancellationToken.None));
         Assert.Equal(2, (await database.Collection("balanceTransactions").GetSnapshotAsync()).Count);
+        Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
     }
 
     [Fact]

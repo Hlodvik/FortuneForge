@@ -1,8 +1,3 @@
-.flappy-shell > .in-game-navbar {
-  border-bottom-color: rgb(217 238 96 / 55%);
-  background: linear-gradient(90deg, #07384c, #105b68 52%, #183c32);
-}
-
 .flappy-shell > .in-game-shell__body {
   overflow: hidden;
   background: #092a35;

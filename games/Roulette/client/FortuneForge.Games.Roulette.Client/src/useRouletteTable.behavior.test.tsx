@@ -5,11 +5,13 @@ import { afterEach, describe, expect, it, vi, type Mocked } from 'vitest'
 import { RouletteGame } from './RouletteGame'
 import { RouletteGatewayError, type RouletteBet, type RouletteGateway, type RouletteRound, type RouletteStatus } from './contracts'
 import { makeBet, neighborPockets, type RouletteBetRequest } from './roulettePresentation'
+import { playRouletteChip } from './rouletteAudio'
 import { useRouletteTable } from './useRouletteTable'
 
 // These tests exercise controls/recovery. Real wheel geometry, reveal timing and
 // result positioning are covered by the browser suite and the unmocked SSR test.
 vi.mock('./RouletteWheel', () => ({ RouletteWheel: () => <svg aria-hidden="true" /> }))
+vi.mock('./rouletteAudio', () => ({ getRouletteMuted: () => false, setRouletteMuted: vi.fn(), playRouletteChip: vi.fn(), playRouletteSpin: vi.fn(), playRouletteWin: vi.fn() }))
 
 const player = 'roulette-player'
 const status: RouletteStatus = { available: true, minimumStake: 1, maximumStake: 100, stakeIncrement: 1, startingBalance: 1_000, mode: 'free-play-single-zero' }
@@ -19,7 +21,7 @@ const key = (account = player, mode = status.mode, part = 'round') => `fortunefo
 const baseRound = (roundId = id): RouletteRound => ({ roundId, balance: 1_000, phase: 'open', bets: [], winningPocket: null, settlements: [] })
 const clone = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T
 
-afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.useRealTimers() })
+afterEach(() => { cleanup(); sessionStorage.clear(); localStorage.clear(); vi.useRealTimers(); vi.clearAllMocks() })
 
 describe('Roulette controller recovery', () => {
   it('reconciles an accepted chip after a lost response without replaying the POST', async () => {
@@ -237,7 +239,7 @@ describe('Roulette component controls', () => {
     server.state = { ...baseRound(), balance: 975, bets: [bet(0, 17, 25)] }
     sessionStorage.setItem(key(), id)
     render(<RouletteGame gateway={server.gateway} playerId={player} />)
-    await waitFor(() => expect((screen.getByRole('button', { name: 'Add chip' }) as HTMLButtonElement).disabled).toBe(false))
+    await waitFor(() => expect((screen.getByRole('button', { name: /^Pocket 17, black/ }) as HTMLButtonElement).disabled).toBe(false))
     expect((screen.getByRole('button', { name: 'Double' }) as HTMLButtonElement).disabled).toBe(true)
     expect(server.gateway.placeBet).not.toHaveBeenCalled()
   })
@@ -254,17 +256,46 @@ describe('Roulette component controls', () => {
     expect(screen.getByRole('button', { name: 'R19.00 chip' }).getAttribute('aria-pressed')).toBe('true')
     await user.click(chip)
     await user.click(screen.getByRole('button', { name: 'Open table' }))
-    await screen.findByRole('button', { name: 'Add chip' })
+    await waitFor(() => expect((screen.getByRole('button', { name: /^Pocket 3, red/ }) as HTMLButtonElement).disabled).toBe(false))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Bet type' }), 'split')
     await user.click(screen.getByRole('button', { name: 'Pocket 3, red' }))
     await user.click(screen.getByRole('button', { name: 'Pocket 4, black' }))
-    expect((screen.getByRole('button', { name: 'Add chip' }) as HTMLButtonElement).disabled).toBe(true)
     expect(server.gateway.placeBet).not.toHaveBeenCalled()
     await user.click(screen.getByRole('button', { name: 'Pocket 4, black' }))
     await user.click(screen.getByRole('button', { name: 'Pocket 2, black' }))
-    await user.click(screen.getByRole('button', { name: 'Add chip' }))
     await waitFor(() => expect(server.gateway.placeBet).toHaveBeenCalledTimes(1))
     expect(server.gateway.placeBet.mock.calls[0]?.[1]).toEqual({ kind: 'split', stake: 3, number: null, numbers: [2, 3] })
+    await waitFor(() => expect((screen.getByRole('button', { name: /^Pocket 2, black/ }) as HTMLButtonElement).disabled).toBe(false))
+    await user.click(screen.getByRole('button', { name: /^Pocket 2, black/ }))
+    await waitFor(() => expect(server.gateway.placeBet).toHaveBeenCalledTimes(2))
+    expect(server.gateway.placeBet.mock.calls[1]?.[1]).toEqual({ kind: 'split', stake: 3, number: null, numbers: [2, 3] })
+  }, 15_000)
+
+  it('places chips on betting boxes and removes the clicked chip without placing another', async () => {
+    const user = userEvent.setup()
+    const server = fakeServer()
+    render(<RouletteGame gateway={server.gateway} playerId={player} />)
+    const open = await screen.findByRole('button', { name: 'Open table' }) as HTMLButtonElement
+    await waitFor(() => expect(open.disabled).toBe(false))
+    await user.click(open)
+    const pocket = await screen.findByRole('button', { name: /^Pocket 17, black/ })
+    await waitFor(() => expect((pocket as HTMLButtonElement).disabled).toBe(false))
+    await user.click(pocket)
+    await waitFor(() => expect(server.gateway.placeBet).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect((screen.getByRole('button', { name: /^Pocket 17, black/ }) as HTMLButtonElement).disabled).toBe(false))
+    await user.click(screen.getByRole('button', { name: /^Pocket 17, black/ }))
+    await waitFor(() => expect(server.gateway.placeBet).toHaveBeenCalledTimes(2))
+    const secondChip = await screen.findByRole('button', { name: /^Remove R1\.00 Number 17 chip 2$/ }) as HTMLButtonElement
+    await waitFor(() => expect(secondChip.disabled).toBe(false))
+    await user.click(secondChip)
+    await waitFor(() => expect(server.gateway.removeBet).toHaveBeenCalledWith(id, 1, expect.any(AbortSignal)))
+    expect(server.gateway.placeBet).toHaveBeenCalledTimes(2)
+    expect(playRouletteChip).toHaveBeenCalledTimes(2)
+    expect(server.state.bets).toHaveLength(1)
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Red' }) as HTMLButtonElement).disabled).toBe(false))
+    await user.click(screen.getByRole('button', { name: 'Red' }))
+    await waitFor(() => expect(server.gateway.placeBet).toHaveBeenCalledTimes(3))
+    expect(server.gateway.placeBet.mock.calls[2]?.[1]).toEqual({ kind: 'red', stake: 1, number: null, numbers: [] })
   }, 15_000)
 
   it('keeps primary controls disabled until a failed table restoration is read successfully', async () => {
@@ -279,8 +310,8 @@ describe('Roulette component controls', () => {
     server.readError = null
     server.state = { ...baseRound(), balance: 995, bets: [bet(0, 17, 5)] }
     await user.click(retry)
-    const add = await screen.findByRole('button', { name: 'Add chip' }) as HTMLButtonElement
-    await waitFor(() => expect(add.disabled).toBe(false))
+    const pocket = await screen.findByRole('button', { name: /^Pocket 17, black/ }) as HTMLButtonElement
+    await waitFor(() => expect(pocket.disabled).toBe(false))
     expect(server.gateway.openRound).not.toHaveBeenCalled()
     expect(server.gateway.placeBet).not.toHaveBeenCalled()
   })

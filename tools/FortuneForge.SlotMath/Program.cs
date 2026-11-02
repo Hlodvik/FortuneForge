@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Net;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
@@ -111,6 +112,13 @@ foreach (var configuredGame in gamesToAnalyze)
     ValidateServerWagerAllowlist();
     ValidateSpecialPointBoost();
 
+    if (game.Id == SlotSpecialRoundProfiles.DragonHoardGameId)
+    {
+        RunMidnightFifoCycles();
+        PrintReport();
+        continue;
+    }
+
     for (var paidSpin = 0; paidSpin < paidSpinCount; paidSpin++)
     {
         var cyclePayout = RunSpin(isFreeSpin: false, freeSpinFeatureMode: null);
@@ -128,6 +136,62 @@ foreach (var configuredGame in gamesToAnalyze)
     }
 
     PrintReport();
+}
+
+void RunMidnightFifoCycles()
+{
+    if (game.Wagering.PointValueInCents != 25m)
+        throw new InvalidOperationException("Midnight's canonical audit requires its native R0.25 point unit.");
+    IReadOnlyList<MidnightVaultBonusRound> rounds = [];
+    IReadOnlyDictionary<string, long> counts = new Dictionary<string, long>();
+    IReadOnlyDictionary<string, long> wagerTotals = new Dictionary<string, long>();
+    var pity = 0;
+    long Resolve()
+    {
+        var selected = rounds.FirstOrDefault();
+        var before = rounds;
+        var free = selected is not null;
+        var lockedWager = selected?.WagerPoints ?? wager;
+        var model = selected?.MathModelId ?? game.Math.PaytableId;
+        var boost = game.SpecialPoints is { } rules && specialPoints >= rules.ActivationCost;
+        if (boost) specialPoints -= game.SpecialPoints!.ActivationCost;
+        if (free) rounds = MidnightVaultBonusRounds.Consume(rounds);
+        var admission = new SlotSpinAdmission(lockedWager,
+            free ? 0 : checked((long)(lockedWager * game.Wagering.PointValueInCents)), free,
+            rounds.FirstOrDefault()?.RemainingSpins ?? 0, boost, specialPoints, null, 0, selected?.FeatureMode)
+        {
+            AdmissionId = Guid.NewGuid(), StartedAtUtc = DateTime.UtcNow, PityMissesBefore = pity,
+            MathModelId = model, BonusRound = selected, BonusRoundsBeforeAdmission = before
+        };
+        var result = requestValidator.SpinAdmitted(game.Id, admission, $"slot-math-{game.Id}");
+        if (result.EnergyAwarded != 0 || result.MoneyGrabPoints != 0)
+            throw new InvalidOperationException("Midnight's disabled energy or direct-value feature awarded value.");
+        pity = result.ConsecutiveFiveMisses;
+        specialPoints = checked(specialPoints + result.SpecialPointsAwarded);
+        var progress = MidnightVaultBonusRounds.Advance(rounds, counts, wagerTotals, result.SealsAwarded,
+            lockedWager, result.FreeSpinsAwarded, result.EngineAudit!.FeatureProfile?.ScatterFeatureMode, model, result.SpinId);
+        rounds = progress.Rounds;
+        counts = progress.CollectionCounts;
+        wagerTotals = progress.CollectionWagerPoints;
+        var awarded = progress.AwardedRounds.Sum(round => round.TotalSpins);
+        var full = result.Payout.Paylines.SelectMany(line => line.Matches)
+            .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
+        statistics.RecordSpin(result.Payout, full, result.FiveMatchPityTriggered, free, awarded,
+            result.SpecialPointsAwarded, result.EnergyAwarded, boost, lockedWager);
+        return result.Payout.TotalPoints;
+    }
+    for (var cycle = 0; cycle < paidSpinCount; cycle++)
+    {
+        if (rounds.Count != 0) throw new InvalidOperationException("A cash cycle began before its bonus queue drained.");
+        var payout = Resolve();
+        var safety = 1_000;
+        while (rounds.Count > 0)
+        {
+            if (--safety < 0) throw new InvalidOperationException("The Midnight bonus queue did not terminate.");
+            payout = checked(payout + Resolve());
+        }
+        statistics.RecordCycle(payout, wager);
+    }
 }
 
 void ValidateServerWagerAllowlist()

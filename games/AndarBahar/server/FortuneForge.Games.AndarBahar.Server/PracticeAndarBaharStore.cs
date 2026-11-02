@@ -30,6 +30,7 @@ public sealed class PracticeAndarBaharStore : IAndarBaharStore
                 return (new AndarBaharStoreResult(prior, Balance(state, userId)), false);
             }
             if (!allowNewRounds) throw new AndarBaharDisabledException();
+            AndarBaharMoney.ValidateNewStake(stakeCents);
             var balance = Balance(state, userId);
             if (balance < stakeCents) throw new AndarBaharInsufficientCreditsException(balance, stakeCents);
             var round = AndarBaharRules.Deal(shuffledDeck);

@@ -78,6 +78,11 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
                 playerPairSettlement, bankerPairSettlement, nextShoeIndex, shoe.Cards.Count - nextShoeIndex);
 
             transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc));
+            FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
+                "baccarat", roundId, userId, totalStakeCents, returnedCentsForRound, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
+                "baccaratRounds", roundId, stored, "baccarat-deal-and-side-bets-v1",
+                FortuneForge.Server.RoundAudit.BaccaratOutcomeAudit.Verify(stored, totalStakeCents, returnedCentsForRound),
+                FortuneForge.Server.RoundAudit.BaccaratOutcomeAudit.Version);
             transaction.Set(shoeReference, ShoeData(userId, shoe.Cards, nextShoeIndex, nowUtc));
             transaction.Set(balanceReference, BalanceUpdate(finalBalanceCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(

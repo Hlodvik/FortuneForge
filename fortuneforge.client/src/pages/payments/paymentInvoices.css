@@ -4,10 +4,8 @@
 }
 
 .payment-customer {
-  border-top: 1px solid rgb(53 231 255 / 13%);
-  background:
-    radial-gradient(circle at 100% 0, rgb(98 234 255 / 7%), transparent 15rem),
-    rgb(5 2 24 / 18%);
+  border-top: 1px solid rgb(227 197 141 / 13%);
+  background: #15161b;
 }
 
 .payment-customer__grid {
@@ -27,7 +25,7 @@
 }
 
 .payment-customer__field span {
-  color: #b7a9cf;
+  color: #bcb5bd;
   font-size: 0.72rem;
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -42,7 +40,7 @@
   outline: 0;
   padding: 0.9rem 1rem;
   color: #fff8df;
-  background: rgb(8 16 29 / 0.64);
+  background: rgb(21 22 27 / 0.64);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
   font: inherit;
   font-weight: 750;
@@ -76,7 +74,7 @@
   overflow: hidden;
   border: 1px solid rgb(223 188 98 / 0.38);
   border-radius: 1rem;
-  background: rgb(8 16 29 / 0.64);
+  background: rgb(21 22 27 / 0.64);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
 }
 
@@ -165,7 +163,7 @@
   border: 1px solid rgb(222 188 100 / 0.28);
   border-radius: 1.5rem;
   color: #dce3ed;
-  background: linear-gradient(145deg, rgb(20 29 46 / 0.97), rgb(9 16 28 / 0.98));
+  background: #15161b;
   box-shadow: 0 2rem 5rem rgb(0 0 0 / 0.3);
 }
 
@@ -181,7 +179,7 @@
   justify-content: space-between;
   padding: 2.5rem;
   border-bottom: 1px solid rgb(255 255 255 / 0.08);
-  background: radial-gradient(circle at 5% 0%, rgb(230 189 88 / 0.12), transparent 40%);
+  background: #15161b;
 }
 
 .invoice-sheet__header h1,
@@ -343,7 +341,7 @@
   align-content: start;
   gap: 0.35rem;
   padding: 1.2rem;
-  background: rgb(10 17 29 / 0.78);
+  background: rgb(21 22 27 / 0.78);
 }
 
 .invoice-sheet__parties strong {
@@ -610,7 +608,7 @@
   outline: 0;
   padding: 0.8rem 0.9rem;
   color: #fff2cc;
-  background: rgb(7 14 25 / 0.72);
+  background: rgb(21 22 27 / 0.72);
   font: 0.85rem ui-monospace, SFMono-Regular, Consolas, monospace;
 }
 
@@ -716,7 +714,9 @@
 }
 
 @media print {
-  .landing-bar,
+  .home-lobby:has(.invoice-main) > .site-navbar {
+    display: none !important;
+  }
   .invoice-sheet__actions,
   .invoice-sheet__mock {
     display: none !important;

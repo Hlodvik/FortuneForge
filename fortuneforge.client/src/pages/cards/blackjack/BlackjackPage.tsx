@@ -160,7 +160,6 @@ export function BlackjackPage({
         ? { ...account, balances: { ...account.balances, slotsCredits: balance } }
         : account}
       title="Blackjack"
-      theme="cards"
       bodyClassName="blackjack-shell-body"
     >
       <div className="blackjack-page blackjack-demo-page" onClickCapture={onCardAudioClick}>

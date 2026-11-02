@@ -77,6 +77,45 @@ public sealed class SicBoContractTests
         await Assert.ThrowsAsync<SicBoRoundConflictException>(() => service.StartAsync("player-1", new CreateSicBoRoundRequest([Bet("big", 1m)]), "sic-bo-start-0004", CancellationToken.None));
     }
 
+    [Fact]
+    public void BetLimit_CapsEachSpotAtTenRandIncludingRepeatedChips()
+    {
+        Assert.Equal(1_000, SicBoMoney.MaximumStakeCents);
+        Assert.Equal(1_000, SicBoMoney.ParseBet(Bet("small", 10m)).StakeCents);
+        Assert.Throws<ArgumentOutOfRangeException>(() => SicBoMoney.ParseBet(Bet("small", 11m)));
+
+        Assert.Equal(2, SicBoMoney.ParseBets([Bet("small", 5m), Bet("small", 5m)]).Count);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            SicBoMoney.ParseBets([Bet("small", 5m), Bet("small", 6m)]));
+        Assert.Equal(2, SicBoMoney.ParseBets([Bet("small", 10m), Bet("big", 10m)]).Count);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            SicBoMoney.ParseBets([Bet("two-number-combination", 5m, firstFace: 1, secondFace: 2),
+                Bet("two-number-combination", 6m, firstFace: 2, secondFace: 1)]));
+    }
+
+    [Fact]
+    public void PreviouslyStoredBetsRemainReadableAndAuditable()
+    {
+        var legacyBet = new SicBoStoredBet("small", 10_000, null, null, null, null);
+        Assert.Equal(100m, SicBoMoney.ToDomain(legacyBet).Stake);
+        Assert.True(SicBoOutcomeAudit.Verify(
+            new SicBoStoreRound("legacy", "alice", [legacyBet], new SicBoRoll(1, 2, 3)),
+            10_000, 20_000));
+    }
+
+    [Fact]
+    public void DatabaseOutcomeCheckerRecalculatesEveryBetOnTheSlip()
+    {
+        var slip = SicBoMoney.ParseBets([
+            Bet("small", 10m), Bet("single-number", 3m, face: 2),
+            Bet("specific-triple", 1m, face: 1), Bet("total", 2m, total: 6)
+        ]);
+        var round = new SicBoStoreRound("round", "alice", slip, new SicBoRoll(1, 2, 3));
+        Assert.True(SicBoOutcomeAudit.Verify(round, 1_600, 6_600));
+        Assert.False(SicBoOutcomeAudit.Verify(round, 1_600, 6_601));
+        Assert.False(SicBoOutcomeAudit.Verify(round with { Roll = new SicBoRoll(6, 6, 6) }, 1_600, 6_600));
+    }
+
     private static SicBoBetRequest Bet(string kind, decimal stake, int? face = null, int? total = null, int? firstFace = null, int? secondFace = null) => new(kind, stake, face, total, firstFace, secondFace);
 
     private sealed class InMemorySicBoStore : ISicBoStore

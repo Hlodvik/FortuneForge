@@ -1,0 +1,23 @@
+from pathlib import Path
+from PIL import Image
+import json
+
+root = Path(__file__).parent
+destination = root / 'preview-72'
+destination.mkdir(exist_ok=True)
+results = []
+for source in sorted((root / 'sources').glob('*.png')):
+    art = Image.open(source).convert('RGBA')
+    alpha = art.getchannel('A')
+    bounds = alpha.point(lambda value: 255 if value >= 16 else 0).getbbox()
+    assert alpha.getextrema() == (0, 255)
+    assert bounds and bounds[0] > 0 and bounds[1] > 0 and bounds[2] < art.width and bounds[3] < art.height, source
+    preview = destination / source.name
+    art.resize((72, 72), Image.Resampling.LANCZOS).save(preview)
+    results.append({'slug': source.stem, 'actualAlpha': True, 'visibleBoundsAtAlpha16': bounds,
+                    'rawAlphaBounds': alpha.getbbox(),
+                    'canvas': art.size, 'preview': str(preview), 'previewSize': [72, 72]})
+assert len(results) == 18
+(root / 'quality-audit.json').write_text(json.dumps({'count': len(results), 'assets': results,
+    'postprocessing': 'Resize/encoding only; no creative editing or alpha reconstruction.'}, indent=2))
+print(json.dumps({'assets': len(results), 'alphaAndUncroppedBounds': 'pass', 'previews': 72}))

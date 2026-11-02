@@ -12,7 +12,7 @@ const state = vi.hoisted(() => ({
   popularity: [] as CataloguePopularityGame[],
 }))
 
-vi.mock('../../components/PlayerHeader', () => ({
+vi.mock('../../components/PlayerAccountMenus', () => ({
   PlayerAccountMenus: ({ showBalance }: { showBalance: boolean }) => <div data-testid="account-menu" data-show-balance={showBalance}>Player menu</div>,
 }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({
@@ -102,7 +102,7 @@ describe('home catalogue visibility', () => {
     state.recent = [recent('blackjack')]
     visible('/cards/blackjack')
     await render()
-    expect(highlight()?.textContent).toContain('Last played')
+    expect(host.querySelector('.home-lobby__spotlight-copy > small')?.textContent).toBe('Last played')
     expect(railRoutes()).toEqual(['/cards/blackjack'])
     expect(highlight()?.getAttribute('href')).toBe('/cards/blackjack')
 
@@ -118,7 +118,7 @@ describe('home catalogue visibility', () => {
     visible('/cards/blackjack', '/games/dragon-tiger', '/slots/rainbow-realm')
     await render()
     expect(highlight()?.getAttribute('href')).toBe('/slots/rainbow-realm')
-    expect(highlight()?.textContent).toContain('Last played')
+    expect(host.querySelector('.home-lobby__spotlight-copy > small')?.textContent).toBe('Last played')
     act(() => visible('/cards/blackjack', '/games/dragon-tiger'))
     expect(highlight()?.getAttribute('href')).toBe('/games/dragon-tiger')
     expect(host.querySelector('a[href="/slots/rainbow-realm"]')).toBeNull()
@@ -159,12 +159,13 @@ describe('home catalogue visibility', () => {
     expect(highlight()).toBeNull()
   })
 
-  it('shows all forty available games once rather than limiting the row to recent play', async () => {
+  it('shows every listed game once rather than limiting the row to recent play', async () => {
     state.recent = [recent('texas-holdem')]
     visible(...HOME_GAME_CATALOG.map(game => game.href))
     await render()
     expect(railRoutes()).toHaveLength(40)
     expect(new Set(railRoutes()).size).toBe(40)
+    expect(railRoutes()).not.toContain('/games/liars-dice')
     expect(highlight()?.getAttribute('href')).toBe('/cards/texas-holdem')
     await filter('Slots')
     expect(gridRoutes()).toHaveLength(20)

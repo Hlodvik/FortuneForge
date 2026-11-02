@@ -79,7 +79,7 @@ public sealed class SlotsController(
             }
 
             var account = accountResult.Value;
-            spinService.ValidateRequest(request.GameId, request.WagerPoints);
+            spinService.ValidateRequest(request.GameId, request.WagerPoints, request.UseFreeSpin);
             var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
             var specialBoostCost = request.UseSpecialBoost
                 ? spinService.GetSpecialBoostCost(request.GameId)
@@ -98,26 +98,23 @@ public sealed class SlotsController(
             if (admission.CooldownRemaining is { } remaining)
             {
                 var retryAfterMilliseconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalMilliseconds));
-                Response.Headers.RetryAfter = "1";
+                Response.Headers.RetryAfter = Math.Max(1, (int)Math.Ceiling(remaining.TotalSeconds))
+                    .ToString(System.Globalization.CultureInfo.InvariantCulture);
                 return StatusCode(StatusCodes.Status429TooManyRequests, new
                 {
-                    error = "Wait half a second before starting another spin.",
+                    error = "Wait for the previous spin to finish.",
                     retryAfterMilliseconds
                 });
             }
 
-            var result = spinService.Spin(
-                request.GameId,
-                admission.WagerPoints,
-                account.UserId,
-                admission.SpecialBoostApplied,
-                admission.EnergyBalance,
-                admission.FreeSpinFeatureMode);
+            var result = spinService.SpinAdmitted(request.GameId, admission, account.UserId);
             var settlement = await accountService.RecordSlotSpinAsync(
                 account.UserId,
                 result,
                 admission,
-                cancellationToken);
+                // Admission has consumed any free/boost credit. Complete settlement
+                // even if the player navigates away or the HTTP request disconnects.
+                CancellationToken.None);
             result = result with
             {
                 SlotsCreditsBalance = settlement.SlotsCreditsBalance,
@@ -135,7 +132,10 @@ public sealed class SlotsController(
                 EnergyMultiplierApplied = settlement.EnergyMultiplierApplied,
                 PayoutMultiplier = settlement.PayoutMultiplier,
                 SealCollections = settlement.SealCollections,
-                FreeSpinFeatureMode = settlement.FreeSpinFeatureMode
+                FreeSpinFeatureMode = settlement.FreeSpinFeatureMode,
+                BonusRound = settlement.BonusRound,
+                QueuedBonusRounds = settlement.QueuedBonusRounds,
+                AwardedBonusRounds = settlement.AwardedBonusRounds
             };
             return Ok(result);
         }

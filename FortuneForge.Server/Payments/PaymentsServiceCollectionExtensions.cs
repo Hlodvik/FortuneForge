@@ -46,7 +46,11 @@ public static class PaymentsServiceCollectionExtensions
             resilience.Retry.DisableForUnsafeHttpMethods();
         });
 #pragma warning restore EXTEXP0001
-        services.AddSingleton<IPaymentStore, FirestorePaymentStore>();
+        services.AddSingleton<FirestorePaymentStore>();
+        services.AddSingleton<IPaymentStore>(serviceProvider =>
+            serviceProvider.GetRequiredService<FirestorePaymentStore>());
+        services.AddSingleton<IWithdrawalHistoryReader>(serviceProvider =>
+            serviceProvider.GetRequiredService<FirestorePaymentStore>());
         services.AddSingleton<MockPaymentProvider>();
         services.AddSingleton<MerchantGatewayPaymentProvider>();
         services.AddHealthChecks()
@@ -66,7 +70,8 @@ public static class PaymentsServiceCollectionExtensions
         });
         services.AddSingleton(serviceProvider => new PaymentService(
             serviceProvider.GetRequiredService<IPaymentProvider>(),
-            serviceProvider.GetRequiredService<IOptions<PaymentsOptions>>()));
+            serviceProvider.GetRequiredService<IOptions<PaymentsOptions>>(),
+            serviceProvider.GetRequiredService<IWithdrawalHistoryReader>()));
         services.AddSingleton(serviceProvider => new PaymentWebhookService(
             serviceProvider.GetRequiredService<IPaymentStore>(),
             serviceProvider.GetRequiredService<IPaymentProvider>(),

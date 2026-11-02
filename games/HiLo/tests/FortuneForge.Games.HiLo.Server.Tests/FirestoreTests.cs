@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.HiLo.Server;
 using Google.Api.Gax;
@@ -19,6 +20,30 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
     private static Task<DocumentSnapshot> Wallet(FirestoreDb db, string user) => db.Collection("userBalances").Document(user + "_slotsCredits").GetSnapshotAsync();
     private static HiLoService Service(FirestoreDb db, CardRank rank) => new(new HiLoFirestoreStore(db), draw: () => PracticeTests.Card(rank));
     private static string Key() => Guid.NewGuid().ToString("N");
+
+    [Fact]
+    public async Task LegacyRoundAboveNewEntryCap_RemainsReadableAndCashable()
+    {
+        var db = Database();
+        const string user = "legacy";
+        await Seed(db, user, 50_000);
+        var round = HiLoEngine.RebuildInitial(Guid.NewGuid(), 1000m, PracticeTests.Card(CardRank.Seven));
+        var now = Timestamp.FromDateTime(DateTime.UtcNow);
+        await db.Collection("hiLoPlayers").Document(HiLoService.Hash(user)).SetAsync(new Dictionary<string, object>
+        {
+            ["schemaVersion"] = 1L, ["userId"] = user, ["roundJson"] = JsonSerializer.Serialize(round),
+            ["updatedAt"] = now, ["roundStartedAt"] = now,
+        });
+        var service = Service(db, CardRank.King);
+        var active = await service.GetSessionAsync(user);
+        Assert.Equal(500, active.Limits.MaxWagerCents);
+        Assert.Equal(100_000, active.Round!.WagerCents);
+        var settled = await service.ActAsync(user, active.Round.RoundId, new(Key(), 0, "cashout"));
+        Assert.Equal("cashedOut", settled.Round!.Status);
+        Assert.Equal(100_000, settled.Round.CurrentReturnCents);
+        Assert.Equal(150_000, settled.WalletBalanceCents);
+        Assert.Equal("cashedOut", (await service.GetSessionAsync(user)).Round!.Status);
+    }
 
     [Fact]
     public async Task ConcurrentDuplicates_AreOneDebitAndOneCredit_ResumeAndPayloadConflictsAreDurable()
@@ -103,22 +128,22 @@ public sealed class FirestoreTests(HiLoEmulator emulator)
     }
 
     [Fact]
-    public async Task AbsoluteCapAndFractionalRecurringMultiplier_PayExactlyOnce()
+    public async Task MaximumMultiplier_PaysExactlyOnce()
     {
         var db = Database(); await Seed(db, "cap", 100000);
         var service = Service(db, CardRank.Queen);
-        var state = await service.StartAsync("cap", new(Key(), 30000));
+        var state = await service.StartAsync("cap", new(Key(), 500));
         while (state.Round!.Status == "active")
         {
             var higher = state.Round.CurrentCard.Rank == "queen";
             state = await Service(db, higher ? CardRank.King : CardRank.Queen).ActAsync("cap", state.Round.RoundId, new(Key(), state.Round.Revision, higher ? "higher" : "lower"));
         }
-        Assert.Equal("maximumReturn", state.Round.Status); Assert.Equal(10000000, state.Round.CurrentReturnCents);
+        Assert.Equal("maximumReturn", state.Round.Status); Assert.Equal(500000, state.Round.CurrentReturnCents);
         var cappedHistory = Assert.Single((await db.Collection("cardGameResults").GetSnapshotAsync()).Documents);
-        Assert.Equal(10000000L, cappedHistory.GetValue<long>("payoutCents"));
-        Assert.Equal(10070000, state.WalletBalanceCents);
+        Assert.Equal(500000L, cappedHistory.GetValue<long>("payoutCents"));
+        Assert.Equal(599500, state.WalletBalanceCents);
         Assert.Equal(2, (await db.Collection("balanceTransactions").GetSnapshotAsync()).Count);
-        Assert.Equal(100700L, (await Wallet(db, "cap")).GetValue<long>("available"));
+        Assert.Equal(5995L, (await Wallet(db, "cap")).GetValue<long>("available"));
     }
 
     [Fact]

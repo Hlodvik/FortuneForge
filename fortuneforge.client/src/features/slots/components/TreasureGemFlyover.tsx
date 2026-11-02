@@ -1,3 +1,4 @@
+import { ResponsiveSlotImage } from './ResponsiveSlotImage'
 import type { CSSProperties } from 'react'
 
 type TreasureGemFlyoverState = {
@@ -16,6 +17,7 @@ type TreasureGemFlyoverState = {
 type TreasureGemFlyoverProps = {
   flyover: TreasureGemFlyoverState
   image: string
+  imageSrcSet?: string
 }
 
 const gemCascade = [
@@ -28,18 +30,18 @@ const gemCascade = [
   { startX: -10, startY: 11, endX: -12, endY: 0, rotate: -16 },
 ] as const
 
-export function TreasureGemFlyover({ flyover, image }: TreasureGemFlyoverProps) {
+export function TreasureGemFlyover({ flyover, image, imageSrcSet }: TreasureGemFlyoverProps) {
   const gemFlightDuration = Math.max(240, Math.round(flyover.durationMs * 0.65))
   const gemStaggerMs = (flyover.durationMs - gemFlightDuration) /
     Math.max(1, gemCascade.length - 1)
   const gemSize = Math.max(14, flyover.width * 0.46)
 
   return gemCascade.map((piece, index) => (
-    <img
+    <ResponsiveSlotImage
       key={`${flyover.id}-${index}`}
       className={`slots-page__seal-flyover slots-page__seal-flyover--${flyover.collectionId} slots-page__seal-flyover--gem-hoard`}
       data-seal-id={flyover.collectionId}
-      src={image}
+      imageSrcSet={imageSrcSet} src={image}
       alt=""
       aria-hidden="true"
       style={{

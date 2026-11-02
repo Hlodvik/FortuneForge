@@ -574,6 +574,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
                 nowUtc));
         }
         table.RoundAccountingSettled = true;
+        if (humanCount > 0) journal.RoundAudits.Add(FortuneForge.Server.RoundAudit.TableRoundAudit.Capture(table, nowUtc));
         table.ActiveSeat = null;
         table.PendingSeat = null;
         table.ActionDeadlineAtUtc = null;

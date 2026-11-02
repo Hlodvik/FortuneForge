@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { ROYAL_DRAW_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -55,7 +56,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const ROYAL_DRAW_EXPERIENCE_SET: SlotExperienceSet = {
+export const ROYAL_DRAW_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'royal-draw-experience-v1',
   cabinet: ROYAL_DRAW_CABINET_THEME,
   features: FEATURES,
@@ -76,7 +77,7 @@ export const ROYAL_DRAW_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: ROYAL_DRAW_SOUNDS,
   rules: createSlotRulesSet('royal-draw-v1'),
-}
+})
 
 export const ROYAL_DRAW_SLOT_GAME = defineSlotGame({
   id: 'royal-draw',

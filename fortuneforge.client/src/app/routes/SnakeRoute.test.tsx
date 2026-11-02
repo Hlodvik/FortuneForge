@@ -12,7 +12,7 @@ describe('Snake route integration', () => {
     expect(renderRoute('/games/snake')).toContain('Opening Fortune Forge…')
     expect(routesSource).toContain("import('./routes/SnakeRoute')")
     expect(routeSource).toContain("useAuthenticatedAccount('/games/snake')")
-    expect(routeSource).toContain('new LocalSnakeGateway()')
+    expect(routeSource).toContain('new HttpSnakeGateway()')
     expect(routeSource).not.toContain('GameAmbientMusic')
   })
 })

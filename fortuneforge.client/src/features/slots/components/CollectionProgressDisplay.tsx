@@ -1,3 +1,4 @@
+import { ResponsiveSlotImage } from './ResponsiveSlotImage'
 import type { CSSProperties } from 'react'
 import type {
   SlotCollectionDefinition,
@@ -9,6 +10,7 @@ type CollectionProgressDisplayProps = {
   collection: SlotSealCollection
   definition: SlotCollectionDefinition
   image: string
+  imageSrcSet?: string
   isImpacting: boolean
   itemLabel: string
   containerImage?: string
@@ -33,16 +35,16 @@ const pileLayout = [
 ] as const
 
 const piratePileLayout = [
-  { x: 0, y: 0, rotate: -5, scale: 0.85 },
-  { x: -1.12, y: -0.02, rotate: -20, scale: 0.73 },
-  { x: 1.1, y: -0.04, rotate: 18, scale: 0.74 },
-  { x: -0.62, y: -0.48, rotate: -8, scale: 0.8 },
-  { x: 0.58, y: -0.51, rotate: 9, scale: 0.81 },
-  { x: -1.48, y: -0.65, rotate: -25, scale: 0.68 },
-  { x: 1.46, y: -0.69, rotate: 23, scale: 0.69 },
-  { x: -0.94, y: -1.04, rotate: -14, scale: 0.76 },
-  { x: 0.89, y: -1.07, rotate: 13, scale: 0.76 },
-  { x: 0, y: -1.34, rotate: 2, scale: 0.83 },
+  { x: 0, y: -0.64, rotate: -5, scale: 0.96 },
+  { x: -0.95, y: 0, rotate: -20, scale: 0.73 },
+  { x: 0.95, y: -0.04, rotate: 18, scale: 0.74 },
+  { x: -0.53, y: -0.45, rotate: -8, scale: 0.8 },
+  { x: 0.55, y: -0.48, rotate: 9, scale: 0.81 },
+  { x: -1.34, y: -0.61, rotate: -25, scale: 0.68 },
+  { x: 1.31, y: -0.67, rotate: 23, scale: 0.69 },
+  { x: -0.83, y: -1.02, rotate: -14, scale: 0.76 },
+  { x: 0.84, y: -1.05, rotate: 13, scale: 0.76 },
+  { x: 0, y: -1.27, rotate: 2, scale: 0.83 },
 ] as const
 
 const orbitSteps = Array.from({ length: 10 }, (_, index) => index)
@@ -51,8 +53,10 @@ export function CollectionProgressDisplay({
   collection,
   definition,
   image,
+  imageSrcSet,
   isImpacting,
   itemLabel,
+  containerImage,
   displayCount,
   isCelebrating = false,
   presentation,
@@ -61,18 +65,32 @@ export function CollectionProgressDisplay({
 }: CollectionProgressDisplayProps) {
   const visualCount = displayCount ?? collection.count
   const isGemHoard = presentation === 'gem-hoard'
+  const isVaultAccess = presentation === 'vault-access'
+  const vaultStage = visualCount >= collection.requiredCount || isCelebrating ? 5
+    : visualCount <= 0 ? 0 : Math.min(4, Math.floor(visualCount / collection.requiredCount * 4) + 1)
+  const vaultStageLabel = ['Empty pile', 'First jewels', 'Growing pile', 'Rich pile', 'Large pile', 'Vault Breach unlocked'][vaultStage]
+  const isTackleMound = presentation === 'tackle-creel' && Boolean(containerImage)
   const progress = isGemHoard
     ? displayCount !== undefined || isCelebrating
       ? 100
       : Number((94 * (1 - Math.exp(-Math.max(0, visualCount) / 8))).toFixed(1))
+    : isVaultAccess ? [0, 20, 40, 65, 85, 100][vaultStage]
     : Math.min(100, visualCount / collection.requiredCount * 100)
+  const tackleReveal = progress === 0
+    ? 0
+    : Math.min(100, 25 + 75 * Math.sqrt(progress / 100))
+  // The reference rail already contains its starting gems; these are earned overlays.
   const visiblePieceCount = isGemHoard
-    ? Math.min(piratePileLayout.length, Math.ceil(Math.max(0, visualCount) / 2.4))
+    ? Math.min(5, Math.round(progress / 18))
     : visualCount === 0 ? 0 : Math.max(1, Math.ceil(progress / 10))
   const collectionName = isGemHoard ? `${definition.shortLabel} gems` : definition.label
   const collectible = isGemHoard ? `${definition.shortLabel} gems` : itemLabel
   const rewardDescription = definition.rewardDescription ?? 'Fill it to unlock a special round.'
-  const collectionHint = isGemHoard
+  const collectionHint = isVaultAccess
+    ? `${collectionName}: ${vaultStageLabel}. Matching gems grow this pile toward a 10-spin bonus round. Its wager is the collected gems' weighted average.`
+    : definition.progressDescription
+    ? `${collectionName}: ${definition.progressDescription} ${rewardDescription}`
+    : isGemHoard
     ? `${collectionName}: land matching gems anywhere on the reels to grow the pile and build the chance of a feature. ${rewardDescription}`
     : `${collectionName}: land ${collectible} anywhere on the reels to complete it. ${collection.count} of ${collection.requiredCount} collected; ${rewardDescription}`
   const tooltipId = `slot-collection-hint-${collection.sealId}`
@@ -82,13 +100,13 @@ export function CollectionProgressDisplay({
       className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId} slots-page__seal-collection--${presentation}${isImpacting ? ' slots-page__seal-collection--impact' : ''}${isCelebrating ? ' slots-page__seal-collection--celebrating' : ''}`}
       data-seal-id={collection.sealId}
       data-collection-presentation={presentation}
-      role={isGemHoard ? 'img' : 'progressbar'}
-      aria-label={`${definition.label}: ${collectionHint}`}
-      aria-describedby={tooltipId}
-      aria-valuemin={isGemHoard ? undefined : 0}
-      aria-valuemax={isGemHoard ? undefined : collection.requiredCount}
-      aria-valuenow={isGemHoard ? undefined : collection.count}
-      tabIndex={0}
+      role={isGemHoard || isVaultAccess ? 'img' : 'progressbar'}
+      aria-label={isVaultAccess ? collectionHint : `${definition.label}: ${collectionHint}`}
+      aria-describedby={isVaultAccess ? undefined : tooltipId}
+      aria-valuemin={isGemHoard || isVaultAccess ? undefined : 0}
+      aria-valuemax={isGemHoard || isVaultAccess ? undefined : collection.requiredCount}
+      aria-valuenow={isGemHoard || isVaultAccess ? undefined : collection.count}
+      tabIndex={isVaultAccess ? undefined : 0}
       style={{ '--collection-progress': `${progress}%` } as CSSProperties}
     >
       <span className="slots-page__collection-visual" aria-hidden="true">
@@ -104,7 +122,7 @@ export function CollectionProgressDisplay({
               ))}
             </span>
             <span className="slots-page__collection-orbit-core">
-              <img src={image} alt="" />
+              <ResponsiveSlotImage imageSrcSet={imageSrcSet} src={image} alt="" />
             </span>
           </span>
         ) : presentation === 'juice-glass' ? (
@@ -119,15 +137,24 @@ export function CollectionProgressDisplay({
                 <i />
               </span>
             </span>
-            <img className="slots-page__collection-garnish" src={image} alt="" />
+            <ResponsiveSlotImage className="slots-page__collection-garnish" imageSrcSet={imageSrcSet} src={image} alt="" />
           </>
+        ) : isVaultAccess ? (
+          <span className="midnight-vault__gem-pile" data-pile-stage={vaultStage}>
+            {piratePileLayout.slice(0, [1, 2, 4, 6, 8, 10][vaultStage]).map((layout, index) => (
+              <ResponsiveSlotImage className="slots-page__vault-access-gem" key={index}
+                imageSrcSet={imageSrcSet} src={image} alt="" draggable={false}
+                style={{ '--pile-x': `${layout.x * 23}%`, '--pile-y': `${layout.y * 22}%`,
+                  '--pile-rotate': `${layout.rotate}deg`, '--pile-scale': layout.scale } as CSSProperties} />
+            ))}
+          </span>
         ) : isGemHoard ? (
           <span className="slots-page__pirate-gem-pile">
             {piratePileLayout.map((layout, index) => (
-              <img
+              <ResponsiveSlotImage
                 className={index < visiblePieceCount ? 'is-visible' : ''}
                 key={index}
-                src={image}
+                imageSrcSet={imageSrcSet} src={image}
                 alt=""
                 draggable={false}
                 style={{
@@ -139,14 +166,29 @@ export function CollectionProgressDisplay({
               />
             ))}
           </span>
+        ) : isTackleMound ? (
+          <span className="slots-page__tackle-mound">
+            {visualCount > 0 && (
+              <>
+                <img className="slots-page__tackle-mound-underlay" src={containerImage} alt="" />
+                <img
+                  className="slots-page__tackle-mound-fill"
+                  src={containerImage}
+                  alt=""
+                  style={{ '--tackle-reveal': `${tackleReveal}%` } as CSSProperties}
+                />
+              </>
+            )}
+            <ResponsiveSlotImage className="slots-page__collection-emblem" imageSrcSet={imageSrcSet} src={image} alt="" />
+          </span>
         ) : (
           <>
             <span className="slots-page__collection-pile">
               {pileLayout.map((layout, index) => (
-                <img
+                <ResponsiveSlotImage
                   className="slots-page__collection-piece"
                   key={index}
-                  src={image}
+                  imageSrcSet={imageSrcSet} src={image}
                   alt=""
                   style={{
                     '--collection-piece-x': `${layout.x}rem`,
@@ -158,39 +200,39 @@ export function CollectionProgressDisplay({
                 />
               ))}
             </span>
-            <img className="slots-page__collection-emblem" src={image} alt="" />
+            <ResponsiveSlotImage className="slots-page__collection-emblem" imageSrcSet={imageSrcSet} src={image} alt="" />
           </>
         )}
       </span>
 
       <span className="slots-page__seal-details">
         <strong className="slots-page__seal-title" aria-hidden={definition.displayLabel ? true : undefined}>
-          {definition.displayLabel ?? definition.label}
+          {definition.displayLabel ?? (isVaultAccess ? definition.shortLabel : definition.label)}
         </strong>
-        {isGemHoard && (
+        {(isGemHoard || isVaultAccess) && (
           <span className="slots-page__pirate-gem-meter" aria-hidden="true"><span /></span>
         )}
-        {showCount && !isGemHoard && (
+        {showCount && !isGemHoard && !isVaultAccess && (
           <span className="slots-page__collection-count" aria-hidden="true">
             <b>{collection.count}</b>
             <small>/{collection.requiredCount}</small>
           </span>
         )}
-        {statusDetail && (
+        {statusDetail && !isVaultAccess && (
           <span className="slots-page__collection-status-detail" aria-live="polite">
             {statusDetail}
           </span>
         )}
       </span>
 
-      <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
+      {!isVaultAccess && <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
         <span className="slots-page__collection-tooltip-kicker">Collection reward</span>
         <strong>{collectionName}</strong>
         <span className="slots-page__collection-tooltip-copy">Land {collectible} anywhere on the reels to bank them.</span>
         <span className="slots-page__collection-tooltip-progress">
           {isGemHoard ? rewardDescription : <><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</>}
         </span>
-      </span>
+      </span>}
     </div>
   )
 }

@@ -14,10 +14,23 @@ for (const viewport of [
     await page.setViewportSize(viewport)
     const fixture = await mockHouseHoldem(page)
     await page.goto('/cards/house-holdem')
+    const navbar = page.locator('[data-site-navbar]')
+    await expect(navbar.getByRole('button', { name: 'How to play House Hold’em' })).toHaveCount(0)
+    await expect(navbar.getByRole('button', { name: 'Report this game' })).toHaveCount(0)
+    const support = page.getByRole('group', { name: 'Game help and reporting' })
+    await expect(support.getByRole('button', { name: 'How to play House Hold’em' })).toBeInViewport()
+    await expect(support.getByRole('button', { name: 'Report this game' })).toBeInViewport()
+    await support.getByRole('button', { name: 'Report this game' }).click()
+    await expect(page.getByRole('dialog', { name: 'Report House Hold’em' })).toBeVisible()
+    await page.getByRole('button', { name: 'Close report' }).click()
     await expect(page.getByRole('button', { name: 'Place chip on Ante' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Place chip on Blind' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Place chip on Trips' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Deal', exact: true })).toBeDisabled()
-    await page.getByRole('button', { name: 'Place chip on Ante' }).click()
+    await page.getByRole('button', { name: `Place chip on ${viewport.name === 'desktop' ? 'Ante' : 'Blind'}` }).click()
+    await expect(page.locator('.house-holdem-bet-spot--ante .three-card-poker-bet-spot__amount')).toHaveText('R1.00')
+    await expect(page.locator('.house-holdem-bet-spot--blind .three-card-poker-bet-spot__amount')).toHaveText('R1.00')
+    await expect(page.locator('.house-holdem-bet-spot--trips .three-card-poker-bet-spot__amount')).toHaveText('R0.00')
     await expect(page.locator('.three-card-poker-action-stats span').first()).toContainText('R2.00')
     await expect(page.getByRole('button', { name: 'Deal', exact: true })).toBeEnabled()
     await expectNoOverflow(page, viewport.width, viewport.height)
@@ -59,6 +72,69 @@ for (const viewport of [
     expect(fixture.advances).toBe(2)
   })
 }
+
+test('House Hold’em keeps cards, bets and controls separate while resizing throughout a hand', async ({ page }) => {
+  test.setTimeout(60_000)
+  const viewports = [
+    { width: 1280, height: 640 },
+    { width: 1024, height: 600 },
+    { width: 800, height: 600 },
+    { width: 768, height: 1024 },
+    { width: 320, height: 480 },
+    { width: 375, height: 568 },
+    { width: 430, height: 932 },
+    { width: 667, height: 375 },
+    { width: 844, height: 390 },
+    { width: 1920, height: 960 },
+  ]
+  await mockHouseHoldem(page, 138_506.46)
+  await page.goto('/cards/house-holdem')
+  await expect(page.getByRole('button', { name: 'Place chip on Ante', exact: true })).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+
+  const checkResizing = async (phase: string) => {
+    for (const viewport of viewports) {
+      await test.step(`${phase} at ${viewport.width}×${viewport.height}`, async () => {
+        await page.setViewportSize(viewport)
+        await page.locator('.blackjack-table').evaluate(async (table) => {
+          const finiteAnimations = table.getAnimations({ subtree: true }).filter((animation) =>
+            animation.effect?.getTiming().iterations !== Infinity)
+          await Promise.all(finiteAnimations.map((animation) => animation.finished.catch(() => undefined)))
+        })
+        await expectSeparatedTableContent(page)
+      })
+    }
+  }
+
+  await checkResizing('empty table')
+  await page.getByRole('button', { name: 'Place chip on Blind', exact: true }).click()
+  await checkResizing('betting')
+  await page.getByRole('button', { name: 'Deal', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Wager 4 times your Ante', exact: true })).toBeVisible()
+  await checkResizing('preflop')
+  await page.getByRole('button', { name: 'Wager 4 times your Ante', exact: true }).click()
+  await expect(page.getByRole('status', { name: 'Round result', exact: true })).toBeVisible()
+  await checkResizing('settled with hand labels')
+})
+
+test('House Hold’em keeps placed chip denominations throughout the deal', async ({ page }) => {
+  const fixture = await mockHouseHoldem(page)
+  await page.goto('/cards/house-holdem')
+  await page.getByRole('button', { name: 'Choose chip value, currently R1.00' }).click()
+  await page.getByRole('button', { name: 'Select R5.00 chip' }).click()
+  for (let index = 0; index < 4; index++) await page.getByRole('button', { name: 'Place chip on Ante' }).click()
+  for (let index = 0; index < 2; index++) await page.getByRole('button', { name: 'Place chip on Trips' }).click()
+  const chipStacks = () => page.locator('.house-holdem-bet-spot .three-card-poker-chip').evaluateAll(chips => chips.map(chip => chip.getAttribute('src')))
+  const placed = await chipStacks()
+  expect(placed).toHaveLength(10)
+  expect(new Set(placed).size).toBe(1)
+  await page.getByRole('button', { name: 'Deal', exact: true }).click()
+  await expect(page.locator('.blackjack-table')).toHaveAttribute('data-phase', 'dealing')
+  expect(await chipStacks()).toEqual(placed)
+  await expect(page.getByRole('button', { name: 'Wager 4 times your Ante' })).toBeVisible()
+  expect(await chipStacks()).toEqual(placed)
+  expect(fixture.start).toEqual([{ ante: 20, trips: 10 }])
+})
 
 test('House Hold’em deals both house cards before either player card', async ({ page }) => {
   await mockHouseHoldem(page)
@@ -161,6 +237,61 @@ test('House Hold’em explains every betting spot on hover and on small-screen f
 async function expectNoOverflow(page: Page, width: number, height: number) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(height)
+}
+
+async function expectSeparatedTableContent(page: Page) {
+  const geometry = await page.evaluate(() => {
+    const selectors = [
+      '.three-card-poker-limits',
+      '.blackjack-dealer .blackjack-hand__heading',
+      '.blackjack-dealer .blackjack-hand__cards > *',
+      '.house-holdem-board .blackjack-hand__cards > *',
+      '.house-holdem-felt',
+      '.three-card-poker-player .blackjack-hand__heading',
+      '.three-card-poker-player .blackjack-hand__cards > *',
+      '.house-holdem-bet-spot__help',
+      '.house-holdem-bet-spot .three-card-poker-bet-spot__amount',
+      '.house-holdem-bet-spot .three-card-poker-chip-stack:has(img)',
+      '.house-holdem-opening-bet-hint',
+      '.blackjack-actions .three-card-poker-action-orb',
+      '.blackjack-actions .three-card-poker-chip-picker__selected',
+      '.three-card-poker-action-stats > span',
+      '.game-support-controls > button, .game-support-controls > div > button',
+    ]
+    const rect = (element: Element) => {
+      const { left, right, top, bottom, width, height } = element.getBoundingClientRect()
+      return { left, right, top, bottom, width, height }
+    }
+    const boxes = selectors.flatMap((selector) => Array.from(document.querySelectorAll(selector), (element, index) => ({
+      name: `${selector} [${index}]`,
+      viewportBound: element.closest('.game-support-controls') !== null,
+      ...rect(element),
+    }))).filter((box) => box.width > 0 && box.height > 0)
+    const controls = Array.from(document.querySelectorAll('.blackjack-actions .three-card-poker-action-orb, .blackjack-actions .three-card-poker-chip-picker__selected'), rect)
+    return { boxes, controls, table: rect(document.querySelector('.blackjack-table')!), width: innerWidth, height: innerHeight, scrollWidth: document.documentElement.scrollWidth }
+  })
+
+  expect(geometry.scrollWidth, 'The table must not require horizontal scrolling').toBeLessThanOrEqual(geometry.width)
+  for (const box of geometry.boxes) {
+    const boundary = box.viewportBound ? { left: 0, right: geometry.width, top: 0, bottom: geometry.height } : geometry.table
+    expect(box.left, `${box.name} clips its left boundary`).toBeGreaterThanOrEqual(boundary.left - 1)
+    expect(box.right, `${box.name} clips its right boundary`).toBeLessThanOrEqual(boundary.right + 1)
+    expect(box.top, `${box.name} clips its top boundary`).toBeGreaterThanOrEqual(boundary.top - 1)
+    expect(box.bottom, `${box.name} clips its bottom boundary`).toBeLessThanOrEqual(boundary.bottom + 1)
+  }
+  for (let index = 0; index < geometry.boxes.length; index++) {
+    const a = geometry.boxes[index]
+    for (const b of geometry.boxes.slice(index + 1)) {
+      const overlapWidth = Math.min(a.right, b.right) - Math.max(a.left, b.left)
+      const overlapHeight = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top)
+      expect(overlapWidth > 1 && overlapHeight > 1, `${a.name} overlaps ${b.name}`).toBe(false)
+    }
+  }
+  expect(geometry.controls).toHaveLength(3)
+  for (const control of geometry.controls) {
+    expect(control.width, 'Chip and action controls must share a diameter').toBeCloseTo(geometry.controls[0].width, 0)
+    expect(control.height, 'Controls must remain circular').toBeCloseTo(control.width, 0)
+  }
 }
 
 async function expectNoCardOverlap(page: Page, landscape: boolean) {

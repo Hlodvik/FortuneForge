@@ -1,0 +1,83 @@
+// Local test host only. No account store, wallet, external API or paid endpoint.
+using System.Text.Json;
+using FortuneForge.Server.Controllers;
+using FortuneForge.Server.RoundAudit;
+using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.Slots.Payouts;
+using FortuneForge.Server.Slots.Reels;
+using FortuneForge.Server.Slots.Spins;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+
+if (args.Length != 4) throw new ArgumentException("Usage: LocalPreview <repo-root> <built-client> <fixtures> <port>");
+var repository = Path.GetFullPath(args[0]);
+var build = Path.GetFullPath(args[1]);
+var fixtures = Path.GetFullPath(args[2]);
+var port = int.Parse(args[3]);
+if (port < 1024 || port > 65535 || !File.Exists(Path.Combine(build, "index.html"))) throw new ArgumentException("Invalid local preview arguments");
+const string gameId = "dragon-hoard-v1";
+var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+using var configuration = JsonDocument.Parse(File.ReadAllText(Path.Combine(repository, "FortuneForge.Server/appsettings.json")));
+var options = configuration.RootElement.GetProperty("Slots").Deserialize<SlotsOptions>(json)!;
+var validation = new SlotsOptionsValidator().Validate(null, options);
+if (validation.Failed) throw new InvalidOperationException(string.Join("\n", validation.Failures));
+var provider = new OptionsSlotsDefinitionProvider(Options.Create(options));
+var random = new CryptoRandomIndexSource();
+var engine = new SpinService(provider, new CryptoReelGenerator(random), new CombinationEvaluator(), new PayoutCalculator(), random);
+engine.ValidateGame(gameId);
+var scenarios = new HashSet<string>(["base-loss", "base-win", "scatter", "collection-sync", "collection-rows", "collection-paw", "collection-rand"], StringComparer.Ordinal);
+var builder = WebApplication.CreateBuilder(Array.Empty<string>());
+var app = builder.Build();
+var files = new PhysicalFileProvider(build);
+var staticOptions = new StaticFileOptions {
+    FileProvider = files,
+    OnPrepareResponse = context => context.Context.Response.Headers.CacheControl = context.Context.Request.Path.StartsWithSegments("/assets")
+        ? "public,max-age=31536000,immutable" : "no-cache,max-age=0,must-revalidate",
+};
+app.UseStaticFiles(staticOptions);
+app.MapGet("/__local-review-health", () => Results.Json(new { localOnly = true, liveRandomSpins = true,
+    gameId, activeSymbols = provider.GetSymbolSet(provider.GetGame(gameId)!.Symbols.SymbolSetId)!.Symbols.Count,
+    payoutMultiplier = provider.GetGame(gameId)!.Math.PayoutMultiplier }));
+app.MapGet("/api/catalog/visibility", () => Results.Json(new { version = 1, games = new[] { new { id = "dragon-hoard", route = "/slots/dragon-hoard", visible = true } } }));
+app.MapGet("/api/slots/demo/status", () => Results.NoContent());
+app.MapPost("/api/slots/demo/spins", async (DemoSpinRequest request, HttpContext context, CancellationToken cancellationToken) => {
+    if (request.GameId != gameId) return Results.BadRequest(new { error = "This local preview hosts Midnight Vault only." });
+    context.Response.Headers.CacheControl = "no-store";
+    // Known review links replay real controller captures at their recorded wager.
+    // Without a review parameter, every spin uses the real engine and crypto RNG.
+    var referer = context.Request.GetTypedHeaders().Referer;
+    var query = referer is null ? null : Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(referer.Query);
+    var scenario = query?.GetValueOrDefault("review").ToString();
+    if (scenario is not null && scenarios.Contains(scenario)) {
+        using var fixture = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(fixtures, $"{scenario}.json"), cancellationToken));
+        if (request.WagerPoints == fixture.RootElement.GetProperty("wagerPoints").GetInt64()) {
+            foreach (var step in fixture.RootElement.GetProperty("steps").EnumerateArray()) {
+                var input = step.GetProperty("request");
+                if (input.GetProperty("useFreeSpin").GetBoolean() == request.UseFreeSpin &&
+                    (!request.UseFreeSpin || input.GetProperty("freeSpinsRemaining").GetInt32() == request.FreeSpinsRemaining))
+                    return Results.Json(step.GetProperty("response").Clone());
+            }
+            return Results.BadRequest(new { error = "Review step does not match the captured feature state." });
+        }
+    }
+    var controller = new DemoSlotsController(engine, new LocalAudit(), NullLogger<DemoSlotsController>.Instance) {
+        ControllerContext = new ControllerContext { HttpContext = context },
+    };
+    var action = await controller.Spin(request, cancellationToken);
+    return action switch {
+        ObjectResult result => Results.Json(result.Value, statusCode: result.StatusCode ?? 200),
+        StatusCodeResult result => Results.StatusCode(result.StatusCode),
+        _ => Results.StatusCode(500),
+    };
+});
+app.Map("/api/{**path}", () => Results.Unauthorized());
+app.MapFallbackToFile("index.html", staticOptions);
+app.Run($"http://127.0.0.1:{port}");
+
+sealed class LocalAudit : IDemoSlotAuditStore {
+    public Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken) => Task.CompletedTask;
+}

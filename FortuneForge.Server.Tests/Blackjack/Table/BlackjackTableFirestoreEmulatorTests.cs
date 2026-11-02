@@ -21,6 +21,71 @@ public sealed class BlackjackTableFirestoreEmulatorTests
     }
 
     [Fact]
+    public async Task SoloJoinsUseSeparateTablesAndKeepWagerAndActionUntimed()
+    {
+        var deck = DeckWithPrefix("2|clubs", "3|clubs", "4|clubs", "5|clubs");
+        var (database, _, suffix) = CreateStore();
+        var first = new FirestoreBlackjackTableStore(database, () => deck, () => 123UL, multiplayerEnabled: false);
+        var second = new FirestoreBlackjackTableStore(database, () => deck, () => 456UL, multiplayerEnabled: false);
+        var firstUser = $"solo-first-{suffix}";
+        var secondUser = $"solo-second-{suffix}";
+        await SeedBalanceAsync(database, firstUser, 5_000);
+        await SeedBalanceAsync(database, secondUser, 5_000);
+
+        var joined = await Task.WhenAll(
+            first.JoinAsync(firstUser, "FirstPlayer", 0, Key("solo-first-join"), Start, default),
+            second.JoinAsync(secondUser, "SecondPlayer", 0, Key("solo-second-join"), Start, default));
+        var firstPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(joined[0].Session);
+        var secondPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(joined[1].Session);
+        Assert.NotEqual(firstPlay.Table.TableId, secondPlay.Table.TableId);
+        Assert.All(new[] { firstPlay, secondPlay }, play =>
+        {
+            Assert.Equal("solo", play.Table.Mode);
+            Assert.Equal(BlackjackTablePhases.Betting, play.Table.Phase);
+            Assert.Null(play.Table.WagerDeadlineAtUtc);
+            Assert.Null(play.Table.ActionDeadlineAtUtc);
+            Assert.True(Assert.Single(play.Table.Seats).IsCurrentPlayer);
+        });
+        foreach (var tableId in new[] { firstPlay.Table.TableId, secondPlay.Table.TableId })
+        {
+            var persisted = await ReadTableAsync(database, tableId);
+            Assert.True(persisted.SoloMode);
+            Assert.DoesNotContain(persisted.Players, BlackjackManagedSeat.IsManaged);
+        }
+
+        var wagerTime = Start.AddHours(1);
+        firstPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(
+            (await first.GetSessionAsync(firstUser, wagerTime, default)).Session);
+        Assert.Null(firstPlay.Table.WagerDeadlineAtUtc);
+        await first.WagerAsync(firstUser, firstPlay.Table.TableId, 100, firstPlay.Version,
+            Key("solo-first-wager"), wagerTime, default);
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            firstPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(
+                (await first.GetSessionAsync(firstUser, wagerTime.AddSeconds(20 + attempt), default)).Session);
+            if (firstPlay.Table.LegalActions.Contains(BlackjackActions.Stand)) break;
+        }
+        Assert.Contains(BlackjackActions.Stand, firstPlay.Table.LegalActions);
+        Assert.Null(firstPlay.Table.ActionDeadlineAtUtc);
+
+        var actionTime = wagerTime.AddHours(1);
+        firstPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(
+            (await first.GetSessionAsync(firstUser, actionTime, default)).Session);
+        Assert.Contains(BlackjackActions.Stand, firstPlay.Table.LegalActions);
+        Assert.Null(firstPlay.Table.ActionDeadlineAtUtc);
+        await first.ActionAsync(firstUser, firstPlay.Table.TableId, BlackjackActions.Stand,
+            firstPlay.Version, Key("solo-first-stand"), actionTime, default);
+
+        secondPlay = Assert.IsType<BlackjackTablePlaySessionResponse>(
+            (await second.GetSessionAsync(secondUser, actionTime, default)).Session);
+        Assert.Equal(BlackjackTablePhases.Betting, secondPlay.Table.Phase);
+        Assert.Null(secondPlay.Table.WagerDeadlineAtUtc);
+        Assert.Equal(4_900, await ReadBalanceAsync(database, firstUser));
+        Assert.Equal(5_000, await ReadBalanceAsync(database, secondUser));
+    }
+
+    [Fact]
     public async Task DuplicateFreeJoinAcrossInstancesReconnectsToTheSameDurableTable()
     {
         var (database, first, suffix) = CreateStore();
@@ -171,6 +236,18 @@ public sealed class BlackjackTableFirestoreEmulatorTests
             .GetSnapshotAsync();
         var revenue = Assert.Single(revenues.Documents);
         Assert.Equal(200, Field<long>(revenue, "humanWagerCents"));
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").WhereEqualTo("roundId", roundId).GetSnapshotAsync()).Documents);
+        Assert.Equal("incomplete", audit.GetValue<string>("auditStatus"));
+        var evidence = await database.Collection("gameRoundEvidence").Document(audit.Id).GetSnapshotAsync();
+        using (var captured = JsonDocument.Parse(evidence.GetValue<string>("payloadJson")))
+        {
+            Assert.True(captured.RootElement.GetProperty("dealerCards").GetArrayLength() >= 2);
+            Assert.True(captured.RootElement.GetProperty("players").GetArrayLength() >= 1);
+        }
+        var analytics = Assert.Single((await database.Collection("gameAnalyticsSettlementOutbox").WhereEqualTo("roundId", roundId).GetSnapshotAsync()).Documents);
+        Assert.Equal(user, analytics.GetValue<string>("userId"));
+        Assert.Equal(200, analytics.GetValue<long>("wagerCents"));
+        Assert.NotNull(analytics.GetValue<object>("startedAt"));
         Assert.Equal(1, Field<long>(revenue, "humanPlayerCount"));
         Assert.Equal(0, Field<long>(revenue, "botFinancialContributionCents"));
         Assert.Equal(

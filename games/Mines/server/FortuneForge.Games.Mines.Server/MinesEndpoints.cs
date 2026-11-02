@@ -20,7 +20,11 @@ public sealed class MinesServerOptions
     public string? PracticeLedgerPath { get; set; }
     public string? ReadRateLimitPolicy { get; set; }
     public string? WriteRateLimitPolicy { get; set; }
-    /// <summary>Local sample origins only. Paid writes always require the request's own origin.</summary>
+    /// <summary>Explicit opt-in for development integrations. The main host rejects practice requests.</summary>
+    public bool AllowPracticeRequests { get; set; }
+    /// <summary>Exact browser origins approved by the host, including its Firebase Hosting proxy.</summary>
+    public string[] AllowedOrigins { get; set; } = [];
+    /// <summary>Additional origins used only by a local practice sample.</summary>
     public string[] PracticeOrigins { get; set; } = [];
 }
 
@@ -83,9 +87,11 @@ public static class MinesEndpoints
             if (account is null) return Error(401, "mines-authentication-required", "Sign in to play Mines.");
             var options = context.RequestServices.GetRequiredService<IOptions<MinesServerOptions>>().Value;
             var practice = options.ForcePractice || string.Equals(context.Request.Headers["X-FortuneForge-Practice"].ToString(), "true", StringComparison.OrdinalIgnoreCase);
+            if (practice && !options.ForcePractice && !options.AllowPracticeRequests)
+                return Error(403, "mines-practice-disabled", "Mines uses your account credits. Practice play is not available.");
             if (!practice && !configuration.GetValue("Features:MinesPaidEnabled", false))
-                return Error(503, "mines-paid-disabled", "Paid Mines play is not enabled. Choose practice mode.");
-            if (write && !TrustedWrite(context, practice ? options.PracticeOrigins : []))
+                return Error(503, "mines-paid-disabled", "Mines wagering is not available yet.");
+            if (write && !TrustedWrite(context, practice ? options.AllowedOrigins.Concat(options.PracticeOrigins) : options.AllowedOrigins))
                 return Error(403, "mines-origin-rejected", "This request must originate from the game page and use JSON.");
             IMinesStore store = practice ? context.RequestServices.GetRequiredService<FileMinesPracticeStore>()
                 : new FirestoreMinesStore(context.RequestServices.GetRequiredService<FirestoreDb>());
@@ -111,13 +117,18 @@ public static class MinesEndpoints
         }
     }
 
-    private static bool TrustedWrite(HttpContext context, string[] additionalOrigins)
+    private static bool TrustedWrite(HttpContext context, IEnumerable<string> additionalOrigins)
     {
         if (!context.Request.HasJsonContentType()) return false;
         var origin = context.Request.Headers.Origin.ToString();
         var sameOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
         if (origin.Length > 0)
+        {
+            if (!Uri.TryCreate(origin, UriKind.Absolute, out var parsed) || parsed.UserInfo.Length > 0 ||
+                parsed.AbsolutePath != "/" || parsed.Query.Length > 0 || parsed.Fragment.Length > 0 ||
+                parsed.Scheme is not ("http" or "https")) return false;
             return string.Equals(origin, sameOrigin, StringComparison.OrdinalIgnoreCase) || additionalOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
+        }
         return !string.Equals(context.Request.Headers["Sec-Fetch-Site"].ToString(), "cross-site", StringComparison.OrdinalIgnoreCase);
     }
     private static IResult Error(int status, string code, string message) => Results.Json(new MinesErrorResponse(code, message), statusCode: status);

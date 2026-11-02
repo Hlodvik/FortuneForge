@@ -9,54 +9,13 @@
   cursor: auto;
 }
 
-.account-page::before {
-  background: radial-gradient(ellipse at 50% 32%, #292015 0, #17151a 35%, #0b0c10 72%);
-}
-
 .account-page a,
 .account-page button,
 .account-page input { cursor: pointer; }
 .account-page input { cursor: text; }
 
-.account-page .landing-bar {
-  width: min(calc(100% - 3rem), 87rem);
-  min-height: 5rem;
-  padding-block: .75rem;
-  border-color: #2b2a2d;
-}
-.account-page .landing-bar::before { background: #0b0c10; }
-.account-page .landing-brand {
-  color: #e8c58b;
-  font: 500 clamp(.9rem, 1.65vw, 1.3rem)/1 Georgia, serif;
-  letter-spacing: .12em;
-}
-.account-page .landing-brand__spark { background: #e8c58b; }
-.account-page .account-brand__spade {
-  display: block;
-  width: 1.8rem;
-  height: 1.8rem;
-  flex: none;
-  color: #e8c58b;
-}
-.account-page .landing-nav__link {
-  display: inline-flex;
-  min-height: 44px;
-  align-items: center;
-  padding: .7rem 1rem;
-  border: 1px solid #4b4337;
-  border-radius: .55rem;
-  background: #14151b;
-  box-shadow: none;
-  color: #eee5d4;
-  font-size: .74rem;
-  font-weight: 600;
-  letter-spacing: .02em;
-  text-transform: none;
-}
-.account-page .landing-nav__link:hover { border-color: #d7bd88; box-shadow: none; }
-
 .account-page .account-main {
-  min-height: calc(100svh - 5rem);
+  min-height: calc(100svh - 3.75rem);
   padding: clamp(2rem, 5vw, 4rem) 1.5rem;
 }
 .account-page .account-card {
@@ -131,6 +90,7 @@
   color: #efdfc2;
 }
 .account-page .landing-button:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.account-page--create .account-form__submit:disabled { cursor: not-allowed; filter: saturate(.5); opacity: .62; transform: none; }
 .account-page .account-form__error { border-color: #9c564e; background: #4d242322; color: #ffc8be; }
 .account-page .account-success__icon { border-color: #c6a66e; background: #4a37231f; box-shadow: none; color: #e4c386; }
 .account-page .account-verification-note { border-color: #5e523e; background: #211e1c; color: #d8cbb3; }
@@ -189,7 +149,6 @@
   .account-page--create .account-card__heading h1 { max-width: none; }
 }
 @media (max-width: 560px) {
-  .account-page .landing-bar { width: calc(100% - 2rem); }
   .account-page .account-main { padding: 2.2rem 1rem; }
   .account-page .account-card { padding: 1.45rem; }
   .account-page .account-card h1 { font-size: clamp(2rem, 9vw, 2.7rem); }

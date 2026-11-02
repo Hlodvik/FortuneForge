@@ -59,11 +59,11 @@ export function oddsCopy(point: number | null): string {
 /** Aggregate server amounts for display without resolving any bet locally. */
 export function roundTotals(round: CrapsRound): CrapsRoundTotals {
   const extras = round.extraBets ?? []
-  const stakeCents = Math.round(round.stake * 100) + sumCents(extras.map(bet => bet.stake))
-  const returnedCents = Math.round((round.lastOutcome?.totalReturn ?? 0) * 100)
+  const stakeCents = round.totalWagerCents ?? Math.round(round.stake * 100) + sumCents(extras.filter(bet => !bet.cancelled).map(bet => bet.stake))
+  const returnedCents = round.totalReturnCents ?? Math.round((round.lastOutcome?.totalReturn ?? 0) * 100)
     + sumCents(extras.filter(bet => bet.resolved).map(bet => bet.totalReturn ?? 0))
   const workingCents = (round.phase === 'resolved' ? 0 : Math.round(round.stake * 100))
-    + sumCents(extras.filter(bet => !bet.resolved).map(bet => bet.stake))
+    + sumCents(extras.filter(bet => !bet.resolved && !bet.cancelled).map(bet => bet.stake))
   return {
     stake: stakeCents / 100,
     returned: returnedCents / 100,

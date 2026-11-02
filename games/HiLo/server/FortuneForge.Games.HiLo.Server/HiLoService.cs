@@ -33,6 +33,8 @@ public sealed class HiLoService(IHiLoStore store, TimeProvider? timeProvider = n
             throw new HiLoException("invalid_request", "operationId requires 16–128 letters, digits, hyphens or underscores.", 400);
         if (command.Kind == "start")
         {
+            // Permit an old accepted operation to replay from the journal. The
+            // new-entry limit is enforced in Apply after replay lookup.
             if (command.WagerCents is < 10 or > 100_000)
                 throw new HiLoException("invalid_request", "Wagers must be from 10 through 100000 whole cents.", 400);
         }
@@ -65,6 +67,8 @@ internal static class HiLoMutations
         string? ledger;
         if (command.Kind == "start")
         {
+            if (command.WagerCents > HiLoRules.MaximumWager * 100m)
+                throw new HiLoException("invalid_request", "Wagers must be from 10 through 500 whole cents.", 400);
             if (state.Round?.Status == HiLoRoundStatus.Active) throw new HiLoException("round_active", "Finish or cash out your current round before placing another wager.");
             if (state.BalanceCents < command.WagerCents) throw new HiLoException("insufficient_funds", "The wallet has insufficient credits for this wager.");
             round = HiLoEngine.Start(Guid.NewGuid(), command.WagerCents / 100m, draw());

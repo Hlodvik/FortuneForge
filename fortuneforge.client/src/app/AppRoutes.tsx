@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { InGameShell } from '../components/InGameShell'
+import { RouteStateLayout } from './RouteStateLayout'
 import { GameLoadingScreen } from '../features/game-loading/GameLoadingScreen'
 import { GameLoadingRouteProvider } from '../features/game-loading/GameLoadingRouteContext'
 import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingRegistry'
@@ -15,6 +15,7 @@ const AuthenticatedThreeCardPokerRoute = lazy(() => import('./routes/ThreeCardPo
 const AuthenticatedHouseHoldemRoute = lazy(() => import('./routes/HouseHoldemRoute').then((module) => ({ default: module.AuthenticatedHouseHoldemRoute })))
 const AuthenticatedTexasHoldemRoute = lazy(() => import('./routes/TexasHoldemRoute').then((module) => ({ default: module.AuthenticatedTexasHoldemRoute })))
 const AuthenticatedSolitaireRoute = lazy(() => import('./routes/SolitaireRoute').then((module) => ({ default: module.AuthenticatedSolitaireRoute })))
+const AuthenticatedFreeSolitaireRoute = lazy(() => import('./routes/FreeSolitaireRoute').then((module) => ({ default: module.AuthenticatedFreeSolitaireRoute })))
 const AuthenticatedAsteroidsRoute = lazy(() => import('./routes/AsteroidsRoute').then((module) => ({ default: module.AuthenticatedAsteroidsRoute })))
 const AuthenticatedTwentyFortyEightRoute = lazy(() => import('./routes/TwentyFortyEightRoute').then((module) => ({ default: module.AuthenticatedTwentyFortyEightRoute })))
 const AuthenticatedDropMergeRoute = lazy(() => import('./routes/DropMergeRoute').then((module) => ({ default: module.AuthenticatedDropMergeRoute })))
@@ -22,6 +23,7 @@ const AuthenticatedBaccaratRoute = lazy(() => import('./routes/BaccaratRoute').t
 const AuthenticatedDragonTigerRoute = lazy(() => import('./routes/DragonTigerRoute').then((module) => ({ default: module.AuthenticatedDragonTigerRoute })))
 const AuthenticatedHiLoRoute = lazy(() => import('./routes/HiLoRoute').then((module) => ({ default: module.AuthenticatedHiLoRoute })))
 const AuthenticatedAndarBaharRoute = lazy(() => import('./routes/AndarBaharRoute').then((module) => ({ default: module.AuthenticatedAndarBaharRoute })))
+const AuthenticatedMinesRoute = lazy(() => import('./routes/MinesRoute').then((module) => ({ default: module.AuthenticatedMinesRoute })))
 const AuthenticatedCasinoWarRoute = lazy(() => import('./routes/CasinoWarRoute').then((module) => ({ default: module.AuthenticatedCasinoWarRoute })))
 const AuthenticatedKenoRoute = lazy(() => import('./routes/KenoRoute').then((module) => ({ default: module.AuthenticatedKenoRoute })))
 const AuthenticatedSicBoRoute = lazy(() => import('./routes/SicBoRoute').then((module) => ({ default: module.AuthenticatedSicBoRoute })))
@@ -34,13 +36,12 @@ const AuthenticatedRouletteRoute = lazy(() => import('./routes/RouletteRoute').t
 const AuthenticatedCrapsRoute = lazy(() => import('./routes/CrapsRoute').then((module) => ({ default: module.AuthenticatedCrapsRoute })))
 const AuthenticatedLiarsDiceRoute = lazy(() => import('./routes/LiarsDiceRoute').then((module) => ({ default: module.AuthenticatedLiarsDiceRoute })))
 const SlotGameRoute = lazy(() => import('./routes/SlotGameRoute').then((module) => ({ default: module.SlotGameRoute })))
-const RainbowRealmMachinePreview = lazy(() => import('../pages/slots/RainbowRealmMachinePreview').then((module) => ({ default: module.RainbowRealmMachinePreview })))
 const CreateAccountPage = lazy(() => import('../pages/auth/CreateAccountPage').then((module) => ({ default: module.CreateAccountPage })))
 const LoginPage = lazy(() => import('../pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
 const VerifyEmailPage = lazy(() => import('../pages/auth/VerifyEmailPage').then((module) => ({ default: module.VerifyEmailPage })))
 const HomePage = lazy(() => import('../pages/account/AccountHomePage').then((module) => ({ default: module.HomePage })))
-const AccountSettingsPage = lazy(() => import('../pages/account/AccountSettingsPage').then((module) => ({ default: module.AccountSettingsPage })))
-const AccountHistoryPage = lazy(() => import('../pages/account/AccountHistoryPage').then((module) => ({ default: module.AccountHistoryPage })))
+const AccountPasswordPage = lazy(() => import('../pages/account/AccountPasswordPage').then((module) => ({ default: module.AccountPasswordPage })))
+const AccountReviewPage = lazy(() => import('../pages/account/AccountReviewPage').then((module) => ({ default: module.AccountReviewPage })))
 const PurchaseCreditsPage = lazy(() => import('../pages/payments/PurchaseCreditsPage').then((module) => ({ default: module.PurchaseCreditsPage })))
 const PaymentInvoicesPage = lazy(() => import('../pages/payments/PaymentInvoicesPage').then((module) => ({ default: module.PaymentInvoicesPage })))
 const PaymentInvoicePage = lazy(() => import('../pages/payments/PaymentInvoicePage').then((module) => ({ default: module.PaymentInvoicePage })))
@@ -78,6 +79,7 @@ export function AppRoutes({
   else if (pathname === '/games/dragon-tiger') route = <AuthenticatedDragonTigerRoute />
   else if (pathname === '/games/hi-lo') route = <AuthenticatedHiLoRoute />
   else if (pathname === '/games/andar-bahar') route = <AuthenticatedAndarBaharRoute />
+  else if (pathname === '/games/mines') route = <AuthenticatedMinesRoute />
   else if (pathname === '/games/casino-war') route = <AuthenticatedCasinoWarRoute />
   else if (pathname === '/games/keno') route = <AuthenticatedKenoRoute />
   else if (pathname === '/games/sic-bo') route = <AuthenticatedSicBoRoute />
@@ -94,17 +96,19 @@ export function AppRoutes({
   else if (pathname === '/cards/house-holdem') route = <AuthenticatedHouseHoldemRoute />
   else if (pathname === '/cards/texas-holdem') route = <AuthenticatedTexasHoldemRoute />
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />
+  else if (pathname === '/cards/free-solitaire') route = <AuthenticatedFreeSolitaireRoute />
   else if (slotRoute !== null) {
     route = <SlotGameRoute definition={slotRoute} pathname={pathname} onSpinStateChange={onSpinStateChange} />
   }
-  else if (pathname === '/slots/rainbow-realm-preview') route = <RainbowRealmMachinePreview />
+  else if (pathname === '/slots/rainbow-realm-preview') route = <RainbowRealmPreviewRedirect />
   else if (pathname === '/create-account') route = <CreateAccountPage />
   else if (pathname === '/login') route = <LoginPage />
   else if (pathname === '/verify-email') route = <VerifyEmailPage />
-  else if (pathname === '/home') route = <HomePage />
-  else if (pathname === '/home/settings') route = <AccountSettingsPage />
-  else if (pathname === '/home/history') route = <AccountHistoryPage />
-  else if (pathname === '/home/rand' || pathname === '/home/credits') route = <PurchaseCreditsPage />
+  else if (pathname === '/account/review') route = <AccountReviewPage />
+  else if (pathname === '/home' || pathname === '/home/settings' || pathname === '/home/history') route = <HomePage />
+  else if (pathname === '/home/change-password') route = <AccountPasswordPage />
+  else if (pathname === '/balance') route = <PurchaseCreditsPage />
+  else if (pathname === '/home/rand' || pathname === '/home/credits') route = <LegacyBalanceRedirect />
   else if (pathname === '/home/invoices') route = <PaymentInvoicesPage />
   else if (invoiceMatch !== null) route = <PaymentInvoicePage invoiceId={invoiceMatch[1]} />
   else if (pathname === '/admin/invoices') route = <AdminPaymentInvoicesPage />
@@ -114,11 +118,9 @@ export function AppRoutes({
   else route = <NotFoundPage />
 
   return (
-    <GameLoadingRouteProvider entry={loadingEntry}>
-      <RouteErrorBoundary key={pathname}>
-        <Suspense fallback={pathname === '/cards/three-card-poker'
-          ? <InGameShell authenticated title="Three Card Poker" theme="cards" className="blackjack-game-shell three-card-poker-shell" bodyClassName="blackjack-shell-body"><GameLoadingScreen entry={loadingEntry} statusLabel="Loading" /></InGameShell>
-          : loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}>{route}</Suspense>
+    <GameLoadingRouteProvider entry={loadingEntry} pathname={pathname}>
+      <RouteErrorBoundary key={pathname} pathname={pathname}>
+        <Suspense fallback={<RouteStateLayout pathname={pathname} entry={loadingEntry}>{loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}</RouteStateLayout>}>{route}</Suspense>
       </RouteErrorBoundary>
     </GameLoadingRouteProvider>
   )
@@ -126,14 +128,26 @@ export function AppRoutes({
 
 function CatalogueHomeRedirect({ href }: { href: string }) {
   useEffect(() => { window.location.replace(href) }, [href])
-  return <main className="route-state" role="status">Opening your home…</main>
+  return <RouteStateLayout><main className="route-state" role="status">Opening your home…</main></RouteStateLayout>
+}
+
+function LegacyBalanceRedirect() {
+  useEffect(() => {
+    window.location.replace(`/balance${window.location.search}${window.location.hash}`)
+  }, [])
+  return <RouteStateLayout><main className="route-state" role="status">Opening your balance…</main></RouteStateLayout>
+}
+
+function RainbowRealmPreviewRedirect() {
+  useEffect(() => { window.location.replace('/slots/rainbow-realm/demo') }, [])
+  return <RouteStateLayout><main className="route-state" role="status">Opening Rainbow Realm…</main></RouteStateLayout>
 }
 
 function RouteLoadingState() {
   return <main className="route-state" role="status">Opening Fortune Forge…</main>
 }
 
-class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class RouteErrorBoundary extends Component<{ children: ReactNode; pathname: string }, { failed: boolean }> {
   state = { failed: false }
 
   static getDerivedStateFromError() {
@@ -143,12 +157,12 @@ class RouteErrorBoundary extends Component<{ children: ReactNode }, { failed: bo
   render() {
     if (!this.state.failed) return this.props.children
     return (
-      <main className="route-state route-state--error" role="alert">
+      <RouteStateLayout pathname={this.props.pathname}><main className="route-state route-state--error" role="alert">
         <strong>This page could not be loaded.</strong>
         <span>Check your connection, then try loading the page again.</span>
         <button type="button" onClick={() => window.location.reload()}>Try again</button>
         <a href="/">Return to Fortune Forge</a>
-      </main>
+      </main></RouteStateLayout>
     )
   }
 }

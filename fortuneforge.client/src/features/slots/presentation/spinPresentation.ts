@@ -54,6 +54,7 @@ export type SlotOutcomePresentationInput = Readonly<{
   spinStage: 'requesting' | 'stopping'
   freeSpinsRemaining: number
   useFreeGameForNextSpin: boolean
+  bonusName?: string
 }>
 
 export function isBigWinAward(award: number, wager: number): boolean {
@@ -83,6 +84,7 @@ export function getSlotOutcomePresentation({
   spinStage,
   freeSpinsRemaining,
   useFreeGameForNextSpin,
+  bonusName,
 }: SlotOutcomePresentationInput): SlotOutcomePresentation {
   if (demoAvailabilityMessage !== null) {
     return {
@@ -120,13 +122,17 @@ export function getSlotOutcomePresentation({
   }
 
   if (lastFreeSpinsAwarded > 0) {
-    const noun = lastFreeSpinsAwarded === 1 ? 'free game' : 'free games'
-    const remainingNoun = freeSpinsRemaining === 1 ? 'free game is' : 'free games are'
+    const noun = bonusName
+      ? `${bonusName} ${lastFreeSpinsAwarded === 1 ? 'spin' : 'spins'}`
+      : lastFreeSpinsAwarded === 1 ? 'free game' : 'free games'
+    const remainingNoun = bonusName
+      ? `bonus ${freeSpinsRemaining === 1 ? 'spin is' : 'spins are'}`
+      : freeSpinsRemaining === 1 ? 'free game is' : 'free games are'
     return {
       label: 'Feature unlocked',
       title: `${lastFreeSpinsAwarded} ${noun} won`,
       detail: `${freeSpinsRemaining} ${remainingNoun} ready at ${formatOutcomeRand(activeWager)}.`,
-      nextAction: 'Press Spin to begin your free games.',
+      nextAction: bonusName ? `Press Spin to enter ${bonusName}.` : 'Press Spin to begin your free games.',
       significance: 'major',
       tone: 'milestone',
     }
@@ -175,10 +181,12 @@ export function getSlotOutcomePresentation({
   if (hasCompletedSpin) {
     if (useFreeGameForNextSpin) {
       return {
-        label: 'Free game ready',
-        title: `${freeSpinsRemaining} free ${freeSpinsRemaining === 1 ? 'game' : 'games'} remain`,
-        detail: `The free-game wager stays locked at ${formatOutcomeRand(activeWager)}.`,
-        nextAction: 'Press Spin for the next free game.',
+        label: bonusName ? `${bonusName} ready` : 'Free game ready',
+        title: bonusName
+          ? `${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin remains' : 'spins remain'}`
+          : `${freeSpinsRemaining} free ${freeSpinsRemaining === 1 ? 'game' : 'games'} remain`,
+        detail: `The ${bonusName ? 'bonus' : 'free-game'} wager stays locked at ${formatOutcomeRand(activeWager)}.`,
+        nextAction: bonusName ? `Press Spin to continue ${bonusName}.` : 'Press Spin for the next free game.',
         significance: 'standard',
         tone: 'milestone',
       }

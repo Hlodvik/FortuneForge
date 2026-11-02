@@ -1,0 +1,80 @@
+// Deterministic game exports of approved art. No image generation or master edits.
+import { createRequire } from 'node:module'
+import { existsSync } from 'node:fs'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { dirname, resolve, relative } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const require = createRequire(import.meta.url)
+const sharp = require('sharp')
+const root = dirname(fileURLToPath(import.meta.url))
+const sourceRoot = root
+if (!process.argv[2]) throw new Error('Usage: node export-approved-art.mjs <new-output-directory>')
+const publicRoot = resolve(process.argv[2])
+if (existsSync(publicRoot)) throw new Error('Output directory must be new; existing art is never overwritten')
+const manifest = JSON.parse(await readFile(resolve(sourceRoot, 'manifest.json'), 'utf8'))
+const sha = bytes => createHash('sha256').update(bytes).digest('hex')
+const slash = path => path.replaceAll('\\', '/')
+const sizes = [96, 192, 320]
+const slugs = {
+  ring: 'ruby-ring', 'loose-diamond': 'loose-diamond', 'front-vault': 'front-vault',
+  'overflowing-chips': 'overflowing-chips', 'cash-briefcase': 'cash-briefcase',
+  'ornate-A': 'ornate-a', 'ornate-K': 'ornate-k', 'ornate-Q': 'ornate-q', 'ornate-J': 'ornate-j',
+  'triple-sevens': 'triple-sevens', 'faberge-egg': 'faberge-egg',
+  ruby: 'ruby-access', sapphire: 'sapphire-access', amber: 'amber-access', emerald: 'emerald-access',
+}
+if (manifest.assets.length !== 15 || manifest.assets.some(asset => !slugs[asset.id])) throw new Error('Expected the fifteen approved designs')
+
+const records = []
+const smallTiles = []
+for (const asset of manifest.assets) {
+  const sourcePath = resolve(sourceRoot, asset.file)
+  const bytes = await readFile(sourcePath)
+  if (sha(bytes) !== asset.sha256) throw new Error(`Approved source changed: ${asset.id}`)
+  const [left, top, right, bottom] = asset.visibleBoundsAtAlpha8
+  const extract = { left, top, width: right - left, height: bottom - top }
+  const isLetter = asset.id.startsWith('ornate-')
+  const variants = []
+  for (const size of sizes) {
+    // Same relative containment as the approved board: art occupies 300/360
+    // of its square, preserving natural proportions and clear space around it.
+    const maxArtSize = Math.round(size * 5 / 6)
+    const contained = await sharp(bytes).extract(extract).resize(maxArtSize, maxArtSize, { fit: 'inside' }).png().toBuffer({ resolveWithObject: true })
+    const normalized = sharp({ create: { width: size, height: size, channels: 4, background: '#00000000' } }).composite([{
+      input: contained.data,
+      left: Math.round((size - contained.info.width) / 2),
+      top: Math.round((size - contained.info.height) / 2),
+    }])
+    // Fine letter engraving is lossless. Prop RGB is compressed; alpha stays
+    // at full quality so silhouettes remain clean on the dark reel background.
+    const webp = await normalized.webp(isLetter ? { lossless: true, effort: 6 } : { quality: 92, alphaQuality: 100, effort: 6 }).toBuffer()
+    const info = await sharp(webp).metadata()
+    if (info.width !== size || info.height !== size || !info.hasAlpha) throw new Error(`Invalid game export: ${asset.id}/${size}`)
+    const destination = resolve(publicRoot, String(size), `midnight-vault-${slugs[asset.id]}.webp`)
+    await mkdir(dirname(destination), { recursive: true })
+    await writeFile(destination, webp)
+    variants.push({ width: size, height: size, bytes: webp.length, sha256: sha(webp), file: slash(relative(root, destination)), encoding: isLetter ? 'WebP lossless' : 'WebP quality92 alphaQuality100' })
+    if (size === 96) smallTiles.push({ asset, bytes: webp })
+  }
+  if (sha(await readFile(sourcePath)) !== asset.sha256) throw new Error(`Source mutated during export: ${asset.id}`)
+  records.push({ id: asset.id, label: asset.label, slug: slugs[asset.id], source: slash(relative(root, sourcePath)), sourceSha256: asset.sha256, sourceBytes: bytes.length, sourceWidth: asset.width, sourceHeight: asset.height, sourcesUnchanged: true, variants })
+}
+
+// Inspect at exactly 96px per exported image, rather than magnifying masters.
+const width = 800, height = 462
+const background = Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="#071321"/><text x="22" y="32" fill="#e7c77d" font-family="Arial" font-size="18">MIDNIGHT VAULT · actual 96px game exports</text>${smallTiles.map(({ asset }, i) => `<rect x="${16 + i % 5 * 156}" y="${50 + Math.floor(i / 5) * 134}" width="144" height="126" rx="8" fill="#0b1a2b" stroke="#25354a"/><text x="${88 + i % 5 * 156}" y="${168 + Math.floor(i / 5) * 134}" fill="#edf1f7" font-family="Arial" font-size="11" text-anchor="middle">${asset.label}</text>`).join('')}</svg>`)
+await sharp(background).composite(smallTiles.map(({ bytes }, i) => ({ input: bytes, left: 40 + i % 5 * 156, top: 57 + Math.floor(i / 5) * 134 }))).png().toFile(resolve(publicRoot, 'actual-size-96.png'))
+const report = {
+  kind: 'Approved Midnight Vault art: deterministic runtime exports',
+  sourceManifest: 'manifest.json',
+  sourceManifestSha256: sha(await readFile(resolve(sourceRoot, 'manifest.json'))),
+  masterCount: records.length, mastersUnchanged: records.every(asset => asset.sourcesUnchanged),
+  layout: 'Alpha>8 visible bounds, contain at 5/6 of square, centered; proportions preserved',
+  totalMasterBytes: records.reduce((sum, asset) => sum + asset.sourceBytes, 0),
+  totalRuntimeBytes: records.flatMap(asset => asset.variants).reduce((sum, variant) => sum + variant.bytes, 0),
+  bytesByTier: Object.fromEntries(sizes.map(size => [size, records.reduce((sum, asset) => sum + asset.variants.find(variant => variant.width === size).bytes, 0)])),
+  assets: records,
+}
+await writeFile(resolve(publicRoot, 'runtime-art-manifest.json'), JSON.stringify(report, null, 2) + '\n')
+console.log(JSON.stringify({ mastersUnchanged: report.mastersUnchanged, masters: report.masterCount, totalMasterBytes: report.totalMasterBytes, totalRuntimeBytes: report.totalRuntimeBytes, bytesByTier: report.bytesByTier }))

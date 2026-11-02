@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -8,6 +9,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import { cardLabel } from '../shared/cards'
+import { playCardAudio } from '../shared/cardAudio'
 import { CourtCardSymbol } from '../shared/CourtCardSymbol'
 import {
   canApplyLocalSolitaireCommand,
@@ -73,18 +75,54 @@ export function SolitaireBoard({
   const compactCards = useCompactCardFaces()
   const boardRef = useRef<HTMLElement | null>(null)
   const dragRef = useRef<DragState | null>(null)
+  const capturedCardRef = useRef<HTMLButtonElement | null>(null)
+  const cancelledPointerRef = useRef<number | null>(null)
   const suppressClickRef = useRef(false)
   const previousGameRef = useRef<SolitaireGame | null>(null)
   const cardRectsRef = useRef<Map<string, DOMRect>>(new Map())
   const flightTimerRef = useRef<number | null>(null)
+  const flipCueTimersRef = useRef<number[]>([])
   const lastHintRequestId = useRef(hintRequestId)
+  const resetDrag = useCallback((cancelled = false) => {
+    const current = dragRef.current, captured = capturedCardRef.current
+    if (cancelled && current && current.pointerId >= 0) cancelledPointerRef.current = current.pointerId
+    dragRef.current = null; capturedCardRef.current = null
+    boardRef.current?.style.removeProperty('--solitaire-drag-x')
+    boardRef.current?.style.removeProperty('--solitaire-drag-y')
+    if (current && captured?.hasPointerCapture?.(current.pointerId)) {
+      try { captured.releasePointerCapture(current.pointerId) } catch { /* The browser may already have released it. */ }
+    }
+    setDrag(null)
+  }, [])
+
+  const emitCommand = (command: SolitaireCommand) => {
+    const uncoveredCard = command.type === 'move' && command.from.zone === 'tableau'
+      ? game.tableau[command.from.index]?.[command.startIndex - 1]
+      : undefined
+    playCardAudio(command.type === 'move' ? 'move' : 'deal')
+    if (uncoveredCard?.isFaceUp === false) {
+      const timer = window.setTimeout(() => {
+        flipCueTimersRef.current = flipCueTimersRef.current.filter((value) => value !== timer)
+        playCardAudio('deal')
+      }, 85)
+      flipCueTimersRef.current.push(timer)
+    }
+    onCommand(command)
+  }
 
   useEffect(() => {
     setSelection(null)
-    setDrag(null)
+    resetDrag(true)
     setHint(null)
-    dragRef.current = null
-  }, [game])
+  }, [game, resetDrag])
+
+  useEffect(() => { if (busy) resetDrag(true) }, [busy, resetDrag])
+  useEffect(() => {
+    const cancel = () => resetDrag(true)
+    const visibility = () => { if (document.hidden) resetDrag(true) }
+    window.addEventListener('blur', cancel); document.addEventListener('visibilitychange', visibility)
+    return () => { window.removeEventListener('blur', cancel); document.removeEventListener('visibilitychange', visibility) }
+  }, [resetDrag])
 
   useEffect(() => {
     if (hintRequestId === lastHintRequestId.current) return
@@ -140,6 +178,7 @@ export function SolitaireBoard({
 
   useEffect(() => () => {
     if (flightTimerRef.current !== null) window.clearTimeout(flightTimerRef.current)
+    for (const timer of flipCueTimersRef.current) window.clearTimeout(timer)
   }, [])
 
   const choose = (
@@ -151,7 +190,7 @@ export function SolitaireBoard({
     if (selection === null) {
       const automatic = firstLegalClickMove(game, from, startIndex)
       if (automatic !== null) {
-        onCommand(automatic)
+        emitCommand(automatic)
         return
       }
       setSelection({ from, startIndex, cardId: card.id })
@@ -163,13 +202,13 @@ export function SolitaireBoard({
     }
     const command = { type: 'move', from: selection.from, startIndex: selection.startIndex, to: from } as const
     if (canApplyLocalSolitaireCommand(game, command)) {
-      onCommand(command)
+      emitCommand(command)
       return
     }
     const automatic = firstLegalClickMove(game, from, startIndex)
     if (automatic !== null) {
       setSelection(null)
-      onCommand(automatic)
+      emitCommand(automatic)
       return
     }
     setSelection({ from, startIndex, cardId: card.id })
@@ -178,7 +217,7 @@ export function SolitaireBoard({
   const moveTo = (to: SolitairePileReference) => {
     if (busy || selection === null) return
     const command = { type: 'move', from: selection.from, startIndex: selection.startIndex, to } as const
-    if (canApplyLocalSolitaireCommand(game, command)) onCommand(command)
+    if (canApplyLocalSolitaireCommand(game, command)) emitCommand(command)
     else setSelection(null)
   }
 
@@ -186,8 +225,10 @@ export function SolitaireBoard({
     event: ReactPointerEvent<HTMLButtonElement>,
     source: Selection,
   ) => {
-    if (busy || event.button !== 0) return
+    if (busy || !event.isPrimary || event.button !== 0 || dragRef.current !== null) return
+    cancelledPointerRef.current = null; suppressClickRef.current = false
     event.currentTarget.setPointerCapture(event.pointerId)
+    capturedCardRef.current = event.currentTarget
     const next: DragState = {
       source,
       pointerId: event.pointerId,
@@ -220,19 +261,13 @@ export function SolitaireBoard({
     }
   }
 
-  const resetDrag = () => {
-    boardRef.current?.style.removeProperty('--solitaire-drag-x')
-    boardRef.current?.style.removeProperty('--solitaire-drag-y')
-    dragRef.current = null
-    setDrag(null)
-  }
-
   const clearDragStyle = (element: HTMLButtonElement) => {
     element.style.removeProperty('--solitaire-drag-x')
     element.style.removeProperty('--solitaire-drag-y')
   }
 
   const commitDrag = (source: Selection, clientX: number, clientY: number) => {
+    if (busy) return
     const target = findDropTarget(boardRef.current, clientX, clientY)
     suppressClickRef.current = true
     window.setTimeout(() => {
@@ -240,12 +275,17 @@ export function SolitaireBoard({
     }, 0)
     if (target !== null && !samePile(source.from, target)) {
       const command = { type: 'move', from: source.from, startIndex: source.startIndex, to: target } as const
-      if (canApplyLocalSolitaireCommand(game, command)) onCommand(command)
+      if (canApplyLocalSolitaireCommand(game, command)) emitCommand(command)
     }
   }
 
   const finishDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const current = dragRef.current
+    if (current === null && cancelledPointerRef.current === event.pointerId) {
+      event.preventDefault(); cancelledPointerRef.current = null; suppressClickRef.current = true
+      window.setTimeout(() => { suppressClickRef.current = false }, 0)
+      return
+    }
     if (current === null || current.pointerId !== event.pointerId) return
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId)
@@ -259,12 +299,13 @@ export function SolitaireBoard({
   }
 
   const cancelDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (dragRef.current?.pointerId !== event.pointerId) return
     clearDragStyle(event.currentTarget)
-    resetDrag()
+    resetDrag(true)
   }
 
   const beginNativeDrag = (event: ReactDragEvent<HTMLButtonElement>, source: Selection) => {
-    if (busy) {
+    if (busy || dragRef.current !== null) {
       event.preventDefault()
       return
     }
@@ -375,7 +416,7 @@ export function SolitaireBoard({
             aria-label={game.stock.length > 0
               ? `Draw ${game.drawCount === 1 ? 'one card' : 'three cards'}, ${game.stock.length} remaining`
               : 'Recycle the waste pile'}
-            onClick={() => onCommand({ type: 'draw' })}
+            onClick={() => emitCommand({ type: 'draw' })}
           >
             {game.stock.length > 0
               ? <SolitaireCardBack />
@@ -528,7 +569,7 @@ export function SolitaireBoard({
                     onClick={() => {
                       activate(() => {
                         if (!card.isFaceUp && isTop) {
-                          onCommand({ type: 'flip', column })
+                          emitCommand({ type: 'flip', column })
                           return
                         }
                         if (card.isFaceUp) choose(target, index, card)
@@ -603,6 +644,7 @@ function CardButton({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerCancel}
+      onLostPointerCapture={onPointerCancel}
       onDragStart={onDragStart}
       onDrag={onDrag}
       onDragEnd={onDragEnd}

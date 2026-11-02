@@ -1,0 +1,36 @@
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const directory = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(directory, '../../..')
+const prefix = process.argv[2]
+if (!prefix || !/^[a-z0-9-]+$/.test(prefix)) throw new Error('Supply a local report prefix.')
+const report = JSON.parse(readFileSync(join(directory, `${prefix}.json`), 'utf8'))
+const clean = text => String(text ?? '').replace(/\u001b\[[0-9;]*m/g, '')
+const failedFiles = report.testResults.filter(file => file.status === 'failed' || file.assertionResults.some(test => test.status === 'failed'))
+const summary = {
+  report: `${prefix}.json`, log: `${prefix}.log`,
+  command: "npm.cmd exec -- vitest run --exclude 'e2e/**' --maxWorkers=2 --reporter=default --reporter=json",
+  timeoutChanges: false, skipChanges: false, maxWorkers: 2,
+  success: report.success,
+  files: report.testResults.length,
+  passedFiles: report.testResults.filter(file => file.status === 'passed').length,
+  failedFiles: failedFiles.length,
+  tests: report.numTotalTests,
+  passed: report.numPassedTests,
+  failed: report.numFailedTests,
+  pending: report.numPendingTests,
+  runtimeErrorSuites: report.numRuntimeErrorTestSuites ?? null,
+  elapsedSeconds: (Math.max(...report.testResults.map(file => file.endTime ?? 0)) - report.startTime) / 1000,
+  failures: failedFiles.map(file => ({
+    file: relative(repo, file.name).replaceAll('\\', '/'),
+    suiteMessage: clean(file.message),
+    tests: file.assertionResults.filter(test => test.status === 'failed').map(test => ({
+      name: test.fullName,
+      messages: test.failureMessages.map(message => clean(message).slice(0, 4000)),
+    })),
+  })),
+}
+writeFileSync(join(directory, `${prefix}-summary.json`), JSON.stringify(summary, null, 2) + '\n')
+console.log(JSON.stringify(summary, null, 2))

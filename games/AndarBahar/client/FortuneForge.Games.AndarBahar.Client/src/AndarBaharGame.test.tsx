@@ -8,7 +8,7 @@ import { playAndarBaharAudio } from './andarBaharAudio'
 
 vi.mock('./andarBaharAudio', () => ({ playAndarBaharAudio: vi.fn(), stopAndarBaharAudio: vi.fn() }))
 const player = 'table-control-test'
-const status: AndarBaharStatus = { available: false, minimumStake: .5, maximumStake: 100, stakeIncrement: .5, balance: 100, mode: 'development-practice-andar-first' }
+const status: AndarBaharStatus = { available: false, minimumStake: .5, maximumStake: 50, stakeIncrement: .5, balance: 100, mode: 'development-practice-andar-first' }
 function gateway(available = false) {
   return {
     getStatus: vi.fn<AndarBaharGateway['getStatus']>().mockResolvedValue({ ...status, available }),
@@ -65,6 +65,20 @@ describe('table controls', () => {
     const result = screen.getByRole('dialog', { name: 'Andar wins' })
     expect(within(result).getAllByTestId('shared-face').map(node => node.textContent)).toEqual(['queen-hearts', 'queen-diamonds'])
     expect(container.querySelector('.ff-ab__card--back')).toBeNull()
+
+    fireEvent.click(within(result).getByRole('button', { name: 'Continue' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByTestId('shared-face')).toBeNull()
+    expect(container.querySelector('.ff-ab__card--back')).not.toBeNull()
+    expect(screen.getByTestId('andar-bahar-total-bet').textContent).toBe('R0.00')
+    expect(screen.getByTestId('andar-bahar-balance').textContent).toBe('R104.50')
+    expect(container.querySelectorAll('.ff-ab__match-tag, .ff-ab__bet.is-winner')).toHaveLength(0)
+    expect(screen.getByRole('status').textContent).toContain('Place your bets')
+    expect(api.createRound).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rebet' }))
+    expect(screen.getByTestId('andar-bahar-total-bet').textContent).toBe('R5.00')
+    expect(screen.queryByTestId('shared-face')).toBeNull()
   })
 
   it('shows one game title with compact sound/help controls and no duplicate site chrome', async () => {

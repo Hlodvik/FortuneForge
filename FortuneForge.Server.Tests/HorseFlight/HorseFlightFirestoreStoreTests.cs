@@ -1,5 +1,7 @@
 using FortuneForge.Games.HorseFlight;
+using FortuneForge.Server.Arcade;
 using FortuneForge.Server.Arcade.HorseFlight;
+using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -69,7 +71,21 @@ public sealed class HorseFlightFirestoreStoreTests(SolitaireFirestoreEmulatorFix
             Field<string>(entry, "userId") == "player-1" &&
             Field<string>(entry, "event") == "completed" &&
             Field<string>(entry, "idempotencyKey") == "horse-flight-complete-0001");
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal("horse-flight", Field<string>(audit, "gameId"));
+        Assert.Equal(started.RunId, Field<string>(audit, "roundId"));
+        Assert.Equal("incomplete", Field<string>(audit, "auditStatus"));
+        Assert.True(Field<bool>(audit, "securityAuditPending"));
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        var payload = Field<string>(evidence, "payloadJson");
+        Assert.Contains("jumpTicks", payload);
+        var summary = FirestoreGameRoundAuditStore.Summary(audit);
+        Assert.Empty(await ArcadeReplayAudit.InspectAsync(database, summary, payload, default));
+        Assert.Equal(2, (await database.Collection("gameSecurityEvents").GetSnapshotAsync()).Count);
         Assert.Empty((await database.Collection("balanceTransactions").GetSnapshotAsync()).Documents);
+        await run.Reference.UpdateAsync("score", completed.Score + 1);
+        Assert.Contains(await ArcadeReplayAudit.InspectAsync(database, summary, payload, default),
+            finding => finding.Code == "arcade-run-source-mismatch");
     }
 
     [Fact]

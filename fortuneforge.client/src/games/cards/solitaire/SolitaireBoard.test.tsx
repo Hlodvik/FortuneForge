@@ -2,12 +2,16 @@
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { playCardAudio } from '../shared/cardAudio'
 import { SolitaireBoard } from './SolitaireBoard'
 import type { SolitaireGame } from './solitaireTypes'
+
+vi.mock('../shared/cardAudio', () => ({ playCardAudio: vi.fn() }))
 
 const ten = { id: 'ten-spades', suit: 'spades', rank: 10, isFaceUp: true } as const
 const nine = { id: 'nine-hearts', suit: 'hearts', rank: 9, isFaceUp: true } as const
 const jack = { id: 'jack-diamonds', suit: 'diamonds', rank: 11, isFaceUp: true } as const
+const down = { isFaceUp: false } as const
 
 let host: HTMLDivElement
 let root: Root | null
@@ -23,6 +27,8 @@ afterEach(async () => {
   if (root !== null) await act(async () => root!.unmount())
   host.remove()
   vi.unstubAllGlobals()
+  vi.useRealTimers()
+  vi.clearAllMocks()
 })
 
 describe('Solitaire card clicks', () => {
@@ -41,6 +47,7 @@ describe('Solitaire card clicks', () => {
       startIndex: 0,
       to: { zone: 'tableau', index: 1 },
     })
+    expect(playCardAudio).toHaveBeenCalledExactlyOnceWith('move')
   })
 
   it('keeps a card selected when no automatic destination exists', async () => {
@@ -51,6 +58,7 @@ describe('Solitaire card clicks', () => {
     await act(async () => card!.click())
 
     expect(onCommand).not.toHaveBeenCalled()
+    expect(playCardAudio).not.toHaveBeenCalled()
     expect(card?.getAttribute('aria-pressed')).toBe('true')
     expect(host.textContent).not.toContain('Selected Ten of spades')
     expect([...host.querySelectorAll<HTMLButtonElement>('[aria-label^="Move selected card to foundation"]')]
@@ -68,6 +76,31 @@ describe('Solitaire card clicks', () => {
     await act(async () => root!.render(<SolitaireBoard game={currentGame} busy={false} hintRequestId={1} onCommand={onCommand} />))
     expect(host.querySelectorAll('.is-hinted').length).toBeGreaterThan(0)
     expect(onCommand).not.toHaveBeenCalled()
+  })
+
+  it('plays a card flick for an explicit flip and a stock draw', async () => {
+    const onCommand = vi.fn()
+    await act(async () => root!.render(<SolitaireBoard game={game([[down]])} busy={false} onCommand={onCommand} />))
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Flip face-down card"]')!.click())
+    expect(onCommand).toHaveBeenCalledWith({ type: 'flip', column: 0 })
+    expect(playCardAudio).toHaveBeenCalledExactlyOnceWith('deal')
+
+    vi.clearAllMocks()
+    const withStock = { ...game([[ten]]), stock: [down] }
+    await act(async () => root!.render(<SolitaireBoard game={withStock} busy={false} onCommand={onCommand} />))
+    await act(async () => host.querySelector<HTMLButtonElement>('.solitaire-stock')!.click())
+    expect(onCommand).toHaveBeenCalledWith({ type: 'draw' })
+    expect(playCardAudio).toHaveBeenCalledExactlyOnceWith('deal')
+  })
+
+  it('flicks the newly uncovered face-down card after a legal move', async () => {
+    vi.useFakeTimers()
+    const onCommand = vi.fn()
+    await act(async () => root!.render(<SolitaireBoard game={game([[down, ten], [jack]])} busy={false} onCommand={onCommand} />))
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="Move or select Ten of spades"]')!.click())
+    expect(playCardAudio).toHaveBeenCalledExactlyOnceWith('move')
+    await act(async () => { vi.advanceTimersByTime(85) })
+    expect(playCardAudio).toHaveBeenNthCalledWith(2, 'deal')
   })
 })
 

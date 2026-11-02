@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import '@fontsource-variable/sora'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { InGameShell } from '../../../components/InGameShell'
@@ -35,6 +36,7 @@ import {
   SolitaireRuleError,
 } from '../../../games/cards/solitaire/solitaireEngine'
 import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
+import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
 import { formatDuration } from '../../../games/cards/solitaire/solitaireDisplay'
 import {
@@ -58,9 +60,11 @@ import './solitaire.css'
 
 export type CompetitiveSolitairePageProps = Readonly<{
   account: AccountSummary
+  freeOnly?: boolean
 }>
 
 type SolitaireContentProps = Readonly<{
+  freeOnly?: boolean
   availability: SolitaireAvailability
   balanceCredits: number
   busy: boolean
@@ -100,6 +104,7 @@ type SolitaireContentProps = Readonly<{
   onFreeSubmit: () => void
   onExitFree: () => void
   onRefresh: () => void
+  onOpenHistory?: () => void
 }>
 
 type OptimisticSolitaireCommand = Extract<SolitaireCommand, { type: 'move' | 'draw' | 'flip' }>
@@ -114,8 +119,14 @@ type FreeHistoryEntry = Readonly<{
   commands: readonly SolitaireFreeReplayCommand[]
 }>
 
-export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePageProps) {
-  const [availability, setAvailability] = useState<SolitaireAvailability>({ kind: 'loading' })
+export function FreeSolitairePage({ account }: { account: AccountSummary }) {
+  return <CompetitiveSolitairePage account={account} freeOnly />
+}
+
+export function CompetitiveSolitairePage({ account, freeOnly = false }: CompetitiveSolitairePageProps) {
+  const [availability, setAvailability] = useState<SolitaireAvailability>(freeOnly
+    ? { kind: 'ready', session: { kind: 'idle' } }
+    : { kind: 'loading' })
   const [balanceCredits, setBalanceCredits] = useState(account.balances.slotsCredits)
   const [playerCount, setPlayerCount] = useState<SolitairePlayerCount>(4)
   const [buyInCredits, setBuyInCredits] = useState<SolitaireBuyIn>(5)
@@ -204,10 +215,11 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   }, [])
 
   useEffect(() => {
+    if (freeOnly) return
     const controller = new AbortController()
     void loadSession(false, controller.signal)
     return () => controller.abort()
-  }, [loadSession])
+  }, [freeOnly, loadSession])
 
   useEffect(() => {
     if (!historyOpen) return
@@ -260,6 +272,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
 
   const sessionKind = availability.kind === 'ready' ? availability.session.kind : null
   useEffect(() => {
+    if (freeOnly) return
     if (sessionKind === null || sessionKind === 'idle' || busy || pending !== null) return
     const controller = new AbortController()
     const interval = sessionKind === 'queued' ? 1_250 : 15_000
@@ -286,7 +299,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
       window.removeEventListener('focus', refresh)
       window.removeEventListener('online', refresh)
     }
-  }, [sessionKind, busy, pending, loadSession])
+  }, [freeOnly, sessionKind, busy, pending, loadSession])
 
   const beginMutation = (fingerprint: string): PendingSolitaireMutation | null => {
     if (pending !== null && pending.fingerprint !== fingerprint) {
@@ -601,7 +614,12 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
     setBusy(true)
     setRequestError(null)
     try {
-      const run = await startSolitaireFreeRun(request.drawCount, request.idempotencyKey, request.replayRunId ?? undefined)
+      const run = await startSolitaireFreeRun(
+        request.drawCount,
+        request.idempotencyKey,
+        request.replayRunId ?? undefined,
+        freeOnly ? 'free-solitaire' : 'solitaire',
+      )
       freeStartRequestRef.current = null
       resetFreeGame(run)
     } catch (error) {
@@ -718,6 +736,14 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   const activePaidRun = availability.kind === 'ready'
     && availability.session.kind === 'match'
     && availability.session.players.some((player) => player.isCurrentPlayer && player.status === 'playing')
+  const idleLobby = availability.kind === 'ready' && availability.session.kind === 'idle' && freeGame === null
+
+  const openHistory = () => {
+    setHistory([])
+    setHistoryNextCursor(null)
+    setHistoryError(null)
+    setHistoryOpen(true)
+  }
 
   useEffect(() => {
     if (activePaidRun) setHistoryOpen(false)
@@ -726,28 +752,26 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
   return (
     <InGameShell
       account={{ ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }}
-      title="Competitive Solitaire"
-      theme="cards"
+      reportTitle={freeOnly ? 'Solitaire' : 'Competitive Solitaire'}
       bodyClassName="solitaire-shell-body"
     >
-      <div className="solitaire-page" onClickCapture={onCardAudioClick}>
+      <div className={`solitaire-page${idleLobby ? ' solitaire-page--lobby' : ''}${freeOnly ? ' solitaire-page--free-only' : ''}`} onClickCapture={(event) => {
+        if (typeof Element !== 'undefined' && event.target instanceof Element && event.target.closest('.solitaire-board')) return
+        onCardAudioClick(event)
+      }}>
       {requestError && (
         <div className="solitaire-request-error" role="alert">
           <span>{requestError}</span>
-          <button type="button" onClick={refresh}>Refresh game</button>
+          <button type="button" onClick={freeOnly ? () => setRequestError(null) : refresh}>{freeOnly ? 'Dismiss' : 'Refresh game'}</button>
         </div>
       )}
-      {availability.kind === 'ready' && !activePaidRun && !busy && (
+      {!freeOnly && availability.kind === 'ready' && availability.session.kind !== 'idle' && !activePaidRun && !busy && (
         <div className="solitaire-history-access">
-          <button type="button" onClick={() => {
-            setHistory([])
-            setHistoryNextCursor(null)
-            setHistoryError(null)
-            setHistoryOpen(true)
-          }}>Match history</button>
+          <button type="button" onClick={openHistory}>Match history</button>
         </div>
       )}
       <SolitaireContent
+        freeOnly={freeOnly}
         availability={availability}
         balanceCredits={balanceCredits}
         busy={busy}
@@ -796,8 +820,9 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
           setFreeSubmissionError(null)
         }}
         onRefresh={refresh}
+        onOpenHistory={freeOnly ? undefined : openHistory}
         />
-      {historyOpen && !activePaidRun && (
+      {!freeOnly && historyOpen && !activePaidRun && (
         <SolitaireHistoryPanel
           items={history}
           loading={historyLoading}
@@ -818,6 +843,7 @@ export function CompetitiveSolitairePage({ account }: CompetitiveSolitairePagePr
 
 export function SolitaireContent(props: SolitaireContentProps) {
   if (props.freeGame !== null) return <FreePanel {...props} game={props.freeGame} />
+  if (props.freeOnly) return <main className="solitaire-main"><FreeSolitaireLobby {...props} /></main>
   const { availability } = props
   if (availability.kind === 'loading') return <GameLoadingScreen entry={resolveGameLoadingEntry('/cards/solitaire')} />
   if (availability.kind === 'disabled') {
@@ -844,34 +870,97 @@ export function SolitaireContent(props: SolitaireContentProps) {
   return <main className="solitaire-main"><SessionPanel {...props} session={availability.session} /></main>
 }
 
+function FreeSolitaireLobby(props: SolitaireContentProps) {
+  return (
+    <section className="solitaire-panel solitaire-lobby" aria-labelledby="solitaire-free-lobby-title">
+      <div className="solitaire-lobby__showcase">
+        <div className="solitaire-lobby__topline"><span className="solitaire-eyebrow">Classic card game</span></div>
+        <div className="solitaire-lobby__cards" aria-hidden="true">
+          <span className="solitaire-lobby__card solitaire-lobby__card--back"><PlayingCard card={{ id: 'free-lobby-back', suit: 'spades', rank: 1 }} faceDown /></span>
+          <span className="solitaire-lobby__card solitaire-lobby__card--heart"><PlayingCard card={{ id: 'free-lobby-heart', suit: 'hearts', rank: 1 }} /></span>
+          <span className="solitaire-lobby__card solitaire-lobby__card--spade"><PlayingCard card={{ id: 'free-lobby-spade', suit: 'spades', rank: 1 }} /></span>
+        </div>
+        <h1 id="solitaire-free-lobby-title">Solitaire</h1>
+        <p>Find your rhythm, build the foundations, and chase a better score with every deal.</p>
+        <div className="solitaire-lobby__facts" aria-label="Game features">
+          <span>♠ <strong>One player</strong></span>
+          <span>♠ <strong>Hints and undo</strong></span>
+          <span>♠ <strong>Replay any deal</strong></span>
+        </div>
+      </div>
+      <div className="solitaire-lobby__setup">
+        <div className="solitaire-lobby__setup-heading">
+          <span className="solitaire-eyebrow">Ready to play?</span>
+          <h2>Choose your draw</h2>
+        </div>
+        <div className="solitaire-lobby__controls">
+          <label><span>Cards per turn</span><select value={props.drawCount} disabled={props.busy}
+            onChange={(event) => props.onDrawCountChange(Number(event.target.value) as SolitaireDrawCount)}>
+            {SOLITAIRE_DRAW_COUNTS.map((value) => <option value={value} key={value}>Draw {value}</option>)}
+          </select></label>
+        </div>
+        <p className="solitaire-lobby__note">Play at your own pace. Your score and time are recorded when you finish.</p>
+        <div className="solitaire-lobby__actions">
+          <button className="solitaire-primary-action" type="button" disabled={props.busy} onClick={props.onStartFree}>
+            {props.busy ? 'Dealing…' : 'Play Solitaire'}
+          </button>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function SessionPanel(props: SolitaireContentProps & { session: SolitaireSession }) {
   const { session } = props
   if (session.kind === 'idle') {
     const retrying = props.pending?.fingerprint === `join:${props.playerCount}:${props.buyInCredits}:${props.drawCount}`
     return (
-      <section className="solitaire-panel solitaire-lobby">
-        <p>Each competitive player gets the same deal and ten minutes of play.</p>
-        <div className="solitaire-lobby__controls">
-          <label><span>Players</span><select value={props.playerCount} disabled={props.busy || props.pending !== null}
-            onChange={(event) => props.onPlayerCountChange(Number(event.target.value) as SolitairePlayerCount)}>
-            {SOLITAIRE_PLAYER_COUNTS.map((value) => <option value={value} key={value}>{value} players</option>)}
-          </select></label>
-          <label><span>Buy-in</span><select value={props.buyInCredits} disabled={props.busy || props.pending !== null}
-            onChange={(event) => props.onBuyInChange(Number(event.target.value) as SolitaireBuyIn)}>
-            {SOLITAIRE_BUY_INS.map((value) => <option value={value} key={value}>R{value}</option>)}
-          </select></label>
-          <label><span>Cards per turn</span><select value={props.drawCount} disabled={props.busy || props.pending !== null}
-            onChange={(event) => props.onDrawCountChange(Number(event.target.value) as SolitaireDrawCount)}>
-            {SOLITAIRE_DRAW_COUNTS.map((value) => <option value={value} key={value}>Turn {value}</option>)}
-          </select></label>
+      <section className="solitaire-panel solitaire-lobby" aria-labelledby="solitaire-lobby-title">
+        <div className="solitaire-lobby__showcase">
+          <div className="solitaire-lobby__topline">
+            <span className="solitaire-eyebrow">Competitive Solitaire</span>
+            {!props.busy && props.onOpenHistory && <button className="solitaire-lobby__history" type="button" onClick={props.onOpenHistory}>Match history <span aria-hidden="true">↗</span></button>}
+          </div>
+          <div className="solitaire-lobby__cards" aria-hidden="true">
+            <span className="solitaire-lobby__card solitaire-lobby__card--back"><PlayingCard card={{ id: 'lobby-back', suit: 'spades', rank: 1 }} faceDown /></span>
+            <span className="solitaire-lobby__card solitaire-lobby__card--heart"><PlayingCard card={{ id: 'lobby-heart', suit: 'hearts', rank: 1 }} /></span>
+            <span className="solitaire-lobby__card solitaire-lobby__card--spade"><PlayingCard card={{ id: 'lobby-spade', suit: 'spades', rank: 1 }} /></span>
+          </div>
+          <h1 id="solitaire-lobby-title">Every card <em>counts.</em></h1>
+          <p>Take on the same shuffled deck as your opponents. You have ten minutes to build your best score.</p>
+          <div className="solitaire-lobby__facts" aria-label="Match format">
+            <span>♠ <strong>Same deal</strong> for everyone</span>
+            <span>♠ <strong>10 minutes</strong> to play</span>
+          </div>
         </div>
-        <div className="solitaire-lobby__actions">
-          <button className="solitaire-primary-action" type="button" disabled={props.busy || (props.pending !== null && !retrying)} onClick={props.onJoin}>
-            {props.busy ? 'Starting…' : retrying ? 'Retry same request' : `Competitive · R${props.buyInCredits}`}
-          </button>
-          <button type="button" disabled={props.busy} onClick={props.onStartFree}>Play free</button>
+        <div className="solitaire-lobby__setup">
+          <div className="solitaire-lobby__setup-heading">
+            <span className="solitaire-eyebrow">Your table</span>
+            <h2>Choose your game</h2>
+          </div>
+          <div className="solitaire-lobby__controls">
+            <label><span>Players</span><select value={props.playerCount} disabled={props.busy || props.pending !== null}
+              onChange={(event) => props.onPlayerCountChange(Number(event.target.value) as SolitairePlayerCount)}>
+              {SOLITAIRE_PLAYER_COUNTS.map((value) => <option value={value} key={value}>{value} players</option>)}
+            </select></label>
+            <label><span>Buy-in</span><select value={props.buyInCredits} disabled={props.busy || props.pending !== null}
+              onChange={(event) => props.onBuyInChange(Number(event.target.value) as SolitaireBuyIn)}>
+              {SOLITAIRE_BUY_INS.map((value) => <option value={value} key={value}>R{value}</option>)}
+            </select></label>
+            <label><span>Cards per turn</span><select value={props.drawCount} disabled={props.busy || props.pending !== null}
+              onChange={(event) => props.onDrawCountChange(Number(event.target.value) as SolitaireDrawCount)}>
+              {SOLITAIRE_DRAW_COUNTS.map((value) => <option value={value} key={value}>Draw {value}</option>)}
+            </select></label>
+          </div>
+          <p className="solitaire-lobby__note">Your draw choice is locked when the match starts.</p>
+          <div className="solitaire-lobby__actions">
+            <button className="solitaire-primary-action" type="button" disabled={props.busy || (props.pending !== null && !retrying)} onClick={props.onJoin}>
+              {props.busy ? 'Starting…' : retrying ? 'Retry same request' : `Join match · R${props.buyInCredits}`}
+            </button>
+            <button className="solitaire-lobby__free-action" type="button" disabled={props.busy} onClick={props.onStartFree}>Play free</button>
+          </div>
+          <p className="solitaire-lobby__balance">Available balance <strong>R{props.balanceCredits.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></p>
         </div>
-        <small>Balance R{props.balanceCredits.toFixed(2)} · Your turn choice is locked when the game starts.</small>
       </section>
     )
   }
@@ -1041,7 +1130,6 @@ function MatchPanel({
   onBuyInChange: (value: SolitaireBuyIn) => void
   onDrawCountChange: (value: SolitaireDrawCount) => void
 }) {
-  const [hintRequestId, setHintRequestId] = useState(0)
   const current = match.players.find((player) => player.isCurrentPlayer)
   const playing = current?.status === 'playing'
   const integrityFailed = current?.status === 'integrity-failed'
@@ -1057,9 +1145,7 @@ function MatchPanel({
         <div className="solitaire-match__metric"><span>Time</span><strong><RemainingTime match={match} /></strong></div>
         <SolitaireBoardUtilities
           undoDisabled={busy || !playing || !match.canUndo || match.isPaused || autoWinning || warning !== null}
-          hintDisabled={busy || !playing || match.isPaused || autoWinning || warning !== null}
           onUndo={() => onCommand({ type: 'undo' })}
-          onHint={() => setHintRequestId((value) => value + 1)}
         />
       </div>
       {warning !== null && (
@@ -1076,7 +1162,7 @@ function MatchPanel({
       )}
       <SolitaireBoard game={match.game} autoWinning={autoWinning}
         busy={busy || !playing || match.isPaused || autoWinning || warning !== null}
-        hintRequestId={hintRequestId} onCommand={onCommand} />
+        onCommand={onCommand} />
       <div className="solitaire-match__controls">
         {playing && !autoWinning && warning === null ? (
           <>
@@ -1106,9 +1192,9 @@ function SolitaireBoardUtilities({
   onHint,
 }: {
   undoDisabled: boolean
-  hintDisabled: boolean
+  hintDisabled?: boolean
   onUndo: () => void
-  onHint: () => void
+  onHint?: () => void
 }) {
   return (
     <div className="solitaire-match__utilities" role="group" aria-label="Board controls">
@@ -1118,12 +1204,12 @@ function SolitaireBoardUtilities({
         </svg>
         <span>Undo</span>
       </button>
-      <button type="button" aria-label="Hint" title="Hint" disabled={hintDisabled} onClick={onHint}>
+      {onHint && <button type="button" aria-label="Hint" title="Hint" disabled={hintDisabled} onClick={onHint}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M9 18h6m-5 3h4m-5.3-6.5A7 7 0 1 1 15.3 14c-.8.7-1.3 1.4-1.3 2.5h-4c0-1.1-.5-1.8-1.3-2.5Z" />
         </svg>
         <span>Hint</span>
-      </button>
+      </button>}
     </div>
   )
 }
@@ -1196,7 +1282,7 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
                   {SOLITAIRE_DRAW_COUNTS.map((value) => (
                     <button className={props.drawCount === value ? 'is-selected' : ''} type="button"
                       aria-pressed={props.drawCount === value} key={value}
-                      onClick={() => props.onDrawCountChange(value)}>Turn {value}</button>
+                      onClick={() => props.onDrawCountChange(value)}>Draw {value}</button>
                   ))}
                 </div>
                 <div className="solitaire-results__actions">
@@ -1213,14 +1299,16 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
                   label="Deck cleared"
                   title="Every card reached a foundation"
                   detail={`${props.game.score.toLocaleString()} points · ${props.game.moves} moves · ${formatElapsed(props.freeElapsedMilliseconds)}`}
-                  nextAction="Replay this draw, choose a new game, or return to the card room."
+                  nextAction={props.freeOnly
+                    ? 'Replay this draw, choose a new game, or return to the start screen.'
+                    : 'Replay this draw, choose a new game, or return to the card room.'}
                   tone="win"
                   significance="major"
                 />
                 <div className="solitaire-results__actions solitaire-results__actions--three">
                   <button className="solitaire-primary-action" type="button" disabled={props.busy} onClick={props.onReplayFree}>Replay</button>
                   <button type="button" disabled={props.busy} onClick={props.onChooseNewFreeGame}>New game</button>
-                  <button type="button" onClick={props.onExitFree}>Return</button>
+                  <button type="button" onClick={props.onExitFree}>{props.freeOnly ? 'Back to start' : 'Return'}</button>
                 </div>
               </div>
             )}

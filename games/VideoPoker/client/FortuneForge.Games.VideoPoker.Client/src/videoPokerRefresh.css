@@ -1,0 +1,201 @@
+@font-face {
+  font-family: 'Video Poker Sora';
+  src: url('./assets/sora-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Video Poker Fraunces';
+  src: url('./assets/fraunces-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+.ff-video-poker {
+  --vp-gold: #d7b979;
+  --vp-border: #6e8378;
+  color: #f2f2e9;
+  background: radial-gradient(ellipse at 50% 0%, #20372f 0, #0c1715 52%, #070d0c 100%);
+  font-family: 'Video Poker Sora', sans-serif;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.ff-video-poker__header h1,
+.ff-video-poker__info-panel h2,
+.ff-video-poker__info-panel h3 {
+  color: #f1e5c3;
+  font-family: 'Video Poker Fraunces', Georgia, serif;
+  font-weight: 750;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+.ff-video-poker__header h1 { font-size: clamp(1.1rem, 2vw, 1.55rem); }
+.ff-video-poker__primary,
+.ff-video-poker__secondary {
+  border-color: #688d7c;
+  border-radius: .55rem;
+  background: linear-gradient(180deg, #25503c, #102b22);
+  box-shadow: inset 0 1px #e9f9ec17, 0 2px 4px #0006;
+  color: #f3f5eb;
+  font-family: 'Video Poker Sora', sans-serif !important;
+  font-size: .72rem;
+  font-weight: 750 !important;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+.ff-video-poker__primary { border-color: #c8ad6d; background: linear-gradient(180deg, #ead8a9, #be9855); color: #17261d; }
+.ff-video-poker__secondary[aria-pressed='true'] {
+  border-color: #d8bf81;
+  background: linear-gradient(180deg, #7b6741, #483b27);
+  color: #fff2c7;
+  box-shadow: inset 0 1px #fff6d13d, 0 0 .5rem #ddbd7750;
+}
+
+.ff-video-poker__console {
+  grid-template-rows: 2.1rem minmax(0, 1fr) 10.7rem;
+  gap: .25rem;
+  border: 1px solid #8ba18b80;
+  border-radius: 1.1rem;
+  background: linear-gradient(180deg, #09281ebe, #0c382aa6 36%, #07231cce), url('./assets/emerald-felt-v2.webp') center / cover;
+  box-shadow: inset 0 0 0 2px #0d271f, inset 0 0 0 3px #d7c49750, inset 0 -3rem 4rem #020c09a3, 0 .8rem 1.6rem #0009;
+}
+.ff-video-poker__console::before { inset: .45rem; border-color: #e0d5ac20; }
+.ff-video-poker__round-head { color: #f0ead6; font-family: 'Video Poker Fraunces', Georgia, serif; font-size: 1rem; font-weight: 700; letter-spacing: .04em; }
+.ff-video-poker__round-head .is-win { color: #f5df9f; font-size: 1.18rem; }
+.ff-video-poker__round-head .is-loss { color: #e3e6da; }
+.ff-video-poker__table-title { display: flex; align-items: baseline; gap: .75rem; font-size: 1.17rem; }
+.ff-video-poker__table-title i { color: #cfbd8e; font-family: 'Video Poker Sora', sans-serif; font-size: .56rem; font-style: normal; font-weight: 650; letter-spacing: .13em; }
+.ff-video-poker__completed-hand { border-color: #a9c7ac50; background: #061c18aa; box-shadow: inset 0 0 1rem #0006; }
+.ff-video-poker__completed-hand.is-winning { border-color: #e3c98991; background: #61532c6e; }
+.ff-video-poker__completed-hand header { color: #d4dcd0; font-family: 'Video Poker Sora', sans-serif; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.ff-video-poker__completed-hand header em { color: #f1d895; }
+.ff-video-poker__card::after { display: none; }
+.ff-video-poker__card--back {
+  border-color: #c7b379;
+  background: linear-gradient(45deg, transparent 44%, #c6b1741c 45% 55%, transparent 56%) 0 0 / .8rem .8rem, linear-gradient(-45deg, transparent 44%, #c6b1741c 45% 55%, transparent 56%) 0 0 / .8rem .8rem, #14211b;
+  box-shadow: inset 0 0 0 4px #182820, inset 0 0 0 5px #b9ab7c, 0 .35rem .75rem #0009;
+  color: #e6d399;
+}
+
+.ff-video-poker__inline-paytable { border-color: #baa56d8a; background: #09201cf0; }
+.ff-video-poker__paytable h2 { border-color: #baa56d6e; background: linear-gradient(90deg, #0a271f, #244939 50%, #0a271f); color: #f1dfa9; font-family: 'Video Poker Fraunces', Georgia, serif; font-weight: 750; }
+.ff-video-poker__paytable h2 small { color: #d1d8c9; font-family: 'Video Poker Sora', sans-serif; }
+.ff-video-poker__paytable table { color: #edf0e5; font-family: 'Video Poker Sora', sans-serif; }
+.ff-video-poker__paytable th,
+.ff-video-poker__paytable td { border-color: #b8c4aa36; }
+.ff-video-poker__paytable thead th { background: #051813c9; color: #d8e3d2; }
+.ff-video-poker__paytable tbody th { color: #f5ebc9; }
+.ff-video-poker__paytable .is-selected-column { background: #dac17b28; color: #ffe6a4; box-shadow: inset 1px 0 #e2ca8d80, inset -1px 0 #e2ca8d80; }
+.ff-video-poker__paytable thead .is-selected-column { background: #77663e; color: #fff4d7; }
+.ff-video-poker__paytable .is-winning-row { background: #d8bd7860; }
+.ff-video-poker__info-panel { border-color: #b3a57a; background: #102720; color: #f1f2e9; }
+.ff-video-poker__info-panel .ff-video-poker__paytable h2 { background: none; }
+
+.ff-video-poker__rail {
+  grid-template-rows: minmax(0, 1fr) 3.4rem 1rem;
+  gap: .05rem;
+  padding: .3rem .65rem .18rem;
+  border: 0;
+  border-top: 1px solid #d0ba8159;
+  border-radius: 0 0 .65rem .65rem;
+  background: linear-gradient(180deg, #07191299, #06130fdb);
+  box-shadow: inset 0 1px #fff5d20f;
+}
+.ff-video-poker__settings {
+  width: min(100%, 37rem);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7rem minmax(0, 1fr);
+  justify-items: center;
+  align-items: center;
+  gap: .55rem;
+}
+.ff-video-poker__chip-selection,
+.ff-video-poker__wager-stack,
+.ff-video-poker__hand-count { display: grid; justify-items: center; align-content: center; gap: .16rem; min-width: 0; color: #d9e0d3; font-size: .62rem; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+.ff-video-poker__chip-selection > div,
+.ff-video-poker__hand-count > div { display: flex; align-items: center; justify-content: center; gap: .22rem; }
+.ff-video-poker .ff-video-poker__chip-option {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+}
+.ff-video-poker__chip-option img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.ff-video-poker__chip-option:hover:not(:disabled) { filter: brightness(1.15) drop-shadow(0 0 .3rem #f1dc9f6b); }
+.ff-video-poker__chip-option:disabled { opacity: .35; }
+.ff-video-poker__wager-stack { position: relative; min-height: 3.8rem; }
+.ff-video-poker__wager-chips { position: relative; width: 2.45rem; height: 2rem; }
+.ff-video-poker__wager-chips img { position: absolute; inset: 0; width: 2.35rem; height: 2.35rem; object-fit: contain; filter: drop-shadow(0 .12rem .15rem #000a); }
+.ff-video-poker__wager-stack strong { color: #f4e7bf; font-size: .8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ff-video-poker__hand-count > div { gap: .18rem; }
+.ff-video-poker__hand-count button { min-width: 2.6rem; min-height: 2.6rem; padding: .3rem; }
+.ff-video-poker__bet-controls { display: grid; width: min(100%, 18rem); grid-template-columns: 1fr 4.2rem 1fr; align-items: center; gap: .55rem; }
+.ff-video-poker__bet-controls .ff-video-poker__undo-chip { grid-column: 1; grid-row: 1; }
+.ff-video-poker__bet-controls .ff-video-poker__max-chips { grid-column: 3; grid-row: 1; }
+.ff-video-poker .ff-video-poker__deal-orb {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  width: 3.45rem;
+  height: 3.45rem;
+  min-width: 3.45rem;
+  min-height: 3.45rem;
+  place-items: center;
+  padding: .16rem;
+  border: .22rem solid #b9c6af;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #1b3025, #06130c 72%);
+  box-shadow: inset 0 0 0 1px #f6f7e64d, 0 0 .65rem #edf0d447, 0 .25rem .6rem #0008;
+}
+.ff-video-poker__deal-orb svg { width: 2.25rem; height: 2.25rem; }
+.ff-video-poker .ff-video-poker__deal-orb:hover:not(:disabled) { border-color: #f4f4e6; background: #153d2d; }
+.ff-video-poker__bet-controls .ff-video-poker__secondary { min-height: 2.45rem; height: 2.45rem; }
+.ff-video-poker__ticket { color: #d6dece; font-size: .62rem; font-weight: 650; letter-spacing: .055em; text-transform: uppercase; }
+
+@media (max-width: 440px) {
+  .ff-video-poker__console { grid-template-rows: 1.7rem minmax(0, 1fr) 10.2rem; }
+  .ff-video-poker__table-title { font-size: .9rem; }
+  .ff-video-poker__table-title i { font-size: .46rem; }
+  .ff-video-poker__settings { grid-template-columns: minmax(0, 1fr) 4.8rem minmax(0, 1fr); gap: .1rem; }
+  .ff-video-poker .ff-video-poker__chip-option { width: 2.3rem; height: 2.3rem; min-width: 2.3rem; min-height: 2.3rem; }
+  .ff-video-poker__chip-selection > div { gap: 0; }
+  .ff-video-poker__wager-stack { min-height: 3.4rem; }
+  .ff-video-poker__wager-chips { width: 2.1rem; height: 1.8rem; }
+  .ff-video-poker__wager-chips img { width: 2rem; height: 2rem; }
+  .ff-video-poker__hand-count button { min-width: 2.25rem; min-height: 2.35rem; }
+  .ff-video-poker__bet-controls { grid-template-columns: 1fr 3.5rem 1fr; width: min(100%, 15rem); gap: .3rem; }
+  .ff-video-poker .ff-video-poker__deal-orb { width: 3.15rem; height: 3.15rem; min-width: 3.15rem; min-height: 3.15rem; }
+  .ff-video-poker__deal-orb svg { width: 2rem; height: 2rem; }
+}
+@media (max-width: 360px) and (min-height: 501px) {
+  .ff-video-poker__console { grid-template-rows: 1.7rem minmax(0, 1fr) 12rem; }
+  .ff-video-poker__rail { grid-template-rows: minmax(0, 1fr) 3.4rem .85rem; }
+  .ff-video-poker__settings { grid-template-columns: minmax(0, 1fr) 4.8rem; grid-template-rows: 3rem 2.5rem; }
+  .ff-video-poker__chip-selection { grid-column: 1; grid-row: 1; }
+  .ff-video-poker__wager-stack { grid-column: 2; grid-row: 1 / 3; }
+  .ff-video-poker__hand-count { grid-column: 1; grid-row: 2; }
+}
+@media (max-height: 500px) and (min-width: 500px) {
+  .ff-video-poker__console { grid-template-rows: 1.3rem minmax(0, 1fr) 4.9rem; }
+  .ff-video-poker__rail { grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 1fr; gap: .3rem; padding: .15rem .4rem; }
+  .ff-video-poker__settings { grid-column: 1; grid-row: 1; width: 100%; grid-template-columns: minmax(0, 1fr) 4.3rem minmax(0, 1fr); gap: .2rem; }
+  .ff-video-poker .ff-video-poker__chip-option { width: 2.2rem; height: 2.2rem; min-width: 2.2rem; min-height: 2.2rem; }
+  .ff-video-poker__wager-stack { min-height: 3.1rem; }
+  .ff-video-poker__wager-chips { height: 1.4rem; }
+  .ff-video-poker__wager-chips img { width: 1.8rem; height: 1.8rem; }
+  .ff-video-poker__hand-count button { min-width: 2.25rem; min-height: 2.25rem; }
+  .ff-video-poker__bet-controls { grid-column: 2; grid-row: 1; width: 11rem; grid-template-columns: 1fr 3rem 1fr; gap: .2rem; }
+  .ff-video-poker .ff-video-poker__deal-orb { width: 2.8rem; height: 2.8rem; min-width: 2.8rem; min-height: 2.8rem; }
+  .ff-video-poker__deal-orb svg { width: 1.8rem; height: 1.8rem; }
+  .ff-video-poker__bet-controls .ff-video-poker__secondary { min-height: 2.2rem; height: 2.2rem; font-size: .58rem; }
+  .ff-video-poker__ticket { display: none; }
+}

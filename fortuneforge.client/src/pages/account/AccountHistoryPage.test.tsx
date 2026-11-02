@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   slots: [{ spinId: 'slot-1', result: 'win', wageredSlotsCredits: 1, wonSlotsCredits: 2, netSlotsCredits: 1, createdAtUtc: '2026-10-23T12:00:00Z' }],
 }))
 vi.mock('../../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({
-  account: { userId: 'player', playerName: 'Player', balances: { slotsCredits: 10 }, slots: { spinsPlayed: 1, wins: 1, losses: 0, netCredits: 1 } },
+  account: { userId: 'player', role: 'Player', playerName: 'Player', balances: { slotsCredits: 10 }, slots: { spinsPlayed: 1, wins: 1, losses: 0, netCredits: 1 } },
   error: null, isLoading: false,
 }) }))
 vi.mock('../../features/account/services/accountsApi', () => ({ getSlotHistory: async () => ({ spins: state.slots }) }))
@@ -15,6 +15,7 @@ vi.mock('../cards/useCardRoomHistory', () => ({ useCardRoomHistory: () => ({
   activities: [
     { id: 'hi-lo-1', matchId: 'round-1', game: 'hi-lo', gameLabel: 'Hi-Lo', title: 'Hi-Lo game', summary: 'R2.14 won', startedAtUtc: '2026-10-23T12:00:00Z', completedAtUtc: '2026-10-23T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 2.14 },
     { id: 'andar-bahar-1', matchId: 'round-2', game: 'andar-bahar', gameLabel: 'Andar Bahar', title: 'Andar Bahar game', summary: 'R0.95 won', startedAtUtc: '2026-10-24T12:00:00Z', completedAtUtc: '2026-10-24T12:00:00Z', unseen: true, requiresClaim: false, winningsCredits: .95, wagerCredits: .5, netCredits: .45 },
+    { id: 'mines-1', matchId: 'mines-round-1', game: 'mines', gameLabel: 'Mines', title: 'Mines game', summary: 'R1.02 won', startedAtUtc: '2026-10-25T12:00:00Z', completedAtUtc: '2026-10-25T12:01:00Z', unseen: true, requiresClaim: false, winningsCredits: 1.02, wagerCredits: 1, netCredits: .02 },
   ],
   loading: false, error: null, busyId: null, select: state.select,
 }) }))
@@ -27,6 +28,9 @@ it('makes settled Hi-Lo reachable from account history without replacing existin
   const root = createRoot(host)
   try {
     await act(async () => { root.render(<AccountHistoryPage />); await Promise.resolve() })
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    expect(host.querySelector('.home-lobby__sidebar')).toBeNull()
+    expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('[aria-label="Card-game history"]')?.textContent).toContain('Hi-Lo game')
     expect(host.textContent).toContain('Spin results')
     expect(host.querySelectorAll('.history-row')).toHaveLength(1)
@@ -50,6 +54,23 @@ it('shows settled Andar Bahar with exact committed, returned and net values', as
     expect(stats.textContent).toContain('CommittedR0.50')
     expect(stats.textContent).toContain('ReturnedR0.95')
     expect(stats.textContent).toContain('Net+R0.45')
+    expect(host.querySelectorAll('.history-row')).toHaveLength(1)
+  } finally { act(() => root.unmount()); host.remove() }
+})
+
+it('shows Mines as a settled account game with exact cents and no missing history group', async () => {
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+  const host = document.createElement('div'); document.body.append(host)
+  const root = createRoot(host)
+  try {
+    await act(async () => { root.render(<AccountHistoryPage />); await Promise.resolve() })
+    const result = [...host.querySelectorAll('button')].find(button => button.textContent?.includes('Mines game'))!
+    expect(result).toBeDefined()
+    act(() => result.click())
+    expect(state.select).toHaveBeenCalledOnce()
+    expect(host.querySelector('.card-room-history-stats')?.textContent).toContain('CommittedR1.00')
+    expect(host.querySelector('.card-room-history-stats')?.textContent).toContain('ReturnedR1.02')
+    expect(host.querySelector('.card-room-history-stats')?.textContent).toContain('Net+R0.02')
     expect(host.querySelectorAll('.history-row')).toHaveLength(1)
   } finally { act(() => root.unmount()); host.remove() }
 })

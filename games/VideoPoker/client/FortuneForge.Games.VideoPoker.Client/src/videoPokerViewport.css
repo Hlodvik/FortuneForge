@@ -8,7 +8,9 @@
   .ff-video-poker__header h1 { flex: 1 0 100%; font-size: 1rem; text-align: center; white-space: nowrap; }
   .ff-video-poker__header h1 + .ff-video-poker__balance { margin-left: 0; }
   .ff-video-poker__header > .ff-video-poker__info > button { padding: .35rem .5rem; font-size: .75rem; }
-  .ff-video-poker__balance strong { font-size: .82rem; }
+  .ff-video-poker__balance { gap: 8px; }
+  .ff-video-poker__balance span { font-size: 9px; }
+  .ff-video-poker__balance strong { font-size: 19px; }
   .ff-video-poker__console { padding: .3rem; gap: .3rem; }
   .ff-video-poker__settings { gap: .5rem; }
   .ff-video-poker__settings select { width: 8.4rem; min-width: 0; font-size: .78rem; }

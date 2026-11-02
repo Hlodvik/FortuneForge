@@ -1,0 +1,40 @@
+from pathlib import Path
+from PIL import Image
+import hashlib
+import json
+
+root = Path(__file__).parent
+repo = root.parents[4]
+reference = repo / 'fortuneforge.client/public/assets/slots/midnight-vault/v1/symbols/320/midnight-vault-ruby-ring.webp'
+origins = {
+    'loose-diamond': 'exec-51e83b13-ca66-4545-bb23-2fa1985d6bac.png',
+    'front-vault': 'exec-eca571b6-27e0-4ede-bd8b-6bd8d1de5b4b.png',
+    'overflowing-chips': 'exec-46b8a63b-c9b7-43ec-ad32-eed7c22b049d.png',
+    'cash-briefcase': 'exec-e63ca6c4-e2d6-4f4e-aebe-e0b539b7686b.png',
+}
+records = []
+for slug, source in origins.items():
+    path = root / f'{slug}.png'
+    with Image.open(path) as art:
+        assert art.mode == 'RGBA', (slug, art.mode)
+        alpha = art.getchannel('A')
+        assert alpha.getextrema() == (0, 255), slug
+        bounds = alpha.point(lambda value: 255 if value >= 16 else 0).getbbox()
+        assert bounds and bounds[0] > 0 and bounds[1] > 0 and bounds[2] < art.width and bounds[3] < art.height, (slug, bounds)
+        width, height = art.size
+    records.append({'slug': slug, 'file': str(path), 'generatedSource':
+        'C:/Users/Lctiv/.codex/generated_images/01a19496-4ba0-7ad1-b781-cfb20c9bbd0f/' + source,
+        'prompt': str(root / f'{slug}.prompt.txt'), 'width': width, 'height': height,
+        'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+        'actualAlpha': True, 'visibleBoundsAtAlpha16': bounds,
+        'largestVisibleDimensionRatio': round(max((bounds[2]-bounds[0])/width, (bounds[3]-bounds[1])/height), 4),
+        'reference': str(reference), 'postprocessed': False,
+        'visualInspection': 'Actual generated source pixels inspected; preview-only, no owner approval claimed.'})
+result = {'generator': 'built-in image_gen', 'count': len(records),
+          'styleReference': str(reference), 'styleReferenceSha256': hashlib.sha256(reference.read_bytes()).hexdigest(),
+          'scope': 'Four new preview PNGs and provenance only; no public/src/UI/browser/engine changes.',
+          'note': 'Generated silhouettes are larger than the requested78–84% footprint; actual bounds are recorded rather than silently altered.',
+          'assets': records}
+(root / 'manifest.json').write_text(json.dumps(result, indent=2))
+print(json.dumps([{'slug': record['slug'], 'size': [record['width'], record['height']],
+                  'visibleRatio': record['largestVisibleDimensionRatio'], 'alpha': True} for record in records]))

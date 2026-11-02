@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { SlotRouteDefinition } from '../games/slots'
 
-const state = vi.hoisted(() => ({ replace: vi.fn(), legacyLoads: vi.fn() }))
+const state = vi.hoisted(() => ({ replace: vi.fn(), legacyLoads: vi.fn(), pathname: '/' }))
 vi.mock('./routes/SlotsLibraryRoute', () => {
   state.legacyLoads('slots')
   return { AuthenticatedSlotsLibraryRoute: () => <main>Old slots catalogue</main> }
@@ -30,10 +30,11 @@ beforeEach(() => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   state.replace.mockReset()
   state.legacyLoads.mockClear()
+  state.pathname = '/'
   const browserWindow = window
   vi.stubGlobal('window', new Proxy(browserWindow, {
     get(target, key) {
-      return key === 'location' ? { replace: state.replace } : Reflect.get(target, key, target)
+      return key === 'location' ? { replace: state.replace, pathname: state.pathname } : Reflect.get(target, key, target)
     },
   }))
   host = document.createElement('div')
@@ -47,6 +48,7 @@ afterEach(() => {
 })
 
 const renderRoute = (pathname: string, slotRoute: SlotRouteDefinition | null = null) => act(async () => {
+  state.pathname = pathname
   root.render(<AppRoutes pathname={pathname} slotRoute={slotRoute} onSpinStateChange={() => undefined} />)
 })
 
@@ -59,6 +61,7 @@ describe('home replaces separate authenticated catalogues', () => {
     await renderRoute(pathname)
     expect(state.replace).toHaveBeenCalledExactlyOnceWith(destination)
     expect(state.legacyLoads).not.toHaveBeenCalled()
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Opening your home…')
     expect(host.querySelector('img, video, [data-game-loading]')).toBeNull()
     expect(host.textContent).not.toContain('Old')

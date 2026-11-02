@@ -1,0 +1,38 @@
+import { createHash } from 'node:crypto'
+import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { dirname, extname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const evidence = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(evidence, '../../..')
+const build = join(evidence, 'client-build')
+const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
+const collect = directory => readdirSync(directory).flatMap(name => {
+  const path = join(directory, name)
+  return statSync(path).isDirectory() ? collect(path) : [path]
+}).sort()
+const manifest = directory => collect(directory).map(path => ({ path: relative(repo, path).replaceAll('\\', '/'), bytes: statSync(path).size, sha256: sha256(readFileSync(path)) }))
+const verifier = readFileSync(join(repo, 'fortuneforge.client/scripts/verify-current-catalog-build.mjs'), 'utf8')
+const target = "const outputDirectory = resolve('dist')"
+if (verifier.split(target).length !== 2) throw new Error('Catalogue verifier changed; review required.')
+await import(`data:text/javascript;base64,${Buffer.from(verifier.replace(target, `const outputDirectory = resolve(${JSON.stringify(build)})`)).toString('base64')}`)
+const files = manifest(build)
+const baseline = JSON.parse(readFileSync(join(evidence, 'default-artifacts-before.json'), 'utf8').replace(/^\uFEFF/, ''))
+const defaults = baseline.map(group => {
+  const after = manifest(join(repo, group.group === 'clientDist' ? 'fortuneforge.client/dist' : 'FortuneForge.Server/wwwroot'))
+  const before = new Map(group.files.map(file => [file.path, file]))
+  const current = new Map(after.map(file => [file.path, file]))
+  const missing = [...before.keys()].filter(path => !current.has(path))
+  const changed = [...before.keys()].filter(path => current.has(path) && current.get(path).sha256 !== before.get(path).sha256)
+  const extra = [...current.keys()].filter(path => !before.has(path))
+  return { group: group.group, files: after.length, preserved: missing.length + changed.length + extra.length === 0, missing, changed, extra }
+})
+const report = { verifiedAtUtc: new Date().toISOString(), sourceKind: 'dirty-workspace validation build, NOT a committed release candidate',
+  files: files.length, bytes: files.reduce((sum, file) => sum + file.bytes, 0), manifestSha256: sha256(JSON.stringify(files)),
+  catalogueVerifierPassed: true, catalogueVerifierAdaptation: 'Exact repository verifier executed in memory; only its output-directory target changed.',
+  textFiles: files.filter(file => /\.(?:html|js|css|json)$/i.test(extname(file.path))).length,
+  defaultArtifacts: defaults, passed: defaults.every(group => group.preserved) }
+writeFileSync(join(evidence, 'client-build-manifest.json'), JSON.stringify(files, null, 2) + '\n')
+writeFileSync(join(evidence, 'client-build-verification.json'), JSON.stringify(report, null, 2) + '\n')
+console.log(JSON.stringify(report, null, 2))
+if (!report.passed) process.exitCode = 1

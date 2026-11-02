@@ -41,7 +41,7 @@ function DragonTigerSession({ initialAccount }: Readonly<{ initialAccount: Accou
     }).catch(() => undefined)
   }, [initialAccount.userId])
 
-  return <InGameShell account={account} theme="casino" className="dragon-tiger-page">
+  return <InGameShell account={account} reportTitle="Dragon Tiger" className="dragon-tiger-page">
     <DragonTigerGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />
   </InGameShell>
 }

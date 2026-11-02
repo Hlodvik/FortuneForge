@@ -11,9 +11,13 @@ public sealed record CashOutMinesRequest(string RequestId);
 public sealed record MinesTileResponse(int Index, bool IsRevealed, string Kind);
 public sealed record MinesRoundResponse(string RoundId, long WagerCents, int MineCount, string Status,
     int SafeReveals, int GemsRemaining, decimal CurrentMultiplier, decimal? NextMultiplier,
-    long CashOutCents, bool CanCashOut, long PayoutCents, IReadOnlyList<MinesTileResponse> Tiles);
+    long CashOutCents, bool CanCashOut, long PayoutCents, IReadOnlyList<MinesTileResponse> Tiles,
+    int HouseEdgeBasisPoints = MinesRules.LegacyHouseEdgeBasisPoints,
+    int PayoutPolicyVersion = MinesRules.LegacyPayoutPolicyVersion, long NextMinePayoutCents = 0);
 public sealed record MinesSessionResponse(long BalanceCents, bool Practice, MinesRoundResponse? Round,
-    long MinimumWagerCents = 10, long MaximumWagerCents = 10_000, int HouseEdgeBasisPoints = 100);
+    long MinimumWagerCents = MinesRules.HistoricalMinimumWagerCents, long MaximumWagerCents = MinesRules.HistoricalMaximumWagerCents,
+    int HouseEdgeBasisPoints = MinesRules.LegacyHouseEdgeBasisPoints,
+    int PayoutPolicyVersion = MinesRules.LegacyPayoutPolicyVersion);
 public sealed record MinesErrorResponse(string Code, string Message);
 public sealed record MinesStoredRound(string RoundId, string UserId, MinesRoundState State, long Version,
     DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt)
@@ -61,10 +65,11 @@ public sealed class MinesService(IMinesStore store, MinesEngine? engine = null, 
     public Task<MinesSessionResponse> StartAsync(string userId, StartMinesRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.WagerCents is < 10 or > 10_000) throw new ArgumentOutOfRangeException(nameof(request), "Wager must be 10 through 10000 cents.");
         if (request.MineCount is < 1 or > 24) throw new ArgumentOutOfRangeException(nameof(request), "Choose 1 through 24 mines.");
         return Command(userId, request.RequestId, $"start:{request.WagerCents}:{request.MineCount}", null, snapshot =>
         {
+            // Check current limits only after immutable command recovery. Already accepted older wagers still replay.
+            MinesRules.ValidateWager(request.WagerCents);
             if (snapshot.LatestRound?.State.Status == MinesRoundStatus.Active)
                 throw new MinesConflictException("Finish the active round before placing another wager.");
             if (snapshot.BalanceCents < request.WagerCents) throw new MinesInsufficientFundsException();
@@ -128,7 +133,11 @@ public sealed class MinesService(IMinesStore store, MinesEngine? engine = null, 
         }, cancellationToken);
     }
 
-    private MinesSessionResponse Session(long balance, MinesStoredRound? round) => new(balance, store.Practice, round is null ? null : Project(round));
+    // Session terms apply to the next wager. A resumed round retains its accepted terms independently.
+    // Constructor defaults remain legacy terms so immutable receipts without metadata replay unchanged.
+    private MinesSessionResponse Session(long balance, MinesStoredRound? round) =>
+        new(balance, store.Practice, round is null ? null : Project(round), MinimumWagerCents: MinesRules.MinimumWagerCents, MaximumWagerCents: MinesRules.MaximumWagerCents,
+            HouseEdgeBasisPoints: MinesRules.HouseEdgeBasisPoints, PayoutPolicyVersion: MinesRules.PayoutPolicyVersion);
     private MinesRoundResponse Project(MinesStoredRound round)
     {
         round.Validate(round.UserId);
@@ -136,10 +145,11 @@ public sealed class MinesService(IMinesStore store, MinesEngine? engine = null, 
         return new(round.RoundId, view.WagerCents, view.MineCount, view.Status switch
         {
             MinesRoundStatus.Active => "active", MinesRoundStatus.Lost => "lost", MinesRoundStatus.CashedOut => "cashed-out", MinesRoundStatus.Cleared => "cleared",
+            MinesRoundStatus.Consolation => "consolation",
             _ => throw new InvalidOperationException("Unknown Mines status."),
         }, view.SafeReveals, view.GemsRemaining, view.CurrentMultiplier, view.NextMultiplier, view.CashOutCents,
             view.CanCashOut, view.PayoutCents, view.Tiles.Select(tile => new MinesTileResponse(tile.Index, tile.IsRevealed,
-                tile.Kind.ToString().ToLowerInvariant())).ToArray());
+                tile.Kind.ToString().ToLowerInvariant())).ToArray(), view.HouseEdgeBasisPoints, view.PayoutPolicyVersion, view.NextMinePayoutCents);
     }
 
     private static void ValidatePlayer(string userId)

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
-import { getSlotSymbolDefinition, type SlotSymbolSet } from '../config/symbolSets'
+import { getSlotSymbolDefinition, getSlotSymbolImageSrcSet, type SlotSymbolSet } from '../config/symbolSets'
 import type { SlotSymbolId } from '../types/slots'
+import { ResponsiveSlotImage } from './ResponsiveSlotImage'
 
 type SlotSymbolProps = {
   animated?: boolean
@@ -27,6 +28,8 @@ export function SlotSymbol({
 }: SlotSymbolProps) {
   // The reel supplies its symbol set, keeping this renderer theme-agnostic.
   const definition = getSlotSymbolDefinition(symbolSet, symbol)
+  const image = animated && definition.animatedImage ? definition.animatedImage : definition.image
+  const responsiveImages = image === definition.image ? definition.responsiveImages : undefined
   const className = [
     'slot-symbol',
     `slot-symbol--${symbol.toLowerCase()}`,
@@ -47,12 +50,13 @@ export function SlotSymbol({
       style={style}
     >
       <div
-        className="slot-symbol__artwork"
+        className={`slot-symbol__artwork${responsiveImages ? ' slot-symbol__artwork--responsive' : ''}`}
         data-value-label={valueLabel ?? definition.valueLabel}
       >
-        <img
+        <ResponsiveSlotImage
           className="slot-symbol__image"
-          src={animated && definition.animatedImage ? definition.animatedImage : definition.image}
+          src={image}
+          imageSrcSet={getSlotSymbolImageSrcSet(responsiveImages)}
           alt=""
           aria-hidden="true"
         />

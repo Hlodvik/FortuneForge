@@ -7,6 +7,8 @@ import { AdminPortalPage } from './AdminPortalPage'
 import { adminMoney } from '../../../features/admin/portal/adminFormatting'
 
 vi.mock('../../../features/admin/operations/operationsApi', () => ({ getOperationsDashboard: vi.fn().mockRejectedValue(new Error('Reporting offline')) }))
+const analytics = vi.hoisted(() => ({ metrics: vi.fn(), rounds: vi.fn(), incidents: vi.fn() }))
+vi.mock('../../../features/admin/portal/gameAnalyticsApi', () => ({ gameAnalyticsApi: analytics }))
 const player = (userId: string): AdminPlayer => ({ userId, playerName: userId, email: `${userId}@example.test`, role: 'player', status: 'active', deactivated: false, isBot: false, createdAtUtc: '2026-10-21T00:00:00Z', lastActiveAtUtc: null })
 const detail = (userId: string): AdminPlayerDetail => ({ player: player(userId), balances: { slotsCredits: 19.75, freeGames: null, specialPoints: null, energy: null }, summary: { purchaseCredits: 100, gamingWageredCredits: 30, gamingPaidCredits: 20, gamingRefundedCredits: 0, gamingNetCredits: -10, recordsRead: 5, scope: 'bounded-records', complete: false, limitations: ['Not a lifetime total.'] }, coverage: { complete: false, sources: [], limitations: ['Recorded sources only.'] } })
 const state = (): AdminManagement => ({ version: 2, botsEnabled: true, updatedAtUtc: null, games: [{ id: 'hearts', displayName: 'Hearts', category: 'Card game', route: '/cards/hearts', visible: true, botsSupported: true, botsEnabled: true, effectiveBotsEnabled: true }] })
@@ -16,6 +18,9 @@ function gateway(): AdminPortalApi {
 }
 let host: HTMLDivElement, root: Root
 beforeEach(() => {
+  analytics.metrics.mockReset().mockRejectedValue(new Error('Analytics fixture offline'))
+  analytics.rounds.mockReset().mockResolvedValue({ items: [], nextCursor: null })
+  analytics.incidents.mockReset().mockResolvedValue({ incidents: [], state: null })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') }
   HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') }
@@ -29,6 +34,18 @@ async function reason(value: string) { const input = host.querySelector('textare
 async function submit() { await act(async () => { host.querySelector('dialog form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) }); await flush() }
 
 describe('admin portal', () => {
+  it('opens analytics and private reviews only through their selected admin sections', async () => {
+    await render(gateway())
+    expect(analytics.metrics).not.toHaveBeenCalled(); expect(analytics.rounds).not.toHaveBeenCalled(); expect(analytics.incidents).not.toHaveBeenCalled()
+    await click('▥Game analytics'); expect(analytics.metrics).toHaveBeenCalledWith('day', undefined, undefined)
+    await click('◇Round reviews'); expect(analytics.rounds).toHaveBeenCalledWith(undefined, undefined, null)
+    await click('⚑Player restrictions'); expect(analytics.incidents).toHaveBeenCalledWith(undefined)
+  })
+  it('pins profile statistics and incidents to the selected human account', async () => {
+    await render(gateway()); await click('♙Players'); await click('View history →')
+    await click('Game statistics'); expect(analytics.metrics).toHaveBeenCalledWith('day', undefined, 'first')
+    await click('Incidents & evidence'); expect(analytics.incidents).toHaveBeenCalledWith('first')
+  })
   it('loads sensitive player records only after choosing the Players section', async () => {
     const api = gateway(); await render(api)
     expect(api.players).not.toHaveBeenCalled()
@@ -59,6 +76,15 @@ describe('admin portal', () => {
     expect(host.querySelector('.admin-player-summary')?.textContent).toContain('second@example.test')
     await act(async () => resolveFirst(detail('first')))
     expect(host.querySelector('.admin-player-summary')?.textContent).not.toContain('first@example.test')
+  })
+  it('clearly separates Mines practice matches from real-credit match amounts', async () => {
+    const api = gateway()
+    vi.mocked(api.matches).mockResolvedValue(page([{ matchId: 'mines-practice-one', game: 'mines', mode: 'practice', status: 'settled', startedAtUtc: null, completedAtUtc: null, wageredCredits: 1, paidCredits: 2.5, netCredits: 1.5 }]))
+    await render(api); await click('♙Players'); await click('View history →')
+    expect(host.textContent).toContain('mines · Practice · settled')
+    expect(host.textContent).toContain(`Practice wager ${adminMoney(1)}`)
+    expect(host.textContent).toContain(`Practice payout ${adminMoney(2.5)}`)
+    expect(host.textContent).toContain(`Practice net ${adminMoney(1.5)}`)
   })
   it('requires a confirmation and reason, then uses the current settings revision', async () => {
     const api = gateway(); await render(api); await click('▦Game catalogue'); await click('Hide game')

@@ -46,6 +46,13 @@
     <Project Path="LiarsDice/src/FortuneForge.Games.LiarsDice/FortuneForge.Games.LiarsDice.csproj" />
     <Project Path="LiarsDice/samples/FortuneForge.Games.LiarsDice.Web/FortuneForge.Games.LiarsDice.Web.csproj" />
   </Folder>
+  <Folder Name="/games/Mines/">
+    <Project Path="Mines/src/FortuneForge.Games.Mines/FortuneForge.Games.Mines.csproj" />
+    <Project Path="Mines/server/FortuneForge.Games.Mines.Server/FortuneForge.Games.Mines.Server.csproj" />
+    <Project Path="Mines/samples/FortuneForge.Games.Mines.Web/FortuneForge.Games.Mines.Web.csproj" />
+    <Project Path="Mines/tests/FortuneForge.Games.Mines.Tests/FortuneForge.Games.Mines.Tests.csproj" />
+    <Project Path="Mines/tests/FortuneForge.Games.Mines.Server.Tests/FortuneForge.Games.Mines.Server.Tests.csproj" />
+  </Folder>
   <Folder Name="/games/Roulette/">
     <Project Path="Roulette/src/FortuneForge.Games.Roulette/FortuneForge.Games.Roulette.csproj" />
     <Project Path="Roulette/samples/FortuneForge.Games.Roulette.Web/FortuneForge.Games.Roulette.Web.csproj" />

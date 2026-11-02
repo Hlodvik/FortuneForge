@@ -14,7 +14,7 @@ Deck sampling, limits and the 1% conditional choice edge below are explicit Fort
 
 - A standard deck has 52 equally likely cards: 13 ranks, four suits. A = 1, 2–10 use their values, J = 11, Q = 12, K = 13. Suits never affect a comparison.
 - Every draw is independent **with replacement**. All 52 cards remain possible on every draw, including a card identical to a previously shown card. This is not a finite shoe; revealed history does not alter the next probabilities.
-- The server accepts a wager of 0.10–1000.00 credits in whole cents, debits it once and reveals the starting card. The round begins at 1.00× and a streak of zero. A player may immediately cash out for the original wager.
+- The server accepts a new wager of 0.10–5.00 credits in whole cents, debits it once and reveals the starting card. The round begins at 1.00× and a streak of zero. A player may immediately cash out for the original wager. Existing rounds placed under the previous 1,000-credit limit can still be resumed and settled.
 - Choose **Higher** to win only if the next rank is strictly larger, or **Lower** to win only if it is strictly smaller. Equal rank loses for either direction, even when the suits differ. A failed guess ends the round with zero return, including the accumulated streak return.
 - Lower at A and Higher at K are impossible and rejected before a draw. No new wager or separate debit occurs for a valid choice; the round's current return is risked.
 - A correct choice increases the cumulative multiplier and streak. The player can risk that return again or cash out. Cash-out ends the round and credits the complete return, including the initial wager.
@@ -63,7 +63,7 @@ M' = min(M × f, L)
 Cash-out credits = floor(initialWager × M' × 100) / 100
 ```
 
-The maximum gross return is both **1000× the initial wager** and **100,000.00 credits**. The smaller limit applies. Limits are gross return, not profit. For example, a 300-credit wager has a multiplier limit of `333.333333…×`, returning exactly 100,000.00 credits at the cap. The implementation explicitly preserves the exact cap even when its multiplier is a recurring decimal.
+The maximum gross return is both **1000× the initial wager** and **100,000.00 credits**. The smaller limit applies. Limits are gross return, not profit. A saved round with a historical 300-credit wager has a multiplier limit of `333.333333…×`, returning exactly 100,000.00 credits at the cap. The implementation explicitly preserves the exact cap even when its multiplier is a recurring decimal.
 
 If a choice would cross the limit, `HiLoRules.Quote` reports the capped cumulative multiplier and actual capped gross return **before** the guess. Its effective step factor is `cappedNextMultiplier / currentMultiplier`. Such a choice has a conditional return below 99% and therefore an edge greater than 1%; the cap is not silently presented as the uncapped factor. A winning capped choice settles automatically.
 

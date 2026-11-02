@@ -8,15 +8,13 @@ import chip050 from './assets/chip-050.png'
 import chip1 from './assets/chip-1.png'
 import chip2 from './assets/chip-2.png'
 import chip5 from './assets/chip-5.png'
-import chip10 from './assets/chip-10.png'
-import chip25 from './assets/chip-25.png'
-import chip50 from './assets/chip-50.png'
 import './hilo.css'
 import './hiloCasino.css'
 
 export type HiLoGameProps = Readonly<{ gateway?: HiLoGateway; playerId?: string; currencySymbol?: string; onBalanceChange?: (balance: number) => void; showTitle?: boolean; renderCardFace?: (card: HiLoCard) => ReactNode }>
 const defaultGateway = new HttpHiLoGateway()
-const wagerChips = [{ value: .5, image: chip050 }, { value: 1, image: chip1 }, { value: 2, image: chip2 }, { value: 5, image: chip5 }, { value: 10, image: chip10 }, { value: 25, image: chip25 }, { value: 50, image: chip50 }]
+const newEntryMaximumWagerCents = 500
+const wagerChips = [{ value: .5, image: chip050 }, { value: 1, image: chip1 }, { value: 2, image: chip2 }, { value: 5, image: chip5 }]
 const symbols = { clubs: '♣', diamonds: '♦', hearts: '♥', spades: '♠' }
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']
 const money = (cents: number, symbol: string) => `${symbol}${(cents / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -53,7 +51,7 @@ export function HiLoGame({ gateway = defaultGateway, playerId = 'standalone-prac
   const lost = round?.status === 'lost'
   const collected = round?.status === 'cashedOut' || round?.status === 'maximumReturn'
   const wagerCents = Math.round(Number(wager) * 100)
-  const validWager = Number.isFinite(Number(wager)) && /^\d+(\.\d{0,2})?$/.test(wager) && wagerCents >= (session?.limits.minWagerCents ?? 10) && wagerCents <= (session?.limits.maxWagerCents ?? 100000)
+  const validWager = Number.isFinite(Number(wager)) && /^\d+(\.\d{0,2})?$/.test(wager) && wagerCents >= (session?.limits.minWagerCents ?? 10) && wagerCents <= (session?.limits.maxWagerCents ?? newEntryMaximumWagerCents)
 
   const canAdjustWager = !!session && !busy && !active && !recovering && acceptingRisk
   useEffect(() => { if (!canAdjustWager) setPickerOpen(false) }, [canAdjustWager])
@@ -67,15 +65,24 @@ export function HiLoGame({ gateway = defaultGateway, playerId = 'standalone-prac
   function chooseWagerChip(value: number) {
     if (!canAdjustWager || locked.current || !session || value * 100 < session.limits.minWagerCents || value * 100 > session.limits.maxWagerCents) return
     setSelectedChip(value); setWager(value.toFixed(2)); setPickerOpen(false); setError(null)
-    playHiLoAudio('move', muted); selectedChipButton.current?.focus()
+    playHiLoAudio('chip', muted); selectedChipButton.current?.focus()
   }
   function stepWagerChip(direction: -1 | 1) {
     const next = wagerChips[selectedChipIndex + direction]
     if (next) chooseWagerChip(next.value)
   }
   function accept(next: HiLoSession) {
+    // A replayed pre-change operation can carry the old R1,000 entry limit.
+    // Its round remains playable, but any subsequent entry uses the new cap.
+    next = { ...next, limits: { ...next.limits, maxWagerCents: Math.min(next.limits.maxWagerCents, newEntryMaximumWagerCents) } }
     setSession(next)
-    if (next.round) setWager((next.round.wagerCents / 100).toFixed(2))
+    if (next.round) {
+      const displayedWager = next.round.status === 'active' ? next.round.wagerCents : Math.min(next.round.wagerCents, next.limits.maxWagerCents)
+      setWager((displayedWager / 100).toFixed(2))
+      if (next.round.status !== 'active' && next.round.wagerCents > next.limits.maxWagerCents) {
+        setSelectedChip(wagerChips.filter(chip => chip.value * 100 <= next.limits.maxWagerCents).at(-1)?.value ?? wagerChips[0].value)
+      }
+    }
     balanceCallback.current?.(next.walletBalanceCents / 100)
   }
   async function restore() {

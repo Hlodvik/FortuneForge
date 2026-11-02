@@ -47,7 +47,7 @@ public sealed class SlotSpinPersistenceTests
 
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(auditData));
 
-        Assert.Equal(5, FirestoreAccountStore.SlotOutcomeSchemaVersion);
+        Assert.Equal(7, FirestoreAccountStore.SlotOutcomeSchemaVersion);
         var visibleReels = document.RootElement
             .GetProperty("visibleSymbolWindow")
             .GetProperty("reels");

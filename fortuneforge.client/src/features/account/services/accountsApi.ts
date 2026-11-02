@@ -1,3 +1,6 @@
+import { clearAccountRestriction, observeRestrictionResponse, publishAccountRestriction } from '../accountRestrictions'
+import { publishAccountSessionEvent } from './accountSessionEvents'
+
 export type CreateAccountInput = {
   playerName: string
   email: string
@@ -31,9 +34,10 @@ export type AccountSummary = {
 }
 
 export type AuthenticationResponse = {
-  account: AccountSummary
+  account: AccountSummary | null
   token: string
   expiresAtUtc: string
+  restriction?: { code: 'account_restricted'; reviewPath: string }
 }
 
 export type CreateAccountResponse = {
@@ -64,6 +68,7 @@ export type SlotHistoryResponse = {
 type ProblemDetails = {
   title?: string
   detail?: string
+  error?: string
 }
 
 export class AccountRequestError extends Error {
@@ -113,6 +118,9 @@ export async function loginAccount(input: LoginInput): Promise<AuthenticationRes
   } else {
     clearAccountToken()
   }
+  if (authentication.restriction?.code === 'account_restricted')
+    publishAccountRestriction({ code: 'account_restricted', message: 'Your account is under review.' })
+  else clearAccountRestriction()
   return authentication
 }
 
@@ -152,6 +160,7 @@ export async function logoutAccount(): Promise<void> {
     // A failed network request must not leave local credentials behind after
     // the user deliberately chooses to log out.
     clearAccountToken()
+    clearAccountRestriction()
   }
 }
 
@@ -172,10 +181,12 @@ export function getAccountToken(): string | null {
 export function clearAccountToken(): void {
   removeStoredToken('sessionStorage')
   removeStoredToken('localStorage')
+  publishAccountSessionEvent('session-changed')
 }
 
 function storeAccountToken(token: string, remainLoggedIn: boolean): void {
-  clearAccountToken()
+  removeStoredToken('sessionStorage')
+  removeStoredToken('localStorage')
   const preferredStorage = remainLoggedIn ? 'localStorage' : 'sessionStorage'
 
   try {
@@ -184,6 +195,7 @@ function storeAccountToken(token: string, remainLoggedIn: boolean): void {
     // The HttpOnly session cookie remains the primary credential. Storage is a
     // compatibility fallback for browsers or privacy modes that allow only one.
   }
+  publishAccountSessionEvent('session-changed')
 }
 
 function readStoredToken(storageName: 'localStorage' | 'sessionStorage'): string | null {
@@ -217,7 +229,7 @@ async function accountRequest<T>(
   if (!response.ok) {
     const problem = await response.json().catch(() => null) as ProblemDetails | null
     throw new AccountRequestError(
-      problem?.detail ?? problem?.title ?? `Account request failed (${response.status}).`,
+      problem?.detail ?? problem?.error ?? problem?.title ?? `Account request failed (${response.status}).`,
       response.status,
       problem?.title,
     )
@@ -250,7 +262,7 @@ export async function fetchWithAccountSession(
       if (token === persistentToken && sessionToken !== null && sessionToken !== persistentToken) {
         removeStoredToken('sessionStorage')
       }
-      return response
+      return observeAccountResponse(response, path, init)
     }
   }
 
@@ -266,7 +278,14 @@ export async function fetchWithAccountSession(
     clearAccountToken()
   }
 
-  return cookieResponse
+  return observeAccountResponse(cookieResponse, path, init)
+}
+
+async function observeAccountResponse(response: Response, path: RequestInfo | URL, init: RequestInit) {
+  const observed = await observeRestrictionResponse(response)
+  const method = (init.method ?? (path instanceof Request ? path.method : 'GET')).toUpperCase()
+  if (observed.ok && method !== 'GET' && method !== 'HEAD') publishAccountSessionEvent('accepted-mutation')
+  return observed
 }
 
 function jsonHeaders(source?: HeadersInit): Headers {

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Server.Payments.Models;
 using Google.Cloud.Firestore;
+using FortuneForge.Server.Risk;
 
 namespace FortuneForge.Server.Payments.Storage;
 
@@ -25,10 +26,15 @@ internal sealed partial class FirestorePaymentStore
                 var initialSnapshots = await Task.WhenAll(
                     transaction.GetSnapshotAsync(userReference, cancellationToken),
                     transaction.GetSnapshotAsync(balanceReference, cancellationToken),
-                    transaction.GetSnapshotAsync(idempotencyReference, cancellationToken));
+                    transaction.GetSnapshotAsync(idempotencyReference, cancellationToken),
+                    transaction.GetSnapshotAsync(FirestoreRiskIncidentStore.StateReference(database, withdrawal.UserId), cancellationToken));
                 var userSnapshot = initialSnapshots[0];
                 var balanceSnapshot = initialSnapshots[1];
                 var idempotencySnapshot = initialSnapshots[2];
+                // This read participates in the reservation transaction, so a
+                // concurrent restriction conflicts and retries before any debit.
+                if (FirestoreRiskIncidentStore.ReadState(initialSnapshots[3], withdrawal.UserId, DateTime.UtcNow).WithdrawalsBlocked)
+                    return PaymentResult<StoredPaymentWithdrawal>.Failure(PaymentError.WithdrawalsRestricted);
                 if (!userSnapshot.Exists)
                 {
                     return PaymentResult<StoredPaymentWithdrawal>.Failure(PaymentError.AccountNotFound);

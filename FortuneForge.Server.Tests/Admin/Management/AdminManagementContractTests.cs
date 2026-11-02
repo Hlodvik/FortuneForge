@@ -1,7 +1,9 @@
 using System.Text.Json;
+using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Server.Admin.Management;
 using FortuneForge.Server.Admin.Operations;
 using FortuneForge.Server.Bots;
+using FortuneForge.Server.Tests.Catalog;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
@@ -130,6 +132,27 @@ public sealed class AdminManagementContractTests
     }
 
     [Fact]
+    public async Task Mines_supports_visibility_controls_but_not_bot_admission_controls()
+    {
+        var store = new Store();
+        var controller = Controller(store);
+        Assert.IsType<OkObjectResult>(await controller.Visibility("mines", new(false, 0, "Hide Mines while reviewing release readiness"), default));
+        var mutation = Assert.Single(store.Writes);
+        Assert.Equal("catalog-visibility", mutation.Operation);
+        Assert.Equal("mines", mutation.GameId);
+        Assert.False(mutation.Value);
+        Assert.IsType<BadRequestObjectResult>(await controller.GameBots("mines", new(false, 0, "Mines is a single-player game"), default));
+        Assert.Single(store.Writes);
+
+        store.State = new(1, true, new Dictionary<string, bool>(), new Dictionary<string, bool> { ["mines"] = false }, Now);
+        var state = await new AdminManagementService(store, Microsoft.Extensions.Options.Options.Create(Options)).GetAsync(default);
+        var game = Assert.Single(state.Games, item => item.Id == "mines");
+        Assert.False(game.Visible);
+        Assert.False(game.BotsSupported);
+        Assert.Equal("/games/mines", game.Route);
+    }
+
+    [Fact]
     public async Task Global_off_does_not_overwrite_independent_game_switches_or_catalogue_visibility()
     {
         var service = new AdminManagementService(new Store { State = new(4, false,
@@ -148,18 +171,66 @@ public sealed class AdminManagementContractTests
     {
         var service = new AdminManagementService(new Store(), Microsoft.Extensions.Options.Options.Create(Options));
         var publicState = await service.VisibilityAsync(default);
-        Assert.Equal(43, publicState.Games.Count);
-        Assert.Equal(43, publicState.Games.Select(game => game.Id).Distinct().Count());
-        Assert.Equal(43, publicState.Games.Select(game => game.Route).Distinct().Count());
-        Assert.Equal(new[] { "2048", "asteroids", "drop-merge", "flappy", "horse-flight", "snake" },
-            publicState.Games.Where(game => !game.Visible).Select(game => game.Id).OrderBy(id => id).ToArray());
+        Assert.Equal(CatalogContract.Entries,
+            publicState.Games.Select(game => (game.Id, game.Route)).OrderBy(game => game.Id, StringComparer.Ordinal).ToArray());
+        Assert.Equal(CatalogContract.Entries.Count, publicState.Games.Select(game => game.Id).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(CatalogContract.Entries.Count, publicState.Games.Select(game => game.Route).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(CatalogContract.DefaultHiddenIds,
+            publicState.Games.Where(game => !game.Visible).Select(game => game.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.Equal(CatalogContract.DefaultVisibleIds,
+            publicState.Games.Where(game => game.Visible).Select(game => game.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.True(publicState.Games.Single(game => game.Id == "2048").Visible);
+        Assert.True(publicState.Games.Single(game => game.Id == "drop-merge").Visible);
         Assert.True(publicState.Games.Single(game => game.Id == "dragon-tiger").Visible);
         Assert.True(publicState.Games.Single(game => game.Id == "hi-lo").Visible);
         Assert.True(publicState.Games.Single(game => game.Id == "andar-bahar").Visible);
+        Assert.True(publicState.Games.Single(game => game.Id == "mines").Visible);
         var json = JsonSerializer.Serialize(publicState).ToLowerInvariant();
         Assert.DoesNotContain("bots", json);
         Assert.DoesNotContain("actor", json);
         Assert.DoesNotContain("reason", json);
+    }
+
+    [Fact]
+    public void Release_catalogue_preserves_title_identity_and_distinguishes_visibility_from_analytics_coverage()
+    {
+        Assert.Equal(CatalogContract.Entries,
+            AdminManagementCatalog.Games.Select(game => (game.Id, game.Route)).OrderBy(game => game.Id, StringComparer.Ordinal).ToArray());
+        var competitive = AdminManagementCatalog.Require("solitaire");
+        var free = AdminManagementCatalog.Require("free-solitaire");
+        var mines = AdminManagementCatalog.Require("mines");
+        Assert.Equal(("Competitive Solitaire", "cards", "/cards/solitaire", true, true),
+            (competitive.DisplayName, competitive.Category, competitive.Route, competitive.DefaultVisible, competitive.BotsSupported));
+        Assert.Equal(("Solitaire", "cards", "/cards/free-solitaire", true, false),
+            (free.DisplayName, free.Category, free.Route, free.DefaultVisible, free.BotsSupported));
+        Assert.Equal(("Mines", "casino", "/games/mines", true, false),
+            (mines.DisplayName, mines.Category, mines.Route, mines.DefaultVisible, mines.BotsSupported));
+        Assert.Equal(CatalogContract.AnalyticsIds, GameAnalyticsOutbox.GameIds.OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.Equal(CatalogContract.UntrackedArcadeIds,
+            CatalogContract.Ids.Except(GameAnalyticsOutbox.GameIds, StringComparer.Ordinal).ToArray());
+        Assert.Equal(new[] { "liars-dice" },
+            GameAnalyticsOutbox.GameIds.Except(CatalogContract.DefaultVisibleIds, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+    }
+
+    [Fact]
+    public async Task Runtime_visibility_overrides_change_only_allowlisted_visibility_not_release_identity_or_defaults()
+    {
+        var store = new Store { State = new(7, true, new Dictionary<string, bool>(), new Dictionary<string, bool>
+        {
+            ["free-solitaire"] = false, ["mines"] = false, ["asteroids"] = true, ["liars-dice"] = true, ["unregistered"] = true,
+        }, Now) };
+        var service = new AdminManagementService(store, Microsoft.Extensions.Options.Options.Create(Options));
+        var publicState = await service.VisibilityAsync(default);
+        Assert.Equal(7, publicState.Version);
+        Assert.Equal(CatalogContract.Entries,
+            publicState.Games.Select(game => (game.Id, game.Route)).OrderBy(game => game.Id, StringComparer.Ordinal).ToArray());
+        var expectedVisible = CatalogContract.DefaultVisibleIds.Except(new[] { "free-solitaire", "mines" }, StringComparer.Ordinal)
+            .Concat(new[] { "asteroids", "liars-dice" }).OrderBy(id => id, StringComparer.Ordinal).ToArray();
+        Assert.Equal(expectedVisible,
+            publicState.Games.Where(game => game.Visible).Select(game => game.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.DoesNotContain(publicState.Games, game => game.Id == "unregistered");
+        Assert.Equal(CatalogContract.DefaultVisibleIds,
+            AdminManagementCatalog.Games.Where(game => game.DefaultVisible).Select(game => game.Id).OrderBy(id => id, StringComparer.Ordinal).ToArray());
     }
 
     [Fact]

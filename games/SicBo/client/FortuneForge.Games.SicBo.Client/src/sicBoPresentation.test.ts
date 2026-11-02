@@ -3,7 +3,7 @@ import type { SicBoRound, SicBoStatus } from './contracts'
 import { appendRollHistory, availableChipValues, betLabel, betTargets, createTargetBet, historyStorageKey,
   legalSlip, parsePendingRoll, parseRollHistory, parseStake, pendingStorageKey, targetsForKind, totalStake, validStake } from './sicBoPresentation'
 
-const status: SicBoStatus = { available: true, minimumStake: 1, maximumStakePerBet: 100, stakeIncrement: 1, maximumBetsPerRound: 20, balance: 10_000, mode: 'practice-three-dice-sic-bo' }
+const status: SicBoStatus = { available: true, minimumStake: 1, maximumStakePerBet: 10, stakeIncrement: 1, maximumBetsPerRound: 20, balance: 10_000, mode: 'practice-three-dice-sic-bo' }
 const scope = 'alex:practice'
 const small = createTargetBet('small', 1)!
 const key = 'sic-bo-exact-recovery-0001'
@@ -73,11 +73,11 @@ describe('exact stake drafts and affordable ordered slips', () => {
 
   it('accepts complete plain decimals and rejects out-of-limit or wrong-step stakes', () => {
     expect(parseStake(' 1.00 ', status)).toBe(1)
-    expect(parseStake('100', status)).toBe(100)
+    expect(parseStake('10', status)).toBe(10)
     expect(parseStake('01', status)).toBe(1)
     expect(parseStake('1.5', status)).toBeNull()
     expect(parseStake('0', status)).toBeNull()
-    expect(parseStake('101', status)).toBeNull()
+    expect(parseStake('11', status)).toBeNull()
     expect(parseStake('1', null)).toBeNull()
     expect(parseStake('1', { ...status, available: false })).toBeNull()
   })
@@ -97,14 +97,14 @@ describe('exact stake drafts and affordable ordered slips', () => {
   })
 
   it('offers legal chips including the last reachable endpoint, without a wallet clamp', () => {
-    expect(availableChipValues(status)).toEqual([1, 2, 5, 10, 25, 50, 100])
-    expect(availableChipValues({ ...status, balance: 0 })).toEqual([1, 2, 5, 10, 25, 50, 100])
+    expect(availableChipValues(status)).toEqual([1, 2, 5, 10])
+    expect(availableChipValues({ ...status, balance: 0 })).toEqual([1, 2, 5, 10])
     expect(availableChipValues(null)).toEqual([])
     expect(availableChipValues({ ...status, available: false })).toEqual([])
     expect(availableChipValues({ ...status, stakeIncrement: 0 })).toEqual([])
   })
 
-  it.each([NaN, Infinity, -1, 0, .5, 1.000000001, 101])('rejects numeric stake %s', value => expect(validStake(value, status)).toBe(false))
+  it.each([NaN, Infinity, -1, 0, .5, 1.000000001, 11])('rejects numeric stake %s', value => expect(validStake(value, status)).toBe(false))
 
   it('sums exact cents and rejects values that would need rounding', () => {
     expect(totalStake([{ stake: .1 }, { stake: .2 }, { stake: .07 }])).toBe(.37)
@@ -120,8 +120,17 @@ describe('exact stake drafts and affordable ordered slips', () => {
     expect(legalSlip(slip, status, 3)).toBe(true)
     expect(legalSlip(slip, status, 2.99)).toBe(false)
     expect(slip).toEqual([small, big, small])
-    expect(legalSlip(Array.from({ length: 20 }, () => small), status, 20)).toBe(true)
+    expect(legalSlip(Array.from({ length: 20 }, (_, index) => index < 10 ? small : big), status, 20)).toBe(true)
     expect(legalSlip(Array.from({ length: 21 }, () => small), status, 21)).toBe(false)
+  })
+
+  it('caps the combined chips on each betting spot at the table maximum', () => {
+    const capped = { ...status, maximumStakePerBet: 10 }
+    const big = createTargetBet('big', 10)!
+    expect(availableChipValues(capped)).toEqual([1, 2, 5, 10])
+    expect(legalSlip([createTargetBet('small', 5)!, createTargetBet('small', 5)!], capped, 20)).toBe(true)
+    expect(legalSlip([createTargetBet('small', 5)!, createTargetBet('small', 6)!], capped, 20)).toBe(false)
+    expect(legalSlip([createTargetBet('small', 10)!, big], capped, 20)).toBe(true)
   })
 
   it('requires a live table, valid complete selections, valid stakes and a nonempty legal count', () => {

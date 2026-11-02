@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import '@fontsource-variable/sora'
-import { ForgeCreditAmount } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
+import { AccountLobbyShell } from '../account/AccountLobbyShell'
 import {
   getAdminPaymentInvoice,
   getPaymentCatalog,
@@ -108,17 +107,12 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
     ].some((value) => value.trim() !== '')
 
   return (
-    <div className="player-page player-page--credits player-page--invoice">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home"><span className="landing-brand__spark" aria-hidden="true">✦</span><span>Fortune Forge</span></a>
-        <div className="landing-bar__account">
-          {displayedBalance !== undefined && <ForgeCreditAmount amount={displayedBalance} />}
-          <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Invoice navigation">{adminView ? <a className="landing-nav__link" href="/admin/invoices">Admin invoices</a> : <a className="landing-nav__link" href="/home/rand">Add Rand</a>}<a className="landing-nav__link" href="/home">Home</a></nav>
-        </div>
-      </header>
-
-      <main className="invoice-main">
+    <AccountLobbyShell
+      account={account === null || displayedBalance === undefined ? account : { ...account, balances: { ...account.balances, slotsCredits: displayedBalance } }}
+      activeNav={null}
+    >
+      <div className="invoice-main">
+        <nav className="invoice-page__navigation" aria-label="Invoice navigation"><a href={adminView ? '/admin/invoices' : '/balance'}>← {adminView ? 'Admin invoices' : 'Balance'}</a><PaymentAlertsMenu /></nav>
         {isAccountLoading && <PageState label="Opening your invoice…" />}
         {!isAccountLoading && accountError !== null && <PageError message={accountError} onRetry={reload} />}
         {!isAccountLoading && account !== null && invoice === null && invoiceError === null && <PageState label="Loading invoice…" />}
@@ -195,8 +189,8 @@ export function PaymentInvoicePage({ invoiceId, adminView = false }: { invoiceId
             </footer>
           </article>
         )}
-      </main>
-    </div>
+      </div>
+    </AccountLobbyShell>
   )
 }
 

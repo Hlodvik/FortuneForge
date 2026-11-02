@@ -5,6 +5,7 @@ import { defineSlotGame } from '../shared/slotGameManifest'
 import { RAINBOW_REALM_CABINET_THEME } from './cabinetTheme'
 import { RAINBOW_REALM_CATALOG } from './catalog'
 import { RAINBOW_REALM_SYMBOLS } from './symbols'
+import './rainbowRealmFeature.css'
 
 const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
   energy: {
@@ -16,10 +17,10 @@ const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
     itemLabel: 'charms',
     presentation: 'juice-glass',
     entries: [
-      { id: 'sync', label: 'Strawberry sync', shortLabel: 'Strawberry', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Blueberry bounty', shortLabel: 'Blueberry', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Basket harvest', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Kiwi token column', shortLabel: 'Kiwi', symbol: 'SEAL_RAND', requiredCount: 40 },
+      { id: 'sync', label: 'Strawberry sync', displayLabel: 'Strawberry', shortLabel: 'Strawberry', symbol: 'SEAL_SYNC', requiredCount: 60 },
+      { id: 'rows', label: 'Blueberry bounty', displayLabel: 'Blueberry', shortLabel: 'Blueberry', symbol: 'SEAL_ROWS', requiredCount: 60 },
+      { id: 'paw', label: 'Basket harvest', displayLabel: 'Orange', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 60 },
+      { id: 'rand', label: 'Kiwi token column', displayLabel: 'Kiwi', shortLabel: 'Kiwi', symbol: 'SEAL_RAND', requiredCount: 60 },
     ],
   },
   moneyGrab: {
@@ -31,9 +32,9 @@ const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
   specialRound: {
     id: 'rainbow-orchard-rush',
     title: 'Orchard Rush',
-    earnLabel: 'Land 3 orchard gates for 5 rushes, or fill a 40-charm glass for 10 enhanced rushes.',
+    earnLabel: 'Land 3 orchard gates or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round.',
     earnStyle: 'glass',
-    earnHint: 'Fruit charms fill four orchard glasses. Finish one 40-charm glass to carry its power into ten Orchard Rush spins.',
+    earnHint: 'Fruit charms fill four orchard glasses. Finish one 60-charm glass to carry its power into ten Orchard Rush bonus spins.',
     activeModes: {
       sync: 'Strawberry Sync · one reel mirrors another',
       rows: 'Blueberry Bounty · two extra rows open',
@@ -48,7 +49,11 @@ const RAINBOW_REALM_HELP: SlotHelpDefinition = {
   paylineCount: 23,
   freeGames: {
     requiredSymbols: 3,
-    awardedSpins: 5,
+    awardedSpins: 10,
+    badge: 'BONUS',
+    title: 'Orchard Rush bonus',
+    symbolLabel: 'ORCHARD GATE',
+    awardLabel: 'Orchard Rush bonus spins',
   },
   extraSections: [
     {
@@ -59,7 +64,7 @@ const RAINBOW_REALM_HELP: SlotHelpDefinition = {
     {
       badge: 'CHARMS',
       title: 'Orchard charm collections',
-      body: 'Strawberry, blueberry, orange, and kiwi charms collect from anywhere visible. A completed 40-charm track awards ten special free spins. Sunshine at 25%, 50%, and 75% improves charm odds; a full meter boosts the payout by 1.5×, resets, and finishes the nearest charm track.',
+      body: 'Strawberry, blueberry, orange, and kiwi charms collect from anywhere visible. A completed 60-charm track starts a ten-spin Orchard Rush bonus round. Sunshine at 25%, 50%, and 75% improves charm odds; a full meter boosts the next paying spin by 1.5×, resets, and finishes the nearest charm track.',
     },
   ],
 }
@@ -74,11 +79,11 @@ export const RAINBOW_REALM_EXPERIENCE_SET: SlotExperienceSet = {
     winTitle: 'Fruit harvest',
     greatWinTitle: 'Bountiful harvest',
     bigWinTitle: 'Orchard jackpot',
-    freeGameSingular: 'free orchard spin',
-    freeGamePlural: 'free orchard spins',
+    freeGameSingular: 'Orchard Rush bonus spin',
+    freeGamePlural: 'Orchard Rush bonus spins',
     lossNextAction: 'Choose a wager, then tend the orchard again.',
     winNextAction: 'Choose a wager, then harvest again when ready.',
-    bonusNextAction: 'Your next orchard spin is free and uses the locked wager.',
+    bonusNextAction: 'Your Orchard Rush bonus round uses the locked wager.',
   },
   shellBackdrop: 'theme',
   symbols: RAINBOW_REALM_SYMBOLS,

@@ -6,7 +6,6 @@ import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
-import { PracticeModeNavAction } from './PracticeModeBanner'
 import { practiceAccountFetch, walletPracticeModeEnabled } from './walletPracticeMode'
 import './AndarBaharRoute.css'
 
@@ -30,7 +29,7 @@ function AndarBaharSession({ initialAccount }: Readonly<{ initialAccount: Accoun
     }).catch(() => undefined)
   }, [initialAccount.userId])
   const scope = `${initialAccount.userId}:${practiceMode ? 'practice' : 'account'}`
-  return <InGameShell account={account} title="Andar Bahar" theme="casino" className="player-page andar-bahar-route" bodyClassName="andar-bahar-route__body" actions={<PracticeModeNavAction enabled={practiceMode} path="/games/andar-bahar"/>}>
+  return <InGameShell account={account} title="Andar Bahar" className="player-page andar-bahar-route" bodyClassName="andar-bahar-route__body">
     <AndarBaharGame key={scope} playerId={scope} gateway={gateway} onBalanceChange={practiceMode ? undefined : refreshBalance}/>
   </InGameShell>
 }

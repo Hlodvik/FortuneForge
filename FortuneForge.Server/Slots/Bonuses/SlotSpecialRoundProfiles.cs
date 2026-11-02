@@ -79,9 +79,9 @@ public static class SlotSpecialRoundProfiles
             [RainbowRealmGameId] = new(
                 RainbowRealmGameId,
                 3,
-                5,
+                10,
                 60,
-                8),
+                10),
             [CosmicFortuneGameId] = new(
                 CosmicFortuneGameId, 3, 6, 24, 7, true, true, false, null, "sync-rows",
                 PayoutMultiplier: 0.856m),
@@ -122,8 +122,9 @@ public static class SlotSpecialRoundProfiles
                 OceanOdysseyGameId, 4, 6, 28, 6, true, true, false, null, "sync-rand",
                 PayoutMultiplier: 1.071m),
             [DragonHoardGameId] = new(
-                DragonHoardGameId, 3, 6, 30, 7, true, false, false, null, "rows-paw",
-                PayoutMultiplier: 1.076m),
+                DragonHoardGameId, 3, 10, 30, 10, true, false, false, null, "rows-paw",
+                BaseReelSetId: MidnightVaultBaseReelSet.Id,
+                PayoutMultiplier: 1.0m),
             [JungleJackpotGameId] = new(
                 JungleJackpotGameId, 3, 6, 22, 8, true, false, false, null, "sync-rows-paw",
                 TargetHitRate: 0.32m,

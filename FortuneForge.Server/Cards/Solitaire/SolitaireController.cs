@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace FortuneForge.Server.Cards.Solitaire;
 
 public sealed record SolitaireForfeitRequest(int ExpectedVersion);
-public sealed record SolitaireFreeRunStartRequest(int DrawCount, string? ReplayRunId = null);
+public sealed record SolitaireFreeRunStartRequest(int DrawCount, string? ReplayRunId = null, string? GameId = null);
 public sealed record SolitaireFreeRunReplayRequest(IReadOnlyList<SolitaireFreeReplayCommand>? Commands);
 
 [ApiController]
@@ -35,7 +35,7 @@ public sealed class SolitaireController(
         {
             return Ok(await freeRunService.StartAsync(
                 idempotencyKey ?? string.Empty, account.UserId, request.DrawCount, cancellationToken,
-                request.ReplayRunId));
+                request.ReplayRunId, request.GameId ?? FirestoreSolitaireFreeRunService.LegacyGameId));
         }
         catch (Exception exception)
         {

@@ -1,0 +1,74 @@
+/* The artwork is shared with the other table games; every value uses one square image box. */
+.ff-roulette-chip-art { position:relative; display:block; flex:none; width:100%; height:100%; aspect-ratio:1; border:0; border-radius:50%; background:none; box-shadow:none; line-height:1; }
+.ff-roulette-chip-art img { display:block; width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 2px 2px #0008); }
+.ff-roulette-chip-art--size-quarter img { transform:scale(1.09); }
+.ff-roulette-chip-art--size-half img { transform:scale(1.02); }
+.ff-roulette-chip-art--size-50 img { transform:scale(1.15); }
+.ff-roulette-chip-art--pair img { position:absolute; inset:0; width:88%; height:88%; }
+.ff-roulette-chip-art--pair img:first-child { transform:translate(-5%,9%); }
+.ff-roulette-chip-art--pair img:nth-child(2) { transform:translate(12%,-5%); }
+.ff-roulette-chip-art--pair b { position:absolute; z-index:1; right:-10%; bottom:-9%; padding:2px 3px; border-radius:3px; background:#142019; color:#fff9de; font:800 max(8px, .25em)/1 Arial,sans-serif; text-shadow:0 1px 1px #000; }
+.ff-roulette-chip-art--custom { display:grid; place-items:center; border:3px dashed #f5e8bc; background:radial-gradient(circle at 35% 30%,#458d73,#10523e 75%); box-shadow:inset 0 0 0 2px #073526,0 2px 3px #0008; }
+.ff-roulette-chip-art--custom b { color:white; font:800 .32em/1 Arial,sans-serif; text-shadow:0 1px 2px #000; }
+
+.ff-roulette-chip-rack .denomination { display:grid; place-items:center; flex:0 1 46px; width:46px; min-width:34px; height:46px; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; }
+.ff-roulette-chip-rack .denomination > .ff-roulette-chip-art { display:block; width:100%; height:100%; border:0; border-radius:50%; background:none; color:inherit; box-shadow:none; font-size:46px; }
+.ff-roulette-chip-rack .denomination[aria-pressed=true] { transform:translateY(-3px); outline:2px solid #f6e7a6; outline-offset:1px; }
+.ff-roulette-chip-rack .denomination:disabled { opacity:.5; }
+
+/* The betting cell owns its geometry. A full-cell transparent button places chips; chips sit above it. */
+.ff-roulette-board .ff-roulette-bet-cell { position:relative; min-width:0; min-height:0; border:1px solid #d3deccd9; color:#f0f4e8; background:transparent; font-family:'Arial Narrow','Trebuchet MS',sans-serif; font-size:clamp(16px,1.9vw,25px); font-weight:800; text-shadow:0 1px 2px #0008; transition:filter .12s; }
+.ff-roulette-board .ff-roulette-bet-cell.number { background:radial-gradient(circle at 30% 20%,#27352b,#121b16),#121b16; }
+.ff-roulette-board .ff-roulette-bet-cell.number.red,
+.ff-roulette-board .outside-grid .ff-roulette-bet-cell.red { background:linear-gradient(125deg,#b34142,#a12e33),#a12e33; }
+.ff-roulette-board .outside-grid .ff-roulette-bet-cell.black { background:#151d17; }
+.ff-roulette-board .ff-roulette-bet-cell.number.zero { background:transparent; border-radius:40% 0 0 40%; }
+.ff-roulette-board .column-bets .ff-roulette-bet-cell { grid-row:calc(4 - var(--area)); }
+.ff-roulette-board .ff-roulette-bet-cell.has-chip { z-index:1; }
+.ff-roulette-board .ff-roulette-bet-cell.selected { z-index:2; box-shadow:inset 0 0 0 2px #fff4b1; background-image:linear-gradient(#fff2,#fff2); }
+.ff-roulette-board .ff-roulette-bet-cell.winning { z-index:3; box-shadow:inset 0 0 0 3px #fff0ad,0 0 15px #f6d77c88; }
+.ff-roulette-board .ff-roulette-bet-cell.won-area { box-shadow:inset 0 0 0 1px #f4df96; }
+.ff-roulette-board .ff-roulette-bet-cell:has(> .ff-roulette-cell-place:hover:not(:disabled)) { filter:brightness(1.2); }
+.ff-roulette-board .ff-roulette-cell-place { position:absolute; z-index:1; inset:0; display:grid; place-items:center; width:100%; height:100%; min-width:0; min-height:0; padding:1px; border:0; border-radius:0; background:none; color:inherit; font:inherit; text-shadow:inherit; }
+.ff-roulette-board .ff-roulette-cell-place:disabled { cursor:default; }
+.ff-roulette-board .ff-roulette-cell-label { position:relative; z-index:0; pointer-events:none; }
+.ff-roulette-board .ff-roulette-chip-stack { position:absolute; z-index:3; inset:0; pointer-events:none; }
+.ff-roulette-board .ff-roulette-placed-chip { position:absolute; left:50%; bottom:calc(1px + var(--chip-index, 0) * 3px); display:block; width:29px; height:29px; min-width:0; min-height:0; padding:0; border:0; border-radius:50%; background:none; color:inherit; box-shadow:none; transform:translateX(-50%); pointer-events:auto; touch-action:manipulation; }
+.ff-roulette-board .ff-roulette-placed-chip .ff-roulette-chip-art { width:100%; height:100%; font-size:29px; }
+.ff-roulette-board .ff-roulette-placed-chip:hover { filter:brightness(1.15); }
+.ff-roulette-board .ff-roulette-placed-chip:disabled { pointer-events:none; }
+
+.ff-roulette-bets .mini-chip { position:static; display:block; flex:none; width:36px; height:36px; padding:0; border:0; border-radius:50%; background:none; box-shadow:none; }
+.ff-roulette-bets .ff-roulette-chip-art { width:36px; height:36px; font-size:36px; }
+.ff-roulette-actions.spin-only { display:flex; align-items:center; justify-content:center; }
+
+@media (min-width:500px) and (max-width:900px) {
+  .ff-roulette-board .ff-roulette-bet-cell { font-size:15px; }
+  .ff-roulette-board .ff-roulette-placed-chip { width:24px; height:24px; bottom:calc(1px + var(--chip-index, 0) * 2px); }
+  .ff-roulette-board .ff-roulette-placed-chip .ff-roulette-chip-art { font-size:24px; }
+}
+@media (max-width:499px) {
+  .ff-roulette-board .ff-roulette-bet-cell { font-size:clamp(15px,2.4svh,21px); }
+  .ff-roulette-board .outside-grid .ff-roulette-bet-cell,
+  .ff-roulette-board .dozen-bets .ff-roulette-bet-cell { font-size:11px; }
+  .ff-roulette-board .column-bets .ff-roulette-bet-cell { grid-column:var(--area); grid-row:1; font-size:12px; }
+  .ff-roulette-board .ff-roulette-bet-cell.number.zero { border-radius:0; }
+  .ff-roulette-board .ff-roulette-placed-chip { width:20px; height:20px; bottom:calc(1px + var(--chip-index, 0) * 2px); }
+  .ff-roulette-board .ff-roulette-placed-chip .ff-roulette-chip-art { font-size:20px; }
+  .ff-roulette-chip-rack .denomination { flex:0 0 32px; width:32px; min-width:32px; height:32px; }
+  .ff-roulette-chip-rack .denomination > .ff-roulette-chip-art { font-size:32px; }
+}
+@media (max-width:359px) {
+  .ff-roulette-board .outside-grid .ff-roulette-bet-cell,
+  .ff-roulette-board .dozen-bets .ff-roulette-bet-cell,
+  .ff-roulette-board .column-bets .ff-roulette-bet-cell { font-size:10px; }
+  .ff-roulette-board .ff-roulette-placed-chip { width:17px; height:17px; }
+  .ff-roulette-board .ff-roulette-placed-chip .ff-roulette-chip-art { font-size:17px; }
+}
+@media (max-height:500px) and (min-width:500px) {
+  .ff-roulette-board .ff-roulette-bet-cell { font-size:clamp(12px,2vw,17px); }
+  .ff-roulette-board .ff-roulette-placed-chip { width:18px; height:18px; }
+  .ff-roulette-board .ff-roulette-placed-chip .ff-roulette-chip-art { font-size:18px; }
+  .ff-roulette-chip-rack .denomination { flex:0 0 25px; width:25px; min-width:25px; height:25px; }
+  .ff-roulette-chip-rack .denomination > .ff-roulette-chip-art { font-size:25px; }
+}

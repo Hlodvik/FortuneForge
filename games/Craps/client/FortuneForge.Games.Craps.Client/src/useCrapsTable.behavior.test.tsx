@@ -129,6 +129,177 @@ describe('Craps controller wager and turn guards', () => {
   })
 })
 
+describe('paid Craps wallet and recovery', () => {
+  const paidMode = 'paid-pass-line'
+  const paidKey = `fortuneforge:craps:pending:${encodeURIComponent(player)}:${encodeURIComponent(paidMode)}`
+
+  it('refuses to place a wager if the authenticated paid table is unavailable', async () => {
+    const server = fakeServer()
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    expect(server.gateway.startRound).not.toHaveBeenCalled()
+    expect(result.current.error).toContain('paid Craps table is unavailable')
+  })
+
+  it('replays the same paid operation ID after a lost response and refreshes the wallet', async () => {
+    const server = fakeServer()
+    let balance = 10000
+    const accepted = { ...ready(), walletBalanceCents: 9000 }
+    server.gateway.getStatus.mockImplementation(async () => ({ ...status, mode: paidMode, walletBalanceCents: balance }))
+    server.gateway.startRound.mockImplementationOnce(async () => { balance = 9000; throw new TypeError('Response lost after debit') })
+      .mockResolvedValue(accepted)
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    await waitFor(() => expect(result.current.round?.roundId).toBe(id))
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(2)
+    expect(server.gateway.startRound.mock.calls[0]?.[3]).toBe(server.gateway.startRound.mock.calls[1]?.[3])
+    expect(server.gateway.startRound.mock.calls[0]?.[3]).toMatch(/^[0-9a-f-]{36}$/i)
+    await waitFor(() => expect(result.current.status?.walletBalanceCents).toBe(9000))
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+  })
+
+  it('treats a timeout response as uncertain and retries the same paid operation', async () => {
+    const server = fakeServer()
+    let balance = 10000
+    server.gateway.getStatus.mockImplementation(async () => ({ ...status, mode: paidMode, walletBalanceCents: balance }))
+    server.gateway.startRound.mockRejectedValueOnce(new CrapsGatewayError('Timed out', 'craps-request-failed', 408))
+      .mockImplementation(async () => { balance = 9000; return { ...ready(), walletBalanceCents: 9000 } })
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    await waitFor(() => expect(result.current.round?.roundId).toBe(id))
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(2)
+    expect(server.gateway.startRound.mock.calls[0]?.[3]).toBe(server.gateway.startRound.mock.calls[1]?.[3])
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+  })
+
+  it('keeps an uncertain paid debit journal across reload and resumes the same operation', async () => {
+    const server = fakeServer()
+    let balance = 10000
+    const accepted = { ...ready(), walletBalanceCents: 9000 }
+    server.gateway.getStatus.mockImplementation(async () => ({ ...status, mode: paidMode, walletBalanceCents: balance }))
+    server.gateway.startRound.mockImplementationOnce(async () => { balance = 9000; server.state = accepted; throw new TypeError('Response lost') })
+      .mockRejectedValueOnce(new TypeError('Still offline'))
+      .mockResolvedValue(accepted)
+    const first = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(first.result.current.busy).toBe(false))
+    act(() => first.result.current.start(10))
+    await waitFor(() => expect(first.result.current.recovery).toBe('failed'))
+    const pending = JSON.parse(sessionStorage.getItem(paidKey)!) as { operationId: string }
+    act(() => first.result.current.start(10))
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(2)
+    first.unmount()
+    const restored = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(restored.result.current.busy).toBe(false))
+    expect(restored.result.current.round?.roundId).toBe(id)
+    expect(restored.result.current.status?.walletBalanceCents).toBe(9000)
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(3)
+    expect(server.gateway.startRound.mock.calls[2]?.[3]).toBe(pending.operationId)
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+  })
+
+  it('restores an already active paid point without starting another wager', async () => {
+    const server = fakeServer()
+    server.gateway.getStatus.mockResolvedValue({ ...status, mode: paidMode, walletBalanceCents: 9000 })
+    server.gateway.getActiveRound.mockResolvedValue({ ...pointHand(), walletBalanceCents: 9000 })
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.round?.point).toBe(6)
+    expect(server.gateway.startRound).not.toHaveBeenCalled()
+  })
+
+  it('restores a conflicting active paid hand and its wallet without replaying the rejected wager', async () => {
+    const server = fakeServer({ ...status, mode: paidMode, walletBalanceCents: 10000 })
+    const active = { ...pointHand(otherId), walletBalanceCents: 7500 }
+    const read = deferred<CrapsRound | null>()
+    const callback = vi.fn()
+    server.gateway.getActiveRound.mockResolvedValueOnce(null).mockImplementationOnce(() => read.promise)
+    server.gateway.startRound.mockRejectedValue(new CrapsGatewayError('Finish the current round.', 'craps-round-active', 409))
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, callback, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10, [{ kind: 'field', stake: 5 }]))
+    await waitFor(() => expect(server.gateway.getActiveRound).toHaveBeenCalledTimes(2))
+    expect(result.current.busy).toBe(true)
+    act(() => { result.current.start(10); result.current.roll(); result.current.placeOdds(1) })
+    await act(async () => read.resolve(active))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.round).toEqual(active)
+    expect(result.current.status?.walletBalanceCents).toBe(7500)
+    expect(result.current.recovery).toBe('ready')
+    expect(callback).toHaveBeenCalledExactlyOnceWith(active)
+    expect(sessionStorage.getItem(key(player, paidMode))).toBe(otherId)
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+    expect(server.gateway.getRound).not.toHaveBeenCalled()
+    expect(server.gateway.roll).not.toHaveBeenCalled()
+    expect(server.gateway.placeOdds).not.toHaveBeenCalled()
+  })
+
+  it('locks a failed active-hand read until Check again restores it without another wager', async () => {
+    const server = fakeServer({ ...status, mode: paidMode, walletBalanceCents: 9000 })
+    const active = { ...pointHand(otherId), walletBalanceCents: 9000 }
+    server.gateway.getActiveRound.mockResolvedValueOnce(null)
+      .mockRejectedValueOnce(new TypeError('Offline')).mockResolvedValue(active)
+    server.gateway.startRound.mockRejectedValue(new CrapsGatewayError('Finish the current round.', 'craps-round-active', 409))
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    await waitFor(() => expect(result.current.recovery).toBe('failed'))
+    expect(result.current.error).toContain('Check again')
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+    act(() => { result.current.start(10); result.current.roll(); result.current.placeOdds(1); result.current.clear() })
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.round).toEqual(active))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.recovery).toBe('ready')
+    expect(server.gateway.getActiveRound).toHaveBeenCalledTimes(3)
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+    expect(server.gateway.getRound).not.toHaveBeenCalled()
+    expect(server.gateway.roll).not.toHaveBeenCalled()
+    expect(server.gateway.placeOdds).not.toHaveBeenCalled()
+  })
+
+  it('locks a missing active hand until an explicit read-only retry confirms no hand remains', async () => {
+    const server = fakeServer({ ...status, mode: paidMode, walletBalanceCents: 10000 })
+    server.gateway.startRound.mockRejectedValue(new CrapsGatewayError('Finish the current round.', 'craps-round-active', 409))
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    await waitFor(() => expect(result.current.recovery).toBe('failed'))
+    expect(result.current.round).toBeNull()
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+    act(() => result.current.start(10))
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.recovery).toBe('ready'))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.round).toBeNull()
+    expect(server.gateway.getActiveRound).toHaveBeenCalledTimes(3)
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    [409, 'craps-insufficient-credits'],
+    [400, 'craps-round-active'],
+  ])('keeps unrelated paid start rejections unchanged (%s, %s)', async (httpStatus, code) => {
+    const server = fakeServer({ ...status, mode: paidMode, walletBalanceCents: 10000 })
+    server.gateway.startRound.mockRejectedValue(new CrapsGatewayError('Original rejection.', code, httpStatus))
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.start(10))
+    await waitFor(() => expect(result.current.error).toBe('Original rejection.'))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.recovery).toBe('ready')
+    expect(result.current.round).toBeNull()
+    expect(sessionStorage.getItem(paidKey)).toBeNull()
+    expect(server.gateway.getActiveRound).toHaveBeenCalledTimes(1)
+    expect(server.gateway.startRound).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('Craps uncertain-response recovery', () => {
   it('reads an accepted-but-lost roll without rolling again', async () => {
     const server = fakeServer()
@@ -461,6 +632,70 @@ describe('Craps dice settlement and callbacks', () => {
 })
 
 describe('Craps optional legacy gateway compatibility', () => {
+  it('keeps an uncertain adjustment bound to its original revision and refreshes a newer roll after replay', async () => {
+    const server = fakeServer({ ...status, mode: 'paid-pass-line', walletBalanceCents: 5000 })
+    server.state = { ...pointHand(), revision: 7, walletBalanceCents: 5000 }
+    server.gateway.getActiveRound.mockImplementation(async () => server.state)
+    const accepted = { ...server.state, revision: 8, walletBalanceCents: 4500, extraBets: [{ kind: 'field' as const, stake: 5, resolved: false, won: false, totalReturn: null, wagerId: 'field-new', placedForRoll: 2, cancelled: false }] }
+    const setWager = vi.fn().mockImplementationOnce(async () => {
+      server.state = { ...advance(accepted, { first: 4, second: 5, total: 9, result: 'no-decision', isTerminal: false, totalReturn: null }), revision: 9, walletBalanceCents: 5500 }
+      throw new TypeError('Accepted, but response lost')
+    }).mockResolvedValue(accepted)
+    server.gateway.setWager = setWager
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => { result.current.setWager('field', 5); result.current.setWager('field', 5) })
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(setWager).toHaveBeenCalledTimes(2)
+    expect(setWager.mock.calls[0].slice(0, 3)).toEqual([id, 'field', 5])
+    expect(setWager.mock.calls[0][4]).toBe(setWager.mock.calls[1][4])
+    expect(setWager.mock.calls[0][5]).toEqual({ expectedRevision: 7, expectedRollNumber: 2 })
+    expect(setWager.mock.calls[1][5]).toEqual(setWager.mock.calls[0][5])
+    expect(result.current.round?.revision).toBe(9)
+    expect(result.current.round?.rolls).toHaveLength(2)
+    expect(sessionStorage.getItem(`fortuneforge:craps:pending:${encodeURIComponent(player)}:paid-pass-line`)).toBeNull()
+  })
+
+  it('restores a stale persisted removal by reads and never converts it into a later-roll bet', async () => {
+    const server = fakeServer({ ...status, mode: 'paid-pass-line', walletBalanceCents: 5000 })
+    server.state = { ...pointHand(), revision: 11, walletBalanceCents: 5000 }
+    server.gateway.setWager = vi.fn().mockRejectedValue(new CrapsGatewayError('Another tab changed this hand.', 'craps-round-stale', 409))
+    const pendingKey = `fortuneforge:craps:pending:${encodeURIComponent(player)}:paid-pass-line`
+    sessionStorage.setItem(pendingKey, JSON.stringify({ kind: 'wager', roundId: id, operationId: otherId, wagerKind: 'odds', stake: 0, context: { expectedRevision: 8, expectedRollNumber: 2 } }))
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player, true, undefined, true))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(result.current.recovery).toBe('ready')
+    expect(result.current.error).toContain('Another tab')
+    expect(result.current.round?.revision).toBe(11)
+    expect(server.gateway.setWager).toHaveBeenCalledTimes(1)
+    expect(server.gateway.roll).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem(pendingKey)).toBeNull()
+  })
+
+  it('uses the authoritative context for each wager kind and permits explicit zero removal only at point', async () => {
+    const server = fakeServer({ ...status, mode: 'paid-pass-line', walletBalanceCents: 5000 })
+    server.state = { ...pointHand(), revision: 3, walletBalanceCents: 5000 }
+    server.gateway.getActiveRound.mockImplementation(async () => server.state)
+    const setWager = vi.fn().mockImplementation(async () => { server.state = { ...server.state, revision: server.state.revision! + 1 }; return server.state })
+    server.gateway.setWager = setWager
+    const { result } = renderHook(() => useCrapsTable(server.gateway, player))
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    for (const [index, kind] of (['field', 'any-seven', 'any-craps', 'odds'] as const).entries()) {
+      act(() => result.current.setWager(kind, index === 3 ? 0 : index + 1))
+      await waitFor(() => expect(result.current.busy).toBe(false))
+      expect(setWager.mock.calls[index][5]).toEqual({ expectedRevision: 3 + index, expectedRollNumber: 2 })
+    }
+    act(() => { result.current.setWager('field', .5); result.current.setWager('field', -1); result.current.setWager('field', 101) })
+    expect(setWager).toHaveBeenCalledTimes(4)
+    act(() => result.current.roll())
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    expect(server.gateway.roll.mock.calls[0][3]).toEqual({ expectedRevision: 7, expectedRollNumber: 2 })
+    server.state = { ...ready(), revision: 7, walletBalanceCents: 5000 }
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.busy).toBe(false))
+    act(() => result.current.setWager('field', 5))
+    expect(setWager).toHaveBeenCalledTimes(4)
+  })
   it('plays normally without getRound or persistence when the legacy gateway succeeds', async () => {
     const server = fakeServer()
     const { getRound: _read, ...legacy } = server.gateway
@@ -519,7 +754,7 @@ function deferred<T>() { let resolve!: (value: T) => void; const promise = new P
 
 function fakeServer(tableStatus: CrapsStatus = status) {
   type Operation = 'roll' | 'odds'
-  type TestGateway = Required<CrapsGateway>
+  type TestGateway = Required<Omit<CrapsGateway, 'setWager'>> & Pick<CrapsGateway, 'setWager'>
   let lost: Operation | null = null
   const server: { state: CrapsRound; readError: Error | null; loseResponse: (operation: Operation) => void; gateway: Mocked<TestGateway> } = {
     state: ready(), readError: null,
@@ -533,6 +768,7 @@ function fakeServer(tableStatus: CrapsStatus = status) {
   function gatewayMethods(): Mocked<TestGateway> {
     return {
       getStatus: vi.fn(async (_signal?: AbortSignal) => clone(tableStatus)),
+      getActiveRound: vi.fn(async () => null),
       getRound: vi.fn(async (_roundId: string, _signal?: AbortSignal) => { if (server.readError) throw server.readError; return clone(server.state) }),
       startRound: vi.fn(async (stake: number, _signal?: AbortSignal, extras?: readonly CrapsExtraBetRequest[]) => {
         server.state = { ...ready(), stake, extraBets: (extras ?? []).map(bet => ({ ...bet, resolved: false, won: false, totalReturn: null })) }

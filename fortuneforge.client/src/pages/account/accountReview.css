@@ -1,0 +1,26 @@
+.account-review-page { display: grid; min-height: 100dvh; grid-template-rows: auto 1fr; background: #090a0d; }
+.account-review-page > .account-review { min-height: 0; }
+.account-review { min-height: 100dvh; display: grid; place-items: center; padding: 24px; background: #090a0d; color: #eee9dd; font-family: inherit; }
+.account-review__card { width: min(100%, 520px); padding: clamp(24px, 5vw, 44px); border: 1px solid #b49a5940; border-radius: 18px; background: #121318; box-shadow: 0 20px 80px #0005; }
+.account-review__page-card { width: min(100%, 680px); min-width: 0; box-sizing: border-box; }
+.account-review__incidents { margin-top: 32px; }
+.account-review__incidents h2 { font-size: 21px; }
+.account-review__incident { margin-top: 20px; padding: clamp(16px, 4vw, 24px); border: 1px solid #b49a5933; border-radius: 12px; background: #191a20; overflow-wrap: anywhere; }
+.account-review__incident h3 { margin: 0 0 16px; color: #dfc78f; font-size: 20px; }
+.account-review__incident h4 { margin: 18px 0 6px; font-size: 15px; }
+.account-review__incident p { margin: 6px 0; }
+.account-review__facts { display: flex; gap: 16px 28px; flex-wrap: wrap; margin: 0; }
+.account-review__facts dt, .account-review__decision-date { color: #b8b6b1; font-size: 13px; }
+.account-review__facts dd { margin: 4px 0 0; font-size: 14px; }
+.account-review__explanation { white-space: pre-wrap; }
+.account-review__decision { border-top: 1px solid #b49a5926; margin-top: 20px; }
+.account-review__brand { color: #c9ae72; font-size: 12px; letter-spacing: .2em; text-transform: uppercase; }
+.account-review h1 { margin: 20px 0 16px; font-family: Georgia, serif; font-size: clamp(28px, 6vw, 40px); font-weight: 500; }
+.account-review p { line-height: 1.65; }
+.account-review__actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.account-review button, .account-review__button { min-height: 44px; border: 1px solid #c9ae7266; border-radius: 8px; padding: 11px 18px; background: #c9ae72; color: #15130e; font: inherit; text-decoration: none; cursor: pointer; }
+.account-review .account-review__secondary { background: transparent; color: #eee9dd; }
+.account-review button:disabled { opacity: .5; cursor: wait; }
+.account-review button:focus-visible, .account-review a:focus-visible { outline: 2px solid #fff; outline-offset: 4px; }
+.account-restriction-dialog { position: fixed; inset: 0; z-index: 2147483000; min-height: 100dvh; background: #000b; }
+.account-restriction-dialog .account-review__card { max-height: calc(100dvh - 48px); overflow: auto; }

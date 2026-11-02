@@ -28,6 +28,7 @@ export type SlotCelebrationEffect =
   | 'desert-sandstorm'
   | 'robot-circuit'
   | 'dragon-embers'
+  | 'vault-jewel-glint'
 
 export type SlotTopbarTheme = {
   background: string
@@ -49,6 +50,8 @@ export type SlotCabinetTheme = {
   backdropImage?: string
   visualsBackdropImage?: string
   pageBackdropImage?: string
+  /** Optional CSS image-set; lets decorative backdrops share one density selection. */
+  backdropImageSet?: string
   topbar?: SlotTopbarTheme
   palette: SlotCabinetPalette
 }

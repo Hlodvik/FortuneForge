@@ -67,7 +67,10 @@ public sealed partial class FirestoreAccountStore
                     status,
                     false);
 
-                transaction.Create(userReference, UserData(storedAccount, createdAtUtc));
+                var userData = UserData(storedAccount, createdAtUtc);
+                userData["gameExperienceOrigin"] = FortuneForge.Server.Activity.GameExperienceOrigin.Create(
+                    Environment.GetEnvironmentVariable("K_REVISION"), Environment.GetEnvironmentVariable("FF_RELEASE_SHA"));
+                transaction.Create(userReference, userData);
                 transaction.Create(emailKeyReference, KeyData(userId, createdAtUtc));
                 transaction.Create(playerNameKeyReference, KeyData(userId, createdAtUtc));
                 transaction.Create(

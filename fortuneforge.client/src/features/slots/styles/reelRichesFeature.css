@@ -1,0 +1,459 @@
+/* Reel Riches' bonus is a moonlit trophy cast, not a second ordinary spin. */
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: visible;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-underlay,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-fill {
+  position: absolute;
+  z-index: 2;
+  bottom: 0.42rem;
+  left: 50%;
+  width: 124%;
+  height: auto;
+  object-fit: contain;
+  transform: translateX(-50%);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-underlay {
+  opacity: 0.62;
+  filter: grayscale(1) brightness(0.24);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-fill {
+  filter: drop-shadow(0 0 0.5rem rgb(95 224 227 / 32%));
+  -webkit-mask-image: linear-gradient(to top, #000 0, #000 calc(var(--tackle-reveal) - 8%), transparent var(--tackle-reveal));
+  mask-image: linear-gradient(to top, #000 0, #000 calc(var(--tackle-reveal) - 8%), transparent var(--tackle-reveal));
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__seal-collection--tackle-creel .slots-page__collection-emblem {
+  top: 0;
+  width: clamp(2.85rem, 5vw, 3.85rem);
+  filter:
+    drop-shadow(0 0.18rem 0.13rem rgb(0 0 0 / 75%))
+    drop-shadow(0 0 0.46rem rgb(245 205 123 / 62%));
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__cabinet-spotlight {
+  filter: brightness(0.34) saturate(0.55) blur(1px);
+  transition: filter 300ms ease;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__meter-stack {
+  filter: brightness(0.56) saturate(0.7);
+}
+
+.reel-riches__bonus-intro {
+  position: fixed;
+  z-index: 40;
+  top: 46%;
+  left: 50%;
+  display: grid;
+  grid-template-columns: minmax(8rem, 0.78fr) minmax(0, 1.22fr);
+  align-items: center;
+  width: min(42rem, calc(100vw - 1.5rem));
+  min-height: 12rem;
+  box-sizing: border-box;
+  padding: clamp(0.8rem, 2vw, 1.3rem);
+  overflow: hidden;
+  border: 1px solid rgb(163 242 236 / 75%);
+  border-radius: 1.15rem;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 24% 70%, rgb(46 194 211 / 34%), transparent 48%),
+    linear-gradient(126deg, rgb(3 30 53 / 98%), rgb(2 13 30 / 98%) 68%, rgb(3 54 68 / 97%));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 9%),
+    inset 0 0 2.8rem rgb(46 184 204 / 17%),
+    0 1.5rem 4rem rgb(0 6 22 / 82%),
+    0 0 2.3rem rgb(79 238 230 / 34%);
+  color: #f5ffff;
+  transform: translate(-50%, -50%);
+  animation: reel-riches-intro 600ms cubic-bezier(0.18, 0.88, 0.25, 1) both;
+}
+
+.reel-riches__bonus-intro::before,
+.reel-riches__bonus-intro::after {
+  position: absolute;
+  right: -12%;
+  bottom: -60%;
+  left: -12%;
+  height: 66%;
+  border: 1px solid rgb(121 233 234 / 20%);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
+
+.reel-riches__bonus-intro::after {
+  bottom: -69%;
+  border-color: rgb(250 210 138 / 25%);
+}
+
+.reel-riches__bonus-intro > img {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-height: 15rem;
+  object-fit: contain;
+  filter: drop-shadow(0 0 1rem rgb(41 216 235 / 72%));
+  animation: reel-riches-marlin-rise 850ms cubic-bezier(0.2, 0.9, 0.24, 1) both;
+}
+
+.reel-riches__bonus-intro-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: start;
+  gap: 0.35rem;
+  padding-right: 0.4rem;
+}
+
+.reel-riches__bonus-intro-copy > span,
+.reel-riches__bonus-intro-copy > b {
+  color: #90f0e8;
+  font: 800 clamp(0.58rem, 1.4vw, 0.72rem)/1.1 system-ui, sans-serif;
+  letter-spacing: 0.19em;
+  text-transform: uppercase;
+}
+
+.reel-riches__bonus-intro-copy h2 {
+  margin: 0;
+  color: #fff5d9;
+  font: 700 clamp(1.8rem, 4.3vw, 3.1rem)/0.98 Georgia, 'Times New Roman', serif;
+  text-shadow: 0 0 0.65rem rgb(61 226 240 / 68%), 0 0.1rem 0.15rem #00121f;
+}
+
+.reel-riches__bonus-intro-copy p {
+  margin: 0.1rem 0 0;
+  color: #f2ffff;
+  font: 700 clamp(0.95rem, 2vw, 1.22rem)/1.22 system-ui, sans-serif;
+}
+
+.reel-riches__bonus-intro-copy small {
+  color: #bedbd9;
+  font: 600 clamp(0.7rem, 1.5vw, 0.82rem)/1.25 system-ui, sans-serif;
+}
+
+.reel-riches__bonus-intro-copy > b {
+  margin-top: 0.45rem;
+  color: #ffe1a0;
+  letter-spacing: 0.11em;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__special-game-dimmer,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__special-game-dimmer {
+  background:
+    radial-gradient(ellipse at 50% 46%, transparent 0 19rem, rgb(2 11 31 / 30%) 55rem),
+    rgb(1 11 29 / 14%);
+  backdrop-filter: brightness(0.9) saturate(1.1);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-bonus='true']::before {
+  background:
+    radial-gradient(ellipse at 50% 46%, rgb(76 227 235 / 15%), transparent 37rem),
+    radial-gradient(ellipse at 82% 10%, rgb(148 91 225 / 15%), transparent 27rem),
+    linear-gradient(180deg, transparent 42%, rgb(0 12 26 / 31%));
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__stage {
+  position: relative;
+  z-index: 12;
+}
+
+@media (min-width: 721px) {
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__main,
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__main {
+    padding-top: 0.15rem;
+  }
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__cabinet-spotlight,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__cabinet-spotlight {
+  margin-bottom: 1.25rem;
+  transform: scale(1.06);
+  transform-origin: center top;
+  transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slot-game-frame {
+  border-color: #9dece0;
+  background: linear-gradient(145deg, #06172a, #043344 62%, #0b2837);
+  box-shadow:
+    inset 0 0 0 1px rgb(203 255 249 / 38%),
+    inset 0 0 2.4rem rgb(5 149 178 / 31%),
+    0 0 1.25rem rgb(67 225 235 / 35%),
+    0 0 3rem rgb(6 142 185 / 23%);
+  transition: background 350ms ease, box-shadow 350ms ease, border-color 350ms ease;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slot-machine__reels {
+  background:
+    radial-gradient(ellipse at 50% 85%, rgb(23 138 169 / 27%), transparent 58%),
+    linear-gradient(180deg, rgb(1 13 35 / 68%), rgb(2 43 63 / 58%) 58%, rgb(1 19 41 / 76%));
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slot-reel {
+  border-right-color: rgb(151 239 238 / 42%);
+  box-shadow: inset 0 0 1rem rgb(2 32 53 / 70%);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__cabinet-spotlight--lit {
+  filter: brightness(1.12) drop-shadow(0 0 1.8rem rgb(61 226 240 / 52%));
+}
+
+.reel-riches__bonus-hud {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.13rem 0.85rem;
+  width: min(100%, 34rem);
+  min-height: 3.15rem;
+  box-sizing: border-box;
+  margin-inline: auto;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid rgb(130 238 229 / 72%);
+  border-radius: 0.65rem;
+  background:
+    radial-gradient(ellipse at 10% 50%, rgb(57 201 212 / 18%), transparent 54%),
+    linear-gradient(110deg, rgb(2 25 45 / 96%), rgb(3 47 58 / 94%));
+  box-shadow: inset 0 0 1rem rgb(72 198 210 / 19%), 0 0 1.05rem rgb(48 223 231 / 20%);
+}
+
+.reel-riches__bonus-hud-title {
+  grid-column: 1;
+  grid-row: 1;
+  color: #80e9e4;
+  font: 800 0.6rem/1.15 system-ui, sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.reel-riches__bonus-hud > strong {
+  grid-column: 1;
+  grid-row: 2;
+  color: #fff4ce;
+  font: 700 clamp(0.9rem, 1.8vw, 1.1rem)/1 Georgia, serif;
+}
+
+.reel-riches__bonus-hud-detail {
+  grid-column: 1;
+  grid-row: 3;
+  overflow: hidden;
+  color: #b7e8e6;
+  font: 600 0.63rem/1.2 system-ui, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.reel-riches__bonus-hud-stats {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  display: grid;
+  justify-items: end;
+  gap: 0.18rem;
+  color: #c5e6e5;
+  font: 700 0.62rem/1.2 system-ui, sans-serif;
+}
+
+.reel-riches__bonus-hud-stats span {
+  display: inline-flex;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.reel-riches__bonus-hud-stats b {
+  color: #fff5d6;
+  font-variant-numeric: tabular-nums;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-bonus='true'] .slots-page__seal-collection--impact .slots-page__collection-visual {
+  animation: reel-riches-creel-flash 680ms ease-out both;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-bonus='true'] .slots-page__win-award span {
+  border-color: rgb(174 249 243 / 72%);
+  background: rgb(2 23 44 / 89%);
+  color: #e8ffff;
+  text-shadow: 0 0 0.65rem rgb(64 222 235 / 80%);
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-bonus='true'] .slots-page__win-award strong {
+  text-shadow:
+    0 0.08em 0 rgb(4 24 49 / 82%),
+    0 0 0.25rem rgb(255 255 255 / 85%),
+    0 0 0.85rem rgb(126 244 233 / 94%),
+    0 0 1.8rem rgb(246 212 130 / 52%);
+}
+
+.reel-riches__catch-burst {
+  position: fixed;
+  z-index: 35;
+  top: 47%;
+  left: 50%;
+  width: min(44rem, 80vw);
+  height: min(28rem, 60vh);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.reel-riches__catch-burst::before,
+.reel-riches__catch-burst::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 15rem;
+  height: 7rem;
+  border: 2px solid rgb(182 252 250 / 80%);
+  border-radius: 50%;
+  box-shadow: 0 0 1.2rem rgb(80 230 244 / 52%);
+  content: '';
+  transform: translate(-50%, -50%) rotate(-12deg);
+  animation: reel-riches-catch-ring 1.15s ease-out both;
+}
+
+.reel-riches__catch-burst::after {
+  width: 10rem;
+  height: 5rem;
+  border-color: rgb(255 220 154 / 70%);
+  animation-delay: 90ms;
+}
+
+.reel-riches__catch-burst i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 25%, #fff, #a2f5e8 48%, #27adc2 80%);
+  box-shadow: 0 0 0.65rem #a2f5e8;
+  animation: reel-riches-catch-spark 1.25s ease-out both;
+}
+
+.reel-riches__catch-burst i:nth-child(3n) {
+  width: 0.37rem;
+  height: 0.37rem;
+  background: radial-gradient(circle at 30% 25%, #fff, #ffdf91 50%, #e89551 85%);
+  box-shadow: 0 0 0.65rem #ffd888;
+}
+
+.reel-riches__catch-burst[data-outcome='win'] i:nth-child(n + 9) { display: none; }
+.reel-riches__catch-burst i:nth-child(1) { --burst-x: -11rem; --burst-y: -5rem; }
+.reel-riches__catch-burst i:nth-child(2) { --burst-x: -8rem; --burst-y: 5rem; }
+.reel-riches__catch-burst i:nth-child(3) { --burst-x: -5rem; --burst-y: -8rem; }
+.reel-riches__catch-burst i:nth-child(4) { --burst-x: -2rem; --burst-y: 7rem; }
+.reel-riches__catch-burst i:nth-child(5) { --burst-x: 1rem; --burst-y: -9rem; }
+.reel-riches__catch-burst i:nth-child(6) { --burst-x: 4rem; --burst-y: 6rem; }
+.reel-riches__catch-burst i:nth-child(7) { --burst-x: 8rem; --burst-y: -6rem; }
+.reel-riches__catch-burst i:nth-child(8) { --burst-x: 11rem; --burst-y: 3rem; }
+.reel-riches__catch-burst i:nth-child(9) { --burst-x: -14rem; --burst-y: 1rem; }
+.reel-riches__catch-burst i:nth-child(10) { --burst-x: -6rem; --burst-y: -2rem; }
+.reel-riches__catch-burst i:nth-child(11) { --burst-x: 3rem; --burst-y: 1rem; }
+.reel-riches__catch-burst i:nth-child(12) { --burst-x: 6rem; --burst-y: -3rem; }
+.reel-riches__catch-burst i:nth-child(13) { --burst-x: 13rem; --burst-y: -2rem; }
+.reel-riches__catch-burst i:nth-child(14) { --burst-x: 15rem; --burst-y: 6rem; }
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win='win'] .slots-page__cabinet-spotlight,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win='great-win'] .slots-page__cabinet-spotlight,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win='big-win'] .slots-page__cabinet-spotlight {
+  animation: reel-riches-win-glow 900ms ease-out both;
+}
+
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win='great-win'] .slot-game-frame,
+.slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win='big-win'] .slot-game-frame {
+  box-shadow:
+    inset 0 0 0 1px rgb(233 255 253 / 72%),
+    inset 0 0 2.3rem rgb(77 234 238 / 50%),
+    0 0 2.1rem rgb(86 246 240 / 78%),
+    0 0 4rem rgb(239 216 123 / 52%);
+}
+
+@keyframes reel-riches-intro {
+  from { opacity: 0; transform: translate(-50%, -46%) scale(0.84); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes reel-riches-marlin-rise {
+  from { opacity: 0; transform: translateY(1rem) rotate(-8deg) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes reel-riches-win-glow {
+  0% { filter: brightness(1.5) drop-shadow(0 0 2.5rem rgb(136 255 246 / 90%)); }
+  100% { filter: brightness(1.12) drop-shadow(0 0 1.8rem rgb(61 226 240 / 52%)); }
+}
+
+@keyframes reel-riches-creel-flash {
+  0% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  35% { filter: brightness(1.65) drop-shadow(0 0 0.9rem rgb(127 241 235 / 95%)); }
+  100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+}
+
+@keyframes reel-riches-catch-ring {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) rotate(-12deg) scale(0.4); }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(-12deg) scale(2.4); }
+}
+
+@keyframes reel-riches-catch-spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--burst-x)), calc(-50% + var(--burst-y))) scale(0.8); }
+}
+
+@media (max-width: 560px) {
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__cabinet-spotlight,
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-intro='true'] .slots-page__cabinet-spotlight {
+    margin-bottom: 0.4rem;
+    transform: scale(1.02);
+  }
+
+  .reel-riches__bonus-intro {
+    top: 44%;
+    grid-template-columns: 30% minmax(0, 1fr);
+    min-height: 9rem;
+    gap: 0.45rem;
+    padding: 0.75rem;
+  }
+
+  .reel-riches__bonus-intro-copy { gap: 0.22rem; }
+  .reel-riches__bonus-intro-copy h2 { font-size: clamp(1.25rem, 6vw, 1.9rem); }
+  .reel-riches__bonus-intro-copy p { font-size: 0.8rem; }
+  .reel-riches__bonus-intro-copy small { font-size: 0.6rem; }
+  .reel-riches__bonus-hud {
+    gap: 0.12rem 0.45rem;
+    padding: 0.5rem 0.65rem;
+  }
+  .reel-riches__bonus-hud-title {
+    font-size: 0.65rem;
+  }
+  .reel-riches__bonus-hud > strong { font-size: 0.9rem; }
+  .reel-riches__bonus-hud-detail { font-size: 0.56rem; }
+  .reel-riches__bonus-hud-stats {
+    font-size: 0.6rem;
+  }
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-underlay,
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'] .slots-page__tackle-mound-fill {
+    bottom: 0.25rem;
+    width: 116%;
+  }
+  .reel-riches__catch-burst { width: 100vw; transform: translate(-50%, -50%) scale(0.65); }
+  .reel-riches__catch-burst::before { width: 9rem; height: 4rem; }
+  .reel-riches__catch-burst::after { width: 6rem; height: 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel-riches__bonus-intro,
+  .reel-riches__bonus-intro > img,
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game[data-reel-riches-win] .slots-page__cabinet-spotlight,
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'][data-reel-riches-bonus='true'] .slots-page__seal-collection--impact .slots-page__collection-visual,
+  .reel-riches__catch-burst::before,
+  .reel-riches__catch-burst::after,
+  .reel-riches__catch-burst i {
+    animation: none;
+  }
+  .reel-riches__catch-burst { display: none; }
+}

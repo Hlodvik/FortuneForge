@@ -93,6 +93,7 @@ export type BlackjackTableQueueSession = BlackjackTableSessionBase & Readonly<{
 
 export type BlackjackTable = Readonly<{
   tableId: string
+  mode: 'solo' | 'multiplayer'
   phase: string
   round: number
   dealer: BlackjackTableHand
@@ -370,15 +371,16 @@ function hasForbiddenPublicField(value: unknown): boolean {
 }
 
 function isBlackjackTableStatus(value: unknown): value is BlackjackTableStatus {
-  return isRecord(value)
-    && typeof value.available === 'boolean'
+  if (!isRecord(value)) return false
+  const soloRules = value.minimumStartOccupancy === 1 && value.tableCapacity === 1
+    && value.humanGraceSeconds === 0 && value.actionDeadlineSeconds === 0
+  const multiplayerRules = value.minimumStartOccupancy === 3 && value.tableCapacity === 5
+    && isPositiveInteger(value.humanGraceSeconds) && isPositiveInteger(value.actionDeadlineSeconds)
+  return typeof value.available === 'boolean'
     && isPositiveNumber(value.minimumWager)
     && isPositiveNumber(value.maximumWager)
     && isPositiveNumber(value.wagerIncrement)
-    && value.minimumStartOccupancy === 3
-    && value.tableCapacity === 5
-    && isPositiveInteger(value.humanGraceSeconds)
-    && isPositiveInteger(value.actionDeadlineSeconds)
+    && (soloRules || multiplayerRules)
     && (value.deckCount === undefined || isPositiveInteger(value.deckCount))
     && typeof value.dealerRule === 'string'
     && typeof value.blackjackPayout === 'string'
@@ -435,6 +437,7 @@ function isBlackjackTableSession(value: unknown): value is BlackjackTableSession
 function isBlackjackTable(value: unknown): value is BlackjackTable {
   return isRecord(value)
     && typeof value.tableId === 'string'
+    && (value.mode === 'solo' || value.mode === 'multiplayer')
     && typeof value.phase === 'string'
     && isNonNegativeInteger(value.round)
     && isBlackjackTableHand(value.dealer)

@@ -1,0 +1,62 @@
+"""Render native type specimens; no previous artwork is edited."""
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont
+import hashlib
+import json
+
+ROOT = Path(__file__).parent
+CANVAS = 1254
+BASELINE = 974
+CAP_HEIGHT = 780
+FILL = (241, 231, 213, 255)
+FAMILIES = [
+    ('bodoni', 'Bodoni MT Bold', 'Elegant card ranks', Path('C:/Windows/Fonts/BOD_B.TTF')),
+    ('georgia', 'Georgia Bold', 'Sturdy classic', Path('C:/Windows/Fonts/georgiab.ttf')),
+    ('times', 'Times New Roman Bold', 'Traditional print', Path('C:/Windows/Fonts/timesbd.ttf')),
+]
+
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+groups = []
+for key, title, description, source in FAMILIES:
+    if not source.is_file():
+        raise FileNotFoundError(source)
+    folder = ROOT / 'letters' / key
+    folder.mkdir(parents=True, exist_ok=True)
+    nominal = ImageFont.truetype(str(source), 1000)
+    h_box = nominal.getbbox('H', anchor='ls')
+    font_size = round(1000 * CAP_HEIGHT / (h_box[3] - h_box[1]))
+    font = ImageFont.truetype(str(source), font_size)
+    records = []
+    for letter in 'AKQJ':
+        x = (CANVAS - font.getlength(letter)) / 2
+        bounds = font.getbbox(letter, anchor='ls')
+        placed = [x + bounds[0], BASELINE + bounds[1], x + bounds[2], BASELINE + bounds[3]]
+        if not (0 < placed[0] < placed[2] < CANVAS and 0 < placed[1] < placed[3] < CANVAS):
+            raise ValueError((key, letter, placed))
+        image = Image.new('RGBA', (CANVAS, CANVAS), (0, 0, 0, 0))
+        ImageDraw.Draw(image).text((x, BASELINE), letter, font=font, fill=FILL, anchor='ls', stroke_width=0)
+        destination = folder / f'{letter}.png'
+        image.save(destination)
+        alpha = image.getchannel('A')
+        if alpha.getextrema() != (0, 255):
+            raise ValueError((key, letter, 'Expected transparent background and opaque ink.'))
+        colours = {rgb[:3] for rgb in image.getdata() if rgb[3] > 0}
+        if colours != {FILL[:3]}:
+            raise ValueError((key, letter, 'The glyph must use one flat ink colour.'))
+        records.append({'letter': letter, 'file': str(destination.relative_to(ROOT)).replace('\\', '/'),
+                        'sha256': sha(destination), 'width': CANVAS, 'height': CANVAS,
+                        'baseline': BASELINE, 'fontSize': font_size,
+                        'inkBounds': alpha.getbbox(), 'alphaRange': alpha.getextrema(),
+                        'visibleRgbColours': [list(c) for c in sorted(colours)]})
+    groups.append({'id': key, 'title': title, 'description': description, 'fontFamilyAndStyle': font.getname(),
+                   'fontSource': str(source), 'fontSourceSha256': sha(source), 'fontSize': font_size,
+                   'commonBaseline': BASELINE, 'nominalCapHeight': CAP_HEIGHT, 'assets': records})
+
+manifest = {'kind': 'Native typography studies; art preview only, no game changes',
+            'method': 'Actual installed font glyphs rasterized with Pillow/FreeType; no image generation or editing of approved art',
+            'fill': '#f1e7d5', 'effects': [], 'canvasSize': CANVAS, 'baseline': BASELINE,
+            'fontsCopiedOrEmbedded': False, 'notes': 'No strokes, shadows, bevels, gradients, outlines, jewellery or texture. Uniform cap height and common baseline.',
+            'families': groups}
+(ROOT / 'font-studies-manifest.json').write_text(json.dumps(manifest, indent=2), encoding='utf-8')
+print(json.dumps({'families': len(groups), 'glyphs': sum(len(g['assets']) for g in groups),
+                  'method': manifest['method'], 'manifest': str(ROOT / 'font-studies-manifest.json')}, indent=2))

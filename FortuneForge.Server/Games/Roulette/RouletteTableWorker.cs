@@ -11,7 +11,7 @@ internal sealed class RouletteTableWorker(
         {
             try
             {
-                games.Sweep(DateTime.UtcNow);
+                await games.SweepAuditedAsync(DateTime.UtcNow, stoppingToken);
             }
             catch (Exception exception)
             {

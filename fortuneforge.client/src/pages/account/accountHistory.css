@@ -1,0 +1,388 @@
+.account-history {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 30px 0 52px;
+  color: var(--home-ink);
+}
+
+.account-history__notice {
+  margin: 32px 0;
+  padding: 20px 24px;
+  border: 1px solid var(--home-line);
+  border-radius: 10px;
+  background: #15141a;
+  color: var(--home-muted);
+}
+
+.account-history__notice--error,
+.account-history__error {
+  border-color: #805466;
+  color: #f4b5bd;
+}
+
+.account-history__error {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid;
+  border-radius: 8px;
+  background: #251b23;
+}
+
+.account-history__eyebrow {
+  margin: 0;
+  color: #c5a5ec;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+.account-history .history-heading {
+  padding: 0 0 25px;
+  border-bottom: 1px solid var(--home-line);
+}
+
+.account-history .history-heading h1 {
+  margin: 8px 0 10px;
+  color: var(--home-ink);
+  font: 600 clamp(32px, 3.3vw, 50px)/1.14 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -.045em;
+  overflow-wrap: anywhere;
+}
+
+.account-history .history-heading p:not(.account-history__eyebrow) {
+  max-width: 680px;
+  margin: 0;
+  color: var(--home-muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.account-history .history-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.account-history .history-summary article {
+  min-width: 0;
+  display: grid;
+  align-content: space-between;
+  gap: 18px;
+  min-height: 118px;
+  padding: 19px 21px;
+  border: 1px solid #333039;
+  border-radius: 10px;
+  background: #111217;
+  box-shadow: none;
+}
+
+.account-history .history-summary span {
+  color: #bcb5c5;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.account-history .history-summary strong {
+  color: var(--home-ink);
+  font-size: clamp(20px, 2vw, 27px);
+  font-weight: 650;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+  text-shadow: none;
+}
+
+.account-history .history-summary__coin-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.account-history .history-summary__coin-label .forge-coin {
+  width: 17px;
+  height: 17px;
+}
+
+.account-history .history-summary .is-positive,
+.account-history .card-room-history-stats .is-positive {
+  color: #9edab3 !important;
+}
+
+.account-history .history-summary .is-negative,
+.account-history .card-room-history-stats .is-negative {
+  color: #e2a6af !important;
+}
+
+.account-history .history-list {
+  margin-top: 24px;
+  padding: clamp(18px, 2.3vw, 27px);
+  border: 1px solid #333039;
+  border-radius: 11px;
+  background: #101115;
+  box-shadow: none;
+}
+
+.account-history .history-list .player-section-heading {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--home-line);
+}
+
+.account-history .history-list .player-section-heading h2 {
+  margin: 6px 0 0;
+  color: var(--home-ink);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+}
+
+.account-history .card-room-history-content > header {
+  padding: 0 0 14px;
+  border-bottom: 1px solid var(--home-line);
+}
+
+.account-history .card-room-history-content > header small,
+.account-history .card-room-history-section li small {
+  color: #c5a5ec;
+  font: 650 10px/1.4 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.account-history .card-room-history-content > header strong {
+  color: var(--home-ink);
+  font: 600 20px/1.2 'Sora Variable', ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -.02em;
+}
+
+.account-history .card-room-history-games {
+  gap: 9px;
+  padding-top: 18px;
+}
+
+.account-history .card-room-history-game {
+  border-color: #333039;
+  border-radius: 8px;
+  background: #18171d;
+}
+
+.account-history .card-room-history-game > summary {
+  min-height: 53px;
+  padding: 12px 16px;
+  color: var(--home-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.account-history .card-room-history-game > summary:hover {
+  background: #201c28;
+}
+
+.account-history .card-room-history-game > summary:focus-visible {
+  outline: 2px solid #c6a2ff;
+  outline-offset: -3px;
+}
+
+.account-history .card-room-history-game > summary span {
+  min-width: 28px;
+  min-height: 24px;
+  border-radius: 5px;
+  background: #282332;
+  color: #d8c3ef;
+  font-size: 11px;
+}
+
+.account-history .card-room-history-game .card-room-history-section {
+  padding: 10px 16px 15px;
+  border-top: 1px solid #302d35;
+}
+
+.account-history .card-room-history-section h2 {
+  color: #c6b5d5;
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: .1em;
+}
+
+.account-history .card-room-history-section > p {
+  padding: 10px 0;
+  color: var(--home-muted);
+  background: transparent;
+  font-size: 12px;
+}
+
+.account-history .card-room-history-section li button {
+  border-color: #34313a;
+  border-radius: 7px;
+  background: #131319;
+  color: var(--home-ink);
+}
+
+.account-history .card-room-history-section li.is-unseen button {
+  border-color: #796548;
+  background: #242016;
+}
+
+.account-history .card-room-history-section li button:hover,
+.account-history .card-room-history-section li button:focus-visible {
+  border-color: #c6a2ff;
+  outline: 2px solid #c6a2ff;
+  outline-offset: 2px;
+}
+
+.account-history .card-room-history-section li span span,
+.account-history .card-room-history-stats dt {
+  color: var(--home-muted);
+}
+
+.account-history .card-room-history-section__action {
+  color: var(--home-gold);
+}
+
+.account-history .card-room-history-stats {
+  background: #333039;
+}
+
+.account-history .card-room-history-stats > div {
+  background: #1b1a20;
+}
+
+.account-history .card-room-history-stats dd {
+  color: var(--home-ink);
+}
+
+.account-history .history-rows {
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.account-history .history-row {
+  display: grid;
+  grid-template-columns: 85px repeat(3, minmax(75px, .75fr)) minmax(150px, 1.3fr);
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid #302e37;
+  border-radius: 8px;
+  background: #18171d;
+}
+
+.account-history .history-row__result {
+  color: #d6a5ae;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.account-history .history-row--win .history-row__result {
+  color: #9edab3;
+}
+
+.account-history .history-row small {
+  color: var(--home-muted);
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.account-history .history-row strong {
+  color: var(--home-ink);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.account-history .history-row time {
+  color: var(--home-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.account-history .history-empty {
+  gap: 10px;
+  padding: 35px 15px 24px;
+  color: var(--home-muted);
+}
+
+.account-history .history-empty > span {
+  color: var(--home-gold);
+  font-size: 28px;
+}
+
+.account-history .history-empty strong {
+  color: var(--home-ink);
+  font-size: 17px;
+}
+
+.account-history .history-empty p {
+  max-width: 420px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.account-history .history-empty .home-lobby__gold-button {
+  margin-top: 10px;
+}
+
+@media (max-width: 950px) {
+  .account-history .history-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .account-history .history-row {
+    grid-template-columns: 70px repeat(3, minmax(65px, 1fr));
+  }
+
+  .account-history .history-row time {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 680px) {
+  .account-history {
+    padding: 22px 0 28px;
+  }
+
+  .account-history .history-heading h1 {
+    font-size: clamp(29px, 7vw, 38px);
+  }
+
+  .account-history .history-summary {
+    gap: 9px;
+    margin-top: 18px;
+  }
+
+  .account-history .history-summary article {
+    min-height: 100px;
+    gap: 12px;
+    padding: 15px;
+  }
+
+  .account-history .history-summary strong {
+    font-size: clamp(17px, 4.5vw, 22px);
+  }
+
+  .account-history .history-list {
+    margin-top: 18px;
+    padding: 16px;
+  }
+
+  .account-history .history-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 11px 8px;
+    padding: 13px;
+  }
+
+  .account-history .history-row__result,
+  .account-history .history-row time {
+    grid-column: 1 / -1;
+  }
+
+  .account-history .history-row time {
+    padding-top: 2px;
+  }
+}

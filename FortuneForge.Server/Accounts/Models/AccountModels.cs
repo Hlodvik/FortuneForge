@@ -1,4 +1,5 @@
 using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.Slots.Bonuses;
 
 namespace FortuneForge.Server.Accounts.Models;
 
@@ -55,7 +56,16 @@ public sealed record SlotSpinAdmission(
     int SpecialPointsRemaining,
     TimeSpan? CooldownRemaining,
     long EnergyBalance,
-    string? FreeSpinFeatureMode);
+    string? FreeSpinFeatureMode)
+{
+    public Guid AdmissionId { get; init; }
+    public DateTime StartedAtUtc { get; init; }
+    public string? RequestId { get; init; }
+    public int PityMissesBefore { get; init; }
+    public string? MathModelId { get; init; }
+    public MidnightVaultBonusRound? BonusRound { get; init; }
+    public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
+}
 
 public sealed record SlotSpinSettlement(
     decimal SlotsCreditsBalance,
@@ -68,7 +78,12 @@ public sealed record SlotSpinSettlement(
     long? FreeSpinWagerPoints,
     IReadOnlyList<SlotSealCollection> SealCollections,
     string? FreeSpinFeatureMode,
-    int SealFreeSpinsAwarded = 0);
+    int SealFreeSpinsAwarded = 0)
+{
+    public MidnightVaultBonusRound? BonusRound { get; init; }
+    public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
+    public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
+}
 
 public sealed record SlotStateResponse(
     int FreeSpinsRemaining,
@@ -76,7 +91,11 @@ public sealed record SlotStateResponse(
     int SpecialPointsBalance,
     long EnergyBalance,
     IReadOnlyList<SlotSealCollection> SealCollections,
-    string? FreeSpinFeatureMode);
+    string? FreeSpinFeatureMode)
+{
+    public MidnightVaultBonusRound? BonusRound { get; init; }
+    public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
+}
 
 public sealed record AccountSummary(
     string UserId,

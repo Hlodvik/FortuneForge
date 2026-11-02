@@ -18,8 +18,10 @@ public sealed class BlackjackTableState
     public required DateTime CreatedAtUtc { get; init; }
     public required DateTime UpdatedAtUtc { get; set; }
     public string Phase { get; set; } = BlackjackTablePhases.Betting;
+    public bool SoloMode { get; set; }
     public int Version { get; set; } = 1;
     public int RoundNumber { get; set; }
+    public DateTime? RoundStartedAtUtc { get; set; }
     public ulong RoundSeed { get; set; }
     public IReadOnlyList<string> Deck { get; set; } = [];
     public int NextCardIndex { get; set; }

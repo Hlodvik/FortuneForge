@@ -1,10 +1,13 @@
 using FortuneForge.Server.Arcade.Competition;
+using FortuneForge.Server.Arcade;
+using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Games.Flappy;
 using FortuneForge.Games.HorseFlight;
 using System.Collections.Immutable;
+using System.Text.Json.Nodes;
 using FortuneForge.Server.Tests.Solitaire;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
@@ -51,6 +54,7 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         var storedAttempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
         Assert.Equal("completed", Field<string>(storedAttempt, "status"));
         Assert.Equal(completed.Score, Field<long>(storedAttempt, "score"));
+        await AssertPaidAudit(database, "flappy", run.RunId);
     }
 
     [Fact]
@@ -97,6 +101,7 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         var storedAttempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
         Assert.Equal("completed", Field<string>(storedAttempt, "status"));
         Assert.Equal(completed.Score, Field<long>(storedAttempt, "score"));
+        await AssertPaidAudit(database, "horse-flight", proposedRun.RunId);
     }
 
     [Fact]
@@ -364,6 +369,14 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         var attempt = Assert.Single((await database.Collection("arcadeCompetitionAttempts").GetSnapshotAsync()).Documents);
         Assert.Equal("completed", Field<string>(attempt, "status"));
         Assert.Equal(first.Score, Field<long>(attempt, "score"));
+        await AssertPaidAudit(database, "asteroids", started.Run.Run.RunId);
+        await database.Collection("balanceTransactions").Document($"arcade-competition-{attempt.Id}-entry")
+            .UpdateAsync("amount", 0d);
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        Assert.Contains(await ArcadeReplayAudit.InspectAsync(database,
+            FirestoreGameRoundAuditStore.Summary(audit), Field<string>(evidence, "payloadJson"), default),
+            finding => finding.Code == "arcade-paid-entry-mismatch");
     }
 
     [Fact]
@@ -509,6 +522,32 @@ public sealed class FirestoreArcadeCompetitionPaidEntryCoordinatorTests
         _ = await runCoordinator.CompleteAsteroidsReplayAsync(runCompletion, default);
         await runDatabase.Collection("asteroidsRuns").Document(runStarted.Attempt.DocumentId).UpdateAsync("terminal", "active");
         await Assert.ThrowsAsync<InvalidOperationException>(() => runCoordinator.CompleteAsteroidsReplayAsync(runCompletion, default));
+    }
+
+    private static async Task AssertPaidAudit(FirestoreDb database, string gameId, string runId)
+    {
+        var audit = Assert.Single((await database.Collection("gameRoundAudits").GetSnapshotAsync()).Documents);
+        Assert.Equal(gameId, Field<string>(audit, "gameId"));
+        Assert.Equal(runId, Field<string>(audit, "roundId"));
+        Assert.Equal("incomplete", Field<string>(audit, "auditStatus"));
+        Assert.True(Field<bool>(audit, "securityAuditPending"));
+        var evidence = Assert.Single((await database.Collection("gameRoundEvidence").GetSnapshotAsync()).Documents);
+        var payload = Field<string>(evidence, "payloadJson");
+        Assert.Contains("feeLedgerId", payload);
+        var summary = FirestoreGameRoundAuditStore.Summary(audit);
+        Assert.True(ArcadeReplayAudit.Supports(summary));
+        Assert.Empty(await ArcadeReplayAudit.InspectAsync(database, summary, payload, default));
+        var changed = JsonNode.Parse(payload)!;
+        changed["data"]!["score"] = changed["data"]!["score"]!.GetValue<long>() + 1;
+        Assert.Contains(ArcadeReplayAudit.Inspect(summary, changed.ToJsonString()),
+            finding => finding.Code == "arcade-replay-outcome-mismatch");
+        changed = JsonNode.Parse(payload)!;
+        changed["entryFeeCents"] = 0;
+        Assert.Contains(ArcadeReplayAudit.Inspect(summary, changed.ToJsonString()),
+            finding => finding.Code == "arcade-replay-classification-mismatch");
+        var events = (await database.Collection("gameSecurityEvents").GetSnapshotAsync()).Documents;
+        Assert.Equal(2, events.Count);
+        Assert.Equal(["run-completed", "run-started"], events.Select(item => Field<string>(item, "eventKind")).Order().ToArray());
     }
 
     private (FirestoreDb Database, FirestoreArcadeCompetitionPaidEntryCoordinator Coordinator) CreateCoordinator()

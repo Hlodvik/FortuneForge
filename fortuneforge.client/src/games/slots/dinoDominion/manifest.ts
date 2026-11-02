@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { DINO_DOMINION_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -59,7 +60,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const DINO_DOMINION_EXPERIENCE_SET: SlotExperienceSet = {
+export const DINO_DOMINION_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'dino-dominion-experience-v1',
   cabinet: DINO_DOMINION_CABINET_THEME,
   features: FEATURES,
@@ -80,7 +81,7 @@ export const DINO_DOMINION_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: DINO_DOMINION_SOUNDS,
   rules: createSlotRulesSet('dino-dominion-v1'),
-}
+})
 
 export const DINO_DOMINION_SLOT_GAME = defineSlotGame({
   id: 'dino-dominion',

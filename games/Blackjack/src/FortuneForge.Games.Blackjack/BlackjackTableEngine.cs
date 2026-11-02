@@ -70,6 +70,7 @@ public static class BlackjackTableEngine
         ValidateDeck(deck);
 
         table.RoundNumber = checked(table.RoundNumber + 1);
+        table.RoundStartedAtUtc = nowUtc;
         table.RoundSeed = roundSeed;
         table.Deck = deck.ToArray();
         table.NextCardIndex = 0;
@@ -395,7 +396,7 @@ public static class BlackjackTableEngine
         table.PendingSeat = null;
         table.Transition = null;
         table.NextTransitionAtUtc = null;
-        table.ActionDeadlineAtUtc = nowUtc.Add(ActionDuration);
+        table.ActionDeadlineAtUtc = table.SoloMode ? null : nowUtc.Add(ActionDuration);
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
     }

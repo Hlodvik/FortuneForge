@@ -1,0 +1,1730 @@
+[
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "R",
+    "expected": "RNaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "$",
+    "expected": "$NaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "€",
+    "expected": "€NaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "",
+    "expected": "NaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "USD ",
+    "expected": "USD NaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "NaN",
+    "symbol": "0",
+    "expected": "0NaN"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "R",
+    "expected": "R∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "$",
+    "expected": "$∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "€",
+    "expected": "€∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "",
+    "expected": "∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "USD ",
+    "expected": "USD ∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "Infinity",
+    "symbol": "0",
+    "expected": "0∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "R",
+    "expected": "-R∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "$",
+    "expected": "-$∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "€",
+    "expected": "-€∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "",
+    "expected": "-∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "USD ",
+    "expected": "-USD ∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-Infinity",
+    "symbol": "0",
+    "expected": "-0∞"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "R",
+    "expected": "R0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "$",
+    "expected": "$0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "€",
+    "expected": "€0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "",
+    "expected": "0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "USD ",
+    "expected": "USD 0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0",
+    "symbol": "0",
+    "expected": "00.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "R",
+    "expected": "R0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "$",
+    "expected": "$0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "€",
+    "expected": "€0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "",
+    "expected": "0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "USD ",
+    "expected": "USD 0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0",
+    "symbol": "0",
+    "expected": "00.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "R",
+    "expected": "R1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "$",
+    "expected": "$1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "€",
+    "expected": "€1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "",
+    "expected": "1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "USD ",
+    "expected": "USD 1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1",
+    "symbol": "0",
+    "expected": "01.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "R",
+    "expected": "-R1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "$",
+    "expected": "-$1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "€",
+    "expected": "-€1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "",
+    "expected": "-1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "USD ",
+    "expected": "-USD 1.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1",
+    "symbol": "0",
+    "expected": "-01.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "R",
+    "expected": "R0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "$",
+    "expected": "$0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "€",
+    "expected": "€0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "",
+    "expected": "0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "USD ",
+    "expected": "USD 0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "0.005",
+    "symbol": "0",
+    "expected": "00.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "R",
+    "expected": "-R0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "$",
+    "expected": "-$0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "€",
+    "expected": "-€0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "",
+    "expected": "-0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "USD ",
+    "expected": "-USD 0.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-0.005",
+    "symbol": "0",
+    "expected": "-00.01"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "R",
+    "expected": "R1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "$",
+    "expected": "$1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "€",
+    "expected": "€1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "",
+    "expected": "1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "USD ",
+    "expected": "USD 1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1.235",
+    "symbol": "0",
+    "expected": "01.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "R",
+    "expected": "-R1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "$",
+    "expected": "-$1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "€",
+    "expected": "-€1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "",
+    "expected": "-1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "USD ",
+    "expected": "-USD 1.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "-1.235",
+    "symbol": "0",
+    "expected": "-01.24"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "R",
+    "expected": "R1,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "$",
+    "expected": "$1,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "€",
+    "expected": "€1,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "",
+    "expected": "1,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "USD ",
+    "expected": "USD 1,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "999.995",
+    "symbol": "0",
+    "expected": "01,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "R",
+    "expected": "R1,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "$",
+    "expected": "$1,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "€",
+    "expected": "€1,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "",
+    "expected": "1,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "USD ",
+    "expected": "USD 1,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "1000000.123",
+    "symbol": "0",
+    "expected": "01,000,000.12"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "R",
+    "expected": "R9,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "$",
+    "expected": "$9,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "€",
+    "expected": "€9,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "",
+    "expected": "9,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "USD ",
+    "expected": "USD 9,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "0",
+    "expected": "09,007,199,254,740,991.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "R",
+    "expected": "R0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "$",
+    "expected": "$0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "€",
+    "expected": "€0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "",
+    "expected": "0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "USD ",
+    "expected": "USD 0.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MIN_VALUE",
+    "symbol": "0",
+    "expected": "00.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "R",
+    "expected": "R179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "$",
+    "expected": "$179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "€",
+    "expected": "€179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "",
+    "expected": "179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "USD ",
+    "expected": "USD 179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "en-US",
+    "valueTag": "MAX_VALUE",
+    "symbol": "0",
+    "expected": "0179,769,313,486,231,570,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000.00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "R",
+    "expected": "RNaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "$",
+    "expected": "$NaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "€",
+    "expected": "€NaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "",
+    "expected": "NaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "USD ",
+    "expected": "USD NaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "NaN",
+    "symbol": "0",
+    "expected": "0NaN"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "R",
+    "expected": "R∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "$",
+    "expected": "$∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "€",
+    "expected": "€∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "",
+    "expected": "∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "USD ",
+    "expected": "USD ∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "Infinity",
+    "symbol": "0",
+    "expected": "0∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "R",
+    "expected": "-R∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "$",
+    "expected": "-$∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "€",
+    "expected": "-€∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "",
+    "expected": "-∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "USD ",
+    "expected": "-USD ∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-Infinity",
+    "symbol": "0",
+    "expected": "-0∞"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "R",
+    "expected": "R0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "$",
+    "expected": "$0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "€",
+    "expected": "€0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "",
+    "expected": "0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "USD ",
+    "expected": "USD 0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0",
+    "symbol": "0",
+    "expected": "00,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "R",
+    "expected": "R0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "$",
+    "expected": "$0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "€",
+    "expected": "€0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "",
+    "expected": "0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "USD ",
+    "expected": "USD 0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0",
+    "symbol": "0",
+    "expected": "00,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "R",
+    "expected": "R1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "$",
+    "expected": "$1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "€",
+    "expected": "€1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "",
+    "expected": "1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "USD ",
+    "expected": "USD 1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1",
+    "symbol": "0",
+    "expected": "01,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "R",
+    "expected": "-R1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "$",
+    "expected": "-$1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "€",
+    "expected": "-€1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "",
+    "expected": "-1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "USD ",
+    "expected": "-USD 1,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1",
+    "symbol": "0",
+    "expected": "-01,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "R",
+    "expected": "R0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "$",
+    "expected": "$0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "€",
+    "expected": "€0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "",
+    "expected": "0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "USD ",
+    "expected": "USD 0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "0.005",
+    "symbol": "0",
+    "expected": "00,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "R",
+    "expected": "-R0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "$",
+    "expected": "-$0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "€",
+    "expected": "-€0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "",
+    "expected": "-0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "USD ",
+    "expected": "-USD 0,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-0.005",
+    "symbol": "0",
+    "expected": "-00,01"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "R",
+    "expected": "R1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "$",
+    "expected": "$1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "€",
+    "expected": "€1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "",
+    "expected": "1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "USD ",
+    "expected": "USD 1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1.235",
+    "symbol": "0",
+    "expected": "01,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "R",
+    "expected": "-R1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "$",
+    "expected": "-$1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "€",
+    "expected": "-€1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "",
+    "expected": "-1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "USD ",
+    "expected": "-USD 1,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "-1.235",
+    "symbol": "0",
+    "expected": "-01,24"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "R",
+    "expected": "R1.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "$",
+    "expected": "$1.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "€",
+    "expected": "€1.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "",
+    "expected": "1.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "USD ",
+    "expected": "USD 1.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "999.995",
+    "symbol": "0",
+    "expected": "01.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "R",
+    "expected": "R1.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "$",
+    "expected": "$1.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "€",
+    "expected": "€1.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "",
+    "expected": "1.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "USD ",
+    "expected": "USD 1.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "1000000.123",
+    "symbol": "0",
+    "expected": "01.000.000,12"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "R",
+    "expected": "R9.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "$",
+    "expected": "$9.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "€",
+    "expected": "€9.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "",
+    "expected": "9.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "USD ",
+    "expected": "USD 9.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "0",
+    "expected": "09.007.199.254.740.991,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "R",
+    "expected": "R0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "$",
+    "expected": "$0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "€",
+    "expected": "€0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "",
+    "expected": "0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "USD ",
+    "expected": "USD 0,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MIN_VALUE",
+    "symbol": "0",
+    "expected": "00,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "R",
+    "expected": "R179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "$",
+    "expected": "$179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "€",
+    "expected": "€179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "",
+    "expected": "179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "USD ",
+    "expected": "USD 179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "de-DE",
+    "valueTag": "MAX_VALUE",
+    "symbol": "0",
+    "expected": "0179.769.313.486.231.570.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000.000,00"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "R",
+    "expected": "Rليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "$",
+    "expected": "$ليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "€",
+    "expected": "€ليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "",
+    "expected": "ليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "USD ",
+    "expected": "USD ليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "NaN",
+    "symbol": "0",
+    "expected": "0ليس رقمًا"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "R",
+    "expected": "R∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "$",
+    "expected": "$∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "€",
+    "expected": "€∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "",
+    "expected": "∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "USD ",
+    "expected": "USD ∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "Infinity",
+    "symbol": "0",
+    "expected": "0∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "R",
+    "expected": "-R∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "$",
+    "expected": "-$∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "€",
+    "expected": "-€∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "",
+    "expected": "-∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "USD ",
+    "expected": "-USD ∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-Infinity",
+    "symbol": "0",
+    "expected": "-0∞"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "R",
+    "expected": "R٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "$",
+    "expected": "$٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "€",
+    "expected": "€٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "",
+    "expected": "٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "USD ",
+    "expected": "USD ٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0",
+    "symbol": "0",
+    "expected": "0٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "R",
+    "expected": "R٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "$",
+    "expected": "$٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "€",
+    "expected": "€٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "",
+    "expected": "٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "USD ",
+    "expected": "USD ٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0",
+    "symbol": "0",
+    "expected": "0٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "R",
+    "expected": "R١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "$",
+    "expected": "$١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "€",
+    "expected": "€١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "",
+    "expected": "١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "USD ",
+    "expected": "USD ١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1",
+    "symbol": "0",
+    "expected": "0١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "R",
+    "expected": "-R١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "$",
+    "expected": "-$١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "€",
+    "expected": "-€١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "",
+    "expected": "-١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "USD ",
+    "expected": "-USD ١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1",
+    "symbol": "0",
+    "expected": "-0١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "R",
+    "expected": "R٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "$",
+    "expected": "$٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "€",
+    "expected": "€٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "",
+    "expected": "٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "USD ",
+    "expected": "USD ٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "0.005",
+    "symbol": "0",
+    "expected": "0٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "R",
+    "expected": "-R٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "$",
+    "expected": "-$٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "€",
+    "expected": "-€٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "",
+    "expected": "-٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "USD ",
+    "expected": "-USD ٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-0.005",
+    "symbol": "0",
+    "expected": "-0٠٫٠١"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "R",
+    "expected": "R١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "$",
+    "expected": "$١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "€",
+    "expected": "€١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "",
+    "expected": "١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "USD ",
+    "expected": "USD ١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1.235",
+    "symbol": "0",
+    "expected": "0١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "R",
+    "expected": "-R١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "$",
+    "expected": "-$١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "€",
+    "expected": "-€١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "",
+    "expected": "-١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "USD ",
+    "expected": "-USD ١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "-1.235",
+    "symbol": "0",
+    "expected": "-0١٫٢٤"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "R",
+    "expected": "R١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "$",
+    "expected": "$١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "€",
+    "expected": "€١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "",
+    "expected": "١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "USD ",
+    "expected": "USD ١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "999.995",
+    "symbol": "0",
+    "expected": "0١٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "R",
+    "expected": "R١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "$",
+    "expected": "$١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "€",
+    "expected": "€١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "",
+    "expected": "١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "USD ",
+    "expected": "USD ١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "1000000.123",
+    "symbol": "0",
+    "expected": "0١٬٠٠٠٬٠٠٠٫١٢"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "R",
+    "expected": "R٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "$",
+    "expected": "$٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "€",
+    "expected": "€٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "",
+    "expected": "٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "USD ",
+    "expected": "USD ٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_SAFE_INTEGER",
+    "symbol": "0",
+    "expected": "0٩٬٠٠٧٬١٩٩٬٢٥٤٬٧٤٠٬٩٩١٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "R",
+    "expected": "R٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "$",
+    "expected": "$٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "€",
+    "expected": "€٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "",
+    "expected": "٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "USD ",
+    "expected": "USD ٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MIN_VALUE",
+    "symbol": "0",
+    "expected": "0٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "R",
+    "expected": "R١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "$",
+    "expected": "$١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "€",
+    "expected": "€١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "",
+    "expected": "١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "USD ",
+    "expected": "USD ١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  },
+  {
+    "locale": "ar-EG",
+    "valueTag": "MAX_VALUE",
+    "symbol": "0",
+    "expected": "0١٧٩٬٧٦٩٬٣١٣٬٤٨٦٬٢٣١٬٥٧٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٬٠٠٠٫٠٠"
+  }
+]

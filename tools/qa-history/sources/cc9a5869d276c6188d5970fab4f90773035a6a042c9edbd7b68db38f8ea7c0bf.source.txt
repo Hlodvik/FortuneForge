@@ -1,0 +1,126 @@
+import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { dirname, join, relative, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const evidence = dirname(fileURLToPath(import.meta.url))
+const repo = resolve(evidence, '../../..')
+const read = name => readFileSync(join(evidence, name), 'utf8').replace(/^\uFEFF/, '')
+const json = name => JSON.parse(read(name))
+const hash = bytes => createHash('sha256').update(bytes).digest('hex')
+const normalized = path => path.replaceAll('\\', '/').replace(repo.replaceAll('\\', '/') + '/', '')
+const scope = json('owned-scope.json')
+const catalogue = json('catalogue/verification.json')
+const holdem = json('holdem/newinvestigation/verification-audit-followup.json')
+const deployment = json('deployment/verification.json')
+const craps = json('craps-navbar-contract/verification.json')
+const rootBefore = json('root-before/scope.json')
+const checkpoints = [
+  ...catalogue.files.map(file => ({ ...file, after: file.finalSha256 })),
+  ...holdem.ownedFiles.map(file => ({ ...file, beforeSha256: file.beforeOriginalSha256, after: file.afterSha256 })),
+  ...json('deployment/source-scope.json').map(file => ({ ...file, after: file.sha256 })),
+  ...craps.ownedFiles.map(file => ({ ...file, after: file.afterSha256 })),
+]
+const checkpoint = new Map(checkpoints.map(file => [normalized(file.path), file]))
+const sources = scope.map(file => {
+  const path = join(repo, file.path), bytes = readFileSync(path), frozen = checkpoint.get(file.path)
+  const sha256 = hash(bytes), before = rootBefore.find(item => item.path === file.path)
+  if (frozen && frozen.after.toLowerCase() !== sha256) throw new Error(`Frozen source drifted: ${file.path}`)
+  return { ...file, bytes: bytes.length, beforeSha256: (frozen?.beforeSha256 ?? before?.sha256)?.toLowerCase() ?? null,
+    sha256, matchesOwnerFrozenHash: frozen ? true : null }
+}).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0)
+writeFileSync(join(evidence, 'source-scope-final.json'), JSON.stringify(sources, null, 2) + '\n')
+const server = json('all-server-final-summary.json')
+const games = json('game-packages-summary.json')
+const client = json('web-test-current.json')
+const gameLog = read('game-clients-tests-final.log').replace(/\x1b\[[0-9;]*m/g, '')
+const gameLines = gameLog.split(/\r?\n/).filter(line => /^\s*Tests\s+\d/.test(line))
+const total = word => gameLines.reduce((sum, line) => sum + Number(line.match(new RegExp(`(\\d+) ${word}`))?.[1] ?? 0), 0)
+const gameClient = { workspaces: gameLines.length, passed: total('passed'), failed: total('failed'), skipped: total('skipped'),
+  commandPlanPassed: Number(gameLog.match(/# pass (\d+)/)?.[1] ?? 0), evidence: 'game-clients-tests-final.log' }
+const rootDeployment = json('deployment/root-verification.json')
+const review = json('deployment/independent-review.json')
+const staticChecks = json('client-static-checks.json')
+const gameStatic = json('game-static-checks.json')
+const build = json('client-build-verification.json')
+const cleanup = json('cleanup.json')
+if (server.failed || games.failed || !client.success || gameClient.failed || gameClient.skipped || gameClient.workspaces !== 21
+  || rootDeployment.guardExit || rootDeployment.scopeExit || !rootDeployment.refusedForDirtySource
+  || staticChecks.typecheckExit || staticChecks.lintExit || Object.values(gameStatic).some(code => code !== 0)
+  || !build.passed || !cleanup.closed || review.status !== 'review-complete-no-unresolved-findings') {
+  throw new Error('One or more final checks are incomplete or failed.')
+}
+for (const [file, count] of [['ci-policy.log', 12], ['navbar-policy.log', 17]]) {
+  if (!read(file).includes(`# pass ${count}`) || !read(file).includes('# fail 0')) throw new Error(`Policy result incomplete: ${file}`)
+}
+const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim()
+const warnings = read('client-lint.log').split(/\r?\n/).filter(line => line.includes('warning react'))
+const verification = {
+  status: 'scoped-local-work-complete-publication-blocked', verifiedAtUtc: new Date().toISOString(),
+  source: { repository: repo.replaceAll('\\', '/'), branch: 'main', head, committedReleaseCandidate: false, dirty: true,
+    ownedFiles: sources.length, manifest: 'source-scope-final.json', manifestSha256: hash(sources.map(file => `${file.path}\t${file.bytes}\t${file.sha256}\n`).join('')),
+    allOwnerFrozenHashesMatch: true, beforeEvidence: ['root-before/scope.json', 'catalogue/verification.json', 'holdem/newinvestigation/verification-audit-followup.json', 'deployment/source-scope.json', 'craps-navbar-contract/verification.json'] },
+  remote: json('remote-state-final.json'),
+  changes: [
+    'Independent catalogue contract: 45 exact identities/routes; 40 default-visible; five exact hidden defaults. Both Mines and free-solitaire additions are covered. Analytics independently has 41 IDs, tracking hidden liars-dice and excluding four untracked arcade games. Runtime overrides cannot create identities; uniqueness and title-specific money/bot semantics remain covered.',
+    'Coordinator match deadlines use existing deadline-aware engine progression. Unsupported external completion warnings remain. A separately exposed audit-only false positive now permits legal carried winnings above the initial buy-in cap only in subsequent escrow hands; initial/legacy/negative/dealer checks remain. No payout, wallet, engine or RNG implementation changed.',
+    'Existing-checkout deployment requires exact clean current-main source/tooling, canonical Git-object and byte manifests, Windows source leases, repeated build-input checks, release reservation/records and finally cleanup. No checkout creation or switching.',
+    'Explicit Cloud Build uses locked exact upload allowlist and verified matching result digest. Cloud Run uses digest-only no-traffic revision, exact image/source read-back and existing target/Firestore/traffic gates. Verified built Hosting files/config are staged and locked with exact file-set exclusion, preserving headers/rewrites. Incompatible paid frontend/API publication is blocked.',
+    'Existing emulator-before-game-tests and navbar CI gates retained, plus 12-case emulator-order policy. One stale Craps preview-shell test was corrected to the canonical navbar contract without gameplay changes.',
+  ],
+  passed: {
+    server: { passed: server.passed, failed: 0, skipped: server.skipped, evidence: 'all-server-final-summary.json' },
+    csharpGamePackages: games,
+    frontend: { passed: client.numPassedTests, files: client.testResults.length, failed: client.numFailedTests, skipped: client.numPendingTests, evidence: 'web-test-current.json' },
+    gameClients: gameClient,
+    focused: { catalogue: 42, holdem: 123, newHoldemRegressions: 13, crapsNavbarPackage: 246 },
+    ciEmulatorPolicy: { passed: 12, evidence: 'ci-policy.log' },
+    navbarPolicy: { passed: 17, sources: 501, runtimeCss: 136, edges: 1101, evidence: 'navbar-policy.log' },
+    deploymentGuards: rootDeployment,
+    independentDeploymentReview: { status: review.status, evidence: 'deployment/independent-review.json', currentBuildHostingSelection: json('deployment/current-build-hosting-selection.json') },
+    typeLintAndBuild: { ...staticChecks, gameStatic, policyLint: 'passed', serverBuild: 'passed: 0 warnings/errors', clientBuild: build },
+  },
+  failedCurrentChecks: [], skippedChecks: [],
+  warnings: { frontendLint: warnings, build: ['Existing AccountReviewPage mixed static/dynamic import warning', 'Existing large-chunk warning'], gameClientTestRuntime: 'jsdom emits HTMLMediaElement.play not-implemented diagnostics; tests pass.' },
+  historicalFailures: [
+    'Saved server baseline had three stale catalogue/count contracts and one incomplete Holdem deadline audit.',
+    'Initial isolated emulator attempt used production deny rules and blocked test seeding; corrected to CI-equivalent test configuration without changing production rules.',
+    'First full server run: 1228 passed, 1 second-hand audit false-positive failed. Audit-only carryover validation fixed and deterministic counterexamples added; final 1236 passed.',
+    'First game-client run stopped on the stale Craps theme expectation. Corrected test contract; final all 21 workspaces passed.',
+  ],
+  notRun: ['Actual clean committed-candidate release path, live cloud/auth/registry/IAM checks, remote Cloud Build/upload, Cloud Run traffic/deploy, Firebase publication, production smoke and remote CI rerun', 'PowerShell ScriptAnalyzer: unavailable; syntax/runtime guard checks passed', 'Slot RTP/design recalibration and browser visual baseline updates: outside this follow-up'],
+  publication: { blocked: true, blockers: deployment.blockers, noPushOrDeploy: true,
+    reconciliation: 'Review/reconcile the eight remote commits and intended dirty source/tooling into a clean coherent candidate. Classify generated/local files explicitly without deleting preserved release folders; rerun the exact committed candidate and retain paired frontend/API compatibility gates.' },
+  preservation: { slotMathPayoutOrRngChangedByThisTask: false, otherUserConcurrentEditsPreserved: true, defaultArtifacts: build.defaultArtifacts,
+    priorReleaseFolders: 'untouched', worktreesBranchesOrRepositoryCopiesCreated: false, repoResetStashCleanMergeCommitPush: false,
+    note: 'Only generated build artifacts/configuration are staged by the new release plan; it never copies the source checkout. Local validation builds are explicitly not committed release candidates.' },
+  cleanup,
+}
+writeFileSync(join(evidence, 'verification.json'), JSON.stringify(verification, null, 2) + '\n')
+const report = `Scoped local work is complete; publication is blocked. Current main is ${head}; directly checked remote main remains cdd1d12efeb27f96228d4ac9534f8e614da8b4ab, eight commits ahead. The checkout contains extensive uncommitted/concurrent work and is not labelled as a committed release candidate.
+
+The catalogue tests now define the exact 45 identities/routes, 40 visible defaults, five hidden defaults and independently tracked 41 analytics IDs. Mines and free-solitaire are both covered, including runtime visibility changes, uniqueness and distinct free/competitive Solitaire money/bot semantics. Production catalogue code did not change.
+
+Holdem deadlines now use the existing deadline-aware engine path. The broader suite exposed one audit-only false positive: a later escrow hand can legally carry winnings above the initial buy-in cap. Replay validation now accepts that specific state, while retaining initial/legacy caps, negative/dealer validation and unsupported host-completion warnings. Settlement retries, money/outcomes, private evidence across the next deal and invalid-state counterexamples are tested. Payout, wallet, engine and RNG implementations were not changed.
+
+Deployment uses the existing checkout with exact clean candidate/tooling checks, Windows source locks, canonical Git and byte manifests, repeated environment-input checks, release reservations and failure cleanup. A locked exact upload list feeds explicit Cloud Build; Cloud Run requires that build's immutable image digest and read-back source/image checks before traffic. Verified Hosting build artifacts/config are separately staged and locked with an exact file set, preserving headers and rewrites. Hosting-only cannot bypass incompatible API changes, including paid Craps.
+
+The existing Firestore setup-before-tests CI change and navbar gate are retained. A new 12-test policy rejects the diagnosed order regression, cache-only/conditional setup and ignored failures. The [saved CI run](https://github.com/Hlodvik/FortuneForge/actions/runs/41358419486) had 47 missing-emulator-cache failures, not 47 demonstrated game-rule defects. One stale Craps theme test from the navbar migration was updated without changing gameplay.
+
+- Server: **${server.passed}/${server.total} passed**, no skipped tests.
+- C# game packages: **${games.passed}/${games.total} passed**, no skipped tests.
+- Current frontend: **${client.numPassedTests} passed** across ${client.testResults.length} files.
+- Game/shared client workspaces: **${gameClient.passed} passed**, plus **${gameClient.commandPlanPassed} workspace command-plan tests**; no failures/skips.
+- Focused catalogue 42, Holdem 123 (13 new regressions), Craps package 246; CI policy 12 and navbar policy 17 all pass.
+- Deployment guard/scope scripts pass on Windows PowerShell 5.1; independent review has no unresolved findings. Actual dirty-source preflight correctly refuses before cloud access/builds. The actual Firebase 14.4 selector retains exactly all 820 fresh build files and excludes six injected-file cases without modifying the build.
+- Server/client type/build checks, all game client type checks and lint pass. Frontend lint retains three existing AdminGameAnalyticsPanel Fast Refresh warnings; build retains existing chunk/import warnings. Default client dist and server wwwroot are unchanged.
+
+Exact ${sources.length}-file scope and hashes: [source-scope-final.json](source-scope-final.json). Complete passed/failed/skipped/not-run results: [verification.json](verification.json). Detailed [deployment review](deployment/independent-review.json), [deployment verification](deployment/verification.json), [catalogue verification](catalogue/verification.json), [Holdem audit verification](holdem/newinvestigation/verification-audit-followup.json) and [Craps contract verification](craps-navbar-contract/verification.json) preserve the before snapshots and task diffs. Earlier failed attempts remain separate historical evidence.
+
+Before publication, reconcile reviewed remote history and intended local changes into a clean coherent candidate, including its exact release tooling and CI fixes. Review generated/local exclusions without deleting old release folders, then verify that committed candidate against the live source stamps and configured registry/build permissions. Retain the API/Hosting compatibility gate and use a combined release for incompatible backend/frontend changes. No live registry/build/upload/deploy/traffic/Firebase/smoke operations or remote CI rerun were performed. ScriptAnalyzer was unavailable; no installation or gate bypass was used. Slot RTP design concerns remain separate.
+
+No branch/worktree/repository copy, reset/stash/clean/merge/commit/push/deploy or real-money action was performed. Prior release folders and concurrent user changes are preserved; the dedicated localhost emulator is stopped.
+`
+writeFileSync(join(evidence, 'README.md'), report)
+console.log(JSON.stringify({ status: verification.status, ownedFiles: sources.length, server: server.passed, csharpGames: games.passed, frontend: client.numPassedTests, gameClients: gameClient, frozenOwnerCheckpoints: checkpoint.size }, null, 2))

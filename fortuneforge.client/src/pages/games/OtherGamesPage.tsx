@@ -1,6 +1,7 @@
 import blackjackPreview from '../../assets/cards/previews/blackjack-game.png'
 import holdemPreview from '../../assets/cards/previews/holdem-game.png'
 import solitairePreview from '../../assets/cards/previews/solitaire-game.png'
+import freeSolitairePreview from '../../assets/catalogue/non-slots/free-solitaire-title-v1.webp'
 import { GameTypeMenu } from '../../components/GameTypeMenu'
 import { PlayerHeader } from '../../components/PlayerHeader'
 import type { AccountSummary } from '../../features/account/services/accountsApi'
@@ -10,6 +11,8 @@ import { useCardRoomHistory } from '../cards/useCardRoomHistory'
 import '../index.css'
 import { useCatalogueVisibility } from '../../features/catalog/catalogVisibility'
 import { CatalogueStatus } from '../../features/catalog/CatalogueStatus'
+import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
+import { ResponsiveSlotImage } from '../../features/slots/components/ResponsiveSlotImage'
 
 type CatalogGame = {
   category: string
@@ -29,7 +32,7 @@ type RecentCatalogGame = {
 }
 
 const cardGames: readonly CatalogGame[] = [
-  { name: 'Fortune Blackjack', category: 'Card game', href: '/cards/blackjack', image: blackjackPreview, summary: 'Continuous five-seat Blackjack.' },
+  { name: 'Fortune Blackjack', category: 'Card game', href: '/cards/blackjack', image: blackjackPreview, summary: 'Play Blackjack against the house at your own pace.' },
   { name: 'Texas Hold’em', category: 'Card game', href: '/cards/texas-holdem', image: holdemPreview, summary: 'Live community-card tables.' },
   { name: 'Competitive Solitaire', category: 'Card game', href: '/cards/solitaire', image: solitairePreview, summary: 'Classic Klondike with timed competitive deals.' },
   { name: 'Video Poker', category: 'Casino card game', href: '/games/video-poker', icon: '♤', summary: 'Build the strongest five-card poker hand.', tone: 'poker' },
@@ -38,6 +41,7 @@ const cardGames: readonly CatalogGame[] = [
   { name: 'Hearts', category: 'Card game', href: '/cards/hearts', icon: '♥', summary: 'Avoid points, take tricks wisely, and shoot the moon.' },
   { name: 'Three Card Poker', category: 'Casino card game', href: '/cards/three-card-poker', image: holdemPreview, summary: 'Play three cards against the dealer with Ante and Pair Plus wagers.', tone: 'poker' },
   { name: 'House Hold’em', category: 'Casino card game', href: '/cards/house-holdem', image: holdemPreview, summary: 'Play a seven-card Hold’em hand against the house.', tone: 'poker' },
+  { name: 'Solitaire', category: 'Card game', href: '/cards/free-solitaire', image: freeSolitairePreview, summary: 'A classic Klondike deal at your own pace.' },
 ]
 
 const slotGames: readonly CatalogGame[] = SLOT_GAME_CATALOG.map(catalogGameFromSlot)
@@ -55,6 +59,7 @@ function catalogGameFromSlot(game: SlotGameCatalogEntry): CatalogGame {
 }
 
 const andarBaharGame: CatalogGame = { name: 'Andar Bahar', category: 'Casino card game', href: '/games/andar-bahar', icon: '♠', summary: 'Choose the side that first matches the central Joker.', tone: 'baccarat' }
+const minesGame: CatalogGame = { name: 'Mines', category: 'Casino game', href: '/games/mines', icon: '◇', summary: 'Find gems, avoid mines, and collect your return before the next pick.' }
 
 const casinoGames: readonly CatalogGame[] = [
   slotGames[0]!,
@@ -71,6 +76,7 @@ const casinoGames: readonly CatalogGame[] = [
   cardGames[8]!,
   { name: 'Hi-Lo', category: 'Casino card game', href: '/games/hi-lo', icon: '↕', summary: 'Call the next card higher or lower, then collect your streak.', tone: 'poker' },
   andarBaharGame,
+  minesGame,
 ]
 
 const arcadeGames: readonly CatalogGame[] = [
@@ -86,10 +92,10 @@ const arcadeGames: readonly CatalogGame[] = [
 const diceGames: readonly CatalogGame[] = [
   { name: 'Craps', category: 'Dice game', href: '/games/craps', icon: '⚄', summary: 'Ride the come-out roll, establish the point, and press the Pass Line.' },
   { name: 'Sic Bo', category: 'Dice game', href: '/games/sic-bo', icon: '⚂', summary: 'Predict three-dice outcomes across a betting layout.', tone: 'sic-bo' },
-  { name: 'Liar’s Dice', category: 'Dice game', href: '/games/liars-dice', icon: '⚅', summary: 'Bid, bluff, and call the table in a game of nerve.' },
 ]
 
 const newGames: readonly CatalogGame[] = [
+  minesGame,
   andarBaharGame,
   cardGames[8]!,
   cardGames[7]!,
@@ -123,7 +129,9 @@ export function OtherGamesPage({ account }: { account: AccountSummary }) {
     })
   }
   for (const activity of cardHistory.activities) {
-    const game = activity.game === 'andar-bahar'
+    const game = activity.game === 'mines'
+      ? minesGame
+      : activity.game === 'andar-bahar'
       ? andarBaharGame
       : activity.game === 'hi-lo'
       ? casinoGames.find(entry => entry.href === '/games/hi-lo')!
@@ -196,8 +204,22 @@ function GameSection({
 }
 
 function GameTile({ game }: { game: CatalogGame }) {
+  const selectedArtwork = getCataloguePresentationArt(game.href)
+  const responsiveArtwork = selectedArtwork?.imageSrcSet ? selectedArtwork : undefined
   const content = <>
-    {game.image ? <img className={`all-games-card__image all-games-card__image--${game.imagePresentation ?? 'cover'}${game.imageScale === 'compact' ? ' all-games-card__image--compact' : ''}`} src={game.image} alt="" draggable="false" /> : <span className={`all-games-card__icon${game.tone ? ` all-games-card__icon--${game.tone}` : ''}`} aria-hidden="true">{game.icon ?? '◇'}</span>}
+    {responsiveArtwork ? (
+      <ResponsiveSlotImage
+        className="all-games-card__image all-games-card__image--cover"
+        src={responsiveArtwork.src}
+        imageSrcSet={responsiveArtwork.imageSrcSet}
+        width={responsiveArtwork.width}
+        height={responsiveArtwork.height}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        draggable="false"
+      />
+    ) : game.image ? <img className={`all-games-card__image all-games-card__image--${game.imagePresentation ?? 'cover'}${game.imageScale === 'compact' ? ' all-games-card__image--compact' : ''}`} src={game.image} alt="" draggable="false" /> : <span className={`all-games-card__icon${game.tone ? ` all-games-card__icon--${game.tone}` : ''}`} aria-hidden="true">{game.icon ?? '◇'}</span>}
     <small>{game.category}</small><strong>{game.name}</strong><span>{game.summary}</span>
   </>
   return game.href

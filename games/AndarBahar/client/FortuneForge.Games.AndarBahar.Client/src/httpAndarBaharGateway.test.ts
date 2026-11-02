@@ -12,7 +12,7 @@ const settled: AndarBaharRound = {
   deals: [{ number: 1, side: 'andar', card: { rank: 'ace', suit: 'hearts' } }],
   winner: 'andar', side: 'andar', stake: .5, disposition: 'win', profit: .45, totalReturn: .95,
 }
-const status = { available: true, minimumStake: .5, maximumStake: 100, stakeIncrement: .5, balance: 10000, mode: 'development-practice-andar-first' }
+const status = { available: true, minimumStake: .5, maximumStake: 50, stakeIncrement: .5, balance: 10000, mode: 'development-practice-andar-first' }
 const json = (value: unknown, code = 200) => new Response(JSON.stringify(value), { status: code, headers: { 'Content-Type': 'application/json' } })
 const makeGateway = (value: unknown) => {
   const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => json(value))

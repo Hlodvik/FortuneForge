@@ -14,6 +14,7 @@ import keno from '../../assets/catalogue/non-slots/keno-title-v1.webp'
 import sicBo from '../../assets/catalogue/non-slots/sic-bo-title-v1.webp'
 import mines from '../../assets/catalogue/non-slots/mines-title-v2.webp'
 import solitaire from '../../assets/catalogue/non-slots/solitaire-title-v2.webp'
+import freeSolitaire from '../../assets/catalogue/non-slots/free-solitaire-title-v1.webp'
 import hearts from '../../assets/catalogue/non-slots/hearts-title-v2.webp'
 import liarsDice from '../../assets/catalogue/non-slots/liars-dice-title-v3.webp'
 import twentyFortyEight from '../../assets/catalogue/non-slots/2048-title-v1.webp'
@@ -37,15 +38,16 @@ import phantomManor from '../../assets/catalogue/slots/phantom-manor-title-v2.we
 import nordicLegends from '../../assets/catalogue/slots/nordic-legends-title-v2.webp'
 import desertTreasures from '../../assets/catalogue/slots/desert-treasures-title-v2.webp'
 import robotRevolution from '../../assets/catalogue/slots/robot-revolution-title-v2.webp'
-import dragonHoard from '../../assets/catalogue/slots/dragon-hoard-title-v2.webp'
+import dragonHoard from '../../assets/catalogue/slots/midnight-vault-catalogue-title-768x384.webp'
 
 export type CataloguePresentationArt = Readonly<{
   src: string
+  imageSrcSet?: string
   width: 768
   height: 384
 }>
 
-const artwork = (src: string): CataloguePresentationArt => Object.freeze({ src, width: 768, height: 384 })
+const artwork = (src: string, imageSrcSet?: string): CataloguePresentationArt => Object.freeze({ src, width: 768, height: 384, ...(imageSrcSet ? { imageSrcSet } : {}) })
 
 // Presentation data only: importing artwork must never import a playable game or engine.
 const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
@@ -65,6 +67,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/games/sic-bo', artwork(sicBo)],
   ['/games/mines', artwork(mines)],
   ['/cards/solitaire', artwork(solitaire)],
+  ['/cards/free-solitaire', artwork(freeSolitaire)],
   ['/cards/hearts', artwork(hearts)],
   ['/games/liars-dice', artwork(liarsDice)],
   ['/games/2048', artwork(twentyFortyEight)],
@@ -88,7 +91,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/nordic-legends', artwork(nordicLegends)],
   ['/slots/desert-treasures', artwork(desertTreasures)],
   ['/slots/robot-revolution', artwork(robotRevolution)],
-  ['/slots/dragon-hoard', artwork(dragonHoard)],
+  ['/slots/dragon-hoard', artwork(dragonHoard, `/assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-384x192.webp 384w, ${dragonHoard} 768w, /assets/slots/midnight-vault/v1/presentation/midnight-vault-catalogue-title-1024x512.webp 1024w`)],
 ])
 
 const cardDemoAliases: ReadonlyMap<string, string> = new Map([

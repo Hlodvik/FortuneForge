@@ -2,24 +2,19 @@ import { CardRoomHeader } from '../../games/cards/shared/CardRoomHeader'
 import { CardRoomHistory } from '../../games/cards/shared/CardRoomHistory'
 import { cardRoomUnseenCount } from '../../games/cards/shared/cardRoomHistoryTypes'
 import { useCardRoomHistory } from './useCardRoomHistory'
+import type { AccountSummary } from '../../features/account/services/accountsApi'
 
 export function CardRoomNavigation({
-  playerName,
-  balanceCredits,
-  showOtherGames = true,
+  account,
   onBalanceChange,
 }: {
-  playerName: string
-  balanceCredits: number
-  showOtherGames?: boolean
+  account: AccountSummary
   onBalanceChange?: (balanceCredits: number) => void
 }) {
   const history = useCardRoomHistory(onBalanceChange)
   return (
     <CardRoomHeader
-      playerName={playerName}
-      balanceCredits={balanceCredits}
-      showOtherGames={showOtherGames}
+      account={account}
       unseenCount={cardRoomUnseenCount(history.activities)}
       onHistoryToggle={(open) => {
         if (open) void history.refresh()

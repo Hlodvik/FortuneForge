@@ -1,65 +1,22 @@
+@font-face {
+  font-family: 'Solitaire Fraunces';
+  src: url('./assets/fonts/fraunces-latin-variable.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 .solitaire-page {
   min-height: 100svh;
   overflow-x: hidden;
-  background:
-    radial-gradient(circle at 50% 8%, rgb(81 230 196 / 16%), transparent 30rem),
-    linear-gradient(155deg, #071b22, #031014 58%, #02090c);
+  background: var(--ff-casino-felt-material, #075343);
   color: #eaf8f4;
+  font-family: 'Sora Variable', 'Segoe UI', sans-serif;
   user-select: none;
   -webkit-user-select: none;
 }
 .solitaire-page img { -webkit-user-drag: none; }
-.solitaire-page .card-room-header { border-bottom-color: rgb(231 201 121 / 18%); background: rgb(2 25 20 / 94%); }
 
-.solitaire-header {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  min-height: 4.7rem;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.8rem clamp(1rem, 4vw, 3.5rem);
-  border-bottom: 1px solid rgb(128 237 216 / 18%);
-  background: rgb(2 14 18 / 86%);
-  backdrop-filter: blur(14px);
-}
-
-.solitaire-header a {
-  color: #a7f1df;
-  font-weight: 900;
-  text-decoration: none;
-}
-
-.solitaire-header div {
-  display: grid;
-  justify-items: end;
-}
-
-.solitaire-header span,
-.solitaire-header strong {
-  font-size: 0.72rem;
-}
-
-.solitaire-header span {
-  color: #78a9a2;
-  font-weight: 850;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-}
-
-.solitaire-header strong {
-  color: #f5e7ad;
-}
-
-.solitaire-hero {
-  width: min(100% - 1.5rem, 78rem);
-  margin-inline: auto;
-  padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(1rem, 2vw, 1.6rem);
-  text-align: center;
-}
-
-.solitaire-hero p,
 .solitaire-eyebrow {
   margin: 0;
   color: #e8c96f;
@@ -67,19 +24,6 @@
   font-weight: 950;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.solitaire-hero h1 {
-  margin: 0.2rem 0 0.35rem;
-  color: #f7fff9;
-  font: 700 clamp(2.4rem, 7vw, 5.2rem)/0.95 Georgia, serif;
-  letter-spacing: -0.055em;
-  text-shadow: 0 1rem 2.5rem rgb(0 0 0 / 52%);
-}
-
-.solitaire-hero > span {
-  color: #9fc7c0;
-  font-size: clamp(0.78rem, 1.6vw, 0.95rem);
 }
 
 .solitaire-main {
@@ -108,14 +52,146 @@
 }
 
 .solitaire-lobby {
-  width: min(100%, 58rem);
-  min-height: 23.5rem;
+  display: grid;
+  width: min(100%, 64rem);
+  min-height: 0;
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
   align-self: center;
   justify-self: center;
-  background:
-    radial-gradient(ellipse at 50% -15%, rgb(83 182 153 / 23%), transparent 70%),
-    linear-gradient(145deg, rgb(11 42 46 / 94%), rgb(4 24 29 / 97%));
+  align-content: stretch;
+  overflow: hidden;
+  padding: 0;
+  border-color: rgb(232 207 145 / 30%);
+  border-radius: 1.25rem;
+  background: #082a24;
+  box-shadow: 0 1.8rem 4.5rem rgb(0 12 10 / 42%), 0 0 0 1px rgb(255 249 222 / 5%) inset;
 }
+
+.solitaire-lobby__showcase {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 1.55rem clamp(1.5rem, 3vw, 2.45rem) 1.85rem;
+  background:
+    linear-gradient(156deg, rgb(2 45 35 / 26%), rgb(1 24 22 / 77%)),
+    var(--ff-casino-felt-material, #0b5944);
+}
+
+.solitaire-lobby__showcase::after {
+  position: absolute;
+  inset: 1rem auto 1rem 0;
+  width: 2px;
+  background: linear-gradient(transparent, rgb(230 198 119 / 75%), transparent);
+  content: '';
+}
+
+.solitaire-lobby__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.solitaire-lobby__topline .solitaire-eyebrow {
+  color: #f2db9d;
+  font-size: .62rem;
+  letter-spacing: .15em;
+}
+
+.solitaire-panel .solitaire-lobby__history {
+  min-height: 2.75rem;
+  padding: .25rem 0 .25rem .4rem;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid rgb(240 212 141 / 60%);
+  background: transparent;
+  box-shadow: none;
+  color: #f5e8c4;
+  font-size: .72rem;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.solitaire-lobby__history span { margin-left: .4rem; font-size: .95rem; }
+
+.solitaire-lobby__cards {
+  position: relative;
+  flex: 1 0 10.6rem;
+  width: 100%;
+  min-height: 10.6rem;
+  max-height: 12.2rem;
+  margin: .55rem 0 .55rem;
+}
+
+.solitaire-lobby__cards::before {
+  position: absolute;
+  right: 5%;
+  bottom: 1.1rem;
+  left: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(224 195 127 / 55%), transparent);
+  content: '';
+}
+
+.solitaire-lobby__card {
+  --ff-card-width: clamp(5.9rem, 8vw, 7.35rem);
+  position: absolute;
+  display: block;
+  width: var(--ff-card-width);
+  aspect-ratio: .704;
+  transform-origin: center 90%;
+}
+
+.solitaire-lobby__card--back { z-index: 1; top: 12%; left: 23%; transform: rotate(-17deg); }
+.solitaire-lobby__card--heart { z-index: 2; top: 1%; left: 39%; transform: rotate(2deg); }
+.solitaire-lobby__card--spade { z-index: 3; top: 13%; left: 56%; transform: rotate(18deg); }
+
+.solitaire-lobby h1 {
+  margin: .15rem 0 .6rem;
+  color: #fff8e7;
+  font: 650 clamp(2.25rem, 3.5vw, 3.25rem)/1.05 'Solitaire Fraunces', Georgia, serif;
+  letter-spacing: -.04em;
+  text-wrap: balance;
+  text-shadow: 0 .2rem .6rem rgb(0 16 11 / 36%);
+}
+
+.solitaire-lobby h1 em { color: #eacb83; font-style: italic; }
+
+.solitaire-lobby__showcase > p {
+  max-width: 26rem;
+  margin: 0;
+  color: #d0e3d6;
+  font-size: .84rem;
+  line-height: 1.65;
+}
+
+.solitaire-lobby__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1rem;
+  margin-top: 1.35rem;
+  padding-top: .85rem;
+  border-top: 1px solid rgb(224 200 141 / 30%);
+  color: #c2d8cc;
+  font-size: .66rem;
+  letter-spacing: .01em;
+}
+
+.solitaire-lobby__facts span::first-letter { color: #e6cb86; }
+.solitaire-lobby__facts strong { color: #f6e5b5; font-weight: 750; }
+
+.solitaire-lobby__setup {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.5rem, 3.3vw, 2.65rem);
+  border-left: 1px solid rgb(234 212 157 / 20%);
+  background: linear-gradient(143deg, rgb(8 34 31 / 97%), rgb(4 22 22 / 98%));
+}
+
+.solitaire-lobby__setup-heading { margin-bottom: 1.4rem; }
 
 .solitaire-panel h2,
 .solitaire-history h2,
@@ -123,7 +199,14 @@
 .solitaire-state h2 {
   margin: 0.35rem 0 0.75rem;
   color: #f7fff9;
-  font: 700 clamp(1.45rem, 3vw, 2.25rem)/1.05 Georgia, serif;
+  font: 650 clamp(1.45rem, 3vw, 2.25rem)/1.05 'Solitaire Fraunces', Georgia, serif;
+}
+
+.solitaire-panel .solitaire-lobby__setup-heading h2 {
+  margin: .4rem 0 0;
+  color: #fbf5e6;
+  font: 650 clamp(1.65rem, 2.4vw, 2.2rem)/1.08 'Solitaire Fraunces', Georgia, serif;
+  letter-spacing: -.025em;
 }
 
 .solitaire-panel > p:not(.solitaire-eyebrow) {
@@ -133,53 +216,67 @@
 
 .solitaire-lobby__controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 1.1rem 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .65rem;
+  margin: 0;
 }
 
-.solitaire-lobby label,
-.solitaire-lobby__prize {
+.solitaire-lobby label {
+  position: relative;
   display: grid;
-  min-height: 5.3rem;
+  min-height: 4.5rem;
   align-content: center;
-  gap: 0.35rem;
-  padding: 0.7rem;
-  border: 1px solid rgb(141 230 212 / 20%);
-  border-radius: 0.85rem;
-  background: rgb(2 22 26 / 65%);
+  gap: .3rem;
+  padding: .7rem 2.55rem .7rem 1rem;
+  border: 1px solid rgb(212 225 195 / 20%);
+  border-radius: .65rem;
+  background: rgb(1 19 18 / 64%);
 }
 
-.solitaire-lobby label > span,
-.solitaire-lobby__prize > span {
-  color: #80aaa4;
-  font-size: 0.64rem;
-  font-weight: 900;
-  letter-spacing: 0.1em;
+.solitaire-lobby label::after {
+  position: absolute;
+  top: 50%;
+  right: 1.15rem;
+  width: .5rem;
+  height: .5rem;
+  border-right: 1.5px solid #d8c490;
+  border-bottom: 1.5px solid #d8c490;
+  content: '';
+  pointer-events: none;
+  transform: translateY(-70%) rotate(45deg);
+}
+
+.solitaire-lobby label:focus-within {
+  border-color: rgb(239 216 151 / 70%);
+  box-shadow: 0 0 0 2px rgb(239 216 151 / 10%);
+}
+
+.solitaire-lobby label > span {
+  color: #a8bdb0;
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .12em;
   text-transform: uppercase;
 }
 
 .solitaire-lobby select {
   width: 100%;
+  min-height: 1.65rem;
+  appearance: none;
   border: 0;
   background: transparent;
-  color: #fff4c4;
+  color: #fff8e5;
   font-family: inherit;
-  font-size: 1rem;
-  font-weight: 850;
+  font-size: .98rem;
+  font-weight: 700;
   line-height: 1;
+  cursor: pointer;
 }
 
 .solitaire-lobby option {
   color: #071b22;
 }
 
-.solitaire-lobby__prize strong {
-  color: #fff0a5;
-  font-size: 1.05rem;
-}
-
-.solitaire-lobby__prize small,
 .solitaire-lobby > small {
   color: #80aaa4;
 }
@@ -188,7 +285,6 @@
 .solitaire-panel button,
 .solitaire-state button,
 .solitaire-request-error button,
-.solitaire-match__heading button,
 .solitaire-match__controls button,
 .solitaire-result-dialog button {
   min-height: 2.8rem;
@@ -203,12 +299,11 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .solitaire-primary-action,
-  .solitaire-panel button,
-  .solitaire-state button,
-  .solitaire-request-error button,
-  .solitaire-match__heading button,
-  .solitaire-match__controls button,
-  .solitaire-result-dialog button {
+.solitaire-panel button,
+.solitaire-state button,
+.solitaire-request-error button,
+.solitaire-match__controls button,
+.solitaire-result-dialog button {
     transition: transform 110ms ease, filter 110ms ease;
   }
 }
@@ -235,6 +330,58 @@
   background: linear-gradient(180deg, #f7e7a3, #d2ac4b);
   box-shadow: inset 0 1px rgb(255 255 255 / 55%), 0 0.3rem 0.8rem rgb(0 9 7 / 27%);
   color: #17302c;
+}
+
+.solitaire-lobby__note {
+  margin: .8rem 0 1.1rem;
+  color: #9eb7ab;
+  font-size: .7rem;
+  line-height: 1.45;
+}
+
+.solitaire-lobby__actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: .6rem;
+}
+
+.solitaire-panel .solitaire-lobby__actions button {
+  min-height: 3.25rem;
+  margin: 0;
+  padding: .7rem 1rem;
+  font-size: .82rem;
+}
+
+.solitaire-panel .solitaire-lobby__actions .solitaire-primary-action {
+  border-color: #f2dd9e;
+  background: linear-gradient(180deg, #f9eabd, #dab764);
+  box-shadow: inset 0 1px rgb(255 255 255 / 60%), 0 .35rem .9rem rgb(0 9 7 / 35%);
+  color: #17312a;
+}
+
+.solitaire-panel .solitaire-lobby__actions .solitaire-lobby__free-action {
+  min-width: 7.6rem;
+  border-color: rgb(224 204 145 / 37%);
+  background: transparent;
+  color: #e9dcb8;
+}
+
+.solitaire-lobby__balance {
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  margin: 1.15rem 0 0;
+  padding-top: .9rem;
+  border-top: 1px solid rgb(219 211 172 / 16%);
+  color: #a9c1b2;
+  font-size: .7rem;
+}
+
+.solitaire-lobby__balance strong {
+  color: #f3e9cf;
+  font-size: .76rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
 }
 
 .solitaire-match__controls {
@@ -271,8 +418,7 @@
 }
 
 .solitaire-page button:focus-visible,
-.solitaire-page select:focus-visible,
-.solitaire-header a:focus-visible {
+.solitaire-page select:focus-visible {
   outline: 2px solid #fff1a7;
   outline-offset: 0.18rem;
 }
@@ -515,7 +661,7 @@
 .solitaire-result-dialog h2 {
   margin: 0.3rem 0;
   color: #fff4bd;
-  font: 700 clamp(2rem, 7vw, 3.4rem)/1 Georgia, serif;
+  font: 650 clamp(2rem, 7vw, 3.4rem)/1 'Solitaire Fraunces', Georgia, serif;
 }
 
 .solitaire-result-dialog > div > p:not(.solitaire-eyebrow) {
@@ -544,56 +690,6 @@
 .solitaire-result-dialog li.is-current {
   border-color: rgb(243 214 119 / 42%);
   color: #fff0ae;
-}
-
-.solitaire-queue__progress {
-  height: 0.55rem;
-  overflow: hidden;
-  margin: 0.8rem 0 1rem;
-  border-radius: 999px;
-  background: rgb(1 15 18 / 80%);
-}
-
-.solitaire-queue__progress span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #5ce4c9, #e6c75f);
-}
-
-.solitaire-seat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.solitaire-seat-grid > div {
-  display: grid;
-  justify-items: center;
-  gap: 0.18rem;
-  padding: 0.7rem 0.25rem;
-  border: 1px dashed rgb(130 190 181 / 22%);
-  border-radius: 0.75rem;
-  color: #6f918c;
-  font-size: 0.66rem;
-  text-align: center;
-}
-
-.solitaire-seat-grid > div.is-filled {
-  border-style: solid;
-  border-color: rgb(114 226 205 / 40%);
-  color: #d9f3ed;
-}
-
-.solitaire-seat-grid span {
-  display: grid;
-  width: 2rem;
-  aspect-ratio: 1;
-  place-items: center;
-  border-radius: 50%;
-  background: rgb(80 214 187 / 14%);
-  color: #c8f4e8;
-  font-weight: 950;
 }
 
 .solitaire-match {
@@ -667,57 +763,6 @@
   color: #fff1ae;
 }
 
-.solitaire-match__heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.solitaire-match__seats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-  gap: 0.55rem;
-  margin-bottom: 1rem;
-}
-
-.solitaire-match__seats > div {
-  display: grid;
-  gap: 0.15rem;
-  padding: 0.65rem 0.75rem;
-  border: 1px solid rgb(222 192 111 / 30%);
-  border-radius: 0.7rem;
-  background: rgb(3 30 23 / 62%);
-}
-
-.solitaire-match__seats > div.is-open {
-  border-style: dashed;
-  color: #a8b8b0;
-}
-
-.solitaire-match__seats small {
-  text-transform: capitalize;
-}
-
-.solitaire-match__heading h2 {
-  margin-bottom: 0.25rem;
-  font-size: clamp(1.15rem, 2.5vw, 1.65rem);
-}
-
-.solitaire-match__heading div > span {
-  color: #9fc7c0;
-  font-size: 0.75rem;
-}
-
-.solitaire-match__heading button {
-  min-height: 2.3rem;
-  padding-inline: 0.8rem;
-  border-color: rgb(255 131 131 / 35%);
-  color: #ffc9c9;
-  font-size: 0.7rem;
-}
-
 .solitaire-board {
   --solitaire-card-width: clamp(2.5rem, calc((100vw - 5.2rem) / 7), 5.4rem);
   box-sizing: border-box;
@@ -752,7 +797,7 @@
 }
 
 .solitaire-auto-win strong {
-  font: 800 clamp(1rem, 3vw, 1.45rem)/1 Georgia, serif;
+  font: 700 clamp(1rem, 3vw, 1.45rem)/1 'Solitaire Fraunces', Georgia, serif;
 }
 
 .solitaire-auto-win span {
@@ -1049,12 +1094,6 @@ button.solitaire-pile,
   }
 }
 
-.solitaire-pile.is-drop-target,
-.solitaire-tableau__pile.is-drop-target {
-  border-color: #ffe36f;
-  box-shadow: 0 0 0 3px rgb(255 227 111 / 38%), inset 0 0 1.2rem rgb(255 227 111 / 18%);
-}
-
 .solitaire-pile__watermark,
 .solitaire-pile__label,
 .solitaire-empty-target {
@@ -1114,32 +1153,6 @@ button.solitaire-pile,
 @keyframes solitaire-hint-pulse {
   from { box-shadow: 0 0 0 rgb(255 227 111 / 0%); }
   to { box-shadow: 0 0 1rem rgb(255 227 111 / 70%); }
-}
-
-.solitaire-match-complete {
-  display: grid;
-  min-height: 24rem;
-  padding: clamp(1.5rem, 5vw, 3rem);
-  place-content: center;
-  justify-items: center;
-  text-align: center;
-}
-
-.solitaire-match-complete h2 {
-  margin: 0.35rem 0 0.75rem;
-  font-family: Georgia, serif;
-  font-size: clamp(1.8rem, 6vw, 3rem);
-}
-
-.solitaire-match-complete > p:not(.solitaire-eyebrow) {
-  max-width: 32rem;
-  margin: 0 0 1.25rem;
-  color: #a9c9c3;
-  line-height: 1.65;
-}
-
-.solitaire-match-complete .solitaire-primary-action {
-  width: min(100%, 18rem);
 }
 
 .solitaire-state {
@@ -1212,18 +1225,6 @@ button.solitaire-pile,
   white-space: nowrap;
 }
 
-.solitaire-footer {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.45rem 1.4rem;
-  padding: 1rem 1rem 1.6rem;
-  border-top: 1px solid rgb(128 237 216 / 12%);
-  color: #668a85;
-  font-size: 0.66rem;
-  text-align: center;
-}
-
 @media (max-width: 860px) {
   .solitaire-main {
     grid-template-columns: minmax(0, 1fr);
@@ -1247,30 +1248,13 @@ button.solitaire-pile,
     width: 100%;
   }
 
-  .solitaire-header {
-    backdrop-filter: none;
-  }
-
   .solitaire-match,
   .solitaire-history {
     box-shadow: none;
   }
-  .solitaire-header {
-    align-items: start;
-  }
-
-  .solitaire-header div {
-    max-width: 13rem;
-    text-align: right;
-  }
-
-  .solitaire-header span {
-    font-size: 0.55rem;
-  }
 
   .solitaire-main,
-  .solitaire-hero,
-  .solitaire-request-error {
+.solitaire-request-error {
     width: min(100% - 0.75rem, 78rem);
   }
 
@@ -1279,21 +1263,12 @@ button.solitaire-pile,
     grid-template-columns: 1fr;
   }
 
-  .solitaire-seat-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .solitaire-results li {
     grid-template-columns: 1fr auto;
   }
 
   .solitaire-results li span {
     grid-column: 1 / -1;
-  }
-
-  .solitaire-match__heading {
-    align-items: start;
-    flex-direction: column;
   }
 
   .solitaire-match__metric {
@@ -1405,6 +1380,106 @@ button.solitaire-pile,
   .solitaire-shell-body > .solitaire-page:not(.practice-bot-page) { height: 100%; }
 }
 
+/* The entry screen scrolls as content; the active board keeps its viewport fit. */
+.solitaire-shell-body > .solitaire-page.solitaire-page--lobby {
+  height: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.solitaire-page--lobby > .solitaire-main {
+  width: min(100% - 2rem, 64rem);
+  min-height: 0;
+  flex: 0 0 auto;
+  align-self: center;
+  margin-block: auto;
+  padding: clamp(.9rem, 4vh, 2.35rem) 0;
+}
+
+@media (max-width: 760px) {
+  .solitaire-lobby {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .solitaire-lobby__showcase {
+    padding-bottom: 1.35rem;
+  }
+
+  .solitaire-lobby__cards {
+    flex-basis: 9.8rem;
+    min-height: 9.8rem;
+    margin-block: .2rem .35rem;
+  }
+
+  .solitaire-lobby__setup {
+    padding: 1.5rem clamp(1.3rem, 5vw, 2.25rem);
+    border-top: 1px solid rgb(234 212 157 / 20%);
+    border-left: 0;
+  }
+
+  .solitaire-lobby__setup-heading {
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .solitaire-page--lobby > .solitaire-main {
+    width: min(100% - 1rem, 64rem);
+    padding-block: .65rem 1.4rem;
+  }
+
+  .solitaire-lobby__showcase {
+    padding: 1rem 1.25rem 1.3rem;
+  }
+
+  .solitaire-lobby__topline .solitaire-eyebrow {
+    font-size: .54rem;
+  }
+
+  .solitaire-lobby__cards {
+    flex-basis: 8.4rem;
+    min-height: 8.4rem;
+    max-height: 8.4rem;
+  }
+
+  .solitaire-lobby__card {
+    --ff-card-width: 5.25rem;
+  }
+
+  .solitaire-lobby h1 {
+    font-size: clamp(2.1rem, 9vw, 2.75rem);
+  }
+
+  .solitaire-lobby__showcase > p {
+    font-size: .78rem;
+  }
+
+  .solitaire-lobby__facts {
+    margin-top: .9rem;
+  }
+
+  .solitaire-lobby__setup {
+    padding: 1.35rem 1.25rem;
+  }
+
+  .solitaire-lobby__controls {
+    gap: .5rem;
+  }
+
+  .solitaire-lobby label {
+    min-height: 4rem;
+  }
+
+  .solitaire-lobby__actions {
+    grid-template-columns: 1fr;
+  }
+
+  .solitaire-panel .solitaire-lobby__actions button {
+    min-height: 2.9rem;
+  }
+}
+
 /* The host shell supplies the sole global navbar and the viewport boundary. */
 .solitaire-shell-body > .solitaire-page {
   height: 100%;
@@ -1496,18 +1571,15 @@ button.solitaire-pile,
     padding-inline: .25rem;
     font-size: .65rem;
   }
-
-  .practice-bot-page.solitaire-page .practice-bot-hero,
-  .practice-bot-page.solitaire-page .practice-bot-table > p { display: none; }
-  .practice-bot-page.solitaire-page .practice-bot-main { padding-top: .35rem; }
-  .practice-bot-page.solitaire-page .practice-bot-table { margin-block: .25rem; }
-  .practice-bot-page.solitaire-page .practice-bot-table__status { margin-bottom: .25rem; }
-  .practice-bot-page.solitaire-page .practice-bot-solitaire-opponents { margin-block: .25rem; }
-  .practice-bot-page.solitaire-page .solitaire-board {
-    height: clamp(26rem, calc(100dvh - 10.5rem), 42rem);
-  }
 }
 
 @media (min-width: 761px) {
   .solitaire-shell-body > .solitaire-page:not(.practice-bot-page) { height: 100%; }
+  .solitaire-shell-body > .solitaire-page.solitaire-page--lobby { overflow-y: auto; }
+  .solitaire-page.solitaire-page--lobby > .solitaire-main {
+    width: min(100% - 2rem, 64rem);
+    min-height: 0;
+    flex: 0 0 auto;
+    padding: clamp(.9rem, 4vh, 2.35rem) 0;
+  }
 }

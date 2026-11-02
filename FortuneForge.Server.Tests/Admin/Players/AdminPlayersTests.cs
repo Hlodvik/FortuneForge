@@ -166,6 +166,64 @@ public sealed class AdminPlayersFirestoreTests
     }
 
     [Fact]
+    public async Task Mines_settled_matches_and_wallet_events_are_visible_without_exposing_private_boards()
+    {
+        var (db, store) = Create();
+        await User(db, "alice", "Alice");
+        await Ledger(db, "mines-wager", "alice", "mines-wager", -1, -100);
+        await Ledger(db, "mines-payout", "alice", "mines-payout", 1.02, 102);
+        await db.Collection("cardGameResults").Document("mines-round").SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = "alice", ["game"] = "mines", ["mode"] = "credit", ["matchId"] = "mines-round", ["wagerCents"] = 100L,
+            ["payoutCents"] = 102L, ["netCents"] = 2L, ["settlementStatus"] = "settled",
+            ["startedAt"] = Timestamp.FromDateTime(new DateTime(2026, 10, 25, 12, 0, 0, DateTimeKind.Utc)),
+            ["completedAt"] = Timestamp.FromDateTime(new DateTime(2026, 10, 25, 12, 0, 5, DateTimeKind.Utc)),
+            // The admin projection must be safe even if an erroneous writer puts private state here.
+            ["privateRoundJson"] = "secret-mine-map", ["mineIndexes"] = new[] { 1L, 2L, 3L },
+        });
+        var match = Assert.Single((await store.MatchesAsync("alice", 25, null, default)).Items);
+        Assert.Equal("mines", match.Game);
+        Assert.Equal("credit", match.Mode);
+        Assert.Equal("mines-round", match.MatchId);
+        Assert.Equal(1m, match.WageredCredits);
+        Assert.Equal(1.02m, match.PaidCredits);
+        Assert.Equal(.02m, match.NetCredits);
+        var events = (await store.GamingAsync("alice", 25, null, default)).Items;
+        Assert.Equal(2, events.Count);
+        Assert.All(events, item => Assert.Equal("mines", item.Game));
+        var detail = (await store.DetailAsync("alice", default))!;
+        Assert.Equal(1m, detail.Summary.GamingWageredCredits);
+        Assert.Equal(1.02m, detail.Summary.GamingPaidCredits);
+        Assert.Equal(.02m, detail.Summary.GamingNetCredits);
+        var json = JsonSerializer.Serialize(match) + JsonSerializer.Serialize(events);
+        Assert.DoesNotContain("secret-mine-map", json);
+        Assert.DoesNotContain("privateRoundJson", json);
+        Assert.DoesNotContain("mineIndexes", json);
+        Assert.Empty((await store.MatchesAsync("bob", 25, null, default)).Items);
+    }
+
+    [Fact]
+    public async Task Mines_practice_matches_are_labeled_and_never_counted_as_paid_wallet_cashflow()
+    {
+        var (db, store) = Create();
+        await User(db, "alice", "Alice");
+        await db.Collection("cardGameResults").Document("mines-practice-round").SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = "alice", ["game"] = "mines", ["mode"] = "practice", ["matchId"] = "practice-round",
+            ["wagerCents"] = 100L, ["payoutCents"] = 250L, ["netCents"] = 150L, ["settlementStatus"] = "settled",
+        });
+        var match = Assert.Single((await store.MatchesAsync("alice", 25, null, default)).Items);
+        Assert.Equal("mines", match.Game);
+        Assert.Equal("practice", match.Mode);
+        Assert.Equal(1.5m, match.NetCredits);
+        Assert.Empty((await store.GamingAsync("alice", 25, null, default)).Items);
+        var summary = (await store.DetailAsync("alice", default))!.Summary;
+        Assert.Equal(0m, summary.GamingWageredCredits);
+        Assert.Equal(0m, summary.GamingPaidCredits);
+        Assert.Equal(0m, summary.GamingNetCredits);
+    }
+
+    [Fact]
     public async Task Truncated_totals_and_unclassified_or_subcent_events_never_claim_complete_lifetime_losses()
     {
         var (db, store) = Create(100); await User(db, "alice", "Alice");

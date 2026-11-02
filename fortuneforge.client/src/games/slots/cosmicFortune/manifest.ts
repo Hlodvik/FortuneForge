@@ -1,3 +1,4 @@
+import { withEngineGuide } from '../shared/engineGuide'
 import { COSMIC_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
@@ -49,7 +50,7 @@ const HELP: SlotHelpDefinition = {
   ],
 }
 
-export const COSMIC_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
+export const COSMIC_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   id: 'cosmic-fortune-experience-v1',
   cabinet: COSMIC_FORTUNE_CABINET_THEME,
   features: FEATURES,
@@ -70,7 +71,7 @@ export const COSMIC_FORTUNE_EXPERIENCE_SET: SlotExperienceSet = {
   mascot: null,
   sounds: COSMIC_FORTUNE_SOUNDS,
   rules: createSlotRulesSet('cosmic-fortune-v1'),
-}
+})
 
 export const COSMIC_FORTUNE_SLOT_GAME = defineSlotGame({
   id: 'cosmic-fortune',

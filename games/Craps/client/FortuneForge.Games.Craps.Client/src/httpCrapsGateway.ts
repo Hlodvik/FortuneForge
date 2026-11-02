@@ -2,6 +2,8 @@ import {
   CrapsGatewayError,
   type CrapsGateway,
   type CrapsExtraBetRequest,
+  type CrapsExtraBetKind,
+  type CrapsActionContext,
   type CrapsOutcome,
   type CrapsPhase,
   type CrapsRoll,
@@ -23,31 +25,52 @@ export class HttpCrapsGateway implements CrapsGateway {
     return this.request('/status', { signal }, isCrapsStatus)
   }
 
+  async getActiveRound(signal?: AbortSignal): Promise<CrapsRound | null> {
+    const response = await this.fetcher(`${this.basePath}/rounds/active`, { signal })
+    if (response.status === 204) return null
+    const value: unknown = await response.json().catch(() => null)
+    if (!response.ok) {
+      const error = isErrorResponse(value) ? value : null
+      throw new CrapsGatewayError(error?.message ?? `The Craps table request failed (${response.status}).`, error?.code, response.status)
+    }
+    if (!isCrapsRound(value)) throw new CrapsGatewayError('The Craps service returned an invalid response.')
+    return value
+  }
+
   getRound(roundId: string, signal?: AbortSignal): Promise<CrapsRound> {
     return this.request(`/rounds/${encodeURIComponent(roundId)}`, { signal }, matchingRound(roundId))
   }
 
-  startRound(stake: number, signal?: AbortSignal, extraBets?: readonly CrapsExtraBetRequest[]): Promise<CrapsRound> {
+  startRound(stake: number, signal?: AbortSignal, extraBets?: readonly CrapsExtraBetRequest[], operationId = crypto.randomUUID()): Promise<CrapsRound> {
     return this.request('/rounds', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ stake, extraBets: extraBets ?? [] }),
+      body: JSON.stringify({ stake, extraBets: extraBets ?? [], operationId }),
       signal,
     }, isCrapsRound)
   }
 
-  placeOdds(roundId: string, stake: number, signal?: AbortSignal): Promise<CrapsRound> {
+  placeOdds(roundId: string, stake: number, signal?: AbortSignal, operationId = crypto.randomUUID(), context?: CrapsActionContext): Promise<CrapsRound> {
     return this.request(`/rounds/${encodeURIComponent(roundId)}/odds`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ stake }),
+      body: JSON.stringify({ stake, operationId, ...context }),
       signal,
     }, matchingRound(roundId))
   }
 
-  roll(roundId: string, signal?: AbortSignal): Promise<CrapsRound> {
+  setWager(roundId: string, kind: CrapsExtraBetKind, stake: number, signal?: AbortSignal, operationId = crypto.randomUUID(), context?: CrapsActionContext): Promise<CrapsRound> {
+    return this.request(`/rounds/${encodeURIComponent(roundId)}/wagers`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ kind, stake, operationId, ...context }), signal,
+    }, matchingRound(roundId))
+  }
+
+  roll(roundId: string, signal?: AbortSignal, operationId = crypto.randomUUID(), context?: CrapsActionContext): Promise<CrapsRound> {
     return this.request(`/rounds/${encodeURIComponent(roundId)}/roll`, {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ operationId, ...context }),
       signal,
     }, matchingRound(roundId))
   }
@@ -83,6 +106,8 @@ function isCrapsStatus(value: unknown): value is CrapsStatus {
     && isPositiveNumber(value.stakeIncrement)
     && typeof value.mode === 'string'
     && value.mode.trim().length > 0
+    && (value.walletBalanceCents === undefined || isNonNegativeInteger(value.walletBalanceCents))
+    && (value.mode !== 'paid-pass-line' || isNonNegativeInteger(value.walletBalanceCents))
 }
 
 function isCrapsRound(value: unknown): value is CrapsRound {
@@ -97,6 +122,13 @@ function isCrapsRound(value: unknown): value is CrapsRound {
     && (value.lastOutcome === null || isOutcome(value.lastOutcome))
     && (value.extraBets === undefined || (Array.isArray(value.extraBets) && value.extraBets.every(isExtraBet))))) return false
 
+  if (value.walletBalanceCents !== undefined && !isNonNegativeInteger(value.walletBalanceCents)) return false
+  if (value.revision !== undefined && !isNonNegativeInteger(value.revision)) return false
+  if (value.totalWagerCents !== undefined && !isNonNegativeInteger(value.totalWagerCents)) return false
+  if (value.totalReturnCents !== undefined && !isNonNegativeInteger(value.totalReturnCents)) return false
+  if ([value.revision, value.totalWagerCents, value.totalReturnCents].some(field => field !== undefined)
+    && ![value.revision, value.totalWagerCents, value.totalReturnCents].every(isNonNegativeInteger)) return false
+
   const round = value as unknown as CrapsRound
   const latest = round.rolls.at(-1)
   const outcome = round.lastOutcome
@@ -109,10 +141,29 @@ function isCrapsRound(value: unknown): value is CrapsRound {
     if (round.phase === 'resolved' && !outcome.isTerminal) return false
     if (!matchesResult(outcome, round.point)) return false
   }
-  return (round.extraBets ?? []).every(bet => {
+  const extras = round.extraBets ?? []
+  const identities = extras.flatMap(bet => bet.wagerId ? [bet.wagerId] : [])
+  if (new Set(identities).size !== identities.length) return false
+  const active = extras.filter(bet => !bet.resolved && !bet.cancelled)
+  if (new Set(active.map(bet => bet.kind)).size !== active.length && round.revision !== undefined) return false
+  if (!extras.every(bet => {
+    if (bet.wagerId) {
+      if (typeof bet.cancelled !== 'boolean' || !Number.isSafeInteger(bet.placedForRoll) || bet.placedForRoll! < 1 || bet.placedForRoll! > round.rolls.length + 1) return false
+    } else if (bet.placedForRoll != null || bet.resolvedOnRoll != null) return false
+    if (bet.cancelled) return bet.resolved && !bet.won && bet.totalReturn === 0 && bet.resolvedOnRoll == null
+    if (bet.wagerId) {
+      if (bet.resolved) {
+        if (!Number.isSafeInteger(bet.resolvedOnRoll) || bet.resolvedOnRoll! < bet.placedForRoll! || bet.resolvedOnRoll! > round.rolls.length) return false
+        if (bet.kind !== 'odds' && bet.resolvedOnRoll !== bet.placedForRoll) return false
+      } else if (bet.resolvedOnRoll != null || round.phase === 'resolved' || bet.kind !== 'odds' && bet.placedForRoll !== round.rolls.length + 1) return false
+    }
     if (bet.kind === 'odds') return round.point !== null && (round.phase === 'resolved' ? bet.resolved : !bet.resolved)
-    return latest ? bet.resolved : !bet.resolved
-  })
+    return bet.wagerId ? true : latest ? bet.resolved : !bet.resolved
+  })) return false
+  const netStake = Math.round(round.stake * 100) + extras.filter(bet => !bet.cancelled).reduce((sum, bet) => sum + Math.round(bet.stake * 100), 0)
+  const returns = Math.round((round.lastOutcome?.totalReturn ?? 0) * 100) + extras.reduce((sum, bet) => sum + Math.round((bet.totalReturn ?? 0) * 100), 0)
+  return (round.totalWagerCents === undefined || round.totalWagerCents === netStake)
+    && (round.totalReturnCents === undefined || round.totalReturnCents === returns)
 }
 
 function matchingRound(roundId: string): (value: unknown) => value is CrapsRound {
@@ -123,6 +174,10 @@ function isExtraBet(value: unknown): boolean {
   return isRecord(value)
     && (value.kind === 'field' || value.kind === 'any-seven' || value.kind === 'any-craps' || value.kind === 'odds')
     && isPositiveNumber(value.stake)
+    && (value.cancelled === undefined || typeof value.cancelled === 'boolean')
+    && (value.wagerId == null || typeof value.wagerId === 'string' && value.wagerId.length > 0)
+    && (value.placedForRoll == null || isNonNegativeInteger(value.placedForRoll) && value.placedForRoll > 0)
+    && (value.resolvedOnRoll == null || isNonNegativeInteger(value.resolvedOnRoll) && value.resolvedOnRoll > 0)
     && typeof value.resolved === 'boolean'
     && typeof value.won === 'boolean'
     && (value.resolved
@@ -180,6 +235,10 @@ function isPositiveNumber(value: unknown): value is number {
 
 function isNonNegativeNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
 function isDie(value: unknown): value is number {

@@ -41,6 +41,20 @@ public sealed class GameReportsContractTests
         Assert.IsType<UnauthorizedObjectResult>(await controller.Create(Request, default)); Assert.Empty(store.Drafts);
     }
 
+    [Fact]
+    public async Task Mines_reports_are_recognized_from_the_server_catalogue()
+    {
+        var store = new Store();
+        var service = Service(store);
+        var receipt = await service.CreateAsync("actual-player", Key,
+            new("suggestion", "Please add a clearer cash-out explanation.", "/games/mines"), Now, default);
+        var draft = Assert.Single(store.Drafts);
+        Assert.Equal("mines", draft.GameId);
+        Assert.Equal("Mines", draft.GameName);
+        Assert.Equal("/games/mines", draft.Path);
+        Assert.Equal(receipt.Id, draft.Id);
+    }
+
     [Theory]
     [InlineData("missing-header")]
     [InlineData("untrusted-origin")]

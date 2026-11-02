@@ -1,8 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import '@fontsource-variable/sora'
-import { ForgeCreditAmount } from '../../components/ForgeCreditAmount'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
+import { AccountLobbyShell } from '../account/AccountLobbyShell'
 import { listAdminPaymentInvoices, type PaymentCheckout } from '../../features/payments/services/paymentsApi'
 import '../index.css'
 import './invoiceTheme.css'
@@ -37,16 +36,9 @@ export function AdminPaymentInvoicesPage() {
   }
 
   return (
-    <div className="player-page player-page--credits player-page--invoice">
-      <header className="landing-bar">
-        <a className="landing-brand" href="/" aria-label="Fortune Forge home"><span className="landing-brand__spark" aria-hidden="true">✦</span><span>Fortune Forge</span></a>
-        <div className="landing-bar__account">
-          {account !== null && <ForgeCreditAmount amount={account.balances.slotsCredits} />}
-          <PaymentAlertsMenu />
-          <nav className="landing-nav" aria-label="Admin invoice navigation"><a className="landing-nav__link" href="/home">Home</a></nav>
-        </div>
-      </header>
-      <main className="invoice-main">
+    <AccountLobbyShell account={account} activeNav={null}>
+      <div className="invoice-main">
+        <nav className="invoice-page__navigation" aria-label="Admin invoice navigation"><a href="/admin">← Admin portal</a><PaymentAlertsMenu /></nav>
         {isLoading && <div className="player-state" role="status">Opening finance invoices…</div>}
         {!isLoading && accountError !== null && <div className="player-state player-state--error" role="alert"><strong>Admin invoices could not be opened.</strong><span>{accountError}</span><button className="landing-button landing-button--secondary" type="button" onClick={reload}>Try again</button></div>}
         {!isLoading && account !== null && account.role.toLowerCase() !== 'admin' && <div className="player-state player-state--error" role="alert"><strong>Admin access required.</strong><span>Your account cannot view other customers’ invoices.</span><a href="/home">Return home</a></div>}
@@ -75,8 +67,8 @@ export function AdminPaymentInvoicesPage() {
             )}
           </section>
         )}
-      </main>
-    </div>
+      </div>
+    </AccountLobbyShell>
   )
 }
 

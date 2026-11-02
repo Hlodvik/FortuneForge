@@ -1,0 +1,273 @@
+/* Casino War keeps the shared felt and chip artwork used by the other table games. */
+.ff-casino-war {
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  background: var(--ff-casino-felt-material);
+}
+
+:where(.in-game-shell__body) > .ff-casino-war { height: 100%; }
+
+.ff-casino-war__table {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(3rem, auto) minmax(0, 1fr) minmax(5.8rem, auto) auto;
+  border: 0;
+  border-radius: 0;
+  background: var(--ff-casino-felt-material);
+  box-shadow: inset 0 0 6rem rgb(0 28 19 / 25%);
+}
+
+.ff-casino-war__table::before { display: none; }
+
+.ff-casino-war__table-top { min-height: 3rem; padding-top: .25rem; }
+
+.ff-casino-war__sound {
+  position: absolute;
+  z-index: 5;
+  top: .7rem;
+  left: .8rem;
+  min-width: 3.1rem;
+  min-height: 2rem;
+  padding: .25rem .45rem;
+  border: 1px solid rgb(234 243 226 / 45%);
+  border-radius: 999px;
+  background: rgb(0 28 22 / 70%);
+  color: #f5f5e9;
+  font-size: .72rem;
+  cursor: pointer;
+}
+
+.ff-casino-war__felt-title {
+  display: grid;
+  min-width: min(17rem, 52vw);
+  justify-items: center;
+  color: rgb(244 248 230 / 82%);
+  text-align: center;
+  text-shadow: 0 1px .65rem rgb(0 22 18 / 65%);
+  pointer-events: none;
+}
+
+.ff-casino-war__felt-title strong {
+  font: italic 900 clamp(1.35rem, 2.9vw, 2.55rem)/1 Georgia, 'Times New Roman', serif;
+  letter-spacing: -.08em;
+  white-space: nowrap;
+}
+
+.ff-casino-war__felt-title strong span { font-size: 1.2em; }
+
+.ff-casino-war__felt-title i {
+  display: block;
+  width: 100%;
+  height: .4rem;
+  margin-top: -.1rem;
+  border-bottom: 1px solid rgb(236 247 226 / 50%);
+  border-radius: 0 0 50% 50%;
+}
+
+.ff-casino-war__bets {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  min-height: 5.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 5vw, 4rem);
+  padding: .75rem 4.75rem .3rem;
+}
+
+.ff-casino-war__bet-spot {
+  position: relative;
+  display: grid;
+  width: clamp(4.4rem, 6.5vw, 5.3rem);
+  height: clamp(4.4rem, 6.5vw, 5.3rem);
+  flex: 0 0 auto;
+  place-items: center;
+  color: #f5f5e9;
+  font: 750 .72rem/1 'Avenir Next', 'Trebuchet MS', sans-serif;
+  text-align: center;
+  text-shadow: 0 1px .4rem #082c20;
+}
+
+.ff-casino-war__bet-label {
+  position: absolute;
+  z-index: 2;
+  top: -.55rem;
+  left: 50%;
+  white-space: nowrap;
+  text-transform: uppercase;
+  transform: translateX(-50%);
+}
+
+.ff-casino-war__diamond {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.ff-casino-war__diamond::before {
+  position: absolute;
+  inset: .78rem;
+  border: 2px solid rgb(234 243 226 / 70%);
+  border-radius: .08rem;
+  box-shadow: inset 0 0 0 1px rgb(10 45 32 / 35%);
+  content: '';
+  transform: rotate(45deg);
+}
+
+.ff-casino-war__diamond:hover:not(:disabled)::before { border-color: #fff; }
+.ff-casino-war__diamond:disabled { opacity: 1 !important; cursor: default; }
+
+.ff-casino-war__placed-chips {
+  position: absolute;
+  z-index: 3;
+  top: .7rem;
+  left: 50%;
+  display: block;
+  width: clamp(2.8rem, 4vw, 3.25rem);
+  height: clamp(2.8rem, 4vw, 3.25rem);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.ff-casino-war__placed-chips img {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 .12rem .12rem rgb(0 20 17 / 55%));
+  pointer-events: none;
+}
+
+.ff-casino-war__placed-chips:disabled { opacity: 1 !important; cursor: default; }
+
+.ff-casino-war__chip-count {
+  position: absolute;
+  z-index: 4;
+  right: -.3rem;
+  bottom: -.25rem;
+  min-width: 1.3rem;
+  padding: .15rem;
+  border-radius: 999px;
+  background: #082821;
+  color: #f7f5e7;
+  font-size: .55rem;
+}
+
+.ff-casino-war__bet-amount {
+  position: absolute;
+  z-index: 4;
+  bottom: -.1rem;
+  left: 50%;
+  min-width: 2.8rem;
+  padding: .13rem .28rem;
+  border-radius: .2rem;
+  background: rgb(0 28 29 / 86%);
+  color: #fff;
+  font-size: .72rem;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+
+.ff-casino-war__controls {
+  min-height: 5rem;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(180deg, transparent, rgb(0 18 14 / 55%));
+  box-shadow: none;
+}
+
+.ff-casino-war__chip-picker {
+  position: absolute;
+  z-index: 7;
+  bottom: calc(100% - .4rem);
+  left: max(.35rem, calc(50% - 17rem));
+  display: grid;
+  width: 48px;
+  grid-template-rows: 30px 48px 30px;
+  justify-items: center;
+}
+
+.ff-casino-war__chip-step,
+.ff-casino-war__chip-current,
+.ff-casino-war__chip-options button {
+  display: grid;
+  width: 48px;
+  height: 100%;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.ff-casino-war__chip-step { color: #f5f7e8; }
+.ff-casino-war__chip-step svg { width: 25px; height: 25px; fill: none; stroke: currentColor; stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; }
+.ff-casino-war__chip-current img,
+.ff-casino-war__chip-options img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+.ff-casino-war__chip-options {
+  position: absolute;
+  top: 28px;
+  left: calc(100% + .4rem);
+  display: flex;
+  gap: .15rem;
+  padding: .25rem;
+  border: 1px solid rgb(220 232 204 / 35%);
+  border-radius: 999px;
+  background: rgb(0 24 20 / 94%);
+  box-shadow: 0 .5rem 1rem #0007;
+}
+.ff-casino-war__chip-options button { width: 42px; height: 42px; }
+.ff-casino-war__chip-options button:hover { transform: translateY(-2px); }
+
+@media (max-width: 720px) {
+  .ff-casino-war { overflow: hidden; padding: 0; }
+  .ff-casino-war__table { border: 0; border-radius: 0; grid-template-rows: minmax(2.5rem, auto) minmax(0, 1fr) minmax(5rem, auto) auto; }
+  .ff-casino-war__table-top { min-height: 2.5rem; }
+  .ff-casino-war__felt-title strong { font-size: clamp(1.2rem, 4.5vw, 1.8rem); }
+  .ff-casino-war__bets { min-height: 5rem; padding: .6rem 3.4rem .2rem; gap: clamp(.5rem, 4vw, 1.5rem); }
+  .ff-casino-war__bet-spot { width: 4.1rem; height: 4.1rem; font-size: .58rem; }
+  .ff-casino-war__diamond::before { inset: .62rem; }
+  .ff-casino-war__placed-chips { width: 2.7rem; height: 2.7rem; top: .6rem; }
+  .ff-casino-war__bet-amount { font-size: .63rem; }
+  .ff-casino-war__controls { display: flex; min-height: 4.7rem; margin: 0; padding: .45rem; }
+  .ff-casino-war__chip-picker { left: .25rem; }
+  .ff-casino-war__balance { min-width: 0; }
+}
+
+@media (max-width: 380px) {
+  .ff-casino-war__chip-options { gap: 1px; padding: 3px; }
+  .ff-casino-war__chip-options button { width: 36px; height: 36px; }
+}
+
+@media (max-height: 520px) {
+  .ff-casino-war__table { grid-template-rows: 2rem minmax(0, 1fr) 3.9rem 3.8rem; }
+  .ff-casino-war__table-top { min-height: 2rem; }
+  .ff-casino-war__felt-title strong { font-size: 1.2rem; }
+  .ff-casino-war__bets { min-height: 3.9rem; padding: .25rem 4rem 0; }
+  .ff-casino-war__bet-spot { width: 3.2rem; height: 3.2rem; font-size: .54rem; }
+  .ff-casino-war__bet-label { top: -.35rem; }
+  .ff-casino-war__diamond::before { inset: .55rem; border-width: 1px; }
+  .ff-casino-war__placed-chips { width: 2.1rem; height: 2.1rem; top: .45rem; }
+  .ff-casino-war__bet-amount { bottom: -.05rem; font-size: .58rem; }
+  .ff-casino-war__controls { min-height: 3.8rem; }
+  .ff-casino-war__chip-picker { grid-template-rows: 22px 38px 22px; width: 38px; bottom: calc(100% - .5rem); }
+  .ff-casino-war__chip-step, .ff-casino-war__chip-current { width: 38px; }
+  .ff-casino-war__chip-options { top: 20px; }
+  .ff-casino-war__chip-options button { width: 36px; height: 36px; }
+}

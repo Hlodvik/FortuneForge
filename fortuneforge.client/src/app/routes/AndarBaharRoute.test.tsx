@@ -106,7 +106,13 @@ describe('Andar Bahar connected route', () => {
 
   it('uses shared navigation with real account exits', () => {
     render()
-    expect(host.querySelector('.andar-bahar-page [data-game-navbar]')).not.toBeNull()
+    expect(host.querySelectorAll('[data-game-navbar]')).toHaveLength(1)
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    const navbar = host.querySelector('[data-game-navbar]')!
+    expect(navbar.parentElement).toBe(host.querySelector('.in-game-shell'))
+    expect(navbar.closest('[data-game-surface]')).toBeNull()
+    expect(host.querySelector('.andar-bahar-page')?.matches('[data-game-surface]')).toBe(true)
+    expect(navbar.querySelector('[aria-label="Balance R100.00. Add funds"]')).not.toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
     expect(host.querySelector('.in-game-navbar__title')).toBeNull()

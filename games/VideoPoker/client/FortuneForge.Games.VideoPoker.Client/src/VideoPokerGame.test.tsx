@@ -60,8 +60,9 @@ describe('VideoPokerGame', () => {
     const user = userEvent.setup()
     render(<VideoPokerGame gateway={fakeGateway()} />)
 
-    const wager = await screen.findByRole('combobox', { name: 'Coin wager' })
-    await user.selectOptions(wager, '5')
+    await user.click(await screen.findByRole('button', { name: 'MAX 5' }))
+
+    expect(screen.getByLabelText('Wager 5 coins')).toBeTruthy()
 
     expect(screen.getByRole('table', { name: 'Jacks or Better paytable' })).toBeTruthy()
     expect(screen.getByRole('cell', { name: '4,000 coins' })).toBeTruthy()
@@ -71,6 +72,25 @@ describe('VideoPokerGame', () => {
     await user.click(screen.getByRole('button', { name: 'Video Poker basic guide' }))
     expect(screen.getByText('Tap the cards you want to keep. A held card stays in your final hand.')).toBeTruthy()
     expect(screen.getByText('Press Draw once. Every card you did not hold is replaced.')).toBeTruthy()
+  })
+
+  it('builds a five-coin wager from denomination chips and prevents exceeding the table maximum', async () => {
+    const user = userEvent.setup()
+    const createRound = vi.fn().mockResolvedValue({ ...awaitingRound, coinsWagered: 5, wager: 5 })
+    render(<VideoPokerGame gateway={fakeGateway({ createRound })} />)
+
+    await user.click(await screen.findByRole('button', { name: 'Add R3 chip to wager' }))
+    expect(screen.getByLabelText('Wager 4 coins')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Add R2 chip to wager' }) as HTMLButtonElement).disabled).toBe(true)
+    await user.click(screen.getByRole('button', { name: 'Add R1 chip to wager' }))
+    expect(screen.getByLabelText('Wager 5 coins')).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Add R1 chip to wager' }) as HTMLButtonElement).disabled).toBe(true)
+
+    await user.click(screen.getByRole('button', { name: 'Undo wager chip' }))
+    expect(screen.getByLabelText('Wager 4 coins')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Add R1 chip to wager' }))
+    await user.click(screen.getByRole('button', { name: 'Deal' }))
+    expect(createRound).toHaveBeenCalledWith(5, expect.objectContaining({ handCount: 1 }))
   })
 
   it('deals five cards, toggles holds, and sends zero-based positions when drawing', async () => {
@@ -106,7 +126,7 @@ describe('VideoPokerGame', () => {
 
     const deal = await screen.findByRole('button', { name: 'Deal' })
     await user.click(deal)
-    expect((screen.getByRole('button', { name: 'Dealing…' }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Dealing' }) as HTMLButtonElement).disabled).toBe(true)
     expect(gateway.createRound).toHaveBeenCalledTimes(1)
 
     resolveRound?.(awaitingRound)
@@ -169,9 +189,8 @@ describe('VideoPokerGame', () => {
 
     await user.click(await screen.findByRole('button', { name: 'New Hand' }))
 
-    const wager = screen.getByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
-    expect(wager.value).toBe('4')
-    expect(screen.getByText('Wager R4.00')).toBeTruthy()
+    expect(screen.getByLabelText('Wager 4 coins')).toBeTruthy()
+    expect(screen.getByText('4 COINS · R4.00 TOTAL BET')).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(false)
     expect(getRound).toHaveBeenCalledTimes(1)
 
@@ -191,7 +210,7 @@ describe('VideoPokerGame', () => {
     await user.click(newHand)
 
     const retry = screen.getByRole('button', { name: 'Retry connection' })
-    expect(screen.queryByRole('combobox', { name: 'Coin wager' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Add R1 chip to wager' })).toBeNull()
     await waitFor(() => expect(document.activeElement).toBe(retry))
   })
 
@@ -203,19 +222,20 @@ describe('VideoPokerGame', () => {
       .mockResolvedValueOnce({ ...awaitingRound, coinsWagered: 2, wager: 2, balance: 1 })
     render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, createRound })} />)
 
-    const wager = await screen.findByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
-    await user.selectOptions(wager, '5')
+    await user.click(await screen.findByRole('button', { name: 'MAX 5' }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     await screen.findByText('R3.00', { selector: '.ff-video-poker__balance strong' })
 
     expect(getStatus).toHaveBeenCalledTimes(2)
-    expect(wager.disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'Undo wager chip' }) as HTMLButtonElement).disabled).toBe(false)
     expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
     expect((screen.getByRole('button', { name: 'Deal' }) as HTMLButtonElement).disabled).toBe(true)
     const rejectedKey = createRound.mock.calls[0]?.[1]?.idempotencyKey
     expect(rejectedKey).toMatch(/^video-poker-deal-/)
 
-    await user.selectOptions(wager, '2')
+    await user.click(screen.getByRole('button', { name: 'Undo wager chip' }))
+    await user.click(screen.getByRole('button', { name: 'Undo wager chip' }))
+    await user.click(screen.getByRole('button', { name: 'Add R2 chip to wager' }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     await screen.findByRole('button', { name: 'Draw' })
 
@@ -235,13 +255,13 @@ describe('VideoPokerGame', () => {
     render(<VideoPokerGame playerId="player-7" gateway={fakeGateway({ getStatus, createRound })} />)
 
     await screen.findByText('R3.00', { selector: '.ff-video-poker__balance strong' })
-    const wager = screen.getByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement
-    expect(wager.disabled).toBe(false)
+    expect((screen.getByRole('button', { name: 'Undo wager chip' }) as HTMLButtonElement).disabled).toBe(false)
     expect(sessionStorage.getItem('fortuneforge:video-poker:pending:player-7')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Retry restoration' })).toBeNull()
     expect(createRound).toHaveBeenNthCalledWith(1, 5, expect.objectContaining({ idempotencyKey: rejectedKey, handCount: 1, signal: expect.any(AbortSignal) }))
 
-    await user.selectOptions(wager, '2')
+    await user.click(screen.getByRole('button', { name: 'Undo wager chip' }))
+    await user.click(screen.getByRole('button', { name: 'Add R2 chip to wager' }))
     await user.click(screen.getByRole('button', { name: 'Deal' }))
     await screen.findByRole('button', { name: 'Draw' })
 
@@ -315,7 +335,7 @@ describe('VideoPokerGame', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Deal' }))
     await screen.findByRole('alert')
-    expect((screen.getByRole('combobox', { name: 'Coin wager' }) as HTMLSelectElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: 'Add R1 chip to wager' }) as HTMLButtonElement).disabled).toBe(true)
     await user.click(screen.getByRole('button', { name: 'Retry Deal' }))
     await screen.findByRole('button', { name: 'Draw' })
 

@@ -1,6 +1,16 @@
 # Catalogue slot audio — source and delivery decisions
 
-Checked October 31, 2026 (Central time). This record covers the twenty current slot sound sets plus their shared default. It records a concrete delivery choice and source evidence; it does not certify legal compliance or claim the files were auditioned.
+Initial record October 31, 2026 (Central time); current original-suite update November 2 below. This record covers the twenty slot sound sets plus their shared default. It records concrete delivery choices and source evidence; it does not certify legal compliance.
+
+## November 2 original theme suites — current seventeen-title selection
+
+Seventeen titles now select twenty original, offline-produced Ogg cues per title at `public/assets/slots/audio-suites/v1/{slug}/{cue}.ogg`. Neon Nights uses the unchanged original WAV masters the user approved; the other sixteen suites use distinct title-specific original synthesized compositions. The aggregate [runtime manifest](../../../../../public/assets/slots/audio-suites/v1/manifest.json), per-title manifests beside each suite, and [pipeline documentation](../../../../../../tools/audio-suites/README.md) record original-source declarations, source/export SHA-256 hashes, durations, playback mix levels, and decoded-sample verification. The retained generation/verification artifacts are under `output/artwork/themed-slots-audio-2026-11-02/`; this configuration work does not claim an additional listening review of all sixteen new palettes.
+
+The eligible slugs are `cosmic-fortune`, `high-noon-fortune`, `gods-of-olympus`, `royal-draw`, `samurai-fortune`, `robot-revolution`, `phantom-manor`, `ocean-odyssey`, `jungle-jackpot`, `candy-carnival`, `desert-treasures`, `neon-nights`, `nordic-legends`, `rainbow-realm`, `arcane-archives`, `dino-dominion`, and `reel-riches`. Sound-set IDs and game rules remain unchanged. Midnight Vault (`dragon-hoard`), Wukong and Pirates are explicitly excluded; their existing selections and cue-key sets remain.
+
+Music switches between one base and one bonus bed; auto play adds no extra music layer. Base/bonus reel textures and landings are separate. The four collection cues map to the existing `sync`, `rows`, `paw`, and `rand` tracks, with at most one accent per track per result and one live voice per track. Shared collection filenames retain the Neon delivery identities (`flamingo`, `dice`, `sunset`, `arcade`); they do not rename other games' symbols. Each result chooses one complete stinger, with actual bonus completion taking priority over a simultaneous win stinger. The 777 cue reads the authoritative separate `bananaBonusPoints` award. Completion is dispatched only from a newly processed final free-spin response, not mounting or restoring a page. User volume, mute and results-only preferences remain effective; no `Audio` objects are created on hook mount.
+
+The October 31 nineteen-disabled-score and retained Reel Riches bonus-palette statements below describe the historical fallback. The new seventeen suites supersede those active selections; the old source files remain. The two excluded OpenTracks base selections remain disabled, and Midnight retains its separately documented selection. Focused suite tests cover catalogue opt-in/exclusion, single-stinger selection, final-spin/777 semantics, music exclusivity, bounded collection voices, lazy allocation and preferences. The coordinating owner runs the combined focused checks and release build; no test result is claimed here before that run.
 
 ## Recorded music retained but disabled
 

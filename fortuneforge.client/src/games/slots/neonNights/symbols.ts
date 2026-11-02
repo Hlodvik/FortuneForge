@@ -1,28 +1,28 @@
-import arcadeJoystick from '../../../assets/slots/games/neon-nights/optimized/neon-nights-arcade-joystick-v2.webp'
+import ornateK from '../../../assets/slots/games/neon-nights/optimized/neon-nights-ornate-k-v3.webp'
 import arcadeChip from '../../../assets/slots/games/neon-nights/optimized/neon-nights-arcade-chip-v2.webp'
-import blueDiamondBadge from '../../../assets/slots/games/neon-nights/optimized/neon-nights-blue-diamond-badge-v2.webp'
+import blueDice from '../../../assets/slots/games/neon-nights/optimized/neon-nights-dice-v4.webp'
 import cassette from '../../../assets/slots/games/neon-nights/optimized/neon-nights-cassette-v2.webp'
-import cherry from '../../../assets/slots/games/neon-nights/optimized/neon-nights-cherry-v2.webp'
+import ornateJ from '../../../assets/slots/games/neon-nights/optimized/neon-nights-ornate-j-v3.webp'
 import diamondShades from '../../../assets/slots/games/neon-nights/optimized/neon-nights-diamond-shades-v2.webp'
 import djDeck from '../../../assets/slots/games/neon-nights/optimized/neon-nights-dj-deck-v2.webp'
-import electricStar from '../../../assets/slots/games/neon-nights/optimized/neon-nights-electric-star-v2.webp'
-import greenMusicBadge from '../../../assets/slots/games/neon-nights/optimized/neon-nights-green-music-badge-v2.webp'
-import neonSkyline from '../../../assets/slots/games/neon-nights/optimized/neon-nights-neon-skyline-v2.webp'
+import discoBall from '../../../assets/slots/games/neon-nights/optimized/neon-nights-disco-ball-v4.webp'
+import arcadeCabinet from '../../../assets/slots/games/neon-nights/optimized/neon-nights-arcade-cabinet-v4.webp'
+import ornateA from '../../../assets/slots/games/neon-nights/optimized/neon-nights-ornate-a-v3.webp'
 import neonBoulevard from '../../../assets/slots/games/neon-nights/optimized/neon-nights-boulevard-v2.webp'
 import neonCabinetEmblem from '../../../assets/slots/games/neon-nights/optimized/neon-nights-cabinet-emblem-v2.webp'
-import nightclubDoorway from '../../../assets/slots/games/neon-nights/optimized/neon-nights-nightclub-doorway-v2.webp'
-import orangeStarBadge from '../../../assets/slots/games/neon-nights/optimized/neon-nights-orange-star-badge-v2.webp'
-import pinkHeartBadge from '../../../assets/slots/games/neon-nights/optimized/neon-nights-pink-heart-badge-v2.webp'
-import rollerSkate from '../../../assets/slots/games/neon-nights/optimized/neon-nights-roller-skate-v2.webp'
+import bonusSign from '../../../assets/slots/games/neon-nights/optimized/neon-nights-bonus-sign-v4.webp'
+import neonSunset from '../../../assets/slots/games/neon-nights/optimized/neon-nights-sunset-v4.webp'
+import pinkFlamingo from '../../../assets/slots/games/neon-nights/optimized/neon-nights-flamingo-v4.webp'
+import ornateQ from '../../../assets/slots/games/neon-nights/optimized/neon-nights-ornate-q-v3.webp'
 import sportsCar from '../../../assets/slots/games/neon-nights/optimized/neon-nights-sports-car-v2.webp'
-import tripleArcadeTokens from '../../../assets/slots/games/neon-nights/optimized/neon-nights-triple-arcade-tokens-v2.webp'
+import tripleSevens from '../../../assets/slots/games/neon-nights/optimized/neon-nights-triple-sevens-v4.webp'
 import voltageBolt from '../../../assets/slots/games/neon-nights/optimized/neon-nights-voltage-bolt-v2.webp'
 
 export const NEON_NIGHTS_SYMBOL_IMAGES = {
-  '2': cherry, '3': cassette, '4': rollerSkate, '5': arcadeJoystick, '6': sportsCar, '7': neonSkyline,
-  ACE: diamondShades, FREE: nightclubDoorway, POWER: electricStar, BOLT: voltageBolt,
-  BANANA: tripleArcadeTokens, PAW: djDeck,
-  SEAL_SYNC: pinkHeartBadge, SEAL_ROWS: blueDiamondBadge, SEAL_PAW: orangeStarBadge, SEAL_RAND: greenMusicBadge,
+  '2': ornateJ, '3': cassette, '4': ornateQ, '5': ornateK, '6': sportsCar, '7': ornateA,
+  ACE: diamondShades, FREE: bonusSign, POWER: discoBall, BOLT: voltageBolt,
+  BANANA: tripleSevens, PAW: djDeck,
+  SEAL_SYNC: pinkFlamingo, SEAL_ROWS: blueDice, SEAL_PAW: neonSunset, SEAL_RAND: arcadeCabinet,
   VALUE: arcadeChip,
   CABINET_EMBLEM: neonCabinetEmblem, BACKDROP: neonBoulevard,
 } as const

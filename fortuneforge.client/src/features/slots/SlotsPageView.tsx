@@ -136,6 +136,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     : formatRand(activeWagerDisplay)
   const midnightVaultBonusVisible = isMidnightVault && (freeSpinsRemaining > 0 || isSpecialGameActive)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
+  const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune
+  const usesPiratesControls = isPiratesFortune || usesSidecarControls
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
   const reelRichesIntroVisible = isReelRiches && freeSpinsRemaining > 0 &&
     !isSpecialGameActive && !isSpinning
@@ -207,7 +209,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     !rainbowIntroVisible && rainbowBonusSummary === null &&
     !((isReelRiches || isRainbowRealm) && isSpecialGameActive && slotOutcome.label === 'Free game ready') &&
     (!isMidnightVault || slotOutcome.tone === 'loss')
-  const utilityButtons = <div className={`slots-page__utility-buttons${isPiratesFortune ? ' slots-page__utility-buttons--pirates' : ''}`} role="group" aria-label="Game options">
+  const utilityButtons = <div className={`slots-page__utility-buttons${usesPiratesControls ? ' slots-page__utility-buttons--pirates' : ''}`} role="group" aria-label="Game options">
     <button
       className="slots-page__help-button"
       type="button"
@@ -242,8 +244,8 @@ export function SlotsPageView(controller: SlotsPageController) {
   const guideSymbols = isMidnightVault ? midnightVaultGuideForModel(symbolSet, controller.midnightBonusRound?.mathModelId) : symbolSet
   const symbolValueGuide = <SymbolValueGuide
     symbolSet={guideSymbols}
-    showSidePanel={isPiratesFortune}
-    sidePanelClassName={isPiratesFortune ? 'symbol-value-guide--pirates' : undefined}
+    showSidePanel={usesPiratesControls}
+    sidePanelClassName={usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
     showValueTokens={Boolean(moneyGrabFeature)}
     theme={isMidnightVault ? 'midnight-vault' : undefined}
     isOpen={controller.isSymbolGuideOpen}
@@ -265,6 +267,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         : slotsPageClassName}
       style={pageStyle}
       data-slot-theme={cabinetTheme.id}
+      data-slot-controls={usesSidecarControls ? 'sidecar' : undefined}
       data-slot-celebration={cabinetTheme.celebrationEffect}
       data-special-round={specialRound?.id}
       data-special-earn-style={specialRound?.earnStyle}
@@ -452,7 +455,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             />
           </div>
 
-          <div className="slots-page__playbar" aria-label={isPiratesFortune ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
+          <div className="slots-page__playbar" aria-label={usesPiratesControls ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
             {isMidnightVault && (
               <div className="midnight-vault__utility-controls">
                 <button type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={isHelpOpen}
@@ -466,9 +469,9 @@ export function SlotsPageView(controller: SlotsPageController) {
                 {balanceActionHref !== null && <PaymentAlertsMenu />}
               </div>
             )}
-            {!isPiratesFortune && symbolValueGuide}
+            {!usesPiratesControls && symbolValueGuide}
 
-            {!isPiratesFortune && (
+            {!usesPiratesControls && (
               <div
                 ref={creditTileRef}
                 className="slots-page__balance slots-page__control-tile"
@@ -496,10 +499,10 @@ export function SlotsPageView(controller: SlotsPageController) {
               </div>
             )}
 
-            {isPiratesFortune ? (
+            {usesPiratesControls ? (
               <PiratesSpinControls
                 activeWager={activeWagerDisplay}
-                disabled={isDemoSpinDisabled}
+                disabled={isDemoSpinDisabled || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -618,15 +621,15 @@ export function SlotsPageView(controller: SlotsPageController) {
             </div>
             <div className="slots-page__utility-controls" aria-label="Game options">
               {balanceActionHref !== null && <PaymentAlertsMenu />}
-              {!isPiratesFortune && utilityButtons}
+              {!usesPiratesControls && utilityButtons}
             </div>
           </div>}
         </div>
         </div>
       </main>
 
-      {isPiratesFortune && symbolValueGuide}
-      {isPiratesFortune && utilityButtons}
+      {usesPiratesControls && symbolValueGuide}
+      {usesPiratesControls && utilityButtons}
 
       {lastSpinOutcome && lastSpinOutcome.kind !== 'loss' && cabinetTheme.celebrationEffect && !reelRichesBonusVisible && (
         <div

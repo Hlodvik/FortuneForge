@@ -1,0 +1,88 @@
+{
+  "kind": "User-approved Neon Nights original artwork",
+  "approvedDate": "2026-11-02",
+  "generation": "Built-in image_gen using previously accepted original project artwork as style references. Backgrounds removed through image_gen; deterministic crops and proportional containment exported to WebP.",
+  "selection": "Ornamental A/K/Q/J; disco ball and777 from preview1; BONUS sign/flamingo/dice/sunset from preview3; arcade cabinet from preview4. Guitar and all other rejected proposals are excluded.",
+  "dimensions": [
+    320,
+    320
+  ],
+  "alpha": true,
+  "sources": [
+    {
+      "localReviewSource": "output/artwork/neon-nights-2026-11-02/letters-v3/approved-board.png",
+      "sha256": "87857c22b7bc239f3a5ffb2d4ac6473bc4ff8e2903f10b50d068cb0568bbc7f4"
+    },
+    {
+      "localReviewSource": "output/artwork/neon-nights-2026-11-02/remaining-symbols-preview-v1/review-board.png",
+      "sha256": "b186a27ea06610c4f7c339d2eb22758e2b19e502348a259444a45ebac006b9c4"
+    },
+    {
+      "localReviewSource": "output/artwork/neon-nights-2026-11-02/remaining-symbols-preview-v3/review-board.png",
+      "sha256": "efa0400a785c8f7e6397e81117446bbde0ccde40b19a8ed94335418e17e39170"
+    },
+    {
+      "localReviewSource": "output/artwork/neon-nights-2026-11-02/remaining-symbols-preview-v4/arcade-cabinet.png",
+      "sha256": "dafb65538f04c5c297db8b9a78b8cd87974c56ee8d2c353d04f4c77720b2f70c"
+    }
+  ],
+  "assets": [
+    {
+      "file": "optimized/neon-nights-ornate-a-v3.webp",
+      "bytes": 63058,
+      "sha256": "c0bef976b443f033a777fabdee212e6c824d9cfa8c9b6394a8638a3a2c4a13f7"
+    },
+    {
+      "file": "optimized/neon-nights-ornate-k-v3.webp",
+      "bytes": 78520,
+      "sha256": "e1c0093c96eda9af4737de27a7f078c7914a470929635e48992ea56d5426f01d"
+    },
+    {
+      "file": "optimized/neon-nights-ornate-q-v3.webp",
+      "bytes": 78116,
+      "sha256": "a1cd7da3e63d4afe10fe95f5cd3db2e02f15d76c02d62fcb61dbeac2d7dcaadc"
+    },
+    {
+      "file": "optimized/neon-nights-ornate-j-v3.webp",
+      "bytes": 52362,
+      "sha256": "b446bf8adce3c4a2588785c08ea82ac6c3cb0e6b7c3e7581eb06b4150a1e8b2e"
+    },
+    {
+      "file": "optimized/neon-nights-bonus-sign-v4.webp",
+      "bytes": 27742,
+      "sha256": "bdccfe2be311601529645e6c7b72d2b1650c9bf42dfc2aa3411f24fedc06fe03"
+    },
+    {
+      "file": "optimized/neon-nights-disco-ball-v4.webp",
+      "bytes": 32978,
+      "sha256": "badcdb624af54876da56c28c95d3ad64848056e249cb4a2b4d5d11bc4a6e7ea4"
+    },
+    {
+      "file": "optimized/neon-nights-triple-sevens-v4.webp",
+      "bytes": 28294,
+      "sha256": "18a96a699c1a2d80ac0fd22bd79d08dac25b03faffd4d8d3763700983431ac8a"
+    },
+    {
+      "file": "optimized/neon-nights-flamingo-v4.webp",
+      "bytes": 26880,
+      "sha256": "86d0ccea7b5b007a387d39e846575381007e31ecd663123031e50ec198c308f9"
+    },
+    {
+      "file": "optimized/neon-nights-dice-v4.webp",
+      "bytes": 26238,
+      "sha256": "b37a8c6cfba64249ce22dd419b8ec41b6482e23c89dfa2ae1d7de0179edae006"
+    },
+    {
+      "file": "optimized/neon-nights-sunset-v4.webp",
+      "bytes": 28408,
+      "sha256": "56b936e66d1635cf6f723d566963c09100fb3267097b6a9c861406beac60792b"
+    },
+    {
+      "file": "optimized/neon-nights-arcade-cabinet-v4.webp",
+      "bytes": 25946,
+      "sha256": "d00703abba5563972a0668f05da38348a56fd7bbbbf429dd05a47fc57ab87135"
+    }
+  ],
+  "existingArt": "Previously accepted car, glasses and cassette are retained unchanged; their existing runtime files are not replaced.",
+  "gameplay": "Artwork and labels only. Reel weights, payouts, bonus rules and server contracts are unchanged."
+}

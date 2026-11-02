@@ -21,6 +21,7 @@ import kenneyChipsHandleSource from '../../../assets/audio/cards/chips-handle-1.
 import kenneyChipsCollideSource from '../../../assets/audio/cards/chips-collide-1.ogg'
 import kenneyCardPlaceSource from '../../../assets/audio/cards/card-place-1.ogg'
 import kenneyCardShuffleSource from '../../../assets/audio/cards/card-shuffle.ogg'
+import { createThemedSlotAudio } from './themedSlotAudio'
 
 // Preserve the recorded music selection without importing or emitting a raw
 // track. These non-fetching identifiers are used only on disabled cues. See
@@ -52,7 +53,7 @@ const reelSpinSource = kenneyCardShuffleSource
 const reelStopSource = kenneyChipLaySource
 
 export type AudioCategory = 'effect' | 'result'
-export type SlotSoundCueId =
+type LegacySlotSoundCueId =
   | 'ambience'
   | 'auto-spin-ambience'
   | 'lever-pull'
@@ -75,6 +76,17 @@ export type SlotSoundCueId =
   | 'five-twinkle'
   | 'pirate-seagull-win'
   | 'soft-miss'
+type ThemeSlotSoundCueId =
+  | 'button-click'
+  | 'bet-step'
+  | 'collect-sync'
+  | 'collect-rows'
+  | 'collect-paw'
+  | 'collect-rand'
+  | 'triple-sevens'
+  | 'bonus-entry'
+  | 'bonus-complete'
+export type SlotSoundCueId = LegacySlotSoundCueId | ThemeSlotSoundCueId
 export type SlotResultSoundEvent = 'bonus' | 'five' | 'no-win' | 'premium' | 'single-three'
 
 export type SlotSoundCue = {
@@ -87,9 +99,10 @@ export type SlotSoundCue = {
 
 export type SlotSoundSet = {
   id: string
-  cues: Readonly<Record<SlotSoundCueId, SlotSoundCue>>
+  cues: Readonly<Record<LegacySlotSoundCueId, SlotSoundCue> & Partial<Record<ThemeSlotSoundCueId, SlotSoundCue>>>
   events: {
     ambience: SlotSoundCueId
+    buttonClick?: SlotSoundCueId
     autoSpinAmbience?: SlotSoundCueId
     leverPull: SlotSoundCueId
     reelSpin: SlotSoundCueId
@@ -98,6 +111,12 @@ export type SlotSoundSet = {
     specialReelStop?: SlotSoundCueId
     specialAmbience?: SlotSoundCueId
     specialCollect?: SlotSoundCueId
+    /** Explicit opt-in; legacy/excluded cabinets retain their event behavior. */
+    themeSuite?: true
+    betStep?: SlotSoundCueId
+    collectionArrival?: Readonly<Partial<Record<'sync' | 'rows' | 'paw' | 'rand', SlotSoundCueId>>>
+    tripleSevens?: SlotSoundCueId
+    bonusComplete?: SlotSoundCueId
     results: Readonly<Record<SlotResultSoundEvent, readonly SlotSoundCueId[]>>
     specialResults?: Readonly<Record<SlotResultSoundEvent, readonly SlotSoundCueId[]>>
   }
@@ -157,7 +176,7 @@ type ThemedSoundOptions = {
 }
 
 function createThemedSlotSounds(id: string, options: ThemedSoundOptions): SlotSoundSet {
-  return {
+  const base: SlotSoundSet = {
     ...DEFAULT_SLOT_SOUNDS,
     id,
     cues: {
@@ -182,6 +201,7 @@ function createThemedSlotSounds(id: string, options: ThemedSoundOptions): SlotSo
       },
     },
   }
+  return createThemedSlotAudio(id.replace(/-audio-v\d+$/, ''), base)
 }
 
 export const COSMIC_FORTUNE_SOUNDS = createThemedSlotSounds('cosmic-fortune-audio-v1', {
@@ -381,7 +401,7 @@ const RAINBOW_REALM_BASE_SOUNDS = createThemedSlotSounds('rainbow-realm-audio-v1
   bonus: ['five-twinkle', 'five-jewel'], five: ['five-twinkle', 'premium-win'], premium: ['five-twinkle'],
 })
 
-export const RAINBOW_REALM_SOUNDS: SlotSoundSet = {
+export const RAINBOW_REALM_SOUNDS: SlotSoundSet = createThemedSlotAudio('rainbow-realm', {
   ...RAINBOW_REALM_BASE_SOUNDS,
   id: 'rainbow-realm-audio-v2',
   cues: {
@@ -410,7 +430,7 @@ export const RAINBOW_REALM_SOUNDS: SlotSoundSet = {
       'single-three': ['special-low-win'],
     },
   },
-}
+})
 
 export const ARCANE_ARCHIVES_SOUNDS = createThemedSlotSounds('arcane-archives-audio-v1', {
   ambienceSource: hauntedChimesSource, ambienceVolume: 0.035,
@@ -430,7 +450,7 @@ const reelRichesBaseSounds = createThemedSlotSounds('reel-riches-audio-v3', {
   bonus: ['five-casino-win'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
 })
 
-export const REEL_RICHES_SOUNDS: SlotSoundSet = {
+export const REEL_RICHES_SOUNDS: SlotSoundSet = createThemedSlotAudio('reel-riches', {
   ...reelRichesBaseSounds,
   cues: {
     ...reelRichesBaseSounds.cues,
@@ -465,4 +485,4 @@ export const REEL_RICHES_SOUNDS: SlotSoundSet = {
       'single-three': ['special-low-win'],
     },
   },
-}
+})

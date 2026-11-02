@@ -1,5 +1,5 @@
-/* The Pirates controls float beside the cabinet, as on a video slot. */
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__stage {
+/* Shared sidecar controls reuse Pirates' existing outline-button presentation. */
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .slots-page__stage {
   position: relative;
 }
 
@@ -17,7 +17,7 @@
 }
 
 .pirates-spin-controls__small,
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop {
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop {
   display: grid;
   place-items: center;
   padding: 0;
@@ -68,7 +68,7 @@
 }
 
 .pirates-spin-controls__small:hover:not(:disabled),
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop:hover:not(:disabled),
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop:hover:not(:disabled),
 .pirates-spin-controls__small--active {
   background: rgb(20 35 54 / 78%);
   box-shadow:
@@ -78,13 +78,13 @@
 }
 
 .pirates-spin-controls__small:focus-visible,
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop:focus-visible {
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop:focus-visible {
   outline: 2px solid #fff;
   outline-offset: 3px;
 }
 
 .pirates-spin-controls__small:disabled,
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop:disabled {
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop:disabled {
   opacity: 0.48;
   cursor: default;
 }
@@ -93,7 +93,7 @@
   margin-top: 0.14rem;
 }
 
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop {
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop {
   width: var(--pirate-control-spin);
   height: var(--pirate-control-spin);
   border-width: 2px;
@@ -112,8 +112,8 @@
   display: none;
 }
 
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop.spin-button--active,
-.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop.spin-button--stopping {
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop.spin-button--active,
+.slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop.spin-button--stopping {
   background: rgb(18 32 47 / 78%);
   border-color: rgb(245 249 249 / 75%);
   color: #fff;
@@ -210,7 +210,14 @@
 }
 
 @media (min-width: 1051px) {
-  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__playbar {
+  /* Reserve both side margins so the control column remains on screen even
+     when a tall desktop viewport allows a full-width cabinet. */
+  .slots-page[data-slot-controls='sidecar'] .slots-page__layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(46rem, calc(100dvh - 13rem), calc(100% - 2 * clamp(8.15rem, 9.4vw, 10.5rem)));
+  }
+
+  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .slots-page__playbar {
     position: absolute;
     z-index: 9;
     top: 26%;
@@ -223,7 +230,7 @@
 }
 
 @media (max-width: 1050px) {
-  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__playbar {
+  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .slots-page__playbar {
     position: relative;
     display: flex;
     justify-content: center;
@@ -270,7 +277,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .pirates-spin-controls__small,
-  .slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .pirates-spin-controls .spin-button--pirate-loop {
+  .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop {
     transition: none;
   }
 }

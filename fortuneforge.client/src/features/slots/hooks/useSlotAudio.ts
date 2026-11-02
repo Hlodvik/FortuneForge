@@ -21,9 +21,9 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   const oneShotsRef = useRef<Map<HTMLAudioElement, SlotSoundCue>>(new Map())
   const loopsRef = useRef<Map<SlotSoundCueId, HTMLAudioElement>>(new Map())
 
-  const isCueAllowed = useCallback((cue: SlotSoundCue) => {
+  const isCueAllowed = useCallback((cue: SlotSoundCue | undefined): cue is SlotSoundCue => {
     const { mode } = preferencesRef.current
-    return cue.enabled !== false && mode !== 'muted' && (mode === 'all' || cue.category === 'result')
+    return cue !== undefined && cue.enabled !== false && mode !== 'muted' && (mode === 'all' || cue.category === 'result')
   }, [])
 
   const updatePreferences = useCallback(
@@ -77,6 +77,13 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
       return
     }
 
+    if (soundSet.events.themeSuite && Object.values(soundSet.events.collectionArrival ?? {}).includes(cueId)) {
+      // At most one live accent for each track, including across fast results.
+      oneShotsRef.current.forEach((activeCue, activeAudio) => {
+        if (activeCue === cue) { stopAudio(activeAudio); oneShotsRef.current.delete(activeAudio) }
+      })
+    }
+
     const audio = new Audio(cue.source)
     const releaseAudio = () => oneShotsRef.current.delete(audio)
     audio.volume = cue.baseVolume * preferencesRef.current.volume / 100
@@ -86,8 +93,9 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   }, [isCueAllowed, soundSet])
 
   const playSequence = useCallback((cueIds: readonly SlotSoundCueId[]) => {
-    cueIds.forEach(playCue)
-  }, [playCue])
+    const selected = soundSet.events.themeSuite ? [...new Set(cueIds)] : cueIds
+    selected.forEach(playCue)
+  }, [playCue, soundSet])
 
   const stopResultCues = useCallback(() => {
     oneShotsRef.current.forEach((cue, audio) => {
@@ -111,6 +119,15 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
     const cue = soundSet.cues[cueId]
     if (!isCueAllowed(cue)) {
       return
+    }
+
+    if (soundSet.events.themeSuite && (cueId === soundSet.events.ambience || cueId === soundSet.events.specialAmbience)) {
+      const musicIds = [soundSet.events.ambience, soundSet.events.specialAmbience]
+      loopsRef.current.forEach((otherAudio, otherId) => {
+        if (otherId !== cueId && musicIds.includes(otherId)) {
+          stopAudio(otherAudio); loopsRef.current.delete(otherId)
+        }
+      })
     }
 
     const existingAudio = loopsRef.current.get(cueId)

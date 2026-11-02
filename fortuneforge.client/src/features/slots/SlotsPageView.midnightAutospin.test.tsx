@@ -4,11 +4,13 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { DRAGON_HOARD_SLOT_GAME } from '../../games/slots/dragonHoard/manifest'
 import { OCEAN_ODYSSEY_SLOT_GAME } from '../../games/slots/oceanOdyssey/manifest'
+import { loadAllSlotGameManifests } from '../../games/slots/routeRegistry'
+import { WUKONG_SLOT_GAME } from '../../games/slots/wukong/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
 import { SlotsPageView } from './SlotsPageView'
 import { useSlotsPageController } from './useSlotsPageController'
 
-const mocks = vi.hoisted(() => ({ clearError: vi.fn(), noop: vi.fn() }))
+const mocks = vi.hoisted(() => ({ clearError: vi.fn(), spin: vi.fn(), noop: vi.fn() }))
 vi.mock('../../components/InGameShell', () => ({ InGameShell: ({ children }: { children: ReactNode }) => <>{children}</> }))
 vi.mock('./components/SlotMachine', () => ({ SlotMachine: () => null }))
 vi.mock('./services/slotsApi', async importOriginal => ({
@@ -29,7 +31,7 @@ function Harness({ experience, disabled = false }: { experience: SlotExperienceS
   // Exercise the view's real toggle handler without starting engine autoplay.
   const [isAutoSpinning, setIsAutoSpinning] = useState(false)
   return <SlotsPageView {...controller} isAutoSpinning={isAutoSpinning} setIsAutoSpinning={setIsAutoSpinning}
-    isDemoSpinDisabled={disabled} setSpinError={mocks.clearError} />
+    isDemoSpinDisabled={disabled} setSpinError={mocks.clearError} handleSpinButtonClick={mocks.spin} />
 }
 async function mount(experience: SlotExperienceSet = DRAGON_HOARD_SLOT_GAME.experience, disabled = false) {
   await act(async () => root.render(<Harness experience={experience} disabled={disabled} />))
@@ -81,10 +83,59 @@ describe('Midnight Vault autospin control', () => {
     expect(mocks.clearError).not.toHaveBeenCalled()
   })
 
-  it('keeps another game’s existing text control and styling hook unchanged', async () => {
-    const button = await mount(OCEAN_ODYSSEY_SLOT_GAME.experience)
+  it('keeps Wukong’s existing text control and styling hook unchanged', async () => {
+    const button = await mount(WUKONG_SLOT_GAME.experience)
     expect(button.classList.contains('midnight-vault__autospin')).toBe(false)
     expect(button.querySelector('strong')?.textContent).toBe('Autospin')
     expect(button.querySelector('svg')).toBeNull()
+  })
+})
+
+describe('Shared sidecar slot controls', () => {
+  it('keeps Ocean’s autospin, wager, and spin callbacks connected to the new icon controls', async () => {
+    await mount(OCEAN_ODYSSEY_SLOT_GAME.experience)
+    expect(host.querySelector('.slots-page__auto-spin')).toBeNull()
+    const auto = host.querySelector<HTMLButtonElement>('.pirates-spin-controls__small[aria-label="Start autospin"]')!
+    expect(auto.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
+    act(() => auto.click())
+    expect(auto.getAttribute('aria-pressed')).toBe('true')
+    expect(auto.getAttribute('aria-label')).toBe('Stop autospin')
+    expect(mocks.clearError).toHaveBeenLastCalledWith(null)
+    act(() => auto.click())
+
+    const before = host.querySelector('.pirates-spin-controls__bet-readout strong')?.textContent
+    const bet = host.querySelector<HTMLButtonElement>('.pirates-spin-controls__bet-wrap > button')!
+    act(() => bet.click())
+    const increase = host.querySelector<HTMLButtonElement>('[aria-label="Increase bet"]')!
+    act(() => increase.click())
+    expect(host.querySelector('.pirates-spin-controls__bet-readout strong')?.textContent).not.toBe(before)
+    const spin = host.querySelector<HTMLButtonElement>('.spin-button--pirate-loop')!
+    act(() => spin.click())
+    expect(mocks.spin).toHaveBeenCalledTimes(1)
+    expect(host.querySelector('[aria-label="Choose bet"]')).toBeNull()
+  })
+
+  it('uses the shared placement hook for all 17 eligible catalog games and keeps the three exclusions on their existing controls', async () => {
+    const games = await loadAllSlotGameManifests()
+    expect(games).toHaveLength(20)
+    const excluded = new Set(['dragon-hoard', 'wukong-journey-to-the-west', 'pirates-fortune'])
+    let sharedCount = 0
+    for (const game of games) {
+      await mount(game.experience)
+      const page = host.querySelector('.slots-page')!
+      if (!excluded.has(game.id)) {
+        expect(page.getAttribute('data-slot-controls'), game.id).toBe('sidecar')
+        expect(page.querySelector('.spin-button--pirate-loop'), game.id).not.toBeNull()
+        expect(page.querySelector('.slots-page__utility-buttons--pirates'), game.id).not.toBeNull()
+        sharedCount += 1
+      } else {
+        expect(page.hasAttribute('data-slot-controls'), game.id).toBe(false)
+        const originalVariant = game.id === 'dragon-hoard' ? '.spin-button--vault-dial'
+          : game.id === 'wukong-journey-to-the-west' ? '.spin-button--wukong-rune'
+          : '.spin-button--pirate-loop'
+        expect(page.querySelector(originalVariant), game.id).not.toBeNull()
+      }
+    }
+    expect(sharedCount).toBe(17)
   })
 })

@@ -15,6 +15,7 @@ import type { SlotResultSoundEvent } from './config/soundSets'
 import { useMascotPerformance, type MascotOutcome } from './hooks/useMascotPerformance'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
 import { useSlotAudio } from './hooks/useSlotAudio'
+import { getCollectionArrivalCue, getSuiteResultCue } from './audio/slotSoundEvents'
 import {
   SlotStateRevisionGuard,
   waitForPresentation,
@@ -258,6 +259,8 @@ export function useSlotsPageController({
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isReloadPromptOpen, setIsReloadPromptOpen] = useState(false)
   const audioUnlockGameRef = useRef<string | null>(null)
+  const playedSuiteResultRef = useRef<string | null>(null)
+  const playedSuiteCollectionsRef = useRef<{ spinId: string; tracks: Set<string> } | null>(null)
   const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
@@ -478,6 +481,25 @@ export function useSlotsPageController({
   ])
 
   useEffect(() => {
+    const buttonClickCue = soundSet.events.buttonClick
+    if (!soundSet.events.themeSuite || buttonClickCue === undefined) return
+
+    const onButtonClick = (event: MouseEvent) => {
+      if (!event.isTrusted || !(event.target instanceof Element)) return
+      const control = event.target.closest('button, summary, [role="button"]')
+      if (control === null || control.matches('.spin-button, :disabled, [aria-disabled="true"]') ||
+        control.closest('[inert]') !== null) return
+      if (soundSet.events.themeSuite && control.closest('.slots-page__wager-control, .pirates-spin-controls__bet-stepper') !== null) return
+      // The main spin control already plays its lever cue. Capture also reaches
+      // dialog portals and the payment bell while this cabinet is mounted.
+      playCue(buttonClickCue)
+    }
+
+    document.addEventListener('click', onButtonClick, true)
+    return () => document.removeEventListener('click', onButtonClick, true)
+  }, [playCue, soundSet.events.buttonClick, soundSet.events.themeSuite])
+
+  useEffect(() => {
     // Ask for ambience as soon as the cabinet opens. Browsers that permit
     // autoplay start immediately; restrictive browsers retry on any trusted
     // interaction. Listeners remain available because a click made while the
@@ -527,7 +549,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (hasSpecialRoundStarted && (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) {
+    if (!soundSet.events.themeSuite && hasSpecialRoundStarted && (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) {
       startLoop(soundSet.events.ambience)
     }
     setHeldCompletedCollectionId(null)
@@ -542,6 +564,7 @@ export function useSlotsPageController({
     hasSpecialRoundStarted,
     isSpecialGameActive,
     soundSet.events.ambience,
+    soundSet.events.themeSuite,
     startLoop,
     useFreeGameForNextSpin,
   ])
@@ -862,12 +885,25 @@ export function useSlotsPageController({
           : []
       }),
     )
+    const heardTracks = soundSet.events.themeSuite && playedSuiteCollectionsRef.current?.spinId === result.spinId
+      ? playedSuiteCollectionsRef.current.tracks : new Set<string>()
+    if (soundSet.events.themeSuite) playedSuiteCollectionsRef.current = { spinId: result.spinId, tracks: heardTracks }
+    const playCollectionArrival = (track: string) => {
+      if (signal.aborted || heardTracks.has(track)) return false
+      const cue = getCollectionArrivalCue(soundSet, track)
+      if (cue === undefined) return false
+      heardTracks.add(track)
+      playCue(cue)
+      return true
+    }
 
     if (
       sealPositions.length === 0 ||
       prefersReducedMotionRef.current ||
       signal.aborted
     ) {
+      if (!signal.aborted && prefersReducedMotionRef.current)
+        sealPositions.forEach(position => playCollectionArrival(position.collection.id))
       settleSeals()
       if (!signal.aborted) presentCollectionAward(awardedCollectionId)
       return
@@ -956,7 +992,8 @@ export function useSlotsPageController({
       )
       setSealFlyover(null)
       setSealImpactId(position.collection.id)
-      if (gameId === 'reel-riches-v1' && isFeatureCast && index === 0 && soundSet.events.specialCollect) {
+      const suiteArrival = playCollectionArrival(position.collection.id)
+      if (!soundSet.events.themeSuite && !suiteArrival && gameId === 'reel-riches-v1' && isFeatureCast && index === 0 && soundSet.events.specialCollect) {
         playCue(soundSet.events.specialCollect)
       }
       const impactCompleted = await waitForPresentation(
@@ -1632,21 +1669,31 @@ export function useSlotsPageController({
         mascotOutcome = 'loss'
         resultSoundEvent = 'no-win'
       }
-      const revealPainted = resultSoundEvent !== null && !presentationSignal.aborted
+      const suiteResultCue = soundSet.events.themeSuite
+        ? getSuiteResultCue(soundSet, result, resultSoundEvent, expectedFreeSpin, presentedFreeSpinsAwarded) : undefined
+      const revealPainted = (resultSoundEvent !== null || suiteResultCue !== undefined) && !presentationSignal.aborted
         ? await waitForPresentationFrame(presentationSignal)
         : false
-      const shouldPlayResultCue = resultSoundEvent !== null &&
+      const shouldPlayResultCue = (resultSoundEvent !== null || suiteResultCue !== undefined) &&
         revealPainted &&
         !stopSpinRequestedRef.current &&
         // A fast auto-spin keeps the voyage music uninterrupted. In
         // particular, its no-win results must not trigger the wave cue.
-        !(isFastAutoSpin && resultSoundEvent === 'no-win')
-      if (shouldPlayResultCue && resultSoundEvent !== null) {
-        playSequence(
-          expectedFreeSpin
-            ? soundSet.events.specialResults?.[resultSoundEvent] ?? soundSet.events.results[resultSoundEvent]
-            : soundSet.events.results[resultSoundEvent],
-        )
+        !(isFastAutoSpin && resultSoundEvent === 'no-win' && !(soundSet.events.themeSuite &&
+          suiteResultCue !== undefined && suiteResultCue === soundSet.events.bonusComplete))
+      if (shouldPlayResultCue) {
+        if (soundSet.events.themeSuite) {
+          if (suiteResultCue !== undefined && playedSuiteResultRef.current !== result.spinId) {
+            playedSuiteResultRef.current = result.spinId
+            playCue(suiteResultCue)
+          }
+        } else if (resultSoundEvent !== null) {
+          playSequence(
+            expectedFreeSpin
+              ? soundSet.events.specialResults?.[resultSoundEvent] ?? soundSet.events.results[resultSoundEvent]
+              : soundSet.events.results[resultSoundEvent],
+          )
+        }
       }
       await animateMoneyGrab(result, isFastAutoSpin, presentationSignal)
       await animateCreditWinAward(
@@ -1781,6 +1828,8 @@ export function useSlotsPageController({
     }
 
     setIsAutoSpinning(false)
+    if (soundSet.events.themeSuite && soundSet.events.betStep &&
+      Math.min(wagerOptions.length - 1, Math.max(0, wagerIndex + direction)) !== wagerIndex) playCue(soundSet.events.betStep)
     setWagerIndex((currentIndex) =>
       Math.min(wagerOptions.length - 1, Math.max(0, currentIndex + direction)),
     )
@@ -1794,6 +1843,8 @@ export function useSlotsPageController({
     }
 
     setIsAutoSpinning(false)
+    if (soundSet.events.themeSuite && soundSet.events.betStep &&
+      Math.min(wagerOptions.length - 1, Math.max(0, Math.round(nextIndex))) !== wagerIndex) playCue(soundSet.events.betStep)
     setWagerIndex(Math.min(wagerOptions.length - 1, Math.max(0, Math.round(nextIndex))))
     setSpinError(null)
   }

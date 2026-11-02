@@ -90,26 +90,24 @@ describe('Wukong sound set', () => {
 })
 
 describe('Reel Riches sound set', () => {
-  it('keeps the bonus music and collection hit out of ordinary spins', () => {
+  it('uses its original theme suite with distinct base/bonus music and semantic collections', () => {
     const { cues, events } = REEL_RICHES_SOUNDS
-    const specialResultIds = Object.values(events.specialResults ?? {}).flat()
-
-    expect(cues[events.ambience].source).toContain('pirate-voyage')
-    expect(cues[events.ambience].enabled).toBe(false)
-    expect(cues[events.specialAmbience ?? 'ambience'].source).toContain('reel-riches-trophy-loop')
-    expect(cues[events.specialAmbience ?? 'ambience'].enabled).not.toBe(false)
-    expect(cues[events.specialReelSpin ?? 'reel-spin'].source).toContain('reel-riches-line-tension')
-    expect(cues[events.specialCollect ?? 'ambience'].source).toContain('reel-riches-special-collect')
-    expect(events.results['single-three']).not.toContain('special-low-win')
-    expect(specialResultIds.every((cueId) => cueId.startsWith('special-'))).toBe(true)
+    expect(events.themeSuite).toBe(true)
+    expect(cues[events.ambience]).toMatchObject({ source: '/assets/slots/audio-suites/v1/reel-riches/night-drive.ogg', enabled: true, loop: true })
+    expect(cues[events.specialAmbience ?? 'ambience'].source).toBe('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
+    expect(events.specialCollect).toBeUndefined()
+    expect(events.autoSpinAmbience).toBeUndefined()
+    expect(Object.keys(events.collectionArrival ?? {})).toEqual(['sync', 'rows', 'paw', 'rand'])
+    expect(Object.values(events.specialResults ?? {}).every(ids => ids.length === 1)).toBe(true)
   })
 })
 
 describe('catalogue audio provenance and allocation', () => {
   const allSoundSets = Object.values(soundSets)
-  const documentedActiveSources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
+  const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
+  const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
 
-  it('keeps nineteen unresolved base scores disabled and documents Midnight Vault\'s licensed music and every active source', async () => {
+  it('enables seventeen original suites while retaining the three excluded title selections', async () => {
     const manifests = await loadAllSlotGameManifests()
     expect(manifests).toHaveLength(20)
     expect(allSoundSets).toHaveLength(21)
@@ -121,9 +119,12 @@ describe('catalogue audio provenance and allocation', () => {
           source: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3',
           category: 'effect', loop: true, enabled: true,
         }
-        : {
+        : ['wukong-journey-to-the-west', 'pirates-fortune'].includes(game.id) ? {
           source: expect.stringMatching(/^disabled:opentracks\/[^/]+\.mp3$/),
           category: 'effect', loop: true, enabled: false,
+        } : {
+          source: `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
+          category: 'effect', loop: true, enabled: true,
         })
     }
     for (const sounds of allSoundSets) {
@@ -131,13 +132,13 @@ describe('catalogue audio provenance and allocation', () => {
         if (cue.source.startsWith('disabled:')) {
           expect(cue.enabled).toBe(false)
         } else {
-          expect(cue.source).toMatch(documentedActiveSources)
+          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source)).toBe(true)
         }
       }
     }
   }, 30_000)
 
-  it('creates no Audio for disabled cues or on hook mount, then allocates effects and original bonus music only on demand', () => {
+  it('creates no Audio for disabled cues or on hook mount, then allocates effects and theme music only on demand', () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
     window.localStorage.clear()
     const play = vi.fn(() => Promise.resolve())
@@ -185,7 +186,7 @@ describe('catalogue audio provenance and allocation', () => {
       expect(audio).toHaveBeenCalledOnce()
       act(() => current().startLoop('special-ambience'))
       expect(audio).toHaveBeenCalledTimes(2)
-      expect(audio).toHaveBeenLastCalledWith(expect.stringContaining('reel-riches-trophy-loop.wav'))
+      expect(audio).toHaveBeenLastCalledWith('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
       expect(play).toHaveBeenCalledTimes(2)
     } finally {
       act(() => root.unmount())

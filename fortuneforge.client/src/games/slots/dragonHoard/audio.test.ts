@@ -54,9 +54,9 @@ describe('Midnight Vault sound mapping', () => {
     expect(cues['reel-stop'].category).toBe(DEFAULT_SLOT_SOUNDS.cues['reel-stop'].category)
     expect(cues['reel-stop'].loop).toBe(DEFAULT_SLOT_SOUNDS.cues['reel-stop'].loop)
     for (const cueId of Object.values(events.results).flat()) {
-      expect(cues[cueId].category).toBe('result')
-      expect(cues[cueId].source).toMatch(/(?:chips-handle-1|chips-collide-1|card-place-1)\.ogg/)
-      expect(cues[cueId].baseVolume).toBeLessThanOrEqual(0.3)
+      expect(cues[cueId]!.category).toBe('result')
+      expect(cues[cueId]!.source).toMatch(/(?:chips-handle-1|chips-collide-1|card-place-1)\.ogg/)
+      expect(cues[cueId]!.baseVolume).toBeLessThanOrEqual(0.3)
     }
     expect(DEFAULT_SLOT_SOUNDS.cues['reel-spin'].source).toContain('card-shuffle.ogg')
     expect(DEFAULT_SLOT_SOUNDS.cues['low-win'].source).toContain('chips-handle-1.ogg')

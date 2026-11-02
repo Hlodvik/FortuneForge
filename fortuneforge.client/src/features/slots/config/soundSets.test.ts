@@ -23,7 +23,7 @@ const pirateSpecialCueIds = Object.values(PIRATES_FORTUNE_SOUNDS.events.specialR
 
 describe('Pirates\' Fortune sound set', () => {
   it('retains its voyage identity without playing it and keeps distinct CC0 Broadside Run cues', () => {
-    const eventSources = pirateEventCueIds.map((cueId) => PIRATES_FORTUNE_SOUNDS.cues[cueId].source)
+    const eventSources = pirateEventCueIds.map((cueId) => PIRATES_FORTUNE_SOUNDS.cues[cueId]!.source)
 
     expect(eventSources).toHaveLength(15)
     expect(eventSources).toHaveLength(pirateEventCueIds.length)
@@ -60,7 +60,7 @@ describe('Pirates\' Fortune sound set', () => {
       .toBe(PIRATES_FORTUNE_SOUNDS.cues['soft-miss'].source)
     expect(pirateSpecialCueIds
       .filter((cueId) => cueId !== 'special-soft-miss')
-      .every((cueId) => !PIRATES_FORTUNE_SOUNDS.cues[cueId].source.includes('pirate-')),
+      .every((cueId) => !PIRATES_FORTUNE_SOUNDS.cues[cueId]!.source.includes('pirate-')),
     ).toBe(true)
     expect(pirateCueSources.some((source) => source.includes('pirate-helm-spin'))).toBe(true)
   })
@@ -75,7 +75,7 @@ describe('Wukong sound set', () => {
       WUKONG_TREASURES_SOUNDS.events.reelStop,
       ...resultCueIds,
     ]
-    const effectSources = effectCueIds.map((cueId) => WUKONG_TREASURES_SOUNDS.cues[cueId].source)
+    const effectSources = effectCueIds.map((cueId) => WUKONG_TREASURES_SOUNDS.cues[cueId]!.source)
 
     expect(WUKONG_TREASURES_SOUNDS.events.ambience).toBe('ambience')
     expect(WUKONG_TREASURES_SOUNDS.cues.ambience.source).toContain('asian-dragon')
@@ -94,7 +94,7 @@ describe('Reel Riches sound set', () => {
     const { cues, events } = REEL_RICHES_SOUNDS
     expect(events.themeSuite).toBe(true)
     expect(cues[events.ambience]).toMatchObject({ source: '/assets/slots/audio-suites/v1/reel-riches/night-drive.ogg', enabled: true, loop: true })
-    expect(cues[events.specialAmbience ?? 'ambience'].source).toBe('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
+    expect(cues[events.specialAmbience ?? 'ambience']!.source).toBe('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
     expect(events.specialCollect).toBeUndefined()
     expect(events.autoSpinAmbience).toBeUndefined()
     expect(Object.keys(events.collectionArrival ?? {})).toEqual(['sync', 'rows', 'paw', 'rand'])

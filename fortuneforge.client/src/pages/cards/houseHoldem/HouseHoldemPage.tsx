@@ -244,8 +244,8 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
   }, [round?.phase])
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balance } }
-  return <InGameShell account={navbarAccount} title="House Hold’em" theme="cards" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body"
-    actions={status ? <HouseHoldemHowToPlay status={status} /> : undefined}>
+  return <InGameShell account={navbarAccount} title="House Hold’em" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body"
+    supportControls={status ? <HouseHoldemHowToPlay status={status} /> : undefined}>
     <div className="blackjack-page blackjack-table-page three-card-poker-page house-holdem-page" onClickCapture={onCardAudioClick}>
       {requestError && <div className="blackjack-error" role="alert"><span>{requestError}</span><button type="button" disabled={busy} onClick={() => {
         const retry = retryRef.current
@@ -281,8 +281,10 @@ export function HouseHoldemContent(props: ContentProps) {
   const betting = round === null || round.phase === 'settled'
   const shownAnte = betting ? props.ante : round.ante
   const shownTrips = betting ? props.trips : round.trips
-  const anteChips = betting ? props.placements.filter((item) => item.spot === 'ante').map((item) => item.value) : chipsForAmount(round.ante)
-  const tripsChips = betting ? props.placements.filter((item) => item.spot === 'trips').map((item) => item.value) : chipsForAmount(round.trips)
+  const placedAnteChips = props.placements.filter((item) => item.spot === 'ante').map((item) => item.value)
+  const placedTripsChips = props.placements.filter((item) => item.spot === 'trips').map((item) => item.value)
+  const anteChips = betting ? placedAnteChips : chipsForAmount(round.ante, placedAnteChips)
+  const tripsChips = betting ? placedTripsChips : chipsForAmount(round.trips, placedTripsChips)
   const canPlaceAnte = betting && !props.busy && !props.pending && shownAnte + props.selectedChip <= status.maximumAnte && cents(minimumHouseHoldemBankroll(Math.max(shownAnte + props.selectedChip, status.minimumAnte), shownTrips)) <= cents(props.balance)
   const onPlaceMainBet = canPlaceAnte ? () => props.onPlace('ante') : undefined
   const canPlaceTrips = betting && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
@@ -302,7 +304,7 @@ export function HouseHoldemContent(props: ContentProps) {
       <div className="three-card-poker-bets" aria-label="Betting spots">
         <BetSpot kind="trips" label="Trips" amount={shownTrips} chips={tripsChips} onPlace={canPlaceTrips ? () => props.onPlace('trips') : undefined} disabled={!canPlaceTrips} />
         <BetSpot kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
-        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind)} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
+        <BetSpot kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind, anteChips)} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
         <BetSpot kind="play" label="Wager" amount={shownRound?.play ?? 0} chips={chipsForAmount(shownRound?.play ?? 0)} disabled />
       </div>
     </div>
@@ -316,7 +318,7 @@ export function HouseHoldemContent(props: ContentProps) {
         </div>
         <button className="three-card-poker-action-orb three-card-poker-action-orb--undo" type="button" aria-label="Undo chip" disabled={props.busy || !!props.pending || props.placements.length === 0} onClick={props.onUndo}><CloseIcon /></button>
         <button className="three-card-poker-action-orb three-card-poker-action-orb--deal" type="button" aria-label="Deal" disabled={!canDeal} onClick={props.onDeal}><CardStackIcon /></button>
-      </div> : controls.length > 0 ? <div className="house-holdem-decision-actions">{controls.map((action) => <button type="button" className={`house-holdem-action house-holdem-action--${action}`} aria-label={actionLabel(action)} disabled={props.busy || !!props.pending || !affordableHouseHoldemAction(round, action)} onClick={() => props.onAct(action)} key={action}>{action === 'fold' ? <CloseIcon /> : shortActionLabel(action)}</button>)}</div> : null}
+      </div> : controls.length > 0 ? <div className="three-card-poker-wager-wrap house-holdem-decision-actions">{controls.map((action) => <button type="button" className={`three-card-poker-action-orb${action === 'play-4x' || action === 'play-2x' ? ' three-card-poker-action-orb--deal' : ''} house-holdem-action house-holdem-action--${action}`} aria-label={actionLabel(action)} disabled={props.busy || !!props.pending || !affordableHouseHoldemAction(round, action)} onClick={() => props.onAct(action)} key={action}>{action === 'fold' ? <CloseIcon /> : shortActionLabel(action)}</button>)}</div> : null}
     </div>
   </section></main>
 }
@@ -368,8 +370,9 @@ function RoundResult({ round, onDismiss }: { round: HouseHoldemRound; onDismiss:
   </div>
 }
 
-function chipsForAmount(amount: number): ChipValue[] {
+function chipsForAmount(amount: number, placedChips: readonly ChipValue[] = []): readonly ChipValue[] {
   if (!Number.isInteger(amount) || amount <= 0) return []
+  if (placedChips.reduce((total, value) => total + value, 0) === amount) return placedChips
   const chips: ChipValue[] = []
   let remaining = amount
   for (const value of [...chipValues].reverse()) {

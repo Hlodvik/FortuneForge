@@ -59,25 +59,10 @@
 .house-holdem-page .three-card-poker-chip-picker__options {
   top: auto; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); animation: none;
 }
-.house-holdem-decision-actions {
-  position: absolute; z-index: 2; top: .35rem; left: 50%; display: flex; align-items: center; justify-content: center;
-  gap: clamp(.45rem, 1vw, .85rem); transform: translateX(-50%);
-}
 .house-holdem-page .blackjack-actions .house-holdem-action {
-  display: grid; min-width: 3.55rem; min-height: 3.55rem; place-items: center; padding: .35rem .6rem;
-  border: .2rem solid #288a96; border-radius: 50%;
-  background: radial-gradient(circle at 34% 23%, #207282, #074353 52%, #021b2a 82%);
-  box-shadow: inset 0 0 0 1px rgb(193 253 253 / 38%), inset 0 -.3rem .65rem rgb(0 13 25 / 40%), 0 .25rem .55rem rgb(0 16 26 / 38%), 0 0 .8rem rgb(25 198 202 / 26%);
-  color: #f5ffff; font: 800 clamp(.78rem, 1.15vw, 1rem)/1 var(--three-card-ui-font);
-  white-space: nowrap; transition: border-color .16s, box-shadow .16s, transform .16s;
+  font-size: calc(var(--house-holdem-control-size) * .24); white-space: nowrap;
 }
-.house-holdem-page .blackjack-actions .house-holdem-action:hover:not(:disabled) { border-color: #b1ffff; box-shadow: inset 0 0 0 1px rgb(238 255 255 / 55%), 0 .3rem .7rem rgb(0 16 26 / 45%), 0 0 1rem rgb(77 233 236 / 55%); transform: translateY(-.12rem); }
-.house-holdem-page .blackjack-actions .house-holdem-action:focus-visible { outline: 2px solid white; outline-offset: .2rem; }
-.house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 3.55rem; width: 3.55rem; padding: .4rem; border-color: #345964; background: radial-gradient(circle at 35% 25%, #1e3844, #03151f 75%); }
-.house-holdem-page .blackjack-actions .house-holdem-action--play-4x,
-.house-holdem-page .blackjack-actions .house-holdem-action--play-2x { border-color: #69d7d9; box-shadow: inset 0 0 0 1px rgb(218 255 255 / 46%), 0 0 .8rem rgb(80 225 222 / 44%); }
-.house-holdem-page .house-holdem-action svg { width: 1.9rem; height: 1.9rem; }
-.house-holdem-page .blackjack-actions .house-holdem-action:disabled { opacity: .4; }
+.house-holdem-page .blackjack-actions .three-card-poker-action-orb:focus-visible { outline: 2px solid white; outline-offset: .2rem; }
 .house-holdem-page .three-card-poker-result { top: 44%; cursor: pointer; }
 .house-holdem-result-close {
   position: absolute; top: .55rem; right: .55rem; display: grid; width: 1.8rem; height: 1.8rem;
@@ -86,15 +71,10 @@
 }
 .house-holdem-result-close:hover, .house-holdem-result-close:focus-visible { border-color: #eaffff; background: #126473; }
 .house-holdem-result-close svg { width: 1rem; height: 1rem; }
-.house-holdem-shell .blackjack-help__panel { width: min(28rem, calc(100vw - 1rem)); }
-@media (max-width: 720px) {
-  .house-holdem-shell .blackjack-help__panel {
-    position: fixed;
-    top: 3.65rem;
-    right: .5rem;
-    width: min(28rem, calc(100vw - 1rem));
-    max-height: calc(100dvh - 4.15rem);
-  }
+.house-holdem-shell .game-support-controls { bottom: calc(3rem + env(safe-area-inset-bottom)); }
+.house-holdem-shell .game-support-controls .blackjack-help__button { width: 44px; height: 44px; min-height: 44px; }
+.house-holdem-shell .blackjack-help__panel {
+  position: absolute; top: auto; bottom: calc(100% + .65rem); width: min(28rem, calc(100vw - 1rem)); max-height: calc(100dvh - 10rem);
 }
 .house-holdem-guide-paytables { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-top: .75rem; }
 .house-holdem-guide-paytables section { min-width: 0; padding: .55rem; border: 1px solid rgb(94 198 211 / 28%); border-radius: .55rem; background: rgb(2 29 38 / 55%); }
@@ -112,6 +92,7 @@
   .house-holdem-page .three-card-poker-bets { top: 92%; }
 }
 @media (max-width: 700px) {
+  .house-holdem-shell .game-support-controls { right: .5rem; flex-direction: column; }
   .house-holdem-page .three-card-poker-action-stats { right: .5rem; left: .5rem; }
   .house-holdem-page .blackjack-table { --ff-card-width: clamp(2.8rem, 16.2vw, 4.8rem); }
   .house-holdem-page .blackjack-dealer { top: 5%; width: min(92%, 22rem); }
@@ -122,9 +103,6 @@
   .house-holdem-page .three-card-poker-bets { top: 86%; width: min(97%, 27rem); gap: .15rem; }
   .house-holdem-bet-spot-wrap { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
   .house-holdem-page .house-holdem-bet-spot { width: clamp(3.55rem, 21vw, 4.5rem); height: clamp(3.55rem, 21vw, 4.5rem); }
-  .house-holdem-decision-actions { top: .15rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.85rem; min-height: 2.85rem; padding: .25rem .4rem; font-size: .75rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.85rem; width: 2.85rem; }
 }
 @media (max-width: 430px) {
   .house-holdem-guide-paytables { grid-template-columns: 1fr; gap: .4rem; }
@@ -143,9 +121,6 @@
   .house-holdem-page .house-holdem-bet-spot::before { inset: .72rem; }
   .house-holdem-page .three-card-poker-chip-stack { top: .53rem; }
   .house-holdem-page .three-card-poker-bet-spot__label { top: -.5rem; font-size: .62rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.65rem; min-height: 2.65rem; font-size: .69rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.65rem; width: 2.65rem; }
-  .house-holdem-page .house-holdem-action svg { width: 1.55rem; height: 1.55rem; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   .house-holdem-page .three-card-poker-wager-wrap { --house-holdem-control-size: 2.75rem; }
@@ -165,7 +140,4 @@
   .house-holdem-page .three-card-poker-chip-stack { top: .35rem; width: 1.75rem; height: 1.75rem; }
   .house-holdem-page .three-card-poker-bet-spot__label { top: -.43rem; font-size: .4rem; }
   .house-holdem-page .three-card-poker-bet-spot__amount { font-size: .42rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action { min-width: 2.4rem; min-height: 2.4rem; font-size: .65rem; }
-  .house-holdem-page .blackjack-actions .house-holdem-action--fold { min-width: 2.4rem; width: 2.4rem; }
-  .house-holdem-page .house-holdem-action svg { width: 1.3rem; height: 1.3rem; }
 }

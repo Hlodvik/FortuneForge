@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import type { AccountSummary } from '../features/account/services/accountsApi'
-import { GameReportControl } from './GameReportControl'
 import { HeaderBalance } from './HeaderBalance'
 import { PlayerAccountMenus } from './PlayerAccountMenus'
 import './SiteNavbar.css'
@@ -67,7 +66,7 @@ function HomeNavIcon({ name }: { name: string }) {
 
 /** The only site-level navbar. Pages can supply local controls through actions. */
 export function SiteNavbar({
-  mode, account, authenticated = false, title, reportTitle, theme = 'arcade', actions,
+  mode, account, authenticated = false, title, theme = 'arcade', actions,
   className, onNavigate, currentPublicPage, balance, hidePublicLogin = false,
 }: SiteNavbarProps) {
   if (mode === 'home') {
@@ -106,7 +105,6 @@ export function SiteNavbar({
     </nav>}
     {mode === 'account' && account && <div className="site-navbar__account-tools"><HeaderBalance amount={balance ?? account.balances.slotsCredits} href="/home/rand" /><AccountAvatar account={account} /></div>}
     {isGame && <div className="in-game-navbar__account-tools">
-      {account && <GameReportControl key={account.userId} gameTitle={reportTitle || title} />}
       {(account || balance !== undefined) && <HeaderBalance amount={balance ?? account?.balances.slotsCredits ?? 0} href={account ? '/home/rand' : undefined} />}
       <AccountAvatar account={account} />
     </div>}

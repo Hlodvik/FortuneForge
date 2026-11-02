@@ -4,6 +4,7 @@ import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/ree
 import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { SiteNavbar } from '../../components/SiteNavbar'
+import { GameSupportControls } from '../../components/GameSupportControls'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
 import { PiratesSpinControls } from './components/PiratesSpinControls'
 import { MascotCompanion } from '../../games/slots/shared/mascot/MascotCompanion'
@@ -250,6 +251,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       />
 
       <main className="slots-page__main">
+        <GameSupportControls account={controller.account} gameTitle={cabinetTheme.title} />
         <h1 className="slots-page__accessible-title">{cabinetTheme.title}</h1>
         <div className="slots-page__layout">
           <div className="slots-page__stage">

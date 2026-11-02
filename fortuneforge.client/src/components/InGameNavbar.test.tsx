@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import type { AccountSummary } from '../features/account/services/accountsApi'
 import { InGameNavbar } from './InGameNavbar'
+import { InGameShell } from './InGameShell'
 import { PlayerHeader } from './PlayerHeader'
 import { SiteNavbar } from './SiteNavbar'
 
@@ -16,11 +17,19 @@ const account: AccountSummary = {
 }
 
 describe('InGameNavbar', () => {
-  it('provides an accessible report control to signed-in players, but not public demos', () => {
-    const markup = renderToStaticMarkup(<InGameNavbar account={account} title="Dragon Tiger" />)
-    expect(markup).toContain('aria-label="Report this game"')
-    expect(markup).toContain('aria-haspopup="dialog"')
+  it('keeps help and reporting in the game surface outside the shared navbar', () => {
+    expect(renderToStaticMarkup(<InGameNavbar account={account} title="Dragon Tiger" />)).not.toContain('Report this game')
+    const markup = renderToStaticMarkup(<InGameShell account={account} title="Dragon Tiger" supportControls={<button type="button">Game help</button>}><main>Table</main></InGameShell>)
+    const navbar = markup.slice(0, markup.indexOf('</header>'))
+    expect(navbar).not.toContain('Report this game')
+    expect(navbar).not.toContain('Game help')
+    const controls = markup.split('class="game-support-controls"')[1]
+    expect(controls).toContain('Game help')
+    expect(controls).toContain('aria-label="Report this game"')
+    expect(controls).toContain('aria-haspopup="dialog"')
+    expect(markup.match(/aria-label="Report this game"/g)).toHaveLength(1)
     expect(renderToStaticMarkup(<InGameNavbar title="Public demo" />)).not.toContain('Report this game')
+    expect(renderToStaticMarkup(<InGameShell title="Public demo"><main>Table</main></InGameShell>)).not.toContain('game-support-controls')
   })
   it('always supplies home and its game catalogue as the authenticated exits', () => {
     const markup = renderToStaticMarkup(<InGameNavbar account={account} title="Asteroids" />)

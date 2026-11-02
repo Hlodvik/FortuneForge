@@ -275,6 +275,21 @@
   }
 }
 
+/* Keep the new catalogue controls comfortable to tap at every viewport. */
+.slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__small {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__bet-stepper {
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+}
+
+.slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__bet-stepper button {
+  width: 44px;
+  height: 44px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pirates-spin-controls__small,
   .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .pirates-spin-controls .spin-button--pirate-loop {

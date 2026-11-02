@@ -14,8 +14,43 @@ function Invoke-ReleaseGit {
     if ($Arguments.Count -eq 0 -or $Arguments[0] -cnotin $allowed -or $Arguments -ccontains '-w') {
         throw 'Release source inspection accepts read-only Git commands only.'
     }
-    $output = if ($PSBoundParameters.ContainsKey('InputLines')) { @($InputLines | & git -C $Repository @Arguments 2>$null) }
-        else { @(& git -C $Repository @Arguments 2>$null) }
+    if ($PSBoundParameters.ContainsKey('InputLines')) {
+        if (($Arguments -join ' ') -cne 'hash-object --stdin-paths') { throw 'Git stdin is supported only for read-only source hashing.' }
+        # Write exact UTF-8 bytes: the Windows PowerShell native pipeline can
+        # prepend a BOM, which Git interprets as part of the first filename.
+        $start = [System.Diagnostics.ProcessStartInfo]::new()
+        $start.FileName = (Get-Command git -CommandType Application | Select-Object -First 1).Source
+        $start.WorkingDirectory = $Repository
+        $start.Arguments = 'hash-object --stdin-paths'
+        $start.UseShellExecute = $false
+        $start.CreateNoWindow = $true
+        $start.RedirectStandardInput = $true
+        $start.RedirectStandardOutput = $true
+        $start.RedirectStandardError = $true
+        $process = [System.Diagnostics.Process]::new()
+        $process.StartInfo = $start
+        try {
+            # .NET Framework chooses this encoding when it constructs the
+            # redirected stdin writer; a BOM can be emitted during Start().
+            $inputEncoding = [Console]::InputEncoding
+            try {
+                [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+                [void]$process.Start()
+            }
+            finally { [Console]::InputEncoding = $inputEncoding }
+            $stdout = $process.StandardOutput.ReadToEndAsync()
+            $stderr = $process.StandardError.ReadToEndAsync()
+            $bytes = [System.Text.UTF8Encoding]::new($false).GetBytes(($InputLines -join "`n") + "`n")
+            $process.StandardInput.BaseStream.Write($bytes, 0, $bytes.Length)
+            $process.StandardInput.Close()
+            $process.WaitForExit()
+            $output = @($stdout.GetAwaiter().GetResult() -split '\r?\n' | Where-Object { $_ })
+            $errorText = $stderr.GetAwaiter().GetResult()
+            return [pscustomobject]@{ ExitCode = $process.ExitCode; Output = $output; Error = $errorText }
+        }
+        finally { $process.Dispose() }
+    }
+    $output = @(& git -C $Repository @Arguments 2>$null)
     return [pscustomobject]@{ ExitCode = $LASTEXITCODE; Output = @($output) }
 }
 

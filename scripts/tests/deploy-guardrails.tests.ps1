@@ -15,6 +15,27 @@ function Assert-Throws {
     if (-not $threw) { throw "$Name did not reject the unsafe release." }
 }
 
+# Exercise the actual read-only native boundary with the encoding that caused
+# source locking to fail on Windows PowerShell. No temporary repository needed.
+$nativeBoundary = & (Get-Module ReleaseGuardrails) {
+    param($Repository)
+    $OutputEncoding = [System.Text.UTF8Encoding]::new($true)
+    $consoleEncoding = [Console]::InputEncoding
+    try {
+        [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($true)
+        $expected = Invoke-ReleaseGit -Repository $Repository -Arguments @('hash-object', '.dockerignore', 'scripts/ReleaseGuardrails.psm1')
+        $actual = Invoke-ReleaseGit -Repository $Repository -Arguments @('hash-object', '--stdin-paths') `
+            -InputLines @('".dockerignore"', '"scripts/ReleaseGuardrails.psm1"')
+        [pscustomobject]@{ Expected = $expected; Actual = $actual; CallerPreambleLength = $OutputEncoding.GetPreamble().Length;
+            ConsolePreambleLength = [Console]::InputEncoding.GetPreamble().Length }
+    }
+    finally { [Console]::InputEncoding = $consoleEncoding }
+} $repoRoot
+Assert-Equal $nativeBoundary.Actual.ExitCode 0 'BOM-free Git stdin succeeds'
+Assert-Equal ($nativeBoundary.Actual.Output -join ',') ($nativeBoundary.Expected.Output -join ',') 'native stdin preserves both source filenames'
+Assert-Equal $nativeBoundary.CallerPreambleLength 3 'native helper leaves caller encoding unchanged'
+Assert-Equal $nativeBoundary.ConsolePreambleLength 3 'native helper restores console encoding'
+
 $head = (& git -C $repoRoot rev-parse HEAD).Trim()
 $parent = (& git -C $repoRoot rev-parse 'HEAD^').Trim()
 Assert-CommitOnMain -Repository $repoRoot -Sha $head

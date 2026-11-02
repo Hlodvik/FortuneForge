@@ -129,6 +129,8 @@
 .house-holdem-result-close:hover, .house-holdem-result-close:focus-visible { border-color: #eaffff; background: #126473; }
 .house-holdem-result-close svg { width: 1rem; height: 1rem; }
 .house-holdem-shell .game-support-controls { bottom: calc(3rem + env(safe-area-inset-bottom)); }
+.house-holdem-local-controls { display: contents; }
+.house-holdem-local-controls .game-support-controls { right: calc(max(.75rem, env(safe-area-inset-right)) + 44px + .5rem); }
 .house-holdem-shell .game-support-controls .blackjack-help__button { width: 44px; height: 44px; min-height: 44px; }
 .house-holdem-shell .blackjack-help__panel {
   position: absolute; top: auto; bottom: calc(100% + .65rem); width: min(28rem, calc(100vw - 1rem)); max-height: calc(100dvh - 10rem);
@@ -143,6 +145,7 @@
 .house-holdem-guide-paytables p { margin: .42rem 0 0; color: #bcd6da; font-size: .55rem; line-height: 1.4; }
 @media (max-width: 700px) {
   .house-holdem-shell .game-support-controls { right: .5rem; flex-direction: column; }
+  .house-holdem-local-controls .game-support-controls { bottom: calc(3rem + env(safe-area-inset-bottom) + 44px + .5rem); }
   .house-holdem-board::before { inset: -.3rem -.18rem; }
 }
 @media (max-width: 430px) {

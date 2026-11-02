@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { InGameShell } from '../../../components/InGameShell'
+import { GameSupportControls } from '../../../components/GameSupportControls'
 import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
 import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
@@ -257,8 +258,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
   }, [round?.phase])
 
   const navbarAccount = { ...account, balances: { ...account.balances, slotsCredits: balance } }
-  return <InGameShell account={navbarAccount} title="House Hold’em" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body"
-    supportControls={status ? <HouseHoldemHowToPlay status={status} /> : undefined}>
+  return <InGameShell account={navbarAccount} title="House Hold’em" className="blackjack-game-shell three-card-poker-shell house-holdem-shell" bodyClassName="blackjack-shell-body">
     <div className="blackjack-page blackjack-table-page three-card-poker-page house-holdem-page" onClickCapture={onCardAudioClick}>
       {requestError && <div className="blackjack-error" role="alert"><span>{requestError}</span><button type="button" disabled={busy} onClick={() => {
         const retry = retryRef.current
@@ -270,6 +270,7 @@ export function HouseHoldemPage({ account }: { account: AccountSummary }) {
         chipPickerOpen={chipPickerOpen} busy={busy} pending={pending} dealPresentation={dealPresentation}
         onDismissResult={dismissResult} onPlace={placeChip} onUndo={undo} onDeal={deal} onAct={act}
         onSelectChip={(value) => { setSelectedChip(value); setChipPickerOpen(false) }} onTogglePicker={() => setChipPickerOpen((value) => !value)} onRefresh={() => void load()} />
+      {status && <div className="house-holdem-local-controls"><GameSupportControls><HouseHoldemHowToPlay status={status} /></GameSupportControls></div>}
     </div>
   </InGameShell>
 }

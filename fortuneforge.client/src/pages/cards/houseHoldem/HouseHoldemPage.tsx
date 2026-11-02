@@ -287,7 +287,7 @@ export function HouseHoldemContent(props: ContentProps) {
   const tripsChips = betting ? placedTripsChips : chipsForAmount(round.trips, placedTripsChips)
   const canPlaceAnte = betting && !props.busy && !props.pending && shownAnte + props.selectedChip <= status.maximumAnte && cents(minimumHouseHoldemBankroll(Math.max(shownAnte + props.selectedChip, status.minimumAnte), shownTrips)) <= cents(props.balance)
   const onPlaceMainBet = canPlaceAnte ? () => props.onPlace('ante') : undefined
-  const canPlaceTrips = betting && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
+  const canPlaceTrips = round === null && !props.busy && !props.pending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
   const canDeal = betting && !props.busy && !props.pending && validHouseHoldemAnte(props.ante, status) && validHouseHoldemTrips(props.trips, status) && cents(minimumHouseHoldemBankroll(props.ante, props.trips)) <= cents(props.balance)
   const controls = dealing || waitingForDeal ? [] : round?.allowedActions ?? []
   return <main className="blackjack-main blackjack-game"><section className="blackjack-table" aria-label="House Hold’em table" data-phase={dealing || waitingForDeal ? 'dealing' : round?.phase ?? 'betting'} onClickCapture={round?.phase === 'settled' && !props.busy && !props.pending ? (event) => {
@@ -351,7 +351,7 @@ function BetSpot({ kind, label, amount, chips, onPlace, disabled }: { kind: 'tri
   const className = `three-card-poker-bet-spot house-holdem-bet-spot house-holdem-bet-spot--${kind}`
   const spot = onPlace ? <button className={className} type="button" aria-label={`Place chip on ${label}`} aria-describedby={tipId} disabled={disabled} onClick={onPlace} data-active="true" data-empty={chips.length === 0}>{contents}</button>
     : <div className={className} aria-label={kind === 'play' ? 'Wager spot' : `${label} wager`} aria-describedby={tipId} data-empty={chips.length === 0}>{contents}</div>
-  return <div className="house-holdem-bet-spot-wrap">
+  return <div className="house-holdem-bet-spot-wrap" data-disabled={disabled}>
     {spot}
     <button className="three-card-poker-bet-spot__label house-holdem-bet-spot__help" type="button" aria-label={`About ${label}`} aria-describedby={tipId}>{label}</button>
     <span className="house-holdem-bet-spot__tip" id={tipId} role="tooltip">{help}</span>

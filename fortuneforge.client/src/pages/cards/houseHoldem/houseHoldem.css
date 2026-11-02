@@ -49,6 +49,8 @@
 .house-holdem-bet-spot-wrap:last-child .house-holdem-bet-spot__help:is(:hover, :focus-visible) + .house-holdem-bet-spot__tip { transform: translateY(0); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-empty="false"]::before { border-color: rgb(203 174 108 / 70%); }
 .house-holdem-page .house-holdem-bet-spot--trips[data-active="true"][data-empty="false"]::before { border-color: rgb(230 195 119 / 86%); }
+.house-holdem-page .house-holdem-bet-spot-wrap[data-disabled="true"] .house-holdem-bet-spot--trips::before { border-color: rgb(154 163 158 / 55%); }
+.house-holdem-page .house-holdem-bet-spot-wrap[data-disabled="true"] .house-holdem-bet-spot--trips + .house-holdem-bet-spot__help { color: #9aa39e; }
 .house-holdem-page.blackjack-table-page .blackjack-actions { height: 100%; min-height: 0; }
 .house-holdem-page .three-card-poker-action-stats { pointer-events: none; }
 .house-holdem-page .three-card-poker-wager-wrap { --house-holdem-control-size: 3.6rem; }

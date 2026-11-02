@@ -6,6 +6,7 @@ param(
     [ValidatePattern('^[a-z0-9][a-z0-9_-]{0,62}$')]
     [string]$ArtifactRepository = 'cloud-run-source-deploy',
     [switch]$PreflightOnly,
+    [switch]$ContinuousAudit,
     [switch]$InspectLive,
     [switch]$AdoptUnstampedLive,
     [string]$ExpectedHostingRelease = '',
@@ -26,6 +27,7 @@ $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
 Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest
+if ($ContinuousAudit -and $Target -eq 'hosting') { throw '-ContinuousAudit applies only to an API release.' }
 
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory)
@@ -556,6 +558,7 @@ $record = [ordered]@{
     testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }
     broadTestSuitesDeferred = [bool]$SkipTestSuites
     livePlaytest = [bool]$LivePlaytest
+    continuousAudit = [bool]$ContinuousAudit
     focusedTestScopes = if ($LivePlaytest) { @(Get-ReleaseFocusedTestScopes) } else { @() }
     focusedTestsStatus = if ($LivePlaytest) { 'required' } else { 'not-applicable' }
     ciStatus = 'not-checked; no CI success claimed'
@@ -714,7 +717,7 @@ try {
         Assert-ReleaseCheckout -Repository $releaseCheckout -Sha $candidateSha
         Assert-ServingApiUnchanged -Before $apiBefore -Now (Get-LiveApi)
         Write-Host "`nCreating a non-serving Cloud Run revision from the verified image digest..." -ForegroundColor Yellow
-        Invoke-Checked -Executable 'gcloud.cmd' -Arguments @(
+        $apiDeployArguments = @(
             'run', 'deploy', $serviceName,
             '--image', $builtImage.Image,
             '--region', $region, '--project', $project,
@@ -722,7 +725,9 @@ try {
             "--update-env-vars=FF_RELEASE_SHA=$candidateSha",
             "--update-labels=ff-source-sha=$candidateSha",
             '--quiet'
-        ) -WorkingDirectory $releaseCheckout
+        )
+        if ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
+        Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
 
         $service = Get-CloudRunService
         $newApiRevision = [string]$service.status.latestCreatedRevisionName

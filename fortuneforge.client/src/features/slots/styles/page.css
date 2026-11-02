@@ -16,6 +16,17 @@
   isolation: isolate;
 }
 
+.slots-page__accessible-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .slots-page--theme-backdrop {
   background:
     linear-gradient(180deg, rgb(5 3 18 / 18%), rgb(10 5 28 / 46%)),

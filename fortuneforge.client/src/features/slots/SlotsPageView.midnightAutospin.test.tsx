@@ -10,7 +10,7 @@ import type { SlotExperienceSet } from './config/slotExperienceSets'
 import { SlotsPageView } from './SlotsPageView'
 import { useSlotsPageController } from './useSlotsPageController'
 
-const mocks = vi.hoisted(() => ({ clearError: vi.fn(), spin: vi.fn(), noop: vi.fn() }))
+const mocks = vi.hoisted(() => ({ clearError: vi.fn(), spin: vi.fn(), toggleMuted: vi.fn(), noop: vi.fn() }))
 vi.mock('../../components/InGameShell', () => ({ InGameShell: ({ children }: { children: ReactNode }) => <>{children}</> }))
 vi.mock('./components/SlotMachine', () => ({ SlotMachine: () => null }))
 vi.mock('./services/slotsApi', async importOriginal => ({
@@ -20,7 +20,7 @@ vi.mock('./services/slotsApi', async importOriginal => ({
 vi.mock('./hooks/useSlotAudio', () => ({ useSlotAudio: () => ({
   preferences: { volume: 50, mode: 'all' }, startLoop: mocks.noop, stopLoop: mocks.noop,
   playCue: mocks.noop, playSequence: mocks.noop, stopResultCues: mocks.noop,
-  setVolume: mocks.noop, toggleMuted: mocks.noop, toggleResultsOnly: mocks.noop,
+  setVolume: mocks.noop, toggleMuted: mocks.toggleMuted, toggleResultsOnly: mocks.noop,
 }) }))
 vi.mock('./hooks/usePrefersReducedMotion', () => ({ usePrefersReducedMotion: () => true }))
 
@@ -95,6 +95,10 @@ describe('Shared sidecar slot controls', () => {
   it('keeps Ocean’s autospin, wager, and spin callbacks connected to the new icon controls', async () => {
     await mount(OCEAN_ODYSSEY_SLOT_GAME.experience)
     expect(host.querySelector('.slots-page__auto-spin')).toBeNull()
+    const mute = host.querySelector<HTMLButtonElement>('.slots-page__mute-shortcut')!
+    expect(mute.getAttribute('aria-pressed')).toBe('false')
+    act(() => mute.click())
+    expect(mocks.toggleMuted).toHaveBeenCalledOnce()
     const auto = host.querySelector<HTMLButtonElement>('.pirates-spin-controls__small[aria-label="Start autospin"]')!
     expect(auto.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true')
     act(() => auto.click())
@@ -123,6 +127,11 @@ describe('Shared sidecar slot controls', () => {
     for (const game of games) {
       await mount(game.experience)
       const page = host.querySelector('.slots-page')!
+      const keyboardRows = page.querySelectorAll('.slots-page__keyboard-help')
+      expect(keyboardRows, game.id).toHaveLength(game.id === 'dragon-hoard' ? 0 : 1)
+      if (game.id !== 'dragon-hoard') {
+        expect(page.querySelector(':scope > .slots-page__keyboard-help > button.slots-page__mute-shortcut'), game.id).not.toBeNull()
+      }
       if (!excluded.has(game.id)) {
         expect(page.getAttribute('data-slot-controls'), game.id).toBe('sidecar')
         expect(page.querySelector('.spin-button--pirate-loop'), game.id).not.toBeNull()

@@ -14,7 +14,6 @@ export const GOLD_FOUNDRY_CABINET_THEME: SlotCabinetTheme = {
   celebrationEffect: 'foundry-sparks',
   emblemImage: art.smithMask,
   accentImage: art.goldIngots,
-  keyboardHelpPlacement: 'footer',
   backdropImage: art.backdrop,
   visualsBackdropImage: art.reelBacking,
   pageBackdropImage: art.backdrop,

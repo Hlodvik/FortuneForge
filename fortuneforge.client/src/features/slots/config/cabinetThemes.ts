@@ -49,7 +49,6 @@ export type SlotCabinetTheme = {
   celebrationEffect?: SlotCelebrationEffect
   emblemImage: string
   accentImage?: string
-  keyboardHelpPlacement?: 'footer'
   spinIconImage?: string
   controlLayout?: 'integrated' | 'sidecar'
   backdropImage?: string

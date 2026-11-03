@@ -166,7 +166,6 @@ export function SlotsPageView(controller: SlotsPageController) {
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
   const paylineTrace = cabinetTheme.paylineTrace
   const usesPaylineTrace = isMidnightVault || isNeonNights || isRainbowRealm || Boolean(paylineTrace)
-  const keyboardHelpAtBottom = isNeonNights || isRainbowRealm || cabinetTheme.keyboardHelpPlacement === 'footer'
   const tracedPaylines = useMemo(() => isRainbowRealm
     ? winningPaylines.filter(({ paylineId }) => paylineId >= 1 && paylineId <= help.paylineCount)
     : winningPaylines, [help.paylineCount, isRainbowRealm, winningPaylines])
@@ -302,20 +301,6 @@ export function SlotsPageView(controller: SlotsPageController) {
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
   />
-
-  const keyboardHelp = (
-    <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
-      <span><kbd>Space</kbd> Spin / stop</span>
-      <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
-      {isRainbowRealm ? (
-        <button className="rainbow-realm__mute-shortcut" type="button" aria-label="Mute"
-          aria-pressed={audioPreferences.mode === 'muted'} onClick={toggleMuted}>
-          <kbd>M</kbd> Mute
-        </button>
-      ) : <span><kbd>M</kbd> Mute</span>}
-      <span><kbd>?</kbd> Rules</span>
-    </div>
-  )
 
   return (
     <InGameShell
@@ -746,8 +731,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               document.body,
             )}
           </div>
-          {!isMidnightVault && (!keyboardHelpAtBottom || balanceActionHref !== null || !usesPiratesControls) && <div className="slots-page__local-controls">
-            {!keyboardHelpAtBottom && keyboardHelp}
+          {!isMidnightVault && (balanceActionHref !== null || !usesPiratesControls) && <div className="slots-page__local-controls">
             <div className="slots-page__utility-controls" aria-label="Game options">
               {balanceActionHref !== null && <PaymentAlertsMenu />}
               {!usesPiratesControls && utilityButtons}
@@ -1053,7 +1037,17 @@ export function SlotsPageView(controller: SlotsPageController) {
         </footer>
       )}
 
-      {keyboardHelpAtBottom && keyboardHelp}
+      {!isMidnightVault && (
+        <div className="slots-page__keyboard-help" role="group" aria-label="Keyboard controls">
+          <span><kbd>Space</kbd> Spin / stop</span>
+          <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
+          <button className="slots-page__mute-shortcut" type="button"
+            aria-pressed={audioPreferences.mode === 'muted'} onClick={toggleMuted}>
+            <kbd aria-hidden="true">M</kbd> Mute
+          </button>
+          <span><kbd>?</kbd> Rules</span>
+        </div>
+      )}
 
       <AudioSettingsDialog
         theme={isMidnightVault ? 'midnight-vault' : undefined}

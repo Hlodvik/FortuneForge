@@ -27,30 +27,6 @@
   }
 }
 
-.rainbow-realm__mute-shortcut {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-shadow: inherit;
-  cursor: pointer;
-}
-
-.rainbow-realm__mute-shortcut:hover,
-.rainbow-realm__mute-shortcut[aria-pressed='true'] {
-  color: #f8d88c;
-  text-decoration: underline;
-}
-
-.rainbow-realm__mute-shortcut:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 3px;
-}
-
 .rainbow-realm__wordmark {
   display: block;
   justify-self: center;

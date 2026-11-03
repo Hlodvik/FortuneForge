@@ -28,14 +28,15 @@ public sealed partial class SpinService
     {
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
-        if (admission.MathModelId == OlympusTumbleDemo.EngineVersion)
+        if (admission.MathModelId is { } olympusVersion && OlympusTumbleDemo.SupportsEngineVersion(olympusVersion))
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
-            if (gameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId || admission.IsFreeSpin ||
+            if (!OlympusTumbleDemo.SupportsPaidEngineVersion(olympusVersion) ||
+                gameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId || admission.IsFreeSpin ||
                 admission.SpecialBoostApplied || admission.FreeSpinsRemaining != 0 ||
                 admission.FreeSpinFeatureMode is not null)
                 throw new ArgumentException("A base Olympus admission is required for a tumble spin.", nameof(admission));
-            return SpinOlympusTumble(admission.WagerPoints, showcase: false,
+            return SpinOlympusTumble(olympusVersion, admission.WagerPoints, showcase: false,
                 admission.PityMissesBefore, admission.EnergyBalance);
         }
         if (gameId == GoldFoundrySlotDefinitions.GameId)

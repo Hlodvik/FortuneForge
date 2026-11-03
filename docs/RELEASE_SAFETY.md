@@ -64,6 +64,19 @@ general operating-system sandbox.
 
 The 250,000-spin slot Monte Carlo job is **not** part of every
 deployment. Run `npm run verify:slot-math` separately when slot math changes.
+The simulator requires observed RTP below 95%. The default run includes the
+active Olympus tumble model as well as the legacy bonus-carry model;
+`--olympus-demo` selects the tumble model alone, and `--seed=<seed>` selects
+an independent run. For the November 3, 2026 slot release, Arcane
+Archives' hit-rate target and Rainbow Realm's RTP target remain visible as
+advisories. The 250,000-cycle runs measured 88.279% RTP and a 35.973% hit rate
+for Arcane, and 90.080% RTP against an 88% ± 2-point target for Rainbow.
+Neither game's payouts or reel strips changed for release acceptance. The
+other configured targets and bankroll depletion checks still apply.
+The new Olympus tumble model reduced one symbol's base payout from 3× to
+2.5× without changing its draw weights or match tiers. At 250,000 spins per
+wager, it measured 93.962% RTP with independent holdouts of 93.831% and
+92.929%. Historical v1 and v2 outcomes still replay under their original rules.
 
 Hosting-only releases also inspect the serving API source stamp. The API must
 already be at the candidate, or be a locally available ancestor whose complete

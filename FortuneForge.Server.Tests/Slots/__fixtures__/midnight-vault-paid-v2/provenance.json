@@ -1,6 +1,8 @@
 {
   "Source": "output/maintenance-2026-11-02/midnight-vault-integer-math/effective-contract.json",
   "SourceSha256": "51ff01fdbbb759fb80bbd410f4bbf742dcc6a8c47783dd2a7fcaac44f52c0ecc",
+  "FixtureSha256": "015849e6495fe8e597de79db52f9c25f979c5bcf777ff76d6c7f62c489bb1a37",
+  "FixtureFormat": "Source with CRLF line endings normalized to LF by Git",
   "Kind": "Frozen v2 exported effective engine contract; not a paid Firestore receipt",
   "PaytableId": "midnight-vault-paytable-v2",
   "ReelSetId": "midnight-vault-reels-v1",

@@ -439,6 +439,10 @@
     gap: 0;
   }
 
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1']:has(> .slots-page__footer--error) .slot-game-frame {
+    aspect-ratio: 1.72 / 1;
+  }
+
   .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__stage {
     width: 100%;
     max-width: none;

@@ -63,7 +63,7 @@ export function WinHelpDialog({
       </section>
     </div>
   )
-  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
+  return typeof document !== 'undefined' ? createPortal(content, document.body) : content
 }
 
 function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'symbolSet'>) {

@@ -117,4 +117,38 @@ public sealed class OlympusTumbleDemoTests
             Assert.All(step.DropRows.SelectMany(reel => reel), rows => Assert.Equal(5, rows));
         });
     }
+
+    [Theory]
+    [InlineData(8, 6, 5)]
+    [InlineData(10, 12, 10)]
+    [InlineData(12, 24, 20)]
+    public void VersionThreeCalibratesSymbolSixAtEveryTierWithoutChangingTheDraws(
+        int matchCount, long versionTwoMinimumAward, long versionThreeMinimumAward)
+    {
+        var otherSymbols = new[] { 0, 17, 34, 51, 77, 85, 91, 96 };
+        foreach (var wager in new long[] { 2, 6, 100, 2000 })
+        {
+            OlympusTumbleOutcome Resolve(string version)
+            {
+                var draws = 0;
+                return OlympusTumbleDemo.Resolve(version, wager, false, maximum =>
+                {
+                    Assert.Equal(100, maximum);
+                    var index = draws++;
+                    return index < matchCount ? 66 : otherSymbols[(index - matchCount) % otherSymbols.Length];
+                });
+            }
+
+            var versionTwo = Resolve(OlympusTumbleDemo.EngineVersionV2);
+            var versionThree = Resolve(OlympusTumbleDemo.EngineVersion);
+            var oldStep = Assert.Single(versionTwo.Steps);
+            var newStep = Assert.Single(versionThree.Steps);
+            Assert.Equal("6", Assert.Single(newStep.Awards).Symbol);
+            Assert.Equal(matchCount, newStep.Cleared.Count);
+            Assert.Equal(oldStep.Cleared, newStep.Cleared);
+            Assert.Equal(oldStep.Reels.SelectMany(reel => reel), newStep.Reels.SelectMany(reel => reel));
+            Assert.Equal(versionTwoMinimumAward * (wager / 2), versionTwo.TotalPoints);
+            Assert.Equal(versionThreeMinimumAward * (wager / 2), versionThree.TotalPoints);
+        }
+    }
 }

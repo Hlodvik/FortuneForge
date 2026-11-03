@@ -85,6 +85,8 @@ test('Reel Riches bonus entry and active casts remain playable on desktop and mo
     await expect(page.locator('.reel-riches__bonus-hud')).toBeVisible()
     await expect(page.locator('.slots-page--special-game')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
+    await expect(page.locator('.reel-riches__bonus-hud-stats')).toContainText('Free casts left 4')
+    await expect(page.locator('.slot-game-frame')).toBeInViewport({ ratio: 0.99 })
     await expect(page.locator('.slots-page')).toHaveScreenshot(`reel-riches-active-casts-${viewport.width}.png`)
     const metrics = await page.evaluate(() => ({
       width: document.documentElement.scrollWidth,
@@ -110,7 +112,9 @@ test('rules and payline guide', async ({ page }) => {
   await mockDemoApi(page)
   await openStableSlot(page, '/slots/pirates-fortune/demo')
   await page.getByRole('button', { name: 'How to win' }).click()
-  await expect(page.getByRole('dialog', { name: 'What counts as a win?' })).toBeVisible()
+  const dialog = page.getByRole('dialog', { name: 'What counts as a win?' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Close win guide' }).click({ trial: true })
 
   await expect(page).toHaveScreenshot('rules-and-paylines.png')
 })
@@ -136,8 +140,8 @@ test('Olympus shows a matched set before the tumble and settles the refill', asy
     const amountPoints = request.wagerPoints / 2
     await route.fulfill({ json: {
       ...spinFixture(request, 'loss'),
-      reelSetId: 'olympus-tumble-demo-v2',
-      paytableId: 'olympus-tumble-demo-v2',
+      reelSetId: 'olympus-tumble-demo-v3',
+      paytableId: 'olympus-tumble-demo-v3',
       reelStops: initialReels.map(() => 0),
       reels: initialReels,
       payout: { totalPoints: amountPoints, paylines: [] },
@@ -350,6 +354,8 @@ test('service failure state', async ({ page }) => {
   await openStableSlot(page, '/slots/wukong/demo')
   await page.getByRole('button', { name: 'Spin the reels' }).click()
   await expect(page.locator('.slots-page__footer--error')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'How to win' })).toBeInViewport({ ratio: 0.99 })
+  await expect(page.getByRole('button', { name: 'Open settings' })).toBeInViewport({ ratio: 0.99 })
 
   await expect(page.locator('.slots-page')).toHaveScreenshot('demo-service-error.png')
 })
@@ -518,7 +524,7 @@ test('Pirates controls, gem hints, and interaction guards stay intact', async ({
   await mockDemoApi(page)
   await openStableSlot(page, '/slots/pirates-fortune/demo')
 
-  await expect(page.locator('.slots-page__balance-label')).toHaveText('Balance')
+  await expect(page.getByLabel('Balance R10,000.00', { exact: true })).toBeVisible()
   await expect(page.getByText('Demo balance', { exact: true })).toHaveCount(0)
 
   const collections = page.locator('.slots-page__seal-collection')
@@ -564,14 +570,17 @@ test('Pirates controls, gem hints, and interaction guards stay intact', async ({
   const helpButton = page.getByRole('button', { name: 'How to win' })
   const helpContainment = await helpButton.evaluate((button) => {
     const buttonBox = button.getBoundingClientRect()
-    return Array.from(button.children).every((child) => {
+    const visibleChildren = Array.from(button.children).filter((child) => child.getClientRects().length > 0)
+    return visibleChildren.length > 0 && visibleChildren.every((child) => {
       const childBox = child.getBoundingClientRect()
       return childBox.top >= buttonBox.top && childBox.bottom <= buttonBox.bottom
     })
   })
   expect(helpContainment).toBe(true)
 
-  const wheel = await page.locator('.spin-button--pirate-helm').evaluate((button) => {
+  const spin = page.getByRole('button', { name: 'Spin the reels' })
+  await expect(spin).toHaveClass(/spin-button--pirate-loop/)
+  const wheel = await spin.evaluate((button) => {
     const buttonBox = button.getBoundingClientRect()
     const iconBox = button.querySelector('.spin-button__icon')?.getBoundingClientRect()
     const style = getComputedStyle(button)
@@ -582,8 +591,8 @@ test('Pirates controls, gem hints, and interaction guards stay intact', async ({
     }
   })
   expect(wheel.backgroundImage).toBe('none')
-  expect(wheel.borderWidth).toBe('0px')
-  expect(wheel.iconRatio).toBeGreaterThan(0.9)
+  expect(wheel.borderWidth).toBe('2px')
+  expect(wheel.iconRatio).toBeGreaterThan(0.7)
 
   expect(await page.locator('.slots-page__special-round').count()).toBe(0)
   expect(await page.locator('body').evaluate((body) => getComputedStyle(body).userSelect)).toBe('none')

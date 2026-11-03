@@ -33,8 +33,10 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
     private const string UserId = "local-olympus-player";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
-    [Fact]
-    public async Task TwoWinningTumblesSettleExactlyOnceAndReplayFromPaidDrawEvidence()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TwoWinningTumblesSettleExactlyOnceAndReplayUsingTheAdmittedVersion(bool admittedBeforeUpgrade)
     {
         var player = await CreatePlayer();
         await player.Guard.SetAsync(new Dictionary<string, object>
@@ -48,32 +50,50 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
             DateTime.UtcNow, TimeSpan.Zero, default);
         Assert.Equal(OlympusTumbleDemo.EngineVersion, admission.MathModelId);
         Assert.Equal(150L, admission.ChargedWagerCents);
+        if (admittedBeforeUpgrade)
+        {
+            // Simulate an accepted v2 spin left outstanding at deployment.
+            admission = admission with { MathModelId = OlympusTumbleDemo.EngineVersionV2 };
+            await player.Database.Collection("slotSpinAdmissions").Document(admission.AdmissionId.ToString("N"))
+                .UpdateAsync("mathModelId", OlympusTumbleDemo.EngineVersionV2);
+        }
 
-        // Eight "7" symbols win first, then a single "3" refill joins seven survivors.
-        var otherSymbols = new[] { 0, 34, 51, 66, 85, 91, 96 };
-        var indexes = Enumerable.Repeat(77, 8).Concat(Enumerable.Repeat(17, 7))
+        // Eight "6" symbols win first, then a single "3" refill joins seven survivors.
+        var otherSymbols = new[] { 0, 34, 51, 77, 85, 91, 96 };
+        var indexes = Enumerable.Repeat(66, 8).Concat(Enumerable.Repeat(17, 7))
             .Concat(Enumerable.Range(0, 15).Select(i => otherSymbols[i % otherSymbols.Length]))
             .Append(17)
             .Concat(Enumerable.Range(0, 15).Select(i => otherSymbols[i % otherSymbols.Length]))
             .ToArray();
         var engine = Engine(new ScriptedDraws(indexes));
         var spin = engine.SpinAdmitted(GameId, admission, UserId);
+        Assert.Equal(admission.MathModelId, spin.EngineAudit!.EngineVersion);
+        Assert.Equal(admission.MathModelId, spin.ReelSetId);
+        Assert.Equal(admission.MathModelId, spin.PaytableId);
         Assert.False(spin.IsFreeSpin);
+        var firstAward = admittedBeforeUpgrade ? 18L : 15L;
+        var expectedPoints = firstAward + 3;
         Assert.Collection(spin.OlympusTumble!.Steps,
-            first => Assert.Equal(27L, Assert.Single(first.Awards).AmountPoints),
+            first => Assert.Equal(firstAward, Assert.Single(first.Awards).AmountPoints),
             second => Assert.Equal(3L, Assert.Single(second.Awards).AmountPoints));
         Assert.Empty(spin.Payout.Paylines);
-        Assert.Equal(30L, spin.Payout.TotalPoints);
+        Assert.Equal(expectedPoints, spin.Payout.TotalPoints);
+
+        var differentVersion = admittedBeforeUpgrade ? OlympusTumbleDemo.EngineVersion : OlympusTumbleDemo.EngineVersionV2;
+        await Assert.ThrowsAsync<InvalidOperationException>(() => player.Store.RecordSlotSpinAsync(
+            UserId, spin, admission with { MathModelId = differentVersion }, DateTime.UtcNow, default));
 
         var settlement = await player.Store.RecordSlotSpinAsync(UserId, spin, admission, DateTime.UtcNow, default);
-        Assert.Equal(1006m, settlement.SlotsCreditsBalance);
+        var expectedPayout = expectedPoints * 0.25m;
+        var expectedBalance = 1000m - 1.50m + expectedPayout;
+        Assert.Equal(expectedBalance, settlement.SlotsCreditsBalance);
         var ledger = player.Database.Collection("balanceTransactions");
         var spinId = spin.SpinId.ToString("N");
         var wager = await ledger.Document(spinId + "-wager").GetSnapshotAsync();
         var payout = await ledger.Document(spinId + "-payout").GetSnapshotAsync();
         Assert.Equal(-1.50m, (decimal)wager.GetValue<double>("amount"));
-        Assert.Equal(7.50m, (decimal)payout.GetValue<double>("amount"));
-        Assert.Equal(1006m, (decimal)payout.GetValue<double>("balanceAfter"));
+        Assert.Equal(expectedPayout, (decimal)payout.GetValue<double>("amount"));
+        Assert.Equal(expectedBalance, (decimal)payout.GetValue<double>("balanceAfter"));
         var guard = await player.Guard.GetSnapshotAsync();
         Assert.Equal(7L, guard.GetValue<long>("consecutiveFiveMisses"));
         Assert.Equal(7L, guard.GetValue<Dictionary<string, long>>("sealCounts")["sync"]);
@@ -86,7 +106,7 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
         Assert.Equal(2, (await ledger.GetSnapshotAsync()).Count);
 
         var evidence = await ReadAudit(player.Database, spin);
-        Assert.Equal(OlympusTumbleDemo.EngineVersion, evidence.GetProperty("admittedMathModelId").GetString());
+        Assert.Equal(admission.MathModelId, evidence.GetProperty("admittedMathModelId").GetString());
         var tumble = evidence.GetProperty("engineAudit").GetProperty("olympusTumble");
         Assert.False(tumble.GetProperty("showcase").GetBoolean());
         Assert.Equal(indexes, tumble.GetProperty("drawIndexes").Deserialize<int[]>(Json));

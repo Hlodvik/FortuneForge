@@ -74,7 +74,7 @@ internal static class SlotRoundAudit
                 "The tumble game's identifiers or wager do not match the captured rules.")];
 
         var evidence = audit.OlympusTumble!;
-        if (isPaid && (audit.EngineVersion == OlympusTumbleDemo.LegacyEngineVersion || evidence.Showcase))
+        if (isPaid && (!OlympusTumbleDemo.SupportsPaidEngineVersion(audit.EngineVersion) || evidence.Showcase))
             return [new("slot-olympus-tumble-paid-mode-mismatch", "error",
                 "A paid tumble requires rules supporting paid play and random draws.")];
 

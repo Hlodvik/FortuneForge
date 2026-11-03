@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ced27d45-4e86-4ece-a17d-c1970eb2fb58",
+        "spinId": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -154,7 +154,7 @@
         "collectionFreeSpinsAwarded": 10,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 10,
           "wagerPoints": 2,
@@ -164,7 +164,7 @@
         "queuedBonusRounds": [],
         "awardedBonusRounds": [
           {
-            "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+            "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -175,7 +175,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -236,7 +236,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -259,7 +259,7 @@
         }
       },
       "response": {
-        "spinId": "4b8a90ce-6e6f-496a-991f-e3723250a6e0",
+        "spinId": "2b5d1c4b-350b-4589-9a54-f66079287ea8",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -368,7 +368,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 9,
           "wagerPoints": 2,
@@ -380,7 +380,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 9,
               "wagerPoints": 2,
@@ -441,7 +441,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 9,
               "wagerPoints": 2,
@@ -464,7 +464,7 @@
         }
       },
       "response": {
-        "spinId": "5c4790ef-bc76-4228-9b62-cec3005a023e",
+        "spinId": "63340647-e446-46bf-8733-0a6899efabbe",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -602,7 +602,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 8,
           "wagerPoints": 2,
@@ -614,7 +614,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 8,
               "wagerPoints": 2,
@@ -675,7 +675,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 8,
               "wagerPoints": 2,
@@ -698,7 +698,7 @@
         }
       },
       "response": {
-        "spinId": "79dd3c89-fcf8-4793-86cc-c17a99fa258d",
+        "spinId": "a1f10a04-7cbd-4fd3-b042-5184e0df9a02",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -805,7 +805,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 7,
           "wagerPoints": 2,
@@ -817,7 +817,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 7,
               "wagerPoints": 2,
@@ -878,7 +878,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 7,
               "wagerPoints": 2,
@@ -901,7 +901,7 @@
         }
       },
       "response": {
-        "spinId": "dccf0c77-4d31-4b85-997d-ef275a65822b",
+        "spinId": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -1008,7 +1008,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 6,
           "wagerPoints": 2,
@@ -1017,7 +1017,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1027,7 +1027,7 @@
         ],
         "awardedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1038,7 +1038,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 6,
               "wagerPoints": 2,
@@ -1046,7 +1046,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1107,7 +1107,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 6,
               "wagerPoints": 2,
@@ -1115,7 +1115,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1138,7 +1138,7 @@
         }
       },
       "response": {
-        "spinId": "0f870490-6cb6-4e1e-bb4c-48d43aa2b651",
+        "spinId": "8654328f-7d2a-4f4c-85ac-cb570ac0dc4e",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -1245,7 +1245,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 5,
           "wagerPoints": 2,
@@ -1254,7 +1254,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1266,7 +1266,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 5,
               "wagerPoints": 2,
@@ -1274,7 +1274,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1335,7 +1335,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 5,
               "wagerPoints": 2,
@@ -1343,7 +1343,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1366,7 +1366,7 @@
         }
       },
       "response": {
-        "spinId": "ffbf2126-37c8-4661-a352-fc97d59405f5",
+        "spinId": "33ae2ed1-4bef-4f72-8c68-82ad97b7074c",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -1473,7 +1473,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 4,
           "wagerPoints": 2,
@@ -1482,7 +1482,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1494,7 +1494,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 4,
               "wagerPoints": 2,
@@ -1502,7 +1502,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1563,7 +1563,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 4,
               "wagerPoints": 2,
@@ -1571,7 +1571,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1594,7 +1594,7 @@
         }
       },
       "response": {
-        "spinId": "f17c8046-0192-4262-b5cd-a729a98ced98",
+        "spinId": "a0ab0a9e-9303-4725-bfce-0e41bf226cb7",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -1703,7 +1703,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 3,
           "wagerPoints": 2,
@@ -1712,7 +1712,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1724,7 +1724,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 3,
               "wagerPoints": 2,
@@ -1732,7 +1732,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1793,7 +1793,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 3,
               "wagerPoints": 2,
@@ -1801,7 +1801,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -1824,7 +1824,7 @@
         }
       },
       "response": {
-        "spinId": "03d74f33-d12e-4ccd-8842-dad96b3bab76",
+        "spinId": "ccdbff1e-231a-4890-bf23-2aa32699e382",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -1931,7 +1931,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 2,
           "wagerPoints": 2,
@@ -1940,7 +1940,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -1952,7 +1952,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 2,
               "wagerPoints": 2,
@@ -1960,7 +1960,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2021,7 +2021,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 2,
               "wagerPoints": 2,
@@ -2029,7 +2029,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2052,7 +2052,7 @@
         }
       },
       "response": {
-        "spinId": "8468b835-a93c-4a54-a985-9578173d8c34",
+        "spinId": "597a2ee8-4833-4f0f-849a-a8b22ad6224b",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -2192,7 +2192,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": "rows-paw",
         "bonusRound": {
-          "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+          "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
           "totalSpins": 10,
           "remainingSpins": 1,
           "wagerPoints": 2,
@@ -2201,7 +2201,7 @@
         },
         "queuedBonusRounds": [
           {
-            "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+            "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
             "totalSpins": 10,
             "remainingSpins": 10,
             "wagerPoints": 2,
@@ -2213,7 +2213,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 1,
               "wagerPoints": 2,
@@ -2221,7 +2221,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2282,7 +2282,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "ced27d45-4e86-4ece-a17d-c1970eb2fb58:collection:paw:0",
+              "id": "fdd1bc7a-d1f7-4de9-9365-2afa42b4359a:collection:paw:0",
               "totalSpins": 10,
               "remainingSpins": 1,
               "wagerPoints": 2,
@@ -2290,7 +2290,7 @@
               "mathModelId": "midnight-vault-paytable-v3"
             },
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2313,7 +2313,7 @@
         }
       },
       "response": {
-        "spinId": "afb45d11-de20-48d3-86d0-8438929480f7",
+        "spinId": "81b2054a-7fc8-49d6-a1a7-82d5e2eba8dc",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -2422,7 +2422,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 10,
           "wagerPoints": 2,
@@ -2434,7 +2434,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2495,7 +2495,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 10,
               "wagerPoints": 2,
@@ -2518,7 +2518,7 @@
         }
       },
       "response": {
-        "spinId": "b8a74e95-f1d0-4998-beab-dbeccd5b93a5",
+        "spinId": "bb7502c5-be3d-4f82-a245-1c9f4e2c4393",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -2617,7 +2617,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 9,
           "wagerPoints": 2,
@@ -2629,7 +2629,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 9,
               "wagerPoints": 2,
@@ -2690,7 +2690,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 9,
               "wagerPoints": 2,
@@ -2713,7 +2713,7 @@
         }
       },
       "response": {
-        "spinId": "07d28e94-b75c-401d-8779-358c9e268aa6",
+        "spinId": "ef41b714-38ed-4b2f-a2f0-a1d29ef0981c",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -2849,7 +2849,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 8,
           "wagerPoints": 2,
@@ -2861,7 +2861,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 8,
               "wagerPoints": 2,
@@ -2922,7 +2922,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 8,
               "wagerPoints": 2,
@@ -2945,7 +2945,7 @@
         }
       },
       "response": {
-        "spinId": "6553fae2-d0de-417d-8bea-b20c7575a159",
+        "spinId": "56af7a52-df3a-4a53-b497-9e968a310d07",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -3042,7 +3042,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 7,
           "wagerPoints": 2,
@@ -3054,7 +3054,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 7,
               "wagerPoints": 2,
@@ -3115,7 +3115,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 7,
               "wagerPoints": 2,
@@ -3138,7 +3138,7 @@
         }
       },
       "response": {
-        "spinId": "1a81afd7-bdc3-45f8-9d36-2e33ca8cba64",
+        "spinId": "cdab8b19-46fe-40dc-b36f-cf55c7dbba55",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -3235,7 +3235,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 6,
           "wagerPoints": 2,
@@ -3247,7 +3247,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 6,
               "wagerPoints": 2,
@@ -3308,7 +3308,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 6,
               "wagerPoints": 2,
@@ -3331,7 +3331,7 @@
         }
       },
       "response": {
-        "spinId": "c1e9359f-f8b4-481f-b159-58a7792793b6",
+        "spinId": "3a2b2b8e-3f1a-482d-8d55-6b1e0cdef0a0",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -3428,7 +3428,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 5,
           "wagerPoints": 2,
@@ -3440,7 +3440,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 5,
               "wagerPoints": 2,
@@ -3501,7 +3501,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 5,
               "wagerPoints": 2,
@@ -3524,7 +3524,7 @@
         }
       },
       "response": {
-        "spinId": "2b0d4c3e-f98c-442f-83b8-f9345120d892",
+        "spinId": "8eb89886-79a3-499c-b593-29593c514dc6",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -3621,7 +3621,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 4,
           "wagerPoints": 2,
@@ -3633,7 +3633,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 4,
               "wagerPoints": 2,
@@ -3694,7 +3694,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 4,
               "wagerPoints": 2,
@@ -3717,7 +3717,7 @@
         }
       },
       "response": {
-        "spinId": "11b012fe-244a-4e6e-9639-eac9c246f0b7",
+        "spinId": "fcb24804-d167-4be1-bc92-173cbc1c58b8",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -3845,7 +3845,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 3,
           "wagerPoints": 2,
@@ -3857,7 +3857,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 3,
               "wagerPoints": 2,
@@ -3918,7 +3918,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 3,
               "wagerPoints": 2,
@@ -3941,7 +3941,7 @@
         }
       },
       "response": {
-        "spinId": "618c9f8c-d1e9-4ba0-800c-32fc084b1c7d",
+        "spinId": "8f1c2a70-7432-42e8-a30a-39b072caaf96",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -4103,7 +4103,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 2,
           "wagerPoints": 2,
@@ -4115,7 +4115,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 2,
               "wagerPoints": 2,
@@ -4176,7 +4176,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 2,
               "wagerPoints": 2,
@@ -4199,7 +4199,7 @@
         }
       },
       "response": {
-        "spinId": "880ee602-6783-494e-84c0-6ad863519670",
+        "spinId": "bc4ea4f8-be85-4c3f-9391-1a56da29835f",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
@@ -4298,7 +4298,7 @@
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": {
-          "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+          "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
           "totalSpins": 10,
           "remainingSpins": 1,
           "wagerPoints": 2,
@@ -4310,7 +4310,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 1,
               "wagerPoints": 2,
@@ -4371,7 +4371,7 @@
         "midnightBonusState": {
           "rounds": [
             {
-              "id": "dccf0c77-4d31-4b85-997d-ef275a65822b:scatter",
+              "id": "b45c6caf-f8c2-4494-a437-f6a772d1f2b5:scatter",
               "totalSpins": 10,
               "remainingSpins": 1,
               "wagerPoints": 2,
@@ -4394,7 +4394,7 @@
         }
       },
       "response": {
-        "spinId": "f88cae0e-febc-40bb-96be-4fb78be2ee9d",
+        "spinId": "6389ddb1-4615-49e9-9243-2a6df56f05f2",
         "gameId": "dragon-hoard-v1",
         "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",

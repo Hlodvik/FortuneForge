@@ -179,6 +179,12 @@
   transition: transform 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+@media (min-width: 721px) and (max-height: 840px) {
+  .slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slots-page__cabinet-spotlight {
+    transform: none;
+  }
+}
+
 .slots-page[data-slot-theme='reel-riches-cabinet-v1'].slots-page--special-game .slot-game-frame {
   border-color: #9dece0;
   background: linear-gradient(145deg, #06172a, #043344 62%, #0b2837);

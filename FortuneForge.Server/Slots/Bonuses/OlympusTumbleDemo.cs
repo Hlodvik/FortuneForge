@@ -22,7 +22,8 @@ public sealed record OlympusTumbleOutcome(
 public static class OlympusTumbleDemo
 {
     public const string LegacyEngineVersion = "olympus-tumble-demo-v1";
-    public const string EngineVersion = "olympus-tumble-demo-v2";
+    public const string EngineVersionV2 = "olympus-tumble-demo-v2";
+    public const string EngineVersion = "olympus-tumble-demo-v3";
 
     private const int ReelCount = 6;
     private const int RowCount = 5;
@@ -44,7 +45,7 @@ public static class OlympusTumbleDemo
     ];
 
     // Half-wager steps keep each award exact for every allowed even-point wager.
-    private static readonly (string Symbol, decimal Multiplier, int DrawWeight)[] Symbols =
+    private static readonly (string Symbol, decimal Multiplier, int DrawWeight)[] Version2Symbols =
     [
         ("2", 0.5m, 17),
         ("3", 0.5m, 17),
@@ -57,8 +58,14 @@ public static class OlympusTumbleDemo
         ("J", 20m, 4)
     ];
 
+    // Version 3 keeps the draw pool and match tiers, and pays 2.5x on symbol 6.
+    private static readonly (string Symbol, decimal Multiplier, int DrawWeight)[] Symbols =
+        Version2Symbols.Select(rule => rule.Symbol == "6"
+            ? (rule.Symbol, 2.5m, rule.DrawWeight)
+            : rule).ToArray();
+
     private static readonly string[] LegacyDrawPool = BuildDrawPool(LegacySymbols);
-    private static readonly string[] DrawPool = BuildDrawPool(Symbols);
+    private static readonly string[] Version2DrawPool = BuildDrawPool(Version2Symbols);
 
     private static readonly string[][] ShowcaseReels =
     [
@@ -73,8 +80,11 @@ public static class OlympusTumbleDemo
     private static readonly string[] ShowcaseRefills =
         ["3", "4", "5", "6", "7", "8", "A", "J", "2", "3", "4", "5", "6", "7", "2", "3"];
 
-    public static bool SupportsEngineVersion(string engineVersion) =>
-        engineVersion is LegacyEngineVersion or EngineVersion;
+    public static bool SupportsEngineVersion(string? engineVersion) =>
+        engineVersion == LegacyEngineVersion || SupportsPaidEngineVersion(engineVersion);
+
+    internal static bool SupportsPaidEngineVersion(string? engineVersion) =>
+        engineVersion is EngineVersionV2 or EngineVersion;
 
     // Classic collection awards can lock an average between two cash wagers.
     internal static bool IsLegacyCarryWager(GameWageringDefinition wagering, long wagerPoints) =>
@@ -93,7 +103,8 @@ public static class OlympusTumbleDemo
         var (symbols, drawPool, largeMatchMultiplier) = engineVersion switch
         {
             LegacyEngineVersion => (LegacySymbols, LegacyDrawPool, 3),
-            EngineVersion => (Symbols, DrawPool, 4),
+            EngineVersionV2 => (Version2Symbols, Version2DrawPool, 4),
+            EngineVersion => (Symbols, Version2DrawPool, 4),
             _ => throw new ArgumentException("Unknown Olympus tumble rules.", nameof(engineVersion))
         };
         var showcaseRefillIndex = 0;

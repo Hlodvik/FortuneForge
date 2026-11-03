@@ -122,8 +122,10 @@ public sealed class SlotRoundAuditTests
         Assert.Contains(findings, finding => finding.Code == "slot-settlement-mismatch" && finding.Severity == "error");
     }
 
-    [Fact]
-    public void OlympusPaidTumble_ReplaysDrawsAndBindsTheAdmissionAndSettlement()
+    [Theory]
+    [InlineData(OlympusTumbleDemo.EngineVersionV2)]
+    [InlineData(OlympusTumbleDemo.EngineVersion)]
+    public void OlympusPaidTumble_ReplaysDrawsAndBindsTheAdmissionAndSettlement(string engineVersion)
     {
         var random = new SeededRandom(72);
         var service = new SpinService(Provider(), new CryptoReelGenerator(random),
@@ -133,10 +135,11 @@ public sealed class SlotRoundAuditTests
             AdmissionId = Guid.NewGuid(),
             StartedAtUtc = DateTime.UtcNow,
             PityMissesBefore = 4,
-            MathModelId = OlympusTumbleDemo.EngineVersion
+            MathModelId = engineVersion
         };
         var result = service.SpinAdmitted(SlotSpecialRoundProfiles.GodsOfOlympusGameId, admission, "audit-test-player");
         var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
+        Assert.Equal(engineVersion, audit.EngineVersion);
         var settledPayout = result.Payout;
         Assert.Equal(admission.PityMissesBefore, result.ConsecutiveFiveMisses);
         Assert.Equal(admission.EnergyBalance, audit.EnergyBalanceBefore);

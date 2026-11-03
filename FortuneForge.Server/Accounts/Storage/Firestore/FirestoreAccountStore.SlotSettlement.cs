@@ -33,11 +33,11 @@ public sealed partial class FirestoreAccountStore
             throw new InvalidOperationException("Slot outcome has no matching admission or engine audit.");
         }
         var isOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(result.EngineAudit.EngineVersion);
-        if (isOlympusTumble || admission.MathModelId == OlympusTumbleDemo.EngineVersion)
+        if (isOlympusTumble || OlympusTumbleDemo.SupportsEngineVersion(admission.MathModelId))
         {
             if (result.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
-                result.EngineAudit.EngineVersion != OlympusTumbleDemo.EngineVersion ||
-                admission.MathModelId != OlympusTumbleDemo.EngineVersion ||
+                !OlympusTumbleDemo.SupportsPaidEngineVersion(result.EngineAudit.EngineVersion) ||
+                result.EngineAudit.EngineVersion != admission.MathModelId ||
                 admission.IsFreeSpin || result.IsFreeSpin || admission.SpecialBoostApplied ||
                 admission.FreeSpinsRemaining != 0 || admission.FreeSpinFeatureMode is not null ||
                 admission.ChargedWagerCents <= 0 ||
@@ -638,7 +638,8 @@ public sealed partial class FirestoreAccountStore
         var json = result.EngineAudit?.EngineVersion switch
         {
             ArcaneLightningCollector.EngineVersion => JsonSerializer.Serialize(new { snapshot, result.LightningCollection }),
-            OlympusTumbleDemo.EngineVersion => JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
+            var version when OlympusTumbleDemo.SupportsPaidEngineVersion(version) =>
+                JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
             _ => JsonSerializer.Serialize(snapshot)
         };
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));

@@ -2,7 +2,7 @@ using FortuneForge.Server.Slots.Bonuses;
 
 internal static class OlympusTumbleSimulation
 {
-    public static void Run(int spinCount, int seed)
+    public static void Run(int spinCount, int seed, decimal releaseRtpCeiling)
     {
         Console.WriteLine($"Olympus demo {OlympusTumbleDemo.EngineVersion}, {spinCount:N0} random spins per wager, seed {seed}.");
         foreach (var wager in new long[] { 2, 100, 2000 })
@@ -39,6 +39,9 @@ internal static class OlympusTumbleSimulation
                 $"{wager,4} points | RTP {rtp:P2} ± {100 * confidenceHalfWidth:F2} pp | " +
                 $"Hit {Rate(hits):P2} | 2+ tumbles {Rate(multiTumbles):P2} | 3+ tumbles {Rate(threeOrMore):P2} | " +
                 $"Profit {Rate(profitSpins):P2} | 10x+ {Rate(tenTimesSpins):P2} | Max {maxReturn:F1}x");
+            if (rtp >= (double)releaseRtpCeiling)
+                throw new InvalidOperationException(
+                    $"Olympus RTP must remain below {releaseRtpCeiling:P0}, but measured {rtp:P3} at {wager} points.");
 
             double Rate(int count) => (double)count / spinCount;
         }

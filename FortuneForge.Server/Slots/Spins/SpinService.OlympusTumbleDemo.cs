@@ -6,10 +6,11 @@ namespace FortuneForge.Server.Slots.Spins;
 public sealed partial class SpinService
 {
     internal SpinResult SpinOlympusTumbleDemo(long wagerPoints, bool showcase) =>
-        SpinOlympusTumble(wagerPoints, showcase, pityMissesBefore: 0, energyBalanceBefore: 0);
+        SpinOlympusTumble(OlympusTumbleDemo.EngineVersion, wagerPoints, showcase,
+            pityMissesBefore: 0, energyBalanceBefore: 0);
 
     private SpinResult SpinOlympusTumble(
-        long wagerPoints, bool showcase, int pityMissesBefore, long energyBalanceBefore)
+        string engineVersion, long wagerPoints, bool showcase, int pityMissesBefore, long energyBalanceBefore)
     {
         const string gameId = SlotSpecialRoundProfiles.GodsOfOlympusGameId;
         var game = definitions.GetGame(gameId)
@@ -25,7 +26,7 @@ public sealed partial class SpinService
         var paytable = definitions.GetPaytable(game.Math.PaytableId)
             ?? throw new KeyNotFoundException($"Paytable '{game.Math.PaytableId}' was not found.");
         var drawIndexes = new List<int>();
-        var outcome = OlympusTumbleDemo.Resolve(wagerPoints, showcase, maximum =>
+        var outcome = OlympusTumbleDemo.Resolve(engineVersion, wagerPoints, showcase, maximum =>
         {
             var index = random.Next(maximum);
             drawIndexes.Add(index);
@@ -33,15 +34,15 @@ public sealed partial class SpinService
         });
 
         return new SpinResult(
-            Guid.NewGuid(), gameId, OlympusTumbleDemo.EngineVersion, symbolSet.Id,
-            OlympusTumbleDemo.EngineVersion, wagerPoints, game.Wagering.PointValueInCents,
+            Guid.NewGuid(), gameId, engineVersion, symbolSet.Id,
+            engineVersion, wagerPoints, game.Wagering.PointValueInCents,
             new int[outcome.InitialReels.Count], outcome.InitialReels, new SpinPayout(outcome.TotalPoints, []),
             ConsecutiveFiveMisses: pityMissesBefore, FiveMatchPityTriggered: false, FreeSpinsAwarded: 0,
             SpecialPointsAwarded: 0, EnergyAwarded: 0, SpecialBoostApplied: false)
         {
             OlympusTumble = outcome,
             EngineAudit = new SlotSpinEngineAudit(
-                OlympusTumbleDemo.EngineVersion, DateTime.UtcNow, game, game,
+                engineVersion, DateTime.UtcNow, game, game,
                 reelSet, symbolSet, paytable, null, pityMissesBefore, energyBalanceBefore, null, 1,
                 outcome.InitialReels, outcome.InitialReels)
             {

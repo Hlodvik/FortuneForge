@@ -1,11 +1,13 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
 import { NORDIC_LEGENDS_SOUNDS } from '../../../features/slots/config/soundSets'
+import nordicLegendsWordmark from '../../../assets/slots/games/nordic-legends/optimized/nordic-legends-wordmark-v1.webp'
 import { NORDIC_LEGENDS_SYMBOL_IMAGES as symbols } from './symbols'
 
 export const NORDIC_LEGENDS_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'nordic-legends', title: 'Nordic Legends', subtitle: 'Claim the Halls of Valor',
   description: 'Sail beneath the aurora toward rune-carved peaks, thunder gods, and a warrior’s hoard.',
   serverGameId: 'nordic-legends-v1',
+  paylineTrace: { color: '#bafff0', glowColor: '#3edfc8' },
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 22, 23],
   presentation: 'divine-offering', collectionAriaLabel: 'Runestone offering collections', itemLabel: 'sacred runes',
   energyLabel: 'Thunder charge', actorName: 'The Valkyrie treasure chest', awardLabel: 'Valhalla war chest',
@@ -17,7 +19,10 @@ export const NORDIC_LEGENDS_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next raid is free and uses the locked wager.',
   },
   celebrationEffect: 'nordic-aurora',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: {
+    emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP,
+    title: { src: nordicLegendsWordmark, width: 640, height: 249 },
+  },
   valueToken: ['stamped silver rune', '🪙', symbols.VALUE], motif: '⚔️', accentGlyph: '❄️',
   collectionLabels: [['Crimson wolf rune', '🐺', symbols.SEAL_SYNC], ['Sapphire wave rune', '🌊', symbols.SEAL_ROWS], ['Amber hammer rune', '🔨', symbols.SEAL_PAW], ['Emerald world-tree rune', '🌲', symbols.SEAL_RAND]],
   symbolSpecs: {

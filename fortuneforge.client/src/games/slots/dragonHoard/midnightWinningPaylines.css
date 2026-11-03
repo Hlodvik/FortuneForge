@@ -50,6 +50,41 @@
   50% { color: #22e7ff; }
 }
 
+@property --slot-payline-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fff4d6;
+}
+
+.slots-page[data-slot-payline-trace] .slots-page__cabinet-spotlight {
+  --slot-payline-color: var(--slot-payline-base);
+}
+
+.midnight-winning-paylines[data-palette='cabinet'],
+.slots-page[data-slot-payline-trace] .slot-symbol--winner {
+  color: var(--slot-payline-color);
+}
+
+.midnight-winning-paylines[data-palette='cabinet'] .midnight-winning-paylines__amount {
+  fill: var(--slot-payline-label);
+  stroke: var(--slot-payline-label-outline);
+}
+
+.slots-page[data-slot-payline-trace] .slot-symbol--winner::before {
+  background: radial-gradient(circle, #fff 0 8%, color-mix(in srgb, currentColor 75%, transparent) 24%, transparent 65%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slots-page[data-slot-payline-trace] .slots-page__cabinet-spotlight:has(.midnight-winning-paylines) {
+    animation: cabinet-payline-breathe 4.4s ease-in-out infinite;
+  }
+}
+
+@keyframes cabinet-payline-breathe {
+  0%, 100% { --slot-payline-color: var(--slot-payline-base); }
+  50% { --slot-payline-color: var(--slot-payline-glow); }
+}
+
 @keyframes midnight-payline-glint {
   0%, 100% { opacity: 0; }
   12%, 82% { opacity: 1; }

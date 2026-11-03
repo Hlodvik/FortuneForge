@@ -7,6 +7,7 @@ import candyCrownWild from '../../../assets/slots/games/candy-carnival/optimized
 import caramelStarCharm from '../../../assets/slots/games/candy-carnival/optimized/caramel-star-charm.png'
 import carnivalCandyBag from '../../../assets/slots/games/candy-carnival/optimized/carnival-candy-bag.png'
 import carnivalFair from '../../../assets/slots/games/candy-carnival/optimized/candy-carnival-fair-v2.webp'
+import candyCarnivalWordmark from '../../../assets/slots/games/candy-carnival/optimized/candy-carnival-wordmark-v1.webp'
 import cottonCandyCone from '../../../assets/slots/games/candy-carnival/optimized/cotton-candy-cone.png'
 import frostedCupcake from '../../../assets/slots/games/candy-carnival/optimized/frosted-cupcake.png'
 import giantJawbreakerPower from '../../../assets/slots/games/candy-carnival/optimized/giant-jawbreaker-power.png'
@@ -24,6 +25,7 @@ export const CANDY_CARNIVAL_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'candy-carnival', title: 'Candy Carnival', subtitle: 'The Sweetest Show on Reels',
   description: 'Step under the striped big top for spun sugar, candy rides, and a sparkling prize parade.',
   serverGameId: 'candy-carnival-v1',
+  paylineTrace: { color: '#ff5eaa', glowColor: '#ffe26d' },
   paylinePatternIds: Array.from({ length: 22 }, (_, index) => index + 1),
   presentation: 'juice-glass', collectionAriaLabel: 'Candy jar collections', itemLabel: 'candy charms',
   energyLabel: 'Sugar-rush charge', actorName: 'The carnival candy bag', awardLabel: 'Sweet-shop haul',
@@ -35,7 +37,10 @@ export const CANDY_CARNIVAL_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next carnival spin is free and uses the locked wager.',
   },
   celebrationEffect: 'candy-sprinkles',
-  artwork: { emblem: cabinetEmblem, accent: giantJawbreakerPower, backdrop: carnivalFair },
+  artwork: {
+    emblem: cabinetEmblem, accent: giantJawbreakerPower, backdrop: carnivalFair,
+    title: { src: candyCarnivalWordmark, width: 640, height: 391 },
+  },
   valueToken: ['rainbow candy token', '🍬', rainbowCandyToken], motif: '🎪', accentGlyph: '🍭',
   collectionLabels: [
     ['Strawberry heart charm', '💗', strawberryHeartCharm],

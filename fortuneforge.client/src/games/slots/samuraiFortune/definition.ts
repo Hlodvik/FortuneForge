@@ -1,4 +1,5 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import samuraiFortuneWordmark from '../../../assets/slots/games/samurai-fortune/optimized/samurai-fortune-wordmark-v1.webp'
 import { SAMURAI_FORTUNE_SOUNDS } from '../../../features/slots/config/soundSets'
 import { SAMURAI_FORTUNE_SYMBOL_IMAGES as symbols } from './symbols'
 
@@ -17,7 +18,11 @@ export const SAMURAI_FORTUNE_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next duel is free and uses the locked wager.',
   },
   celebrationEffect: 'samurai-blossom',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: {
+    emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP,
+    title: { src: samuraiFortuneWordmark, width: 640, height: 284 },
+  },
+  paylineTrace: { color: '#f5ba67', glowColor: '#ff8a94' },
   valueToken: ['golden mon coin', '🪙', symbols.VALUE], motif: '⛩️', accentGlyph: '🌸',
   collectionLabels: [['Crimson crane crest', '🦢', symbols.SEAL_SYNC], ['Sapphire moon crest', '🌙', symbols.SEAL_ROWS], ['Amber sun crest', '☀️', symbols.SEAL_PAW], ['Jade dragon crest', '🐉', symbols.SEAL_RAND]],
   symbolSpecs: {

@@ -1,4 +1,5 @@
 import highNoonEmblem from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-cabinet-emblem-v2.webp'
+import wordmark from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-fortune-wordmark-v1.webp'
 import turquoiseJewel from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-gold-nugget-v2.webp'
 import westernTown from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-town-v2.webp'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
@@ -9,6 +10,8 @@ export const HIGH_NOON_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
   accessibleName: 'High Noon Fortune western slot machine',
   eyebrow: 'Fortune Forge presents',
   title: 'High Noon Fortune',
+  titleArtwork: { src: wordmark, width: 640, height: 257 },
+  paylineTrace: { color: '#fff0ad', glowColor: '#ef861f' },
   subtitle: 'Round Up the Frontier Gold',
   celebrationEffect: 'frontier-dust',
   emblemImage: highNoonEmblem,

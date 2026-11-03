@@ -16,16 +16,18 @@ let host: HTMLDivElement
 let root: Root
 let resize: () => void
 
-function Harness({ rows = 4, paylines = [first], visible = true, resultKey = 'first', reducedMotion = false, palette, formatWinAmount }: {
+function Harness({ rows = 4, paylines = [first], visible = true, resultKey = 'first', reducedMotion = false, palette, formatWinAmount, onActivePathChange }: {
   rows?: number; paylines?: PaylinePayout[]; visible?: boolean; resultKey?: string; reducedMotion?: boolean
   palette?: ComponentProps<typeof MidnightWinningPaylines>['palette']
   formatWinAmount?: (amountPoints: number) => string
+  onActivePathChange?: ComponentProps<typeof MidnightWinningPaylines>['onActivePathChange']
 }) {
   return <div className="slots-page__cabinet-spotlight" data-test-rows={rows}>
     <div className="slot-machine__reels">{Array.from({ length: 5 }, (_, reel) =>
       Array.from({ length: rows }, (_, row) => <span key={`${reel}:${row}`} className="slot-symbol"
         data-reel-index={reel} data-row-index={row} />))}</div>
-    <MidnightWinningPaylines paylines={paylines} visible={visible} resultKey={resultKey} reducedMotion={reducedMotion} palette={palette} formatWinAmount={formatWinAmount} />
+    <MidnightWinningPaylines paylines={paylines} visible={visible} resultKey={resultKey} reducedMotion={reducedMotion}
+      palette={palette} formatWinAmount={formatWinAmount} onActivePathChange={onActivePathChange} />
   </div>
 }
 const activeLine = () => host.querySelector('g[data-payline-id]')?.getAttribute('data-payline-id')
@@ -79,14 +81,21 @@ describe('Midnight paid line pulse', () => {
     expect(host.querySelectorAll('g[data-payline-id]')).toHaveLength(1)
   })
 
-  it('cycles one winning match at a time and resets to the first line for a fresh result', () => {
-    act(() => root.render(<Harness paylines={[first, second]} />))
+  it('cycles one winning match and its highlights at a time, then resets for a fresh result', () => {
+    const onActivePathChange = vi.fn()
+    const paylines = [first, second]
+    act(() => root.render(<Harness palette="cabinet" paylines={paylines} onActivePathChange={onActivePathChange} />))
     expect(activeLine()).toBe('1')
+    expect(onActivePathChange).toHaveBeenLastCalledWith({ resultKey: 'first', positions: first.matches[0].match.positions })
     act(() => vi.advanceTimersByTime(2200))
     expect(activeLine()).toBe('2')
+    expect(onActivePathChange).toHaveBeenLastCalledWith({ resultKey: 'first', positions: second.matches[0].match.positions })
     expect(host.querySelectorAll('g[data-payline-id]')).toHaveLength(1)
-    act(() => root.render(<Harness paylines={[first, second]} resultKey="next" />))
+    act(() => root.render(<Harness palette="cabinet" paylines={paylines} resultKey="next" onActivePathChange={onActivePathChange} />))
     expect(activeLine()).toBe('1')
+    expect(onActivePathChange).toHaveBeenLastCalledWith({ resultKey: 'next', positions: first.matches[0].match.positions })
+    act(() => root.render(<Harness palette="cabinet" paylines={paylines} visible={false} onActivePathChange={onActivePathChange} />))
+    expect(onActivePathChange).toHaveBeenLastCalledWith(null)
   })
 
   it('clears immediately on a new spin or a result without paid lines', () => {
@@ -131,10 +140,11 @@ describe('Midnight paid line pulse', () => {
   })
 
   it('keeps a single static line for reduced motion', () => {
-    act(() => root.render(<Harness paylines={[first, second]} reducedMotion />))
+    act(() => root.render(<Harness palette="cabinet" paylines={[first, second]} reducedMotion />))
     act(() => vi.advanceTimersByTime(22_000))
     expect(activeLine()).toBe('1')
     expect(host.querySelector('svg')?.getAttribute('data-reduced-motion')).toBe('true')
+    expect(host.querySelector('g[data-payline-id] > polyline')?.getAttribute('points')).toBe(points())
   })
 
   it('never draws a partial guessed path and remeasures when an enhanced grid appears', () => {

@@ -1,4 +1,5 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import wordmark from '../../../assets/slots/games/jungle-jackpot/optimized/jungle-jackpot-wordmark-v1.webp'
 import { JUNGLE_JACKPOT_SOUNDS } from '../../../features/slots/config/soundSets'
 import { JUNGLE_JACKPOT_SYMBOL_IMAGES as symbols } from './symbols'
 
@@ -7,6 +8,7 @@ export const JUNGLE_JACKPOT_DEFINITION: ShowcaseSlotGameDefinition = {
   description: 'Push through a living rainforest where bright wildlife guards an overgrown golden temple.',
   serverGameId: 'jungle-jackpot-v1',
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
+  paylineTrace: { color: '#d9ff98', glowColor: '#76dc3f' },
   presentation: 'fossil-dig', collectionAriaLabel: 'Rainforest relic collections', itemLabel: 'jungle relics',
   energyLabel: 'Sunbeam charge', actorName: 'The explorer field pack', awardLabel: 'Temple expedition haul',
   outcomeNarrative: {
@@ -17,7 +19,7 @@ export const JUNGLE_JACKPOT_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next expedition is free and uses the locked wager.',
   },
   celebrationEffect: 'jungle-canopy',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: { title: { src: wordmark, width: 640, height: 310 }, emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
   valueToken: ['golden temple coin', '🪙', symbols.VALUE], motif: '🌴', accentGlyph: '🦜',
   collectionLabels: [['Jaguar fang relic', '🐆', symbols.SEAL_SYNC], ['Blue orchid relic', '🪻', symbols.SEAL_ROWS], ['Amber sun relic', '☀️', symbols.SEAL_PAW], ['Emerald frog relic', '🐸', symbols.SEAL_RAND]],
   symbolSpecs: {

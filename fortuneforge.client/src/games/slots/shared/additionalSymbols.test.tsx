@@ -5,6 +5,7 @@ import { SlotSymbol } from '../../../features/slots/components/SlotSymbol'
 import { createSlotRulesSet } from '../../../features/slots/config/slotExperienceSets'
 import { selectWinSoundEvent } from '../../../features/slots/presentation/spinPresentation'
 import type { SlotResponsiveImages } from '../../../features/slots/config/symbolSets'
+import { JUNGLE_JACKPOT_DEFINITION } from '../jungleJackpot/definition'
 import { NEON_NIGHTS_DEFINITION } from '../neonNights/definition'
 import { createShowcaseSlotGame } from './createShowcaseSlotGame'
 import { createThemedSymbolSet, type ThemedSymbolSetOptions } from './themedSymbolSet'
@@ -43,11 +44,11 @@ describe('opt-in additional ordinary slot symbols', () => {
   })
 
   it('retains the legacy showcase server identity, idle reels and symbol count without opt-ins', () => {
-    const game = createShowcaseSlotGame(NEON_NIGHTS_DEFINITION)
+    const game = createShowcaseSlotGame(JUNGLE_JACKPOT_DEFINITION)
     expect(game.experience.symbols.serverSymbolSetId).toBe('classic-symbols-v3')
     expect(game.experience.symbols.definitions['8']).toBeUndefined()
     expect(Object.keys(game.experience.symbols.definitions)).toHaveLength(23)
-    expect(game.experience.rules.initialReels).toEqual(createSlotRulesSet(NEON_NIGHTS_DEFINITION.serverGameId).initialReels)
+    expect(game.experience.rules.initialReels).toEqual(createSlotRulesSet(JUNGLE_JACKPOT_DEFINITION.serverGameId).initialReels)
     expect(game.experience.rules.initialReels.flat()).not.toContain('8')
   })
 

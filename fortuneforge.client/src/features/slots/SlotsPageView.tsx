@@ -1,5 +1,5 @@
 import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
-import { useMemo, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
 import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
@@ -7,7 +7,7 @@ import rainbowRealmWordmark from '../../assets/slots/games/rainbow-realm/optimiz
 import arcaneArchivesWordmark from '../../assets/slots/games/arcane-archives/optimized/arcane-archives-wordmark-v1.webp'
 import { ArcaneLightningCollection } from '../../games/slots/arcaneArchives/ArcaneLightningCollection'
 import '../../games/slots/arcaneArchives/arcaneArchivesWordmark.css'
-import { MidnightWinningPaylines } from '../../games/slots/dragonHoard/MidnightWinningPaylines'
+import { MidnightWinningPaylines, type ActivePaidPath } from '../../games/slots/dragonHoard/MidnightWinningPaylines'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -151,11 +151,16 @@ export function SlotsPageView(controller: SlotsPageController) {
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune
   const usesPiratesControls = isPiratesFortune || usesSidecarControls
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
+  const paylineTrace = cabinetTheme.paylineTrace
+  const usesPaylineTrace = isRainbowRealm || Boolean(paylineTrace)
   const keyboardHelpAtBottom = isRainbowRealm || cabinetTheme.keyboardHelpPlacement === 'footer'
   const tracedPaylines = useMemo(() => isRainbowRealm
     ? winningPaylines.filter(({ paylineId }) => paylineId >= 1 && paylineId <= help.paylineCount)
     : winningPaylines, [help.paylineCount, isRainbowRealm, winningPaylines])
-  const hasRainbowPaylineTrace = isRainbowRealm && tracedPaylines.length > 0
+  const hasPaylineTrace = usesPaylineTrace && tracedPaylines.length > 0
+  const [activePaidPath, setActivePaidPath] = useState<ActivePaidPath | null>(null)
+  const highlightedPositions = paylineTrace && hasCompletedSpin && hasPaylineTrace &&
+    activePaidPath?.resultKey === lastSpinOutcomeKey ? activePaidPath.positions : winningPositions
   const showCollectionMeter = !isRainbowRealm
   const rainbowBonusSymbol = isRainbowRealm ? getSlotSymbolDefinition(symbolSet, 'FREE') : undefined
   const rainbowBonusImage = rainbowBonusSymbol?.responsiveImages?.[320] ?? rainbowBonusSymbol?.image
@@ -191,6 +196,12 @@ export function SlotsPageView(controller: SlotsPageController) {
   const pageStyle = {
     ...pageBackdropStyle,
     ...topbarStyle,
+    ...(paylineTrace && {
+      '--slot-payline-base': paylineTrace.color,
+      '--slot-payline-glow': paylineTrace.glowColor,
+      '--slot-payline-label': cabinetTheme.palette.text,
+      '--slot-payline-label-outline': cabinetTheme.palette.shellBottom,
+    }),
     ...(reelRichesBonusVisible
       ? { '--slot-page-backdrop': `url("${reelRichesBonusLake}")` }
       : {}),
@@ -306,6 +317,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         : slotsPageClassName}
       style={pageStyle}
       data-slot-theme={cabinetTheme.id}
+      data-slot-payline-trace={paylineTrace ? 'true' : undefined}
       data-slot-controls={usesSidecarControls ? 'sidecar' : undefined}
       data-slot-celebration={cabinetTheme.celebrationEffect}
       data-special-round={specialRound?.id}
@@ -498,10 +510,10 @@ export function SlotsPageView(controller: SlotsPageController) {
                       beingGrabbed={moneyGrabPresentation?.tokens.some(
                         (token) => token.reel === reelIndex && token.row === rowIndex,
                       ) ?? false}
-                      highlighted={winningPositions.some(
+                      highlighted={highlightedPositions.some(
                         (position) => position.reel === reelIndex && position.row === rowIndex,
                       )}
-                      highlightOrder={winningPositions.findIndex(
+                      highlightOrder={highlightedPositions.findIndex(
                         (position) => position.reel === reelIndex && position.row === rowIndex,
                       )}
                     />
@@ -510,13 +522,14 @@ export function SlotsPageView(controller: SlotsPageController) {
               </div>
               )}
             />
-            {isRainbowRealm && <MidnightWinningPaylines
-              palette="rainbow"
+            {usesPaylineTrace && <MidnightWinningPaylines
+              palette={paylineTrace ? 'cabinet' : 'rainbow'}
               formatWinAmount={points => `+${formatVaultMoney(slotPointsToRand(points, controller.pointValueInCents))}`}
               paylines={tracedPaylines}
               resultKey={lastSpinOutcomeKey}
               visible={hasCompletedSpin}
               reducedMotion={prefersReducedMotion}
+              onActivePathChange={paylineTrace ? setActivePaidPath : undefined}
             />}
           </div>
 
@@ -931,7 +944,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      {winAwardFlyover && !hasRainbowPaylineTrace && (
+      {winAwardFlyover && !hasPaylineTrace && (
         <div
           key={winAwardFlyover.id}
           className={[

@@ -1,4 +1,5 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import wordmark from '../../../assets/slots/games/robot-revolution/optimized/robot-revolution-wordmark-v1.webp'
 import { ROBOT_REVOLUTION_SOUNDS } from '../../../features/slots/config/soundSets'
 import { ROBOT_REVOLUTION_SYMBOL_IMAGES as symbols } from './symbols'
 
@@ -7,6 +8,7 @@ export const ROBOT_REVOLUTION_DEFINITION: ShowcaseSlotGameDefinition = {
   description: 'Charge a chrome megacity of clever drones, fusion cores, and jackpot-building machines.',
   serverGameId: 'robot-revolution-v1',
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23],
+  paylineTrace: { color: '#c6f6ff', glowColor: '#16bff5' },
   presentation: 'chip-stack', collectionAriaLabel: 'Circuit module collections', itemLabel: 'data modules',
   energyLabel: 'Fusion charge', actorName: 'The quantum magnet array', awardLabel: 'Megacity data haul',
   outcomeNarrative: {
@@ -17,7 +19,7 @@ export const ROBOT_REVOLUTION_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next boost is free and uses the locked wager.',
   },
   celebrationEffect: 'robot-circuit',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: { title: { src: wordmark, width: 640, height: 178 }, emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
   valueToken: ['quantum data chip', '💾', symbols.VALUE], motif: '🤖', accentGlyph: '⚙️',
   collectionLabels: [['Crimson combat module', '🔴', symbols.SEAL_SYNC], ['Sapphire logic module', '🔷', symbols.SEAL_ROWS], ['Amber power module', '🔶', symbols.SEAL_PAW], ['Emerald repair module', '🟢', symbols.SEAL_RAND]],
   symbolSpecs: {

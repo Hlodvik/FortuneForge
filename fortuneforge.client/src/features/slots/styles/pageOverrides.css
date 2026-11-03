@@ -880,6 +880,15 @@
   gap: clamp(0.3rem, 0.7vw, 0.58rem);
 }
 
+.slots-page[data-slot-payline-trace] .slots-page__title-art {
+  display: block;
+  justify-self: center;
+  width: auto;
+  max-width: 70%;
+  height: var(--slot-title-height, clamp(3rem, 9dvh, 5rem));
+  object-fit: contain;
+}
+
 .slots-page__playbar {
   position: relative;
   display: grid;

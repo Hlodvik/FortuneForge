@@ -1,4 +1,5 @@
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
+import cosmicFortuneWordmark from '../../../assets/slots/games/cosmic-fortune/optimized/cosmic-fortune-wordmark-v1.webp'
 import { COSMIC_FORTUNE_VISUALS as art } from './visuals'
 
 export const COSMIC_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
@@ -7,6 +8,8 @@ export const COSMIC_FORTUNE_CABINET_THEME: SlotCabinetTheme = {
   accessibleName: 'Cosmic Fortune space slot machine',
   eyebrow: 'Fortune Forge presents',
   title: 'Cosmic Fortune',
+  titleArtwork: { src: cosmicFortuneWordmark, width: 640, height: 360 },
+  paylineTrace: { color: '#b5f2ff', glowColor: '#7a62ff' },
   subtitle: 'Launch Beyond the Lucky Stars',
   celebrationEffect: 'cosmic-streak',
   emblemImage: art.emblem,

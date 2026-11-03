@@ -1,6 +1,7 @@
 import pokerRoom from '../../../assets/slots/games/royal-draw/optimized/royal-draw-poker-salon-v2.webp'
 import royalDrawEmblem from '../../../assets/slots/games/royal-draw/optimized/royal-draw-cabinet-emblem-v2.webp'
 import rubyCardJewel from '../../../assets/slots/games/royal-draw/optimized/royal-draw-jackpot-chip-v2.webp'
+import royalDrawWordmark from '../../../assets/slots/games/royal-draw/optimized/royal-draw-wordmark-v1.webp'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 
 export const ROYAL_DRAW_CABINET_THEME: SlotCabinetTheme = {
@@ -9,8 +10,10 @@ export const ROYAL_DRAW_CABINET_THEME: SlotCabinetTheme = {
   accessibleName: 'Royal Draw poker slot machine',
   eyebrow: 'Fortune Forge presents',
   title: 'Royal Draw',
+  titleArtwork: { src: royalDrawWordmark, width: 640, height: 453 },
   subtitle: 'Sweep the High-Stakes Table',
   celebrationEffect: 'royal-card-fan',
+  paylineTrace: { color: '#fff0a3', glowColor: '#e93e69' },
   emblemImage: royalDrawEmblem,
   accentImage: rubyCardJewel,
   backdropImage: pokerRoom,

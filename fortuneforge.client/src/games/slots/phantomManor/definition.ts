@@ -1,4 +1,5 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import phantomManorWordmark from '../../../assets/slots/games/phantom-manor/optimized/phantom-manor-wordmark-v1.webp'
 import { PHANTOM_MANOR_SOUNDS } from '../../../features/slots/config/soundSets'
 import { PHANTOM_MANOR_SYMBOL_IMAGES as symbols } from './symbols'
 
@@ -6,6 +7,7 @@ export const PHANTOM_MANOR_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'phantom-manor', title: 'Phantom Manor', subtitle: 'Fortune Haunts These Halls',
   description: 'Unlock a moonlit estate of whispering portraits, restless ravens, and spectral treasure.',
   serverGameId: 'phantom-manor-v1',
+  paylineTrace: { color: '#a7ffe7', glowColor: '#9b77ff' },
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
   presentation: 'spellbook-shelf', collectionAriaLabel: 'Haunted portrait collections', itemLabel: 'spirit seals',
   energyLabel: 'Moonlight charge', actorName: 'The séance spirit lantern', awardLabel: 'Phantom treasure haul',
@@ -17,7 +19,12 @@ export const PHANTOM_MANOR_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next haunting is free and uses the locked wager.',
   },
   celebrationEffect: 'phantom-mist',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: {
+    emblem: symbols.CABINET_EMBLEM,
+    accent: symbols.POWER,
+    backdrop: symbols.BACKDROP,
+    title: { src: phantomManorWordmark, width: 640, height: 420 },
+  },
   valueToken: ['captured spirit wisp', '👻', symbols.VALUE], motif: '🏚️', accentGlyph: '🌙',
   collectionLabels: [['Crimson raven seal', '🐦‍⬛', symbols.SEAL_SYNC], ['Sapphire mirror seal', '🪞', symbols.SEAL_ROWS], ['Amber candle seal', '🕯️', symbols.SEAL_PAW], ['Emerald key seal', '🗝️', symbols.SEAL_RAND]],
   symbolSpecs: {

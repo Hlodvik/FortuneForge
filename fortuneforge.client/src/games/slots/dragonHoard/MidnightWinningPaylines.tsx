@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import type { PaylinePayout } from '../../../features/slots/types/slots'
-import { getMidnightPaidPaths } from './midnightPaidPaths'
+import type { GridPosition, PaylinePayout } from '../../../features/slots/types/slots'
+import { getMidnightPaidPaths, type MidnightPaidPath } from './midnightPaidPaths'
 import './midnightWinningPaylines.css'
 
-type MeasuredPath = Readonly<{ id: string; paylineId: number; amountPoints: number; points: string; labelX: number; labelY: number }>
-type Geometry = Readonly<{ width: number; height: number; paths: readonly MeasuredPath[] }>
+type MeasuredPath = MidnightPaidPath & Readonly<{ points: string; labelX: number; labelY: number }>
+type Geometry = Readonly<{ resultKey: number | string; width: number; height: number; paths: readonly MeasuredPath[] }>
+export type ActivePaidPath = Readonly<{ resultKey: number | string; positions: readonly GridPosition[] }>
 
 function pathMidpoint(points: readonly (readonly [number, number])[]): readonly [number, number] {
   const lengths = points.slice(1).map((point, index) => Math.hypot(point[0] - points[index][0], point[1] - points[index][1]))
@@ -26,12 +27,15 @@ type MidnightWinningPaylinesProps = Readonly<{
   resultKey: number | string
   visible: boolean
   reducedMotion: boolean
-  palette?: 'gold' | 'neon' | 'rainbow'
+  palette?: 'gold' | 'neon' | 'rainbow' | 'cabinet'
   formatWinAmount?: (amountPoints: number) => string
+  onActivePathChange?: (path: ActivePaidPath | null) => void
 }>
 
 /** Render beside SlotMachine inside the existing, positioned cabinet spotlight. */
-export function MidnightWinningPaylines({ paylines, resultKey, visible, reducedMotion, palette = 'gold', formatWinAmount }: MidnightWinningPaylinesProps) {
+export function MidnightWinningPaylines({
+  paylines, resultKey, visible, reducedMotion, palette = 'gold', formatWinAmount, onActivePathChange,
+}: MidnightWinningPaylinesProps) {
   const isRainbow = palette === 'rainbow'
   const overlay = useRef<SVGSVGElement>(null)
   const paidPaths = useMemo(() => getMidnightPaidPaths(paylines), [paylines])
@@ -60,12 +64,12 @@ export function MidnightWinningPaylines({ paylines, resultKey, visible, reducedM
         const points = path.positions.map(position => centers.get(`${position.reel}:${position.row}`))
         if (!points.every((point): point is readonly [number, number] => point !== undefined)) return []
         const [labelX, labelY] = pathMidpoint(points)
-        return [{ id: path.id, paylineId: path.paylineId, amountPoints: path.amountPoints,
+        return [{ ...path,
           points: points.map(point => point.join(',')).join(' '),
           labelX: isRainbow ? labelX : Math.max(64, Math.min(bounds.width - 64, labelX)),
           labelY: isRainbow ? labelY : Math.max(26, labelY - 16) }]
       })
-      const next = { width: bounds.width, height: bounds.height, paths }
+      const next = { resultKey, width: bounds.width, height: bounds.height, paths }
       setGeometry(previous => JSON.stringify(previous) === JSON.stringify(next) ? previous : next)
     }
     measure()
@@ -76,7 +80,8 @@ export function MidnightWinningPaylines({ paylines, resultKey, visible, reducedM
     return () => { observer?.disconnect(); window.removeEventListener('resize', measure) }
   }, [isRainbow, paidPaths, resultKey, visible])
 
-  const pathCount = geometry?.paths.length ?? 0
+  const currentGeometry = geometry?.resultKey === resultKey ? geometry : null
+  const pathCount = currentGeometry?.paths.length ?? 0
   useEffect(() => {
     if (!visible || reducedMotion || pathCount < 2) return
     const timer = window.setInterval(() => setCycle(current => ({ resultKey,
@@ -85,16 +90,23 @@ export function MidnightWinningPaylines({ paylines, resultKey, visible, reducedM
     return () => window.clearInterval(timer)
   }, [pathCount, reducedMotion, resultKey, visible])
 
-  if (!visible || paidPaths.length === 0) return null
+  const showPayline = visible && paidPaths.length > 0
   const index = reducedMotion || cycle.resultKey !== resultKey ? 0 : cycle.index % Math.max(1, pathCount)
-  const path = geometry?.paths[index]
+  const path = showPayline ? currentGeometry?.paths[index] : undefined
+  useLayoutEffect(() => {
+    onActivePathChange?.(path ? { resultKey, positions: path.positions } : null)
+  }, [onActivePathChange, path, resultKey])
+
+  if (!showPayline) return null
   return <svg ref={overlay} className="midnight-winning-paylines" aria-hidden="true" focusable="false"
     data-palette={palette}
     data-reduced-motion={reducedMotion ? 'true' : undefined}
-    viewBox={`0 0 ${geometry?.width ?? 1} ${geometry?.height ?? 1}`} preserveAspectRatio="none">
+    viewBox={`0 0 ${currentGeometry?.width ?? 1} ${currentGeometry?.height ?? 1}`} preserveAspectRatio="none">
     {path && <g key={`${resultKey}:${path.id}`} data-payline-id={path.paylineId} data-points={path.points}>
       {isRainbow && <polyline className="midnight-winning-paylines__trail rainbow-realm__steady-payline"
         points={path.points} vectorEffect="non-scaling-stroke" strokeWidth={3.5} />}
+      {palette === 'cabinet' && reducedMotion && <polyline className="midnight-winning-paylines__trail"
+        points={path.points} vectorEffect="non-scaling-stroke" strokeWidth={3} strokeOpacity={0.85} />}
       <g className="midnight-winning-paylines__glint">
         {[[24, 9, .07], [19, 6, .12], [14, 4, .23], [9, 2.8, .44], [4, 1.6, .85]].map(([length, width, opacity], index) =>
           <polyline key={length} className={`midnight-winning-paylines__trail${index < 2 ? ' midnight-winning-paylines__trail--soft' : ''}`}

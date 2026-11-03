@@ -1,4 +1,5 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
+import oceanOdysseyWordmark from '../../../assets/slots/games/ocean-odyssey/optimized/ocean-odyssey-wordmark-v1.webp'
 import { OCEAN_ODYSSEY_SOUNDS } from '../../../features/slots/config/soundSets'
 import { OCEAN_ODYSSEY_SYMBOL_IMAGES as symbols } from './symbols'
 
@@ -6,6 +7,7 @@ export const OCEAN_ODYSSEY_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'ocean-odyssey', title: 'Ocean Odyssey', subtitle: 'Dive Beyond the Blue',
   description: 'Descend through coral gardens and ancient currents in search of a luminous pearl kingdom.',
   serverGameId: 'ocean-odyssey-v1',
+  paylineTrace: { color: '#9ffcff', glowColor: '#19acd9' },
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 23],
   presentation: 'star-orbit', collectionAriaLabel: 'Coral treasure collections', itemLabel: 'sea treasures',
   energyLabel: 'Tidal charge', actorName: 'The pearl-diver net', awardLabel: 'Deep-sea treasure haul',
@@ -17,7 +19,12 @@ export const OCEAN_ODYSSEY_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next dive is free and uses the locked wager.',
   },
   celebrationEffect: 'ocean-swell',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: {
+    emblem: symbols.CABINET_EMBLEM,
+    accent: symbols.POWER,
+    backdrop: symbols.BACKDROP,
+    title: { src: oceanOdysseyWordmark, width: 640, height: 261 },
+  },
   valueToken: ['luminous pearl', '🫧', symbols.VALUE], motif: '🌊', accentGlyph: '🐚',
   collectionLabels: [['Crimson coral treasure', '🪸', symbols.SEAL_SYNC], ['Sapphire shell treasure', '🐚', symbols.SEAL_ROWS], ['Amber star treasure', '⭐', symbols.SEAL_PAW], ['Emerald turtle treasure', '🐢', symbols.SEAL_RAND]],
   symbolSpecs: {

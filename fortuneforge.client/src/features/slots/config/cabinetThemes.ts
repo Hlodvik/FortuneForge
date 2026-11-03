@@ -44,6 +44,7 @@ export type SlotCabinetTheme = {
   eyebrow: string
   title: string
   titleArtwork?: { src: string; width: number; height: number }
+  paylineTrace?: { color: string; glowColor: string }
   subtitle: string
   celebrationEffect?: SlotCelebrationEffect
   emblemImage: string

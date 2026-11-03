@@ -1,11 +1,13 @@
 import type { ShowcaseSlotGameDefinition } from '../shared/createShowcaseSlotGame'
 import { DESERT_TREASURES_SOUNDS } from '../../../features/slots/config/soundSets'
+import desertTreasuresWordmark from '../../../assets/slots/games/desert-treasures/optimized/desert-treasures-wordmark-v1.webp'
 import { DESERT_TREASURES_SYMBOL_IMAGES as symbols } from './symbols'
 
 export const DESERT_TREASURES_DEFINITION: ShowcaseSlotGameDefinition = {
   id: 'desert-treasures', title: 'Desert Treasures', subtitle: 'Awaken the Golden Tomb',
   description: 'Follow the desert stars past ancient scarabs, hidden oases, and a sealed pharaoh’s vault.',
   serverGameId: 'desert-treasures-v1',
+  paylineTrace: { color: '#fff2ac', glowColor: '#f4a83d' },
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 20, 21, 22, 23],
   presentation: 'frontier-trail', collectionAriaLabel: 'Royal scarab collections', itemLabel: 'tomb relics',
   energyLabel: 'Sun-disc charge', actorName: 'The royal excavation satchel', awardLabel: 'Pharaoh vault haul',
@@ -17,7 +19,10 @@ export const DESERT_TREASURES_DEFINITION: ShowcaseSlotGameDefinition = {
     bonusNextAction: 'Your next excavation is free and uses the locked wager.',
   },
   celebrationEffect: 'desert-sandstorm',
-  artwork: { emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP },
+  artwork: {
+    emblem: symbols.CABINET_EMBLEM, accent: symbols.POWER, backdrop: symbols.BACKDROP,
+    title: { src: desertTreasuresWordmark, width: 640, height: 317 },
+  },
   valueToken: ['ancient gold scarab', '🪲', symbols.VALUE], motif: '🔺', accentGlyph: '☀️',
   collectionLabels: [['Crimson ankh relic', '🔻', symbols.SEAL_SYNC], ['Sapphire lotus relic', '🪷', symbols.SEAL_ROWS], ['Amber sun relic', '☀️', symbols.SEAL_PAW], ['Emerald scarab relic', '🪲', symbols.SEAL_RAND]],
   symbolSpecs: {

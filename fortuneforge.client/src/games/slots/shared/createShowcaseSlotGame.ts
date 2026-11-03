@@ -43,6 +43,7 @@ export type ShowcaseSlotGameDefinition = {
   serverSymbolSetId?: string
   /** A game-specific idle grid; never changes another theme's initial symbols. */
   initialReels?: SlotRulesSet['initialReels']
+  paylineTrace?: SlotCabinetTheme['paylineTrace']
   paylinePatternIds: readonly number[]
   presentation: SlotCollectionPresentation
   collectionAriaLabel: string
@@ -67,6 +68,7 @@ export type ShowcaseSlotGameDefinition = {
     accent: string
     backdrop: string
     backdropImageSet?: string
+    title?: SlotCabinetTheme['titleArtwork']
   }
   motif: string
   accentGlyph: string
@@ -196,6 +198,8 @@ export function createShowcaseSlotGame(
     eyebrow: 'Fortune Forge presents',
     title: definition.title,
     subtitle: definition.subtitle,
+    titleArtwork: artwork.title,
+    paylineTrace: definition.paylineTrace,
     celebrationEffect: definition.celebrationEffect,
     emblemImage: artwork.emblem,
     accentImage: artwork.accent,

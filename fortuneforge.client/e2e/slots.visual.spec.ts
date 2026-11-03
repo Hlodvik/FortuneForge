@@ -277,6 +277,40 @@ test('settled win with highlighted payline and outcome', async ({ page }) => {
   await expect(page.locator('.slots-page')).toHaveScreenshot('settled-robot-win.png')
 })
 
+test('themed cabinets show their title and trace paid symbols with their own palette', async ({ page }) => {
+  test.setTimeout(120_000)
+  await mockDemoApi(page, { kind: 'win' })
+  const themedGames = [
+    'candy-carnival', 'high-noon-fortune', 'jungle-jackpot', 'robot-revolution', 'nordic-legends',
+    'cosmic-fortune', 'desert-treasures', 'ocean-odyssey', 'phantom-manor', 'royal-draw',
+    'samurai-fortune', 'reel-riches',
+  ]
+  const tracer = page.locator('.midnight-winning-paylines[data-palette="cabinet"]')
+  const paidLine = tracer.locator('g[data-payline-id="1"]')
+
+  for (const slug of themedGames) {
+    await test.step(slug, async () => {
+      await openStableSlot(page, `/slots/${slug}/demo`)
+      const title = page.locator('.slots-page__title-art')
+      await expect(title).toBeVisible()
+      expect(await title.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
+      const titleBox = await title.boundingBox()
+      const cabinetBox = await page.locator('.slot-game-frame').boundingBox()
+      expect(titleBox!.y + titleBox!.height).toBeLessThanOrEqual(cabinetBox!.y)
+      await expect(tracer).toHaveCount(0)
+
+      await page.getByRole('button', { name: 'Spin the reels' }).click()
+
+      await expect(paidLine.locator(':scope > polyline')).toHaveAttribute('points', /\d/)
+      await expect(paidLine.locator('text')).toHaveText('+R2.00')
+      const highlighted = page.locator('.slot-symbol--winner[data-row-index="0"]')
+      await expect(highlighted).toHaveCount(5)
+      const color = await tracer.evaluate(element => getComputedStyle(element).color)
+      await expect(highlighted.first()).toHaveCSS('color', color)
+    })
+  }
+})
+
 test('service failure state', async ({ page }) => {
   await mockDemoApi(page, { kind: 'loss' })
   await page.route('**/api/slots/demo/spins', async (route) => {

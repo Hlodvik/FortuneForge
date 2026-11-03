@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "exportedUtc": "2026-11-02T05:06:51.0914981Z",
+  "exportedUtc": "2026-11-03T06:10:41.8700849Z",
   "games": [
     {
       "route": {
@@ -172,11 +172,11 @@
         "collectionTarget": 60,
         "collectionAwardedSpins": 10,
         "usesCollections": true,
-        "usesEnergy": true,
-        "usesDirectValueTokens": true,
+        "usesEnergy": false,
+        "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
         "collectionFeatureMode": null,
-        "baseReelSetId": null,
+        "baseReelSetId": "rainbow-realm-reels-v1",
         "targetHitRate": null,
         "paylinePatternIds": null,
         "payoutMultiplier": 1
@@ -202,7 +202,7 @@
         },
         {
           "scenario": "base-win",
-          "seed": 2,
+          "seed": 23,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -215,8 +215,8 @@
         },
         {
           "scenario": "scatter",
-          "seed": 106,
-          "responses": 21,
+          "seed": 2208,
+          "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
             4
@@ -230,7 +230,7 @@
         },
         {
           "scenario": "collection-sync",
-          "seed": 13,
+          "seed": 0,
           "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
@@ -245,7 +245,7 @@
         },
         {
           "scenario": "collection-rows",
-          "seed": 15,
+          "seed": 18,
           "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
@@ -260,7 +260,7 @@
         },
         {
           "scenario": "collection-paw",
-          "seed": 1,
+          "seed": 0,
           "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
@@ -275,7 +275,7 @@
         },
         {
           "scenario": "collection-rand",
-          "seed": 3,
+          "seed": 1,
           "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
@@ -289,23 +289,8 @@
           "replayMatchesExceptSpinId": true
         },
         {
-          "scenario": "energy-completion",
-          "seed": 6,
-          "responses": 21,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "sync",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "direct-token-award",
-          "seed": 2,
+          "scenario": "charm-harvest",
+          "seed": 36,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -318,8 +303,10 @@
         }
       ],
       "missingScenarios": [],
-      "responses": 89,
-      "unavailable": []
+      "responses": 58,
+      "unavailable": [
+        "Energy disabled in actual engine profile."
+      ]
     },
     {
       "route": {
@@ -1398,25 +1385,25 @@
     },
     {
       "route": {
-        "id": "dino-dominion",
-        "title": "Dino Dominion",
-        "playPath": "/slots/dino-dominion",
-        "demoPath": "/slots/dino-dominion/demo",
-        "gameId": "dino-dominion-v1"
+        "id": "gold-foundry",
+        "title": "Gold Foundry",
+        "playPath": "/slots/gold-foundry",
+        "demoPath": "/slots/gold-foundry/demo",
+        "gameId": "gold-foundry-v1"
       },
       "statusEndpoint": 204,
       "paylineCount": 14,
       "profile": {
-        "gameId": "dino-dominion-v1",
-        "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 5,
-        "collectionTarget": 40,
-        "collectionAwardedSpins": 10,
-        "usesCollections": true,
+        "gameId": "gold-foundry-v1",
+        "scatterRequiredSymbols": 0,
+        "scatterAwardedSpins": 0,
+        "collectionTarget": 0,
+        "collectionAwardedSpins": 0,
+        "usesCollections": false,
         "usesEnergy": true,
-        "usesDirectValueTokens": true,
+        "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
-        "collectionFeatureMode": "rows-paw-rand",
+        "collectionFeatureMode": null,
         "baseReelSetId": null,
         "targetHitRate": null,
         "paylinePatternIds": [
@@ -1435,12 +1422,11 @@
           22,
           23
         ],
-        "payoutMultiplier": 0.607
+        "payoutMultiplier": 0.05
       },
-      "payoutMultiplier": 0.607,
+      "payoutMultiplier": 0.05,
       "observedRows": [
-        4,
-        6
+        4
       ],
       "scenarios": [
         {
@@ -1458,7 +1444,7 @@
         },
         {
           "scenario": "base-win",
-          "seed": 2,
+          "seed": 6,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -1470,98 +1456,21 @@
           "replayMatchesExceptSpinId": true
         },
         {
-          "scenario": "scatter",
-          "seed": 106,
-          "responses": 6,
+          "scenario": "energy-completion",
+          "seed": 0,
+          "responses": 1,
           "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 5,
+          "continuationRows": [],
+          "triggerFreeSpinsAwarded": 0,
           "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 5,
+          "triggerRemaining": 0,
           "triggerMode": null,
           "finalRemaining": 0,
           "replayMatchesExceptSpinId": true
         },
         {
-          "scenario": "collection-sync",
-          "seed": 13,
-          "responses": 11,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "rows-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rows",
-          "seed": 15,
-          "responses": 11,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "rows-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-paw",
-          "seed": 1,
-          "responses": 11,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "rows-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rand",
-          "seed": 5,
-          "responses": 21,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "rows-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "energy-completion",
-          "seed": 3,
-          "responses": 11,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "rows-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "direct-token-award",
-          "seed": 2,
+          "scenario": "reel-collector-award",
+          "seed": 6,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -1574,8 +1483,11 @@
         }
       ],
       "missingScenarios": [],
-      "responses": 74,
-      "unavailable": []
+      "responses": 4,
+      "unavailable": [
+        "Scatter awards disabled in actual engine profile; no scatter scenario invented.",
+        "Collections disabled in actual engine profile; no collection scenario invented."
+      ]
     },
     {
       "route": {
@@ -2801,8 +2713,8 @@
     }
   ],
   "gameCount": 20,
-  "scenarioCount": 138,
-  "responseCount": 1000,
+  "scenarioCount": 132,
+  "responseCount": 899,
   "generator": "Actual in-process DemoSlotsController \u002B shared engine; no HTTP listener, live request, account settlement, Firestore, tuning or backend source edits.",
   "randomness": "System.Random(seed), fresh controller/service/pity state for each searched scenario; production RNG is unchanged.",
   "collectionState": "Collection cases seed the real engine track at target-1; they do not prove a complete natural collection history.",

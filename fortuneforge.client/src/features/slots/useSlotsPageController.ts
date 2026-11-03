@@ -11,7 +11,7 @@ import {
   type ReelMotionState,
 } from './animation/slotAnimation'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
-import { GOLD_FOUNDRY_GAME_ID } from './config/slotFeatures'
+import type { SlotEnergyAward } from './config/slotFeatures'
 import type { SlotResultSoundEvent } from './config/soundSets'
 import { useMascotPerformance, type MascotOutcome } from './hooks/useMascotPerformance'
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion'
@@ -167,8 +167,7 @@ export function useSlotsPageController({
   const isWukongGame = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const reelTravelRowCount = isWukongGame ? 4 : 8
   const baseSpinSpeedMultiplier = isWukongGame ? 1.2 : 1
-  const usesGoldFoundryCrucible = gameId === GOLD_FOUNDRY_GAME_ID &&
-    featureSet.energy?.presentation === 'crucible'
+  const energyCompletionAward = featureSet.energy?.completionAward
   const defaultSealCollections = useMemo<SlotSealCollection[]>(
     () => featureSet.collections?.entries.map((collection) => ({
       sealId: collection.id,
@@ -247,10 +246,8 @@ export function useSlotsPageController({
   const [specialRoundGemCount, setSpecialRoundGemCount] = useState(0)
   const [isFreeSpinBadgePopping, setIsFreeSpinBadgePopping] = useState(false)
   const [energyBalance, setEnergyBalance] = useState(0)
-  const [isEnergyPouring, setIsEnergyPouring] = useState(false)
-  const [crucibleWageredCents, setCrucibleWageredCents] = useState(0)
-  const [cruciblePourValueCents, setCruciblePourValueCents] = useState(0)
-  const [lastCruciblePayoutCents, setLastCruciblePayoutCents] = useState(0)
+  const [isEnergyAwardCompleting, setIsEnergyAwardCompleting] = useState(false)
+  const [energyAward, setEnergyAward] = useState<SlotEnergyAward | null>(null)
   const [sealCollections, setSealCollections] =
     useState<SlotSealCollection[]>(defaultSealCollections)
   const [energyFlyover, setEnergyFlyover] = useState<EnergyFlyover | null>(null)
@@ -617,10 +614,8 @@ export function useSlotsPageController({
     setHasSpecialRoundStarted(false)
     setIsFreeSpinBadgePopping(false)
     setEnergyBalance(0)
-    setIsEnergyPouring(false)
-    setCrucibleWageredCents(0)
-    setCruciblePourValueCents(0)
-    setLastCruciblePayoutCents(0)
+    setIsEnergyAwardCompleting(false)
+    setEnergyAward(energyCompletionAward?.decode({}) ?? null)
     setSealCollections(defaultSealCollections)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
@@ -657,16 +652,16 @@ export function useSlotsPageController({
           return
         }
 
+        const award = energyCompletionAward?.decode(state)
+        if (award === null) return
+
         setFreeSpinsRemaining(state.freeSpinsRemaining)
         setFreeSpinWagerPoints(state.freeSpinWagerPoints)
         setFreeSpinFeatureMode(state.freeSpinFeatureMode)
         setMidnightBonusRound(state.bonusRound ?? null)
         setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
         setEnergyBalance(state.energyBalance)
-        if (usesGoldFoundryCrucible) {
-          setCrucibleWageredCents(state.crucibleWageredCents ?? 0)
-          setCruciblePourValueCents(state.cruciblePourValueCents ?? 0)
-        }
+        if (award) setEnergyAward(award)
         setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
         if (state.freeSpinWagerPoints !== null) {
           const matchingWagerIndex = wagerOptions.findIndex(
@@ -682,7 +677,7 @@ export function useSlotsPageController({
     return () => {
       isCurrent = false
     }
-  }, [defaultSealCollections, demoMode, gameId, usesGoldFoundryCrucible, wagerOptions])
+  }, [defaultSealCollections, demoMode, energyCompletionAward, gameId, wagerOptions])
 
   function isCurrentPresentation(signal: AbortSignal): boolean {
     return (
@@ -693,6 +688,7 @@ export function useSlotsPageController({
 
   async function animateEnergyCollection(
     result: SpinResult,
+    award: SlotEnergyAward | undefined,
     isFastAutoSpin: boolean,
     signal: AbortSignal,
   ) {
@@ -706,38 +702,33 @@ export function useSlotsPageController({
       return
     }
     const energyFeature = featureSet.energy
-    const usesCrucible = usesGoldFoundryCrucible
-    const completed = usesCrucible ? result.cruciblePoured === true : result.energyMultiplierApplied
+    const completed = award?.completed ?? result.energyMultiplierApplied
 
     const settleEnergy = () => {
       if (!isCurrentPresentation(signal)) {
         return
       }
       setEnergyFlyover(null)
-      setIsEnergyPouring(false)
+      setIsEnergyAwardCompleting(false)
       setEnergyBalance(result.energyBalance)
-      if (usesCrucible) {
-        setCrucibleWageredCents(result.crucibleWageredCents ?? 0)
-        setCruciblePourValueCents(result.cruciblePourValueCents ?? 0)
-        setLastCruciblePayoutCents(result.cruciblePayoutCents ?? 0)
-      }
+      if (award) setEnergyAward(award)
     }
 
     const showEnergyCompletion = async () => {
       setEnergyBalance(energyMeterCapacity)
       setEnergyImpactKey((current) => current + 1)
-      setIsEnergyPouring(usesCrucible)
-      if (usesCrucible) {
-        setLastCruciblePayoutCents(result.cruciblePayoutCents ?? 0)
+      if (award) {
+        setIsEnergyAwardCompleting(true)
+        setEnergyAward(award)
       }
       await waitForPresentation(
-        (usesCrucible ? energyFeature.completionDurationMs : undefined) ?? (isFastAutoSpin ? 120 : 320),
+        energyCompletionAward?.durationMs ?? (isFastAutoSpin ? 120 : 320),
         signal,
       )
     }
 
     setLastEnergyAwarded(result.energyAwarded)
-    if (usesCrucible && prefersReducedMotionRef.current) {
+    if (award && prefersReducedMotionRef.current) {
       settleEnergy()
       return
     }
@@ -759,7 +750,7 @@ export function useSlotsPageController({
       ))
       .sort((left, right) => left.reel - right.reel || left.row - right.row)
     if (boltPositions.length === 0 || prefersReducedMotionRef.current || signal.aborted) {
-      if (usesCrucible && completed && isCurrentPresentation(signal)) {
+      if (award && completed && isCurrentPresentation(signal)) {
         await showEnergyCompletion()
       }
       settleEnergy()
@@ -1096,7 +1087,7 @@ export function useSlotsPageController({
     visibleBalanceBeforeAward: number,
     isFastAutoSpin: boolean,
     signal: AbortSignal,
-    pendingPour: number,
+    pendingEnergyAward: number,
   ) {
     const awardedCredits = Math.max(
       0,
@@ -1104,7 +1095,7 @@ export function useSlotsPageController({
     )
     const finalBalance = result.slotsCreditsBalance === null
       ? visibleBalanceBeforeAward + awardedCredits
-      : result.slotsCreditsBalance - pendingPour
+      : result.slotsCreditsBalance - pendingEnergyAward
     const settleAward = () => {
       if (!isCurrentPresentation(signal)) {
         return
@@ -1473,7 +1464,7 @@ export function useSlotsPageController({
     setLastWin(0)
     setWinningPaylines([])
     setLastCollectorAward(0)
-    setLastCruciblePayoutCents(0)
+    setEnergyAward((current) => current && { ...current, payoutCents: 0 })
     setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
@@ -1580,13 +1571,13 @@ export function useSlotsPageController({
     try {
       const result = demoMode
         ? await requestDemoSpin({
+            ...energyAward?.demoState,
             gameId,
             wagerPoints: wagerForSpin,
             useFreeSpin: expectedFreeSpin,
             freeSpinsRemaining,
             freeSpinWagerPoints,
             energyBalance,
-            ...(usesGoldFoundryCrucible ? { crucibleWageredCents } : {}),
             sealCollections,
             freeSpinFeatureMode,
             ...(gameId === 'dragon-hoard-v1' ? { midnightBonusState } : {}),
@@ -1598,6 +1589,10 @@ export function useSlotsPageController({
             useSpecialBoost: requestedSpecialBoost,
           })
 
+      const energyAwardResult = energyCompletionAward?.decode(result)
+      if (energyAwardResult === null) {
+        throw new Error('The spin server returned an invalid reel result.')
+      }
       if (result.reels.length !== displayedReels.length) {
         throw new Error(`Expected ${displayedReels.length} reels but received ${result.reels.length}.`)
       }
@@ -1622,9 +1617,9 @@ export function useSlotsPageController({
       if (!isMountedRef.current) {
         return
       }
-      const cruciblePoured = usesGoldFoundryCrucible && result.cruciblePoured === true
-      const pourCredits = cruciblePoured ? (result.cruciblePayoutCents ?? 0) / 100 : 0
-      const awardedRand = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents) + pourCredits
+      const hasEnergyPayout = energyAwardResult?.completed === true
+      const energyCredits = hasEnergyPayout ? energyAwardResult.payoutCents / 100 : 0
+      const awardedRand = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents) + energyCredits
       const wagerRand = slotPointsToRand(result.wagerPoints, result.pointValueInCents)
       // Read the authoritative balance for presentation only. Some demo
       // collection awards are omitted from the separate award field.
@@ -1747,17 +1742,17 @@ export function useSlotsPageController({
         visibleBalanceBeforeAward,
         isFastAutoSpin,
         presentationSignal,
-        pourCredits,
+        energyCredits,
       )
-      if (cruciblePoured) {
-        await animateEnergyCollection(result, isFastAutoSpin, presentationSignal)
+      if (hasEnergyPayout) {
+        await animateEnergyCollection(result, energyAwardResult, isFastAutoSpin, presentationSignal)
         if (isCurrentPresentation(presentationSignal)) {
-          setBalance((current) => result.slotsCreditsBalance ?? current + pourCredits)
+          setBalance((current) => result.slotsCreditsBalance ?? current + energyCredits)
         }
       }
       await animateSealCollection(result, isFastAutoSpin, presentationSignal, expectedFreeSpin)
-      if (!cruciblePoured) {
-        await animateEnergyCollection(result, isFastAutoSpin, presentationSignal)
+      if (!hasEnergyPayout) {
+        await animateEnergyCollection(result, energyAwardResult, isFastAutoSpin, presentationSignal)
       }
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {
@@ -1818,7 +1813,7 @@ export function useSlotsPageController({
       stopLoop(spinLoopCue)
       if (isMountedRef.current) {
         finishSpinAnimation(animation)
-        setIsEnergyPouring(false)
+        setIsEnergyAwardCompleting(false)
         completePerformance(mascotOutcome, !isFastAutoSpin)
         setIsAutoSpinCoolingDown(shouldStartAutoSpinCooldown)
         setIsSpinning(false)
@@ -2008,10 +2003,8 @@ export function useSlotsPageController({
     energyImpactKey,
     energyMeterCapacity,
     energyMeterRef,
-    usesGoldFoundryCrucible,
-    isEnergyPouring,
-    cruciblePourValueCents,
-    lastCruciblePayoutCents,
+    energyAward,
+    isEnergyAwardCompleting,
     featureSet,
     freeSpinFeatureMode,
     midnightBonusRound,

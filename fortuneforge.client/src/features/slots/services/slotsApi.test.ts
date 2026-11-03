@@ -45,7 +45,7 @@ describe('demo slot API', () => {
       spinId: 'c80e3ebc-e113-4bb8-9134-690b4db42083',
       gameId: symbolId === '8' ? 'dragon-hoard-v1' : 'wukong-journey-v1',
       reelSetId: 'classic-reels-v4',
-      symbolSetId: symbolId === '8' ? 'midnight-vault-symbols-v1' : 'wukong-treasures-v3',
+      symbolSetId: symbolId === '8' ? 'midnight-vault-symbols-v1' : 'classic-symbols-v3',
       paytableId: 'classic-paytable-v4',
       wagerPoints: 50,
       pointValueInCents: 100,

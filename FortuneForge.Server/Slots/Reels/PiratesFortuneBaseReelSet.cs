@@ -9,7 +9,7 @@ public static class PiratesFortuneBaseReelSet
     public static readonly ReelSetDefinition Definition = new()
     {
         Id = Id,
-        SymbolSetId = "wukong-treasures-v3",
+        SymbolSetId = "classic-symbols-v3",
         Reels =
         [
             [

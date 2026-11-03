@@ -1,9 +1,10 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 import { COSMIC_FORTUNE_VISUALS as art } from './visuals'
 
 export const COSMIC_FORTUNE_SYMBOLS = createThemedSymbolSet({
   id: 'cosmic-fortune-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Fortune satellite', image: art.satellite },
     '3': { label: 'Silver comet', image: art.comet },

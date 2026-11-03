@@ -1,7 +1,5 @@
-import type { ComponentType } from 'react'
+import type { ComponentType, Ref } from 'react'
 import type { SlotSymbolId } from '../types/slots'
-
-export const GOLD_FOUNDRY_GAME_ID = 'dino-dominion-v1'
 
 export type SlotCollectionDefinition = {
   id: string
@@ -40,17 +38,29 @@ export type SlotCollectionFeature = {
   completionDialog?: boolean
 }
 
-export type SlotEnergyArtworkProps = {
-  progress: number
+export type SlotEnergyAward = {
+  demoState: Record<string, number>
+  valueCents: number
+  payoutCents: number
+  completed: boolean
+}
+
+export type SlotEnergyAwardMeterProps = {
+  balance: number
+  capacity: number
+  meterRef: Ref<HTMLDivElement>
+  award: SlotEnergyAward | null
   completing: boolean
 }
 
 export type SlotEnergyFeature = {
   label: string
   symbol: SlotSymbolId
-  presentation?: 'crucible'
-  artwork?: ComponentType<SlotEnergyArtworkProps>
-  completionDurationMs?: number
+  completionAward?: {
+    decode: (response: object) => SlotEnergyAward | null
+    Meter: ComponentType<SlotEnergyAwardMeterProps>
+    durationMs: number
+  }
 }
 
 export type SlotMoneyGrabFeature = {

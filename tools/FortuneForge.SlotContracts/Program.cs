@@ -7,6 +7,7 @@ using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -51,6 +52,7 @@ Directory.CreateDirectory(output);
 foreach (var route in routes)
 {
     var game = definitions.GetGame(route.GameId)!;
+    var paytable = definitions.GetPaytable(game.Math.PaytableId)!;
     var usesFoundryCollector = GoldFoundrySlotDefinitions.IsModel(game);
     SlotSpecialRoundProfiles.TryGet(route.GameId, out var profile);
     var usesCharmHarvest = route.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId && !profile.UsesDirectValueTokens;
@@ -100,7 +102,7 @@ foreach (var route in routes)
         symbols = game.Symbols, symbolSet = definitions.GetSymbolSet(game.Symbols.SymbolSetId), matching = game.Matching, wagering = game.Wagering,
         freeGames = game.FreeGames, energy = game.Energy, specialPoints = game.SpecialPoints,
         math = game.Math, paylines = game.Paylines,
-        paytable = definitions.GetPaytable(game.Math.PaytableId)!.Rules,
+        paytable = paytable.Rules,
         observedRows = scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.Reels[0].Count).Distinct().Order().ToArray(),
         observedActiveModes = scenarios.SelectMany(scenario => scenario.Steps).Select(step => step.Response.FreeSpinFeatureMode).Distinct().ToArray(),
         statusEndpoint = 204, scenarios = scenarios.Select(ScenarioSummary), missingScenarios = misses, unavailable
@@ -205,7 +207,8 @@ foreach (var route in routes)
         Require(result.Payout.TotalPoints == result.Payout.Paylines.Sum(line => line.AmountPoints) + offPaylinePoints &&
             result.Payout.Paylines.All(line => line.AmountPoints == line.Matches.Sum(match => match.AmountPoints)), "Payout does not reconcile.");
         if (usesFoundryCollector)
-            Require(result.Payout.Paylines.All(line => line.Matches.All(match => match.Match.SymbolId != "PAW")) &&
+            Require(result.Payout.Paylines.All(line => line.Matches.All(match =>
+                paytable.Rules.Any(rule => rule.SymbolId == match.Match.SymbolId))) &&
                 result.FreeSpinsAwarded == 0 && result.FreeSpinsRemaining == 0, "Unexpected Foundry payline or free spin.");
         Require(result.FreeSpinsRemaining >= 0 && (result.FreeSpinsRemaining == 0 ? result.FreeSpinWagerPoints is null : result.FreeSpinWagerPoints == wager), "Bonus locked wager mismatch.");
         Require(result.FreeSpinsRemaining > 0 || result.FreeSpinFeatureMode is null, "Ended bonus retained active mode.");

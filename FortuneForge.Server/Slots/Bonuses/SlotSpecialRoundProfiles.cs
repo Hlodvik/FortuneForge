@@ -1,4 +1,5 @@
 using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 
@@ -55,7 +56,6 @@ public static class SlotSpecialRoundProfiles
     public const string NordicLegendsGameId = "nordic-legends-v1";
     public const string ReelRichesGameId = "reel-riches-v1";
     public const string ArcaneArchivesGameId = "arcane-archives-v1";
-    public const string DinoDominionGameId = "dino-dominion-v1";
 
     private static readonly string[] Modes = ["sync", "rows", "paw", "rand"];
     private static readonly IReadOnlyDictionary<string, string> ModesBySeal =
@@ -155,11 +155,7 @@ public static class SlotSpecialRoundProfiles
                 CollectionFeatureMode: "sync-paw-rand",
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
                 PayoutMultiplier: 0.716m),
-            [DinoDominionGameId] = new(
-                DinoDominionGameId, 0, 0, 0, 0,
-                UsesCollections: false, UsesDirectValueTokens: false,
-                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
-                PayoutMultiplier: GoldFoundrySlotDefinitions.LinePayoutUnit)
+            [GoldFoundrySlotDefinitions.GameId] = GoldFoundrySlotDefinitions.Profile
         };
 
     public static bool TryGet(string gameId, out SlotSpecialRoundProfile profile) =>

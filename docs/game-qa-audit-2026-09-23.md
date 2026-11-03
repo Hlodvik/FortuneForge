@@ -25,7 +25,7 @@ This is the first production smoke and product-quality pass after the repository
 
 ## Defects fixed during this pass
 
-- Restored production profiles for Reel Riches, Arcane Archives, and Dino Dominion; corrected Rainbow Realm's symbol-set and payline metadata. All four now complete demo spins in production.
+- Restored production profiles for Reel Riches and Arcane Archives and corrected Rainbow Realm's symbol-set and payline metadata. All three completed demo spins in production.
 - Restored the package stylesheet imports for Video Poker, 2048, Sic Bo, Roulette, Liar's Dice, Keno, Baccarat, Hearts, Casino War, Drop Merge, and Craps. Keno's raw/unformatted production page was one symptom of this shared integration defect.
 - Aligned Horse Flight's browser and server obstacle pools, widths, and biome-transition timing. A production collision at score 173 was accepted and saved after deployment.
 
@@ -53,7 +53,6 @@ All twenty slot routes loaded and completed a demo spin. The shared shell is fun
 7. **Royal Draw — pass.** Lean into its card-game identity with clearer hand-like collection feedback and a stronger explanation of why a special outcome paid.
 8. **Arcane Archives — pass after repair.** Telegraph rune/shelf progress on the cabinet and make the feature's current objective readable without opening help.
 9. **Cosmic Fortune — pass.** Use orbital motion, persistent meter feedback, and stronger depth/audio changes to distinguish the bonus from an ordinary reskinned spin.
-10. **Dino Dominion — pass after repair.** Show dig/collection progress continuously and make fossil/meteor events readable before payout text appears.
 11. **Neon Nights — pass.** Tighten animation-to-audio synchronization and make the nightclub feature state more legible under the high-saturation palette.
 12. **Jungle Jackpot — pass.** Improve foreground/background separation and use creature/environment motion to create anticipation without obscuring symbols.
 13. **Ocean Odyssey — pass.** Increase low-value symbol differentiation and preserve payline readability against the detailed blue background.

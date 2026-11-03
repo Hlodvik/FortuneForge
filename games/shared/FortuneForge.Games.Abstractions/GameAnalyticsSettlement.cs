@@ -32,7 +32,7 @@ public static class GameAnalyticsOutbox
         "blackjack", "dragon-tiger", "mines", "texas-holdem", "solitaire", "free-solitaire", "three-card-poker", "house-holdem", "hearts",
         "andar-bahar", "hi-lo", "baccarat", "casino-war", "video-poker", "roulette", "craps", "keno", "sic-bo", "liars-dice", "2048", "drop-merge",
         "wukong-journey-to-the-west", "rainbow-realm", "pirates-fortune", "gods-of-olympus", "reel-riches", "high-noon-fortune",
-        "royal-draw", "arcane-archives", "cosmic-fortune", "dino-dominion", "neon-nights", "jungle-jackpot", "ocean-odyssey",
+        "royal-draw", "arcane-archives", "cosmic-fortune", "gold-foundry", "neon-nights", "jungle-jackpot", "ocean-odyssey",
         "samurai-fortune", "candy-carnival", "phantom-manor", "nordic-legends", "desert-treasures", "robot-revolution", "dragon-hoard",
     };
 

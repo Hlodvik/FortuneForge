@@ -1,5 +1,7 @@
 import type { SlotSymbolId } from '../types/slots'
 
+export const CLASSIC_SLOT_SYMBOL_SET_ID = 'classic-symbols-v3'
+
 /** Matches the responsive artwork contract already used by Rainbow Realm and Pirates. */
 export type SlotResponsiveImages = Readonly<
   { 96: string; 192: string } & ({ 256: string; 320?: never } | { 256?: never; 320: string })

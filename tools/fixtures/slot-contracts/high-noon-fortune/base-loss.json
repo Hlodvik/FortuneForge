@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d1d8f810-53ba-4088-9d7b-f3d40db2fe0b",
+        "spinId": "f0e98d20-982c-4de8-b17a-1f6df4f5a5d2",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

@@ -37,7 +37,7 @@ const slotDemoPaths = [
   '/slots/royal-draw/demo',
   '/slots/arcane-archives/demo',
   '/slots/cosmic-fortune/demo',
-  '/slots/dino-dominion/demo',
+  '/slots/gold-foundry/demo',
   '/slots/neon-nights/demo',
   '/slots/jungle-jackpot/demo',
   '/slots/ocean-odyssey/demo',
@@ -580,7 +580,7 @@ test('legacy saved mute state no longer makes a slot launch muted', async ({ pag
 
 test('Gold Foundry credits its crucible payout and resets the fill', async ({ page }) => {
   const response = spinFixture({
-    gameId: 'dino-dominion-v1',
+    gameId: 'gold-foundry-v1',
     wagerPoints: 2,
     useFreeSpin: false,
     freeSpinsRemaining: 0,
@@ -633,7 +633,7 @@ test('Gold Foundry credits its crucible payout and resets the fill', async ({ pa
   ] as const) {
     await page.setViewportSize({ width, height })
     await page.emulateMedia({ reducedMotion })
-    await openStableSlot(page, '/slots/dino-dominion/demo')
+    await openStableSlot(page, '/slots/gold-foundry/demo')
 
     const crucible = page.getByRole('progressbar', { name: 'Gold crucible' })
     const pourValue = page.locator('.slots-page__crucible-copy strong')
@@ -687,7 +687,7 @@ test('Gold Foundry shows a reel crucible payout separately from paylines', async
     })
   })
 
-  await openStableSlot(page, '/slots/dino-dominion/demo')
+  await openStableSlot(page, '/slots/gold-foundry/demo')
   await expect(page.locator('.slots-page__seal-collections')).toHaveCount(0)
   await page.getByRole('button', { name: 'Spin the reels' }).click()
   await expect(page.getByText('Ingot haul', { exact: true })).toBeVisible()
@@ -805,7 +805,7 @@ function spinFixture(request: SpinRequest, kind: SpinKind, options: DemoApiOptio
     gameId: request.gameId,
     reelSetId: 'visual-fixture-reels-v1',
     symbolSetId: isRainbowRealm ? 'rainbow-realm-symbols-v1'
-      : request.gameId === 'dino-dominion-v1' ? 'gold-foundry-symbols-v1' : 'wukong-treasures-v3',
+      : request.gameId === 'gold-foundry-v1' ? 'gold-foundry-symbols-v1' : 'classic-symbols-v3',
     paytableId: 'visual-fixture-paytable-v1',
     wagerPoints: request.wagerPoints,
     pointValueInCents: 25,

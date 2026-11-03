@@ -1,3 +1,4 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import amberNetBadge from '../../../assets/slots/games/reel-riches/optimized/reel-riches-amber-net-badge-v2.webp'
 import blueMarlin from '../../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
 import bobber from '../../../assets/slots/games/reel-riches/optimized/reel-riches-bobber-v2.webp'
@@ -19,7 +20,7 @@ import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const REEL_RICHES_SYMBOLS = createThemedSymbolSet({
   id: 'reel-riches-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Lucky fishing bobber', image: bobber },
     '3': { label: 'Sparkling feather lure', image: featherLure },

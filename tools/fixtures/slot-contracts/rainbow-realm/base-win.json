@@ -2,8 +2,8 @@
   "scenario": "base-win",
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
-    "seed": 2,
-    "engineVersion": "shared-slots-engine-v1",
+    "seed": 23,
+    "engineVersion": "rainbow-realm-charm-harvest-v1",
     "gameId": "rainbow-realm-fruits-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -54,78 +54,82 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ea629adc-45e5-44b4-bc85-1bd047ef88d0",
+        "spinId": "6887c2eb-8b24-4a1c-90cc-c071f7887cd2",
         "gameId": "rainbow-realm-fruits-v1",
-        "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
-        "paytableId": "classic-paytable-v4",
+        "reelSetId": "rainbow-realm-reels-v1",
+        "symbolSetId": "rainbow-realm-symbols-v1",
+        "paytableId": "rainbow-realm-paytable-v1",
         "wagerPoints": 2,
         "pointValueInCents": 25,
         "reelStops": [
-          49,
-          25,
-          10,
-          63,
-          6
+          742,
+          565,
+          844,
+          467,
+          590
         ],
         "reels": [
           [
-            "PAW",
-            "3",
-            "4",
-            "POWER"
-          ],
-          [
-            "RAND_05",
-            "SEAL_PAW",
-            "7",
+            "Q",
+            "A",
+            "POWER",
             "6"
           ],
           [
-            "BANANA",
-            "2",
-            "3",
-            "2"
+            "5",
+            "A",
+            "Q",
+            "BANANA"
           ],
           [
             "3",
-            "7",
+            "A",
+            "2",
+            "3"
+          ],
+          [
+            "Q",
             "5",
+            "BANANA",
             "4"
           ],
           [
-            "7",
-            "4",
-            "2",
-            "POWER"
+            "SEAL_RAND",
+            "BANANA",
+            "K",
+            "3"
           ]
         ],
         "payout": {
-          "totalPoints": 1,
+          "totalPoints": 2,
           "paylines": [
             {
-              "paylineId": 901,
-              "amountPoints": 1,
+              "paylineId": 2,
+              "amountPoints": 2,
               "matches": [
                 {
                   "match": {
-                    "paylineId": 901,
-                    "symbolId": "PAW",
-                    "matchLength": 2,
+                    "paylineId": 2,
+                    "symbolId": "A",
+                    "matchLength": 3,
                     "positions": [
                       {
                         "reel": 0,
-                        "row": 0
+                        "row": 1
                       },
                       {
                         "reel": 1,
-                        "row": 0
+                        "row": 1
+                      },
+                      {
+                        "reel": 2,
+                        "row": 1
                       }
                     ],
                     "wildPositions": []
                   },
                   "multiplier": 1,
-                  "amountPoints": 1
+                  "amountPoints": 2
                 }
               ]
             }
@@ -145,11 +149,11 @@
         "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
-        "monkeyPawCount": 1,
-        "moneyGrabPoints": 1,
+        "monkeyPawCount": 0,
+        "moneyGrabPoints": 0,
         "bananaBonusPoints": 0,
         "sealsAwarded": {
-          "SEAL_PAW": 1
+          "SEAL_RAND": 1
         },
         "sealCollections": [
           {
@@ -166,14 +170,14 @@
           },
           {
             "sealId": "paw",
-            "count": 1,
-            "averageWagerPoints": 2,
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           },
           {
             "sealId": "rand",
-            "count": 0,
-            "averageWagerPoints": 0,
+            "count": 1,
+            "averageWagerPoints": 2,
             "requiredCount": 60
           }
         ],

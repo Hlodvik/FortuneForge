@@ -31,9 +31,7 @@ public sealed class AcceptedGameActivityRealContractTests
     [Fact]
     public void EveryRuntimeSlotIdMapsToExactlyOneCatalogueSlotUsingTheRealSpinContract()
     {
-        var runtimeIds = typeof(SlotSpecialRoundProfiles).GetFields(BindingFlags.Public | BindingFlags.Static)
-            .Where(field => field.IsLiteral && field.FieldType == typeof(string) && field.Name.EndsWith("GameId"))
-            .Select(field => (string)field.GetRawConstantValue()!).ToArray();
+        var runtimeIds = SlotSpecialRoundProfiles.All.Select(profile => profile.GameId).ToArray();
         Assert.Equal(20, runtimeIds.Length);
         var canonicalIds = new HashSet<string>();
         var path = ActionPath<SlotsController>(nameof(SlotsController.Spin));

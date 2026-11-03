@@ -44,7 +44,7 @@ describe('opt-in additional ordinary slot symbols', () => {
 
   it('retains the legacy showcase server identity, idle reels and symbol count without opt-ins', () => {
     const game = createShowcaseSlotGame(NEON_NIGHTS_DEFINITION)
-    expect(game.experience.symbols.serverSymbolSetId).toBe('wukong-treasures-v3')
+    expect(game.experience.symbols.serverSymbolSetId).toBe('classic-symbols-v3')
     expect(game.experience.symbols.definitions['8']).toBeUndefined()
     expect(Object.keys(game.experience.symbols.definitions)).toHaveLength(23)
     expect(game.experience.rules.initialReels).toEqual(createSlotRulesSet(NEON_NIGHTS_DEFINITION.serverGameId).initialReels)

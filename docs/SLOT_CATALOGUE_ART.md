@@ -4,6 +4,7 @@ Current source status (2026-11-02): the Home redesign selects runtime artwork th
 `fortuneforge.client/src/features/catalog/cataloguePresentationArt.ts`. The original
 files-only production brief below is retained as history. Unselected sibling versions
 remain source artwork and do not change those explicit runtime imports.
+Gold Foundry uses `gold-foundry-title-v1.webp` and its own artwork metadata.
 
 Owner request: use the same three artwork chats to make original catalogue title cards for all
 20 slots, one game at a time within each chat. This is catalogue artwork, not a reel/theme rewrite.
@@ -52,7 +53,6 @@ loading-screen follow-on was dispatched to all three chats; see `docs/GAME_LOADI
 | royal-draw | Royal Draw | A | Queued |
 | arcane-archives | Arcane Archives | B | Queued |
 | cosmic-fortune | Cosmic Fortune | B | Queued |
-| dino-dominion | Dino Dominion | B | Queued |
 | neon-nights | Neon Nights | B | Queued |
 | jungle-jackpot | Jungle Jackpot | B | Queued |
 | ocean-odyssey | Ocean Odyssey | B | Queued |

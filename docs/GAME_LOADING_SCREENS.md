@@ -110,7 +110,7 @@ wukong-journey-to-the-west, rainbow-realm, pirates-fortune, gods-of-olympus, ree
 high-noon-fortune, royal-draw.
 
 B (14): dragon-tiger, andar-bahar, hi-lo, casino-war, video-poker, keno, sic-bo;
-arcane-archives, cosmic-fortune, dino-dominion, neon-nights, jungle-jackpot, ocean-odyssey,
+arcane-archives, cosmic-fortune, gold-foundry, neon-nights, jungle-jackpot, ocean-odyssey,
 samurai-fortune.
 
 C (12): mines, solitaire, hearts, liars-dice, 2048, drop-merge; candy-carnival, phantom-manor,

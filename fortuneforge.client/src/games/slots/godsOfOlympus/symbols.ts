@@ -1,3 +1,4 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import ambrosiaFlame from '../../../assets/slots/games/gods-of-olympus/optimized/ambrosia-flame.png'
 import amphora from '../../../assets/slots/games/gods-of-olympus/optimized/amphora.png'
 import aresHelmetMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/ares-helmet-medallion.png'
@@ -19,7 +20,7 @@ import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
   id: 'gods-of-olympus-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Olympian amphora', image: amphora },
     '3': { label: 'Golden laurel wreath', image: laurelWreath },

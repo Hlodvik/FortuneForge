@@ -80,3 +80,13 @@ Source WAVs: https://bigsoundbank.com/UPLOAD/bwf-en/0902.wav
 License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
 
 reel-brake.wav is an original synthesized effect.
+
+Result stingers
+These five cues reuse FortuneForge original offline synthesis from the
+November 2, 2026 themed audio batch. They are unchanged 44.1 kHz stereo
+Ogg Vorbis files. Output SHA-256:
+win-small.ogg  5bf6468e07f18a978805a5c1b59051aabc4adcc1f1a78b9ec1acdc419ba4a3b5
+win-medium.ogg  6fe2952d7c26ab0296284f077c89e619476cbfbe85cb5dee18de533adc7b1379
+win-big.ogg  aedd5523bbc38e685f8c24ba2ed374060b724b6da97e24c89118b50d2bb193b1
+triple-sevens.ogg  dc828ce45dc49f930188f182ec4ea0ed9ba698a0cb30e8e774237b8302682589
+no-win.ogg  a4c5c0810f755058dbe9e2066fce9f1a894e6b685277170c6d0fd4933f463691

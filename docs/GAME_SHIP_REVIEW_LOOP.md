@@ -56,7 +56,7 @@ All non-slot games come first. The slot catalog follows, with Wukong and Pirates
 | 23 | Royal Draw | Slot | Queued |
 | 24 | Arcane Archives | Slot | Queued |
 | 25 | Cosmic Fortune | Slot | Queued |
-| 26 | Dino Dominion | Slot | Queued |
+| 26 | Gold Foundry | Slot | Queued |
 | 27 | Neon Nights | Slot | Queued |
 | 28 | Jungle Jackpot | Slot | Queued |
 | 29 | Ocean Odyssey | Slot | Queued |

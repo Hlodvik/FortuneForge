@@ -15,11 +15,11 @@
     "collectionTarget": 60,
     "collectionAwardedSpins": 10,
     "usesCollections": true,
-    "usesEnergy": true,
-    "usesDirectValueTokens": true,
+    "usesEnergy": false,
+    "usesDirectValueTokens": false,
     "scatterFeatureMode": null,
     "collectionFeatureMode": null,
-    "baseReelSetId": null,
+    "baseReelSetId": "rainbow-realm-reels-v1",
     "targetHitRate": null,
     "paylinePatternIds": null,
     "payoutMultiplier": 1
@@ -30,7 +30,7 @@
     "paylineCount": 23
   },
   "symbols": {
-    "symbolSetId": "wukong-treasures-v3",
+    "symbolSetId": "rainbow-realm-symbols-v1",
     "wildSymbolId": "ACE",
     "nativeWildMatchLengths": [
       3,
@@ -41,8 +41,20 @@
     ]
   },
   "symbolSet": {
-    "id": "wukong-treasures-v3",
+    "id": "rainbow-realm-symbols-v1",
     "symbols": [
+      {
+        "id": "A"
+      },
+      {
+        "id": "K"
+      },
+      {
+        "id": "Q"
+      },
+      {
+        "id": "J"
+      },
       {
         "id": "2"
       },
@@ -65,40 +77,13 @@
         "id": "ACE"
       },
       {
-        "id": "FREE"
-      },
-      {
         "id": "POWER"
-      },
-      {
-        "id": "BOLT"
       },
       {
         "id": "BANANA"
       },
       {
-        "id": "PAW"
-      },
-      {
-        "id": "RAND_05"
-      },
-      {
-        "id": "RAND_1"
-      },
-      {
-        "id": "RAND_15"
-      },
-      {
-        "id": "RAND_2"
-      },
-      {
-        "id": "RAND_3"
-      },
-      {
-        "id": "RAND_4"
-      },
-      {
-        "id": "RAND_5"
+        "id": "FREE"
       },
       {
         "id": "SEAL_SYNC"
@@ -111,6 +96,9 @@
       },
       {
         "id": "SEAL_RAND"
+      },
+      {
+        "id": "PAW"
       }
     ]
   },
@@ -131,10 +119,7 @@
     "awardedSpins": 10,
     "visibleFrequencyDivisor": 4
   },
-  "energy": {
-    "symbolId": "BOLT",
-    "pointsPerVisibleSymbol": 1
-  },
+  "energy": null,
   "specialPoints": {
     "symbolId": "POWER",
     "threeMatchPoints": 1,
@@ -147,8 +132,8 @@
     ]
   },
   "math": {
-    "reelSetId": "classic-reels-v4",
-    "paytableId": "classic-paytable-v4",
+    "reelSetId": "rainbow-realm-reels-v1",
+    "paytableId": "rainbow-realm-paytable-v1",
     "payoutMultiplier": 1,
     "paylinePayoutSteps": [
       2,
@@ -178,7 +163,7 @@
     "fiveMatchPityMissLimit": 12,
     "targets": {
       "rtp": 0.88,
-      "hitRate": 0.30,
+      "hitRate": 0.19,
       "volatility": null
     }
   },
@@ -347,6 +332,46 @@
   ],
   "paytable": [
     {
+      "symbolId": "J",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "J",
+      "matchLength": 5,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "Q",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "Q",
+      "matchLength": 5,
+      "multiplier": 3
+    },
+    {
+      "symbolId": "K",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "K",
+      "matchLength": 5,
+      "multiplier": 4
+    },
+    {
+      "symbolId": "A",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "A",
+      "matchLength": 5,
+      "multiplier": 5
+    },
+    {
       "symbolId": "2",
       "matchLength": 3,
       "multiplier": 1
@@ -455,7 +480,7 @@
     },
     {
       "scenario": "base-win",
-      "seed": 2,
+      "seed": 23,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],
@@ -468,8 +493,8 @@
     },
     {
       "scenario": "scatter",
-      "seed": 106,
-      "responses": 21,
+      "seed": 2208,
+      "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
         4
@@ -483,7 +508,7 @@
     },
     {
       "scenario": "collection-sync",
-      "seed": 13,
+      "seed": 0,
       "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
@@ -498,7 +523,7 @@
     },
     {
       "scenario": "collection-rows",
-      "seed": 15,
+      "seed": 18,
       "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
@@ -513,7 +538,7 @@
     },
     {
       "scenario": "collection-paw",
-      "seed": 1,
+      "seed": 0,
       "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
@@ -528,7 +553,7 @@
     },
     {
       "scenario": "collection-rand",
-      "seed": 3,
+      "seed": 1,
       "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
@@ -542,23 +567,8 @@
       "replayMatchesExceptSpinId": true
     },
     {
-      "scenario": "energy-completion",
-      "seed": 6,
-      "responses": 21,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 10,
-      "triggerMode": "sync",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "direct-token-award",
-      "seed": 2,
+      "scenario": "charm-harvest",
+      "seed": 36,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],
@@ -571,5 +581,7 @@
     }
   ],
   "missingScenarios": [],
-  "unavailable": []
+  "unavailable": [
+    "Energy disabled in actual engine profile."
+  ]
 }

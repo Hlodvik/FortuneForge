@@ -2,7 +2,7 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
-import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/dinoDominion/sounds'
+import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/goldFoundry/sounds'
 import * as soundSets from './soundSets'
 import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
 import type { SlotSoundSet } from './soundSets'
@@ -113,6 +113,7 @@ describe('catalogue audio provenance and allocation', () => {
     `${foundryAudioPath}/spin-button-metal-hit.wav`,
     `${foundryAudioPath}/forge-bellows-and-crackling-fire.wav`,
     `${foundryAudioPath}/reel-brake.wav`,
+    ...['win-small', 'win-medium', 'win-big', 'triple-sevens', 'no-win'].map(name => `${foundryAudioPath}/${name}.ogg`),
   ])
   const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
   const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
@@ -133,7 +134,7 @@ describe('catalogue audio provenance and allocation', () => {
           source: expect.stringMatching(/^disabled:opentracks\/[^/]+\.mp3$/),
           category: 'effect', loop: true, enabled: false,
         } : {
-          source: game.id === 'dino-dominion' ? foundryAmbienceSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
+          source: game.id === 'gold-foundry' ? foundryAmbienceSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
           category: 'effect', loop: true, enabled: true,
         })
     }

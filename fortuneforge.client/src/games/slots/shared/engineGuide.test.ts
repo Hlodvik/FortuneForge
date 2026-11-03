@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { GOLD_FOUNDRY_GAME_ID } from '../../../features/slots/config/slotFeatures'
+import { GOLD_FOUNDRY_GAME_ID } from '../goldFoundry/identity'
 import type { SlotSymbolId } from '../../../features/slots/types/slots'
 import { loadAllSlotGameManifests } from '..'
 import { getSlotEngineGuideContract, withEngineGuide } from './engineGuide'
@@ -127,8 +127,8 @@ it('matches the Gold Foundry guide to exported line prices', () => {
   }
 })
 
-it('preserves the separately maintained Rainbow Realm, Midnight Vault, and Gold Foundry experiences', () => {
-  for (const id of ['rainbow-realm', 'dragon-hoard', 'dino-dominion']) {
+it('preserves the separately maintained Rainbow Realm and Midnight Vault experiences', () => {
+  for (const id of ['rainbow-realm', 'dragon-hoard']) {
     const experience = manifests.find(game => game.id === id)!.experience
     expect(withEngineGuide(experience)).toBe(experience)
   }

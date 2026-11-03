@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d8b8aa38-457b-44a0-aa46-15f6534d4e99",
+        "spinId": "e1d06354-20a9-4c07-8a21-9b17d21b5fa5",
         "gameId": "jungle-jackpot-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

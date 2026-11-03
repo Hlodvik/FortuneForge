@@ -3,7 +3,7 @@
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
     "seed": 0,
-    "engineVersion": "shared-slots-engine-v1",
+    "engineVersion": "rainbow-realm-charm-harvest-v1",
     "gameId": "rainbow-realm-fruits-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -54,50 +54,50 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ad3d4fec-e005-4f6e-8e86-8a6fb8d9c34c",
+        "spinId": "db271c9b-3e27-4ce3-9c73-277b2b7f72a3",
         "gameId": "rainbow-realm-fruits-v1",
-        "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
-        "paytableId": "classic-paytable-v4",
+        "reelSetId": "rainbow-realm-reels-v1",
+        "symbolSetId": "rainbow-realm-symbols-v1",
+        "paytableId": "rainbow-realm-paytable-v1",
         "wagerPoints": 2,
         "pointValueInCents": 25,
         "reelStops": [
-          46,
-          52,
-          49,
-          35,
-          13
+          726,
+          817,
+          768,
+          558,
+          206
         ],
         "reels": [
           [
-            "7",
-            "2",
-            "7",
-            "3"
-          ],
-          [
-            "2",
+            "J",
             "POWER",
-            "4",
-            "BOLT"
-          ],
-          [
-            "POWER",
-            "4",
-            "3",
-            "BANANA"
-          ],
-          [
-            "4",
-            "POWER",
-            "5",
-            "3"
+            "SEAL_SYNC",
+            "6"
           ],
           [
             "6",
+            "POWER",
+            "Q",
+            "J"
+          ],
+          [
+            "A",
+            "SEAL_PAW",
             "2",
-            "5",
-            "RAND_05"
+            "4"
+          ],
+          [
+            "4",
+            "A",
+            "K",
+            "J"
+          ],
+          [
+            "POWER",
+            "3",
+            "ACE",
+            "A"
           ]
         ],
         "payout": {
@@ -108,25 +108,28 @@
         "fiveMatchPityTriggered": false,
         "freeSpinsAwarded": 0,
         "specialPointsAwarded": 0,
-        "energyAwarded": 1,
+        "energyAwarded": 0,
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
         "moneyGrabPoints": 0,
         "bananaBonusPoints": 0,
-        "sealsAwarded": {},
+        "sealsAwarded": {
+          "SEAL_SYNC": 1,
+          "SEAL_PAW": 1
+        },
         "sealCollections": [
           {
             "sealId": "sync",
-            "count": 0,
-            "averageWagerPoints": 0,
+            "count": 1,
+            "averageWagerPoints": 2,
             "requiredCount": 60
           },
           {
@@ -137,8 +140,8 @@
           },
           {
             "sealId": "paw",
-            "count": 0,
-            "averageWagerPoints": 0,
+            "count": 1,
+            "averageWagerPoints": 2,
             "requiredCount": 60
           },
           {

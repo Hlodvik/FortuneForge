@@ -3,6 +3,7 @@ using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Spins;
 using FortuneForge.Server.RoundAudit;
@@ -56,9 +57,7 @@ public sealed class DemoSlotsController(
     {
         try
         {
-            var isGoldFoundry = GoldFoundryCrucible.IsGame(request.GameId);
-            if (isGoldFoundry && request.UseFreeSpin)
-                throw new ArgumentException("Gold Foundry does not support demo free spins.", nameof(request));
+            var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
             if (request.FreeSpinsRemaining < 0 || request.FreeSpinsRemaining > 1_000)
             {
                 throw new ArgumentOutOfRangeException(
@@ -78,9 +77,11 @@ public sealed class DemoSlotsController(
 
             if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
                 return await SpinMidnight(request, cancellationToken);
-            if (isGoldFoundry && request.CrucibleWageredCents is < 0 or > GoldFoundryCrucible.MaximumDemoWageredCents)
-                throw new ArgumentOutOfRangeException(nameof(request.CrucibleWageredCents),
-                    "The demo crucible total is outside the allowed range.");
+            if (isGoldFoundry)
+            {
+                GoldFoundrySlotDefinitions.ValidateSpinRequest(request.UseFreeSpin);
+                GoldFoundryCrucible.ValidateDemoWager(request.CrucibleWageredCents);
+            }
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
             var usesEnergy = profile?.UsesEnergy != false;
@@ -95,16 +96,19 @@ public sealed class DemoSlotsController(
                 request.UseFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
                     ? request.FreeSpinFeatureMode
                     : null);
-            var crucible = isGoldFoundry
-                ? GoldFoundryCrucible.Settle(currentEnergy, engineResult.EnergyAwarded,
-                    request.CrucibleWageredCents, request.UseFreeSpin ? 0 :
-                        RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents))
-                : null;
-            var energy = crucible?.AsEnergySettlement(engineResult.Payout) ?? EnergyBonus.Settle(
+            if (isGoldFoundry)
+            {
+                var settled = GoldFoundryCrucible.SettleDemo(engineResult, currentEnergy, request.CrucibleWageredCents);
+                await auditStore.RecordAsync(new DemoSlotAuditEntry(request, engineResult,
+                    settled, startedAtUtc, DateTime.UtcNow), cancellationToken);
+                return Ok(settled);
+            }
+
+            var energy = EnergyBonus.Settle(
                 currentEnergy,
                 engineResult.EnergyAwarded,
                 engineResult.Payout);
-            var specialRounds = isGoldFoundry || profile is null
+            var specialRounds = profile is null
                 ? new SlotSpecialRoundProgress(0, null, [])
                 : SlotSpecialRoundProfiles.SettleDemo(
                     profile,
@@ -113,7 +117,7 @@ public sealed class DemoSlotsController(
                     engineResult.WagerPoints,
                     energy.MultiplierApplied,
                     engineResult.SpinId);
-            var freeSpinsRemaining = isGoldFoundry ? 0 : checked(
+            var freeSpinsRemaining = checked(
                 request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
                 engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
@@ -134,10 +138,6 @@ public sealed class DemoSlotsController(
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,
-                CrucibleWageredCents = crucible?.WageredCents,
-                CruciblePourValueCents = crucible?.PourValueCents,
-                CruciblePoured = crucible?.Poured,
-                CruciblePayoutCents = crucible?.PayoutCents,
                 PayoutMultiplier = energy.PayoutMultiplier,
                 SealCollections = specialRounds.Collections,
                 FreeSpinFeatureMode = freeSpinsRemaining > 0

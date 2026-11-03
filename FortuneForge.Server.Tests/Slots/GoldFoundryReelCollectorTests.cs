@@ -2,6 +2,7 @@ using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -103,29 +104,10 @@ public sealed class GoldFoundryReelCollectorTests
         Assert.Equal(0, result.MoneyGrabPoints);
     }
 
-    [Fact]
-    public void HistoricFoundryOutcomeStillReplaysWithItsRecordedCollectorLine()
-    {
-        var result = Spin(
-        [
-            ["PAW", "2", "2", "2"],
-            ["3", "3", "3", "3"],
-            ["4", "4", "4", "4"],
-            ["5", "5", "RAND_1", "5"],
-            ["6", "RAND_05", "6", "6"]
-        ], legacy: true);
-
-        Assert.Equal(GoldFoundryCrucible.LegacyRuleVersion, result.EngineAudit?.CrucibleRuleVersion);
-        Assert.Equal(SpinService.AuditEngineVersion, result.EngineAudit?.EngineVersion);
-        Assert.Equal(91, result.MoneyGrabPoints);
-        Assert.Equal(901, Assert.Single(result.Payout.Paylines).PaylineId);
-        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
-    }
-
-    private static SpinResult Spin(List<List<string>> strips, long wagerPoints = 100, bool legacy = false)
+    private static SpinResult Spin(List<List<string>> strips, long wagerPoints = 100)
     {
         var random = new FirstStop();
-        return new SpinService(new FoundryFixture(strips, legacy), new CryptoReelGenerator(random),
+        return new SpinService(new FoundryFixture(strips), new CryptoReelGenerator(random),
             new CombinationEvaluator(), new PayoutCalculator(), random)
             .Spin(GoldFoundrySlotDefinitions.GameId, wagerPoints, "foundry-fixture", false);
     }
@@ -135,51 +117,18 @@ public sealed class GoldFoundryReelCollectorTests
         public int Next(int maximumExclusive) => 0;
     }
 
-    private sealed class FoundryFixture(List<List<string>> strips, bool legacy) : ISlotsDefinitionProvider
+    private sealed class FoundryFixture(List<List<string>> strips) : ISlotsDefinitionProvider
     {
-        private string SymbolSetId => legacy ? "wukong-treasures-v3" : GoldFoundrySlotDefinitions.SymbolSetId;
+        public GameDefinition GetGame(string id) => GoldFoundrySlotDefinitions.CreateGame();
 
-        public GameDefinition GetGame(string id)
-        {
-            var foundry = GoldFoundrySlotDefinitions.CreateGame();
-            if (!legacy)
-                return foundry;
+        public SymbolSetDefinition GetSymbolSet(string id) => GoldFoundrySlotDefinitions.CreateSymbolSet();
 
-            return new GameDefinition
-            {
-                Id = foundry.Id,
-                Layout = foundry.Layout,
-                Symbols = new() { SymbolSetId = SymbolSetId, WildSymbolId = "ACE" },
-                Matching = foundry.Matching,
-                Math = new()
-                {
-                    ReelSetId = "classic-reels-v4",
-                    PaytableId = "classic-paytable-v4",
-                    PayoutMultiplier = 0.607m,
-                    PaylinePayoutSteps = foundry.Math.PaylinePayoutSteps,
-                    Targets = new()
-                },
-                Wagering = foundry.Wagering,
-                Energy = foundry.Energy,
-                Paylines = foundry.Paylines
-            };
-        }
-
-        public SymbolSetDefinition GetSymbolSet(string id) => legacy ? new()
-        {
-            Id = id,
-            Symbols = strips.SelectMany(strip => strip).Append("ACE").Distinct()
-                .Select(symbol => new SymbolDefinition { Id = symbol }).ToList()
-        } : GoldFoundrySlotDefinitions.CreateSymbolSet();
-
-        public PaytableDefinition GetPaytable(string id) => legacy
-            ? new() { Id = id, SymbolSetId = SymbolSetId }
-            : GoldFoundrySlotDefinitions.CreatePaytable();
+        public PaytableDefinition GetPaytable(string id) => GoldFoundrySlotDefinitions.CreatePaytable();
 
         public ReelSetDefinition GetReelSet(string id) => new()
         {
             Id = id,
-            SymbolSetId = SymbolSetId,
+            SymbolSetId = GoldFoundrySlotDefinitions.SymbolSetId,
             Reels = strips
         };
     }

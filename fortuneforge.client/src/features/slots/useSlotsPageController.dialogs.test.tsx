@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { OCEAN_ODYSSEY_SLOT_GAME } from '../../games/slots/oceanOdyssey/manifest'
 import { DRAGON_HOARD_SLOT_GAME } from '../../games/slots/dragonHoard/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from './config/symbolSets'
 import { useSlotsPageController, type SlotsPageController } from './useSlotsPageController'
 import { getPresentedFreeSpinsAwarded } from './presentation/freeSpinAwards'
 import type { SpinResult } from './types/slots'
@@ -39,6 +40,8 @@ vi.mock('./presentation/spinLifecycle', async importOriginal => ({
 const fixture = JSON.parse(readFileSync(new NodeURL('./__fixtures__/controller-dialog-engine.json', import.meta.url), 'utf8')) as {
   collection: { response: SpinResult }[]; baseLoss: { response: SpinResult }
 }
+const withCurrentSymbolSet = (response: SpinResult): SpinResult =>
+  ({ ...response, symbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID })
 let host: HTMLDivElement
 let root: Root
 let controller: SlotsPageController
@@ -60,7 +63,7 @@ beforeEach(() => {
   host = document.createElement('div')
   document.body.append(host)
   root = createRoot(host)
-  mocks.request.mockResolvedValue(fixture.baseLoss.response)
+  mocks.request.mockResolvedValue(withCurrentSymbolSet(fixture.baseLoss.response))
 })
 afterEach(() => {
   act(() => root.unmount())
@@ -84,9 +87,9 @@ describe('symbol guide pauses slot controls', () => {
   })
 
   it('pauses an existing bonus timer and resumes using the actual server balance', async () => {
-    mocks.request.mockResolvedValueOnce(fixture.collection[0].response)
-      .mockResolvedValueOnce(fixture.collection[1].response)
-      .mockResolvedValueOnce(fixture.collection[2].response)
+    mocks.request.mockResolvedValueOnce(withCurrentSymbolSet(fixture.collection[0].response))
+      .mockResolvedValueOnce(withCurrentSymbolSet(fixture.collection[1].response))
+      .mockResolvedValueOnce(withCurrentSymbolSet(fixture.collection[2].response))
     await mount()
     await spin()
     expect(controller.lastFreeSpinsAwarded).toBe(6)

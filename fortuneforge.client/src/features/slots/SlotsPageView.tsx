@@ -43,7 +43,6 @@ export function SlotsPageView(controller: SlotsPageController) {
     collectionAwardPresentation,
     closeSettings,
     creditTileRef,
-    cruciblePourValueCents,
     displayedReels,
     balanceActionHref,
     balanceRecoveryHref,
@@ -66,14 +65,14 @@ export function SlotsPageView(controller: SlotsPageController) {
     isFreeSpinBadgePopping,
     isHelpOpen,
     isDemoSpinDisabled,
-    isEnergyPouring,
+    energyAward,
+    isEnergyAwardCompleting,
     isReloadPromptOpen,
     isSpecialGameActive,
     isSpecialSpinDelayActive,
     isSettingsOpen,
     isSpinning,
     isStopRequested,
-    lastCruciblePayoutCents,
     lastCollectorAward,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
@@ -113,7 +112,6 @@ export function SlotsPageView(controller: SlotsPageController) {
     toggleMuted,
     toggleResultsOnly,
     useFreeGameForNextSpin,
-    usesGoldFoundryCrucible,
     visibleSealCollections,
     wagerIndex,
     wagerOptions,
@@ -124,35 +122,8 @@ export function SlotsPageView(controller: SlotsPageController) {
   } = controller
   const collectionFeature = featureSet.collections
   const energyFeature = featureSet.energy
-  const EnergyArtwork = energyFeature?.artwork
-  const crucibleValue = isEnergyPouring ? lastCruciblePayoutCents : cruciblePourValueCents
-  const floorCrucible = usesGoldFoundryCrucible && energyFeature && EnergyArtwork && (
-    <div className="slots-page__crucible">
-      <div
-        className="slots-page__crucible-art"
-        ref={energyMeterRef}
-        role="progressbar"
-        aria-label={energyFeature.label}
-        aria-valuemin={0}
-        aria-valuemax={energyMeterCapacity}
-        aria-valuenow={Math.min(energyMeterCapacity, energyBalance)}
-        aria-valuetext={`${Math.floor(Math.min(1, energyBalance / energyMeterCapacity) * 100)}% full. Pour value ${formatVaultMoney(crucibleValue / 100)}`}
-        data-pouring={isEnergyPouring ? 'true' : undefined}
-      >
-        <EnergyArtwork progress={energyBalance / energyMeterCapacity} completing={isEnergyPouring} />
-      </div>
-      <span className="slots-page__crucible-copy">
-        <span>{isEnergyPouring ? 'Pouring' : 'Pour value'}</span>
-        <strong>{formatVaultMoney(crucibleValue / 100)}</strong>
-        <small className="slots-page__crucible-receipt" role="status">
-          {!isEnergyPouring && lastCruciblePayoutCents > 0
-            ? `${formatVaultMoney(lastCruciblePayoutCents / 100)} credited`
-            : null}
-        </small>
-      </span>
-    </div>
-  )
-  const panelEnergy = floorCrucible ? undefined : energyFeature
+  const EnergyAwardMeter = energyFeature?.completionAward?.Meter
+  const panelEnergy = EnergyAwardMeter ? undefined : energyFeature
   const moneyGrabFeature = featureSet.moneyGrab
   const specialRound = featureSet.specialRound
   const specialRoundLabel = specialRound
@@ -237,7 +208,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     gameTitle: cabinetTheme.title,
     hasCompletedSpin,
     isSpinning,
-    lastEnergyAwarded: energyFeature && !usesGoldFoundryCrucible ? lastEnergyAwarded : 0,
+    lastEnergyAwarded: panelEnergy ? lastEnergyAwarded : 0,
     lastEnergyMultiplierApplied: Boolean(energyFeature) && lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
     lastWin,
@@ -530,7 +501,15 @@ export function SlotsPageView(controller: SlotsPageController) {
             />}
           </div>
 
-          {floorCrucible}
+          {EnergyAwardMeter && (
+            <EnergyAwardMeter
+              balance={energyBalance}
+              capacity={energyMeterCapacity}
+              meterRef={energyMeterRef}
+              award={energyAward}
+              completing={isEnergyAwardCompleting}
+            />
+          )}
 
           <div className="slots-page__playbar" aria-label={usesPiratesControls ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
             {isMidnightVault && (

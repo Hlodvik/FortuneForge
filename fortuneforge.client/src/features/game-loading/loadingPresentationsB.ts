@@ -55,8 +55,8 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     image: cosmicFortune, background: '#05081e', accent: '#54d9ff',
   },
   {
-    id: 'dino-dominion', title: 'Gold Foundry',
-    routes: ['/slots/dino-dominion', '/slots/dino-dominion/demo'],
+    id: 'gold-foundry', title: 'Gold Foundry',
+    routes: ['/slots/gold-foundry', '/slots/gold-foundry/demo'],
     image: goldFoundry, background: '#1c1513', accent: '#ffd283',
   },
   {

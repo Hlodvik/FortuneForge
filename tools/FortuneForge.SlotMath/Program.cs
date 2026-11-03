@@ -7,6 +7,7 @@ using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;

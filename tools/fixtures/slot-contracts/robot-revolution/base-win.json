@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "314a211f-274b-44e4-8c62-16926cc6661c",
+        "spinId": "80dd520a-e5bc-43f2-84ac-968c9b147e10",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

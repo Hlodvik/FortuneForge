@@ -11,7 +11,7 @@ import type {
 import { defineSlotGame, type SlotGameManifest } from './slotGameManifest'
 import { withEngineGuide } from './engineGuide'
 import { createThemedSymbolSet, type AdditionalThemeSymbolId } from './themedSymbolSet'
-import type { SlotResponsiveImages, SlotSymbolGuideEntry } from '../../../features/slots/config/symbolSets'
+import { CLASSIC_SLOT_SYMBOL_SET_ID, type SlotResponsiveImages, type SlotSymbolGuideEntry } from '../../../features/slots/config/symbolSets'
 
 const BASE_SYMBOL_IDS = [
   '2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER', 'BOLT', 'BANANA', 'PAW',
@@ -103,7 +103,7 @@ export function createShowcaseSlotGame(
   const themedSymbols = createThemedSymbolSet({
     id: `${definition.id}-symbols-v1`,
     serverSymbolSetId: definition.serverSymbolSetId ??
-      (specialRound ? 'wukong-treasures-v3' : `${definition.serverGameId}-symbols`),
+      (specialRound ? CLASSIC_SLOT_SYMBOL_SET_ID : `${definition.serverGameId}-symbols`),
     symbols: {
       ...Object.fromEntries(BASE_SYMBOL_IDS.map((id) => [id, {
         label: definition.symbolSpecs[id][0],

@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d7083738-66d2-4a91-9af2-f57f1b16872c",
+        "spinId": "7b25a6d1-353d-48b1-ab0c-d122080d06b5",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

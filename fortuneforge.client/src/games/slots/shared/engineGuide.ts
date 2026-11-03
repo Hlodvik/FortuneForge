@@ -1,4 +1,3 @@
-import { GOLD_FOUNDRY_GAME_ID } from '../../../features/slots/config/slotFeatures'
 import type { SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotSymbolGuideEntry } from '../../../features/slots/config/symbolSets'
 import contracts from './engineGuideContracts'
@@ -55,8 +54,7 @@ function collectionReward(contract: SlotEngineGuideContract, mode: string): stri
 export function withEngineGuide(experience: SlotExperienceSet): SlotExperienceSet {
   // These games have independent, actively maintained presentation contracts.
   if (experience.rules.gameId === 'rainbow-realm-fruits-v1' ||
-      experience.rules.gameId === 'dragon-hoard-v1' ||
-      experience.rules.gameId === GOLD_FOUNDRY_GAME_ID) return experience
+      experience.rules.gameId === 'dragon-hoard-v1') return experience
 
   const contract = getSlotEngineGuideContract(experience.rules.gameId)
   const multiplier = (value: number) => formatCalibratedMultiplier(value, contract.payoutMultiplier)

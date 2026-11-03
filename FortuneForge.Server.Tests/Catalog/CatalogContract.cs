@@ -39,7 +39,7 @@ internal static class CatalogContract
         ("royal-draw", "/slots/royal-draw"),
         ("arcane-archives", "/slots/arcane-archives"),
         ("cosmic-fortune", "/slots/cosmic-fortune"),
-        ("dino-dominion", "/slots/dino-dominion"),
+        ("gold-foundry", "/slots/gold-foundry"),
         ("neon-nights", "/slots/neon-nights"),
         ("jungle-jackpot", "/slots/jungle-jackpot"),
         ("ocean-odyssey", "/slots/ocean-odyssey"),

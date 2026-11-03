@@ -1,4 +1,5 @@
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 using Microsoft.Extensions.Options;

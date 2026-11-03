@@ -15,7 +15,7 @@ public static class AcceptedGameParticipationDocuments
         "asteroids", "flappy", "2048", "drop-merge", "snake", "horse-flight",
         "wukong-journey-to-the-west", "rainbow-realm", "pirates-fortune", "gods-of-olympus",
         "reel-riches", "high-noon-fortune", "royal-draw", "arcane-archives", "cosmic-fortune",
-        "dino-dominion", "neon-nights", "jungle-jackpot", "ocean-odyssey", "samurai-fortune",
+        "gold-foundry", "neon-nights", "jungle-jackpot", "ocean-odyssey", "samurai-fortune",
         "candy-carnival", "phantom-manor", "nordic-legends", "desert-treasures", "robot-revolution",
         "dragon-hoard",
     };

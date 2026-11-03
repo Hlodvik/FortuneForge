@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f4319584-3b5a-40c3-92c3-c89dcad3ea4b",
+        "spinId": "bfdc0681-823c-4646-b8df-83558a9d6b98",
         "gameId": "arcane-archives-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

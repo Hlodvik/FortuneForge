@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "5a514be9-c933-4665-9bca-4a9b39072059",
+        "spinId": "c245f4fc-94f7-44df-9a77-0a800b1995af",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

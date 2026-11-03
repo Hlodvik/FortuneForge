@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace FortuneForge.Server.Slots.Models;
 
 public sealed class SlotsOptions
@@ -36,6 +38,8 @@ public sealed class GameSymbolRules
 {
     public required string SymbolSetId { get; init; }
     public required string WildSymbolId { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public List<string>? PaylineSymbolIds { get; init; }
     public List<int> NativeWildMatchLengths { get; init; } = [];
     public List<int> WildSubstitutionMatchLengths { get; init; } = [];
 }

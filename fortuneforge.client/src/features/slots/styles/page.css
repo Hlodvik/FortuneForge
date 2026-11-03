@@ -768,7 +768,6 @@
 .slots-page__result-atmosphere[data-celebration='royal-card-fan']::before { content: '♥ ♠ ♦ ♣ ♥'; animation-name: result-royal-card-fan; }
 .slots-page__result-atmosphere[data-celebration='arcane-orbit']::before { content: '✧ ☾ ✦ ☾ ✧'; animation-name: result-arcane-orbit; }
 .slots-page__result-atmosphere[data-celebration='cosmic-streak']::before { content: '✦ ⋆ ✧ ⋆ ✦'; animation-name: result-cosmic-streak; }
-.slots-page__result-atmosphere[data-celebration='fossil-burst']::before { content: '🦴 ✦ 🦕 ✦ 🦴'; animation-name: result-fossil-burst; }
 .slots-page__result-atmosphere[data-celebration='neon-scan']::before { content: '▰ ✦ ▰ ✦ ▰'; animation-name: result-neon-scan; }
 .slots-page__result-atmosphere[data-celebration='jungle-canopy']::before { content: '🍃 ✦ 🐆 ✦ 🍃'; animation-name: result-jungle-canopy; }
 .slots-page__result-atmosphere[data-celebration='ocean-swell']::before { content: '🌊 ✦ 🐚 ✦ 🌊'; animation-name: result-ocean-swell; }
@@ -839,12 +838,6 @@
   0% { opacity: 0; transform: translate3d(-44%, 44%, 0) skewX(-18deg); }
   22% { opacity: 1; }
   100% { opacity: 0; transform: translate3d(45%, -46%, 0) skewX(-18deg); }
-}
-
-@keyframes result-fossil-burst {
-  0% { opacity: 0; transform: translateY(42%) scale(0.56); }
-  30% { opacity: 0.95; transform: translateY(-2%) scale(1.1); }
-  100% { opacity: 0; transform: translateY(-30%) scale(1.25); }
 }
 
 @keyframes result-neon-scan {

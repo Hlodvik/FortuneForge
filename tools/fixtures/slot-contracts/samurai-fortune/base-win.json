@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ba9d616b-308a-4578-a752-c6200fbc68c7",
+        "spinId": "a32b8756-7bf6-4499-96ff-511f7d3a4a29",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

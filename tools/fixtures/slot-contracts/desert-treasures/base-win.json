@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ac901e80-3085-497d-8032-b671fe4b3429",
+        "spinId": "c99438cf-049d-4fd8-89ec-c3f4d92348a9",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

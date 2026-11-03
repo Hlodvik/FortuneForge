@@ -3,6 +3,7 @@ using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -25,8 +26,9 @@ public sealed partial class SpinService
     {
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
-        var derived = admission.IsFreeSpin &&
-            gameId is SlotSpecialRoundProfiles.DragonHoardGameId or GoldFoundrySlotDefinitions.GameId;
+        if (gameId == GoldFoundrySlotDefinitions.GameId)
+            GoldFoundrySlotDefinitions.ValidateSpinRequest(admission.IsFreeSpin);
+        var derived = gameId == SlotSpecialRoundProfiles.DragonHoardGameId && admission.IsFreeSpin;
         var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
             admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
             derived, admission.MathModelId);
@@ -57,9 +59,7 @@ public sealed partial class SpinService
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         if (mathModelId is not null)
             game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, mathModelId);
-        if (derivedFreeSpin && GoldFoundrySlotDefinitions.IsModel(game))
-            GoldFoundrySlotDefinitions.ValidateLegacyFreeSpinWager(wagerPoints);
-        else if (derivedFreeSpin)
+        if (derivedFreeSpin)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
         else
             ValidateWager(game, wagerPoints);
@@ -213,8 +213,7 @@ public sealed partial class SpinService
                 currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
                 rawOutcome.VisibleReels, frequencyOutcome.VisibleReels)
             {
-                CrucibleRuleVersion = foundry ? GoldFoundryCrucible.RuleVersion :
-                    GoldFoundryCrucible.IsGame(game.Id) ? GoldFoundryCrucible.LegacyRuleVersion : null
+                CrucibleRuleVersion = foundry ? GoldFoundryCrucible.RuleVersion : null
             },
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,

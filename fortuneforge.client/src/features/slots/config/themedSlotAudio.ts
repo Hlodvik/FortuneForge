@@ -4,10 +4,10 @@ export const THEMED_AUDIO_GAME_SLUGS = [
   'cosmic-fortune', 'high-noon-fortune', 'gods-of-olympus', 'royal-draw', 'samurai-fortune',
   'robot-revolution', 'phantom-manor', 'ocean-odyssey', 'jungle-jackpot', 'candy-carnival',
   'desert-treasures', 'neon-nights', 'nordic-legends', 'rainbow-realm', 'arcane-archives',
-  'dino-dominion', 'reel-riches',
+  'reel-riches',
 ] as const
 
-/** Only these seventeen titles opt in; old sound-set IDs remain stable. */
+/** Only these sixteen titles opt in; old sound-set IDs remain stable. */
 export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): SlotSoundSet {
   if (!(THEMED_AUDIO_GAME_SLUGS as readonly string[]).includes(slug)) return previous
   const cue = (id: string, baseVolume: number, category: SlotSoundCue['category'] = 'effect', loop = false): SlotSoundCue => ({

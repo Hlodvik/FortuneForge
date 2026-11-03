@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0d558f71-b9ec-4ef8-a7ed-cc38793ab15e",
+        "spinId": "f56f7ea0-557b-4f87-837a-994494725801",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

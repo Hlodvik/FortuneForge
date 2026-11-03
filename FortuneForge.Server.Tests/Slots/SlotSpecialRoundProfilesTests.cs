@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 using Microsoft.Extensions.Options;
@@ -28,7 +29,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.NordicLegendsGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
-    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 0, 0, 0, 0)]
+    [InlineData(GoldFoundrySlotDefinitions.GameId, 0, 0, 0, 0)]
     [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 10, 60, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
@@ -67,7 +68,7 @@ public sealed class SlotSpecialRoundProfilesTests
             SlotSpecialRoundProfiles.NordicLegendsGameId,
             SlotSpecialRoundProfiles.ReelRichesGameId,
             SlotSpecialRoundProfiles.ArcaneArchivesGameId,
-            SlotSpecialRoundProfiles.DinoDominionGameId,
+            GoldFoundrySlotDefinitions.GameId,
             SlotSpecialRoundProfiles.RainbowRealmGameId
         }
         .Select(gameId =>
@@ -106,7 +107,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [Theory]
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 19)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 16)]
-    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 14)]
+    [InlineData(GoldFoundrySlotDefinitions.GameId, 14)]
     public void OptionsProvider_AppliesTheClientPaylineSelection(string gameId, int expectedCount)
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
@@ -282,7 +283,7 @@ public sealed class SlotSpecialRoundProfilesTests
             GameDefinitions = [Prototype(SlotSpecialRoundProfiles.WukongGameId)]
         }));
         Assert.Equal(GoldFoundrySlotDefinitions.PaytableId,
-            wukongOnly.GetGame(SlotSpecialRoundProfiles.DinoDominionGameId)?.Math.PaytableId);
+            wukongOnly.GetGame(GoldFoundrySlotDefinitions.GameId)?.Math.PaytableId);
         Assert.Null(wukongOnly.GetGame(SlotSpecialRoundProfiles.CosmicFortuneGameId));
     }
 

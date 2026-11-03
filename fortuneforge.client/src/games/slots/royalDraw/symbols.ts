@@ -1,3 +1,4 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import aceSpadesCrest from '../../../assets/slots/games/royal-draw/optimized/royal-draw-ace-spades-crest-v2.webp'
 import blackChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-black-chip-v2.webp'
 import blueChip from '../../../assets/slots/games/royal-draw/optimized/royal-draw-blue-chip-v2.webp'
@@ -19,7 +20,7 @@ import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const ROYAL_DRAW_SYMBOLS = createThemedSymbolSet({
   id: 'royal-draw-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Blue poker chip', image: blueChip },
     '3': { label: 'Red poker chip', image: redChip },

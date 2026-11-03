@@ -4,7 +4,7 @@ import { createThemedSlotAudio } from '../../features/slots/config/themedSlotAud
 import { DEFAULT_SLOT_SOUNDS } from '../../features/slots/config/soundSets'
 
 describe('slot audio coverage', () => {
-  it('gives seventeen titles complete suites without changing the excluded palettes', async () => {
+  it('gives sixteen titles complete suites plus a dedicated Gold Foundry palette', async () => {
     const games = await loadAllSlotGameManifests()
     expect(games).toHaveLength(20)
     expect(games.filter(game => game.experience.sounds.events.themeSuite)).toHaveLength(17)
@@ -19,19 +19,24 @@ describe('slot audio coverage', () => {
         expect(Object.keys(cues).sort()).toEqual(Object.keys(DEFAULT_SLOT_SOUNDS.cues).sort())
         continue
       }
+      if (game.id === 'gold-foundry') {
+        const resultCues = [...Object.values(events.results).flat(), events.tripleSevens!]
+        expect(resultCues).toHaveLength(5)
+        expect(resultCues.every(id => cues[id]!.source.startsWith('/assets/slots/gold-foundry/v1/audio/'))).toBe(true)
+        expect(events.collectionArrival).toBeUndefined()
+        expect(events.bonusComplete).toBeUndefined()
+        continue
+      }
       expect(events.autoSpinAmbience).toBeUndefined()
       const ids = [events.ambience, events.specialAmbience!, events.buttonClick!, events.betStep!,
         events.leverPull, events.reelSpin, events.reelStop, events.specialReelSpin!, events.specialReelStop!,
         ...Object.values(events.collectionArrival!), ...Object.values(events.results).flat(),
         events.tripleSevens!, events.bonusComplete!]
       const sources = ids.map(id => cues[id]!.source)
-      const isGoldFoundry = game.id === 'dino-dominion'
-      expect(new Set(sources).size).toBe(isGoldFoundry ? 16 : 20)
-      expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`) ||
-        (isGoldFoundry && source.startsWith('/assets/slots/gold-foundry/v1/audio/')))).toBe(true)
+      expect(new Set(sources).size).toBe(20)
+      expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`))).toBe(true)
       for (const id of ids) {
-        if (isGoldFoundry) expect(cues[id]!.enabled !== false).toBe(id !== events.leverPull)
-        else expect(cues[id]!.enabled).toBe(true)
+        expect(cues[id]!.enabled).toBe(true)
       }
       for (const id of [events.ambience, events.specialAmbience!]) {
         expect(cues[id]!.loop).toBe(true)

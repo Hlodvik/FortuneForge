@@ -8,7 +8,7 @@ const base = process.env.LOADING_REVIEW_URL ?? 'http://127.0.0.1:4187'
 const output = process.env.LOADING_REVIEW_OUTPUT
 const ids = [
   'dragon-tiger', 'andar-bahar', 'hi-lo', 'casino-war', 'video-poker', 'keno', 'sic-bo',
-  'arcane-archives', 'cosmic-fortune', 'dino-dominion', 'neon-nights',
+  'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights',
   'jungle-jackpot', 'ocean-odyssey', 'samurai-fortune',
 ]
 const fixture = `${base}/src/features/game-loading/__fixtures__/loadingB.html`

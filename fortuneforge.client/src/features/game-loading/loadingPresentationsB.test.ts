@@ -8,7 +8,7 @@ import { LOADING_PRESENTATIONS_B } from './loadingPresentationsB'
 
 const assignedIds = [
   'dragon-tiger', 'andar-bahar', 'hi-lo', 'casino-war', 'video-poker', 'keno', 'sic-bo',
-  'arcane-archives', 'cosmic-fortune', 'dino-dominion', 'neon-nights',
+  'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights',
   'jungle-jackpot', 'ocean-odyssey', 'samurai-fortune',
 ] as const
 

@@ -50,7 +50,7 @@
     "paylineCount": 19
   },
   "symbols": {
-    "symbolSetId": "wukong-treasures-v3",
+    "symbolSetId": "classic-symbols-v3",
     "wildSymbolId": "ACE",
     "nativeWildMatchLengths": [
       3,
@@ -61,7 +61,7 @@
     ]
   },
   "symbolSet": {
-    "id": "wukong-treasures-v3",
+    "id": "classic-symbols-v3",
     "symbols": [
       {
         "id": "2"

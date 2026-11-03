@@ -81,7 +81,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/royal-draw', artwork(royalDraw)],
   ['/slots/arcane-archives', artwork(arcaneArchives)],
   ['/slots/cosmic-fortune', artwork(cosmicFortune)],
-  ['/slots/dino-dominion', artwork(goldFoundry)],
+  ['/slots/gold-foundry', artwork(goldFoundry)],
   ['/slots/neon-nights', artwork(neonNights)],
   ['/slots/jungle-jackpot', artwork(jungleJackpot)],
   ['/slots/ocean-odyssey', artwork(oceanOdyssey)],

@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d3461743-29bb-4dec-af19-0ea64b751feb",
+        "spinId": "19192f78-59c8-4663-be3b-ac7d3af728f4",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

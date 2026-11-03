@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.RoundAudit;
 using Google.Cloud.Firestore;
@@ -37,15 +38,11 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
-        var isGoldFoundry = GoldFoundryCrucible.IsGame(result.GameId);
+        var isGoldFoundry = result.GameId == GoldFoundrySlotDefinitions.GameId;
         var rainbowSunshineDisabled = result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId &&
             result.EngineAudit.BaseGame.Energy is null;
-        if (isGoldFoundry && result.EngineAudit.EngineVersion == GoldFoundryReelCollector.EngineVersion &&
-            (result.IsFreeSpin != admission.IsFreeSpin ||
-             result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin ||
-             result.EngineAudit.FreeSpinFeatureMode is not null ||
-             result.FreeSpinsAwarded != 0 || result.SealsAwarded.Count != 0))
-            throw new InvalidOperationException("Gold Foundry's outcome differs from the accepted wager or carry spin.");
+        if (isGoldFoundry)
+            GoldFoundryCrucible.ValidatePaidOutcome(result, admission);
         if (isMidnightGame &&
             (admission.IsFreeSpin != (admission.BonusRound is not null) ||
              admission.BonusRound?.FeatureMode != admission.FreeSpinFeatureMode ||
@@ -197,8 +194,7 @@ public sealed partial class FirestoreAccountStore
                 var crucibleWageredBeforeCents = isGoldFoundry ? ReadLong(guardSnapshot, "crucibleWageredCents") : 0;
                 var crucible = isGoldFoundry
                     ? GoldFoundryCrucible.Settle(currentEnergy, result.EnergyAwarded,
-                        crucibleWageredBeforeCents, chargedWagerCents,
-                        result.EngineAudit.CrucibleRuleVersion ?? GoldFoundryCrucible.RuleVersion)
+                        crucibleWageredBeforeCents, chargedWagerCents)
                     : null;
                 var energyBonus = crucible?.AsEnergySettlement(result.Payout) ?? EnergyBonus.Settle(
                     specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
@@ -484,8 +480,7 @@ public sealed partial class FirestoreAccountStore
                 if (midnightProgress is not null || totalFreeSpinsAwarded > 0 ||
                     sealSettlement.SealsChanged ||
                     (!isFreeSpin && currentFreeGames > 0) ||
-                    (isFreeSpin && currentFreeGames == 0 &&
-                        (isGoldFoundry || !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode))))
+                    (isFreeSpin && currentFreeGames == 0 && !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode)))
                 {
                     guardData["userId"] = userId;
                     guardData["freeSpinWagerPoints"] = nextFreeSpinWagerPoints;

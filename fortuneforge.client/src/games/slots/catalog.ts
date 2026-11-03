@@ -2,7 +2,7 @@ import { ARCANE_ARCHIVES_CATALOG } from './arcaneArchives/catalog'
 import { CANDY_CARNIVAL_DEFINITION } from './candyCarnival/definition'
 import { COSMIC_FORTUNE_CATALOG } from './cosmicFortune/catalog'
 import { DESERT_TREASURES_DEFINITION } from './desertTreasures/definition'
-import { DINO_DOMINION_CATALOG } from './dinoDominion/catalog'
+import { GOLD_FOUNDRY_CATALOG } from './goldFoundry/catalog'
 import { DRAGON_HOARD_DEFINITION } from './dragonHoard/definition'
 import { GODS_OF_OLYMPUS_CATALOG } from './godsOfOlympus/catalog'
 import { HIGH_NOON_FORTUNE_CATALOG } from './highNoonFortune/catalog'
@@ -35,7 +35,7 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
   ROYAL_DRAW_CATALOG,
   ARCANE_ARCHIVES_CATALOG,
   COSMIC_FORTUNE_CATALOG,
-  DINO_DOMINION_CATALOG,
+  GOLD_FOUNDRY_CATALOG,
   createShowcaseSlotCatalog(NEON_NIGHTS_DEFINITION),
   createShowcaseSlotCatalog(JUNGLE_JACKPOT_DEFINITION),
   createShowcaseSlotCatalog(OCEAN_ODYSSEY_DEFINITION),

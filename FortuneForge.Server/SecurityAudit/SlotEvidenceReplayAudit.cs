@@ -2,6 +2,7 @@ using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.RoundAudit;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Controllers;
@@ -45,9 +46,8 @@ internal static class SlotEvidenceReplayAudit
                     "The saved spin identity differs from its audit summary."));
             if (demo)
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
-            else if (GoldFoundryCrucible.IsGame(result.GameId) &&
-                GoldFoundryCrucible.IsSupportedRuleVersion(engineAudit.CrucibleRuleVersion))
-                findings.AddRange(InspectCrucibleSettlement(data, result, engineAudit, settledPayout, summary));
+            else if (GoldFoundrySlotDefinitions.IsModel(engineAudit.BaseGame))
+                findings.AddRange(GoldFoundryAudit.InspectPaidSettlement(data, result, engineAudit, settledPayout, summary));
             else if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
                 data.TryGetProperty("outcomeSchemaVersion", out var schema) && schema.GetInt64() >= 7)
                 findings.AddRange(InspectMidnightAdmission(data, result, engineAudit, settledPayout, summary));
@@ -64,30 +64,6 @@ internal static class SlotEvidenceReplayAudit
             return [new("slot-evidence-replay-invalid", "error",
                 "The saved slot result or frozen engine rules cannot be parsed for independent outcome review.")];
         }
-    }
-
-    private static IReadOnlyList<RoundAuditFinding> InspectCrucibleSettlement(
-        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, SpinPayout settled,
-        RoundAuditSummary summary)
-    {
-        var evidence = data.GetProperty("crucible");
-        var wagerBefore = evidence.GetProperty("wageredBeforeCents").GetInt64();
-        var recorded = evidence.GetProperty("settlement").Deserialize<GoldFoundryCrucibleSettlement>(RoundAuditCapture.Json)
-            ?? throw new JsonException("Missing Gold Foundry crucible settlement.");
-        var isFree = data.GetProperty("isFreeSpin").GetBoolean();
-        var wagerCents = isFree ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
-        var expected = GoldFoundryCrucible.Settle(audit.EnergyBalanceBefore, result.EnergyAwarded, wagerBefore,
-            wagerCents, audit.CrucibleRuleVersion!);
-        var payoutCents = checked(RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents) + expected.PayoutCents);
-        if (isFree != result.IsFreeSpin || expected != recorded ||
-            (audit.EngineVersion == GoldFoundryReelCollector.EngineVersion &&
-                (isFree != audit.IsDerivedFreeSpin || audit.FreeSpinFeatureMode is not null)) ||
-            summary.Participants.Count != 1 || summary.Participants[0].WagerCents != wagerCents ||
-            summary.Participants[0].PayoutCents != payoutCents ||
-            summary.Participants[0].NetCents != payoutCents - wagerCents)
-            return [new("slot-crucible-financial-mismatch", "error",
-                "The Gold Foundry wager cycle and payout do not replay from the accepted spin.")];
-        return [];
     }
 
     private static IReadOnlyList<RoundAuditFinding> InspectMidnightAdmission(
@@ -217,27 +193,23 @@ internal static class SlotEvidenceReplayAudit
             return findings;
         }
 
-        var usesFoundryCollector = GoldFoundryCrucible.IsGame(engine.GameId) &&
-            audit.EngineVersion == GoldFoundryReelCollector.EngineVersion;
+        if (GoldFoundrySlotDefinitions.IsModel(audit.BaseGame))
+        {
+            findings.AddRange(GoldFoundryAudit.InspectDemo(request, engine, response, audit));
+            return findings;
+        }
         var profile = audit.FeatureProfile;
         var currentEnergy = profile?.UsesEnergy != false ? request.EnergyBalance : 0;
-        var activeFeatureMode = !usesFoundryCollector && request.UseFreeSpin &&
+        var activeFeatureMode = request.UseFreeSpin &&
             SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
                 ? request.FreeSpinFeatureMode : null;
         if (audit.EnergyBalanceBefore != currentEnergy ||
-            audit.FreeSpinFeatureMode != activeFeatureMode ||
-            usesFoundryCollector && (request.UseFreeSpin || audit.IsDerivedFreeSpin))
+            audit.FreeSpinFeatureMode != activeFeatureMode)
             Flag("slot-demo-engine-input-mismatch",
                 "The saved demo engine inputs differ from the accepted request.");
 
-        var crucible = GoldFoundryCrucible.IsGame(engine.GameId) &&
-            GoldFoundryCrucible.IsSupportedRuleVersion(audit.CrucibleRuleVersion)
-            ? GoldFoundryCrucible.Settle(currentEnergy, engine.EnergyAwarded, request.CrucibleWageredCents,
-                request.UseFreeSpin ? 0 : RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents),
-                audit.CrucibleRuleVersion!)
-            : null;
-        var energy = crucible?.AsEnergySettlement(engine.Payout) ?? EnergyBonus.Settle(currentEnergy, engine.EnergyAwarded, engine.Payout);
-        var specialRounds = usesFoundryCollector || profile is null
+        var energy = EnergyBonus.Settle(currentEnergy, engine.EnergyAwarded, engine.Payout);
+        var specialRounds = profile is null
             ? new SlotSpecialRoundProgress(0, null, [])
             : SlotSpecialRoundProfiles.SettleDemo(profile, request.SealCollections ?? [],
                 engine.SealsAwarded, engine.WagerPoints, energy.MultiplierApplied,
@@ -245,7 +217,7 @@ internal static class SlotEvidenceReplayAudit
         var collectionFreeSpinsAwarded = engine.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId &&
             profile?.CollectionTarget == PiratesGemBonus.MaximumGems
                 ? specialRounds.FreeSpinsAwarded : 0;
-        var freeSpinsRemaining = usesFoundryCollector ? 0 : checked(request.FreeSpinsRemaining -
+        var freeSpinsRemaining = checked(request.FreeSpinsRemaining -
             (request.UseFreeSpin ? 1 : 0) + engine.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
         long? freeSpinWagerPoints = freeSpinsRemaining > 0
             ? request.FreeSpinWagerPoints ?? request.WagerPoints : null;
@@ -261,10 +233,8 @@ internal static class SlotEvidenceReplayAudit
             response.FreeSpinWagerPoints != freeSpinWagerPoints ||
             response.EnergyBalance != energy.FinalEnergyBalance ||
             response.EnergyMultiplierApplied != energy.MultiplierApplied ||
-            response.CrucibleWageredCents != crucible?.WageredCents ||
-            response.CruciblePourValueCents != crucible?.PourValueCents ||
-            response.CruciblePoured != crucible?.Poured ||
-            response.CruciblePayoutCents != crucible?.PayoutCents ||
+            response.CrucibleWageredCents is not null || response.CruciblePourValueCents is not null ||
+            response.CruciblePoured is not null || response.CruciblePayoutCents is not null ||
             response.PayoutMultiplier != energy.PayoutMultiplier ||
             response.FreeSpinFeatureMode != nextFeatureMode ||
             response.SpecialPointsBalance != 0 ||

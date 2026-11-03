@@ -15,7 +15,7 @@ const catalogLoaders: Readonly<Record<string, CatalogLoader>> = {
   'royal-draw': () => import('./royalDraw/catalog').then((module) => module.ROYAL_DRAW_CATALOG),
   'arcane-archives': () => import('./arcaneArchives/catalog').then((module) => module.ARCANE_ARCHIVES_CATALOG),
   'cosmic-fortune': () => import('./cosmicFortune/catalog').then((module) => module.COSMIC_FORTUNE_CATALOG),
-  'dino-dominion': () => import('./dinoDominion/catalog').then((module) => module.DINO_DOMINION_CATALOG),
+  'gold-foundry': () => import('./goldFoundry/catalog').then((module) => module.GOLD_FOUNDRY_CATALOG),
   'neon-nights': () => loadShowcaseCatalog(import('./neonNights/definition').then((module) => module.NEON_NIGHTS_DEFINITION)),
   'jungle-jackpot': () => loadShowcaseCatalog(import('./jungleJackpot/definition').then((module) => module.JUNGLE_JACKPOT_DEFINITION)),
   'ocean-odyssey': () => loadShowcaseCatalog(import('./oceanOdyssey/definition').then((module) => module.OCEAN_ODYSSEY_DEFINITION)),

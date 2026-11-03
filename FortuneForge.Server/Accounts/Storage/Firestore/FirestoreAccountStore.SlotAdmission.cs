@@ -3,6 +3,7 @@ using System.Text;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Games.Abstractions.Auditing;
 using Google.Cloud.Firestore;
@@ -23,6 +24,9 @@ public sealed partial class FirestoreAccountStore
         TimeSpan cooldown,
         CancellationToken cancellationToken)
     {
+        if (gameId == GoldFoundrySlotDefinitions.GameId)
+            GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
+
         var admissionId = Guid.NewGuid();
         var admissionReference = SlotSpinAdmissionDocument(admissionId);
         var requestObservation = GameSecurityContext.Current;
@@ -61,7 +65,6 @@ public sealed partial class FirestoreAccountStore
                 var energyBalance = gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                     ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
-                var isGoldFoundry = GoldFoundryCrucible.IsGame(gameId);
                 IReadOnlyList<MidnightVaultBonusRound> roundsBefore = isMidnight
                     ? ReadMidnightBonusRounds(guardSnapshot, freeGamesAvailable, pointValueInCents) : [];
                 if (guardSnapshot.Exists &&
@@ -134,7 +137,7 @@ public sealed partial class FirestoreAccountStore
 
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
-                if (!isGoldFoundry && storedFreeSpinWagerCents <= 0)
+                if (storedFreeSpinWagerCents <= 0)
                 {
                     storedFreeSpinWagerCents = checked(
                         ReadLong(guardSnapshot, "freeSpinWagerPoints") * RandMoney.CentsPerRand);
@@ -144,8 +147,6 @@ public sealed partial class FirestoreAccountStore
                 {
                     throw new NoFreeSpinsException();
                 }
-                if (isGoldFoundry && !useFreeSpin && freeGamesAvailable > 0)
-                    throw new ArgumentException("Finish your previously awarded Gold Foundry spins before placing another bet.");
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -160,9 +161,7 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 var effectiveWagerPoints = wagerPoints;
-                if (useFreeSpin && isGoldFoundry)
-                    effectiveWagerPoints = ReadGoldFoundryCarryWagerPoints(guardSnapshot, pointValueInCents);
-                else if (useFreeSpin && storedFreeSpinWagerCents > 0)
+                if (useFreeSpin && storedFreeSpinWagerCents > 0)
                     effectiveWagerPoints = RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents);
                 var admittedRound = isMidnight && useFreeSpin ? roundsBefore.FirstOrDefault() : null;
                 string? mathModelId = null;
@@ -184,7 +183,7 @@ public sealed partial class FirestoreAccountStore
                         ? admittedRound!.MathModelId
                         : MidnightVaultSlotDefinitions.PaytableId;
                 }
-                var activeFreeSpinFeatureMode = useFreeSpin && !isGoldFoundry
+                var activeFreeSpinFeatureMode = useFreeSpin
                     ? isMidnight ? admittedRound!.FeatureMode : storedFreeSpinFeatureMode : null;
                 var roundsAfter = isMidnight && useFreeSpin ? MidnightVaultBonusRounds.Consume(roundsBefore) : roundsBefore;
                 var chargedWagerCents = useFreeSpin

@@ -1,4 +1,3 @@
-using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Slots.Evaluation;
@@ -30,14 +29,12 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
         ValidateGrid(reels, game);
         var wildId = game.Symbols.WildSymbolId;
         var freeGameSymbolId = game.FreeGames?.SymbolId;
-        var foundry = GoldFoundrySlotDefinitions.IsModel(game);
+        var paylineSymbolIds = game.Symbols.PaylineSymbolIds?.ToHashSet(StringComparer.Ordinal);
         var regularIds = symbolSet.Symbols
             .Where(symbol =>
                 !string.Equals(symbol.Id, wildId, StringComparison.Ordinal) &&
                 !string.Equals(symbol.Id, freeGameSymbolId, StringComparison.Ordinal) &&
-                (foundry
-                    ? GoldFoundrySlotDefinitions.IsPaylineSymbol(symbol.Id)
-                    : !FeatureOnlySymbolIds.Contains(symbol.Id)))
+                (paylineSymbolIds?.Contains(symbol.Id) ?? !FeatureOnlySymbolIds.Contains(symbol.Id)))
             .Select(symbol => symbol.Id)
             .ToArray();
         var nativeWildMatchLengths = game.Symbols.NativeWildMatchLengths.ToHashSet();
@@ -54,7 +51,7 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
                 regularIds,
                 nativeWildMatchLengths,
                 wildSubstitutionMatchLengths,
-                foundry))
+                paylineSymbolIds))
             .ToArray();
     }
 
@@ -68,7 +65,7 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
         IReadOnlyList<string> regularIds,
         IReadOnlySet<int> nativeWildMatchLengths,
         IReadOnlySet<int> wildSubstitutionMatchLengths,
-        bool foundry)
+        IReadOnlySet<string>? paylineSymbolIds)
     {
         var original = rows.Select((row, reel) => reels[reel][row]).ToArray();
         var assignments = new string[game.Layout.ReelCount];
@@ -122,7 +119,7 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
                 var usesWildSubstitution = Enumerable.Range(start, length).Any(reel =>
                     original[reel] == wildId && assignments[reel] != wildId);
                 if (!isFreeGameSymbol &&
-                    (!foundry || GoldFoundrySlotDefinitions.IsPaylineSymbol(assignments[start])) &&
+                    (paylineSymbolIds is null || paylineSymbolIds.Contains(assignments[start])) &&
                     length >= game.Matching.MinimumRunLength &&
                     IsAllowedRunShape(rows, start, length, game.Layout.ReelCount) &&
                     (!usesWildSubstitution || wildSubstitutionMatchLengths.Contains(length)) &&

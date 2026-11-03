@@ -17,7 +17,6 @@ export type SlotCelebrationEffect =
   | 'royal-card-fan'
   | 'arcane-orbit'
   | 'cosmic-streak'
-  | 'fossil-burst'
   | 'foundry-sparks'
   | 'neon-scan'
   | 'jungle-canopy'

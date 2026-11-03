@@ -8,6 +8,7 @@ using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -22,7 +23,7 @@ namespace FortuneForge.Server.Tests.Slots;
 
 public sealed class GoldFoundryCrucibleTests
 {
-    internal const string GameId = SlotSpecialRoundProfiles.DinoDominionGameId;
+    internal const string GameId = GoldFoundrySlotDefinitions.GameId;
 
     [Fact]
     public void PaidWagersAccrueOncePerChargingSpinUntilOneWholeCentPayout()
@@ -45,9 +46,6 @@ public sealed class GoldFoundryCrucibleTests
         Assert.Equal(14_999, poured.PayoutCents);
         Assert.Equal(0, poured.WageredCents);
         Assert.Equal(0, poured.EnergyBalance);
-
-        var legacy = GoldFoundryCrucible.Settle(95, 0, 99_849, 50, GoldFoundryCrucible.LegacyRuleVersion);
-        Assert.Equal(99_899, legacy.WageredCents);
     }
 
     [Fact]
@@ -211,48 +209,30 @@ public sealed class GoldFoundryCrucibleFirestoreTests(MidnightVaultPaidEmulatorF
     }
 
     [Fact]
-    public async Task PaidCarryHonorsAnOldOddWagerAndCannotGrantMoreSpins()
+    public async Task PaidStateIsIsolatedFromOtherGamesAndFreeSpinsAreRejected()
     {
-        const string player = "local-foundry-carry";
+        const string player = "local-foundry-isolation";
         const string gameId = GoldFoundryCrucibleTests.GameId;
+        const string otherGameId = SlotSpecialRoundProfiles.WukongGameId;
         var database = emulator.Database();
         var store = new FirestoreAccountStore(database);
         Assert.NotNull((await store.CreateAsync(player, player, player.ToUpperInvariant(), player + "@example.test",
             "unused-local-test", "active", default)).Value);
-        var gameKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(gameId)));
-        var guard = database.Collection("slotSpinGuards").Document(player + "_" + gameKey);
-        await guard.SetAsync(new Dictionary<string, object>
-        {
-            ["userId"] = player, ["freeSpinWagerCents"] = 75L, ["freeSpinFeatureMode"] = "rows-paw-rand",
-            ["crucibleWageredCents"] = 1_000L,
-            ["sealCounts"] = new Dictionary<string, long> { ["sync"] = 39L }
-        });
-        await database.Collection("userBalances").Document(player + "_freeGames:" + gameId)
-            .SetAsync(new Dictionary<string, object> { ["available"] = 1L, ["version"] = 0L });
+        var otherGameKey = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(otherGameId)));
+        await database.Collection("slotSpinGuards").Document(player + "_" + otherGameKey)
+            .SetAsync(new Dictionary<string, object> { ["crucibleWageredCents"] = 1_000L });
+        await database.Collection("userBalances").Document(player + "_energy:" + otherGameId)
+            .SetAsync(new Dictionary<string, object> { ["available"] = 99L, ["version"] = 0L });
 
-        var resumed = await store.GetSlotStateAsync(player, gameId, 25m, default);
-        Assert.Equal(1, resumed.FreeSpinsRemaining);
-        Assert.Equal(3, resumed.FreeSpinWagerPoints);
-        Assert.Null(resumed.FreeSpinFeatureMode);
-        Assert.Empty(resumed.SealCollections);
-        await Assert.ThrowsAsync<ArgumentException>(() => store.BeginSlotSpinAsync(player, gameId, 2, 25m,
-            false, false, 0, DateTime.UtcNow, TimeSpan.Zero, default));
-
+        var state = await store.GetSlotStateAsync(player, gameId, 25m, default);
+        Assert.Equal(0, state.FreeSpinsRemaining);
+        Assert.Equal(0, state.EnergyBalance);
+        Assert.Equal(0, state.CrucibleWageredCents);
+        Assert.Empty(state.SealCollections);
         var engine = GoldFoundryCrucibleTests.FoundryEngine(landsCoal: true);
-        engine.ValidateRequest(gameId, 3, useFreeSpin: true);
+        Assert.Throws<ArgumentException>(() => engine.ValidateRequest(gameId, 2, useFreeSpin: true));
         Assert.Throws<ArgumentOutOfRangeException>(() => engine.ValidateRequest(gameId, 3));
-        var admission = await store.BeginSlotSpinAsync(player, gameId, 3, 25m, true, false, 0,
-            DateTime.UtcNow, TimeSpan.Zero, default);
-        Assert.Equal(0, admission.ChargedWagerCents);
-        Assert.Equal(3, admission.WagerPoints);
-        Assert.Null(admission.FreeSpinFeatureMode);
-        var spin = engine.SpinAdmitted(gameId, admission, player);
-        var settled = await store.RecordSlotSpinAsync(player, spin, admission, DateTime.UtcNow, default);
-        Assert.Equal(1, settled.EnergyBalance);
-        Assert.Equal(1_000, settled.CrucibleWageredCents);
-        Assert.Equal(0, settled.FreeSpinsRemaining);
-        Assert.Equal(0, settled.SealFreeSpinsAwarded);
-        Assert.Empty(settled.SealCollections);
-        Assert.Equal(0, (await guard.GetSnapshotAsync()).GetValue<long>("freeSpinWagerCents"));
+        await Assert.ThrowsAsync<ArgumentException>(() => store.BeginSlotSpinAsync(player, gameId, 2, 25m,
+            true, false, 0, DateTime.UtcNow, TimeSpan.Zero, default));
     }
 }

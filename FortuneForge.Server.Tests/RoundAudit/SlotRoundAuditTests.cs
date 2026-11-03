@@ -7,6 +7,7 @@ using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -172,7 +173,7 @@ public sealed class SlotRoundAuditTests
     private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(SpinResult result)
     {
         var wagerCents = RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
-        var crucible = GoldFoundryCrucible.IsGame(result.GameId)
+        var crucible = result.GameId == GoldFoundrySlotDefinitions.GameId
             ? GoldFoundryCrucible.Settle(0, result.EnergyAwarded, 0, wagerCents)
             : null;
         var settledPayout = crucible?.AsEnergySettlement(result.Payout).Payout

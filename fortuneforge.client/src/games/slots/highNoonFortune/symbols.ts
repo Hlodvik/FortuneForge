@@ -1,3 +1,4 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import amberLassoBadge from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-amber-lasso-badge-v2.webp'
 import cowboyBoot from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-cowboy-boot-v2.webp'
 import crimsonBandanaBadge from '../../../assets/slots/games/high-noon-fortune/optimized/high-noon-crimson-bandana-badge-v2.webp'
@@ -19,7 +20,7 @@ import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 
 export const HIGH_NOON_FORTUNE_SYMBOLS = createThemedSymbolSet({
   id: 'high-noon-fortune-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Lucky horseshoe', image: horseshoe },
     '3': { label: 'Tooled cowboy boot', image: cowboyBoot },

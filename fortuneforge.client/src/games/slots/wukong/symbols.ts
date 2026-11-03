@@ -13,10 +13,7 @@ import wukongPowerSealSymbol from '../../../assets/slots/symbols/wukong/wukong-p
 import wukongPowerSealBlueSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-blue.png'
 import wukongPowerSealJadeSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-jade.png'
 import wukongPowerSealOrangeSymbol from '../../../assets/slots/symbols/wukong/wukong-power-seal-orange.png'
-import type {
-  SlotSymbolDefinition,
-  SlotSymbolSet,
-} from '../../../features/slots/config/symbolSets'
+import { CLASSIC_SLOT_SYMBOL_SET_ID, type SlotSymbolDefinition, type SlotSymbolSet } from '../../../features/slots/config/symbolSets'
 import type { SlotSymbolId } from '../../../features/slots/types/slots'
 
 export const WUKONG_FEATURE_SYMBOL_IDS = [
@@ -56,6 +53,7 @@ const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
 
 export const WUKONG_SYMBOLS: SlotSymbolSet = {
   id: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   definitions: {
     '2': { id: '2', label: 'Staff strike', image: celestialStaffSymbol, animatedImage: celestialStaffSymbol },
     '3': { id: '3', label: 'Immortality peach', image: immortalityPeachSymbol, animatedImage: immortalityPeachSymbol },

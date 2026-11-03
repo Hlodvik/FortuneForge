@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -63,10 +64,10 @@ public sealed partial class SpinService(
 
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
+        if (GoldFoundrySlotDefinitions.IsModel(game))
+            GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
         if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
-        else if (useFreeSpin && GoldFoundrySlotDefinitions.IsModel(game))
-            GoldFoundrySlotDefinitions.ValidateLegacyFreeSpinWager(wagerPoints);
         else
             ValidateWager(game, wagerPoints);
     }

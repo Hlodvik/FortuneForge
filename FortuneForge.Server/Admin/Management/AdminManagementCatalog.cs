@@ -45,7 +45,7 @@ internal static class AdminManagementCatalog
         new("royal-draw", "Royal Draw", "slots", "/slots/royal-draw"),
         new("arcane-archives", "Arcane Archives", "slots", "/slots/arcane-archives"),
         new("cosmic-fortune", "Cosmic Fortune", "slots", "/slots/cosmic-fortune"),
-        new("dino-dominion", "Dino Dominion", "slots", "/slots/dino-dominion"),
+        new("gold-foundry", "Gold Foundry", "slots", "/slots/gold-foundry"),
         new("neon-nights", "Neon Nights", "slots", "/slots/neon-nights"),
         new("jungle-jackpot", "Jungle Jackpot", "slots", "/slots/jungle-jackpot"),
         new("ocean-odyssey", "Ocean Odyssey", "slots", "/slots/ocean-odyssey"),

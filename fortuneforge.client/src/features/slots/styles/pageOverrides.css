@@ -763,40 +763,6 @@
   border-color: rgb(142 244 255 / 48%);
 }
 
-.slots-page__crucible {
-  display: flex;
-  align-items: center;
-  justify-self: center;
-  gap: clamp(0.35rem, 1.1vw, 0.8rem);
-  padding-inline: 0.35rem 0.9rem;
-  border: 1px solid rgb(193 137 59 / 55%);
-  border-radius: 0.7rem;
-  background: radial-gradient(ellipse at 32% 85%, #472a19, #201b15 72%);
-  color: #fff1ce;
-}
-
-.slots-page__crucible-art {
-  flex: none;
-}
-
-.slots-page__crucible-copy {
-  display: grid;
-  gap: 0.12rem;
-  font-size: clamp(0.66rem, 1.1vw, 0.82rem);
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.slots-page__crucible-copy strong {
-  color: #ffc268;
-  font-variant-numeric: tabular-nums;
-}
-
-.slots-page__crucible-receipt {
-  color: #e5c6a4;
-  font-weight: 500;
-}
-
 .slots-page__balance-line {
   display: inline-flex;
   align-items: center;
@@ -1670,12 +1636,6 @@
   --special-round-accent: #dab1ff;
   --special-round-deep: #55327f;
   --special-round-ink: #160d29;
-}
-
-.slots-page[data-special-round='dino-meteor-dig'] {
-  --special-round-accent: #b9e56d;
-  --special-round-deep: #5a6923;
-  --special-round-ink: #15200b;
 }
 
 .slots-page[data-special-round] .slots-page__spin-controls .spin-button {

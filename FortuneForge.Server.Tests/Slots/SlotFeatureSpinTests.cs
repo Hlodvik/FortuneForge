@@ -211,7 +211,7 @@ public sealed class SlotFeatureSpinTests
     {
         private static readonly SymbolSetDefinition SymbolSet = new()
         {
-            Id = "wukong-treasures-v3",
+            Id = "classic-symbols-v3",
             Symbols =
             [
                 new SymbolDefinition { Id = "2" },

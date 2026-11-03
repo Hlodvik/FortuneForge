@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "8df8fda3-b0d0-4ecc-a50d-95d80388d0b3",
+        "spinId": "f87db69c-ded1-4a90-9163-254a030b6d5b",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -194,10 +194,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "27e9fc8e-cb0f-43e6-9c34-b7108f5e1a93",
+        "spinId": "1bf76061-1325-4700-ac43-cb7519d5d2e3",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -334,10 +334,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "648ec3db-ce9e-4ee0-a7c7-b0d371aaef2a",
+        "spinId": "58a14777-cb52-4686-aec7-933579244ac0",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -474,10 +474,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a3c01ffd-6843-43a0-98d5-23af4f51131a",
+        "spinId": "96b0ffd8-b017-4d4c-afbe-5c7e76d6827b",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -671,10 +671,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f3b816da-ca40-4982-ba7a-5aa78d7b1d64",
+        "spinId": "43f59744-4ccc-4317-9760-e920147f1599",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -846,10 +846,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d18c84a4-07b1-41b8-83bb-e4b5a7d8d1f6",
+        "spinId": "28d68b38-f5f4-49b9-a621-bbbd32b21736",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

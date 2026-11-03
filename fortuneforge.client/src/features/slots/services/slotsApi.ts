@@ -1,6 +1,5 @@
 import { isSlotSymbolId, type MidnightVaultBonusRound, type MidnightVaultDemoState, type SlotSealCollection, type SpinResult } from '../types/slots'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
-import { GOLD_FOUNDRY_GAME_ID } from '../config/slotFeatures'
 
 type SpinRequest = {
   gameId: string
@@ -13,7 +12,6 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   energyBalance: number
-  crucibleWageredCents?: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
   midnightBonusState?: MidnightVaultDemoState | null
@@ -26,8 +24,6 @@ export type SlotState = {
   freeSpinWagerPoints: number | null
   specialPointsBalance: number
   energyBalance: number
-  crucibleWageredCents?: number
-  cruciblePourValueCents?: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
 }
@@ -94,7 +90,7 @@ export async function requestSpin(request: SpinRequest): Promise<SpinResult> {
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result, request.gameId)) {
+  if (!isSpinResult(result)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -119,7 +115,7 @@ export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinRes
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result, request.gameId)) {
+  if (!isSpinResult(result)) {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
@@ -148,7 +144,6 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || typeof state.energyBalance !== 'number'
     || !Number.isInteger(state.energyBalance)
     || state.energyBalance < 0
-    || (gameId === GOLD_FOUNDRY_GAME_ID && !validCrucibleFields(state))
     || !Array.isArray(state.sealCollections)
     || !state.sealCollections.every(isSlotSealCollection)
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
@@ -160,7 +155,7 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
   return state as SlotState
 }
 
-function isSpinResult(result: unknown, gameId: string): result is SpinResult {
+function isSpinResult(result: unknown): result is SpinResult {
   if (!isRecord(result) || !isRecord(result.payout)) {
     return false
   }
@@ -201,7 +196,6 @@ function isSpinResult(result: unknown, gameId: string): result is SpinResult {
     Number.isInteger(result.energyBalance) &&
     result.energyBalance >= 0 &&
     typeof result.energyMultiplierApplied === 'boolean' &&
-    (gameId !== GOLD_FOUNDRY_GAME_ID || validCrucibleFields(result)) &&
     typeof result.payoutMultiplier === 'number' &&
     result.payoutMultiplier >= 1 &&
     typeof result.monkeyPawCount === 'number' &&
@@ -233,13 +227,6 @@ function isSpinResult(result: unknown, gameId: string): result is SpinResult {
     Array.isArray(result.payout.paylines) &&
     result.payout.paylines.every(isPaylinePayout)
   )
-}
-
-function validCrucibleFields(value: Record<string, unknown>): boolean {
-  const amounts = [value.crucibleWageredCents, value.cruciblePourValueCents, value.cruciblePayoutCents]
-  return amounts.every((amount) => amount == null ||
-    (typeof amount === 'number' && Number.isSafeInteger(amount) && amount >= 0)) &&
-    (value.cruciblePoured == null || typeof value.cruciblePoured === 'boolean')
 }
 
 function isMidnightRound(value: unknown): value is MidnightVaultBonusRound {

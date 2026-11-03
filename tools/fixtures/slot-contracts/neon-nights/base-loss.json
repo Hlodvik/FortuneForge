@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9806c471-6bac-44eb-b4fe-b8f61fbaaa0f",
+        "spinId": "55c821b1-4a2a-4f68-9fdf-106b851d504a",
         "gameId": "neon-nights-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

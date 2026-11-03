@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "afbbf891-cc31-4851-ba54-ef77b0ee2dbc",
+        "spinId": "85812bba-5e66-4c39-afd8-a72bd981ab81",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

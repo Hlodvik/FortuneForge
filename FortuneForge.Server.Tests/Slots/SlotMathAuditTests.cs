@@ -3,6 +3,7 @@ using FortuneForge.Server.Controllers;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
+using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -185,6 +186,6 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         SlotSpecialRoundProfiles.NordicLegendsGameId,
         SlotSpecialRoundProfiles.ReelRichesGameId,
         SlotSpecialRoundProfiles.ArcaneArchivesGameId,
-        SlotSpecialRoundProfiles.DinoDominionGameId
+        GoldFoundrySlotDefinitions.GameId
     ];
 }

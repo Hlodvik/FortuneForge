@@ -58,9 +58,9 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
     load: () => import('./cosmicFortune/manifest').then((module) => module.COSMIC_FORTUNE_SLOT_GAME),
   },
   {
-    id: 'dino-dominion', title: 'Gold Foundry', shortTitle: 'Gold Foundry',
-    playPath: '/slots/dino-dominion', demoPath: '/slots/dino-dominion/demo', serverGameIds: ['dino-dominion-v1'], shellBackdrop: 'theme',
-    load: () => import('./dinoDominion/manifest').then((module) => module.DINO_DOMINION_SLOT_GAME),
+    id: 'gold-foundry', title: 'Gold Foundry', shortTitle: 'Gold Foundry',
+    playPath: '/slots/gold-foundry', demoPath: '/slots/gold-foundry/demo', serverGameIds: ['gold-foundry-v1'], shellBackdrop: 'theme',
+    load: () => import('./goldFoundry/manifest').then((module) => module.GOLD_FOUNDRY_SLOT_GAME),
   },
   {
     id: 'neon-nights', title: 'Neon Nights', shortTitle: 'Neon Nights',

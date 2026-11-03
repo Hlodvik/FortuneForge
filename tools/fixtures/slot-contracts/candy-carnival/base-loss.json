@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "afa10cf9-039a-463e-9db1-549e93aeb516",
+        "spinId": "8ff9cb04-6fcc-4001-9770-201b331b78e6",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

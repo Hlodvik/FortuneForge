@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "dfbfad36-c688-4e76-9afb-a2c8343e7a25",
+        "spinId": "4849bc79-4657-4d8a-be71-f2dbb49deb34",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

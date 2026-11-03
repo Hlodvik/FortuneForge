@@ -29,10 +29,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "8c60bc40-929c-45fd-a9e5-7ae17a93c068",
+        "spinId": "1756ba57-38c1-4d03-b9b1-6be09b5d8c24",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -119,10 +119,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "8b189a7a-e403-4ac5-8a0f-056b3d598048",
+        "spinId": "1bc8648d-c1b3-4ce3-91c6-63c98034c941",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -209,10 +209,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "3a581ce7-a9c1-4e9e-95d8-f064389f7ba3",
+        "spinId": "bf690b43-f960-45df-8a72-9165d24ea348",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -420,10 +420,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "280985e5-ae15-494c-99e0-79aa54e3c7ee",
+        "spinId": "96eb0545-641f-4773-9294-0622e5735cca",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -510,10 +510,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1944f1a2-8828-44f7-a3bb-9e77b9b41ce3",
+        "spinId": "9edaf549-e9fa-4b37-8d3e-f11769d9f1c9",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,
@@ -600,10 +600,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "49adce8a-6a98-44a7-97c0-aaf1c9b63915",
+        "spinId": "ac240ba3-c951-400f-b015-685cc3156511",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f55865bf-199c-4001-8c3b-316f84179d5d",
+        "spinId": "c5d5a9ba-4b9f-4507-9302-d2c029ffb05d",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

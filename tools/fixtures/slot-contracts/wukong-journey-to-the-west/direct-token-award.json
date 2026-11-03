@@ -54,10 +54,10 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "77f3fbb4-7012-46a1-b6c7-e270f271fdd5",
+        "spinId": "9cdea27d-8638-4866-8dfe-43fac24bf9fa",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
         "pointValueInCents": 25,

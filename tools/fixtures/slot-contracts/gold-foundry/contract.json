@@ -1,0 +1,534 @@
+{
+  "schemaVersion": 1,
+  "route": {
+    "id": "gold-foundry",
+    "title": "Gold Foundry",
+    "playPath": "/slots/gold-foundry",
+    "demoPath": "/slots/gold-foundry/demo",
+    "gameId": "gold-foundry-v1"
+  },
+  "gameId": "gold-foundry-v1",
+  "profile": {
+    "gameId": "gold-foundry-v1",
+    "scatterRequiredSymbols": 0,
+    "scatterAwardedSpins": 0,
+    "collectionTarget": 0,
+    "collectionAwardedSpins": 0,
+    "usesCollections": false,
+    "usesEnergy": true,
+    "usesDirectValueTokens": false,
+    "scatterFeatureMode": null,
+    "collectionFeatureMode": null,
+    "baseReelSetId": null,
+    "targetHitRate": null,
+    "paylinePatternIds": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "payoutMultiplier": 0.05
+  },
+  "layout": {
+    "reelCount": 5,
+    "visibleRows": 4,
+    "paylineCount": 14
+  },
+  "symbols": {
+    "symbolSetId": "gold-foundry-symbols-v1",
+    "wildSymbolId": "ACE",
+    "paylineSymbolIds": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "FREE",
+      "POWER",
+      "SEAL_ROWS",
+      "SEAL_SYNC",
+      "SEAL_PAW",
+      "SEAL_RAND",
+      "ACE"
+    ],
+    "nativeWildMatchLengths": [
+      3,
+      4,
+      5
+    ],
+    "wildSubstitutionMatchLengths": [
+      5
+    ]
+  },
+  "symbolSet": {
+    "id": "gold-foundry-symbols-v1",
+    "symbols": [
+      {
+        "id": "2"
+      },
+      {
+        "id": "3"
+      },
+      {
+        "id": "4"
+      },
+      {
+        "id": "5"
+      },
+      {
+        "id": "6"
+      },
+      {
+        "id": "7"
+      },
+      {
+        "id": "FREE"
+      },
+      {
+        "id": "POWER"
+      },
+      {
+        "id": "SEAL_ROWS"
+      },
+      {
+        "id": "SEAL_SYNC"
+      },
+      {
+        "id": "SEAL_PAW"
+      },
+      {
+        "id": "SEAL_RAND"
+      },
+      {
+        "id": "ACE"
+      },
+      {
+        "id": "BANANA"
+      },
+      {
+        "id": "BOLT"
+      },
+      {
+        "id": "PAW"
+      }
+    ]
+  },
+  "matching": {
+    "minimumRunLength": 3,
+    "allowMultipleRunsPerPayline": true
+  },
+  "wagering": {
+    "pointValueInCents": 25,
+    "minimumWagerPoints": 2,
+    "maximumWagerPoints": 2000,
+    "wagerIncrementPoints": 2,
+    "allowedWagerPoints": []
+  },
+  "freeGames": null,
+  "energy": {
+    "symbolId": "BOLT",
+    "pointsPerVisibleSymbol": 1
+  },
+  "specialPoints": null,
+  "math": {
+    "reelSetId": "gold-foundry-reels-v1",
+    "paytableId": "gold-foundry-paytable-v1",
+    "payoutMultiplier": 0.05,
+    "paylinePayoutSteps": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "fiveMatchPityMissLimit": null,
+    "targets": {
+      "rtp": null,
+      "hitRate": null,
+      "volatility": null
+    }
+  },
+  "paylines": [
+    [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    [
+      2,
+      2,
+      2,
+      2,
+      2
+    ],
+    [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    [
+      0,
+      1,
+      2,
+      1,
+      0
+    ],
+    [
+      1,
+      2,
+      3,
+      2,
+      1
+    ],
+    [
+      0,
+      1,
+      2,
+      3,
+      3
+    ],
+    [
+      3,
+      2,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      1,
+      2,
+      1,
+      2,
+      1
+    ],
+    [
+      2,
+      3,
+      2,
+      3,
+      2
+    ],
+    [
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    [
+      2,
+      1,
+      2,
+      1,
+      2
+    ],
+    [
+      3,
+      2,
+      3,
+      2,
+      3
+    ]
+  ],
+  "paytable": [
+    {
+      "symbolId": "2",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "2",
+      "matchLength": 4,
+      "multiplier": 6
+    },
+    {
+      "symbolId": "2",
+      "matchLength": 5,
+      "multiplier": 20
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 4,
+      "multiplier": 7
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 5,
+      "multiplier": 22
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 3,
+      "multiplier": 3
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 4,
+      "multiplier": 8
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 5,
+      "multiplier": 26
+    },
+    {
+      "symbolId": "5",
+      "matchLength": 3,
+      "multiplier": 3
+    },
+    {
+      "symbolId": "5",
+      "matchLength": 4,
+      "multiplier": 9
+    },
+    {
+      "symbolId": "5",
+      "matchLength": 5,
+      "multiplier": 30
+    },
+    {
+      "symbolId": "6",
+      "matchLength": 3,
+      "multiplier": 4
+    },
+    {
+      "symbolId": "6",
+      "matchLength": 4,
+      "multiplier": 10
+    },
+    {
+      "symbolId": "6",
+      "matchLength": 5,
+      "multiplier": 36
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 3,
+      "multiplier": 5
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 4,
+      "multiplier": 12
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 5,
+      "multiplier": 40
+    },
+    {
+      "symbolId": "FREE",
+      "matchLength": 3,
+      "multiplier": 5
+    },
+    {
+      "symbolId": "FREE",
+      "matchLength": 4,
+      "multiplier": 13
+    },
+    {
+      "symbolId": "FREE",
+      "matchLength": 5,
+      "multiplier": 44
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 3,
+      "multiplier": 6
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 4,
+      "multiplier": 15
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 5,
+      "multiplier": 48
+    },
+    {
+      "symbolId": "SEAL_ROWS",
+      "matchLength": 3,
+      "multiplier": 5
+    },
+    {
+      "symbolId": "SEAL_ROWS",
+      "matchLength": 4,
+      "multiplier": 10
+    },
+    {
+      "symbolId": "SEAL_ROWS",
+      "matchLength": 5,
+      "multiplier": 30
+    },
+    {
+      "symbolId": "SEAL_SYNC",
+      "matchLength": 3,
+      "multiplier": 6
+    },
+    {
+      "symbolId": "SEAL_SYNC",
+      "matchLength": 4,
+      "multiplier": 15
+    },
+    {
+      "symbolId": "SEAL_SYNC",
+      "matchLength": 5,
+      "multiplier": 50
+    },
+    {
+      "symbolId": "SEAL_PAW",
+      "matchLength": 3,
+      "multiplier": 8
+    },
+    {
+      "symbolId": "SEAL_PAW",
+      "matchLength": 4,
+      "multiplier": 20
+    },
+    {
+      "symbolId": "SEAL_PAW",
+      "matchLength": 5,
+      "multiplier": 70
+    },
+    {
+      "symbolId": "SEAL_RAND",
+      "matchLength": 3,
+      "multiplier": 12
+    },
+    {
+      "symbolId": "SEAL_RAND",
+      "matchLength": 4,
+      "multiplier": 30
+    },
+    {
+      "symbolId": "SEAL_RAND",
+      "matchLength": 5,
+      "multiplier": 100
+    },
+    {
+      "symbolId": "ACE",
+      "matchLength": 3,
+      "multiplier": 16
+    },
+    {
+      "symbolId": "ACE",
+      "matchLength": 4,
+      "multiplier": 40
+    },
+    {
+      "symbolId": "ACE",
+      "matchLength": 5,
+      "multiplier": 140
+    }
+  ],
+  "observedRows": [
+    4
+  ],
+  "observedActiveModes": [
+    null
+  ],
+  "statusEndpoint": 204,
+  "scenarios": [
+    {
+      "scenario": "base-loss",
+      "seed": 0,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "base-win",
+      "seed": 6,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "energy-completion",
+      "seed": 0,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    },
+    {
+      "scenario": "reel-collector-award",
+      "seed": 6,
+      "responses": 1,
+      "triggerRows": 4,
+      "continuationRows": [],
+      "triggerFreeSpinsAwarded": 0,
+      "triggerCollectionFreeSpinsAwarded": 0,
+      "triggerRemaining": 0,
+      "triggerMode": null,
+      "finalRemaining": 0,
+      "replayMatchesExceptSpinId": true
+    }
+  ],
+  "missingScenarios": [],
+  "unavailable": [
+    "Scatter awards disabled in actual engine profile; no scatter scenario invented.",
+    "Collections disabled in actual engine profile; no collection scenario invented."
+  ]
+}

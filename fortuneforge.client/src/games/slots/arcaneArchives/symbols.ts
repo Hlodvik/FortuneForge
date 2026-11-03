@@ -1,9 +1,10 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import { createThemedSymbolSet } from '../shared/themedSymbolSet'
 import { ARCANE_ARCHIVES_VISUALS as art } from './visuals'
 
 export const ARCANE_ARCHIVES_SYMBOLS = createThemedSymbolSet({
   id: 'arcane-archives-symbols-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Whispering candle', image: art.candle },
     '3': { label: 'Moon-feather quill', image: art.quill },

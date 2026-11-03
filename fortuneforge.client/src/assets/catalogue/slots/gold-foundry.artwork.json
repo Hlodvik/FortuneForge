@@ -1,0 +1,16 @@
+{
+  "id": "gold-foundry",
+  "title": "Gold Foundry",
+  "file": "gold-foundry-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 77246,
+  "prompt": "Create a 2:1 wide video slot catalogue title-card for Gold Foundry. Reference 1 is the warmly lit charcoal foundry casting hall. Reference 2 is the existing symbols with a rough cast iron crucible in the bottom-right cell. Paint that exact dark pivoting cast-iron crucible with orange molten gold on the right, and a clear two-line left-side title \"GOLD FOUNDRY\" in substantial burnished gold metal serif lettering, easy to read at thumbnail sizes. Dark charcoal and amber highlights. Quiet dark hall behind. Keep the complete title and crucible in the central 80% with breathing room on all sides. The exact words GOLD FOUNDRY once only. No UI, no people, no extra props, no money piles, no logo or watermark.",
+  "generator": "built-in imagegen",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a19f4a-096a-70c3-b014-224b0e0aefc4/exec-646a719c-7a7b-41be-8f1a-535041b0ce07.png",
+  "referencePaths": [
+    "fortuneforge.client/src/assets/slots/games/gold-foundry/casting-hall.webp",
+    "fortuneforge.client/src/assets/slots/games/gold-foundry/crucible.webp"
+  ],
+  "status": "ready-for-parent-review"
+}

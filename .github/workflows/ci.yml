@@ -37,7 +37,9 @@ jobs:
         run: |
           dotnet restore FortuneForge.slnx
           dotnet restore games/FortuneForge.Games.slnx
-          dotnet restore tools/FortuneForge.SlotMath/FortuneForge.SlotMath.csproj
+          while IFS= read -r project; do
+            dotnet restore "$project"
+          done < <(git ls-files -- 'tools/*.csproj')
 
       - name: Build .NET
         run: |

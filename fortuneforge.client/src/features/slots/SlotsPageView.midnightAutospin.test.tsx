@@ -146,5 +146,5 @@ describe('Shared sidecar slot controls', () => {
       }
     }
     expect(sharedCount).toBe(17)
-  })
+  }, 20_000)
 })

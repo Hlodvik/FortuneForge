@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { WinHelpDialog } from '../../features/slots/WinHelpDialog'
 import { describeSpinOutcome } from '../../features/slots/presentation/spinPresentation'
+import { GODS_TUMBLE_SYMBOLS } from './godsOfOlympus/tumble'
 import { WUKONG_FEATURE_SYMBOL_IDS } from './wukong/symbols'
 import type { SlotSymbolId } from '../../features/slots/types/slots'
 import { getSlotSymbolValueLabel, slotPointsToRand } from '../../features/slots/slotPagePresentation'
@@ -100,7 +101,9 @@ describe('slot game manifests', () => {
         : game.id === 'gold-foundry' ? 'gold-foundry-symbols-v1'
         : game.id === 'neon-nights' ? 'neon-arcade-symbols-v2'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'classic-symbols-v3'))
-    for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard')) {
+    expect(GODS_TUMBLE_SYMBOLS).toContain('8')
+    expect(GODS_OF_OLYMPUS_SLOT_GAME.experience.symbols.definitions['8']?.label).toBe('Olympian sapphire')
+    for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard' && candidate.id !== 'gods-of-olympus')) {
       expect(game.experience.symbols.definitions['8'], game.id).toBeUndefined()
       expect(game.experience.rules.initialReels.flat(), game.id).not.toContain('8')
     }

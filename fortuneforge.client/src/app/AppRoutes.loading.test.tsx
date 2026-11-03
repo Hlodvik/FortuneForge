@@ -66,8 +66,9 @@ describe('game route loading integration', () => {
     expect(vi.getTimerCount()).toBe(0)
   })
 
-  it('shows recognised game artwork only while its lazy chunk is pending, then renders ready without a timer', async () => {
+  it('shows recognised game artwork only while its lazy chunk is pending, with no loading timer', async () => {
     vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })))
     await renderRoute('/cards/blackjack')
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     const entry = resolveGameLoadingEntry('/cards/blackjack')!
@@ -75,6 +76,8 @@ describe('game route loading integration', () => {
     expect(host.querySelector('img')?.getAttribute('src')).toBe(entry.image)
     expect(host.querySelector('[role="status"]')?.textContent).toBe('Loading Fortune Blackjack…')
     expect(host.querySelector('[data-route-ready]')).toBeNull()
+    // The game experience store polls independently of the loading UI.
+    expect(vi.getTimerCount()).toBe(1)
 
     function ReadyBlackjack() {
       return <main data-route-ready="blackjack" data-route-entry={useGameLoadingEntry()?.id}>Blackjack ready</main>
@@ -83,6 +86,8 @@ describe('game route loading integration', () => {
     expect(host.querySelector('[data-route-ready]')?.getAttribute('data-route-entry')).toBe('blackjack')
     expect(host.textContent).toBe('Blackjack ready')
     expect(host.querySelector('[data-game-loading], [role="status"]')).toBeNull()
+    expect(vi.getTimerCount()).toBe(1)
+    await act(async () => root.render(null))
     expect(vi.getTimerCount()).toBe(0)
   })
 

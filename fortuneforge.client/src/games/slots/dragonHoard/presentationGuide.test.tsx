@@ -1,19 +1,17 @@
 // @vitest-environment jsdom
 import { act, createRef } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SymbolValueGuide } from '../../../features/slots/components/SymbolValueGuide'
 import { getSlotOutcomePresentation, type SlotOutcomePresentationInput } from '../../../features/slots/presentation/spinPresentation'
 import { WinHelpDialog } from '../../../features/slots/WinHelpDialog'
-import { NEON_NIGHTS_DEFINITION } from '../neonNights/definition'
-import { createShowcaseSlotGame } from '../shared/createShowcaseSlotGame'
+import { ROBOT_REVOLUTION_SLOT_GAME } from '../robotRevolution/manifest'
 import type { SlotGameManifest } from '../shared/slotGameManifest'
 import { DRAGON_HOARD_SLOT_GAME } from './manifest'
 import { midnightVaultMultiplier } from './math'
 
 const target = DRAGON_HOARD_SLOT_GAME
-const unchangedDefault = createShowcaseSlotGame(NEON_NIGHTS_DEFINITION)
+const unchangedDefault = ROBOT_REVOLUTION_SLOT_GAME
 let host: HTMLDivElement
 let root: Root
 
@@ -30,17 +28,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function helpMarkup(game: SlotGameManifest) {
-  return renderToStaticMarkup(<WinHelpDialog
+function openHelp(game: SlotGameManifest) {
+  act(() => root.render(<WinHelpDialog
     isOpen closeButtonRef={createRef<HTMLButtonElement>()}
     help={game.experience.help} symbolSet={game.experience.symbols} onClose={() => undefined}
-  />)
-}
-
-function text(markup: string) {
-  const element = document.createElement('div')
-  element.innerHTML = markup
-  return element.textContent ?? ''
+  />))
+  return document.body.querySelector<HTMLElement>('.win-help[role="dialog"]')!
 }
 
 function openValues(game: SlotGameManifest, showValueTokens: boolean) {
@@ -62,9 +55,9 @@ function outcomeInput(): SlotOutcomePresentationInput {
 
 describe('Midnight Vault optional presentation guides', () => {
   it('renders the target path count, uniform payline note and separate scatter/collection awards', () => {
-    const markup = helpMarkup(target)
-    const copy = text(markup)
-    expect(markup.match(/aria-label="Valid five-symbol payline \d+"/g)).toHaveLength(23)
+    const dialog = openHelp(target)
+    const copy = dialog.textContent
+    expect(dialog.querySelectorAll('[aria-label^="Valid five-symbol payline "]')).toHaveLength(23)
     expect(copy).toContain('All 23 full payline patterns use the same symbol multipliers.')
     expect(copy).not.toContain('The more central patterns pay more.')
     expect(copy).toContain('receive 10 Vault Breach spins')
@@ -107,7 +100,7 @@ describe('Midnight Vault optional presentation guides', () => {
   })
 
   it('preserves another title’s labels while correcting its uniform payline note', () => {
-    const copy = text(helpMarkup(unchangedDefault))
+    const copy = openHelp(unchangedDefault).textContent
     expect(copy).toContain('Free games')
     expect(copy).toContain('FREE GAME symbols')
     expect(copy).toContain('All 23 full payline patterns use the same symbol multipliers.')

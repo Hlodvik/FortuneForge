@@ -6,11 +6,13 @@ const gameSource = (game: string, file: string) => readFileSync(new URL(
   `../../../../games/${game}/client/FortuneForge.Games.${game}.Client/src/${file}`, import.meta.url,
 ), 'utf8')
 
-function rule(source: string, selector: string): string {
+function rules(source: string, selector: string): string[] {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const matches = [...source.matchAll(new RegExp(`(?:^|\\n)${escaped}\\s*\\{([^}]+)\\}`, 'g'))]
-  return matches.at(-1)?.[1] ?? ''
+  return matches.map(match => match[1])
 }
+
+const rule = (source: string, selector: string) => rules(source, selector).at(-1) ?? ''
 
 const sharedImport = "@import '../../../../shared/visuals/casino-felt.css';"
 
@@ -23,13 +25,15 @@ describe('shared emerald casino felt materials', () => {
 
   it('replaces only Baccarat’s rigid felt layer while retaining its printed arcs and textured leather rail', () => {
     const styles = gameSource('Baccarat', 'baccaratTable.css')
-    const felt = rule(styles, '.ff-baccarat__play-surface::before')
+    const [felt, ...alignmentOverrides] = rules(styles, '.ff-baccarat__play-surface::before')
     expect(felt).toContain('background: var(--ff-casino-felt-material)')
     expect(felt).toContain('filter: none')
     expect(felt).not.toMatch(/blur|radial-gradient/)
     expect(felt).toContain('width: max(100cqw, 157.377cqh)')
     expect(felt).toContain('height: max(100cqh, 63.542cqw)')
     expect(felt).toContain('transform: translate(-50%, -50%)')
+    expect(alignmentOverrides.at(-1)).toContain('bottom: 0; transform: translateX(-50%)')
+    expect(alignmentOverrides.join('')).not.toMatch(/background|filter/)
     expect(styles).not.toContain('baccarat-felt-generated-v3.png')
     const board = gameSource('Baccarat', 'BaccaratGame.tsx')
     expect(board).toContain('className="ff-baccarat__felt-lines" viewBox="0 0 1440 915"')

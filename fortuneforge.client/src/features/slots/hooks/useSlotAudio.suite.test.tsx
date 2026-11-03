@@ -65,7 +65,7 @@ describe('theme-suite audio lifecycle', () => {
     expect(instances.every(audio => audio.paused)).toBe(true)
     act(() => { current().startLoop('ambience'); current().playCue('collect-sync'); current().playCue('low-win') })
     expect(instances).toHaveLength(5)
-    expect(instances[4].src).toContain('win-small.ogg')
+    expect(instances[4].src).toBe('/assets/slots/audio-suites/v1/neon-nights/win-nice-v1.ogg')
     act(() => current().toggleMuted())
     expect(instances[4].paused).toBe(true)
   }))

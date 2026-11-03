@@ -55,6 +55,7 @@ export type SlotOutcomePresentationInput = Readonly<{
   freeSpinsRemaining: number
   useFreeGameForNextSpin: boolean
   bonusName?: string
+  featureAward?: { label: string; amount: number }
 }>
 
 export function isBigWinAward(award: number, wager: number): boolean {
@@ -85,6 +86,7 @@ export function getSlotOutcomePresentation({
   freeSpinsRemaining,
   useFreeGameForNextSpin,
   bonusName,
+  featureAward,
 }: SlotOutcomePresentationInput): SlotOutcomePresentation {
   if (demoAvailabilityMessage !== null) {
     return {
@@ -135,6 +137,18 @@ export function getSlotOutcomePresentation({
       nextAction: bonusName ? `Press Spin to enter ${bonusName}.` : 'Press Spin to begin your free games.',
       significance: 'major',
       tone: 'milestone',
+    }
+  }
+
+  if (featureAward && featureAward.amount > 0) {
+    const includesOtherWins = lastWin > featureAward.amount
+    return {
+      label: includesOtherWins ? 'Spin win' : featureAward.label,
+      title: `+${formatOutcomeRand(lastWin)}`,
+      detail: includesOtherWins ? `${featureAward.label} +${formatOutcomeRand(featureAward.amount)}` : undefined,
+      nextAction: 'Spin again, or adjust your wager before the next result.',
+      significance: isBigWinAward(lastWin, activeWager) ? 'major' : 'standard',
+      tone: 'win',
     }
   }
 

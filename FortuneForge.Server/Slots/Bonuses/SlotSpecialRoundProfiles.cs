@@ -156,10 +156,10 @@ public static class SlotSpecialRoundProfiles
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
                 PayoutMultiplier: 0.716m),
             [DinoDominionGameId] = new(
-                DinoDominionGameId, 3, 5, 40, 10,
-                CollectionFeatureMode: "rows-paw-rand",
+                DinoDominionGameId, 0, 0, 0, 0,
+                UsesCollections: false, UsesDirectValueTokens: false,
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
-                PayoutMultiplier: 0.607m)
+                PayoutMultiplier: GoldFoundrySlotDefinitions.LinePayoutUnit)
         };
 
     public static bool TryGet(string gameId, out SlotSpecialRoundProfile profile) =>

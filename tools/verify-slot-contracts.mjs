@@ -43,7 +43,9 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
         assert.equal(response.wagerPoints, request.wagerPoints)
         assert.equal(response.slotsCreditsBalance, null)
         assert.ok(!Object.hasOwn(response, 'engineAudit'))
-        const offPaylinePoints = usesCharmHarvest ? response.moneyGrabPoints : 0
+        const usesFoundryCollector = response.gameId === 'dino-dominion-v1' &&
+          response.paytableId === 'gold-foundry-paytable-v1'
+        const offPaylinePoints = usesCharmHarvest || usesFoundryCollector ? response.moneyGrabPoints : 0
         assert.equal(response.payout.totalPoints, response.payout.paylines.reduce((sum, line) => sum + line.amountPoints, offPaylinePoints))
         for (const line of response.payout.paylines)
           assert.equal(line.amountPoints, line.matches.reduce((sum, match) => sum + match.amountPoints, 0))

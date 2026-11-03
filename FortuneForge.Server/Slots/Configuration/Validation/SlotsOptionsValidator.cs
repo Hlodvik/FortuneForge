@@ -38,6 +38,11 @@ public sealed partial class SlotsOptionsValidator : IValidateOptions<SlotsOption
             ValidateGame(game, symbolSets, reelSets, paytables, errors);
         }
 
+        if (options.ClassicProfileTemplate is { } template)
+        {
+            ValidateGame(template, symbolSets, reelSets, paytables, errors);
+        }
+
         return errors.Count == 0
             ? ValidateOptionsResult.Success
             : ValidateOptionsResult.Fail(errors);

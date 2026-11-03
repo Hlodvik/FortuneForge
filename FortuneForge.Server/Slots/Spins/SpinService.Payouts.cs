@@ -21,6 +21,15 @@ public sealed partial class SpinService
         return new FeaturePayout(basketCount, harvest, bananas.Sum(payout => payout.AmountPoints), bananas, harvest);
     }
 
+    private static FeaturePayout CalculateFoundryFeaturePayout(
+        IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints)
+    {
+        var (collectorCount, ingotPayout) = GoldFoundryReelCollector.Calculate(reels, wagerPoints);
+        var hammerPayouts = CalculateBananaPayouts(reels, wagerPoints, 1m);
+        return new FeaturePayout(collectorCount, ingotPayout, hammerPayouts.Sum(payout => payout.AmountPoints),
+            hammerPayouts, ingotPayout);
+    }
+
     private static FeaturePayout CalculateFeaturePayout(
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,

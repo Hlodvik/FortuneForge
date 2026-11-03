@@ -104,6 +104,10 @@ export type SpinResult = {
   energyAwarded: number
   energyBalance: number
   energyMultiplierApplied: boolean
+  crucibleWageredCents?: number
+  cruciblePourValueCents?: number
+  cruciblePoured?: boolean
+  cruciblePayoutCents?: number
   payoutMultiplier: number
   monkeyPawCount: number
   moneyGrabPoints: number

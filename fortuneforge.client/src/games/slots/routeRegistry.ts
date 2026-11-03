@@ -58,7 +58,7 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
     load: () => import('./cosmicFortune/manifest').then((module) => module.COSMIC_FORTUNE_SLOT_GAME),
   },
   {
-    id: 'dino-dominion', title: 'Dino Dominion', shortTitle: 'Dino Dominion',
+    id: 'dino-dominion', title: 'Gold Foundry', shortTitle: 'Gold Foundry',
     playPath: '/slots/dino-dominion', demoPath: '/slots/dino-dominion/demo', serverGameIds: ['dino-dominion-v1'], shellBackdrop: 'theme',
     load: () => import('./dinoDominion/manifest').then((module) => module.DINO_DOMINION_SLOT_GAME),
   },

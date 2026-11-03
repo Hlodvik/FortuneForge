@@ -98,6 +98,7 @@ describe('slot game manifests', () => {
     expect(new Set(serverGameIds).size).toBe(serverGameIds.length)
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
       game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
+        : game.id === 'dino-dominion' ? 'gold-foundry-symbols-v1'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'wukong-treasures-v3'))
     for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard')) {
       expect(game.experience.symbols.definitions['8'], game.id).toBeUndefined()
@@ -155,11 +156,10 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('registers three additional playable themes with distinct special-game presentations', () => {
+  it('registers Arcane Archives and Cosmic Fortune with distinct collection presentations', () => {
     const newGames = [
       [ARCANE_ARCHIVES_SLOT_GAME, 'enchanted book satchel', 'spellbook-shelf'],
       [COSMIC_FORTUNE_SLOT_GAME, null, 'star-orbit'],
-      [DINO_DOMINION_SLOT_GAME, 'paleontologist field kit', 'fossil-dig'],
     ] as const
 
     expect(SLOT_GAME_MANIFESTS).toHaveLength(20)
@@ -181,6 +181,25 @@ describe('slot game manifests', () => {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
     }
+  })
+
+  it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
+    const { experience, routes } = DINO_DOMINION_SLOT_GAME
+    const { features, help, symbols } = experience
+    expect(routes.demo).toBe('/slots/dino-dominion/demo')
+    expect(features.collections).toBeUndefined()
+    expect(features.specialRound).toBeUndefined()
+    expect(help.freeGames).toBeUndefined()
+    expect(features.energy?.symbol).toBe('BOLT')
+    expect(features.moneyGrab).toMatchObject({
+      collectorSymbol: 'PAW',
+      presentation: 'separate-award',
+      valueSymbols: ['SEAL_ROWS', 'SEAL_SYNC', 'SEAL_PAW', 'SEAL_RAND'],
+    })
+    expect(symbols.guideEntries.filter(entry => entry.firstLabel === '3 / 4')
+      .map(entry => entry.symbol)).toEqual(expect.arrayContaining(['SEAL_ROWS', 'SEAL_SYNC', 'SEAL_PAW', 'SEAL_RAND']))
+    expect(symbols.guideEntries.find(entry => entry.symbol === 'PAW')?.firstLabel).toBe('1 crucible')
+    expect(symbols.definitions.RAND_1).toBeUndefined()
   })
 
   it('registers ten second-wave games with complete distinct themed contracts', () => {
@@ -261,11 +280,13 @@ describe('slot game manifests', () => {
       .toBe(18)
   })
 
-  it('gives every cabinet a named, persistent feature contract', () => {
-    const features = SLOT_GAME_MANIFESTS.map((game) => game.experience.features.specialRound)
+  it('gives free-spin rounds distinct, named feature contracts', () => {
+    const features = SLOT_GAME_MANIFESTS
+      .filter((game) => game.id !== 'dino-dominion')
+      .map((game) => game.experience.features.specialRound)
 
     expect(features.every(Boolean)).toBe(true)
-    expect(new Set(features.map((feature) => feature?.id)).size).toBe(20)
+    expect(new Set(features.map((feature) => feature?.id)).size).toBe(19)
     for (const feature of features) {
       expect(feature?.title).toBeTruthy()
       expect(feature?.earnLabel).toBeTruthy()
@@ -274,10 +295,10 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('uses a high-paying reel symbol for every slot catalog card', () => {
+  it('uses a representative reel symbol for every slot catalog card', () => {
     for (const gameId of REEL_SYMBOL_CATALOG_GAME_IDS) {
       const game = requireGame(gameId)
-      const reelSymbol = game.experience.symbols.definitions['7']
+      const reelSymbol = game.experience.symbols.definitions[gameId === 'dino-dominion' ? 'PAW' : '7']
       const catalogEntry = SLOT_GAME_CATALOG.find((candidate) => candidate.id === gameId)
 
       expect(reelSymbol).toBeDefined()

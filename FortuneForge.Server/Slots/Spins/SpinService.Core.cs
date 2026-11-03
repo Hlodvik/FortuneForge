@@ -65,6 +65,8 @@ public sealed partial class SpinService(
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else if (useFreeSpin && GoldFoundrySlotDefinitions.IsModel(game))
+            GoldFoundrySlotDefinitions.ValidateLegacyFreeSpinWager(wagerPoints);
         else
             ValidateWager(game, wagerPoints);
     }

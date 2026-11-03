@@ -1,42 +1,26 @@
-import amberToken from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-amber-token-v2.webp'
-import amberTrackFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-amber-track-fossil-v2.webp'
-import cabinetEmblem from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-cabinet-emblem-v2.webp'
-import crimsonFangFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-crimson-fang-fossil-v2.webp'
-import dinosaurFootprint from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-dinosaur-footprint-v2.webp'
-import emeraldLeafFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-emerald-leaf-fossil-v2.webp'
-import fallingMeteor from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-falling-meteor-v2.webp'
-import fossilBone from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-fossil-bone-v2.webp'
-import fossilClawTrio from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-fossil-claw-trio-v2.webp'
-import goldenAmberStone from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-golden-amber-stone-v2.webp'
-import mightyTyrannosaurus from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-mighty-tyrannosaurus-v2.webp'
-import paleontologistFieldKit from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-paleontologist-field-kit-v2.webp'
-import primevalFern from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-primeval-fern-v2.webp'
-import sapphireShellFossil from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-sapphire-shell-fossil-v2.webp'
-import speckledEgg from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-speckled-egg-v2.webp'
-import swiftRaptor from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-swift-raptor-v2.webp'
-import triceratopsWildCrest from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-triceratops-wild-crest-v2.webp'
-import valley from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-valley-v2.webp'
-import volcanicCave from '../../../assets/slots/games/dino-dominion/optimized/dino-dominion-volcanic-cave-v2.webp'
+import ace from '../../../assets/slots/games/gold-foundry/ace.webp'
+import jack from '../../../assets/slots/games/gold-foundry/jack.webp'
+import king from '../../../assets/slots/games/gold-foundry/king.webp'
+import queen from '../../../assets/slots/games/gold-foundry/queen.webp'
+import goldIngots from '../../../assets/slots/games/gold-foundry/gold-ingots.webp'
+import bronzeIngots from '../../../assets/slots/games/gold-foundry/bronze-ingots.webp'
+import ironIngot from '../../../assets/slots/games/gold-foundry/iron-ingot.webp'
+import copperIngots from '../../../assets/slots/games/gold-foundry/copper-ingots.webp'
+import ore from '../../../assets/slots/games/gold-foundry/ore.webp'
+import tongs from '../../../assets/slots/games/gold-foundry/tongs.webp'
+import bellows from '../../../assets/slots/games/gold-foundry/bellows.webp'
+import anvil from '../../../assets/slots/games/gold-foundry/anvil.webp'
+import smithMask from '../../../assets/slots/games/gold-foundry/smith-mask.webp'
+import paybackIngotBundle from '../../../assets/slots/games/gold-foundry/payback-ingot-bundle.webp'
+import hammer from '../../../assets/slots/games/gold-foundry/hammer.webp'
+import crucible from '../../../assets/slots/games/gold-foundry/crucible.webp'
+import backdrop from '../../../assets/slots/games/gold-foundry/casting-hall.webp'
+import reelBacking from '../../../assets/slots/games/gold-foundry/reel-backing.webp'
 
-export const DINO_DOMINION_VISUALS = {
-  backdrop: valley,
-  emblem: cabinetEmblem,
-  accent: amberToken,
-  bone: fossilBone,
-  egg: speckledEgg,
-  fern: primevalFern,
-  footprint: dinosaurFootprint,
-  raptor: swiftRaptor,
-  rex: mightyTyrannosaurus,
-  wild: triceratopsWildCrest,
-  free: volcanicCave,
-  power: goldenAmberStone,
-  energy: fallingMeteor,
-  lineBonus: fossilClawTrio,
-  collector: paleontologistFieldKit,
-  sync: crimsonFangFossil,
-  rows: sapphireShellFossil,
-  paw: amberTrackFossil,
-  rand: emeraldLeafFossil,
-  value: amberToken,
+export const GOLD_FOUNDRY_VISUALS = {
+  ace, jack, king, queen,
+  goldIngots, bronzeIngots, ironIngot, copperIngots,
+  ore, tongs, bellows, anvil,
+  smithMask, paybackIngotBundle, hammer, crucible,
+  backdrop, reelBacking,
 } as const

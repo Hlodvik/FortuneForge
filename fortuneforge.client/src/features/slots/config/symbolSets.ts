@@ -36,6 +36,7 @@ export type SlotSymbolSet = {
   serverSymbolSetId?: string
   definitions: Readonly<Partial<Record<SlotSymbolId, SlotSymbolDefinition>>>
   guideEntries: readonly SlotSymbolGuideEntry[]
+  guideSubtitle?: string
   /** Opt-in reel filler identities for games with dormant compatibility metadata. */
   animationSymbolIds?: readonly SlotSymbolId[]
   /** Optional explanation for a game's displayed, calibrated multipliers. */

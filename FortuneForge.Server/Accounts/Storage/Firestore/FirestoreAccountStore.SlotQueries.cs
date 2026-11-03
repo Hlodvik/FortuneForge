@@ -18,12 +18,28 @@ public sealed partial class FirestoreAccountStore
         var guardReference = SlotSpinGuardDocument(userId, gameId);
         var specialPointsCurrencyId = GameCurrencyId(SpecialPointsCurrencyId, gameId);
         var energyCurrencyId = GameCurrencyId(EnergyCurrencyId, gameId);
-        if (gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
+        var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+        var isGoldFoundry = GoldFoundryCrucible.IsGame(gameId);
+        if (isMidnight || isGoldFoundry)
             return await database.RunTransactionAsync(async transaction =>
             {
                 var state = await transaction.GetAllSnapshotsAsync([
                     guardReference, BalanceDocument(userId, GameCurrencyId(FreeGamesCurrencyId, gameId)),
                     BalanceDocument(userId, specialPointsCurrencyId), BalanceDocument(userId, energyCurrencyId)], cancellationToken);
+                if (isGoldFoundry)
+                {
+                    var wageredCents = ReadLong(state[0], "crucibleWageredCents");
+                    var legacySpins = checked((int)ReadLong(state[1], "available"));
+                    long? legacyWager = legacySpins > 0
+                        ? ReadGoldFoundryCarryWagerPoints(state[0], pointValueInCents) : null;
+                    return new SlotStateResponse(legacySpins, legacyWager,
+                        checked((int)ReadLong(state[2], "available")), ReadLong(state[3], "available"),
+                        [], null)
+                    {
+                        CrucibleWageredCents = wageredCents,
+                        CruciblePourValueCents = GoldFoundryCrucible.PourValueCents(wageredCents)
+                    };
+                }
                 var rounds = ReadMidnightBonusRounds(state[0], ReadLong(state[1], "available"), pointValueInCents);
                 var active = rounds.FirstOrDefault();
                 return new SlotStateResponse(active?.RemainingSpins ?? 0, active?.WagerPoints,
@@ -67,6 +83,16 @@ public sealed partial class FirestoreAccountStore
             .OrderByDescending(spin => spin.CreatedAtUtc)
             .Take(Math.Clamp(limit, 1, 100))
             .ToArray();
+    }
+
+    private static long ReadGoldFoundryCarryWagerPoints(DocumentSnapshot guard, decimal pointValueInCents)
+    {
+        decimal cents = ReadLong(guard, "freeSpinWagerCents");
+        if (cents <= 0)
+            cents = ReadLong(guard, "freeSpinWagerPoints") * (decimal)RandMoney.CentsPerRand;
+        var points = cents / pointValueInCents;
+        // Incomplete older records still retain the awarded spin. Use the original minimum wager.
+        return points is >= 2 and <= 2000 && points == decimal.Truncate(points) ? (long)points : 2;
     }
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(

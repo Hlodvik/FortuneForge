@@ -23,6 +23,9 @@ public sealed record SlotSpinEngineAudit(
 {
     // Set after checking a stored paid entitlement or a nonfinancial demo round.
     public bool IsDerivedFreeSpin { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CrucibleRuleVersion { get; init; }
 }
 
 public readonly record struct GridPosition(int Reel, int Row);
@@ -92,6 +95,14 @@ public sealed record SpinResult(
     public long EnergyBalance { get; init; }
     public bool EnergyMultiplierApplied { get; init; }
     public decimal PayoutMultiplier { get; init; } = 1m;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CrucibleWageredCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePourValueCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CruciblePoured { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePayoutCents { get; init; }
     public int MonkeyPawCount { get; init; }
     public long MoneyGrabPoints { get; init; }
     public long BananaBonusPoints { get; init; }

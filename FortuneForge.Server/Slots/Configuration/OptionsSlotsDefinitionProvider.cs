@@ -9,26 +9,30 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 {
     public GameDefinition? GetGame(string id)
     {
+        if (id == GoldFoundrySlotDefinitions.GameId)
+            return GoldFoundrySlotDefinitions.CreateGame();
         var configured = options.Value.GameDefinitions
             .SingleOrDefault(game => string.Equals(game.Id, id, StringComparison.Ordinal));
         if (configured is not null)
         {
             return SlotSpecialRoundProfiles.TryGet(id, out var configuredProfile)
-                ? ClonePrototype(configured, configuredProfile)
+                ? ApplyProfile(configured, configuredProfile)
                 : configured;
         }
-        if (!SlotSpecialRoundProfiles.TryGet(id, out var profile))
+        if (id == SlotSpecialRoundProfiles.WukongGameId ||
+            !SlotSpecialRoundProfiles.TryGet(id, out var profile))
         {
             return null;
         }
 
-        var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
-            string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
-        return prototype is null ? null : ClonePrototype(prototype, profile);
+        var template = options.Value.ClassicProfileTemplate;
+        return template is null ? null : ApplyProfile(template, profile);
     }
 
     public SymbolSetDefinition? GetSymbolSet(string id) =>
-        id == RainbowRealmSlotDefinitions.SymbolSetId
+        id == GoldFoundrySlotDefinitions.SymbolSetId
+            ? GoldFoundrySlotDefinitions.CreateSymbolSet()
+            : id == RainbowRealmSlotDefinitions.SymbolSetId
             ? RainbowRealmSlotDefinitions.CreateSymbolSet()
             : string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
             ? MidnightVaultSlotDefinitions.CreateSymbolSet()
@@ -36,16 +40,17 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public ReelSetDefinition? GetReelSet(string id)
     {
+        if (id == GoldFoundrySlotDefinitions.ReelSetId)
+            return GoldFoundrySlotDefinitions.CreateReelSet();
         if (id == RainbowRealmSlotDefinitions.ReelSetId)
             return RainbowRealmSlotDefinitions.Reels;
         if (string.Equals(id, MidnightVaultBaseReelSet.Id, StringComparison.Ordinal))
         {
-            var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
-                string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
-            var source = prototype is null
+            var template = options.Value.ClassicProfileTemplate;
+            var source = template is null
                 ? null
                 : options.Value.ReelSets.SingleOrDefault(set =>
-                    string.Equals(set.Id, prototype.Math.ReelSetId, StringComparison.Ordinal));
+                    string.Equals(set.Id, template.Math.ReelSetId, StringComparison.Ordinal));
             return source is null ? null : MidnightVaultBaseReelSet.Create(source);
         }
         if (string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal))
@@ -68,6 +73,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public PaytableDefinition? GetPaytable(string id)
     {
+        if (id == GoldFoundrySlotDefinitions.PaytableId)
+            return GoldFoundrySlotDefinitions.CreatePaytable();
         if (id == RainbowRealmSlotDefinitions.PaytableId)
             return RainbowRealmSlotDefinitions.CreatePaytable();
         if (string.Equals(id, MidnightVaultSlotDefinitions.PaytableId, StringComparison.Ordinal))
@@ -78,7 +85,7 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         return options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
     }
 
-    private static GameDefinition ClonePrototype(GameDefinition source, SlotSpecialRoundProfile profile)
+    private static GameDefinition ApplyProfile(GameDefinition source, SlotSpecialRoundProfile profile)
     {
         var paylineIndexes = profile.PaylinePatternIds?
             .Select(patternId => patternId - 1)

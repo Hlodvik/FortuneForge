@@ -171,14 +171,25 @@ public sealed class SlotRoundAuditTests
 
     private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(SpinResult result)
     {
-        var settledPayout = EnergyBonus.Settle(0, result.EnergyAwarded, result.Payout).Payout;
+        var wagerCents = RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var crucible = GoldFoundryCrucible.IsGame(result.GameId)
+            ? GoldFoundryCrucible.Settle(0, result.EnergyAwarded, 0, wagerCents)
+            : null;
+        var settledPayout = crucible?.AsEnergySettlement(result.Payout).Payout
+            ?? EnergyBonus.Settle(0, result.EnergyAwarded, result.Payout).Payout;
+        var payoutCents = RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents)
+            + (crucible?.PayoutCents ?? 0);
         var catalogueGameId = FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds[result.GameId];
         var piratesGemEvidence = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
             ? PiratesGemEvidence(result) : null;
         return SinglePlayerRoundRecord.Create(catalogueGameId, result.SpinId.ToString("N"),
-            "audit-test-player", 100, 100, DateTime.UtcNow, DateTime.UtcNow,
+            "audit-test-player", wagerCents, payoutCents, DateTime.UtcNow, DateTime.UtcNow,
             "slotSpinResults", result.SpinId.ToString("N"),
-            new { result, engineAudit = result.EngineAudit, settledPayout, piratesGemEvidence },
+            new
+            {
+                result, result.IsFreeSpin, engineAudit = result.EngineAudit, settledPayout, piratesGemEvidence,
+                crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible }
+            },
             "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;
     }
 

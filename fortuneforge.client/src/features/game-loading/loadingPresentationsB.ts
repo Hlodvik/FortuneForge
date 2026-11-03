@@ -7,7 +7,7 @@ import keno from '../../assets/catalogue/non-slots/keno-title-v1.webp'
 import sicBo from '../../assets/catalogue/non-slots/sic-bo-title-v1.webp'
 import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
 import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
-import dinoDominion from '../../assets/catalogue/slots/dino-dominion-title-v1.webp'
+import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
 import jungleJackpot from '../../assets/catalogue/slots/jungle-jackpot-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
@@ -55,9 +55,9 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     image: cosmicFortune, background: '#05081e', accent: '#54d9ff',
   },
   {
-    id: 'dino-dominion', title: 'Dino Dominion',
+    id: 'dino-dominion', title: 'Gold Foundry',
     routes: ['/slots/dino-dominion', '/slots/dino-dominion/demo'],
-    image: dinoDominion, background: '#141d10', accent: '#e0ad4c',
+    image: goldFoundry, background: '#1c1513', accent: '#ffd283',
   },
   {
     id: 'neon-nights', title: 'Neon Nights',

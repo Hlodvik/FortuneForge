@@ -1,26 +1,30 @@
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
-import { DINO_DOMINION_VISUALS as art } from './visuals'
+import wordmark from '../../../assets/slots/games/gold-foundry/optimized/gold-foundry-wordmark-v1.webp'
+import { GOLD_FOUNDRY_VISUALS as art } from './visuals'
+import './goldFoundryCabinet.css'
 
 export const DINO_DOMINION_CABINET_THEME: SlotCabinetTheme = {
-  id: 'dino-dominion-cabinet-v1',
+  id: 'gold-foundry-cabinet-v1',
   chrome: 'simple',
-  accessibleName: 'Dino Dominion prehistoric slot machine',
+  accessibleName: 'Gold Foundry slot machine',
   eyebrow: 'Fortune Forge presents',
-  title: 'Dino Dominion',
-  subtitle: 'Unearth a Prehistoric Fortune',
-  celebrationEffect: 'fossil-burst',
-  emblemImage: art.emblem,
-  accentImage: art.accent,
+  title: 'Gold Foundry',
+  titleArtwork: { src: wordmark, width: 960, height: 126 },
+  subtitle: 'Cast molten gold',
+  celebrationEffect: 'foundry-sparks',
+  emblemImage: art.smithMask,
+  accentImage: art.goldIngots,
+  keyboardHelpPlacement: 'footer',
   backdropImage: art.backdrop,
-  visualsBackdropImage: art.backdrop,
+  visualsBackdropImage: art.reelBacking,
   pageBackdropImage: art.backdrop,
   palette: {
-    shellTop: '#43622b',
-    shellBottom: '#171d14',
-    panel: '#2b2b1b',
-    trim: '#e0ad4c',
-    trimBright: '#fff0a3',
-    accent: '#6ed6c3',
+    shellTop: '#3b2c25',
+    shellBottom: '#171314',
+    panel: '#242a30',
+    trim: '#d39142',
+    trimBright: '#ffe0a3',
+    accent: '#e5a161',
     glow: '#f1793e',
     text: '#fff1ce',
   },

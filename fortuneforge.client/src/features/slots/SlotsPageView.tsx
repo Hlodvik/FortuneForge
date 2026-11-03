@@ -43,6 +43,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     collectionAwardPresentation,
     closeSettings,
     creditTileRef,
+    cruciblePourValueCents,
     displayedReels,
     balanceActionHref,
     balanceRecoveryHref,
@@ -65,12 +66,15 @@ export function SlotsPageView(controller: SlotsPageController) {
     isFreeSpinBadgePopping,
     isHelpOpen,
     isDemoSpinDisabled,
+    isEnergyPouring,
     isReloadPromptOpen,
     isSpecialGameActive,
     isSpecialSpinDelayActive,
     isSettingsOpen,
     isSpinning,
     isStopRequested,
+    lastCruciblePayoutCents,
+    lastCollectorAward,
     lastEnergyAwarded,
     lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
@@ -109,6 +113,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     toggleMuted,
     toggleResultsOnly,
     useFreeGameForNextSpin,
+    usesGoldFoundryCrucible,
     visibleSealCollections,
     wagerIndex,
     wagerOptions,
@@ -119,6 +124,35 @@ export function SlotsPageView(controller: SlotsPageController) {
   } = controller
   const collectionFeature = featureSet.collections
   const energyFeature = featureSet.energy
+  const EnergyArtwork = energyFeature?.artwork
+  const crucibleValue = isEnergyPouring ? lastCruciblePayoutCents : cruciblePourValueCents
+  const floorCrucible = usesGoldFoundryCrucible && energyFeature && EnergyArtwork && (
+    <div className="slots-page__crucible">
+      <div
+        className="slots-page__crucible-art"
+        ref={energyMeterRef}
+        role="progressbar"
+        aria-label={energyFeature.label}
+        aria-valuemin={0}
+        aria-valuemax={energyMeterCapacity}
+        aria-valuenow={Math.min(energyMeterCapacity, energyBalance)}
+        aria-valuetext={`${Math.floor(Math.min(1, energyBalance / energyMeterCapacity) * 100)}% full. Pour value ${formatVaultMoney(crucibleValue / 100)}`}
+        data-pouring={isEnergyPouring ? 'true' : undefined}
+      >
+        <EnergyArtwork progress={energyBalance / energyMeterCapacity} completing={isEnergyPouring} />
+      </div>
+      <span className="slots-page__crucible-copy">
+        <span>{isEnergyPouring ? 'Pouring' : 'Pour value'}</span>
+        <strong>{formatVaultMoney(crucibleValue / 100)}</strong>
+        <small className="slots-page__crucible-receipt" role="status">
+          {!isEnergyPouring && lastCruciblePayoutCents > 0
+            ? `${formatVaultMoney(lastCruciblePayoutCents / 100)} credited`
+            : null}
+        </small>
+      </span>
+    </div>
+  )
+  const panelEnergy = floorCrucible ? undefined : energyFeature
   const moneyGrabFeature = featureSet.moneyGrab
   const specialRound = featureSet.specialRound
   const specialRoundLabel = specialRound
@@ -141,6 +175,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune
   const usesPiratesControls = isPiratesFortune || usesSidecarControls
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
+  const keyboardHelpAtBottom = isRainbowRealm || cabinetTheme.keyboardHelpPlacement === 'footer'
   const tracedPaylines = useMemo(() => isRainbowRealm
     ? winningPaylines.filter(({ paylineId }) => paylineId >= 1 && paylineId <= help.paylineCount)
     : winningPaylines, [help.paylineCount, isRainbowRealm, winningPaylines])
@@ -202,7 +237,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     gameTitle: cabinetTheme.title,
     hasCompletedSpin,
     isSpinning,
-    lastEnergyAwarded: energyFeature ? lastEnergyAwarded : 0,
+    lastEnergyAwarded: energyFeature && !usesGoldFoundryCrucible ? lastEnergyAwarded : 0,
     lastEnergyMultiplierApplied: Boolean(energyFeature) && lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
     lastWin,
@@ -211,6 +246,9 @@ export function SlotsPageView(controller: SlotsPageController) {
     freeSpinsRemaining,
     useFreeGameForNextSpin,
     bonusName: isMidnightVault ? specialRound?.title : undefined,
+    featureAward: moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
+      ? { label: moneyGrabFeature.awardLabel, amount: lastCollectorAward }
+      : undefined,
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
@@ -306,6 +344,9 @@ export function SlotsPageView(controller: SlotsPageController) {
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
         <div className="slots-page__layout">
           <div className="slots-page__stage">
+          {cabinetTheme.titleArtwork && (
+            <img className="slots-page__title-art" {...cabinetTheme.titleArtwork} alt="" />
+          )}
           {isRainbowRealm && (
             <img className="rainbow-realm__wordmark" src={rainbowRealmWordmark} width={640} height={305} alt="" />
           )}
@@ -322,7 +363,7 @@ export function SlotsPageView(controller: SlotsPageController) {
               </h2>
             </div>
           )}
-          {((showCollectionMeter && collectionFeature) || energyFeature || isSpecialGameActive) && (
+          {((showCollectionMeter && collectionFeature) || panelEnergy || isSpecialGameActive) && (
           <div className="slots-page__meter-stack">
             {showCollectionMeter && collectionFeature && (
             <div className="slots-page__seal-collections" aria-label={collectionFeature.ariaLabel}>
@@ -360,20 +401,20 @@ export function SlotsPageView(controller: SlotsPageController) {
             </div>
             )}
 
-            {energyFeature && (
+            {panelEnergy && (
             <div
               key={`energy-meter-${energyImpactKey}`}
               ref={energyMeterRef}
               className={`slots-page__energy-meter${energyImpactKey > 0 ? ' slots-page__energy-meter--impact' : ''}`}
               role="progressbar"
-              aria-label={`${energyFeature.label}: ${creditFormatter.format(energyBalance)}`}
+              aria-label={`${panelEnergy.label}: ${creditFormatter.format(energyBalance)}`}
               aria-valuemin={0}
               aria-valuemax={energyMeterCapacity}
               aria-valuenow={Math.min(energyMeterCapacity, energyBalance)}
             >
-              <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, energyFeature.symbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, energyFeature.symbol).image} alt="" aria-hidden="true" />
+              <ResponsiveSlotImage imageSrcSet={getSlotSymbolImageSrcSet(getSlotSymbolDefinition(symbolSet, panelEnergy.symbol).responsiveImages)} src={getSlotSymbolDefinition(symbolSet, panelEnergy.symbol).image} alt="" aria-hidden="true" />
               <span className="slots-page__energy-copy">
-                <span className="slots-page__energy-label">{energyFeature.label}</span>
+                <span className="slots-page__energy-label">{panelEnergy.label}</span>
                 <span className="slots-page__energy-track" aria-hidden="true">
                   <span
                     className="slots-page__energy-fill"
@@ -488,6 +529,8 @@ export function SlotsPageView(controller: SlotsPageController) {
               reducedMotion={prefersReducedMotion}
             />}
           </div>
+
+          {floorCrucible}
 
           <div className="slots-page__playbar" aria-label={usesPiratesControls ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
             {isMidnightVault && (
@@ -648,7 +691,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             )}
           </div>
           {!isMidnightVault && (!isRainbowRealm || balanceActionHref !== null) && <div className="slots-page__local-controls">
-            {!isRainbowRealm && keyboardHelp}
+            {!keyboardHelpAtBottom && keyboardHelp}
             <div className="slots-page__utility-controls" aria-label="Game options">
               {balanceActionHref !== null && <PaymentAlertsMenu />}
               {!usesPiratesControls && utilityButtons}
@@ -929,7 +972,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         </footer>
       )}
 
-      {isRainbowRealm && keyboardHelp}
+      {keyboardHelpAtBottom && keyboardHelp}
 
       <AudioSettingsDialog
         theme={isMidnightVault ? 'midnight-vault' : undefined}

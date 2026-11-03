@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
 
@@ -80,6 +81,14 @@ public sealed record SlotSpinSettlement(
     string? FreeSpinFeatureMode,
     int SealFreeSpinsAwarded = 0)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CrucibleWageredCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePourValueCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CruciblePoured { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePayoutCents { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
@@ -93,6 +102,10 @@ public sealed record SlotStateResponse(
     IReadOnlyList<SlotSealCollection> SealCollections,
     string? FreeSpinFeatureMode)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CrucibleWageredCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePourValueCents { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
 }

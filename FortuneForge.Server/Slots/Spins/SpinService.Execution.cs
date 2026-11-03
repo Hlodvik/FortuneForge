@@ -25,7 +25,8 @@ public sealed partial class SpinService
     {
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
-        var derived = gameId == SlotSpecialRoundProfiles.DragonHoardGameId && admission.IsFreeSpin;
+        var derived = admission.IsFreeSpin &&
+            gameId is SlotSpecialRoundProfiles.DragonHoardGameId or GoldFoundrySlotDefinitions.GameId;
         var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
             admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
             derived, admission.MathModelId);
@@ -56,7 +57,9 @@ public sealed partial class SpinService
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         if (mathModelId is not null)
             game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, mathModelId);
-        if (derivedFreeSpin)
+        if (derivedFreeSpin && GoldFoundrySlotDefinitions.IsModel(game))
+            GoldFoundrySlotDefinitions.ValidateLegacyFreeSpinWager(wagerPoints);
+        else if (derivedFreeSpin)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
         else
             ValidateWager(game, wagerPoints);
@@ -117,6 +120,9 @@ public sealed partial class SpinService
         long currentEnergyBalance,
         string? freeSpinFeatureMode)
     {
+        var foundry = GoldFoundrySlotDefinitions.IsModel(game);
+        if (foundry)
+            freeSpinFeatureMode = null;
         var effectiveGame = CreateEffectiveSpinGame(game, freeSpinFeatureMode);
         var pityTriggered = string.IsNullOrWhiteSpace(freeSpinFeatureMode) &&
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
@@ -145,7 +151,8 @@ public sealed partial class SpinService
             rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
             frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
             outcome = frequencyOutcome;
-            outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
+            if (!foundry)
+                outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
             {
@@ -166,7 +173,9 @@ public sealed partial class SpinService
             : checked(pityState.ConsecutiveFiveMisses + 1);
         var payout = payoutCalculator.Calculate(evaluations, game, paytable, wagerPoints);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(game);
-        var featurePayout = rainbowHarvest
+        var featurePayout = foundry
+            ? CalculateFoundryFeaturePayout(outcome.VisibleReels, wagerPoints)
+            : rainbowHarvest
             ? CalculateRainbowFeaturePayout(outcome.VisibleReels, wagerPoints, game.Math.PayoutMultiplier)
             : CalculateFeaturePayout(outcome.VisibleReels, wagerPoints, game.Math.PayoutMultiplier);
         payout = AddFeaturePayout(payout, featurePayout);
@@ -197,15 +206,20 @@ public sealed partial class SpinService
             specialBoostApplied)
         {
             EngineAudit = new SlotSpinEngineAudit(
-                rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion : AuditEngineVersion,
+                foundry ? GoldFoundryReelCollector.EngineVersion :
+                    rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion : AuditEngineVersion,
                 DateTime.UtcNow, game, effectiveGame, reelSet,
                 symbolSet, paytable, featureProfile, pityMissesBefore,
                 currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
-                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels),
+                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels)
+            {
+                CrucibleRuleVersion = foundry ? GoldFoundryCrucible.RuleVersion :
+                    GoldFoundryCrucible.IsGame(game.Id) ? GoldFoundryCrucible.LegacyRuleVersion : null
+            },
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,
-            SealsAwarded = CountSealSymbols(outcome.VisibleReels)
+            SealsAwarded = foundry ? new Dictionary<string, int>() : CountSealSymbols(outcome.VisibleReels)
         };
     }
 

@@ -37,14 +37,23 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+        var isGoldFoundry = GoldFoundryCrucible.IsGame(result.GameId);
         var rainbowSunshineDisabled = result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId &&
             result.EngineAudit.BaseGame.Energy is null;
+        if (isGoldFoundry && result.EngineAudit.EngineVersion == GoldFoundryReelCollector.EngineVersion &&
+            (result.IsFreeSpin != admission.IsFreeSpin ||
+             result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin ||
+             result.EngineAudit.FreeSpinFeatureMode is not null ||
+             result.FreeSpinsAwarded != 0 || result.SealsAwarded.Count != 0))
+            throw new InvalidOperationException("Gold Foundry's outcome differs from the accepted wager or carry spin.");
         if (isMidnightGame &&
             (admission.IsFreeSpin != (admission.BonusRound is not null) ||
              admission.BonusRound?.FeatureMode != admission.FreeSpinFeatureMode ||
              result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted bonus mode.");
-        var engineOutcomeSha256 = isMidnightGame ? MidnightEngineOutcomeSha256(result) : null;
+        var frozenSettlementField = isMidnightGame ? "midnightSettlementJson" :
+            isGoldFoundry ? "goldFoundrySettlementJson" : null;
+        var engineOutcomeSha256 = frozenSettlementField is not null ? EngineOutcomeSha256(result) : null;
 
         var chargedWagerCents = admission.ChargedWagerCents;
         var isFreeSpin = admission.IsFreeSpin;
@@ -53,7 +62,7 @@ public sealed partial class FirestoreAccountStore
         var rulesSha256 = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(
             JsonSerializer.Serialize(new { result.EngineAudit.BaseGame, result.EngineAudit.EffectiveGame,
                 result.EngineAudit.ReelSet, result.EngineAudit.SymbolSet, result.EngineAudit.Paytable,
-                result.EngineAudit.FeatureProfile }))));
+                    result.EngineAudit.FeatureProfile }))));
         var resultReference = SlotSpinResultDocument(result.SpinId);
         var statisticsReference = StatisticsDocument(userId);
         var slotsCreditsReference = BalanceDocument(userId, SlotsCreditsCurrencyId);
@@ -74,7 +83,7 @@ public sealed partial class FirestoreAccountStore
         var energyAwardTransactionReference = BalanceTransactionDocument(
             $"{spinKey}-energy-award");
         var energyResetTransactionReference = BalanceTransactionDocument(
-            $"{spinKey}-energy-multiplier-use");
+            isGoldFoundry ? $"{spinKey}-energy-crucible-pour" : $"{spinKey}-energy-multiplier-use");
 
         return database.RunTransactionAsync(
             async transaction =>
@@ -105,16 +114,17 @@ public sealed partial class FirestoreAccountStore
                 {
                     throw new InvalidOperationException("Slot admission has already been used.");
                 }
-                if (isMidnightGame && existingResult.Exists)
+                if (frozenSettlementField is not null && existingResult.Exists &&
+                    (isMidnightGame || ReadString(existingResult, "engineOutcomeSha256") is not null))
                 {
                     if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
                         ReadString(existingResult, "admissionId") != admission.AdmissionId.ToString("N") ||
                         ReadString(existingResult, "gameId") != result.GameId ||
                         ReadString(existingResult, "engineOutcomeSha256") != engineOutcomeSha256 ||
-                        ReadString(existingResult, "midnightSettlementJson") is not { } frozenJson)
-                        throw new InvalidOperationException("The Midnight Vault retry differs from its original engine outcome or has no frozen settlement.");
+                        ReadString(existingResult, frozenSettlementField) is not { } frozenJson)
+                        throw new InvalidOperationException("The slot retry differs from its original engine outcome or has no frozen settlement.");
                     return JsonSerializer.Deserialize<SlotSpinSettlement>(frozenJson)
-                        ?? throw new InvalidOperationException("The original Midnight Vault settlement is invalid.");
+                        ?? throw new InvalidOperationException("The original slot settlement is invalid.");
                 }
                 var slotsCreditsSnapshot = await transaction.GetSnapshotAsync(
                     slotsCreditsReference,
@@ -182,7 +192,15 @@ public sealed partial class FirestoreAccountStore
                 SlotSpecialRoundProfiles.TryGet(result.GameId, out var specialRoundProfile);
                 if (result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId)
                     specialRoundProfile = result.EngineAudit.FeatureProfile ?? specialRoundProfile;
-                var energyBonus = EnergyBonus.Settle(
+                if (isGoldFoundry && currentEnergy != admission.EnergyBalance)
+                    throw new InvalidOperationException("The crucible charge differs from the admitted spin.");
+                var crucibleWageredBeforeCents = isGoldFoundry ? ReadLong(guardSnapshot, "crucibleWageredCents") : 0;
+                var crucible = isGoldFoundry
+                    ? GoldFoundryCrucible.Settle(currentEnergy, result.EnergyAwarded,
+                        crucibleWageredBeforeCents, chargedWagerCents,
+                        result.EngineAudit.CrucibleRuleVersion ?? GoldFoundryCrucible.RuleVersion)
+                    : null;
+                var energyBonus = crucible?.AsEnergySettlement(result.Payout) ?? EnergyBonus.Settle(
                     specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
                     result.EnergyAwarded,
                     result.Payout);
@@ -221,11 +239,11 @@ public sealed partial class FirestoreAccountStore
                 var settledPayout = energyBonus.Payout;
                 var outcomeFindings = SlotRoundAudit.Check(result, settledPayout);
                 var outcomeVerified = !outcomeFindings.Any(finding => finding.Severity == "error");
-                var payoutCents = RandMoney.PointsToCents(
+                var payoutCents = checked(RandMoney.PointsToCents(
                     settledPayout.TotalPoints,
-                    result.PointValueInCents);
+                    result.PointValueInCents) + (crucible?.PayoutCents ?? 0));
                 var netCents = checked(payoutCents - chargedWagerCents);
-                var isWin = settledPayout.TotalPoints > 0;
+                var isWin = settledPayout.TotalPoints > 0 || crucible?.PayoutCents > 0;
                 var balanceAfterWagerCents = checked(availableCents - chargedWagerCents);
                 var balanceAfterPayoutCents = checked(balanceAfterWagerCents + payoutCents);
                 var wagerRand = RandMoney.CentsToRand(chargedWagerCents);
@@ -255,30 +273,47 @@ public sealed partial class FirestoreAccountStore
                         nextFreeSpinWagerPoints,
                         result.PointValueInCents)
                     : 0;
-                var midnightSettlement = midnightProgress is null ? null : new SlotSpinSettlement(
-                    balanceAfterPayoutRand, midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
+                var settlement = new SlotSpinSettlement(
+                    balanceAfterPayoutRand, midnightProgress is null ? checked((int)freeGamesRemaining) :
+                        midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
                     checked((int)specialPointsBalance), energyBalance, settledPayout, energyBonus.MultiplierApplied,
                     energyBonus.PayoutMultiplier, nextFreeSpinWagerPoints > 0 ? nextFreeSpinWagerPoints : null,
                     sealSettlement.Collections, nextFreeSpinFeatureMode, sealSettlement.FreeSpinsAwarded)
                 {
-                    BonusRound = midnightProgress.Rounds.FirstOrDefault(),
-                    QueuedBonusRounds = midnightProgress.Rounds.Skip(1).ToArray(),
-                    AwardedBonusRounds = midnightProgress.AwardedRounds
+                    BonusRound = midnightProgress?.Rounds.FirstOrDefault(),
+                    QueuedBonusRounds = midnightProgress?.Rounds.Skip(1).ToArray() ?? [],
+                    AwardedBonusRounds = midnightProgress?.AwardedRounds ?? [],
+                    CrucibleWageredCents = crucible?.WageredCents,
+                    CruciblePourValueCents = crucible?.PourValueCents,
+                    CruciblePoured = crucible?.Poured,
+                    CruciblePayoutCents = crucible?.PayoutCents
                 };
 
                 if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId))
+                {
+                    var payload = new { result, admissionId = admission.AdmissionId, admission.StartedAtUtc,
+                        admission.RequestId, engineAudit = result.EngineAudit, rulesSha256,
+                        settledPayout, isFreeSpin, activeFreeSpinFeatureMode,
+                        admittedMathModelId = admission.MathModelId,
+                        midnightBonusEvidence = sealSettlement.MidnightEvidence,
+                        energyBonus.PayoutMultiplier, piratesGemEvidence,
+                        outcomeSchemaVersion = SlotOutcomeSchemaVersion };
+                    object evidence = payload;
+                    if (crucible is not null)
+                    {
+                        var json = JsonSerializer.SerializeToNode(payload, FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json)!.AsObject();
+                        json["crucible"] = JsonSerializer.SerializeToNode(
+                            new { wageredBeforeCents = crucibleWageredBeforeCents, settlement = crucible },
+                            FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
+                        evidence = json;
+                    }
                     FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
                         catalogueGameId, result.SpinId.ToString("N"), userId, chargedWagerCents, payoutCents,
                         admission.StartedAtUtc, createdAtUtc, "slotSpinResults", result.SpinId.ToString("N"),
-                        new { result, admissionId = admission.AdmissionId, admission.StartedAtUtc,
-                            admission.RequestId, engineAudit = result.EngineAudit, rulesSha256,
-                            settledPayout, isFreeSpin, activeFreeSpinFeatureMode,
-                            admittedMathModelId = admission.MathModelId,
-                             midnightBonusEvidence = sealSettlement.MidnightEvidence,
-                            energyBonus.PayoutMultiplier, piratesGemEvidence,
-                            outcomeSchemaVersion = SlotOutcomeSchemaVersion },
+                        evidence,
                         "slot-reels-paylines-and-features-v1", outcomeVerified,
                         SlotRoundAudit.AuditorVersion, outcomeFindings);
+                }
 
                 if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var activityGameId))
                 {
@@ -343,10 +378,17 @@ public sealed partial class FirestoreAccountStore
                     ["result"] = isWin ? "win" : "loss",
                     ["createdAt"] = Timestamp.FromDateTime(createdAtUtc)
                 };
-                if (midnightSettlement is not null)
+                if (frozenSettlementField is not null)
                 {
                     resultData["engineOutcomeSha256"] = engineOutcomeSha256!;
-                    resultData["midnightSettlementJson"] = JsonSerializer.Serialize(midnightSettlement);
+                    resultData[frozenSettlementField] = JsonSerializer.Serialize(settlement);
+                }
+                if (crucible is not null)
+                {
+                    resultData["crucibleWageredBeforeCents"] = crucibleWageredBeforeCents;
+                    resultData["crucibleWageredCents"] = crucible.WageredCents;
+                    resultData["cruciblePayoutCents"] = crucible.PayoutCents;
+                    resultData["cruciblePoured"] = crucible.Poured;
                 }
                 transaction.Create(resultReference, resultData);
                 transaction.Update(slotsCreditsReference, new Dictionary<string, object>
@@ -431,43 +473,33 @@ public sealed partial class FirestoreAccountStore
                             createdAtUtc));
                 }
 
+                var guardData = new Dictionary<string, object>
+                {
+                    ["activeAdmissionId"] = string.Empty,
+                    ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
+                    ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
+                };
+                if (crucible is not null)
+                    guardData["crucibleWageredCents"] = crucible.WageredCents;
                 if (midnightProgress is not null || totalFreeSpinsAwarded > 0 ||
                     sealSettlement.SealsChanged ||
                     (!isFreeSpin && currentFreeGames > 0) ||
-                    (isFreeSpin && currentFreeGames == 0 && !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode)))
+                    (isFreeSpin && currentFreeGames == 0 &&
+                        (isGoldFoundry || !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode))))
                 {
-                    var guardData = new Dictionary<string, object>
-                    {
-                        ["userId"] = userId,
-                        ["freeSpinWagerPoints"] = nextFreeSpinWagerPoints,
-                        ["freeSpinWagerCents"] = nextFreeSpinWagerCents,
-                        ["freeSpinFeatureMode"] = nextFreeSpinFeatureMode ?? string.Empty,
-                        ["freeSpinMathModelId"] = freeGamesRemaining > 0 ? admission.MathModelId ?? string.Empty : string.Empty,
-                        ["activeAdmissionId"] = string.Empty,
-                        ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
-                        ["sealCounts"] = sealSettlement.SealCounts.ToDictionary(
-                            pair => pair.Key,
-                            pair => (object)pair.Value,
-                            StringComparer.Ordinal),
-                        ["sealWagerCents"] = sealSettlement.SealWagerCents.ToDictionary(
-                            pair => pair.Key,
-                            pair => (object)pair.Value,
-                            StringComparer.Ordinal),
-                        ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
-                    };
+                    guardData["userId"] = userId;
+                    guardData["freeSpinWagerPoints"] = nextFreeSpinWagerPoints;
+                    guardData["freeSpinWagerCents"] = nextFreeSpinWagerCents;
+                    guardData["freeSpinFeatureMode"] = nextFreeSpinFeatureMode ?? string.Empty;
+                    guardData["freeSpinMathModelId"] = freeGamesRemaining > 0 ? admission.MathModelId ?? string.Empty : string.Empty;
+                    guardData["sealCounts"] = sealSettlement.SealCounts.ToDictionary(
+                        pair => pair.Key, pair => (object)pair.Value, StringComparer.Ordinal);
+                    guardData["sealWagerCents"] = sealSettlement.SealWagerCents.ToDictionary(
+                        pair => pair.Key, pair => (object)pair.Value, StringComparer.Ordinal);
                     if (midnightProgress is not null)
                         foreach (var pair in MidnightBonusGuardData(midnightProgress.Rounds, result.PointValueInCents)) guardData[pair.Key] = pair.Value;
-                    transaction.Set(guardReference, guardData, SetOptions.MergeAll);
                 }
-                else
-                {
-                    transaction.Set(guardReference, new Dictionary<string, object>
-                    {
-                        ["activeAdmissionId"] = string.Empty,
-                        ["consecutiveFiveMisses"] = result.ConsecutiveFiveMisses,
-                        ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
-                    }, SetOptions.MergeAll);
-                }
+                transaction.Set(guardReference, guardData, SetOptions.MergeAll);
 
                 if (result.SpecialPointsAwarded > 0)
                 {
@@ -505,7 +537,7 @@ public sealed partial class FirestoreAccountStore
 
                 var shouldWriteEnergyBalance =
                     result.EnergyAwarded > 0 ||
-                    energyBonus.MultiplierApplied ||
+                    energyBonus.MultiplierApplied || crucible?.Poured == true ||
                     currentEnergy != energyBonus.FinalEnergyBalance;
                 if (shouldWriteEnergyBalance)
                 {
@@ -541,7 +573,7 @@ public sealed partial class FirestoreAccountStore
                             createdAtUtc));
                 }
 
-                if (energyBonus.MultiplierApplied)
+                if (energyBonus.MultiplierApplied || crucible?.Poured == true)
                 {
                     transaction.Create(
                         energyResetTransactionReference,
@@ -551,34 +583,17 @@ public sealed partial class FirestoreAccountStore
                             energyCurrencyId,
                             -energyBonus.MeterBalanceBeforeReset,
                             energyBalance,
-                            "energy-multiplier-use",
+                            isGoldFoundry ? "energy-crucible-pour" : "energy-multiplier-use",
                             energyResetTransactionReference.Id,
                             createdAtUtc));
                 }
 
-                if (midnightSettlement is not null) return midnightSettlement;
-                return new SlotSpinSettlement(
-                    balanceAfterPayoutRand,
-                    midnightProgress is null ? checked((int)freeGamesRemaining) : midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
-                    checked((int)specialPointsBalance),
-                    energyBalance,
-                    settledPayout,
-                    energyBonus.MultiplierApplied,
-                    energyBonus.PayoutMultiplier,
-                    nextFreeSpinWagerPoints > 0 ? nextFreeSpinWagerPoints : null,
-                    sealSettlement.Collections,
-                    nextFreeSpinFeatureMode,
-                    sealSettlement.FreeSpinsAwarded)
-                {
-                    BonusRound = midnightProgress?.Rounds.FirstOrDefault(),
-                    QueuedBonusRounds = midnightProgress?.Rounds.Skip(1).ToArray() ?? [],
-                    AwardedBonusRounds = midnightProgress?.AwardedRounds ?? []
-                };
+                return settlement;
             },
             cancellationToken: cancellationToken);
     }
 
-    private static string MidnightEngineOutcomeSha256(SpinResult result) =>
+    private static string EngineOutcomeSha256(SpinResult result) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
         {
             result.SpinId, result.GameId, result.ReelSetId, result.SymbolSetId, result.PaytableId,

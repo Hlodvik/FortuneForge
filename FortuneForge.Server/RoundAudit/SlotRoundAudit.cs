@@ -18,6 +18,16 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        if (GoldFoundrySlotDefinitions.IsModel(audit.BaseGame) !=
+            (audit.EngineVersion == GoldFoundryReelCollector.EngineVersion) ||
+            audit.EngineVersion == GoldFoundryReelCollector.EngineVersion &&
+                audit.CrucibleRuleVersion != GoldFoundryCrucible.RuleVersion)
+            return [new("slot-foundry-collector-version-mismatch", "error",
+                "The collector rule is not bound to its captured Foundry model.")];
+        if (audit.CrucibleRuleVersion is not null &&
+            (!GoldFoundryCrucible.IsGame(result.GameId) || !GoldFoundryCrucible.IsSupportedRuleVersion(audit.CrucibleRuleVersion)))
+            return [new("slot-crucible-rule-mismatch", "error",
+                "The saved crucible rule does not match this game's engine outcome.")];
         if (RainbowRealmSlotDefinitions.IsModel(audit.BaseGame) !=
             (audit.EngineVersion == RainbowRealmSlotDefinitions.EngineVersion))
             return [new("slot-rainbow-model-mismatch", "error",
@@ -25,7 +35,8 @@ internal static class SlotRoundAudit
         return Check(result, audit.BaseGame, audit.EffectiveGame, audit.ReelSet,
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
-            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin);
+            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin,
+            GoldFoundryCrucible.IsSupportedRuleVersion(audit.CrucibleRuleVersion));
     }
 
     internal static IReadOnlyList<RoundAuditFinding> Check(
@@ -41,10 +52,12 @@ internal static class SlotRoundAudit
         string? activeFeatureMode,
         IReadOnlyList<IReadOnlyList<string>>? rawGeneratedReels = null,
         IReadOnlyList<IReadOnlyList<string>>? reelsAfterFrequency = null,
-        bool isDerivedFreeSpin = false)
+        bool isDerivedFreeSpin = false,
+        bool usesCrucible = false)
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
+        var foundryCollector = GoldFoundrySlotDefinitions.IsModel(baseGame);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(baseGame);
 
         if (result.GameId != baseGame.Id || result.GameId != effectiveGame.Id ||
@@ -53,8 +66,9 @@ internal static class SlotRoundAudit
             reelSet.SymbolSetId != symbolSet.Id || paytable.SymbolSetId != symbolSet.Id)
             Flag("slot-rules-mismatch", "The spin identifiers do not match the captured rules.");
         var trustedBonusWager = isDerivedFreeSpin && result.IsFreeSpin &&
-            result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
-            MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints);
+            (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
+                 MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints) ||
+             foundryCollector && GoldFoundrySlotDefinitions.IsValidLegacyFreeSpinWager(result.WagerPoints));
         if (result.PointValueInCents != baseGame.Wagering.PointValueInCents ||
             !(trustedBonusWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
             isDerivedFreeSpin && !trustedBonusWager)
@@ -97,6 +111,10 @@ internal static class SlotRoundAudit
         if (rawGeneratedReels is not null && reelsAfterFrequency is not null &&
             !ValidFrequencyStage(rawGeneratedReels, reelsAfterFrequency, effectiveGame))
             Flag("slot-frequency-stage-mismatch", "The scatter frequency stage changed an unexpected symbol.");
+        if (foundryCollector && (activeFeatureMode is not null ||
+            rawGeneratedReels is not null && (rawGeneratedReels.Count != result.Reels.Count ||
+                rawGeneratedReels.Where((reel, index) => !reel.SequenceEqual(result.Reels[index])).Any())))
+            Flag("slot-foundry-reel-mismatch", "The Foundry window must match its authored strips without legacy feature injection.");
 
         try
         {
@@ -120,7 +138,7 @@ internal static class SlotRoundAudit
                   energy.PointsPerVisibleSymbol : 0;
             if (result.EnergyAwarded != energyAward)
                 Flag("slot-energy-award-mismatch", "The energy award does not match the visible symbols.");
-            var seals = result.Reels.SelectMany(reel => reel)
+            var seals = (foundryCollector ? Enumerable.Empty<string>() : result.Reels.SelectMany(reel => reel))
                 .Where(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW" or "SEAL_RAND")
                 .GroupBy(symbol => symbol, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
@@ -141,19 +159,21 @@ internal static class SlotRoundAudit
 
             var pawCount = result.Reels.SelectMany(reel => reel).Count(symbol => symbol == "PAW");
             var moneyMultiplier = result.Reels.SelectMany(reel => reel)
-                .Sum(symbol => rainbowHarvest ? RainbowRealmCharmHarvest.WagerMultiplier(symbol) : RandMultiplier(symbol));
+                .Sum(symbol => foundryCollector ? GoldFoundryReelCollector.IngotMultiplier(symbol) :
+                    rainbowHarvest ? RainbowRealmCharmHarvest.WagerMultiplier(symbol) : RandMultiplier(symbol));
             var collectedPoints = pawCount > 0 && moneyMultiplier > 0
                 ? RoundPoints(result.WagerPoints * moneyMultiplier * Math.Min(pawCount, 2)) : 0;
-            var moneyPoints = rainbowHarvest ? collectedPoints : Scale(collectedPoints, baseGame.Math.PayoutMultiplier);
+            var moneyPoints = foundryCollector || rainbowHarvest
+                ? collectedPoints : Scale(collectedPoints, baseGame.Math.PayoutMultiplier);
             var bananaPatterns = CountBananaPatterns(result.Reels);
-            var bananaUnit = Scale(checked(result.WagerPoints * 3), baseGame.Math.PayoutMultiplier);
+            var bananaUnit = Scale(checked(result.WagerPoints * 3), foundryCollector ? 1m : baseGame.Math.PayoutMultiplier);
             var bananaPoints = checked(bananaPatterns * bananaUnit);
             if (result.MonkeyPawCount != pawCount || result.MoneyGrabPoints != moneyPoints ||
                 result.BananaBonusPoints != bananaPoints)
                 Flag("slot-feature-award-mismatch", "The feature awards do not match the visible reels.");
             var moneyLines = result.Payout.Paylines.Where(line => line.PaylineId == 901).ToArray();
             var bananaLines = result.Payout.Paylines.Where(line => line.PaylineId is >= 801 and < 901).ToArray();
-            var offPaylinePoints = rainbowHarvest ? moneyPoints : 0;
+            var offPaylinePoints = foundryCollector || rainbowHarvest ? moneyPoints : 0;
             var listedMoneyPoints = moneyPoints - offPaylinePoints;
             if (moneyLines.Length != (listedMoneyPoints > 0 ? 1 : 0) ||
                 moneyLines.Sum(line => line.AmountPoints) != listedMoneyPoints ||
@@ -172,7 +192,8 @@ internal static class SlotRoundAudit
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
             var usesEnergy = result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null;
-            var multiply = usesEnergy && fullEnergy >= 100 && result.Payout.TotalPoints > 0;
+            var multiply = usesEnergy && !usesCrucible && !foundryCollector &&
+                fullEnergy >= 100 && result.Payout.TotalPoints > 0;
             var expectedSettledLines = multiply
                 ? result.Payout.Paylines.Select(line => line with
                 {

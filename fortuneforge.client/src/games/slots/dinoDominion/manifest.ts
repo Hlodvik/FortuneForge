@@ -1,87 +1,82 @@
-import { withEngineGuide } from '../shared/engineGuide'
-import { DINO_DOMINION_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
-import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
+import { GOLD_FOUNDRY_GAME_ID, type SlotFeatureSet, type SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { DINO_DOMINION_CABINET_THEME } from './cabinetTheme'
 import { DINO_DOMINION_CATALOG } from './catalog'
-import { DINO_DOMINION_SYMBOLS } from './symbols'
+import { DINO_DOMINION_SYMBOLS, FOUNDRY_INGOT_IDS } from './symbols'
+import { GOLD_CRUCIBLE_POUR_MS, GoldCrucible } from './GoldCrucible'
+import { GOLD_FOUNDRY_SOUNDS } from './sounds'
 
 const FEATURES: SlotFeatureSet = {
-  energy: { label: 'Meteor charge', symbol: 'BOLT' },
-  collections: {
-    ariaLabel: 'Fossil dig collections',
-    itemLabel: 'fossils',
-    presentation: 'fossil-dig',
-    entries: [
-      { id: 'sync', label: 'Predator pack', shortLabel: 'Fang', symbol: 'SEAL_SYNC', requiredCount: 40 },
-      { id: 'rows', label: 'Deep strata', shortLabel: 'Shell', symbol: 'SEAL_ROWS', requiredCount: 40 },
-      { id: 'paw', label: 'Fossil rush', shortLabel: 'Track', symbol: 'SEAL_PAW', requiredCount: 40 },
-      { id: 'rand', label: 'Amber vein', shortLabel: 'Leaf', symbol: 'SEAL_RAND', requiredCount: 40 },
-    ],
+  energy: {
+    label: 'Gold crucible',
+    symbol: 'BOLT',
+    presentation: 'crucible',
+    artwork: GoldCrucible,
+    completionDurationMs: GOLD_CRUCIBLE_POUR_MS,
   },
   moneyGrab: {
-    actorName: 'The paleontologist field kit',
-    awardLabel: 'Museum haul',
+    actorName: 'The reel crucible',
+    awardLabel: 'Ingot haul',
     collectorSymbol: 'PAW',
-    valueSymbolPrefix: 'RAND_',
-  },
-  specialRound: {
-    id: 'dino-meteor-dig',
-    title: 'Meteor Dig',
-    earnLabel: 'Land 3 meteor craters for 5 digs, or excavate 40 matching fossils for 10 enhanced digs.',
-    earnStyle: 'dig',
-    earnHint: 'Fossils stay exposed across four dig sites. Complete one 40-fossil site to begin ten Meteor Dig spins.',
-    activeModes: {
-      sync: 'Predator Pack · one reel mirrors another',
-      rows: 'Deep Strata · two extra rows open',
-      paw: 'Fossil Rush · stronger field-kit hauls appear',
-      rand: 'Amber Vein · a prize column appears',
-      'rows-paw-rand': 'Extinction Layer · extra rows, stronger hauls, and a prize column',
-    },
+    valueSymbols: FOUNDRY_INGOT_IDS,
+    presentation: 'separate-award',
   },
 }
 
 const HELP: SlotHelpDefinition = {
   paylineCount: 14,
   paylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
-  freeGames: { requiredSymbols: 3, awardedSpins: 5 },
+  fourMatchPayoutNote: 'Four matching symbols pay their own rate. Wild substitution applies only to five-symbol matches.',
   extraSections: [
     {
-      badge: 'DIG',
-      title: 'Museum haul',
-      body: 'The paleontologist field kit gathers every amber token in the dig. Two kits double the haul. Three fossil claws in a row, column, or diagonal pay 3× the wager.',
+      badge: 'CAST',
+      title: 'Reel crucible',
+      body: 'When a reel crucible lands, it pays for every visible ingot, even if the ingots are on different reels or already paid on a line. Each iron ingot pays 0.5× the wager, bronze 1×, copper 1.5×, and gold 2×. Two or more reel crucibles double the haul. The reel crucible itself never counts toward a payline.',
     },
     {
-      badge: 'FOSSIL',
-      title: 'Prehistoric dig collections',
-      body: 'Excavate 40 fossils from any dig site to unlock ten themed free spins. Meteor charge improves fossil odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest dig.',
+      badge: 'POUR',
+      title: 'Filling crucible',
+      body: 'Each payback ingot bundle adds one charge to the crucible above the reels. A paid spin that lands one or more bundles adds its wager once to the payback total. At 100 charge, the crucible pays 15% of that total, rounded down to the cent. Payback bundles do not pay on lines or count toward an ingot haul.',
+    },
+    {
+      badge: 'HAMMER',
+      title: 'Hammer award',
+      body: 'Three smithing hammers in a row, column, or diagonal pay 3× the wager per qualifying pattern.',
     },
   ],
 }
 
-export const DINO_DOMINION_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
+export const DINO_DOMINION_EXPERIENCE_SET: SlotExperienceSet = {
   id: 'dino-dominion-experience-v1',
   cabinet: DINO_DOMINION_CABINET_THEME,
   features: FEATURES,
   help: HELP,
   outcomeNarrative: {
-    lossTitle: 'No fossil find this spin',
-    winTitle: 'Fossil find',
-    greatWinTitle: 'Prehistoric prize',
-    bigWinTitle: 'Dino jackpot',
-    freeGameSingular: 'free dig',
-    freeGamePlural: 'free digs',
-    lossNextAction: 'Choose a wager, then dig again when ready.',
-    winNextAction: 'Choose a wager, then uncover another prize.',
-    bonusNextAction: 'Your next dig is free and uses the locked wager.',
+    lossTitle: 'No win this spin',
+    winTitle: 'Foundry win',
+    greatWinTitle: 'Golden haul',
+    bigWinTitle: 'Big foundry win',
+    freeGameSingular: 'free spin',
+    freeGamePlural: 'free spins',
+    lossNextAction: 'Choose a wager, then spin again when ready.',
+    winNextAction: 'Choose a wager, then spin again when ready.',
+    bonusNextAction: 'Your next spin is free and uses the locked wager.',
   },
   shellBackdrop: 'theme',
   symbols: DINO_DOMINION_SYMBOLS,
   mascot: null,
-  sounds: DINO_DOMINION_SOUNDS,
-  rules: createSlotRulesSet('dino-dominion-v1'),
-})
+  sounds: GOLD_FOUNDRY_SOUNDS,
+  rules: createSlotRulesSet(GOLD_FOUNDRY_GAME_ID, {
+    initialReels: [
+      ['2', 'SEAL_ROWS', '6', 'BOLT'],
+      ['5', '3', 'BANANA', 'SEAL_SYNC'],
+      ['4', 'FREE', 'SEAL_PAW', '7'],
+      ['POWER', 'SEAL_RAND', '2', 'ACE'],
+      ['7', '6', '5', '3'],
+    ],
+  }),
+}
 
 export const DINO_DOMINION_SLOT_GAME = defineSlotGame({
   id: 'dino-dominion',

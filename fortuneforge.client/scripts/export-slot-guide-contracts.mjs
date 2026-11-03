@@ -12,13 +12,15 @@ const engineFixtures = []
 let basePaytable
 for (const item of index.games) {
   const contract = JSON.parse(await readFile(resolve(source, item.route.id, 'contract.json'), 'utf8'))
-  // Midnight Vault and Rainbow Realm maintain their own paytables and guides.
-  // Retain both full contracts in the evidence alongside the common paytable.
-  if (!['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
+  // These games maintain their own paytables and guides. Keep their full engine
+  // contracts in the evidence alongside the common paytable.
+  const isGoldFoundry = contract.gameId === 'dino-dominion-v1'
+  if (!isGoldFoundry && !['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
     if (basePaytable && JSON.stringify(basePaytable) !== JSON.stringify(contract.paytable)) throw new Error('Per-game paytable needs explicit guide support')
     basePaytable = contract.paytable
   }
-  if (JSON.stringify(contract.symbols.nativeWildMatchLengths) !== '[3,5]' ||
+  const nativeWildMatchLengths = isGoldFoundry ? '[3,4,5]' : '[3,5]'
+  if (JSON.stringify(contract.symbols.nativeWildMatchLengths) !== nativeWildMatchLengths ||
       JSON.stringify(contract.symbols.wildSubstitutionMatchLengths) !== '[5]') throw new Error('Wild-match rules need guide support')
   if (contract.gameId !== 'rainbow-realm-fruits-v1' && contract.math.paylinePayoutSteps.some(step => step !== 0)) throw new Error('Non-uniform payline prices need guide support')
   const p = contract.profile

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
+import { GOLD_FOUNDRY_GAME_ID } from '../../../features/slots/config/slotFeatures'
 import type { SlotSymbolId } from '../../../features/slots/types/slots'
 import { loadAllSlotGameManifests } from '..'
 import { getSlotEngineGuideContract, withEngineGuide } from './engineGuide'
@@ -22,7 +23,7 @@ const fixture = JSON.parse(readFileSync(new URL('./__fixtures__/engineGuide-cont
   sourceSha256: Record<string, string>; games: EngineContract[]
 }
 const manifests = await loadAllSlotGameManifests()
-const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1'].includes(game.experience.rules.gameId))
+const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
 
 it('retains the server sources that produced the independently exported guide contracts', () => {
   for (const [path, expected] of Object.entries(fixture.sourceSha256)) {
@@ -30,7 +31,7 @@ it('retains the server sources that produced the independently exported guide co
     expect(createHash('sha256').update(current).digest('hex'), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
   }
   expect(fixture.games).toHaveLength(20)
-  expect(audited).toHaveLength(18)
+  expect(audited).toHaveLength(17)
 })
 
 describe.each(audited)('$catalog.title audited guide', game => {
@@ -98,8 +99,36 @@ describe.each(audited)('$catalog.title audited guide', game => {
   })
 })
 
-it('preserves the separately maintained Rainbow Realm and Midnight Vault experiences', () => {
-  for (const id of ['rainbow-realm', 'dragon-hoard']) {
+it('matches the Gold Foundry guide to exported line prices', () => {
+  const experience = manifests.find(game => game.experience.rules.gameId === GOLD_FOUNDRY_GAME_ID)!.experience
+  const engine = fixture.games.find(game => game.gameId === GOLD_FOUNDRY_GAME_ID)!
+  const { help, symbols } = experience
+
+  expect(help.paylineCount).toBe(engine.layout.paylineCount)
+  expect(help.paylinePatternIds).toEqual(engine.profile.paylinePatternIds)
+  expect(engine.profile.scatterAwardedSpins).toBe(0)
+  expect(engine.profile.usesCollections).toBe(false)
+  expect(engine.symbols.nativeWildMatchLengths).toEqual([3, 4, 5])
+  expect(engine.symbols.wildSubstitutionMatchLengths).toEqual([5])
+
+  const displayedRates = symbols.guideEntries.filter(entry => entry.firstLabel === '3 / 4').flatMap(entry => {
+    const [three, four] = entry.firstValue.split(' / ').map(value => Number.parseFloat(value))
+    return [
+      { symbolId: entry.symbol, matchLength: 3, rate: three },
+      { symbolId: entry.symbol, matchLength: 4, rate: four },
+      { symbolId: entry.symbol, matchLength: 5, rate: Number.parseFloat(entry.secondValue ?? '') },
+    ]
+  })
+  expect(displayedRates).toHaveLength(engine.paytable.length)
+  for (const rule of engine.paytable) {
+    const displayedRate = displayedRates.find(entry =>
+      entry.symbolId === rule.symbolId && entry.matchLength === rule.matchLength)
+    expect(displayedRate?.rate).toBeCloseTo(rule.multiplier * engine.math.payoutMultiplier, 6)
+  }
+})
+
+it('preserves the separately maintained Rainbow Realm, Midnight Vault, and Gold Foundry experiences', () => {
+  for (const id of ['rainbow-realm', 'dragon-hoard', 'dino-dominion']) {
     const experience = manifests.find(game => game.id === id)!.experience
     expect(withEngineGuide(experience)).toBe(experience)
   }

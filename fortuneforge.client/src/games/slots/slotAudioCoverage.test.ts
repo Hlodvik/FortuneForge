@@ -4,7 +4,7 @@ import { createThemedSlotAudio } from '../../features/slots/config/themedSlotAud
 import { DEFAULT_SLOT_SOUNDS } from '../../features/slots/config/soundSets'
 
 describe('slot audio coverage', () => {
-  it('gives exactly seventeen titles complete, distinct suites without changing the excluded palettes', async () => {
+  it('gives seventeen titles complete suites without changing the excluded palettes', async () => {
     const games = await loadAllSlotGameManifests()
     expect(games).toHaveLength(20)
     expect(games.filter(game => game.experience.sounds.events.themeSuite)).toHaveLength(17)
@@ -25,9 +25,14 @@ describe('slot audio coverage', () => {
         ...Object.values(events.collectionArrival!), ...Object.values(events.results).flat(),
         events.tripleSevens!, events.bonusComplete!]
       const sources = ids.map(id => cues[id]!.source)
-      expect(new Set(sources).size).toBe(20)
-      expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`))).toBe(true)
-      for (const id of ids) expect(cues[id]!.enabled).toBe(true)
+      const isGoldFoundry = game.id === 'dino-dominion'
+      expect(new Set(sources).size).toBe(isGoldFoundry ? 16 : 20)
+      expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`) ||
+        (isGoldFoundry && source.startsWith('/assets/slots/gold-foundry/v1/audio/')))).toBe(true)
+      for (const id of ids) {
+        if (isGoldFoundry) expect(cues[id]!.enabled !== false).toBe(id !== events.leverPull)
+        else expect(cues[id]!.enabled).toBe(true)
+      }
       for (const id of [events.ambience, events.specialAmbience!]) {
         expect(cues[id]!.loop).toBe(true)
         expect(cues[id]!.baseVolume).toBeGreaterThan(0)

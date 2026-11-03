@@ -1,0 +1,82 @@
+foundry-working-room.ogg
+40-second stereo mix using foundry-workshop-room.ogg as its base. Added
+recorded footsteps, drawer movement, chain handling, and tools sliding on
+a bench. The additions were trimmed, filtered, and placed around the room.
+
+DavidGreck, "Man Footsteps on the Wooden Floor", BigSoundBank.
+https://bigsoundbank.com/man-footsteps-on-the-wooden-floor-s0165.html
+Source WAV: https://bigsoundbank.com/UPLOAD/bwf-en/0165.wav
+
+Joseph Sardin, "Metal drawer #1" and "Small chain #5", BigSoundBank.
+https://bigsoundbank.com/metal-drawers-1-s0792.html
+https://bigsoundbank.com/small-chain-5-s0615.html
+Source WAVs: https://bigsoundbank.com/UPLOAD/bwf-en/0792.wav
+             https://bigsoundbank.com/UPLOAD/bwf-en/0615.wav
+
+Alex Fitzwater (Alex_hears_things), "Sliding Metal on Workbench.wav", Freesound.
+https://freesound.org/people/Alex_hears_things/sounds/380214/
+Source preview: https://cdn.freesound.org/previews/380/380214_2309965-hq.mp3
+
+All four additions are licensed under CC0 1.0 Universal
+(https://creativecommons.org/publicdomain/zero/1.0/).
+
+foundry-workshop-room.ogg
+Workshop ambience assembled from cabin room tone, oak floor creaks, and
+wooden door movement. The recordings were trimmed, equalized, layered,
+and crossfaded for looping.
+
+callmethefoo, "Soft Room Tone", Freesound.
+https://freesound.org/people/callmethefoo/sounds/744447/
+Source preview: https://cdn.freesound.org/previews/744/744447_14793871-hq.mp3
+
+Joseph Sardin, "Squeaking parquet #3", BigSoundBank.
+https://bigsoundbank.com/squeaking-parquet-3-s3053.html
+Source WAV: https://bigsoundbank.com/UPLOAD/bwf-en/3053.wav
+
+alienistcog, "wooden-door-creak-slow.aif", Freesound.
+https://freesound.org/people/alienistcog/sounds/125310/
+Source preview: https://cdn.freesound.org/previews/125/125310_296888-hq.mp3
+
+All three room ambience sources are licensed under CC0 1.0 Universal
+(https://creativecommons.org/publicdomain/zero/1.0/).
+
+hammer-ring.wav
+User-supplied hammer_ring_1shot.wav.
+Source SHA-256: 23352dc524195d554387dbb0041148c8b9924b6b23fe5e333b9d1d156d080570
+Resampled from 96 kHz to 48 kHz stereo 16-bit PCM.
+
+spin-button-metal-hit.wav
+User-supplied Splice Sounds sample, Heavy Metal Vol. 2.
+Source: SPLC-5316_FX_Oneshot_Blacksmith_Metal_Hits_Resonant_Water.wav
+Source SHA-256: bbb82fbd2ba3c81ab73a64dab61976a1401e5daad89212c56268884ce7737269
+Converted to 48 kHz stereo 16-bit PCM with 5 dB gain and audio only.
+https://support.splice.com/en/articles/8652642-splice-sounds-licensing-faq
+
+forge-bellows-and-crackling-fire.wav
+Mixed, trimmed, EQ'd, pitch-adjusted, and crossfaded into a 1.94-second
+loop at 48 kHz. Two crank and bellows strokes are paired with recorded
+flame bursts, forge crackle, and crackling branches.
+
+Monika Widzicka / Museum of Municipal Engineering, "Smithy: blacksmith
+bellows (1)", Sounds of Changes. Recorded at the National Museum of
+Agriculture and Agricultural-Food Industry, Szreniawa, Poland.
+https://www.soundsofchanges.eu/sound/smithy-blacksmith-bellows-1/
+Source WAV: https://www.soundsofchanges.eu/soundfiles/566/5666a8fb144f9.wav
+License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+Work With Sounds / La Fonderie, "Fire of the forge".
+https://commons.wikimedia.org/wiki/File:WWS_Fireoftheforge.ogg
+Source Ogg: https://upload.wikimedia.org/wikipedia/commons/0/01/WWS_Fireoftheforge.ogg
+License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+
+Joseph Sardin, "Manual winch #2", "Gasoline fire #1", and
+"Big Branching Fire #1", BigSoundBank.
+https://bigsoundbank.com/manual-winch-2-s0902.html
+https://bigsoundbank.com/gasoline-fire-1-s1340.html
+https://bigsoundbank.com/big-branching-fire-1-s0987.html
+Source WAVs: https://bigsoundbank.com/UPLOAD/bwf-en/0902.wav
+             https://bigsoundbank.com/UPLOAD/bwf-en/1340.wav
+             https://bigsoundbank.com/UPLOAD/bwf-en/0987.wav
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+
+reel-brake.wav is an original synthesized effect.

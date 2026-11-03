@@ -2,6 +2,7 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
+import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/dinoDominion/sounds'
 import * as soundSets from './soundSets'
 import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
 import type { SlotSoundSet } from './soundSets'
@@ -103,11 +104,20 @@ describe('Reel Riches sound set', () => {
 })
 
 describe('catalogue audio provenance and allocation', () => {
-  const allSoundSets = Object.values(soundSets)
+  const allSoundSets = [...Object.values(soundSets), GOLD_FOUNDRY_SOUNDS]
+  const foundryAudioPath = '/assets/slots/gold-foundry/v1/audio'
+  const foundryAmbienceSource = `${foundryAudioPath}/foundry-working-room.ogg`
+  const foundrySources = new Set([
+    foundryAmbienceSource,
+    `${foundryAudioPath}/hammer-ring.wav`,
+    `${foundryAudioPath}/spin-button-metal-hit.wav`,
+    `${foundryAudioPath}/forge-bellows-and-crackling-fire.wav`,
+    `${foundryAudioPath}/reel-brake.wav`,
+  ])
   const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
   const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
 
-  it('enables seventeen original suites while retaining the three excluded title selections', async () => {
+  it('enables seventeen themed suites while retaining the three excluded title selections', async () => {
     const manifests = await loadAllSlotGameManifests()
     expect(manifests).toHaveLength(20)
     expect(allSoundSets).toHaveLength(21)
@@ -123,7 +133,7 @@ describe('catalogue audio provenance and allocation', () => {
           source: expect.stringMatching(/^disabled:opentracks\/[^/]+\.mp3$/),
           category: 'effect', loop: true, enabled: false,
         } : {
-          source: `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
+          source: game.id === 'dino-dominion' ? foundryAmbienceSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
           category: 'effect', loop: true, enabled: true,
         })
     }
@@ -132,11 +142,28 @@ describe('catalogue audio provenance and allocation', () => {
         if (cue.source.startsWith('disabled:')) {
           expect(cue.enabled).toBe(false)
         } else {
-          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source)).toBe(true)
+          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
+            (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)), cue.source).toBe(true)
         }
       }
     }
   }, 30_000)
+
+  it('gives Gold Foundry its own workshop ambience and button and reel cues', () => {
+    const { cues, events } = GOLD_FOUNDRY_SOUNDS
+    expect(cues.ambience.source).toBe(foundryAmbienceSource)
+    expect(cues['special-ambience']).toBe(cues.ambience)
+    expect(events).toMatchObject({
+      buttonClick: 'button-click', betStep: 'button-click', stopButtonClick: 'button-click',
+      spinButtonClick: 'spin-button-click', specialReelSpin: 'reel-spin', specialReelStop: 'reel-stop',
+    })
+    expect(cues['button-click']?.source).toBe(`${foundryAudioPath}/hammer-ring.wav`)
+    expect(cues['spin-button-click']?.source).toBe(`${foundryAudioPath}/spin-button-metal-hit.wav`)
+    expect(cues['lever-pull'].enabled).toBe(false)
+    expect(cues['reel-spin']).toMatchObject({ source: `${foundryAudioPath}/forge-bellows-and-crackling-fire.wav`, loop: true })
+    expect(cues['reel-stop'].source).toBe(`${foundryAudioPath}/reel-brake.wav`)
+    expect(Object.values(cues).some(cue => /wukong/i.test(cue.source))).toBe(false)
+  })
 
   it('creates no Audio for disabled cues or on hook mount, then allocates effects and theme music only on demand', () => {
     vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)

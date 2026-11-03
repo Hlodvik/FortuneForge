@@ -28,7 +28,7 @@ import highNoonFortune from '../../assets/catalogue/slots/high-noon-fortune-titl
 import royalDraw from '../../assets/catalogue/slots/royal-draw-title-v2.webp'
 import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v1.webp'
 import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
-import dinoDominion from '../../assets/catalogue/slots/dino-dominion-title-v1.webp'
+import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
 import jungleJackpot from '../../assets/catalogue/slots/jungle-jackpot-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
@@ -81,7 +81,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/royal-draw', artwork(royalDraw)],
   ['/slots/arcane-archives', artwork(arcaneArchives)],
   ['/slots/cosmic-fortune', artwork(cosmicFortune)],
-  ['/slots/dino-dominion', artwork(dinoDominion)],
+  ['/slots/dino-dominion', artwork(goldFoundry)],
   ['/slots/neon-nights', artwork(neonNights)],
   ['/slots/jungle-jackpot', artwork(jungleJackpot)],
   ['/slots/ocean-odyssey', artwork(oceanOdyssey)],

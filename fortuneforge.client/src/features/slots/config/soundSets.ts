@@ -79,6 +79,7 @@ type LegacySlotSoundCueId =
 type ThemeSlotSoundCueId =
   | 'button-click'
   | 'bet-step'
+  | 'spin-button-click'
   | 'collect-sync'
   | 'collect-rows'
   | 'collect-paw'
@@ -103,6 +104,8 @@ export type SlotSoundSet = {
   events: {
     ambience: SlotSoundCueId
     buttonClick?: SlotSoundCueId
+    spinButtonClick?: SlotSoundCueId
+    stopButtonClick?: SlotSoundCueId
     autoSpinAmbience?: SlotSoundCueId
     leverPull: SlotSoundCueId
     reelSpin: SlotSoundCueId
@@ -436,12 +439,6 @@ export const ARCANE_ARCHIVES_SOUNDS = createThemedSlotSounds('arcane-archives-au
   ambienceSource: hauntedChimesSource, ambienceVolume: 0.035,
   leverSource: leverCoinSource, leverVolume: 0.25,
   bonus: ['five-twinkle', 'premium-win'], five: ['five-jewel', 'five-twinkle'], premium: ['premium-win'],
-})
-
-export const DINO_DOMINION_SOUNDS = createThemedSlotSounds('dino-dominion-audio-v1', {
-  ambienceSource: forestJourneySource, ambienceVolume: 0.05,
-  leverSource: leverRegisterSource, leverVolume: 0.3,
-  bonus: ['five-casino-win', 'five-jewel'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
 })
 
 const reelRichesBaseSounds = createThemedSlotSounds('reel-riches-audio-v3', {

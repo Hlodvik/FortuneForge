@@ -15,8 +15,16 @@ namespace FortuneForge.Server.Tests.Slots;
 
 public sealed class MidnightVaultDefinitionTests
 {
+    private const string V1 = "midnight-vault-paytable-v1";
+    private const string V2 = "midnight-vault-paytable-v2";
+    private const string V3 = "midnight-vault-paytable-v3";
+    private static readonly (string Symbol, long Three, long Five)[] CurrentRates =
+    [
+        ("2", 1, 2), ("3", 1, 1), ("4", 1, 4), ("5", 1, 4), ("6", 1, 4),
+        ("7", 2, 6), ("8", 2, 8), ("ACE", 3, 10), ("POWER", 1, 2)
+    ];
     [Fact]
-    public void DedicatedDefinitions_ExposeFifteenActiveSymbolsAndSevenDistinctOrdinaryPayoutPairs()
+    public void DedicatedDefinitions_ExposeFifteenSymbolsAndSevenOrdinaryPayingIdentities()
     {
         var provider = Provider(ReadOptions());
         var game = Assert.IsType<GameDefinition>(provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId));
@@ -28,7 +36,7 @@ public sealed class MidnightVaultDefinitionTests
         Assert.Equal(symbols.Id, paytable.SymbolSetId);
         Assert.Equal(symbols.Id, reels.SymbolSetId);
         Assert.Equal(MidnightVaultSlotDefinitions.PaytableId, paytable.Id);
-        Assert.Equal(MidnightVaultBaseReelSet.Id, reels.Id);
+        Assert.Equal(MidnightVaultBaseReelSet.CurrentId, reels.Id);
         Assert.Equal(new[]
         {
             "2", "3", "4", "5", "6", "7", "8", "ACE", "FREE", "POWER", "BANANA",
@@ -43,10 +51,11 @@ public sealed class MidnightVaultDefinitionTests
                 paytable.Rules.Single(rule => rule.SymbolId == id && rule.MatchLength == 3).Multiplier,
                 paytable.Rules.Single(rule => rule.SymbolId == id && rule.MatchLength == 5).Multiplier);
         }).ToArray();
-        Assert.Equal(7, pairs.Distinct().Count());
-        Assert.Equal((4L, 14L), pairs[^1]);
-        Assert.Equal((1L, 2L), pairs[1]);
-        Assert.Equal((2L, 7L), pairs[3]);
+        Assert.Equal(CurrentRates.Take(7).Select(rate => (rate.Three, rate.Five)), pairs);
+        Assert.All(pairs, pair => { Assert.True(pair.Item1 > 0); Assert.True(pair.Item2 > 0); });
+        Assert.Equal(7, paytable.Rules.Where(rule => int.TryParse(rule.SymbolId, out var id) && id is >= 2 and <= 8)
+            .Select(rule => rule.SymbolId).Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(Rules(CurrentRules()), Rules(paytable.Rules));
         Assert.Equal(1m, game.Math.PayoutMultiplier);
         Assert.Equal(MidnightVaultSlotDefinitions.MinimumWagerPoints, game.Wagering.MinimumWagerPoints);
         Assert.Equal(MidnightVaultSlotDefinitions.MaximumWagerPoints, game.Wagering.MaximumWagerPoints);
@@ -84,7 +93,7 @@ public sealed class MidnightVaultDefinitionTests
 
         Assert.Equal(MidnightVaultSlotDefinitions.SymbolSetId, result.SymbolSetId);
         Assert.Equal(MidnightVaultSlotDefinitions.PaytableId, result.PaytableId);
-        Assert.Equal(MidnightVaultBaseReelSet.Id, result.ReelSetId);
+        Assert.Equal(MidnightVaultBaseReelSet.CurrentId, result.ReelSetId);
         Assert.All(result.Reels, reel =>
         {
             Assert.Equal(rows, reel.Count);
@@ -97,8 +106,8 @@ public sealed class MidnightVaultDefinitionTests
         var match = Assert.Single(award.Matches);
         Assert.Equal("8", match.Match.SymbolId);
         Assert.Equal(5, match.Match.MatchLength);
-        Assert.Equal(14, match.Multiplier);
-        Assert.Equal((long)Math.Round(100 * 14 * game.Math.PayoutMultiplier, MidpointRounding.AwayFromZero), award.AmountPoints);
+        Assert.Equal(8, match.Multiplier);
+        Assert.Equal((long)Math.Round(100 * 8 * game.Math.PayoutMultiplier, MidpointRounding.AwayFromZero), award.AmountPoints);
         Assert.Equal(0, result.EnergyAwarded);
         Assert.Equal(0, result.MoneyGrabPoints);
         var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
@@ -109,10 +118,10 @@ public sealed class MidnightVaultDefinitionTests
     }
 
     [Theory]
-    [InlineData("8,8,8,2,3", 3, 4)]
-    [InlineData("8,8,8,8,3", 4, 4)]
-    [InlineData("8,8,8,8,8", 5, 14)]
-    [InlineData("8,ACE,8,8,8", 5, 14)]
+    [InlineData("8,8,8,2,3", 3, 2)]
+    [InlineData("8,8,8,8,3", 4, 2)]
+    [InlineData("8,8,8,8,8", 5, 8)]
+    [InlineData("8,ACE,8,8,8", 5, 8)]
     [InlineData("8,ACE,8,2,3", 0, 0)]
     public void NewSymbol_UsesExistingNativeRunFallbackAndFiveOnlyWildSubstitution(
         string lineText, int matchLength, long multiplier)
@@ -145,37 +154,15 @@ public sealed class MidnightVaultDefinitionTests
         var options = ReadOptions();
         var before = JsonSerializer.Serialize(options);
         var provider = Provider(options);
-        var source = options.GameDefinitions.Single(game => game.Id == SlotSpecialRoundProfiles.WukongGameId);
-        var sourceReels = options.ReelSets.Single(set => set.Id == source.Math.ReelSetId);
-        var sourcePaytable = options.Paytables.Single(table => table.Id == source.Math.PaytableId);
         var midnight = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
         var reels = provider.GetReelSet(midnight.Math.ReelSetId)!;
         var paytable = provider.GetPaytable(midnight.Math.PaytableId)!;
         var legacyPaytable = provider.GetPaytable(MidnightVaultSlotDefinitions.LegacyPaytableId)!;
 
-        for (var reel = 0; reel < sourceReels.Reels.Count; reel++)
-        {
-            var original = sourceReels.Reels[reel];
-            var midnightStrip = reels.Reels[reel];
-            Assert.Equal(original.Count, midnightStrip.Count);
-            var addedLetters = 0;
-            for (var stop = 0; stop < original.Count; stop++)
-            {
-                if (original[stop] == "POWER" && midnightStrip[stop] == "5")
-                {
-                    addedLetters++;
-                    Assert.NotEqual("5", original[(stop + original.Count - 1) % original.Count]);
-                    Assert.NotEqual("5", original[(stop + 1) % original.Count]);
-                }
-                else Assert.Equal(original[stop] == "BOLT" ? "8" : original[stop], midnightStrip[stop]);
-            }
-            Assert.Equal(3, addedLetters);
-        }
-        Assert.Equal(sourcePaytable.Rules.Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier)),
-            legacyPaytable.Rules.Where(rule => rule.SymbolId != "8").Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier)));
-        Assert.Equal(legacyPaytable.Rules.Select(rule => (rule.SymbolId, rule.MatchLength,
-                rule.SymbolId == "5" && rule.MatchLength == 5 ? 7L : rule.Multiplier)),
-            paytable.Rules.Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier)));
+        MidnightVaultHistoricalFixtures.AssertHistoricalReels(provider.GetReelSet(MidnightVaultBaseReelSet.Id)!);
+        Assert.Equal(Rules(MidnightVaultHistoricalFixtures.V1Audit().Paytable.Rules), Rules(legacyPaytable.Rules));
+        Assert.Equal(Rules(MidnightVaultHistoricalFixtures.V2Rules()), Rules(provider.GetPaytable(V2)!.Rules));
+        Assert.Equal(Rules(CurrentRules()), Rules(paytable.Rules));
         foreach (var profile in SlotSpecialRoundProfiles.All.Where(profile => profile.GameId != midnight.Id))
         {
             var other = provider.GetGame(profile.GameId)!;
@@ -194,27 +181,49 @@ public sealed class MidnightVaultDefinitionTests
     }
 
     [Fact]
-    public void BaseReels_MakeAllFourLetterIdentitiesMoreCommonThanEveryOtherSymbol()
+    public void CurrentReels_ReduceCombinedRankFrequencyAndPreserveSpecialStopPositions()
     {
         var provider = Provider(ReadOptions());
         var game = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
         var reels = provider.GetReelSet(game.Math.ReelSetId)!;
         var letters = new HashSet<string>(["3", "2", "4", "5"], StringComparer.Ordinal);
+        int[][] expectedRanks = [[7, 7, 6, 6], [6, 6, 7, 7], [6, 7, 7, 6], [7, 6, 6, 7], [7, 7, 6, 6]];
+        string[] rankIds = ["2", "3", "4", "5"];
 
-        foreach (var strip in reels.Reels)
+        var historical = provider.GetReelSet(MidnightVaultBaseReelSet.Id)!;
+        MidnightVaultHistoricalFixtures.AssertHistoricalReels(historical);
+        for (var reel = 0; reel < reels.Reels.Count; reel++)
         {
+            var strip = reels.Reels[reel];
             var counts = strip.GroupBy(symbol => symbol).ToDictionary(group => group.Key, group => group.Count());
-            Assert.Equal(15, counts["3"]);
-            Assert.Equal(11, counts["2"]);
-            Assert.Equal(10, counts["4"]);
-            Assert.Equal(9, counts["5"]);
-            var mostCommonOther = counts.Where(pair => !letters.Contains(pair.Key)).Max(pair => pair.Value);
-            Assert.All(letters, letter => Assert.True(counts[letter] > mostCommonOther));
+            Assert.Equal(64, strip.Count);
+            for (var rank = 0; rank < rankIds.Length; rank++) Assert.Equal(expectedRanks[reel][rank], counts[rankIds[rank]]);
+            Assert.Equal(26, strip.Count(letters.Contains));
+            Assert.True(strip.Count(letters.Contains) < historical.Reels[reel].Count(letters.Contains));
+            Assert.Equal(10, counts["6"]);
+            Assert.Equal(10, counts["7"]);
+            Assert.Equal(9, counts["8"]);
+            Assert.Equal(5, counts["POWER"]);
+            Assert.Equal(3, counts["FREE"]);
+            Assert.Equal(1, counts["ACE"]);
+            for (var stop = 0; stop < strip.Count; stop++)
+            {
+                if (historical.Reels[reel][stop] is "FREE" or "POWER" or "ACE")
+                    Assert.Equal(historical.Reels[reel][stop], strip[stop]);
+                var next = (stop + 1) % strip.Count;
+                if (strip[stop] == strip[next])
+                {
+                    Assert.Equal(historical.Reels[reel][stop], strip[stop]);
+                    Assert.Equal(historical.Reels[reel][next], strip[next]);
+                }
+                foreach (var rows in new[] { 4, 6 })
+                    Assert.Contains(Enumerable.Range(0, rows).Select(row => strip[(stop + row) % strip.Count]), symbol => !letters.Contains(symbol));
+            }
         }
     }
 
     [Fact]
-    public void IntegerV2Payouts_AreExactlyProportionalAcrossEveryTrustedIntegerWager()
+    public void CurrentIntegerPayouts_AreExactlyProportionalAcrossEveryTrustedIntegerWager()
     {
         var provider = Provider(ReadOptions());
         var game = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
@@ -239,7 +248,7 @@ public sealed class MidnightVaultDefinitionTests
     }
 
     [Fact]
-    public void GameVersionSelection_PinsBothScalarsAndCopiesSettingsWithoutChangingActiveV2()
+    public void GameVersionSelection_PinsScalarsAndReelsWithoutChangingActiveV3()
     {
         var provider = Provider(ReadOptions());
         var active = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
@@ -249,7 +258,13 @@ public sealed class MidnightVaultDefinitionTests
         Assert.Equal(active.Id, legacy.Id);
         Assert.Equal(MidnightVaultSlotDefinitions.LegacyPaytableId, legacy.Math.PaytableId);
         Assert.Equal(1.09m, legacy.Math.PayoutMultiplier);
+        Assert.Equal(MidnightVaultBaseReelSet.Id, legacy.Math.ReelSetId);
         Assert.Equal(6, legacy.FreeGames?.AwardedSpins);
+        var previous = MidnightVaultSlotDefinitions.CreateGameForPaytable(active, V2);
+        Assert.Equal(V2, previous.Math.PaytableId);
+        Assert.Equal(MidnightVaultBaseReelSet.Id, previous.Math.ReelSetId);
+        Assert.Equal(1m, previous.Math.PayoutMultiplier);
+        Assert.Equal(10, previous.FreeGames?.AwardedSpins);
         var restoredCurrent = MidnightVaultSlotDefinitions.CreateGameForPaytable(legacy, MidnightVaultSlotDefinitions.PaytableId);
         Assert.Equal(active.Math.PayoutMultiplier, restoredCurrent.Math.PayoutMultiplier);
         var expectedSettings = JsonNode.Parse(before)!;
@@ -258,6 +273,8 @@ public sealed class MidnightVaultDefinitionTests
         restoredSettings["Math"]!.AsObject().Remove("PayoutMultiplier");
         Assert.Equal(expectedSettings.ToJsonString(), restoredSettings.ToJsonString());
         Assert.Equal(1m, restoredCurrent.Math.PayoutMultiplier);
+        Assert.Equal(V3, restoredCurrent.Math.PaytableId);
+        Assert.Equal(MidnightVaultBaseReelSet.CurrentId, restoredCurrent.Math.ReelSetId);
         Assert.Equal(10, restoredCurrent.FreeGames?.AwardedSpins);
         Assert.NotSame(active.Layout, legacy.Layout);
         Assert.NotSame(active.Symbols, legacy.Symbols);
@@ -272,13 +289,13 @@ public sealed class MidnightVaultDefinitionTests
         legacy.SpecialPoints!.CommonSymbolIds.Clear();
         Assert.Equal(before, JsonSerializer.Serialize(active));
         Assert.Equal(before, JsonSerializer.Serialize(provider.GetGame(active.Id)));
-        Assert.Throws<ArgumentException>(() => MidnightVaultSlotDefinitions.CreateGameForPaytable(active, "midnight-vault-paytable-v3"));
+        Assert.Throws<ArgumentException>(() => MidnightVaultSlotDefinitions.CreateGameForPaytable(active, "midnight-vault-paytable-v4"));
         Assert.Throws<ArgumentException>(() => MidnightVaultSlotDefinitions.CreateGameForPaytable(
             provider.GetGame(SlotSpecialRoundProfiles.CosmicFortuneGameId)!, MidnightVaultSlotDefinitions.LegacyPaytableId));
     }
 
     [Fact]
-    public void FrozenLegacyV1Evidence_ReplaysAfterTheActiveGameSwitchesToV2()
+    public void FrozenLegacyV1Evidence_ReplaysAfterTheActiveGameSwitchesToV3()
     {
         var provider = Provider(ReadOptions());
         var active = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
@@ -298,6 +315,106 @@ public sealed class MidnightVaultDefinitionTests
         Assert.Equal(1m, provider.GetGame(active.Id)!.Math.PayoutMultiplier);
         Assert.Empty(SlotRoundAudit.Check(oldResult with { EngineAudit = frozen }, oldResult.Payout));
     }
+
+    [Theory]
+    [InlineData(V1, 1.09, 6)]
+    [InlineData(V2, 1.0, 10)]
+    public void HistoricalModelsKeepExactFrozenStripOrderAndNativeRates(string model, double scalar, int spins)
+    {
+        var provider = Provider(ReadOptions());
+        var game = MidnightVaultSlotDefinitions.CreateGameForPaytable(provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!, model);
+        Assert.Equal((decimal)scalar, game.Math.PayoutMultiplier);
+        Assert.Equal(spins, game.FreeGames!.AwardedSpins);
+        MidnightVaultHistoricalFixtures.AssertHistoricalReels(provider.GetReelSet(game.Math.ReelSetId)!);
+        var expected = model == V1 ? MidnightVaultHistoricalFixtures.V1Audit().Paytable.Rules : MidnightVaultHistoricalFixtures.V2Rules();
+        Assert.Equal(Rules(expected), Rules(provider.GetPaytable(model)!.Rules));
+    }
+
+    [Theory]
+    [InlineData(V1)]
+    [InlineData(V2)]
+    [InlineData(V3)]
+    public void CapturedModelKeepsItsPublishedGameAndProfileHitTargets(string model)
+    {
+        var result = VersionedSpin(model, null, "8");
+        var audit = result.EngineAudit!;
+        Assert.Equal(model == V3 ? .21m : .30m, audit.BaseGame.Math.Targets.HitRate);
+        Assert.Equal(model == V3 ? .21m : .30m, audit.EffectiveGame.Math.Targets.HitRate);
+        if (model == V3) Assert.Equal(.21m, audit.FeatureProfile!.TargetHitRate);
+        else Assert.Null(audit.FeatureProfile!.TargetHitRate);
+        Assert.True(SlotSpecialRoundProfiles.TryGet(result.GameId, out var activeProfile));
+        Assert.Equal(.21m, activeProfile.TargetHitRate);
+    }
+
+    [Theory]
+    [InlineData(V1, null, 6)]
+    [InlineData(V1, "rows-paw", 6)]
+    [InlineData(V2, "rows-paw", 10)]
+    [InlineData(V3, "rows-paw", 10)]
+    public void ScatterKeepsItsResolvedModelsSpinAwardAndReplays(string model, string? mode, int spins)
+    {
+        var result = VersionedSpin(model, mode, "FREE");
+        Assert.Equal(spins, result.FreeSpinsAwarded);
+        Assert.Equal(spins, result.EngineAudit!.EffectiveGame.FreeGames!.AwardedSpins);
+        Assert.All(result.Reels, reel => Assert.Equal(mode is null ? 4 : 6, reel.Count));
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+    }
+
+    [Fact]
+    public void NonMidnightRowsStillAppliesItsExistingProfileFreeGameConfiguration()
+    {
+        var provider = Provider(ReadOptions());
+        var wukong = provider.GetGame(SlotSpecialRoundProfiles.WukongGameId)!;
+        var node = JsonSerializer.SerializeToNode(wukong)!;
+        node["FreeGames"] = JsonSerializer.SerializeToNode(new GameFreeGamesDefinition
+        { SymbolId = "FREE", RequiredSymbols = 3, AwardedSpins = 99, VisibleFrequencyDivisor = 1 });
+        var configured = node.Deserialize<GameDefinition>()!;
+        var reels = provider.GetReelSet(configured.Math.ReelSetId)!;
+        var result = new SpinService(new FixedGameProvider(provider, configured),
+            new CryptoReelGenerator(new FixedStopsRandom(reels.Reels.Select(reel => reel.IndexOf("2")))),
+            new CombinationEvaluator(), new PayoutCalculator(), new QuietFeatureRandom())
+            .Spin(configured.Id, 100, "non-midnight-rows-profile-proof", false, freeSpinFeatureMode: "rows");
+        Assert.Equal(99, result.EngineAudit!.BaseGame.FreeGames!.AwardedSpins);
+        Assert.Equal(0, result.EngineAudit.EffectiveGame.FreeGames!.AwardedSpins);
+        Assert.Equal(0, result.FreeSpinsAwarded);
+        Assert.All(result.Reels, reel => Assert.Equal(6, reel.Count));
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+    }
+
+    [Theory]
+    [InlineData(V2)]
+    [InlineData(V3)]
+    public void IntegerModelsRejectWrongFrozenScalarDuringReplay(string model)
+    {
+        var result = VersionedSpin(model, null, "8");
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+        var node = JsonSerializer.SerializeToNode(result.EngineAudit!.BaseGame)!;
+        node["Math"]!["PayoutMultiplier"] = .99m;
+        var wrong = node.Deserialize<GameDefinition>()!;
+        var altered = result with { EngineAudit = result.EngineAudit with { BaseGame = wrong } };
+        Assert.Contains(SlotRoundAudit.Check(altered, altered.Payout), finding => finding.Code == "slot-model-mismatch");
+    }
+
+    private static SpinResult VersionedSpin(string model, string? mode, string stopSymbol)
+    {
+        var provider = Provider(ReadOptions());
+        var game = MidnightVaultSlotDefinitions.CreateGameForPaytable(provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!, model);
+        var reels = provider.GetReelSet(game.Math.ReelSetId)!;
+        return new SpinService(new FixedGameProvider(provider, game),
+            new CryptoReelGenerator(new FixedStopsRandom(reels.Reels.Select(reel => reel.IndexOf(stopSymbol)))),
+            new CombinationEvaluator(), new PayoutCalculator(), new QuietFeatureRandom())
+            .Spin(game.Id, 100, "midnight-version-proof", false, freeSpinFeatureMode: mode);
+    }
+
+    private static IEnumerable<(string, int, long)> Rules(IEnumerable<PayoutRule> rules) => rules
+        .OrderBy(rule => rule.SymbolId, StringComparer.Ordinal).ThenBy(rule => rule.MatchLength)
+        .Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier));
+
+    private static IEnumerable<PayoutRule> CurrentRules() => CurrentRates.SelectMany(rate => new[]
+    {
+        new PayoutRule { SymbolId = rate.Symbol, MatchLength = 3, Multiplier = rate.Three },
+        new PayoutRule { SymbolId = rate.Symbol, MatchLength = 5, Multiplier = rate.Five }
+    });
 
     private static OptionsSlotsDefinitionProvider Provider(SlotsOptions options) => new(Options.Create(options));
 

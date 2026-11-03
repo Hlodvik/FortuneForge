@@ -30,7 +30,21 @@ public sealed class MidnightVaultPaidEmulatorFixture : IAsyncLifetime
             throw new DirectoryNotFoundException("The existing repository checkout was not found.");
         }
     }
-    public static string EvidenceDirectory => Path.Combine(RepositoryRoot, "output", "maintenance-2026-11-02", "midnight-vault-integer-math");
+    public static string EvidenceDirectory
+    {
+        get
+        {
+            var configured = Environment.GetEnvironmentVariable("MIDNIGHT_PAID_EVIDENCE_DIRECTORY");
+            var path = string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(RepositoryRoot, "output", "maintenance-2026-11-02", "midnight-vault-frequency-rebalance")
+                : Path.GetFullPath(configured, RepositoryRoot);
+            var outputRoot = Path.GetFullPath(Path.Combine(RepositoryRoot, "output")) + Path.DirectorySeparatorChar;
+            var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            if (!Path.GetFullPath(path).StartsWith(outputRoot, comparison))
+                throw new InvalidOperationException("Midnight paid evidence must stay inside this checkout's output directory.");
+            return path;
+        }
+    }
 
     public async Task InitializeAsync()
     {

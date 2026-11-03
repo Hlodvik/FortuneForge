@@ -23,7 +23,7 @@ internal static class GameRequestPayloadObservation
         "commands", "replay", "step", "input", "totalSteps", "totalTicks", "flapTicks", "jumpTicks", "rightClickTicks", "rulesVersion", "flap",
         "draw", "mode", "seat", "position", "pile", "pileIndex", "tableauIndex", "foundationIndex", "cardCount", "expectedMoves", "expectedScore",
         "zone", "startIndex", "useFreeSpin", "useSpecialBoost", "freeSpinsRemaining", "freeSpinWagerPoints",
-        "energyBalance", "sealCollections", "sealId", "averageWagerPoints", "requiredCount", "freeSpinFeatureMode",
+        "energyBalance", "crucibleWageredCents", "sealCollections", "sealId", "averageWagerPoints", "requiredCount", "freeSpinFeatureMode",
         "period", "competition", "entry", "variant", "tableRuleId",
         "raiseTo", "buyInCredits", "stakeCents", "amountCents", "amount", "claim", "elapsedMilliseconds", "elapsedTicks", "commandIndex", "tick", "timestamp"
     };

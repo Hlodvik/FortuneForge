@@ -94,6 +94,7 @@ afterEach(() => {
 describe('Rainbow Realm Orchard Rush presentation', () => {
   it('shows the ready intro from the server bonus balance and waits for Spin', async () => {
     await mount()
+    expect(host.querySelector('.slots-page__meter-stack')).toBeNull()
     mocks.request.mockResolvedValueOnce(response(10))
     await spin()
     expect(host.querySelector('[data-rainbow-intro="true"]')).not.toBeNull()

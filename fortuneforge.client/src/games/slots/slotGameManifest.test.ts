@@ -7,6 +7,7 @@ import { describeSpinOutcome } from '../../features/slots/presentation/spinPrese
 import { WUKONG_FEATURE_SYMBOL_IDS } from './wukong/symbols'
 import type { SlotSymbolId } from '../../features/slots/types/slots'
 import { getSlotSymbolValueLabel, slotPointsToRand } from '../../features/slots/slotPagePresentation'
+import { getSlotAnimationSymbolIds } from '../../features/slots/config/symbolSets'
 import {
   loadAllSlotGameManifests,
   SECOND_WAVE_SLOT_GAME_IDS,
@@ -96,7 +97,9 @@ describe('slot game manifests', () => {
     expect(new Set(experienceIds).size).toBe(experienceIds.length)
     expect(new Set(serverGameIds).size).toBe(serverGameIds.length)
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
-      game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1' : 'wukong-treasures-v3'))
+      game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
+        : game.id === 'neon-nights' ? 'neon-arcade-symbols-v2'
+        : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'wukong-treasures-v3'))
     for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard')) {
       expect(game.experience.symbols.definitions['8'], game.id).toBeUndefined()
       expect(game.experience.rules.initialReels.flat(), game.id).not.toContain('8')
@@ -153,11 +156,10 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('registers three additional playable themes with distinct special-game presentations', () => {
+  it('registers Arcane Archives and Cosmic Fortune with distinct collection presentations', () => {
     const newGames = [
       [ARCANE_ARCHIVES_SLOT_GAME, 'enchanted book satchel', 'spellbook-shelf'],
       [COSMIC_FORTUNE_SLOT_GAME, null, 'star-orbit'],
-      [DINO_DOMINION_SLOT_GAME, 'paleontologist field kit', 'fossil-dig'],
     ] as const
 
     expect(SLOT_GAME_MANIFESTS).toHaveLength(20)
@@ -168,8 +170,10 @@ describe('slot game manifests', () => {
       else expect(game.experience.features.moneyGrab).toBeUndefined()
       expect(game.experience.features.collections?.presentation).toBe(presentation)
       expect(game.experience.features.collections?.entries).toHaveLength(4)
-      expect(game.experience.help.extraSections).toHaveLength(2)
-      expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
+      expect(game.experience.help.extraSections).toHaveLength(game.id === 'arcane-archives' ? 3 : 2)
+      expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(
+        Boolean(game.experience.features.energy || game.experience.features.lightningCollection),
+      )
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       expect(new Set(
         Object.values(game.experience.symbols.definitions)
@@ -179,6 +183,32 @@ describe('slot game manifests', () => {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
     }
+
+    const { features, symbols } = ARCANE_ARCHIVES_SLOT_GAME.experience
+    expect(features.energy).toBeUndefined()
+    expect(features.lightningCollection?.collectorSymbol).toBe('BOLT')
+    expect(symbols.definitions['7']?.wagerMultiplier).toBe(0.5)
+    expect(symbols.definitions.POWER?.wagerMultiplier).toBe(1)
+    expect(symbols.definitions.SEAL_RAND?.wagerMultiplier).toBe(2)
+  })
+
+  it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
+    const { experience, routes } = DINO_DOMINION_SLOT_GAME
+    const { features, help, symbols } = experience
+    expect(routes.demo).toBe('/slots/dino-dominion/demo')
+    expect(features.collections).toBeUndefined()
+    expect(features.specialRound).toBeUndefined()
+    expect(help.freeGames).toBeUndefined()
+    expect(features.energy?.symbol).toBe('BOLT')
+    expect(features.moneyGrab).toMatchObject({
+      collectorSymbol: 'PAW',
+      presentation: 'separate-award',
+      valueSymbols: ['SEAL_ROWS', 'SEAL_SYNC', 'SEAL_PAW', 'SEAL_RAND'],
+    })
+    expect(symbols.guideEntries.filter(entry => entry.firstLabel === '3 / 4')
+      .map(entry => entry.symbol)).toEqual(expect.arrayContaining(['SEAL_ROWS', 'SEAL_SYNC', 'SEAL_PAW', 'SEAL_RAND']))
+    expect(symbols.guideEntries.find(entry => entry.symbol === 'PAW')?.firstLabel).toBe('1 crucible')
+    expect(symbols.definitions.RAND_1).toBeUndefined()
   })
 
   it('registers ten second-wave games with complete distinct themed contracts', () => {
@@ -189,14 +219,17 @@ describe('slot game manifests', () => {
       expect(game.routes.play).toBe(`/slots/${game.id}`)
       expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
       expect(game.experience.cabinet.backdropImage).toMatch(/\.webp$/)
-      const isScatterOnly = new Set([
+      const hasNoCollections = new Set([
         'robot-revolution',
         'phantom-manor',
         'candy-carnival',
         'nordic-legends',
+        'neon-nights',
       ]).has(game.id)
-      expect(game.experience.features.collections?.entries ?? []).toHaveLength(isScatterOnly ? 0 : 4)
-      expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
+      expect(game.experience.features.collections?.entries ?? []).toHaveLength(hasNoCollections ? 0 : 4)
+      if (game.id !== 'neon-nights') {
+        expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
+      }
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       expect(new Set(
@@ -396,12 +429,11 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('gives the final five showcase slots matched special rounds and audio', () => {
+  it('gives the remaining showcase slots matched special rounds and audio', () => {
     const featured = [
       [JUNGLE_JACKPOT_SLOT_GAME, 'jungle-temple-trek', 'jungle-jackpot-audio-v1', 22, 3, 6, true],
       [CANDY_CARNIVAL_SLOT_GAME, 'candy-sugar-parade', 'candy-carnival-audio-v1', 20, 4, 5, false],
       [DESERT_TREASURES_SLOT_GAME, 'desert-pharaoh-passage', 'desert-treasures-audio-v1', 24, 3, 7, true],
-      [NEON_NIGHTS_SLOT_GAME, 'neon-midnight-mix', 'neon-nights-audio-v1', 26, 3, 6, true],
       [NORDIC_LEGENDS_SLOT_GAME, 'nordic-valhalla-voyage', 'nordic-legends-audio-v1', 28, 4, 6, false],
     ] as const
 
@@ -430,7 +462,7 @@ describe('slot game manifests', () => {
 
     expect(featured.filter((game) => game.experience.features.energy)).toHaveLength(4)
     expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(10)
-    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(5)
+    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(6)
     expect(new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle)).size).toBeGreaterThan(7)
   })
 
@@ -523,19 +555,26 @@ describe('slot game manifests', () => {
       'rand',
     ])
     expect(rainbowCollections?.entries.every((collection) => collection.requiredCount === 60)).toBe(true)
+    expect(RAINBOW_REALM_SLOT_GAME.experience.features.energy).toBeUndefined()
+    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries.some((entry) => entry.symbol === 'BOLT')).toBe(false)
+    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions.BOLT).toBeDefined()
+    expect(RAINBOW_REALM_SLOT_GAME.experience.rules.initialReels.flat()).not.toContain('BOLT')
+    expect(getSlotAnimationSymbolIds(RAINBOW_REALM_SLOT_GAME.experience.symbols)).not.toContain('BOLT')
     expect(RAINBOW_REALM_SLOT_GAME.experience.help.freeGames).toEqual({
       requiredSymbols: 3,
       awardedSpins: 10,
       badge: 'BONUS',
       title: 'Orchard Rush bonus',
-      symbolLabel: 'ORCHARD GATE',
+      symbolLabel: 'RAINBOW',
       awardLabel: 'Orchard Rush bonus spins',
     })
     expect(RAINBOW_REALM_SLOT_GAME.experience.features.specialRound?.earnLabel)
-      .toContain('3 orchard gates or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round')
+      .toContain('3 rainbows or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round')
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries.find((entry) => entry.symbol === 'FREE')?.secondValue)
       .toBe('10 bonus spins')
     expect(RAINBOW_REALM_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
+    expect(RAINBOW_REALM_SLOT_GAME.experience.features.moneyGrab?.valueSymbols)
+      .toEqual(['SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND'])
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions.PAW?.label).toContain('Wicker')
     expect(RAINBOW_REALM_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
     for (const symbol of WUKONG_FEATURE_SYMBOL_IDS) {
@@ -548,13 +587,17 @@ describe('slot game manifests', () => {
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions.PAW?.image).not.toBe(
       PIRATES_FORTUNE_SLOT_GAME.experience.symbols.definitions.PAW?.image,
     )
-    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries).toHaveLength(16)
+    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries).toHaveLength(19)
+    const rainbowSymbols = RAINBOW_REALM_SLOT_GAME.experience.symbols
+    expect(getSlotAnimationSymbolIds(rainbowSymbols)).toEqual(expect.arrayContaining(['A', 'J', 'K', 'Q']))
+    expect(getSlotAnimationSymbolIds(rainbowSymbols).some(symbol => symbol.startsWith('RAND_'))).toBe(false)
+    expect(rainbowSymbols.guideEntries.some(({ symbol }) => symbol.startsWith('RAND_'))).toBe(false)
     expect(PIRATES_FORTUNE_SLOT_GAME.experience.features.collections?.presentation).toBe('gem-hoard')
     expect(WUKONG_SLOT_GAME.experience.features.collections?.presentation).toBe('celestial-orbit')
     expect(new Set(
       Object.values(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions)
         .flatMap((definition) => definition ? [definition.label] : []),
-    ).size).toBe(23)
+    ).size).toBe(27)
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_05?.wagerMultiplier).toBe(0.5)
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_5?.wagerMultiplier).toBe(5)
     expect(getSlotSymbolValueLabel(

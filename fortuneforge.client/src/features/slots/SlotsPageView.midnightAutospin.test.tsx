@@ -31,7 +31,7 @@ function Harness({ experience, disabled = false }: { experience: SlotExperienceS
   // Exercise the view's real toggle handler without starting engine autoplay.
   const [isAutoSpinning, setIsAutoSpinning] = useState(false)
   return <SlotsPageView {...controller} isAutoSpinning={isAutoSpinning} setIsAutoSpinning={setIsAutoSpinning}
-    isDemoSpinDisabled={disabled} setSpinError={mocks.clearError} handleSpinButtonClick={mocks.spin} />
+    isSpinServiceDisabled={disabled} setSpinError={mocks.clearError} handleSpinButtonClick={mocks.spin} />
 }
 async function mount(experience: SlotExperienceSet = DRAGON_HOARD_SLOT_GAME.experience, disabled = false) {
   await act(async () => root.render(<Harness experience={experience} disabled={disabled} />))
@@ -106,13 +106,13 @@ describe('Shared sidecar slot controls', () => {
     const before = host.querySelector('.pirates-spin-controls__bet-readout strong')?.textContent
     const bet = host.querySelector<HTMLButtonElement>('.pirates-spin-controls__bet-wrap > button')!
     act(() => bet.click())
-    const increase = host.querySelector<HTMLButtonElement>('[aria-label="Increase bet"]')!
+    const increase = document.body.querySelector<HTMLButtonElement>('[aria-label="Increase bet"]')!
     act(() => increase.click())
     expect(host.querySelector('.pirates-spin-controls__bet-readout strong')?.textContent).not.toBe(before)
     const spin = host.querySelector<HTMLButtonElement>('.spin-button--pirate-loop')!
     act(() => spin.click())
     expect(mocks.spin).toHaveBeenCalledTimes(1)
-    expect(host.querySelector('[aria-label="Choose bet"]')).toBeNull()
+    expect(document.body.querySelector('[aria-label="Choose bet"]')).toBeNull()
   })
 
   it('uses the shared placement hook for all 17 eligible catalog games and keeps the three exclusions on their existing controls', async () => {
@@ -131,7 +131,7 @@ describe('Shared sidecar slot controls', () => {
       } else {
         expect(page.hasAttribute('data-slot-controls'), game.id).toBe(false)
         const originalVariant = game.id === 'dragon-hoard' ? '.spin-button--vault-dial'
-          : game.id === 'wukong-journey-to-the-west' ? '.spin-button--wukong-rune'
+          : game.id === 'wukong-journey-to-the-west' ? '.spin-button--custom-icon'
           : '.spin-button--pirate-loop'
         expect(page.querySelector(originalVariant), game.id).not.toBeNull()
       }

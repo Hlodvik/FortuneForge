@@ -51,6 +51,7 @@ Directory.CreateDirectory(output);
 foreach (var route in routes)
 {
     var game = definitions.GetGame(route.GameId)!;
+    var usesFoundryCollector = GoldFoundrySlotDefinitions.IsModel(game);
     SlotSpecialRoundProfiles.TryGet(route.GameId, out var profile);
     var wager = game.Wagering.MinimumWagerPoints;
     var gameDirectory = Path.Combine(output, route.Id);
@@ -76,10 +77,16 @@ foreach (var route in routes)
                 result.FreeSpinFeatureMode == (profile.CollectionFeatureMode ?? mode) && result.SealsAwarded.GetValueOrDefault(seal) > 0);
         }
     else unavailable.Add("Collections disabled in actual engine profile; no collection scenario invented.");
-    if (profile.UsesEnergy && game.Energy is not null)
+    if (usesFoundryCollector)
+        Search("energy-completion", null, 99, result => result.CruciblePoured == true &&
+            result.CruciblePayoutCents > 0 && result.EnergyBalance == 0 && result.FreeSpinsRemaining == 0);
+    else if (profile.UsesEnergy && game.Energy is not null)
         Search("energy-completion", null, 99, result => result.EnergyMultiplierApplied && result.EnergyBalance == 0 && result.FreeSpinsRemaining > 0);
     else unavailable.Add("Energy disabled in actual engine profile.");
-    if (profile.UsesDirectValueTokens)
+    if (usesFoundryCollector)
+        Search("reel-collector-award", null, 0, result =>
+            result.MoneyGrabPoints > 0 && result.MonkeyPawCount > 0 && result.FreeSpinsRemaining == 0);
+    else if (profile.UsesDirectValueTokens)
         Search("direct-token-award", null, 0, result => result.MoneyGrabPoints > 0 && result.MonkeyPawCount > 0 && result.FreeSpinsRemaining == 0);
     else unavailable.Add("Direct-value tokens and collectors disabled in actual engine profile.");
 
@@ -102,7 +109,9 @@ foreach (var route in routes)
             scenario = scenario.Name, source = new
             {
                 generator = "Actual in-process DemoSlotsController + SpinService + CryptoReelGenerator",
-                scenario.Seed, engineVersion = SpinService.AuditEngineVersion, gameId = route.GameId,
+                scenario.Seed, engineVersion = usesFoundryCollector
+                    ? scenario.Steps[0].Response.EngineAudit!.EngineVersion : SpinService.AuditEngineVersion,
+                gameId = route.GameId,
                 noHttpServerOrAccountSettlement = true, scenario.ReplayMatchesExceptSpinId,
                 deterministicCaveat = route.GameId == "pirates-fortune-v1" ?
                     "Pirates gem chance also depends on fresh engine spin GUID; replay may differ beyond response.spinId. Near-maximum seeds guarantee the initial gem award." :
@@ -190,12 +199,17 @@ foreach (var route in routes)
             result.Reels.All(reel => reel.Count == expectedRows), $"Grid/identity mismatch: {route.Id}.");
         Require(result.WagerPoints == request.WagerPoints && result.IsFreeSpin == request.UseFreeSpin, $"Wager/free-spin identity mismatch: {route.Id}.");
         Require(result.SlotsCreditsBalance is null, "Demo unexpectedly includes account balance.");
-        Require(result.Payout.TotalPoints == result.Payout.Paylines.Sum(line => line.AmountPoints) &&
+        var collectorPoints = usesFoundryCollector ? result.MoneyGrabPoints : 0;
+        Require(result.Payout.TotalPoints == result.Payout.Paylines.Sum(line => line.AmountPoints) + collectorPoints &&
             result.Payout.Paylines.All(line => line.AmountPoints == line.Matches.Sum(match => match.AmountPoints)), "Payout does not reconcile.");
+        if (usesFoundryCollector)
+            Require(result.Payout.Paylines.All(line => line.Matches.All(match => match.Match.SymbolId != "PAW")) &&
+                result.FreeSpinsAwarded == 0 && result.FreeSpinsRemaining == 0, "Unexpected Foundry payline or free spin.");
         Require(result.FreeSpinsRemaining >= 0 && (result.FreeSpinsRemaining == 0 ? result.FreeSpinWagerPoints is null : result.FreeSpinWagerPoints == wager), "Bonus locked wager mismatch.");
         Require(result.FreeSpinsRemaining > 0 || result.FreeSpinFeatureMode is null, "Ended bonus retained active mode.");
         if (!profile.UsesEnergy) Require(result.EnergyAwarded == 0 && result.EnergyBalance == 0 && !result.EnergyMultiplierApplied, "Disabled energy appeared.");
-        if (!profile.UsesDirectValueTokens) Require(result.MoneyGrabPoints == 0 && result.MonkeyPawCount == 0, "Disabled direct tokens appeared.");
+        if (!profile.UsesDirectValueTokens && !usesFoundryCollector)
+            Require(result.MoneyGrabPoints == 0 && result.MonkeyPawCount == 0, "Disabled direct tokens appeared.");
         if (!profile.UsesCollections) Require(result.SealCollections.Count == 0 && result.SealsAwarded.Count == 0, "Disabled collection appeared.");
         return result;
     }

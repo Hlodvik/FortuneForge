@@ -1,5 +1,12 @@
 import { isSlotSymbolId, type MidnightVaultBonusRound, type MidnightVaultDemoState, type SlotSealCollection, type SpinResult } from '../types/slots'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
+import { GOLD_FOUNDRY_GAME_ID } from '../config/slotFeatures'
+import {
+  GODS_TUMBLE_COLUMNS,
+  GODS_TUMBLE_GAME_ID,
+  GODS_TUMBLE_ROWS,
+  GODS_TUMBLE_SYMBOLS,
+} from '../../../games/slots/godsOfOlympus/tumble'
 
 type SpinRequest = {
   gameId: string
@@ -12,9 +19,11 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   energyBalance: number
+  crucibleWageredCents?: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
   midnightBonusState?: MidnightVaultDemoState | null
+  olympusTumbleShowcase?: boolean
 }
 
 export type SlotState = {
@@ -24,6 +33,8 @@ export type SlotState = {
   freeSpinWagerPoints: number | null
   specialPointsBalance: number
   energyBalance: number
+  crucibleWageredCents?: number
+  cruciblePourValueCents?: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
 }
@@ -90,8 +101,11 @@ export async function requestSpin(request: SpinRequest): Promise<SpinResult> {
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result)) {
+  if (!isSpinResult(result, request.gameId)) {
     throw new Error('The spin server returned an invalid reel result.')
+  }
+  if (request.gameId === GODS_TUMBLE_GAME_ID && !request.useFreeSpin) {
+    validateGodsTumbleResult(result, request, false)
   }
 
   return result
@@ -115,8 +129,11 @@ export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinRes
   }
 
   const result = (await response.json()) as unknown
-  if (!isSpinResult(result)) {
+  if (!isSpinResult(result, request.gameId)) {
     throw new Error('The spin server returned an invalid reel result.')
+  }
+  if (request.olympusTumbleShowcase !== undefined) {
+    validateGodsTumbleResult(result, request, true)
   }
 
   return result
@@ -144,6 +161,7 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || typeof state.energyBalance !== 'number'
     || !Number.isInteger(state.energyBalance)
     || state.energyBalance < 0
+    || (gameId === GOLD_FOUNDRY_GAME_ID && !validCrucibleFields(state))
     || !Array.isArray(state.sealCollections)
     || !state.sealCollections.every(isSlotSealCollection)
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
@@ -155,7 +173,7 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
   return state as SlotState
 }
 
-function isSpinResult(result: unknown): result is SpinResult {
+function isSpinResult(result: unknown, gameId: string): result is SpinResult {
   if (!isRecord(result) || !isRecord(result.payout)) {
     return false
   }
@@ -196,6 +214,7 @@ function isSpinResult(result: unknown): result is SpinResult {
     Number.isInteger(result.energyBalance) &&
     result.energyBalance >= 0 &&
     typeof result.energyMultiplierApplied === 'boolean' &&
+    (gameId !== GOLD_FOUNDRY_GAME_ID || validCrucibleFields(result)) &&
     typeof result.payoutMultiplier === 'number' &&
     result.payoutMultiplier >= 1 &&
     typeof result.monkeyPawCount === 'number' &&
@@ -224,9 +243,120 @@ function isSpinResult(result: unknown): result is SpinResult {
     result.reelStops.length === result.reels.length &&
     result.reelStops.every((stop) => Number.isInteger(stop)) &&
     typeof result.payout.totalPoints === 'number' &&
+    (result.lightningCollection == null || (gameId === 'arcane-archives-v1' &&
+      validLightningCollection(result.lightningCollection, result.reels, result.payout.totalPoints))) &&
     Array.isArray(result.payout.paylines) &&
     result.payout.paylines.every(isPaylinePayout)
   )
+}
+
+function validLightningCollection(value: unknown, reels: unknown[][], totalPayout: number): boolean {
+  if (!isRecord(value) || !isRecord(value.collector)) return false
+  const { collector, cells, totalPoints } = value
+  if (!isNonNegativeInteger(collector.reel) || !isNonNegativeInteger(collector.row) ||
+    reels[collector.reel]?.[collector.row] !== 'BOLT' || !Array.isArray(cells) || cells.length === 0 ||
+    !isNonNegativeInteger(totalPoints) || totalPoints > totalPayout) return false
+
+  const positions = new Set<string>()
+  let collected = 0
+  for (const cell of cells) {
+    if (!isRecord(cell) || !isNonNegativeInteger(cell.reel) || !isNonNegativeInteger(cell.row) ||
+      !isNonNegativeInteger(cell.amountPoints) || cell.amountPoints === 0) return false
+    const symbol = reels[cell.reel]?.[cell.row]
+    const key = `${cell.reel}:${cell.row}`
+    if ((symbol !== '7' && symbol !== 'POWER' && symbol !== 'SEAL_RAND') || positions.has(key)) return false
+    positions.add(key)
+    collected += cell.amountPoints
+  }
+  return collected === totalPoints
+}
+
+function validCrucibleFields(value: Record<string, unknown>): boolean {
+  const amounts = [value.crucibleWageredCents, value.cruciblePourValueCents, value.cruciblePayoutCents]
+  return amounts.every((amount) => amount == null ||
+    (typeof amount === 'number' && Number.isSafeInteger(amount) && amount >= 0)) &&
+    (value.cruciblePoured == null || typeof value.cruciblePoured === 'boolean')
+}
+
+function validateGodsTumbleResult(
+  result: SpinResult,
+  request: Pick<SpinRequest, 'gameId' | 'wagerPoints'>,
+  isDemo: boolean,
+) {
+  const balance = result.slotsCreditsBalance
+  if (result.gameId !== request.gameId || result.wagerPoints !== request.wagerPoints ||
+    (isDemo ? balance !== null : balance === null || !Number.isFinite(balance) || balance < 0) ||
+    !validGodsTumbleResult(result)
+  ) {
+    throw new Error('The spin server returned an invalid Olympus tumble result.')
+  }
+}
+
+function validGodsTumbleResult(result: SpinResult): boolean {
+  const tumble: unknown = result.olympusTumble
+  if (!isRecord(tumble)) return false
+  const { initialReels, steps, totalPoints } = tumble
+  if (!validGodsTumbleReels(initialReels) ||
+    !Array.isArray(steps) || steps.length > 12 ||
+    !isNonNegativeInteger(totalPoints) || totalPoints !== result.payout.totalPoints ||
+    result.payout.paylines.length !== 0 ||
+    result.isFreeSpin || result.freeSpinsAwarded !== 0 || result.freeSpinsRemaining !== 0 ||
+    !validGodsTumbleReels(result.reels) ||
+    !result.reels.every((reel, column) => reel.every((symbol, row) => symbol === initialReels[column][row]))
+  ) return false
+
+  let reels = initialReels
+  let total = 0
+  for (const step of steps) {
+    if (!isRecord(step) || !validGodsTumbleReels(step.reels) || !isNonNegativeInteger(step.amountPoints) ||
+      !Array.isArray(step.awards) || step.awards.length === 0 || step.awards.length > 3 ||
+      !Array.isArray(step.cleared) || step.cleared.length > GODS_TUMBLE_COLUMNS * GODS_TUMBLE_ROWS ||
+      !Array.isArray(step.dropRows) || step.dropRows.length !== GODS_TUMBLE_COLUMNS ||
+      !step.dropRows.every(reel => Array.isArray(reel) && reel.length === GODS_TUMBLE_ROWS &&
+        reel.every(rows => isNonNegativeInteger(rows) && rows <= GODS_TUMBLE_ROWS))
+    ) return false
+
+    const awardedCells = new Set<number>()
+    let stepPoints = 0
+    for (const award of step.awards) {
+      if (!isRecord(award) || !isNonNegativeInteger(award.amountPoints) ||
+        !Array.isArray(award.positions) || award.positions.length < 8 ||
+        award.positions.length > GODS_TUMBLE_COLUMNS * GODS_TUMBLE_ROWS
+      ) return false
+      for (const position of award.positions) {
+        if (!isGodsTumblePosition(position) || reels[position.reel][position.row] !== award.symbol) return false
+        const key = godsTumbleCellKey(position)
+        if (awardedCells.has(key)) return false
+        awardedCells.add(key)
+      }
+      stepPoints += award.amountPoints
+    }
+    if (stepPoints !== step.amountPoints || step.cleared.length !== awardedCells.size ||
+      !step.cleared.every(position => isGodsTumblePosition(position) && awardedCells.delete(godsTumbleCellKey(position)))
+    ) return false
+    total += stepPoints
+    reels = step.reels
+  }
+  return total === totalPoints
+}
+
+function validGodsTumbleReels(value: unknown): value is SpinResult['reels'] {
+  return Array.isArray(value) && value.length === GODS_TUMBLE_COLUMNS &&
+    value.every(reel => Array.isArray(reel) && reel.length === GODS_TUMBLE_ROWS &&
+      reel.every(symbol => GODS_TUMBLE_SYMBOLS.includes(symbol)))
+}
+
+function isGodsTumblePosition(value: unknown): value is { reel: number; row: number } {
+  return isRecord(value) && isNonNegativeInteger(value.reel) && value.reel < GODS_TUMBLE_COLUMNS &&
+    isNonNegativeInteger(value.row) && value.row < GODS_TUMBLE_ROWS
+}
+
+function godsTumbleCellKey({ reel, row }: { reel: number; row: number }): number {
+  return reel * GODS_TUMBLE_ROWS + row
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
 function isMidnightRound(value: unknown): value is MidnightVaultBonusRound {

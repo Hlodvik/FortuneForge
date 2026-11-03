@@ -23,7 +23,7 @@ for (const [route, gameId] of slotSmokeInventory) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       gameId,
-      wagerPoints: 10,
+      wagerPoints: gameId === 'neon-nights-v1' ? 50 : 10,
       useFreeSpin: false,
       freeSpinsRemaining: 0,
       freeSpinWagerPoints: null,

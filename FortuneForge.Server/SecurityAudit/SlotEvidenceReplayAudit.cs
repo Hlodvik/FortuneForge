@@ -4,6 +4,7 @@ using FortuneForge.Server.Activity;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.Accounts.Models;
 
@@ -22,7 +23,8 @@ internal static class SlotEvidenceReplayAudit
         {
             using var document = JsonDocument.Parse(payloadJson);
             var demo = summary.EvidenceKind == "slot-demo-nonfinancial-v1";
-            var data = demo ? document.RootElement : document.RootElement.GetProperty("data");
+            var root = document.RootElement;
+            var data = demo ? root : root.GetProperty("data");
             var result = data.GetProperty(demo ? "engineResult" : "result")
                 .Deserialize<SpinResult>(RoundAuditCapture.Json)
                 ?? throw new JsonException("Missing slot result.");
@@ -36,15 +38,31 @@ internal static class SlotEvidenceReplayAudit
                 data.GetProperty("settledPayout").Deserialize<SpinPayout>(RoundAuditCapture.Json)
                     ?? throw new JsonException("Missing settled slot payout.");
 
-            var findings = SlotRoundAudit.Check(result with { EngineAudit = engineAudit }, settledPayout).ToList();
+            var findings = SlotRoundAudit.Check(result with { EngineAudit = engineAudit }, settledPayout, isPaid: !demo).ToList();
+            var usesOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(engineAudit.EngineVersion);
+            if (usesOlympusTumble && demo && summary.Participants is not
+                [{ ActorId: "public-demo", IsAccountBacked: false, WagerCents: 0, PayoutCents: 0, NetCents: 0 }])
+                findings.Add(new("slot-olympus-tumble-financial-mismatch", "error",
+                    "The recorded tumble demo must be nonfinancial and independent of player accounts."));
+            if (!demo && NeonArcadeSlotDefinitions.SupportsSpecialPlays(engineAudit.EngineVersion) &&
+                data.GetProperty("isFreeSpin").GetBoolean() != result.IsFreeSpin)
+                findings.Add(new("slot-neon-admission-mismatch", "error",
+                    "The recorded Neon spin type differs from the accepted admission."));
             if (!AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId) ||
                 catalogueGameId != summary.GameId ||
                 (demo ? "demo:" : string.Empty) + result.SpinId.ToString("N") != summary.RoundId ||
-                (demo && summary.TableId != summary.RoundId))
+                ((demo || usesOlympusTumble) && summary.TableId != summary.RoundId))
                 findings.Add(new("slot-evidence-identity-mismatch", "error",
                     "The saved spin identity differs from its audit summary."));
             if (demo)
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
+            else if (usesOlympusTumble)
+                findings.AddRange(InspectOlympusSettlement(root, data, result, engineAudit, settledPayout, summary));
+            else if (engineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion)
+                findings.AddRange(InspectArcaneSettlement(data, result, engineAudit, settledPayout, summary));
+            else if (GoldFoundryCrucible.IsGame(result.GameId) &&
+                GoldFoundryCrucible.IsSupportedRuleVersion(engineAudit.CrucibleRuleVersion))
+                findings.AddRange(InspectCrucibleSettlement(data, result, engineAudit, settledPayout, summary));
             else if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
                 data.TryGetProperty("outcomeSchemaVersion", out var schema) && schema.GetInt64() >= 7)
                 findings.AddRange(InspectMidnightAdmission(data, result, engineAudit, settledPayout, summary));
@@ -61,6 +79,71 @@ internal static class SlotEvidenceReplayAudit
             return [new("slot-evidence-replay-invalid", "error",
                 "The saved slot result or frozen engine rules cannot be parsed for independent outcome review.")];
         }
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InspectOlympusSettlement(
+        JsonElement root, JsonElement data, SpinResult result, SlotSpinEngineAudit audit,
+        SpinPayout settled, RoundAuditSummary summary)
+    {
+        if (data.GetProperty("isFreeSpin").GetBoolean() ||
+            data.GetProperty("activeFreeSpinFeatureMode").ValueKind != JsonValueKind.Null ||
+            data.GetProperty("admittedMathModelId").GetString() != audit.EngineVersion ||
+            data.GetProperty("payoutMultiplier").GetDecimal() != 1m)
+            return [new("slot-olympus-tumble-admission-mismatch", "error",
+                "The recorded Olympus spin differs from the admitted paid tumble rules.")];
+
+        var wagerCents = RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents);
+        var netCents = checked(payoutCents - wagerCents);
+        if (root.GetProperty("sourceCollection").GetString() != "slotSpinResults" ||
+            root.GetProperty("sourceDocumentId").GetString() != result.SpinId.ToString("N") ||
+            root.GetProperty("wagerCents").GetInt64() != wagerCents ||
+            root.GetProperty("payoutCents").GetInt64() != payoutCents ||
+            root.GetProperty("netCents").GetInt64() != netCents ||
+            summary.Participants is not [{ IsAccountBacked: true } participant] ||
+            string.IsNullOrWhiteSpace(participant.ActorId) || participant.WagerCents != wagerCents ||
+            participant.PayoutCents != payoutCents || participant.NetCents != netCents)
+            return [new("slot-olympus-tumble-financial-mismatch", "error",
+                "The Olympus stake and replayed payout differ from the paid settlement receipt.")];
+        return [];
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InspectArcaneSettlement(
+        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, SpinPayout settled, RoundAuditSummary summary)
+    {
+        var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
+        var wagerCents = isFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents);
+        if (isFreeSpin != result.IsFreeSpin || isFreeSpin != audit.IsDerivedFreeSpin || summary.Participants.Count != 1 ||
+            summary.Participants[0].WagerCents != wagerCents || summary.Participants[0].PayoutCents != payoutCents ||
+            summary.Participants[0].NetCents != payoutCents - wagerCents)
+            return [new("slot-arcane-financial-mismatch", "error",
+                "The Arcane Archives stake and payout do not balance with the paid round summary.")];
+        return [];
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InspectCrucibleSettlement(
+        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, SpinPayout settled,
+        RoundAuditSummary summary)
+    {
+        var evidence = data.GetProperty("crucible");
+        var wagerBefore = evidence.GetProperty("wageredBeforeCents").GetInt64();
+        var recorded = evidence.GetProperty("settlement").Deserialize<GoldFoundryCrucibleSettlement>(RoundAuditCapture.Json)
+            ?? throw new JsonException("Missing Gold Foundry crucible settlement.");
+        var isFree = data.GetProperty("isFreeSpin").GetBoolean();
+        var wagerCents = isFree ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var expected = GoldFoundryCrucible.Settle(audit.EnergyBalanceBefore, result.EnergyAwarded, wagerBefore,
+            wagerCents, audit.CrucibleRuleVersion!);
+        var payoutCents = checked(RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents) + expected.PayoutCents);
+        if (isFree != result.IsFreeSpin || expected != recorded ||
+            (audit.EngineVersion == GoldFoundryReelCollector.EngineVersion &&
+                (isFree != audit.IsDerivedFreeSpin || audit.FreeSpinFeatureMode is not null)) ||
+            summary.Participants.Count != 1 || summary.Participants[0].WagerCents != wagerCents ||
+            summary.Participants[0].PayoutCents != payoutCents ||
+            summary.Participants[0].NetCents != payoutCents - wagerCents)
+            return [new("slot-crucible-financial-mismatch", "error",
+                "The Gold Foundry wager cycle and payout do not replay from the accepted spin.")];
+        return [];
     }
 
     private static IReadOnlyList<RoundAuditFinding> InspectMidnightAdmission(
@@ -177,12 +260,27 @@ internal static class SlotEvidenceReplayAudit
             Flag("slot-demo-financial-classification-mismatch",
                 "The saved demo spin is not consistently marked nonfinancial.");
         if (request.GameId != engine.GameId || request.WagerPoints != engine.WagerPoints ||
-            request.FreeSpinsRemaining is < 0 or > 1_000 ||
+            request.FreeSpinsRemaining < 0 ||
+            audit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion && request.FreeSpinsRemaining > 1_000 ||
             request.EnergyBalance is < 0 or > 100 ||
             request.UseFreeSpin && request.FreeSpinsRemaining == 0 ||
             !SameEngineOutcome(engine, response))
             Flag("slot-demo-response-mismatch",
                 "The saved demo request or response differs from the captured engine outcome.");
+
+        if (OlympusTumbleDemo.SupportsEngineVersion(audit.EngineVersion) || request.OlympusTumbleShowcase is not null)
+        {
+            if (audit.OlympusTumble is not { } tumble ||
+                request.OlympusTumbleShowcase != tumble.Showcase ||
+                request.UseFreeSpin || request.FreeSpinsRemaining != 0 || request.FreeSpinWagerPoints is not null ||
+                request.EnergyBalance != 0 || request.FreeSpinFeatureMode is not null ||
+                request.MidnightBonusState is not null || request.CrucibleWageredCents != 0 ||
+                request.SealCollections is { Count: > 0 } ||
+                !SlotRoundAudit.HasOnlyOlympusDemoState(response))
+                Flag("slot-olympus-tumble-demo-state-mismatch",
+                    "The saved request or response contains bonus carry or differs from the recorded tumble mode.");
+            return findings;
+        }
 
         if (engine.GameId == SlotSpecialRoundProfiles.DragonHoardGameId && response.MidnightBonusState is not null)
         {
@@ -190,18 +288,36 @@ internal static class SlotEvidenceReplayAudit
             return findings;
         }
 
+        var usesNeonSpecialPlays = NeonArcadeSlotDefinitions.SupportsSpecialPlays(audit.EngineVersion);
+        if (usesNeonSpecialPlays &&
+            (request.UseFreeSpin != (request.FreeSpinsRemaining > 0) ||
+             engine.IsFreeSpin != request.UseFreeSpin ||
+             request.UseFreeSpin && request.FreeSpinWagerPoints != request.WagerPoints ||
+             JsonSerializer.Serialize(engine.NeonArcade) != JsonSerializer.Serialize(response.NeonArcade)))
+            Flag("slot-neon-demo-progression-mismatch",
+                "The saved Neon spin type, locked wager, or activators differ from the accepted demo outcome.");
+
+        var usesFoundryCollector = GoldFoundryCrucible.IsGame(engine.GameId) &&
+            audit.EngineVersion == GoldFoundryReelCollector.EngineVersion;
         var profile = audit.FeatureProfile;
         var currentEnergy = profile?.UsesEnergy != false ? request.EnergyBalance : 0;
-        var activeFeatureMode = request.UseFreeSpin &&
+        var activeFeatureMode = !usesFoundryCollector && request.UseFreeSpin &&
             SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
                 ? request.FreeSpinFeatureMode : null;
         if (audit.EnergyBalanceBefore != currentEnergy ||
-            audit.FreeSpinFeatureMode != activeFeatureMode)
+            audit.FreeSpinFeatureMode != activeFeatureMode ||
+            usesFoundryCollector && (request.UseFreeSpin || audit.IsDerivedFreeSpin))
             Flag("slot-demo-engine-input-mismatch",
                 "The saved demo engine inputs differ from the accepted request.");
 
-        var energy = EnergyBonus.Settle(currentEnergy, engine.EnergyAwarded, engine.Payout);
-        var specialRounds = profile is null
+        var crucible = GoldFoundryCrucible.IsGame(engine.GameId) &&
+            GoldFoundryCrucible.IsSupportedRuleVersion(audit.CrucibleRuleVersion)
+            ? GoldFoundryCrucible.Settle(currentEnergy, engine.EnergyAwarded, request.CrucibleWageredCents,
+                request.UseFreeSpin ? 0 : RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents),
+                audit.CrucibleRuleVersion!)
+            : null;
+        var energy = crucible?.AsEnergySettlement(engine.Payout) ?? EnergyBonus.Settle(currentEnergy, engine.EnergyAwarded, engine.Payout);
+        var specialRounds = usesFoundryCollector || profile is null
             ? new SlotSpecialRoundProgress(0, null, [])
             : SlotSpecialRoundProfiles.SettleDemo(profile, request.SealCollections ?? [],
                 engine.SealsAwarded, engine.WagerPoints, energy.MultiplierApplied,
@@ -209,10 +325,10 @@ internal static class SlotEvidenceReplayAudit
         var collectionFreeSpinsAwarded = engine.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId &&
             profile?.CollectionTarget == PiratesGemBonus.MaximumGems
                 ? specialRounds.FreeSpinsAwarded : 0;
-        var freeSpinsRemaining = checked(request.FreeSpinsRemaining -
+        var freeSpinsRemaining = usesFoundryCollector ? 0 : checked(request.FreeSpinsRemaining -
             (request.UseFreeSpin ? 1 : 0) + engine.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
         long? freeSpinWagerPoints = freeSpinsRemaining > 0
-            ? request.FreeSpinWagerPoints ?? request.WagerPoints : null;
+            ? usesNeonSpecialPlays ? engine.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints : null;
         var nextFeatureMode = freeSpinsRemaining > 0
             ? specialRounds.FeatureMode ??
                 (engine.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
@@ -225,6 +341,10 @@ internal static class SlotEvidenceReplayAudit
             response.FreeSpinWagerPoints != freeSpinWagerPoints ||
             response.EnergyBalance != energy.FinalEnergyBalance ||
             response.EnergyMultiplierApplied != energy.MultiplierApplied ||
+            response.CrucibleWageredCents != crucible?.WageredCents ||
+            response.CruciblePourValueCents != crucible?.PourValueCents ||
+            response.CruciblePoured != crucible?.Poured ||
+            response.CruciblePayoutCents != crucible?.PayoutCents ||
             response.PayoutMultiplier != energy.PayoutMultiplier ||
             response.FreeSpinFeatureMode != nextFeatureMode ||
             response.SpecialPointsBalance != 0 ||
@@ -237,7 +357,7 @@ internal static class SlotEvidenceReplayAudit
     private static IReadOnlyList<RoundAuditFinding> InspectMidnightDemo(
         DemoSpinRequest request, SpinResult engine, SpinResult response, SlotSpinEngineAudit audit)
     {
-        var state = DemoSlotsController.CreateMidnightState(request);
+        var state = DemoSlotsController.CreateMidnightState(request, engine.PaytableId);
         MidnightVaultBonusRounds.Validate(state.Rounds);
         var head = state.Rounds.FirstOrDefault();
         var consumed = request.UseFreeSpin ? MidnightVaultBonusRounds.Consume(state.Rounds) : state.Rounds;
@@ -284,6 +404,10 @@ internal static class SlotEvidenceReplayAudit
         engine.MonkeyPawCount == response.MonkeyPawCount &&
         engine.MoneyGrabPoints == response.MoneyGrabPoints &&
         engine.BananaBonusPoints == response.BananaBonusPoints &&
+        SlotRoundAudit.SameLightningCollection(engine.LightningCollection, response.LightningCollection) &&
+        (engine.OlympusTumble is null && response.OlympusTumble is null ||
+         JsonSerializer.Serialize(engine.OlympusTumble, RoundAuditCapture.Json) ==
+             JsonSerializer.Serialize(response.OlympusTumble, RoundAuditCapture.Json)) &&
         engine.SealsAwarded.Count == response.SealsAwarded.Count &&
         engine.SealsAwarded.All(pair => response.SealsAwarded.TryGetValue(pair.Key, out var count) && count == pair.Value);
 }

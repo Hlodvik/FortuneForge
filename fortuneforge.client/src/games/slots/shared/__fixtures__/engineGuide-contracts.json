@@ -37,6 +37,33 @@
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "5e3f4d65f16254bbb743c577a6811e3ec9523a21378cd6a98eb272074e3f39da",
     "FortuneForge.Server/appsettings.json": "847626eb443d4c182f12ffa1de8f52de9f4a0bbd7c7ecc51e2049bbd48a03578"
   },
+  "localOverrides": {
+    "neon-nights-v1": {
+      "source": "Actual OptionsSlotsDefinitionProvider + DemoSlotsController + SpinService + CryptoReelGenerator",
+      "exportedUtc": "2026-11-02T23:43:30.9542026Z",
+      "assemblySha256": "d0fc3324264f1208aa152eec82c7bade6f2ee847a7e3e4e05d86885312113e5d",
+      "sourceSha256": {
+        "FortuneForge.Server/appsettings.json": "ae88fce869890e9558e0dab74e8f064ed4a8c877af39ff1787bbb4374db99806",
+        "FortuneForge.Server/Slots/Configuration/NeonArcadeSlotDefinitions.cs": "d1b8a7578d6010dc278182f7605af31197a39fe2b42e0a4b46ea71852a2c1238",
+        "FortuneForge.Server/Slots/Configuration/OptionsSlotsDefinitionProvider.cs": "b1e438e70a95c24bdabcfb387e1d49b32679161c22339433110e8b25e7fec031",
+        "FortuneForge.Server/Slots/Bonuses/NeonArcadeBonus.cs": "bd87535c9adf4cabe4fa50999eb4982d112cf056bd98c5a98241d94f0727c9d7",
+        "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "ba6c48e1834e3666b49221a9afb5fec20c08a838cace1995a9b15541eebd29a4",
+        "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "2aad64305b88ae4c0542232a7704fc864b6aeb9b9c106116f54b1522ced71a3e",
+        "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "72d72864fce4237b9394fd4da8662c77ee9a3ef7b7a64f710374070b1e86e3b3",
+        "FortuneForge.Server/Slots/Evaluation/CombinationEvaluator.cs": "ad2944f583a56bd659f53b9d27e19241ca9b96c127e5cf0ce66f7dcbf19590e1",
+        "FortuneForge.Server/Slots/Models/SpinModels.cs": "82c616b6a7ca75f5ee754b4e095af0143191e09ec33a7b086b12022d9c74142b",
+        "FortuneForge.Server/RoundAudit/SlotRoundAudit.cs": "f372e10fc4d2781a80fbf4cdabf442cd612b798affd57de777fcbba10a6e6c09"
+      },
+      "nonfinancial": true,
+      "calibrated": false,
+      "simulationPerformed": false,
+      "fixtureSelection": "Three deliberately chosen valid strip stop sets; no random sweep.",
+      "sourceArtifact": "output/neon-arcade-local-v2/engine-contract.json",
+      "sourceArtifactSha256": "1e472bdf6b62dbce8604e97dbd44c3f1bd6045a7ab60c99d8c9293df138b35fc",
+      "provenanceArtifact": "output/neon-arcade-local-v2/provenance.json",
+      "provenanceArtifactSha256": "eb0bff551935f360585fd0de9d5fd0c42c82a09239e545c30d62e07c236f70f6"
+    }
+  },
   "games": [
     {
       "gameId": "wukong-journey-v1",
@@ -3275,15 +3302,15 @@
       "profile": {
         "gameId": "neon-nights-v1",
         "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 6,
+        "scatterAwardedSpins": 0,
         "collectionTarget": 26,
-        "collectionAwardedSpins": 7,
-        "usesCollections": true,
+        "collectionAwardedSpins": 0,
+        "usesCollections": false,
         "usesEnergy": false,
         "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
-        "collectionFeatureMode": "sync",
-        "baseReelSetId": null,
+        "collectionFeatureMode": null,
+        "baseReelSetId": "neon-arcade-reels-v2",
         "targetHitRate": null,
         "paylinePatternIds": null,
         "payoutMultiplier": 1
@@ -3294,7 +3321,7 @@
         "paylineCount": 23
       },
       "symbols": {
-        "symbolSetId": "wukong-treasures-v3",
+        "symbolSetId": "neon-arcade-symbols-v2",
         "wildSymbolId": "ACE",
         "nativeWildMatchLengths": [
           3,
@@ -3305,15 +3332,15 @@
         ]
       },
       "wagering": {
-        "pointValueInCents": 25,
-        "minimumWagerPoints": 2,
-        "maximumWagerPoints": 2000,
-        "wagerIncrementPoints": 2,
+        "pointValueInCents": 1,
+        "minimumWagerPoints": 50,
+        "maximumWagerPoints": 50000,
+        "wagerIncrementPoints": 50,
         "allowedWagerPoints": []
       },
       "math": {
-        "reelSetId": "classic-reels-v4",
-        "paytableId": "classic-paytable-v4",
+        "reelSetId": "neon-arcade-reels-v2",
+        "paytableId": "neon-arcade-paytable-v2",
         "payoutMultiplier": 1,
         "paylinePayoutSteps": [
           0,
@@ -3342,22 +3369,12 @@
         ],
         "fiveMatchPityMissLimit": 12,
         "targets": {
-          "rtp": 0.9,
-          "hitRate": 0.3,
+          "rtp": null,
+          "hitRate": null,
           "volatility": null
         }
       },
-      "specialPoints": {
-        "symbolId": "POWER",
-        "threeMatchPoints": 1,
-        "fiveMatchPoints": 2,
-        "activationCost": 8,
-        "commonSymbolIds": [
-          "2",
-          "3",
-          "4"
-        ]
-      },
+      "specialPoints": null,
       "paylines": [
         [
           0,
@@ -3563,16 +3580,6 @@
           "multiplier": 6
         },
         {
-          "symbolId": "6",
-          "matchLength": 3,
-          "multiplier": 2
-        },
-        {
-          "symbolId": "6",
-          "matchLength": 5,
-          "multiplier": 8
-        },
-        {
           "symbolId": "7",
           "matchLength": 3,
           "multiplier": 3
@@ -3593,14 +3600,34 @@
           "multiplier": 18
         },
         {
-          "symbolId": "POWER",
+          "symbolId": "SEAL_SYNC",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "SEAL_SYNC",
+          "matchLength": 5,
+          "multiplier": 4
+        },
+        {
+          "symbolId": "SEAL_ROWS",
+          "matchLength": 3,
+          "multiplier": 1
+        },
+        {
+          "symbolId": "SEAL_ROWS",
+          "matchLength": 5,
+          "multiplier": 5
+        },
+        {
+          "symbolId": "SEAL_PAW",
           "matchLength": 3,
           "multiplier": 2
         },
         {
-          "symbolId": "POWER",
+          "symbolId": "SEAL_PAW",
           "matchLength": 5,
-          "multiplier": 4
+          "multiplier": 8
         }
       ]
     },

@@ -26,7 +26,8 @@ const STATIC_THEME_SYMBOL_IDS = [
 ] as const satisfies readonly SlotSymbolId[]
 
 type StaticThemeSymbolId = (typeof STATIC_THEME_SYMBOL_IDS)[number]
-export type AdditionalThemeSymbolId = '8'
+const ADDITIONAL_THEME_SYMBOL_IDS = ['8', 'A', 'J'] as const satisfies readonly SlotSymbolId[]
+export type AdditionalThemeSymbolId = (typeof ADDITIONAL_THEME_SYMBOL_IDS)[number]
 type CollectionSymbolId = 'SEAL_SYNC' | 'SEAL_ROWS' | 'SEAL_PAW' | 'SEAL_RAND'
 type RandSymbolId = 'RAND_05' | 'RAND_1' | 'RAND_15' | 'RAND_2' | 'RAND_3' | 'RAND_4' | 'RAND_5'
 
@@ -34,6 +35,7 @@ type ThemedSymbolSpec = {
   image: string
   responsiveImages?: SlotResponsiveImages
   label: string
+  wagerMultiplier?: number
 }
 
 export type ThemedSymbolSetOptions = {
@@ -71,13 +73,16 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
       label: symbol.label,
       image: symbol.image,
       ...(symbol.responsiveImages ? { responsiveImages: symbol.responsiveImages } : {}),
+      ...(symbol.wagerMultiplier !== undefined ? { wagerMultiplier: symbol.wagerMultiplier } : {}),
       animatedImage: symbol.image,
     }
   }
-  const additional = options.additionalSymbols?.['8']
-  if (additional) {
-    definitions['8'] = {
-      id: '8',
+  for (const id of ADDITIONAL_THEME_SYMBOL_IDS) {
+    const additional = options.additionalSymbols?.[id]
+    if (!additional) continue
+
+    definitions[id] = {
+      id,
       label: additional.label,
       image: additional.image,
       ...(additional.responsiveImages ? { responsiveImages: additional.responsiveImages } : {}),

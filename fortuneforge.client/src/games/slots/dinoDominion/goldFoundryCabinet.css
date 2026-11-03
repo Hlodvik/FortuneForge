@@ -1,0 +1,198 @@
+.slot-game-frame[data-cabinet-theme='gold-foundry-cabinet-v1'][data-cabinet-chrome='simple'] {
+  aspect-ratio: 1.38 / 1;
+  border: 0;
+  border-radius: 0;
+  background: url('../../../assets/slots/games/gold-foundry/cabinet-frame.webp') center / 100% 100% no-repeat;
+  box-shadow: none;
+}
+
+.slot-game-frame[data-cabinet-theme='gold-foundry-cabinet-v1'][data-cabinet-chrome='simple'] .slot-game-frame__visuals {
+  position: absolute;
+  inset: 12.3% 6.9% 11.7%;
+  width: auto;
+  height: auto;
+  overflow: hidden;
+  padding: 0.35%;
+  border: 0;
+  border-radius: 1.6%;
+  background: var(--cabinet-visuals-backdrop) center / cover;
+  box-shadow: inset 0 0 1.1rem rgb(0 0 0 / 42%);
+}
+
+.slot-game-frame[data-cabinet-theme='gold-foundry-cabinet-v1'][data-cabinet-chrome='simple'] .slot-reel {
+  border-right-color: rgb(232 176 102 / 24%);
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] {
+  --foundry-crucible-size: clamp(7.6rem, min(18vw, 23dvh), 13.5rem);
+  --foundry-title-height: clamp(2.6rem, 8dvh, 4.6rem);
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__title-art {
+  display: block;
+  justify-self: center;
+  width: min(83%, 35rem);
+  height: var(--foundry-title-height);
+  object-fit: contain;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__cabinet-spotlight {
+  margin-block-start: -0.45rem;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible {
+  justify-self: start;
+  gap: clamp(0.35rem, 1.25vw, 1rem);
+  margin-block-start: -1.4rem;
+  margin-inline-start: 4%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-shadow: 0 1px 0.28rem #150b06, 0 0 0.55rem #150b06;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible-art {
+  position: relative;
+  isolation: isolate;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible-art::before {
+  position: absolute;
+  z-index: -1;
+  inset: auto 0 3% -5%;
+  height: 14%;
+  background: radial-gradient(ellipse, rgb(15 7 3 / 88%) 8%, rgb(19 9 5 / 52%) 43%, transparent 71%);
+  content: '';
+  pointer-events: none;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .gold-crucible {
+  inline-size: var(--foundry-crucible-size);
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible-copy {
+  gap: 0.18rem;
+  font-size: clamp(0.67rem, 1.15vw, 0.88rem);
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible-copy strong {
+  font-size: clamp(1.05rem, 1.8vw, 1.45rem);
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__local-controls {
+  min-height: 0;
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] > .slots-page__keyboard-help {
+  gap: 0.28rem clamp(0.45rem, 1.25vw, 0.9rem);
+  color: #f9eddc;
+  font-size: 0.64rem;
+  text-shadow: 0 1px 0.32rem #100904;
+}
+
+@media (min-width: 721px) {
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(
+      46rem,
+      calc((100dvh - var(--foundry-crucible-size) - var(--foundry-title-height) - 9.5rem) * 1.38),
+      calc(100% - 2 * clamp(8.15rem, 9.4vw, 10.5rem))
+    );
+  }
+}
+
+@media (max-width: 1050px) {
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    width: min(
+      100%,
+      46rem,
+      max(18rem, calc((100dvh - var(--foundry-crucible-size) - var(--foundry-title-height) - 9.5rem) * 1.38))
+    );
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__stage {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__stage > :is(
+    .slots-page__title-art,
+    .slots-page__cabinet-spotlight,
+    .slots-page__meter-stack,
+    .slots-page__local-controls
+  ) {
+    grid-column: 1 / -1;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible {
+    grid-column: 1;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__playbar {
+    grid-column: 2;
+    width: auto;
+    margin-inline-end: 0.45rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] {
+    --foundry-crucible-size: clamp(6.4rem, 32vw, 9rem);
+    --foundry-title-height: clamp(2.25rem, 9vw, 3.6rem);
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__crucible {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin-block-start: -0.4rem;
+    margin-inline-start: 0.45rem;
+    text-align: center;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] > .slots-page__keyboard-help {
+    display: flex;
+    margin-bottom: max(3.55rem, calc(env(safe-area-inset-bottom) + 2.75rem));
+  }
+}
+
+@media (max-width: 560px) {
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__footer {
+    padding-block: 0.15rem 0.3rem;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__outcome {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'label title'
+      'detail detail'
+      'next next';
+    padding: 0.42rem 0.6rem;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__outcome .game-outcome-banner__label {
+    padding: 0 0.45rem 0 0;
+    border-right: 1px solid rgb(255 255 255 / 16%);
+    border-bottom: 0;
+  }
+}
+
+@media (max-width: 720px), (max-height: 570px) {
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] {
+    overflow-y: auto;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__main {
+    flex: 1 0 auto;
+    overflow: visible;
+  }
+
+  .slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__footer {
+    flex-shrink: 0;
+  }
+}
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='foundry-sparks']::before {
+  content: '✦ · ✧ · ✦';
+  animation-name: result-dragon-embers;
+}

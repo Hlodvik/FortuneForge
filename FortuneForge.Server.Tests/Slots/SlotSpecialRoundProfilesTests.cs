@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
@@ -23,11 +24,11 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.JungleJackpotGameId, 3, 6, 22, 8)]
     [InlineData(SlotSpecialRoundProfiles.CandyCarnivalGameId, 4, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.DesertTreasuresGameId, 3, 7, 24, 7)]
-    [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 6, 26, 7)]
+    [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 0, 26, 0)]
     [InlineData(SlotSpecialRoundProfiles.NordicLegendsGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
-    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 3, 5, 40, 10)]
+    [InlineData(SlotSpecialRoundProfiles.DinoDominionGameId, 0, 0, 0, 0)]
     [InlineData(SlotSpecialRoundProfiles.RainbowRealmGameId, 3, 10, 60, 10)]
     public void FeaturedProfiles_ExposeTheirOwnScatterAndCollectionRules(
         string gameId,
@@ -76,17 +77,19 @@ public sealed class SlotSpecialRoundProfilesTests
         })
         .ToArray();
 
-        Assert.Equal(8, profiles.Count(profile => profile.UsesEnergy));
-        Assert.Equal(10, profiles.Count(profile => !profile.UsesDirectValueTokens));
-        Assert.Equal(5, profiles.Count(profile => !profile.UsesCollections));
-        Assert.All(profiles.Where(profile => !profile.UsesCollections), profile =>
+        Assert.Equal(6, profiles.Count(profile => profile.UsesEnergy));
+        Assert.False(profiles.Single(profile => profile.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId).UsesEnergy);
+        Assert.Equal(12, profiles.Count(profile => !profile.UsesDirectValueTokens));
+        Assert.Equal(7, profiles.Count(profile => !profile.UsesCollections));
+        Assert.All(profiles.Where(profile => !profile.UsesCollections && profile.ScatterAwardedSpins > 0), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(profiles, profile =>
             Assert.True(
-                profile.UsesCollections ||
+                profile.ScatterAwardedSpins == 0 || profile.UsesCollections ||
                 SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(
             profiles
+                .Where(profile => profile.CollectionFeatureMode is not null || profile.ScatterFeatureMode is not null)
                 .GroupBy(profile => profile.CollectionFeatureMode ?? profile.ScatterFeatureMode)
                 .Select(group => group.Count()),
             count => Assert.InRange(count, 1, 2));
@@ -109,7 +112,7 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
-            GameDefinitions = [Prototype()]
+            ClassicProfileTemplate = Prototype()
         }));
 
         var game = Assert.IsType<GameDefinition>(provider.GetGame(gameId));
@@ -142,12 +145,14 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         Assert.True(SlotSpecialRoundProfiles.TryGet(
             SlotSpecialRoundProfiles.RainbowRealmGameId, out var profile));
+        Assert.False(profile.UsesEnergy);
 
         var game = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
-            GameDefinitions = [Prototype()]
+            ClassicProfileTemplate = Prototype()
         })).GetGame(SlotSpecialRoundProfiles.RainbowRealmGameId);
         Assert.NotNull(game);
+        Assert.Null(game.Energy);
         Assert.Equal(3, game.FreeGames?.RequiredSymbols);
         Assert.Equal(10, game.FreeGames?.AwardedSpins);
 
@@ -162,6 +167,13 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Equal("sync", completedGlass.FeatureMode);
         Assert.Contains(completedGlass.Collections, collection =>
             collection.SealId == "sync" && collection.Count == 0 && collection.RequiredCount == 60);
+
+        var oldMeterBalance = SlotSpecialRoundProfiles.SettleDemo(
+            profile, [new SlotSealCollection("sync", 59, 40, 60)],
+            new Dictionary<string, int>(), wagerPoints: 40, energyCompleted: true);
+        Assert.Equal(0, oldMeterBalance.FreeSpinsAwarded);
+        Assert.Contains(oldMeterBalance.Collections, collection =>
+            collection.SealId == "sync" && collection.Count == 59);
     }
 
     [Fact]
@@ -169,7 +181,7 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
-            GameDefinitions = [Prototype()]
+            ClassicProfileTemplate = Prototype()
         }));
 
         var game = provider.GetGame(SlotSpecialRoundProfiles.PiratesFortuneGameId);
@@ -189,7 +201,8 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
-            GameDefinitions = [Prototype()],
+            GameDefinitions = [Prototype(SlotSpecialRoundProfiles.WukongGameId)],
+            ClassicProfileTemplate = Prototype(),
             ReelSets =
             [
                 new ReelSetDefinition
@@ -219,7 +232,7 @@ public sealed class SlotSpecialRoundProfilesTests
             Assert.Single(reel, symbol => symbol == "6");
             Assert.Single(reel, symbol => symbol == "7");
         });
-        Assert.Equal("reels", rainbow.Math.ReelSetId);
+        Assert.Equal(RainbowRealmSlotDefinitions.ReelSetId, rainbow.Math.ReelSetId);
         Assert.Equal(10, rainbow.FreeGames?.AwardedSpins);
     }
 
@@ -237,9 +250,46 @@ public sealed class SlotSpecialRoundProfilesTests
             symbol is "PAW" or "BOLT");
     }
 
-    private static GameDefinition Prototype() => new()
+    [Fact]
+    public void OptionsProvider_ResolvesEveryOtherTitleWithoutWukongConfigured()
     {
-        Id = SlotSpecialRoundProfiles.WukongGameId,
+        using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "appsettings.json")));
+        var options = settings.RootElement.GetProperty("Slots")
+            .Deserialize<SlotsOptions>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var template = Assert.IsType<GameDefinition>(options.ClassicProfileTemplate);
+        var original = new OptionsSlotsDefinitionProvider(Options.Create(options));
+        var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
+        {
+            ClassicProfileTemplate = template,
+            GameDefinitions = options.GameDefinitions.Where(game => game.Id != SlotSpecialRoundProfiles.WukongGameId).ToList(),
+            SymbolSets = options.SymbolSets,
+            ReelSets = options.ReelSets,
+            Paytables = options.Paytables
+        }));
+
+        Assert.Null(provider.GetGame(SlotSpecialRoundProfiles.WukongGameId));
+        Assert.Null(provider.GetGame(template.Id));
+        foreach (var profile in SlotSpecialRoundProfiles.All.Where(
+                     profile => profile.GameId != SlotSpecialRoundProfiles.WukongGameId))
+        {
+            var game = Assert.IsType<GameDefinition>(provider.GetGame(profile.GameId));
+            Assert.Equal(JsonSerializer.Serialize(original.GetGame(profile.GameId)), JsonSerializer.Serialize(game));
+            Assert.NotNull(provider.GetReelSet(game.Math.ReelSetId));
+            Assert.NotNull(provider.GetPaytable(game.Math.PaytableId));
+        }
+
+        var wukongOnly = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
+        {
+            GameDefinitions = [Prototype(SlotSpecialRoundProfiles.WukongGameId)]
+        }));
+        Assert.Equal(GoldFoundrySlotDefinitions.PaytableId,
+            wukongOnly.GetGame(SlotSpecialRoundProfiles.DinoDominionGameId)?.Math.PaytableId);
+        Assert.Null(wukongOnly.GetGame(SlotSpecialRoundProfiles.CosmicFortuneGameId));
+    }
+
+    private static GameDefinition Prototype(string id = "classic-profile-template-v1") => new()
+    {
+        Id = id,
         Layout = new GameLayoutDefinition { ReelCount = 5, VisibleRows = 4, PaylineCount = 23 },
         Symbols = new GameSymbolRules { SymbolSetId = "symbols", WildSymbolId = "ACE" },
         Matching = new GameMatchingRules(),

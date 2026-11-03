@@ -2,20 +2,20 @@
   "schemaVersion": 1,
   "sourceSha256": {
     "FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs": "f93e9f420ff6d774eee34d53326fc386d6a68f2ffb89f46c7c364652e00795ce",
-    "FortuneForge.Server/Controllers/DemoSlotsController.cs": "b300b638565a3905c698dd0db01842015cadabba79008a9d361a1dcaa4692479",
+    "FortuneForge.Server/Controllers/DemoSlotsController.cs": "08968dc06349312ce4795b07306f4a6de1a9a4447571ca8b2bd8c3d6f69fb7d5",
     "FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs": "f3e3a459bc32443358abbb634fb0c5a2eaa0cd5b9bbc3e135444138d9b7c8b4c",
     "FortuneForge.Server/Slots/Bonuses/EnergyBonus.cs": "b6b9fa35a517f4aeb870b1804ac8e0cceec60f45cc4beb570bdc53b393127a31",
     "FortuneForge.Server/Slots/Bonuses/FreeGameFrequency.cs": "7b9d1722ad1ecdb691433de55f05515806cdd4c883f4bbd9b47c0984f1b83c5c",
-    "FortuneForge.Server/Slots/Bonuses/MidnightVaultBonusPolicy.cs": "6cb25c893b2812bfacb7b703e62a168e450d6a8d2b85d8bfafd3a015d2e39750",
-    "FortuneForge.Server/Slots/Bonuses/MidnightVaultBonusRounds.cs": "cf47d246b99a3b8369c2ef58c812d5b73860aea358d9ece00f7e56377d65fc06",
+    "FortuneForge.Server/Slots/Bonuses/MidnightVaultBonusPolicy.cs": "6119ffe399eb0d0a122268688d254479e00f890079bfdd49b00bf54e12db0f7d",
+    "FortuneForge.Server/Slots/Bonuses/MidnightVaultBonusRounds.cs": "9be1731ec2f305ba8027ecca0eb572219e19349c1e256fcf7a9e3d5f2983bcb4",
     "FortuneForge.Server/Slots/Bonuses/PiratesGemBonus.cs": "4ff4997b6877f376090d64bc424d2b33b5a304fee7349289b07f20a6db8cdccd",
     "FortuneForge.Server/Slots/Bonuses/SealCollectionRules.cs": "ed4fc36f045dd8208a8c408c224901d76cb8c4ad9ff61a0991df7a759dae10bf",
     "FortuneForge.Server/Slots/Bonuses/SlotBonusRounds.cs": "78e7f16e50bb3ce948b144a544232445e51b847fe19a99714630914f2b32d470",
-    "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "d3fbf24303833823bd9a15cd971065aa438d0b762f6525e8eb454b1adc07cce2",
+    "FortuneForge.Server/Slots/Bonuses/SlotSpecialRoundProfiles.cs": "0e8b23ca5cf28f5eafbb32ff086aea12ac2bd828364decc67bfad20aa113c03e",
     "FortuneForge.Server/Slots/Bonuses/SpecialPointBonus.cs": "ffecc22667a24d31c23f95c037a94163324262cc5f1b8810b847191d8d88234e",
     "FortuneForge.Server/Slots/Configuration/ISlotsDefinitionProvider.cs": "7cff210496b23a2ed608b2f587a8455b3175d05ebd3d237d9ce36a20d5539e54",
-    "FortuneForge.Server/Slots/Configuration/MidnightVaultSlotDefinitions.cs": "a46310ae65e8039984705a12d9990cd775ed76665b136c70d773d512141288e8",
-    "FortuneForge.Server/Slots/Configuration/OptionsSlotsDefinitionProvider.cs": "4dba9e58de19c5681b20efa5ed44c374ca23f46c4990601a1e84f39298010b02",
+    "FortuneForge.Server/Slots/Configuration/MidnightVaultSlotDefinitions.cs": "88d2becb4a49771292944b47508311bff8bcff6b616268ef6e47e692e7ac72db",
+    "FortuneForge.Server/Slots/Configuration/OptionsSlotsDefinitionProvider.cs": "2d9df197570081cdcca89cf1b288014d491eb94541a544442bbad0b20542560f",
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Definitions.cs": "676e4a943dd7781eec75d5a884330c6252c9fc46bf4dd0ada0428175e95c179c",
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Games.cs": "cdeea48df33a85c16a7597ed686856564af3e7030d38aedc2ad0116cc189c64b",
     "FortuneForge.Server/Slots/Configuration/Validation/SlotsOptionsValidator.Paylines.cs": "e807643164f0721d8bc2a73580d91d885c3499931a72f95d23f44bc563f861c4",
@@ -31,18 +31,18 @@
     "FortuneForge.Server/Slots/Reels/CryptoReelGenerator.cs": "67cff780b60a557766c89edbd6000c1599783c9c6303783f7168f430ca6f0774",
     "FortuneForge.Server/Slots/Reels/IRandomIndexSource.cs": "0c57f931ae2a44346f01629827a317a79ba3df62a92a962efbf88a72817f9f69",
     "FortuneForge.Server/Slots/Reels/IReelGenerator.cs": "77cc02cc0b2e3e059155bfa51f9e59a6209c828745bdd5a8ffe63bff8d9d855a",
-    "FortuneForge.Server/Slots/Reels/MidnightVaultBaseReelSet.cs": "ff57c378fc5432a8bb94bd731ba50d34b8ac3e3580569a160c4ea2e3937e514d",
+    "FortuneForge.Server/Slots/Reels/MidnightVaultBaseReelSet.cs": "ab66722240e6ba8c1a18b4dc90fed0c2acb94e30174e1b8745cbd90b2fe3482d",
     "FortuneForge.Server/Slots/Reels/PiratesFortuneBaseReelSet.cs": "4bc0c8e2696c85ecbf69adb2525b84089b60108e76c67989364adf7045ea3bb2",
     "FortuneForge.Server/Slots/Reels/WukongBaseReelSet.cs": "8228446731f91899a9113bfeb87eec145dc5d0efd6d07119e848429c918a2711",
     "FortuneForge.Server/Slots/Spins/SpinService.Core.cs": "a4c84f5ddb41ba0cf9163806606987b90c311b6e97753bd75210a5ac301c690a",
-    "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "7d8bea23ae7a85d33fa1ceb78c50818d7e9a7f103e3619008e59917845aa0137",
-    "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "73c3446b777f88ff4d6ca84be3e5a0a2e93db875ed6a70ca7f06e9e6667c52c9",
+    "FortuneForge.Server/Slots/Spins/SpinService.Execution.cs": "74583a2ae262b3725187e3200ce35a4bfec502d80489b90d6ef99440dc2a9c55",
+    "FortuneForge.Server/Slots/Spins/SpinService.Features.cs": "10a8ee2adaaf5871647c950d6236d7c773c227be97fd881c81ad3f9979a0f9bd",
     "FortuneForge.Server/Slots/Spins/SpinService.Payouts.cs": "48106bae2cada4361d70d4b9ac6474057c49855e67e18e5226b267eaec2793fe",
     "FortuneForge.Server/Slots/Spins/SpinService.Support.cs": "5e3f4d65f16254bbb743c577a6811e3ec9523a21378cd6a98eb272074e3f39da",
-    "FortuneForge.Server/appsettings.json": "847626eb443d4c182f12ffa1de8f52de9f4a0bbd7c7ecc51e2049bbd48a03578",
+    "FortuneForge.Server/appsettings.json": "ae88fce869890e9558e0dab74e8f064ed4a8c877af39ff1787bbb4374db99806",
     "fortuneforge.client/src/games/slots/routeRegistry.ts": "8415c1967a1a70d88c6afbf9cb6d13484e3fa2676d7770ae113edf6f1dc39915"
   },
-  "assemblySha256": "2777d80e530a65072882144f94c19e4c95911d472e8bf1d6729590377abad435",
+  "assemblySha256": "fbc0c1602dd63c678b496b82b6855f817b32ece3073194b859cd830eaa310a3a",
   "contract": {
     "schemaVersion": 1,
     "route": {
@@ -64,8 +64,8 @@
       "usesDirectValueTokens": false,
       "scatterFeatureMode": null,
       "collectionFeatureMode": "rows-paw",
-      "baseReelSetId": "midnight-vault-reels-v1",
-      "targetHitRate": null,
+      "baseReelSetId": "midnight-vault-reels-v2",
+      "targetHitRate": 0.21,
       "paylinePatternIds": null,
       "payoutMultiplier": 1
     },
@@ -165,8 +165,8 @@
       ]
     },
     "math": {
-      "reelSetId": "midnight-vault-reels-v1",
-      "paytableId": "midnight-vault-paytable-v2",
+      "reelSetId": "midnight-vault-reels-v2",
+      "paytableId": "midnight-vault-paytable-v3",
       "payoutMultiplier": 1,
       "paylinePayoutSteps": [
         0,
@@ -196,7 +196,7 @@
       "fiveMatchPityMissLimit": 12,
       "targets": {
         "rtp": 0.9,
-        "hitRate": 0.3,
+        "hitRate": 0.21,
         "volatility": null
       }
     },
@@ -372,87 +372,87 @@
       {
         "symbolId": "2",
         "matchLength": 5,
+        "multiplier": 2
+      },
+      {
+        "symbolId": "3",
+        "matchLength": 3,
+        "multiplier": 1
+      },
+      {
+        "symbolId": "3",
+        "matchLength": 5,
+        "multiplier": 1
+      },
+      {
+        "symbolId": "4",
+        "matchLength": 3,
+        "multiplier": 1
+      },
+      {
+        "symbolId": "4",
+        "matchLength": 5,
         "multiplier": 4
       },
       {
-        "symbolId": "3",
+        "symbolId": "5",
         "matchLength": 3,
         "multiplier": 1
       },
       {
-        "symbolId": "3",
+        "symbolId": "5",
         "matchLength": 5,
-        "multiplier": 2
+        "multiplier": 4
       },
       {
-        "symbolId": "4",
+        "symbolId": "6",
         "matchLength": 3,
         "multiplier": 1
       },
       {
-        "symbolId": "4",
-        "matchLength": 5,
-        "multiplier": 7
-      },
-      {
-        "symbolId": "5",
-        "matchLength": 3,
-        "multiplier": 2
-      },
-      {
-        "symbolId": "5",
-        "matchLength": 5,
-        "multiplier": 7
-      },
-      {
-        "symbolId": "6",
-        "matchLength": 3,
-        "multiplier": 2
-      },
-      {
         "symbolId": "6",
         "matchLength": 5,
-        "multiplier": 8
+        "multiplier": 4
       },
       {
         "symbolId": "7",
+        "matchLength": 3,
+        "multiplier": 2
+      },
+      {
+        "symbolId": "7",
+        "matchLength": 5,
+        "multiplier": 6
+      },
+      {
+        "symbolId": "ACE",
         "matchLength": 3,
         "multiplier": 3
       },
       {
-        "symbolId": "7",
-        "matchLength": 5,
-        "multiplier": 11
-      },
-      {
-        "symbolId": "ACE",
-        "matchLength": 3,
-        "multiplier": 5
-      },
-      {
         "symbolId": "ACE",
         "matchLength": 5,
-        "multiplier": 18
+        "multiplier": 10
       },
       {
         "symbolId": "POWER",
+        "matchLength": 3,
+        "multiplier": 1
+      },
+      {
+        "symbolId": "POWER",
+        "matchLength": 5,
+        "multiplier": 2
+      },
+      {
+        "symbolId": "8",
         "matchLength": 3,
         "multiplier": 2
       },
       {
-        "symbolId": "POWER",
-        "matchLength": 5,
-        "multiplier": 4
-      },
-      {
-        "symbolId": "8",
-        "matchLength": 3,
-        "multiplier": 4
-      },
-      {
         "symbolId": "8",
         "matchLength": 5,
-        "multiplier": 14
+        "multiplier": 8
       }
     ],
     "observedRows": [
@@ -480,7 +480,7 @@
       },
       {
         "scenario": "base-win",
-        "seed": 4,
+        "seed": 12,
         "responses": 1,
         "triggerRows": 4,
         "continuationRows": [],

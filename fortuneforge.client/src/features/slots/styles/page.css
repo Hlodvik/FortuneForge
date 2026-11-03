@@ -41,12 +41,6 @@
     linear-gradient(180deg, rgb(5 3 18 / 8%), rgb(10 5 28 / 12%));
 }
 
-.slots-page--theme-backdrop[data-slot-theme='rainbow-realm-fruit-arcade-v1'] {
-  background:
-    linear-gradient(180deg, rgb(19 6 47 / 10%), rgb(13 7 36 / 38%)),
-    var(--slot-page-backdrop) center top / cover fixed no-repeat;
-}
-
 .slots-page__main {
   cursor: url('../../../assets/slots/ui/cursor-sparkle.svg') 3 3, auto;
 }

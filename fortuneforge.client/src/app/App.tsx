@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
-import slotBackgroundVideoMp4 from '../assets/slots/backgrounds/background-clouds-animated.mp4'
-import slotBackgroundVideoWebm from '../assets/slots/backgrounds/background-clouds-animated.webm'
+import { useEffect } from 'react'
 import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
@@ -11,10 +9,6 @@ import './styles/index.css'
 
 export default function App() {
   const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
-  const backgroundVideoRef = useRef<HTMLVideoElement | null>(null)
-  const userAgent = window.navigator?.userAgent ?? ''
-  const isGoogleChrome =
-    /\bChrome\//.test(userAgent) && !/\b(?:Edg|OPR)\//.test(userAgent)
   const slotRoute = findSlotRoute(pathname)
   const isPlayableGameRoute = slotRoute !== null || (
     pathname.startsWith('/games/') ||
@@ -23,13 +17,10 @@ export default function App() {
   )
   const usesThemeSpecificSlotBackdrop =
     slotRoute?.shellBackdrop === 'theme'
-  const shouldRenderDefaultShellVideo =
-    slotRoute?.id === 'wukong-journey-to-the-west' && slotRoute.shellBackdrop === 'default-clouds'
   const appShellClassName = [
     'app-shell',
     pathname === '/' ? 'app-shell--landing' : '',
     pathname === '/home' || pathname.startsWith('/home/') || pathname === '/balance' ? 'app-shell--home' : '',
-    shouldRenderDefaultShellVideo ? 'app-shell--wukong-clouds' : '',
     isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
     pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
@@ -39,21 +30,6 @@ export default function App() {
   ]
     .filter(Boolean)
     .join(' ')
-
-  const handleSlotSpinStateChange = useCallback(
-    (isSpinning: boolean) => {
-      const video = backgroundVideoRef.current
-      if (!video || !isGoogleChrome) return
-
-      if (isSpinning) {
-        video.pause()
-        return
-      }
-
-      void video.play().catch(() => undefined)
-    },
-    [isGoogleChrome],
-  )
 
   usePageTitle(pathname)
   useGamePresence(pathname)
@@ -77,33 +53,9 @@ export default function App() {
 
   return (
     <div className={appShellClassName}>
-      {shouldRenderDefaultShellVideo && (
-        <video
-          ref={backgroundVideoRef}
-          className="app-shell__background-video"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-        >
-          <source
-            src={slotBackgroundVideoMp4}
-            type="video/mp4"
-            media="(prefers-reduced-motion: no-preference)"
-          />
-          <source
-            src={slotBackgroundVideoWebm}
-            type="video/webm"
-            media="(prefers-reduced-motion: no-preference)"
-          />
-        </video>
-      )}
       <GameLeaveGuardProvider><AccountAccessBoundary><AppRoutes
         pathname={pathname}
         slotRoute={slotRoute}
-        onSpinStateChange={handleSlotSpinStateChange}
       /></AccountAccessBoundary></GameLeaveGuardProvider>
     </div>
   )

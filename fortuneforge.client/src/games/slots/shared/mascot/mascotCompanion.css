@@ -817,10 +817,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell--wukong-clouds > .app-shell__background-video {
-    display: none;
-  }
-
   .slots-page {
     background-attachment: scroll;
   }

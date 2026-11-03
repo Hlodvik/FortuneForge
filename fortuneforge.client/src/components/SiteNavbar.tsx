@@ -96,14 +96,16 @@ export function SiteNavbar({
   return <header className={classes} data-site-navbar data-game-navbar={isGame ? true : undefined}>
     <div className="site-navbar__leading">
       <SiteBrand href={signedIn ? '/home' : '/'} className="player-shell-header__brand" onNavigate={onNavigate} />
-      {isGame && <a className="player-shell-header__games" href={signedIn ? '/home#home-lobby-games-title' : '/demo'} onClick={onNavigate}>Other Games</a>}
+      {isGame && <a className="player-shell-header__games" href={signedIn ? '/home' : '/demo'} onClick={onNavigate}>Other Games</a>}
     </div>
     {!isGame && title && <strong className="in-game-navbar__title">{title}</strong>}
     {!isGame && actions && <div className="site-navbar__actions in-game-navbar__actions">{actions}</div>}
     {isPublic && <nav className="site-navbar__public-links" aria-label="Primary navigation">
       <a href="/#discover-games">Games</a>
-      {!hidePublicLogin && currentPublicPage !== 'login' && <a href="/login">Log in</a>}
-      {currentPublicPage !== 'create-account' && <a className="site-navbar__public-cta" href="/create-account">Create account</a>}
+      {!hidePublicLogin && currentPublicPage !== 'login' && currentPublicPage !== 'landing' && <a href="/login">Log in</a>}
+      {currentPublicPage === 'landing'
+        ? <a className="site-navbar__public-cta" href="/login">Log in</a>
+        : currentPublicPage !== 'create-account' && <a className="site-navbar__public-cta" href="/create-account">Create account</a>}
     </nav>}
     {mode === 'account' && account && <div className="site-navbar__account-tools"><HeaderBalance amount={balance ?? account.balances.slotsCredits} href="/balance" /><AccountAvatar account={account} /></div>}
     {isGame && <div className="in-game-navbar__account-tools">

@@ -143,9 +143,21 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
   for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport)
     await openStableSlot(page, '/slots/rainbow-realm/demo')
+    await expect(page.locator('.slot-reel [data-symbol="FREE"] .slot-symbol__image').first())
+      .toHaveAttribute('src', /orchard-rush-rainbow-v1-192\.webp/)
+    const pageArt = viewport.width > viewport.height
+      ? 'rainbow-realm-sunrise-valley-page-v1.webp'
+      : 'rainbow-realm-sunrise-valley-page-portrait-v1.webp'
+    const cabinet = page.locator('.slot-game-frame__visuals')
+    await expect(page.locator('.slots-page')).toHaveCSS('background-image', new RegExp(pageArt))
+    await expect(cabinet).toHaveCSS('background-image', /radial-gradient\(/)
+    await expect(cabinet).not.toHaveCSS('background-image', /url\(/)
+    const baseCabinetBackground = await cabinet.evaluate(element => getComputedStyle(element).backgroundImage)
     await page.getByRole('button', { name: 'Spin the reels' }).click()
     await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
     await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('10 bonus spins are ready')
+    await expect(page.locator('.rainbow-realm__bonus-intro > img'))
+      .toHaveAttribute('src', /orchard-rush-rainbow-v1-320\.webp/)
     await expect(page.locator('[data-rainbow-bonus="true"]')).toBeVisible()
     await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-intro-${viewport.width}.png`), fullPage: true })
     await page.getByRole('button', { name: 'Spin the reels' }).click()
@@ -165,7 +177,9 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
       }
     })
     await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-rush-${viewport.width}.png`), fullPage: true })
-    expect(metrics.background).toContain('rainbow-realm-twilight-orchard-bonus-v1.webp')
+    expect(metrics.background).toContain(pageArt)
+    await expect(cabinet).not.toHaveCSS('background-image', baseCabinetBackground)
+    await expect(cabinet).not.toHaveCSS('background-image', /url\(/)
     expect(metrics.documentWidth).toBeLessThanOrEqual(viewport.width + 1)
     expect(metrics.spinTop).toBeGreaterThanOrEqual(0)
     expect(metrics.spinBottom).toBeLessThanOrEqual(viewport.height)
@@ -560,6 +574,153 @@ test('legacy saved mute state no longer makes a slot launch muted', async ({ pag
   await expect(page.locator('.audio-settings__volume-heading output')).toHaveText('20%')
 })
 
+test('Gold Foundry credits its crucible payout and resets the fill', async ({ page }) => {
+  const response = spinFixture({
+    gameId: 'dino-dominion-v1',
+    wagerPoints: 2,
+    useFreeSpin: false,
+    freeSpinsRemaining: 0,
+    freeSpinWagerPoints: null,
+  }, 'loss')
+  const openingCharge = 99
+  const partialCharge = {
+    ...response,
+    spinId: '00000000-0000-4000-8000-000000000001',
+    payout: { totalPoints: 0, paylines: [] },
+    monkeyPawCount: 0,
+    moneyGrabPoints: 0,
+    freeSpinsRemaining: 0,
+    freeSpinWagerPoints: null,
+    freeSpinFeatureMode: null,
+    reels: response.reels.map((reel, index) => index === 2 ? ['BOLT', ...reel.slice(1)] : reel),
+    energyAwarded: openingCharge,
+    energyBalance: openingCharge,
+    energyMultiplierApplied: false,
+    payoutMultiplier: 1,
+    sealCollections: [],
+    crucibleWageredCents: 100_000,
+    cruciblePourValueCents: 15_000,
+    cruciblePoured: false,
+    cruciblePayoutCents: 0,
+  }
+  const fullCharge = {
+    ...partialCharge,
+    spinId: '00000000-0000-4000-8000-000000000002',
+    energyAwarded: 1,
+    energyBalance: 0,
+    crucibleWageredCents: 0,
+    cruciblePourValueCents: 0,
+    cruciblePoured: true,
+    cruciblePayoutCents: 15_007,
+  }
+  await page.route('**/api/slots/demo/status?**', (route) => route.fulfill({ status: 204 }))
+  await page.route('**/api/slots/demo/spins', (route) => {
+    const { energyBalance, crucibleWageredCents } = route.request().postDataJSON() as {
+      energyBalance: number
+      crucibleWageredCents: number
+    }
+    expect(crucibleWageredCents).toBe(energyBalance === 0 ? 0 : partialCharge.crucibleWageredCents)
+    return route.fulfill({ json: energyBalance === 0 ? partialCharge : fullCharge })
+  })
+
+  for (const { width, height, reducedMotion } of [
+    { width: 1366, height: 768, reducedMotion: 'no-preference' },
+    { width: 390, height: 844, reducedMotion: 'reduce' },
+  ] as const) {
+    await page.setViewportSize({ width, height })
+    await page.emulateMedia({ reducedMotion })
+    await openStableSlot(page, '/slots/dino-dominion/demo')
+
+    const crucible = page.getByRole('progressbar', { name: 'Gold crucible' })
+    const pourValue = page.locator('.slots-page__crucible-copy strong')
+    const spin = page.getByRole('button', { name: 'Spin the reels' })
+    await expect(crucible.locator('.gold-crucible')).toBeVisible()
+    await expect(page.locator('.slots-page__energy-track')).toHaveCount(0)
+    await expect(crucible).toHaveAttribute('aria-valuenow', '0')
+    await expect(crucible).toBeInViewport()
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width + 1)
+
+    await spin.click()
+    await expect(crucible).toHaveAttribute('aria-valuenow', String(openingCharge))
+    await expect(pourValue).toHaveText('R150.00')
+    await expect(crucible).not.toHaveAttribute('data-pouring', 'true')
+    await expect(spin).toBeEnabled()
+
+    await spin.click()
+    if (reducedMotion === 'no-preference') {
+      await expect(crucible).toHaveAttribute('data-pouring', 'true')
+      await expect(crucible).toHaveAttribute('aria-valuenow', '100')
+    }
+    await expect(crucible).toHaveAttribute('aria-valuenow', String(fullCharge.energyBalance))
+    await expect(crucible).not.toHaveAttribute('data-pouring', 'true')
+    await expect(pourValue).toHaveText('R0.00')
+    await expect(page.getByRole('status').filter({ hasText: 'R150.07 credited' })).toBeVisible()
+    await expect(page.locator('.slots-page__free-spin-badge')).toHaveCount(0)
+    await expect(page.getByLabel('Balance R10,149.07', { exact: true })).toBeVisible()
+  }
+})
+
+test('Gold Foundry shows a reel crucible payout separately from paylines', async ({ page }) => {
+  await page.route('**/api/slots/demo/status?**', (route) => route.fulfill({ status: 204 }))
+  await page.route('**/api/slots/demo/spins', (route) => {
+    const request = route.request().postDataJSON() as SpinRequest
+    return route.fulfill({
+      json: {
+        ...spinFixture(request, 'loss'),
+        reels: [
+          ['PAW', '2', '3', '4'],
+          ['5', '6', 'SEAL_ROWS', '2'],
+          ['7', '2', '3', '5'],
+          ['3', '5', '6', 'SEAL_RAND'],
+          ['2', '3', '4', '5'],
+        ],
+        monkeyPawCount: 1,
+        moneyGrabPoints: 5,
+        sealCollections: [],
+        payout: { totalPoints: 5, paylines: [] },
+      },
+    })
+  })
+
+  await openStableSlot(page, '/slots/dino-dominion/demo')
+  await expect(page.locator('.slots-page__seal-collections')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.getByText('Ingot haul', { exact: true })).toBeVisible()
+  await expect(page.getByText('+R1.25', { exact: true })).toBeVisible()
+  await expect(page.getByLabel('Balance R10,000.75', { exact: true })).toBeVisible()
+  await expect(page.getByText('Line win', { exact: true })).toHaveCount(0)
+  await expect(page.locator('.slots-page__free-spin-badge')).toHaveCount(0)
+})
+
+test('Wukong keeps its energy boost and ignores Foundry payout fields', async ({ page }) => {
+  const crucibleAssetRequests: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('gold-foundry-crucible-stages')) crucibleAssetRequests.push(request.url())
+  })
+  await page.route('**/api/slots/demo/status?**', (route) => route.fulfill({ status: 204 }))
+  await page.route('**/api/slots/demo/spins', (route) => {
+    const request = route.request().postDataJSON() as SpinRequest
+    expect(request).not.toHaveProperty('crucibleWageredCents')
+    return route.fulfill({
+      json: {
+        ...spinFixture(request, 'win'),
+        energyMultiplierApplied: true,
+        payoutMultiplier: 1.5,
+        cruciblePoured: true,
+        cruciblePayoutCents: 15_000,
+      },
+    })
+  })
+
+  await openStableSlot(page, '/slots/wukong/demo')
+  await expect(page.locator('.slots-page__energy-track')).toHaveCount(1)
+  await expect(page.locator('.gold-crucible')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Spin the reels' }).click()
+  await expect(page.getByText(/boost ×1\.5/)).toBeVisible()
+  await expect(page.getByLabel('Balance R10,001.50', { exact: true })).toBeVisible()
+  expect(crucibleAssetRequests).toEqual([])
+})
+
 async function openStableSlot(page: Page, path: string) {
   await page.goto(path)
   await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
@@ -638,7 +799,8 @@ function spinFixture(request: SpinRequest, kind: SpinKind, options: DemoApiOptio
     spinId: '00000000-0000-4000-8000-000000000001',
     gameId: request.gameId,
     reelSetId: 'visual-fixture-reels-v1',
-    symbolSetId: 'wukong-treasures-v3',
+    symbolSetId: isRainbowRealm ? 'rainbow-realm-symbols-v1'
+      : request.gameId === 'dino-dominion-v1' ? 'gold-foundry-symbols-v1' : 'wukong-treasures-v3',
     paytableId: 'visual-fixture-paytable-v1',
     wagerPoints: request.wagerPoints,
     pointValueInCents: 25,

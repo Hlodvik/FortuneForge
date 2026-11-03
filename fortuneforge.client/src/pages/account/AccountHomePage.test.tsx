@@ -157,13 +157,45 @@ describe('account home', () => {
   })
   it.each([['Slots', 'Slots', 20], ['Cards', 'Card games', 9], ['Casino', 'Table games', 6], ['Puzzles', 'Other games', 5], ['All%20games', 'Popular', 40], ['Popular', 'Popular', 40], ['invalid', 'Popular', 40]])('preserves %s links across login', (query, label, count) => {
     window.history.replaceState(null, '', '/home?category=' + query + '#home-lobby-games-title')
+    if (label === 'Slots') {
+      state.popularity = [
+        { id: 'wukong-journey-to-the-west', route: '/slots/wukong', playCount: 500 },
+        { id: 'candy-carnival', route: '/slots/candy-carnival', playCount: 400 },
+      ]
+    }
     const host = staticHome()
     expect(host.querySelectorAll('.home-lobby__game-card')).toHaveLength(count)
     expect(host.querySelector('.home-lobby__filters [aria-pressed="true"]')?.textContent).toBe(label)
-    expect(state.returnPath).toBe('/home?category=' + query + '#home-lobby-games-title')
+    expect(state.returnPath).toBe('/home?category=' + query)
     expect(host.querySelector('.game-catalogue-rail') !== null).toBe(label === 'Popular')
     expect(host.querySelector('.home-lobby__game-grid') !== null).toBe(label !== 'Popular')
     if (label !== 'Popular') expect(host.querySelector('.game-catalogue-rail__arrow')).toBeNull()
+    if (label === 'Slots') {
+      const routes = Array.from(host.querySelectorAll('.home-lobby__game-card')).map(card => card.getAttribute('href'))
+      expect(routes.slice(0, 8)).toEqual([
+        '/slots/neon-nights', '/slots/gods-of-olympus', '/slots/arcane-archives', '/slots/dino-dominion',
+        '/slots/rainbow-realm', '/slots/pirates-fortune', '/slots/candy-carnival', '/slots/wukong',
+      ])
+    }
+  })
+  it('cleans a legacy catalogue bookmark without adding a history entry', async () => {
+    const historyState = { key: 'catalogue' }
+    window.history.replaceState(historyState, '', '/home?category=Slots#home-lobby-games-title')
+    const historyLength = window.history.length
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+    try {
+      await act(async () => root.render(<HomePage />))
+      expect(window.location.pathname + window.location.search + window.location.hash).toBe('/home?category=Slots')
+      expect(window.history.length).toBe(historyLength)
+      expect(window.history.state).toEqual(historyState)
+      expect(host.querySelector('.home-lobby__filters [aria-pressed="true"]')?.textContent).toBe('Slots')
+    } finally {
+      await act(async () => root.unmount())
+      host.remove()
+    }
   })
   it('puts Keno, Drop Merge, 2048 and Solitaire in Other games and restores all games', async () => {
     const host = document.createElement('div'); document.body.append(host)

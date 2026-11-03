@@ -96,7 +96,7 @@ export function AccountHistoryContent({ account }: { account: AccountSummary }) 
                   <span aria-hidden="true">♠</span>
                   <strong>No tracked spins yet</strong>
                   <p>Play Fortune Slots while logged in and your results will appear here.</p>
-                  <a className="home-lobby__gold-button" href="/home?category=Slots#home-lobby-games-title">Play slots</a>
+                  <a className="home-lobby__gold-button" href="/home?category=Slots">Play slots</a>
                 </div>
               )}
               {spins.length > 0 && (

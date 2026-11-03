@@ -39,7 +39,7 @@ describe.each(games)('$catalog.title site navigation', game => {
     expect(navbar.querySelector('button[aria-label="Open settings"]')).toBeNull()
     expect(navbar.textContent).not.toContain(game.experience.cabinet.title)
     expect(navbar.querySelector('[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe(demoMode ? '/' : '/home')
-    expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe(demoMode ? '/demo' : '/home#home-lobby-games-title')
+    expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe(demoMode ? '/demo' : '/home')
     const balance = navbar.querySelector('.site-header-balance')!
     expect(navbar.querySelectorAll('.site-header-balance')).toHaveLength(1)
     expect(balance.tagName).toBe(demoMode ? 'SPAN' : 'A')

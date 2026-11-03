@@ -1,7 +1,9 @@
 import neonJewelCloudsGold from '../../../assets/slots/backgrounds/optimized/neon-jewel-clouds-gold.png'
 import wukongMedallion from '../../../assets/slots/symbols/wukong/wukong-medallion.png'
 import wukongPowerSeal from '../../../assets/slots/symbols/wukong/wukong-power-seal.png'
+import staff from '../../../assets/slots/symbols/wukong/celestial-staff.png'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
+import './wukongCabinet.css'
 
 export const WUKONG_CABINET_THEME: SlotCabinetTheme = {
   id: 'wukong-celestial-arcade-v1',
@@ -12,6 +14,8 @@ export const WUKONG_CABINET_THEME: SlotCabinetTheme = {
   subtitle: 'To the West',
   emblemImage: wukongMedallion,
   accentImage: wukongPowerSeal,
+  spinIconImage: staff,
+  controlLayout: 'integrated',
   backdropImage: neonJewelCloudsGold,
   visualsBackdropImage: neonJewelCloudsGold,
   pageBackdropImage: neonJewelCloudsGold,

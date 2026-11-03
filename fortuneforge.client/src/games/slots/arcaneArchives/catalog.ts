@@ -5,7 +5,7 @@ export const ARCANE_ARCHIVES_CATALOG: SlotGameCatalogDefinition = {
   id: 'arcane-archives',
   title: 'Arcane Archives',
   shortTitle: 'Arcane Archives',
-  description: 'Open the forbidden stacks, build four rune shelves, and let an enchanted satchel gather raw mana.',
+  description: 'Open the forbidden stacks, build four seal shelves, and let an enchanted satchel gather raw mana.',
   image: art.owl,
   imagePresentation: 'contain',
   slotDivBackgroundImage: art.backdrop,

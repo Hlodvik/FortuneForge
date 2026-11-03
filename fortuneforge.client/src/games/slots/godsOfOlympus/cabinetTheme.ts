@@ -1,5 +1,6 @@
 import olympusEmblem from '../../../assets/slots/games/gods-of-olympus/optimized/olympus-emblem.png'
 import olympusTerrace from '../../../assets/slots/games/gods-of-olympus/optimized/olympus-terrace.png'
+import olympusWordmark from '../../../assets/slots/games/gods-of-olympus/optimized/olympus-wordmark-v1.webp'
 import sapphireLaurelJewel from '../../../assets/slots/games/gods-of-olympus/optimized/sapphire-laurel-jewel.png'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
 
@@ -9,6 +10,7 @@ export const GODS_OF_OLYMPUS_CABINET_THEME: SlotCabinetTheme = {
   accessibleName: 'Gods of Olympus slot machine',
   eyebrow: 'Fortune Forge presents',
   title: 'Gods of Olympus',
+  titleArtwork: { src: olympusWordmark, width: 640, height: 328 },
   subtitle: 'Claim the Divine Tribute',
   celebrationEffect: 'olympus-storm',
   emblemImage: olympusEmblem,

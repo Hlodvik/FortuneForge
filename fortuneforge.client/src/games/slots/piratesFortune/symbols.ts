@@ -1,3 +1,4 @@
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '../../../features/slots/config/symbolSets'
 import type { SlotSymbolSet } from '../../../features/slots/config/symbolSets'
 import { pirateSymbolImages } from './responsiveSymbols'
 
@@ -25,7 +26,7 @@ const doubloonValueSymbol = (
 
 export const PIRATES_FORTUNE_SYMBOLS: SlotSymbolSet = {
   id: 'pirates-fortune-treasures-v1',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   definitions: {
     '2': staticSymbol('2', 'Rum bottle', pirateSymbolImages.rumBottleV2),
     '3': staticSymbol('3', 'Brass compass', pirateSymbolImages.compass),

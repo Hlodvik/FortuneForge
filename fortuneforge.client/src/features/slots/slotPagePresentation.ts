@@ -10,6 +10,12 @@ export const slotPointsToRand = (points: number, pointValueInCents: number) =>
 export const getSlotSymbolValueLabel = (
   definition: SlotSymbolDefinition,
   wager: number,
-) => definition.wagerMultiplier === undefined
-  ? definition.valueLabel
-  : formatRand(wager * definition.wagerMultiplier)
+  pointValueInCents?: number,
+) => {
+  const multiplier = definition.wagerMultiplier
+  if (multiplier === undefined) return definition.valueLabel
+  if (pointValueInCents === undefined) return formatRand(wager * multiplier)
+
+  const wagerPoints = Math.round(wager * 100 / pointValueInCents)
+  return formatRand(slotPointsToRand(Math.round(wagerPoints * multiplier), pointValueInCents))
+}

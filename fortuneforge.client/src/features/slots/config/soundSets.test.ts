@@ -3,7 +3,9 @@ import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
 import * as soundSets from './soundSets'
-import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
+import { WUKONG_TREASURES_SOUNDS } from '../../../games/slots/wukong/sounds'
+import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/dinoDominion/sounds'
+import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS } from './soundSets'
 import type { SlotSoundSet } from './soundSets'
 import { useSlotAudio } from '../hooks/useSlotAudio'
 import { loadAllSlotGameManifests } from '../../../games/slots/routeRegistry'
@@ -103,17 +105,31 @@ describe('Reel Riches sound set', () => {
 })
 
 describe('catalogue audio provenance and allocation', () => {
-  const allSoundSets = Object.values(soundSets)
-  const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
+  const allSoundSets = [...Object.values(soundSets), WUKONG_TREASURES_SOUNDS, GOLD_FOUNDRY_SOUNDS]
+  const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3|vault-win-noir\.wav)$/
   const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
+  const arcaneMusicSource = '/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg'
+  const olympusMusicSource = '/assets/slots/audio-suites/v1/gods-of-olympus/secret-sanctum-v1.ogg'
+  const neonSpecialMusicSource = '/assets/slots/audio-suites/v1/neon-nights/special-plays-music-v1.ogg'
+  const neonWinSource = '/assets/slots/audio-suites/v1/neon-nights/win-nice-v1.ogg'
+  const foundryAmbienceSource = '/assets/slots/gold-foundry/v1/audio/foundry-working-room.ogg'
+  const ambienceSourceOverrides: Partial<Record<string, string>> = {
+    'arcane-archives': arcaneMusicSource,
+    'gods-of-olympus': olympusMusicSource,
+    'dino-dominion': foundryAmbienceSource,
+  }
+  const documentedFoundrySource = /^\/assets\/slots\/gold-foundry\/v1\/audio\/(?:hammer-ring|spin-button-metal-hit|forge-bellows-and-crackling-fire|reel-brake)\.wav$/
 
-  it('enables seventeen original suites while retaining the three excluded title selections', async () => {
+  it('enables seventeen themed suites while retaining the three excluded title selections', async () => {
     const manifests = await loadAllSlotGameManifests()
     expect(manifests).toHaveLength(20)
     expect(allSoundSets).toHaveLength(21)
     for (const game of manifests) {
       const sounds = game.experience.sounds
       expect(allSoundSets).toContain(sounds)
+      if (game.id !== 'wukong-journey-to-the-west') {
+        expect(Object.values(sounds.cues).map(cue => cue.source).join('\n')).not.toMatch(/\/wukong-[^/]+\.wav/)
+      }
       expect(sounds.cues[sounds.events.ambience]).toMatchObject(game.id === 'dragon-hoard'
         ? {
           source: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3',
@@ -123,16 +139,31 @@ describe('catalogue audio provenance and allocation', () => {
           source: expect.stringMatching(/^disabled:opentracks\/[^/]+\.mp3$/),
           category: 'effect', loop: true, enabled: false,
         } : {
-          source: `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
+          source: ambienceSourceOverrides[game.id] ?? `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
           category: 'effect', loop: true, enabled: true,
         })
+      if (game.id === 'arcane-archives') {
+        expect(sounds.events.specialAmbience).toBeUndefined()
+        expect(sounds.cues['special-ambience'].source).toBe(arcaneMusicSource)
+      }
+      if (game.id === 'gods-of-olympus') {
+        expect(sounds.cues[sounds.events.ambience]?.baseVolume).toBe(0.12)
+      }
+      if (game.id === 'neon-nights') {
+        expect(sounds.cues[sounds.events.specialAmbience!]).toMatchObject({
+          source: neonSpecialMusicSource, category: 'effect', loop: true, enabled: true,
+        })
+      }
     }
     for (const sounds of allSoundSets) {
       for (const cue of Object.values(sounds.cues)) {
         if (cue.source.startsWith('disabled:')) {
           expect(cue.enabled).toBe(false)
         } else {
-          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source)).toBe(true)
+          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
+            (sounds === GOLD_FOUNDRY_SOUNDS && (documentedFoundrySource.test(cue.source) || cue.source === foundryAmbienceSource)) ||
+            cue.source === arcaneMusicSource || cue.source === olympusMusicSource ||
+            cue.source === neonSpecialMusicSource || cue.source === neonWinSource, cue.source).toBe(true)
         }
       }
     }

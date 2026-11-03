@@ -2,7 +2,6 @@ import { readFileSync } from 'node:fs'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import * as slotRoutes from '../games/slots'
 import { SLOT_ROUTE_DEFINITIONS } from '../games/slots/routeRegistry'
 import App from './App'
 
@@ -16,18 +15,6 @@ describe('app shell slot media isolation', () => {
     expect(renderApp('/account')).not.toContain('app-shell__background-video')
     expect(renderApp('/')).not.toContain('app-shell__background-video')
     expect(renderApp('/')).toContain('app-shell--landing')
-  })
-
-  it('permits legacy cloud shell media only for an explicit Wukong opt-in', () => {
-    const wukong = SLOT_ROUTE_DEFINITIONS.find(route => route.id === 'wukong-journey-to-the-west')!
-    const route = vi.spyOn(slotRoutes, 'findSlotRoute')
-    route.mockReturnValue({ ...wukong, shellBackdrop: 'default-clouds' })
-    expect(renderApp('/slots/wukong')).toContain('app-shell--wukong-clouds')
-    expect(renderApp('/slots/wukong')).toContain('app-shell__background-video')
-
-    route.mockReturnValue({ ...wukong, id: 'another-slot', shellBackdrop: 'default-clouds' })
-    expect(renderApp('/slots/another-slot')).not.toContain('app-shell--wukong-clouds')
-    expect(renderApp('/slots/another-slot')).not.toContain('app-shell__background-video')
   })
 
   it.each([
@@ -54,7 +41,7 @@ describe('app shell slot media isolation', () => {
     expect(defaultBackdrop).toContain('background: none')
     expect(defaultBackdrop).toContain('content: none')
     expect(defaultBackdrop).not.toContain('url(')
-    expect(shellStyles.match(/\.app-shell--wukong-clouds::before\s*\{([^}]*)\}/)?.[1]).toContain('background-clouds-poster.webp')
+    expect(shellStyles).not.toContain('background-clouds-poster.webp')
     expect(rootStyles).toMatch(/:root\s*\{[^}]*background: var\(--ff-home-background, #090a0d\)/)
     expect(rootStyles).toMatch(/html\s*\{[^}]*background: var\(--ff-home-background, #090a0d\)/)
     expect(mascotStyles).not.toContain('background-clouds-poster')

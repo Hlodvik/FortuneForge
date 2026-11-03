@@ -1,0 +1,84 @@
+.wukong-paw-preview {
+  box-sizing: border-box; min-height: 100dvh; padding: clamp(1rem, 3vw, 2.5rem);
+  background: radial-gradient(ellipse at 50% 30%, #44202e, #170e1b 65%); color: #fff1d3;
+  font: 400 14px/1.5 'Sora Variable', system-ui, sans-serif;
+}
+.wukong-paw-preview *, .wukong-paw-preview *::before, .wukong-paw-preview *::after { box-sizing: border-box; }
+.wukong-paw-preview > :is(header, section, p, footer) { width: min(100%, 68rem); margin-inline: auto; }
+.wukong-paw-preview button, .wukong-paw-preview input { font: inherit; }
+.wukong-paw-preview button { min-height: 44px; border: 1px solid #b69556; border-radius: .65rem; background: #322431; color: #fff1d3; padding: .55rem .8rem; cursor: pointer; }
+.wukong-paw-preview button:hover:not(:disabled) { background: #604031; border-color: #ffe4a3; }
+.wukong-paw-preview button:disabled { cursor: default; opacity: .5; }
+.wukong-paw-preview :is(button, input):focus-visible { outline: 3px solid #67eee3; outline-offset: 3px; }
+.wukong-paw-preview__heading { text-align: center; padding-block: .4rem 1.2rem; }
+.wukong-paw-preview__local-badge { color: #f4d18b; font-size: .67rem; font-weight: 750; letter-spacing: .13em; }
+.wukong-paw-preview h1 { margin: .45rem 0; font-size: clamp(1.5rem, 4.5vw, 2.5rem); letter-spacing: -.04em; }
+.wukong-paw-preview h2 { margin: 0; font-size: 1rem; }
+.wukong-paw-preview p { margin-block: .4rem; }
+.wukong-paw-preview__heading p { color: #cdbfd0; }
+.wukong-paw-preview__earn-role { display: grid; grid-template-columns: 3.6rem minmax(0, 1fr) auto; gap: .7rem; align-items: center; padding: 1rem; border: 1px solid #766653; border-radius: 1rem; background: #211f26; }
+.wukong-paw-preview__earn-role p { color: #c7bfc6; font-size: .76rem; }
+.wukong-paw-preview__earn-role strong { color: #8aebe0; font-size: .8rem; }
+.wukong-paw-preview__earn-role > small { grid-column: 2 / -1; color: #d6bd88; font-size: .71rem; }
+.wukong-paw-preview__scroll-icon { display: block; width: 100%; height: 100%; max-width: 4rem; max-height: 4rem; }
+.wukong-paw-preview__fixture-toggle { display: flex; align-items: center; gap: .5rem; min-height: 44px; font-size: .75rem; }
+.wukong-paw-preview__fixture-toggle input { width: 1.15rem; height: 1.15rem; accent-color: #e9c779; }
+.wukong-paw-preview__rack { margin-block: 1rem; padding: 1rem; border: 1px solid #a57c45; border-radius: 1.1rem; background: linear-gradient(160deg, #4d2028, #2c1721); box-shadow: inset 0 0 0 3px #cba45d0b; }
+.wukong-paw-preview__rack-heading { display: flex; flex-wrap: wrap; gap: .35rem 1rem; align-items: baseline; justify-content: space-between; }
+.wukong-paw-preview__rack-heading > span { color: #f8d693; font-size: .83rem; }
+.wukong-paw-preview__rack > p { color: #dbbec6; font-size: .75rem; }
+.wukong-paw-preview__grants { display: flex; flex-wrap: wrap; gap: .7rem; padding-top: .6rem; }
+.wukong-paw-preview .wukong-paw-preview__grant { display: grid; flex: 0 1 9rem; justify-items: center; gap: .15rem; min-width: 7rem; padding: .55rem; background: radial-gradient(ellipse at 50% 30%, #86493c, #301b28 75%); }
+.wukong-paw-preview .wukong-paw-preview__grant[aria-pressed='true'] { outline: 2px solid #69ece3; outline-offset: 2px; }
+.wukong-paw-preview__grant img { width: 4rem; height: 4rem; object-fit: contain; pointer-events: none; }
+.wukong-paw-preview__grant > span { font-weight: 750; }
+.wukong-paw-preview__grant small { font-size: .58rem; color: #e7c796; }
+.wukong-paw-preview__empty { color: #c8bdc9; }
+.wukong-paw-preview__status { min-height: 2.8rem; display: grid; place-items: center; padding: .5rem; text-align: center; color: #e8d3ad; }
+.wukong-paw-preview__error { border: 1px solid #ef9675; border-radius: .6rem; padding: .7rem; color: #ffd7c9; }
+.wukong-paw-preview__cabinet { position: relative; padding-block: .5rem; }
+.wukong-paw-preview .slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'] { width: 100%; max-width: none; min-height: 0; aspect-ratio: auto; margin: 0; }
+.wukong-paw-preview .slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'] .slot-game-frame__visuals { position: relative; inset: auto; padding: clamp(.6rem, 2vw, 1.4rem); }
+.wukong-paw-preview .slot-machine { display: block; height: auto; }
+.wukong-paw-preview .slot-machine__playfield { display: block; min-height: 0; }
+.wukong-paw-preview .slot-machine__reels { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .35rem; padding: .35rem; }
+.wukong-paw-preview .slot-reel { min-height: 0; overflow: visible; }
+.wukong-paw-preview .slot-reel__content { position: relative; inset: auto; display: block; min-height: 0; padding: 0; }
+.wukong-paw-preview__reel-stack { position: relative; display: grid; grid-auto-rows: clamp(3.2rem, 9vw, 6.6rem); gap: .15rem; padding-top: 2.1rem; }
+.wukong-paw-preview .slot-symbol { min-width: 0; width: 100%; height: 100%; min-height: 0; aspect-ratio: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.wukong-paw-preview .slot-symbol__artwork { width: 100%; height: 100%; min-width: 0; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.wukong-paw-preview .slot-symbol__image { width: 100%; height: 100%; object-fit: contain; }
+.wukong-paw-preview .wukong-paw-preview__column { position: absolute; z-index: 4; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: .1rem; width: 100%; padding: .18rem; border: 2px dashed #f8d49666; border-radius: .4rem; background: transparent; font-size: clamp(.5rem, 1.5vw, .78rem); }
+.wukong-paw-preview .wukong-paw-preview__column strong { font-size: .75em; color: #ffe6aa; }
+.wukong-paw-preview .wukong-paw-preview__column:disabled { opacity: 1; border-color: transparent; }
+.wukong-paw-preview .wukong-paw-preview__column:disabled strong { opacity: .55; }
+.wukong-paw-preview .wukong-paw-preview__column:hover:not(:disabled), .wukong-paw-preview .wukong-paw-preview__column[data-drop-active='true'] { background: #70e8d821; border-color: #7df2e6; }
+.wukong-paw-preview .wukong-paw-preview__column[data-placed='true'] { border-style: solid; border-color: #ffdd81; box-shadow: inset 0 0 1rem #f8d47040; }
+.wukong-paw-preview__earn-symbol { display: grid; place-items: center; align-content: center; min-width: 0; color: #f2d899; }
+.wukong-paw-preview__earn-symbol small { font-size: clamp(.34rem, .8vw, .55rem); text-align: center; }
+.wukong-paw-preview__spin-lock { position: absolute; z-index: 5; inset: .5rem 0; display: grid; place-items: center; border-radius: 1rem; background: #1f101ccc; color: #ffdf93; font-weight: 750; backdrop-filter: blur(2px); }
+.wukong-paw-preview__controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(14rem, auto); gap: 1rem; padding-top: 1rem; }
+.wukong-paw-preview__controls fieldset { min-width: 0; border: 1px solid #827056; border-radius: .8rem; padding: .7rem; }
+.wukong-paw-preview__controls legend { padding-inline: .35rem; font-size: .78rem; }
+.wukong-paw-preview__wagers { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .45rem; }
+.wukong-paw-preview__wagers button[aria-pressed='true'] { border-color: #ffe0a2; background: #704530; }
+.wukong-paw-preview__controls fieldset small { color: #c2b6c5; font-size: .7rem; }
+.wukong-paw-preview__actions { display: flex; flex-direction: column; justify-content: center; gap: .5rem; }
+.wukong-paw-preview .wukong-paw-preview__spin { background: linear-gradient(150deg, #f3d08b, #b98540); color: #241629; border-color: #ffdf9a; font-weight: 750; }
+.wukong-paw-preview__result { margin-block: 1rem; padding: 1rem; border: 1px solid #598d83; border-radius: .9rem; background: #142f2b; }
+.wukong-paw-preview__result dl { display: flex; flex-wrap: wrap; gap: .8rem 2rem; margin: .7rem 0; }
+.wukong-paw-preview__result dt { color: #b9d5c9; font-size: .75rem; }
+.wukong-paw-preview__result dd { margin: 0; color: #ffdfa3; font-size: 1.1rem; font-weight: 750; }
+.wukong-paw-preview__result p { color: #c0d7ce; font-size: .76rem; }
+.wukong-paw-preview__footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .8rem; padding-block: .8rem; color: #bbabbe; font-size: .7rem; }
+@media (max-width: 600px) {
+  .wukong-paw-preview { padding: .75rem; font-size: 13px; }
+  .wukong-paw-preview__earn-role { grid-template-columns: 2.7rem minmax(0, 1fr); padding: .7rem; }
+  .wukong-paw-preview__fixture-toggle { grid-column: 1 / -1; }
+  .wukong-paw-preview__earn-role > small { grid-column: 1 / -1; }
+  .wukong-paw-preview__rack { padding: .7rem; }
+  .wukong-paw-preview__grants { gap: .4rem; }
+  .wukong-paw-preview .wukong-paw-preview__grant { flex: 1 1 6.1rem; min-width: 0; padding: .4rem .2rem; }
+  .wukong-paw-preview__grant img { width: 3rem; height: 3rem; }
+  .wukong-paw-preview__controls { grid-template-columns: minmax(0, 1fr); }
+}

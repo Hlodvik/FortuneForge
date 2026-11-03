@@ -1,20 +1,23 @@
 import { withEngineGuide } from '../shared/engineGuide'
-import { WUKONG_TREASURES_SOUNDS } from '../../../features/slots/config/soundSets'
 import { createSlotRulesSet, type SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
 import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots/config/slotFeatures'
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { WUKONG_CABINET_THEME } from './cabinetTheme'
 import { WUKONG_CATALOG } from './catalog'
+import { WUKONG_TREASURES_SOUNDS } from './sounds'
 import { WUKONG_SYMBOLS } from './symbols'
 
 const WUKONG_FEATURES: SlotFeatureSet = {
   energy: {
     label: 'Energy',
     symbol: 'BOLT',
+    milestones: [25, 50, 75, 100],
   },
   collections: {
     ariaLabel: 'Power seal collections',
     presentation: 'celestial-orbit',
+    completionTitle: 'Celestial seal awakened',
+    completionDetail: 'The seal stays awakened while matching seals are banked for the next quest.',
     entries: [
       {
         id: 'sync', label: 'Synced reels', displayLabel: 'Mirror Reel', shortLabel: 'Sync', symbol: 'SEAL_SYNC', requiredCount: 40,
@@ -81,6 +84,8 @@ export const WUKONG_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide({
   mascot: null,
   sounds: WUKONG_TREASURES_SOUNDS,
   rules: createSlotRulesSet('wukong-journey-v1', {
+    baseSpinSpeedMultiplier: 1.2,
+    reelTravelRowCount: 4,
     initialReels: [
       ['2', '3', '4', 'BOLT'],
       ['3', '4', '5', '6'],

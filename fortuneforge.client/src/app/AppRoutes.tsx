@@ -57,7 +57,7 @@ export function AppRoutes({
 }: {
   pathname: string
   slotRoute: SlotRouteDefinition | null
-  onSpinStateChange: (isSpinning: boolean) => void
+  onSpinStateChange?: (isSpinning: boolean) => void
 }) {
   const loadingEntry = resolveGameLoadingEntry(pathname)
   const invoiceMatch = pathname.match(/^\/home\/invoices\/([A-Za-z0-9]+)$/)
@@ -69,9 +69,9 @@ export function AppRoutes({
   else if (pathname === '/demo/cards') route = <DemoCardLibraryPage demoMode />
   else if (pathname === '/demo/cards/blackjack') route = <DemoBlackjackPage demoMode />
   else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage />
-  else if (pathname === '/slots') route = <CatalogueHomeRedirect href="/home?category=Slots#home-lobby-games-title" />
-  else if (pathname === '/cards') route = <CatalogueHomeRedirect href="/home?category=Cards#home-lobby-games-title" />
-  else if (pathname === '/games') route = <CatalogueHomeRedirect href="/home#home-lobby-games-title" />
+  else if (pathname === '/slots') route = <CatalogueHomeRedirect href="/home?category=Slots" />
+  else if (pathname === '/cards') route = <CatalogueHomeRedirect href="/home?category=Cards" />
+  else if (pathname === '/games') route = <CatalogueHomeRedirect href="/home" />
   else if (pathname === '/games/asteroids') route = <AuthenticatedAsteroidsRoute />
   else if (pathname === '/games/2048') route = <AuthenticatedTwentyFortyEightRoute />
   else if (pathname === '/games/drop-merge') route = <AuthenticatedDropMergeRoute />

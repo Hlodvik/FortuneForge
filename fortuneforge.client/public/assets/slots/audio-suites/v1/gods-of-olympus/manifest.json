@@ -2,7 +2,7 @@
   "version": 1,
   "slug": "gods-of-olympus",
   "title": "Gods of Olympus",
-  "originalComposition": true,
+  "originalComposition": false,
   "theme": "Harp arpeggios, restrained bronze chimes, ceremonial low drums and warm horn harmony.",
   "bpm": 102,
   "bonusBpm": 110,
@@ -17,7 +17,7 @@
   "channels": 2,
   "sourceGenerator": "tools/audio-suites/render-themed-suites.mjs",
   "generatorSha256": "c210219097f6eefd50a0bdf748d204258f9092121fa5360e29d4fd289c870efd",
-  "provenance": "All sounds are original offline algorithmic compositions and synthesis. No licensed or unlicensed external recordings, borrowed melodies, scraped sound effects, or network services are used. Neon Nights uses the unchanged user-approved original PCM masters.",
+  "provenance": "The twenty baseline cues are original offline compositions and synthesis. Base music uses Viktor Kraus’s Secret Sanctum under CC BY 3.0, converted from the creator’s MP3 to Ogg Vorbis.",
   "tracks": [
     {
       "id": "night-drive",
@@ -697,6 +697,44 @@
         "codec": "vorbis",
         "container": "ogg",
         "quality": 5
+      }
+    },
+    {
+      "id": "secret-sanctum-v1",
+      "title": "Secret Sanctum · base music",
+      "group": "Music",
+      "file": "secret-sanctum-v1.ogg",
+      "url": "/assets/slots/audio-suites/v1/gods-of-olympus/secret-sanctum-v1.ogg",
+      "loop": true,
+      "volume": 0.12,
+      "description": "Viktor Kraus’s temple score at a low playback gain.",
+      "durationSeconds": 375.076848,
+      "peakDbfs": -0.351,
+      "rmsDbfs": -14.662,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 16540889,
+      "decodedPeakDbfs": -0.351,
+      "decodedRmsDbfs": -14.662,
+      "decodeVerified": true,
+      "bytes": 5113309,
+      "sha256": "bf12dfe241774fa76906f2f0726ffc59755eca0c2efd70b32fff1f885f455116",
+      "source": {
+        "type": "cc-by-3.0-artist-mp3-transcode",
+        "title": "Secret Sanctum",
+        "creator": "Viktor Kraus",
+        "url": "https://opengameart.org/content/secret-sanctum",
+        "downloadUrl": "https://opengameart.org/sites/default/files/Viktor%20Kraus%20-%20Secret%20Sanctum.mp3",
+        "license": "CC BY 3.0",
+        "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+        "sha256": "5d8cce9f06029ed618b6c1d3eeef35066be4ffd13f39a4dc25eca492949f828a",
+        "bytes": 15005778,
+        "attribution": "Composed, performed, mixed and mastered by Viktor Kraus. Orchestral samples from the Vienna Symphonic Library."
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 3
       }
     }
   ]

@@ -114,7 +114,7 @@ describe('Andar Bahar connected route', () => {
     expect(host.querySelector('.andar-bahar-page')?.matches('[data-game-surface]')).toBe(true)
     expect(navbar.querySelector('[aria-label="Balance R100.00. Add funds"]')).not.toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
-    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
+    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('.in-game-navbar__title')).toBeNull()
     expect(host.querySelector('.in-game-navbar__actions')).toBeNull()
     expect(host.textContent).not.toContain('Try practice')

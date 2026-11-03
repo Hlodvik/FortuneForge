@@ -85,7 +85,7 @@ foreach (var autoBoost in boostModes)
     var provider = new Definitions(underlying, multiplier);
     var result = CalibrationRunner.Run(provider, profile, schedule, cycles, seed, autoBoost, arguments.ContainsKey("--integer-search"));
     results.Add(result);
-    Console.WriteLine($"{wager} points; multiplier {multiplier}; seed {seed}; boost {autoBoost}: RTP {result.Rtp:P4}; hit {result.HitRate:P3}; total spins {result.TotalSpins}; pass {result.PolicyPass}");
+    Console.WriteLine($"{wager} points; multiplier {multiplier}; seed {seed}; boost {autoBoost}: RTP {result.Rtp:P4}; hit {result.HitRate:P3}; letters {result.CombinedLetterVisibleShare:P3}; total spins {result.TotalSpins}; pass {result.PolicyPass}");
 }
 var hashesAfter = Hashes();
 var stable = hashesBefore.Count == hashesAfter.Count && hashesBefore.All(pair => hashesAfter.GetValueOrDefault(pair.Key) == pair.Value);
@@ -97,11 +97,13 @@ var report = new
     runtimeEngine, engineAssemblyStable = serverAssemblyStable,
     scope = "Headless real SpinService.SpinAdmitted with pure MidnightVaultBonusRounds queue and exact weighted gem totals. No account store, wallet, HTTP, or other games are exercised.",
     policy = new { rtpTarget = actualGame.Math.Targets.Rtp, hitRateTarget = actualGame.Math.Targets.HitRate, tolerance = 0.02m,
-        rtpMustBeBelow = 1m, source = "tools/FortuneForge.SlotMath/Program.cs:370-390" },
+        rtpMustBeBelow = 1m, visibleLetterShareTarget = .39, visibleLetterShareTolerance = .02,
+        lettersTopFourIsDescriptiveOnly = true, source = "Existing SlotMath RTP/hit/ruin rules; current user-directed letter share39% +/-2pp" },
     featureCarry = "Exact gem wager-point totals, pity, special points and FIFO rounds persist between paid cycles. Every awarded round locks its own wager/mode/model. All bonus spins and retriggers resolve before the next paid cycle.",
     mixedStakeLimit = "Mixed stakes use the same pure weighted-total/round-queue helper as paid settlement, including odd derived wagers via SpinAdmitted. This headless run does not exercise Firestore admission/idempotency/wallet transactions.",
     confidence = "Approximate 95% interval: mean of up to 50 contiguous batch RTPs +/- 2 standard errors; feature-state correlation is retained within batches. Not an exact mathematical RTP proof.",
-    sourceStable = stable, sourceHashesBefore = hashesBefore, sourceHashesAfter = hashesAfter, results
+    sourceStable = stable, sourceHashesBefore = hashesBefore, sourceHashesAfter = hashesAfter, results,
+    integerSearchSelection = arguments.ContainsKey("--integer-search") ? IntegerSearchSelection.Create(results) : null
 };
 if (arguments.TryGetValue("--out", out var outputPath)) Write(outputPath, report);
 if (!stable || !serverAssemblyStable) throw new InvalidOperationException("Source or server assembly changed while measuring; results are not a final calibration.");

@@ -25,8 +25,8 @@ namespace FortuneForge.MidnightAudit
         public static readonly long[] DerivedWagers = Enumerable.Range(2, 1999).Select(value => (long)value).ToArray();
         private static readonly IReadOnlyDictionary<string, (long Three, long Five)> Rates = new Dictionary<string, (long, long)>(StringComparer.Ordinal)
         {
-            ["2"] = (1, 4), ["3"] = (1, 2), ["4"] = (1, 7), ["5"] = (2, 7),
-            ["6"] = (2, 8), ["7"] = (3, 11), ["8"] = (4, 14), ["ACE"] = (5, 18), ["POWER"] = (2, 4)
+            ["2"] = (1, 2), ["3"] = (1, 1), ["4"] = (1, 4), ["5"] = (1, 4),
+            ["6"] = (1, 4), ["7"] = (2, 6), ["8"] = (2, 8), ["ACE"] = (3, 10), ["POWER"] = (1, 2)
         };
 
         public static void Require(bool condition, string message)
@@ -37,7 +37,8 @@ namespace FortuneForge.MidnightAudit
             var game = provider.GetGame(GameId)!;
             var table = provider.GetPaytable(game.Math.PaytableId)!;
             Require(game.Math.PayoutMultiplier == 1m, "Integer proof requires actual scalar 1.0.");
-            Require(table.Id == "midnight-vault-paytable-v2", "Integer proof requires versioned v2 paytable.");
+            Require(table.Id == "midnight-vault-paytable-v3", "Integer proof requires the active rebalanced v3 paytable.");
+            Require(game.Math.ReelSetId == "midnight-vault-reels-v2", "Integer proof requires the isolated rebalanced reel model.");
             Require(game.Layout.ReelCount == 5 && game.Layout.VisibleRows == 4 && game.Layout.PaylineCount == 23, "Unexpected layout.");
             Require(game.Math.PaylinePayoutSteps.All(value => value == 0), "Expected zero full-match steps.");
             Require(game.Matching.MinimumRunLength == 3, "The one-match-per-five-reel-line bound requires minimum run 3.");
@@ -55,7 +56,7 @@ namespace FortuneForge.MidnightAudit
                 Require(table.Rules.Single(rule => rule.SymbolId == id && rule.MatchLength == 3).Multiplier == rate.Three, "Unexpected three-match rate for " + id);
                 Require(table.Rules.Single(rule => rule.SymbolId == id && rule.MatchLength == 5).Multiplier == rate.Five, "Unexpected five-match rate for " + id);
             }
-            Require(table.Rules.All(rule => rule.Multiplier > 0 && rule.Multiplier <= 18), "Positive paying support and overflow bound changed.");
+            Require(table.Rules.All(rule => rule.Multiplier > 0 && rule.Multiplier <= 10), "Positive paying support and overflow bound changed.");
         }
 
         // Price in integer coefficients, not by rounding a reference wager or
@@ -141,7 +142,7 @@ namespace FortuneForge.MidnightAudit
             Require(OracleKeys(native).SequenceEqual(EngineNativeKeys(result.Payout)), "Whole-spin selected native geometry mismatch.");
             Require(egg.SequenceEqual(EngineEggGeometries(result.Payout)), "Whole-spin smooth-777 pattern geometry mismatch.");
             CheckAmounts(result.Payout, result.WagerPoints);
-            Require(result.Payout.TotalPoints <= 600L * result.WagerPoints, "Enhanced-spin conservative bound exceeded.");
+            Require(result.Payout.TotalPoints <= 416L * result.WagerPoints, "Enhanced-spin conservative bound exceeded.");
             Require(game.Energy is null && result.EnergyAwarded == 0 && result.MoneyGrabPoints == 0, "Disabled noninteger path became active.");
         }
 
@@ -224,12 +225,12 @@ namespace FortuneForge.MidnightAudit
                     CheckAmounts(result.Payout, wager);
                 }
             }
-            Require((BigInteger)2000 * (23 * 18 + 62 * 3) == 1_200_000, "Conservative overflow bound changed.");
+            Require((BigInteger)2000 * (23 * 10 + 62 * 3) == 832_000, "Conservative overflow bound changed.");
             return new { admittedWagers = AdmittedWagers.Length, minimum = 2, maximum = 2000, step = 2,
                 derivedBonusWagers = DerivedWagers.Length, derivedStep = 1,
                 fixtureCases = cases.Length, nativeReprices = checkedPrices, selectedGeometryChecked = true,
                 featureSpinReprices = DerivedWagers.Length * 2, eggPatternsBase = 34, eggPatternsEnhanced = 62,
-                enhancedCoefficientBound = 600, maximumSpinPointsBound = 1_200_000, maximumSpinCentsBound = 30_000_000 };
+                enhancedCoefficientBound = 416, maximumSpinPointsBound = 832_000, maximumSpinCentsBound = 20_800_000 };
         }
 
         public static object QueueArithmetic(ISlotsDefinitionProvider provider)
@@ -445,17 +446,49 @@ namespace FortuneForge.Server.Tests.Slots
                 new PaylineEvaluation(3, [new MatchCandidate([Match("8", 5, 3)])])
             };
             var priced = FortuneForge.MidnightAudit.IntegerPayoutOracle.Native(input);
-            // ACE native-three5 beats J five2. Its claimed three-cell geometry
-            // then excludes POWER three2. Full cash-five14 always survives.
-            Assert.Equal(19, priced.Coefficient);
+            // ACE native-three3 beats J five1. Its claimed three-cell geometry
+            // then excludes POWER three1. Full cash-five8 always survives.
+            Assert.Equal(11, priced.Coefficient);
             Assert.Equal(new[] { "8", "ACE" }, priced.Lines.SelectMany(line => line.Matches).Select(match => match.Match.SymbolId).Order(StringComparer.Ordinal));
-            Assert.Equal(new BigInteger(38000), (BigInteger)2000 * priced.Coefficient);
+            Assert.Equal(new BigInteger(22000), (BigInteger)2000 * priced.Coefficient);
         }
 
         [Fact]
         public void WeightedRounds_LockIndependentTermsAndAdmitOddDerivedWagersWithoutChangingCashMenu()
         {
             FortuneForge.MidnightAudit.IntegerPayoutOracle.QueueArithmetic(Provider());
+        }
+
+        [Fact]
+        public void RebalancedModel_KeepsPriorModelReelsAndPayoutsSeparate()
+        {
+            var provider = Provider();
+            var active = provider.GetGame("dragon-hoard-v1")!;
+            var v1 = MidnightVaultSlotDefinitions.CreateGameForPaytable(active, "midnight-vault-paytable-v1");
+            var v2 = MidnightVaultSlotDefinitions.CreateGameForPaytable(active, "midnight-vault-paytable-v2");
+            Assert.Equal("midnight-vault-reels-v1", v1.Math.ReelSetId);
+            Assert.Equal("midnight-vault-reels-v1", v2.Math.ReelSetId);
+            Assert.Equal("midnight-vault-reels-v2", active.Math.ReelSetId);
+            Assert.Equal(1.09m, v1.Math.PayoutMultiplier);
+            Assert.Equal(1m, v2.Math.PayoutMultiplier);
+            Assert.Equal(1m, active.Math.PayoutMultiplier);
+            Assert.Equal(6, provider.GetPaytable(v1.Math.PaytableId)!.Rules.Single(rule => rule.SymbolId == "5" && rule.MatchLength == 5).Multiplier);
+            Assert.Equal(7, provider.GetPaytable(v2.Math.PaytableId)!.Rules.Single(rule => rule.SymbolId == "5" && rule.MatchLength == 5).Multiplier);
+            var previous = provider.GetReelSet(v2.Math.ReelSetId)!;
+            var current = provider.GetReelSet(active.Math.ReelSetId)!;
+            int[][] letterCounts = [[7, 7, 6, 6], [6, 6, 7, 7], [6, 7, 7, 6], [7, 6, 6, 7], [7, 7, 6, 6]];
+            for (var reel = 0; reel < 5; reel++)
+            {
+                Assert.Equal(64, current.Reels[reel].Count);
+                for (var letter = 0; letter < 4; letter++)
+                    Assert.Equal(letterCounts[reel][letter], current.Reels[reel].Count(symbol => symbol == (letter + 2).ToString()));
+                Assert.Equal(10, current.Reels[reel].Count(symbol => symbol == "6"));
+                Assert.Equal(10, current.Reels[reel].Count(symbol => symbol == "7"));
+                Assert.Equal(9, current.Reels[reel].Count(symbol => symbol == "8"));
+                for (var stop = 0; stop < 64; stop++)
+                    if (previous.Reels[reel][stop] is "ACE" or "FREE" or "POWER")
+                        Assert.Equal(previous.Reels[reel][stop], current.Reels[reel][stop]);
+            }
         }
 
         [Theory]

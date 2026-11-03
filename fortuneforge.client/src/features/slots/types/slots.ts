@@ -1,3 +1,5 @@
+import type { GodsTumbleResult } from '../../../games/slots/godsOfOlympus/tumble'
+
 export const slotSymbolIds = [
   '2',
   '3',
@@ -6,6 +8,10 @@ export const slotSymbolIds = [
   '6',
   '7',
   '8',
+  'A',
+  'J',
+  'K',
+  'Q',
   'ACE',
   'FREE',
   'POWER',
@@ -30,6 +36,12 @@ export type SlotSymbolId = (typeof slotSymbolIds)[number]
 export type GridPosition = {
   reel: number
   row: number
+}
+
+export type LightningCollection = {
+  collector: GridPosition
+  cells: (GridPosition & { amountPoints: number })[]
+  totalPoints: number
 }
 
 export type SymbolMatch = {
@@ -74,6 +86,22 @@ export type MidnightVaultDemoState = {
   collectionWagerPoints: Record<string, number>
 }
 
+export type NeonArcadeResult = {
+  modelId: 'neon-arcade-local-v2'
+  calibrated: false
+  bonusSymbolCount: number
+  boostPercentPerSymbol: number
+  paylineBoostMultiplier: number
+  unboostedPaylinePoints: number
+  paylineBoostPoints: number
+  featureGamesEnabled: boolean
+  activators: {
+    kind: 'car' | 'disco-ball' | 'arcade-cabinet'
+    symbolId: '6' | 'POWER' | 'SEAL_RAND'
+    positions: GridPosition[]
+  }[]
+}
+
 export type SpinResult = {
   spinId: string
   gameId: string
@@ -95,14 +123,21 @@ export type SpinResult = {
   queuedBonusRounds?: MidnightVaultBonusRound[]
   awardedBonusRounds?: MidnightVaultBonusRound[]
   midnightBonusState?: MidnightVaultDemoState | null
+  neonArcade?: NeonArcadeResult | null
+  olympusTumble?: GodsTumbleResult
   specialPointsAwarded: number
   specialPointsBalance: number
   energyAwarded: number
   energyBalance: number
   energyMultiplierApplied: boolean
+  crucibleWageredCents?: number
+  cruciblePourValueCents?: number
+  cruciblePoured?: boolean
+  cruciblePayoutCents?: number
   payoutMultiplier: number
   monkeyPawCount: number
   moneyGrabPoints: number
+  lightningCollection?: LightningCollection | null
   bananaBonusPoints: number
   sealsAwarded: Record<string, number>
   sealCollections: SlotSealCollection[]

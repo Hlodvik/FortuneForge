@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Net;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.Controllers;
+using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
@@ -10,6 +12,8 @@ using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 const int defaultPaidSpins = 250_000;
@@ -22,6 +26,12 @@ var configurationPath = args.FirstOrDefault(argument => argument.EndsWith(".json
 var paidSpinCount = args.Select(argument => int.TryParse(argument, out var parsed) ? parsed : 0)
     .FirstOrDefault(value => value > 0);
 paidSpinCount = paidSpinCount > 0 ? paidSpinCount : defaultPaidSpins;
+if (args.Contains("--olympus-demo", StringComparer.OrdinalIgnoreCase))
+{
+    OlympusTumbleSimulation.Run(paidSpinCount, defaultSeed);
+    return;
+}
+
 var requestedGameArgumentIndex = Array.FindIndex(
     args,
     argument => string.Equals(argument, "--game", StringComparison.OrdinalIgnoreCase));
@@ -112,6 +122,13 @@ foreach (var configuredGame in gamesToAnalyze)
     ValidateServerWagerAllowlist();
     ValidateSpecialPointBoost();
 
+    if (GoldFoundrySlotDefinitions.IsModel(game))
+    {
+        RunFoundrySpins();
+        PrintReport(checked(wager * (long)game.Wagering.PointValueInCents));
+        continue;
+    }
+
     if (game.Id == SlotSpecialRoundProfiles.DragonHoardGameId)
     {
         RunMidnightFifoCycles();
@@ -136,6 +153,46 @@ foreach (var configuredGame in gamesToAnalyze)
     }
 
     PrintReport();
+}
+
+void RunFoundrySpins()
+{
+    // Use the same demo settlement that applies the exact-cent qualifying-wager pour.
+    var controller = new DemoSlotsController(requestValidator, new NoOpDemoSlotAuditStore(),
+        NullLogger<DemoSlotsController>.Instance);
+    var pointCents = checked((long)game.Wagering.PointValueInCents);
+    var wagerCents = checked(wager * pointCents);
+    var qualifyingWagerCents = 0L;
+    var collectorCents = 0L;
+    var pourCents = 0L;
+    for (var paidSpin = 0; paidSpin < paidSpinCount; paidSpin++)
+    {
+        var action = controller.Spin(new DemoSpinRequest(game.Id, wager, false, 0, null, energyBalance,
+            CrucibleWageredCents: qualifyingWagerCents), CancellationToken.None).GetAwaiter().GetResult();
+        var result = (action as OkObjectResult)?.Value as SpinResult
+            ?? throw new InvalidOperationException("The Foundry demo controller rejected the simulation spin.");
+        energyBalance = result.EnergyBalance;
+        qualifyingWagerCents = result.CrucibleWageredCents!.Value;
+        var spinPourCents = result.CruciblePayoutCents!.Value;
+        collectorCents = checked(collectorCents + result.MoneyGrabPoints * pointCents);
+        pourCents = checked(pourCents + spinPourCents);
+        var payout = new SpinPayout(checked(result.Payout.TotalPoints * pointCents + spinPourCents),
+            result.Payout.Paylines.Select(line => line with
+            {
+                AmountPoints = checked(line.AmountPoints * pointCents),
+                Matches = line.Matches.Select(match => match with
+                {
+                    AmountPoints = checked(match.AmountPoints * pointCents)
+                }).ToArray()
+            }).ToArray());
+        var fullMatch = result.Payout.Paylines.SelectMany(line => line.Matches)
+            .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
+        statistics.RecordSpin(payout, fullMatch, result.FiveMatchPityTriggered, false,
+            result.FreeSpinsAwarded, result.SpecialPointsAwarded, result.EnergyAwarded, false, wagerCents);
+        statistics.RecordCycle(payout.TotalPoints, wagerCents);
+    }
+    Console.WriteLine($"Reel collector return: {collectorCents / (decimal)statistics.TotalPaidWager:P3}");
+    Console.WriteLine($"Crucible pour return: {pourCents / (decimal)statistics.TotalPaidWager:P3}");
 }
 
 void RunMidnightFifoCycles()
@@ -367,7 +424,7 @@ SpinPayout MultiplyPayout(SpinPayout payout, decimal multiplier)
     };
 }
 
-void PrintReport()
+void PrintReport(long reportingWager = wager)
 {
     Console.WriteLine($"Configuration: {Path.GetFullPath(configurationPath)}");
     Console.WriteLine($"Seed: {defaultSeed:N0}; paid spins: {statistics.PaidSpins:N0}; total resolved spins: {statistics.TotalSpins:N0}");
@@ -398,9 +455,9 @@ void PrintReport()
     Console.WriteLine($"Special points awarded per paid spin: {statistics.SpecialPointsAwarded / (decimal)statistics.PaidSpins:N4}");
     Console.WriteLine($"Energy awarded per paid spin: {statistics.EnergyAwarded / (decimal)statistics.PaidSpins:N4}");
     Console.WriteLine($"Power-boosted resolved spins: {statistics.SpecialBoostSpins / (decimal)statistics.TotalSpins:P3}");
-    Console.WriteLine($"Average return on a hit: {statistics.HitPayout / (decimal)Math.Max(1, statistics.HitSpins) / wager:N2}x wager");
-    Console.WriteLine($"Largest resolved-spin payout: {statistics.MaxSpinPayout / (decimal)wager:N1}x wager");
-    Console.WriteLine($"Largest paid-cycle payout including free games: {statistics.MaxCyclePayout / (decimal)wager:N1}x wager");
+    Console.WriteLine($"Average return on a hit: {statistics.HitPayout / (decimal)Math.Max(1, statistics.HitSpins) / reportingWager:N2}x wager");
+    Console.WriteLine($"Largest resolved-spin payout: {statistics.MaxSpinPayout / (decimal)reportingWager:N1}x wager");
+    Console.WriteLine($"Largest paid-cycle payout including free games: {statistics.MaxCyclePayout / (decimal)reportingWager:N1}x wager");
 
     Console.WriteLine();
     Console.WriteLine("Payout contribution by paid symbol:");
@@ -420,7 +477,7 @@ void PrintReport()
             $"{contribution.Value / (decimal)statistics.TotalPaidWager,8:P3} of paid wager");
     }
 
-    var bankroll = statistics.EstimateBankrollDepletion(wager, defaultSeed + 1);
+    var bankroll = statistics.EstimateBankrollDepletion(reportingWager, defaultSeed + 1);
     Console.WriteLine();
     Console.WriteLine(
         $"Bankroll trial (100 starting bets, up to 1,000 paid spins): {bankroll.RuinRate:P2} ran out; " +
@@ -462,4 +519,9 @@ void ValidateTargets(decimal ruinRate)
 
     Console.WriteLine();
     Console.WriteLine("PASS: configured RTP, hit-rate, and bankroll-depletion safeguards are satisfied.");
+}
+
+sealed class NoOpDemoSlotAuditStore : IDemoSlotAuditStore
+{
+    public Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken) => Task.CompletedTask;
 }

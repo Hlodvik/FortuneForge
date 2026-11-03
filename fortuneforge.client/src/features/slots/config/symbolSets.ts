@@ -1,5 +1,8 @@
 import type { SlotSymbolId } from '../types/slots'
 
+/** Stable wire identifier for the shared classic symbol vocabulary. */
+export const CLASSIC_SLOT_SYMBOL_SET_ID = 'wukong-treasures-v3'
+
 /** Matches the responsive artwork contract already used by Rainbow Realm and Pirates. */
 export type SlotResponsiveImages = Readonly<
   { 96: string; 192: string } & ({ 256: string; 320?: never } | { 256?: never; 320: string })
@@ -36,6 +39,7 @@ export type SlotSymbolSet = {
   serverSymbolSetId?: string
   definitions: Readonly<Partial<Record<SlotSymbolId, SlotSymbolDefinition>>>
   guideEntries: readonly SlotSymbolGuideEntry[]
+  guideSubtitle?: string
   /** Opt-in reel filler identities for games with dormant compatibility metadata. */
   animationSymbolIds?: readonly SlotSymbolId[]
   /** Optional explanation for a game's displayed, calibrated multipliers. */

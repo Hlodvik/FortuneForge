@@ -1,0 +1,117 @@
+.slots-page[data-slot-theme='gods-of-olympus-cabinet-v1'] .slots-page__title-art {
+  display: block;
+  justify-self: center;
+  width: min(65%, 18rem);
+  height: clamp(2.75rem, 12svh, 6.5rem);
+  object-fit: contain;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] :is(.slot-symbol, .slot-symbol__artwork) {
+  min-width: 0;
+  min-height: 0;
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.gods-tumble__cell {
+  min-width: 0;
+  min-height: 0;
+}
+
+.gods-tumble__cell--clear {
+  z-index: 1;
+  animation: gods-tumble-clear 500ms ease-in-out both;
+}
+
+:is(.gods-tumble__cell--award, .gods-tumble__cell--clear) .slot-symbol--winner::before,
+:is(.gods-tumble__cell--award, .gods-tumble__cell--clear) .slot-symbol__image {
+  animation: none;
+}
+
+.gods-tumble__award {
+  --gods-tumble-award-inset: min(20%, 4.25rem);
+  position: absolute;
+  z-index: 30;
+  top: clamp(1.25rem, var(--gods-tumble-award-y), calc(100% - 1.25rem));
+  left: clamp(var(--gods-tumble-award-inset), var(--gods-tumble-award-x), calc(100% - var(--gods-tumble-award-inset)));
+  transform: translate(-50%, -50%);
+  padding: 0.2em 0.55em;
+  border: 1px solid #ffda7c;
+  border-radius: 0.4em;
+  background: #12132f;
+  box-shadow: 0 0.16rem 0.5rem rgb(9 10 32 / 80%);
+  color: #fff0b8;
+  font-size: clamp(0.85rem, 2.6vw, 1.45rem);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.gods-tumble__cell--drop {
+  animation: gods-tumble-drop calc(280ms + 45ms * var(--gods-tumble-rows)) cubic-bezier(0.44, 0.04, 0.8, 0.84) both;
+}
+
+.gods-tumble__score {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  gap: 0.15rem 0.8rem;
+  color: #fff0c8;
+  font-size: clamp(0.68rem, 1.5vw, 0.9rem);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  text-shadow: 0 1px 0.25rem #120d26, 0 1px 0.4rem #120d26;
+}
+
+.gods-tumble__score:empty {
+  position: absolute;
+}
+
+.gods-tumble__final-win {
+  padding-inline: 0.2em;
+  color: #ffe5a0;
+  font: italic 900 clamp(1.8rem, min(6.5vw, 6.5svh), 3.25rem)/1.08 Georgia, 'Times New Roman', serif;
+  text-shadow:
+    0 1px #9b4d0e,
+    0 3px #552415,
+    0 4px 0.45rem #110d25,
+    0 0 1rem rgb(249 177 55 / 65%);
+  animation: gods-tumble-win-pop 330ms ease-out both;
+}
+
+.slots-page__result-atmosphere[data-celebration='olympus-storm'] > span:first-child {
+  display: none;
+}
+
+@keyframes gods-tumble-win-pop {
+  from { transform: scale(0.85); }
+  60% { transform: scale(1.07); }
+  to { transform: scale(1); }
+}
+
+@keyframes gods-tumble-clear {
+  25%, 55% {
+    transform: scale(1.08);
+    filter: brightness(1.25);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.35);
+    opacity: 0;
+  }
+}
+
+@keyframes gods-tumble-drop {
+  from { transform: translateY(calc(-100% * var(--gods-tumble-rows))); }
+  to { transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gods-tumble__cell--clear,
+  .gods-tumble__cell--drop,
+  .gods-tumble__final-win {
+    animation: none;
+  }
+}

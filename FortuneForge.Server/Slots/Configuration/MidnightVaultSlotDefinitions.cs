@@ -1,5 +1,6 @@
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
+using FortuneForge.Server.Slots.Reels;
 
 namespace FortuneForge.Server.Slots.Configuration;
 
@@ -11,11 +12,13 @@ namespace FortuneForge.Server.Slots.Configuration;
 public static class MidnightVaultSlotDefinitions
 {
     public const string SymbolSetId = "midnight-vault-symbols-v1";
-    public const string PaytableId = "midnight-vault-paytable-v2";
+    public const string PaytableId = "midnight-vault-paytable-v3";
+    public const string PreviousPaytableId = "midnight-vault-paytable-v2";
     public const string LegacyPaytableId = "midnight-vault-paytable-v1";
     public const string AdditionalOrdinarySymbolId = "8";
     public const long MinimumWagerPoints = 2;
     public const long MaximumWagerPoints = 2000;
+    public const decimal TargetHitRate = 0.21m;
     public const int BonusRoundSpins = 10;
     public const int LegacyScatterAwardedSpins = 6;
     public const int LegacyCollectionAwardedSpins = 7;
@@ -25,6 +28,13 @@ public static class MidnightVaultSlotDefinitions
     [
         ("2", 1, 4), ("3", 1, 2), ("4", 1, 7), ("5", 2, 6), ("6", 2, 8),
         ("7", 3, 11), ("ACE", 5, 18), ("POWER", 2, 4), ("8", 4, 14)
+    ];
+
+    // V3's calibrated integer rates are independent of both historical tables.
+    private static readonly (string Symbol, long Three, long Five)[] V3Payouts =
+    [
+        ("2", 1, 2), ("3", 1, 1), ("4", 1, 4), ("5", 1, 4), ("6", 1, 4),
+        ("7", 2, 6), ("ACE", 3, 10), ("POWER", 1, 2), ("8", 2, 8)
     ];
 
     public static GameSymbolRules CreateSymbolRules(GameSymbolRules source) => new()
@@ -48,20 +58,22 @@ public static class MidnightVaultSlotDefinitions
 
     public static PaytableDefinition CreatePaytable() => CreatePaytable(PaytableId);
 
+    public static PaytableDefinition CreatePreviousPaytable() => CreatePaytable(PreviousPaytableId);
+
     public static PaytableDefinition CreateLegacyPaytable() => CreatePaytable(LegacyPaytableId);
 
     private static PaytableDefinition CreatePaytable(string id) => new()
     {
         Id = id,
         SymbolSetId = SymbolSetId,
-        Rules = LegacyPayouts.SelectMany(row => new[]
+        Rules = (id == PaytableId ? V3Payouts : LegacyPayouts).SelectMany(row => new[]
         {
             new PayoutRule { SymbolId = row.Symbol, MatchLength = 3, Multiplier = row.Three },
             new PayoutRule
             {
                 SymbolId = row.Symbol,
                 MatchLength = 5,
-                Multiplier = id == PaytableId && row.Symbol == "5" ? 7 : row.Five
+                Multiplier = id == PreviousPaytableId && row.Symbol == "5" ? 7 : row.Five
             }
         }).ToList()
     };
@@ -76,6 +88,7 @@ public static class MidnightVaultSlotDefinitions
         var multiplier = paytableId switch
         {
             LegacyPaytableId => 1.09m,
+            PreviousPaytableId => 1m,
             PaytableId => 1m,
             _ => throw new ArgumentException("Unknown Midnight Vault paytable version.", nameof(paytableId))
         };
@@ -103,7 +116,7 @@ public static class MidnightVaultSlotDefinitions
             },
             Math = new GameMathDefinition
             {
-                ReelSetId = active.Math.ReelSetId,
+                ReelSetId = paytableId == PaytableId ? MidnightVaultBaseReelSet.CurrentId : MidnightVaultBaseReelSet.Id,
                 PaytableId = paytableId,
                 PayoutMultiplier = multiplier,
                 PaylinePayoutSteps = [.. active.Math.PaylinePayoutSteps],
@@ -111,7 +124,7 @@ public static class MidnightVaultSlotDefinitions
                 Targets = new GameMathTargets
                 {
                     Rtp = active.Math.Targets.Rtp,
-                    HitRate = active.Math.Targets.HitRate,
+                    HitRate = paytableId == PaytableId ? TargetHitRate : 0.30m,
                     Volatility = active.Math.Targets.Volatility
                 }
             },

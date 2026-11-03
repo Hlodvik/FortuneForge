@@ -1,0 +1,75 @@
+.midnight-winning-paylines {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  color: #f0cc82;
+}
+
+.midnight-winning-paylines__glint {
+  fill: currentColor;
+  animation: midnight-payline-glint 2.2s linear infinite;
+}
+
+.midnight-winning-paylines__trail { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.midnight-winning-paylines__trail--soft { filter: blur(1.8px); }
+.midnight-winning-paylines__bloom { opacity: .32; filter: blur(2.5px); }
+.midnight-winning-paylines__core { opacity: .94; filter: blur(.35px); }
+
+.midnight-winning-paylines__amount {
+  fill: #fff5fe;
+  stroke: #090b1bed;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  font: 800 clamp(16px, 1.7vw, 23px)/1 var(--font-ui, sans-serif);
+  font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 0 5px currentColor);
+}
+
+.slots-page__win-announcement {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@property --neon-payline-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff4fd8;
+}
+
+.midnight-winning-paylines[data-palette='neon'] {
+  color: var(--neon-payline-color, #ff4fd8);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__cabinet-spotlight:has(.slot-symbol--winner) {
+    animation: neon-payline-breathe 4.4s ease-in-out infinite;
+  }
+}
+
+@keyframes neon-payline-breathe {
+  0%, 100% { --neon-payline-color: #ff4fd8; }
+  50% { --neon-payline-color: #22e7ff; }
+}
+
+@keyframes midnight-payline-glint {
+  0%, 100% { opacity: 0; }
+  12%, 82% { opacity: 1; }
+}
+
+.midnight-winning-paylines[data-reduced-motion='true'] .midnight-winning-paylines__glint { display: none; animation: none; }
+.midnight-winning-paylines[data-reduced-motion='true'] { animation: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .midnight-winning-paylines { animation: none; }
+  .midnight-winning-paylines__glint { display: none; animation: none; }
+}

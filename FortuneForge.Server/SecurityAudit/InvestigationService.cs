@@ -583,6 +583,8 @@ internal sealed class SecurityAuditInvestigationService(FirestoreDb database, Ti
         {
             foreach (var suffix in new[] { "wager", "payout", "free-games-award", "special-points-award", "energy-award", "energy-multiplier-use" })
                 await CopyKnownLedgerAsync(caseId, auditId, $"{id}-{suffix}", ct);
+            if (source.Exists && source.TryGetValue<bool>("cruciblePoured", out var poured) && poured)
+                await CopyKnownLedgerAsync(caseId, auditId, $"{id}-energy-crucible-pour", ct);
             if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object &&
                 data.TryGetProperty("admissionId", out var admissionField) && admissionField.ValueKind == JsonValueKind.String &&
                 GameRequestPayloadObservation.SafeId(admissionField.GetString()) is { } admissionId)

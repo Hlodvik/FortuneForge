@@ -13,6 +13,15 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
   const cue = (id: string, baseVolume: number, category: SlotSoundCue['category'] = 'effect', loop = false): SlotSoundCue => ({
     source: `/assets/slots/audio-suites/v1/${slug}/${id}.ogg`, baseVolume, category, loop, enabled: true,
   })
+  const paidWinCue = (id: string, baseVolume: number) => slug === 'neon-nights'
+    ? cue('win-nice-v1', .58, 'result')
+    : cue(id, baseVolume, 'result')
+  const baseMusic = slug === 'gods-of-olympus'
+    ? { id: 'secret-sanctum-v1', volume: .12 }
+    : { id: 'night-drive', volume: .62 }
+  const specialMusic = slug === 'neon-nights'
+    ? { id: 'special-plays-music-v1', volume: .50 }
+    : { id: 'midnight-mix', volume: .60 }
   const results: SlotSoundSet['events']['results'] = {
     bonus: ['bonus-entry'], five: ['five-casino-win'], premium: ['premium-win'],
     'single-three': ['low-win'], 'no-win': ['soft-miss'],
@@ -22,8 +31,8 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
     cues: {
       ...previous.cues,
       // Match the suite manifests' audition mix, then apply saved user volume.
-      ambience: cue('night-drive', .62, 'effect', true),
-      'special-ambience': cue('midnight-mix', .60, 'effect', true),
+      ambience: cue(baseMusic.id, baseMusic.volume, 'effect', true),
+      'special-ambience': cue(specialMusic.id, specialMusic.volume, 'effect', true),
       'button-click': cue('button-click', .58), 'bet-step': cue('bet-step', .54),
       'lever-pull': cue('spin-launch', .65), 'reel-spin': cue('reel-roll', .40, 'effect', true),
       'reel-stop': cue('reel-land', .62),
@@ -31,8 +40,8 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
       'special-reel-stop': cue('bonus-reel-land', .60),
       'collect-sync': cue('collect-flamingo', .58), 'collect-rows': cue('collect-dice', .58),
       'collect-paw': cue('collect-sunset', .58), 'collect-rand': cue('collect-arcade', .58),
-      'low-win': cue('win-small', .65, 'result'), 'premium-win': cue('win-medium', slug === 'neon-nights' ? .67 : .65, 'result'),
-      'five-casino-win': cue('win-big', .70, 'result'), 'triple-sevens': cue('triple-sevens', .67, 'result'),
+      'low-win': paidWinCue('win-small', .65), 'premium-win': paidWinCue('win-medium', .65),
+      'five-casino-win': paidWinCue('win-big', .70), 'triple-sevens': paidWinCue('triple-sevens', .67),
       'soft-miss': cue('no-win', .30, 'result'), 'bonus-entry': cue('bonus-entry', .68, 'result'),
       'bonus-complete': cue('bonus-complete', .66, 'result'),
     },

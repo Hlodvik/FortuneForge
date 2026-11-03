@@ -85,7 +85,7 @@ export const LOADING_PRESENTATIONS_A: readonly GameLoadingEntry[] = [
     title: "Rainbow Realm",
     routes: ["/slots/rainbow-realm","/slots/rainbow-realm/demo"],
     image: rainbowRealmArt,
-    background: '#4f1a62',
+    background: '#000000',
     accent: '#40cfff',
   },
   {

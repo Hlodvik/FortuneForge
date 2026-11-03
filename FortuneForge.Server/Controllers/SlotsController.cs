@@ -130,6 +130,10 @@ public sealed class SlotsController(
                 SpecialPointsBalance = settlement.SpecialPointsBalance,
                 EnergyBalance = settlement.EnergyBalance,
                 EnergyMultiplierApplied = settlement.EnergyMultiplierApplied,
+                CrucibleWageredCents = settlement.CrucibleWageredCents,
+                CruciblePourValueCents = settlement.CruciblePourValueCents,
+                CruciblePoured = settlement.CruciblePoured,
+                CruciblePayoutCents = settlement.CruciblePayoutCents,
                 PayoutMultiplier = settlement.PayoutMultiplier,
                 SealCollections = settlement.SealCollections,
                 FreeSpinFeatureMode = settlement.FreeSpinFeatureMode,
@@ -165,6 +169,10 @@ public sealed class SlotsController(
                 error = exception.Message,
                 freeSpinsRemaining = 0
             });
+        }
+        catch (SlotFreeSpinsRequiredException exception)
+        {
+            return Conflict(new { code = "free-spins-required", error = exception.Message });
         }
         catch (InsufficientSpecialPointsException exception)
         {

@@ -1,3 +1,4 @@
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 
@@ -81,7 +82,10 @@ public static class SlotSpecialRoundProfiles
                 3,
                 10,
                 60,
-                10),
+                10,
+                UsesEnergy: false,
+                UsesDirectValueTokens: false,
+                BaseReelSetId: RainbowRealmSlotDefinitions.ReelSetId),
             [CosmicFortuneGameId] = new(
                 CosmicFortuneGameId, 3, 6, 24, 7, true, true, false, null, "sync-rows",
                 PayoutMultiplier: 0.856m),
@@ -123,7 +127,8 @@ public static class SlotSpecialRoundProfiles
                 PayoutMultiplier: 1.071m),
             [DragonHoardGameId] = new(
                 DragonHoardGameId, 3, 10, 30, 10, true, false, false, null, "rows-paw",
-                BaseReelSetId: MidnightVaultBaseReelSet.Id,
+                BaseReelSetId: MidnightVaultBaseReelSet.CurrentId,
+                TargetHitRate: MidnightVaultSlotDefinitions.TargetHitRate,
                 PayoutMultiplier: 1.0m),
             [JungleJackpotGameId] = new(
                 JungleJackpotGameId, 3, 6, 22, 8, true, false, false, null, "sync-rows-paw",
@@ -136,7 +141,8 @@ public static class SlotSpecialRoundProfiles
             [DesertTreasuresGameId] = new(
                 DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows",
                 PayoutMultiplier: 0.977m),
-            [NeonNightsGameId] = new(NeonNightsGameId, 3, 6, 26, 7, true, false, false, null, "sync"),
+            [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
+                BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId),
             [NordicLegendsGameId] = new(
                 NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw",
                 TargetHitRate: 0.32m,
@@ -148,14 +154,16 @@ public static class SlotSpecialRoundProfiles
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23]),
             [ArcaneArchivesGameId] = new(
                 ArcaneArchivesGameId, 3, 5, 40, 10,
+                UsesEnergy: false,
                 CollectionFeatureMode: "sync-paw-rand",
+                BaseReelSetId: ArcaneLightningCollector.ReelSetId,
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
                 PayoutMultiplier: 0.716m),
             [DinoDominionGameId] = new(
-                DinoDominionGameId, 3, 5, 40, 10,
-                CollectionFeatureMode: "rows-paw-rand",
+                DinoDominionGameId, 0, 0, 0, 0,
+                UsesCollections: false, UsesDirectValueTokens: false,
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 16, 17, 18, 19, 20, 21, 22, 23],
-                PayoutMultiplier: 0.607m)
+                PayoutMultiplier: GoldFoundrySlotDefinitions.LinePayoutUnit)
         };
 
     public static bool TryGet(string gameId, out SlotSpecialRoundProfile profile) =>

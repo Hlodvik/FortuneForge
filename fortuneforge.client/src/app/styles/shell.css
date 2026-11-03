@@ -53,28 +53,6 @@ body.ff-game-active img {
   transform: translateZ(0);
 }
 
-/* Legacy cloud artwork is an explicit Wukong-only opt-in, never a site default. */
-.app-shell--wukong-clouds::before {
-  background:
-    linear-gradient(180deg, rgb(10 5 28 / 12%), rgb(22 8 50 / 22%)) center / cover no-repeat,
-    url('../../assets/slots/backgrounds/background-clouds-poster.webp') center bottom / cover no-repeat;
-  content: '';
-}
-
-.app-shell__background-video {
-  position: fixed;
-  z-index: 0;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  backface-visibility: hidden;
-  contain: strict;
-  object-fit: cover;
-  object-position: center bottom;
-  pointer-events: none;
-  transform: translateZ(0);
-}
-
 .app-shell--themed-slot-backdrop::before {
   background: none;
   content: none;
@@ -112,10 +90,6 @@ body.ff-game-active img {
     radial-gradient(circle at 12% 14%, rgb(63 185 141 / 16%), transparent 28rem),
     radial-gradient(circle at 88% 20%, rgb(230 190 97 / 10%), transparent 26rem),
     linear-gradient(180deg, rgb(4 42 34 / 10%), rgb(2 24 20 / 42%));
-}
-
-.app-shell--themed-slot-backdrop > .app-shell__background-video {
-  display: none;
 }
 
 .app-shell > .in-game-shell,

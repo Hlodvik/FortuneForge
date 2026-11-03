@@ -51,7 +51,7 @@ public sealed partial class SpinService
             FillWildReel(reels);
         }
 
-        if (profile.UsesDirectValueTokens)
+        if (profile.UsesDirectValueTokens || RainbowRealmSlotDefinitions.IsModel(game))
         {
             InjectSymbols(reels, RollMonkeyPawCount(game.Id, freeSpinFeatureMode), () => MonkeyPawSymbolId);
         }
@@ -59,7 +59,10 @@ public sealed partial class SpinService
         {
             InjectSymbols(reels, 2, () => "ACE");
         }
-        InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
+        // Neon's authored strips own every visible role, including its ordinary
+        // flamingo/dice/sunset. No legacy bonus-symbol injection changes weights.
+        if (!NeonArcadeSlotDefinitions.IsModel(game))
+            InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
         if (profile.UsesCollections)
         {
             InjectSymbols(reels, RollSealCount(game.Id, currentEnergyBalance), PickSealSymbol);
@@ -96,7 +99,7 @@ public sealed partial class SpinService
             Matching = game.Matching,
             Math = game.Math,
             Wagering = game.Wagering,
-            FreeGames = game.FreeGames is null || profile is null
+            FreeGames = game.FreeGames is null || profile is null || game.Id == SlotSpecialRoundProfiles.DragonHoardGameId
                 ? game.FreeGames
                 : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,
@@ -131,7 +134,8 @@ public sealed partial class SpinService
             return 2;
         }
 
-        return random.Next(14) == 0 ? 1 : 0;
+        var singleBasketDivisor = gameId == SlotSpecialRoundProfiles.RainbowRealmGameId ? 17 : 14;
+        return random.Next(singleBasketDivisor) == 0 ? 1 : 0;
     }
 
     private int RollMoneySymbolCount(string gameId) =>
@@ -196,6 +200,9 @@ public sealed partial class SpinService
 
     internal static int GetSealAppearanceChance(string gameId, long currentEnergyBalance)
     {
+        if (gameId == SlotSpecialRoundProfiles.RainbowRealmGameId)
+            return 33;
+
         if (string.Equals(gameId, SlotSpecialRoundProfiles.PiratesFortuneGameId, StringComparison.Ordinal))
         {
             // Pirates has no energy meter. Its fixed 50% gem appearance chance

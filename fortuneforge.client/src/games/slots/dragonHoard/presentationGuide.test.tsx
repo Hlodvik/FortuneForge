@@ -84,10 +84,10 @@ describe('Midnight Vault optional presentation guides', () => {
     expect(modal.querySelectorAll('.symbol-value-guide__item')).toHaveLength(15)
     expect(modal.textContent).toContain('Cash briefcase')
     expect(modal.textContent).toContain('Triple sevens')
-    expect(modal.textContent).toContain(midnightVaultMultiplier(14))
+    expect(modal.textContent).toContain(midnightVaultMultiplier(8))
     expect(modal.textContent).toContain(target.experience.symbols.guideNote)
     const power = target.experience.symbols.guideEntries.find(entry => entry.symbol === 'POWER')!
-    expect(power).toMatchObject({ firstLabel: '3–4', firstValue: midnightVaultMultiplier(2), secondValue: midnightVaultMultiplier(4) })
+    expect(power).toMatchObject({ firstLabel: '3–4', firstValue: midnightVaultMultiplier(1), secondValue: midnightVaultMultiplier(2) })
     expect(modal.querySelector('.symbol-value-guide__item--bolt')).toBeNull()
     expect(modal.querySelector('.symbol-value-guide__item--paw')).toBeNull()
     expect(modal.querySelector('[class*="symbol-value-guide__item--rand_"]')).toBeNull()

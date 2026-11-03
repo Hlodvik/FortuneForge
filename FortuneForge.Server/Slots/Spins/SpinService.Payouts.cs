@@ -10,10 +10,31 @@ namespace FortuneForge.Server.Slots.Spins;
 
 public sealed partial class SpinService
 {
+    private static FeaturePayout CalculateRainbowFeaturePayout(
+        IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints, decimal payoutMultiplier)
+    {
+        var symbols = reels.SelectMany(reel => reel);
+        var basketCount = symbols.Count(symbol => symbol == MonkeyPawSymbolId);
+        var harvest = basketCount == 0 ? 0 : MultiplyWager(wagerPoints,
+            symbols.Sum(RainbowRealmCharmHarvest.WagerMultiplier) * Math.Min(basketCount, 2));
+        var bananas = CalculateBananaPayouts(reels, wagerPoints, payoutMultiplier);
+        return new FeaturePayout(basketCount, harvest, bananas.Sum(payout => payout.AmountPoints), bananas, harvest);
+    }
+
+    private static FeaturePayout CalculateFoundryFeaturePayout(
+        IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints)
+    {
+        var (collectorCount, ingotPayout) = GoldFoundryReelCollector.Calculate(reels, wagerPoints);
+        var hammerPayouts = CalculateBananaPayouts(reels, wagerPoints, 1m);
+        return new FeaturePayout(collectorCount, ingotPayout, hammerPayouts.Sum(payout => payout.AmountPoints),
+            hammerPayouts, ingotPayout);
+    }
+
     private static FeaturePayout CalculateFeaturePayout(
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,
-        decimal payoutMultiplier)
+        decimal payoutMultiplier,
+        bool collectWithEveryPaw = false)
     {
         var moneyPositions = VisiblePositions(reels)
             .Select(position => new
@@ -34,14 +55,14 @@ public sealed partial class SpinService
         if (pawPositions.Length > 0 && moneyPositions.Length > 0)
         {
             var multiplier = moneyPositions.Sum(symbol => symbol.Multiplier);
-            if (pawPositions.Length >= 2)
-            {
-                multiplier *= 2;
-            }
+            multiplier *= collectWithEveryPaw ? pawPositions.Length : Math.Min(pawPositions.Length, 2);
 
-            moneyGrabPoints = ApplyPayoutMultiplier(
-                MultiplyWager(wagerPoints, multiplier),
-                payoutMultiplier);
+            var collectedPoints = MultiplyWager(wagerPoints, multiplier);
+            // The explicit preview rule collects the displayed wager-linked cash
+            // once per paw. Historical outcomes retain their original game scale.
+            moneyGrabPoints = collectWithEveryPaw
+                ? collectedPoints
+                : ApplyPayoutMultiplier(collectedPoints, payoutMultiplier);
             moneyGrabPayout = new PaylinePayout(
                 901,
                 moneyGrabPoints,
@@ -165,7 +186,7 @@ public sealed partial class SpinService
 
     private static SpinPayout AddFeaturePayout(SpinPayout payout, FeaturePayout featurePayout)
     {
-        if (featurePayout.Paylines.Count == 0)
+        if (featurePayout.Paylines.Count == 0 && featurePayout.OffPaylinePoints == 0)
         {
             return payout;
         }
@@ -173,7 +194,7 @@ public sealed partial class SpinService
         var paylines = payout.Paylines.Concat(featurePayout.Paylines).ToArray();
         return payout with
         {
-            TotalPoints = paylines.Sum(payline => payline.AmountPoints),
+            TotalPoints = checked(paylines.Sum(payline => payline.AmountPoints) + featurePayout.OffPaylinePoints),
             Paylines = paylines
         };
     }

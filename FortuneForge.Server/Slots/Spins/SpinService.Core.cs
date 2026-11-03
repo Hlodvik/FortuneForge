@@ -65,8 +65,20 @@ public sealed partial class SpinService(
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else if (useFreeSpin && GoldFoundrySlotDefinitions.IsModel(game))
+            GoldFoundrySlotDefinitions.ValidateLegacyFreeSpinWager(wagerPoints);
+        else if (useFreeSpin && ArcaneLightningCollector.IsModel(game))
+            ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
+        else if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
+            ValidateOlympusCarryWager(game, wagerPoints);
         else
             ValidateWager(game, wagerPoints);
+    }
+
+    private static void ValidateOlympusCarryWager(GameDefinition game, long wagerPoints)
+    {
+        if (!OlympusTumbleDemo.IsLegacyCarryWager(game.Wagering, wagerPoints))
+            throw new ArgumentOutOfRangeException(nameof(wagerPoints), "The Olympus free-spin wager is out of range.");
     }
 
     public int GetSpecialBoostCost(string gameId)

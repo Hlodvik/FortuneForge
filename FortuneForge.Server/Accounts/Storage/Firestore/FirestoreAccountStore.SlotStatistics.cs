@@ -48,11 +48,13 @@ public sealed partial class FirestoreAccountStore
     private static SealCollectionSettlement SettleSealCollections(
         DocumentSnapshot guardSnapshot,
         SpinResult result,
-        bool energyCompleted)
+        bool energyCompleted,
+        SlotSpecialRoundProfile? profile,
+        bool freezeProgress = false)
     {
         var counts = ReadLongMap(guardSnapshot, "sealCounts");
         var wagerCents = ReadSealWagerCents(guardSnapshot);
-        if (!SlotSpecialRoundProfiles.TryGet(result.GameId, out var profile))
+        if (profile is null)
         {
             return new SealCollectionSettlement(
                 counts,
@@ -75,6 +77,10 @@ public sealed partial class FirestoreAccountStore
                 [],
                 false);
         }
+
+        if (freezeProgress)
+            return new SealCollectionSettlement(counts, wagerCents, 0, null, 0,
+                CreateSealCollections(counts, wagerCents, result.PointValueInCents, profile.CollectionTarget), false);
 
         var spinWagerCents = RandMoney.PointsToCents(
             result.WagerPoints,

@@ -52,16 +52,18 @@ function collectionReward(contract: SlotEngineGuideContract, mode: string): stri
 
 /** Corrects visible instructions without changing rules, requests or results. */
 export function withEngineGuide(experience: SlotExperienceSet): SlotExperienceSet {
-  // These two games have independent, actively maintained presentation contracts.
+  // These games have independent, actively maintained presentation contracts.
   if (experience.rules.gameId === 'rainbow-realm-fruits-v1' ||
-      experience.rules.gameId === 'dragon-hoard-v1') return experience
+      experience.rules.gameId === 'dragon-hoard-v1' ||
+      experience.rules.gameId === 'neon-nights-v1') return experience
 
   const contract = getSlotEngineGuideContract(experience.rules.gameId)
   const multiplier = (value: number) => formatCalibratedMultiplier(value, contract.payoutMultiplier)
   const symbols = experience.symbols
+  const lightningCollector = experience.features.lightningCollection?.collectorSymbol
   const lineEntries = new Set(Object.keys(basePayouts))
   const guideEntries = symbols.guideEntries.flatMap((entry): SlotSymbolGuideEntry[] => {
-    if (entry.symbol === 'BOLT' && !contract.usesEnergy ||
+    if (entry.symbol === 'BOLT' && !contract.usesEnergy && entry.symbol !== lightningCollector ||
         entry.symbol === 'PAW' && !contract.usesDirectValueTokens ||
         entry.symbol.startsWith('RAND_') && !contract.usesDirectValueTokens ||
         sealSymbols.includes(entry.symbol as typeof sealSymbols[number]) && !contract.usesCollections ||

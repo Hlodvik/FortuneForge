@@ -48,7 +48,7 @@ function SymbolValuePanel({
       )}
       <div className="symbol-value-guide__heading">
         <strong id={headingId}>Symbol values</strong>
-        <span>3 in a row · 5 in a row</span>
+        <span>{symbolSet.guideSubtitle ?? '3 in a row · 5 in a row'}</span>
       </div>
       <div className="symbol-value-guide__grid">
         {guideEntries.map(({

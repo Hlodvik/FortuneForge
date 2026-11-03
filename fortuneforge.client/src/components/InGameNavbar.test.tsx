@@ -47,7 +47,7 @@ describe('InGameNavbar', () => {
     const markup = renderToStaticMarkup(<InGameNavbar account={account} title="Asteroids" />)
     expect(markup).toContain('href="/home"')
     expect(markup).toContain('Fortune Forge home')
-    expect(markup).toContain('href="/home#home-lobby-games-title"')
+    expect(markup).toContain('href="/home"')
     expect(markup).not.toContain('href="/games"')
     expect(markup).toContain('Other Games')
   })

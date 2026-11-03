@@ -1,4 +1,4 @@
-import rainbowOrchard from '../../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.webp'
+import sunriseValley from '../../../assets/slots/backgrounds/optimized/rainbow-realm-sunrise-valley-page-v1.webp'
 import rainbowAppleMedallion from '../../../assets/slots/games/rainbow-realm/responsive/rainbow-apple-medallion-192.webp'
 import cherrySymbol from '../../../assets/slots/games/rainbow-realm/responsive/cherry-192.webp'
 import type { SlotCabinetTheme } from '../../../features/slots/config/cabinetThemes'
@@ -13,9 +13,7 @@ export const RAINBOW_REALM_CABINET_THEME: SlotCabinetTheme = {
   celebrationEffect: 'orchard-cascade',
   emblemImage: cherrySymbol,
   accentImage: rainbowAppleMedallion,
-  backdropImage: rainbowOrchard,
-  visualsBackdropImage: rainbowOrchard,
-  pageBackdropImage: rainbowOrchard,
+  pageBackdropImage: sunriseValley,
   palette: {
     shellTop: '#ff5d46',
     shellBottom: '#4f1a62',

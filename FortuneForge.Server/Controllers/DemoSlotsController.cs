@@ -1,4 +1,6 @@
+using System.Text.Json.Serialization;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
@@ -18,7 +20,9 @@ public sealed record DemoSpinRequest(
     long EnergyBalance,
     IReadOnlyList<SlotSealCollection>? SealCollections = null,
     string? FreeSpinFeatureMode = null,
-    MidnightVaultDemoState? MidnightBonusState = null);
+    MidnightVaultDemoState? MidnightBonusState = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null);
 
 [ApiController]
 [Route("api/slots/demo")]
@@ -53,7 +57,14 @@ public sealed class DemoSlotsController(
     {
         try
         {
-            if (request.FreeSpinsRemaining < 0 || request.FreeSpinsRemaining > 1_000)
+            if (request.OlympusTumbleShowcase is { } showcase)
+                return await SpinOlympusTumble(request, showcase, cancellationToken);
+
+            var isGoldFoundry = GoldFoundryCrucible.IsGame(request.GameId);
+            var isNeon = request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+            if (isGoldFoundry && request.UseFreeSpin)
+                throw new ArgumentException("Gold Foundry does not support demo free spins.", nameof(request));
+            if (request.FreeSpinsRemaining < 0 || !isNeon && request.FreeSpinsRemaining > 1_000)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(request.FreeSpinsRemaining),
@@ -69,9 +80,16 @@ public sealed class DemoSlotsController(
             {
                 throw new ArgumentException("No demo free spins are available.", nameof(request));
             }
+            if (isNeon && !request.UseFreeSpin && request.FreeSpinsRemaining > 0)
+                throw new ArgumentException("Finish your awarded Neon spins before placing another bet.", nameof(request));
+            if (isNeon && request.UseFreeSpin && request.WagerPoints != request.FreeSpinWagerPoints)
+                throw new ArgumentException("Special Plays use the wager from the triggering spin.", nameof(request));
 
             if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
                 return await SpinMidnight(request, cancellationToken);
+            if (isGoldFoundry && request.CrucibleWageredCents is < 0 or > GoldFoundryCrucible.MaximumDemoWageredCents)
+                throw new ArgumentOutOfRangeException(nameof(request.CrucibleWageredCents),
+                    "The demo crucible total is outside the allowed range.");
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
             var usesEnergy = profile?.UsesEnergy != false;
@@ -85,12 +103,18 @@ public sealed class DemoSlotsController(
                 currentEnergy,
                 request.UseFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
                     ? request.FreeSpinFeatureMode
-                    : null);
-            var energy = EnergyBonus.Settle(
+                    : null,
+                isFreeSpin: isNeon && request.UseFreeSpin);
+            var crucible = isGoldFoundry
+                ? GoldFoundryCrucible.Settle(currentEnergy, engineResult.EnergyAwarded,
+                    request.CrucibleWageredCents, request.UseFreeSpin ? 0 :
+                        RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents))
+                : null;
+            var energy = crucible?.AsEnergySettlement(engineResult.Payout) ?? EnergyBonus.Settle(
                 currentEnergy,
                 engineResult.EnergyAwarded,
                 engineResult.Payout);
-            var specialRounds = profile is null
+            var specialRounds = isGoldFoundry || profile is null
                 ? new SlotSpecialRoundProgress(0, null, [])
                 : SlotSpecialRoundProfiles.SettleDemo(
                     profile,
@@ -99,11 +123,15 @@ public sealed class DemoSlotsController(
                     engineResult.WagerPoints,
                     energy.MultiplierApplied,
                     engineResult.SpinId);
-            var freeSpinsRemaining = checked(
-                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
-                engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
+            var nextFreeSpins = isGoldFoundry ? 0L :
+                (long)request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
+                engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded;
+            if (nextFreeSpins > int.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(request.FreeSpinsRemaining),
+                    "The next demo free-spin balance exceeds the supported range.");
+            var freeSpinsRemaining = checked((int)nextFreeSpins);
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
-                ? request.FreeSpinWagerPoints ?? request.WagerPoints
+                ? isNeon ? engineResult.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints
                 : null;
 
             var responseResult = engineResult with
@@ -120,6 +148,10 @@ public sealed class DemoSlotsController(
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,
+                CrucibleWageredCents = crucible?.WageredCents,
+                CruciblePourValueCents = crucible?.PourValueCents,
+                CruciblePoured = crucible?.Poured,
+                CruciblePayoutCents = crucible?.PayoutCents,
                 PayoutMultiplier = energy.PayoutMultiplier,
                 SealCollections = specialRounds.Collections,
                 FreeSpinFeatureMode = freeSpinsRemaining > 0
@@ -153,6 +185,21 @@ public sealed class DemoSlotsController(
                 HttpContext.TraceIdentifier);
             return BadRequest(new { error = exception.Message });
         }
+    }
+
+    private async Task<ActionResult> SpinOlympusTumble(
+        DemoSpinRequest request, bool showcase, CancellationToken cancellationToken)
+    {
+        if (request.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
+            request.UseFreeSpin || request.FreeSpinsRemaining != 0 || request.FreeSpinWagerPoints is not null ||
+            request.FreeSpinFeatureMode is not null || request.EnergyBalance != 0 || request.SealCollections is { Count: > 0 } ||
+            request.MidnightBonusState is not null || request.CrucibleWageredCents != 0)
+            throw new ArgumentException("The Olympus tumble demo requires its own game and a base spin.", nameof(request));
+
+        var startedAt = DateTime.UtcNow;
+        var result = spinService.SpinOlympusTumbleDemo(request.WagerPoints, showcase);
+        await auditStore.RecordAsync(new DemoSlotAuditEntry(request, result, result, startedAt, DateTime.UtcNow), cancellationToken);
+        return Ok(result);
     }
 
     private async Task<ActionResult> SpinMidnight(DemoSpinRequest request, CancellationToken cancellationToken)
@@ -193,11 +240,20 @@ public sealed class DemoSlotsController(
         return Ok(response);
     }
 
-    internal static MidnightVaultDemoState CreateMidnightState(DemoSpinRequest request)
+    internal static MidnightVaultDemoState CreateMidnightState(DemoSpinRequest request, string? capturedMathModelId = null)
     {
         if (request.MidnightBonusState is { } state) return state;
         // Compatibility for an older local demo client. All newly returned state
-        // carries exact totals and the complete ordered round queue.
+        // carries exact totals and the complete ordered round queue. Missing live
+        // state retains the previous v2 contract; replay supplies its captured model.
+        var mathModelId = capturedMathModelId ?? MidnightVaultSlotDefinitions.PreviousPaytableId;
+        if (mathModelId is not (MidnightVaultSlotDefinitions.LegacyPaytableId or
+            MidnightVaultSlotDefinitions.PreviousPaytableId or MidnightVaultSlotDefinitions.PaytableId))
+            throw new ArgumentException("The demo carry has an unsupported Midnight Vault payout model.", nameof(capturedMathModelId));
+        // A v1 aggregate does not identify its original six/seven-spin rounds.
+        // Preserve old generic receipt replay; never fabricate ten-spin v1 rounds.
+        if (request.FreeSpinsRemaining > 0 && mathModelId == MidnightVaultSlotDefinitions.LegacyPaytableId)
+            throw new ArgumentException("A legacy v1 demo bonus requires its original round state.", nameof(capturedMathModelId));
         var rounds = new List<MidnightVaultBonusRound>();
         var remaining = request.FreeSpinsRemaining;
         for (var index = 0; remaining > 0; index++)
@@ -205,7 +261,7 @@ public sealed class DemoSlotsController(
             var spins = Math.Min(10, remaining);
             rounds.Add(new($"demo-carry:{index}", 10, spins,
                 request.FreeSpinWagerPoints ?? request.WagerPoints, request.FreeSpinFeatureMode,
-                MidnightVaultSlotDefinitions.PaytableId));
+                mathModelId));
             remaining -= spins;
         }
         var collections = request.SealCollections ?? [];

@@ -23,9 +23,24 @@ public sealed record SlotSpinEngineAudit(
 {
     // Set after checking a stored paid entitlement or a nonfinancial demo round.
     public bool IsDerivedFreeSpin { get; init; }
+
+    // Absent from every existing paid/demo path and from legacy serialized evidence.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public WukongPawPrototypeEvidence? WukongPawPrototype { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonArcadeEvidence? NeonArcade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OlympusTumbleEvidence? OlympusTumble { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? CrucibleRuleVersion { get; init; }
 }
 
 public readonly record struct GridPosition(int Reel, int Row);
+
+public sealed record OlympusTumbleEvidence(bool Showcase, IReadOnlyList<int> DrawIndexes);
 
 public sealed record SymbolMatch(
     int PaylineId,
@@ -92,9 +107,19 @@ public sealed record SpinResult(
     public long EnergyBalance { get; init; }
     public bool EnergyMultiplierApplied { get; init; }
     public decimal PayoutMultiplier { get; init; } = 1m;
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CrucibleWageredCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePourValueCents { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CruciblePoured { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? CruciblePayoutCents { get; init; }
     public int MonkeyPawCount { get; init; }
     public long MoneyGrabPoints { get; init; }
     public long BananaBonusPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneLightningCollection? LightningCollection { get; init; }
     public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } =
         new Dictionary<string, int>(StringComparer.Ordinal);
     public IReadOnlyList<SlotSealCollection> SealCollections { get; init; } = [];
@@ -104,4 +129,10 @@ public sealed record SpinResult(
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
     public MidnightVaultDemoState? MidnightBonusState { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonArcadeEvidence? NeonArcade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OlympusTumbleOutcome? OlympusTumble { get; init; }
 }

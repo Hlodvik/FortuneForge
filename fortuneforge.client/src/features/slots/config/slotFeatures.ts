@@ -1,4 +1,7 @@
+import type { ComponentType } from 'react'
 import type { SlotSymbolId } from '../types/slots'
+
+export const GOLD_FOUNDRY_GAME_ID = 'dino-dominion-v1'
 
 export type SlotCollectionDefinition = {
   id: string
@@ -35,19 +38,33 @@ export type SlotCollectionFeature = {
   containerImage?: string
   presentation?: SlotCollectionPresentation
   completionDialog?: boolean
+  completionTitle?: string
+  completionDetail?: string
+}
+
+export type SlotEnergyArtworkProps = {
+  progress: number
+  completing: boolean
 }
 
 export type SlotEnergyFeature = {
   label: string
   symbol: SlotSymbolId
+  presentation?: 'crucible'
+  artwork?: ComponentType<SlotEnergyArtworkProps>
+  completionDurationMs?: number
+  milestones?: readonly number[]
 }
 
 export type SlotMoneyGrabFeature = {
   actorName: string
   awardLabel: string
   collectorSymbol: SlotSymbolId
-  valueSymbolPrefix: string
-}
+  presentation?: 'separate-award'
+} & (
+  | { valueSymbolPrefix: string; valueSymbols?: never }
+  | { valueSymbolPrefix?: never; valueSymbols: readonly SlotSymbolId[] }
+)
 
 export type SlotSpecialRoundEarnStyle =
   | 'altar'
@@ -73,6 +90,7 @@ export type SlotSpecialRoundFeature = {
 export type SlotFeatureSet = {
   collections?: SlotCollectionFeature
   energy?: SlotEnergyFeature
+  lightningCollection?: { collectorSymbol: SlotSymbolId }
   moneyGrab?: SlotMoneyGrabFeature
   specialRound?: SlotSpecialRoundFeature
 }

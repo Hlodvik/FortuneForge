@@ -18,6 +18,7 @@ export type SlotCelebrationEffect =
   | 'arcane-orbit'
   | 'cosmic-streak'
   | 'fossil-burst'
+  | 'foundry-sparks'
   | 'neon-scan'
   | 'jungle-canopy'
   | 'ocean-swell'
@@ -43,10 +44,13 @@ export type SlotCabinetTheme = {
   accessibleName: string
   eyebrow: string
   title: string
+  titleArtwork?: { src: string; width: number; height: number }
   subtitle: string
   celebrationEffect?: SlotCelebrationEffect
   emblemImage: string
   accentImage?: string
+  spinIconImage?: string
+  controlLayout?: 'integrated' | 'sidecar'
   backdropImage?: string
   visualsBackdropImage?: string
   pageBackdropImage?: string

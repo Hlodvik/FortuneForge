@@ -381,7 +381,7 @@ describe('slot game manifests', () => {
       [ROBOT_REVOLUTION_SLOT_GAME, 'robot-overclock', 'robot-revolution-audio-v1', 24, 3, 7, false],
       [PHANTOM_MANOR_SLOT_GAME, 'phantom-midnight-seance', 'phantom-manor-audio-v1', 18, 3, 5, false],
       [OCEAN_ODYSSEY_SLOT_GAME, 'ocean-pearl-voyage', 'ocean-odyssey-audio-v1', 28, 4, 6, true],
-      [DRAGON_HOARD_SLOT_GAME, 'dragon-ember-siege', 'dragon-hoard-audio-v1', 30, 3, 6, true],
+      [DRAGON_HOARD_SLOT_GAME, 'dragon-ember-siege', 'dragon-hoard-audio-v1', 30, 3, 10, true],
     ] as const
 
     for (const [game, roundId, soundId, collectionTarget, scatterCount, scatterAward, usesCollections] of featured) {

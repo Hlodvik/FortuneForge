@@ -7,12 +7,14 @@ import '../styles/index.css'
 type SlotMachineProps = {
   cabinetTheme: SlotCabinetTheme
   reelCount: number
+  reelOverlay?: ReactNode
   renderReel?: (index: number) => ReactNode
 }
 
 export function SlotMachine({
   cabinetTheme,
   reelCount,
+  reelOverlay,
   renderReel,
 }: SlotMachineProps) {
   const safeReelCount = Math.max(1, Math.floor(reelCount))
@@ -31,6 +33,7 @@ export function SlotMachine({
                 {renderReel?.(index)}
               </Reel>
             ))}
+            {reelOverlay}
           </div>
         </div>
       </div>

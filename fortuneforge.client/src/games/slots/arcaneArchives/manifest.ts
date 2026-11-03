@@ -8,10 +8,10 @@ import { ARCANE_ARCHIVES_CATALOG } from './catalog'
 import { ARCANE_ARCHIVES_SYMBOLS } from './symbols'
 
 const FEATURES: SlotFeatureSet = {
-  energy: { label: 'Aether charge', symbol: 'BOLT' },
+  lightningCollection: { collectorSymbol: 'BOLT' },
   collections: {
-    ariaLabel: 'Forbidden rune shelves',
-    itemLabel: 'runes',
+    ariaLabel: 'Forbidden seal shelves',
+    itemLabel: 'seals',
     presentation: 'spellbook-shelf',
     entries: [
       { id: 'sync', label: 'Echo chamber', shortLabel: 'Echo', symbol: 'SEAL_SYNC', requiredCount: 40 },
@@ -29,9 +29,9 @@ const FEATURES: SlotFeatureSet = {
   specialRound: {
     id: 'arcane-forbidden-chapter',
     title: 'Forbidden Chapter',
-    earnLabel: 'Land 3 archive doors for 5 chapters, or shelve 40 matching runes for 10 enhanced chapters.',
+    earnLabel: 'Land 3 archive doors for 5 chapters, or shelve 40 matching seals for 10 enhanced chapters.',
     earnStyle: 'shelf',
-    earnHint: 'Runes remain visible on four archive shelves. Complete one 40-rune shelf to open ten Forbidden Chapters.',
+    earnHint: 'Seals remain visible on four archive shelves. Complete one 40-seal shelf to open ten Forbidden Chapters.',
     activeModes: {
       sync: 'Echo Chamber · one reel mirrors another',
       rows: 'Moonlit Stacks · two extra rows open',
@@ -48,14 +48,19 @@ const HELP: SlotHelpDefinition = {
   freeGames: { requiredSymbols: 3, awardedSpins: 5 },
   extraSections: [
     {
+      badge: 'LIGHTNING',
+      title: 'Living Lightning collection',
+      body: 'Land a Living Lightning Rune to collect every visible constellation on that spin. Open Book pays 0.5×, Aether pays 1×, and Fortune pays 2× the wager. Each constellation pays once, even when more than one Lightning Rune lands.',
+    },
+    {
       badge: 'SPELL',
       title: 'Mana harvest',
       body: 'The enchanted book satchel gathers every mana shard in the window. Two satchels double the harvest. Three magic wands in a row, column, or diagonal pay 3× the wager.',
     },
     {
-      badge: 'RUNES',
-      title: 'Forbidden rune shelves',
-      body: 'Collect 40 runes on any shelf to unlock ten themed free spins. Aether charge improves rune odds at each quarter meter; a full meter boosts the payout by 1.5× and completes the nearest shelf.',
+      badge: 'SEALS',
+      title: 'Forbidden seal shelves',
+      body: 'Collect 40 seals on any shelf to unlock ten themed free spins.',
     },
   ],
 }
@@ -67,7 +72,7 @@ export const ARCANE_ARCHIVES_EXPERIENCE_SET: SlotExperienceSet = withEngineGuide
   help: HELP,
   outcomeNarrative: {
     lossTitle: 'No spell reward this spin',
-    winTitle: 'Rune reward',
+    winTitle: 'Arcane reward',
     greatWinTitle: 'Arcane surge',
     bigWinTitle: 'Forbidden jackpot',
     freeGameSingular: 'free spell',

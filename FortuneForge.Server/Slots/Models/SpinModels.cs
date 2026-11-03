@@ -106,6 +106,8 @@ public sealed record SpinResult(
     public int MonkeyPawCount { get; init; }
     public long MoneyGrabPoints { get; init; }
     public long BananaBonusPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public ArcaneLightningCollection? LightningCollection { get; init; }
     public IReadOnlyDictionary<string, int> SealsAwarded { get; init; } =
         new Dictionary<string, int>(StringComparer.Ordinal);
     public IReadOnlyList<SlotSealCollection> SealCollections { get; init; } = [];

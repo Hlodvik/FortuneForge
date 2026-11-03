@@ -5,6 +5,7 @@ using FortuneForge.Server.Slots.Evaluation;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
+using FortuneForge.Server.Slots.Reels;
 
 namespace FortuneForge.Server.RoundAudit;
 
@@ -25,6 +26,13 @@ internal static class SlotRoundAudit
             (audit.EngineVersion == RainbowRealmSlotDefinitions.EngineVersion))
             return [new("slot-rainbow-model-mismatch", "error",
                 "The charm harvest rule does not match the saved Rainbow Realm model.")];
+        var usesArcaneCollector = audit.EngineVersion == ArcaneLightningCollector.EngineVersion;
+        if (usesArcaneCollector != ArcaneLightningCollector.IsModel(audit.BaseGame) ||
+            usesArcaneCollector && (!ArcaneLightningCollector.IsModel(audit.EffectiveGame) ||
+                audit.BaseGame.Energy is not null || audit.EffectiveGame.Energy is not null ||
+                audit.FeatureProfile?.UsesEnergy != false))
+            return [new("slot-arcane-collector-version-mismatch", "error",
+                "The lightning collector rule does not match the saved Arcane Archives model.")];
         return Check(result, audit.BaseGame, audit.EffectiveGame, audit.ReelSet,
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
@@ -50,6 +58,7 @@ internal static class SlotRoundAudit
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
         var foundryCollector = GoldFoundrySlotDefinitions.IsModel(baseGame);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(baseGame);
+        var arcaneCollector = ArcaneLightningCollector.IsModel(baseGame);
 
         if (result.GameId != baseGame.Id || result.GameId != effectiveGame.Id ||
             result.SymbolSetId != symbolSet.Id || result.ReelSetId != reelSet.Id ||
@@ -57,8 +66,9 @@ internal static class SlotRoundAudit
             reelSet.SymbolSetId != symbolSet.Id || paytable.SymbolSetId != symbolSet.Id)
             Flag("slot-rules-mismatch", "The spin identifiers do not match the captured rules.");
         var trustedBonusWager = isDerivedFreeSpin && result.IsFreeSpin &&
-            result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
-            MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints);
+            (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
+                 MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints) ||
+             arcaneCollector && ArcaneLightningCollector.IsValidCarryWager(baseGame, result.WagerPoints));
         if (result.PointValueInCents != baseGame.Wagering.PointValueInCents ||
             !(trustedBonusWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
             isDerivedFreeSpin && !trustedBonusWager)
@@ -82,10 +92,8 @@ internal static class SlotRoundAudit
             Flag("slot-symbol-invalid", "The visible window contains a symbol outside the captured symbol set.");
         for (var reel = 0; reel < result.ReelStops.Count; reel++)
         {
-            var playable = effectiveGame.Energy is null
-                ? reelSet.Reels[reel].Where(symbol => symbol != "BOLT").ToArray()
-                : reelSet.Reels[reel].ToArray();
-            var playableCount = playable.Length;
+            var playable = CryptoReelGenerator.GetPlayableStrip(effectiveGame, reelSet.Reels[reel]);
+            var playableCount = playable.Count;
             if (result.ReelStops[reel] < 0 || result.ReelStops[reel] >= playableCount)
                 Flag("slot-stop-invalid", $"Reel {reel + 1} has a stop outside its captured strip.");
             else if (rawGeneratedReels is not null && rawGeneratedReels.Count == result.Reels.Count &&
@@ -161,6 +169,17 @@ internal static class SlotRoundAudit
                 Flag("slot-feature-award-mismatch", "The feature awards do not match the visible reels.");
             var moneyLines = result.Payout.Paylines.Where(line => line.PaylineId == 901).ToArray();
             var bananaLines = result.Payout.Paylines.Where(line => line.PaylineId is >= 801 and < 901).ToArray();
+            var lightningLines = result.Payout.Paylines
+                .Where(line => line.PaylineId == ArcaneLightningCollector.PaylineId).ToArray();
+            var expectedCollection = arcaneCollector
+                ? ArcaneLightningCollector.Calculate(result.Reels, result.WagerPoints) : null;
+            var lightningPoints = expectedCollection?.TotalPoints ?? 0;
+            IReadOnlyList<PaylinePayout> expectedLightningLines = expectedCollection is null
+                ? [] : [ArcaneLightningCollector.CreatePayout(expectedCollection, result.WagerPoints)];
+            if (!SameLightningCollection(expectedCollection, result.LightningCollection) ||
+                !LinesEqual(lightningLines, expectedLightningLines))
+                Flag("slot-arcane-collector-mismatch",
+                    "The lightning collector positions, values, or payout do not match the visible reels.");
             var offPaylinePoints = foundryCollector || rainbowHarvest ? moneyPoints : 0;
             var listedMoneyPoints = moneyPoints - offPaylinePoints;
             if (moneyLines.Length != (listedMoneyPoints > 0 ? 1 : 0) ||
@@ -170,16 +189,18 @@ internal static class SlotRoundAudit
                 bananaLines.Any(line => line.AmountPoints != bananaUnit) ||
                 !bananaLines.Select(line => line.PaylineId)
                     .SequenceEqual(Enumerable.Range(801, bananaLines.Length)) ||
-                result.Payout.Paylines.Any(line => line.PaylineId >= 901 && line.PaylineId != 901))
+                result.Payout.Paylines.Any(line => line.PaylineId >= 901 &&
+                    line.PaylineId != 901 && line.PaylineId != ArcaneLightningCollector.PaylineId))
                 Flag("slot-feature-payout-mismatch", "The feature payline breakdown does not match its award.");
-            var expectedTotal = checked(basePayout.TotalPoints + moneyPoints + bananaPoints);
+            var expectedTotal = checked(basePayout.TotalPoints + moneyPoints + bananaPoints + lightningPoints);
             if (result.Payout.TotalPoints != expectedTotal ||
                 result.Payout.TotalPoints != checked(result.Payout.Paylines.Sum(line => line.AmountPoints) + offPaylinePoints) ||
                 result.Payout.Paylines.Any(line => line.AmountPoints != line.Matches.Sum(match => match.AmountPoints)))
                 Flag("slot-payout-total-mismatch", "The outcome payout does not balance with its paylines and separate awards.");
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
-            var usesEnergy = result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null;
+            var usesEnergy = !arcaneCollector &&
+                (result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null);
             var multiply = usesEnergy && !foundryCollector &&
                 fullEnergy >= 100 && result.Payout.TotalPoints > 0;
             var expectedSettledLines = multiply
@@ -242,6 +263,11 @@ internal static class SlotRoundAudit
 
     private static long RoundPoints(decimal points) =>
         checked((long)Math.Round(points, MidpointRounding.AwayFromZero));
+
+    internal static bool SameLightningCollection(ArcaneLightningCollection? left, ArcaneLightningCollection? right) =>
+        left is null ? right is null : right is not null &&
+            left.Collector == right.Collector && left.TotalPoints == right.TotalPoints &&
+            left.Cells is not null && right.Cells is not null && left.Cells.SequenceEqual(right.Cells);
 
     private static long Scale(long points, decimal multiplier) =>
         RoundPoints(points * multiplier);

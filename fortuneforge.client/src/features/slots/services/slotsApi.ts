@@ -224,9 +224,36 @@ function isSpinResult(result: unknown): result is SpinResult {
     result.reelStops.length === result.reels.length &&
     result.reelStops.every((stop) => Number.isInteger(stop)) &&
     typeof result.payout.totalPoints === 'number' &&
+    (result.lightningCollection == null || (result.gameId === 'arcane-archives-v1' &&
+      validLightningCollection(result.lightningCollection, result.reels, result.payout.totalPoints))) &&
     Array.isArray(result.payout.paylines) &&
     result.payout.paylines.every(isPaylinePayout)
   )
+}
+
+function validLightningCollection(value: unknown, reels: unknown[][], totalPayout: number): boolean {
+  if (!isRecord(value) || !isRecord(value.collector)) return false
+  const { collector, cells, totalPoints } = value
+  if (!isNonNegativeInteger(collector.reel) || !isNonNegativeInteger(collector.row) ||
+    reels[collector.reel]?.[collector.row] !== 'BOLT' || !Array.isArray(cells) || cells.length === 0 ||
+    !isNonNegativeInteger(totalPoints) || totalPoints > totalPayout) return false
+
+  const positions = new Set<string>()
+  let collected = 0
+  for (const cell of cells) {
+    if (!isRecord(cell) || !isNonNegativeInteger(cell.reel) || !isNonNegativeInteger(cell.row) ||
+      !isNonNegativeInteger(cell.amountPoints) || cell.amountPoints === 0) return false
+    const symbol = reels[cell.reel]?.[cell.row]
+    const key = `${cell.reel}:${cell.row}`
+    if ((symbol !== '7' && symbol !== 'POWER' && symbol !== 'SEAL_RAND') || positions.has(key)) return false
+    positions.add(key)
+    collected += cell.amountPoints
+  }
+  return collected === totalPoints
+}
+
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
 function isMidnightRound(value: unknown): value is MidnightVaultBonusRound {

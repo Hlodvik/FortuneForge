@@ -34,6 +34,7 @@ type ThemedSymbolSpec = {
   image: string
   responsiveImages?: SlotResponsiveImages
   label: string
+  wagerMultiplier?: number
 }
 
 export type ThemedSymbolSetOptions = {
@@ -71,6 +72,7 @@ export function createThemedSymbolSet(options: ThemedSymbolSetOptions): SlotSymb
       label: symbol.label,
       image: symbol.image,
       ...(symbol.responsiveImages ? { responsiveImages: symbol.responsiveImages } : {}),
+      ...(symbol.wagerMultiplier !== undefined ? { wagerMultiplier: symbol.wagerMultiplier } : {}),
       animatedImage: symbol.image,
     }
   }

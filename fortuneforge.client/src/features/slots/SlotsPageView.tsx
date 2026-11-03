@@ -4,6 +4,9 @@ import { createPortal } from 'react-dom'
 import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
 import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
 import rainbowRealmWordmark from '../../assets/slots/games/rainbow-realm/optimized/rainbow-realm-wordmark-v1.webp'
+import arcaneArchivesWordmark from '../../assets/slots/games/arcane-archives/optimized/arcane-archives-wordmark-v1.webp'
+import { ArcaneLightningCollection } from '../../games/slots/arcaneArchives/ArcaneLightningCollection'
+import '../../games/slots/arcaneArchives/arcaneArchivesWordmark.css'
 import { MidnightWinningPaylines } from '../../games/slots/dragonHoard/MidnightWinningPaylines'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
@@ -80,6 +83,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
+    lightningCollection,
     mascotActionKey,
     mascotPhase,
     mascotSet,
@@ -138,6 +142,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const isPiratesFortune = cabinetTheme.id === 'pirates-fortune-moonlit-cove-v1'
   const isReelRiches = cabinetTheme.id === 'reel-riches-cabinet-v1'
   const isMidnightVault = cabinetTheme.id === 'dragon-hoard-cabinet-v1'
+  const isArcaneArchives = cabinetTheme.id === 'arcane-archives-cabinet-v1'
   const activeWagerLabel = isMidnightVault
     ? `R${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(activeWagerDisplay)}`
     : formatRand(activeWagerDisplay)
@@ -217,9 +222,11 @@ export function SlotsPageView(controller: SlotsPageController) {
     freeSpinsRemaining,
     useFreeGameForNextSpin,
     bonusName: isMidnightVault ? specialRound?.title : undefined,
-    featureAward: moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
-      ? { label: moneyGrabFeature.awardLabel, amount: lastCollectorAward }
-      : undefined,
+    featureAward: lightningCollection
+      ? { label: 'Lightning collection', amount: slotPointsToRand(lightningCollection.totalPoints, controller.pointValueInCents) }
+      : moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
+        ? { label: moneyGrabFeature.awardLabel, amount: lastCollectorAward }
+        : undefined,
   })
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
@@ -313,6 +320,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     >
       <main className="slots-page__main">
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
+        {isArcaneArchives && <img className="arcane-archives__wordmark" src={arcaneArchivesWordmark} width={768} height={512} alt="" />}
         <div className="slots-page__layout">
           <div className="slots-page__stage">
           {cabinetTheme.titleArtwork && (
@@ -457,37 +465,48 @@ export function SlotsPageView(controller: SlotsPageController) {
             <SlotMachine
               cabinetTheme={activeCabinetTheme}
               reelCount={displayedReels.length}
+              reelOverlay={lightningCollection && (
+                <ArcaneLightningCollection collection={lightningCollection} reducedMotion={prefersReducedMotion} />
+              )}
               renderReel={(reelIndex) => (
               <div
                 className={`slot-reel__symbols slot-reel__symbols--${reelMotion[reelIndex]}`}
                 style={reelStripStyle(reelIndex)}
               >
-                {displayedReels[reelIndex].map((symbol, rowIndex) => (
-                  <SlotSymbol
-                    key={`row-${rowIndex}`}
-                    symbol={symbol}
-                    symbolSet={symbolSet}
-                    valueLabel={getSlotSymbolValueLabel(
-                      getSlotSymbolDefinition(symbolSet, symbol),
-                      activeWagerDisplay,
-                    )}
-                    reelIndex={reelIndex}
-                     rowIndex={rowIndex}
-                    animated={shouldUseAnimatedSymbol(
-                      prefersReducedMotion,
-                      reelMotion[reelIndex],
-                    )}
-                    beingGrabbed={moneyGrabPresentation?.tokens.some(
-                      (token) => token.reel === reelIndex && token.row === rowIndex,
-                    ) ?? false}
-                    highlighted={winningPositions.some(
-                      (position) => position.reel === reelIndex && position.row === rowIndex,
-                    )}
-                    highlightOrder={winningPositions.findIndex(
-                      (position) => position.reel === reelIndex && position.row === rowIndex,
-                    )}
-                  />
-                ))}
+                {displayedReels[reelIndex].map((symbol, rowIndex) => {
+                  const collectedValue = lightningCollection?.cells.find(
+                    position => position.reel === reelIndex && position.row === rowIndex,
+                  )
+                  const valueLabel = collectedValue
+                    ? formatRand(slotPointsToRand(collectedValue.amountPoints, controller.pointValueInCents))
+                    : getSlotSymbolValueLabel(
+                      getSlotSymbolDefinition(symbolSet, symbol), activeWagerDisplay,
+                      isArcaneArchives && !symbol.startsWith('RAND_') ? controller.pointValueInCents : undefined,
+                    )
+                  return (
+                    <SlotSymbol
+                      key={`row-${rowIndex}`}
+                      symbol={symbol}
+                      symbolSet={symbolSet}
+                      valueLabel={valueLabel}
+                      reelIndex={reelIndex}
+                      rowIndex={rowIndex}
+                      animated={shouldUseAnimatedSymbol(
+                        prefersReducedMotion,
+                        reelMotion[reelIndex],
+                      )}
+                      beingGrabbed={moneyGrabPresentation?.tokens.some(
+                        (token) => token.reel === reelIndex && token.row === rowIndex,
+                      ) ?? false}
+                      highlighted={winningPositions.some(
+                        (position) => position.reel === reelIndex && position.row === rowIndex,
+                      )}
+                      highlightOrder={winningPositions.findIndex(
+                        (position) => position.reel === reelIndex && position.row === rowIndex,
+                      )}
+                    />
+                  )
+                })}
               </div>
               )}
             />

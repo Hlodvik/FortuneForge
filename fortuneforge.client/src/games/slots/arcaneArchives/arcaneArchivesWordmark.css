@@ -1,0 +1,20 @@
+.slots-page[data-slot-theme='arcane-archives-cabinet-v1'] .slots-page__main {
+  position: relative;
+}
+
+.arcane-archives__wordmark {
+  position: absolute;
+  z-index: 1;
+  top: clamp(0.75rem, 2vw, 1.25rem);
+  left: clamp(0.75rem, 2vw, 1.5rem);
+  display: block;
+  width: clamp(9rem, 15vw, 13.5rem);
+  height: auto;
+  pointer-events: none;
+}
+
+@media (max-width: 900px), (max-aspect-ratio: 6/5) {
+  .arcane-archives__wordmark {
+    display: none;
+  }
+}

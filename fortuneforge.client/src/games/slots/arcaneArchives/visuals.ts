@@ -1,22 +1,23 @@
 import amberOracleRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-amber-oracle-rune-v2.webp'
 import cabinetEmblem from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-cabinet-emblem-v2.webp'
 import candle from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-candle-v2.webp'
-import celestialSpellburst from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-celestial-spellburst-v2.webp'
+import aetherConstellation from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-aether-constellation-v1.webp'
 import crystal from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-crystal-v2.webp'
-import emeraldFortuneRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-emerald-fortune-rune-v2.webp'
+import fortuneConstellationRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-fortune-constellation-rune-v7.webp'
 import enchantedBookSatchel from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-enchanted-book-satchel-v2.webp'
 import grandGrimoire from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-grand-grimoire-v2.webp'
 import library from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-library-v2.webp'
 import livingLightningRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-living-lightning-rune-v2.webp'
 import manaToken from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-mana-token-v2.webp'
+import openBookConstellationRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-open-book-constellation-rune-v5.webp'
 import owl from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-owl-v2.webp'
-import potion from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-potion-v2.webp'
-import quill from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-quill-v2.webp'
+import potion from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-potion-v3.webp'
+import quill from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-quill-v3.webp'
 import rubyEchoRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-ruby-echo-rune-v2.webp'
 import sapphireMoonRune from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-sapphire-moon-rune-v2.webp'
 import scroll from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-scroll-v2.webp'
 import secretLibraryDoorway from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-secret-library-doorway-v2.webp'
-import triadMagicWands from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-triad-magic-wands-v2.webp'
+import traditionalWand from '../../../assets/slots/games/arcane-archives/optimized/arcane-archives-traditional-wand-v6.webp'
 
 export const ARCANE_ARCHIVES_VISUALS = {
   backdrop: library,
@@ -28,15 +29,16 @@ export const ARCANE_ARCHIVES_VISUALS = {
   potion,
   crystal,
   owl,
+  bookRune: openBookConstellationRune,
   wild: grandGrimoire,
   free: secretLibraryDoorway,
-  power: celestialSpellburst,
+  power: aetherConstellation,
   energy: livingLightningRune,
-  lineBonus: triadMagicWands,
+  lineBonus: traditionalWand,
   collector: enchantedBookSatchel,
   sync: rubyEchoRune,
   rows: sapphireMoonRune,
   paw: amberOracleRune,
-  rand: emeraldFortuneRune,
+  rand: fortuneConstellationRune,
   value: manaToken,
 } as const

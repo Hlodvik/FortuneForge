@@ -97,6 +97,7 @@ export type SlotSpecialRoundFeature = {
 export type SlotFeatureSet = {
   collections?: SlotCollectionFeature
   energy?: SlotEnergyFeature
+  lightningCollection?: { collectorSymbol: SlotSymbolId }
   moneyGrab?: SlotMoneyGrabFeature
   specialRound?: SlotSpecialRoundFeature
 }

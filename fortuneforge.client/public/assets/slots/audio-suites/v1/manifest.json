@@ -1,7 +1,7 @@
 {
   "version": 1,
   "created": "2026-11-02",
-  "originalComposition": true,
+  "originalComposition": false,
   "sampleRate": 44100,
   "channels": 2,
   "codec": "ogg-vorbis",
@@ -29,10 +29,10 @@
     "bonus-complete"
   ],
   "suiteCount": 16,
-  "cueCount": 320,
-  "totalBytes": 23298088,
+  "cueCount": 321,
+  "totalBytes": 26807134,
   "suiteManifestPattern": "/assets/slots/audio-suites/v1/{slug}/manifest.json",
-  "notes": "Generic cue filenames remain fixed for the shared runtime contract. The four collection cues are musically distinct for each title. Music and reel textures have exact-zero 2ms boundaries, circular mixing and reverb; nonloops have 4ms edge fades. Vorbis encoding and PCM decode verification run for every cue. Runtime synthesis is unnecessary. Excluded existing titles: Midnight Vault (dragon-hoard), Wukong, Pirates and the separately supplied Gold Foundry palette.",
+  "notes": "Generic cue filenames remain fixed for the shared runtime contract. The four collection cues are musically distinct for each title. Music and reel textures have exact-zero 2ms boundaries, circular mixing and reverb; nonloops have 4ms edge fades. Vorbis encoding and PCM decode verification run for every cue. Runtime synthesis is unnecessary. Excluded existing titles: Midnight Vault (dragon-hoard), Wukong, Pirates and the separately supplied Gold Foundry palette. Arcane Archives uses MintoDog's CC0 Magic Puzzle In-Game 1 for continuous base and bonus music.",
   "suites": [
     {
       "version": 1,
@@ -4256,7 +4256,7 @@
       "version": 1,
       "slug": "arcane-archives",
       "title": "Arcane Archives",
-      "originalComposition": true,
+      "originalComposition": false,
       "theme": "Dorian celesta figures, quiet harp filigree and breathy, nonverbal choir tones.",
       "bpm": 90,
       "bonusBpm": 98,
@@ -4271,7 +4271,7 @@
       "channels": 2,
       "sourceGenerator": "tools/audio-suites/render-themed-suites.mjs",
       "generatorSha256": "c210219097f6eefd50a0bdf748d204258f9092121fa5360e29d4fd289c870efd",
-      "provenance": "All sounds are original offline algorithmic compositions and synthesis. No licensed or unlicensed external recordings, borrowed melodies, scraped sound effects, or network services are used. Neon Nights uses the unchanged user-approved original PCM masters.",
+      "provenance": "The baseline twenty cues are original offline algorithmic compositions and synthesis. The active music is an additional, unchanged MintoDog recording released under CC0-1.0; its creator page, license, and hash are recorded below. The original base and bonus loops are retained as inactive source assets.",
       "tracks": [
         {
           "id": "night-drive",
@@ -4339,6 +4339,42 @@
             "codec": "vorbis",
             "container": "ogg",
             "quality": 5
+          }
+        },
+        {
+          "id": "magic-puzzle-in-game-1",
+          "title": "Magic Puzzle In-Game 1 · active music",
+          "group": "Music",
+          "file": "magic-puzzle-in-game-1.ogg",
+          "url": "/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg",
+          "loop": true,
+          "volume": 0.28,
+          "description": "MintoDog CC0 fantasy puzzle composition. One continuous loop serves base and bonus play.",
+          "durationSeconds": 122.181814,
+          "peakDbfs": -1,
+          "rmsDbfs": -13.7,
+          "sampleRate": 44100,
+          "channels": 2,
+          "frames": 5388218,
+          "decodedPeakDbfs": -1,
+          "decodedRmsDbfs": -13.7,
+          "decodeVerified": true,
+          "bytes": 3509046,
+          "sha256": "f94f4a6f895f22669dd5ced4061f932e1b5335e40e36d1e94fe7cfc222a4c2b8",
+          "source": {
+            "type": "cc0-artist-ogg-unchanged",
+            "title": "Magic Puzzle In-Game 1",
+            "creator": "MintoDog",
+            "url": "https://opengameart.org/content/magic-puzzle-in-game-1",
+            "downloadUrl": "https://opengameart.org/sites/default/files/magic_puzzle_in-game_1_bpm110_0.ogg",
+            "license": "CC0-1.0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "sha256": "f94f4a6f895f22669dd5ced4061f932e1b5335e40e36d1e94fe7cfc222a4c2b8",
+            "bytes": 3509046
+          },
+          "encoding": {
+            "codec": "vorbis",
+            "container": "ogg"
           }
         },
         {
@@ -4953,7 +4989,13 @@
             "quality": 5
           }
         }
-      ]
+      ],
+      "runtimeMusicSelection": {
+        "trackId": "magic-puzzle-in-game-1",
+        "bpm": 110,
+        "baseVolume": 0.28,
+        "bonusMode": "continue-base-loop"
+      }
     },
     {
       "version": 1,

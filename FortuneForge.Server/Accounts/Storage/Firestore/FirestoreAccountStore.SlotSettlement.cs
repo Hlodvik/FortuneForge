@@ -39,8 +39,12 @@ public sealed partial class FirestoreAccountStore
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
         var isGoldFoundry = result.GameId == GoldFoundrySlotDefinitions.GameId;
-        var rainbowSunshineDisabled = result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId &&
-            result.EngineAudit.BaseGame.Energy is null;
+        var arcaneLightning = result.EngineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion;
+        if (arcaneLightning &&
+            (!ArcaneLightningCollector.IsModel(result.EngineAudit.BaseGame) || result.IsFreeSpin != admission.IsFreeSpin))
+            throw new InvalidOperationException("Arcane Archives' outcome differs from the admitted lightning model or spin type.");
+        var ignoreLegacyEnergy = arcaneLightning ||
+            result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId && result.EngineAudit.BaseGame.Energy is null;
         if (isGoldFoundry)
             GoldFoundryCrucible.ValidatePaidOutcome(result, admission);
         if (isMidnightGame &&
@@ -49,7 +53,7 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted bonus mode.");
         var frozenSettlementField = isMidnightGame ? "midnightSettlementJson" :
-            isGoldFoundry ? "goldFoundrySettlementJson" : null;
+            isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" : null;
         var engineOutcomeSha256 = frozenSettlementField is not null ? EngineOutcomeSha256(result) : null;
 
         var chargedWagerCents = admission.ChargedWagerCents;
@@ -112,7 +116,7 @@ public sealed partial class FirestoreAccountStore
                     throw new InvalidOperationException("Slot admission has already been used.");
                 }
                 if (frozenSettlementField is not null && existingResult.Exists &&
-                    (isMidnightGame || ReadString(existingResult, "engineOutcomeSha256") is not null))
+                    (isMidnightGame || arcaneLightning || ReadString(existingResult, "engineOutcomeSha256") is not null))
                 {
                     if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
                         ReadString(existingResult, "admissionId") != admission.AdmissionId.ToString("N") ||
@@ -141,7 +145,7 @@ public sealed partial class FirestoreAccountStore
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var currentFreeGames = ReadLong(freeGamesSnapshot, "available");
                 var currentSpecialPoints = ReadLong(specialPointsSnapshot, "available");
-                var currentEnergy = rainbowSunshineDisabled ? 0 : ReadLong(energySnapshot, "available");
+                var currentEnergy = ignoreLegacyEnergy ? 0 : ReadLong(energySnapshot, "available");
                 if (existingResult.Exists)
                 {
                     var existingSealCollections = CreateSealCollections(
@@ -187,7 +191,7 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 SlotSpecialRoundProfiles.TryGet(result.GameId, out var specialRoundProfile);
-                if (result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId)
+                if (result.GameId is SlotSpecialRoundProfiles.RainbowRealmGameId or SlotSpecialRoundProfiles.ArcaneArchivesGameId)
                     specialRoundProfile = result.EngineAudit.FeatureProfile ?? specialRoundProfile;
                 if (isGoldFoundry && currentEnergy != admission.EnergyBalance)
                     throw new InvalidOperationException("The crucible charge differs from the admitted spin.");
@@ -588,8 +592,9 @@ public sealed partial class FirestoreAccountStore
             cancellationToken: cancellationToken);
     }
 
-    private static string EngineOutcomeSha256(SpinResult result) =>
-        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(new
+    private static string EngineOutcomeSha256(SpinResult result)
+    {
+        var snapshot = new
         {
             result.SpinId, result.GameId, result.ReelSetId, result.SymbolSetId, result.PaytableId,
             result.WagerPoints, result.PointValueInCents, result.ReelStops, result.Reels, result.Payout,
@@ -598,7 +603,12 @@ public sealed partial class FirestoreAccountStore
             result.MonkeyPawCount, result.MoneyGrabPoints, result.BananaBonusPoints,
             SealsAwarded = result.SealsAwarded.OrderBy(pair => pair.Key, StringComparer.Ordinal),
             EngineAudit = result.EngineAudit
-        }))));
+        };
+        var json = result.EngineAudit?.EngineVersion == ArcaneLightningCollector.EngineVersion
+            ? JsonSerializer.Serialize(new { snapshot, result.LightningCollection })
+            : JsonSerializer.Serialize(snapshot);
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
+    }
 
     internal static Dictionary<string, object> CreateVisibleSymbolWindowData(
         IReadOnlyList<IReadOnlyList<string>> reels) => new()

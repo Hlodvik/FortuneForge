@@ -80,7 +80,7 @@ describe.each(audited)('$catalog.title audited guide', game => {
   it('omits rewards for disabled features without changing the playable rules or artwork', () => {
     if (!profile.usesEnergy) {
       expect(experience.features.energy).toBeUndefined()
-      expect(entry('BOLT')).toBeUndefined()
+      expect(Boolean(entry('BOLT'))).toBe(experience.features.lightningCollection?.collectorSymbol === 'BOLT')
     }
     if (!profile.usesDirectValueTokens) {
       expect(experience.features.moneyGrab).toBeUndefined()

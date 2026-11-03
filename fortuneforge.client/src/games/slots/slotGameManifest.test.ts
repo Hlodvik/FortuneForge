@@ -52,7 +52,6 @@ const NEON_NIGHTS_SLOT_GAME = requireGame('neon-nights')
 const NORDIC_LEGENDS_SLOT_GAME = requireGame('nordic-legends')
 const SECOND_WAVE_SLOT_GAMES = SECOND_WAVE_SLOT_GAME_IDS.map(requireGame)
 const REEL_SYMBOL_CATALOG_GAME_IDS = [
-  'arcane-archives',
   'cosmic-fortune',
   'gold-foundry',
   'rainbow-realm',
@@ -170,8 +169,10 @@ describe('slot game manifests', () => {
       else expect(game.experience.features.moneyGrab).toBeUndefined()
       expect(game.experience.features.collections?.presentation).toBe(presentation)
       expect(game.experience.features.collections?.entries).toHaveLength(4)
-      expect(game.experience.help.extraSections).toHaveLength(2)
-      expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
+      expect(game.experience.help.extraSections).toHaveLength(game.id === 'arcane-archives' ? 3 : 2)
+      expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(
+        Boolean(game.experience.features.energy || game.experience.features.lightningCollection),
+      )
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       expect(new Set(
         Object.values(game.experience.symbols.definitions)
@@ -181,6 +182,16 @@ describe('slot game manifests', () => {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
     }
+
+    const { features, symbols } = ARCANE_ARCHIVES_SLOT_GAME.experience
+    expect(features.energy).toBeUndefined()
+    expect(features.lightningCollection?.collectorSymbol).toBe('BOLT')
+    expect(symbols.definitions['7']?.wagerMultiplier).toBe(0.5)
+    expect(symbols.definitions.POWER?.wagerMultiplier).toBe(1)
+    expect(symbols.definitions.SEAL_RAND?.wagerMultiplier).toBe(2)
+    const arcaneCatalogImage = ARCANE_ARCHIVES_SLOT_GAME.catalog.image
+    expect(arcaneCatalogImage).toMatch(/arcane-archives-owl-v2\.webp$/)
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'arcane-archives')?.image).toBe(arcaneCatalogImage)
   })
 
   it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
@@ -297,7 +308,7 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('uses a representative reel symbol for every slot catalog card', () => {
+  it('uses a representative reel symbol for the reel-art catalog cards', () => {
     for (const gameId of REEL_SYMBOL_CATALOG_GAME_IDS) {
       const game = requireGame(gameId)
       const reelSymbol = game.experience.symbols.definitions[gameId === 'gold-foundry' ? 'PAW' : '7']

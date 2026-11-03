@@ -41,6 +41,13 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public ReelSetDefinition? GetReelSet(string id)
     {
+        if (id == ArcaneLightningCollector.ReelSetId)
+        {
+            var game = options.Value.GameDefinitions.SingleOrDefault(game =>
+                game.Id == SlotSpecialRoundProfiles.ArcaneArchivesGameId) ?? options.Value.ClassicProfileTemplate;
+            var source = game is null ? null : options.Value.ReelSets.SingleOrDefault(set => set.Id == game.Math.ReelSetId);
+            return source is null ? null : ArcaneArchivesBaseReelSet.Create(source);
+        }
         if (id == GoldFoundrySlotDefinitions.ReelSetId)
             return GoldFoundrySlotDefinitions.CreateReelSet();
         if (id == RainbowRealmSlotDefinitions.ReelSetId)

@@ -435,11 +435,24 @@ export const RAINBOW_REALM_SOUNDS: SlotSoundSet = createThemedSlotAudio('rainbow
   },
 })
 
-export const ARCANE_ARCHIVES_SOUNDS = createThemedSlotSounds('arcane-archives-audio-v1', {
+const arcaneArchivesBaseSounds = createThemedSlotSounds('arcane-archives-audio-v1', {
   ambienceSource: hauntedChimesSource, ambienceVolume: 0.035,
   leverSource: leverCoinSource, leverVolume: 0.25,
   bonus: ['five-twinkle', 'premium-win'], five: ['five-jewel', 'five-twinkle'], premium: ['premium-win'],
 })
+
+const arcaneArchivesMusicSource = '/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg'
+
+export const ARCANE_ARCHIVES_SOUNDS: SlotSoundSet = {
+  ...arcaneArchivesBaseSounds,
+  cues: {
+    ...arcaneArchivesBaseSounds.cues,
+    ambience: { ...arcaneArchivesBaseSounds.cues.ambience, source: arcaneArchivesMusicSource, baseVolume: 0.28 },
+    'special-ambience': { ...arcaneArchivesBaseSounds.cues['special-ambience'], source: arcaneArchivesMusicSource, baseVolume: 0.28 },
+  },
+  // Keep the approved loop running through bonus rounds instead of switching tracks.
+  events: { ...arcaneArchivesBaseSounds.events, specialAmbience: undefined },
+}
 
 const reelRichesBaseSounds = createThemedSlotSounds('reel-riches-audio-v3', {
   ambienceSource: pirateVoyageSource, ambienceVolume: 0.045,

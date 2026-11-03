@@ -36,6 +36,12 @@ export type GridPosition = {
   row: number
 }
 
+export type LightningCollection = {
+  collector: GridPosition
+  cells: (GridPosition & { amountPoints: number })[]
+  totalPoints: number
+}
+
 export type SymbolMatch = {
   paylineId: number
   symbolId: SlotSymbolId
@@ -107,6 +113,7 @@ export type SpinResult = {
   payoutMultiplier: number
   monkeyPawCount: number
   moneyGrabPoints: number
+  lightningCollection?: LightningCollection | null
   bananaBonusPoints: number
   sealsAwarded: Record<string, number>
   sealCollections: SlotSealCollection[]

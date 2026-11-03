@@ -107,6 +107,57 @@ public sealed class SlotRoundAuditTests
     }
 
     [Fact]
+    public void ArcaneLightning_ReplaysSavedCollectionAndRejectsChangedValuesAndSettlement()
+    {
+        var result = SpinArcane();
+        var collection = Assert.IsType<ArcaneLightningCollection>(result.LightningCollection);
+        Assert.Equal(8, collection.TotalPoints);
+        var paid = SavedEvidence(result);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(paid.Summary, paid.PayloadJson));
+
+        var changed = JsonNode.Parse(paid.PayloadJson)!;
+        changed["data"]!["result"]!["lightningCollection"]!["cells"]![0]!["amountPoints"] = 5;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(paid.Summary, changed.ToJsonString()),
+            finding => finding.Code == "slot-arcane-collector-mismatch");
+
+        var lightningLine = Assert.Single(result.Payout.Paylines,
+            line => line.PaylineId == ArcaneLightningCollector.PaylineId);
+        var duplicatedPayout = result.Payout with { Paylines = [.. result.Payout.Paylines, lightningLine] };
+        Assert.Contains(SlotRoundAudit.Check(result with { Payout = duplicatedPayout }, result.Payout),
+            finding => finding.Code == "slot-arcane-collector-mismatch");
+
+        var boosted = EnergyBonus.Settle(100, result.EnergyAwarded, result.Payout).Payout;
+        Assert.Contains(SlotRoundAudit.Check(SpinArcane(energy: 100), boosted),
+            finding => finding.Code == "slot-settlement-mismatch");
+
+        var participant = Assert.Single(paid.Summary.Participants);
+        var alteredSummary = paid.Summary with
+        {
+            Participants = [participant with { PayoutCents = participant.PayoutCents + 1 }]
+        };
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(alteredSummary, paid.PayloadJson),
+            finding => finding.Code == "slot-arcane-financial-mismatch");
+
+        var demo = SavedDemoEvidence(result);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(demo.Summary, demo.PayloadJson));
+        var changedDemo = JsonNode.Parse(demo.PayloadJson)!;
+        changedDemo["responseResult"]!["lightningCollection"]!["collector"]!["row"] = 1;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(demo.Summary, changedDemo.ToJsonString()),
+            finding => finding.Code == "slot-demo-response-mismatch");
+    }
+
+    [Fact]
+    public void ArcaneLightning_HistoricalEnergySpinStillReplays()
+    {
+        var result = SpinArcane(legacy: true);
+        Assert.Equal(SpinService.AuditEngineVersion, result.EngineAudit?.EngineVersion);
+        Assert.Equal(2, result.EnergyAwarded);
+        Assert.Null(result.LightningCollection);
+        var saved = SavedEvidence(result);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(saved.Summary, saved.PayloadJson));
+    }
+
+    [Fact]
     public void SavedDemoEvidence_ReplaysFrozenOutcomeAndNonfinancialProgression()
     {
         var (result, _, _, _, _) = Spin(Provider(), SlotSpecialRoundProfiles.WukongGameId);
@@ -250,6 +301,64 @@ public sealed class SlotRoundAuditTests
         var options = document.RootElement.GetProperty("Slots")
             .Deserialize<SlotsOptions>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
         return new OptionsSlotsDefinitionProvider(Options.Create(options));
+    }
+
+    private static SpinResult SpinArcane(bool legacy = false, long energy = 0)
+    {
+        var random = new ArcaneFixtureRandom();
+        var service = new SpinService(new ArcaneFixtureProvider(Provider(), legacy),
+            new CryptoReelGenerator(random), new CombinationEvaluator(), new PayoutCalculator(), random);
+        var result = service.Spin(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 2, "arcane-audit-test",
+            false, currentEnergyBalance: energy);
+        return legacy ? result with
+        {
+            EngineAudit = result.EngineAudit! with
+            {
+                FeatureProfile = result.EngineAudit.FeatureProfile! with { UsesEnergy = true }
+            }
+        } : result;
+    }
+
+    private sealed class ArcaneFixtureProvider(OptionsSlotsDefinitionProvider provider, bool legacy)
+        : ISlotsDefinitionProvider
+    {
+        public GameDefinition GetGame(string id)
+        {
+            var current = provider.GetGame(id)!;
+            if (!legacy) return current;
+            return new GameDefinition
+            {
+                Id = current.Id, Layout = current.Layout, Symbols = current.Symbols,
+                Matching = current.Matching, Wagering = current.Wagering, Paylines = current.Paylines,
+                FreeGames = current.FreeGames, SpecialPoints = current.SpecialPoints,
+                Energy = new() { SymbolId = "BOLT", PointsPerVisibleSymbol = 1 },
+                Math = new()
+                {
+                    ReelSetId = "classic-reels-v4", PaytableId = current.Math.PaytableId,
+                    PaylinePayoutSteps = current.Math.PaylinePayoutSteps,
+                    PayoutMultiplier = current.Math.PayoutMultiplier, Targets = current.Math.Targets
+                }
+            };
+        }
+
+        public ReelSetDefinition GetReelSet(string id) => new()
+        {
+            Id = id, SymbolSetId = GetGame(SlotSpecialRoundProfiles.ArcaneArchivesGameId).Symbols.SymbolSetId,
+            Reels =
+            [
+                ["BOLT", "7", "POWER", "SEAL_RAND"], ["BOLT", "7", "2", "3"],
+                ["4", "5", "6", "2"], ["3", "4", "5", "6"], ["2", "3", "4", "5"]
+            ]
+        };
+
+        public SymbolSetDefinition? GetSymbolSet(string id) => provider.GetSymbolSet(id);
+        public PaytableDefinition? GetPaytable(string id) => provider.GetPaytable(id);
+    }
+
+    private sealed class ArcaneFixtureRandom : IRandomIndexSource
+    {
+        private int _reelStopsRemaining = 5;
+        public int Next(int maximumExclusive) => _reelStopsRemaining-- > 0 ? 0 : maximumExclusive - 1;
     }
 
     private sealed class SeededRandom(int seed) : IRandomIndexSource

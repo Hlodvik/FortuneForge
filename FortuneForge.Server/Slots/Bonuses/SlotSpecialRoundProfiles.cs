@@ -152,7 +152,9 @@ public static class SlotSpecialRoundProfiles
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23]),
             [ArcaneArchivesGameId] = new(
                 ArcaneArchivesGameId, 3, 5, 40, 10,
+                UsesEnergy: false,
                 CollectionFeatureMode: "sync-paw-rand",
+                BaseReelSetId: ArcaneLightningCollector.ReelSetId,
                 PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
                 PayoutMultiplier: 0.716m),
             [GoldFoundrySlotDefinitions.GameId] = GoldFoundrySlotDefinitions.Profile

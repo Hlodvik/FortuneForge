@@ -42,7 +42,7 @@ import {
   requestSpin,
   SpinRequestError,
 } from './services/slotsApi'
-import type { GridPosition, MidnightVaultBonusRound, MidnightVaultDemoState, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
+import type { GridPosition, LightningCollection, MidnightVaultBonusRound, MidnightVaultDemoState, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
 import type { AccountSummary } from '../account/services/accountsApi'
 
 type EnergyFlyover = {
@@ -120,6 +120,8 @@ const regularWinBalanceCountDurationMs = 420
 const bigWinCountDurationMs = 1250
 const bigWinBalanceCountDurationMs = 720
 const winFlyoverDurationMs = 540
+const lightningCollectionDurationMs = 500
+const lightningCollectionPayoutId = 902
 const autoSpinWinPresentationMaxMultiplier = 1.35
 const extraRowsFeatureMode = 'rows'
 const specialSpinDelayMs = 2_400
@@ -218,6 +220,7 @@ export function useSlotsPageController({
   const [bestWin, setBestWin] = useState<PaylinePayout | null>(null)
   const [lastWin, setLastWin] = useState(0)
   const [lastCollectorAward, setLastCollectorAward] = useState(0)
+  const [lightningCollection, setLightningCollection] = useState<LightningCollection | null>(null)
   const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
   const [winningPaylineCount, setWinningPaylineCount] = useState(0)
   const [winningPaylines, setWinningPaylines] = useState<PaylinePayout[]>([])
@@ -621,6 +624,7 @@ export function useSlotsPageController({
     setLastEnergyMultiplierApplied(false)
     setLastWin(0)
     setLastCollectorAward(0)
+    setLightningCollection(null)
     setLastFreeSpinsAwarded(0)
     setLastSpinOutcome(null)
     setWinningPaylineCount(0)
@@ -1464,6 +1468,7 @@ export function useSlotsPageController({
     setLastWin(0)
     setWinningPaylines([])
     setLastCollectorAward(0)
+    setLightningCollection(null)
     setEnergyAward((current) => current && { ...current, payoutCents: 0 })
     setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
@@ -1630,7 +1635,10 @@ export function useSlotsPageController({
         freeSpinsAwarded: presentedFreeSpinsAwarded,
         narrative: outcomeNarrative,
       })
-      const bestPayline = findBestPayline(result.payout.paylines)
+      const lineWins = result.lightningCollection
+        ? result.payout.paylines.filter(({ paylineId }) => paylineId !== lightningCollectionPayoutId)
+        : result.payout.paylines
+      const bestPayline = findBestPayline(lineWins)
       const winSoundCue = selectOutcomeSoundEvent(
         bestPayline,
         displayedReels.length,
@@ -1648,13 +1656,14 @@ export function useSlotsPageController({
         mascotOutcome = 'win'
       }
       setBestWin(bestPayline)
-      setWinningPaylineCount(result.payout.paylines.length)
-      setWinningPaylines(result.payout.paylines)
+      setWinningPaylineCount(lineWins.length)
+      setWinningPaylines(lineWins)
       setBonusPositions(triggeredBonusPositions)
       setLastSpinOutcome(spinOutcome)
       setResultAtmosphereId((current) => current + 1)
       const spinWinnings = awardedRand
       setLastWin(spinWinnings)
+      setLightningCollection(result.lightningCollection ?? null)
       if (featureSet.moneyGrab?.presentation === 'separate-award') {
         setLastCollectorAward(slotPointsToRand(result.moneyGrabPoints, result.pointValueInCents))
       }
@@ -1736,6 +1745,9 @@ export function useSlotsPageController({
           )
         }
       }
+      if (result.lightningCollection && !prefersReducedMotionRef.current) {
+        await waitForPresentation(lightningCollectionDurationMs, presentationSignal)
+      }
       await animateMoneyGrab(result, isFastAutoSpin, presentationSignal)
       await animateCreditWinAward(
         result,
@@ -1800,6 +1812,7 @@ export function useSlotsPageController({
       setSealImpactId(null)
       setWinAwardFlyover(null)
       setMoneyGrabPresentation(null)
+      setLightningCollection(null)
       if (expectedFreeSpin && !isFreeSpinUnavailable) {
         setFreeSpinsRemaining((current) => current + 1)
       }
@@ -2031,6 +2044,7 @@ export function useSlotsPageController({
     lastSpinOutcomeKey,
     lastWin,
     lastSpinOutcome,
+    lightningCollection,
     mascotActionKey,
     mascotPhase,
     mascotSet,

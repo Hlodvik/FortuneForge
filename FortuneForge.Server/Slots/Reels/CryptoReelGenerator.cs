@@ -1,3 +1,4 @@
+using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Slots.Reels;
@@ -68,11 +69,11 @@ public sealed class CryptoReelGenerator(IRandomIndexSource random) : IReelGenera
         }
     }
 
-    private static IReadOnlyList<string> GetPlayableStrip(
+    internal static IReadOnlyList<string> GetPlayableStrip(
         GameDefinition game,
         IReadOnlyList<string> source)
     {
-        if (game.Energy is not null) return source;
+        if (game.Energy is not null || ArcaneLightningCollector.IsModel(game)) return source;
 
         return source
             .Where(symbolId => !string.Equals(symbolId, EnergySymbolId, StringComparison.Ordinal))

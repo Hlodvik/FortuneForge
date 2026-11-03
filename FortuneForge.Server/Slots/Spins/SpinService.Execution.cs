@@ -28,7 +28,10 @@ public sealed partial class SpinService
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
         if (gameId == GoldFoundrySlotDefinitions.GameId)
             GoldFoundrySlotDefinitions.ValidateSpinRequest(admission.IsFreeSpin);
-        var derived = gameId == SlotSpecialRoundProfiles.DragonHoardGameId && admission.IsFreeSpin;
+        var derived = admission.IsFreeSpin &&
+            (gameId == SlotSpecialRoundProfiles.DragonHoardGameId ||
+             gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId && definitions.GetGame(gameId) is { } arcaneGame &&
+             ArcaneLightningCollector.IsModel(arcaneGame));
         var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
             admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
             derived, admission.MathModelId);
@@ -59,7 +62,9 @@ public sealed partial class SpinService
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         if (mathModelId is not null)
             game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, mathModelId);
-        if (derivedFreeSpin)
+        if (derivedFreeSpin && ArcaneLightningCollector.IsModel(game))
+            ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
+        else if (derivedFreeSpin)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
         else
             ValidateWager(game, wagerPoints);
@@ -121,6 +126,7 @@ public sealed partial class SpinService
         string? freeSpinFeatureMode)
     {
         var foundry = GoldFoundrySlotDefinitions.IsModel(game);
+        var arcaneLightning = ArcaneLightningCollector.IsModel(game);
         if (foundry)
             freeSpinFeatureMode = null;
         var effectiveGame = CreateEffectiveSpinGame(game, freeSpinFeatureMode);
@@ -152,7 +158,7 @@ public sealed partial class SpinService
             frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
             outcome = frequencyOutcome;
             if (!foundry)
-                outcome = ApplyFeatureSymbols(outcome, effectiveGame, currentEnergyBalance, freeSpinFeatureMode);
+                outcome = ApplyFeatureSymbols(outcome, effectiveGame, arcaneLightning ? 0 : currentEnergyBalance, freeSpinFeatureMode);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
             {
@@ -178,6 +184,13 @@ public sealed partial class SpinService
             : rainbowHarvest
             ? CalculateRainbowFeaturePayout(outcome.VisibleReels, wagerPoints, game.Math.PayoutMultiplier)
             : CalculateFeaturePayout(outcome.VisibleReels, wagerPoints, game.Math.PayoutMultiplier);
+        var lightningCollection = arcaneLightning
+            ? ArcaneLightningCollector.Calculate(outcome.VisibleReels, wagerPoints) : null;
+        if (lightningCollection is not null)
+            featurePayout = featurePayout with
+            {
+                Paylines = [.. featurePayout.Paylines, ArcaneLightningCollector.CreatePayout(lightningCollection, wagerPoints)]
+            };
         payout = AddFeaturePayout(payout, featurePayout);
         var freeSpinsAwarded = CountFreeGameSymbols(outcome.VisibleReels, effectiveGame) >=
             (effectiveGame.FreeGames?.RequiredSymbols ?? int.MaxValue)
@@ -207,7 +220,8 @@ public sealed partial class SpinService
         {
             EngineAudit = new SlotSpinEngineAudit(
                 foundry ? GoldFoundryReelCollector.EngineVersion :
-                    rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion : AuditEngineVersion,
+                    rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion :
+                    arcaneLightning ? ArcaneLightningCollector.EngineVersion : AuditEngineVersion,
                 DateTime.UtcNow, game, effectiveGame, reelSet,
                 symbolSet, paytable, featureProfile, pityMissesBefore,
                 currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
@@ -218,6 +232,7 @@ public sealed partial class SpinService
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,
+            LightningCollection = lightningCollection,
             SealsAwarded = foundry ? new Dictionary<string, int>() : CountSealSymbols(outcome.VisibleReels)
         };
     }

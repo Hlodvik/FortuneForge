@@ -46,6 +46,8 @@ internal static class SlotEvidenceReplayAudit
                     "The saved spin identity differs from its audit summary."));
             if (demo)
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
+            else if (engineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion)
+                findings.AddRange(InspectArcaneSettlement(data, result, engineAudit, settledPayout, summary));
             else if (GoldFoundrySlotDefinitions.IsModel(engineAudit.BaseGame))
                 findings.AddRange(GoldFoundryAudit.InspectPaidSettlement(data, result, engineAudit, settledPayout, summary));
             else if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
@@ -64,6 +66,20 @@ internal static class SlotEvidenceReplayAudit
             return [new("slot-evidence-replay-invalid", "error",
                 "The saved slot result or frozen engine rules cannot be parsed for independent outcome review.")];
         }
+    }
+
+    private static IReadOnlyList<RoundAuditFinding> InspectArcaneSettlement(
+        JsonElement data, SpinResult result, SlotSpinEngineAudit audit, SpinPayout settled, RoundAuditSummary summary)
+    {
+        var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
+        var wagerCents = isFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, result.PointValueInCents);
+        if (isFreeSpin != result.IsFreeSpin || isFreeSpin != audit.IsDerivedFreeSpin || summary.Participants.Count != 1 ||
+            summary.Participants[0].WagerCents != wagerCents || summary.Participants[0].PayoutCents != payoutCents ||
+            summary.Participants[0].NetCents != payoutCents - wagerCents)
+            return [new("slot-arcane-financial-mismatch", "error",
+                "The Arcane Archives stake and payout do not balance with the paid round summary.")];
+        return [];
     }
 
     private static IReadOnlyList<RoundAuditFinding> InspectMidnightAdmission(
@@ -294,6 +310,7 @@ internal static class SlotEvidenceReplayAudit
         engine.MonkeyPawCount == response.MonkeyPawCount &&
         engine.MoneyGrabPoints == response.MoneyGrabPoints &&
         engine.BananaBonusPoints == response.BananaBonusPoints &&
+        SlotRoundAudit.SameLightningCollection(engine.LightningCollection, response.LightningCollection) &&
         engine.SealsAwarded.Count == response.SealsAwarded.Count &&
         engine.SealsAwarded.All(pair => response.SealsAwarded.TryGetValue(pair.Key, out var count) && count == pair.Value);
 }

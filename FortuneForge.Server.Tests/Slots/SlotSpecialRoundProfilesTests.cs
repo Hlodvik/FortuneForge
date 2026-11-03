@@ -78,7 +78,8 @@ public sealed class SlotSpecialRoundProfilesTests
         })
         .ToArray();
 
-        Assert.Equal(7, profiles.Count(profile => profile.UsesEnergy));
+        Assert.Equal(6, profiles.Count(profile => profile.UsesEnergy));
+        Assert.False(profiles.Single(profile => profile.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId).UsesEnergy);
         Assert.Equal(12, profiles.Count(profile => !profile.UsesDirectValueTokens));
         Assert.Equal(6, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections && profile.ScatterAwardedSpins > 0), profile =>

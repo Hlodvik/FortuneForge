@@ -1,9 +1,10 @@
 import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import reelRichesMarlin from '../../assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp'
 import reelRichesBonusLake from '../../assets/slots/games/reel-riches/optimized/reel-riches-moonlit-bonus-v1.webp'
-import rainbowOrchardGate from '../../assets/slots/games/rainbow-realm/responsive/rainbow-orchard-gate-320.webp'
+import rainbowRealmWordmark from '../../assets/slots/games/rainbow-realm/optimized/rainbow-realm-wordmark-v1.webp'
+import { MidnightWinningPaylines } from '../../games/slots/dragonHoard/MidnightWinningPaylines'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -22,7 +23,7 @@ import { getSlotSymbolDefinition, getSlotSymbolImageSrcSet } from './config/symb
 import { InsufficientBalanceDialog } from './InsufficientBalanceDialog'
 import { getSlotOutcomePresentation } from './presentation/spinPresentation'
 import { shouldUseAnimatedSymbol } from './presentation/spinLifecycle'
-import { creditFormatter, formatRand, getSlotSymbolValueLabel } from './slotPagePresentation'
+import { creditFormatter, formatRand, getSlotSymbolValueLabel, slotPointsToRand } from './slotPagePresentation'
 import type { SlotsPageController } from './useSlotsPageController'
 import { WinHelpDialog } from './WinHelpDialog'
 import { midnightVaultGuideForModel } from '../../games/slots/dragonHoard/math'
@@ -113,6 +114,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     wagerOptions,
     winAwardFlyover,
     winningPaylineCount,
+    winningPaylines,
     winningPositions,
   } = controller
   const collectionFeature = featureSet.collections
@@ -139,6 +141,13 @@ export function SlotsPageView(controller: SlotsPageController) {
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune
   const usesPiratesControls = isPiratesFortune || usesSidecarControls
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
+  const tracedPaylines = useMemo(() => isRainbowRealm
+    ? winningPaylines.filter(({ paylineId }) => paylineId >= 1 && paylineId <= help.paylineCount)
+    : winningPaylines, [help.paylineCount, isRainbowRealm, winningPaylines])
+  const hasRainbowPaylineTrace = isRainbowRealm && tracedPaylines.length > 0
+  const showCollectionMeter = !isRainbowRealm
+  const rainbowBonusSymbol = isRainbowRealm ? getSlotSymbolDefinition(symbolSet, 'FREE') : undefined
+  const rainbowBonusImage = rainbowBonusSymbol?.responsiveImages?.[320] ?? rainbowBonusSymbol?.image
   const reelRichesIntroVisible = isReelRiches && freeSpinsRemaining > 0 &&
     !isSpecialGameActive && !isSpinning
   const reelRichesBonusVisible = isReelRiches && (reelRichesIntroVisible || isSpecialGameActive)
@@ -193,8 +202,8 @@ export function SlotsPageView(controller: SlotsPageController) {
     gameTitle: cabinetTheme.title,
     hasCompletedSpin,
     isSpinning,
-    lastEnergyAwarded,
-    lastEnergyMultiplierApplied,
+    lastEnergyAwarded: energyFeature ? lastEnergyAwarded : 0,
+    lastEnergyMultiplierApplied: Boolean(energyFeature) && lastEnergyMultiplierApplied,
     lastFreeSpinsAwarded,
     lastWin,
     spinError,
@@ -246,11 +255,25 @@ export function SlotsPageView(controller: SlotsPageController) {
     symbolSet={guideSymbols}
     showSidePanel={usesPiratesControls}
     sidePanelClassName={usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
-    showValueTokens={Boolean(moneyGrabFeature)}
+    showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     theme={isMidnightVault ? 'midnight-vault' : undefined}
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
   />
+
+  const keyboardHelp = (
+    <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
+      <span><kbd>Space</kbd> Spin / stop</span>
+      <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
+      {isRainbowRealm ? (
+        <button className="rainbow-realm__mute-shortcut" type="button" aria-label="Mute"
+          aria-pressed={audioPreferences.mode === 'muted'} onClick={toggleMuted}>
+          <kbd>M</kbd> Mute
+        </button>
+      ) : <span><kbd>M</kbd> Mute</span>}
+      <span><kbd>?</kbd> Rules</span>
+    </div>
+  )
 
   return (
     <InGameShell
@@ -283,6 +306,9 @@ export function SlotsPageView(controller: SlotsPageController) {
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
         <div className="slots-page__layout">
           <div className="slots-page__stage">
+          {isRainbowRealm && (
+            <img className="rainbow-realm__wordmark" src={rainbowRealmWordmark} width={640} height={305} alt="" />
+          )}
           {isMidnightVault && (
             <div className="midnight-vault__masthead" aria-hidden="true">
               <h2 className="midnight-vault__wordmark">
@@ -296,9 +322,9 @@ export function SlotsPageView(controller: SlotsPageController) {
               </h2>
             </div>
           )}
-          {(collectionFeature || energyFeature || isSpecialGameActive) && (
+          {((showCollectionMeter && collectionFeature) || energyFeature || isSpecialGameActive) && (
           <div className="slots-page__meter-stack">
-            {collectionFeature && (
+            {showCollectionMeter && collectionFeature && (
             <div className="slots-page__seal-collections" aria-label={collectionFeature.ariaLabel}>
               {visibleSealCollections.map((collection) => {
                 const seal = collectionFeature.entries.find((entry) => entry.id === collection.sealId)
@@ -325,7 +351,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                       !isPiratesFortune && isSpecialGameActive &&
                       heldCompletedCollectionId === collection.sealId &&
                       specialRoundGemCount > 0
-                        ? `${specialRoundGemCount} ${isReelRiches ? 'catches' : isRainbowRealm ? 'charms' : 'gems'} banked`
+                        ? `${specialRoundGemCount} ${isReelRiches ? 'catches' : 'gems'} banked`
                         : undefined
                     }
                   />
@@ -453,6 +479,14 @@ export function SlotsPageView(controller: SlotsPageController) {
               </div>
               )}
             />
+            {isRainbowRealm && <MidnightWinningPaylines
+              palette="rainbow"
+              formatWinAmount={points => `+${formatVaultMoney(slotPointsToRand(points, controller.pointValueInCents))}`}
+              paylines={tracedPaylines}
+              resultKey={lastSpinOutcomeKey}
+              visible={hasCompletedSpin}
+              reducedMotion={prefersReducedMotion}
+            />}
           </div>
 
           <div className="slots-page__playbar" aria-label={usesPiratesControls ? 'Wager and spin controls' : 'Balance, wager, and spin controls'}>
@@ -515,6 +549,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                 showFreeSpinBadge={showFreeSpinBadge}
                 specialControlsActive={specialControlsActive}
                 specialRoundLabel={specialRoundLabel}
+                wagerFirst={isRainbowRealm}
                 wagerIndex={wagerIndex}
                 wagerOptions={wagerOptions}
               />
@@ -612,13 +647,8 @@ export function SlotsPageView(controller: SlotsPageController) {
               document.body,
             )}
           </div>
-          {!isMidnightVault && <div className="slots-page__local-controls">
-            <div className="slots-page__keyboard-help" aria-label="Keyboard controls">
-              <span><kbd>Space</kbd> Spin / stop</span>
-              <span><kbd>←</kbd><kbd>→</kbd> Wager</span>
-              <span><kbd>M</kbd> Mute</span>
-              <span><kbd>?</kbd> Rules</span>
-            </div>
+          {!isMidnightVault && (!isRainbowRealm || balanceActionHref !== null) && <div className="slots-page__local-controls">
+            {!isRainbowRealm && keyboardHelp}
             <div className="slots-page__utility-controls" aria-label="Game options">
               {balanceActionHref !== null && <PaymentAlertsMenu />}
               {!usesPiratesControls && utilityButtons}
@@ -675,9 +705,9 @@ export function SlotsPageView(controller: SlotsPageController) {
 
       {rainbowIntroVisible && (
         <section className="rainbow-realm__bonus-intro" role="status" aria-live="polite">
-          <img src={rainbowOrchardGate} alt="" aria-hidden="true" />
+          <img src={rainbowBonusImage} alt="" aria-hidden="true" />
           <div className="rainbow-realm__bonus-intro-copy">
-            <span>{controller.freeSpinFeatureMode ? 'Orchard glass filled' : 'Orchard gates open'}</span>
+            <span>{controller.freeSpinFeatureMode ? 'Orchard glass filled' : 'Rainbows landed'}</span>
             <h2>Orchard Rush</h2>
             <p>{freeSpinsRemaining} bonus spins are ready</p>
             {rainbowFeatureLabel && rainbowFeatureLabel !== specialRound?.title &&
@@ -698,7 +728,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             if (event.key === 'Escape') dismissRainbowBonusSummary()
           }}
         >
-          <img src={rainbowOrchardGate} alt="" aria-hidden="true" />
+          <img src={rainbowBonusImage} alt="" aria-hidden="true" />
           <div className="rainbow-realm__bonus-intro-copy rainbow-realm__bonus-summary-copy">
             <span>Bonus round complete</span>
             <h2 id="rainbow-bonus-summary-title">Orchard Rush</h2>
@@ -860,7 +890,7 @@ export function SlotsPageView(controller: SlotsPageController) {
         </div>
       )}
 
-      {winAwardFlyover && (
+      {winAwardFlyover && !hasRainbowPaylineTrace && (
         <div
           key={winAwardFlyover.id}
           className={[
@@ -898,6 +928,8 @@ export function SlotsPageView(controller: SlotsPageController) {
           />
         </footer>
       )}
+
+      {isRainbowRealm && keyboardHelp}
 
       <AudioSettingsDialog
         theme={isMidnightVault ? 'midnight-vault' : undefined}

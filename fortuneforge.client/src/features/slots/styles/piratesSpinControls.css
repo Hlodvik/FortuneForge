@@ -265,6 +265,14 @@
     left: 50%;
     transform: translateX(-50%);
   }
+
+  .pirates-spin-controls[data-wager-first] .pirates-spin-controls__bet-wrap {
+    position: static;
+  }
+
+  .pirates-spin-controls[data-wager-first] .pirates-spin-controls__bet-menu {
+    top: calc(100% + 0.45rem);
+  }
 }
 
 @media (max-width: 420px) {

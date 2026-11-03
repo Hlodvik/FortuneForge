@@ -12,10 +12,9 @@ const engineFixtures = []
 let basePaytable
 for (const item of index.games) {
   const contract = JSON.parse(await readFile(resolve(source, item.route.id, 'contract.json'), 'utf8'))
-  // Midnight Vault has its own fifteen-symbol paytable and independently
-  // maintained guide. Keep the common guide's paytable identical for every
-  // other title while retaining Midnight's full contract in the evidence.
-  if (contract.gameId !== 'dragon-hoard-v1') {
+  // Midnight Vault and Rainbow Realm maintain their own paytables and guides.
+  // Retain both full contracts in the evidence alongside the common paytable.
+  if (!['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
     if (basePaytable && JSON.stringify(basePaytable) !== JSON.stringify(contract.paytable)) throw new Error('Per-game paytable needs explicit guide support')
     basePaytable = contract.paytable
   }

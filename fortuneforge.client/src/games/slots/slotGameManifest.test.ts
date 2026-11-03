@@ -7,6 +7,7 @@ import { describeSpinOutcome } from '../../features/slots/presentation/spinPrese
 import { WUKONG_FEATURE_SYMBOL_IDS } from './wukong/symbols'
 import type { SlotSymbolId } from '../../features/slots/types/slots'
 import { getSlotSymbolValueLabel, slotPointsToRand } from '../../features/slots/slotPagePresentation'
+import { getSlotAnimationSymbolIds } from '../../features/slots/config/symbolSets'
 import {
   loadAllSlotGameManifests,
   SECOND_WAVE_SLOT_GAME_IDS,
@@ -96,7 +97,8 @@ describe('slot game manifests', () => {
     expect(new Set(experienceIds).size).toBe(experienceIds.length)
     expect(new Set(serverGameIds).size).toBe(serverGameIds.length)
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
-      game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1' : 'wukong-treasures-v3'))
+      game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
+        : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'wukong-treasures-v3'))
     for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard')) {
       expect(game.experience.symbols.definitions['8'], game.id).toBeUndefined()
       expect(game.experience.rules.initialReels.flat(), game.id).not.toContain('8')
@@ -523,19 +525,30 @@ describe('slot game manifests', () => {
       'rand',
     ])
     expect(rainbowCollections?.entries.every((collection) => collection.requiredCount === 60)).toBe(true)
+    const rainbowSymbols = RAINBOW_REALM_SLOT_GAME.experience.symbols
+    const rainbowAnimationSymbols = getSlotAnimationSymbolIds(rainbowSymbols)
+    expect(RAINBOW_REALM_SLOT_GAME.experience.features.energy).toBeUndefined()
+    expect(rainbowSymbols.definitions.BOLT).toBeDefined()
+    expect(RAINBOW_REALM_SLOT_GAME.experience.rules.initialReels.flat()).not.toContain('BOLT')
+    expect(rainbowAnimationSymbols).not.toContain('BOLT')
+    expect(rainbowAnimationSymbols).toEqual(expect.arrayContaining(['A', 'J', 'K', 'Q']))
+    expect(rainbowAnimationSymbols.some(symbol => symbol.startsWith('RAND_'))).toBe(false)
+    expect(rainbowSymbols.guideEntries.some(({ symbol }) => symbol === 'BOLT' || symbol.startsWith('RAND_'))).toBe(false)
     expect(RAINBOW_REALM_SLOT_GAME.experience.help.freeGames).toEqual({
       requiredSymbols: 3,
       awardedSpins: 10,
       badge: 'BONUS',
       title: 'Orchard Rush bonus',
-      symbolLabel: 'ORCHARD GATE',
+      symbolLabel: 'RAINBOW',
       awardLabel: 'Orchard Rush bonus spins',
     })
     expect(RAINBOW_REALM_SLOT_GAME.experience.features.specialRound?.earnLabel)
-      .toContain('3 orchard gates or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round')
+      .toContain('3 rainbows or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round')
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries.find((entry) => entry.symbol === 'FREE')?.secondValue)
       .toBe('10 bonus spins')
     expect(RAINBOW_REALM_SLOT_GAME.experience.features.moneyGrab?.collectorSymbol).toBe('PAW')
+    expect(RAINBOW_REALM_SLOT_GAME.experience.features.moneyGrab?.valueSymbols)
+      .toEqual(['SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND'])
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions.PAW?.label).toContain('Wicker')
     expect(RAINBOW_REALM_SLOT_GAME.experience.help.extraSections).toHaveLength(2)
     for (const symbol of WUKONG_FEATURE_SYMBOL_IDS) {
@@ -548,13 +561,13 @@ describe('slot game manifests', () => {
     expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions.PAW?.image).not.toBe(
       PIRATES_FORTUNE_SLOT_GAME.experience.symbols.definitions.PAW?.image,
     )
-    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries).toHaveLength(16)
+    expect(RAINBOW_REALM_SLOT_GAME.experience.symbols.guideEntries).toHaveLength(19)
     expect(PIRATES_FORTUNE_SLOT_GAME.experience.features.collections?.presentation).toBe('gem-hoard')
     expect(WUKONG_SLOT_GAME.experience.features.collections?.presentation).toBe('celestial-orbit')
     expect(new Set(
       Object.values(RAINBOW_REALM_SLOT_GAME.experience.symbols.definitions)
         .flatMap((definition) => definition ? [definition.label] : []),
-    ).size).toBe(23)
+    ).size).toBe(27)
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_05?.wagerMultiplier).toBe(0.5)
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions.RAND_5?.wagerMultiplier).toBe(5)
     expect(getSlotSymbolValueLabel(

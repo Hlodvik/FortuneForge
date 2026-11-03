@@ -129,5 +129,6 @@ public sealed partial class SpinService
         int MonkeyPawCount,
         long MoneyGrabPoints,
         long BananaBonusPoints,
-        IReadOnlyList<PaylinePayout> Paylines);
+        IReadOnlyList<PaylinePayout> Paylines,
+        long OffPaylinePoints = 0);
 }

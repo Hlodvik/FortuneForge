@@ -28,12 +28,16 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     }
 
     public SymbolSetDefinition? GetSymbolSet(string id) =>
-        string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
+        id == RainbowRealmSlotDefinitions.SymbolSetId
+            ? RainbowRealmSlotDefinitions.CreateSymbolSet()
+            : string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
             ? MidnightVaultSlotDefinitions.CreateSymbolSet()
             : options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
 
     public ReelSetDefinition? GetReelSet(string id)
     {
+        if (id == RainbowRealmSlotDefinitions.ReelSetId)
+            return RainbowRealmSlotDefinitions.Reels;
         if (string.Equals(id, MidnightVaultBaseReelSet.Id, StringComparison.Ordinal))
         {
             var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
@@ -64,6 +68,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public PaytableDefinition? GetPaytable(string id)
     {
+        if (id == RainbowRealmSlotDefinitions.PaytableId)
+            return RainbowRealmSlotDefinitions.CreatePaytable();
         if (string.Equals(id, MidnightVaultSlotDefinitions.PaytableId, StringComparison.Ordinal))
             return MidnightVaultSlotDefinitions.CreatePaytable();
         if (string.Equals(id, MidnightVaultSlotDefinitions.LegacyPaytableId, StringComparison.Ordinal))
@@ -91,6 +97,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
                 },
             Symbols = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
                 ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
+                : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+                ? RainbowRealmSlotDefinitions.CreateSymbolRules(source.Symbols)
                 : source.Symbols,
             Matching = source.Matching,
             Math = CloneMath(source.Math, profile, paylineIndexes),
@@ -114,6 +122,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
         PaytableId = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
             ? MidnightVaultSlotDefinitions.PaytableId
+            : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+            ? RainbowRealmSlotDefinitions.PaytableId
             : source.PaytableId,
         PayoutMultiplier = profile.PayoutMultiplier,
         PaylinePayoutSteps = paylineIndexes is null

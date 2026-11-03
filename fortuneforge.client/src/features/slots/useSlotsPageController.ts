@@ -217,6 +217,7 @@ export function useSlotsPageController({
   const [lastWin, setLastWin] = useState(0)
   const [lastFreeSpinsAwarded, setLastFreeSpinsAwarded] = useState(0)
   const [winningPaylineCount, setWinningPaylineCount] = useState(0)
+  const [winningPaylines, setWinningPaylines] = useState<PaylinePayout[]>([])
   const [bonusPositions, setBonusPositions] = useState<GridPosition[]>([])
   const [balance, setBalance] = useState(
     demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
@@ -615,6 +616,7 @@ export function useSlotsPageController({
     setLastFreeSpinsAwarded(0)
     setLastSpinOutcome(null)
     setWinningPaylineCount(0)
+    setWinningPaylines([])
     setHasCompletedSpin(false)
     setEnergyFlyover(null)
     setWinAwardFlyover(null)
@@ -1257,9 +1259,12 @@ export function useSlotsPageController({
       ),
     )[0]
     const moneyPositions = result.reels.flatMap((reel, reelIndex) =>
-      reel.flatMap((symbol, row) => symbol.startsWith(moneyGrabFeature.valueSymbolPrefix)
-        ? [{ reel: reelIndex, row, symbol }]
-        : []),
+      reel.flatMap((symbol, row) => {
+        const isCollected = moneyGrabFeature.valueSymbols
+          ? moneyGrabFeature.valueSymbols.includes(symbol)
+          : symbol.startsWith(moneyGrabFeature.valueSymbolPrefix)
+        return isCollected ? [{ reel: reelIndex, row, symbol }] : []
+      }),
     )
 
     if (!pawPosition || moneyPositions.length === 0) {
@@ -1435,6 +1440,7 @@ export function useSlotsPageController({
     }
     setLastSpinOutcome(null)
     setLastWin(0)
+    setWinningPaylines([])
     setLastFreeSpinsAwarded(0)
     setLastEnergyAwarded(0)
     setLastEnergyMultiplierApplied(false)
@@ -1612,6 +1618,7 @@ export function useSlotsPageController({
       }
       setBestWin(bestPayline)
       setWinningPaylineCount(result.payout.paylines.length)
+      setWinningPaylines(result.payout.paylines)
       setBonusPositions(triggeredBonusPositions)
       setLastSpinOutcome(spinOutcome)
       setResultAtmosphereId((current) => current + 1)
@@ -2011,6 +2018,7 @@ export function useSlotsPageController({
     wagerOptions,
     winAwardFlyover,
     winningPaylineCount,
+    winningPaylines,
     winningPositions,
   }
 }

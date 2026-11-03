@@ -58,7 +58,8 @@ public sealed partial class FirestoreAccountStore
                 var specialPointsSnapshot = snapshots[3];
                 var specialPointsAvailable = ReadLong(specialPointsSnapshot, "available");
                 var energySnapshot = snapshots[4];
-                var energyBalance = ReadLong(energySnapshot, "available");
+                var energyBalance = gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+                    ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
                 IReadOnlyList<MidnightVaultBonusRound> roundsBefore = isMidnight
                     ? ReadMidnightBonusRounds(guardSnapshot, freeGamesAvailable, pointValueInCents) : [];

@@ -37,6 +37,8 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.IsDerivedFreeSpin != admission.IsFreeSpin))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
+        var rainbowSunshineDisabled = result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId &&
+            result.EngineAudit.BaseGame.Energy is null;
         if (isMidnightGame &&
             (admission.IsFreeSpin != (admission.BonusRound is not null) ||
              admission.BonusRound?.FeatureMode != admission.FreeSpinFeatureMode ||
@@ -132,7 +134,7 @@ public sealed partial class FirestoreAccountStore
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var currentFreeGames = ReadLong(freeGamesSnapshot, "available");
                 var currentSpecialPoints = ReadLong(specialPointsSnapshot, "available");
-                var currentEnergy = ReadLong(energySnapshot, "available");
+                var currentEnergy = rainbowSunshineDisabled ? 0 : ReadLong(energySnapshot, "available");
                 if (existingResult.Exists)
                 {
                     var existingSealCollections = CreateSealCollections(
@@ -178,6 +180,8 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 SlotSpecialRoundProfiles.TryGet(result.GameId, out var specialRoundProfile);
+                if (result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId)
+                    specialRoundProfile = result.EngineAudit.FeatureProfile ?? specialRoundProfile;
                 var energyBonus = EnergyBonus.Settle(
                     specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
                     result.EnergyAwarded,
@@ -202,7 +206,7 @@ public sealed partial class FirestoreAccountStore
                         throw new InvalidOperationException("The admitted Midnight Vault bonus round does not match its saved queue.");
                     sealSettlement = SettleMidnightBonusRounds(guardSnapshot, result, before, afterConsumption, selected);
                 }
-                else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied);
+                else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied, specialRoundProfile);
                 PiratesGemSettlementEvidence? piratesGemEvidence = piratesGemCountsBefore is null
                     ? null
                     : new(

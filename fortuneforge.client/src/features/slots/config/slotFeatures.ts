@@ -46,8 +46,10 @@ export type SlotMoneyGrabFeature = {
   actorName: string
   awardLabel: string
   collectorSymbol: SlotSymbolId
-  valueSymbolPrefix: string
-}
+} & (
+  | { valueSymbolPrefix: string; valueSymbols?: never }
+  | { valueSymbolPrefix?: never; valueSymbols: readonly SlotSymbolId[] }
+)
 
 export type SlotSpecialRoundEarnStyle =
   | 'altar'

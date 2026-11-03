@@ -24,6 +24,7 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
     const contract = await json(resolve(root, contractPath))
     files.push(contractPath)
     assert.equal(contract.gameId, game.route.gameId)
+    const usesCharmHarvest = contract.gameId === 'rainbow-realm-fruits-v1' && !contract.profile.usesDirectValueTokens
     assert.equal(contract.statusEndpoint, 204)
     assert.deepEqual(contract.missingScenarios, [])
     const names = new Set(contract.scenarios.map(item => item.scenario))
@@ -42,7 +43,8 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
         assert.equal(response.wagerPoints, request.wagerPoints)
         assert.equal(response.slotsCreditsBalance, null)
         assert.ok(!Object.hasOwn(response, 'engineAudit'))
-        assert.equal(response.payout.totalPoints, response.payout.paylines.reduce((sum, line) => sum + line.amountPoints, 0))
+        const offPaylinePoints = usesCharmHarvest ? response.moneyGrabPoints : 0
+        assert.equal(response.payout.totalPoints, response.payout.paylines.reduce((sum, line) => sum + line.amountPoints, offPaylinePoints))
         for (const line of response.payout.paylines)
           assert.equal(line.amountPoints, line.matches.reduce((sum, match) => sum + match.amountPoints, 0))
       }

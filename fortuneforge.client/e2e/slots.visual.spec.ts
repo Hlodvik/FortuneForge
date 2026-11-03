@@ -143,6 +143,22 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
   for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport)
     await openStableSlot(page, '/slots/rainbow-realm/demo')
+    if (viewport.width > 640) {
+      const mute = page.getByRole('button', { name: 'Mute', exact: true })
+      await expect(mute).toHaveAttribute('aria-pressed', 'false')
+      await mute.click()
+      await expect(mute).toHaveAttribute('aria-pressed', 'true')
+      await mute.click()
+      await expect(mute).toHaveAttribute('aria-pressed', 'false')
+    }
+    const pageArt = viewport.width > viewport.height
+      ? 'rainbow-realm-sunrise-valley-page-v1.webp'
+      : 'rainbow-realm-sunrise-valley-page-portrait-v1.webp'
+    const cabinet = page.locator('.slot-game-frame__visuals')
+    await expect(page.locator('.slots-page')).toHaveCSS('background-image', new RegExp(pageArt))
+    await expect(cabinet).toHaveCSS('background-image', /radial-gradient\(/)
+    await expect(cabinet).not.toHaveCSS('background-image', /url\(/)
+    const baseCabinetBackground = await cabinet.evaluate(element => getComputedStyle(element).backgroundImage)
     await page.getByRole('button', { name: 'Spin the reels' }).click()
     await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
     await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('10 bonus spins are ready')
@@ -165,7 +181,9 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
       }
     })
     await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-rush-${viewport.width}.png`), fullPage: true })
-    expect(metrics.background).toContain('rainbow-realm-twilight-orchard-bonus-v1.webp')
+    expect(metrics.background).toContain(pageArt)
+    await expect(cabinet).not.toHaveCSS('background-image', baseCabinetBackground)
+    await expect(cabinet).not.toHaveCSS('background-image', /url\(/)
     expect(metrics.documentWidth).toBeLessThanOrEqual(viewport.width + 1)
     expect(metrics.spinTop).toBeGreaterThanOrEqual(0)
     expect(metrics.spinBottom).toBeLessThanOrEqual(viewport.height)
@@ -638,7 +656,7 @@ function spinFixture(request: SpinRequest, kind: SpinKind, options: DemoApiOptio
     spinId: '00000000-0000-4000-8000-000000000001',
     gameId: request.gameId,
     reelSetId: 'visual-fixture-reels-v1',
-    symbolSetId: 'wukong-treasures-v3',
+    symbolSetId: isRainbowRealm ? 'rainbow-realm-symbols-v1' : 'wukong-treasures-v3',
     paytableId: 'visual-fixture-paytable-v1',
     wagerPoints: request.wagerPoints,
     pointValueInCents: 25,

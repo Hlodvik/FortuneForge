@@ -4,14 +4,10 @@ import type { SlotFeatureSet, SlotHelpDefinition } from '../../../features/slots
 import { defineSlotGame } from '../shared/slotGameManifest'
 import { RAINBOW_REALM_CABINET_THEME } from './cabinetTheme'
 import { RAINBOW_REALM_CATALOG } from './catalog'
-import { RAINBOW_REALM_SYMBOLS } from './symbols'
+import { RAINBOW_REALM_BASKET_CHARMS, RAINBOW_REALM_SYMBOLS } from './symbols'
 import './rainbowRealmFeature.css'
 
 const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
-  energy: {
-    label: 'Sunshine',
-    symbol: 'BOLT',
-  },
   collections: {
     ariaLabel: 'Orchard charm collections',
     itemLabel: 'charms',
@@ -20,27 +16,27 @@ const RAINBOW_REALM_FEATURES: SlotFeatureSet = {
       { id: 'sync', label: 'Strawberry sync', displayLabel: 'Strawberry', shortLabel: 'Strawberry', symbol: 'SEAL_SYNC', requiredCount: 60 },
       { id: 'rows', label: 'Blueberry bounty', displayLabel: 'Blueberry', shortLabel: 'Blueberry', symbol: 'SEAL_ROWS', requiredCount: 60 },
       { id: 'paw', label: 'Basket harvest', displayLabel: 'Orange', shortLabel: 'Orange', symbol: 'SEAL_PAW', requiredCount: 60 },
-      { id: 'rand', label: 'Kiwi token column', displayLabel: 'Kiwi', shortLabel: 'Kiwi', symbol: 'SEAL_RAND', requiredCount: 60 },
+      { id: 'rand', label: 'Kiwi wild column', displayLabel: 'Kiwi', shortLabel: 'Kiwi', symbol: 'SEAL_RAND', requiredCount: 60 },
     ],
   },
   moneyGrab: {
     actorName: 'The wicker basket',
     awardLabel: 'Basket harvest',
     collectorSymbol: 'PAW',
-    valueSymbolPrefix: 'RAND_',
+    valueSymbols: RAINBOW_REALM_BASKET_CHARMS.map(({ symbol }) => symbol),
   },
   specialRound: {
     id: 'rainbow-orchard-rush',
     title: 'Orchard Rush',
-    earnLabel: 'Land 3 orchard gates or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round.',
+    earnLabel: 'Land 3 rainbows or fill a 60-charm glass to start a 10-spin Orchard Rush bonus round.',
     earnStyle: 'glass',
     earnHint: 'Fruit charms fill four orchard glasses. Finish one 60-charm glass to carry its power into ten Orchard Rush bonus spins.',
     activeModes: {
       sync: 'Strawberry Sync · one reel mirrors another',
       rows: 'Blueberry Bounty · two extra rows open',
       paw: 'Basket Harvest · stronger basket grabs appear',
-      rand: 'Kiwi Column · a prize column appears',
-      'sync-rows-paw-rand': 'Full Spectrum · linked reels, extra rows, stronger harvests, and a prize column',
+      rand: 'Kiwi Column · one reel fills with golden apple wilds',
+      'sync-rows-paw-rand': 'Full Spectrum · linked reels, extra rows, stronger harvests, and a wild reel',
     },
   },
 }
@@ -52,19 +48,19 @@ const RAINBOW_REALM_HELP: SlotHelpDefinition = {
     awardedSpins: 10,
     badge: 'BONUS',
     title: 'Orchard Rush bonus',
-    symbolLabel: 'ORCHARD GATE',
+    symbolLabel: 'RAINBOW',
     awardLabel: 'Orchard Rush bonus spins',
   },
   extraSections: [
     {
       badge: 'BASKET',
       title: 'Wicker basket harvest',
-      body: 'A wicker fruit basket anywhere on screen gathers every rainbow fruit token showing in the window. Two baskets are much rarer and double the harvest. Three rainbow banana bunches in a row, column, or diagonal pay 3× the wager.',
+      body: 'A wicker fruit basket anywhere on the reels harvests every visible fruit charm. Each charm pays the wager multiple shown in Symbol values. Two or more baskets double the harvest. Three rainbow banana bunches in a row, column, or diagonal pay 3× the wager.',
     },
     {
       badge: 'CHARMS',
       title: 'Orchard charm collections',
-      body: 'Strawberry, blueberry, orange, and kiwi charms collect from anywhere visible. A completed 60-charm track starts a ten-spin Orchard Rush bonus round. Sunshine at 25%, 50%, and 75% improves charm odds; a full meter boosts the next paying spin by 1.5×, resets, and finishes the nearest charm track.',
+      body: 'Strawberry, blueberry, orange, and kiwi charms collect from anywhere visible. A completed 60-charm track starts a ten-spin Orchard Rush bonus round.',
     },
   ],
 }
@@ -89,7 +85,15 @@ export const RAINBOW_REALM_EXPERIENCE_SET: SlotExperienceSet = {
   symbols: RAINBOW_REALM_SYMBOLS,
   mascot: null,
   sounds: RAINBOW_REALM_SOUNDS,
-  rules: createSlotRulesSet('rainbow-realm-fruits-v1'),
+  rules: createSlotRulesSet('rainbow-realm-fruits-v1', {
+    initialReels: [
+      ['2', 'J', '4', '5'],
+      ['3', '4', 'K', '6'],
+      ['Q', '5', '6', '7'],
+      ['5', 'A', '7', 'ACE'],
+      ['FREE', '7', 'ACE', 'POWER'],
+    ],
+  }),
 }
 
 export const RAINBOW_REALM_SLOT_GAME = defineSlotGame({

@@ -1,9 +1,146 @@
-/* Orchard Rush changes only the free-spin presentation. The sunny base game
-   and the server's spin and payout rules remain untouched. */
-.slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'].slots-page--special-game {
+.slots-page--theme-backdrop[data-slot-theme='rainbow-realm-fruit-arcade-v1'] {
+  --rainbow-page-image: var(--slot-page-backdrop);
   background:
-    linear-gradient(180deg, rgb(4 3 27 / 12%), rgb(15 3 36 / 26%)),
-    url('../../../assets/slots/backgrounds/optimized/rainbow-realm-twilight-orchard-bonus-v1.webp') center / cover fixed no-repeat;
+    var(--rainbow-page-shade, linear-gradient(180deg, rgb(19 6 47 / 10%), rgb(13 7 36 / 38%))),
+    var(--rainbow-page-image) center top / cover fixed no-repeat;
+}
+
+@media (max-aspect-ratio: 4/3) {
+  .slots-page--theme-backdrop[data-slot-theme='rainbow-realm-fruit-arcade-v1'] {
+    --rainbow-page-image: url('../../../assets/slots/backgrounds/optimized/rainbow-realm-sunrise-valley-page-portrait-v1.webp');
+  }
+}
+
+@media (min-width: 641px) {
+  .slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'] .slots-page__main {
+    flex-shrink: 0;
+    flex-basis: auto;
+  }
+
+  .slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'] > .slots-page__keyboard-help {
+    flex: none;
+    flex-wrap: wrap;
+    min-height: 2.75rem;
+    margin: 0 1rem max(0.9rem, env(safe-area-inset-bottom));
+    color: #fff;
+    text-shadow: 0 1px 2px #150923, 0 0 0.35rem #150923;
+  }
+}
+
+.rainbow-realm__mute-shortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  cursor: pointer;
+}
+
+.rainbow-realm__mute-shortcut:hover,
+.rainbow-realm__mute-shortcut[aria-pressed='true'] {
+  color: #f8d88c;
+  text-decoration: underline;
+}
+
+.rainbow-realm__mute-shortcut:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+.rainbow-realm__wordmark {
+  display: block;
+  justify-self: center;
+  width: min(64%, 19rem, 37dvh);
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .rainbow-realm__wordmark {
+    width: min(54%, 12rem);
+  }
+}
+
+@media (max-width: 1050px) and (max-height: 640px) {
+  .rainbow-realm__wordmark {
+    display: none;
+  }
+}
+
+.midnight-winning-paylines[data-palette='rainbow'] {
+  color: #ff6874;
+}
+
+.rainbow-realm__steady-payline {
+  filter: drop-shadow(0 0 2px #1b092b) drop-shadow(0 0 5px currentColor);
+}
+
+.midnight-winning-paylines[data-palette='rainbow'] .midnight-winning-paylines__amount {
+  stroke: #1b092b;
+  stroke-width: 6px;
+  font-size: clamp(17px, 2vw, 26px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .midnight-winning-paylines[data-palette='rainbow']:not([data-reduced-motion='true']) {
+    animation: rainbow-realm-payline-breathe 4.4s ease-in-out infinite;
+  }
+}
+
+@keyframes rainbow-realm-payline-breathe {
+  0%, 100% { color: #ff6874; }
+  14% { color: #ffad62; }
+  28% { color: #ffe46d; }
+  42% { color: #77f498; }
+  56% { color: #63e9ff; }
+  70% { color: #829dff; }
+  84% { color: #df8cff; }
+}
+
+/* A gold lip and plum gasket frame the inset reel glass. */
+.slot-game-frame[data-cabinet-theme='rainbow-realm-fruit-arcade-v1'][data-cabinet-chrome='simple'] {
+  border: clamp(0.23rem, 0.5vw, 0.48rem) solid transparent;
+  background:
+    linear-gradient(180deg, #66346c, #2e153d 43%, #210d30) padding-box,
+    linear-gradient(180deg, #fff5c7, #efbd5b 21%, #a36424 52%, #f7d78b 81%, #ba782d) border-box;
+  box-shadow:
+    0 0 0 1px #704220,
+    0 0.25rem 0 #4b2719,
+    0 0.65rem 1.2rem rgb(24 9 38 / 56%);
+}
+
+.slot-game-frame[data-cabinet-theme='rainbow-realm-fruit-arcade-v1'][data-cabinet-chrome='simple'] .slot-game-frame__visuals {
+  position: absolute;
+  inset: clamp(0.18rem, 0.36vw, 0.34rem);
+  width: auto;
+  height: auto;
+  padding: clamp(0.34rem, 0.65vw, 0.59rem);
+  border-radius: clamp(0.5rem, 1.35vw, 1.1rem);
+  background:
+    linear-gradient(150deg, rgb(255 227 249 / 13%), transparent 32%),
+    radial-gradient(ellipse at 50% -20%, var(--rainbow-reel-glow, rgb(255 133 183 / 32%)), transparent 69%),
+    linear-gradient(180deg, #442968, var(--cabinet-panel) 50%, #150c2d);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 231 162 / 56%),
+    inset 0 0 0 3px rgb(18 7 35 / 64%),
+    inset 0 0.3rem 0.9rem rgb(15 5 28 / 54%),
+    inset 0 -0.65rem 1.2rem rgb(8 3 24 / 38%);
+}
+
+.slot-game-frame[data-cabinet-theme='rainbow-realm-fruit-arcade-v1'][data-cabinet-chrome='simple'] .slot-reel {
+  background:
+    linear-gradient(90deg, rgb(8 3 24 / 42%), transparent 18% 81%, rgb(8 3 24 / 40%)),
+    linear-gradient(180deg, rgb(255 237 249 / 10%), transparent 23% 77%, rgb(8 3 24 / 28%));
+  border-right-color: rgb(247 209 132 / 33%);
+  box-shadow: inset 0 1px rgb(255 230 168 / 16%), inset 0 -1px rgb(255 230 168 / 12%);
+}
+
+.slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'].slots-page--special-game {
+  --rainbow-reel-glow: rgb(97 172 255 / 52%);
+  --rainbow-page-shade: linear-gradient(180deg, rgb(4 3 27 / 12%), rgb(15 3 36 / 26%));
 }
 
 .slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'].slots-page--special-game::before {
@@ -154,12 +291,6 @@
 .rainbow-realm__bonus-summary-copy button:focus-visible {
   outline: 3px solid white;
   outline-offset: 3px;
-}
-
-.slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'].slots-page--special-game .slot-game-frame__visuals {
-  background:
-    linear-gradient(180deg, rgb(14 7 48 / 24%), rgb(26 6 56 / 38%)),
-    url('../../../assets/slots/backgrounds/optimized/rainbow-realm-twilight-orchard-bonus-v1.webp') center / cover no-repeat;
 }
 
 .slots-page[data-slot-theme='rainbow-realm-fruit-arcade-v1'] .slots-page__special-game-tally {

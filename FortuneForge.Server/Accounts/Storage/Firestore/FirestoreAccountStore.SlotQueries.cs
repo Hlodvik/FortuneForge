@@ -40,7 +40,7 @@ public sealed partial class FirestoreAccountStore
             0,
             null,
             checked((int)ReadLong(snapshots[1], "available")),
-            ReadLong(snapshots[2], "available"),
+            gameId == SlotSpecialRoundProfiles.RainbowRealmGameId ? 0 : ReadLong(snapshots[2], "available"),
             CreateSealCollections(guardSnapshot, pointValueInCents, gameId),
             null);
     }

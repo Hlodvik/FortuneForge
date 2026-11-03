@@ -16,7 +16,7 @@
   isolation: isolate;
 }
 
-.ff-game-loading[data-game-loading="three-card-poker"] {
+.ff-game-loading:is([data-game-loading="three-card-poker"], [data-game-loading="rainbow-realm"]) {
   background: var(--game-loading-background);
 }
 

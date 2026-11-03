@@ -45,22 +45,46 @@ const fruitToken = (
   wagerMultiplier,
 })
 
+const ranks = [
+  { symbol: 'J', label: 'Jack', stem: 'gold-rank-j', five: 2 },
+  { symbol: 'Q', label: 'Queen', stem: 'gold-rank-q', five: 3 },
+  { symbol: 'K', label: 'King', stem: 'gold-rank-k', five: 4 },
+  { symbol: 'A', label: 'Ace', stem: 'gold-rank-a', five: 5 },
+] as const
+
+export const RAINBOW_REALM_BASKET_CHARMS = [
+  { symbol: 'SEAL_SYNC', bonus: 'strawberry', multiplier: 1.5 },
+  { symbol: 'SEAL_ROWS', bonus: 'blueberry', multiplier: 2 },
+  { symbol: 'SEAL_PAW', bonus: 'basket', multiplier: 2.5 },
+  { symbol: 'SEAL_RAND', bonus: 'kiwi', multiplier: 3 },
+] as const
+
+const activeSymbols = {
+  ...Object.fromEntries(ranks.map(({ symbol, label, stem }) => [symbol, staticSymbol(symbol, label, stem)])),
+  '2': staticSymbol('2', 'Cherry', 'cherry'),
+  '3': staticSymbol('3', 'Orange', 'orange'),
+  '4': staticSymbol('4', 'Lemon', 'lemon'),
+  '5': staticSymbol('5', 'Grape bunch', 'grape-bunch'),
+  '6': staticSymbol('6', 'Mango', 'mango'),
+  '7': staticSymbol('7', 'Watermelon slice', 'watermelon-slice'),
+  ACE: staticSymbol('ACE', 'Golden apple wild', 'golden-apple'),
+  FREE: staticSymbol('FREE', 'Orchard Rush rainbow', 'orchard-rush-rainbow-v1'),
+  POWER: staticSymbol('POWER', 'Crowned rainbow apple', 'rainbow-apple-medallion'),
+  BANANA: staticSymbol('BANANA', 'Rainbow banana bunch', 'rainbow-banana-bunch'),
+  PAW: staticSymbol('PAW', 'Wicker fruit basket harvest', 'wicker-fruit-basket'),
+  SEAL_SYNC: staticSymbol('SEAL_SYNC', 'Strawberry sync charm', 'strawberry-sync-charm'),
+  SEAL_ROWS: staticSymbol('SEAL_ROWS', 'Blueberry bounty charm', 'blueberry-rows-charm'),
+  SEAL_PAW: staticSymbol('SEAL_PAW', 'Orange basket charm', 'orange-basket-charm'),
+  SEAL_RAND: staticSymbol('SEAL_RAND', 'Kiwi wild-column charm', 'kiwi-column-charm'),
+}
+
 export const RAINBOW_REALM_SYMBOLS: SlotSymbolSet = {
   id: 'rainbow-realm-fruits-v2',
-  serverSymbolSetId: 'wukong-treasures-v3',
+  serverSymbolSetId: 'rainbow-realm-symbols-v1',
   definitions: {
-    '2': staticSymbol('2', 'Cherry', 'cherry'),
-    '3': staticSymbol('3', 'Orange', 'orange'),
-    '4': staticSymbol('4', 'Lemon', 'lemon'),
-    '5': staticSymbol('5', 'Grape bunch', 'grape-bunch'),
-    '6': staticSymbol('6', 'Mango', 'mango'),
-    '7': staticSymbol('7', 'Watermelon slice', 'watermelon-slice'),
-    ACE: staticSymbol('ACE', 'Golden apple wild', 'golden-apple'),
-    FREE: staticSymbol('FREE', 'Orchard Rush bonus gate', 'rainbow-orchard-gate'),
-    POWER: staticSymbol('POWER', 'Crowned rainbow apple', 'rainbow-apple-medallion'),
+    ...activeSymbols,
+    // Keep art available for historical results.
     BOLT: staticSymbol('BOLT', 'Bottled sunshine', 'bottled-sunshine'),
-    BANANA: staticSymbol('BANANA', 'Rainbow banana bunch', 'rainbow-banana-bunch'),
-    PAW: staticSymbol('PAW', 'Wicker fruit basket harvest', 'wicker-fruit-basket'),
     RAND_05: fruitToken('RAND_05', 0.5),
     RAND_1: fruitToken('RAND_1', 1),
     RAND_15: fruitToken('RAND_15', 1.5),
@@ -68,12 +92,10 @@ export const RAINBOW_REALM_SYMBOLS: SlotSymbolSet = {
     RAND_3: fruitToken('RAND_3', 3),
     RAND_4: fruitToken('RAND_4', 4),
     RAND_5: fruitToken('RAND_5', 5),
-    SEAL_SYNC: staticSymbol('SEAL_SYNC', 'Strawberry sync charm', 'strawberry-sync-charm'),
-    SEAL_ROWS: staticSymbol('SEAL_ROWS', 'Blueberry bounty charm', 'blueberry-rows-charm'),
-    SEAL_PAW: staticSymbol('SEAL_PAW', 'Orange basket charm', 'orange-basket-charm'),
-    SEAL_RAND: staticSymbol('SEAL_RAND', 'Kiwi token-column charm', 'kiwi-column-charm'),
   },
+  animationSymbolIds: Object.values(activeSymbols).map(({ id }) => id),
   guideEntries: [
+    ...ranks.map(({ symbol, five }) => ({ symbol, firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: `${five}×` })),
     { symbol: '2', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '4×' },
     { symbol: '3', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '2×' },
     { symbol: '4', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '7×' },
@@ -83,12 +105,14 @@ export const RAINBOW_REALM_SYMBOLS: SlotSymbolSet = {
     { symbol: 'ACE', firstLabel: '3–4', firstValue: '5×', secondLabel: '5', secondValue: '18×' },
     { symbol: 'FREE', firstLabel: '3+', firstValue: 'anywhere', secondLabel: 'Award', secondValue: '10 bonus spins' },
     { symbol: 'POWER', firstLabel: '3–4', firstValue: '2× +1 point', secondLabel: '5', secondValue: '4× +2 points' },
-    { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: '+1 sunshine' },
     { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },
-    { symbol: 'PAW', firstLabel: 'Any', firstValue: 'gathers fruit tokens', secondLabel: '2 baskets', secondValue: 'double' },
-    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 60', secondLabel: 'Award', secondValue: '10 strawberry bonus spins' },
-    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 60', secondLabel: 'Award', secondValue: '10 blueberry bonus spins' },
-    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 60', secondLabel: 'Award', secondValue: '10 basket bonus spins' },
-    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'collect 60', secondLabel: 'Award', secondValue: '10 kiwi bonus spins' },
+    { symbol: 'PAW', firstLabel: 'Any', firstValue: 'harvests visible charms', secondLabel: '2+ baskets', secondValue: 'double' },
+    ...RAINBOW_REALM_BASKET_CHARMS.map(({ symbol, bonus, multiplier }) => ({
+      symbol,
+      firstLabel: 'Basket',
+      firstValue: `${multiplier}× wager`,
+      secondLabel: 'Collect 60',
+      secondValue: `10 ${bonus} bonus spins`,
+    })),
   ],
 }

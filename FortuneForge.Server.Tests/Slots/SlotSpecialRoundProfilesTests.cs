@@ -76,8 +76,8 @@ public sealed class SlotSpecialRoundProfilesTests
         })
         .ToArray();
 
-        Assert.Equal(8, profiles.Count(profile => profile.UsesEnergy));
-        Assert.Equal(10, profiles.Count(profile => !profile.UsesDirectValueTokens));
+        Assert.Equal(7, profiles.Count(profile => profile.UsesEnergy));
+        Assert.Equal(11, profiles.Count(profile => !profile.UsesDirectValueTokens));
         Assert.Equal(5, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
@@ -142,6 +142,7 @@ public sealed class SlotSpecialRoundProfilesTests
     {
         Assert.True(SlotSpecialRoundProfiles.TryGet(
             SlotSpecialRoundProfiles.RainbowRealmGameId, out var profile));
+        Assert.False(profile.UsesEnergy);
 
         var game = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
@@ -162,6 +163,13 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Equal("sync", completedGlass.FeatureMode);
         Assert.Contains(completedGlass.Collections, collection =>
             collection.SealId == "sync" && collection.Count == 0 && collection.RequiredCount == 60);
+
+        var oldMeterBalance = SlotSpecialRoundProfiles.SettleDemo(
+            profile, [new SlotSealCollection("sync", 59, 40, 60)],
+            new Dictionary<string, int>(), wagerPoints: 40, energyCompleted: true);
+        Assert.Equal(0, oldMeterBalance.FreeSpinsAwarded);
+        Assert.Contains(oldMeterBalance.Collections, collection =>
+            collection.SealId == "sync" && collection.Count == 59);
     }
 
     [Fact]
@@ -219,7 +227,7 @@ public sealed class SlotSpecialRoundProfilesTests
             Assert.Single(reel, symbol => symbol == "6");
             Assert.Single(reel, symbol => symbol == "7");
         });
-        Assert.Equal("reels", rainbow.Math.ReelSetId);
+        Assert.Equal(RainbowRealmSlotDefinitions.ReelSetId, rainbow.Math.ReelSetId);
         Assert.Equal(10, rainbow.FreeGames?.AwardedSpins);
     }
 

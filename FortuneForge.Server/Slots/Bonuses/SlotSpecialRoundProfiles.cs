@@ -1,3 +1,4 @@
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
 
@@ -81,7 +82,10 @@ public static class SlotSpecialRoundProfiles
                 3,
                 10,
                 60,
-                10),
+                10,
+                UsesEnergy: false,
+                UsesDirectValueTokens: false,
+                BaseReelSetId: RainbowRealmSlotDefinitions.ReelSetId),
             [CosmicFortuneGameId] = new(
                 CosmicFortuneGameId, 3, 6, 24, 7, true, true, false, null, "sync-rows",
                 PayoutMultiplier: 0.856m),

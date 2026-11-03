@@ -17,6 +17,7 @@ type PiratesSpinControlsProps = {
   showFreeSpinBadge: boolean
   specialControlsActive: boolean
   specialRoundLabel: string | null
+  wagerFirst?: boolean
   wagerIndex: number
   wagerOptions: readonly number[]
 }
@@ -36,6 +37,7 @@ export function PiratesSpinControls({
   showFreeSpinBadge,
   specialControlsActive,
   specialRoundLabel,
+  wagerFirst = false,
   wagerIndex,
   wagerOptions,
 }: PiratesSpinControlsProps) {
@@ -66,27 +68,30 @@ export function PiratesSpinControls({
     }
   }, [isBetOpen])
 
+  const autoSpinButton = (
+    <button
+      className={`pirates-spin-controls__small${isAutoSpinning ? ' pirates-spin-controls__small--active' : ''}`}
+      type="button"
+      disabled={disabled}
+      aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
+      aria-pressed={isAutoSpinning}
+      onClick={() => {
+        setIsBetOpen(false)
+        onAutoSpinChange(!isAutoSpinning)
+      }}
+    >
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M37 19a14 14 0 0 0-23-6l-3 3M11 11v6h6M11 29a14 14 0 0 0 23 6l3-3M37 37v-6h-6" />
+        <path d="M21 18v12l9-6Z" />
+      </svg>
+    </button>
+  )
+
   return (
-    <div className="pirates-spin-controls" aria-label="Autospin, bet, and spin controls">
+    <div className="pirates-spin-controls" aria-label="Autospin, bet, and spin controls" data-wager-first={wagerFirst || undefined}>
       {!specialControlsActive && (
         <>
-          <button
-            className={`pirates-spin-controls__small${isAutoSpinning ? ' pirates-spin-controls__small--active' : ''}`}
-            type="button"
-            disabled={disabled}
-            aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
-            aria-pressed={isAutoSpinning}
-            onClick={() => {
-              setIsBetOpen(false)
-              onAutoSpinChange(!isAutoSpinning)
-            }}
-          >
-            <svg viewBox="0 0 48 48" aria-hidden="true">
-              <path d="M37 19a14 14 0 0 0-23-6l-3 3M11 11v6h6M11 29a14 14 0 0 0 23 6l3-3M37 37v-6h-6" />
-              <path d="M21 18v12l9-6Z" />
-            </svg>
-          </button>
-
+          {!wagerFirst && autoSpinButton}
           <div className="pirates-spin-controls__bet-wrap" ref={betMenuRef}>
             <button
               className={`pirates-spin-controls__small${isBetOpen ? ' pirates-spin-controls__small--active' : ''}`}
@@ -102,9 +107,10 @@ export function PiratesSpinControls({
             >
               <svg viewBox="0 0 48 48" aria-hidden="true" className="pirates-spin-controls__coins">
                 <ellipse cx="27" cy="16" rx="12" ry="4.5" />
-                <path d="M15 16v6c0 2.5 5.4 4.5 12 4.5s12-2 12-4.5v-6M15 22v5c0 2.5 5.4 4.5 12 4.5s12-2 12-4.5v-5" />
+                {/* Draw only the parts of the right stack visible behind the left stack. */}
+                <path d="M15 16v8M39 16v11c0 2.5-5.4 4.5-12 4.5M39 22c0 2.5-5.4 4.5-12 4.5h-.7" />
                 <ellipse cx="16" cy="28" rx="11" ry="4" />
-                <path d="M5 28v5c0 2.2 4.9 4 11 4 3.7 0 7-.7 9-1.8M5 33v4c0 2.2 4.9 4 11 4 3.7 0 7-.7 9-1.8" />
+                <path d="M5 28v9c0 2.2 4.9 4 11 4s11-1.8 11-4v-9M5 33c0 2.2 4.9 4 11 4s11-1.8 11-4" />
               </svg>
             </button>
             {isBetOpen && (
@@ -129,6 +135,7 @@ export function PiratesSpinControls({
               </div>
             )}
           </div>
+          {wagerFirst && autoSpinButton}
         </>
       )}
 

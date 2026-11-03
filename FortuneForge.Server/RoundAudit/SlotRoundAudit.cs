@@ -18,6 +18,10 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        if (RainbowRealmSlotDefinitions.IsModel(audit.BaseGame) !=
+            (audit.EngineVersion == RainbowRealmSlotDefinitions.EngineVersion))
+            return [new("slot-rainbow-model-mismatch", "error",
+                "The charm harvest rule does not match the saved Rainbow Realm model.")];
         return Check(result, audit.BaseGame, audit.EffectiveGame, audit.ReelSet,
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
@@ -41,6 +45,7 @@ internal static class SlotRoundAudit
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
+        var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(baseGame);
 
         if (result.GameId != baseGame.Id || result.GameId != effectiveGame.Id ||
             result.SymbolSetId != symbolSet.Id || result.ReelSetId != reelSet.Id ||
@@ -135,10 +140,11 @@ internal static class SlotRoundAudit
                 Flag("slot-pity-state-mismatch", "The pity state transition does not match the spin outcome.");
 
             var pawCount = result.Reels.SelectMany(reel => reel).Count(symbol => symbol == "PAW");
-            var moneyMultiplier = result.Reels.SelectMany(reel => reel).Sum(RandMultiplier);
-            var moneyPoints = pawCount > 0 && moneyMultiplier > 0
-                ? Scale(RoundPoints(result.WagerPoints * moneyMultiplier * (pawCount >= 2 ? 2 : 1)),
-                    baseGame.Math.PayoutMultiplier) : 0;
+            var moneyMultiplier = result.Reels.SelectMany(reel => reel)
+                .Sum(symbol => rainbowHarvest ? RainbowRealmCharmHarvest.WagerMultiplier(symbol) : RandMultiplier(symbol));
+            var collectedPoints = pawCount > 0 && moneyMultiplier > 0
+                ? RoundPoints(result.WagerPoints * moneyMultiplier * Math.Min(pawCount, 2)) : 0;
+            var moneyPoints = rainbowHarvest ? collectedPoints : Scale(collectedPoints, baseGame.Math.PayoutMultiplier);
             var bananaPatterns = CountBananaPatterns(result.Reels);
             var bananaUnit = Scale(checked(result.WagerPoints * 3), baseGame.Math.PayoutMultiplier);
             var bananaPoints = checked(bananaPatterns * bananaUnit);
@@ -147,8 +153,10 @@ internal static class SlotRoundAudit
                 Flag("slot-feature-award-mismatch", "The feature awards do not match the visible reels.");
             var moneyLines = result.Payout.Paylines.Where(line => line.PaylineId == 901).ToArray();
             var bananaLines = result.Payout.Paylines.Where(line => line.PaylineId is >= 801 and < 901).ToArray();
-            if (moneyLines.Length != (moneyPoints > 0 ? 1 : 0) ||
-                moneyLines.Sum(line => line.AmountPoints) != moneyPoints ||
+            var offPaylinePoints = rainbowHarvest ? moneyPoints : 0;
+            var listedMoneyPoints = moneyPoints - offPaylinePoints;
+            if (moneyLines.Length != (listedMoneyPoints > 0 ? 1 : 0) ||
+                moneyLines.Sum(line => line.AmountPoints) != listedMoneyPoints ||
                 bananaLines.Length != bananaPatterns ||
                 bananaLines.Sum(line => line.AmountPoints) != bananaPoints ||
                 bananaLines.Any(line => line.AmountPoints != bananaUnit) ||
@@ -158,12 +166,13 @@ internal static class SlotRoundAudit
                 Flag("slot-feature-payout-mismatch", "The feature payline breakdown does not match its award.");
             var expectedTotal = checked(basePayout.TotalPoints + moneyPoints + bananaPoints);
             if (result.Payout.TotalPoints != expectedTotal ||
-                result.Payout.TotalPoints != result.Payout.Paylines.Sum(line => line.AmountPoints) ||
+                result.Payout.TotalPoints != checked(result.Payout.Paylines.Sum(line => line.AmountPoints) + offPaylinePoints) ||
                 result.Payout.Paylines.Any(line => line.AmountPoints != line.Matches.Sum(match => match.AmountPoints)))
-                Flag("slot-payout-total-mismatch", "The outcome payout does not balance with its paylines.");
+                Flag("slot-payout-total-mismatch", "The outcome payout does not balance with its paylines and separate awards.");
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
-            var multiply = fullEnergy >= 100 && result.Payout.TotalPoints > 0;
+            var usesEnergy = result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null;
+            var multiply = usesEnergy && fullEnergy >= 100 && result.Payout.TotalPoints > 0;
             var expectedSettledLines = multiply
                 ? result.Payout.Paylines.Select(line => line with
                 {
@@ -175,7 +184,7 @@ internal static class SlotRoundAudit
                 }).ToArray()
                 : result.Payout.Paylines;
             if (!LinesEqual(settledPayout.Paylines, expectedSettledLines) ||
-                settledPayout.TotalPoints != expectedSettledLines.Sum(line => line.AmountPoints))
+                settledPayout.TotalPoints != checked(expectedSettledLines.Sum(line => line.AmountPoints) + offPaylinePoints))
                 Flag("slot-settlement-mismatch", "The settled payout does not match the energy multiplier rules.");
         }
         catch (Exception exception) when (exception is ArgumentException or OverflowException or

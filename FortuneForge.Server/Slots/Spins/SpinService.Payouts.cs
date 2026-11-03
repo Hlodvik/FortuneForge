@@ -10,6 +10,17 @@ namespace FortuneForge.Server.Slots.Spins;
 
 public sealed partial class SpinService
 {
+    private static FeaturePayout CalculateRainbowFeaturePayout(
+        IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints, decimal payoutMultiplier)
+    {
+        var symbols = reels.SelectMany(reel => reel);
+        var basketCount = symbols.Count(symbol => symbol == MonkeyPawSymbolId);
+        var harvest = basketCount == 0 ? 0 : MultiplyWager(wagerPoints,
+            symbols.Sum(RainbowRealmCharmHarvest.WagerMultiplier) * Math.Min(basketCount, 2));
+        var bananas = CalculateBananaPayouts(reels, wagerPoints, payoutMultiplier);
+        return new FeaturePayout(basketCount, harvest, bananas.Sum(payout => payout.AmountPoints), bananas, harvest);
+    }
+
     private static FeaturePayout CalculateFeaturePayout(
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,
@@ -165,7 +176,7 @@ public sealed partial class SpinService
 
     private static SpinPayout AddFeaturePayout(SpinPayout payout, FeaturePayout featurePayout)
     {
-        if (featurePayout.Paylines.Count == 0)
+        if (featurePayout.Paylines.Count == 0 && featurePayout.OffPaylinePoints == 0)
         {
             return payout;
         }
@@ -173,7 +184,7 @@ public sealed partial class SpinService
         var paylines = payout.Paylines.Concat(featurePayout.Paylines).ToArray();
         return payout with
         {
-            TotalPoints = paylines.Sum(payline => payline.AmountPoints),
+            TotalPoints = checked(paylines.Sum(payline => payline.AmountPoints) + featurePayout.OffPaylinePoints),
             Paylines = paylines
         };
     }

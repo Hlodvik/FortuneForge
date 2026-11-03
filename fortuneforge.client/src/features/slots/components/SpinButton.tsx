@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import wukongStaff from '../../../assets/slots/symbols/wukong/celestial-staff.png'
 
 type SpinButtonProps = {
   disabled?: boolean
   isSpinning?: boolean
   isStopRequested?: boolean
   onSpin: () => void
-  variant?: 'default' | 'pirate-helm' | 'pirate-loop' | 'wukong-rune' | 'vault-dial'
+  variant?: 'default' | 'pirate-helm' | 'pirate-loop' | 'vault-dial'
+  iconSrc?: string
 }
 
 export function SpinButton({
@@ -15,6 +15,7 @@ export function SpinButton({
   isStopRequested = false,
   onSpin,
   variant = 'default',
+  iconSrc,
 }: SpinButtonProps) {
   const isActive = isSpinning || isStopRequested
   const [spinBurstKey, setSpinBurstKey] = useState(0)
@@ -26,7 +27,7 @@ export function SpinButton({
 
   return (
     <button
-      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'pirate-helm' ? ' spin-button--pirate-helm' : ''}${variant === 'pirate-loop' ? ' spin-button--pirate-loop' : ''}${variant === 'wukong-rune' ? ' spin-button--wukong-rune' : ''}${variant === 'vault-dial' ? ' spin-button--vault-dial' : ''}`}
+      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'default' ? '' : ` spin-button--${variant}`}${iconSrc ? ' spin-button--custom-icon' : ''}`}
       type="button"
       onClick={handleClick}
       disabled={disabled && !isActive}
@@ -58,10 +59,10 @@ export function SpinButton({
               <path d="M393 184a157 157 0 1 0 21 114" />
               <path d="M393 100v90h-90" />
             </g>
-          ) : variant === 'wukong-rune' ? (
+          ) : iconSrc ? (
             <image
-              className="spin-button__wukong-staff-image"
-              href={wukongStaff}
+              className="spin-button__custom-image"
+              href={iconSrc}
               x="56"
               y="56"
               width="400"

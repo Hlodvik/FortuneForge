@@ -25,7 +25,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.JungleJackpotGameId, 3, 6, 22, 8)]
     [InlineData(SlotSpecialRoundProfiles.CandyCarnivalGameId, 4, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.DesertTreasuresGameId, 3, 7, 24, 7)]
-    [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 6, 26, 7)]
+    [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 0, 26, 0)]
     [InlineData(SlotSpecialRoundProfiles.NordicLegendsGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.ReelRichesGameId, 3, 5, 40, 10)]
     [InlineData(SlotSpecialRoundProfiles.ArcaneArchivesGameId, 3, 5, 40, 10)]
@@ -81,7 +81,7 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Equal(6, profiles.Count(profile => profile.UsesEnergy));
         Assert.False(profiles.Single(profile => profile.GameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId).UsesEnergy);
         Assert.Equal(12, profiles.Count(profile => !profile.UsesDirectValueTokens));
-        Assert.Equal(6, profiles.Count(profile => !profile.UsesCollections));
+        Assert.Equal(7, profiles.Count(profile => !profile.UsesCollections));
         Assert.All(profiles.Where(profile => !profile.UsesCollections && profile.ScatterAwardedSpins > 0), profile =>
             Assert.True(SlotSpecialRoundProfiles.IsFeatureMode(profile.ScatterFeatureMode)));
         Assert.All(profiles, profile =>

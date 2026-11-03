@@ -5,6 +5,7 @@ using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.Accounts.Models;
 
@@ -44,6 +45,10 @@ internal static class SlotEvidenceReplayAudit
                 [{ ActorId: "public-demo", IsAccountBacked: false, WagerCents: 0, PayoutCents: 0, NetCents: 0 }])
                 findings.Add(new("slot-olympus-tumble-financial-mismatch", "error",
                     "The recorded tumble demo must be nonfinancial and independent of player accounts."));
+            if (!demo && NeonArcadeSlotDefinitions.SupportsSpecialPlays(engineAudit.EngineVersion) &&
+                data.GetProperty("isFreeSpin").GetBoolean() != result.IsFreeSpin)
+                findings.Add(new("slot-neon-admission-mismatch", "error",
+                    "The recorded Neon spin type differs from the accepted admission."));
             if (!AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId) ||
                 catalogueGameId != summary.GameId ||
                 (demo ? "demo:" : string.Empty) + result.SpinId.ToString("N") != summary.RoundId ||
@@ -231,7 +236,8 @@ internal static class SlotEvidenceReplayAudit
             Flag("slot-demo-financial-classification-mismatch",
                 "The saved demo spin is not consistently marked nonfinancial.");
         if (request.GameId != engine.GameId || request.WagerPoints != engine.WagerPoints ||
-            request.FreeSpinsRemaining is < 0 or > 1_000 ||
+            request.FreeSpinsRemaining < 0 ||
+            audit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion && request.FreeSpinsRemaining > 1_000 ||
             request.EnergyBalance is < 0 or > 100 ||
             request.UseFreeSpin && request.FreeSpinsRemaining == 0 ||
             !SameEngineOutcome(engine, response))
@@ -263,6 +269,14 @@ internal static class SlotEvidenceReplayAudit
             findings.AddRange(GoldFoundryAudit.InspectDemo(request, engine, response, audit));
             return findings;
         }
+        var usesNeonSpecialPlays = NeonArcadeSlotDefinitions.SupportsSpecialPlays(audit.EngineVersion);
+        if (usesNeonSpecialPlays &&
+            (request.UseFreeSpin != (request.FreeSpinsRemaining > 0) ||
+             engine.IsFreeSpin != request.UseFreeSpin ||
+             request.UseFreeSpin && request.FreeSpinWagerPoints != request.WagerPoints ||
+             JsonSerializer.Serialize(engine.NeonArcade) != JsonSerializer.Serialize(response.NeonArcade)))
+            Flag("slot-neon-demo-progression-mismatch",
+                "The saved Neon spin type, locked wager, or activators differ from the accepted demo outcome.");
         var profile = audit.FeatureProfile;
         var currentEnergy = profile?.UsesEnergy != false ? request.EnergyBalance : 0;
         var activeFeatureMode = request.UseFreeSpin &&
@@ -285,7 +299,7 @@ internal static class SlotEvidenceReplayAudit
         var freeSpinsRemaining = checked(request.FreeSpinsRemaining -
             (request.UseFreeSpin ? 1 : 0) + engine.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded);
         long? freeSpinWagerPoints = freeSpinsRemaining > 0
-            ? request.FreeSpinWagerPoints ?? request.WagerPoints : null;
+            ? usesNeonSpecialPlays ? engine.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints : null;
         var nextFeatureMode = freeSpinsRemaining > 0
             ? specialRounds.FeatureMode ??
                 (engine.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
@@ -312,7 +326,7 @@ internal static class SlotEvidenceReplayAudit
     private static IReadOnlyList<RoundAuditFinding> InspectMidnightDemo(
         DemoSpinRequest request, SpinResult engine, SpinResult response, SlotSpinEngineAudit audit)
     {
-        var state = DemoSlotsController.CreateMidnightState(request);
+        var state = DemoSlotsController.CreateMidnightState(request, engine.PaytableId);
         MidnightVaultBonusRounds.Validate(state.Rounds);
         var head = state.Rounds.FirstOrDefault();
         var consumed = request.UseFreeSpin ? MidnightVaultBonusRounds.Consume(state.Rounds) : state.Rounds;

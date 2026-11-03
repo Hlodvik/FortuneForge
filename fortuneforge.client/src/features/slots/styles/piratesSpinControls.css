@@ -4,6 +4,7 @@
 }
 
 .pirates-spin-controls {
+  --pirate-bet-placement: left;
   --pirate-control-small: clamp(2.65rem, 3.4vw, 3.15rem);
   --pirate-control-spin: clamp(6.1rem, 8.3vw, 7.1rem);
   position: relative;
@@ -134,26 +135,21 @@
   font-weight: 900;
 }
 
-.pirates-spin-controls__bet-wrap {
-  position: relative;
-}
-
 .pirates-spin-controls__bet-menu {
-  position: absolute;
-  z-index: 20;
-  top: 50%;
-  right: calc(100% + 0.7rem);
+  position: fixed;
+  z-index: 21;
   display: grid;
   gap: 0.48rem;
-  width: min(14rem, calc(100vw - 1.5rem));
+  width: min(14rem, calc(var(--pirate-bet-viewport-width, 100vw) - 1.5rem));
   box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 0.76rem 0.8rem;
   border: 1px solid rgb(230 240 240 / 45%);
   border-radius: 0.8rem;
   background: rgb(9 20 31 / 93%);
   box-shadow: 0 0.55rem 1.35rem rgb(0 0 0 / 45%);
   color: #fff;
-  transform: translateY(-50%);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
@@ -167,22 +163,29 @@
 
 .pirates-spin-controls__bet-stepper {
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 0.3rem;
 }
 
 .pirates-spin-controls__bet-stepper button {
-  width: 2rem;
-  height: 2rem;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 1px solid rgb(255 255 255 / 46%);
   border-radius: 50%;
   background: rgb(255 255 255 / 8%);
   color: #fff;
   cursor: pointer;
-  font-size: 1.3rem;
-  line-height: 1;
+}
+
+.pirates-spin-controls__bet-stepper button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 2;
 }
 
 .pirates-spin-controls__bet-stepper button:disabled {
@@ -229,7 +232,7 @@
   }
 }
 
-@media (max-width: 1050px) {
+@media (width < 1051px) {
   .slots-page:is([data-slot-theme='pirates-fortune-moonlit-cove-v1'], [data-slot-controls='sidecar']) .slots-page__playbar {
     position: relative;
     display: flex;
@@ -239,6 +242,7 @@
   }
 
   .pirates-spin-controls {
+    --pirate-bet-placement: above;
     --pirate-control-small: 2.6rem;
     --pirate-control-spin: 5.4rem;
     grid-template-columns: auto auto auto;
@@ -257,22 +261,6 @@
     justify-self: center;
     margin: -0.2rem 0 0;
   }
-
-  .pirates-spin-controls__bet-menu {
-    top: calc(var(--pirate-control-spin) + 1.5rem);
-    right: auto;
-    bottom: auto;
-    left: 50%;
-    transform: translateX(-50%);
-  }
-
-  .pirates-spin-controls[data-wager-first] .pirates-spin-controls__bet-wrap {
-    position: static;
-  }
-
-  .pirates-spin-controls[data-wager-first] .pirates-spin-controls__bet-menu {
-    top: calc(100% + 0.45rem);
-  }
 }
 
 @media (max-width: 420px) {
@@ -287,15 +275,6 @@
 .slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__small {
   min-width: 44px;
   min-height: 44px;
-}
-
-.slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__bet-stepper {
-  grid-template-columns: 44px minmax(0, 1fr) 44px;
-}
-
-.slots-page[data-slot-controls='sidecar'] .pirates-spin-controls__bet-stepper button {
-  width: 44px;
-  height: 44px;
 }
 
 @media (prefers-reduced-motion: reduce) {

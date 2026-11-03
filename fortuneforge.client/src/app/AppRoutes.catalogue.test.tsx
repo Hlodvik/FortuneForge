@@ -54,9 +54,9 @@ const renderRoute = (pathname: string, slotRoute: SlotRouteDefinition | null = n
 
 describe('home replaces separate authenticated catalogues', () => {
   it.each([
-    ['/slots', '/home?category=Slots#home-lobby-games-title'],
-    ['/cards', '/home?category=Cards#home-lobby-games-title'],
-    ['/games', '/home#home-lobby-games-title'],
+    ['/slots', '/home?category=Slots'],
+    ['/cards', '/home?category=Cards'],
+    ['/games', '/home'],
   ])('replaces %s with the home catalogue without loading the old page', async (pathname, destination) => {
     await renderRoute(pathname)
     expect(state.replace).toHaveBeenCalledExactlyOnceWith(destination)

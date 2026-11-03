@@ -33,13 +33,14 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
 {
     private const string GameId = SlotSpecialRoundProfiles.DragonHoardGameId;
     private const string V1 = "midnight-vault-paytable-v1";
+    private const string Active = "midnight-vault-paytable-v3";
     private const string V2 = "midnight-vault-paytable-v2";
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { WriteIndented = true };
 
     [Theory]
     [InlineData("v1-paid-win.json")]
     [InlineData("v1-pending-bonus.json")]
-    public void GenuineV1PaidReceiptsReplayFromTheirFrozenRulesAfterV2Activation(string name)
+    public void GenuineV1PaidReceiptsReplayFromTheirFrozenRulesAfterV3Activation(string name)
     {
         using var saved = JsonDocument.Parse(File.ReadAllText(FixturePath(name)));
         var detail = saved.RootElement.GetProperty("audit").Deserialize<GameRoundAuditDetail>(Json)!;
@@ -49,7 +50,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(1.09m, audit.GetProperty("baseGame").GetProperty("math").GetProperty("payoutMultiplier").GetDecimal());
         var provider = Provider();
         var activeGame = provider.GetGame(GameId)!;
-        Assert.Equal(V2, activeGame.Math.PaytableId);
+        Assert.Equal(Active, activeGame.Math.PaytableId);
         var frozenPaytable = audit.GetProperty("paytable").Deserialize<PaytableDefinition>(Json)!;
         static IEnumerable<(string, int, long)> Rules(PaytableDefinition table) => table.Rules
             .OrderBy(rule => rule.SymbolId, StringComparer.Ordinal).ThenBy(rule => rule.MatchLength)
@@ -77,7 +78,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
             var response = Success(await player.Spin(new(GameId, stake, false, false)));
             Assert.False(response.IsFreeSpin);
             Assert.Equal(stake, response.WagerPoints);
-            Assert.Equal(V2, response.PaytableId);
+            Assert.Equal(Active, response.PaytableId);
             Assert.True(response.Payout.TotalPoints > 0);
             Assert.All(response.Payout.Paylines.SelectMany(line => line.Matches), match =>
                 Assert.Equal(checked(stake * match.Multiplier), match.AmountPoints));
@@ -142,7 +143,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task InsufficientBoostPointsCannotConsumeTheAwardedFreeSpin()
     {
         var player = await Player(emulator.Database(), "insufficient-boost");
-        await SeedBank(player, 3, 2, V2);
+        await SeedBank(player, 3, 2, Active);
         Assert.IsType<ConflictObjectResult>(await player.Spin(new(GameId, 3, true, true)));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100_000, await WalletCents(player));
@@ -169,7 +170,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var response = Success(await player.Spin(new(GameId, 2, false, true)));
         Assert.True(response.SpecialBoostApplied);
         Assert.EndsWith("-power-boost", response.ReelSetId);
-        Assert.Equal(V2, response.PaytableId);
+        Assert.Equal(Active, response.PaytableId);
         Assert.Equal(11 + response.SpecialPointsAwarded, response.SpecialPointsBalance);
         Assert.Equal(100_000 - 50 + response.Payout.TotalPoints * 25, await WalletCents(player));
         var uses = (await player.Database.Collection("balanceTransactions").WhereEqualTo("type", "special-boost-use").GetSnapshotAsync()).Documents;
@@ -196,14 +197,14 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(3, trigger.FreeSpinWagerPoints);
         Assert.Equal(10, trigger.BonusRound!.TotalSpins);
         Assert.Equal(3, trigger.BonusRound.WagerPoints);
-        Assert.Equal(V2, trigger.BonusRound.MathModelId);
+        Assert.Equal(Active, trigger.BonusRound.MathModelId);
         Assert.Equal(75, (await player.Guard.GetSnapshotAsync()).GetValue<long>("freeSpinWagerCents"));
         var before = await WalletCents(player);
         await ReadyForNextRequest(player);
         var bonus = Success(await player.Spin(new(GameId, 3, true, false)));
         Assert.True(bonus.IsFreeSpin);
         Assert.Equal(3, bonus.WagerPoints);
-        Assert.Equal(V2, bonus.PaytableId);
+        Assert.Equal(Active, bonus.PaytableId);
         Assert.Equal(before + bonus.Payout.TotalPoints * 25, await WalletCents(player));
         Assert.False((await player.Database.Collection("balanceTransactions").Document(bonus.SpinId.ToString("N") + "-wager").GetSnapshotAsync()).Exists);
         await AssertSavedAudit(player.Database, bonus, derived: true);
@@ -213,7 +214,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task TriggeredRoundQueuesBehindTheActiveRoundWithoutRepricingItsRemainingSpin()
     {
         var player = await Player(emulator.Database(), "queued-round", featureRandom: new OneSyncSeal());
-        await SeedBank(player, 4, 2, V2);
+        await SeedBank(player, 4, 2, Active);
         await player.Guard.UpdateAsync(new Dictionary<string, object>
         {
             ["sealCounts"] = Modes(29), ["sealWagerCents"] = Modes((15 * 2 + 14 * 4) * 25)
@@ -225,7 +226,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(3, first.QueuedBonusRounds[0].WagerPoints);
         Assert.Equal(10, first.QueuedBonusRounds[0].TotalSpins);
         Assert.Equal(10, first.QueuedBonusRounds[0].RemainingSpins);
-        Assert.Equal(V2, first.QueuedBonusRounds[0].MathModelId);
+        Assert.Equal(Active, first.QueuedBonusRounds[0].MathModelId);
         var queuedId = first.QueuedBonusRounds[0].Id;
         var reconnected = Assert.IsType<SlotStateResponse>(Assert.IsType<OkObjectResult>(await player.State()).Value);
         Assert.Equal(1, reconnected.FreeSpinsRemaining);
@@ -242,7 +243,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var firstQueuedSpin = Success(await player.Spin(new(GameId, 3, true, false)));
         Assert.Equal(3, firstQueuedSpin.WagerPoints);
         Assert.Equal(9, firstQueuedSpin.FreeSpinsRemaining);
-        Assert.Equal(V2, firstQueuedSpin.PaytableId);
+        Assert.Equal(Active, firstQueuedSpin.PaytableId);
         Assert.Equal(queuedId, firstQueuedSpin.BonusRound!.Id);
         Assert.Equal(10, firstQueuedSpin.BonusRound.TotalSpins);
     }
@@ -253,7 +254,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task InvalidStoredCarryIsRejectedBeforeFreeSpinOrBoostIsConsumed(long carry)
     {
         var player = await Player(emulator.Database(), "bad-carry-" + carry);
-        await SeedBank(player, carry, 2, V2);
+        await SeedBank(player, carry, 2, Active);
         await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = 100L });
         Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 2, true, true)));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
@@ -286,7 +287,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task PaidRequestCannotDiscardAnOutstandingBonusPool()
     {
         var player = await Player(emulator.Database(), "preserve-bank");
-        await SeedBank(player, 3, 2, V2);
+        await SeedBank(player, 3, 2, Active);
         Assert.IsType<BadRequestObjectResult>(await player.Spin(new(GameId, 2, false, false)));
         Assert.Equal(2, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
         Assert.Equal(100_000, await WalletCents(player));
@@ -294,9 +295,9 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     }
 
     [Fact]
-    public async Task GenuineUnversionedV1BankSurvivesReloadAndDrainsBeforeNewV2CashPlay()
+    public async Task GenuineUnversionedV1BankSurvivesReloadAndDrainsBeforeNewV3CashPlay()
     {
-        var player = await Player(emulator.Database(), "v1-bonus");
+        var player = await Player(emulator.Database(), "v1-bonus", stopModel: V1);
         await RestoreFrozenV1Bank(player);
         Assert.False((await player.Guard.GetSnapshotAsync()).ContainsField("freeSpinMathModelId"));
         var state = Assert.IsType<SlotStateResponse>(Assert.IsType<OkObjectResult>(await player.State()).Value);
@@ -316,16 +317,18 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         }
         await ReadyForNextRequest(player);
         var cash = Success(await player.Spin(new(GameId, 2, false, false)));
-        Assert.Equal(V2, cash.PaytableId);
+        Assert.Equal(Active, cash.PaytableId);
+        Assert.Equal("midnight-vault-reels-v2", cash.ReelSetId);
         Assert.False(cash.IsFreeSpin);
     }
 
     [Theory]
     [InlineData(V1, 6)]
     [InlineData(V2, 10)]
+    [InlineData(Active, 10)]
     public async Task RetriggeredFreeSpinsKeepTheAwardingPoolsMathModel(string model, int awardedSpins)
     {
-        var player = await Player(emulator.Database(), "retrigger-" + model[^2..], scatter: true);
+        var player = await Player(emulator.Database(), "retrigger-" + model[^2..], scatter: true, stopModel: model);
         await SeedBank(player, 4, 1, model);
         var response = Success(await player.Spin(new(GameId, 4, true, false)));
         Assert.Equal(model, response.PaytableId);
@@ -333,6 +336,62 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal(awardedSpins, response.BonusRound!.TotalSpins);
         Assert.Equal(model, (await player.Guard.GetSnapshotAsync()).GetValue<string>("freeSpinMathModelId"));
         Assert.Equal(4, response.FreeSpinWagerPoints);
+        var audit = await EngineAudit(player.Database, response);
+        if (model is V1 or V2) MidnightVaultHistoricalFixtures.AssertHistoricalReels(audit.ReelSet);
+    }
+
+    [Theory]
+    [InlineData(V1, false)]
+    [InlineData(V1, true)]
+    [InlineData(V2, false)]
+    [InlineData(V2, true)]
+    public async Task AwardedHistoricalFreeSpinKeepsItsExactOldStripsRatesAndZeroCashCharge(string model, bool boosted)
+    {
+        var player = await Player(emulator.Database(), "historical-" + model[^2..] + "-" + boosted,
+            stopModel: model, boosted: boosted);
+        await SeedBank(player, 3, 1, model);
+        if (boosted)
+            await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = player.Engine.GetSpecialBoostCost(GameId) + 5L });
+        var before = await WalletCents(player);
+        // The request cannot reprice an awarded3point stake to a cash-menu2.
+        var response = Success(await player.Spin(new(GameId, 2, true, boosted)));
+        Assert.Equal(3, response.WagerPoints);
+        Assert.Equal(model, response.PaytableId);
+        Assert.True(response.IsFreeSpin);
+        Assert.Equal(boosted, response.SpecialBoostApplied);
+        Assert.Equal(before + response.Payout.TotalPoints * 25, await WalletCents(player));
+        Assert.False((await player.Database.Collection("balanceTransactions").Document(response.SpinId.ToString("N") + "-wager").GetSnapshotAsync()).Exists);
+        var audit = await EngineAudit(player.Database, response);
+        MidnightVaultHistoricalFixtures.AssertHistoricalReels(audit.ReelSet, boosted);
+        Assert.Equal("midnight-vault-reels-v1", audit.BaseGame.Math.ReelSetId);
+        Assert.Equal(model == V1 ? 1.09m : 1m, audit.BaseGame.Math.PayoutMultiplier);
+        Assert.Equal(.30m, audit.BaseGame.Math.Targets.HitRate);
+        Assert.Null(audit.FeatureProfile!.TargetHitRate);
+        static IEnumerable<(string, int, long)> Rates(IEnumerable<PayoutRule> rules) => rules
+            .OrderBy(rule => rule.SymbolId, StringComparer.Ordinal).ThenBy(rule => rule.MatchLength)
+            .Select(rule => (rule.SymbolId, rule.MatchLength, rule.Multiplier));
+        var frozenRules = model == V1 ? MidnightVaultHistoricalFixtures.V1Audit().Paytable.Rules : MidnightVaultHistoricalFixtures.V2Rules();
+        Assert.Equal(Rates(frozenRules), Rates(audit.Paytable.Rules));
+        await AssertSavedAudit(player.Database, response, derived: true);
+    }
+
+    [Fact]
+    public async Task ExistingV2BankDrainsOnFrozenReelsBeforeTheNextCashSpinUsesV3()
+    {
+        var player = await Player(emulator.Database(), "drain-v2", stopModel: V2);
+        await SeedBank(player, 3, 2, V2);
+        for (var remaining = 1; remaining >= 0; remaining--)
+        {
+            if (remaining == 0) await ReadyForNextRequest(player);
+            var response = Success(await player.Spin(new(GameId, 3, true, false)));
+            Assert.Equal(V2, response.PaytableId);
+            Assert.Equal(remaining, response.FreeSpinsRemaining);
+            MidnightVaultHistoricalFixtures.AssertHistoricalReels((await EngineAudit(player.Database, response)).ReelSet);
+        }
+        await ReadyForNextRequest(player);
+        var cash = Success(await player.Spin(new(GameId, 2, false, false)));
+        Assert.Equal(Active, cash.PaytableId);
+        Assert.Equal("midnight-vault-reels-v2", cash.ReelSetId);
     }
 
     [Fact]
@@ -416,7 +475,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task FractionalStoredRoundFieldsFailBeforeAnyCreditIsConsumed(string field, double fractional)
     {
         var player = await Player(emulator.Database(), "fractional-" + field);
-        await SeedBank(player, 3, 2, V2);
+        await SeedBank(player, 3, 2, Active);
         var rounds = (await player.Guard.GetSnapshotAsync()).GetValue<List<Dictionary<string, object>>>("midnightBonusRounds");
         rounds[0][field] = fractional;
         await player.Guard.UpdateAsync("midnightBonusRounds", rounds);
@@ -433,7 +492,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task StoredRoundModeCannotBeUpgradedByChangingAdmissionOrEngineAudit(bool changeAdmission)
     {
         var player = await Player(emulator.Database(), changeAdmission ? "changed-admission-mode" : "changed-audit-mode");
-        await SeedBank(player, 3, 1, V2);
+        await SeedBank(player, 3, 1, Active);
         var admission = await player.Store.BeginSlotSpinAsync(player.UserId, GameId, 3, 25, true, false, 0,
             DateTime.UtcNow, TimeSpan.Zero, default);
         Assert.Null(admission.BonusRound!.FeatureMode);
@@ -452,7 +511,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task RetryingAFreeSpinSettlementCannotAppendItsTriggeredRoundTwice()
     {
         var player = await Player(emulator.Database(), "retry-trigger", scatter: true);
-        await SeedBank(player, 3, 1, V2);
+        await SeedBank(player, 3, 1, Active);
         var admission = await player.Store.BeginSlotSpinAsync(player.UserId, GameId, 3, 25, true, false, 0,
             DateTime.UtcNow, TimeSpan.Zero, default);
         var result = player.Engine.SpinAdmitted(GameId, admission, player.UserId);
@@ -486,7 +545,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task InterruptedBeforeGenerationLeavesDurableAdmissionAndConsumptionReceiptsForReconciliation()
     {
         var player = await Player(emulator.Database(), "admission-only");
-        await SeedBank(player, 3, 2, V2);
+        await SeedBank(player, 3, 2, Active);
         var cost = player.Engine.GetSpecialBoostCost(GameId);
         await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = cost + 5L });
         var admission = await player.Store.BeginSlotSpinAsync(player.UserId, GameId, 3, 25, true, true, cost,
@@ -497,7 +556,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         Assert.Equal("admitted", receipt.GetValue<string>("status"));
         Assert.Equal(2, receipt.GetValue<long>("freeSpinsBefore"));
         Assert.Equal(cost + 5, receipt.GetValue<long>("specialPointsBefore"));
-        Assert.Equal(V2, receipt.GetValue<string>("mathModelId"));
+        Assert.Equal(Active, receipt.GetValue<string>("mathModelId"));
         foreach (var field in new[] { "freeGameUseTransactionId", "specialPointUseTransactionId" })
             Assert.True((await player.Database.Collection("balanceTransactions").Document(receipt.GetValue<string>(field)).GetSnapshotAsync()).Exists);
         Assert.Equal(1, (await FreeGames(player).GetSnapshotAsync()).GetValue<long>("available"));
@@ -517,7 +576,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task ExpiredInterruptedAdmissionRestoresFreeSpinAndBoostOnceAndRejectsItsLateOutcome()
     {
         var player = await Player(emulator.Database(), "expired-admission");
-        await SeedBank(player, 3, 2, V2);
+        await SeedBank(player, 3, 2, Active);
         var cost = player.Engine.GetSpecialBoostCost(GameId);
         await SpecialPoints(player).SetAsync(new Dictionary<string, object> { ["available"] = cost + 5L });
         var old = await player.Store.BeginSlotSpinAsync(player.UserId, GameId, 3, 25, true, true, cost,
@@ -555,7 +614,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
     public async Task ChangedPaidFreeSpinMetadataIsDetectedDuringFrozenReplay()
     {
         var player = await Player(emulator.Database(), "tampered-metadata");
-        await SeedBank(player, 3, 1, V2);
+        await SeedBank(player, 3, 1, Active);
         var response = Success(await player.Spin(new(GameId, 3, true, false)));
         var detail = await Audit(player.Database, response);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(detail.Summary, detail.PayloadJson!));
@@ -584,7 +643,7 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
 
     private static async Task<PaidPlayer> Player(FirestoreDb database, string userId, bool scatter = false,
         long initialRand = 1000, IRandomIndexSource? featureRandom = null, Action? onGenerate = null, bool boosted = false,
-        int[]? stopsOverride = null)
+        int[]? stopsOverride = null, string? stopModel = null)
     {
         var provider = Provider();
         var store = new FirestoreAccountStore(database);
@@ -596,9 +655,13 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var accessor = new HttpContextAccessor();
         var accountService = new AccountService(store, null!, null!, accessor);
         var game = provider.GetGame(GameId)!;
+        if (stopModel is not null) game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, stopModel);
         var reels = provider.GetReelSet(game.Math.ReelSetId)!;
         if (boosted) reels = SpecialPointBonus.CreateBoostedReelSet(game, reels);
-        var stops = stopsOverride ?? reels.Reels.Select((strip, index) => strip.IndexOf(scatter && index < 3 ? "FREE" : "2")).ToArray();
+        var stops = stopsOverride ?? reels.Reels.Select((strip, index) => scatter && index < 3
+            ? strip.IndexOf("FREE")
+            : Enumerable.Range(0, strip.Count).First(stop => strip[stop] == "2" &&
+                Enumerable.Range(0, 4).All(row => strip[(stop + row) % strip.Count] != "FREE"))).ToArray();
         Assert.All(stops, stop => Assert.True(stop >= 0));
         var engine = new SpinService(provider, new CryptoReelGenerator(new FixedStops(stops, onGenerate)), new CombinationEvaluator(), new PayoutCalculator(), featureRandom ?? new QuietFeatures());
         return new(database, userId, token, accessor, store, engine,
@@ -704,6 +767,12 @@ public sealed class MidnightVaultPaidFirestoreTests(MidnightVaultPaidEmulatorFix
         var audits = new FirestoreGameRoundAuditStore(database, Options.Create(new AdminOperationsOptions
         { CursorSigningKey = "midnight-local-paid-evidence-only-signing-key" }));
         return (await audits.ReadAsync(summary.Id, default))!;
+    }
+    private static async Task<SlotSpinEngineAudit> EngineAudit(FirestoreDb database, SpinResult response)
+    {
+        var detail = await Audit(database, response);
+        using var payload = JsonDocument.Parse(detail.PayloadJson!);
+        return payload.RootElement.GetProperty("data").GetProperty("engineAudit").Deserialize<SlotSpinEngineAudit>(Json)!;
     }
     private static async Task AssertSavedAudit(FirestoreDb database, SpinResult response, bool derived)
     {

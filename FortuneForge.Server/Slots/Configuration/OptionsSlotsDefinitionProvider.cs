@@ -35,6 +35,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
             ? GoldFoundrySlotDefinitions.CreateSymbolSet()
             : id == RainbowRealmSlotDefinitions.SymbolSetId
             ? RainbowRealmSlotDefinitions.CreateSymbolSet()
+            : string.Equals(id, NeonArcadeSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
+            ? NeonArcadeSlotDefinitions.CreateSymbolSet()
             : string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
             ? MidnightVaultSlotDefinitions.CreateSymbolSet()
             : options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
@@ -52,15 +54,12 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
             return GoldFoundrySlotDefinitions.CreateReelSet();
         if (id == RainbowRealmSlotDefinitions.ReelSetId)
             return RainbowRealmSlotDefinitions.Reels;
+        if (string.Equals(id, NeonArcadeSlotDefinitions.ReelSetId, StringComparison.Ordinal))
+            return NeonArcadeSlotDefinitions.CreateReelSet();
         if (string.Equals(id, MidnightVaultBaseReelSet.Id, StringComparison.Ordinal))
-        {
-            var template = options.Value.ClassicProfileTemplate;
-            var source = template is null
-                ? null
-                : options.Value.ReelSets.SingleOrDefault(set =>
-                    string.Equals(set.Id, template.Math.ReelSetId, StringComparison.Ordinal));
-            return source is null ? null : MidnightVaultBaseReelSet.Create(source);
-        }
+            return MidnightVaultBaseReelSet.Create();
+        if (string.Equals(id, MidnightVaultBaseReelSet.CurrentId, StringComparison.Ordinal))
+            return MidnightVaultBaseReelSet.CreateCurrent();
         if (string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal))
         {
             return PiratesFortuneBaseReelSet.Definition;
@@ -85,8 +84,12 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
             return GoldFoundrySlotDefinitions.CreatePaytable();
         if (id == RainbowRealmSlotDefinitions.PaytableId)
             return RainbowRealmSlotDefinitions.CreatePaytable();
+        if (string.Equals(id, NeonArcadeSlotDefinitions.PaytableId, StringComparison.Ordinal))
+            return NeonArcadeSlotDefinitions.CreatePaytable();
         if (string.Equals(id, MidnightVaultSlotDefinitions.PaytableId, StringComparison.Ordinal))
             return MidnightVaultSlotDefinitions.CreatePaytable();
+        if (string.Equals(id, MidnightVaultSlotDefinitions.PreviousPaytableId, StringComparison.Ordinal))
+            return MidnightVaultSlotDefinitions.CreatePreviousPaytable();
         if (string.Equals(id, MidnightVaultSlotDefinitions.LegacyPaytableId, StringComparison.Ordinal))
             return MidnightVaultSlotDefinitions.CreateLegacyPaytable();
 
@@ -110,18 +113,21 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
                     VisibleRows = source.Layout.VisibleRows,
                     PaylineCount = paylineIndexes.Length
                 },
-            Symbols = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
-                ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
+            Symbols = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                ? NeonArcadeSlotDefinitions.CreateSymbolRules(source.Symbols)
                 : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                 ? RainbowRealmSlotDefinitions.CreateSymbolRules(source.Symbols)
+                : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
+                ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
                 : source.Symbols,
             Matching = source.Matching,
             Math = CloneMath(source.Math, profile, paylineIndexes),
-            Wagering = source.Wagering,
+            Wagering = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                ? NeonArcadeSlotDefinitions.CreateCentWagering() : source.Wagering,
             FreeGames = source.FreeGames is null || profile.ScatterAwardedSpins <= 0
                 ? null
                 : profile.Configure(source.FreeGames),
-            SpecialPoints = source.SpecialPoints,
+            SpecialPoints = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId ? null : source.SpecialPoints,
             Energy = profile.UsesEnergy ? source.Energy : null,
             Paylines = paylineIndexes is null
                 ? source.Paylines
@@ -135,17 +141,21 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         IReadOnlyList<int>? paylineIndexes) => new()
     {
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
-        PaytableId = string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
-            ? MidnightVaultSlotDefinitions.PaytableId
+        PaytableId = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+            ? NeonArcadeSlotDefinitions.PaytableId
             : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
             ? RainbowRealmSlotDefinitions.PaytableId
+            : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
+            ? MidnightVaultSlotDefinitions.PaytableId
             : source.PaytableId,
         PayoutMultiplier = profile.PayoutMultiplier,
         PaylinePayoutSteps = paylineIndexes is null
             ? source.PaylinePayoutSteps
             : paylineIndexes.Select(index => source.PaylinePayoutSteps[index]).ToList(),
         FiveMatchPityMissLimit = source.FiveMatchPityMissLimit,
-        Targets = profile.TargetHitRate is { } targetHitRate
+        Targets = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+            ? new GameMathTargets() // The local arcade model has not been calibrated.
+            : profile.TargetHitRate is { } targetHitRate
             ? new GameMathTargets
             {
                 Rtp = source.Targets.Rtp,

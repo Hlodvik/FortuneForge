@@ -13,6 +13,8 @@ export type SlotRulesSet = {
   wagerOptions: readonly number[]
   autoSpinDelayMs: number
   autoSpinSpeedMultiplier: number
+  baseSpinSpeedMultiplier: number
+  reelTravelRowCount: number
   specialBoostCost: number
   energyMeterCapacity: number
 }
@@ -42,6 +44,8 @@ const BASE_SLOT_RULES_SET: Omit<SlotRulesSet, 'gameId'> = {
   wagerOptions: Array.from({ length: 1_000 }, (_, index) => (index + 1) * 2),
   autoSpinDelayMs: 1_000,
   autoSpinSpeedMultiplier: 3,
+  baseSpinSpeedMultiplier: 1,
+  reelTravelRowCount: 8,
   specialBoostCost: 8,
   energyMeterCapacity: 100,
 }

@@ -24,6 +24,13 @@ public sealed record SlotSpinEngineAudit(
     // Set after checking a stored paid entitlement or a nonfinancial demo round.
     public bool IsDerivedFreeSpin { get; init; }
 
+    // Absent from every existing paid/demo path and from legacy serialized evidence.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public WukongPawPrototypeEvidence? WukongPawPrototype { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonArcadeEvidence? NeonArcade { get; init; }
+
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleEvidence? OlympusTumble { get; init; }
 
@@ -122,6 +129,9 @@ public sealed record SpinResult(
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
     public MidnightVaultDemoState? MidnightBonusState { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonArcadeEvidence? NeonArcade { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleOutcome? OlympusTumble { get; init; }

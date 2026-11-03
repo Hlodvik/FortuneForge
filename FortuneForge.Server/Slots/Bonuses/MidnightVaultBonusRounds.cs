@@ -44,6 +44,8 @@ public static class MidnightVaultBonusRounds
             new(MidnightVaultSlotDefinitions.LegacyPaytableId,
                 MidnightVaultSlotDefinitions.LegacyScatterAwardedSpins, MidnightVaultSlotDefinitions.LegacyCollectionAwardedSpins,
                 ["sync", "rows", "paw", "rand"], AllowFeatureModeCombinations: true, AllowLegacyCarryTotals: true),
+            new(MidnightVaultSlotDefinitions.PreviousPaytableId, MidnightVaultSlotDefinitions.BonusRoundSpins,
+                MidnightVaultSlotDefinitions.BonusRoundSpins, ["rows-paw"]),
             new(MidnightVaultSlotDefinitions.PaytableId, MidnightVaultSlotDefinitions.BonusRoundSpins,
                 MidnightVaultSlotDefinitions.BonusRoundSpins, ["rows-paw"])
         ]);

@@ -30,36 +30,33 @@ internal sealed class IntegerCandidateSweep : IPayoutCalculator
             throw new InvalidOperationException("Integer search requires scalar1, zero steps and unchanged positive native support.");
         expectedCycles = cycleCount;
         batchSize = Math.Max(1, cycleCount / Math.Min(50, cycleCount));
-        var basis = table.Rules.GroupBy(rule => rule.SymbolId).ToDictionary(group => group.Key,
-            group => (Three: group.Single(rule => rule.MatchLength == 3).Multiplier,
-                Five: group.Single(rule => rule.MatchLength == 5).Multiplier), StringComparer.Ordinal);
-        // Predeclared search: the original integer table (J-five2), plus each
-        // single five-match rule shifted by +/-1 or +/-2. No reel/feature/RNG or
-        // positive-paying support changes. A selected table needs a holdout run.
-        basis["3"] = (basis["3"].Three, 2);
-        // Preserve the original predeclared lattice after production selects
-        // A-five7. Historical calibration candidates must remain identical.
-        basis["5"] = (basis["5"].Three, 6);
-        var list = new List<Candidate> { Create("integer-base-j2", basis, table) };
-        foreach (var id in basis.Keys.Order(StringComparer.Ordinal))
-        foreach (var delta in new[] { -2, -1, 1, 2 })
+        var basis = provider.GetPaytable(MidnightVaultSlotDefinitions.PreviousPaytableId)
+            ?? throw new InvalidOperationException("Frozen v2 calibration basis is missing.");
+        var list = new Dictionary<string, Candidate>(StringComparer.Ordinal);
+        // Approved, predeclared factor family: round each frozen v2 native rate
+        // once, positive AwayFromZero, then floor at1. Deduplicate whole tables.
+        // Feature777 remains3x and is added outside this native calculator.
+        for (var numerator = 25; numerator <= 75; numerator++)
         {
-            var value = basis[id].Five + delta;
-            if (value is < 1 or > 18) continue;
-            var rates = basis.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.Ordinal);
-            rates[id] = (rates[id].Three, value);
-            list.Add(Create($"{id}-five-{value}", rates, table));
+            var factor = numerator / 100m;
+            var candidateTable = new PaytableDefinition
+            {
+                Id = table.Id, SymbolSetId = table.SymbolSetId,
+                Rules = basis.Rules.Select(rule => new PayoutRule { SymbolId = rule.SymbolId, MatchLength = rule.MatchLength,
+                    Multiplier = Math.Max(1, checked((long)Math.Round(rule.Multiplier * factor, MidpointRounding.AwayFromZero))) }).ToList()
+            };
+            var key = string.Join('|', candidateTable.Rules.OrderBy(rule => rule.SymbolId, StringComparer.Ordinal).ThenBy(rule => rule.MatchLength)
+                .Select(rule => $"{rule.SymbolId}:{rule.MatchLength}:{rule.Multiplier}"));
+            if (list.TryGetValue(key, out var equivalent)) { equivalent.Factors.Add(factor); continue; }
+            var rates = candidateTable.Rules.GroupBy(rule => rule.SymbolId).ToDictionary(group => group.Key,
+                group => (Three: group.Single(rule => rule.MatchLength == 3).Multiplier,
+                    Five: group.Single(rule => rule.MatchLength == 5).Multiplier), StringComparer.Ordinal);
+            var changed = candidateTable.Rules.Count(rule => basis.Rules.Single(original =>
+                original.SymbolId == rule.SymbolId && original.MatchLength == rule.MatchLength).Multiplier != rule.Multiplier);
+            list.Add(key, new Candidate($"native-f{numerator:000}", rates, candidateTable, changed, key, factor));
         }
-        candidates = list.ToArray();
+        candidates = list.Values.OrderBy(candidate => candidate.Id, StringComparer.Ordinal).ToArray();
     }
-
-    private static Candidate Create(string id, IReadOnlyDictionary<string, (long Three, long Five)> rates, PaytableDefinition source) =>
-        new(id, rates, new PaytableDefinition
-        {
-            Id = source.Id, SymbolSetId = source.SymbolSetId,
-            Rules = source.Rules.Select(rule => new PayoutRule { SymbolId = rule.SymbolId, MatchLength = rule.MatchLength,
-                Multiplier = rule.MatchLength == 3 ? rates[rule.SymbolId].Three : rates[rule.SymbolId].Five }).ToList()
-        });
 
     public void BeginCycle()
     {
@@ -144,39 +141,37 @@ internal sealed class IntegerCandidateSweep : IPayoutCalculator
         currentBatchWager = 0;
     }
 
-    public object Report()
+    public IntegerSearchReport Report()
     {
         if (cycles != expectedCycles || pendingSpin) throw new InvalidOperationException("Candidate sweep did not finish every complete cycle.");
         var digest = Convert.ToHexStringLower(observed.GetHashAndReset());
         observed.Dispose();
-        return new
-        {
-            method = "All complete evaluator alternatives repriced in memory with production calculator and independent integer/geometry oracle; unchanged positive support, zero steps, scalar1. Feature amounts copied exactly from the same complete seeded queue stream. No selected-match histogram approximation.",
-            selectionRule = "Predeclared original integer table plus one five-match rate shifted +/-1 or +/-2, bounded1..18. Select using multiple calibration seeds and minimum changed rules; independently validate the final source on a holdout seed. Search intervals are descriptive, not multiplicity-adjusted.",
-            completeEvaluationStreamSha256 = digest, evaluatedSpins = calls, completeCycles = cycles,
-            candidates = candidates.Select(candidate =>
+        return new IntegerSearchReport(
+            "All complete evaluator alternatives repriced in memory with production calculator and independent integer/geometry oracle; unchanged positive support, zero steps, scalar1. Feature777 amounts copied exactly from the same complete seeded queue stream. No selected-match histogram approximation.",
+            "Frozen v2 native rates *factor0.25..0.75 step0.01, integer AwayFromZero once, floor1; identical tables deduplicated. Select after both predeclared calibration seeds by nearest paid-amount-pooled90%, then fewer changed native rules vs v2, then canonical ID ordinal. Require pooled88..92%; no family widening. Search intervals descriptive, not multiplicity-adjusted.",
+            digest, calls, cycles, candidates.Select(candidate =>
             {
                 var mean = candidate.BatchRtps.Average();
                 var standardError = candidate.BatchRtps.Count > 1 ? Math.Sqrt(candidate.BatchRtps.Sum(value => (value - mean) * (value - mean)) /
                     (candidate.BatchRtps.Count - 1) / candidate.BatchRtps.Count) : 0;
-                return new
-                {
-                    candidate.Id, rates = candidate.Table.Rules, candidate.TotalPayout,
-                    rtp = candidate.TotalPayout / (double)paidWager, hitRate = candidate.Hits / (double)calls,
-                    approximate95PercentBatchInterval = new[] { mean - 2 * standardError, mean + 2 * standardError },
-                    cycleReturnStdDev = Math.Sqrt(Math.Max(0, candidate.ReturnSquares / cycles - Math.Pow(candidate.ReturnSum / cycles, 2))),
-                    candidate.MaxCyclePayout, zeroCycleRate = candidate.ZeroCycles / (double)cycles,
-                    candidate.ChangedNativeSelections
-                };
-            }).ToArray()
-        };
+                return new IntegerCandidateResult(candidate.Id, candidate.Factors[0], candidate.Factors.ToArray(),
+                    candidate.ChangedNativeRules, candidate.CanonicalTable, candidate.Table.Rules, candidate.TotalPayout,
+                    candidate.TotalPayout / (double)paidWager, candidate.Hits / (double)calls,
+                    [mean - 2 * standardError, mean + 2 * standardError],
+                    Math.Sqrt(Math.Max(0, candidate.ReturnSquares / cycles - Math.Pow(candidate.ReturnSum / cycles, 2))),
+                    candidate.MaxCyclePayout, candidate.ZeroCycles / (double)cycles, candidate.ChangedNativeSelections);
+            }).ToArray());
     }
 
-    private sealed class Candidate(string id, IReadOnlyDictionary<string, (long Three, long Five)> rates, PaytableDefinition table)
+    private sealed class Candidate(string id, IReadOnlyDictionary<string, (long Three, long Five)> rates, PaytableDefinition table,
+        int changedNativeRules, string canonicalTable, decimal factor)
     {
         public string Id { get; } = id;
         public IReadOnlyDictionary<string, (long Three, long Five)> Rates { get; } = rates;
         public PaytableDefinition Table { get; } = table;
+        public int ChangedNativeRules { get; } = changedNativeRules;
+        public string CanonicalTable { get; } = canonicalTable;
+        public List<decimal> Factors { get; } = [factor];
         public long LastNative, CyclePayout, TotalPayout, BatchPayout, Hits, ChangedNativeSelections, MaxCyclePayout, ZeroCycles;
         public double ReturnSum, ReturnSquares;
         public List<double> BatchRtps { get; } = [];

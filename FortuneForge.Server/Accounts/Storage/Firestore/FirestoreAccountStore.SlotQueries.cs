@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using Google.Cloud.Firestore;
@@ -21,7 +22,8 @@ public sealed partial class FirestoreAccountStore
         var energyCurrencyId = GameCurrencyId(EnergyCurrencyId, gameId);
         var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
         var isGoldFoundry = gameId == GoldFoundrySlotDefinitions.GameId;
-        if (isMidnight || isGoldFoundry)
+        var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+        if (isMidnight || isGoldFoundry || isNeon)
             return await database.RunTransactionAsync(async transaction =>
             {
                 if (isGoldFoundry)
@@ -34,6 +36,13 @@ public sealed partial class FirestoreAccountStore
                 var state = await transaction.GetAllSnapshotsAsync([
                     guardReference, BalanceDocument(userId, GameCurrencyId(FreeGamesCurrencyId, gameId)),
                     BalanceDocument(userId, specialPointsCurrencyId), BalanceDocument(userId, energyCurrencyId)], cancellationToken);
+                if (isNeon)
+                {
+                    var remaining = checked((int)ReadLong(state[1], "available"));
+                    var wager = remaining > 0 ? ReadNeonCarryWagerPoints(state[0], pointValueInCents) : (long?)null;
+                    var mode = remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null;
+                    return new SlotStateResponse(remaining, wager, 0, 0, [], mode);
+                }
                 var rounds = ReadMidnightBonusRounds(state[0], ReadLong(state[1], "available"), pointValueInCents);
                 var active = rounds.FirstOrDefault();
                 return new SlotStateResponse(active?.RemainingSpins ?? 0, active?.WagerPoints,
@@ -77,6 +86,20 @@ public sealed partial class FirestoreAccountStore
             .OrderByDescending(spin => spin.CreatedAtUtc)
             .Take(Math.Clamp(limit, 1, 100))
             .ToArray();
+    }
+
+    private static long ReadNeonCarryWagerPoints(DocumentSnapshot guard, decimal pointValueInCents)
+    {
+        var cents = ReadLong(guard, "freeSpinWagerCents");
+        if (cents <= 0)
+        {
+            // Point-only guards predate the migration from whole-rand units.
+            cents = checked(ReadLong(guard, "freeSpinWagerPoints") * RandMoney.CentsPerRand);
+        }
+        var wager = RandMoney.CentsToPoints(cents, pointValueInCents);
+        if (!NeonArcadeSlotDefinitions.IsValidCarryWager(wager))
+            throw new InvalidOperationException("The saved Neon bonus wager is invalid.");
+        return wager;
     }
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(

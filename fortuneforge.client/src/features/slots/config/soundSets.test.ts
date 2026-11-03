@@ -4,7 +4,8 @@ import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
 import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/goldFoundry/sounds'
 import * as soundSets from './soundSets'
-import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS, WUKONG_TREASURES_SOUNDS } from './soundSets'
+import { WUKONG_TREASURES_SOUNDS } from '../../../games/slots/wukong/sounds'
+import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS } from './soundSets'
 import type { SlotSoundSet } from './soundSets'
 import { useSlotAudio } from '../hooks/useSlotAudio'
 import { loadAllSlotGameManifests } from '../../../games/slots/routeRegistry'
@@ -104,7 +105,7 @@ describe('Reel Riches sound set', () => {
 })
 
 describe('catalogue audio provenance and allocation', () => {
-  const allSoundSets = [...Object.values(soundSets), GOLD_FOUNDRY_SOUNDS]
+  const allSoundSets = [...Object.values(soundSets), WUKONG_TREASURES_SOUNDS, GOLD_FOUNDRY_SOUNDS]
   const arcaneMusicSource = '/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg'
   const olympusMusicSource = '/assets/slots/audio-suites/v1/gods-of-olympus/secret-sanctum-v1.ogg'
   const foundryAudioPath = '/assets/slots/gold-foundry/v1/audio'
@@ -119,6 +120,9 @@ describe('catalogue audio provenance and allocation', () => {
   ])
   const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
   const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
+  const neonSpecialMusicSource = '/assets/slots/audio-suites/v1/neon-nights/special-plays-music-v1.ogg'
+  const neonWinSource = '/assets/slots/audio-suites/v1/neon-nights/win-nice-v1.ogg'
+  const midnightWinSource = '/assets/slots/midnight-vault/v4/audio/vault-win-noir.wav'
 
   it('enables seventeen themed suites while retaining the three excluded title selections', async () => {
     const manifests = await loadAllSlotGameManifests()
@@ -127,6 +131,9 @@ describe('catalogue audio provenance and allocation', () => {
     for (const game of manifests) {
       const sounds = game.experience.sounds
       expect(allSoundSets).toContain(sounds)
+      if (game.id !== 'wukong-journey-to-the-west') {
+        expect(Object.values(sounds.cues).map(cue => cue.source).join('\n')).not.toMatch(/\/wukong-[^/]+\.wav/)
+      }
       expect(sounds.cues[sounds.events.ambience]).toMatchObject(game.id === 'dragon-hoard'
         ? {
           source: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3',
@@ -148,6 +155,11 @@ describe('catalogue audio provenance and allocation', () => {
       if (game.id === 'gods-of-olympus') {
         expect(sounds.cues[sounds.events.ambience]?.baseVolume).toBe(.12)
       }
+      if (game.id === 'neon-nights') {
+        expect(sounds.cues[sounds.events.specialAmbience!]).toMatchObject({
+          source: neonSpecialMusicSource, category: 'effect', loop: true, enabled: true,
+        })
+      }
     }
     for (const sounds of allSoundSets) {
       for (const cue of Object.values(sounds.cues)) {
@@ -156,7 +168,9 @@ describe('catalogue audio provenance and allocation', () => {
         } else {
           expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
             (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)) ||
-            cue.source === arcaneMusicSource || cue.source === olympusMusicSource, cue.source).toBe(true)
+            cue.source === arcaneMusicSource || cue.source === olympusMusicSource ||
+            cue.source === neonSpecialMusicSource || cue.source === neonWinSource ||
+            cue.source === midnightWinSource, cue.source).toBe(true)
         }
       }
     }

@@ -6,13 +6,13 @@ if (gameSmokeRoutes.length !== 45) throw new Error(`Smoke inventory must contain
 
 console.log(`Fortune Forge production smoke: ${baseUrl}`)
 
-for (const route of gameSmokeRoutes) {
+for (const route of ['/home', ...gameSmokeRoutes]) {
   const response = await request(`${baseUrl}${route}`)
   const html = await response.text()
   assert(response.ok, `${route} returned ${response.status}`)
   assert(html.includes('<div id="root"></div>'), `${route} did not return the application shell`)
 }
-console.log(`✓ ${gameSmokeRoutes.length} game routes returned the application shell`)
+console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell`)
 
 for (const [route, gameId] of slotSmokeInventory) {
   const status = await request(`${baseUrl}/api/slots/demo/status?gameId=${encodeURIComponent(gameId)}`)
@@ -23,7 +23,7 @@ for (const [route, gameId] of slotSmokeInventory) {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({
       gameId,
-      wagerPoints: 10,
+      wagerPoints: gameId === 'neon-nights-v1' ? 50 : 10,
       useFreeSpin: false,
       freeSpinsRemaining: 0,
       freeSpinWagerPoints: null,

@@ -2,7 +2,7 @@
   "scenario": "base-win",
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
-    "seed": 4,
+    "seed": 12,
     "engineVersion": "shared-slots-engine-v1",
     "gameId": "dragon-hoard-v1",
     "noHttpServerOrAccountSettlement": true,
@@ -54,76 +54,76 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0a34b24b-c355-4036-ad91-4e6974ee8c8c",
+        "spinId": "db998de8-cd48-4ff8-9ba7-3c99f715b170",
         "gameId": "dragon-hoard-v1",
-        "reelSetId": "midnight-vault-reels-v1",
+        "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
-        "paytableId": "midnight-vault-paytable-v2",
+        "paytableId": "midnight-vault-paytable-v3",
         "wagerPoints": 2,
         "pointValueInCents": 25,
         "reelStops": [
-          52,
           63,
-          36,
-          26,
-          0
+          21,
+          9,
+          7,
+          39
         ],
         "reels": [
           [
-            "POWER",
-            "FREE",
-            "POWER",
-            "5"
+            "8",
+            "6",
+            "7",
+            "4"
           ],
           [
+            "8",
             "3",
+            "ACE",
+            "POWER"
+          ],
+          [
+            "8",
             "5",
             "7",
-            "5"
-          ],
-          [
-            "6",
-            "3",
-            "BANANA",
-            "5"
-          ],
-          [
-            "2",
-            "3",
-            "2",
-            "7"
-          ],
-          [
-            "2",
-            "5",
-            "4",
             "3"
+          ],
+          [
+            "SEAL_PAW",
+            "4",
+            "6",
+            "4"
+          ],
+          [
+            "5",
+            "3",
+            "8",
+            "2"
           ]
         ],
         "payout": {
           "totalPoints": 4,
           "paylines": [
             {
-              "paylineId": 4,
+              "paylineId": 1,
               "amountPoints": 4,
               "matches": [
                 {
                   "match": {
-                    "paylineId": 4,
-                    "symbolId": "5",
+                    "paylineId": 1,
+                    "symbolId": "8",
                     "matchLength": 3,
                     "positions": [
                       {
                         "reel": 0,
-                        "row": 3
+                        "row": 0
                       },
                       {
                         "reel": 1,
-                        "row": 3
+                        "row": 0
                       },
                       {
                         "reel": 2,
-                        "row": 3
+                        "row": 0
                       }
                     ],
                     "wildPositions": []
@@ -152,7 +152,9 @@
         "monkeyPawCount": 0,
         "moneyGrabPoints": 0,
         "bananaBonusPoints": 0,
-        "sealsAwarded": {},
+        "sealsAwarded": {
+          "SEAL_PAW": 1
+        },
         "sealCollections": [
           {
             "sealId": "sync",
@@ -168,8 +170,8 @@
           },
           {
             "sealId": "paw",
-            "count": 0,
-            "averageWagerPoints": 0,
+            "count": 1,
+            "averageWagerPoints": 2,
             "requiredCount": 30
           },
           {
@@ -189,13 +191,13 @@
           "collectionCounts": {
             "sync": 0,
             "rows": 0,
-            "paw": 0,
+            "paw": 1,
             "rand": 0
           },
           "collectionWagerPoints": {
             "sync": 0,
             "rows": 0,
-            "paw": 0,
+            "paw": 2,
             "rand": 0
           }
         }

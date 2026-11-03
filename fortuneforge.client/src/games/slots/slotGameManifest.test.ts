@@ -98,6 +98,7 @@ describe('slot game manifests', () => {
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
       game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
         : game.id === 'gold-foundry' ? 'gold-foundry-symbols-v1'
+        : game.id === 'neon-nights' ? 'neon-arcade-symbols-v2'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'classic-symbols-v3'))
     for (const game of SLOT_GAME_MANIFESTS.filter(candidate => candidate.id !== 'dragon-hoard')) {
       expect(game.experience.symbols.definitions['8'], game.id).toBeUndefined()
@@ -223,14 +224,17 @@ describe('slot game manifests', () => {
       expect(game.routes.play).toBe(`/slots/${game.id}`)
       expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
       expect(game.experience.cabinet.backdropImage).toMatch(/\.webp$/)
-      const isScatterOnly = new Set([
+      const hasNoCollections = new Set([
         'robot-revolution',
         'phantom-manor',
         'candy-carnival',
         'nordic-legends',
+        'neon-nights',
       ]).has(game.id)
-      expect(game.experience.features.collections?.entries ?? []).toHaveLength(isScatterOnly ? 0 : 4)
-      expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
+      expect(game.experience.features.collections?.entries ?? []).toHaveLength(hasNoCollections ? 0 : 4)
+      if (game.id !== 'neon-nights') {
+        expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
+      }
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       expect(new Set(
@@ -432,12 +436,11 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('gives the final five showcase slots matched special rounds and audio', () => {
+  it('gives the remaining showcase slots matched special rounds and audio', () => {
     const featured = [
       [JUNGLE_JACKPOT_SLOT_GAME, 'jungle-temple-trek', 'jungle-jackpot-audio-v1', 22, 3, 6, true],
       [CANDY_CARNIVAL_SLOT_GAME, 'candy-sugar-parade', 'candy-carnival-audio-v1', 20, 4, 5, false],
       [DESERT_TREASURES_SLOT_GAME, 'desert-pharaoh-passage', 'desert-treasures-audio-v1', 24, 3, 7, true],
-      [NEON_NIGHTS_SLOT_GAME, 'neon-midnight-mix', 'neon-nights-audio-v1', 26, 3, 6, true],
       [NORDIC_LEGENDS_SLOT_GAME, 'nordic-valhalla-voyage', 'nordic-legends-audio-v1', 28, 4, 6, false],
     ] as const
 
@@ -466,7 +469,7 @@ describe('slot game manifests', () => {
 
     expect(featured.filter((game) => game.experience.features.energy)).toHaveLength(4)
     expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(10)
-    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(5)
+    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(6)
     expect(new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle)).size).toBeGreaterThan(7)
   })
 

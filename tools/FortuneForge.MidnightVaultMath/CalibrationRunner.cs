@@ -102,14 +102,18 @@ internal static class CalibrationRunner
         var ruin = EstimateRuin(payouts, schedule, seed + 1);
         var lettersTopFour = symbols.OrderByDescending(pair => pair.Value).Take(4).Select(pair => pair.Key)
             .ToHashSet(StringComparer.Ordinal).SetEquals(["2", "3", "4", "5"]);
+        var letterShare = symbols.Where(pair => pair.Key is "2" or "3" or "4" or "5").Sum(pair => pair.Value) /
+            (double)symbols.Values.Sum();
+        var letterSharePass = letterShare >= .37 && letterShare <= .41;
         return new CalibrationMeasurement(schedule, cycles, seed, autoBoost, game.Math.PayoutMultiplier, paidWager, totalPayout,
-            rtp, paidPayout / (double)paidWager, hit, Math.Abs(rtp - target) <= .02 && rtp < 1 && Math.Abs(hit - targetHit) <= .02 && (ruin is null || ruin > .5) && lettersTopFour,
+            rtp, paidPayout / (double)paidWager, hit, Math.Abs(rtp - target) <= .02 && rtp < 1 && Math.Abs(hit - targetHit) <= .02 && (ruin is null || ruin > .5) && letterSharePass,
             interval, spins, scatterSpins, collectionSpins, boosts, specialAwarded, specialSpent,
             specialPoints, pity, maxSpin, maxCycle, zeroCycles / (double)cycles,
             Math.Sqrt(cycleReturns.Sum(value => Math.Pow(value - averageCycleReturn, 2)) / cycles),
             ruin, counts.Select(pair => new SlotSealCollection(pair.Key, checked((int)pair.Value), pair.Value == 0 ? 0 :
                 checked((long)Math.Round(wagerTotals[pair.Key] / (decimal)pair.Value, MidpointRounding.AwayFromZero)), profile.CollectionTarget)).ToArray(),
-            symbols, contribution, featureModes, checks, lettersTopFour, symbolsByMode, spinsByMode, counts, wagerTotals, sweep?.Report(), intervalInsidePolicy);
+            symbols, contribution, featureModes, checks, lettersTopFour, symbolsByMode, spinsByMode, counts, wagerTotals, sweep?.Report(), intervalInsidePolicy,
+            letterShare, letterSharePass);
     }
 
     private static string[] ValidateFixtures(ISlotsDefinitionProvider provider, GameDefinition game, SlotSpecialRoundProfile profile, long[] wagers)
@@ -174,5 +178,5 @@ internal sealed record CalibrationMeasurement(long[] WagerSchedule, int PaidCycl
     double CycleReturnStdDev, double? ResampledBankrollRuinRate, IReadOnlyList<SlotSealCollection> FinalCollections,
     Dictionary<string, long> VisibleSymbolCounts, Dictionary<string, long> PayoutBySymbol, Dictionary<string, long> FreeSpinModes, string[] Checks,
     bool LettersAreOverallTopFour, Dictionary<string, Dictionary<string, long>> VisibleSymbolCountsByMode, Dictionary<string, long> SpinsByMode,
-    IReadOnlyDictionary<string, long> FinalCollectionCounts, IReadOnlyDictionary<string, long> FinalCollectionWagerPoints, object? CandidateSearch,
-    bool RtpIntervalInsidePolicy);
+    IReadOnlyDictionary<string, long> FinalCollectionCounts, IReadOnlyDictionary<string, long> FinalCollectionWagerPoints, IntegerSearchReport? CandidateSearch,
+    bool RtpIntervalInsidePolicy, double CombinedLetterVisibleShare, bool LetterVisibleSharePolicyPass);

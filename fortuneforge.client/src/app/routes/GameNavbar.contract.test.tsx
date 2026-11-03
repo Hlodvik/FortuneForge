@@ -77,7 +77,7 @@ describe('all registered production games share canonical navigation', () => {
       const expected = hostFor(<SiteNavbar mode="game" authenticated account={phase === 'ready' ? account : undefined} />).querySelector('[data-site-navbar]')!
       expect(navbar.outerHTML).toBe(expected.outerHTML)
       expect(navbar.querySelector('[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
-      expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
+      expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/home')
       expect(navbar.querySelectorAll('.site-header-balance')).toHaveLength(phase === 'ready' ? 1 : 0)
       expect(navbar.querySelector('[aria-label="Account menu"]') !== null).toBe(phase === 'ready')
     })

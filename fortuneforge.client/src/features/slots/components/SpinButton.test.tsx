@@ -18,14 +18,13 @@ describe('SpinButton', () => {
     expect(markup).toContain('>Stop</strong>')
   })
 
-  it('uses Wukong\'s actual staff art without the old cloud crest', () => {
+  it('renders the icon supplied by the cabinet', () => {
     const markup = renderToStaticMarkup(
-      <SpinButton variant="wukong-rune" onSpin={() => undefined} />,
+      <SpinButton iconSrc="/example-spin-icon.png" onSpin={() => undefined} />,
     )
 
-    expect(markup).toContain('spin-button--wukong-rune')
-    expect(markup).toContain('spin-button__wukong-staff-image')
-    expect(markup).not.toContain('spin-button__wukong-cloud')
+    expect(markup).toContain('spin-button--custom-icon')
+    expect(markup).toContain('href="/example-spin-icon.png"')
     expect(markup).not.toContain('spin-button__arrow-icon')
   })
 })

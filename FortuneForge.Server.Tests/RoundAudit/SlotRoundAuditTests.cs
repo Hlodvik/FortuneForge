@@ -36,6 +36,22 @@ public sealed class SlotRoundAuditTests
     }
 
     [Fact]
+    public void RainbowRealm_StaleSunshineDoesNotChangeTheReelsOrPayout()
+    {
+        var provider = Provider();
+        var gameId = SlotSpecialRoundProfiles.RainbowRealmGameId;
+        var (ordinary, _, _, _, _) = Spin(provider, gameId);
+        var (stale, _, reelSet, _, _) = Spin(provider, gameId, energy: 100);
+
+        Assert.Equal(0, stale.EnergyAwarded);
+        Assert.DoesNotContain("BOLT", reelSet.Reels.SelectMany(reel => reel));
+        Assert.DoesNotContain("BOLT", stale.Reels.SelectMany(reel => reel));
+        Assert.Equal(ordinary.Payout.TotalPoints, stale.Payout.TotalPoints);
+        Assert.Equal(ordinary.Reels.SelectMany(reel => reel), stale.Reels.SelectMany(reel => reel));
+        Assert.Empty(SlotRoundAudit.Check(stale, stale.Payout));
+    }
+
+    [Fact]
     public void MutatedPayoutAndReel_AreFlagged()
     {
         var provider = Provider();
@@ -293,17 +309,17 @@ public sealed class SlotRoundAuditTests
 
     private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(SpinResult result)
     {
-        var wagerCents = RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        var wagerCents = result.IsFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
         var crucible = result.GameId == GoldFoundrySlotDefinitions.GameId
             ? GoldFoundryCrucible.Settle(0, result.EnergyAwarded, 0, wagerCents)
             : null;
         var settledPayout = crucible?.AsEnergySettlement(result.Payout).Payout
             ?? EnergyBonus.Settle(0, result.EnergyAwarded, result.Payout).Payout;
-        var payoutCents = RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents)
-            + (crucible?.PayoutCents ?? 0);
         var catalogueGameId = FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds[result.GameId];
         var piratesGemEvidence = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
             ? PiratesGemEvidence(result) : null;
+        var payoutCents = RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents)
+            + (crucible?.PayoutCents ?? 0);
         return SinglePlayerRoundRecord.Create(catalogueGameId, result.SpinId.ToString("N"),
             "audit-test-player", wagerCents, payoutCents, DateTime.UtcNow, DateTime.UtcNow,
             "slotSpinResults", result.SpinId.ToString("N"),
@@ -349,7 +365,7 @@ public sealed class SlotRoundAuditTests
 
     private static (SpinResult Result, GameDefinition Game, ReelSetDefinition ReelSet,
         SymbolSetDefinition Symbols, PaytableDefinition Paytable) Spin(
-        OptionsSlotsDefinitionProvider provider, string gameId)
+        OptionsSlotsDefinitionProvider provider, string gameId, long energy = 0)
     {
         var game = provider.GetGame(gameId)!;
         var reelSet = provider.GetReelSet(game.Math.ReelSetId)!;
@@ -360,7 +376,7 @@ public sealed class SlotRoundAuditTests
             new CombinationEvaluator(), new PayoutCalculator(), random);
         var wager = game.Wagering.AllowedWagerPoints.Count > 0
             ? game.Wagering.AllowedWagerPoints[0] : game.Wagering.MinimumWagerPoints;
-        var result = service.Spin(gameId, wager, "audit-test-player", false);
+        var result = service.Spin(gameId, wager, "audit-test-player", false, currentEnergyBalance: energy);
         return (result, game, reelSet, symbolSet, paytable);
     }
 

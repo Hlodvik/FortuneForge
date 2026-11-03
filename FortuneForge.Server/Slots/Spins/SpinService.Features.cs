@@ -59,7 +59,10 @@ public sealed partial class SpinService
         {
             InjectSymbols(reels, 2, () => "ACE");
         }
-        InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
+        // Neon's authored strips own every visible role, including its ordinary
+        // flamingo/dice/sunset. No legacy bonus-symbol injection changes weights.
+        if (!NeonArcadeSlotDefinitions.IsModel(game))
+            InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
         if (profile.UsesCollections)
         {
             InjectSymbols(reels, RollSealCount(game.Id, currentEnergyBalance), PickSealSymbol);
@@ -96,7 +99,7 @@ public sealed partial class SpinService
             Matching = game.Matching,
             Math = game.Math,
             Wagering = game.Wagering,
-            FreeGames = game.FreeGames is null || profile is null
+            FreeGames = game.FreeGames is null || profile is null || game.Id == SlotSpecialRoundProfiles.DragonHoardGameId
                 ? game.FreeGames
                 : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,

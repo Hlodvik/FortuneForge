@@ -30,6 +30,17 @@ internal static class SlotRoundAudit
             return CheckOlympusTumble(result, audit, settledPayout, isPaid);
         if (GoldFoundryAudit.CheckModel(audit) is { } foundryFinding)
             return [foundryFinding];
+        if ((audit.WukongPawPrototype is not null) !=
+            (audit.EngineVersion == WukongPawPrototypeEvidence.EngineVersion))
+            return [new("slot-wukong-prototype-version-mismatch", "error",
+                "The preview collection rule is not bound to its captured engine version.")];
+        var usesNeonSpecialPlays = NeonArcadeSlotDefinitions.SupportsSpecialPlays(audit.EngineVersion);
+        var usesNeonEngine = usesNeonSpecialPlays || audit.EngineVersion == NeonArcadeSlotDefinitions.LegacyEngineVersion;
+        if ((audit.NeonArcade is not null) != usesNeonEngine ||
+            audit.NeonArcade is { } arcade &&
+            arcade.FeatureGamesEnabled != usesNeonSpecialPlays)
+            return [new("slot-neon-arcade-version-mismatch", "error",
+                "The arcade payline rule is not bound to its captured engine version.")];
         if (RainbowRealmSlotDefinitions.IsModel(audit.BaseGame) !=
             (audit.EngineVersion == RainbowRealmSlotDefinitions.EngineVersion))
             return [new("slot-rainbow-model-mismatch", "error",
@@ -44,7 +55,8 @@ internal static class SlotRoundAudit
         return Check(result, audit.BaseGame, audit.EffectiveGame, audit.ReelSet,
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
-            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin, isPaid);
+            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin, audit.WukongPawPrototype, audit.NeonArcade,
+            isPaid: isPaid, neonEngineVersion: usesNeonEngine ? audit.EngineVersion : null);
     }
 
     private static IReadOnlyList<RoundAuditFinding> CheckOlympusTumble(
@@ -125,7 +137,7 @@ internal static class SlotRoundAudit
         !result.FiveMatchPityTriggered && !result.SpecialBoostApplied &&
         result.SpecialPointsAwarded == 0 && result.SpecialPointsBalance == 0 &&
         result.EnergyAwarded == 0 && result.EnergyBalance == 0 && !result.EnergyMultiplierApplied &&
-        result.PayoutMultiplier == 1m && result.LightningCollection is null &&
+        result.PayoutMultiplier == 1m && result.NeonArcade is null && result.LightningCollection is null &&
         result.MonkeyPawCount == 0 && result.MoneyGrabPoints == 0 && result.BananaBonusPoints == 0 &&
         result.CrucibleWageredCents is null && result.CruciblePourValueCents is null &&
         result.CruciblePoured is null && result.CruciblePayoutCents is null;
@@ -148,13 +160,26 @@ internal static class SlotRoundAudit
         IReadOnlyList<IReadOnlyList<string>>? rawGeneratedReels = null,
         IReadOnlyList<IReadOnlyList<string>>? reelsAfterFrequency = null,
         bool isDerivedFreeSpin = false,
-        bool isPaid = false)
+        WukongPawPrototypeEvidence? pawPrototype = null,
+        NeonArcadeEvidence? neonArcade = null,
+        bool isPaid = false,
+        string? neonEngineVersion = null)
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
         var foundryCollector = GoldFoundrySlotDefinitions.IsModel(baseGame);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(baseGame);
         var arcaneCollector = ArcaneLightningCollector.IsModel(baseGame);
+
+        if (pawPrototype is not null &&
+            (result.GameId != SlotSpecialRoundProfiles.WukongGameId || !pawPrototype.SyntheticOnly ||
+             pawPrototype.CollectionRule != WukongPawPrototypeEvidence.RuleVersion ||
+             string.IsNullOrWhiteSpace(pawPrototype.SessionId) || string.IsNullOrWhiteSpace(pawPrototype.AdmissionId) ||
+             pawPrototype.WagerPoints != result.WagerPoints ||
+             pawPrototype.ForcedPawColumn is { } column &&
+                 (column < 0 || column >= result.Reels.Count || string.IsNullOrWhiteSpace(pawPrototype.GrantId) ||
+                  result.Reels[column].Count == 0 || result.Reels[column][0] != "PAW")))
+            Flag("slot-wukong-prototype-invalid", "The synthetic paw placement or collection rule is inconsistent.");
 
         if (result.GameId != baseGame.Id || result.GameId != effectiveGame.Id ||
             result.SymbolSetId != symbolSet.Id || result.ReelSetId != reelSet.Id ||
@@ -168,13 +193,16 @@ internal static class SlotRoundAudit
         var legacyOlympusCarryWager = isPaid && result.IsFreeSpin &&
             result.GameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId &&
             OlympusTumbleDemo.IsLegacyCarryWager(baseGame.Wagering, result.WagerPoints);
+        var neonCarryWager = result.IsFreeSpin && NeonArcadeSlotDefinitions.IsModel(baseGame) &&
+            NeonArcadeSlotDefinitions.IsValidCarryWager(result.WagerPoints);
         if (result.PointValueInCents != baseGame.Wagering.PointValueInCents ||
-            !(trustedBonusWager || legacyOlympusCarryWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
+            !(trustedBonusWager || legacyOlympusCarryWager || neonCarryWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
             isDerivedFreeSpin && !trustedBonusWager)
             Flag("slot-wager-invalid", "The wager or point value does not match the captured rules.");
         if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
             (baseGame.Math.PaytableId != paytable.Id ||
-             paytable.Id == MidnightVaultSlotDefinitions.PaytableId && baseGame.Math.PayoutMultiplier != 1m))
+             (paytable.Id is MidnightVaultSlotDefinitions.PreviousPaytableId or MidnightVaultSlotDefinitions.PaytableId) &&
+             baseGame.Math.PayoutMultiplier != 1m))
             Flag("slot-model-mismatch", "Midnight Vault's frozen payout model is inconsistent.");
 
         if (result.Reels.Count != effectiveGame.Layout.ReelCount ||
@@ -189,6 +217,21 @@ internal static class SlotRoundAudit
         var validSymbols = symbolSet.Symbols.Select(symbol => symbol.Id).ToHashSet(StringComparer.Ordinal);
         if (result.Reels.SelectMany(reel => reel).Any(symbol => !validSymbols.Contains(symbol)))
             Flag("slot-symbol-invalid", "The visible window contains a symbol outside the captured symbol set.");
+        if (pawPrototype is not null)
+        {
+            var earnPositions = result.Reels.SelectMany((reel, column) => reel.Select((symbol, row) =>
+                (Symbol: symbol, Column: column, Row: row)))
+                .Where(cell => cell.Symbol == WukongPawPrototypeEvidence.EarnSymbolId).ToArray();
+            var validColumn = pawPrototype.ForcedPawColumn is { } forced && forced >= 0 && forced < result.Reels.Count
+                ? forced : 0;
+            var earnColumn = result.Reels.Count > 0 ? (validColumn + 1) % result.Reels.Count : 0;
+            var validEarnMarker = pawPrototype.InjectEarnSymbol
+                ? result.Reels.Count > 0 && earnPositions.Length == 1 &&
+                    earnPositions[0].Column == earnColumn && earnPositions[0].Row == result.Reels[earnColumn].Count - 1
+                : earnPositions.Length == 0;
+            if (!validEarnMarker)
+                Flag("slot-wukong-earn-marker-mismatch", "The illustrative earn symbol differs from the captured fixture placement.");
+        }
         for (var reel = 0; reel < result.ReelStops.Count; reel++)
         {
             var playable = CryptoReelGenerator.GetPlayableStrip(effectiveGame, reelSet.Reels[reel]);
@@ -216,13 +259,30 @@ internal static class SlotRoundAudit
             var evaluations = new CombinationEvaluator().Evaluate(result.Reels, effectiveGame, symbolSet);
             var basePayout = new PayoutCalculator().Calculate(
                 evaluations, baseGame, paytable, result.WagerPoints);
+            var neonFreeSpinsAwarded = 0;
+            if (NeonArcadeSlotDefinitions.IsModel(baseGame))
+            {
+                var featuresEnabled = neonArcade?.FeatureGamesEnabled ?? result.NeonArcade?.FeatureGamesEnabled ?? false;
+                var capturedVersion = neonEngineVersion ?? (featuresEnabled
+                    ? NeonArcadeSlotDefinitions.BaseOnlyEngineVersion : NeonArcadeSlotDefinitions.LegacyEngineVersion);
+                var expected = NeonArcadeBonus.Apply(basePayout, result.Reels, isFreeSpin: result.IsFreeSpin,
+                    engineVersion: capturedVersion);
+                if (baseGame.Wagering.PointValueInCents != 1m ||
+                    JsonSerializer.Serialize(expected.Evidence) != JsonSerializer.Serialize(result.NeonArcade) ||
+                    neonArcade is not null && JsonSerializer.Serialize(neonArcade) != JsonSerializer.Serialize(result.NeonArcade))
+                    Flag("slot-neon-arcade-mismatch", "The arcade boost or feature symbols do not replay from the visible reels.");
+                basePayout = expected.Payout;
+                neonFreeSpinsAwarded = expected.FreeSpinsAwarded;
+            }
+            else if (result.NeonArcade is not null || neonArcade is not null)
+                Flag("slot-neon-arcade-mismatch", "Arcade metadata is only valid for its isolated Neon model.");
             var recordedBaseLines = result.Payout.Paylines.Where(line => line.PaylineId < 801).ToArray();
             if (!LinesEqual(recordedBaseLines, basePayout.Paylines))
                 Flag("slot-base-payout-mismatch", "The base payline breakdown does not replay from the visible reels.");
 
             var expectedFreeSpins = effectiveGame.FreeGames is { } freeGames &&
                 result.Reels.SelectMany(reel => reel).Count(symbol => symbol == freeGames.SymbolId) >=
-                freeGames.RequiredSymbols ? freeGames.AwardedSpins : 0;
+                freeGames.RequiredSymbols ? freeGames.AwardedSpins : neonFreeSpinsAwarded;
             if (result.FreeSpinsAwarded != expectedFreeSpins)
                 Flag("slot-free-spins-mismatch", "The free-spin award does not match the visible symbols.");
             if (result.SpecialPointsAwarded != SpecialPointBonus.CalculateAward(evaluations, effectiveGame))
@@ -233,7 +293,8 @@ internal static class SlotRoundAudit
                   energy.PointsPerVisibleSymbol : 0;
             if (result.EnergyAwarded != energyAward)
                 Flag("slot-energy-award-mismatch", "The energy award does not match the visible symbols.");
-            var seals = (foundryCollector ? Enumerable.Empty<string>() : result.Reels.SelectMany(reel => reel))
+            var seals = (foundryCollector || NeonArcadeSlotDefinitions.IsModel(baseGame)
+                    ? Enumerable.Empty<string>() : result.Reels.SelectMany(reel => reel))
                 .Where(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW" or "SEAL_RAND")
                 .GroupBy(symbol => symbol, StringComparer.Ordinal)
                 .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
@@ -257,8 +318,9 @@ internal static class SlotRoundAudit
                 .Sum(symbol => foundryCollector ? GoldFoundryReelCollector.IngotMultiplier(symbol) :
                     rainbowHarvest ? RainbowRealmCharmHarvest.WagerMultiplier(symbol) : RandMultiplier(symbol));
             var collectedPoints = pawCount > 0 && moneyMultiplier > 0
-                ? RoundPoints(result.WagerPoints * moneyMultiplier * Math.Min(pawCount, 2)) : 0;
-            var moneyPoints = foundryCollector || rainbowHarvest
+                ? RoundPoints(result.WagerPoints * moneyMultiplier *
+                    (pawPrototype is not null ? pawCount : Math.Min(pawCount, 2))) : 0;
+            var moneyPoints = pawPrototype is not null || foundryCollector || rainbowHarvest
                 ? collectedPoints : Scale(collectedPoints, baseGame.Math.PayoutMultiplier);
             var bananaPatterns = CountBananaPatterns(result.Reels);
             var bananaUnit = Scale(checked(result.WagerPoints * 3), foundryCollector ? 1m : baseGame.Math.PayoutMultiplier);
@@ -298,7 +360,7 @@ internal static class SlotRoundAudit
                 Flag("slot-payout-total-mismatch", "The outcome payout does not balance with its paylines and separate awards.");
 
             var fullEnergy = Math.Min(100, checked(Math.Clamp(preSpinEnergy, 0, 100) + energyAward));
-            var usesEnergy = !arcaneCollector &&
+            var usesEnergy = !arcaneCollector && !NeonArcadeSlotDefinitions.IsModel(baseGame) &&
                 (result.GameId != SlotSpecialRoundProfiles.RainbowRealmGameId || effectiveGame.Energy is not null);
             var multiply = usesEnergy && !foundryCollector &&
                 fullEnergy >= 100 && result.Payout.TotalPoints > 0;

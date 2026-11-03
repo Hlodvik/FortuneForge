@@ -174,6 +174,8 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
       await mute.click()
       await expect(mute).toHaveAttribute('aria-pressed', 'false')
     }
+    await expect(page.locator('.slot-reel [data-symbol="FREE"] .slot-symbol__image').first())
+      .toHaveAttribute('src', /orchard-rush-rainbow-v1-192\.webp/)
     const pageArt = viewport.width > viewport.height
       ? 'rainbow-realm-sunrise-valley-page-v1.webp'
       : 'rainbow-realm-sunrise-valley-page-portrait-v1.webp'
@@ -185,6 +187,8 @@ test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async (
     await page.getByRole('button', { name: 'Spin the reels' }).click()
     await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
     await expect(page.locator('.rainbow-realm__bonus-intro')).toContainText('10 bonus spins are ready')
+    await expect(page.locator('.rainbow-realm__bonus-intro > img'))
+      .toHaveAttribute('src', /orchard-rush-rainbow-v1-320\.webp/)
     await expect(page.locator('[data-rainbow-bonus="true"]')).toBeVisible()
     await page.screenshot({ path: testInfo.outputPath(`rainbow-orchard-intro-${viewport.width}.png`), fullPage: true })
     await page.getByRole('button', { name: 'Spin the reels' }).click()

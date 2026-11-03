@@ -12,6 +12,16 @@ import { AccountLobbyShell } from './AccountLobbyShell'
 import './accountOverlay.css'
 
 const catalogueAnchor = 'home-lobby-games-title'
+const legacyCatalogueHash = `#${catalogueAnchor}`
+const featuredSlotRanks = new Map([
+  'neon-nights',
+  'gods-of-olympus',
+  'arcane-archives',
+  'gold-foundry',
+  'rainbow-realm',
+  'pirates-fortune',
+  'candy-carnival',
+].map((id, rank) => [id, rank]))
 const AccountSettingsContent = lazy(() => import('./AccountSettingsPage').then(module => ({ default: module.AccountSettingsContent })))
 const AccountHistoryContent = lazy(() => import('./AccountHistoryPage').then(module => ({ default: module.AccountHistoryContent })))
 
@@ -28,12 +38,16 @@ function initialCategory(): CategoryFilter {
 }
 
 export function HomePage() {
-  const [returnPath] = useState(() => typeof window === 'undefined' ? '/home'
-    : `${window.location.pathname}${window.location.search}${window.location.hash}`)
+  const [returnPath] = useState(() => {
+    if (typeof window === 'undefined') return '/home'
+    const { pathname, search, hash } = window.location
+    return `${pathname}${search}${hash === legacyCatalogueHash ? '' : hash}`
+  })
   const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
   const [overlay, setOverlay] = useState<HomeOverlay>(() => typeof window === 'undefined' ? null : overlayFromPath(window.location.pathname))
   const isOverlayOpen = overlay !== null
   const overlayDialog = useRef<HTMLDialogElement>(null)
+  const scrollToLegacyCatalogue = useRef(false)
   const recent = useRecentGameActivity(account?.userId)
   const popularity = useCataloguePopularity()
   const visibility = useCatalogueVisibility()
@@ -41,6 +55,12 @@ export function HomePage() {
   const visibleGames = HOME_GAME_CATALOG.filter(game => visibility.isVisible(game.href))
   const orderedGames = orderByCataloguePopularity(visibleGames, popularity.games)
   const categoryGames = orderedGames.filter(game => category === 'Popular' || game.category === category)
+  if (category === 'Slots') {
+    categoryGames.sort((left, right) => (
+      (featuredSlotRanks.get(left.id) ?? featuredSlotRanks.size) -
+      (featuredSlotRanks.get(right.id) ?? featuredSlotRanks.size)
+    ))
+  }
   const recentGames = [...recent.games]
     .filter(play => Number.isFinite(Date.parse(play.playedAtUtc)))
     .sort((left, right) => Date.parse(right.playedAtUtc) - Date.parse(left.playedAtUtc) || left.gameId.localeCompare(right.gameId))
@@ -112,7 +132,13 @@ export function HomePage() {
   }
 
   useEffect(() => {
-    if (!accountId || isLoading || window.location.hash !== `#${catalogueAnchor}`) return
+    const { pathname, search, hash } = window.location
+    if (hash === legacyCatalogueHash) {
+      scrollToLegacyCatalogue.current = true
+      window.history.replaceState(window.history.state, '', `${pathname}${search}`)
+    }
+    if (!scrollToLegacyCatalogue.current || !accountId || isLoading) return
+    scrollToLegacyCatalogue.current = false
     document.getElementById(catalogueAnchor)?.scrollIntoView?.({ block: 'start' })
   }, [accountId, isLoading])
 
@@ -151,7 +177,9 @@ export function HomePage() {
                 ? <GameCatalogueRail label={category} resetKey={category}>{categoryGames.map(game => <LobbyGameCard key={game.href} game={game} />)}</GameCatalogueRail>
                 : <ul className="home-lobby__game-grid" aria-label={category}>{categoryGames.map(game => <li key={game.href}><LobbyGameCard game={game} /></li>)}</ul>
                 : <p className="home-lobby__notice" role="status">{visibility.loading ? 'Checking the catalogue…' : 'No games are currently available in this category.'}</p>}
-              {popularity.error && <p className="home-lobby__inline-notice" role="status">{popularity.games === null ? 'Popular order is unavailable. Games are listed by name.' : 'Popular order couldn’t be refreshed.'} <button type="button" onClick={popularity.reload}>Try again</button></p>}
+              {popularity.error && <p className="home-lobby__inline-notice" role="status">{popularity.games === null
+                ? `Popular order is unavailable. ${category === 'Slots' ? 'The remaining slots are listed by name.' : 'Games are listed by name.'}`
+                : 'Popular order couldn’t be refreshed.'} <button type="button" onClick={popularity.reload}>Try again</button></p>}
             </section>
 
           </section>

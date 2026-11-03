@@ -34,7 +34,8 @@ public sealed partial class SpinService
     private static FeaturePayout CalculateFeaturePayout(
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,
-        decimal payoutMultiplier)
+        decimal payoutMultiplier,
+        bool collectWithEveryPaw = false)
     {
         var moneyPositions = VisiblePositions(reels)
             .Select(position => new
@@ -55,14 +56,14 @@ public sealed partial class SpinService
         if (pawPositions.Length > 0 && moneyPositions.Length > 0)
         {
             var multiplier = moneyPositions.Sum(symbol => symbol.Multiplier);
-            if (pawPositions.Length >= 2)
-            {
-                multiplier *= 2;
-            }
+            multiplier *= collectWithEveryPaw ? pawPositions.Length : Math.Min(pawPositions.Length, 2);
 
-            moneyGrabPoints = ApplyPayoutMultiplier(
-                MultiplyWager(wagerPoints, multiplier),
-                payoutMultiplier);
+            var collectedPoints = MultiplyWager(wagerPoints, multiplier);
+            // The explicit preview rule collects the displayed wager-linked cash
+            // once per paw. Historical outcomes retain their original game scale.
+            moneyGrabPoints = collectWithEveryPaw
+                ? collectedPoints
+                : ApplyPayoutMultiplier(collectedPoints, payoutMultiplier);
             moneyGrabPayout = new PaylinePayout(
                 901,
                 moneyGrabPoints,

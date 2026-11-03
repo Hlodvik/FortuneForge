@@ -23,7 +23,7 @@ const fixture = JSON.parse(readFileSync(new URL('./__fixtures__/engineGuide-cont
   sourceSha256: Record<string, string>; games: EngineContract[]
 }
 const manifests = await loadAllSlotGameManifests()
-const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
+const audited = manifests.filter(game => !['rainbow-realm-fruits-v1', 'dragon-hoard-v1', 'neon-nights-v1', GOLD_FOUNDRY_GAME_ID].includes(game.experience.rules.gameId))
 
 it('retains the server sources that produced the independently exported guide contracts', () => {
   for (const [path, expected] of Object.entries(fixture.sourceSha256)) {
@@ -31,7 +31,7 @@ it('retains the server sources that produced the independently exported guide co
     expect(createHash('sha256').update(current).digest('hex'), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
   }
   expect(fixture.games).toHaveLength(20)
-  expect(audited).toHaveLength(17)
+  expect(audited).toHaveLength(16)
 })
 
 describe.each(audited)('$catalog.title audited guide', game => {
@@ -127,8 +127,8 @@ it('matches the Gold Foundry guide to exported line prices', () => {
   }
 })
 
-it('preserves the separately maintained Rainbow Realm and Midnight Vault experiences', () => {
-  for (const id of ['rainbow-realm', 'dragon-hoard']) {
+it('preserves the separately maintained Rainbow Realm, Midnight Vault and Neon experiences', () => {
+  for (const id of ['rainbow-realm', 'dragon-hoard', 'neon-nights']) {
     const experience = manifests.find(game => game.id === id)!.experience
     expect(withEngineGuide(experience)).toBe(experience)
   }

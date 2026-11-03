@@ -18,3 +18,7 @@ Bytes: 6044335
 SHA-256: 10e3480eefcbefe839f69dfff27d99991e16c23981072fca769f38eb21aab50c
 
 Composer attribution does not imply endorsement of FortuneForge.
+
+Win cue: vault-win-noir.wav is an edited 3.2-second excerpt from this recording
+(156.849–160.049 seconds), with short fades and playback gain adjustment.
+The background MP3 remains unmodified. The same attribution and CC BY 4.0 apply.

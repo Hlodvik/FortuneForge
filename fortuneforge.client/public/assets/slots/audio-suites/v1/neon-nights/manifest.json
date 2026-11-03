@@ -2,10 +2,10 @@
   "version": 1,
   "slug": "neon-nights",
   "title": "Neon Nights",
-  "originalComposition": true,
+  "originalComposition": false,
   "theme": "User-approved original Neon Nights composition; exact existing WAV masters preserved.",
   "bpm": 108,
-  "bonusBpm": 116,
+  "bonusBpm": 100,
   "meter": 4,
   "palette": [
     "approved warm polysynth",
@@ -17,7 +17,7 @@
   "channels": 2,
   "sourceGenerator": "tools/audio-suites/render-themed-suites.mjs",
   "generatorSha256": "c210219097f6eefd50a0bdf748d204258f9092121fa5360e29d4fd289c870efd",
-  "provenance": "All sounds are original offline algorithmic compositions and synthesis. No licensed or unlicensed external recordings, borrowed melodies, scraped sound effects, or network services are used. Neon Nights uses the unchanged user-approved original PCM masters.",
+  "provenance": "The twenty original Neon tracks retain their unchanged user-approved original synthesized PCM masters. The additional win-nice-v1 callout uses Sadiquecat’s original human recording “Joyful - Nice 2,” released under CC0, with local EQ, compression and slap delay. Source and license are documented beside this manifest. No commercial game audio is sampled. Special Plays music uses the user-supplied LEX WAV loop.",
   "tracks": [
     {
       "id": "night-drive",
@@ -698,6 +698,89 @@
         "container": "ogg",
         "quality": 5
       }
+    },
+    {
+      "id": "win-nice-v1",
+      "title": "NICE! · arcade win callout",
+      "group": "Wins",
+      "file": "win-nice-v1.ogg",
+      "url": "/assets/slots/audio-suites/v1/neon-nights/win-nice-v1.ogg",
+      "loop": false,
+      "volume": 0.58,
+      "description": "Short human NICE callout with light compression, EQ, and quiet slap delay. Replaces the four Neon paid-win stingers; never layers with them.",
+      "durationSeconds": 0.730522,
+      "peakDbfs": -4.037,
+      "rmsDbfs": -21.412,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 32216,
+      "decodedPeakDbfs": -3.95,
+      "decodedRmsDbfs": -21.398,
+      "decodeVerified": true,
+      "bytes": 12341,
+      "sha256": "42b40e09cbe3b0ce60119620cfa7b84495cfaa7fa877bfe553b59cb0ceca4b05",
+      "source": {
+        "type": "cc0-human-voice-with-local-processing",
+        "title": "Joyful - Nice 2",
+        "creator": "Sadiquecat",
+        "url": "https://freesound.org/people/Sadiquecat/sounds/801285/",
+        "downloadUrl": "https://cdn.freesound.org/previews/801/801285_5287430-hq.mp3",
+        "license": "CC0-1.0",
+        "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+        "originalSha256": "fbabfb751c1eeeb0664e7eba5916a0e40e1a612c43afad499d4b9c8b76f37d90",
+        "originalBytes": 14592,
+        "path": "output/neon-payline-review-2026-11-02/nice-audition/nice-arcade-light.wav",
+        "sha256": "c5dd36db4ebc067042ad6de1158b48f71ebf260b671977a804ea863d5e1e906f",
+        "bytes": 140898,
+        "masterSampleRate": 48000,
+        "masterChannels": 2,
+        "masterPeakDbfs": -4.037,
+        "masterRmsDbfs": -21.412,
+        "processing": "highpass=f=100,lowpass=f=11000,acompressor=threshold=0.15:ratio=3:attack=3:release=60:makeup=1.2,equalizer=f=220:t=q:w=1.0:g=2,equalizer=f=3000:t=q:w=1.0:g=2.5,aecho=0.8:0.7:65|120:0.15|0.07,alimiter=limit=0.75:level=false,afade=t=in:d=0.006,apad=pad_dur=0.12,volume=11.1dB"
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 5
+      }
+    },
+    {
+      "id": "special-plays-music-v1",
+      "title": "Special Plays music",
+      "group": "Music",
+      "file": "special-plays-music-v1.ogg",
+      "url": "/assets/slots/audio-suites/v1/neon-nights/special-plays-music-v1.ogg",
+      "loop": true,
+      "volume": 0.5,
+      "description": "100 BPM. Four-bar drum and synth bass loop for Special Plays.",
+      "durationSeconds": 9.6,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 423360,
+      "decodedPeakDbfs": -0.932,
+      "decodeVerified": true,
+      "bytes": 259221,
+      "sha256": "c10ca2ef0af8e473e68cfeddf75a4a7567fc12efa2ae23e79c1c7de240c4be2b",
+      "source": {
+        "type": "user-supplied-wav",
+        "filename": "LEX_SD_100_drum_loop_classic_049_synth_bass_4bar.wav",
+        "sha256": "7bea7dc24842c3e6107ca44e37c4f683e5d511bad2c3295c98415f71f2875dbd",
+        "bytes": 2540204,
+        "masterPeakDbfs": -1
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 6
+      }
     }
-  ]
+  ],
+  "originalMusicComposition": false,
+  "runtimeCueOverrides": {
+    "low-win": "win-nice-v1",
+    "premium-win": "win-nice-v1",
+    "five-casino-win": "win-nice-v1",
+    "triple-sevens": "win-nice-v1",
+    "special-ambience": "special-plays-music-v1"
+  }
 }

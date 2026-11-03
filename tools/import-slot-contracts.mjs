@@ -5,7 +5,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { verifySlotContracts } from './verify-slot-contracts.mjs'
 
-if (!process.argv[2]) throw new Error('Usage: node tools/import-slot-contracts.mjs <fresh-engine-export> [--apply]')
+if (!process.argv[2]) throw new Error('Usage: node tools/import-slot-contracts.mjs <fresh-engine-export> [--midnight-only] [--apply]')
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const capture = await verifySlotContracts(process.argv[2], { requireCurrent: true })
 const records = []
@@ -38,14 +38,19 @@ for (const [name, value] of Object.entries({
   const bytes = Buffer.from(JSON.stringify(value, null, 2) + '\n')
   records.push({ path: `tools/fixtures/midnight-vault/${name}.json`, bytes, sha256: sha(bytes) })
 }
+const selectedRecords = process.argv.includes('--midnight-only')
+  ? records.filter(record => record.path.startsWith('tools/fixtures/midnight-vault/') ||
+    record.path === 'fortuneforge.client/src/games/slots/dragonHoard/evidence/current-engine-contract.json')
+  : records
 if (process.argv.includes('--apply')) {
   // All source identities, paths, public money sums and required scenarios have
   // been checked before any versioned input is replaced. Original captures stay.
-  for (const record of records) {
+  for (const record of selectedRecords) {
     const filename = resolve(repository, record.path)
     await mkdir(dirname(filename), { recursive: true })
     await writeFile(filename, record.bytes)
   }
 }
 console.log(JSON.stringify({ applied: process.argv.includes('--apply'), sourceHashesCurrent: true,
-  games: capture.games, scenarios: capture.scenarios, files: records.map(({ path, sha256 }) => ({ path, sha256 })) }, null, 2))
+  midnightOnly: process.argv.includes('--midnight-only'), games: capture.games, scenarios: capture.scenarios,
+  files: selectedRecords.map(({ path, sha256 }) => ({ path, sha256 })) }, null, 2))

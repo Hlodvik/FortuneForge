@@ -68,6 +68,8 @@ public sealed partial class SpinService(
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
         if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else if (useFreeSpin && NeonArcadeSlotDefinitions.IsModel(game))
+            NeonArcadeSlotDefinitions.ValidateCarryWager(wagerPoints);
         else if (useFreeSpin && ArcaneLightningCollector.IsModel(game))
             ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
         else if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)

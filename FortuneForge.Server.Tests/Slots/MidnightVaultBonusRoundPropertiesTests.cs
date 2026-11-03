@@ -7,9 +7,12 @@ public sealed class MidnightVaultBonusRoundPropertiesTests
 {
     private const string V1 = "midnight-vault-paytable-v1";
     private const string V2 = "midnight-vault-paytable-v2";
+    private const string V3 = "midnight-vault-paytable-v3";
 
-    [Fact]
-    public void MixedCashStakeGemSequencesLockTheRoundedArithmeticMeanOfAllThirtyGems()
+    [Theory]
+    [InlineData(V2)]
+    [InlineData(V3)]
+    public void MixedCashStakeGemSequencesLockTheRoundedArithmeticMeanOfAllThirtyGems(string model)
     {
         var random = new Random(82319);
         for (var trial = 0; trial < 128; trial++)
@@ -21,7 +24,7 @@ public sealed class MidnightVaultBonusRoundPropertiesTests
             IReadOnlyList<MidnightVaultBonusRound> rounds = [];
             for (var gem = 0; gem < gemStakes.Length; gem++)
             {
-                var progress = Advance(rounds, counts, totals, 1, gemStakes[gem], 1 + trial * 30 + gem);
+                var progress = Advance(rounds, counts, totals, 1, gemStakes[gem], 1 + trial * 30 + gem, model);
                 rounds = progress.Rounds;
                 counts = progress.CollectionCounts;
                 totals = progress.CollectionWagerPoints;
@@ -104,7 +107,7 @@ public sealed class MidnightVaultBonusRoundPropertiesTests
         new Dictionary<string, long> { ["sync"] = sync, ["rows"] = 0, ["paw"] = 0, ["rand"] = 0 };
 
     private static MidnightVaultBonusProgress Advance(IReadOnlyList<MidnightVaultBonusRound> rounds,
-        IReadOnlyDictionary<string, long> counts, IReadOnlyDictionary<string, long> totals, int incoming, long stake, int id) =>
+        IReadOnlyDictionary<string, long> counts, IReadOnlyDictionary<string, long> totals, int incoming, long stake, int id, string model = V3) =>
         MidnightVaultBonusRounds.Advance(rounds, counts, totals, new Dictionary<string, int> { ["SEAL_SYNC"] = incoming },
-            stake, 0, null, V2, new Guid(id, 0, 0, new byte[8]));
+            stake, 0, null, model, new Guid(id, 0, 0, new byte[8]));
 }

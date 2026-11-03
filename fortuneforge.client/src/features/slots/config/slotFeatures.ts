@@ -36,6 +36,8 @@ export type SlotCollectionFeature = {
   containerImage?: string
   presentation?: SlotCollectionPresentation
   completionDialog?: boolean
+  completionTitle?: string
+  completionDetail?: string
 }
 
 export type SlotEnergyAward = {
@@ -61,6 +63,7 @@ export type SlotEnergyFeature = {
     Meter: ComponentType<SlotEnergyAwardMeterProps>
     durationMs: number
   }
+  milestones?: readonly number[]
 }
 
 export type SlotMoneyGrabFeature = {

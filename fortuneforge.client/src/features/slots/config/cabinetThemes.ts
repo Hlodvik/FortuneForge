@@ -50,6 +50,8 @@ export type SlotCabinetTheme = {
   emblemImage: string
   accentImage?: string
   keyboardHelpPlacement?: 'footer'
+  spinIconImage?: string
+  controlLayout?: 'integrated' | 'sidecar'
   backdropImage?: string
   visualsBackdropImage?: string
   pageBackdropImage?: string

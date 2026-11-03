@@ -61,11 +61,16 @@
 }
 
 .payment-alerts__panel {
-  position: absolute;
-  top: calc(100% + 0.75rem);
-  right: 0;
+  position: fixed;
+  z-index: 180;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  visibility: hidden;
   width: min(23rem, calc(100vw - 2rem));
-  overflow: hidden;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgb(219 185 99 / 0.32);
   border-radius: 1rem;
   color: #e9edf5;
@@ -75,6 +80,7 @@
 
 .payment-alerts__panel header {
   display: flex;
+  flex: none;
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1rem 0.85rem;
@@ -106,7 +112,8 @@
 }
 
 .payment-alerts__panel ul {
-  max-height: min(25rem, 60vh);
+  min-height: 0;
+  max-height: 25rem;
   margin: 0;
   padding: 0.35rem;
   overflow-y: auto;
@@ -174,10 +181,13 @@
   font-size: 0.82rem;
 }
 
-@media (max-width: 640px) {
-  .payment-alerts__panel {
-    position: fixed;
-    top: 4.75rem;
-    right: 1rem;
-  }
+.payment-alerts__panel--account {
+  border-color: #51463e;
+  color: #f4f1e9;
+  background: #18171c;
+}
+
+.payment-alerts__panel--account header small,
+.payment-alerts__panel--account li small {
+  color: #b0adb8;
 }

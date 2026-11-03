@@ -12,7 +12,7 @@ export function SlotGameRoute({
 }: {
   definition: SlotRouteDefinition
   pathname: string
-  onSpinStateChange: (isSpinning: boolean) => void
+  onSpinStateChange?: (isSpinning: boolean) => void
 }) {
   const [attempt, setAttempt] = useState(0)
   const [manifest, setManifest] = useState<SlotGameManifest | null>(null)
@@ -57,7 +57,7 @@ function AuthenticatedSlotGame({
   returnPath,
 }: {
   manifest: SlotGameManifest
-  onSpinStateChange: (isSpinning: boolean) => void
+  onSpinStateChange?: (isSpinning: boolean) => void
   returnPath: string
 }) {
   const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)

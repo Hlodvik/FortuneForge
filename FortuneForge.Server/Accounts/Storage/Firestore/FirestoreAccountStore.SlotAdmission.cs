@@ -65,7 +65,8 @@ public sealed partial class FirestoreAccountStore
                 var specialPointsSnapshot = snapshots[3];
                 var specialPointsAvailable = ReadLong(specialPointsSnapshot, "available");
                 var energySnapshot = snapshots[4];
-                var energyBalance = gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+                var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+                var energyBalance = isNeon || gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                     ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
                 IReadOnlyList<MidnightVaultBonusRound> roundsBefore = isMidnight
@@ -140,7 +141,7 @@ public sealed partial class FirestoreAccountStore
 
                 var availableCents = ReadRandBalanceCents(slotsCreditsSnapshot);
                 var storedFreeSpinWagerCents = ReadLong(guardSnapshot, "freeSpinWagerCents");
-                if (storedFreeSpinWagerCents <= 0)
+                if (!isNeon && storedFreeSpinWagerCents <= 0)
                 {
                     storedFreeSpinWagerCents = checked(
                         ReadLong(guardSnapshot, "freeSpinWagerPoints") * RandMoney.CentsPerRand);
@@ -151,6 +152,8 @@ public sealed partial class FirestoreAccountStore
                     throw new NoFreeSpinsException();
                 }
                 if (isOlympusTumble && freeGamesAvailable > 0)
+                    throw new SlotFreeSpinsRequiredException();
+                if (isNeon && !useFreeSpin && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
@@ -166,7 +169,9 @@ public sealed partial class FirestoreAccountStore
                 }
 
                 var effectiveWagerPoints = wagerPoints;
-                if (useFreeSpin && storedFreeSpinWagerCents > 0)
+                if (useFreeSpin && isNeon)
+                    effectiveWagerPoints = ReadNeonCarryWagerPoints(guardSnapshot, pointValueInCents);
+                else if (useFreeSpin && storedFreeSpinWagerCents > 0)
                     effectiveWagerPoints = RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents);
                 var admittedRound = isMidnight && useFreeSpin ? roundsBefore.FirstOrDefault() : null;
                 string? mathModelId = isOlympusTumble ? OlympusTumbleDemo.EngineVersion : null;

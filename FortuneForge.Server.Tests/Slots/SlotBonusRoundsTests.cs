@@ -67,10 +67,10 @@ public sealed class SlotBonusRoundsTests
     [Fact]
     public void MidnightWrapper_KeepsPriorRoundJsonAndWeightedOverflowContract()
     {
-        MidnightVaultBonusRound[] prior = [new("existing", 10, 2, 4, "rows-paw", MidnightVaultSlotDefinitions.PaytableId)];
+        MidnightVaultBonusRound[] prior = [new("existing", 10, 2, 4, "rows-paw", MidnightVaultSlotDefinitions.PreviousPaytableId)];
         var progress = MidnightVaultBonusRounds.Advance(MidnightVaultBonusRounds.Consume(prior),
             new Dictionary<string, long> { ["sync"] = 29 }, new Dictionary<string, long> { ["sync"] = 87 },
-            new Dictionary<string, int> { ["SEAL_SYNC"] = 2 }, 4, 0, null, MidnightVaultSlotDefinitions.PaytableId, SpinId);
+            new Dictionary<string, int> { ["SEAL_SYNC"] = 2 }, 4, 0, null, MidnightVaultSlotDefinitions.PreviousPaytableId, SpinId);
         const string expected = "[{\"id\":\"existing\",\"totalSpins\":10,\"remainingSpins\":1,\"wagerPoints\":4,\"featureMode\":\"rows-paw\",\"mathModelId\":\"midnight-vault-paytable-v2\"},{\"id\":\"00000000-0000-4000-8000-000000000001:collection:sync:0\",\"totalSpins\":10,\"remainingSpins\":10,\"wagerPoints\":3,\"featureMode\":\"rows-paw\",\"mathModelId\":\"midnight-vault-paytable-v2\"}]";
         Assert.Equal(expected, JsonSerializer.Serialize(progress.Rounds, new JsonSerializerOptions(JsonSerializerDefaults.Web)));
         Assert.Equal(1, progress.CollectionCounts["sync"]);

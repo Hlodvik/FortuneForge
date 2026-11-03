@@ -36,7 +36,8 @@ describe('slot audio coverage', () => {
         ...Object.values(events.collectionArrival!), ...Object.values(events.results).flat(),
         events.tripleSevens!, events.bonusComplete!]
       const sources = ids.map(id => cues[id]!.source)
-      expect(new Set(sources).size).toBe(game.id === 'arcane-archives' ? 19 : 20)
+      const expectedSourceCount = { 'arcane-archives': 19, 'neon-nights': 17 } as Record<string, number>
+      expect(new Set(sources).size).toBe(expectedSourceCount[game.id] ?? 20)
       expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`))).toBe(true)
       for (const id of ids) {
         expect(cues[id]!.enabled).toBe(true)

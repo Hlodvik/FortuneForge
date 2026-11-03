@@ -40,14 +40,25 @@
   white-space: nowrap;
 }
 
+@property --neon-payline-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff4fd8;
+}
+
 .midnight-winning-paylines[data-palette='neon'] {
-  color: #ff4fd8;
-  animation: neon-payline-breathe 4.4s ease-in-out infinite;
+  color: var(--neon-payline-color, #ff4fd8);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__cabinet-spotlight:has(.slot-symbol--winner) {
+    animation: neon-payline-breathe 4.4s ease-in-out infinite;
+  }
 }
 
 @keyframes neon-payline-breathe {
-  0%, 100% { color: #ff4fd8; }
-  50% { color: #22e7ff; }
+  0%, 100% { --neon-payline-color: #ff4fd8; }
+  50% { --neon-payline-color: #22e7ff; }
 }
 
 @property --slot-payline-color {

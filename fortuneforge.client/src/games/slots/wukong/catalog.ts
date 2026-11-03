@@ -1,4 +1,4 @@
-import wukongMedallion from '../../../assets/slots/symbols/wukong/wukong-medallion.png'
+import wukongTitleArt from '../../../assets/catalogue/slots/wukong-journey-to-the-west-title-v2.webp'
 import type { SlotGameCatalogDefinition } from '../shared/slotGameManifest'
 
 export const WUKONG_CATALOG: SlotGameCatalogDefinition = {
@@ -6,7 +6,6 @@ export const WUKONG_CATALOG: SlotGameCatalogDefinition = {
   title: "Wukong's Journey to the West",
   shortTitle: "Wukong's Journey",
   description: 'Ride the nimbus clouds through five celestial reels with Wukong at your side.',
-  image: wukongMedallion,
-  imagePresentation: 'contain',
-  imageScale: 'compact',
+  image: wukongTitleArt,
+  imagePresentation: 'cover',
 }

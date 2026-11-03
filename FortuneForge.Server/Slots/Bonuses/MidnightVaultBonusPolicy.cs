@@ -27,6 +27,7 @@ internal static class MidnightVaultBonusPolicy
     {
         null or "" => MidnightVaultSlotDefinitions.LegacyPaytableId,
         MidnightVaultSlotDefinitions.LegacyPaytableId => MidnightVaultSlotDefinitions.LegacyPaytableId,
+        MidnightVaultSlotDefinitions.PreviousPaytableId => MidnightVaultSlotDefinitions.PreviousPaytableId,
         MidnightVaultSlotDefinitions.PaytableId => MidnightVaultSlotDefinitions.PaytableId,
         _ => throw new InvalidOperationException("The saved Midnight Vault bonus has an unsupported payout model.")
     };

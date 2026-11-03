@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.RoundAudit;
@@ -51,11 +52,18 @@ public sealed partial class FirestoreAccountStore
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted payout model or bonus entitlement.");
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
         var isGoldFoundry = result.GameId == GoldFoundrySlotDefinitions.GameId;
+        var isNeon = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+        if (isNeon &&
+            (result.IsFreeSpin != admission.IsFreeSpin ||
+             admission.IsFreeSpin && result.FreeSpinsAwarded != 0 &&
+             (result.FreeSpinsAwarded != NeonArcadeSlotDefinitions.SpecialPlaySpins ||
+              result.EngineAudit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion)))
+            throw new InvalidOperationException("Neon's bonus outcome differs from its accepted admission.");
         var arcaneLightning = result.EngineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion;
         if (arcaneLightning &&
             (!ArcaneLightningCollector.IsModel(result.EngineAudit.BaseGame) || result.IsFreeSpin != admission.IsFreeSpin))
             throw new InvalidOperationException("Arcane Archives' outcome differs from the admitted lightning model or spin type.");
-        var ignoreLegacyEnergy = arcaneLightning ||
+        var ignoreLegacyEnergy = isNeon || arcaneLightning ||
             result.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId && result.EngineAudit.BaseGame.Energy is null;
         if (isGoldFoundry)
             GoldFoundryCrucible.ValidatePaidOutcome(result, admission);
@@ -506,7 +514,8 @@ public sealed partial class FirestoreAccountStore
                 if (midnightProgress is not null || totalFreeSpinsAwarded > 0 ||
                     sealSettlement.SealsChanged ||
                     (!isFreeSpin && currentFreeGames > 0) ||
-                    (isFreeSpin && currentFreeGames == 0 && !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode)))
+                    (isFreeSpin && currentFreeGames == 0 &&
+                        (isNeon || !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode))))
                 {
                     guardData["userId"] = userId;
                     guardData["freeSpinWagerPoints"] = nextFreeSpinWagerPoints;

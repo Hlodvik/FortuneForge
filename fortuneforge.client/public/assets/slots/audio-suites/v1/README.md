@@ -2,6 +2,8 @@
 
 Sixteen title-specific suites have twenty baseline Ogg Vorbis cues each, created with offline synthesis. Neon Nights retains its approved PCM source composition. The other fifteen suites use distinct instrument palettes, motifs, scales, harmonies and rhythms.
 
+Neon Nights uses a CC0 voice recording for the NICE win callout and a supplied drum and synth bass loop for Special Plays. The per-title manifest records both assets. [NICE recording source](neon-nights/WIN-NICE-SOURCE.md)
+
 Arcane Archives selects one additional CC0 loop, MintoDog's `magic-puzzle-in-game-1.ogg`, for its active music. It continues through bonus rounds at a 0.28 base gain. Its generated `night-drive.ogg` and `midnight-mix.ogg` remain as inactive source assets. See [the Arcane music source note](arcane-archives/MAGIC-PUZZLE-SOURCE.md) for the creator page, license and source hash. The original-synthesis declaration applies to Arcane's baseline twenty tracks, not this added recording.
 
 Gods of Olympus uses Viktor Kraus’s Secret Sanctum for base music at a 0.12 base gain. The game transcodes the creator’s MP3 to Ogg Vorbis and credits Kraus for composition, performance, mixing and mastering. [OpenGameArt source](https://opengameart.org/content/secret-sanctum) · [CC BY 3.0 license](https://creativecommons.org/licenses/by/3.0/)

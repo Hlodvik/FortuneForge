@@ -19,7 +19,7 @@ type EngineContract = {
   symbols: { symbolSetId: string; nativeWildMatchLengths: number[]; wildSubstitutionMatchLengths: number[] }
   symbolSet: { symbols: { id: SlotSymbolId }[] }
   wagering: { pointValueInCents: number; minimumWagerPoints: number; maximumWagerPoints: number; wagerIncrementPoints: number }
-  math: { paytableId: string; payoutMultiplier: number; paylinePayoutSteps: number[] }
+  math: { reelSetId: string; paytableId: string; payoutMultiplier: number; paylinePayoutSteps: number[] }
   paytable: { symbolId: SlotSymbolId; matchLength: number; multiplier: number }[]
 }
 // Captured through the real controller and provider, including the new paytable.
@@ -41,7 +41,8 @@ describe('Midnight Vault fifteen-symbol engine presentation contract', () => {
     expect(engine.symbolSet.symbols).toHaveLength(15)
     expect(experience.symbols.guideEntries.map(entry => entry.symbol).sort()).toEqual(engine.symbolSet.symbols.map(symbol => symbol.id).sort())
     expect(experience.symbols.serverSymbolSetId).toBe(engine.symbols.symbolSetId)
-    expect(engine.math.paytableId).toBe('midnight-vault-paytable-v2')
+    expect(engine.math.paytableId).toBe('midnight-vault-paytable-v3')
+    expect(engine.math.reelSetId).toBe('midnight-vault-reels-v2')
   })
 
   it('shows the actual paths and wager units', () => {

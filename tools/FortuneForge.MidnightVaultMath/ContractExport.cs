@@ -32,6 +32,17 @@ internal static class ContractExport
             payoutMultiplier = game.Math.PayoutMultiplier, paylinePayoutSteps = game.Math.PaylinePayoutSteps,
             fiveMatchPityMissLimit = game.Math.FiveMatchPityMissLimit, paylines = game.Paylines,
             paytableRules = paytable.Rules, wagering = game.Wagering, profile,
+            versionedModels = new[] { MidnightVaultSlotDefinitions.LegacyPaytableId,
+                MidnightVaultSlotDefinitions.PreviousPaytableId, MidnightVaultSlotDefinitions.PaytableId }.Select(modelId =>
+            {
+                var modelGame = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, modelId);
+                var modelReels = provider.GetReelSet(modelGame.Math.ReelSetId)!;
+                return new { mathModelId = modelId, payoutMultiplier = modelGame.Math.PayoutMultiplier,
+                    reelSetId = modelReels.Id, scatterAwardedSpins = modelGame.FreeGames!.AwardedSpins,
+                    collectionAwardedSpins = modelId == MidnightVaultSlotDefinitions.LegacyPaytableId ?
+                        MidnightVaultSlotDefinitions.LegacyCollectionAwardedSpins : MidnightVaultSlotDefinitions.BonusRoundSpins,
+                    paytableRules = provider.GetPaytable(modelId)!.Rules, reelStrips = modelReels.Reels };
+            }),
             features = new { scatter = game.FreeGames, specialPoints = game.SpecialPoints, energy = game.Energy,
                 collection = new { target = profile.CollectionTarget, awardedSpins = profile.CollectionAwardedSpins, mode = profile.CollectionFeatureMode },
                 bonusRounds = new { helper = nameof(MidnightVaultBonusRounds), ordering = "FIFO; existing rounds, then newly earned scatter, then sync/rows/paw/rand tracks",

@@ -127,7 +127,8 @@ public static class SlotSpecialRoundProfiles
                 PayoutMultiplier: 1.071m),
             [DragonHoardGameId] = new(
                 DragonHoardGameId, 3, 10, 30, 10, true, false, false, null, "rows-paw",
-                BaseReelSetId: MidnightVaultBaseReelSet.Id,
+                BaseReelSetId: MidnightVaultBaseReelSet.CurrentId,
+                TargetHitRate: MidnightVaultSlotDefinitions.TargetHitRate,
                 PayoutMultiplier: 1.0m),
             [JungleJackpotGameId] = new(
                 JungleJackpotGameId, 3, 6, 22, 8, true, false, false, null, "sync-rows-paw",
@@ -140,7 +141,8 @@ public static class SlotSpecialRoundProfiles
             [DesertTreasuresGameId] = new(
                 DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows",
                 PayoutMultiplier: 0.977m),
-            [NeonNightsGameId] = new(NeonNightsGameId, 3, 6, 26, 7, true, false, false, null, "sync"),
+            [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
+                BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId),
             [NordicLegendsGameId] = new(
                 NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw",
                 TargetHitRate: 0.32m,

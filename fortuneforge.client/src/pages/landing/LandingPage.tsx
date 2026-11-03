@@ -24,7 +24,7 @@ const discoveries: ReadonlyArray<{ title: string; route: string; category: Categ
 ]
 
 export function LandingPage() {
-  const { account, isLoading: isCheckingSession } = useOptionalAccountSession()
+  const { account } = useOptionalAccountSession()
   const visibility = useCatalogueVisibility()
   const [category, setCategory] = useState<Category>('All games')
   const games = discoveries.filter(game => visibility.isVisible(game.route)
@@ -41,7 +41,7 @@ export function LandingPage() {
   return (
     <div className="ff-landing">
       <a className="ff-landing__skip" href="#landing-main">Skip to content</a>
-      <SiteNavbar mode="public" currentPublicPage="landing" hidePublicLogin={isCheckingSession} />
+      <SiteNavbar mode="public" currentPublicPage="landing" />
 
       <main id="landing-main">
         <section className="ff-landing__hero" aria-labelledby="landing-title">
@@ -70,7 +70,7 @@ export function LandingPage() {
           </nav>
           <div className="ff-landing__section-heading">
             <h2 id="discover-title">Find your next favourite</h2>
-            <a href="/home#home-lobby-games-title">View all games <Arrow /></a>
+            <a href="/home">View all games <Arrow /></a>
           </div>
           <div className="ff-landing__game-grid" aria-live="polite" aria-busy={visibility.loading}>
             {games.map(game => {

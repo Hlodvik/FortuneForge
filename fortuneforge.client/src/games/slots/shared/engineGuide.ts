@@ -54,7 +54,8 @@ function collectionReward(contract: SlotEngineGuideContract, mode: string): stri
 export function withEngineGuide(experience: SlotExperienceSet): SlotExperienceSet {
   // These games have independent, actively maintained presentation contracts.
   if (experience.rules.gameId === 'rainbow-realm-fruits-v1' ||
-      experience.rules.gameId === 'dragon-hoard-v1') return experience
+      experience.rules.gameId === 'dragon-hoard-v1' ||
+      experience.rules.gameId === 'neon-nights-v1') return experience
 
   const contract = getSlotEngineGuideContract(experience.rules.gameId)
   const multiplier = (value: number) => formatCalibratedMultiplier(value, contract.payoutMultiplier)

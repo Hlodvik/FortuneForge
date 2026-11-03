@@ -96,7 +96,7 @@ describe('Mines production host route', () => {
     expect(host.querySelector('.in-game-shell > [data-game-surface].mines-page')).not.toBeNull()
     expect(host.querySelector('[data-game-navbar]')?.closest('[data-game-surface]')).toBeNull()
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/home')
-    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home#home-lobby-games-title')
+    expect(host.querySelector('a.player-shell-header__games')?.getAttribute('href')).toBe('/home')
     expect(host.querySelector('button[aria-label="Report this game"]')).not.toBeNull()
     expect(host.querySelector('.player-shell-menu--balance')).toBeNull()
     const navbar = host.querySelector('[data-game-navbar]')!

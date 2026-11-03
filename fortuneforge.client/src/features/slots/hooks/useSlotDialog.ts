@@ -6,7 +6,7 @@ const focusableSelector = 'button:not([disabled]), a[href], input:not([disabled]
 
 export function useSlotDialog(
   isOpen: boolean,
-  onClose: () => void,
+  onClose?: () => void,
   initialFocusRef?: RefObject<HTMLElement | null>,
 ) {
   const dialogRef = useRef<HTMLElement | null>(null)
@@ -39,7 +39,7 @@ export function useSlotDialog(
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()
-        onCloseRef.current()
+        onCloseRef.current?.()
       } else if (event.key === 'Tab') {
         const controls = focusable()
         const first = controls[0]

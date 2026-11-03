@@ -29,9 +29,9 @@ describe('game category menus', () => {
   beforeEach(useVerifiedTestCatalogue)
   it('sends authenticated category links to the home catalogue filters', () => {
     const markup = renderToStaticMarkup(createElement(GameTypeMenu, { active: 'all' }))
-    expect(markup).toContain('href="/home#home-lobby-games-title"')
-    expect(markup).toContain('href="/home?category=Slots#home-lobby-games-title"')
-    expect(markup).toContain('href="/home?category=Cards#home-lobby-games-title"')
+    expect(markup).toContain('href="/home"')
+    expect(markup).toContain('href="/home?category=Slots"')
+    expect(markup).toContain('href="/home?category=Cards"')
     expect(markup).not.toMatch(/href="\/(games|cards|slots)"/)
     for (const pathname of ['/games', '/cards', '/slots']) {
       expect(pageTitleForPath(pathname)).toBe('Home — Fortune Forge')
@@ -79,7 +79,7 @@ describe('game category menus', () => {
   it('omits recently played when the authenticated game browser has no history', () => {
     const markup = renderToStaticMarkup(createElement(OtherGamesPage, { account }))
 
-    expect(markup).toContain('href="/home#home-lobby-games-title" aria-current="page"')
+    expect(markup).toContain('href="/home" aria-current="page"')
     expect(markup).toContain('All games')
     expect(markup).toContain('>Popular</h2>')
     expect(markup).not.toContain('>Recently played</h2>')

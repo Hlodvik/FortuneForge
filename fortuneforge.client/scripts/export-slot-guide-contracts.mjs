@@ -15,7 +15,7 @@ for (const item of index.games) {
   // These games maintain their own paytables and guides. Keep their full engine
   // contracts in the evidence alongside the common paytable.
   const isGoldFoundry = contract.gameId === 'gold-foundry-v1'
-  if (!isGoldFoundry && !['dragon-hoard-v1', 'rainbow-realm-fruits-v1'].includes(contract.gameId)) {
+  if (!isGoldFoundry && !['dragon-hoard-v1', 'rainbow-realm-fruits-v1', 'neon-nights-v1'].includes(contract.gameId)) {
     if (basePaytable && JSON.stringify(basePaytable) !== JSON.stringify(contract.paytable)) throw new Error('Per-game paytable needs explicit guide support')
     basePaytable = contract.paytable
   }

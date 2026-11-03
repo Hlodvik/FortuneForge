@@ -1,3 +1,4 @@
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
 
 namespace FortuneForge.Server.Slots.Evaluation;
@@ -30,11 +31,14 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
         var wildId = game.Symbols.WildSymbolId;
         var freeGameSymbolId = game.FreeGames?.SymbolId;
         var paylineSymbolIds = game.Symbols.PaylineSymbolIds?.ToHashSet(StringComparer.Ordinal);
+        var neonArcade = NeonArcadeSlotDefinitions.IsModel(game);
         var regularIds = symbolSet.Symbols
             .Where(symbol =>
                 !string.Equals(symbol.Id, wildId, StringComparison.Ordinal) &&
                 !string.Equals(symbol.Id, freeGameSymbolId, StringComparison.Ordinal) &&
-                (paylineSymbolIds?.Contains(symbol.Id) ?? !FeatureOnlySymbolIds.Contains(symbol.Id)))
+                (paylineSymbolIds?.Contains(symbol.Id) ?? (neonArcade
+                    ? NeonArcadeSlotDefinitions.IsOrdinaryPayingSymbol(symbol.Id)
+                    : !FeatureOnlySymbolIds.Contains(symbol.Id))))
             .Select(symbol => symbol.Id)
             .ToArray();
         var nativeWildMatchLengths = game.Symbols.NativeWildMatchLengths.ToHashSet();

@@ -83,7 +83,7 @@ async function observe(page: Page, account: boolean) {
   for (const control of result.controls) { expect(control.x, control.label ?? '').toBeGreaterThanOrEqual(0); expect(control.right).toBeLessThanOrEqual(page.viewportSize()!.width); expect(control.hit, control.label ?? '').toBe(true) }
   await expect(navbar.locator('.game-local-controls,.site-navbar__actions')).toHaveCount(0)
   await expect(navbar.getByLabel('Fortune Forge home', { exact: true })).toHaveAttribute('href', account ? '/home' : '/')
-  await expect(navbar.locator('.player-shell-header__games')).toHaveAttribute('href', account ? '/home#home-lobby-games-title' : '/demo')
+  await expect(navbar.locator('.player-shell-header__games')).toHaveAttribute('href', account ? '/home' : '/demo')
   await expect(navbar.getByLabel('Report this game', { exact: true })).toHaveCount(account ? 1 : 0)
   const balance = navbar.locator('.site-header-balance')
   if (account) { await expect(balance).toHaveAttribute('href', '/balance'); await expect(balance).toHaveAttribute('aria-label', 'Balance R1,234.56. Add funds') }

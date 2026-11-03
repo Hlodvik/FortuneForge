@@ -9,13 +9,6 @@ import reelRichesSpecialCollectSource from '../../../assets/slots/audio/reel-ric
 import reelRichesTrophyAwardSource from '../../../assets/slots/audio/reel-riches-trophy-award.wav'
 import reelRichesTrophyLoopSource from '../../../assets/slots/audio/reel-riches-trophy-loop.wav'
 import reelRichesTrophyWinSource from '../../../assets/slots/audio/reel-riches-trophy-win.wav'
-import wukongCelestialChimeSource from '../../../assets/slots/audio/wukong-celestial-chime.wav'
-import wukongCloudRushSource from '../../../assets/slots/audio/wukong-cloud-rush.wav'
-import wukongGongWinSource from '../../../assets/slots/audio/wukong-gong-win.wav'
-import wukongSoftStepSource from '../../../assets/slots/audio/wukong-soft-step.wav'
-import wukongStaffWhooshSource from '../../../assets/slots/audio/wukong-staff-whoosh.wav'
-import wukongTempleBellSource from '../../../assets/slots/audio/wukong-temple-bell.wav'
-import wukongWoodblockSource from '../../../assets/slots/audio/wukong-woodblock.wav'
 import kenneyChipLaySource from '../../../assets/audio/cards/chip-lay-1.ogg'
 import kenneyChipsHandleSource from '../../../assets/audio/cards/chips-handle-1.ogg'
 import kenneyChipsCollideSource from '../../../assets/audio/cards/chips-collide-1.ogg'
@@ -55,6 +48,7 @@ const reelStopSource = kenneyChipLaySource
 export type AudioCategory = 'effect' | 'result'
 type LegacySlotSoundCueId =
   | 'ambience'
+  | 'button-click'
   | 'auto-spin-ambience'
   | 'lever-pull'
   | 'reel-spin'
@@ -77,7 +71,6 @@ type LegacySlotSoundCueId =
   | 'pirate-seagull-win'
   | 'soft-miss'
 type ThemeSlotSoundCueId =
-  | 'button-click'
   | 'bet-step'
   | 'spin-button-click'
   | 'collect-sync'
@@ -131,6 +124,7 @@ export const DEFAULT_SLOT_SOUNDS: SlotSoundSet = {
   id: 'fortune-forge-default-audio-v2',
   cues: {
     ambience: { source: casinoRockSource, baseVolume: 0.055, category: 'effect', loop: true, enabled: false },
+    'button-click': { source: kenneyChipLaySource, baseVolume: 0.11, category: 'effect', enabled: false },
     'auto-spin-ambience': { source: casinoRockSource, baseVolume: 0.055, category: 'effect', loop: true, enabled: false },
     'lever-pull': { source: leverRegisterSource, baseVolume: 0.34, category: 'effect' },
     'reel-spin': { source: reelSpinSource, baseVolume: 0.14, category: 'effect', loop: false },
@@ -313,29 +307,37 @@ export const OCEAN_ODYSSEY_SOUNDS = createThemedSlotSounds('ocean-odyssey-audio-
   bonus: ['five-jewel', 'five-twinkle'], five: ['premium-win', 'five-jewel'], premium: ['five-jewel'],
 })
 
+const midnightVaultWinSource = '/assets/slots/midnight-vault/v4/audio/vault-win-noir.wav'
+
 const midnightVaultBaseSounds = createThemedSlotSounds('dragon-hoard-audio-v1', {
   // Midnight Vault retains the historical sound-set ID and semantic events.
   // Official CC BY 4.0 noir score, credited in the game's help and asset folder.
-  ambienceSource: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3', ambienceVolume: 0.04,
+  ambienceSource: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3', ambienceVolume: 0.16,
   leverSource: kenneyChipLaySource, leverVolume: 0.26,
   bonus: ['five-jewel'], five: ['five-twinkle'], premium: ['premium-win'],
 })
 
 export const DRAGON_HOARD_SOUNDS: SlotSoundSet = {
   ...midnightVaultBaseSounds,
+  events: {
+    ...midnightVaultBaseSounds.events,
+    buttonClick: 'button-click',
+    specialResults: midnightVaultBaseSounds.events.results,
+  },
   cues: {
     ...midnightVaultBaseSounds.cues,
+    'button-click': { source: kenneyChipLaySource, baseVolume: 0.11, category: 'effect', enabled: true },
     // Unlike the retired DOVA mapping, this CC BY recording permits direct
     // distribution with attribution. Playback starts after player interaction.
     ambience: { ...midnightVaultBaseSounds.cues.ambience, enabled: true },
-    // Every currently reachable effect/result uses the existing Kenney CC0
-    // palette. Preserve the reel cue categories and loop flags exactly.
     'reel-spin': { ...DEFAULT_SLOT_SOUNDS.cues['reel-spin'], source: kenneyCardShuffleSource, baseVolume: 0.1 },
     'reel-stop': { ...DEFAULT_SLOT_SOUNDS.cues['reel-stop'], source: kenneyChipLaySource, baseVolume: 0.16 },
-    'low-win': { source: kenneyChipsHandleSource, baseVolume: 0.22, category: 'result' },
-    'premium-win': { source: kenneyChipsCollideSource, baseVolume: 0.28, category: 'result' },
-    'five-jewel': { source: kenneyChipsCollideSource, baseVolume: 0.3, category: 'result' },
-    'five-twinkle': { source: kenneyChipsHandleSource, baseVolume: 0.3, category: 'result' },
+    // Edited excerpt of the credited CC BY 4.0 score.
+    'low-win': { source: midnightVaultWinSource, baseVolume: 0.42, category: 'result' },
+    'premium-win': { source: midnightVaultWinSource, baseVolume: 0.34, category: 'result' },
+    'five-casino-win': { source: midnightVaultWinSource, baseVolume: 0.42, category: 'result' },
+    'five-jewel': { source: midnightVaultWinSource, baseVolume: 0.4, category: 'result' },
+    'five-twinkle': { source: midnightVaultWinSource, baseVolume: 0.52, category: 'result' },
     'soft-miss': { source: kenneyCardPlaceSource, baseVolume: 0.08, category: 'result' },
   },
 }
@@ -370,34 +372,6 @@ export const NORDIC_LEGENDS_SOUNDS = createThemedSlotSounds('nordic-legends-audi
   bonus: ['five-jewel', 'premium-win'], five: ['five-casino-win', 'five-jewel'], premium: ['five-casino-win'],
 })
 
-export const WUKONG_TREASURES_SOUNDS: SlotSoundSet = {
-  ...DEFAULT_SLOT_SOUNDS,
-  id: 'wukong-treasures-audio-v3',
-  cues: {
-    ...DEFAULT_SLOT_SOUNDS.cues,
-    ambience: { source: asianDragonSource, baseVolume: 0.06, category: 'effect', loop: true, enabled: false },
-    'lever-pull': { source: wukongStaffWhooshSource, baseVolume: 0.24, category: 'effect' },
-    'reel-spin': { source: wukongCloudRushSource, baseVolume: 0.1, category: 'effect', loop: true },
-    'reel-stop': { source: wukongWoodblockSource, baseVolume: 0.2, category: 'effect' },
-    'low-win': { source: wukongTempleBellSource, baseVolume: 0.23, category: 'result' },
-    'premium-win': { source: wukongGongWinSource, baseVolume: 0.27, category: 'result' },
-    'five-casino-win': { source: wukongGongWinSource, baseVolume: 0.3, category: 'result' },
-    'five-jewel': { source: wukongCelestialChimeSource, baseVolume: 0.26, category: 'result' },
-    'five-twinkle': { source: wukongCelestialChimeSource, baseVolume: 0.24, category: 'result' },
-    'soft-miss': { source: wukongSoftStepSource, baseVolume: 0.1, category: 'result' },
-  },
-  events: {
-    ...DEFAULT_SLOT_SOUNDS.events,
-    results: {
-      bonus: ['five-twinkle', 'five-jewel'],
-      five: ['five-jewel', 'five-twinkle'],
-      'no-win': ['soft-miss'],
-      premium: ['five-twinkle'],
-      'single-three': ['low-win'],
-    },
-  },
-}
-
 const RAINBOW_REALM_BASE_SOUNDS = createThemedSlotSounds('rainbow-realm-audio-v1', {
   ambienceSource: carnivalLightsSource, ambienceVolume: 0.05,
   leverSource: leverCoinSource, leverVolume: 0.29,
@@ -412,13 +386,13 @@ export const RAINBOW_REALM_SOUNDS: SlotSoundSet = createThemedSlotAudio('rainbow
     // Retain the Orchard Rush palette while honoring the shared unresolved
     // music policy. Its result and reel effects use existing cleared clips.
     'special-ambience': { source: forestJourneySource, baseVolume: 0.14, category: 'effect', loop: true, enabled: false },
-    'special-reel-spin': { source: wukongCloudRushSource, baseVolume: 0.22, category: 'effect', loop: true },
-    'special-reel-stop': { source: wukongWoodblockSource, baseVolume: 0.31, category: 'effect' },
-    'special-low-win': { source: wukongCelestialChimeSource, baseVolume: 0.38, category: 'result' },
+    'special-reel-spin': { source: reelSpinSource, baseVolume: 0.22, category: 'effect', loop: true },
+    'special-reel-stop': { source: reelStopSource, baseVolume: 0.31, category: 'effect' },
+    'special-low-win': { source: fiveJewelSource, baseVolume: 0.38, category: 'result' },
     'special-premium-win': { source: fiveCasinoWinSource, baseVolume: 0.44, category: 'result' },
     'special-five-jewel': { source: fiveJewelSource, baseVolume: 0.39, category: 'result' },
     'special-five-twinkle': { source: fiveTwinkleSource, baseVolume: 0.38, category: 'result' },
-    'special-soft-miss': { source: wukongSoftStepSource, baseVolume: 0.16, category: 'result' },
+    'special-soft-miss': { source: noWinWaterDropSource, baseVolume: 0.16, category: 'result' },
   },
   events: {
     ...RAINBOW_REALM_BASE_SOUNDS.events,

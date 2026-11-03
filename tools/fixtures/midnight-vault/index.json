@@ -23,7 +23,7 @@
     },
     {
       "scenario": "base-win",
-      "seed": 4,
+      "seed": 12,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],

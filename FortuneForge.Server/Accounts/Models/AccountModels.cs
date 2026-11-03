@@ -163,6 +163,9 @@ public sealed class InsufficientSlotCreditsException(decimal available, decimal 
 public sealed class NoFreeSpinsException() : Exception(
     "This account does not have a free game available.");
 
+public sealed class SlotFreeSpinsRequiredException() : Exception(
+    "Finish your awarded free spins before placing another bet.");
+
 public sealed class InsufficientSpecialPointsException(long available, long required) : Exception(
     $"This account has {available} special points, but the power boost requires {required}.")
 {

@@ -115,26 +115,49 @@ test('rules and payline guide', async ({ page }) => {
   await expect(page).toHaveScreenshot('rules-and-paylines.png')
 })
 
-test('feature transition with deterministic free spins', async ({ page }) => {
-  const featureGate = deferred()
-  await mockDemoApi(page, {
-    kind: 'bonus',
-    onFreeSpinRequest: async () => {
-      featureGate.started()
-      await featureGate.releasePromise
-    },
+test('Olympus shows a matched set before the tumble and settles the refill', async ({ page }) => {
+  await mockDemoApi(page)
+  const refilledReels = [
+    ['8', 'A', '4', '5', '6'],
+    ['J', '8', '5', '6', '7'],
+    ['A', 'J', '6', '7', '3'],
+    ['8', 'A', '7', '3', '4'],
+    ['3', '4', '5', '6', '7'],
+    ['4', '5', '6', '7', '8'],
+  ]
+  const initialReels = refilledReels.map((reel, index) => index < 4 ? ['2', '2', ...reel.slice(2)] : reel)
+  const positions = initialReels.flatMap((symbols, reel) =>
+    symbols.flatMap((symbol, row) => symbol === '2' ? [{ reel, row }] : []),
+  )
+  const dropRows = refilledReels.map((_, index) => index < 4 ? [2, 2, 0, 0, 0] : [0, 0, 0, 0, 0])
+  await page.route('**/api/slots/demo/spins', async (route) => {
+    const request = route.request().postDataJSON() as SpinRequest & { olympusTumbleShowcase?: boolean }
+    expect(request).toMatchObject({ wagerPoints: 2, useFreeSpin: false, olympusTumbleShowcase: false })
+    const amountPoints = request.wagerPoints / 2
+    await route.fulfill({ json: {
+      ...spinFixture(request, 'loss'),
+      reelSetId: 'olympus-tumble-demo-v2',
+      paytableId: 'olympus-tumble-demo-v2',
+      reelStops: initialReels.map(() => 0),
+      reels: initialReels,
+      payout: { totalPoints: amountPoints, paylines: [] },
+      olympusTumble: {
+        initialReels,
+        steps: [{ awards: [{ symbol: '2', amountPoints, positions }],
+          cleared: positions, reels: refilledReels, dropRows, amountPoints }],
+        totalPoints: amountPoints,
+      },
+    } })
   })
   await openStableSlot(page, '/slots/gods-of-olympus/demo')
 
+  await expect(page.locator('.slot-machine__reels .slot-symbol')).toHaveCount(30)
   await page.getByRole('button', { name: 'Spin the reels' }).click()
-  await expect(page.locator('.slots-page__free-spin-badge')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Spin the reels' })).toBeEnabled()
-  await page.getByRole('button', { name: 'Spin the reels' }).click()
-  await featureGate.startedPromise
-  await expect(page.locator('.slots-page__special-game-tally')).toBeVisible()
-
-  await expect(page.locator('.slots-page__stage')).toHaveScreenshot('active-olympian-feature.png')
-  featureGate.release()
+  await expect(page.locator('.slot-machine__playfield .gods-tumble__award')).toHaveText('+R0.25')
+  await expect(page.locator('.gods-tumble__final-win')).toHaveText('+R0.25!')
+  await expect(page.locator('.slot-machine__reels .slot-symbol')).toHaveCount(30)
+  await expect(page.locator('.slot-symbol[data-reel-index="0"][data-row-index="0"]')).toHaveAttribute('data-symbol', '8')
+  await expect(page.locator('.slots-page__free-spin-badge')).toHaveCount(0)
 })
 
 test('Rainbow Realm Orchard Rush remains playable on desktop and phone', async ({ page }, testInfo) => {

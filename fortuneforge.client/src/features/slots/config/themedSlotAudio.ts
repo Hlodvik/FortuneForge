@@ -13,6 +13,9 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
   const cue = (id: string, baseVolume: number, category: SlotSoundCue['category'] = 'effect', loop = false): SlotSoundCue => ({
     source: `/assets/slots/audio-suites/v1/${slug}/${id}.ogg`, baseVolume, category, loop, enabled: true,
   })
+  const baseAmbience = slug === 'gods-of-olympus'
+    ? cue('secret-sanctum-v1', .12, 'effect', true)
+    : cue('night-drive', .62, 'effect', true)
   const results: SlotSoundSet['events']['results'] = {
     bonus: ['bonus-entry'], five: ['five-casino-win'], premium: ['premium-win'],
     'single-three': ['low-win'], 'no-win': ['soft-miss'],
@@ -22,7 +25,7 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
     cues: {
       ...previous.cues,
       // Match the suite manifests' audition mix, then apply saved user volume.
-      ambience: cue('night-drive', .62, 'effect', true),
+      ambience: baseAmbience,
       'special-ambience': cue('midnight-mix', .60, 'effect', true),
       'button-click': cue('button-click', .58), 'bet-step': cue('bet-step', .54),
       'lever-pull': cue('spin-launch', .65), 'reel-spin': cue('reel-roll', .40, 'effect', true),

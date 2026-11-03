@@ -106,6 +106,7 @@ describe('Reel Riches sound set', () => {
 describe('catalogue audio provenance and allocation', () => {
   const allSoundSets = [...Object.values(soundSets), GOLD_FOUNDRY_SOUNDS]
   const arcaneMusicSource = '/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg'
+  const olympusMusicSource = '/assets/slots/audio-suites/v1/gods-of-olympus/secret-sanctum-v1.ogg'
   const foundryAudioPath = '/assets/slots/gold-foundry/v1/audio'
   const foundryAmbienceSource = `${foundryAudioPath}/foundry-working-room.ogg`
   const foundrySources = new Set([
@@ -136,12 +137,16 @@ describe('catalogue audio provenance and allocation', () => {
           category: 'effect', loop: true, enabled: false,
         } : {
           source: game.id === 'gold-foundry' ? foundryAmbienceSource
-            : game.id === 'arcane-archives' ? arcaneMusicSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
+            : game.id === 'arcane-archives' ? arcaneMusicSource
+              : game.id === 'gods-of-olympus' ? olympusMusicSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
           category: 'effect', loop: true, enabled: true,
         })
       if (game.id === 'arcane-archives') {
         expect(sounds.events.specialAmbience).toBeUndefined()
         expect(sounds.cues['special-ambience'].source).toBe(arcaneMusicSource)
+      }
+      if (game.id === 'gods-of-olympus') {
+        expect(sounds.cues[sounds.events.ambience]?.baseVolume).toBe(.12)
       }
     }
     for (const sounds of allSoundSets) {
@@ -150,7 +155,8 @@ describe('catalogue audio provenance and allocation', () => {
           expect(cue.enabled).toBe(false)
         } else {
           expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
-            (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)) || cue.source === arcaneMusicSource, cue.source).toBe(true)
+            (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)) ||
+            cue.source === arcaneMusicSource || cue.source === olympusMusicSource, cue.source).toBe(true)
         }
       }
     }

@@ -41,9 +41,28 @@ import {
   requestSlotState,
   requestSpin,
   SpinRequestError,
+  type SlotState,
 } from './services/slotsApi'
 import type { GridPosition, LightningCollection, MidnightVaultBonusRound, MidnightVaultDemoState, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
 import type { AccountSummary } from '../account/services/accountsApi'
+
+import {
+  GODS_TUMBLE_COLUMNS,
+  GODS_TUMBLE_GAME_ID,
+  GODS_TUMBLE_INITIAL_REELS,
+  type GodsTumbleAward,
+  type GodsTumbleStep,
+} from '../../games/slots/godsOfOlympus/tumble'
+
+type GodsTumbleFrame = Pick<GodsTumbleStep, 'cleared' | 'dropRows' | 'amountPoints'> & {
+  totalPoints: number
+  step: number
+} & ({ phase: 'award'; award: GodsTumbleAward } | { phase: 'clear' | 'drop' })
+
+const tumbleDemoFeatures: SlotExperienceSet['features'] = {}
+const godsTumbleAwardMs = 650
+const godsTumbleClearMs = 500
+const godsTumbleDropMs = 520
 
 type EnergyFlyover = {
   id: number
@@ -134,7 +153,7 @@ export type SlotsPageProps = {
 }
 
 const demoStartingBalance = 10_000
-type DemoAvailability = 'checking' | 'available' | 'unavailable'
+type SpinAvailability = 'checking' | 'available' | 'unavailable'
 
 export function useSlotsPageController({
   account,
@@ -149,7 +168,6 @@ export function useSlotsPageController({
   // through this single composed set rather than direct file imports.
   const {
     cabinet: cabinetTheme,
-    features: featureSet,
     help,
     mascot: mascotSet,
     outcomeNarrative,
@@ -162,10 +180,13 @@ export function useSlotsPageController({
     autoSpinSpeedMultiplier,
     energyMeterCapacity,
     gameId,
-    initialReels,
     pointValueInCents,
     wagerOptions,
   } = rules
+  const usesGodsTumble = gameId === GODS_TUMBLE_GAME_ID
+  const isPaidGodsTumble = usesGodsTumble && !demoMode
+  const featureSet = usesGodsTumble && demoMode ? tumbleDemoFeatures : experienceSet.features
+  const initialReels = usesGodsTumble ? GODS_TUMBLE_INITIAL_REELS : rules.initialReels
   const isWukongGame = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const reelTravelRowCount = isWukongGame ? 4 : 8
   const baseSpinSpeedMultiplier = isWukongGame ? 1.2 : 1
@@ -209,8 +230,9 @@ export function useSlotsPageController({
     initialReels.map(() => 'idle'),
   )
   const [isSpinning, setIsSpinning] = useState(false)
-  const [demoAvailability, setDemoAvailability] = useState<DemoAvailability>(
-    demoMode ? 'checking' : 'available',
+  const [godsTumbleFrame, setGodsTumbleFrame] = useState<GodsTumbleFrame | null>(null)
+  const [spinAvailability, setSpinAvailability] = useState<SpinAvailability>(
+    demoMode || isPaidGodsTumble ? 'checking' : 'available',
   )
   const [isAutoSpinning, setIsAutoSpinning] = useState(false)
   const [isAutoSpinCoolingDown, setIsAutoSpinCoolingDown] = useState(false)
@@ -272,6 +294,7 @@ export function useSlotsPageController({
   const playedSuiteCollectionsRef = useRef<{ spinId: string; tracks: Set<string> } | null>(null)
   const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
+  const hasShownGodsTumbleShowcaseRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
   const prefersReducedMotionRef = useRef(prefersReducedMotion)
   const presentationAbortControllerRef = useRef<AbortController | null>(null)
@@ -289,10 +312,11 @@ export function useSlotsPageController({
   const freeSpinBadgeTimerRef = useRef<number | null>(null)
   const specialSpinDelayTimerRef = useRef<number | null>(null)
   const [isStopRequested, setIsStopRequested] = useState(false)
-  const isDemoSpinDisabled = demoMode && demoAvailability !== 'available'
-  const demoAvailabilityMessage = !demoMode || demoAvailability === 'available'
+  const isGodsTumbleBoard = usesGodsTumble && displayedReels.length === GODS_TUMBLE_COLUMNS
+  const isSpinServiceDisabled = spinAvailability !== 'available'
+  const spinAvailabilityMessage = !isSpinServiceDisabled
     ? null
-    : demoAvailability === 'checking'
+    : spinAvailability === 'checking'
       ? 'Checking game service availability…'
       : 'Game service unavailable — Spin is disabled. Reload after the service is restored.'
   const selectedWagerPoints = wagerOptions[wagerIndex] ?? wagerOptions[0] ?? 0
@@ -368,32 +392,32 @@ export function useSlotsPageController({
 
   useEffect(() => {
     if (!demoMode) {
-      setDemoAvailability('available')
+      if (!isPaidGodsTumble) setSpinAvailability('available')
       return undefined
     }
 
     const controller = new AbortController()
-    setDemoAvailability('checking')
+    setSpinAvailability('checking')
     void requestDemoAvailability(gameId, controller.signal)
       .then(() => {
         if (!controller.signal.aborted) {
-          setDemoAvailability('available')
+          setSpinAvailability('available')
         }
       })
       .catch(() => {
         if (!controller.signal.aborted) {
-          setDemoAvailability('unavailable')
+          setSpinAvailability('unavailable')
           setIsAutoSpinning(false)
         }
       })
 
     return () => controller.abort()
-  }, [demoMode, gameId])
+  }, [demoMode, gameId, isPaidGodsTumble])
 
   useEffect(() => {
     if (
       !isAutoSpinning ||
-      isDemoSpinDisabled ||
+      isSpinServiceDisabled ||
       isSpinning ||
       isAutoSpinCoolingDown ||
       mascotPhase !== 'idle' ||
@@ -428,7 +452,7 @@ export function useSlotsPageController({
     rainbowBonusSummary,
     isHelpOpen,
     isSymbolGuideOpen,
-    isDemoSpinDisabled,
+    isSpinServiceDisabled,
     isReloadPromptOpen,
     isSettingsOpen,
     isSpinning,
@@ -604,6 +628,28 @@ export function useSlotsPageController({
     }
   }, [])
 
+  const applySlotState = useCallback((state: SlotState) => {
+    const award = energyCompletionAward?.decode(state)
+    if (award === null) return
+
+    setFreeSpinsRemaining(state.freeSpinsRemaining)
+    setFreeSpinWagerPoints(state.freeSpinWagerPoints)
+    setFreeSpinFeatureMode(state.freeSpinFeatureMode)
+    setMidnightBonusRound(state.bonusRound ?? null)
+    setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
+    setEnergyBalance(state.energyBalance)
+    if (award) setEnergyAward(award)
+    setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
+    if (state.freeSpinWagerPoints !== null) {
+      const matchingWagerIndex = wagerOptions.findIndex(
+        (wager) => wager === state.freeSpinWagerPoints,
+      )
+      if (matchingWagerIndex >= 0) {
+        setWagerIndex(matchingWagerIndex)
+      }
+    }
+  }, [defaultSealCollections, energyCompletionAward, wagerOptions])
+
   useEffect(() => {
     let isCurrent = true
     slotStateRevisionGuardRef.current.advance()
@@ -647,6 +693,7 @@ export function useSlotsPageController({
       }
     }
 
+    if (isPaidGodsTumble) setSpinAvailability('checking')
     void requestSlotState(gameId)
       .then((state) => {
         if (
@@ -656,32 +703,17 @@ export function useSlotsPageController({
           return
         }
 
-        const award = energyCompletionAward?.decode(state)
-        if (award === null) return
-
-        setFreeSpinsRemaining(state.freeSpinsRemaining)
-        setFreeSpinWagerPoints(state.freeSpinWagerPoints)
-        setFreeSpinFeatureMode(state.freeSpinFeatureMode)
-        setMidnightBonusRound(state.bonusRound ?? null)
-        setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
-        setEnergyBalance(state.energyBalance)
-        if (award) setEnergyAward(award)
-        setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
-        if (state.freeSpinWagerPoints !== null) {
-          const matchingWagerIndex = wagerOptions.findIndex(
-            (wager) => wager === state.freeSpinWagerPoints,
-          )
-          if (matchingWagerIndex >= 0) {
-            setWagerIndex(matchingWagerIndex)
-          }
-        }
+        applySlotState(state)
+        if (isPaidGodsTumble) setSpinAvailability('available')
       })
-      .catch(() => undefined)
+      .catch(() => {
+        if (isCurrent && isPaidGodsTumble) setSpinAvailability('unavailable')
+      })
 
     return () => {
       isCurrent = false
     }
-  }, [defaultSealCollections, demoMode, energyCompletionAward, gameId, wagerOptions])
+  }, [applySlotState, defaultSealCollections, demoMode, energyCompletionAward, gameId, isPaidGodsTumble])
 
   function isCurrentPresentation(signal: AbortSignal): boolean {
     return (
@@ -1418,7 +1450,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (isDemoSpinDisabled || collectionAwardPresentation !== null) {
+    if (isSpinServiceDisabled || collectionAwardPresentation !== null) {
       setIsAutoSpinning(false)
       return
     }
@@ -1432,6 +1464,7 @@ export function useSlotsPageController({
 
     const isFastAutoSpin = isAutoSpinning
     const expectedFreeSpin = useFreeGameForNextSpin
+    const expectsGodsTumble = usesGodsTumble && !expectedFreeSpin
     const autoSpinAmbienceCue = soundSet.events.autoSpinAmbience
     const ambienceCue = isFastAutoSpin && autoSpinAmbienceCue !== undefined
       ? autoSpinAmbienceCue
@@ -1502,17 +1535,21 @@ export function useSlotsPageController({
     setBestWin(null)
     setWinningPaylineCount(0)
     setBonusPositions([])
-    const regularRowCount = initialReels[0]?.length ?? 4
+    const spinInitialReels = expectsGodsTumble ? GODS_TUMBLE_INITIAL_REELS : rules.initialReels
+    const regularRowCount = spinInitialReels[0]?.length ?? 4
     const expectedRowCount = getSpinRowCount(
       expectedFreeSpin,
       freeSpinFeatureMode,
       regularRowCount,
     )
-    const reelsBeforeSpin = displayedReels.map((reel, reelIndex) =>
-      normalizeReelRows(reel, initialReels[reelIndex], expectedRowCount),
+    const reelsBeforeSpin = spinInitialReels.map((reel, reelIndex) =>
+      normalizeReelRows(displayedReels[reelIndex] ?? reel, reel, expectedRowCount),
     )
-    if (displayedReels.some((reel) => reel.length !== expectedRowCount)) {
+    if (displayedReels.length !== reelsBeforeSpin.length || displayedReels.some((reel) => reel.length !== expectedRowCount)) {
       setDisplayedReels(reelsBeforeSpin)
+    }
+    if (reelMotion.length !== reelsBeforeSpin.length) {
+      setReelMotion(reelsBeforeSpin.map(() => 'idle'))
     }
     const displayFrame = (reelIndex: number, symbols: readonly SlotSymbolId[]) => {
       setDisplayedReels((currentReels) =>
@@ -1522,7 +1559,7 @@ export function useSlotsPageController({
       )
     }
     const animation = startSpinAnimation({
-      reelCount: displayedReels.length,
+      reelCount: reelsBeforeSpin.length,
       rowsPerReel: expectedRowCount,
       symbolIds: animationSymbolIds,
       displayFrame,
@@ -1572,6 +1609,10 @@ export function useSlotsPageController({
     let mascotOutcome: MascotOutcome = 'neutral'
     let shouldStartAutoSpinCooldown = false
     let completedRainbowBonus: { totalRand: number | null } | null = null
+    let confirmedPaidTumbleBalance: number | null = null
+    const showGodsTumbleShowcase = import.meta.env.DEV && demoMode && expectsGodsTumble && !hasShownGodsTumbleShowcaseRef.current &&
+      new URLSearchParams(window.location.search).get('showcase') === '1'
+
 
     try {
       const result = demoMode
@@ -1586,6 +1627,7 @@ export function useSlotsPageController({
             sealCollections,
             freeSpinFeatureMode,
             ...(gameId === 'dragon-hoard-v1' ? { midnightBonusState } : {}),
+            ...(expectsGodsTumble ? { olympusTumbleShowcase: showGodsTumbleShowcase } : {}),
           })
         : await requestSpin({
             gameId,
@@ -1598,8 +1640,8 @@ export function useSlotsPageController({
       if (energyAwardResult === null) {
         throw new Error('The spin server returned an invalid reel result.')
       }
-      if (result.reels.length !== displayedReels.length) {
-        throw new Error(`Expected ${displayedReels.length} reels but received ${result.reels.length}.`)
+      if (result.reels.length !== reelsBeforeSpin.length) {
+        throw new Error(`Expected ${reelsBeforeSpin.length} reels but received ${result.reels.length}.`)
       }
       if (result.reels.some((reel) => reel.length !== expectedRowCount)) {
         throw new Error(`Expected ${expectedRowCount} visible rows per reel but received an invalid slot grid.`)
@@ -1615,6 +1657,12 @@ export function useSlotsPageController({
         )
       }
 
+      const tumble = expectsGodsTumble ? result.olympusTumble : undefined
+      if (expectsGodsTumble && !tumble) {
+        throw new Error('The spin server did not return an Olympus tumble result.')
+      }
+      if (tumble && !demoMode) confirmedPaidTumbleBalance = result.slotsCreditsBalance
+
       slotStateRevisionGuardRef.current.advance()
       setSpinStage('stopping')
       hasStartedStoppingResult = true
@@ -1622,6 +1670,50 @@ export function useSlotsPageController({
       if (!isMountedRef.current) {
         return
       }
+
+      if (tumble) {
+        if (!isCurrentPresentation(presentationSignal)) return
+
+        let totalPoints = 0
+        for (const [index, { awards, cleared, dropRows, reels, amountPoints }] of tumble.steps.entries()) {
+          if (presentationSignal.aborted) break
+          const frame = { cleared, dropRows, amountPoints, step: index + 1 }
+          for (const award of awards) {
+            totalPoints += award.amountPoints
+            setGodsTumbleFrame({ ...frame, totalPoints, phase: 'award', award })
+            setLastWin(slotPointsToRand(totalPoints, pointValueInCents))
+            if (!await waitForPresentation(godsTumbleAwardMs, presentationSignal)) break
+          }
+          if (presentationSignal.aborted) break
+          if (!isCurrentPresentation(presentationSignal)) return
+          setGodsTumbleFrame({ ...frame, totalPoints, phase: 'clear' })
+          if (!await waitForPresentation(godsTumbleClearMs, presentationSignal)) break
+          if (!isCurrentPresentation(presentationSignal)) return
+          setDisplayedReels(reels)
+          setGodsTumbleFrame({ ...frame, totalPoints, phase: 'drop' })
+          if (!await waitForPresentation(prefersReducedMotionRef.current ? 120 : godsTumbleDropMs, presentationSignal)) break
+        }
+
+        // Stop skips the remaining animation and settles the completed spin.
+        if (!isCurrentPresentation(presentationSignal)) return
+        const awardRand = slotPointsToRand(tumble.totalPoints, pointValueInCents)
+        setDisplayedReels(tumble.steps.at(-1)?.reels ?? tumble.initialReels)
+        setLastWin(awardRand)
+        setBalance(result.slotsCreditsBalance ?? (visibleBalanceBeforeAward + awardRand))
+        setLastSpinOutcome(describeSpinOutcome({
+          awardRand,
+          wagerRand: selectedWagerRand,
+          freeSpinsAwarded: 0,
+          narrative: outcomeNarrative,
+        }))
+        setHasCompletedSpin(true)
+        setLastSpinOutcomeKey((current) => current + 1)
+        if (showGodsTumbleShowcase) hasShownGodsTumbleShowcaseRef.current = true
+        mascotOutcome = awardRand > 0 ? 'win' : 'loss'
+        shouldStartAutoSpinCooldown = isFastAutoSpin
+        return
+      }
+
       const hasEnergyPayout = energyAwardResult?.completed === true
       const energyCredits = hasEnergyPayout ? energyAwardResult.payoutCents / 100 : 0
       const awardedRand = slotPointsToRand(result.payout.totalPoints, result.pointValueInCents) + energyCredits
@@ -1641,7 +1733,7 @@ export function useSlotsPageController({
       const bestPayline = findBestPayline(lineWins)
       const winSoundCue = selectOutcomeSoundEvent(
         bestPayline,
-        displayedReels.length,
+        reelsBeforeSpin.length,
         spinOutcome.winTier,
       )
       const triggeredBonusPositions = result.freeSpinsAwarded > 0
@@ -1773,8 +1865,8 @@ export function useSlotsPageController({
         return
       }
       setIsAutoSpinning(false)
-      if (demoMode) {
-        setDemoAvailability('unavailable')
+      if (demoMode && !expectsGodsTumble) {
+        setSpinAvailability('unavailable')
       }
       const isInsufficientBalance =
         error instanceof SpinRequestError && error.code === 'insufficient-slot-credits'
@@ -1803,6 +1895,7 @@ export function useSlotsPageController({
       setBestWin(null)
       setWinningPaylineCount(0)
       setBonusPositions([])
+      if (expectsGodsTumble) setLastWin(0)
       setLastFreeSpinsAwarded(0)
       setLastEnergyAwarded(0)
       setLastEnergyMultiplierApplied(false)
@@ -1816,16 +1909,23 @@ export function useSlotsPageController({
       if (expectedFreeSpin && !isFreeSpinUnavailable) {
         setFreeSpinsRemaining((current) => current + 1)
       }
-      if (isInsufficientBalance && error.available !== undefined) {
+      if (confirmedPaidTumbleBalance !== null) {
+        setBalance(confirmedPaidTumbleBalance)
+      } else if (isInsufficientBalance && error.available !== undefined) {
         setBalance(error.available)
       } else {
         setBalance((currentBalance) => currentBalance + optimisticCharge)
       }
       setSpinError(error instanceof Error ? error.message : 'The spin could not be completed.')
+      if (isPaidGodsTumble && error instanceof SpinRequestError && error.code === 'free-spins-required') {
+        const state = await requestSlotState(gameId).catch(() => null)
+        if (state && isMountedRef.current) applySlotState(state)
+      }
     } finally {
       stopLoop(spinLoopCue)
       if (isMountedRef.current) {
         finishSpinAnimation(animation)
+        if (expectsGodsTumble) setGodsTumbleFrame(null)
         setIsEnergyAwardCompleting(false)
         completePerformance(mascotOutcome, !isFastAutoSpin)
         setIsAutoSpinCoolingDown(shouldStartAutoSpinCooldown)
@@ -1938,7 +2038,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (isDemoSpinDisabled) {
+    if (isSpinServiceDisabled) {
       return
     }
 
@@ -2007,8 +2107,8 @@ export function useSlotsPageController({
     displayedReels,
     dismissCollectionAwardPresentation,
     dismissRainbowBonusSummary,
-    demoAvailability,
-    demoAvailabilityMessage,
+    spinAvailability,
+    spinAvailabilityMessage,
     demoMode,
     demoStartingBalance,
     energyBalance,
@@ -2024,13 +2124,15 @@ export function useSlotsPageController({
     midnightQueuedRounds,
     freeSpinsRemaining,
     hasCompletedSpin,
+    godsTumbleFrame,
     handleSpinButtonClick,
     helpCloseButtonRef,
     isAutoSpinning,
     isFreeSpinBadgePopping,
     isHelpOpen,
     isSymbolGuideOpen,
-    isDemoSpinDisabled,
+    isSpinServiceDisabled,
+    isGodsTumbleBoard,
     isReloadPromptOpen,
     isSpecialGameActive,
     isSpecialSpinDelayActive,
@@ -2081,6 +2183,7 @@ export function useSlotsPageController({
     toggleMuted,
     toggleResultsOnly,
     useFreeGameForNextSpin,
+    usesGodsTumble,
     visibleSealCollections,
     wagerIndex,
     wagerOptions,

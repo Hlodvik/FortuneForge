@@ -4,12 +4,15 @@ import amphora from '../../../assets/slots/games/gods-of-olympus/optimized/ampho
 import aresHelmetMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/ares-helmet-medallion.png'
 import athenaOwlMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/athena-owl-medallion.png'
 import drachmaToken from '../../../assets/slots/games/gods-of-olympus/optimized/drachma-token.png'
-import goldenFleece from '../../../assets/slots/games/gods-of-olympus/optimized/golden-fleece.png'
 import hermesWingMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/hermes-wing-medallion.png'
-import laurelWreath from '../../../assets/slots/games/gods-of-olympus/optimized/laurel-wreath.png'
 import lightningBolt from '../../../assets/slots/games/gods-of-olympus/optimized/lightning-bolt.png'
 import lightningVolley from '../../../assets/slots/games/gods-of-olympus/optimized/lightning-volley.png'
 import olympusGates from '../../../assets/slots/games/gods-of-olympus/optimized/olympus-gates.png'
+import amethyst from '../../../assets/slots/games/gods-of-olympus/optimized/olympian-amethyst.png'
+import citrine from '../../../assets/slots/games/gods-of-olympus/optimized/olympian-citrine.png'
+import emerald from '../../../assets/slots/games/gods-of-olympus/optimized/olympian-emerald.png'
+import ruby from '../../../assets/slots/games/gods-of-olympus/optimized/olympian-ruby.png'
+import sapphire from '../../../assets/slots/games/gods-of-olympus/optimized/olympian-sapphire.png'
 import poseidonTrident from '../../../assets/slots/games/gods-of-olympus/optimized/poseidon-trident.png'
 import poseidonWaveMedallion from '../../../assets/slots/games/gods-of-olympus/optimized/poseidon-wave-medallion.png'
 import thunderboltShield from '../../../assets/slots/games/gods-of-olympus/optimized/thunderbolt-shield.png'
@@ -23,9 +26,9 @@ export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
   serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
     '2': { label: 'Olympian amphora', image: amphora },
-    '3': { label: 'Golden laurel wreath', image: laurelWreath },
+    '3': { label: 'Olympian emerald', image: emerald },
     '4': { label: 'Winged sandal of Hermes', image: wingedSandal },
-    '5': { label: 'Golden fleece', image: goldenFleece },
+    '5': { label: 'Olympian ruby', image: ruby },
     '6': { label: 'Trident of Poseidon', image: poseidonTrident },
     '7': { label: 'Lightning of Zeus', image: lightningBolt },
     ACE: { label: 'Zeus eagle wild crest', image: zeusEagleCrest },
@@ -38,6 +41,11 @@ export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
     SEAL_ROWS: { label: 'Poseidon tide medallion', image: poseidonWaveMedallion },
     SEAL_PAW: { label: 'Ares fury medallion', image: aresHelmetMedallion },
     SEAL_RAND: { label: 'Hermes fortune medallion', image: hermesWingMedallion },
+  },
+  additionalSymbols: {
+    '8': { label: 'Olympian sapphire', image: sapphire },
+    A: { label: 'Olympian amethyst', image: amethyst },
+    J: { label: 'Olympian citrine', image: citrine },
   },
   valueToken: { label: 'drachma', image: drachmaToken },
   energyEarnLabel: '+1 divine favor',

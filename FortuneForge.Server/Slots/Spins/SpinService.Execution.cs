@@ -26,6 +26,16 @@ public sealed partial class SpinService
     {
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
+        if (admission.MathModelId == OlympusTumbleDemo.EngineVersion)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(playerId);
+            if (gameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId || admission.IsFreeSpin ||
+                admission.SpecialBoostApplied || admission.FreeSpinsRemaining != 0 ||
+                admission.FreeSpinFeatureMode is not null)
+                throw new ArgumentException("A base Olympus admission is required for a tumble spin.", nameof(admission));
+            return SpinOlympusTumble(admission.WagerPoints, showcase: false,
+                admission.PityMissesBefore, admission.EnergyBalance);
+        }
         if (gameId == GoldFoundrySlotDefinitions.GameId)
             GoldFoundrySlotDefinitions.ValidateSpinRequest(admission.IsFreeSpin);
         var derived = admission.IsFreeSpin &&
@@ -34,7 +44,8 @@ public sealed partial class SpinService
              ArcaneLightningCollector.IsModel(arcaneGame));
         var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
             admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
-            derived, admission.MathModelId);
+            derived, admission.MathModelId, olympusLegacyCarry: admission.IsFreeSpin &&
+                gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId);
         return result with
         {
             IsFreeSpin = admission.IsFreeSpin,
@@ -56,7 +67,7 @@ public sealed partial class SpinService
 
     private SpinResult SpinCore(string gameId, long wagerPoints, string playerId,
         bool specialBoostApplied, long currentEnergyBalance, string? freeSpinFeatureMode,
-        int? persistedPityMisses, bool derivedFreeSpin, string? mathModelId)
+        int? persistedPityMisses, bool derivedFreeSpin, string? mathModelId, bool olympusLegacyCarry = false)
     {
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
@@ -66,6 +77,8 @@ public sealed partial class SpinService
             ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
         else if (derivedFreeSpin)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
+        else if (olympusLegacyCarry)
+            ValidateOlympusCarryWager(game, wagerPoints);
         else
             ValidateWager(game, wagerPoints);
         if (string.IsNullOrWhiteSpace(playerId))

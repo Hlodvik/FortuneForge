@@ -31,7 +31,19 @@ public sealed partial class FirestoreAccountStore
         {
             throw new InvalidOperationException("Slot outcome has no matching admission or engine audit.");
         }
-        if (admission.MathModelId is not null &&
+        var isOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(result.EngineAudit.EngineVersion);
+        if (isOlympusTumble || admission.MathModelId == OlympusTumbleDemo.EngineVersion)
+        {
+            if (result.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
+                result.EngineAudit.EngineVersion != OlympusTumbleDemo.EngineVersion ||
+                admission.MathModelId != OlympusTumbleDemo.EngineVersion ||
+                admission.IsFreeSpin || result.IsFreeSpin || admission.SpecialBoostApplied ||
+                admission.FreeSpinsRemaining != 0 || admission.FreeSpinFeatureMode is not null ||
+                admission.ChargedWagerCents <= 0 ||
+                admission.ChargedWagerCents != RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents))
+                throw new InvalidOperationException("Olympus tumble outcome differs from its admitted wager or model.");
+        }
+        else if (admission.MathModelId is not null &&
             (result.PaytableId != admission.MathModelId ||
              result.EngineAudit.BaseGame.Math.PaytableId != admission.MathModelId ||
              result.IsFreeSpin != admission.IsFreeSpin ||
@@ -53,7 +65,8 @@ public sealed partial class FirestoreAccountStore
              result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode))
             throw new InvalidOperationException("Midnight Vault's outcome differs from its admitted bonus mode.");
         var frozenSettlementField = isMidnightGame ? "midnightSettlementJson" :
-            isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" : null;
+            isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" :
+            isOlympusTumble ? "olympusTumbleSettlementJson" : null;
         var engineOutcomeSha256 = frozenSettlementField is not null ? EngineOutcomeSha256(result) : null;
 
         var chargedWagerCents = admission.ChargedWagerCents;
@@ -104,6 +117,8 @@ public sealed partial class FirestoreAccountStore
                     admissionSnapshot.GetValue<bool>("specialBoostApplied") != result.SpecialBoostApplied ||
                     (ReadString(admissionSnapshot, "mathModelId") ?? string.Empty) != (admission.MathModelId ?? string.Empty) ||
                     (isMidnightGame && ReadString(admissionSnapshot, "freeSpinFeatureMode") != admission.FreeSpinFeatureMode) ||
+                    (isOlympusTumble && (ReadLong(admissionSnapshot, "freeSpinsBefore") != 0 ||
+                        ReadLong(admissionSnapshot, "energyBalanceBefore") != admission.EnergyBalance)) ||
                     admissionSnapshot.GetValue<long>("pityMissesBefore") != admission.PityMissesBefore)
                 {
                     throw new InvalidOperationException("Slot admission receipt does not match the engine result.");
@@ -116,7 +131,8 @@ public sealed partial class FirestoreAccountStore
                     throw new InvalidOperationException("Slot admission has already been used.");
                 }
                 if (frozenSettlementField is not null && existingResult.Exists &&
-                    (isMidnightGame || arcaneLightning || ReadString(existingResult, "engineOutcomeSha256") is not null))
+                    (isMidnightGame || arcaneLightning || isOlympusTumble ||
+                        ReadString(existingResult, "engineOutcomeSha256") is not null))
                 {
                     if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
                         ReadString(existingResult, "admissionId") != admission.AdmissionId.ToString("N") ||
@@ -195,15 +211,18 @@ public sealed partial class FirestoreAccountStore
                     specialRoundProfile = result.EngineAudit.FeatureProfile ?? specialRoundProfile;
                 if (isGoldFoundry && currentEnergy != admission.EnergyBalance)
                     throw new InvalidOperationException("The crucible charge differs from the admitted spin.");
+                if (isOlympusTumble && (currentFreeGames != 0 || currentEnergy != admission.EnergyBalance))
+                    throw new InvalidOperationException("Olympus legacy balances changed during the admitted spin.");
                 var crucibleWageredBeforeCents = isGoldFoundry ? ReadLong(guardSnapshot, "crucibleWageredCents") : 0;
                 var crucible = isGoldFoundry
                     ? GoldFoundryCrucible.Settle(currentEnergy, result.EnergyAwarded,
                         crucibleWageredBeforeCents, chargedWagerCents)
                     : null;
-                var energyBonus = crucible?.AsEnergySettlement(result.Payout) ?? EnergyBonus.Settle(
-                    specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
-                    result.EnergyAwarded,
-                    result.Payout);
+                var energyBonus = isOlympusTumble
+                    ? new EnergyBonusSettlement(result.Payout, currentEnergy, currentEnergy, 0, false, 1m)
+                    : crucible?.AsEnergySettlement(result.Payout) ?? EnergyBonus.Settle(
+                        specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
+                        result.EnergyAwarded, result.Payout);
                 var piratesGemCountsBefore = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? ReadLongMap(guardSnapshot, "sealCounts") : null;
                 var piratesGemWagerCentsBefore = piratesGemCountsBefore is not null
@@ -224,7 +243,8 @@ public sealed partial class FirestoreAccountStore
                         throw new InvalidOperationException("The admitted Midnight Vault bonus round does not match its saved queue.");
                     sealSettlement = SettleMidnightBonusRounds(guardSnapshot, result, before, afterConsumption, selected);
                 }
-                else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied, specialRoundProfile);
+                else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied,
+                    specialRoundProfile, freezeProgress: isOlympusTumble);
                 PiratesGemSettlementEvidence? piratesGemEvidence = piratesGemCountsBefore is null
                     ? null
                     : new(
@@ -237,8 +257,10 @@ public sealed partial class FirestoreAccountStore
                         sealSettlement.FreeSpinFeatureMode,
                         sealSettlement.FreeSpinWagerPoints);
                 var settledPayout = energyBonus.Payout;
-                var outcomeFindings = SlotRoundAudit.Check(result, settledPayout);
+                var outcomeFindings = SlotRoundAudit.Check(result, settledPayout, isPaid: true);
                 var outcomeVerified = !outcomeFindings.Any(finding => finding.Severity == "error");
+                if (isOlympusTumble && !outcomeVerified)
+                    throw new InvalidOperationException("The paid Olympus outcome could not be verified.");
                 var payoutCents = checked(RandMoney.PointsToCents(
                     settledPayout.TotalPoints,
                     result.PointValueInCents) + (crucible?.PayoutCents ?? 0));
@@ -604,9 +626,12 @@ public sealed partial class FirestoreAccountStore
             SealsAwarded = result.SealsAwarded.OrderBy(pair => pair.Key, StringComparer.Ordinal),
             EngineAudit = result.EngineAudit
         };
-        var json = result.EngineAudit?.EngineVersion == ArcaneLightningCollector.EngineVersion
-            ? JsonSerializer.Serialize(new { snapshot, result.LightningCollection })
-            : JsonSerializer.Serialize(snapshot);
+        var json = result.EngineAudit?.EngineVersion switch
+        {
+            ArcaneLightningCollector.EngineVersion => JsonSerializer.Serialize(new { snapshot, result.LightningCollection }),
+            OlympusTumbleDemo.EngineVersion => JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
+            _ => JsonSerializer.Serialize(snapshot)
+        };
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));
     }
 

@@ -22,7 +22,8 @@ public sealed record DemoSpinRequest(
     IReadOnlyList<SlotSealCollection>? SealCollections = null,
     string? FreeSpinFeatureMode = null,
     MidnightVaultDemoState? MidnightBonusState = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null);
 
 [ApiController]
 [Route("api/slots/demo")]
@@ -57,6 +58,9 @@ public sealed class DemoSlotsController(
     {
         try
         {
+            if (request.OlympusTumbleShowcase is { } showcase)
+                return await SpinOlympusTumble(request, showcase, cancellationToken);
+
             var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
             if (request.FreeSpinsRemaining < 0 || request.FreeSpinsRemaining > 1_000)
             {
@@ -171,6 +175,21 @@ public sealed class DemoSlotsController(
                 HttpContext.TraceIdentifier);
             return BadRequest(new { error = exception.Message });
         }
+    }
+
+    private async Task<ActionResult> SpinOlympusTumble(
+        DemoSpinRequest request, bool showcase, CancellationToken cancellationToken)
+    {
+        if (request.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
+            request.UseFreeSpin || request.FreeSpinsRemaining != 0 || request.FreeSpinWagerPoints is not null ||
+            request.FreeSpinFeatureMode is not null || request.EnergyBalance != 0 || request.SealCollections is { Count: > 0 } ||
+            request.MidnightBonusState is not null || request.CrucibleWageredCents != 0)
+            throw new ArgumentException("The Olympus tumble demo requires its own game and a base spin.", nameof(request));
+
+        var startedAt = DateTime.UtcNow;
+        var result = spinService.SpinOlympusTumbleDemo(request.WagerPoints, showcase);
+        await auditStore.RecordAsync(new DemoSlotAuditEntry(request, result, result, startedAt, DateTime.UtcNow), cancellationToken);
+        return Ok(result);
     }
 
     private async Task<ActionResult> SpinMidnight(DemoSpinRequest request, CancellationToken cancellationToken)

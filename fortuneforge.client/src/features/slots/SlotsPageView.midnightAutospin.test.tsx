@@ -31,7 +31,7 @@ function Harness({ experience, disabled = false }: { experience: SlotExperienceS
   // Exercise the view's real toggle handler without starting engine autoplay.
   const [isAutoSpinning, setIsAutoSpinning] = useState(false)
   return <SlotsPageView {...controller} isAutoSpinning={isAutoSpinning} setIsAutoSpinning={setIsAutoSpinning}
-    isDemoSpinDisabled={disabled} setSpinError={mocks.clearError} handleSpinButtonClick={mocks.spin} />
+    isSpinServiceDisabled={disabled} setSpinError={mocks.clearError} handleSpinButtonClick={mocks.spin} />
 }
 async function mount(experience: SlotExperienceSet = DRAGON_HOARD_SLOT_GAME.experience, disabled = false) {
   await act(async () => root.render(<Harness experience={experience} disabled={disabled} />))

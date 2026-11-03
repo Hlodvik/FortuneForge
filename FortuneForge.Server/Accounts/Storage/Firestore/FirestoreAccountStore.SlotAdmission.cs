@@ -28,6 +28,9 @@ public sealed partial class FirestoreAccountStore
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
 
         var admissionId = Guid.NewGuid();
+        var isOlympusTumble = gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId && !useFreeSpin;
+        if (isOlympusTumble && useSpecialBoost)
+            throw new ArgumentException("Olympus tumble spins do not use the classic special-point boost.", nameof(useSpecialBoost));
         var admissionReference = SlotSpinAdmissionDocument(admissionId);
         var requestObservation = GameSecurityContext.Current;
         var guardReference = SlotSpinGuardDocument(userId, gameId);
@@ -147,6 +150,8 @@ public sealed partial class FirestoreAccountStore
                 {
                     throw new NoFreeSpinsException();
                 }
+                if (isOlympusTumble && freeGamesAvailable > 0)
+                    throw new SlotFreeSpinsRequiredException();
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -164,7 +169,7 @@ public sealed partial class FirestoreAccountStore
                 if (useFreeSpin && storedFreeSpinWagerCents > 0)
                     effectiveWagerPoints = RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents);
                 var admittedRound = isMidnight && useFreeSpin ? roundsBefore.FirstOrDefault() : null;
-                string? mathModelId = null;
+                string? mathModelId = isOlympusTumble ? OlympusTumbleDemo.EngineVersion : null;
                 if (isMidnight)
                 {
                     if (!useFreeSpin && roundsBefore.Count > 0)

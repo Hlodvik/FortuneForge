@@ -27,6 +27,12 @@ var configurationPath = args.FirstOrDefault(argument => argument.EndsWith(".json
 var paidSpinCount = args.Select(argument => int.TryParse(argument, out var parsed) ? parsed : 0)
     .FirstOrDefault(value => value > 0);
 paidSpinCount = paidSpinCount > 0 ? paidSpinCount : defaultPaidSpins;
+if (args.Contains("--olympus-demo", StringComparer.OrdinalIgnoreCase))
+{
+    OlympusTumbleSimulation.Run(paidSpinCount, defaultSeed);
+    return;
+}
+
 var requestedGameArgumentIndex = Array.FindIndex(
     args,
     argument => string.Equals(argument, "--game", StringComparison.OrdinalIgnoreCase));

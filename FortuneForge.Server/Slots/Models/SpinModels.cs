@@ -25,10 +25,15 @@ public sealed record SlotSpinEngineAudit(
     public bool IsDerivedFreeSpin { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OlympusTumbleEvidence? OlympusTumble { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CrucibleRuleVersion { get; init; }
 }
 
 public readonly record struct GridPosition(int Reel, int Row);
+
+public sealed record OlympusTumbleEvidence(bool Showcase, IReadOnlyList<int> DrawIndexes);
 
 public sealed record SymbolMatch(
     int PaylineId,
@@ -117,4 +122,7 @@ public sealed record SpinResult(
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
     public MidnightVaultDemoState? MidnightBonusState { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OlympusTumbleOutcome? OlympusTumble { get; init; }
 }

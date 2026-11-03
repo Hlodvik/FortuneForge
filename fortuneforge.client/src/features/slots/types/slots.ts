@@ -1,3 +1,5 @@
+import type { GodsTumbleResult } from '../../../games/slots/godsOfOlympus/tumble'
+
 export const slotSymbolIds = [
   '2',
   '3',
@@ -85,6 +87,7 @@ export type MidnightVaultDemoState = {
 }
 
 export type SpinResult = {
+  olympusTumble?: GodsTumbleResult
   spinId: string
   gameId: string
   reelSetId: string

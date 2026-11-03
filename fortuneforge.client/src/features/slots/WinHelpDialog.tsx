@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import type { ReactNode, RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import { SlotDialogCloseIcon } from './components/SlotDialogCloseIcon'
 import { useSlotDialog, type SlotDialogTheme } from './hooks/useSlotDialog'
@@ -7,6 +7,7 @@ import type { SlotHelpDefinition } from './config/slotFeatures'
 import { getSlotSymbolDefinition, type SlotSymbolSet } from './config/symbolSets'
 
 type WinHelpDialogProps = {
+  children?: ReactNode
   isOpen: boolean
   closeButtonRef: RefObject<HTMLButtonElement | null>
   help: SlotHelpDefinition
@@ -16,6 +17,7 @@ type WinHelpDialogProps = {
 }
 
 export function WinHelpDialog({
+  children,
   isOpen,
   closeButtonRef,
   help,
@@ -25,17 +27,6 @@ export function WinHelpDialog({
 }: WinHelpDialogProps) {
   const dialogRef = useSlotDialog(isOpen, onClose, closeButtonRef)
   if (!isOpen) return null
-  const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
-  const paylinePatternIds = help.paylinePatternIds ??
-    Array.from({ length: help.paylineCount }, (_, index) => index + 1)
-  const fiveMatchPatterns = paylinePatternIds.map((patternId) => {
-    const rows = FIVE_MATCH_PATTERNS[patternId - 1]
-    if (!rows) {
-      throw new Error(`Win-help payline pattern ${patternId} is not defined.`)
-    }
-    return { patternId, rows }
-  })
-
   const content = (
     <div
       data-slot-dialog-theme={theme}
@@ -68,6 +59,27 @@ export function WinHelpDialog({
 
         <p className="win-help__eyebrow">Fortune guide</p>
         <h2 id="win-help-title">What counts as a win?</h2>
+        {children ?? <PaylineRules help={help} symbolSet={symbolSet} />}
+      </section>
+    </div>
+  )
+  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
+}
+
+function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'symbolSet'>) {
+  const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
+  const paylinePatternIds = help.paylinePatternIds ??
+    Array.from({ length: help.paylineCount }, (_, index) => index + 1)
+  const fiveMatchPatterns = paylinePatternIds.map((patternId) => {
+    const rows = FIVE_MATCH_PATTERNS[patternId - 1]
+    if (!rows) {
+      throw new Error(`Win-help payline pattern ${patternId} is not defined.`)
+    }
+    return { patternId, rows }
+  })
+
+  return (
+    <>
         <p className="win-help__intro">
           Matching symbols must connect across neighboring reels. {wildDefinition.label}{' '}
           is the highest-value symbol and can substitute on a full five-symbol payline.
@@ -216,8 +228,6 @@ export function WinHelpDialog({
           Repeated copies of the same short path pay once. When wilds create several possible
           symbol matches, the highest-paying valid match is used.
         </p>
-      </section>
-    </div>
+    </>
   )
-  return theme && typeof document !== 'undefined' ? createPortal(content, document.body) : content
 }

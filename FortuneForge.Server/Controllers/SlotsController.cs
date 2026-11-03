@@ -170,6 +170,10 @@ public sealed class SlotsController(
                 freeSpinsRemaining = 0
             });
         }
+        catch (SlotFreeSpinsRequiredException exception)
+        {
+            return Conflict(new { code = "free-spins-required", error = exception.Message });
+        }
         catch (InsufficientSpecialPointsException exception)
         {
             return Conflict(new

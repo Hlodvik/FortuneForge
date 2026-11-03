@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -15,11 +16,18 @@ internal static class SlotRoundAudit
 {
     internal const string AuditorVersion = "slot-outcome-auditor-v1";
 
-    internal static IReadOnlyList<RoundAuditFinding> Check(SpinResult result, SpinPayout settledPayout)
+    internal static IReadOnlyList<RoundAuditFinding> Check(SpinResult result, SpinPayout settledPayout, bool isPaid = false)
     {
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        var usesOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(audit.EngineVersion);
+        if ((audit.OlympusTumble is not null) != usesOlympusTumble ||
+            (result.OlympusTumble is not null) != usesOlympusTumble)
+            return [new("slot-olympus-tumble-version-mismatch", "error",
+                "The tumble result and draw evidence do not match the captured engine version.")];
+        if (usesOlympusTumble)
+            return CheckOlympusTumble(result, audit, settledPayout, isPaid);
         if (GoldFoundryAudit.CheckModel(audit) is { } foundryFinding)
             return [foundryFinding];
         if (RainbowRealmSlotDefinitions.IsModel(audit.BaseGame) !=
@@ -36,8 +44,95 @@ internal static class SlotRoundAudit
         return Check(result, audit.BaseGame, audit.EffectiveGame, audit.ReelSet,
             audit.SymbolSet, audit.Paytable, settledPayout, audit.EnergyBalanceBefore,
             audit.PityMissesBefore, audit.FreeSpinFeatureMode, audit.RawGeneratedReels,
-            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin);
+            audit.ReelsAfterFreeGameFrequency, audit.IsDerivedFreeSpin, isPaid);
     }
+
+    private static IReadOnlyList<RoundAuditFinding> CheckOlympusTumble(
+        SpinResult result, SlotSpinEngineAudit audit, SpinPayout settledPayout, bool isPaid)
+    {
+        if (result.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
+            audit.BaseGame.Id != result.GameId || audit.EffectiveGame.Id != result.GameId ||
+            result.ReelSetId != audit.EngineVersion ||
+            result.PaytableId != audit.EngineVersion ||
+            result.SymbolSetId != audit.SymbolSet.Id ||
+            result.SymbolSetId != audit.BaseGame.Symbols.SymbolSetId ||
+            result.PointValueInCents != audit.BaseGame.Wagering.PointValueInCents ||
+            !ValidWager(result.WagerPoints, audit.BaseGame.Wagering))
+            return [new("slot-olympus-tumble-rules-mismatch", "error",
+                "The tumble game's identifiers or wager do not match the captured rules.")];
+
+        var evidence = audit.OlympusTumble!;
+        if (isPaid && (audit.EngineVersion == OlympusTumbleDemo.LegacyEngineVersion || evidence.Showcase))
+            return [new("slot-olympus-tumble-paid-mode-mismatch", "error",
+                "A paid tumble requires rules supporting paid play and random draws.")];
+
+        var validProgress = isPaid
+            ? (result.SlotsCreditsBalance is null or >= 0m) && audit.PityMissesBefore >= 0 &&
+                result.ConsecutiveFiveMisses == audit.PityMissesBefore && audit.EnergyBalanceBefore >= 0 &&
+                HasNoOlympusTumbleProgression(result)
+            : HasOnlyOlympusDemoState(result) && audit.PityMissesBefore == 0 && audit.EnergyBalanceBefore == 0;
+        if (!validProgress ||
+            audit.FreeSpinFeatureMode is not null || audit.IsDerivedFreeSpin)
+            return [new("slot-olympus-tumble-progression-mismatch", "error",
+                "The tumble outcome changes bonus progression or includes unexpected settlement state.")];
+
+        var draws = evidence.DrawIndexes;
+        var nextDraw = 0;
+        int ReplayDraw(int upperBound)
+        {
+            if (draws is null || nextDraw >= draws.Count)
+                throw new ArgumentException("The saved tumble draw sequence is incomplete.");
+            var index = draws[nextDraw++];
+            if (index < 0 || index >= upperBound)
+                throw new ArgumentException("A saved tumble draw index is out of range.");
+            return index;
+        }
+
+        try
+        {
+            var expected = OlympusTumbleDemo.Resolve(audit.EngineVersion, result.WagerPoints, evidence.Showcase, ReplayDraw);
+            if (draws is null || nextDraw != draws.Count ||
+                !SameOlympusReels(expected.InitialReels, result.Reels) ||
+                !SameOlympusReels(expected.InitialReels, audit.RawGeneratedReels) ||
+                !SameOlympusReels(expected.InitialReels, audit.ReelsAfterFreeGameFrequency) ||
+                result.ReelStops.Count != expected.InitialReels.Count || result.ReelStops.Any(stop => stop != 0) ||
+                JsonSerializer.Serialize(expected, RoundAuditCapture.Json) !=
+                    JsonSerializer.Serialize(result.OlympusTumble, RoundAuditCapture.Json))
+                return [new("slot-olympus-tumble-outcome-mismatch", "error",
+                    "The saved boards, cleared symbols, or awards differ from the recorded draws.")];
+            if (result.Payout.TotalPoints != expected.TotalPoints || settledPayout.TotalPoints != expected.TotalPoints ||
+                result.Payout.Paylines.Count != 0 || settledPayout.Paylines.Count != 0)
+                return [new("slot-olympus-tumble-payout-mismatch", "error",
+                    "The saved payout differs from the replayed tumble total.")];
+        }
+        catch (Exception exception) when (exception is ArgumentException or OverflowException)
+        {
+            return [new("slot-olympus-tumble-draw-invalid", "error",
+                "The saved draw sequence cannot reproduce this tumble outcome.")];
+        }
+        return [];
+    }
+
+    internal static bool HasOnlyOlympusDemoState(SpinResult result) =>
+        result.SlotsCreditsBalance is null && result.ConsecutiveFiveMisses == 0 && HasNoOlympusTumbleProgression(result);
+
+    private static bool HasNoOlympusTumbleProgression(SpinResult result) =>
+        !result.IsFreeSpin && result.FreeSpinsAwarded == 0 && result.FreeSpinsRemaining == 0 &&
+        result.FreeSpinWagerPoints is null && result.FreeSpinFeatureMode is null &&
+        result.BonusRound is null && result.QueuedBonusRounds.Count == 0 && result.AwardedBonusRounds.Count == 0 &&
+        result.MidnightBonusState is null && result.CollectionFreeSpinsAwarded == 0 &&
+        result.SealsAwarded.Count == 0 && result.SealCollections.Count == 0 &&
+        !result.FiveMatchPityTriggered && !result.SpecialBoostApplied &&
+        result.SpecialPointsAwarded == 0 && result.SpecialPointsBalance == 0 &&
+        result.EnergyAwarded == 0 && result.EnergyBalance == 0 && !result.EnergyMultiplierApplied &&
+        result.PayoutMultiplier == 1m && result.LightningCollection is null &&
+        result.MonkeyPawCount == 0 && result.MoneyGrabPoints == 0 && result.BananaBonusPoints == 0 &&
+        result.CrucibleWageredCents is null && result.CruciblePourValueCents is null &&
+        result.CruciblePoured is null && result.CruciblePayoutCents is null;
+
+    private static bool SameOlympusReels(
+        IReadOnlyList<IReadOnlyList<string>> expected, IReadOnlyList<IReadOnlyList<string>> recorded) =>
+        expected.Count == recorded.Count && expected.Zip(recorded).All(pair => pair.First.SequenceEqual(pair.Second));
 
     internal static IReadOnlyList<RoundAuditFinding> Check(
         SpinResult result,
@@ -52,7 +147,8 @@ internal static class SlotRoundAudit
         string? activeFeatureMode,
         IReadOnlyList<IReadOnlyList<string>>? rawGeneratedReels = null,
         IReadOnlyList<IReadOnlyList<string>>? reelsAfterFrequency = null,
-        bool isDerivedFreeSpin = false)
+        bool isDerivedFreeSpin = false,
+        bool isPaid = false)
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
@@ -69,8 +165,11 @@ internal static class SlotRoundAudit
             (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&
                  MidnightVaultBonusPolicy.IsValidDerivedWager(result.WagerPoints) ||
              arcaneCollector && ArcaneLightningCollector.IsValidCarryWager(baseGame, result.WagerPoints));
+        var legacyOlympusCarryWager = isPaid && result.IsFreeSpin &&
+            result.GameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId &&
+            OlympusTumbleDemo.IsLegacyCarryWager(baseGame.Wagering, result.WagerPoints);
         if (result.PointValueInCents != baseGame.Wagering.PointValueInCents ||
-            !(trustedBonusWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
+            !(trustedBonusWager || legacyOlympusCarryWager || ValidWager(result.WagerPoints, baseGame.Wagering)) ||
             isDerivedFreeSpin && !trustedBonusWager)
             Flag("slot-wager-invalid", "The wager or point value does not match the captured rules.");
         if (result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId &&

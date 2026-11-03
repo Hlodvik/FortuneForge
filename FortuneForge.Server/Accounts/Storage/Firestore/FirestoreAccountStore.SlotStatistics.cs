@@ -49,7 +49,8 @@ public sealed partial class FirestoreAccountStore
         DocumentSnapshot guardSnapshot,
         SpinResult result,
         bool energyCompleted,
-        SlotSpecialRoundProfile? profile)
+        SlotSpecialRoundProfile? profile,
+        bool freezeProgress = false)
     {
         var counts = ReadLongMap(guardSnapshot, "sealCounts");
         var wagerCents = ReadSealWagerCents(guardSnapshot);
@@ -76,6 +77,10 @@ public sealed partial class FirestoreAccountStore
                 [],
                 false);
         }
+
+        if (freezeProgress)
+            return new SealCollectionSettlement(counts, wagerCents, 0, null, 0,
+                CreateSealCollections(counts, wagerCents, result.PointValueInCents, profile.CollectionTarget), false);
 
         var spinWagerCents = RandMoney.PointsToCents(
             result.WagerPoints,

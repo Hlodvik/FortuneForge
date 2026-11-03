@@ -107,6 +107,76 @@ public sealed class SlotRoundAuditTests
     }
 
     [Fact]
+    public void OlympusPaidTumble_ReplaysDrawsAndBindsTheAdmissionAndSettlement()
+    {
+        var random = new SeededRandom(72);
+        var service = new SpinService(Provider(), new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var admission = new SlotSpinAdmission(2, 50, false, 0, false, 0, null, 23, null)
+        {
+            AdmissionId = Guid.NewGuid(),
+            StartedAtUtc = DateTime.UtcNow,
+            PityMissesBefore = 4,
+            MathModelId = OlympusTumbleDemo.EngineVersion
+        };
+        var result = service.SpinAdmitted(SlotSpecialRoundProfiles.GodsOfOlympusGameId, admission, "audit-test-player");
+        var audit = Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit);
+        var settledPayout = result.Payout;
+        Assert.Equal(admission.PityMissesBefore, result.ConsecutiveFiveMisses);
+        Assert.Equal(admission.EnergyBalance, audit.EnergyBalanceBefore);
+        Assert.Empty(SlotRoundAudit.Check(result, settledPayout, isPaid: true));
+
+        var roundId = result.SpinId.ToString("N");
+        var saved = SinglePlayerRoundRecord.Create("gods-of-olympus", roundId, "audit-test-player",
+            admission.ChargedWagerCents, RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents),
+            admission.StartedAtUtc, DateTime.UtcNow, "slotSpinResults", roundId,
+            new
+            {
+                result, engineAudit = audit, settledPayout, admission.IsFreeSpin,
+                activeFreeSpinFeatureMode = admission.FreeSpinFeatureMode,
+                admittedMathModelId = admission.MathModelId,
+                payoutMultiplier = 1m
+            },
+            "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(saved.Summary, saved.PayloadJson));
+
+        var changed = JsonNode.Parse(saved.PayloadJson)!;
+        changed["wagerCents"] = admission.ChargedWagerCents + 1;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(saved.Summary, changed.ToJsonString()),
+            finding => finding.Code == "slot-olympus-tumble-financial-mismatch");
+
+        changed["wagerCents"] = admission.ChargedWagerCents;
+        changed["data"]!["admittedMathModelId"] = OlympusTumbleDemo.LegacyEngineVersion;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(saved.Summary, changed.ToJsonString()),
+            finding => finding.Code == "slot-olympus-tumble-admission-mismatch");
+
+        changed["data"]!["admittedMathModelId"] = admission.MathModelId;
+        changed["data"]!["engineAudit"]!["olympusTumble"]!["showcase"] = true;
+        Assert.Contains(SlotEvidenceReplayAudit.Inspect(saved.Summary, changed.ToJsonString()),
+            finding => finding.Code == "slot-olympus-tumble-paid-mode-mismatch");
+    }
+
+    [Fact]
+    public void OlympusLegacyFreeSpin_ReplaysTheLockedOddWager()
+    {
+        var random = new SeededRandom(72);
+        var service = new SpinService(Provider(), new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var admission = new SlotSpinAdmission(3, 0, true, 0, false, 0, null, 0, null)
+        {
+            AdmissionId = Guid.NewGuid(),
+            StartedAtUtc = DateTime.UtcNow
+        };
+        var result = service.SpinAdmitted(SlotSpecialRoundProfiles.GodsOfOlympusGameId, admission, "audit-test-player");
+        Assert.True(result.IsFreeSpin);
+        Assert.Null(result.OlympusTumble);
+        Assert.False(Assert.IsType<SlotSpinEngineAudit>(result.EngineAudit).IsDerivedFreeSpin);
+        var saved = SavedEvidence(result);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(saved.Summary, saved.PayloadJson));
+        Assert.Contains(SlotRoundAudit.Check(result, result.Payout), finding => finding.Code == "slot-wager-invalid");
+    }
+
+    [Fact]
     public void ArcaneLightning_ReplaysSavedCollectionAndRejectsChangedValuesAndSettlement()
     {
         var result = SpinArcane();

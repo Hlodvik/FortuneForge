@@ -185,10 +185,11 @@ public sealed class NeonArcadeTests
         Assert.Equal(7, award.FreeSpinsAwarded);
         Assert.Equal(7, award.FreeSpinsRemaining);
         Assert.Equal(150, award.FreeSpinWagerPoints);
-        Assert.Null(award.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidArcadeFeatureMode, award.FreeSpinFeatureMode);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
-        var continuation = start with { UseFreeSpin = true, FreeSpinsRemaining = 7, FreeSpinWagerPoints = 150 };
+        var continuation = start with { UseFreeSpin = true, FreeSpinsRemaining = 7,
+            FreeSpinWagerPoints = 150, FreeSpinFeatureMode = NeonArcadeBonus.PaidArcadeFeatureMode };
         Assert.IsType<BadRequestObjectResult>(await controller.Spin(
             continuation with { WagerPoints = 200 }, CancellationToken.None));
         Assert.IsType<BadRequestObjectResult>(await controller.Spin(
@@ -200,7 +201,7 @@ public sealed class NeonArcadeTests
         Assert.Equal(7, consumed.FreeSpinsAwarded);
         Assert.Equal(13, consumed.FreeSpinsRemaining);
         Assert.Equal(150, consumed.FreeSpinWagerPoints);
-        Assert.Null(consumed.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidArcadeFeatureMode, consumed.FreeSpinFeatureMode);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
         var baseOnlyAudit = consumed.EngineAudit! with { EngineVersion = NeonArcadeSlotDefinitions.BaseOnlyEngineVersion };

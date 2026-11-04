@@ -111,6 +111,7 @@ export type SpinResult = {
   paytableId: string
   wagerPoints: number
   pointValueInCents: number
+  chargedWagerCents?: number
   reelStops: number[]
   reels: SlotSymbolId[][]
   consecutiveFiveMisses: number

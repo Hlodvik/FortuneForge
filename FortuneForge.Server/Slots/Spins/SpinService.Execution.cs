@@ -52,6 +52,8 @@ public sealed partial class SpinService
         return result with
         {
             IsFreeSpin = admission.IsFreeSpin,
+            ChargedWagerCents = gameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                ? admission.ChargedWagerCents : 0,
             EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = derived }
         };
     }
@@ -216,7 +218,7 @@ public sealed partial class SpinService
         pityState.ConsecutiveFiveMisses = hasFiveMatch
             ? 0
             : checked(pityState.ConsecutiveFiveMisses + 1);
-        var payout = payoutCalculator.Calculate(evaluations, game, paytable, wagerPoints);
+        var payout = payoutCalculator.Calculate(evaluations, effectiveGame, paytable, wagerPoints);
         var neonArcade = NeonArcadeSlotDefinitions.IsModel(game)
             ? NeonArcadeBonus.Apply(payout, outcome.VisibleReels, isFreeSpin: isFreeSpin) : null;
         payout = neonArcade?.Payout ?? payout;
@@ -228,7 +230,11 @@ public sealed partial class SpinService
             outcome.VisibleReels,
             wagerPoints,
             game.Math.PayoutMultiplier,
-            collectWithEveryPaw: pawPrototype is not null);
+            collectWithEveryPaw: pawPrototype is not null,
+            bananaPatternMultiplier: NeonArcadeSlotDefinitions.IsModel(game)
+                ? NeonArcadeSlotDefinitions.TripleSevenPatternMultiplier : 3,
+            bananaPayoutMultiplier: NeonArcadeSlotDefinitions.IsModel(game)
+                ? 1m : game.Math.PayoutMultiplier);
         var lightningCollection = arcaneLightning
             ? ArcaneLightningCollector.Calculate(outcome.VisibleReels, wagerPoints) : null;
         if (lightningCollection is not null)

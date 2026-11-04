@@ -147,6 +147,10 @@ public sealed class DemoSlotsController(
                 CollectionFreeSpinsAwarded = engineResult.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? specialRounds.FreeSpinsAwarded : 0,
                 IsFreeSpin = request.UseFreeSpin,
+                ChargedWagerCents = !request.UseFreeSpin ||
+                    isNeon && NeonArcadeBonus.IsPaidArcadeMode(request.FreeSpinFeatureMode)
+                    ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents)
+                    : 0,
                 FreeSpinsRemaining = freeSpinsRemaining,
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
@@ -155,6 +159,8 @@ public sealed class DemoSlotsController(
                 SealCollections = specialRounds.Collections,
                 FreeSpinFeatureMode = freeSpinsRemaining > 0
                     ? specialRounds.FeatureMode ??
+                        (isNeon && !request.UseFreeSpin && engineResult.FreeSpinsAwarded > 0
+                            ? NeonArcadeBonus.AwardedFeatureMode(engineResult.NeonArcade) : null) ??
                         (engineResult.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
                         (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
                     : null

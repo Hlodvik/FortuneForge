@@ -55,6 +55,9 @@ public sealed partial class FirestoreAccountStore
         var isNeon = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
         if (isNeon &&
             (result.IsFreeSpin != admission.IsFreeSpin ||
+             admission.ChargedWagerCents !=
+             (admission.IsFreeSpin && !NeonArcadeBonus.IsPaidArcadeMode(admission.FreeSpinFeatureMode)
+                 ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents)) ||
              admission.IsFreeSpin && result.FreeSpinsAwarded != 0 &&
              (result.FreeSpinsAwarded != NeonArcadeSlotDefinitions.SpecialPlaySpins ||
               result.EngineAudit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion)))
@@ -292,6 +295,8 @@ public sealed partial class FirestoreAccountStore
                 var nextFreeSpinFeatureMode = freeGamesRemaining > 0
                     ? sealSettlement.FreeSpinFeatureMode ?? (isFreeSpin ? activeFreeSpinFeatureMode : null)
                     : null;
+                if (isNeon && !isFreeSpin && result.FreeSpinsAwarded > 0)
+                    nextFreeSpinFeatureMode = NeonArcadeBonus.AwardedFeatureMode(result.NeonArcade);
                 if (midnightProgress is not null) nextFreeSpinFeatureMode = midnightProgress.Rounds.FirstOrDefault()?.FeatureMode;
                 var nextFreeSpinWagerPoints = freeGamesRemaining > 0
                     ? sealSettlement.FreeSpinWagerPoints > 0

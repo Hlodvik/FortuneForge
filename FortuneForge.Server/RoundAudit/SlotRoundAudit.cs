@@ -258,7 +258,9 @@ internal static class SlotRoundAudit
         {
             var evaluations = new CombinationEvaluator().Evaluate(result.Reels, effectiveGame, symbolSet);
             var basePayout = new PayoutCalculator().Calculate(
-                evaluations, baseGame, paytable, result.WagerPoints);
+                evaluations,
+                neonEngineVersion == NeonArcadeSlotDefinitions.EngineVersion ? effectiveGame : baseGame,
+                paytable, result.WagerPoints);
             var neonFreeSpinsAwarded = 0;
             if (NeonArcadeSlotDefinitions.IsModel(baseGame))
             {
@@ -323,7 +325,11 @@ internal static class SlotRoundAudit
             var moneyPoints = pawPrototype is not null || foundryCollector || rainbowHarvest
                 ? collectedPoints : Scale(collectedPoints, baseGame.Math.PayoutMultiplier);
             var bananaPatterns = CountBananaPatterns(result.Reels);
-            var bananaUnit = Scale(checked(result.WagerPoints * 3), foundryCollector ? 1m : baseGame.Math.PayoutMultiplier);
+            var bananaMultiplier = NeonArcadeSlotDefinitions.IsModel(baseGame)
+                ? NeonArcadeSlotDefinitions.TripleSevenMultiplierForEngine(neonEngineVersion) : 3;
+            var bananaUnit = Scale(checked(result.WagerPoints * bananaMultiplier),
+                foundryCollector || NeonArcadeSlotDefinitions.IsModel(baseGame)
+                    ? 1m : baseGame.Math.PayoutMultiplier);
             var bananaPoints = checked(bananaPatterns * bananaUnit);
             if (result.MonkeyPawCount != pawCount || result.MoneyGrabPoints != moneyPoints ||
                 result.BananaBonusPoints != bananaPoints)
@@ -348,6 +354,9 @@ internal static class SlotRoundAudit
                 bananaLines.Length != bananaPatterns ||
                 bananaLines.Sum(line => line.AmountPoints) != bananaPoints ||
                 bananaLines.Any(line => line.AmountPoints != bananaUnit) ||
+                bananaLines.Any(line => line.Matches.Count != 1 ||
+                    line.Matches[0].Multiplier != bananaMultiplier ||
+                    line.Matches[0].AmountPoints != bananaUnit) ||
                 !bananaLines.Select(line => line.PaylineId)
                     .SequenceEqual(Enumerable.Range(801, bananaLines.Length)) ||
                 result.Payout.Paylines.Any(line => line.PaylineId >= 901 &&

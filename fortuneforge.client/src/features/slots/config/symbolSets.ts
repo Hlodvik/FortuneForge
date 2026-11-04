@@ -26,6 +26,8 @@ export function getSlotSymbolImageSrcSet(images?: SlotResponsiveImages): string 
 
 export type SlotSymbolGuideEntry = {
   symbol: SlotSymbolId
+  compactInSidePanel?: boolean
+  payoutScale?: number
   firstLabel: string
   firstValue: string
   secondLabel?: string
@@ -38,6 +40,7 @@ export type SlotSymbolSet = {
   serverSymbolSetId?: string
   definitions: Readonly<Partial<Record<SlotSymbolId, SlotSymbolDefinition>>>
   guideEntries: readonly SlotSymbolGuideEntry[]
+  guidePayoutScale?: number
   guideSubtitle?: string
   /** Opt-in reel filler identities for games with dormant compatibility metadata. */
   animationSymbolIds?: readonly SlotSymbolId[]

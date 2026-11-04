@@ -32,13 +32,17 @@ public sealed class NeonArcadeTests
         Assert.Null(game.Energy);
         Assert.Null(game.SpecialPoints);
         Assert.Null(game.Math.Targets.Rtp);
+        Assert.Equal(0.74m, game.Math.PayoutMultiplier);
+        Assert.Equal(new[] { 3, 5 }, game.Symbols.WildSubstitutionMatchLengths);
         Assert.Equal(25m, provider.GetGame(SlotSpecialRoundProfiles.OceanOdysseyGameId)!.Wagering.PointValueInCents);
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
         Assert.All(strips, strip =>
         {
             Assert.Equal(2048, strip.Count);
-            Assert.Equal(788, strip.Count(symbol => symbol is "2" or "4" or "5" or "7"));
-            Assert.Equal(768, strip.Count(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW"));
+            Assert.Equal(464, strip.Count(symbol => symbol is "2" or "4" or "5" or "7"));
+            Assert.Equal(462, strip.Count(symbol => symbol == "3"));
+            Assert.Equal(418, strip.Count(symbol => symbol == "SEAL_ROWS"));
+            Assert.Equal(930, strip.Count(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW"));
             Assert.Equal(8, strip.Count(symbol => symbol == "FREE"));
             Assert.Single(strip, symbol => symbol == "6");
             Assert.Single(strip, symbol => symbol == "POWER");
@@ -102,6 +106,51 @@ public sealed class NeonArcadeTests
             }
         };
         Assert.Empty(SlotRoundAudit.Check(previous, previous.Payout));
+    }
+
+    [Fact]
+    public void TripleSevensPayTwelveTimesTheWagerWhileEarlierRoundsStillReplayAtThreeTimes()
+    {
+        var provider = Definitions();
+        var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
+        var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
+        var stops = new[] { Start(strips[0], "BANANA"), Start(strips[1], "BANANA"),
+            Start(strips[2], "BANANA"), Start(strips[3], "2"), Start(strips[4], "3") };
+        var random = new Stops(stops);
+        var engine = new SpinService(provider, new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        const long wagerPoints = 50;
+        var result = engine.Spin(game.Id, wagerPoints, "neon-sevens-test", false);
+        var sevenLines = result.Payout.Paylines.Where(line => line.PaylineId is >= 801 and < 901).ToArray();
+
+        Assert.NotEmpty(sevenLines);
+        Assert.All(sevenLines, line =>
+        {
+            Assert.Equal(wagerPoints * NeonArcadeSlotDefinitions.TripleSevenPatternMultiplier, line.AmountPoints);
+            Assert.Single(line.Matches);
+            Assert.Equal(NeonArcadeSlotDefinitions.TripleSevenPatternMultiplier, line.Matches[0].Multiplier);
+        });
+        Assert.Equal(sevenLines.Sum(line => line.AmountPoints), result.BananaBonusPoints);
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+
+        var oldUnit = wagerPoints * 3;
+        var oldSevenPoints = sevenLines.Length * oldUnit;
+        var oldLines = result.Payout.Paylines.Select(line => line.PaylineId is >= 801 and < 901
+            ? line with { AmountPoints = oldUnit, Matches = line.Matches.Select(match =>
+                match with { Multiplier = 3, AmountPoints = oldUnit }).ToArray() }
+            : line).ToArray();
+        var oldPayout = result.Payout with
+        {
+            TotalPoints = result.Payout.TotalPoints - result.BananaBonusPoints + oldSevenPoints,
+            Paylines = oldLines
+        };
+        var oldResult = result with
+        {
+            Payout = oldPayout,
+            BananaBonusPoints = oldSevenPoints,
+            EngineAudit = result.EngineAudit! with { EngineVersion = NeonArcadeSlotDefinitions.PreviousEngineVersion }
+        };
+        Assert.Empty(SlotRoundAudit.Check(oldResult, oldPayout));
     }
 
     [Fact]

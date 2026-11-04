@@ -44,6 +44,14 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
       'five-casino-win': paidWinCue('win-big', .70), 'triple-sevens': paidWinCue('triple-sevens', .67),
       'soft-miss': cue('no-win', .30, 'result'), 'bonus-entry': cue('bonus-entry', .68, 'result'),
       'bonus-complete': cue('bonus-complete', .66, 'result'),
+      ...(slug === 'neon-nights' ? {
+        'arcade-expansion': {
+          source: '/assets/slots/audio-suites/v1/neon-nights/arcade-expansion.wav',
+          baseVolume: .54,
+          category: 'effect' as const,
+          enabled: true,
+        },
+      } : {}),
     },
     // No auto-music layer or old multi-stinger/special-collect mappings survive.
     // Track names are engine modes; asset names are shared delivery identities.
@@ -53,6 +61,7 @@ export function createThemedSlotAudio(slug: string, previous: SlotSoundSet): Slo
       reelSpin: 'reel-spin', reelStop: 'reel-stop', specialReelSpin: 'special-reel-spin', specialReelStop: 'special-reel-stop',
       collectionArrival: { sync: 'collect-sync', rows: 'collect-rows', paw: 'collect-paw', rand: 'collect-rand' },
       tripleSevens: 'triple-sevens', bonusComplete: 'bonus-complete', results, specialResults: results,
+      ...(slug === 'neon-nights' ? { arcadeExpansion: 'arcade-expansion' as const } : {}),
     },
   }
 }

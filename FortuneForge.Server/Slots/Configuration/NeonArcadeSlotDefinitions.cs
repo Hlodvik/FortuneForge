@@ -10,23 +10,32 @@ public static class NeonArcadeSlotDefinitions
     public const string ModelId = "neon-arcade-local-v2";
     public const string LegacyEngineVersion = "neon-arcade-prototype-v2";
     public const string BaseOnlyEngineVersion = "neon-arcade-special-plays-v3";
-    public const string EngineVersion = "neon-arcade-special-plays-v4";
+    public const string PreviousEngineVersion = "neon-arcade-special-plays-v4";
+    public const string PreviousPaidEngineVersion = "neon-arcade-special-plays-v5";
+    public const string EngineVersion = "neon-arcade-special-plays-v6";
     public const string SymbolSetId = "neon-arcade-symbols-v2";
     public const string ReelSetId = "neon-arcade-reels-v2";
     public const string PaytableId = "neon-arcade-paytable-v2";
     public const decimal BoostPercentPerBonusSymbol = 25m;
     public const int SpecialPlaySpins = 7;
+    public const long TripleSevenPatternMultiplier = 12;
     public const int StopsPerReel = 2048;
     private const int MinimumWagerPoints = 50;
     private const int MaximumWagerPoints = 50_000;
 
     public static bool SupportsSpecialPlays(string? engineVersion) =>
-        engineVersion is BaseOnlyEngineVersion or EngineVersion;
+        engineVersion is BaseOnlyEngineVersion or PreviousEngineVersion or PreviousPaidEngineVersion or EngineVersion;
+
+    public static bool SupportsFreeSpinRetriggers(string? engineVersion) =>
+        engineVersion is PreviousEngineVersion or PreviousPaidEngineVersion or EngineVersion;
+
+    public static long TripleSevenMultiplierForEngine(string? engineVersion) =>
+        engineVersion is PreviousPaidEngineVersion or EngineVersion ? TripleSevenPatternMultiplier : 3;
 
     private static readonly (string Symbol, int Count)[] Weights =
     [
-        ("2", 197), ("4", 197), ("5", 197), ("7", 197),
-        ("3", 300), ("SEAL_SYNC", 256), ("SEAL_ROWS", 256), ("SEAL_PAW", 256),
+        ("2", 116), ("4", 116), ("5", 116), ("7", 116),
+        ("3", 462), ("SEAL_SYNC", 256), ("SEAL_ROWS", 418), ("SEAL_PAW", 256),
         ("BANANA", 101), ("ACE", 80), ("FREE", 8),
         ("6", 1), ("POWER", 1), ("SEAL_RAND", 1)
     ];
@@ -48,7 +57,7 @@ public static class NeonArcadeSlotDefinitions
         SymbolSetId = SymbolSetId,
         WildSymbolId = source.WildSymbolId,
         NativeWildMatchLengths = [.. source.NativeWildMatchLengths],
-        WildSubstitutionMatchLengths = [.. source.WildSubstitutionMatchLengths]
+        WildSubstitutionMatchLengths = [3, 5]
     };
 
     public static SymbolSetDefinition CreateSymbolSet() => new()

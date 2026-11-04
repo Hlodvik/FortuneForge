@@ -86,25 +86,42 @@ public sealed partial class SpinService
             return game;
         }
 
+        var isNeonArcade = NeonArcadeSlotDefinitions.IsModel(game);
+        var addedRows = isNeonArcade ? 3 : 2;
+        var addedPaylines = isNeonArcade
+            ? Enumerable.Range(game.Layout.VisibleRows, addedRows)
+                .Select(row => Enumerable.Repeat(row, game.Layout.ReelCount).ToList())
+                .ToList()
+            : [];
+
         return new GameDefinition
         {
             Id = game.Id,
             Layout = new GameLayoutDefinition
             {
                 ReelCount = game.Layout.ReelCount,
-                VisibleRows = checked(game.Layout.VisibleRows + 2),
-                PaylineCount = game.Layout.PaylineCount
+                VisibleRows = checked(game.Layout.VisibleRows + addedRows),
+                PaylineCount = checked(game.Layout.PaylineCount + addedPaylines.Count)
             },
             Symbols = game.Symbols,
             Matching = game.Matching,
-            Math = game.Math,
+            Math = !isNeonArcade ? game.Math : new GameMathDefinition
+            {
+                ReelSetId = game.Math.ReelSetId,
+                PaytableId = game.Math.PaytableId,
+                PayoutMultiplier = game.Math.PayoutMultiplier,
+                PaylinePayoutSteps = [.. game.Math.PaylinePayoutSteps,
+                    .. Enumerable.Repeat(0, addedPaylines.Count)],
+                FiveMatchPityMissLimit = game.Math.FiveMatchPityMissLimit,
+                Targets = game.Math.Targets
+            },
             Wagering = game.Wagering,
             FreeGames = game.FreeGames is null || profile is null || game.Id == SlotSpecialRoundProfiles.DragonHoardGameId
                 ? game.FreeGames
                 : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,
             Energy = game.Energy,
-            Paylines = game.Paylines
+            Paylines = isNeonArcade ? [.. game.Paylines, .. addedPaylines] : game.Paylines
         };
     }
 

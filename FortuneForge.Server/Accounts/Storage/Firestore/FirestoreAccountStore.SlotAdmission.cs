@@ -196,10 +196,11 @@ public sealed partial class FirestoreAccountStore
                 var activeFreeSpinFeatureMode = useFreeSpin
                     ? isMidnight ? admittedRound!.FeatureMode : storedFreeSpinFeatureMode : null;
                 var roundsAfter = isMidnight && useFreeSpin ? MidnightVaultBonusRounds.Consume(roundsBefore) : roundsBefore;
-                var chargedWagerCents = useFreeSpin
-                    ? 0
-                    : RandMoney.PointsToCents(wagerPoints, pointValueInCents);
-                if (!useFreeSpin && availableCents < chargedWagerCents)
+                var chargedWagerCents = !useFreeSpin ||
+                    isNeon && NeonArcadeBonus.IsPaidArcadeMode(activeFreeSpinFeatureMode)
+                    ? RandMoney.PointsToCents(effectiveWagerPoints, pointValueInCents)
+                    : 0;
+                if (availableCents < chargedWagerCents)
                 {
                     throw new InsufficientSlotCreditsException(
                         RandMoney.CentsToRand(availableCents),

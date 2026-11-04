@@ -57,7 +57,7 @@ public static class SlotSpecialRoundProfiles
     public const string ReelRichesGameId = "reel-riches-v1";
     public const string ArcaneArchivesGameId = "arcane-archives-v1";
 
-    private static readonly string[] Modes = ["sync", "rows", "paw", "rand"];
+    private static readonly string[] Modes = ["sync", "rows", "paw", "rand", "arcade"];
     private static readonly IReadOnlyDictionary<string, string> ModesBySeal =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -142,7 +142,8 @@ public static class SlotSpecialRoundProfiles
                 DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows",
                 PayoutMultiplier: 0.977m),
             [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
-                BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId),
+                BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId,
+                PayoutMultiplier: 0.74m),
             [NordicLegendsGameId] = new(
                 NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw",
                 TargetHitRate: 0.32m,

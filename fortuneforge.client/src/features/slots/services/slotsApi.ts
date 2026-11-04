@@ -171,6 +171,27 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
   return state as SlotState
 }
 
+export async function requestNeonAdminTrigger(
+  symbol: 'car' | 'disco-ball' | 'arcade-cabinet',
+  wagerPoints: number,
+): Promise<SlotState> {
+  const response = await fetchWithAccountSession('/api/slots/admin/neon-trigger', {
+    method: 'POST',
+    body: JSON.stringify({ symbol, wagerPoints }),
+  })
+  if (!response.ok) {
+    const problem = (await response.json().catch(() => null)) as SpinProblem | null
+    throw new SpinRequestError(
+      problem?.error ?? problem?.detail ?? `Special Plays trigger failed with status ${response.status}.`,
+      response.status,
+      problem,
+    )
+  }
+
+  // Read the authoritative account state through the same validator used on page load.
+  return requestSlotState('neon-nights-v1')
+}
+
 function isSpinResult(result: unknown): result is SpinResult {
   if (!isRecord(result) || !isRecord(result.payout)) {
     return false
@@ -184,6 +205,9 @@ function isSpinResult(result: unknown): result is SpinResult {
     typeof result.paytableId === 'string' &&
     typeof result.wagerPoints === 'number' &&
     typeof result.pointValueInCents === 'number' &&
+    (result.chargedWagerCents === undefined ||
+      (typeof result.chargedWagerCents === 'number' &&
+        Number.isInteger(result.chargedWagerCents) && result.chargedWagerCents >= 0)) &&
     typeof result.consecutiveFiveMisses === 'number' &&
     Number.isInteger(result.consecutiveFiveMisses) &&
     result.consecutiveFiveMisses >= 0 &&

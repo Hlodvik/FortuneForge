@@ -2,6 +2,7 @@ using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Spins;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,6 +15,8 @@ public sealed record SpinRequest(
     bool UseFreeSpin,
     bool UseSpecialBoost);
 
+public sealed record NeonAdminTriggerRequest(string Symbol, long WagerPoints);
+
 [ApiController]
 [Route("api/slots")]
 public sealed class SlotsController(
@@ -22,6 +25,47 @@ public sealed class SlotsController(
     ILogger<SlotsController> logger) : ControllerBase
 {
     private static readonly TimeSpan SpinCooldown = TimeSpan.FromMilliseconds(500);
+
+    [HttpPost("admin/neon-trigger")]
+    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
+    public async Task<ActionResult> AdminNeonTrigger(
+        NeonAdminTriggerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var account = await accountService.GetAccessContextAsync(SessionToken(), cancellationToken);
+        if (account is null)
+            return Unauthorized(new { error = "Sign in to play Fortune Slots." });
+        if (!account.IsAdmin)
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { error = "Only administrators can start a Neon preview round." });
+
+        if (request.Symbol is not ("car" or "disco-ball" or "arcade-cabinet"))
+            return BadRequest(new { error = "Unknown Neon Special Plays symbol." });
+
+        try
+        {
+            var gameId = SlotSpecialRoundProfiles.NeonNightsGameId;
+            spinService.ValidateRequest(gameId, request.WagerPoints, false);
+            NeonArcadeSlotDefinitions.ValidateCarryWager(request.WagerPoints);
+            var pointValueInCents = spinService.GetPointValueInCents(gameId);
+            var granted = await accountService.GrantNeonAdminSpecialPlaysAsync(
+                account.UserId,
+                request.WagerPoints,
+                pointValueInCents,
+                request.Symbol == "arcade-cabinet",
+                cancellationToken);
+            if (!granted)
+                return Conflict(new { error = "Finish the current Neon spin or Special Plays round first." });
+            logger.LogInformation("Administrator {UserId} started Neon {Symbol} Special Plays.",
+                account.UserId, request.Symbol);
+            return Ok(await accountService.GetSlotStateAsync(
+                account.UserId, gameId, pointValueInCents, cancellationToken));
+        }
+        catch (ArgumentException exception)
+        {
+            return BadRequest(new { error = exception.Message });
+        }
+    }
 
     [HttpGet("state")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -125,6 +169,8 @@ public sealed class SlotsController(
                 CollectionFreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? settlement.SealFreeSpinsAwarded : 0,
                 IsFreeSpin = admission.IsFreeSpin,
+                ChargedWagerCents = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                    ? admission.ChargedWagerCents : 0,
                 FreeSpinsRemaining = settlement.FreeSpinsRemaining,
                 FreeSpinWagerPoints = settlement.FreeSpinWagerPoints,
                 SpecialPointsBalance = settlement.SpecialPointsBalance,

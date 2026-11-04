@@ -23,8 +23,17 @@ internal sealed record NeonArcadeSettlement(
 
 internal static class NeonArcadeBonus
 {
+    internal const string PaidArcadeFeatureMode = "arcade-rows";
+
     private static readonly (string Kind, string Symbol)[] ActivatorRoles =
         [("car", "6"), ("disco-ball", "POWER"), ("arcade-cabinet", "SEAL_RAND")];
+
+    internal static bool IsPaidArcadeMode(string? featureMode) =>
+        string.Equals(featureMode, PaidArcadeFeatureMode, StringComparison.Ordinal);
+
+    internal static string? AwardedFeatureMode(NeonArcadeEvidence? evidence) =>
+        evidence?.Activators.FirstOrDefault()?.Kind == "arcade-cabinet"
+            ? PaidArcadeFeatureMode : null;
 
     public static NeonArcadeSettlement Apply(
         SpinPayout paylinePayout,
@@ -44,7 +53,8 @@ internal static class NeonArcadeBonus
             positions.Where(cell => cell.Symbol == role.Symbol).Select(cell => cell.Position).ToArray()))
             .Where(role => role.Positions.Count > 0).ToArray();
         var featureGamesEnabled = NeonArcadeSlotDefinitions.SupportsSpecialPlays(engineVersion);
-        var canAward = featureGamesEnabled && (!isFreeSpin || engineVersion == NeonArcadeSlotDefinitions.EngineVersion);
+        var canAward = featureGamesEnabled &&
+            (!isFreeSpin || NeonArcadeSlotDefinitions.SupportsFreeSpinRetriggers(engineVersion));
         var award = canAward && activators.Length > 0
             ? NeonArcadeSlotDefinitions.SpecialPlaySpins : 0;
         return new(payout, new(NeonArcadeSlotDefinitions.ModelId, false, bonusCount,

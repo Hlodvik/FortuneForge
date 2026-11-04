@@ -302,10 +302,18 @@ internal static class SlotEvidenceReplayAudit
             ? usesNeonSpecialPlays ? engine.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints : null;
         var nextFeatureMode = freeSpinsRemaining > 0
             ? specialRounds.FeatureMode ??
+                (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion &&
+                    !request.UseFreeSpin && engine.FreeSpinsAwarded > 0
+                    ? NeonArcadeBonus.AwardedFeatureMode(engine.NeonArcade) : null) ??
                 (engine.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
                 (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
             : null;
+        var expectedChargedWagerCents = request.UseFreeSpin &&
+            !(usesNeonSpecialPlays && NeonArcadeBonus.IsPaidArcadeMode(request.FreeSpinFeatureMode))
+                ? 0 : RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents);
         if (response.IsFreeSpin != request.UseFreeSpin ||
+            (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion &&
+                response.ChargedWagerCents != expectedChargedWagerCents) ||
             response.FreeSpinsAwarded != checked(engine.FreeSpinsAwarded + collectionFreeSpinsAwarded) ||
             response.CollectionFreeSpinsAwarded != collectionFreeSpinsAwarded ||
             response.FreeSpinsRemaining != freeSpinsRemaining ||

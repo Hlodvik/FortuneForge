@@ -10,6 +10,7 @@ import '../../games/slots/arcaneArchives/arcaneArchivesWordmark.css'
 import '../../games/slots/godsOfOlympus/godsTumble.css'
 import { GodsTumbleAwardBadge } from '../../games/slots/godsOfOlympus/GodsTumbleAwardBadge'
 import { NeonSpecialPlaysIntro } from '../../games/slots/neonNights/NeonSpecialPlaysIntro'
+import { NeonRoundSummary } from '../../games/slots/neonNights/NeonRoundSummary'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -36,6 +37,11 @@ import { midnightVaultGuideForModel } from '../../games/slots/dragonHoard/math'
 
 const vaultMoneyFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const formatVaultMoney = (value: number) => `R${vaultMoneyFormatter.format(value)}`
+const neonAdminPreviewSymbols = [
+  { symbol: '6', label: 'Sports car' },
+  { symbol: 'POWER', label: 'Disco ball' },
+  { symbol: 'SEAL_RAND', label: 'Arcade cabinet' },
+] as const
 
 export function SlotsPageView(controller: SlotsPageController) {
   const {
@@ -155,6 +161,9 @@ export function SlotsPageView(controller: SlotsPageController) {
   const isArcaneArchives = cabinetTheme.id === 'arcane-archives-cabinet-v1'
   const isNeonNights = cabinetTheme.id === 'neon-nights-cabinet-v1'
   const neonSpecialIntro = isNeonNights ? controller.neonSpecialIntro : null
+  const neonRoundSummary = isNeonNights ? controller.neonRoundSummary : null
+  const isNeonArcadeExpanding = isNeonNights && controller.isNeonArcadeExpanding
+  const isNeonArcadePaidPlay = isNeonNights && controller.isNeonArcadePaidPlay
   const cabinetRef = useRef<HTMLDivElement>(null)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune && cabinetTheme.controlLayout !== 'integrated'
@@ -192,7 +201,8 @@ export function SlotsPageView(controller: SlotsPageController) {
   const [reelRichesFeatureName, reelRichesFeatureDetail] =
     reelRichesFeatureLabel?.split(' · ', 2) ?? ['Trophy Catch', undefined]
   const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null ||
-    reelRichesIntroVisible || midnightVaultBonusVisible || rainbowIntroVisible || rainbowBonusSummary !== null
+    reelRichesIntroVisible || midnightVaultBonusVisible || rainbowIntroVisible ||
+    rainbowBonusSummary !== null || isNeonArcadeExpanding
   const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
   const completedGemImage = isPiratesFortune && completedCollection
     ? getSlotSymbolDefinition(symbolSet, completedCollection.symbol).image
@@ -290,14 +300,33 @@ export function SlotsPageView(controller: SlotsPageController) {
         <circle cx="12" cy="11.5" r="3" />
       </svg>
     </button>
+    {isNeonNights && ((controller.demoMode && import.meta.env.DEV) || controller.account?.role.toLowerCase() === 'admin') && (
+      <div className="neon-admin-triggers" role="group" aria-label="Admin Special Plays triggers">
+        {neonAdminPreviewSymbols.map(({ symbol, label }) => (
+          <button
+            key={symbol}
+            className="neon-admin-triggers__button"
+            type="button"
+            aria-label={`Trigger ${label} Special Plays`}
+            disabled={isSpinServiceDisabled || isSpinning || controller.isNeonAdminTriggering || freeSpinsRemaining > 0 ||
+              Boolean(neonRoundSummary) ||
+              Boolean(neonSpecialIntro) || isNeonArcadeExpanding}
+            onClick={() => controller.triggerNeonAdminPreview(symbol)}
+          >
+            <img src={getSlotSymbolDefinition(symbolSet, symbol).image} alt="" aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+    )}
   </div>
   const guideSymbols = isMidnightVault ? midnightVaultGuideForModel(symbolSet, controller.midnightBonusRound?.mathModelId) : symbolSet
   const symbolValueGuide = !isGodsTumbleBoard && <SymbolValueGuide
     symbolSet={guideSymbols}
     showSidePanel={usesPiratesControls}
-    sidePanelClassName={usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
+    sidePanelClassName={isNeonNights ? 'symbol-value-guide--neon' : usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
     showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     theme={isMidnightVault ? 'midnight-vault' : undefined}
+    wager={isNeonNights ? activeWagerDisplay : undefined}
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
   />
@@ -329,6 +358,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-rainbow-bonus={rainbowBonusVisible ? 'true' : undefined}
       data-midnight-vault-bonus={midnightVaultBonusVisible ? 'true' : undefined}
       data-midnight-vault-mode={midnightVaultBonusVisible ? controller.freeSpinFeatureMode ?? 'standard' : undefined}
+      data-neon-arcade-expanding={isNeonArcadeExpanding ? 'true' : undefined}
     >
       <main className="slots-page__main">
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
@@ -451,9 +481,11 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <b>Bonus win {formatVaultMoney(specialRoundWinnings)}</b>
               </aside>
             )}
-            {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && (
+            {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && !neonRoundSummary && (
               <aside className="slots-page__special-game-tally" aria-live="polite">
-                <span>{isRainbowRealm || isNeonNights
+                <span>{isNeonArcadePaidPlay
+                  ? `Arcade Plays · ${freeSpinsRemaining} paid ${freeSpinsRemaining === 1 ? 'play' : 'plays'} left · ${formatRand(activeWagerDisplay)} locked`
+                  : isRainbowRealm || isNeonNights
                   ? `${specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
                   : `${specialRoundLabel ?? specialRound.title} winnings`}</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
@@ -611,7 +643,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             {usesPiratesControls ? (
               <PiratesSpinControls
                 activeWager={activeWagerDisplay}
-                disabled={isSpinServiceDisabled || Boolean(neonSpecialIntro) || (usesSidecarControls && rainbowBonusSummary !== null)}
+                disabled={isSpinServiceDisabled || Boolean(neonSpecialIntro) || Boolean(neonRoundSummary) || isNeonArcadeExpanding || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -794,7 +826,16 @@ export function SlotsPageView(controller: SlotsPageController) {
           symbol={neonSpecialIntro.symbol}
           symbolImage={getSlotSymbolDefinition(symbolSet, neonSpecialIntro.symbol).image}
           volume={audioPreferences.mode === 'muted' ? 0 : audioPreferences.volume / 100}
-          onComplete={controller.finishNeonSpecialIntro}
+          onComplete={() => controller.finishNeonSpecialIntro(neonSpecialIntro.symbol)}
+        />
+      )}
+
+      {neonRoundSummary && (
+        <NeonRoundSummary
+          cabinetRef={cabinetRef}
+          title={neonRoundSummary.mode === 'arcade-rows' ? 'Arcade Plays' : 'Special Plays'}
+          amount={formatVaultMoney(neonRoundSummary.totalRand)}
+          onDismiss={controller.dismissNeonRoundSummary}
         />
       )}
 

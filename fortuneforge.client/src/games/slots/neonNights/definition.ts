@@ -26,7 +26,7 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
   awardLabel: 'Neon remix haul',
   outcomeNarrative: {
     lossTitle: 'No neon win this spin', winTitle: 'Neon win', greatWinTitle: 'After-dark win', bigWinTitle: 'Midnight jackpot',
-    freeGameSingular: 'bonus spin', freeGamePlural: 'bonus spins',
+    freeGameSingular: 'Special Play', freeGamePlural: 'Special Plays',
     lossNextAction: 'Choose a wager, then light up the city again.',
     winNextAction: 'Choose a wager, then chase another neon win.',
     bonusNextAction: 'Special Plays use the wager that started the round.',
@@ -36,11 +36,11 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
   valueToken: ['glowing arcade chip', '💿', symbols.VALUE],
   motif: '🌃',
   accentGlyph: '🎵',
-  collectionLabels: [['Pink neon koi', '🐟', symbols.SEAL_SYNC], ['Blue dice', '🎲', symbols.SEAL_ROWS], ['Red neon lantern', '🏮', symbols.SEAL_PAW], ['Arcade cabinet feature', '🕹️', symbols.SEAL_RAND]],
+  collectionLabels: [['Pink neon koi', '🐟', symbols.SEAL_SYNC], ['Blue dice', '🎲', symbols.SEAL_ROWS], ['Red neon lantern', '🏮', symbols.SEAL_PAW], ['Arcade cabinet', '🕹️', symbols.SEAL_RAND]],
   symbolSpecs: {
     '2': ['Jack', 'J', symbols['2']], '3': ['Retro cassette', '📼', symbols['3']], '4': ['Queen', 'Q', symbols['4']],
-    '5': ['King', 'K', symbols['5']], '6': ['Sports car feature', '🏎️', symbols['6']], '7': ['Ace', 'A', symbols['7']],
-    ACE: ['Shades Wild', '🕶️', symbols.ACE], FREE: ['BONUS payline boost', 'BONUS', symbols.FREE], POWER: ['Disco ball feature', '🪩', symbols.POWER],
+    '5': ['King', 'K', symbols['5']], '6': ['Sports car', '🏎️', symbols['6']], '7': ['Ace', 'A', symbols['7']],
+    ACE: ['Shades Wild', '🕶️', symbols.ACE], FREE: ['NEON BONUS', 'BONUS', symbols.FREE], POWER: ['Disco ball', '🪩', symbols.POWER],
     BOLT: ['Voltage lightning', '⚡', symbols.BOLT], BANANA: ['Triple neon sevens', '7️⃣', symbols.BANANA], PAW: ['Midnight DJ deck', '🎛️', symbols.PAW],
   },
   specialRound: {
@@ -49,10 +49,11 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
     usesCollections: false, usesEnergy: false, usesDirectValueTokens: false,
     feature: {
       id: 'neon-midnight-mix', title: 'Special Plays',
-      earnLabel: 'Land a sports car, disco ball or arcade cabinet to win 7 bonus spins.',
-      earnStyle: 'orbit', earnHint: 'Bonus spins use the wager that triggered them.',
+      earnLabel: 'Land a sports car, disco ball or arcade cabinet to start 7 Special Plays.',
+      earnStyle: 'orbit', earnHint: 'Arcade cabinet plays cost the locked triggering wager; car and disco plays are free.',
       activeModes: {
-        sync: 'Beat Match · a matching reel is copied', rows: 'Laser Wall · two extra rows',
+        sync: 'Beat Match · a matching reel is copied', rows: 'Arcade cabinet · three extra rows',
+        'arcade-rows': 'Arcade Plays · three extra rows',
         paw: 'DJ Drop · extra wilds appear', rand: 'Arcade Rush · a wild reel appears',
       },
     },

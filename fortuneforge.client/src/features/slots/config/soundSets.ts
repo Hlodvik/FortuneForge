@@ -73,6 +73,7 @@ type LegacySlotSoundCueId =
 type ThemeSlotSoundCueId =
   | 'bet-step'
   | 'spin-button-click'
+  | 'arcade-expansion'
   | 'collect-sync'
   | 'collect-rows'
   | 'collect-paw'
@@ -110,6 +111,7 @@ export type SlotSoundSet = {
     /** Explicit opt-in; legacy/excluded cabinets retain their event behavior. */
     themeSuite?: true
     betStep?: SlotSoundCueId
+    arcadeExpansion?: SlotSoundCueId
     collectionArrival?: Readonly<Partial<Record<'sync' | 'rows' | 'paw' | 'rand', SlotSoundCueId>>>
     tripleSevens?: SlotSoundCueId
     bonusComplete?: SlotSoundCueId

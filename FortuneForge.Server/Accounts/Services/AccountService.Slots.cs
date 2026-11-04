@@ -57,6 +57,15 @@ public sealed partial class AccountService
         CancellationToken cancellationToken) =>
         accountStore.GetSlotStateAsync(userId, gameId, pointValueInCents, cancellationToken);
 
+    public Task<bool> GrantNeonAdminSpecialPlaysAsync(
+        string userId,
+        long wagerPoints,
+        decimal pointValueInCents,
+        bool arcadeRows,
+        CancellationToken cancellationToken) =>
+        accountStore.GrantNeonAdminSpecialPlaysAsync(
+            userId, wagerPoints, pointValueInCents, arcadeRows, cancellationToken);
+
     public async Task<AccountResult<SlotHistoryResponse>> GetSlotHistoryAsync(
         string? token,
         int limit,

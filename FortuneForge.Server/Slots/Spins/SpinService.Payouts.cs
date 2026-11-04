@@ -35,7 +35,9 @@ public sealed partial class SpinService
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,
         decimal payoutMultiplier,
-        bool collectWithEveryPaw = false)
+        bool collectWithEveryPaw = false,
+        long bananaPatternMultiplier = 3,
+        decimal? bananaPayoutMultiplier = null)
     {
         var moneyPositions = VisiblePositions(reels)
             .Select(position => new
@@ -80,7 +82,8 @@ public sealed partial class SpinService
                 ]);
         }
 
-        var bananaPayouts = CalculateBananaPayouts(reels, wagerPoints, payoutMultiplier);
+        var bananaPayouts = CalculateBananaPayouts(reels, wagerPoints,
+            bananaPayoutMultiplier ?? payoutMultiplier, bananaPatternMultiplier);
         return new FeaturePayout(
             pawPositions.Length,
             moneyGrabPoints,
@@ -91,7 +94,8 @@ public sealed partial class SpinService
     private static IReadOnlyList<PaylinePayout> CalculateBananaPayouts(
         IReadOnlyList<IReadOnlyList<string>> reels,
         long wagerPoints,
-        decimal payoutMultiplier)
+        decimal payoutMultiplier,
+        long bananaPatternMultiplier = 3)
     {
         var payouts = new List<PaylinePayout>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -114,7 +118,7 @@ public sealed partial class SpinService
                 return;
             }
 
-            var amount = ApplyPayoutMultiplier(checked(wagerPoints * 3), payoutMultiplier);
+            var amount = ApplyPayoutMultiplier(checked(wagerPoints * bananaPatternMultiplier), payoutMultiplier);
             var currentPaylineId = paylineId++;
             payouts.Add(new PaylinePayout(
                 currentPaylineId,
@@ -122,7 +126,7 @@ public sealed partial class SpinService
                 [
                     new PaidMatch(
                         new SymbolMatch(currentPaylineId, BananaSymbolId, 3, positions.ToArray(), []),
-                        3,
+                        bananaPatternMultiplier,
                         amount)
                 ]));
         }

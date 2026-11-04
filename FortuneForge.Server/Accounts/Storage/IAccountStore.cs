@@ -79,6 +79,13 @@ public interface IAccountStore
         decimal pointValueInCents,
         CancellationToken cancellationToken);
 
+    Task<bool> GrantNeonAdminSpecialPlaysAsync(
+        string userId,
+        long wagerPoints,
+        decimal pointValueInCents,
+        bool arcadeRows,
+        CancellationToken cancellationToken);
+
     Task<IReadOnlyList<SlotSpinHistoryItem>> GetSlotSpinHistoryAsync(
         string userId,
         int limit,

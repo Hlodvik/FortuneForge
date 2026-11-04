@@ -45,7 +45,9 @@ internal static class NeonArcadeBonus
             .Where(role => role.Positions.Count > 0).ToArray();
         var featureGamesEnabled = NeonArcadeSlotDefinitions.SupportsSpecialPlays(engineVersion);
         var canAward = featureGamesEnabled && (!isFreeSpin || engineVersion == NeonArcadeSlotDefinitions.EngineVersion);
-        var award = canAward && activators.Length > 0
+        // The disco ball enters its own play state. The car and arcade awards
+        // retain their existing behavior until the arcade feature is integrated.
+        var award = canAward && activators.Any(role => role.SymbolId != "POWER")
             ? NeonArcadeSlotDefinitions.SpecialPlaySpins : 0;
         return new(payout, new(NeonArcadeSlotDefinitions.ModelId, false, bonusCount,
             boostPercentPerSymbol, multiplier, paylinePayout.TotalPoints,

@@ -49,12 +49,15 @@ describe('Neon arcade presentation contract', () => {
   it('explains the BONUS boost and the Special Plays triggers', () => {
     const bonus = experience.symbols.guideEntries.find(entry => entry.symbol === 'FREE')
     expect(bonus).toMatchObject({ firstValue: '+25% to payline wins', secondValue: '2 BONUS = +50%' })
-    for (const symbol of ['6', 'POWER', 'SEAL_RAND']) {
+    for (const symbol of ['6', 'SEAL_RAND']) {
       expect(contract.paytable.some(payout => payout.symbolId === symbol)).toBe(false)
       expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)).toMatchObject({
         firstLabel: 'Special Plays', firstValue: '7 bonus spins', secondValue: 'Land anywhere, including during Special Plays',
       })
     }
+    expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'POWER')).toMatchObject({
+      firstLabel: 'Disco floor', firstValue: '10 paid spins',
+    })
     const visibleCopy = [
       experience.features.specialRound?.earnLabel,
       experience.features.specialRound?.earnHint,

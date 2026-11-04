@@ -10,6 +10,7 @@ import '../../games/slots/arcaneArchives/arcaneArchivesWordmark.css'
 import '../../games/slots/godsOfOlympus/godsTumble.css'
 import { GodsTumbleAwardBadge } from '../../games/slots/godsOfOlympus/GodsTumbleAwardBadge'
 import { NeonSpecialPlaysIntro } from '../../games/slots/neonNights/NeonSpecialPlaysIntro'
+import { NeonDiscoFloor } from '../../games/slots/neonNights/NeonDiscoFloor'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -155,6 +156,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const isArcaneArchives = cabinetTheme.id === 'arcane-archives-cabinet-v1'
   const isNeonNights = cabinetTheme.id === 'neon-nights-cabinet-v1'
   const neonSpecialIntro = isNeonNights ? controller.neonSpecialIntro : null
+  const neonDiscoRoundVisible = isNeonNights && controller.isNeonDiscoPlayActive
   const cabinetRef = useRef<HTMLDivElement>(null)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune && cabinetTheme.controlLayout !== 'integrated'
@@ -329,6 +331,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-rainbow-bonus={rainbowBonusVisible ? 'true' : undefined}
       data-midnight-vault-bonus={midnightVaultBonusVisible ? 'true' : undefined}
       data-midnight-vault-mode={midnightVaultBonusVisible ? controller.freeSpinFeatureMode ?? 'standard' : undefined}
+      data-neon-disco-round={neonDiscoRoundVisible ? 'true' : undefined}
     >
       <main className="slots-page__main">
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
@@ -340,6 +343,12 @@ export function SlotsPageView(controller: SlotsPageController) {
           )}
           {isRainbowRealm && (
             <img className="rainbow-realm__wordmark" src={rainbowRealmWordmark} width={640} height={305} alt="" />
+          )}
+          {neonDiscoRoundVisible && (
+            <div className="neon-disco-play__status" role="status">
+              <strong>Disco floor</strong>
+              <span>{controller.neonDiscoSpinsRemaining} {controller.neonDiscoSpinsRemaining === 1 ? 'spin' : 'spins'} left</span>
+            </div>
           )}
           {isMidnightVault && (
             <div className="midnight-vault__masthead" aria-hidden="true">
@@ -454,7 +463,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && (
               <aside className="slots-page__special-game-tally" aria-live="polite">
                 <span>{isRainbowRealm || isNeonNights
-                  ? `${specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
+                  ? `${specialRoundLabel ?? specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
                   : `${specialRoundLabel ?? specialRound.title} winnings`}</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
                 <small>
@@ -783,9 +792,11 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
       )}
 
-      {(isSpecialGameActive || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
+      {(isSpecialGameActive || neonDiscoRoundVisible || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
         <div className="slots-page__special-game-dimmer" aria-hidden="true" />
       )}
+
+      {neonDiscoRoundVisible && <NeonDiscoFloor />}
 
       {neonSpecialIntro && !isSpinning && (
         <NeonSpecialPlaysIntro

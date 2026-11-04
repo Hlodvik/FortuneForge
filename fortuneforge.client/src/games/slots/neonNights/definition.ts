@@ -49,7 +49,7 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
     usesCollections: false, usesEnergy: false, usesDirectValueTokens: false,
     feature: {
       id: 'neon-midnight-mix', title: 'Special Plays',
-      earnLabel: 'Land a sports car, disco ball or arcade cabinet to win 7 bonus spins.',
+      earnLabel: 'A sports car or arcade cabinet awards 7 bonus spins. A disco ball starts 10 disco spins.',
       earnStyle: 'orbit', earnHint: 'Bonus spins use the wager that triggered them.',
       activeModes: {
         sync: 'Beat Match · a matching reel is copied', rows: 'Laser Wall · two extra rows',

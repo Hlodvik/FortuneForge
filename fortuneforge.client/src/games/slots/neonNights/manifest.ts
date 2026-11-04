@@ -30,10 +30,12 @@ const guideEntries: SlotSymbolGuideEntry[] = [
   { symbol: 'FREE', firstLabel: 'Each BONUS', firstValue: '+25% to payline wins',
     secondLabel: 'Stacks', secondValue: '2 BONUS = +50%' },
   { symbol: 'BANANA', firstLabel: '3', firstValue: 'row / column / diagonal', secondLabel: 'Pays', secondValue: '3× per pattern' },
-  ...(['6', 'POWER', 'SEAL_RAND'] as const).map(symbol => ({
+  ...(['6', 'SEAL_RAND'] as const).map(symbol => ({
     symbol, firstLabel: 'Special Plays', firstValue: '7 bonus spins',
     secondLabel: 'Trigger', secondValue: 'Land anywhere, including during Special Plays',
   })),
+  { symbol: 'POWER', firstLabel: 'Disco floor', firstValue: '10 paid spins',
+    secondLabel: 'Trigger', secondValue: 'Land anywhere; regular wagers and payouts apply' },
 ]
 
 export const NEON_NIGHTS_SLOT_GAME = {
@@ -63,7 +65,7 @@ export const NEON_NIGHTS_SLOT_GAME = {
       extraSections: [
         { badge: '+25%', title: 'BONUS boosts', body: 'Each BONUS sign anywhere on the board adds 25% to the spin’s payline wins. Two signs add 50%, three add 75%, and so on. The boost applies to paying lines only; it does not multiply triple-sevens pattern prizes or award free spins.' },
         { badge: '777', title: 'Triple sevens', body: 'Three triple-sevens symbols in a row, column or diagonal pay 3× the wager per qualifying pattern.' },
-        { badge: '7', title: 'Special Plays', body: 'Land a sports car, disco ball or arcade cabinet anywhere to win 7 bonus spins. During Special Plays, those spins are added to the same round at the original wager. Each spin can award one set of 7.' },
+        { badge: '7', title: 'Special Plays', body: 'A sports car or arcade cabinet awards 7 bonus spins at the original wager. A disco ball starts a separate 10-spin disco floor state; these spins use regular wagers and payouts. Symbols can land anywhere.' },
       ],
     },
   },

@@ -50,7 +50,7 @@ describe('Neon arcade presentation contract', () => {
     const bonus = experience.symbols.guideEntries.find(entry => entry.symbol === 'FREE')
     expect(bonus).toMatchObject({ firstLabel: 'Each BONUS', firstValue: '+25% to payline wins' })
     expect(bonus?.secondValue).toBeUndefined()
-    for (const symbol of ['6', 'POWER', 'SEAL_RAND']) {
+    for (const symbol of ['6', 'SEAL_RAND']) {
       expect(contract.paytable.some(payout => payout.symbolId === symbol)).toBe(false)
       expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)).toMatchObject({
         firstLabel: 'Special Plays',
@@ -58,6 +58,9 @@ describe('Neon arcade presentation contract', () => {
       })
       expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)?.secondValue).toBeUndefined()
     }
+    expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'POWER')).toMatchObject({
+      firstLabel: 'Disco floor', firstValue: '10 paid spins',
+    })
     const visibleCopy = [
       experience.features.specialRound?.earnLabel,
       experience.features.specialRound?.earnHint,

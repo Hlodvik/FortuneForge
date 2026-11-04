@@ -11,6 +11,7 @@ import '../../games/slots/godsOfOlympus/godsTumble.css'
 import { GodsTumbleAwardBadge } from '../../games/slots/godsOfOlympus/GodsTumbleAwardBadge'
 import { NeonSpecialPlaysIntro } from '../../games/slots/neonNights/NeonSpecialPlaysIntro'
 import { NeonRoundSummary } from '../../games/slots/neonNights/NeonRoundSummary'
+import { NeonDiscoFloor } from '../../games/slots/neonNights/NeonDiscoFloor'
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -164,6 +165,7 @@ export function SlotsPageView(controller: SlotsPageController) {
   const neonRoundSummary = isNeonNights ? controller.neonRoundSummary : null
   const isNeonArcadeExpanding = isNeonNights && controller.isNeonArcadeExpanding
   const isNeonArcadePaidPlay = isNeonNights && controller.isNeonArcadePaidPlay
+  const neonDiscoRoundVisible = isNeonNights && controller.isNeonDiscoPlayActive
   const cabinetRef = useRef<HTMLDivElement>(null)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune && cabinetTheme.controlLayout !== 'integrated'
@@ -359,6 +361,7 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-midnight-vault-bonus={midnightVaultBonusVisible ? 'true' : undefined}
       data-midnight-vault-mode={midnightVaultBonusVisible ? controller.freeSpinFeatureMode ?? 'standard' : undefined}
       data-neon-arcade-expanding={isNeonArcadeExpanding ? 'true' : undefined}
+      data-neon-disco-round={neonDiscoRoundVisible ? 'true' : undefined}
     >
       <main className="slots-page__main">
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
@@ -370,6 +373,12 @@ export function SlotsPageView(controller: SlotsPageController) {
           )}
           {isRainbowRealm && (
             <img className="rainbow-realm__wordmark" src={rainbowRealmWordmark} width={640} height={305} alt="" />
+          )}
+          {neonDiscoRoundVisible && (
+            <div className="neon-disco-play__status" role="status">
+              <strong>Disco floor</strong>
+              <span>{controller.neonDiscoSpinsRemaining} {controller.neonDiscoSpinsRemaining === 1 ? 'spin' : 'spins'} left</span>
+            </div>
           )}
           {isMidnightVault && (
             <div className="midnight-vault__masthead" aria-hidden="true">
@@ -486,7 +495,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <span>{isNeonArcadePaidPlay
                   ? `Arcade Plays · ${freeSpinsRemaining} paid ${freeSpinsRemaining === 1 ? 'play' : 'plays'} left · ${formatRand(activeWagerDisplay)} locked`
                   : isRainbowRealm || isNeonNights
-                  ? `${specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
+                  ? `${specialRoundLabel ?? specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
                   : `${specialRoundLabel ?? specialRound.title} winnings`}</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
                 <small>
@@ -815,9 +824,11 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
       )}
 
-      {(isSpecialGameActive || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
+      {(isSpecialGameActive || neonDiscoRoundVisible || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
         <div className="slots-page__special-game-dimmer" aria-hidden="true" />
       )}
+
+      {neonDiscoRoundVisible && <NeonDiscoFloor />}
 
       {neonSpecialIntro && !isSpinning && (
         <NeonSpecialPlaysIntro
@@ -833,7 +844,8 @@ export function SlotsPageView(controller: SlotsPageController) {
       {neonRoundSummary && (
         <NeonRoundSummary
           cabinetRef={cabinetRef}
-          title={neonRoundSummary.mode === 'arcade-rows' ? 'Arcade Plays' : 'Special Plays'}
+          title={neonRoundSummary.mode === 'arcade-rows' ? 'Arcade Plays' :
+            neonRoundSummary.mode === 'neon-disco' ? 'Disco Plays' : 'Special Plays'}
           amount={formatVaultMoney(neonRoundSummary.totalRand)}
           onDismiss={controller.dismissNeonRoundSummary}
         />

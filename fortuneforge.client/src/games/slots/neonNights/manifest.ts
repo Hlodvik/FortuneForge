@@ -29,10 +29,11 @@ const guideEntries: SlotSymbolGuideEntry[] = [
     symbol, compactInSidePanel: true, firstLabel: '3', firstValue: `${three}×`, secondLabel: '5', secondValue: `${five}×`,
   })),
   { symbol: 'FREE', compactInSidePanel: true, firstLabel: 'Each BONUS', firstValue: '+25% to payline wins' },
-  ...(['6', 'POWER', 'SEAL_RAND'] as const).map(symbol => ({
+  ...(['6', 'SEAL_RAND'] as const).map(symbol => ({
     symbol, compactInSidePanel: true, firstLabel: 'Special Plays',
     firstValue: symbol === 'SEAL_RAND' ? '7 paid plays · locked wager' : '7 free plays',
   })),
+  { symbol: 'POWER', compactInSidePanel: true, firstLabel: 'Disco floor', firstValue: '10 paid spins' },
 ]
 
 export const NEON_NIGHTS_SLOT_GAME = {
@@ -63,7 +64,7 @@ export const NEON_NIGHTS_SLOT_GAME = {
       extraSections: [
         { badge: '+25%', title: 'BONUS boosts', body: 'Each BONUS sign anywhere on the board adds 25% to the spin’s payline wins. Two signs add 50%, three add 75%, and so on. The boost applies to paying lines only; it does not multiply triple-sevens pattern prizes or award free spins.' },
         { badge: '777', title: 'Triple sevens', body: 'Three triple-sevens symbols in a row, column or diagonal pay 12× the wager per qualifying pattern.' },
-        { badge: '7', title: 'Special Plays', body: 'Land a sports car or disco ball for 7 free plays. An arcade cabinet starts 7 paid Arcade Plays at the triggering wager, with three extra rows and one new horizontal payline per row. A feature symbol landed during the round adds 7 more plays.' },
+        { badge: '7', title: 'Special Plays', body: 'A sports car starts 7 free plays. An arcade cabinet starts 7 paid Arcade Plays at the triggering wager, with three extra rows and one new horizontal payline per row. A car or arcade cabinet landed during Special Plays adds 7 more plays. A disco ball starts a separate 10-spin paid disco floor state.' },
       ],
     },
   },

@@ -39,7 +39,7 @@ public sealed class SlotsController(
             return StatusCode(StatusCodes.Status403Forbidden,
                 new { error = "Only administrators can start a Neon preview round." });
 
-        if (request.Symbol is not ("car" or "disco-ball" or "arcade-cabinet"))
+        if (request.Symbol is not ("car" or "arcade-cabinet"))
             return BadRequest(new { error = "Unknown Neon Special Plays symbol." });
 
         try

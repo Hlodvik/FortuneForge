@@ -72,6 +72,16 @@ public sealed class NeonArcadeTests
     }
 
     [Fact]
+    public void DiscoBallDoesNotAwardCarFreeSpins()
+    {
+        var disco = NeonArcadeBonus.Apply(new(0, []), [["POWER"]]);
+        Assert.Equal(0, disco.FreeSpinsAwarded);
+        Assert.Contains(disco.Evidence.Activators, activator => activator.Kind == "disco-ball");
+        var car = NeonArcadeBonus.Apply(new(0, []), [["6"]]);
+        Assert.Equal(NeonArcadeSlotDefinitions.SpecialPlaySpins, car.FreeSpinsAwarded);
+    }
+
+    [Fact]
     public void CommonPropsPayThroughTheEngineAndOneRareSymbolAwardsSpecialPlays()
     {
         var provider = Definitions();

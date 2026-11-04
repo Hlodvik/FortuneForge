@@ -49,8 +49,8 @@ export const NEON_NIGHTS_DEFINITION: ShowcaseSlotGameDefinition = {
     usesCollections: false, usesEnergy: false, usesDirectValueTokens: false,
     feature: {
       id: 'neon-midnight-mix', title: 'Special Plays',
-      earnLabel: 'Land a sports car, disco ball or arcade cabinet to start 7 Special Plays.',
-      earnStyle: 'orbit', earnHint: 'Arcade cabinet plays cost the locked triggering wager; car and disco plays are free.',
+      earnLabel: 'A sports car or arcade cabinet starts 7 Special Plays. A disco ball starts 10 disco spins.',
+      earnStyle: 'orbit', earnHint: 'Car plays are free. Arcade plays cost the locked triggering wager. Disco spins use regular wagers.',
       activeModes: {
         sync: 'Beat Match · a matching reel is copied', rows: 'Arcade cabinet · three extra rows',
         'arcade-rows': 'Arcade Plays · three extra rows',

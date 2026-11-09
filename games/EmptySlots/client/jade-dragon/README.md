@@ -26,6 +26,7 @@ For emulator verification, the host's FirebaseApp credential factory now allows 
 - Host TypeScript, Vite production bundle, catalogue verification, navbar boundary and source ownership checks pass. Windows SSH rejects npm directory junction traversal, so verification used materialized generated dependencies and an uncommitted real-path Vite resolver; original production bundle-isolation guards remained enabled.
 - Browser test against the remote Development host and `demo-fortuneforge-jade` emulator project: one spin produced one POST; resulting balance matched stake/payout conversion and recovered on reload; server rejected an R100.50 wager; rules loaded; mobile had no horizontal overflow.
 - Feature display fixture used a real nonfinancial demo outcome to verify six-row rendering, visible free-games count, Auto stop, and recovery of the actual emulator account state. Its legacy demo `isFreeSpin` response flag was normalized only inside the browser fixture to match the paid contract. It never credited the account.
+- Dedicated broad server run under the repository's isolated Firestore test-emulator configuration: 1,528 passed, 3 failed. The failures concern unchanged Jungle Jackpot game inventory/legacy activity expectations (`GameAnalyticsFirestoreTests` twice and `PlayerGameExperienceFirestoreTests` once). No test assertions were removed or waived. These broader failures remain unresolved and prevent calling the whole release suite green.
 - No live wallet wagers were used in verification. No production publication has been performed.
 
 ## Remote workspace
@@ -33,3 +34,7 @@ For emulator verification, the host's FirebaseApp credential factory now allows 
 Branch: `codex/jade-dragon-empty-slots`.
 Worktree: `C:/Users/Lctiv/source/repos/FortuneForge-consolidated/.tmp/jade-dragon`.
 Development preview uses a separate emulator-only backend and a separate Vite port. Release must follow the repository's existing clean-main release guard and verification process; do not deploy the dirty main worktree or copy generated frontend files onto an older serving backend.
+
+The SSH account `tian` can work in this new worktree. Git refuses access to the existing release-main worktree because it belongs to `Lctiv` (`detected dubious ownership`). No Git trust exception, ACL change, or release-guard bypass was applied. The change is committed on its feature branch, not merged into main or published.
+
+Tian confirmed retaining the existing EmptySlots server rules for the final integration. The prototype's cascade/bonus-choice/gift rules are therefore deliberately excluded.

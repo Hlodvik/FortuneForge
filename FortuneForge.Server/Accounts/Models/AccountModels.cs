@@ -63,6 +63,7 @@ public sealed record SlotSpinAdmission(
     public DateTime StartedAtUtc { get; init; }
     public string? RequestId { get; init; }
     public int PityMissesBefore { get; init; }
+    public bool IsNeonDiscoPlay { get; init; }
     public string? MathModelId { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
@@ -92,6 +93,7 @@ public sealed record SlotSpinSettlement(
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
+    public int NeonDiscoSpinsRemaining { get; init; }
 }
 
 public sealed record SlotStateResponse(
@@ -108,6 +110,7 @@ public sealed record SlotStateResponse(
     public long? CruciblePourValueCents { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
+    public int NeonDiscoSpinsRemaining { get; init; }
 }
 
 public sealed record AccountSummary(

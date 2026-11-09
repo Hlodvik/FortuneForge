@@ -62,9 +62,10 @@ public sealed partial class AccountService
         long wagerPoints,
         decimal pointValueInCents,
         bool arcadeRows,
+        bool discoBall,
         CancellationToken cancellationToken) =>
         accountStore.GrantNeonAdminSpecialPlaysAsync(
-            userId, wagerPoints, pointValueInCents, arcadeRows, cancellationToken);
+            userId, wagerPoints, pointValueInCents, arcadeRows, discoBall, cancellationToken);
 
     public async Task<AccountResult<SlotHistoryResponse>> GetSlotHistoryAsync(
         string? token,

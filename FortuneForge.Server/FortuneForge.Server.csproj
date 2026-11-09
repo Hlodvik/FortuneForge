@@ -23,6 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\games\EmptySlots\src\FortuneForge.Games.EmptySlots\FortuneForge.Games.EmptySlots.csproj" />
+    <ProjectReference Include="..\games\shared\FortuneForge.Games.Slots.Contracts\FortuneForge.Games.Slots.Contracts.csproj" />
+    <ProjectReference Include="..\games\NeonNights\src\FortuneForge.Games.NeonNights\FortuneForge.Games.NeonNights.csproj" />
     <ProjectReference Include="..\games\ThreeCardPoker\src\FortuneForge.Games.ThreeCardPoker\FortuneForge.Games.ThreeCardPoker.csproj" />
     <ProjectReference Include="..\games\HouseHoldem\src\FortuneForge.Games.HouseHoldem\FortuneForge.Games.HouseHoldem.csproj" />
     <ProjectReference Include="..\games\Asteroids\src\FortuneForge.Games.Asteroids\FortuneForge.Games.Asteroids.csproj" />

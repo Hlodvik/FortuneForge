@@ -31,12 +31,14 @@ public sealed class CombinationEvaluator : ICombinationEvaluator
         var wildId = game.Symbols.WildSymbolId;
         var freeGameSymbolId = game.FreeGames?.SymbolId;
         var paylineSymbolIds = game.Symbols.PaylineSymbolIds?.ToHashSet(StringComparer.Ordinal);
-        var neonArcade = NeonArcadeSlotDefinitions.IsModel(game);
+        // Current Neon rules provide the paying symbols explicitly. Retain the
+        // fallback only for previously captured Neon spins without that field.
+        var legacyNeonRules = paylineSymbolIds is null && NeonArcadeSlotDefinitions.IsModel(game);
         var regularIds = symbolSet.Symbols
             .Where(symbol =>
                 !string.Equals(symbol.Id, wildId, StringComparison.Ordinal) &&
                 !string.Equals(symbol.Id, freeGameSymbolId, StringComparison.Ordinal) &&
-                (paylineSymbolIds?.Contains(symbol.Id) ?? (neonArcade
+                (paylineSymbolIds?.Contains(symbol.Id) ?? (legacyNeonRules
                     ? NeonArcadeSlotDefinitions.IsOrdinaryPayingSymbol(symbol.Id)
                     : !FeatureOnlySymbolIds.Contains(symbol.Id))))
             .Select(symbol => symbol.Id)

@@ -68,11 +68,6 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
     load: () => import('./neonNights/manifest').then((module) => module.NEON_NIGHTS_SLOT_GAME),
   },
   {
-    id: 'jungle-jackpot', title: 'Jungle Jackpot', shortTitle: 'Jungle Jackpot',
-    playPath: '/slots/jungle-jackpot', demoPath: '/slots/jungle-jackpot/demo', serverGameIds: ['jungle-jackpot-v1'], shellBackdrop: 'theme',
-    load: () => import('./jungleJackpot/manifest').then((module) => module.JUNGLE_JACKPOT_SLOT_GAME),
-  },
-  {
     id: 'ocean-odyssey', title: 'Ocean Odyssey', shortTitle: 'Ocean Odyssey',
     playPath: '/slots/ocean-odyssey', demoPath: '/slots/ocean-odyssey/demo', serverGameIds: ['ocean-odyssey-v1'], shellBackdrop: 'theme',
     load: () => import('./oceanOdyssey/manifest').then((module) => module.OCEAN_ODYSSEY_SLOT_GAME),
@@ -115,7 +110,7 @@ export const SLOT_ROUTE_DEFINITIONS: readonly SlotRouteDefinition[] = [
 ]
 
 export const SECOND_WAVE_SLOT_GAME_IDS = [
-  'neon-nights', 'jungle-jackpot', 'ocean-odyssey', 'samurai-fortune', 'candy-carnival',
+  'neon-nights', 'ocean-odyssey', 'samurai-fortune', 'candy-carnival',
   'phantom-manor', 'nordic-legends', 'desert-treasures', 'robot-revolution', 'dragon-hoard',
 ] as const
 

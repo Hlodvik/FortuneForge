@@ -6,7 +6,6 @@ import { createSlotRulesSet } from '../../../features/slots/config/slotExperienc
 import { selectWinSoundEvent } from '../../../features/slots/presentation/spinPresentation'
 import type { SlotResponsiveImages } from '../../../features/slots/config/symbolSets'
 import { JUNGLE_JACKPOT_DEFINITION } from '../jungleJackpot/definition'
-import { NEON_NIGHTS_DEFINITION } from '../neonNights/definition'
 import { createShowcaseSlotGame } from './createShowcaseSlotGame'
 import { createThemedSymbolSet, type ThemedSymbolSetOptions } from './themedSymbolSet'
 
@@ -55,7 +54,7 @@ describe('opt-in additional ordinary slot symbols', () => {
   it('forwards an explicit server identity, idle grid and custom guide only for the opted-in game', () => {
     const initialReels = [['8', '2', '3', '4']] as const
     const entries = [{ symbol: '8' as const, firstLabel: '3', firstValue: '4×', secondLabel: '5', secondValue: '14×' }]
-    const game = createShowcaseSlotGame({ ...NEON_NIGHTS_DEFINITION,
+    const game = createShowcaseSlotGame({ ...JUNGLE_JACKPOT_DEFINITION,
       serverGameId: 'dragon-hoard-v1', serverSymbolSetId: 'midnight-vault-symbols-v1', initialReels,
       additionalSymbolSpecs: { '8': ['Cash briefcase', '▣', responsive[96]] },
       responsiveImages: { [responsive[96]]: responsive }, symbolGuide: { entries, note: 'Game-specific audited guide.' },

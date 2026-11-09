@@ -1,4 +1,11 @@
 <Solution>
+  <Folder Name="/games/EmptySlots/">
+    <Project Path="EmptySlots/src/FortuneForge.Games.EmptySlots/FortuneForge.Games.EmptySlots.csproj" />
+  </Folder>
+  <Folder Name="/games/NeonNights/">
+    <Project Path="NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj" />
+    <Project Path="NeonNights/tests/FortuneForge.Games.NeonNights.Tests/FortuneForge.Games.NeonNights.Tests.csproj" />
+  </Folder>
   <Folder Name="/games/AndarBahar/">
     <Project Path="AndarBahar/src/FortuneForge.Games.AndarBahar/FortuneForge.Games.AndarBahar.csproj" />
     <Project Path="AndarBahar/server/FortuneForge.Games.AndarBahar.Server/FortuneForge.Games.AndarBahar.Server.csproj" />
@@ -101,6 +108,7 @@
     <Project Path="Keno/samples/FortuneForge.Games.Keno.Web/FortuneForge.Games.Keno.Web.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
     <Project Path="shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
     <Project Path="shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
     <Project Path="shared/FortuneForge.Games.Dice/FortuneForge.Games.Dice.csproj" />

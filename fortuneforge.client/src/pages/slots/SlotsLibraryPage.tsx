@@ -92,7 +92,7 @@ function MachineCard({ game, demoMode = false }: { game: SlotGameCatalogEntry; d
             decoding="async"
             draggable="false"
           />
-        ) : <img src={game.image} alt="" draggable="false" />}
+         ) : game.image ? <img src={game.image} alt="" draggable="false" /> : null}
       </span>
       {statusLabel && <span className="machine-card__status">{statusLabel}</span>}
       <strong>{game.title}</strong>

@@ -59,7 +59,7 @@ describe('Neon arcade presentation contract', () => {
       expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)?.secondValue).toBeUndefined()
     }
     expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'POWER')).toMatchObject({
-      firstLabel: 'Disco floor', firstValue: '10 paid spins',
+      firstLabel: 'Disco Plays', firstValue: '10 paid cascade spins',
     })
     const visibleCopy = [
       experience.features.specialRound?.earnLabel,

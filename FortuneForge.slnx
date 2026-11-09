@@ -1,4 +1,12 @@
 <Solution>
+  <Folder Name="/Games/Empty Slots Game/">
+    <Project Path="games/EmptySlots/src/FortuneForge.Games.EmptySlots/FortuneForge.Games.EmptySlots.csproj" />
+  </Folder>
+  <Folder Name="/Games/Neon Nights/">
+    <Project Path="games/NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj" />
+    <Project Path="games/NeonNights/tests/FortuneForge.Games.NeonNights.Tests/FortuneForge.Games.NeonNights.Tests.csproj" />
+    <Project Path="games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
+  </Folder>
   <Folder Name="/Games/Andar Bahar/">
     <Project Path="games/AndarBahar/src/FortuneForge.Games.AndarBahar/FortuneForge.Games.AndarBahar.csproj" />
     <Project Path="games/AndarBahar/server/FortuneForge.Games.AndarBahar.Server/FortuneForge.Games.AndarBahar.Server.csproj" />

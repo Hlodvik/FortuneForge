@@ -1,0 +1,89 @@
+import { useState } from 'react'
+
+type SpinButtonProps = {
+  disabled?: boolean
+  isSpinning?: boolean
+  isStopRequested?: boolean
+  onSpin: () => void
+  variant?: 'default' | 'pirate-helm' | 'pirate-loop' | 'vault-dial'
+  iconSrc?: string
+}
+
+export function SpinButton({
+  disabled = false,
+  isSpinning = false,
+  isStopRequested = false,
+  onSpin,
+  variant = 'default',
+  iconSrc,
+}: SpinButtonProps) {
+  const isActive = isSpinning || isStopRequested
+  const [spinBurstKey, setSpinBurstKey] = useState(0)
+
+  const handleClick = () => {
+    setSpinBurstKey((current) => current + 1)
+    onSpin()
+  }
+
+  return (
+    <button
+      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'default' ? '' : ` spin-button--${variant}`}${iconSrc ? ' spin-button--custom-icon' : ''}`}
+      type="button"
+      onClick={handleClick}
+      disabled={disabled && !isActive}
+      aria-label={isActive ? 'Stop the spin' : 'Spin the reels'}
+    >
+      <svg
+        key={spinBurstKey}
+        className={`spin-button__icon${spinBurstKey > 0 && !isActive ? ' spin-button__icon--burst' : ''}`}
+        viewBox="0 0 512 512"
+        aria-hidden="true"
+      >
+        {isActive
+          ? <rect className="spin-button__stop-icon" x="168" y="168" width="176" height="176" rx="24" />
+          : variant === 'pirate-helm' ? (
+            <g className="spin-button__helm" fill="none" stroke="currentColor" strokeLinecap="round">
+              {Array.from({ length: 8 }, (_, index) => (
+                <g key={index} transform={`rotate(${index * 45} 256 256)`}>
+                  <line className="spin-button__helm-spoke" x1="256" y1="205" x2="256" y2="91" />
+                  <rect className="spin-button__helm-handle" x="232" y="45" width="48" height="74" rx="22" />
+                </g>
+              ))}
+              <circle className="spin-button__helm-rim" cx="256" cy="256" r="171" />
+              <circle className="spin-button__helm-inner-rim" cx="256" cy="256" r="146" />
+              <circle className="spin-button__helm-hub" cx="256" cy="256" r="58" />
+              <circle className="spin-button__helm-boss" cx="256" cy="256" r="18" />
+            </g>
+          ) : variant === 'pirate-loop' ? (
+            <g className="spin-button__pirate-loop" fill="none" stroke="currentColor" strokeWidth="45" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M393 184a157 157 0 1 0 21 114" />
+              <path d="M393 100v90h-90" />
+            </g>
+          ) : iconSrc ? (
+            <image
+              className="spin-button__custom-image"
+              href={iconSrc}
+              x="56"
+              y="56"
+              width="400"
+              height="400"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          ) : variant === 'vault-dial' ? (
+            <g className="spin-button__vault-arrow" fill="none" stroke="currentColor" strokeWidth="32" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M390 190a154 154 0 1 0 12 108" />
+              <path d="M390 100v90H300" />
+            </g>
+          ) : (
+            <path
+              className="spin-button__arrow-icon"
+              d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8 62.5-62.5 163.8-62.5 226.3 0l17.1 17.2H336c-17.7 0-32 14.3-32 32s14.3 32 32 32h128c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2l-17.6-17.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.6ZM39 289.3c-5 1.5-9.8 4.2-13.7 8.2-4 4-6.7 8.8-8.1 14-.8 2.8-1.2 5.6-1.2 8.5v128c0 17.7 14.3 32 32 32s32-14.3 32-32v-51.1l17.6 17.5c87.5 87.4 229.3 87.4 316.7 0 24.4-24.4 42.1-53.1 52.9-83.7 5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8-62.5 62.5-163.8 62.5-226.3 0l-17.2-17.2H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-3.2 0-6.3.4-9.4 1.3Z"
+            />
+          )}
+      </svg>
+      <strong className="spin-button__label">
+        {isStopRequested ? 'Stopping' : isSpinning ? 'Stop' : 'Spin'}
+      </strong>
+    </button>
+  )
+}

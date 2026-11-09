@@ -9,7 +9,6 @@ import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v
 import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
 import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
-import jungleJackpot from '../../assets/catalogue/slots/jungle-jackpot-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
 import samuraiFortune from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
 import type { GameLoadingEntry } from './types'
@@ -63,11 +62,6 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     id: 'neon-nights', title: 'Neon Nights',
     routes: ['/slots/neon-nights', '/slots/neon-nights/demo'],
     image: neonNights, background: '#070b2d', accent: '#ff4fd8',
-  },
-  {
-    id: 'jungle-jackpot', title: 'Jungle Jackpot',
-    routes: ['/slots/jungle-jackpot', '/slots/jungle-jackpot/demo'],
-    image: jungleJackpot, background: '#071d15', accent: '#f2b94b',
   },
   {
     id: 'ocean-odyssey', title: 'Ocean Odyssey',

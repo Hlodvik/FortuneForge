@@ -3,6 +3,7 @@ using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
+using NeonNightsEngine = FortuneForge.Server.Slots.Games.NeonNights.NeonNightsEngine;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -43,9 +44,13 @@ public sealed partial class SpinService(
         "SEAL_RAND"
     ];
     private readonly ConcurrentDictionary<string, PityState> _pityStates = new(StringComparer.Ordinal);
+    private readonly Games.EmptySlots.EmptySlotsEngine emptySlotsEngine = new(random);
+    private readonly NeonNightsEngine neonNightsEngine = new(
+        definitions, random);
 
     public void ValidateGame(string gameId)
     {
+        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId) return;
         if (string.IsNullOrWhiteSpace(gameId))
         {
             throw new ArgumentException("A game id is required.", nameof(gameId));
@@ -57,6 +62,16 @@ public sealed partial class SpinService(
 
     public void ValidateRequest(string gameId, long wagerPoints, bool useFreeSpin = false)
     {
+        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+        {
+            Games.EmptySlots.EmptySlotsEngine.ValidateWager(wagerPoints);
+            return;
+        }
+        if (gameId == NeonArcadeSlotDefinitions.GameId)
+        {
+            neonNightsEngine.ValidateRequest(wagerPoints, useFreeSpin);
+            return;
+        }
         if (string.IsNullOrWhiteSpace(gameId))
         {
             throw new ArgumentException("A game id is required.", nameof(gameId));
@@ -68,8 +83,6 @@ public sealed partial class SpinService(
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
         if (useFreeSpin && gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
             MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
-        else if (useFreeSpin && NeonArcadeSlotDefinitions.IsModel(game))
-            NeonArcadeSlotDefinitions.ValidateCarryWager(wagerPoints);
         else if (useFreeSpin && ArcaneLightningCollector.IsModel(game))
             ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
         else if (useFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
@@ -86,6 +99,8 @@ public sealed partial class SpinService(
 
     public int GetSpecialBoostCost(string gameId)
     {
+        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+            return Games.EmptySlots.EmptySlotsEngine.CreateGame().SpecialPoints!.ActivationCost;
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         return game.SpecialPoints?.ActivationCost
@@ -96,6 +111,8 @@ public sealed partial class SpinService(
 
     public decimal GetPointValueInCents(string gameId)
     {
+        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+            return Games.EmptySlots.EmptySlotsEngine.CreateGame().Wagering.PointValueInCents;
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
         return game.Wagering.PointValueInCents;

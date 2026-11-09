@@ -41,7 +41,8 @@ public sealed partial class FirestoreAccountStore
                     var remaining = checked((int)ReadLong(state[1], "available"));
                     var wager = remaining > 0 ? ReadNeonCarryWagerPoints(state[0], pointValueInCents) : (long?)null;
                     var mode = remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null;
-                    return new SlotStateResponse(remaining, wager, 0, 0, [], mode);
+                    return new SlotStateResponse(remaining, wager, 0, 0, [], mode)
+                    { NeonDiscoSpinsRemaining = ReadNeonDiscoSpinsRemaining(state[0]) };
                 }
                 var rounds = ReadMidnightBonusRounds(state[0], ReadLong(state[1], "available"), pointValueInCents);
                 var active = rounds.FirstOrDefault();
@@ -100,6 +101,14 @@ public sealed partial class FirestoreAccountStore
         if (!NeonArcadeSlotDefinitions.IsValidCarryWager(wager))
             throw new InvalidOperationException("The saved Neon bonus wager is invalid.");
         return wager;
+    }
+
+    private static int ReadNeonDiscoSpinsRemaining(DocumentSnapshot guard)
+    {
+        var remaining = ReadLong(guard, "neonDiscoSpinsRemaining");
+        if (remaining < 0 || remaining > NeonArcadeSlotDefinitions.DiscoPlaySpins)
+            throw new InvalidOperationException("The saved Neon Disco play balance is invalid.");
+        return checked((int)remaining);
     }
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(

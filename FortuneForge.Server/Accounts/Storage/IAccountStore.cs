@@ -84,6 +84,7 @@ public interface IAccountStore
         long wagerPoints,
         decimal pointValueInCents,
         bool arcadeRows,
+        bool discoBall,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SlotSpinHistoryItem>> GetSlotSpinHistoryAsync(

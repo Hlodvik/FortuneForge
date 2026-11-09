@@ -1,0 +1,11 @@
+.winning-paylines { position: absolute; z-index: 8; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; pointer-events: none; color: #f0cc82; }
+.winning-paylines__glint { fill: currentColor; animation: winning-payline-glint 2.2s linear infinite; }
+.winning-paylines__trail { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.winning-paylines__trail--soft { filter: blur(1.8px); }
+.winning-paylines__bloom { opacity: .32; filter: blur(2.5px); }
+.winning-paylines__core { opacity: .94; filter: blur(.35px); }
+.winning-paylines__amount { fill: #fff5fe; stroke: #090b1bed; stroke-width: 4px; stroke-linejoin: round; paint-order: stroke fill; font: 800 clamp(16px, 1.7vw, 23px)/1 var(--font-ui, sans-serif); font-variant-numeric: tabular-nums; filter: drop-shadow(0 0 5px currentColor); }
+@keyframes winning-payline-glint { 0%, 100% { opacity: 0; } 12%, 82% { opacity: 1; } }
+.winning-paylines[data-reduced-motion='true'] .winning-paylines__glint { display: none; animation: none; }
+.winning-paylines[data-reduced-motion='true'] { animation: none; }
+@media (prefers-reduced-motion: reduce) { .winning-paylines { animation: none; } .winning-paylines__glint { display: none; animation: none; } }

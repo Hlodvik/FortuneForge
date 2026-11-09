@@ -49,13 +49,22 @@ internal static class SlotEvidenceReplayAudit
                 data.GetProperty("isFreeSpin").GetBoolean() != result.IsFreeSpin)
                 findings.Add(new("slot-neon-admission-mismatch", "error",
                     "The recorded Neon spin type differs from the accepted admission."));
+            if (!demo && NeonArcadeSlotDefinitions.SupportsDiscoCascade(engineAudit.EngineVersion) &&
+                (!data.TryGetProperty("isNeonDiscoPlay", out var discoMode) ||
+                 discoMode.ValueKind is not (JsonValueKind.True or JsonValueKind.False) ||
+                 discoMode.GetBoolean() != (result.NeonDiscoCascade is not null)))
+                findings.Add(new("slot-neon-disco-admission-mismatch", "error",
+                    "The recorded Disco cascade differs from the admitted paid play."));
             if (!AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId) ||
                 catalogueGameId != summary.GameId ||
                 (demo ? "demo:" : string.Empty) + result.SpinId.ToString("N") != summary.RoundId ||
                 ((demo || usesOlympusTumble) && summary.TableId != summary.RoundId))
                 findings.Add(new("slot-evidence-identity-mismatch", "error",
                     "The saved spin identity differs from its audit summary."));
-            if (demo)
+            if (engineAudit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion)
+                findings.AddRange(InspectCurrentNeon(root, data, result, response, engineAudit,
+                    settledPayout, summary, demo));
+            else if (demo)
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
             else if (usesOlympusTumble)
                 findings.AddRange(InspectOlympusSettlement(root, data, result, engineAudit, settledPayout, summary));
@@ -79,6 +88,70 @@ internal static class SlotEvidenceReplayAudit
             return [new("slot-evidence-replay-invalid", "error",
                 "The saved slot result or frozen engine rules cannot be parsed for independent outcome review.")];
         }
+    }
+
+    // The host checks receipt identity and money; Neon owns entitlement transitions.
+    private static IReadOnlyList<RoundAuditFinding> InspectCurrentNeon(JsonElement root, JsonElement data,
+        SpinResult engine, SpinResult? response, SlotSpinEngineAudit audit, SpinPayout settled,
+        RoundAuditSummary summary, bool demo)
+    {
+        var findings = new List<RoundAuditFinding>();
+        void Flag(string code, string message) => findings.Add(new(code, "error", message));
+        if (demo)
+        {
+            var request = data.GetProperty("request").Deserialize<DemoSpinRequest>(RoundAuditCapture.Json)
+                ?? throw new JsonException("Missing Neon demo request.");
+            var discoPlay = !request.UseFreeSpin && request.NeonDiscoSpinsRemaining > 0;
+            var progress = NeonPlayPolicy.AdvanceAwardedPlays(
+                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0), request.UseFreeSpin,
+                request.FreeSpinFeatureMode, engine.FreeSpinsAwarded, engine.WagerPoints, engine.NeonArcade);
+            var featureMode = request.UseFreeSpin && NeonPlayPolicy.IsFeatureMode(request.FreeSpinFeatureMode)
+                ? request.FreeSpinFeatureMode : null;
+            var charged = NeonPlayPolicy.ChargesWager(request.UseFreeSpin, request.FreeSpinFeatureMode)
+                ? RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents) : 0;
+            if (data.GetProperty("mode").GetString() != "demo" || data.GetProperty("financial").GetBoolean() ||
+                data.GetProperty("wagerCents").GetInt64() != 0 || data.GetProperty("payoutCents").GetInt64() != 0 ||
+                response!.SlotsCreditsBalance is not null)
+                Flag("slot-demo-financial-classification-mismatch", "The Neon demo receipt is not consistently nonfinancial.");
+            if (request.GameId != engine.GameId || request.WagerPoints != engine.WagerPoints ||
+                request.UseFreeSpin != (request.FreeSpinsRemaining > 0) ||
+                engine.IsFreeSpin != request.UseFreeSpin || request.UseFreeSpin && request.FreeSpinWagerPoints != engine.WagerPoints ||
+                audit.EnergyBalanceBefore != 0 || audit.FreeSpinFeatureMode != featureMode ||
+                !SameEngineOutcome(engine, response!) ||
+                response!.ChargedWagerCents != charged || response.IsFreeSpin != request.UseFreeSpin ||
+                response.FreeSpinsRemaining != progress.Remaining || response.FreeSpinWagerPoints != progress.LockedWagerPoints ||
+                response.FreeSpinFeatureMode != progress.FeatureMode || response.FreeSpinsAwarded != engine.FreeSpinsAwarded ||
+                response.CollectionFreeSpinsAwarded != 0 || response.SealCollections.Count != 0 ||
+                response.EnergyBalance != 0 || response.EnergyMultiplierApplied || response.PayoutMultiplier != 1m ||
+                response.SpecialPointsBalance != 0 ||
+                discoPlay != (engine.NeonDiscoCascade is not null) ||
+                response.NeonDiscoSpinsRemaining != NeonPlayPolicy.NextDiscoSpins(
+                    request.NeonDiscoSpinsRemaining, discoPlay, engine.NeonArcade) ||
+                JsonSerializer.Serialize(response.Payout) != JsonSerializer.Serialize(settled) ||
+                JsonSerializer.Serialize(engine.NeonArcade) != JsonSerializer.Serialize(response.NeonArcade))
+                Flag("slot-neon-demo-progression-mismatch", "The Neon response differs from its captured play and progression rules.");
+            return findings;
+        }
+
+        var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
+        var activeMode = data.GetProperty("activeFreeSpinFeatureMode").GetString();
+        var isDisco = data.GetProperty("isNeonDiscoPlay").GetBoolean();
+        var wagerCents = NeonPlayPolicy.ChargesWager(isFreeSpin, activeMode)
+            ? RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents) : 0;
+        var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, engine.PointValueInCents);
+        if (isFreeSpin != engine.IsFreeSpin || isDisco != (engine.NeonDiscoCascade is not null) ||
+            data.GetProperty("payoutMultiplier").GetDecimal() != 1m ||
+            data.GetProperty("neonDiscoSpinsRemaining").GetInt32() != NeonPlayPolicy.NextDiscoSpins(
+                data.GetProperty("neonDiscoSpinsBefore").GetInt32(), isDisco, engine.NeonArcade) ||
+            root.GetProperty("sourceCollection").GetString() != "slotSpinResults" ||
+            root.GetProperty("sourceDocumentId").GetString() != engine.SpinId.ToString("N") ||
+            root.GetProperty("wagerCents").GetInt64() != wagerCents || root.GetProperty("payoutCents").GetInt64() != payoutCents ||
+            root.GetProperty("netCents").GetInt64() != payoutCents - wagerCents ||
+            summary.Participants is not [{ IsAccountBacked: true } participant] ||
+            string.IsNullOrWhiteSpace(participant.ActorId) || participant.WagerCents != wagerCents ||
+            participant.PayoutCents != payoutCents || participant.NetCents != payoutCents - wagerCents)
+            Flag("slot-neon-financial-mismatch", "The Neon admission or replayed amounts differ from the paid receipt.");
+        return findings;
     }
 
     private static IReadOnlyList<RoundAuditFinding> InspectOlympusSettlement(
@@ -237,7 +310,9 @@ internal static class SlotEvidenceReplayAudit
                 "The saved demo spin is not consistently marked nonfinancial.");
         if (request.GameId != engine.GameId || request.WagerPoints != engine.WagerPoints ||
             request.FreeSpinsRemaining < 0 ||
-            audit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion && request.FreeSpinsRemaining > 1_000 ||
+            !NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(audit.EngineVersion) && request.FreeSpinsRemaining > 1_000 ||
+            request.NeonDiscoSpinsRemaining is < 0 or > NeonArcadeSlotDefinitions.DiscoPlaySpins ||
+            request.GameId != SlotSpecialRoundProfiles.NeonNightsGameId && request.NeonDiscoSpinsRemaining != 0 ||
             request.EnergyBalance is < 0 or > 100 ||
             request.UseFreeSpin && request.FreeSpinsRemaining == 0 ||
             !SameEngineOutcome(engine, response))
@@ -302,7 +377,7 @@ internal static class SlotEvidenceReplayAudit
             ? usesNeonSpecialPlays ? engine.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints : null;
         var nextFeatureMode = freeSpinsRemaining > 0
             ? specialRounds.FeatureMode ??
-                (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion &&
+                (NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(audit.EngineVersion) &&
                     !request.UseFreeSpin && engine.FreeSpinsAwarded > 0
                     ? NeonArcadeBonus.AwardedFeatureMode(engine.NeonArcade) : null) ??
                 (engine.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
@@ -312,7 +387,7 @@ internal static class SlotEvidenceReplayAudit
             !(usesNeonSpecialPlays && NeonArcadeBonus.IsPaidArcadeMode(request.FreeSpinFeatureMode))
                 ? 0 : RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents);
         if (response.IsFreeSpin != request.UseFreeSpin ||
-            (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion &&
+            (NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(audit.EngineVersion) &&
                 response.ChargedWagerCents != expectedChargedWagerCents) ||
             response.FreeSpinsAwarded != checked(engine.FreeSpinsAwarded + collectionFreeSpinsAwarded) ||
             response.CollectionFreeSpinsAwarded != collectionFreeSpinsAwarded ||
@@ -385,6 +460,8 @@ internal static class SlotEvidenceReplayAudit
         (engine.OlympusTumble is null && response.OlympusTumble is null ||
          JsonSerializer.Serialize(engine.OlympusTumble, RoundAuditCapture.Json) ==
              JsonSerializer.Serialize(response.OlympusTumble, RoundAuditCapture.Json)) &&
+        JsonSerializer.Serialize(engine.NeonDiscoCascade, RoundAuditCapture.Json) ==
+            JsonSerializer.Serialize(response.NeonDiscoCascade, RoundAuditCapture.Json) &&
         engine.SealsAwarded.Count == response.SealsAwarded.Count &&
         engine.SealsAwarded.All(pair => response.SealsAwarded.TryGetValue(pair.Key, out var count) && count == pair.Value);
 }

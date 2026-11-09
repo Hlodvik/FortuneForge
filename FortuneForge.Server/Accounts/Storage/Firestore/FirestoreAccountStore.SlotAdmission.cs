@@ -66,6 +66,7 @@ public sealed partial class FirestoreAccountStore
                 var specialPointsAvailable = ReadLong(specialPointsSnapshot, "available");
                 var energySnapshot = snapshots[4];
                 var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+                var neonDiscoSpinsBefore = isNeon ? ReadNeonDiscoSpinsRemaining(guardSnapshot) : 0;
                 var energyBalance = isNeon || gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                     ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
@@ -155,6 +156,7 @@ public sealed partial class FirestoreAccountStore
                     throw new SlotFreeSpinsRequiredException();
                 if (isNeon && !useFreeSpin && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
+                var isNeonDiscoPlay = isNeon && !useFreeSpin && neonDiscoSpinsBefore > 0;
                 if (useSpecialBoost && specialBoostCost <= 0)
                 {
                     throw new ArgumentOutOfRangeException(
@@ -196,8 +198,10 @@ public sealed partial class FirestoreAccountStore
                 var activeFreeSpinFeatureMode = useFreeSpin
                     ? isMidnight ? admittedRound!.FeatureMode : storedFreeSpinFeatureMode : null;
                 var roundsAfter = isMidnight && useFreeSpin ? MidnightVaultBonusRounds.Consume(roundsBefore) : roundsBefore;
-                var chargedWagerCents = !useFreeSpin ||
-                    isNeon && NeonArcadeBonus.IsPaidArcadeMode(activeFreeSpinFeatureMode)
+                var chargedWagerCents = isNeon
+                    ? NeonPlayPolicy.ChargesWager(useFreeSpin, activeFreeSpinFeatureMode)
+                        ? RandMoney.PointsToCents(effectiveWagerPoints, pointValueInCents) : 0
+                    : !useFreeSpin
                     ? RandMoney.PointsToCents(effectiveWagerPoints, pointValueInCents)
                     : 0;
                 if (availableCents < chargedWagerCents)
@@ -288,6 +292,8 @@ public sealed partial class FirestoreAccountStore
                 };
                 if (isMidnight)
                     foreach (var pair in MidnightBonusGuardData(roundsAfter, pointValueInCents)) guardData[pair.Key] = pair.Value;
+                if (isNeon)
+                    guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsBefore;
                 transaction.Set(guardReference, guardData, SetOptions.MergeAll);
                 var admissionData = new Dictionary<string, object>
                 {
@@ -299,6 +305,8 @@ public sealed partial class FirestoreAccountStore
                     ["effectiveWagerPoints"] = effectiveWagerPoints,
                     ["chargedWagerCents"] = chargedWagerCents,
                     ["isFreeSpin"] = useFreeSpin,
+                    ["isNeonDiscoPlay"] = isNeonDiscoPlay,
+                    ["neonDiscoSpinsBefore"] = neonDiscoSpinsBefore,
                     ["specialBoostApplied"] = useSpecialBoost,
                     ["specialBoostCost"] = useSpecialBoost ? specialBoostCost : 0,
                     ["freeGameUseTransactionId"] = useFreeSpin
@@ -343,6 +351,7 @@ public sealed partial class FirestoreAccountStore
                     StartedAtUtc = startedAtUtc,
                     RequestId = requestObservation?.RequestId,
                     PityMissesBefore = pityMissesBefore,
+                    IsNeonDiscoPlay = isNeonDiscoPlay,
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
                     BonusRoundsBeforeAdmission = roundsBefore

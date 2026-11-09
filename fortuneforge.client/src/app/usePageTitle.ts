@@ -4,6 +4,7 @@ import { findSlotRoute } from '../games/slots'
 const pageTitles: Record<string, string> = {
   '/': 'Fortune Forge — Play Your Way',
   '/slots': 'Home — Fortune Forge',
+  '/slots/empty-slots-game': 'Empty Slots Game — Fortune Forge',
   '/demo': 'Choose a Demo — Fortune Forge',
   '/cards': 'Home — Fortune Forge',
   '/games': 'Home — Fortune Forge',

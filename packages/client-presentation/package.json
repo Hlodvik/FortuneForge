@@ -7,12 +7,13 @@
   "exports": {
     ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
     "./money": { "types": "./dist/formatMoney.d.ts", "import": "./dist/formatMoney.js" },
-    "./game-experience": { "types": "./dist/GameExperienceContext.d.ts", "import": "./dist/GameExperienceContext.js" }
+    "./game-experience": { "types": "./dist/GameExperienceContext.d.ts", "import": "./dist/GameExperienceContext.js" },
+    "./slots/paylines": { "types": "./dist/slots/WinningPaylines.d.ts", "import": "./dist/slots/WinningPaylines.js" }
   },
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mjs"
   },
   "peerDependencies": { "react": "^19.0.0" },
   "devDependencies": {

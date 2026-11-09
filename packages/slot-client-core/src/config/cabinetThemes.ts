@@ -1,0 +1,42 @@
+export type SlotCabinetPalette = {
+  shellTop: string
+  shellBottom: string
+  panel: string
+  trim: string
+  trimBright: string
+  accent: string
+  glow: string
+  text: string
+}
+
+export type SlotCelebrationEffect = string
+
+export type SlotTopbarTheme = {
+  background: string
+  borderColor: string
+  shadowColor: string
+  accentColor?: string
+}
+
+export type SlotCabinetTheme = {
+  id: string
+  chrome: 'ornate' | 'simple'
+  accessibleName: string
+  eyebrow: string
+  title: string
+  titleArtwork?: { src: string; width: number; height: number }
+  paylineTrace?: { color: string; glowColor: string }
+  subtitle: string
+  celebrationEffect?: SlotCelebrationEffect
+  emblemImage: string
+  accentImage?: string
+  spinIconImage?: string
+  controlLayout?: 'integrated' | 'sidecar'
+  backdropImage?: string
+  visualsBackdropImage?: string
+  pageBackdropImage?: string
+  /** Optional CSS image-set; lets decorative backdrops share one density selection. */
+  backdropImageSet?: string
+  topbar?: SlotTopbarTheme
+  palette: SlotCabinetPalette
+}

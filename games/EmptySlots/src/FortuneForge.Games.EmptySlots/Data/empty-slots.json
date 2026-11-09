@@ -1,0 +1,745 @@
+{
+  "Game": {
+    "Id": "empty-slots-v1",
+    "Layout": {
+      "ReelCount": 5,
+      "VisibleRows": 4,
+      "PaylineCount": 23
+    },
+    "Symbols": {
+      "SymbolSetId": "empty-slots-symbols-v1",
+      "WildSymbolId": "S07",
+      "NativeWildMatchLengths": [
+        3,
+        5
+      ],
+      "WildSubstitutionMatchLengths": [
+        5
+      ]
+    },
+    "Matching": {
+      "MinimumRunLength": 3,
+      "AllowMultipleRunsPerPayline": true
+    },
+    "Math": {
+      "ReelSetId": "empty-slots-reels-v1",
+      "PaytableId": "empty-slots-paytable-v1",
+      "PaylinePayoutSteps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "FiveMatchPityMissLimit": 12,
+      "Targets": {
+        "Rtp": 0.9,
+        "HitRate": 0.32,
+        "Volatility": null
+      },
+      "PayoutMultiplier": 0.866
+    },
+    "Wagering": {
+      "PointValueInCents": 25,
+      "MinimumWagerPoints": 2,
+      "MaximumWagerPoints": 2000,
+      "WagerIncrementPoints": 2,
+      "AllowedWagerPoints": []
+    },
+    "FreeGames": {
+      "SymbolId": "S08",
+      "RequiredSymbols": 3,
+      "AwardedSpins": 6,
+      "VisibleFrequencyDivisor": 2
+    },
+    "SpecialPoints": {
+      "SymbolId": "S09",
+      "ThreeMatchPoints": 1,
+      "FiveMatchPoints": 2,
+      "ActivationCost": 8,
+      "CommonSymbolIds": [
+        "S01",
+        "S02",
+        "S03"
+      ]
+    },
+    "Energy": null,
+    "Paylines": [
+      [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      [
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      [
+        3,
+        3,
+        3,
+        3,
+        3
+      ],
+      [
+        0,
+        1,
+        2,
+        1,
+        0
+      ],
+      [
+        1,
+        2,
+        3,
+        2,
+        1
+      ],
+      [
+        3,
+        2,
+        1,
+        2,
+        3
+      ],
+      [
+        2,
+        1,
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        1,
+        1,
+        1,
+        0
+      ],
+      [
+        1,
+        2,
+        2,
+        2,
+        1
+      ],
+      [
+        2,
+        3,
+        3,
+        3,
+        2
+      ],
+      [
+        3,
+        2,
+        2,
+        2,
+        3
+      ],
+      [
+        2,
+        1,
+        1,
+        1,
+        2
+      ],
+      [
+        0,
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        3,
+        3,
+        2,
+        1,
+        0
+      ],
+      [
+        0,
+        1,
+        2,
+        3,
+        3
+      ],
+      [
+        3,
+        2,
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0,
+        1,
+        0
+      ],
+      [
+        1,
+        2,
+        1,
+        2,
+        1
+      ],
+      [
+        2,
+        3,
+        2,
+        3,
+        2
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        1
+      ],
+      [
+        2,
+        1,
+        2,
+        1,
+        2
+      ],
+      [
+        3,
+        2,
+        3,
+        2,
+        3
+      ]
+    ]
+  },
+  "SymbolSet": {
+    "Id": "empty-slots-symbols-v1",
+    "Symbols": [
+      {
+        "Id": "S01"
+      },
+      {
+        "Id": "S02"
+      },
+      {
+        "Id": "S03"
+      },
+      {
+        "Id": "S04"
+      },
+      {
+        "Id": "S05"
+      },
+      {
+        "Id": "S06"
+      },
+      {
+        "Id": "S07"
+      },
+      {
+        "Id": "S08"
+      },
+      {
+        "Id": "S09"
+      },
+      {
+        "Id": "S10"
+      },
+      {
+        "Id": "S11"
+      },
+      {
+        "Id": "S12"
+      },
+      {
+        "Id": "S13"
+      },
+      {
+        "Id": "S14"
+      },
+      {
+        "Id": "S15"
+      },
+      {
+        "Id": "S16"
+      },
+      {
+        "Id": "S17"
+      },
+      {
+        "Id": "S18"
+      },
+      {
+        "Id": "S19"
+      },
+      {
+        "Id": "S20"
+      },
+      {
+        "Id": "S21"
+      },
+      {
+        "Id": "S22"
+      },
+      {
+        "Id": "S23"
+      }
+    ]
+  },
+  "ReelSet": {
+    "Id": "empty-slots-reels-v1",
+    "SymbolSetId": "empty-slots-symbols-v1",
+    "Reels": [
+      [
+        "S05",
+        "S03",
+        "S03",
+        "S02",
+        "S06",
+        "S07",
+        "S03",
+        "S09",
+        "S08",
+        "S03",
+        "S01",
+        "S05",
+        "S04",
+        "S01",
+        "S02",
+        "S02",
+        "S03",
+        "S02",
+        "S09",
+        "S03",
+        "S01",
+        "S02",
+        "S03",
+        "S05",
+        "S03",
+        "S02",
+        "S04",
+        "S02",
+        "S02",
+        "S01",
+        "S02",
+        "S09",
+        "S08",
+        "S05",
+        "S03",
+        "S01",
+        "S05",
+        "S01",
+        "S01",
+        "S09",
+        "S02",
+        "S04",
+        "S02",
+        "S01",
+        "S04",
+        "S04",
+        "S06",
+        "S01",
+        "S06",
+        "S02",
+        "S02",
+        "S03",
+        "S09",
+        "S08",
+        "S09",
+        "S09",
+        "S10",
+        "S01",
+        "S09",
+        "S02",
+        "S05",
+        "S01",
+        "S04",
+        "S02"
+      ],
+      [
+        "S04",
+        "S06",
+        "S09",
+        "S03",
+        "S01",
+        "S02",
+        "S02",
+        "S05",
+        "S09",
+        "S08",
+        "S02",
+        "S01",
+        "S02",
+        "S01",
+        "S01",
+        "S02",
+        "S03",
+        "S05",
+        "S01",
+        "S02",
+        "S03",
+        "S02",
+        "S02",
+        "S07",
+        "S09",
+        "S04",
+        "S03",
+        "S06",
+        "S05",
+        "S02",
+        "S02",
+        "S02",
+        "S05",
+        "S08",
+        "S05",
+        "S04",
+        "S02",
+        "S03",
+        "S09",
+        "S03",
+        "S06",
+        "S04",
+        "S01",
+        "S09",
+        "S09",
+        "S03",
+        "S03",
+        "S04",
+        "S01",
+        "S09",
+        "S01",
+        "S03",
+        "S01",
+        "S09",
+        "S03",
+        "S10",
+        "S05",
+        "S04",
+        "S08",
+        "S02",
+        "S01",
+        "S01",
+        "S02",
+        "S02"
+      ],
+      [
+        "S03",
+        "S06",
+        "S02",
+        "S01",
+        "S02",
+        "S04",
+        "S08",
+        "S09",
+        "S03",
+        "S03",
+        "S04",
+        "S01",
+        "S02",
+        "S01",
+        "S03",
+        "S01",
+        "S05",
+        "S01",
+        "S07",
+        "S09",
+        "S01",
+        "S04",
+        "S06",
+        "S02",
+        "S09",
+        "S02",
+        "S01",
+        "S03",
+        "S02",
+        "S02",
+        "S08",
+        "S09",
+        "S05",
+        "S05",
+        "S01",
+        "S02",
+        "S05",
+        "S02",
+        "S01",
+        "S04",
+        "S09",
+        "S04",
+        "S05",
+        "S02",
+        "S02",
+        "S01",
+        "S03",
+        "S06",
+        "S09",
+        "S09",
+        "S03",
+        "S02",
+        "S05",
+        "S03",
+        "S02",
+        "S03",
+        "S10",
+        "S08",
+        "S01",
+        "S03",
+        "S02",
+        "S04",
+        "S09",
+        "S02"
+      ],
+      [
+        "S06",
+        "S04",
+        "S03",
+        "S01",
+        "S01",
+        "S02",
+        "S02",
+        "S03",
+        "S03",
+        "S05",
+        "S03",
+        "S04",
+        "S05",
+        "S03",
+        "S08",
+        "S03",
+        "S05",
+        "S01",
+        "S09",
+        "S07",
+        "S09",
+        "S06",
+        "S01",
+        "S09",
+        "S05",
+        "S05",
+        "S01",
+        "S02",
+        "S01",
+        "S06",
+        "S02",
+        "S02",
+        "S09",
+        "S05",
+        "S02",
+        "S08",
+        "S09",
+        "S04",
+        "S02",
+        "S02",
+        "S09",
+        "S01",
+        "S03",
+        "S04",
+        "S02",
+        "S02",
+        "S04",
+        "S01",
+        "S09",
+        "S01",
+        "S02",
+        "S01",
+        "S02",
+        "S04",
+        "S03",
+        "S08",
+        "S09",
+        "S01",
+        "S10",
+        "S02",
+        "S03",
+        "S02",
+        "S03",
+        "S02"
+      ],
+      [
+        "S01",
+        "S04",
+        "S03",
+        "S02",
+        "S02",
+        "S04",
+        "S06",
+        "S08",
+        "S01",
+        "S09",
+        "S03",
+        "S07",
+        "S05",
+        "S05",
+        "S01",
+        "S04",
+        "S01",
+        "S01",
+        "S03",
+        "S08",
+        "S01",
+        "S03",
+        "S02",
+        "S03",
+        "S02",
+        "S04",
+        "S04",
+        "S09",
+        "S02",
+        "S03",
+        "S01",
+        "S06",
+        "S09",
+        "S02",
+        "S02",
+        "S02",
+        "S04",
+        "S02",
+        "S03",
+        "S09",
+        "S02",
+        "S02",
+        "S01",
+        "S01",
+        "S03",
+        "S02",
+        "S05",
+        "S02",
+        "S05",
+        "S01",
+        "S05",
+        "S10",
+        "S09",
+        "S06",
+        "S09",
+        "S08",
+        "S01",
+        "S03",
+        "S09",
+        "S03",
+        "S05",
+        "S09",
+        "S02",
+        "S02"
+      ]
+    ]
+  },
+  "Paytable": {
+    "Id": "empty-slots-paytable-v1",
+    "SymbolSetId": "empty-slots-symbols-v1",
+    "Rules": [
+      {
+        "SymbolId": "S01",
+        "MatchLength": 3,
+        "Multiplier": 1
+      },
+      {
+        "SymbolId": "S01",
+        "MatchLength": 5,
+        "Multiplier": 4
+      },
+      {
+        "SymbolId": "S02",
+        "MatchLength": 3,
+        "Multiplier": 1
+      },
+      {
+        "SymbolId": "S02",
+        "MatchLength": 5,
+        "Multiplier": 2
+      },
+      {
+        "SymbolId": "S03",
+        "MatchLength": 3,
+        "Multiplier": 1
+      },
+      {
+        "SymbolId": "S03",
+        "MatchLength": 5,
+        "Multiplier": 7
+      },
+      {
+        "SymbolId": "S04",
+        "MatchLength": 3,
+        "Multiplier": 2
+      },
+      {
+        "SymbolId": "S04",
+        "MatchLength": 5,
+        "Multiplier": 6
+      },
+      {
+        "SymbolId": "S05",
+        "MatchLength": 3,
+        "Multiplier": 2
+      },
+      {
+        "SymbolId": "S05",
+        "MatchLength": 5,
+        "Multiplier": 8
+      },
+      {
+        "SymbolId": "S06",
+        "MatchLength": 3,
+        "Multiplier": 3
+      },
+      {
+        "SymbolId": "S06",
+        "MatchLength": 5,
+        "Multiplier": 11
+      },
+      {
+        "SymbolId": "S07",
+        "MatchLength": 3,
+        "Multiplier": 5
+      },
+      {
+        "SymbolId": "S07",
+        "MatchLength": 5,
+        "Multiplier": 18
+      },
+      {
+        "SymbolId": "S09",
+        "MatchLength": 3,
+        "Multiplier": 2
+      },
+      {
+        "SymbolId": "S09",
+        "MatchLength": 5,
+        "Multiplier": 4
+      }
+    ]
+  }
+}

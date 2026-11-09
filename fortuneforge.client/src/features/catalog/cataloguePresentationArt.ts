@@ -30,7 +30,6 @@ import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v
 import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
 import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
-import jungleJackpot from '../../assets/catalogue/slots/jungle-jackpot-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
 import samuraiFortune from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
 import candyCarnival from '../../assets/catalogue/slots/candy-carnival-title-v2.webp'
@@ -83,7 +82,6 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/cosmic-fortune', artwork(cosmicFortune)],
   ['/slots/gold-foundry', artwork(goldFoundry)],
   ['/slots/neon-nights', artwork(neonNights)],
-  ['/slots/jungle-jackpot', artwork(jungleJackpot)],
   ['/slots/ocean-odyssey', artwork(oceanOdyssey)],
   ['/slots/samurai-fortune', artwork(samuraiFortune)],
   ['/slots/candy-carnival', artwork(candyCarnival)],

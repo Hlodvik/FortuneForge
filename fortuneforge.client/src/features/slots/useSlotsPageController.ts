@@ -38,7 +38,6 @@ import { getSlotKeyboardAction } from './slotKeyboard'
 import {
   requestDemoAvailability,
   requestDemoSpin,
-  requestNeonAdminTrigger,
   requestSlotState,
   requestSpin,
   SpinRequestError,
@@ -246,33 +245,6 @@ export function useSlotsPageController({
   const [winningPaylineCount, setWinningPaylineCount] = useState(0)
   const [winningPaylines, setWinningPaylines] = useState<PaylinePayout[]>([])
   const [bonusPositions, setBonusPositions] = useState<GridPosition[]>([])
-  const [neonSpecialIntro, setNeonSpecialIntro] = useState<{
-    symbol: '6' | 'POWER' | 'SEAL_RAND'
-    position: GridPosition
-  } | null>(null)
-  const [isNeonArcadeExpanding, setIsNeonArcadeExpanding] = useState(false)
-  const [isNeonAdminTriggering, setIsNeonAdminTriggering] = useState(false)
-  const neonArcadeExpansionTimerRef = useRef<number | null>(null)
-  const neonDiscoStorageKey = `neon-nights-disco:${demoMode ? 'demo' : account?.userId ?? 'guest'}`
-  const [neonDiscoSpinsRemaining, setNeonDiscoSpinsRemaining] = useState(() => {
-    if (gameId !== 'neon-nights-v1') return 0
-    try {
-      const saved = Number(window.sessionStorage.getItem(neonDiscoStorageKey))
-      return Number.isInteger(saved) && saved > 0 && saved <= 10 ? saved : 0
-    } catch {
-      return 0
-    }
-  })
-  useEffect(() => {
-    if (gameId !== 'neon-nights-v1') return
-    try {
-      if (neonDiscoSpinsRemaining > 0) {
-        window.sessionStorage.setItem(neonDiscoStorageKey, String(neonDiscoSpinsRemaining))
-      } else {
-        window.sessionStorage.removeItem(neonDiscoStorageKey)
-      }
-    } catch { /* Storage may be unavailable; the active page still keeps its state. */ }
-  }, [gameId, neonDiscoSpinsRemaining, neonDiscoStorageKey])
   const [balance, setBalance] = useState(
     demoMode ? demoStartingBalance : account?.balances.slotsCredits ?? 0,
   )
@@ -289,50 +261,10 @@ export function useSlotsPageController({
   const [midnightBonusRound, setMidnightBonusRound] = useState<MidnightVaultBonusRound | null>(null)
   const [midnightQueuedRounds, setMidnightQueuedRounds] = useState(0)
   const [hasSpecialRoundStarted, setHasSpecialRoundStarted] = useState(false)
-  const neonFirstSpecialSpinPendingRef = useRef(false)
-  const finishNeonSpecialIntro = useCallback((symbol: '6' | 'POWER' | 'SEAL_RAND') => {
-    setNeonSpecialIntro(null)
-    if (symbol === 'POWER') return
-    if (symbol === 'SEAL_RAND') {
-      setIsNeonArcadeExpanding(true)
-      setDisplayedReels((current) => current.map((reel, reelIndex) => Array.from(
-        { length: 7 },
-        (_, row) => reel[row] ?? initialReels[reelIndex]?.[(row + 1) % 4] ?? '2',
-      )))
-      if (soundSet.events.arcadeExpansion) playCue(soundSet.events.arcadeExpansion)
-      if (neonArcadeExpansionTimerRef.current !== null) {
-        window.clearTimeout(neonArcadeExpansionTimerRef.current)
-      }
-      neonArcadeExpansionTimerRef.current = window.setTimeout(() => {
-        neonArcadeExpansionTimerRef.current = null
-        neonFirstSpecialSpinPendingRef.current = true
-        setIsNeonArcadeExpanding(false)
-        setHasSpecialRoundStarted(true)
-      }, 3500)
-      return
-    }
-    neonFirstSpecialSpinPendingRef.current = true
-    setHasSpecialRoundStarted(true)
-  }, [initialReels, playCue, soundSet.events.arcadeExpansion])
   const [isSpecialSpinInProgress, setIsSpecialSpinInProgress] = useState(false)
   const [isSpecialSpinDelayActive, setIsSpecialSpinDelayActive] = useState(false)
   const [heldCompletedCollectionId, setHeldCompletedCollectionId] = useState<string | null>(null)
   const [specialRoundWinnings, setSpecialRoundWinnings] = useState(0)
-  const [neonRoundSummary, setNeonRoundSummary] = useState<{
-    totalRand: number
-    mode: string | null
-  } | null>(null)
-  const dismissNeonRoundSummary = useCallback(() => {
-    setNeonRoundSummary(null)
-    setHasSpecialRoundStarted(false)
-    setSpecialRoundWinnings(0)
-    setDisplayedReels((current) => current.map((reel) => reel.slice(0, 4)))
-    setHasCompletedSpin(false)
-    setWinningPaylines([])
-    setWinningPaylineCount(0)
-    setBonusPositions([])
-    setLastSpinOutcome(null)
-  }, [])
   const [rainbowBonusSummary, setRainbowBonusSummary] = useState<{ totalRand: number | null } | null>(null)
   const [specialRoundGemCount, setSpecialRoundGemCount] = useState(0)
   const [isFreeSpinBadgePopping, setIsFreeSpinBadgePopping] = useState(false)
@@ -355,10 +287,8 @@ export function useSlotsPageController({
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isReloadPromptOpen, setIsReloadPromptOpen] = useState(false)
-  const audioUnlockGameRef = useRef<string | null>(null)
   const playedSuiteResultRef = useRef<string | null>(null)
   const playedSuiteCollectionsRef = useRef<{ spinId: string; tracks: Set<string> } | null>(null)
-  const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
   const hasShownGodsTumbleShowcaseRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
@@ -389,19 +319,9 @@ export function useSlotsPageController({
   const selectedWagerRand = slotPointsToRand(selectedWagerPoints, pointValueInCents)
   const expectedServerSymbolSetId = symbolSet.serverSymbolSetId ?? symbolSet.id
   const useFreeGameForNextSpin = freeSpinsRemaining > 0
-  const isNeonArcadePaidPlay = gameId === 'neon-nights-v1' &&
-    useFreeGameForNextSpin && freeSpinFeatureMode === 'arcade-rows'
-  const lockedWagerRand = slotPointsToRand(
-    freeSpinWagerPoints ?? selectedWagerPoints,
-    pointValueInCents,
-  )
-  const isNeonDiscoPlayActive = gameId === 'neon-nights-v1' && neonDiscoSpinsRemaining > 0 &&
-    !useFreeGameForNextSpin && !isSpecialSpinInProgress
   const isSpecialGameActive = featureSet.specialRound !== undefined &&
     hasSpecialRoundStarted &&
-    (useFreeGameForNextSpin || isSpecialSpinInProgress || neonRoundSummary !== null)
-  const suppressAmbience = neonSpecialIntro !== null ||
-    (gameId === 'neon-nights-v1' && useFreeGameForNextSpin && !isSpecialGameActive)
+    (useFreeGameForNextSpin || isSpecialSpinInProgress)
   const closeSettings = useCallback(() => setIsSettingsOpen(false), [])
   const dismissCollectionAwardPresentation = useCallback(
     () => setCollectionAwardPresentation(null),
@@ -504,14 +424,12 @@ export function useSlotsPageController({
       isReloadPromptOpen ||
       collectionAwardPresentation !== null ||
       rainbowBonusSummary !== null ||
-      neonSpecialIntro !== null ||
       isSpecialGameActive
     ) {
       return undefined
     }
 
-    if ((!useFreeGameForNextSpin || isNeonArcadePaidPlay) &&
-      balance < (isNeonArcadePaidPlay ? lockedWagerRand : selectedWagerRand)) {
+    if (!useFreeGameForNextSpin && balance < selectedWagerRand) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -529,7 +447,6 @@ export function useSlotsPageController({
     isAutoSpinCoolingDown,
     collectionAwardPresentation,
     rainbowBonusSummary,
-    neonSpecialIntro,
     isHelpOpen,
     isSymbolGuideOpen,
     isSpinServiceDisabled,
@@ -540,8 +457,6 @@ export function useSlotsPageController({
     mascotPhase,
     useFreeGameForNextSpin,
     isSpecialGameActive,
-    isNeonArcadePaidPlay,
-    lockedWagerRand,
   ])
 
   useEffect(() => {
@@ -554,7 +469,6 @@ export function useSlotsPageController({
       !isSymbolGuideOpen &&
       !isSettingsOpen &&
       !isReloadPromptOpen &&
-      neonSpecialIntro === null &&
       collectionAwardPresentation === null
 
     if (!canQueueSpecialSpin) {
@@ -570,13 +484,12 @@ export function useSlotsPageController({
       return undefined
     }
 
-    const startImmediately = neonFirstSpecialSpinPendingRef.current
-    setIsSpecialSpinDelayActive(!startImmediately)
+    setIsSpecialSpinDelayActive(true)
     const timer = window.setTimeout(() => {
       specialSpinDelayTimerRef.current = null
       setIsSpecialSpinDelayActive(false)
       void handleSpinRef.current()
-    }, startImmediately ? 0 : specialSpinDelayMs)
+    }, specialSpinDelayMs)
     specialSpinDelayTimerRef.current = timer
 
     return () => {
@@ -595,7 +508,6 @@ export function useSlotsPageController({
     isSpecialGameActive,
     isSpinning,
     mascotPhase,
-    neonSpecialIntro,
   ])
 
   useEffect(() => {
@@ -624,16 +536,11 @@ export function useSlotsPageController({
     // player has muted effects must not consume the only unlock attempt.
     const specialAmbienceCue = soundSet.events.specialAmbience
     const playSpecialAmbience = specialAmbienceCue !== undefined &&
-      (useFreeGameForNextSpin || isSpecialSpinInProgress || rainbowBonusSummary !== null)
+      (useFreeGameForNextSpin || isSpecialSpinInProgress ||
+        rainbowBonusSummary !== null)
     const activeAmbienceCue = playSpecialAmbience && specialAmbienceCue !== undefined
       ? specialAmbienceCue
       : soundSet.events.ambience
-    if (suppressAmbience) {
-      stopLoop(soundSet.events.ambience)
-      if (soundSet.events.autoSpinAmbience !== undefined) stopLoop(soundSet.events.autoSpinAmbience)
-      if (specialAmbienceCue !== undefined) stopLoop(specialAmbienceCue)
-      return
-    }
     if (playSpecialAmbience) {
       stopLoop(soundSet.events.ambience)
       if (soundSet.events.autoSpinAmbience !== undefined) {
@@ -642,22 +549,29 @@ export function useSlotsPageController({
     } else if (specialAmbienceCue !== undefined) {
       stopLoop(specialAmbienceCue)
     }
-    if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(activeAmbienceCue)
+    startLoop(activeAmbienceCue)
     const unlockAudio = (event: Event) => {
-      if (requiresAudioGesture && !event.isTrusted) return
-      audioUnlockGameRef.current = gameId
+      if (!event.isTrusted) return
       startLoop(activeAmbienceCue)
+    }
+    const retryVisibleAudio = () => {
+      if (document.visibilityState === 'visible') startLoop(activeAmbienceCue)
     }
     window.addEventListener('pointerdown', unlockAudio)
     window.addEventListener('keydown', unlockAudio)
+    window.addEventListener('focus', retryVisibleAudio)
+    window.addEventListener('pageshow', retryVisibleAudio)
+    document.addEventListener('visibilitychange', retryVisibleAudio)
     return () => {
       window.removeEventListener('pointerdown', unlockAudio)
       window.removeEventListener('keydown', unlockAudio)
+      window.removeEventListener('focus', retryVisibleAudio)
+      window.removeEventListener('pageshow', retryVisibleAudio)
+      document.removeEventListener('visibilitychange', retryVisibleAudio)
     }
   }, [
     audioPreferences.mode,
     gameId,
-    requiresAudioGesture,
     isSpecialSpinInProgress,
     rainbowBonusSummary,
     soundSet.events.ambience,
@@ -665,7 +579,6 @@ export function useSlotsPageController({
     soundSet.events.specialAmbience,
     startLoop,
     stopLoop,
-    suppressAmbience,
     useFreeGameForNextSpin,
   ])
 
@@ -674,7 +587,7 @@ export function useSlotsPageController({
       return
     }
 
-    if (!soundSet.events.themeSuite && hasSpecialRoundStarted && (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) {
+    if (!soundSet.events.themeSuite && hasSpecialRoundStarted) {
       startLoop(soundSet.events.ambience)
     }
     setHeldCompletedCollectionId(null)
@@ -685,7 +598,6 @@ export function useSlotsPageController({
     }
   }, [
     gameId,
-    requiresAudioGesture,
     hasSpecialRoundStarted,
     isSpecialGameActive,
     soundSet.events.ambience,
@@ -727,7 +639,6 @@ export function useSlotsPageController({
     setFreeSpinsRemaining(state.freeSpinsRemaining)
     setFreeSpinWagerPoints(state.freeSpinWagerPoints)
     setFreeSpinFeatureMode(state.freeSpinFeatureMode)
-    if (gameId === 'neon-nights-v1') setHasSpecialRoundStarted(state.freeSpinsRemaining > 0)
     setMidnightBonusRound(state.bonusRound ?? null)
     setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
     setEnergyBalance(state.energyBalance)
@@ -748,14 +659,6 @@ export function useSlotsPageController({
     slotStateRevisionGuardRef.current.advance()
     const requestedRevision = slotStateRevisionGuardRef.current.capture()
     setFreeSpinsRemaining(0)
-    setNeonSpecialIntro(null)
-    setNeonRoundSummary(null)
-    setIsNeonArcadeExpanding(false)
-    if (neonArcadeExpansionTimerRef.current !== null) {
-      window.clearTimeout(neonArcadeExpansionTimerRef.current)
-      neonArcadeExpansionTimerRef.current = null
-    }
-    neonFirstSpecialSpinPendingRef.current = false
     setMidnightBonusState(null)
     setMidnightBonusRound(null)
     setMidnightQueuedRounds(0)
@@ -1175,6 +1078,7 @@ export function useSlotsPageController({
     durationMs: number,
     signal: AbortSignal,
     onValue: (value: number) => void,
+    precision = 1,
   ): Promise<boolean> {
     if (signal.aborted || durationMs <= 0 || fromValue === toValue) {
       onValue(toValue)
@@ -1205,7 +1109,7 @@ export function useSlotsPageController({
         }
         const progress = Math.min(1, (timestamp - startTime) / durationMs)
         const easedProgress = 1 - Math.pow(1 - progress, 3)
-        onValue(Math.round(fromValue + valueDelta * easedProgress))
+        onValue(Math.round((fromValue + valueDelta * easedProgress) * precision) / precision)
 
         if (progress < 1) {
           frameId = window.requestAnimationFrame(step)
@@ -1313,10 +1217,11 @@ export function useSlotsPageController({
     })
 
     if (isBigWin) {
+      const countDuration = initialHoldDuration
       const completed = await animateNumberValue(
         0,
         awardedCredits,
-        initialHoldDuration,
+        countDuration,
         signal,
         (displayAmount) => {
           if (!isCurrentPresentation(signal)) {
@@ -1328,8 +1233,14 @@ export function useSlotsPageController({
               : currentAward,
           )
         },
+        1,
       )
       if (!completed) {
+        settleAward()
+        return
+      }
+      if (countDuration < initialHoldDuration &&
+          !await waitForPresentation(initialHoldDuration - countDuration, signal)) {
         settleAward()
         return
       }
@@ -1520,7 +1431,7 @@ export function useSlotsPageController({
       ) !== null
       const action = getSlotKeyboardAction(event.key, {
         hasOpenDialog: isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
-          rainbowBonusSummary !== null || neonSpecialIntro !== null || neonRoundSummary !== null,
+          rainbowBonusSummary !== null,
         isEditableTarget,
         modified: event.altKey || event.ctrlKey || event.metaKey,
         repeated: event.repeat,
@@ -1547,9 +1458,7 @@ export function useSlotsPageController({
   })
 
   async function handleSpin() {
-    if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen || neonSpecialIntro !== null ||
-        neonRoundSummary !== null ||
-        isNeonArcadeExpanding ||
+    if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen ||
         spinInProgressRef.current || isSpinning || collectionAwardPresentation !== null || rainbowBonusSummaryPendingRef.current) {
       return
     }
@@ -1559,8 +1468,7 @@ export function useSlotsPageController({
       return
     }
 
-    if ((!useFreeGameForNextSpin || isNeonArcadePaidPlay) &&
-        balance < (isNeonArcadePaidPlay ? lockedWagerRand : selectedWagerRand)) {
+    if (!useFreeGameForNextSpin && balance < selectedWagerRand) {
       setIsAutoSpinning(false)
       setSpinError(null)
       setIsReloadPromptOpen(true)
@@ -1584,11 +1492,10 @@ export function useSlotsPageController({
     const wagerForSpin = expectedFreeSpin
       ? freeSpinWagerPoints ?? selectedWagerPoints
       : selectedWagerPoints
-    const optimisticCharge = expectedFreeSpin && !isNeonArcadePaidPlay
+    const optimisticCharge = expectedFreeSpin
       ? 0
       : slotPointsToRand(wagerForSpin, pointValueInCents)
     const visibleBalanceBeforeAward = balance - optimisticCharge
-    neonFirstSpecialSpinPendingRef.current = false
     spinInProgressRef.current = true
     stopSpinRequestedRef.current = false
     presentationAbortControllerRef.current?.abort()
@@ -1632,7 +1539,7 @@ export function useSlotsPageController({
       if (isFastAutoSpin && autoSpinAmbienceCue !== undefined) {
         stopLoop(soundSet.events.ambience)
       }
-      if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(ambienceCue)
+      startLoop(ambienceCue)
     }
     startLoop(spinLoopCue)
     setIsSpinning(true)
@@ -1647,7 +1554,6 @@ export function useSlotsPageController({
       expectedFreeSpin,
       freeSpinFeatureMode,
       regularRowCount,
-      gameId,
     )
     const reelsBeforeSpin = spinInitialReels.map((reel, reelIndex) =>
       normalizeReelRows(displayedReels[reelIndex] ?? reel, reel, expectedRowCount),
@@ -1716,11 +1622,7 @@ export function useSlotsPageController({
     let mascotOutcome: MascotOutcome = 'neutral'
     let shouldStartAutoSpinCooldown = false
     let completedRainbowBonus: { totalRand: number | null } | null = null
-    let completedNeonRound: { totalRand: number; mode: string | null } | null = null
     let confirmedPaidTumbleBalance: number | null = null
-    const expectedDiscoSpin = isNeonDiscoPlayActive
-    let completedDiscoSpin = false
-    let discoTriggered = false
     const showGodsTumbleShowcase = import.meta.env.DEV && demoMode && expectsGodsTumble && !hasShownGodsTumbleShowcaseRef.current &&
       new URLSearchParams(window.location.search).get('showcase') === '1'
 
@@ -1766,7 +1668,6 @@ export function useSlotsPageController({
           `The spin used a ${result.pointValueInCents}-cent point instead of ${pointValueInCents} cents.`,
         )
       }
-      completedDiscoSpin = expectedDiscoSpin
       const tumble = expectsGodsTumble ? result.olympusTumble : undefined
       if (expectsGodsTumble && !tumble) {
         throw new Error('The spin server did not return an Olympus tumble result.')
@@ -1831,22 +1732,12 @@ export function useSlotsPageController({
       // Read the authoritative balance for presentation only. Some demo
       // collection awards are omitted from the separate award field.
       const presentedFreeSpinsAwarded = getPresentedFreeSpinsAwarded(result, freeSpinsRemaining, expectedFreeSpin)
-      const discoActivator = gameId === 'neon-nights-v1' && result.neonArcade?.featureGamesEnabled
-        ? result.neonArcade.activators.find(({ symbolId }) => symbolId === 'POWER')
-        : undefined
-      const discoPosition = discoActivator?.positions.find(({ reel, row }) => result.reels[reel]?.[row] === 'POWER')
-      discoTriggered = discoPosition !== undefined
-      const ordinaryOutcome = describeSpinOutcome({
+      const spinOutcome: SlotSpinOutcome = describeSpinOutcome({
         awardRand: awardedRand,
         wagerRand,
         freeSpinsAwarded: presentedFreeSpinsAwarded,
         narrative: outcomeNarrative,
       })
-      const spinOutcome: SlotSpinOutcome = discoTriggered
-        ? { ...ordinaryOutcome, kind: 'bonus', title: 'Disco floor activated',
-            freeSpinsAwarded: presentedFreeSpinsAwarded,
-            nextAction: '10 disco spins are ready at your selected wager.' }
-        : ordinaryOutcome
       const lineWins = result.lightningCollection
         ? result.payout.paylines.filter(({ paylineId }) => paylineId !== lightningCollectionPayoutId)
         : result.payout.paylines
@@ -1856,14 +1747,14 @@ export function useSlotsPageController({
         reelsBeforeSpin.length,
         spinOutcome.winTier,
       )
-      const triggeredBonusPositions = result.freeSpinsAwarded > 0 || discoTriggered
-        ? result.neonArcade?.activators.flatMap(({ positions }) => positions) ?? result.reels.flatMap((reel, reelIndex) =>
+      const triggeredBonusPositions = result.freeSpinsAwarded > 0
+        ? result.reels.flatMap((reel, reelIndex) =>
             reel.flatMap((symbol, row) => symbol === 'FREE' ? [{ reel: reelIndex, row }] : []),
           )
         : []
       if (
         (result.payout.totalPoints > 0 ||
-          presentedFreeSpinsAwarded > 0 || discoTriggered)
+          presentedFreeSpinsAwarded > 0)
       ) {
         mascotOutcome = 'win'
       }
@@ -1881,9 +1772,6 @@ export function useSlotsPageController({
       }
       if (expectedFreeSpin) {
         setSpecialRoundWinnings((current) => current + spinWinnings)
-        if (gameId === 'neon-nights-v1' && result.freeSpinsRemaining === 0) {
-          completedNeonRound = { totalRand: specialRoundWinnings + spinWinnings, mode: freeSpinFeatureMode }
-        }
         if (gameId === 'rainbow-realm-fruits-v1') {
           rainbowBonusWinningsCentsRef.current += result.payout.totalPoints * result.pointValueInCents
           if (result.freeSpinsRemaining === 0) {
@@ -1898,40 +1786,16 @@ export function useSlotsPageController({
           ? result.sealCollections.find((collection) => collection.sealId === heldCompletedCollectionId)
           : undefined
         setSpecialRoundGemCount(heldCollection?.count ?? 0)
-      } else if (expectedDiscoSpin) {
-        setSpecialRoundWinnings((current) => current + spinWinnings)
-        if (!discoTriggered && neonDiscoSpinsRemaining === 1) {
-          completedNeonRound = { totalRand: specialRoundWinnings + spinWinnings, mode: 'neon-disco' }
-        }
       } else if (presentedFreeSpinsAwarded > 0 || (
         gameId === 'rainbow-realm-fruits-v1' && freeSpinsRemaining === 0 && result.freeSpinsRemaining > 0
       ) || (
         gameId === 'reel-riches-v1' && result.freeSpinsRemaining > freeSpinsRemaining
       )) {
         setSpecialRoundWinnings(0)
-        if (result.neonArcade?.featureGamesEnabled && !discoTriggered) {
-          setIsAutoSpinning(false)
-          if (!result.isFreeSpin && result.freeSpinsAwarded > 0) {
-            for (const symbol of ['6', 'SEAL_RAND'] as const) {
-              const activator = result.neonArcade.activators.find(({ symbolId }) => symbolId === symbol)
-              const position = activator?.positions.find(({ reel, row }) => result.reels[reel]?.[row] === symbol)
-              if (position) {
-                setNeonSpecialIntro({ symbol, position })
-                break
-              }
-            }
-          }
-        }
         if (gameId === 'rainbow-realm-fruits-v1' && result.freeSpinsRemaining > 0) {
           rainbowBonusWinningsCentsRef.current = 0
           rainbowBonusStartedHereRef.current = true
         }
-      }
-      if (discoPosition) {
-        setIsAutoSpinning(false)
-        if (!expectedDiscoSpin) setSpecialRoundWinnings(0)
-        setNeonDiscoSpinsRemaining(10)
-        setNeonSpecialIntro({ symbol: 'POWER', position: discoPosition })
       }
       setLastFreeSpinsAwarded(presentedFreeSpinsAwarded)
       setLastEnergyMultiplierApplied(result.energyMultiplierApplied)
@@ -1950,7 +1814,7 @@ export function useSlotsPageController({
         setMidnightQueuedRounds(result.queuedBonusRounds?.length ?? 0)
       }
       let resultSoundEvent: SlotResultSoundEvent | null = winSoundCue
-      if (presentedFreeSpinsAwarded > 0 || discoTriggered || (
+      if (presentedFreeSpinsAwarded > 0 || (
         gameId === 'reel-riches-v1' && !expectedFreeSpin && result.freeSpinsRemaining > freeSpinsRemaining
       )) {
         resultSoundEvent = 'bonus'
@@ -2008,7 +1872,6 @@ export function useSlotsPageController({
       shouldStartAutoSpinCooldown = isFastAutoSpin
     } catch (error) {
       completedRainbowBonus = null
-      completedNeonRound = null
       if (!isMountedRef.current) {
         return
       }
@@ -2044,7 +1907,6 @@ export function useSlotsPageController({
       setWinningPaylines([])
       setWinningPaylineCount(0)
       setBonusPositions([])
-      setNeonSpecialIntro(null)
       if (expectsGodsTumble) setLastWin(0)
       setLastFreeSpinsAwarded(0)
       setLastEnergyAwarded(0)
@@ -2085,19 +1947,12 @@ export function useSlotsPageController({
         setIsSpinning(false)
         setIsFastSpinActive(false)
         setIsStopRequested(false)
-        if (completedDiscoSpin && !discoTriggered) {
-          setNeonDiscoSpinsRemaining((remaining) => Math.max(0, remaining - 1))
-        }
         if (expectedFreeSpin) {
           setIsSpecialSpinInProgress(false)
         }
         if (completedRainbowBonus !== null) {
           rainbowBonusSummaryPendingRef.current = true
           setRainbowBonusSummary(completedRainbowBonus)
-          setIsAutoSpinning(false)
-        }
-        if (completedNeonRound !== null) {
-          setNeonRoundSummary(completedNeonRound)
           setIsAutoSpinning(false)
         }
       } else {
@@ -2120,9 +1975,7 @@ export function useSlotsPageController({
     ...(bestWin?.matches.flatMap((match) => match.match.positions) ?? []),
     ...bonusPositions,
   ]
-  const canAffordSelectedWager = useFreeGameForNextSpin
-    ? !isNeonArcadePaidPlay || balance >= lockedWagerRand
-    : balance >= selectedWagerRand
+  const canAffordSelectedWager = useFreeGameForNextSpin || balance >= selectedWagerRand
   const activeWagerDisplay = useFreeGameForNextSpin
     ? slotPointsToRand(freeSpinWagerPoints ?? selectedWagerPoints, pointValueInCents)
     : selectedWagerRand
@@ -2141,15 +1994,13 @@ export function useSlotsPageController({
   const slotsPageClassName = [
     'slots-page',
     isFastSpinActive ? 'slots-page--fast-spin' : '',
-    isSpecialGameActive || isNeonDiscoPlayActive ? 'slots-page--special-game' : '',
+    isSpecialGameActive ? 'slots-page--special-game' : '',
     pageBackdropImage ? 'slots-page--theme-backdrop' : '',
   ].filter(Boolean).join(' ')
 
   function changeWager(direction: -1 | 1) {
     if (freeSpinsRemaining > 0) {
-      setSpinError(isNeonArcadePaidPlay
-        ? 'Arcade Plays are locked to the triggering wager.'
-        : 'Free spins are locked to the wager that won them.')
+      setSpinError('Free spins are locked to the wager that won them.')
       return
     }
 
@@ -2164,9 +2015,7 @@ export function useSlotsPageController({
 
   function selectWager(nextIndex: number) {
     if (freeSpinsRemaining > 0) {
-      setSpinError(isNeonArcadePaidPlay
-        ? 'Arcade Plays are locked to the triggering wager.'
-        : 'Free spins are locked to the wager that won them.')
+      setSpinError('Free spins are locked to the wager that won them.')
       return
     }
 
@@ -2177,50 +2026,8 @@ export function useSlotsPageController({
     setSpinError(null)
   }
 
-  async function triggerNeonAdminPreview(symbol: '6' | 'POWER' | 'SEAL_RAND') {
-    if (gameId !== 'neon-nights-v1' ||
-        (!demoMode && account?.role.toLowerCase() !== 'admin') ||
-        (demoMode && !import.meta.env.DEV) || isNeonAdminTriggering ||
-        isSpinning || spinInProgressRef.current || freeSpinsRemaining > 0 ||
-        neonSpecialIntro !== null || neonRoundSummary !== null || isNeonArcadeExpanding) return
-
-    setIsNeonAdminTriggering(true)
-    try {
-      if (symbol === 'POWER') {
-        // Disco Plays are the separate paid play state used by natural disco triggers.
-        setNeonDiscoSpinsRemaining(10)
-      } else if (demoMode) {
-        setFreeSpinsRemaining(7)
-        setFreeSpinWagerPoints(selectedWagerPoints)
-        setFreeSpinFeatureMode(symbol === 'SEAL_RAND' ? 'arcade-rows' : null)
-      } else {
-        const serverSymbol = symbol === '6' ? 'car' : 'arcade-cabinet'
-        const state = await requestNeonAdminTrigger(serverSymbol, selectedWagerPoints)
-        applySlotState(state)
-      }
-
-      setIsAutoSpinning(false)
-      setSpinError(null)
-      setHasCompletedSpin(false)
-      setWinningPaylines([])
-      setWinningPaylineCount(0)
-      setBonusPositions([])
-      setSpecialRoundWinnings(0)
-      setNeonRoundSummary(null)
-      setHasSpecialRoundStarted(false)
-      setDisplayedReels((current) => current.map((reel, reelIndex) =>
-        Array.from({ length: 4 }, (_, row) => reelIndex === 2 && row === 1
-          ? symbol : reel[row] ?? initialReels[reelIndex]?.[row] ?? '2')))
-      setNeonSpecialIntro({ symbol, position: { reel: 2, row: 1 } })
-    } catch (error) {
-      setSpinError(error instanceof Error ? error.message : 'Could not start Special Plays.')
-    } finally {
-      setIsNeonAdminTriggering(false)
-    }
-  }
-
   function handleSpinButtonClick() {
-    if (rainbowBonusSummaryPendingRef.current || neonSpecialIntro !== null || neonRoundSummary !== null) return
+    if (rainbowBonusSummaryPendingRef.current) return
     if (isHelpOpen || isSymbolGuideOpen || isSettingsOpen || isReloadPromptOpen) return
     if (spinInProgressRef.current || isSpinning) {
       if (!stopSpinRequestedRef.current && soundSet.events.stopButtonClick) {
@@ -2325,7 +2132,6 @@ export function useSlotsPageController({
     energyAward,
     isEnergyAwardCompleting,
     featureSet,
-    finishNeonSpecialIntro,
     freeSpinFeatureMode,
     midnightBonusRound,
     midnightQueuedRounds,
@@ -2342,9 +2148,6 @@ export function useSlotsPageController({
     isGodsTumbleBoard,
     isReloadPromptOpen,
     isSpecialGameActive,
-    isNeonArcadeExpanding,
-    isNeonArcadePaidPlay,
-    isNeonDiscoPlayActive,
     isSpecialSpinDelayActive,
     isSettingsOpen,
     isSpinning,
@@ -2363,11 +2166,6 @@ export function useSlotsPageController({
     mascotSuccessFrame,
     help,
     moneyGrabPresentation,
-    neonSpecialIntro,
-    isNeonAdminTriggering,
-    neonRoundSummary,
-    dismissNeonRoundSummary,
-    neonDiscoSpinsRemaining,
     pageBackdropStyle,
     pointValueInCents,
     prefersReducedMotion,
@@ -2383,7 +2181,6 @@ export function useSlotsPageController({
     specialRoundGemCount,
     specialRoundWinnings,
     setIsAutoSpinning,
-    triggerNeonAdminPreview,
     setIsHelpOpen,
     setIsSymbolGuideOpen,
     setIsReloadPromptOpen,
@@ -2414,10 +2211,9 @@ function getSpinRowCount(
   isFreeSpin: boolean,
   featureMode: string | null,
   regularRowCount: number,
-  gameId: string,
 ): number {
   const hasExtraRows = isFreeSpin && featureMode?.split('-').includes(extraRowsFeatureMode)
-  return regularRowCount + (hasExtraRows ? gameId === 'neon-nights-v1' ? 3 : 2 : 0)
+  return regularRowCount + (hasExtraRows ? 2 : 0)
 }
 
 function normalizeReelRows(

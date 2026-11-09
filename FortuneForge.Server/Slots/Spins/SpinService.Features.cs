@@ -59,10 +59,7 @@ public sealed partial class SpinService
         {
             InjectSymbols(reels, 2, () => "ACE");
         }
-        // Neon's authored strips own every visible role, including its ordinary
-        // flamingo/dice/sunset. No legacy bonus-symbol injection changes weights.
-        if (!NeonArcadeSlotDefinitions.IsModel(game))
-            InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
+        InjectSymbols(reels, RollBananaCount(), () => BananaSymbolId);
         if (profile.UsesCollections)
         {
             InjectSymbols(reels, RollSealCount(game.Id, currentEnergyBalance), PickSealSymbol);
@@ -86,13 +83,7 @@ public sealed partial class SpinService
             return game;
         }
 
-        var isNeonArcade = NeonArcadeSlotDefinitions.IsModel(game);
-        var addedRows = isNeonArcade ? 3 : 2;
-        var addedPaylines = isNeonArcade
-            ? Enumerable.Range(game.Layout.VisibleRows, addedRows)
-                .Select(row => Enumerable.Repeat(row, game.Layout.ReelCount).ToList())
-                .ToList()
-            : [];
+        const int addedRows = 2;
 
         return new GameDefinition
         {
@@ -101,27 +92,18 @@ public sealed partial class SpinService
             {
                 ReelCount = game.Layout.ReelCount,
                 VisibleRows = checked(game.Layout.VisibleRows + addedRows),
-                PaylineCount = checked(game.Layout.PaylineCount + addedPaylines.Count)
+                PaylineCount = game.Layout.PaylineCount
             },
             Symbols = game.Symbols,
             Matching = game.Matching,
-            Math = !isNeonArcade ? game.Math : new GameMathDefinition
-            {
-                ReelSetId = game.Math.ReelSetId,
-                PaytableId = game.Math.PaytableId,
-                PayoutMultiplier = game.Math.PayoutMultiplier,
-                PaylinePayoutSteps = [.. game.Math.PaylinePayoutSteps,
-                    .. Enumerable.Repeat(0, addedPaylines.Count)],
-                FiveMatchPityMissLimit = game.Math.FiveMatchPityMissLimit,
-                Targets = game.Math.Targets
-            },
+            Math = game.Math,
             Wagering = game.Wagering,
             FreeGames = game.FreeGames is null || profile is null || game.Id == SlotSpecialRoundProfiles.DragonHoardGameId
                 ? game.FreeGames
                 : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,
             Energy = game.Energy,
-            Paylines = isNeonArcade ? [.. game.Paylines, .. addedPaylines] : game.Paylines
+            Paylines = game.Paylines
         };
     }
 

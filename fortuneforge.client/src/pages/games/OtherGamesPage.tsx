@@ -204,6 +204,7 @@ function GameSection({
 }
 
 function GameTile({ game }: { game: CatalogGame }) {
+  const empty = game.href === '/slots/empty-slots-game'
   const selectedArtwork = getCataloguePresentationArt(game.href)
   const responsiveArtwork = selectedArtwork?.imageSrcSet ? selectedArtwork : undefined
   const content = <>
@@ -219,7 +220,7 @@ function GameTile({ game }: { game: CatalogGame }) {
         decoding="async"
         draggable="false"
       />
-    ) : game.image ? <img className={`all-games-card__image all-games-card__image--${game.imagePresentation ?? 'cover'}${game.imageScale === 'compact' ? ' all-games-card__image--compact' : ''}`} src={game.image} alt="" draggable="false" /> : <span className={`all-games-card__icon${game.tone ? ` all-games-card__icon--${game.tone}` : ''}`} aria-hidden="true">{game.icon ?? '◇'}</span>}
+    ) : empty ? <span className="all-games-card__icon" aria-hidden="true" /> : game.image ? <img className={`all-games-card__image all-games-card__image--${game.imagePresentation ?? 'cover'}${game.imageScale === 'compact' ? ' all-games-card__image--compact' : ''}`} src={game.image} alt="" draggable="false" /> : <span className={`all-games-card__icon${game.tone ? ` all-games-card__icon--${game.tone}` : ''}`} aria-hidden="true">{game.icon ?? '◇'}</span>}
     <small>{game.category}</small><strong>{game.name}</strong><span>{game.summary}</span>
   </>
   return game.href

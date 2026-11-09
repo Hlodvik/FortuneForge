@@ -120,14 +120,13 @@ describe('catalogue audio provenance and allocation', () => {
   ])
   const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
   const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
-  const neonSpecialMusicSource = '/assets/slots/audio-suites/v1/neon-nights/special-plays-music-v1.ogg'
-  const neonWinSource = '/assets/slots/audio-suites/v1/neon-nights/win-nice-v1.ogg'
   const midnightWinSource = '/assets/slots/midnight-vault/v4/audio/vault-win-noir.wav'
 
-  it('enables seventeen themed suites while retaining the three excluded title selections', async () => {
-    const manifests = await loadAllSlotGameManifests()
-    expect(manifests).toHaveLength(20)
-    expect(allSoundSets).toHaveLength(21)
+  it('keeps shared-host audio allocations separate from standalone Neon', async () => {
+    // Neon owns its audio contract checks inside its client package.
+    const manifests = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
+    expect(manifests).toHaveLength(19)
+    expect(allSoundSets).toHaveLength(20)
     for (const game of manifests) {
       const sounds = game.experience.sounds
       expect(allSoundSets).toContain(sounds)
@@ -155,11 +154,6 @@ describe('catalogue audio provenance and allocation', () => {
       if (game.id === 'gods-of-olympus') {
         expect(sounds.cues[sounds.events.ambience]?.baseVolume).toBe(.12)
       }
-      if (game.id === 'neon-nights') {
-        expect(sounds.cues[sounds.events.specialAmbience!]).toMatchObject({
-          source: neonSpecialMusicSource, category: 'effect', loop: true, enabled: true,
-        })
-      }
     }
     for (const sounds of allSoundSets) {
       for (const cue of Object.values(sounds.cues)) {
@@ -169,7 +163,6 @@ describe('catalogue audio provenance and allocation', () => {
           expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
             (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)) ||
             cue.source === arcaneMusicSource || cue.source === olympusMusicSource ||
-            cue.source === neonSpecialMusicSource || cue.source === neonWinSource ||
             cue.source === midnightWinSource, cue.source).toBe(true)
         }
       }

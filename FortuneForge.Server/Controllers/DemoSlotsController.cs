@@ -23,7 +23,8 @@ public sealed record DemoSpinRequest(
     string? FreeSpinFeatureMode = null,
     MidnightVaultDemoState? MidnightBonusState = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int NeonDiscoSpinsRemaining = 0);
 
 [ApiController]
 [Route("api/slots/demo")]
@@ -63,6 +64,11 @@ public sealed class DemoSlotsController(
 
             var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
             var isNeon = request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+            if (request.NeonDiscoSpinsRemaining < 0 ||
+                request.NeonDiscoSpinsRemaining > NeonArcadeSlotDefinitions.DiscoPlaySpins ||
+                !isNeon && request.NeonDiscoSpinsRemaining != 0)
+                throw new ArgumentOutOfRangeException(nameof(request.NeonDiscoSpinsRemaining),
+                    "The demo Disco play balance is outside the allowed range.");
             if (request.FreeSpinsRemaining < 0 || !isNeon && request.FreeSpinsRemaining > 1_000)
             {
                 throw new ArgumentOutOfRangeException(
@@ -83,6 +89,8 @@ public sealed class DemoSlotsController(
                 throw new ArgumentException("Finish your awarded Neon spins before placing another bet.", nameof(request));
             if (isNeon && request.UseFreeSpin && request.WagerPoints != request.FreeSpinWagerPoints)
                 throw new ArgumentException("Special Plays use the wager from the triggering spin.", nameof(request));
+            var isNeonDiscoPlay = isNeon && !request.UseFreeSpin &&
+                request.NeonDiscoSpinsRemaining > 0;
 
             if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
                 return await SpinMidnight(request, cancellationToken);
@@ -93,7 +101,7 @@ public sealed class DemoSlotsController(
             }
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
-            var usesEnergy = profile?.UsesEnergy != false;
+            var usesEnergy = !isNeon && profile?.UsesEnergy != false;
             var currentEnergy = usesEnergy ? request.EnergyBalance : 0;
             var startedAtUtc = DateTime.UtcNow;
             var engineResult = spinService.Spin(
@@ -102,10 +110,12 @@ public sealed class DemoSlotsController(
                 DemoPlayerId,
                 specialBoostApplied: false,
                 currentEnergy,
-                request.UseFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode)
+                request.UseFreeSpin && (isNeon ? NeonPlayPolicy.IsFeatureMode(request.FreeSpinFeatureMode) :
+                    SlotSpecialRoundProfiles.IsFeatureMode(request.FreeSpinFeatureMode))
                     ? request.FreeSpinFeatureMode
                     : null,
-                isFreeSpin: isNeon && request.UseFreeSpin);
+                isFreeSpin: isNeon && request.UseFreeSpin,
+                isNeonDiscoPlay: isNeonDiscoPlay);
             if (isGoldFoundry)
             {
                 var settled = GoldFoundryCrucible.SettleDemo(engineResult, currentEnergy, request.CrucibleWageredCents);
@@ -114,11 +124,11 @@ public sealed class DemoSlotsController(
                 return Ok(settled);
             }
 
-            var energy = EnergyBonus.Settle(
+            var energy = isNeon ? new EnergyBonusSettlement(engineResult.Payout, 0, 0, 0, false, 1m) : EnergyBonus.Settle(
                 currentEnergy,
                 engineResult.EnergyAwarded,
                 engineResult.Payout);
-            var specialRounds = profile is null
+            var specialRounds = isNeon || profile is null
                 ? new SlotSpecialRoundProgress(0, null, [])
                 : SlotSpecialRoundProfiles.SettleDemo(
                     profile,
@@ -127,12 +137,19 @@ public sealed class DemoSlotsController(
                     engineResult.WagerPoints,
                     energy.MultiplierApplied,
                     engineResult.SpinId);
-            var nextFreeSpins = (long)request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
+            var neonProgress = isNeon ? NeonPlayPolicy.AdvanceAwardedPlays(
+                request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0), request.UseFreeSpin,
+                request.FreeSpinFeatureMode, engineResult.FreeSpinsAwarded,
+                engineResult.WagerPoints, engineResult.NeonArcade) : null;
+            var nextFreeSpins = neonProgress?.Remaining ?? (long)request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0) +
                 engineResult.FreeSpinsAwarded + specialRounds.FreeSpinsAwarded;
             if (nextFreeSpins > int.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(request.FreeSpinsRemaining),
                     "The next demo free-spin balance exceeds the supported range.");
             var freeSpinsRemaining = checked((int)nextFreeSpins);
+            var neonDiscoSpinsRemaining = isNeon
+                ? NeonPlayPolicy.NextDiscoSpins(request.NeonDiscoSpinsRemaining, isNeonDiscoPlay, engineResult.NeonArcade)
+                : 0;
             long? freeSpinWagerPoints = freeSpinsRemaining > 0
                 ? isNeon ? engineResult.WagerPoints : request.FreeSpinWagerPoints ?? request.WagerPoints
                 : null;
@@ -147,20 +164,21 @@ public sealed class DemoSlotsController(
                 CollectionFreeSpinsAwarded = engineResult.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? specialRounds.FreeSpinsAwarded : 0,
                 IsFreeSpin = request.UseFreeSpin,
-                ChargedWagerCents = !request.UseFreeSpin ||
-                    isNeon && NeonArcadeBonus.IsPaidArcadeMode(request.FreeSpinFeatureMode)
+                ChargedWagerCents = isNeon
+                    ? NeonPlayPolicy.ChargesWager(request.UseFreeSpin, request.FreeSpinFeatureMode)
+                        ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents) : 0
+                    : !request.UseFreeSpin
                     ? RandMoney.PointsToCents(engineResult.WagerPoints, engineResult.PointValueInCents)
                     : 0,
                 FreeSpinsRemaining = freeSpinsRemaining,
+                NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,
                 PayoutMultiplier = energy.PayoutMultiplier,
                 SealCollections = specialRounds.Collections,
-                FreeSpinFeatureMode = freeSpinsRemaining > 0
+                FreeSpinFeatureMode = isNeon ? neonProgress!.FeatureMode : freeSpinsRemaining > 0
                     ? specialRounds.FeatureMode ??
-                        (isNeon && !request.UseFreeSpin && engineResult.FreeSpinsAwarded > 0
-                            ? NeonArcadeBonus.AwardedFeatureMode(engineResult.NeonArcade) : null) ??
                         (engineResult.FreeSpinsAwarded > 0 ? profile?.ScatterFeatureMode : null) ??
                         (request.UseFreeSpin ? request.FreeSpinFeatureMode : null)
                     : null
@@ -198,7 +216,8 @@ public sealed class DemoSlotsController(
         if (request.GameId != SlotSpecialRoundProfiles.GodsOfOlympusGameId ||
             request.UseFreeSpin || request.FreeSpinsRemaining != 0 || request.FreeSpinWagerPoints is not null ||
             request.FreeSpinFeatureMode is not null || request.EnergyBalance != 0 || request.SealCollections is { Count: > 0 } ||
-            request.MidnightBonusState is not null || request.CrucibleWageredCents != 0)
+            request.MidnightBonusState is not null || request.CrucibleWageredCents != 0 ||
+            request.NeonDiscoSpinsRemaining != 0)
             throw new ArgumentException("The Olympus tumble demo requires its own game and a base spin.", nameof(request));
 
         var startedAt = DateTime.UtcNow;

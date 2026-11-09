@@ -3,6 +3,8 @@
   "private": true,
   "workspaces": [
     "packages/client-presentation",
+    "packages/slot-client-core",
+    "games/NeonNights/client/FortuneForge.Games.NeonNights.Client",
     "games/AndarBahar/client/FortuneForge.Games.AndarBahar.Client",
     "games/Asteroids/client/FortuneForge.Games.Asteroids.Client",
     "games/TwentyFortyEight/client/FortuneForge.Games.TwentyFortyEight.Client",
@@ -33,6 +35,8 @@
     "games:test": "node --test ./scripts/tests/game-workspace-plan.test.mjs && node ./scripts/run-game-workspaces.mjs test",
     "games:build": "node ./scripts/run-game-workspaces.mjs build",
     "verify:game-source": "node ./scripts/verify-game-source-ownership.mjs",
+    "verify:neon-standalone": "node scripts/verify-neon-standalone.mjs",
+    "verify:neon-bundle": "node scripts/verify-neon-bundle.mjs",
     "verify:game-routes": "node ./scripts/verify-game-route-inventory.mjs",
     "verify:game-navbar": "node --test ./scripts/tests/game-navbar-boundary.test.mjs && node ./scripts/verify-game-navbar.mjs",
     "verify:ci-emulator": "node --test ./scripts/tests/ci-emulator-order.test.mjs && node ./scripts/verify-ci-emulator-order.mjs",

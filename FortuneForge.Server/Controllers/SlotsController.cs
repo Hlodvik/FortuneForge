@@ -39,7 +39,7 @@ public sealed class SlotsController(
             return StatusCode(StatusCodes.Status403Forbidden,
                 new { error = "Only administrators can start a Neon preview round." });
 
-        if (request.Symbol is not ("car" or "arcade-cabinet"))
+        if (request.Symbol is not ("car" or "disco-ball" or "arcade-cabinet"))
             return BadRequest(new { error = "Unknown Neon Special Plays symbol." });
 
         try
@@ -53,6 +53,7 @@ public sealed class SlotsController(
                 request.WagerPoints,
                 pointValueInCents,
                 request.Symbol == "arcade-cabinet",
+                request.Symbol == "disco-ball",
                 cancellationToken);
             if (!granted)
                 return Conflict(new { error = "Finish the current Neon spin or Special Plays round first." });
@@ -172,6 +173,7 @@ public sealed class SlotsController(
                 ChargedWagerCents = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
                     ? admission.ChargedWagerCents : 0,
                 FreeSpinsRemaining = settlement.FreeSpinsRemaining,
+                NeonDiscoSpinsRemaining = settlement.NeonDiscoSpinsRemaining,
                 FreeSpinWagerPoints = settlement.FreeSpinWagerPoints,
                 SpecialPointsBalance = settlement.SpecialPointsBalance,
                 EnergyBalance = settlement.EnergyBalance,

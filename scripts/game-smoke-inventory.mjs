@@ -10,7 +10,6 @@ export const slotSmokeInventory = [
   ['cosmic-fortune', 'cosmic-fortune-v1'],
   ['gold-foundry', 'gold-foundry-v1'],
   ['neon-nights', 'neon-nights-v1'],
-  ['jungle-jackpot', 'jungle-jackpot-v1'],
   ['ocean-odyssey', 'ocean-odyssey-v1'],
   ['samurai-fortune', 'samurai-fortune-v1'],
   ['candy-carnival', 'candy-carnival-v1'],

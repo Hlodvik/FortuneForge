@@ -52,8 +52,10 @@ public sealed partial class FirestoreAccountStore
         SlotSpecialRoundProfile? profile,
         bool freezeProgress = false)
     {
-        var counts = ReadLongMap(guardSnapshot, "sealCounts");
-        var wagerCents = ReadSealWagerCents(guardSnapshot);
+        var trackIds = result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId
+            ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null;
+        var counts = ReadLongMap(guardSnapshot, "sealCounts", trackIds);
+        var wagerCents = ReadSealWagerCents(guardSnapshot, trackIds);
         if (profile is null)
         {
             return new SealCollectionSettlement(
@@ -80,11 +82,24 @@ public sealed partial class FirestoreAccountStore
 
         if (freezeProgress)
             return new SealCollectionSettlement(counts, wagerCents, 0, null, 0,
-                CreateSealCollections(counts, wagerCents, result.PointValueInCents, profile.CollectionTarget), false);
+                CreateSealCollections(counts, wagerCents, result.PointValueInCents, profile.CollectionTarget, trackIds), false);
 
         var spinWagerCents = RandMoney.PointsToCents(
             result.WagerPoints,
             result.PointValueInCents);
+        if (result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+        {
+            var progress = FortuneForge.Games.EmptySlots.EmptySlotsCollections.AdvancePaid(
+                counts, wagerCents.ToDictionary(pair => pair.Key,
+                    pair => RandMoney.CentsToPoints(pair.Value, result.PointValueInCents), StringComparer.Ordinal),
+                result.SealsAwarded, result.WagerPoints, result.FreeSpinsAwarded);
+            var nextCents = progress.WagerPointTotals.ToDictionary(pair => pair.Key,
+                pair => RandMoney.PointsToCents(pair.Value, result.PointValueInCents), StringComparer.Ordinal);
+            return new SealCollectionSettlement(progress.Counts, nextCents, progress.FreeSpinsAwarded,
+                progress.FeatureMode, progress.FreeSpinWagerPoints,
+                CreateSealCollections(progress.Counts, nextCents, result.PointValueInCents,
+                    profile.CollectionTarget, trackIds), progress.Changed);
+        }
         if (result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId)
             return SettlePiratesCollections(counts, wagerCents, result, profile, spinWagerCents);
 
@@ -215,8 +230,9 @@ public sealed partial class FirestoreAccountStore
         IReadOnlyDictionary<string, long> counts,
         IReadOnlyDictionary<string, long> wagerCents,
         decimal pointValueInCents,
-        int requiredCount) =>
-        SealFeatureModes
+        int requiredCount,
+        IReadOnlyList<string>? trackIds = null) =>
+        (trackIds ?? SealFeatureModes)
             .Select(mode =>
             {
                 var count = Math.Min(
@@ -244,20 +260,24 @@ public sealed partial class FirestoreAccountStore
         string gameId) =>
         SlotSpecialRoundProfiles.TryGet(gameId, out var profile) && profile.UsesCollections
             ? CreateSealCollections(
-                ReadLongMap(guardSnapshot, "sealCounts"),
-                ReadSealWagerCents(guardSnapshot),
+                ReadLongMap(guardSnapshot, "sealCounts", gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
+                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null),
+                ReadSealWagerCents(guardSnapshot, gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
+                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null),
                 pointValueInCents,
-                profile.CollectionTarget)
+                profile.CollectionTarget, gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
+                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null)
             : [];
 
-    private static Dictionary<string, long> ReadSealWagerCents(DocumentSnapshot snapshot)
+    private static Dictionary<string, long> ReadSealWagerCents(DocumentSnapshot snapshot,
+        IReadOnlyList<string>? trackIds = null)
     {
         if (snapshot.Exists && snapshot.ToDictionary().ContainsKey("sealWagerCents"))
         {
-            return ReadLongMap(snapshot, "sealWagerCents");
+            return ReadLongMap(snapshot, "sealWagerCents", trackIds);
         }
 
-        return ReadLongMap(snapshot, "sealWagerTotals").ToDictionary(
+        return ReadLongMap(snapshot, "sealWagerTotals", trackIds).ToDictionary(
             pair => pair.Key,
             pair => checked(pair.Value * RandMoney.CentsPerRand),
             StringComparer.Ordinal);

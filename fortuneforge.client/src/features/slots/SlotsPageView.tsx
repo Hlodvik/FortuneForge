@@ -9,9 +9,9 @@ import { ArcaneLightningCollection } from '../../games/slots/arcaneArchives/Arca
 import '../../games/slots/arcaneArchives/arcaneArchivesWordmark.css'
 import '../../games/slots/godsOfOlympus/godsTumble.css'
 import { GodsTumbleAwardBadge } from '../../games/slots/godsOfOlympus/GodsTumbleAwardBadge'
-import { NeonSpecialPlaysIntro } from '../../games/slots/neonNights/NeonSpecialPlaysIntro'
-import { NeonRoundSummary } from '../../games/slots/neonNights/NeonRoundSummary'
-import { NeonDiscoFloor } from '../../games/slots/neonNights/NeonDiscoFloor'
+
+
+
 import { GameOutcomeBanner } from '../../components/GameOutcomeBanner'
 import { InGameShell } from '../../components/InGameShell'
 import { PaymentAlertsMenu } from '../../components/PaymentAlertsMenu'
@@ -38,11 +38,7 @@ import { midnightVaultGuideForModel } from '../../games/slots/dragonHoard/math'
 
 const vaultMoneyFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const formatVaultMoney = (value: number) => `R${vaultMoneyFormatter.format(value)}`
-const neonAdminPreviewSymbols = [
-  { symbol: '6', label: 'Sports car' },
-  { symbol: 'POWER', label: 'Disco ball' },
-  { symbol: 'SEAL_RAND', label: 'Arcade cabinet' },
-] as const
+
 
 export function SlotsPageView(controller: SlotsPageController) {
   const {
@@ -160,12 +156,13 @@ export function SlotsPageView(controller: SlotsPageController) {
   const isReelRiches = cabinetTheme.id === 'reel-riches-cabinet-v1'
   const isMidnightVault = cabinetTheme.id === 'dragon-hoard-cabinet-v1'
   const isArcaneArchives = cabinetTheme.id === 'arcane-archives-cabinet-v1'
-  const isNeonNights = cabinetTheme.id === 'neon-nights-cabinet-v1'
-  const neonSpecialIntro = isNeonNights ? controller.neonSpecialIntro : null
-  const neonRoundSummary = isNeonNights ? controller.neonRoundSummary : null
-  const isNeonArcadeExpanding = isNeonNights && controller.isNeonArcadeExpanding
-  const isNeonArcadePaidPlay = isNeonNights && controller.isNeonArcadePaidPlay
-  const neonDiscoRoundVisible = isNeonNights && controller.isNeonDiscoPlayActive
+
+
+
+
+
+
+
   const cabinetRef = useRef<HTMLDivElement>(null)
   const isWukong = cabinetTheme.id === 'wukong-celestial-arcade-v1'
   const usesSidecarControls = !isMidnightVault && !isWukong && !isPiratesFortune && cabinetTheme.controlLayout !== 'integrated'
@@ -176,13 +173,13 @@ export function SlotsPageView(controller: SlotsPageController) {
   const midnightVaultBonusVisible = isMidnightVault && (freeSpinsRemaining > 0 || isSpecialGameActive)
   const isRainbowRealm = cabinetTheme.id === 'rainbow-realm-fruit-arcade-v1'
   const paylineTrace = cabinetTheme.paylineTrace
-  const usesPaylineTrace = isMidnightVault || isNeonNights || isRainbowRealm || Boolean(paylineTrace)
+  const usesPaylineTrace = isMidnightVault || isRainbowRealm || Boolean(paylineTrace)
   const tracedPaylines = useMemo(() => isRainbowRealm
     ? winningPaylines.filter(({ paylineId }) => paylineId >= 1 && paylineId <= help.paylineCount)
     : winningPaylines, [help.paylineCount, isRainbowRealm, winningPaylines])
   const hasPaylineTrace = usesPaylineTrace && tracedPaylines.length > 0
   const [activePaidPath, setActivePaidPath] = useState<ActivePaidPath | null>(null)
-  const highlightedPositions = (isNeonNights || paylineTrace) && hasCompletedSpin && hasPaylineTrace &&
+  const highlightedPositions = (paylineTrace) && hasCompletedSpin && hasPaylineTrace &&
     activePaidPath?.resultKey === lastSpinOutcomeKey ? activePaidPath.positions : winningPositions
   const showCollectionMeter = !isRainbowRealm
   const rainbowBonusSymbol = isRainbowRealm ? getSlotSymbolDefinition(symbolSet, 'FREE') : undefined
@@ -204,7 +201,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     reelRichesFeatureLabel?.split(' · ', 2) ?? ['Trophy Catch', undefined]
   const specialControlsActive = isSpecialGameActive || collectionAwardPresentation !== null ||
     reelRichesIntroVisible || midnightVaultBonusVisible || rainbowIntroVisible ||
-    rainbowBonusSummary !== null || isNeonArcadeExpanding
+    rainbowBonusSummary !== null
   const completedChestImage = completedCollection?.containerImage ?? collectionFeature?.containerImage
   const completedGemImage = isPiratesFortune && completedCollection
     ? getSlotSymbolDefinition(symbolSet, completedCollection.symbol).image
@@ -256,7 +253,7 @@ export function SlotsPageView(controller: SlotsPageController) {
     spinStage,
     freeSpinsRemaining,
     useFreeGameForNextSpin,
-    bonusName: isMidnightVault || isNeonNights ? specialRound?.title : undefined,
+    bonusName: isMidnightVault ? specialRound?.title : undefined,
     featureAward: lightningCollection
       ? { label: 'Lightning collection', amount: slotPointsToRand(lightningCollection.totalPoints, controller.pointValueInCents) }
       : moneyGrabFeature?.presentation === 'separate-award' && lastCollectorAward > 0
@@ -266,9 +263,8 @@ export function SlotsPageView(controller: SlotsPageController) {
   // Moving reels and the Spin/Stop control already communicate an ordinary
   // spin. Reserve this extra panel for wins, features, and actionable errors.
   const showOutcomeBanner = slotOutcome.tone !== 'neutral' && !reelRichesIntroVisible &&
-    !rainbowIntroVisible && !neonSpecialIntro && rainbowBonusSummary === null &&
+    !rainbowIntroVisible && rainbowBonusSummary === null &&
     !((isReelRiches || isRainbowRealm) && isSpecialGameActive && slotOutcome.label === 'Free game ready') &&
-    !(isNeonNights && (slotOutcome.tone === 'win' || slotOutcome.tone === 'milestone')) &&
     !(isGodsTumbleBoard && slotOutcome.tone === 'win') &&
     (!isMidnightVault || slotOutcome.tone === 'loss')
   const utilityButtons = <div className={`slots-page__utility-buttons${usesPiratesControls ? ' slots-page__utility-buttons--pirates' : ''}`} role="group" aria-label="Game options">
@@ -302,33 +298,16 @@ export function SlotsPageView(controller: SlotsPageController) {
         <circle cx="12" cy="11.5" r="3" />
       </svg>
     </button>
-    {isNeonNights && ((controller.demoMode && import.meta.env.DEV) || controller.account?.role.toLowerCase() === 'admin') && (
-      <div className="neon-admin-triggers" role="group" aria-label="Admin Special Plays triggers">
-        {neonAdminPreviewSymbols.map(({ symbol, label }) => (
-          <button
-            key={symbol}
-            className="neon-admin-triggers__button"
-            type="button"
-            aria-label={`Trigger ${label} Special Plays`}
-            disabled={isSpinServiceDisabled || isSpinning || controller.isNeonAdminTriggering || freeSpinsRemaining > 0 ||
-              Boolean(neonRoundSummary) ||
-              Boolean(neonSpecialIntro) || isNeonArcadeExpanding}
-            onClick={() => controller.triggerNeonAdminPreview(symbol)}
-          >
-            <img src={getSlotSymbolDefinition(symbolSet, symbol).image} alt="" aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-    )}
+
   </div>
   const guideSymbols = isMidnightVault ? midnightVaultGuideForModel(symbolSet, controller.midnightBonusRound?.mathModelId) : symbolSet
   const symbolValueGuide = !isGodsTumbleBoard && <SymbolValueGuide
     symbolSet={guideSymbols}
     showSidePanel={usesPiratesControls}
-    sidePanelClassName={isNeonNights ? 'symbol-value-guide--neon' : usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
+    sidePanelClassName={usesPiratesControls ? 'symbol-value-guide--pirates' : undefined}
     showValueTokens={Boolean(moneyGrabFeature?.valueSymbolPrefix)}
     theme={isMidnightVault ? 'midnight-vault' : undefined}
-    wager={isNeonNights ? activeWagerDisplay : undefined}
+
     isOpen={controller.isSymbolGuideOpen}
     onOpenChange={controller.setIsSymbolGuideOpen}
   />
@@ -360,8 +339,10 @@ export function SlotsPageView(controller: SlotsPageController) {
       data-rainbow-bonus={rainbowBonusVisible ? 'true' : undefined}
       data-midnight-vault-bonus={midnightVaultBonusVisible ? 'true' : undefined}
       data-midnight-vault-mode={midnightVaultBonusVisible ? controller.freeSpinFeatureMode ?? 'standard' : undefined}
-      data-neon-arcade-expanding={isNeonArcadeExpanding ? 'true' : undefined}
-      data-neon-disco-round={neonDiscoRoundVisible ? 'true' : undefined}
+
+
+
+
     >
       <main className="slots-page__main">
         <h1 className={isMidnightVault ? 'midnight-vault__accessible-title' : 'slots-page__accessible-title'}>{cabinetTheme.title}</h1>
@@ -373,12 +354,6 @@ export function SlotsPageView(controller: SlotsPageController) {
           )}
           {isRainbowRealm && (
             <img className="rainbow-realm__wordmark" src={rainbowRealmWordmark} width={640} height={305} alt="" />
-          )}
-          {neonDiscoRoundVisible && (
-            <div className="neon-disco-play__status" role="status">
-              <strong>Disco floor</strong>
-              <span>{controller.neonDiscoSpinsRemaining} {controller.neonDiscoSpinsRemaining === 1 ? 'spin' : 'spins'} left</span>
-            </div>
           )}
           {isMidnightVault && (
             <div className="midnight-vault__masthead" aria-hidden="true">
@@ -490,11 +465,9 @@ export function SlotsPageView(controller: SlotsPageController) {
                 <b>Bonus win {formatVaultMoney(specialRoundWinnings)}</b>
               </aside>
             )}
-            {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && !neonRoundSummary && (
+            {isSpecialGameActive && specialRound && !isReelRiches && !isMidnightVault && (
               <aside className="slots-page__special-game-tally" aria-live="polite">
-                <span>{isNeonArcadePaidPlay
-                  ? `Arcade Plays · ${freeSpinsRemaining} paid ${freeSpinsRemaining === 1 ? 'play' : 'plays'} left · ${formatRand(activeWagerDisplay)} locked`
-                  : isRainbowRealm || isNeonNights
+                <span>{isRainbowRealm
                   ? `${specialRoundLabel ?? specialRound.title} · ${freeSpinsRemaining} bonus ${freeSpinsRemaining === 1 ? 'spin' : 'spins'} left`
                   : `${specialRoundLabel ?? specialRound.title} winnings`}</span>
                 <strong>{formatRand(specialRoundWinnings)}</strong>
@@ -541,12 +514,14 @@ export function SlotsPageView(controller: SlotsPageController) {
                   const isTumbleHighlight = godsTumbleHighlights?.some(
                     (position) => position.reel === reelIndex && position.row === rowIndex,
                   )
+
                   const highlightOrder = highlightedPositions.findIndex(
                     (position) => position.reel === reelIndex && position.row === rowIndex,
                   )
                   const dropRows = godsTumbleFrame?.phase === 'drop'
                     ? godsTumbleFrame.dropRows[reelIndex]?.[rowIndex] ?? 0
                     : 0
+
                   const collectedValue = lightningCollection?.cells.find(
                     (position) => position.reel === reelIndex && position.row === rowIndex,
                   )
@@ -570,9 +545,11 @@ export function SlotsPageView(controller: SlotsPageController) {
                     beingGrabbed={moneyGrabPresentation?.tokens.some(
                       (token) => token.reel === reelIndex && token.row === rowIndex,
                     ) ?? false}
-                    highlighted={isTumbleHighlight || highlightOrder >= 0}
+                    highlighted={isTumbleHighlight ||
+                      highlightOrder >= 0}
                     highlightOrder={highlightOrder}
                   />
+
                   if (!isTumbleHighlight && dropRows === 0) return tile
                   const phase = dropRows > 0 ? 'drop' : godsTumbleAward ? 'award' : 'clear'
                   return (
@@ -589,18 +566,16 @@ export function SlotsPageView(controller: SlotsPageController) {
               )}
             />
             {usesPaylineTrace && <MidnightWinningPaylines
-              palette={isNeonNights ? 'neon' : isRainbowRealm ? 'rainbow' : paylineTrace ? 'cabinet' : 'gold'}
+              palette={isRainbowRealm ? 'rainbow' : paylineTrace ? 'cabinet' : 'gold'}
               formatWinAmount={isMidnightVault ? undefined
                 : points => `+${formatVaultMoney(slotPointsToRand(points, controller.pointValueInCents))}`}
               paylines={tracedPaylines}
               resultKey={lastSpinOutcomeKey}
               visible={hasCompletedSpin}
               reducedMotion={prefersReducedMotion}
-              onActivePathChange={isNeonNights || paylineTrace ? setActivePaidPath : undefined}
+              onActivePathChange={paylineTrace ? setActivePaidPath : undefined}
             />}
-            {isNeonNights && <span className="slots-page__win-announcement" role="status" aria-atomic="true">
-              {hasCompletedSpin && lastWin > 0 ? `Won ${formatVaultMoney(lastWin)}.` : ''}
-            </span>}
+
           </div>
 
           {isGodsTumbleBoard && (
@@ -652,7 +627,7 @@ export function SlotsPageView(controller: SlotsPageController) {
             {usesPiratesControls ? (
               <PiratesSpinControls
                 activeWager={activeWagerDisplay}
-                disabled={isSpinServiceDisabled || Boolean(neonSpecialIntro) || Boolean(neonRoundSummary) || isNeonArcadeExpanding || (usesSidecarControls && rainbowBonusSummary !== null)}
+                disabled={isSpinServiceDisabled || (usesSidecarControls && rainbowBonusSummary !== null)}
                 freeSpinsRemaining={freeSpinsRemaining}
                 isAutoSpinning={isAutoSpinning}
                 isFreeSpinBadgePopping={isFreeSpinBadgePopping}
@@ -662,7 +637,7 @@ export function SlotsPageView(controller: SlotsPageController) {
                 onSelectWager={controller.selectWager}
                 onSpin={handleSpinButtonClick}
                 pointValueInCents={controller.pointValueInCents}
-                showFreeSpinBadge={showFreeSpinBadge && !neonSpecialIntro}
+                showFreeSpinBadge={showFreeSpinBadge}
                 specialControlsActive={specialControlsActive}
                 specialRoundLabel={specialRoundLabel}
                 wagerFirst={isRainbowRealm}
@@ -807,8 +782,7 @@ export function SlotsPageView(controller: SlotsPageController) {
           data-outcome={lastSpinOutcome.kind}
           aria-hidden="true"
         >
-          <span />
-          <span />
+          <span /><span />
         </div>
       )}
 
@@ -824,32 +798,15 @@ export function SlotsPageView(controller: SlotsPageController) {
           </div>
       )}
 
-      {(isSpecialGameActive || neonDiscoRoundVisible || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
+      {(isSpecialGameActive || reelRichesIntroVisible || midnightVaultBonusVisible || rainbowBonusVisible) && (
         <div className="slots-page__special-game-dimmer" aria-hidden="true" />
       )}
 
-      {neonDiscoRoundVisible && <NeonDiscoFloor />}
 
-      {neonSpecialIntro && !isSpinning && (
-        <NeonSpecialPlaysIntro
-          cabinetRef={cabinetRef}
-          position={neonSpecialIntro.position}
-          symbol={neonSpecialIntro.symbol}
-          symbolImage={getSlotSymbolDefinition(symbolSet, neonSpecialIntro.symbol).image}
-          volume={audioPreferences.mode === 'muted' ? 0 : audioPreferences.volume / 100}
-          onComplete={() => controller.finishNeonSpecialIntro(neonSpecialIntro.symbol)}
-        />
-      )}
 
-      {neonRoundSummary && (
-        <NeonRoundSummary
-          cabinetRef={cabinetRef}
-          title={neonRoundSummary.mode === 'arcade-rows' ? 'Arcade Plays' :
-            neonRoundSummary.mode === 'neon-disco' ? 'Disco Plays' : 'Special Plays'}
-          amount={formatVaultMoney(neonRoundSummary.totalRand)}
-          onDismiss={controller.dismissNeonRoundSummary}
-        />
-      )}
+
+
+
 
       {reelRichesIntroVisible && (
         <section className="reel-riches__bonus-intro" role="status" aria-live="polite">

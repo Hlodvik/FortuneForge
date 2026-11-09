@@ -4,8 +4,6 @@ import { createRoot } from 'react-dom/client'
 import { expect, it, vi } from 'vitest'
 import { GODS_OF_OLYMPUS_SLOT_GAME } from '../../games/slots/godsOfOlympus/manifest'
 import { GODS_TUMBLE_INITIAL_REELS } from '../../games/slots/godsOfOlympus/tumble'
-import { NEON_NIGHTS_SLOT_GAME } from '../../games/slots/neonNights/manifest'
-import { SpinRequestError } from './services/slotsApi'
 import type { SpinResult } from './types/slots'
 import { useSlotsPageController, type SlotsPageController } from './useSlotsPageController'
 
@@ -78,48 +76,6 @@ it('plays an owed extra-row Trial before switching to paid tumbles and settles t
     })
     expect(controller.displayedReels).toEqual(GODS_TUMBLE_INITIAL_REELS)
     expect(controller.balance).toBe(39.25)
-  } finally {
-    act(() => root.unmount())
-    vi.unstubAllGlobals()
-  }
-})
-
-it('recovers paid Neon Special Plays and the original wager after a stale cash spin', async () => {
-  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-  vi.clearAllMocks()
-  const root = createRoot(document.createElement('div'))
-  const experienceSet = NEON_NIGHTS_SLOT_GAME.experience
-  const account = {
-    userId: 'paid-neon-test', playerName: 'Neon Test', email: 'neon@example.test', createdAtUtc: '', role: 'player',
-    balances: { slotsCredits: 20, freeGames: 0 },
-    slots: { spinsPlayed: 0, wins: 0, losses: 0, creditsWagered: 0, creditsWon: 0, netCredits: 0 },
-  }
-  let controller!: SlotsPageController
-  function Harness() {
-    controller = useSlotsPageController({ experienceSet, account })
-    return null
-  }
-
-  const staleState = {
-    freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
-    specialPointsBalance: 0, energyBalance: 0, sealCollections: [],
-  }
-  mocks.state.mockResolvedValueOnce(staleState).mockResolvedValueOnce({
-    ...staleState, freeSpinsRemaining: 7, freeSpinWagerPoints: 150,
-  })
-  mocks.request.mockRejectedValueOnce(new SpinRequestError('Play your awarded spins first.', 409, { code: 'free-spins-required' }))
-
-  try {
-    await act(async () => root.render(<Harness />))
-    await act(async () => controller.handleSpinButtonClick())
-    expect(mocks.request).toHaveBeenCalledOnce()
-    expect(mocks.request).toHaveBeenCalledWith(expect.objectContaining({ useFreeSpin: false }))
-    expect(mocks.state.mock.calls).toEqual([['neon-nights-v1'], ['neon-nights-v1']])
-    expect(controller.freeSpinsRemaining).toBe(7)
-    expect(controller.useFreeGameForNextSpin).toBe(true)
-    expect(controller.activeWagerDisplay).toBe(1.5)
-    expect(controller.balance).toBe(20)
-    expect(controller.spinError).toBeNull()
   } finally {
     act(() => root.unmount())
     vi.unstubAllGlobals()

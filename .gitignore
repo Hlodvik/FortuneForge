@@ -48,6 +48,10 @@ coverage/
 /output/integration-2026-11-02/
 /output/maintenance-2026-11-02/midnight-vault-integer-math/
 
+# Local standalone Neon API and test builds.
+/output/neon-standalone-api/
+/output/neon-standalone-tests/
+
 # Logs and local process output
 *.log
 .firebase/

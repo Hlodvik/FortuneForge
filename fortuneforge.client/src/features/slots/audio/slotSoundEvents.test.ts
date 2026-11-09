@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SLOT_SOUNDS, NEON_NIGHTS_SOUNDS, PIRATES_FORTUNE_SOUNDS } from '../config/soundSets'
+import { DEFAULT_SLOT_SOUNDS, CANDY_CARNIVAL_SOUNDS, PIRATES_FORTUNE_SOUNDS } from '../config/soundSets'
 import type { SlotResultSoundEvent } from '../config/soundSets'
 import type { SpinResult } from '../types/slots'
 import { getCollectionArrivalCue, getSuiteResultCue } from './slotSoundEvents'
@@ -14,27 +14,27 @@ describe('opt-in suite event selection', () => {
     const finalSpin = result({ isFreeSpin: true, bananaBonusPoints: 300 })
     const events: (SlotResultSoundEvent | null)[] = ['bonus', 'five', 'premium', 'single-three', 'no-win', null]
     for (const event of events) {
-      expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, finalSpin, event, true, 0)).toBe('bonus-complete')
+      expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, finalSpin, event, true, 0)).toBe('bonus-complete')
     }
   })
 
   it('does not infer completion from idle/base/retriggered/continuing states', () => {
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, result(), null, false, 0)).toBeUndefined()
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, result(), 'no-win', true, 0)).toBe('soft-miss')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, result({ isFreeSpin: true, freeSpinsRemaining: 1 }), 'no-win', true, 0)).toBe('soft-miss')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, result({ isFreeSpin: true }), 'bonus', true, 6)).toBe('bonus-entry')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, result(), null, false, 0)).toBeUndefined()
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, result(), 'no-win', true, 0)).toBe('soft-miss')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, result({ isFreeSpin: true, freeSpinsRemaining: 1 }), 'no-win', true, 0)).toBe('soft-miss')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, result({ isFreeSpin: true }), 'bonus', true, 6)).toBe('bonus-entry')
   })
 
   it('uses the separate 777 award even when no ordinary payline pays, below bonus/major-win priority', () => {
     const tripleOnly = result({ bananaBonusPoints: 300 })
     expect(tripleOnly.payout.paylines).toEqual([])
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, null, false, 0)).toBe('triple-sevens')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, 'single-three', false, 0)).toBe('triple-sevens')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, 'no-win', false, 0)).toBe('triple-sevens')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, 'bonus', false, 6)).toBe('bonus-entry')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, 'five', false, 0)).toBe('five-casino-win')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, tripleOnly, 'premium', false, 0)).toBe('premium-win')
-    expect(getSuiteResultCue(NEON_NIGHTS_SOUNDS, result(), 'single-three', false, 0)).toBe('low-win')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, null, false, 0)).toBe('triple-sevens')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, 'single-three', false, 0)).toBe('triple-sevens')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, 'no-win', false, 0)).toBe('triple-sevens')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, 'bonus', false, 6)).toBe('bonus-entry')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, 'five', false, 0)).toBe('five-casino-win')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, tripleOnly, 'premium', false, 0)).toBe('premium-win')
+    expect(getSuiteResultCue(CANDY_CARNIVAL_SOUNDS, result(), 'single-three', false, 0)).toBe('low-win')
   })
 
   it('leaves legacy result and collection dispatch unchanged', () => {
@@ -42,8 +42,8 @@ describe('opt-in suite event selection', () => {
       expect(getSuiteResultCue(sounds, result({ isFreeSpin: true, bananaBonusPoints: 300 }), 'five', true, 0)).toBeUndefined()
       expect(getCollectionArrivalCue(sounds, 'sync')).toBeUndefined()
     }
-    expect(['sync', 'rows', 'paw', 'rand'].map(track => getCollectionArrivalCue(NEON_NIGHTS_SOUNDS, track)))
+    expect(['sync', 'rows', 'paw', 'rand'].map(track => getCollectionArrivalCue(CANDY_CARNIVAL_SOUNDS, track)))
       .toEqual(['collect-sync', 'collect-rows', 'collect-paw', 'collect-rand'])
-    expect(getCollectionArrivalCue(NEON_NIGHTS_SOUNDS, 'unknown')).toBeUndefined()
+    expect(getCollectionArrivalCue(CANDY_CARNIVAL_SOUNDS, 'unknown')).toBeUndefined()
   })
 })

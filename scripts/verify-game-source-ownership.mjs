@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { verifyNeonStandalone } from './verify-neon-standalone.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const read = (path) => readFileSync(resolve(root, path), 'utf8')
@@ -64,5 +65,6 @@ for (const oldFeed of ['packages/client', 'packages/games']) {
   if (existsSync(resolve(root, oldFeed))) fail(`Obsolete copied-package feed still exists: ${oldFeed}`)
 }
 
+for (const error of verifyNeonStandalone(root).errors) fail(error)
 if (process.exitCode) process.exit(process.exitCode)
 console.log(`Verified ${sourceProjectPaths.size} server game projects and ${clientGameDependencies.length} client game workspaces are owned by this repository.`)

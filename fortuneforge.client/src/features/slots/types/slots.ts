@@ -86,22 +86,6 @@ export type MidnightVaultDemoState = {
   collectionWagerPoints: Record<string, number>
 }
 
-export type NeonArcadeResult = {
-  modelId: 'neon-arcade-local-v2'
-  calibrated: false
-  bonusSymbolCount: number
-  boostPercentPerSymbol: number
-  paylineBoostMultiplier: number
-  unboostedPaylinePoints: number
-  paylineBoostPoints: number
-  featureGamesEnabled: boolean
-  activators: {
-    kind: 'car' | 'disco-ball' | 'arcade-cabinet'
-    symbolId: '6' | 'POWER' | 'SEAL_RAND'
-    positions: GridPosition[]
-  }[]
-}
-
 export type SpinResult = {
   olympusTumble?: GodsTumbleResult
   spinId: string
@@ -125,7 +109,6 @@ export type SpinResult = {
   queuedBonusRounds?: MidnightVaultBonusRound[]
   awardedBonusRounds?: MidnightVaultBonusRound[]
   midnightBonusState?: MidnightVaultDemoState | null
-  neonArcade?: NeonArcadeResult | null
   specialPointsAwarded: number
   specialPointsBalance: number
   energyAwarded: number

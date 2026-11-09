@@ -133,9 +133,11 @@ public sealed partial class FirestoreAccountStore
         return value;
     }
 
-    private static Dictionary<string, long> ReadLongMap(DocumentSnapshot snapshot, string field)
+    private static Dictionary<string, long> ReadLongMap(DocumentSnapshot snapshot, string field,
+        IReadOnlyList<string>? trackIds = null)
     {
-        var values = SealFeatureModes.ToDictionary(
+        var modes = trackIds ?? SealFeatureModes;
+        var values = modes.ToDictionary(
             mode => mode,
             _ => 0L,
             StringComparer.Ordinal);
@@ -151,7 +153,7 @@ public sealed partial class FirestoreAccountStore
             return values;
         }
 
-        foreach (var mode in SealFeatureModes)
+        foreach (var mode in modes)
         {
             if (rawMap.TryGetValue(mode, out var value))
             {

@@ -32,18 +32,18 @@ public sealed class NeonArcadeTests
         Assert.Null(game.Energy);
         Assert.Null(game.SpecialPoints);
         Assert.Null(game.Math.Targets.Rtp);
-        Assert.Equal(0.74m, game.Math.PayoutMultiplier);
+        Assert.Equal(0.82m, game.Math.PayoutMultiplier);
         Assert.Equal(new[] { 3, 5 }, game.Symbols.WildSubstitutionMatchLengths);
         Assert.Equal(25m, provider.GetGame(SlotSpecialRoundProfiles.OceanOdysseyGameId)!.Wagering.PointValueInCents);
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
         Assert.All(strips, strip =>
         {
-            Assert.Equal(2048, strip.Count);
-            Assert.Equal(464, strip.Count(symbol => symbol is "2" or "4" or "5" or "7"));
-            Assert.Equal(462, strip.Count(symbol => symbol == "3"));
-            Assert.Equal(418, strip.Count(symbol => symbol == "SEAL_ROWS"));
-            Assert.Equal(930, strip.Count(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW"));
-            Assert.Equal(8, strip.Count(symbol => symbol == "FREE"));
+            Assert.Equal(4096, strip.Count);
+            Assert.Equal(928, strip.Count(symbol => symbol is "2" or "4" or "5" or "7"));
+            Assert.Equal(927, strip.Count(symbol => symbol == "3"));
+            Assert.Equal(836, strip.Count(symbol => symbol == "SEAL_ROWS"));
+            Assert.Equal(1860, strip.Count(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW"));
+            Assert.Equal(16, strip.Count(symbol => symbol == "FREE"));
             Assert.Single(strip, symbol => symbol == "6");
             Assert.Single(strip, symbol => symbol == "POWER");
             Assert.Single(strip, symbol => symbol == "SEAL_RAND");
@@ -82,6 +82,75 @@ public sealed class NeonArcadeTests
     }
 
     [Fact]
+    public void DiscoPlayCascadesPayingSymbolsAndReplaysEveryRefill()
+    {
+        var provider = Definitions();
+        var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
+        var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
+        var stops = Enumerable.Range(0, strips.Count)
+            .Select(reel => Start(strips[reel], "3")).ToArray();
+        var random = new StopsThenZero(stops);
+        var engine = new SpinService(provider, new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+
+        var result = engine.Spin(game.Id, 50, "neon-disco-test", false,
+            isNeonDiscoPlay: true);
+        var cascade = Assert.IsType<NeonDiscoCascadeOutcome>(result.NeonDiscoCascade);
+        Assert.NotEmpty(cascade.Steps);
+        Assert.Equal(result.Reels.SelectMany(reel => reel), cascade.InitialReels.SelectMany(reel => reel));
+        Assert.Equal(cascade.Steps.Sum(step => step.Payout.TotalPoints), cascade.TotalPoints);
+        Assert.Equal(cascade.TotalPoints, result.Payout.TotalPoints);
+        Assert.Empty(result.Payout.Paylines);
+        Assert.All(cascade.Steps, step =>
+        {
+            Assert.NotEmpty(step.Cleared);
+            Assert.Equal(game.Layout.ReelCount, step.Reels.Count);
+            Assert.Equal(game.Layout.ReelCount, step.DropRows.Count);
+            Assert.Equal(step.Payout.TotalPoints, step.Payout.Paylines.Sum(line => line.AmountPoints));
+        });
+        Assert.Empty(SlotRoundAudit.Check(result, result.Payout, isPaid: true));
+
+        var altered = result with
+        {
+            NeonDiscoCascade = cascade with { TotalPoints = cascade.TotalPoints + 1 }
+        };
+        Assert.Contains(SlotRoundAudit.Check(altered, altered.Payout, isPaid: true),
+            finding => finding.Code == "slot-neon-disco-steps-mismatch");
+    }
+
+    [Fact]
+    public async Task DiscoDemoCarriesThePaidPlayAndReplaysItsCascadeReceipt()
+    {
+        var provider = Definitions();
+        var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
+        var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
+        var stops = Enumerable.Range(0, strips.Count)
+            .Select(reel => Start(strips[reel], reel == 0 ? "POWER" : "3")).ToArray();
+        var random = new StopsThenZero(stops);
+        var engine = new SpinService(provider, new CryptoReelGenerator(random),
+            new CombinationEvaluator(), new PayoutCalculator(), random);
+        var store = new DemoAudit();
+        var controller = new DemoSlotsController(engine, store, NullLogger<DemoSlotsController>.Instance)
+        {
+            ControllerContext = new() { HttpContext = new DefaultHttpContext() }
+        };
+        var request = new DemoSpinRequest(game.Id, 50, false, 0, null, 0);
+        var trigger = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(
+            await controller.Spin(request, CancellationToken.None)).Value);
+        Assert.Equal(NeonArcadeSlotDefinitions.DiscoPlaySpins, trigger.NeonDiscoSpinsRemaining);
+        Assert.Null(trigger.NeonDiscoCascade);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
+
+        var play = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(
+            await controller.Spin(request with
+            {
+                NeonDiscoSpinsRemaining = trigger.NeonDiscoSpinsRemaining
+            }, CancellationToken.None)).Value);
+        Assert.NotNull(play.NeonDiscoCascade);
+        Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
+    }
+
+    [Fact]
     public void CommonPropsPayThroughTheEngineAndOneRareSymbolAwardsSpecialPlays()
     {
         var provider = Definitions();
@@ -101,10 +170,25 @@ public sealed class NeonArcadeTests
         Assert.Contains(result.NeonArcade.Activators, role => role.Kind == "car");
         Assert.DoesNotContain(result.Payout.Paylines.SelectMany(line => line.Matches), match => match.Match.SymbolId is "6" or "POWER" or "SEAL_RAND" or "FREE");
         Assert.Empty(SlotRoundAudit.Check(result, result.Payout));
+        var v7Evidence = result.NeonArcade with { ModelId = NeonArcadeSlotDefinitions.PreviousDiscoModelId };
+        var v7Round = result with
+        {
+            NeonArcade = v7Evidence,
+            EngineAudit = result.EngineAudit! with
+            {
+                EngineVersion = NeonArcadeSlotDefinitions.PreviousDiscoEngineVersion,
+                NeonArcade = v7Evidence
+            }
+        };
+        Assert.Empty(SlotRoundAudit.Check(v7Round, v7Round.Payout));
         Assert.Contains(SlotRoundAudit.Check(result with { NeonArcade = result.NeonArcade with { PaylineBoostPoints = 999 } }, result.Payout),
             finding => finding.Code == "slot-neon-arcade-mismatch");
 
-        var previousEvidence = result.NeonArcade with { FeatureGamesEnabled = false };
+        var previousEvidence = result.NeonArcade with
+        {
+            ModelId = NeonArcadeSlotDefinitions.PreviousModelId,
+            FeatureGamesEnabled = false
+        };
         var previous = result with
         {
             FreeSpinsAwarded = 0,
@@ -154,11 +238,17 @@ public sealed class NeonArcadeTests
             TotalPoints = result.Payout.TotalPoints - result.BananaBonusPoints + oldSevenPoints,
             Paylines = oldLines
         };
+        var oldEvidence = result.NeonArcade! with { ModelId = NeonArcadeSlotDefinitions.PreviousModelId };
         var oldResult = result with
         {
             Payout = oldPayout,
             BananaBonusPoints = oldSevenPoints,
-            EngineAudit = result.EngineAudit! with { EngineVersion = NeonArcadeSlotDefinitions.PreviousEngineVersion }
+            NeonArcade = oldEvidence,
+            EngineAudit = result.EngineAudit! with
+            {
+                EngineVersion = NeonArcadeSlotDefinitions.PreviousEngineVersion,
+                NeonArcade = oldEvidence
+            }
         };
         Assert.Empty(SlotRoundAudit.Check(oldResult, oldPayout));
     }
@@ -203,9 +293,15 @@ public sealed class NeonArcadeTests
         Assert.Null(consumed.FreeSpinFeatureMode);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
-        var baseOnlyAudit = consumed.EngineAudit! with { EngineVersion = NeonArcadeSlotDefinitions.BaseOnlyEngineVersion };
-        Assert.Empty(SlotRoundAudit.Check(consumed with { EngineAudit = baseOnlyAudit, FreeSpinsAwarded = 0 }, consumed.Payout));
-        Assert.Contains(SlotRoundAudit.Check(consumed with { EngineAudit = baseOnlyAudit }, consumed.Payout),
+        var baseOnlyEvidence = consumed.NeonArcade! with { ModelId = NeonArcadeSlotDefinitions.PreviousModelId };
+        var baseOnlyAudit = consumed.EngineAudit! with
+        {
+            EngineVersion = NeonArcadeSlotDefinitions.BaseOnlyEngineVersion,
+            NeonArcade = baseOnlyEvidence
+        };
+        var baseOnlyResult = consumed with { EngineAudit = baseOnlyAudit, NeonArcade = baseOnlyEvidence };
+        Assert.Empty(SlotRoundAudit.Check(baseOnlyResult with { FreeSpinsAwarded = 0 }, consumed.Payout));
+        Assert.Contains(SlotRoundAudit.Check(baseOnlyResult, consumed.Payout),
             finding => finding.Code == "slot-free-spins-mismatch");
 
         var aboveLimit = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(await controller.Spin(
@@ -246,6 +342,13 @@ public sealed class NeonArcadeTests
     {
         private int cursor;
         public int Next(int maximumExclusive) => values[cursor++] % maximumExclusive;
+    }
+
+    private sealed class StopsThenZero(IReadOnlyList<int> stops) : IRandomIndexSource
+    {
+        private int cursor;
+        public int Next(int maximumExclusive) => cursor < stops.Count
+            ? stops[cursor++] % maximumExclusive : 0;
     }
 
     private sealed class DemoAudit : IDemoSlotAuditStore

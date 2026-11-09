@@ -1,0 +1,786 @@
+/* Neon-owned styles extracted without changing their original declarations. */
+
+
+
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'][data-cabinet-chrome='simple'] .slot-game-frame__visuals {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgb(34 231 255 / 10%), transparent 52%),
+    radial-gradient(ellipse at 90% 100%, rgb(255 79 216 / 12%), transparent 52%),
+    linear-gradient(145deg, #11132b, #090b1b 58%, #1b0e2c);
+}
+
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner {
+  color: var(--neon-payline-color, #ff4fd8);
+}
+
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner::before {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(255 255 255 / 70%) 0 8%, color-mix(in srgb, currentColor 72%, transparent) 20%, transparent 58%),
+    radial-gradient(circle at 50% 50%, color-mix(in srgb, currentColor 60%, transparent), transparent 68%);
+}
+
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner .slot-symbol__image {
+  filter:
+    drop-shadow(0 0 0.25rem rgb(255 255 255 / 55%))
+    drop-shadow(0 0 0.7rem color-mix(in srgb, currentColor 70%, transparent));
+  animation-name: neon-winning-symbol-pop;
+}
+
+@keyframes neon-winning-symbol-pop {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1.42); }
+  46% { transform: translate3d(0, -3%, 0) scale(1.56); }
+  62% { transform: translate3d(0, 0, 0) scale(1.48); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner,
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner::before,
+.slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] .slot-symbol--winner .slot-symbol__image {
+    animation: none;
+  }
+}
+
+
+.slots-page__result-atmosphere[data-celebration='neon-scan']::before { content: '▰ ✦ ▰ ✦ ▰'; animation-name: result-neon-scan; }
+
+@keyframes result-neon-scan {
+  0% { opacity: 0; transform: translateX(-58%) scaleY(0.35); filter: brightness(0.8); }
+  20% { opacity: 1; filter: brightness(2); }
+  100% { opacity: 0; transform: translateX(58%) scaleY(1.28); filter: brightness(1); }
+}
+
+
+
+.slots-page[data-special-round='neon-midnight-mix'] {
+  --special-round-accent: #57f0ff;
+  --special-round-deep: #6a1778;
+  --special-round-ink: #08051f;
+}
+
+.slots-page[data-special-round='neon-midnight-mix'] .slots-page__spin-controls .spin-button {
+  border-radius: 0.28rem;
+  clip-path: polygon(14% 0, 86% 0, 100% 22%, 100% 78%, 86% 100%, 14% 100%, 0 78%, 0 22%);
+}
+
+.symbol-value-guide--neon {
+  border-color: rgb(98 234 255 / 70%);
+  background:
+    radial-gradient(ellipse at 12% 0%, rgb(34 231 255 / 10%), transparent 52%),
+    radial-gradient(ellipse at 90% 100%, rgb(255 79 216 / 12%), transparent 52%),
+    linear-gradient(145deg, #11132b, #090b1b 58%, #1b0e2c);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 10%),
+    0 0.8rem 1.8rem rgb(2 4 17 / 58%),
+    0 0 1.2rem rgb(255 85 203 / 24%);
+}
+
+.symbol-value-guide--neon .symbol-value-guide__item {
+  border-color: rgb(98 234 255 / 22%);
+  background: rgb(7 13 34 / 72%);
+  color: #dff8ff;
+}
+
+.symbol-value-guide--neon .symbol-value-guide__item b {
+  color: #ff9fe9;
+}
+
+.symbol-value-guide--neon .symbol-value-guide__heading span,
+.symbol-value-guide--neon > small {
+  color: #b8f5ff;
+}
+
+@media (min-width: 1500px) and (min-height: 720px) {
+  .symbol-value-guide--neon.symbol-value-guide--side,
+.symbol-value-guide__restore.symbol-value-guide--neon {
+    top: calc(4.35rem + clamp(0.7rem, 1.6vw, 1.7rem));
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__heading {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0.2rem;
+    padding-inline: 1.85rem;
+    text-align: center;
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__heading > span {
+    margin-left: 0;
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__minimize {
+    position: absolute;
+    top: 0;
+    right: 0;
+  }
+}
+
+@media (min-width: 1750px) and (min-height: 720px) {
+  .symbol-value-guide--neon .symbol-value-guide__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__item {
+    grid-column: 1 / -1;
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__item--compact {
+    grid-column: auto;
+    grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 0.3rem;
+    padding: 0.28rem 0.35rem;
+  }
+
+  .symbol-value-guide--neon .symbol-value-guide__item--compact .symbol-value-guide__artwork {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Keep the full fourteen-symbol guide visible on laptop-sized desktop views. */
+@media (min-width: 1500px) and (max-width: 1749px) and (min-height: 720px) {
+  .symbol-value-guide--neon.symbol-value-guide--side {
+    max-height: calc(100dvh - 4.35rem - 2 * clamp(0.7rem, 1.6vw, 1.7rem));
+    overflow-y: visible;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item {
+    grid-template-columns: clamp(1.9rem, 4dvh, 2.25rem) minmax(0, 1fr) auto auto;
+    grid-template-rows: auto;
+    gap: 0.35rem;
+    padding: 0.18rem 0.35rem;
+    font-size: 0.7rem;
+    line-height: 1.1;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__artwork {
+    grid-column: 1;
+    grid-row: 1;
+    width: clamp(1.9rem, 4dvh, 2.25rem);
+    height: clamp(1.9rem, 4dvh, 2.25rem);
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__name {
+    grid-column: 2;
+    grid-row: 1;
+    font-size: 0.64rem;
+    line-height: 1.1;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item > span:nth-of-type(2) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item > span:nth-of-type(3) {
+    grid-column: 4;
+    grid-row: 1;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item--single-value > span:nth-of-type(2) {
+    grid-column: 3 / -1;
+  }
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] :is(.symbol-value-guide__trigger, .slots-page__help-button, .slots-page__settings-button) {
+  --neon-utility-accent: #ff83df;
+  border-color: var(--neon-utility-accent);
+  background:
+    radial-gradient(ellipse at top, color-mix(in srgb, var(--neon-utility-accent) 22%, transparent), transparent 76%),
+    linear-gradient(155deg, #211536, #090f23 78%);
+  box-shadow:
+    inset 0 0 0.4rem color-mix(in srgb, var(--neon-utility-accent) 18%, transparent),
+    0 0 0.65rem color-mix(in srgb, var(--neon-utility-accent) 33%, transparent);
+  color: #fff0fc;
+  text-shadow: 0 0 0.35rem var(--neon-utility-accent);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__settings-button {
+  --neon-utility-accent: #62eaff;
+  color: #ddfaff;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__help-button {
+  font: 700 1.2rem/1 Inter, system-ui, sans-serif;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger {
+  gap: 0.35rem;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger span {
+  display: inline;
+  color: #62eaff;
+  text-shadow: 0 0 0.4rem #62eaff;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] :is(.symbol-value-guide__trigger, .slots-page__help-button, .slots-page__settings-button):is(:hover, [aria-expanded='true']) {
+  border-color: #fff0fc;
+  background: linear-gradient(155deg, color-mix(in srgb, var(--neon-utility-accent) 27%, #211536), #0b1430);
+  box-shadow:
+    inset 0 0 0.5rem color-mix(in srgb, var(--neon-utility-accent) 32%, transparent),
+    0 0 0.85rem color-mix(in srgb, var(--neon-utility-accent) 57%, transparent);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] :is(.symbol-value-guide__trigger, .slots-page__help-button, .slots-page__settings-button):focus-visible {
+  outline-color: #62eaff;
+}
+
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] {
+  --neon-title-height: clamp(3rem, 15dvh, 8rem);
+  --neon-tally-space: 0rem;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] {
+  border: clamp(2px, 0.18vw, 3px) solid transparent;
+  border-radius: clamp(0.55rem, 1vw, 0.85rem);
+  background:
+    linear-gradient(#0b1028, #0b1028) padding-box,
+    linear-gradient(118deg, #c9ecf5 0%, #71a9ca 19%, #24395f 45%, #4b477d 76%, #9fc4df 100%) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgb(224 246 255 / 14%),
+    0 0 0 1px rgb(6 10 26 / 72%),
+    0 0 1.1rem rgb(58 154 213 / 22%);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-disco-round='true'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] {
+  background:
+    linear-gradient(#0b1028, #0b1028) padding-box,
+    linear-gradient(118deg, #ecf5ff 0%, #92d9ef 20%, #6651bd 42%, #d65cc4 68%, #dfe9fb 100%) border-box;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 22%),
+    0 0 0 1px rgb(8 8 29 / 78%),
+    0 0 1.15rem rgb(166 84 232 / 38%),
+    0 0 2.15rem rgb(68 185 233 / 20%);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-disco-round='true'] .slots-page__main {
+  position: relative;
+  z-index: 12;
+}
+
+.neon-disco-floor {
+  position: fixed;
+  z-index: 11;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #090e23;
+  pointer-events: none;
+}
+
+.neon-disco-cascade__cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.neon-disco-cascade__cell--award {
+  z-index: 2;
+  animation: neon-disco-cascade-hit 950ms ease-out both;
+}
+
+.neon-disco-cascade__cell--clear {
+  z-index: 2;
+  animation: neon-disco-cascade-clear 420ms ease-in both;
+}
+
+.neon-disco-cascade__cell--drop {
+  animation: neon-disco-cascade-drop calc(300ms + 55ms * var(--neon-disco-drop-rows)) cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-symbol__image {
+  transition: transform 380ms cubic-bezier(.2, .8, .2, 1), filter 380ms ease-out;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-symbol--winner .slot-symbol__image {
+  animation: none;
+  transform: translateY(-3%) scale(1.08);
+  filter: drop-shadow(0 0 .4rem #fff) drop-shadow(0 0 1rem #ffcf5a);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-disco-cascade='award'] .slot-symbol--winner .slot-symbol__image {
+  transform: none;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon {
+  isolation: isolate;
+  min-width: 0;
+  width: min(86vw, 35rem);
+  gap: .35rem;
+  filter: drop-shadow(0 .35rem .3rem rgb(12 4 24 / 85%));
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon:not(.slots-page__win-award--flying) {
+  animation-name: neon-win-amount-pop;
+  animation-timing-function: cubic-bezier(.18, .82, .2, 1);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon::before {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: min(85vw, 25rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 249 185 / 68%) 0, rgb(255 177 38 / 33%) 24%, rgb(255 87 204 / 12%) 46%, transparent 69%);
+  content: '';
+  filter: blur(.7rem);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon span {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #d92b1a;
+  font: italic 900 clamp(1.25rem, 3vw, 2.3rem)/1 Georgia, 'Times New Roman', serif;
+  letter-spacing: .035em;
+  -webkit-text-stroke: .8px #fff4d0;
+  text-shadow: 0 .1em 0 #086055, 0 .17em .1em #092d31, 0 0 .45em #ffe273;
+  animation: neon-win-label-flash .48s steps(2, end) both;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon strong {
+  max-width: 100%;
+  background: linear-gradient(180deg, #ffe54c 0%, #ffdb21 24%, #ffc00d 49%, #f99508 76%, #d45607 100%);
+  background-clip: text;
+  color: transparent;
+  font: italic 900 clamp(3.2rem, 9vw, 7.5rem)/.94 Georgia, 'Times New Roman', serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -.045em;
+  paint-order: stroke fill;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -webkit-text-stroke: clamp(2px, .24vw, 4px) #7a210c;
+  filter: drop-shadow(0 .055em 0 #451206) drop-shadow(0 0 .09em #fff4a0) drop-shadow(0 0 .24em #ffbd2c);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon.slots-page__win-award--big strong,
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__win-award--neon.slots-page__win-award--jackpot strong {
+  font-size: clamp(4rem, 11vw, 9rem);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='neon-scan']::before {
+  top: 48%;
+  left: 50%;
+  width: min(58vw, 34rem);
+  height: min(46vh, 25rem);
+  background: radial-gradient(ellipse, rgb(255 239 139 / 24%) 0%, rgb(255 108 203 / 13%) 30%, transparent 68%);
+  content: '';
+  transform: translate(-50%, -50%);
+  animation: neon-win-flash 760ms ease-out both;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='neon-scan']::after {
+  display: none;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='neon-scan'] i {
+  position: absolute;
+  top: calc(48% + var(--spark-origin-y));
+  left: calc(50% + var(--spark-origin-x));
+  width: var(--spark-width, .2rem);
+  height: var(--spark-height, .9rem);
+  border-radius: 55% 55% 35% 35%;
+  background: linear-gradient(180deg, #fff 0%, var(--spark-color, #ffe08a) 58%, transparent 100%);
+  filter: drop-shadow(0 0 .38rem var(--spark-color, #ffe08a));
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(var(--spark-angle, 0deg));
+  animation: neon-win-spark var(--spark-duration, 860ms) cubic-bezier(.18, .68, .28, 1) var(--spark-delay, 0ms) both;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(3n) {
+  width: .8rem;
+  height: .8rem;
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+}
+
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(1) { --spark-origin-x: -7vmin; --spark-origin-y: -3vmin; --spark-travel-x: -8vmin; --spark-travel-y: -9vmin; --spark-angle: -38deg; --spark-delay: 0ms; --spark-color: #ffe8a0; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(2) { --spark-origin-x: -1vmin; --spark-origin-y: -7vmin; --spark-travel-x: 1vmin; --spark-travel-y: -10vmin; --spark-angle: 9deg; --spark-delay: 66ms; --spark-color: #9cf1ff; --spark-height: 1.1rem; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(3) { --spark-origin-x: 5vmin; --spark-origin-y: -4vmin; --spark-travel-x: 9vmin; --spark-travel-y: -6vmin; --spark-delay: 38ms; --spark-color: #ffafe7; --spark-duration: 980ms; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(4) { --spark-origin-x: 8vmin; --spark-origin-y: 1vmin; --spark-travel-x: 10vmin; --spark-travel-y: 4vmin; --spark-angle: 61deg; --spark-delay: 118ms; --spark-color: #ffd874; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(5) { --spark-origin-x: 2vmin; --spark-origin-y: 6vmin; --spark-travel-x: 4vmin; --spark-travel-y: 9vmin; --spark-angle: 145deg; --spark-delay: 48ms; --spark-color: #b7f5ff; --spark-height: .7rem; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(6) { --spark-origin-x: -5vmin; --spark-origin-y: 5vmin; --spark-travel-x: -4vmin; --spark-travel-y: 9vmin; --spark-delay: 134ms; --spark-color: #ff94d5; --spark-duration: 940ms; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(7) { --spark-origin-x: -9vmin; --spark-origin-y: 1vmin; --spark-travel-x: -11vmin; --spark-travel-y: -2vmin; --spark-angle: -71deg; --spark-delay: 80ms; --spark-color: #ffe7a3; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(8) { --spark-origin-x: -3vmin; --spark-origin-y: -2vmin; --spark-travel-x: -8vmin; --spark-travel-y: -6vmin; --spark-angle: -58deg; --spark-delay: 156ms; --spark-color: #98edff; --spark-height: .68rem; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(9) { --spark-origin-x: 1vmin; --spark-origin-y: -2vmin; --spark-travel-x: 5vmin; --spark-travel-y: -8vmin; --spark-delay: 97ms; --spark-color: #fff4bd; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(10) { --spark-origin-x: 6vmin; --spark-origin-y: 5vmin; --spark-travel-x: 8vmin; --spark-travel-y: 8vmin; --spark-angle: 133deg; --spark-delay: 14ms; --spark-color: #ff95d3; --spark-height: 1.12rem; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(11) { --spark-origin-x: -2vmin; --spark-origin-y: 3vmin; --spark-travel-x: -7vmin; --spark-travel-y: 8vmin; --spark-angle: -135deg; --spark-delay: 180ms; --spark-color: #ffe3a0; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(12) { --spark-origin-x: -6vmin; --spark-origin-y: -6vmin; --spark-travel-x: -2vmin; --spark-travel-y: -11vmin; --spark-delay: 122ms; --spark-color: #94f0ff; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(13) { --spark-origin-x: 7vmin; --spark-origin-y: -6vmin; --spark-travel-x: 10vmin; --spark-travel-y: -2vmin; --spark-angle: 68deg; --spark-delay: 171ms; --spark-color: #fff0bb; --spark-height: .73rem; }
+.slots-page__result-atmosphere[data-celebration='neon-scan'] i:nth-child(14) { --spark-origin-x: -8vmin; --spark-origin-y: 4vmin; --spark-travel-x: -10vmin; --spark-travel-y: 5vmin; --spark-angle: -105deg; --spark-delay: 56ms; --spark-color: #ffa6df; }
+
+@keyframes neon-win-flash {
+  0% { opacity: 0; }
+  18% { opacity: .8; }
+  100% { opacity: 0; }
+}
+
+@keyframes neon-win-spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--spark-angle)) scale(.4); }
+  22% { opacity: .95; transform: translate(-50%, -50%) rotate(var(--spark-angle)) scale(1); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--spark-travel-x)), calc(-50% + var(--spark-travel-y))) rotate(var(--spark-angle)) scale(.45); }
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__main {
+  container-type: size;
+  overflow-y: auto;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__title-art {
+  display: block;
+  justify-self: center;
+  width: min(74%, 18rem);
+  height: var(--neon-title-height);
+  object-fit: contain;
+}
+
+.neon-special-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgb(9 5 20 / 76%);
+}
+
+.neon-special-intro__symbol {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(72vw, 68dvh, 28rem);
+  aspect-ratio: 1;
+  object-fit: contain;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 1.1rem rgb(255 47 186 / 52%));
+  animation: neon-special-intro-grow var(--neon-special-intro-reveal-duration) ease-out both;
+}
+
+.neon-special-intro__clip {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #08040e;
+}
+
+.neon-special-intro[data-trigger-symbol='POWER'] .neon-special-intro__clip {
+  object-fit: fill;
+}
+
+.slots-page[data-neon-arcade-rows='true'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] {
+  aspect-ratio: 0.95 / 1;
+}
+
+.slots-page[data-neon-arcade-expanding='true'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] {
+  animation: neon-arcade-cabinet-expand 3s cubic-bezier(0.2, 0.7, 0.16, 1) both;
+}
+
+.slots-page[data-neon-arcade-expanding='true'] .slot-reel__symbols {
+  animation: neon-arcade-add-rows 3s cubic-bezier(0.2, 0.7, 0.16, 1) both;
+}
+
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='4'],
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='5'],
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='6'] {
+  animation: neon-arcade-row-light 600ms ease-out both;
+}
+
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='4'] { animation-delay: 900ms; }
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='5'] { animation-delay: 1600ms; }
+.slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='6'] { animation-delay: 2300ms; }
+
+.slots-page[data-neon-arcade-expanding='true'] .pirates-spin-controls__spin {
+  visibility: hidden;
+}
+
+.neon-admin-triggers {
+  display: none;
+}
+
+.neon-round-summary-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 190;
+  background: rgb(4 5 17 / 64%);
+  backdrop-filter: blur(3px);
+}
+
+.neon-round-summary {
+  position: fixed;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: stretch;
+  overflow: hidden;
+  border: 2px solid #ff8fe2;
+  border-radius: 1rem;
+  box-shadow: 0 0 2.2rem rgb(255 55 205 / 48%), inset 0 0 1.5rem rgb(103 232 255 / 18%);
+}
+
+.neon-round-summary:not([style]) {
+  top: 50%;
+  left: 50%;
+  width: min(90vw, 46rem);
+  height: min(60vh, 30rem);
+  transform: translate(-50%, -50%);
+}
+
+.neon-round-summary__continue {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.25rem, 1.6vh, 0.8rem);
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  border: 0;
+  background: radial-gradient(ellipse at 50% 43%, rgb(82 31 112 / 88%), transparent 70%),
+    linear-gradient(145deg, #121534, #080a1a 64%, #25102e);
+  color: #fff5fc;
+  cursor: pointer;
+  text-align: center;
+}
+
+.neon-round-summary__continue > span {
+  color: #91efff;
+  font: 800 clamp(0.76rem, 1.6vw, 1.2rem)/1.1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.neon-round-summary__continue > small {
+  color: #ffcfed;
+  font: 800 clamp(0.9rem, 2vw, 1.4rem)/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.neon-round-summary__continue > strong {
+  color: #fff8ff;
+  font: 900 clamp(2.8rem, 8vw, 6rem)/1 Georgia, serif;
+  text-shadow: 0 0 0.75rem #ff6ed8, 0 0 2rem rgb(255 60 211 / 70%);
+}
+
+.neon-round-summary__continue > em {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.2rem;
+  border: 1px solid #73e9ff;
+  border-radius: 999px;
+  color: #a2f2ff;
+  font: 800 0.75rem/1 Inter, system-ui, sans-serif;
+  font-style: normal;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.neon-round-summary__continue:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: -6px;
+}
+
+@media (min-width: 1200px) and (min-height: 700px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-admin-triggers {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 0.65rem);
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .neon-admin-triggers__button {
+    display: grid;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0.2rem;
+    place-items: center;
+    border: 1px solid #72e8ff;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #182041, #0c0e20 74%);
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%), 0 0 0.65rem rgb(71 213 255 / 28%);
+    cursor: pointer;
+  }
+
+  .neon-admin-triggers__button img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .neon-admin-triggers__button:hover:not(:disabled),
+  .neon-admin-triggers__button:focus-visible {
+    border-color: #ff85df;
+    box-shadow: 0 0 0.8rem rgb(255 87 206 / 56%);
+  }
+
+  .neon-admin-triggers__button:focus-visible {
+    outline: 2px solid #ffdcf5;
+    outline-offset: 2px;
+  }
+
+  .neon-admin-triggers__button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+@keyframes neon-arcade-add-rows {
+  from { height: 175%; }
+  to { height: 100%; }
+}
+
+@keyframes neon-win-amount-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.48); filter: brightness(1.12); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.18); filter: brightness(1.08); }
+  29% { transform: translate(-50%, -50%) scale(.94); filter: brightness(1); }
+  46% { transform: translate(-50%, -50%) scale(1.06); filter: brightness(1.13); }
+  67%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: brightness(1); }
+}
+
+@keyframes neon-win-label-flash {
+  0%, 24% { opacity: 0; }
+  25%, 49% { opacity: 1; }
+  50%, 74% { opacity: .35; }
+  75%, 100% { opacity: 1; }
+}
+
+@keyframes neon-disco-cascade-hit {
+  0% { transform: scale(1); filter: brightness(1); }
+  35%, 100% { transform: scale(1.08); filter: brightness(1.2); }
+}
+
+@keyframes neon-disco-cascade-clear {
+  0% { opacity: 1; transform: scale(1.08); filter: brightness(1.2); }
+  40% { opacity: 1; transform: scale(1.08); filter: brightness(1.8) drop-shadow(0 0 0.6rem #ff61d9); }
+  100% { opacity: 0; transform: scale(1.08); filter: brightness(1.4) blur(2px); }
+}
+
+@keyframes neon-disco-cascade-drop {
+  from { opacity: 0.6; transform: translateY(calc(-100% * var(--neon-disco-drop-rows))); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes neon-arcade-cabinet-expand {
+  from { aspect-ratio: 1.56 / 1; }
+  to { aspect-ratio: 0.95 / 1; }
+}
+
+@keyframes neon-arcade-row-light {
+  from { opacity: 0; filter: brightness(1.8); transform: translateY(-0.5rem) scale(0.9); }
+  to { opacity: 1; filter: brightness(1); transform: translateY(0) scale(1); }
+}
+
+@keyframes neon-special-intro-grow {
+  from {
+    transform: translate(
+      calc(-50% + var(--neon-special-intro-start-x, 0px)),
+      calc(-50% + var(--neon-special-intro-start-y, 0px))
+    ) scale(var(--neon-special-intro-start-scale, 0.2));
+  }
+  48%, to { transform: translate(-50%, -50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-special-intro__symbol { animation: none; }
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-symbol__image { transition: none; }
+  .neon-disco-cascade__cell--award,
+  .neon-disco-cascade__cell--clear,
+  .neon-disco-cascade__cell--drop,
+  .slots-page[data-neon-arcade-expanding='true'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'],
+  .slots-page[data-neon-arcade-expanding='true'] .slot-reel__symbols,
+  .slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='4'],
+  .slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='5'],
+  .slots-page[data-neon-arcade-expanding='true'] .slot-symbol[data-row-index='6'] { animation: none; }
+}
+
+@media (width < 1051px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    /* Leave space for the wordmark, the bonus tally, and the controls below the reels. */
+    max-width: max(9rem, calc((100cqh - var(--neon-title-height) - var(--neon-tally-space) - 7.5rem) * 1.56));
+  }
+}
+
+/* Short landscape screens have room beside the cabinet for the controls. */
+@media (min-width: 641px) and (max-height: 500px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-slot-controls='sidecar'] .slots-page__layout {
+    grid-template-columns: minmax(0, 1fr);
+    width: min(46rem, calc(100% - 10rem), max(9rem, calc((100cqh - var(--neon-title-height) - var(--neon-tally-space) - 0.75rem) * 1.56)));
+    max-width: none;
+  }
+
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__playbar {
+    position: absolute;
+    inset: 0 auto 0 calc(100% + 0.6rem);
+    display: grid;
+    align-content: safe center;
+    width: max-content;
+    margin: 0;
+    padding: 0;
+  }
+
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .pirates-spin-controls {
+    --pirate-bet-placement: left;
+    --pirate-control-spin: 3.75rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.3rem;
+  }
+
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .pirates-spin-controls__spin {
+    grid-area: auto;
+    margin: 0;
+  }
+
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .pirates-spin-controls__bet-readout {
+    margin: 0;
+  }
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-arcade-rows='true'] .slots-page__layout {
+  width: min(100%, 46rem, max(9rem, calc((100cqh - var(--neon-title-height) - var(--neon-tally-space) - 1rem) * 0.95)));
+  max-width: none;
+}
+
+
+
+@property --neon-payline-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ff4fd8;
+}
+
+.neon-winning-paylines[data-palette='neon'] {
+  color: var(--neon-payline-color, #ff4fd8);
+}
+
+.neon-winning-paylines[data-palette='neon'] .neon-winning-paylines__glint {
+  animation: none;
+}
+
+.neon-winning-paylines[data-palette='neon'] .neon-winning-paylines__amount {
+  stroke: #761e0b;
+  stroke-width: 2.8px;
+  font: italic 900 clamp(18px, 2.2vw, 29px)/1 Georgia, 'Times New Roman', serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -.055em;
+  filter: drop-shadow(0 1px 0 #4d1008) drop-shadow(0 0 4px #fff59b) drop-shadow(0 0 9px #ffad21);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__cabinet-spotlight:has(.slot-symbol--winner) {
+    animation: neon-payline-breathe 4.4s ease-in-out infinite;
+  }
+}
+
+@keyframes neon-payline-breathe {
+  0%, 100% { --neon-payline-color: #ff4fd8; }
+  50% { --neon-payline-color: #22e7ff; }
+}

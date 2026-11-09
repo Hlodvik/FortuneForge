@@ -89,6 +89,8 @@ export type SlotSoundCue = {
   baseVolume: number
   category: AudioCategory
   loop?: boolean
+  gaplessLoop?: boolean
+  loopDurationSeconds?: number
   enabled?: boolean
 }
 
@@ -344,12 +346,6 @@ export const DRAGON_HOARD_SOUNDS: SlotSoundSet = {
   },
 }
 
-export const JUNGLE_JACKPOT_SOUNDS = createThemedSlotSounds('jungle-jackpot-audio-v1', {
-  ambienceSource: forestJourneySource, ambienceVolume: 0.05,
-  leverSource: leverCoinSource, leverVolume: 0.32,
-  bonus: ['five-jewel', 'premium-win'], five: ['five-casino-win', 'five-jewel'], premium: ['five-jewel'],
-})
-
 export const CANDY_CARNIVAL_SOUNDS = createThemedSlotSounds('candy-carnival-audio-v1', {
   ambienceSource: carnivalLightsSource, ambienceVolume: 0.05,
   leverSource: leverCoinSource, leverVolume: 0.31,
@@ -360,12 +356,6 @@ export const DESERT_TREASURES_SOUNDS = createThemedSlotSounds('desert-treasures-
   ambienceSource: desertWindSource, ambienceVolume: 0.04,
   leverSource: leverRegisterSource, leverVolume: 0.34,
   bonus: ['five-casino-win', 'five-jewel'], five: ['premium-win', 'five-casino-win'], premium: ['five-jewel'],
-})
-
-export const NEON_NIGHTS_SOUNDS = createThemedSlotSounds('neon-nights-audio-v1', {
-  ambienceSource: cyberNightSource, ambienceVolume: 0.055,
-  leverSource: leverRegisterSource, leverVolume: 0.24,
-  bonus: ['five-twinkle', 'premium-win'], five: ['five-jewel', 'five-twinkle'], premium: ['premium-win'],
 })
 
 export const NORDIC_LEGENDS_SOUNDS = createThemedSlotSounds('nordic-legends-audio-v1', {

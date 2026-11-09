@@ -1,7 +1,6 @@
 import type { ReactNode, RefObject } from 'react'
-import { createPortal } from 'react-dom'
-import { SlotDialogCloseIcon } from './components/SlotDialogCloseIcon'
-import { useSlotDialog, type SlotDialogTheme } from './hooks/useSlotDialog'
+import { WinHelpDialog as WinHelpDialogFrame } from '@fortuneforge/slot-client-core/WinHelpDialog'
+import type { SlotDialogTheme } from './hooks/useSlotDialog'
 import { FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from './config/paylinePatterns'
 import type { SlotHelpDefinition } from './config/slotFeatures'
 import { getSlotSymbolDefinition, type SlotSymbolSet } from './config/symbolSets'
@@ -16,54 +15,9 @@ type WinHelpDialogProps = {
   theme?: SlotDialogTheme
 }
 
-export function WinHelpDialog({
-  children,
-  isOpen,
-  closeButtonRef,
-  help,
-  symbolSet,
-  onClose,
-  theme,
-}: WinHelpDialogProps) {
-  const dialogRef = useSlotDialog(isOpen, onClose, closeButtonRef)
-  if (!isOpen) return null
-  const content = (
-    <div
-      data-slot-dialog-theme={theme}
-      className="win-help__backdrop"
-      role="presentation"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose()
-        }
-      }}
-    >
-      <section
-        ref={dialogRef}
-        tabIndex={-1}
-        data-slot-dialog-theme={theme}
-        className="win-help"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="win-help-title"
-      >
-        <button
-          ref={closeButtonRef}
-          className="win-help__close"
-          type="button"
-          aria-label="Close win guide"
-          onClick={() => onClose()}
-        >
-          <SlotDialogCloseIcon />
-        </button>
 
-        <p className="win-help__eyebrow">Fortune guide</p>
-        <h2 id="win-help-title">What counts as a win?</h2>
-        {children ?? <PaylineRules help={help} symbolSet={symbolSet} />}
-      </section>
-    </div>
-  )
-  return typeof document !== 'undefined' ? createPortal(content, document.body) : content
+export function WinHelpDialog({ children, help, symbolSet, ...props }: WinHelpDialogProps) {
+  return <WinHelpDialogFrame {...props}>{children ?? <PaylineRules help={help} symbolSet={symbolSet} />}</WinHelpDialogFrame>
 }
 
 function PaylineRules({ help, symbolSet }: Pick<WinHelpDialogProps, 'help' | 'symbolSet'>) {

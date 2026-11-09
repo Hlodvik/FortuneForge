@@ -7,6 +7,7 @@
     <DefineConstants>$(DefineConstants);MIDNIGHT_ORACLE_ONLY</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
     <ProjectReference Include="..\..\FortuneForge.Server\FortuneForge.Server.csproj" />
     <Compile Include="..\..\FortuneForge.Server.Tests\Slots\MidnightVaultIntegerPayoutTests.cs" Link="IndependentIntegerOracle.cs" />
   </ItemGroup>

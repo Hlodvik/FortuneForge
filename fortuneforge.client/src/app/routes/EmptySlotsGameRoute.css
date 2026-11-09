@@ -1,0 +1,9 @@
+.empty-slots-game {
+  min-height: 100svh;
+  background: #090a0d;
+}
+
+.empty-slots-game__surface {
+  min-height: calc(100svh - 4rem);
+  background: #090a0d;
+}

@@ -4,6 +4,7 @@ using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
+using FortuneForge.Server.Slots.Games.NeonNights;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -21,6 +22,23 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        if (audit.EngineVersion == FortuneForge.Games.EmptySlots.EmptySlotsEngine.Version)
+            return Slots.Games.EmptySlots.EmptySlotsAudit.Check(result, settledPayout);
+        if (result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+            return [new("slot-empty-version-mismatch", "error",
+                "Empty Slots evidence must use its owned engine version.")];
+        if (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion)
+        {
+            var findings = NeonOutcomeReplay.Check(
+                FortuneForge.Server.Slots.Games.NeonNights.NeonNightsEngine.ToPackage(result, audit),
+                settledPayout).Select(finding => new RoundAuditFinding(finding.Code, "error", finding.Message)).ToList();
+            if (audit.IsDerivedFreeSpin || audit.WukongPawPrototype is not null ||
+                audit.OlympusTumble is not null || result.OlympusTumble is not null ||
+                result.LightningCollection is not null || result.MonkeyPawCount != 0 ||
+                result.MoneyGrabPoints != 0 || result.SealsAwarded.Count != 0)
+                findings.Add(new("slot-neon-state-mismatch", "error", "The Neon outcome includes another game's state."));
+            return findings;
+        }
         var usesOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(audit.EngineVersion);
         if ((audit.OlympusTumble is not null) != usesOlympusTumble ||
             (result.OlympusTumble is not null) != usesOlympusTumble)
@@ -41,6 +59,11 @@ internal static class SlotRoundAudit
             arcade.FeatureGamesEnabled != usesNeonSpecialPlays)
             return [new("slot-neon-arcade-version-mismatch", "error",
                 "The arcade payline rule is not bound to its captured engine version.")];
+        if ((audit.NeonDiscoCascade is null) != (result.NeonDiscoCascade is null) ||
+            audit.NeonDiscoCascade is not null &&
+            !NeonArcadeSlotDefinitions.SupportsDiscoCascade(audit.EngineVersion))
+            return [new("slot-neon-disco-version-mismatch", "error",
+                "The Disco cascade does not match its captured engine version.")];
         if (RainbowRealmSlotDefinitions.IsModel(audit.BaseGame) !=
             (audit.EngineVersion == RainbowRealmSlotDefinitions.EngineVersion))
             return [new("slot-rainbow-model-mismatch", "error",
@@ -257,10 +280,8 @@ internal static class SlotRoundAudit
         try
         {
             var evaluations = new CombinationEvaluator().Evaluate(result.Reels, effectiveGame, symbolSet);
-            var basePayout = new PayoutCalculator().Calculate(
-                evaluations,
-                neonEngineVersion == NeonArcadeSlotDefinitions.EngineVersion ? effectiveGame : baseGame,
-                paytable, result.WagerPoints);
+            var payoutGame = NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(neonEngineVersion) ? effectiveGame : baseGame;
+            var basePayout = new PayoutCalculator().Calculate(evaluations, payoutGame, paytable, result.WagerPoints);
             var neonFreeSpinsAwarded = 0;
             if (NeonArcadeSlotDefinitions.IsModel(baseGame))
             {

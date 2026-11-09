@@ -32,37 +32,16 @@ public sealed record SlotSpinEngineAudit(
     public NeonArcadeEvidence? NeonArcade { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonDiscoCascadeAudit? NeonDiscoCascade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleEvidence? OlympusTumble { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CrucibleRuleVersion { get; init; }
 }
 
-public readonly record struct GridPosition(int Reel, int Row);
-
 public sealed record OlympusTumbleEvidence(bool Showcase, IReadOnlyList<int> DrawIndexes);
-
-public sealed record SymbolMatch(
-    int PaylineId,
-    string SymbolId,
-    int MatchLength,
-    IReadOnlyList<GridPosition> Positions,
-    IReadOnlyList<GridPosition> WildPositions);
-
-public sealed record MatchCandidate(IReadOnlyList<SymbolMatch> Matches);
-
-public sealed record PaylineEvaluation(
-    int PaylineId,
-    IReadOnlyList<MatchCandidate> Candidates);
-
-public sealed record PaidMatch(SymbolMatch Match, long Multiplier, long AmountPoints);
-
-public sealed record PaylinePayout(
-    int PaylineId,
-    long AmountPoints,
-    IReadOnlyList<PaidMatch> Matches);
-
-public sealed record SpinPayout(long TotalPoints, IReadOnlyList<PaylinePayout> Paylines);
 
 public sealed record SlotSealCollection(
     string SealId,
@@ -74,10 +53,6 @@ public sealed record MidnightVaultDemoState(
     IReadOnlyList<MidnightVaultBonusRound> Rounds,
     IReadOnlyDictionary<string, long> CollectionCounts,
     IReadOnlyDictionary<string, long> CollectionWagerPoints);
-
-public sealed record ReelOutcome(
-    IReadOnlyList<int> StopIndexes,
-    IReadOnlyList<IReadOnlyList<string>> VisibleReels);
 
 public sealed record SpinResult(
     Guid SpinId,
@@ -103,6 +78,7 @@ public sealed record SpinResult(
     public bool IsFreeSpin { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long ChargedWagerCents { get; init; }
+    public int NeonDiscoSpinsRemaining { get; init; }
     public int FreeSpinsRemaining { get; init; }
     public long? FreeSpinWagerPoints { get; init; }
     public int SpecialPointsBalance { get; init; }
@@ -134,6 +110,9 @@ public sealed record SpinResult(
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public NeonArcadeEvidence? NeonArcade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonDiscoCascadeOutcome? NeonDiscoCascade { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleOutcome? OlympusTumble { get; init; }

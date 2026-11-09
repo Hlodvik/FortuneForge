@@ -10,6 +10,10 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 {
     public GameDefinition? GetGame(string id)
     {
+        if (id == SlotSpecialRoundProfiles.EmptySlotsGameId)
+            return Games.EmptySlots.EmptySlotsEngine.CreateGame();
+        if (id == NeonArcadeSlotDefinitions.GameId)
+            return NeonArcadeSlotDefinitions.CreateGame();
         if (id == GoldFoundrySlotDefinitions.GameId)
             return GoldFoundrySlotDefinitions.CreateGame();
         var configured = options.Value.GameDefinitions
@@ -31,7 +35,9 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
     }
 
     public SymbolSetDefinition? GetSymbolSet(string id) =>
-        id == GoldFoundrySlotDefinitions.SymbolSetId
+        id == "empty-slots-symbols-v1"
+            ? Games.EmptySlots.EmptySlotsEngine.CreateSymbolSet()
+            : id == GoldFoundrySlotDefinitions.SymbolSetId
             ? GoldFoundrySlotDefinitions.CreateSymbolSet()
             : id == RainbowRealmSlotDefinitions.SymbolSetId
             ? RainbowRealmSlotDefinitions.CreateSymbolSet()
@@ -43,6 +49,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public ReelSetDefinition? GetReelSet(string id)
     {
+        if (id == "empty-slots-reels-v1")
+            return Games.EmptySlots.EmptySlotsEngine.CreateReelSet();
         if (id == ArcaneLightningCollector.ReelSetId)
         {
             var game = options.Value.GameDefinitions.SingleOrDefault(game =>
@@ -80,6 +88,8 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
 
     public PaytableDefinition? GetPaytable(string id)
     {
+        if (id == "empty-slots-paytable-v1")
+            return Games.EmptySlots.EmptySlotsEngine.CreatePaytable();
         if (id == GoldFoundrySlotDefinitions.PaytableId)
             return GoldFoundrySlotDefinitions.CreatePaytable();
         if (id == RainbowRealmSlotDefinitions.PaytableId)
@@ -113,21 +123,18 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
                     VisibleRows = source.Layout.VisibleRows,
                     PaylineCount = paylineIndexes.Length
                 },
-            Symbols = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-                ? NeonArcadeSlotDefinitions.CreateSymbolRules(source.Symbols)
-                : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+            Symbols = profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                 ? RainbowRealmSlotDefinitions.CreateSymbolRules(source.Symbols)
                 : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
                 ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
                 : source.Symbols,
             Matching = source.Matching,
             Math = CloneMath(source.Math, profile, paylineIndexes),
-            Wagering = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-                ? NeonArcadeSlotDefinitions.CreateCentWagering() : source.Wagering,
+            Wagering = source.Wagering,
             FreeGames = source.FreeGames is null || profile.ScatterAwardedSpins <= 0
                 ? null
                 : profile.Configure(source.FreeGames),
-            SpecialPoints = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId ? null : source.SpecialPoints,
+            SpecialPoints = source.SpecialPoints,
             Energy = profile.UsesEnergy ? source.Energy : null,
             Paylines = paylineIndexes is null
                 ? source.Paylines
@@ -141,9 +148,7 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
         IReadOnlyList<int>? paylineIndexes) => new()
     {
         ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
-        PaytableId = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-            ? NeonArcadeSlotDefinitions.PaytableId
-            : profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
+        PaytableId = profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
             ? RainbowRealmSlotDefinitions.PaytableId
             : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
             ? MidnightVaultSlotDefinitions.PaytableId
@@ -153,9 +158,7 @@ public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> option
             ? source.PaylinePayoutSteps
             : paylineIndexes.Select(index => source.PaylinePayoutSteps[index]).ToList(),
         FiveMatchPityMissLimit = source.FiveMatchPityMissLimit,
-        Targets = profile.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-            ? new GameMathTargets() // The local arcade model has not been calibrated.
-            : profile.TargetHitRate is { } targetHitRate
+        Targets = profile.TargetHitRate is { } targetHitRate
             ? new GameMathTargets
             {
                 Rtp = source.Targets.Rtp,

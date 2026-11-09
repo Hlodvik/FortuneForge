@@ -18,8 +18,6 @@ export type SlotCelebrationEffect =
   | 'arcane-orbit'
   | 'cosmic-streak'
   | 'foundry-sparks'
-  | 'neon-scan'
-  | 'jungle-canopy'
   | 'ocean-swell'
   | 'samurai-blossom'
   | 'candy-sprinkles'

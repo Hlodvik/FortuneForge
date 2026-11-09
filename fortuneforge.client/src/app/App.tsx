@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { findSlotRoute } from '../games/slots'
 import { AppRoutes } from './AppRoutes'
 import { usePageTitle } from './usePageTitle'
@@ -8,7 +8,7 @@ import { GameLeaveGuardProvider } from '../features/navigation/GameLeaveGuard'
 import './styles/index.css'
 
 export default function App() {
-  const pathname = window.location.pathname.replace(/\/+$/, '') || '/'
+  const [pathname, setPathname] = useState(() => window.location.pathname.replace(/\/+$/, '') || '/')
   const slotRoute = findSlotRoute(pathname)
   const isPlayableGameRoute = slotRoute !== null || (
     pathname.startsWith('/games/') ||
@@ -33,6 +33,33 @@ export default function App() {
 
   usePageTitle(pathname)
   useGamePresence(pathname)
+
+  useEffect(() => {
+    const syncPathname = () => setPathname(window.location.pathname.replace(/\/+$/, '') || '/')
+    const openSlotFromCatalogue = (event: MouseEvent) => {
+      if (isPlayableGameRoute || event.defaultPrevented || event.button !== 0 ||
+        event.metaKey || event.ctrlKey || event.shiftKey || event.altKey ||
+        !(event.target instanceof Element)) return
+      const link = event.target.closest<HTMLAnchorElement>('a[href]')
+      if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return
+      const destination = new URL(link.href, window.location.href)
+      const destinationPath = destination.pathname.replace(/\/+$/, '') || '/'
+      if (destination.origin !== window.location.origin || findSlotRoute(destinationPath) === null) return
+
+      // Keep the catalogue click's browser audio activation in this document.
+      event.preventDefault()
+      window.history.pushState(window.history.state, '', destination.href)
+      syncPathname()
+      window.scrollTo(0, 0)
+    }
+
+    window.addEventListener('popstate', syncPathname)
+    document.addEventListener('click', openSlotFromCatalogue)
+    return () => {
+      window.removeEventListener('popstate', syncPathname)
+      document.removeEventListener('click', openSlotFromCatalogue)
+    }
+  }, [isPlayableGameRoute])
 
   useEffect(() => {
     if (!isPlayableGameRoute) return undefined

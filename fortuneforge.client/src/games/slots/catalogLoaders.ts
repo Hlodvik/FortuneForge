@@ -16,8 +16,7 @@ const catalogLoaders: Readonly<Record<string, CatalogLoader>> = {
   'arcane-archives': () => import('./arcaneArchives/catalog').then((module) => module.ARCANE_ARCHIVES_CATALOG),
   'cosmic-fortune': () => import('./cosmicFortune/catalog').then((module) => module.COSMIC_FORTUNE_CATALOG),
   'gold-foundry': () => import('./goldFoundry/catalog').then((module) => module.GOLD_FOUNDRY_CATALOG),
-  'neon-nights': () => loadShowcaseCatalog(import('./neonNights/definition').then((module) => module.NEON_NIGHTS_DEFINITION)),
-  'jungle-jackpot': () => loadShowcaseCatalog(import('./jungleJackpot/definition').then((module) => module.JUNGLE_JACKPOT_DEFINITION)),
+  'neon-nights': () => import('./neonNights/catalog').then((module) => module.NEON_NIGHTS_CATALOG),
   'ocean-odyssey': () => loadShowcaseCatalog(import('./oceanOdyssey/definition').then((module) => module.OCEAN_ODYSSEY_DEFINITION)),
   'samurai-fortune': () => loadShowcaseCatalog(import('./samuraiFortune/definition').then((module) => module.SAMURAI_FORTUNE_DEFINITION)),
   'candy-carnival': () => loadShowcaseCatalog(import('./candyCarnival/definition').then((module) => module.CANDY_CARNIVAL_DEFINITION)),
@@ -29,6 +28,7 @@ const catalogLoaders: Readonly<Record<string, CatalogLoader>> = {
 }
 
 export async function loadSlotGameCatalogById(id: string): Promise<SlotGameCatalogEntry | null> {
+  if (id === 'empty-slots-game') return import('./emptySlotsGame/catalog').then(module => module.EMPTY_SLOTS_GAME_CATALOG)
   const route = findSlotRouteById(id)
   const loader = catalogLoaders[id]
   if (!route || !loader) return null

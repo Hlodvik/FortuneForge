@@ -2,9 +2,10 @@ using FortuneForge.Server.Slots.Models;
 
 sealed class Statistics(IEnumerable<string> symbolIds)
 {
-    private readonly List<long> _cyclePayouts = [];
+    private readonly List<(long Payout, long Wager)> _cycles = [];
 
     public long BreakEvenCycles { get; private set; }
+    public int CycleCount => _cycles.Count;
     public long FreeSpinsAwarded { get; private set; }
     public long EnergyAwarded { get; private set; }
     public long FullMatchSpins { get; private set; }
@@ -77,7 +78,7 @@ sealed class Statistics(IEnumerable<string> symbolIds)
 
     public void RecordCycle(long payout, long wager)
     {
-        _cyclePayouts.Add(payout);
+        _cycles.Add((payout, wager));
         MaxCyclePayout = Math.Max(MaxCyclePayout, payout);
         if (payout == 0)
         {
@@ -106,13 +107,13 @@ sealed class Statistics(IEnumerable<string> symbolIds)
             var balance = checked(wager * 100);
             for (var spin = 0; spin < maximumPaidSpins; spin++)
             {
-                if (balance < wager)
+                var cycle = _cycles[random.Next(_cycles.Count)];
+                if (balance < cycle.Wager)
                 {
                     ruined++;
                     break;
                 }
-
-                balance = checked(balance - wager + _cyclePayouts[random.Next(_cyclePayouts.Count)]);
+                balance = checked(balance - cycle.Wager + cycle.Payout);
             }
             endingBalances[trial] = balance;
         }

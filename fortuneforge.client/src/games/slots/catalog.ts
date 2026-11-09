@@ -6,8 +6,8 @@ import { GOLD_FOUNDRY_CATALOG } from './goldFoundry/catalog'
 import { DRAGON_HOARD_DEFINITION } from './dragonHoard/definition'
 import { GODS_OF_OLYMPUS_CATALOG } from './godsOfOlympus/catalog'
 import { HIGH_NOON_FORTUNE_CATALOG } from './highNoonFortune/catalog'
-import { JUNGLE_JACKPOT_DEFINITION } from './jungleJackpot/definition'
-import { NEON_NIGHTS_DEFINITION } from './neonNights/definition'
+import { EMPTY_SLOTS_GAME_CATALOG } from './emptySlotsGame/catalog'
+import { NEON_NIGHTS_CATALOG } from './neonNights/catalog'
 import { NORDIC_LEGENDS_DEFINITION } from './nordicLegends/definition'
 import { OCEAN_ODYSSEY_DEFINITION } from './oceanOdyssey/definition'
 import { PHANTOM_MANOR_DEFINITION } from './phantomManor/definition'
@@ -36,8 +36,8 @@ const catalogDefinitions: readonly SlotGameCatalogDefinition[] = [
   ARCANE_ARCHIVES_CATALOG,
   COSMIC_FORTUNE_CATALOG,
   GOLD_FOUNDRY_CATALOG,
-  createShowcaseSlotCatalog(NEON_NIGHTS_DEFINITION),
-  createShowcaseSlotCatalog(JUNGLE_JACKPOT_DEFINITION),
+  NEON_NIGHTS_CATALOG,
+  EMPTY_SLOTS_GAME_CATALOG,
   createShowcaseSlotCatalog(OCEAN_ODYSSEY_DEFINITION),
   createShowcaseSlotCatalog(SAMURAI_FORTUNE_DEFINITION),
   createShowcaseSlotCatalog(CANDY_CARNIVAL_DEFINITION),
@@ -52,6 +52,7 @@ const routesById = new Map(SLOT_ROUTE_DEFINITIONS.map((definition) => [definitio
 
 export const SLOT_GAME_CATALOG: readonly SlotGameCatalogEntry[] = catalogDefinitions.map(
   (catalog) => {
+    if (catalog.id === EMPTY_SLOTS_GAME_CATALOG.id) return EMPTY_SLOTS_GAME_CATALOG
     const route = routesById.get(catalog.id)
     if (!route) throw new Error(`Missing slot route metadata for '${catalog.id}'.`)
     return {

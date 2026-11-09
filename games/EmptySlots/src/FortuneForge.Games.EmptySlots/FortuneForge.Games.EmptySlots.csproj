@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>FortuneForge.Games.EmptySlots</PackageId>
+    <Version>1.0.0</Version>
+    <Description>Standalone Empty Slots Game outcome engine and frozen FortuneForge game math.</Description>
+    <PackageReadmeFile>PROVENANCE.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../../shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
+    <EmbeddedResource Include="Data/empty-slots.json" />
+    <None Include="PROVENANCE.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>

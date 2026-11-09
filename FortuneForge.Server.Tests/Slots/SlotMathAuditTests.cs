@@ -45,7 +45,8 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         foreach (var measurement in measurements)
         {
             output.WriteLine(
-                $"{measurement.GameId}: RTP {measurement.Rtp:P2}; hit rate {measurement.HitRate:P2}; " +
+                $"{measurement.GameId}: RTP {measurement.Rtp:P2}; " +
+                $"{(measurement.GameId == SlotSpecialRoundProfiles.NeonNightsGameId ? "ordinary paid-spin" : "paid-cycle")} hit rate {measurement.HitRate:P2}; " +
                 $"volatility {measurement.Volatility:F3}; max cycle {measurement.MaxCycleReturn:F2}x; " +
                 $"spins {measurement.TotalSpins:N0}.");
         }
@@ -72,34 +73,66 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         var state = new AuditState([], 0, null, null);
         var cycleReturns = new double[PaidSpinsPerGame];
         var totalSpins = 0;
+        var totalPayout = 0L;
+        var totalChargedWager = 0L;
+        var ordinaryPaidSpins = 0;
+        var ordinaryPaidHits = 0;
+        var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
 
         for (var paidSpin = 0; paidSpin < PaidSpinsPerGame; paidSpin++)
         {
             var cyclePayout = 0L;
-            var response = Spin(controller, gameId, state, useFreeSpin: false);
+            var cycleChargedWager = 0L;
+            var discoPaidSpinsRemaining = 0;
+            var response = Spin(controller, gameId, state, useFreeSpin: false,
+                neonDiscoSpinsRemaining: discoPaidSpinsRemaining);
             state = UpdateState(response);
-            cyclePayout = checked(cyclePayout + response.Payout.TotalPoints);
-            totalSpins++;
+            Tally(response, useFreeSpin: false, isDiscoPlay: false);
 
-            var freeSpinSafetyLimit = 1_000;
-            while (state.FreeSpinsRemaining > 0)
+            var specialSpinSafetyLimit = 1_000;
+            while (state.FreeSpinsRemaining > 0 || discoPaidSpinsRemaining > 0)
             {
-                Assert.True(freeSpinSafetyLimit-- > 0, $"{gameId} generated an unbounded free-spin cycle.");
-                response = Spin(controller, gameId, state, useFreeSpin: true);
+                Assert.True(specialSpinSafetyLimit-- > 0, $"{gameId} generated an unbounded special-play cycle.");
+                var useFreeSpin = state.FreeSpinsRemaining > 0;
+                var isDiscoPlay = isNeon && !useFreeSpin && discoPaidSpinsRemaining > 0;
+                response = Spin(controller, gameId, state, useFreeSpin, discoPaidSpinsRemaining);
                 state = UpdateState(response);
-                cyclePayout = checked(cyclePayout + response.Payout.TotalPoints);
-                totalSpins++;
+                Tally(response, useFreeSpin, isDiscoPlay);
             }
 
-            cycleReturns[paidSpin] = cyclePayout / (double)WagerPoints;
+            cycleReturns[paidSpin] = cyclePayout / (double)cycleChargedWager;
+
+            void Tally(SpinResult spin, bool useFreeSpin, bool isDiscoPlay)
+            {
+                cyclePayout = checked(cyclePayout + spin.Payout.TotalPoints);
+                totalPayout = checked(totalPayout + spin.Payout.TotalPoints);
+                totalSpins++;
+                if (isNeon)
+                {
+                    cycleChargedWager = checked(cycleChargedWager + spin.ChargedWagerCents);
+                    totalChargedWager = checked(totalChargedWager + spin.ChargedWagerCents);
+                    if (!useFreeSpin && !isDiscoPlay)
+                    {
+                        ordinaryPaidSpins++;
+                        if (spin.Payout.TotalPoints > 0) ordinaryPaidHits++;
+                    }
+                    discoPaidSpinsRemaining = spin.NeonDiscoSpinsRemaining;
+                }
+                else if (!useFreeSpin)
+                {
+                    cycleChargedWager = checked(cycleChargedWager + WagerPoints);
+                    totalChargedWager = checked(totalChargedWager + WagerPoints);
+                }
+            }
         }
 
         var averageReturn = cycleReturns.Average();
         var variance = cycleReturns.Select(value => Math.Pow(value - averageReturn, 2)).Average();
         return new MathAuditMeasurement(
             gameId,
-            averageReturn,
-            cycleReturns.Count(value => value > 0d) / (double)cycleReturns.Length,
+            totalPayout / (double)totalChargedWager,
+            isNeon ? ordinaryPaidHits / (double)ordinaryPaidSpins :
+                cycleReturns.Count(value => value > 0d) / (double)cycleReturns.Length,
             Math.Sqrt(variance),
             cycleReturns.Max(),
             totalSpins);
@@ -109,7 +142,8 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         DemoSlotsController controller,
         string gameId,
         AuditState state,
-        bool useFreeSpin)
+        bool useFreeSpin,
+        int neonDiscoSpinsRemaining = 0)
     {
         var wager = useFreeSpin ? state.FreeSpinWagerPoints ?? WagerPoints : WagerPoints;
         var action = controller.Spin(new DemoSpinRequest(
@@ -120,7 +154,8 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
             state.FreeSpinWagerPoints,
             state.EnergyBalance,
             state.Collections,
-            state.FreeSpinFeatureMode), CancellationToken.None).GetAwaiter().GetResult();
+            state.FreeSpinFeatureMode,
+            NeonDiscoSpinsRemaining: neonDiscoSpinsRemaining), CancellationToken.None).GetAwaiter().GetResult();
         return Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(action).Value);
     }
 

@@ -13,8 +13,11 @@ public sealed partial class FirestoreAccountStore
         long wagerPoints,
         decimal pointValueInCents,
         bool arcadeRows,
+        bool discoBall,
         CancellationToken cancellationToken)
     {
+        if (arcadeRows && discoBall)
+            throw new ArgumentException("A Neon preview can start one feature at a time.");
         NeonArcadeSlotDefinitions.ValidateCarryWager(wagerPoints);
         var gameId = SlotSpecialRoundProfiles.NeonNightsGameId;
         var guardReference = SlotSpinGuardDocument(userId, gameId);
@@ -30,8 +33,20 @@ public sealed partial class FirestoreAccountStore
             var guard = snapshots[0];
             var balance = snapshots[1];
             if (ReadLong(balance, "available") != 0 ||
+                ReadNeonDiscoSpinsRemaining(guard) != 0 ||
                 !string.IsNullOrEmpty(ReadString(guard, "activeAdmissionId")))
                 return false;
+
+            if (discoBall)
+            {
+                transaction.Set(guardReference, new Dictionary<string, object>
+                {
+                    ["userId"] = userId,
+                    ["neonDiscoSpinsRemaining"] = NeonArcadeSlotDefinitions.DiscoPlaySpins,
+                    ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
+                }, SetOptions.MergeAll);
+                return true;
+            }
 
             var remaining = NeonArcadeSlotDefinitions.SpecialPlaySpins;
             if (balance.Exists)

@@ -49,10 +49,12 @@ public static class SlotSpecialRoundProfiles
     public const string PhantomManorGameId = "phantom-manor-v1";
     public const string OceanOdysseyGameId = "ocean-odyssey-v1";
     public const string DragonHoardGameId = "dragon-hoard-v1";
+    public const string EmptySlotsGameId = "empty-slots-v1";
+    // Historical identifier retained for saved evidence and source compatibility.
     public const string JungleJackpotGameId = "jungle-jackpot-v1";
     public const string CandyCarnivalGameId = "candy-carnival-v1";
     public const string DesertTreasuresGameId = "desert-treasures-v1";
-    public const string NeonNightsGameId = "neon-nights-v1";
+    public const string NeonNightsGameId = NeonArcadeSlotDefinitions.GameId;
     public const string NordicLegendsGameId = "nordic-legends-v1";
     public const string ReelRichesGameId = "reel-riches-v1";
     public const string ArcaneArchivesGameId = "arcane-archives-v1";
@@ -130,10 +132,7 @@ public static class SlotSpecialRoundProfiles
                 BaseReelSetId: MidnightVaultBaseReelSet.CurrentId,
                 TargetHitRate: MidnightVaultSlotDefinitions.TargetHitRate,
                 PayoutMultiplier: 1.0m),
-            [JungleJackpotGameId] = new(
-                JungleJackpotGameId, 3, 6, 22, 8, true, false, false, null, "sync-rows-paw",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 0.866m),
+            [EmptySlotsGameId] = Games.EmptySlots.EmptySlotsEngine.Profile,
             [CandyCarnivalGameId] = new(
                 CandyCarnivalGameId, 4, 5, 20, 8, false, false, false, "rand",
                 TargetHitRate: 0.32m,
@@ -141,9 +140,11 @@ public static class SlotSpecialRoundProfiles
             [DesertTreasuresGameId] = new(
                 DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows",
                 PayoutMultiplier: 0.977m),
+            // Historical host/audit descriptor only; preserve its recorded
+            // values. Current Neon bypasses these scatter/collection policies.
             [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
                 BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId,
-                PayoutMultiplier: 0.74m),
+                PayoutMultiplier: NeonArcadeSlotDefinitions.PayoutMultiplier),
             [NordicLegendsGameId] = new(
                 NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw",
                 TargetHitRate: 0.32m,
@@ -170,6 +171,7 @@ public static class SlotSpecialRoundProfiles
 
     public static bool IsFeatureMode(string? value)
     {
+        if (value == FortuneForge.Games.EmptySlots.EmptySlotsCollections.CollectionFeatureMode) return true;
         if (string.IsNullOrWhiteSpace(value)) return false;
 
         var modes = value.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -188,6 +190,8 @@ public static class SlotSpecialRoundProfiles
         bool energyCompleted,
         Guid spinId = default)
     {
+        if (profile.GameId == EmptySlotsGameId)
+            return Games.EmptySlots.EmptySlotsEngine.SettleCollections(current, awarded, wagerPoints);
         if (!profile.UsesCollections)
         {
             return new SlotSpecialRoundProgress(0, null, []);

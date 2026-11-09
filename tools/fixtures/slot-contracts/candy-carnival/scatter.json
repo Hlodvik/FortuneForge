@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1756ba57-38c1-4d03-b9b1-6be09b5d8c24",
+        "spinId": "507ed0f6-25f9-4d1c-b7b0-333e31358d3a",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -119,7 +121,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1bc8648d-c1b3-4ce3-91c6-63c98034c941",
+        "spinId": "aadd5741-a0ca-4b6f-abf9-29185f32ab66",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -177,6 +179,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -209,7 +212,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "bf690b43-f960-45df-8a72-9165d24ea348",
+        "spinId": "63e5664d-ec68-4f7c-9a8f-32312edc659c",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -388,6 +391,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -420,7 +424,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "96eb0545-641f-4773-9294-0622e5735cca",
+        "spinId": "f20a684d-04dd-49f6-b854-9fd73fb7ebfd",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -478,6 +482,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -510,7 +515,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9edaf549-e9fa-4b37-8d3e-f11769d9f1c9",
+        "spinId": "575c7646-94c1-438f-9f32-dacaf0a6abd5",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -568,6 +573,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -600,7 +606,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ac240ba3-c951-400f-b015-685cc3156511",
+        "spinId": "133c9e75-2c50-4d91-b514-831a53a76362",
         "gameId": "candy-carnival-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -658,6 +664,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

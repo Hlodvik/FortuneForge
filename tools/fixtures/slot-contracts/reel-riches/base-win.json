@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "5a049f20-0114-4ac1-99c8-2be3e0883f84",
+        "spinId": "990d1b27-dd4c-4e39-a4af-82ed69ef13a1",
         "gameId": "reel-riches-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -143,6 +143,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -176,6 +178,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40

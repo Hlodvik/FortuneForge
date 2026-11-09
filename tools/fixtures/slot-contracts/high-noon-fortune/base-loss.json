@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f0e98d20-982c-4de8-b17a-1f6df4f5a5d2",
+        "spinId": "c1b13d7b-6f7e-4ebe-9d42-4876af654588",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

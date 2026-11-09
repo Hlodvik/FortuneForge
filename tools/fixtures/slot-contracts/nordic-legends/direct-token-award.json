@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9eaa2b10-2b85-4890-97d1-da6410d7d0c3",
+        "spinId": "33ebd84c-f9db-42a9-96cd-1d2a4f99fa55",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -118,6 +118,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

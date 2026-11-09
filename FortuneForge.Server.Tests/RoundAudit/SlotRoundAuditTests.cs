@@ -329,6 +329,13 @@ public sealed class SlotRoundAuditTests
             new
             {
                 result, result.IsFreeSpin, engineAudit = result.EngineAudit, settledPayout, piratesGemEvidence,
+                isNeonDiscoPlay = result.NeonDiscoCascade is not null,
+                activeFreeSpinFeatureMode = result.EngineAudit!.FreeSpinFeatureMode,
+                payoutMultiplier = 1m,
+                neonDiscoSpinsBefore = 0,
+                neonDiscoSpinsRemaining = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                    ? NeonPlayPolicy.NextDiscoSpins(0, result.NeonDiscoCascade is not null, result.NeonArcade)
+                    : 0,
                 crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible }
             },
             "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;

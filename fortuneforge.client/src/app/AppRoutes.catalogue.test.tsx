@@ -88,4 +88,16 @@ describe('home replaces separate authenticated catalogues', () => {
     expect(host.textContent).toBe('Slot game')
     expect(state.replace).not.toHaveBeenCalled()
   })
+
+  it('opens the empty slot starter with shared navigation and an empty game surface', async () => {
+    await import('./routes/EmptySlotsGameRoute')
+    await renderRoute('/slots/empty-slots-game')
+    expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
+    const surface = host.querySelector('main[aria-label="Empty Slots Game"]')!
+    expect(surface).not.toBeNull()
+    expect(surface.children).toHaveLength(0)
+    expect(host.querySelector('button.spin-button, audio, video, [data-game-loading]')).toBeNull()
+    expect(state.replace).not.toHaveBeenCalled()
+    expect(state.legacyLoads).not.toHaveBeenCalled()
+  })
 })

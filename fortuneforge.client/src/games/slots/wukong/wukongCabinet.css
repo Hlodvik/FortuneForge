@@ -47,7 +47,9 @@
   }
 }
 
-.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'] {
+/* Theme chrome takes precedence over the shared simple-cabinet defaults,
+   regardless of the order in which the lazy route loads their styles. */
+.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'][data-cabinet-chrome='simple'] {
   border-width: clamp(0.16rem, 0.34vw, 0.28rem);
   border-color: #e9b845;
   border-radius: clamp(0.72rem, 1.35vw, 1.1rem) clamp(0.72rem, 1.35vw, 1.1rem) clamp(0.42rem, 0.8vw, 0.72rem);
@@ -62,7 +64,7 @@
     0 0.9rem 1.6rem rgb(12 2 8 / 48%);
 }
 
-.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1']::before {
+.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'][data-cabinet-chrome='simple']::before {
   position: absolute;
   z-index: 0;
   inset: clamp(0.3rem, 0.62vw, 0.52rem);
@@ -77,7 +79,7 @@
   pointer-events: none;
 }
 
-.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'] .slot-game-frame__visuals {
+.slot-game-frame[data-cabinet-theme='wukong-celestial-arcade-v1'][data-cabinet-chrome='simple'] .slot-game-frame__visuals {
   z-index: 1;
   padding: clamp(0.72rem, 1.25vw, 1.08rem);
   background:
@@ -214,13 +216,13 @@
   }
 }
 
-.slots-page[data-special-round='wukong-celestial-quest'] {
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round='wukong-celestial-quest'] {
   --special-round-accent: #ffe86b;
   --special-round-deep: #96401b;
   --special-round-ink: #240b12;
 }
 
-.slots-page[data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button {
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button {
   border: 0.2rem solid #f6c956;
   border-radius: 50%;
   background:
@@ -234,8 +236,8 @@
   color: #fff0a5;
 }
 
-.slots-page[data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button:hover:not(:disabled),
-.slots-page[data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button:focus-visible {
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button:hover:not(:disabled),
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round='wukong-celestial-quest'] .slots-page__spin-controls .spin-button:focus-visible {
   background:
     radial-gradient(circle at 36% 28%, rgb(255 249 205 / 40%), transparent 26%),
     radial-gradient(circle, #1a9484 0 48%, #a83239 49% 68%, #491126 69% 100%);
@@ -382,7 +384,7 @@
   background: linear-gradient(90deg, #18a88f, #67e6bd 62%, #ffe77e);
 }
 
-.slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--custom-icon {
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__spin-controls .spin-button--custom-icon {
   width: clamp(5.4rem, 8vw, 6.1rem);
   border: 0.13rem solid #f2c85b;
   background:
@@ -394,8 +396,8 @@
     0 0.38rem 0.72rem rgb(0 0 0 / 42%);
 }
 
-.slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--custom-icon:hover:not(:disabled),
-.slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__spin-controls .spin-button--custom-icon:focus-visible {
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__spin-controls .spin-button--custom-icon:hover:not(:disabled),
+.slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__spin-controls .spin-button--custom-icon:focus-visible {
   background:
     radial-gradient(circle at 35% 24%, rgb(255 251 216 / 34%), transparent 32%),
     linear-gradient(145deg, #92293b, #501029 58%, #18534e);
@@ -428,12 +430,14 @@
 }
 
 @media (min-width: 721px) {
-  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__main {
+  /* The shared host styles can load after this lazy theme. Keep Wukong's
+     compact HUD and cabinet width ahead of the generic desktop defaults. */
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__main {
     flex: 1;
     padding-block: clamp(0.24rem, 0.58dvh, 0.46rem) 0;
   }
 
-  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__layout {
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__layout {
     grid-template-columns: minmax(0, min(46rem, calc(100dvh - 11rem)));
     width: min(100%, 46rem, calc(100dvh - 11rem));
     gap: 0;
@@ -443,7 +447,7 @@
     aspect-ratio: 1.72 / 1;
   }
 
-  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'] .slots-page__stage {
+  .slots-page[data-slot-theme='wukong-celestial-arcade-v1'][data-special-round] .slots-page__stage {
     width: 100%;
     max-width: none;
     gap: clamp(0.18rem, 0.44dvh, 0.34rem);

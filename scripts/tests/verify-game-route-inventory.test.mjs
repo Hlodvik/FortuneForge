@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
+import { readFileSync, realpathSync } from 'node:fs'
+import { join } from 'node:path'
 import test from 'node:test'
-import { nonSlotSmokeInventory, slotSmokeInventory } from '../game-smoke-inventory.mjs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+import { gameSmokeRoutes, nonSlotSmokeInventory, shellOnlySmokeInventory, slotSmokeInventory } from '../game-smoke-inventory.mjs'
 import { verifyGameRouteInventory } from '../verify-game-route-inventory.mjs'
 
 const source = relative => readFileSync(new URL(`../../${relative}`, import.meta.url), 'utf8')
@@ -10,16 +13,43 @@ const current = {
   catalog: source('fortuneforge.client/src/pages/games/OtherGamesPage.tsx'),
   slotRoutes: source('fortuneforge.client/src/games/slots/routeRegistry.ts'),
   runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
+  slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
+  starterCatalog: source('fortuneforge.client/src/games/slots/emptySlotsGame/catalog.ts'),
 }
 
-test('all 45 routes and 20 slot contracts allow a filtered, runtime-default-hidden Horse Flight', () => {
+test('all 45 routes cover 19 playable slots and one shell-only starter, with physical and resolved-alias CLI execution', () => {
   assert.doesNotThrow(() => verifyGameRouteInventory(current))
+  assert.equal(gameSmokeRoutes.length, 45)
+  assert.equal(slotSmokeInventory.length, 19)
+  assert.deepEqual(shellOnlySmokeInventory, [{ smokePath: '/slots/empty-slots-game' }])
+  assert.equal(gameSmokeRoutes.filter(route => route === '/slots/empty-slots-game').length, 1)
+  assert.equal(gameSmokeRoutes.includes('/slots/empty-slots-game/demo'), false)
+  assert.equal(slotSmokeInventory.some(([route]) => route === 'empty-slots-game'), false)
+
+  const root = realpathSync(fileURLToPath(new URL('../../', import.meta.url)))
+  const physical = join(root, 'scripts/verify-game-route-inventory.mjs')
+  const alias = join(root, 'logical-junction/scripts/verify-game-route-inventory.mjs')
+  // Model junction resolution without requiring permission to create Windows links.
+  const aliasMain = `
+    import fs from 'node:fs'
+    import { syncBuiltinESMExports } from 'node:module'
+    const realpathSync = fs.realpathSync
+    fs.realpathSync = path => path === ${JSON.stringify(alias)} ? ${JSON.stringify(physical)} : realpathSync(path)
+    syncBuiltinESMExports()
+    process.argv[1] = ${JSON.stringify(alias)}
+    await import(${JSON.stringify(pathToFileURL(physical).href)})
+  `
+  for (const args of [[physical], ['--input-type=module', '-e', aliasMain]]) {
+    const cli = spawnSync(process.execPath, args, { encoding: 'utf8' })
+    assert.equal(cli.status, 0, cli.stderr)
+    assert.match(cli.stdout, /45 routes, 19 playable slot contracts and 1 shell-only starter/)
+  }
 })
 
 test('40 games are listed, including free Solitaire, while five games remain hidden', () => {
   const hidden = nonSlotSmokeInventory.filter(game => game.listed === false).map(game => game.smokePath).sort()
   assert.deepEqual(hidden, ['/games/asteroids', '/games/flappy', '/games/horse-flight', '/games/liars-dice', '/games/snake'])
-  assert.equal(nonSlotSmokeInventory.length - hidden.length + slotSmokeInventory.length, 40)
+  assert.equal(nonSlotSmokeInventory.length - hidden.length + slotSmokeInventory.length + shellOnlySmokeInventory.length, 40)
   for (const route of ['/cards/free-solitaire', '/games/2048', '/games/drop-merge']) {
     const listedGame = nonSlotSmokeInventory.find(game => game.smokePath === route)
     assert.ok(listedGame, `${route} must remain in the smoke inventory`)
@@ -54,20 +84,59 @@ test('rejects an unfiltered Horse Flight entry even if the runtime default is hi
   }), /visibility filter before mapping/)
 })
 
-test('rejects a visible-by-default Horse Flight or a missing runtime route', () => {
+test('rejects incorrect runtime visibility, missing starter coverage, extra routes and duplicates', () => {
   assert.throws(() => verifyGameRouteInventory({
     ...current, runtimeCatalog: current.runtimeCatalog.replace('"/games/horse-flight", false)', '"/games/horse-flight", true)'),
   }), /runtime default visibility must be false/)
   assert.throws(() => verifyGameRouteInventory({
     ...current, runtimeCatalog: current.runtimeCatalog.replace('"/games/horse-flight"', '"/games/not-a-game"'),
   }), /horse-flight is missing from the runtime catalogue/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, runtimeCatalog: current.runtimeCatalog.replace('"/slots/empty-slots-game")', '"/slots/empty-slots-game", false)'),
+  }), /empty-slots-game runtime default visibility must be true/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, runtimeCatalog: current.runtimeCatalog.replace('"/slots/empty-slots-game"', '"/slots/unknown-starter"'),
+  }), /empty-slots-game is missing from the runtime catalogue/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, runtimeCatalog: current.runtimeCatalog.split('\n').filter(line => !line.includes('"/slots/empty-slots-game"')).join('\n'),
+  }), /expected 45 runtime catalogue routes, found 44/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, runtimeCatalog: `${current.runtimeCatalog}\nnew("extra", "Extra", "slots", "/slots/extra")`,
+  }), /expected 45 runtime catalogue routes, found 46/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, runtimeCatalog: current.runtimeCatalog.replace('"/slots/empty-slots-game"', '"/slots/wukong"'),
+  }), /runtime catalogue routes must be unique/)
 })
 
-test('still rejects missing playable routes and slot server contracts', () => {
+test('rejects missing playable contracts, starter dispatch and starter catalog wiring', () => {
   assert.throws(() => verifyGameRouteInventory({
     ...current, appRoutes: current.appRoutes.replaceAll("pathname === '/games/horse-flight'", "pathname === '/games/not-a-game'"),
   }), /horse-flight is missing from AppRoutes/)
   assert.throws(() => verifyGameRouteInventory({
     ...current, slotRoutes: current.slotRoutes.replaceAll("'wukong-journey-v1'", "'unknown-server-game'"),
   }), /does not declare server profile wukong-journey-v1/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, slotRoutes: current.slotRoutes.replace("demoPath: '/slots/wukong/demo'", "demoPath: '/slots/unknown/demo'"),
+  }), /wukong\/demo is missing from the slot route registry/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, slotRoutes: current.slotRoutes.replace("playPath: '/slots/wukong'", "playPath: '/slots/unknown'"),
+  }), /must retain its playable route/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, slotRoutes: `${current.slotRoutes}\n{ playPath: '/slots/empty-slots-game', demoPath: '/slots/empty-slots-game/demo', serverGameIds: ['empty-slots-v1'] }`,
+  }), /expected 19 playable slot route definitions, found 20/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, appRoutes: current.appRoutes.replace("pathname === '/slots/empty-slots-game') route = <EmptySlotsGameRoute />", "pathname === '/slots/empty-slots-game') route = <NotFoundPage />"),
+  }), /empty-slots-game is missing its custom starter route/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, starterCatalog: current.starterCatalog.replace("playHref: '/slots/empty-slots-game'", "playHref: '/slots/unknown-starter'"),
+  }), /empty-slots-game is missing from the starter catalog/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, slotCatalog: current.slotCatalog.replace('  EMPTY_SLOTS_GAME_CATALOG,', ''),
+  }), /must remain in the slot catalog through its custom starter entry/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, slotCatalog: current.slotCatalog.replace('if (catalog.id === EMPTY_SLOTS_GAME_CATALOG.id) return EMPTY_SLOTS_GAME_CATALOG', ''),
+  }), /must remain in the slot catalog through its custom starter entry/)
+  assert.throws(() => verifyGameRouteInventory({
+    ...current, catalog: current.catalog.replace('SLOT_GAME_CATALOG.map(catalogGameFromSlot)', '[]'),
+  }), /requires the slot catalog mapping in the game catalog/)
 })

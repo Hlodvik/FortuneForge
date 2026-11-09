@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "707c8a7a-2fdc-414f-91d6-14ad481f3871",
+        "spinId": "9d691863-2892-4aa3-b8e9-0b1f4379d409",
         "gameId": "gold-foundry-v1",
         "reelSetId": "gold-foundry-reels-v1",
         "symbolSetId": "gold-foundry-symbols-v1",
@@ -87,6 +87,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

@@ -3,7 +3,7 @@
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
     "seed": 5,
-    "engineVersion": "shared-slots-engine-v1",
+    "engineVersion": "arcane-lightning-collector-v1",
     "gameId": "arcane-archives-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -54,9 +54,9 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "7a530437-461f-433d-bc37-f94d9af7d698",
+        "spinId": "50a820bb-f9aa-4b50-bf1c-f4ab3e24c7c0",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -65,7 +65,7 @@
           21,
           18,
           16,
-          40,
+          120,
           29
         ],
         "reels": [
@@ -85,13 +85,13 @@
             "6",
             "RAND_05",
             "ACE",
-            "POWER"
+            "7"
           ],
           [
-            "POWER",
+            "6",
             "2",
-            "4",
-            "5"
+            "BOLT",
+            "3"
           ],
           [
             "4",
@@ -101,8 +101,47 @@
           ]
         ],
         "payout": {
-          "totalPoints": 0,
-          "paylines": []
+          "totalPoints": 8,
+          "paylines": [
+            {
+              "paylineId": 902,
+              "amountPoints": 8,
+              "matches": [
+                {
+                  "match": {
+                    "paylineId": 902,
+                    "symbolId": "BOLT",
+                    "matchLength": 5,
+                    "positions": [
+                      {
+                        "reel": 3,
+                        "row": 2
+                      },
+                      {
+                        "reel": 0,
+                        "row": 1
+                      },
+                      {
+                        "reel": 2,
+                        "row": 3
+                      },
+                      {
+                        "reel": 4,
+                        "row": 2
+                      },
+                      {
+                        "reel": 4,
+                        "row": 3
+                      }
+                    ],
+                    "wildPositions": []
+                  },
+                  "multiplier": 4,
+                  "amountPoints": 8
+                }
+              ]
+            }
+          ]
         },
         "consecutiveFiveMisses": 1,
         "fiveMatchPityTriggered": false,
@@ -112,6 +151,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 10,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -121,6 +162,35 @@
         "monkeyPawCount": 0,
         "moneyGrabPoints": 0,
         "bananaBonusPoints": 0,
+        "lightningCollection": {
+          "collector": {
+            "reel": 3,
+            "row": 2
+          },
+          "cells": [
+            {
+              "reel": 0,
+              "row": 1,
+              "amountPoints": 4
+            },
+            {
+              "reel": 2,
+              "row": 3,
+              "amountPoints": 1
+            },
+            {
+              "reel": 4,
+              "row": 2,
+              "amountPoints": 1
+            },
+            {
+              "reel": 4,
+              "row": 3,
+              "amountPoints": 2
+            }
+          ],
+          "totalPoints": 8
+        },
         "sealsAwarded": {
           "SEAL_RAND": 1
         },
@@ -147,6 +217,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -190,15 +266,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f24b0d27-447c-4b0e-8a5c-68c34ce23eeb",
+        "spinId": "ab985cde-fc07-4f4c-9df5-c0cd6d616639",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -207,7 +289,7 @@
           6,
           52,
           16,
-          30,
+          92,
           4
         ],
         "reels": [
@@ -219,15 +301,15 @@
           ],
           [
             "2",
-            "POWER",
+            "6",
             "4",
-            "BOLT"
+            "2"
           ],
           [
             "6",
             "2",
             "ACE",
-            "POWER"
+            "7"
           ],
           [
             "RAND_3",
@@ -236,10 +318,10 @@
             "RAND_2"
           ],
           [
+            "2",
+            "7",
             "3",
-            "3",
-            "POWER",
-            "6"
+            "3"
           ]
         ],
         "payout": {
@@ -289,14 +371,15 @@
         "fiveMatchPityTriggered": false,
         "freeSpinsAwarded": 0,
         "specialPointsAwarded": 0,
-        "energyAwarded": 1,
+        "energyAwarded": 0,
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 1,
@@ -327,6 +410,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -344,7 +433,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -369,15 +458,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "23242c49-05d0-4596-b2e3-862680d51db5",
+        "spinId": "74f8e970-2e25-401c-9ca0-d708f019b03f",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -386,7 +481,7 @@
           11,
           50,
           12,
-          50,
+          152,
           21
         ],
         "reels": [
@@ -400,7 +495,7 @@
             "2",
             "4",
             "2",
-            "POWER"
+            "6"
           ],
           [
             "3",
@@ -409,8 +504,8 @@
             "2"
           ],
           [
-            "3",
-            "2",
+            "6",
+            "6",
             "BANANA",
             "BANANA"
           ],
@@ -433,10 +528,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -469,6 +565,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -486,7 +588,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -511,15 +613,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0595f23c-2b98-4995-9b1e-c24e38ac22ee",
+        "spinId": "4dcc9510-3996-42a2-8adc-c55ca85010f6",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -528,7 +636,7 @@
           28,
           30,
           27,
-          46,
+          138,
           44
         ],
         "reels": [
@@ -575,10 +683,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -609,6 +718,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -626,7 +741,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -651,15 +766,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b892e053-01b6-4971-892b-34f7ae95ad72",
+        "spinId": "86dedafb-a42d-432a-afae-e288ef994f28",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -668,7 +789,7 @@
           1,
           58,
           24,
-          6,
+          18,
           63
         ],
         "reels": [
@@ -746,10 +867,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -782,6 +904,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -799,7 +927,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -824,15 +952,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "03490b93-0a29-4de0-8fa4-125da7d7bf56",
+        "spinId": "62e218d7-dbd6-4df0-9e0f-7fe9ee2ea7e2",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -841,7 +975,7 @@
           30,
           6,
           62,
-          5,
+          15,
           31
         ],
         "reels": [
@@ -854,20 +988,20 @@
           [
             "3",
             "BANANA",
-            "POWER",
+            "7",
             "FREE"
           ],
           [
-            "POWER",
+            "6",
             "3",
             "4",
             "7"
           ],
           [
-            "3",
-            "3",
             "4",
-            "4"
+            "6",
+            "2",
+            "POWER"
           ],
           [
             "3",
@@ -888,10 +1022,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -922,6 +1057,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -939,7 +1080,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -964,15 +1105,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1eb2e31e-cc25-4e96-8fc5-a92eb4d1576b",
+        "spinId": "26ab1814-9bdd-4f93-af09-9ee877b6d378",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -981,7 +1128,7 @@
           15,
           28,
           1,
-          63,
+          191,
           13
         ],
         "reels": [
@@ -1028,10 +1175,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -1062,6 +1210,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -1079,7 +1233,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -1104,15 +1258,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6fa0dc77-9dfa-4d8e-89e3-b5101015e71d",
+        "spinId": "f54ea93b-38e2-4a2b-a9fb-82fa6be8dbf4",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -1121,7 +1281,7 @@
           26,
           58,
           59,
-          18,
+          56,
           38
         ],
         "reels": [
@@ -1141,7 +1301,7 @@
             "4",
             "3",
             "5",
-            "POWER"
+            "6"
           ],
           [
             "RAND_2",
@@ -1151,7 +1311,7 @@
           ],
           [
             "4",
-            "POWER",
+            "6",
             "3",
             "SEAL_SYNC"
           ]
@@ -1199,10 +1359,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -1235,6 +1396,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -1252,7 +1419,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -1277,15 +1444,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "da270162-0423-4b36-b1ee-58f363539f9d",
+        "spinId": "64558873-420f-4d6d-b37e-f72bc127f9b8",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -1294,33 +1467,33 @@
           28,
           58,
           29,
-          6,
+          19,
           49
         ],
         "reels": [
           [
             "3",
             "2",
-            "3",
+            "BANANA",
             "POWER"
           ],
           [
-            "3",
-            "BANANA",
-            "4",
-            "6"
+            "ACE",
+            "7",
+            "7",
+            "2"
           ],
           [
             "3",
             "FREE",
-            "POWER",
+            "6",
             "6"
           ],
           [
-            "3",
-            "4",
-            "4",
-            "6"
+            "ACE",
+            "7",
+            "7",
+            "2"
           ],
           [
             "RAND_05",
@@ -1330,43 +1503,8 @@
           ]
         ],
         "payout": {
-          "totalPoints": 1,
-          "paylines": [
-            {
-              "paylineId": 1,
-              "amountPoints": 1,
-              "matches": [
-                {
-                  "match": {
-                    "paylineId": 1,
-                    "symbolId": "3",
-                    "matchLength": 4,
-                    "positions": [
-                      {
-                        "reel": 0,
-                        "row": 0
-                      },
-                      {
-                        "reel": 1,
-                        "row": 0
-                      },
-                      {
-                        "reel": 2,
-                        "row": 0
-                      },
-                      {
-                        "reel": 3,
-                        "row": 0
-                      }
-                    ],
-                    "wildPositions": []
-                  },
-                  "multiplier": 1,
-                  "amountPoints": 1
-                }
-              ]
-            }
-          ]
+          "totalPoints": 0,
+          "paylines": []
         },
         "consecutiveFiveMisses": 9,
         "fiveMatchPityTriggered": false,
@@ -1376,10 +1514,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -1410,6 +1549,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -1427,7 +1572,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -1452,15 +1597,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "98744631-0c8d-4b25-a4c4-e8aef9d92491",
+        "spinId": "930180ca-8f3c-483a-b146-fbdf507e5e4a",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -1469,7 +1620,7 @@
           33,
           36,
           13,
-          22,
+          67,
           37
         ],
         "reels": [
@@ -1482,25 +1633,25 @@
           [
             "3",
             "4",
-            "POWER",
+            "6",
             "4"
           ],
           [
             "3",
             "4",
-            "POWER",
+            "6",
             "4"
           ],
           [
+            "2",
             "PAW",
-            "POWER",
-            "6",
-            "6"
+            "3",
+            "3"
           ],
           [
             "BANANA",
             "BANANA",
-            "POWER",
+            "6",
             "PAW"
           ]
         ],
@@ -1519,7 +1670,7 @@
                     "positions": [
                       {
                         "reel": 3,
-                        "row": 0
+                        "row": 1
                       },
                       {
                         "reel": 4,
@@ -1559,10 +1710,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 2,
@@ -1593,6 +1745,12 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "collectionFreeSpinsAwarded": 0,
@@ -1610,7 +1768,7 @@
         "useFreeSpin": true,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "sealCollections": [
           {
             "sealId": "sync",
@@ -1635,15 +1793,21 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "sync-paw-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "42c5794b-5e34-4a38-be5c-32b4c3f213da",
+        "spinId": "da42a589-84cb-41e1-a6e4-fe15606d459a",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -1652,7 +1816,7 @@
           51,
           9,
           12,
-          30,
+          92,
           32
         ],
         "reels": [
@@ -1660,7 +1824,7 @@
             "4",
             "POWER",
             "FREE",
-            "POWER"
+            "7"
           ],
           [
             "3",
@@ -1675,10 +1839,10 @@
             "RAND_1"
           ],
           [
+            "2",
+            "7",
             "3",
-            "3",
-            "POWER",
-            "6"
+            "3"
           ],
           [
             "POWER",
@@ -1699,10 +1863,11 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -1732,6 +1897,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],

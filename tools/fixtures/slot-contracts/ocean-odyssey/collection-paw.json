@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a0d67f6c-94f9-4e43-a2ff-aef011c78f6b",
+        "spinId": "d0de2d49-431f-4a26-89e6-a18903199f58",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -146,6 +148,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -191,13 +199,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6fb80c5d-50af-4f58-b38c-9471cc59d5d3",
+        "spinId": "516ef70e-6d3e-4ef7-9e67-715c7641ae20",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -255,6 +269,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -286,6 +301,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -331,13 +352,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "8d654b63-5d49-47df-85c8-a98696bd328b",
+        "spinId": "6dfe24cd-0e21-478a-bb1a-612353abf4ea",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -395,6 +422,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -426,6 +454,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -471,13 +505,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d6d853c9-7090-4f23-a469-9f02e6a5a7cb",
+        "spinId": "270f3c0e-d78f-478c-af94-972345e8cd73",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -535,6 +575,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -566,6 +607,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -611,13 +658,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "2f9d0de5-973b-435a-857d-ec09c0ff9193",
+        "spinId": "e377a5d9-5d84-450f-9ea0-5ed47b578f7b",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -719,6 +772,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -750,6 +804,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -795,13 +855,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "52a167e3-ece6-457b-8d7a-6b283074004c",
+        "spinId": "40175593-8664-4f31-9f46-572581b6facc",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -859,6 +925,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -890,6 +957,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -935,13 +1008,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": "sync-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d51ff9ec-364a-4752-8b94-c35bf8c2f4b0",
+        "spinId": "c58aeffb-fe6a-44cc-9b66-6382b2cb7e3c",
         "gameId": "ocean-odyssey-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -999,6 +1078,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1032,6 +1112,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28

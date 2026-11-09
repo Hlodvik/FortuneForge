@@ -214,7 +214,6 @@ public sealed class SlotMathAuditTests(ITestOutputHelper output)
         SlotSpecialRoundProfiles.PhantomManorGameId,
         SlotSpecialRoundProfiles.OceanOdysseyGameId,
         SlotSpecialRoundProfiles.DragonHoardGameId,
-        SlotSpecialRoundProfiles.JungleJackpotGameId,
         SlotSpecialRoundProfiles.CandyCarnivalGameId,
         SlotSpecialRoundProfiles.DesertTreasuresGameId,
         SlotSpecialRoundProfiles.NeonNightsGameId,

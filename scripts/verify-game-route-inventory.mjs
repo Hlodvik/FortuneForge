@@ -1,46 +1,71 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { gameSmokeRoutes, nonSlotSmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
+import { gameSmokeRoutes, nonSlotSmokeInventory, shellOnlySmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runtimeCatalog }) {
+export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runtimeCatalog, slotCatalog, starterCatalog }) {
+  assert(gameSmokeRoutes.length === 45, `expected 45 smoke routes, found ${gameSmokeRoutes.length}`)
+  assert(new Set(gameSmokeRoutes).size === gameSmokeRoutes.length, 'smoke routes must be unique')
+  assert(slotSmokeInventory.length === 19, `expected 19 playable slot contracts, found ${slotSmokeInventory.length}`)
+  assert(shellOnlySmokeInventory.length === 1 && shellOnlySmokeInventory[0].smokePath === '/slots/empty-slots-game',
+    'the Empty Slots starter must retain separate shell-only coverage')
 
-assert(gameSmokeRoutes.length === 45, `expected 45 smoke routes, found ${gameSmokeRoutes.length}`)
-assert(new Set(gameSmokeRoutes).size === gameSmokeRoutes.length, 'smoke routes must be unique')
-assert(slotSmokeInventory.length === 20, `expected 20 slot contracts, found ${slotSmokeInventory.length}`)
-
-for (const [route, gameId] of slotSmokeInventory) {
-  const demoPath = `/slots/${route}/demo`
-  const routeBlock = slotRoutes.match(new RegExp(`demoPath: '${escapeRegExp(demoPath)}'[\\s\\S]*?serverGameIds: \\[([^\\]]+)\\]`))
-  assert(routeBlock !== null, `${demoPath} is missing from the slot route registry`)
-  assert(routeBlock[1].includes(`'${gameId}'`), `${demoPath} does not declare server profile ${gameId}`)
-}
-
-const runtimeGames = runtimeCatalog === undefined ? null : parseRuntimeCatalog(runtimeCatalog)
-if (runtimeGames) {
-  const expectedPaths = [
-    ...slotSmokeInventory.map(([route]) => `/slots/${route}`),
-    ...nonSlotSmokeInventory.map(({ smokePath, catalogPath = smokePath }) => catalogPath),
-  ]
-  assert(runtimeGames.size === 45, `expected 45 runtime catalogue routes, found ${runtimeGames.size}`)
-  for (const route of expectedPaths) assert(runtimeGames.has(route), `${route} is missing from the runtime catalogue`)
-  for (const [route] of slotSmokeInventory) assert(runtimeGames.get(`/slots/${route}`) === true, `/slots/${route} must be listed by default`)
-}
-
-for (const { smokePath, catalogPath = smokePath, listed = true } of nonSlotSmokeInventory) {
-  assert(appRoutes.includes(`pathname === '${smokePath}'`), `${smokePath} is missing from AppRoutes`)
-  assert(appRoutes.includes(`pathname === '${catalogPath}'`), `${catalogPath} is missing from AppRoutes`)
-  const appearsInCatalog = catalog.includes(`href: '${catalogPath}'`)
-  if (runtimeGames) assert(runtimeGames.get(catalogPath) === listed,
-    `${catalogPath} runtime default visibility must be ${listed}`)
-  if (listed) assert(appearsInCatalog, `${catalogPath} is missing from the game catalog`)
-  else if (appearsInCatalog) {
-    assert(runtimeGames?.get(catalogPath) === false,
-      `${catalogPath} must remain unlisted in the game catalog or be runtime-default-hidden`)
-    verifyRuntimeCatalogueFilter(catalog, catalogPath)
+  const registeredSlots = [...slotRoutes.matchAll(/playPath:\s*'([^']+)',\s*demoPath:\s*'([^']+)',\s*serverGameIds:\s*\[([^\]]*)\]/g)]
+  assert(registeredSlots.length === 19, `expected 19 playable slot route definitions, found ${registeredSlots.length}`)
+  assert(new Set(registeredSlots.flatMap(([, playPath, demoPath]) => [playPath, demoPath])).size === 38,
+    'playable slot play and demo routes must be unique')
+  for (const [route, gameId] of slotSmokeInventory) {
+    const demoPath = `/slots/${route}/demo`
+    const registered = registeredSlots.find(([, , path]) => path === demoPath)
+    assert(registered !== undefined, `${demoPath} is missing from the slot route registry`)
+    assert(registered[1] === `/slots/${route}`, `${demoPath} must retain its playable route /slots/${route}`)
+    assert([...registered[3].matchAll(/'([^']+)'/g)].some(([, id]) => id === gameId),
+      `${demoPath} does not declare server profile ${gameId}`)
   }
-}
+
+  const runtimeGames = runtimeCatalog === undefined ? null : parseRuntimeCatalog(runtimeCatalog)
+  if (runtimeGames) {
+    const expectedPaths = [
+      ...slotSmokeInventory.map(([route]) => `/slots/${route}`),
+      ...nonSlotSmokeInventory.map(({ smokePath, catalogPath = smokePath }) => catalogPath),
+      ...shellOnlySmokeInventory.map(({ smokePath }) => smokePath),
+    ]
+    assert(new Set(expectedPaths).size === 45, 'runtime catalogue coverage must contain 45 distinct routes')
+    assert(runtimeGames.size === 45, `expected 45 runtime catalogue routes, found ${runtimeGames.size}`)
+    for (const route of expectedPaths) assert(runtimeGames.has(route), `${route} is missing from the runtime catalogue`)
+    for (const [route] of slotSmokeInventory) assert(runtimeGames.get(`/slots/${route}`) === true, `/slots/${route} must be listed by default`)
+  }
+
+  for (const { smokePath, catalogPath = smokePath, listed = true } of nonSlotSmokeInventory) {
+    assert(appRoutes.includes(`pathname === '${smokePath}'`), `${smokePath} is missing from AppRoutes`)
+    assert(appRoutes.includes(`pathname === '${catalogPath}'`), `${catalogPath} is missing from AppRoutes`)
+    const appearsInCatalog = catalog.includes(`href: '${catalogPath}'`)
+    if (runtimeGames) assert(runtimeGames.get(catalogPath) === listed,
+      `${catalogPath} runtime default visibility must be ${listed}`)
+    if (listed) assert(appearsInCatalog, `${catalogPath} is missing from the game catalog`)
+    else if (appearsInCatalog) {
+      assert(runtimeGames?.get(catalogPath) === false,
+        `${catalogPath} must remain unlisted in the game catalog or be runtime-default-hidden`)
+      verifyRuntimeCatalogueFilter(catalog, catalogPath)
+    }
+  }
+
+  for (const { smokePath } of shellOnlySmokeInventory) {
+    assert(appRoutes.includes(`pathname === '${smokePath}') route = <EmptySlotsGameRoute />`),
+      `${smokePath} is missing its custom starter route in AppRoutes`)
+    assert(!registeredSlots.some(([, playPath, demoPath]) => playPath === smokePath || demoPath.startsWith(`${smokePath}/`)),
+      `${smokePath} must remain shell-only rather than a playable slot contract`)
+    if (runtimeGames) assert(runtimeGames.get(smokePath) === true, `${smokePath} runtime default visibility must be true`)
+    assert(starterCatalog?.includes(`playHref: '${smokePath}'`), `${smokePath} is missing from the starter catalog`)
+    const definitions = slotCatalog?.match(/const catalogDefinitions:[\s\S]*?=\s*\[([\s\S]*?)\n\]/)?.[1] ?? ''
+    assert(/import\s*\{\s*EMPTY_SLOTS_GAME_CATALOG\s*\}\s*from\s*'\.\/emptySlotsGame\/catalog'/.test(slotCatalog ?? '')
+      && /^\s*EMPTY_SLOTS_GAME_CATALOG,\s*$/m.test(definitions)
+      && /if\s*\(catalog\.id === EMPTY_SLOTS_GAME_CATALOG\.id\) return EMPTY_SLOTS_GAME_CATALOG/.test(slotCatalog ?? ''),
+      `${smokePath} must remain in the slot catalog through its custom starter entry`)
+    assert(/const slotGames:[^\n]*= SLOT_GAME_CATALOG\.map\(catalogGameFromSlot\)/.test(catalog)
+      && /href: game\.playHref \?\? undefined/.test(catalog),
+      `${smokePath} requires the slot catalog mapping in the game catalog`)
+  }
 }
 
 function parseRuntimeCatalog(runtimeCatalog) {
@@ -60,22 +85,20 @@ function verifyRuntimeCatalogueFilter(catalog, route) {
     `${route} requires the runtime visibility filter before mapping game tiles`)
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   verifyGameRouteInventory({
     appRoutes: source('fortuneforge.client/src/app/AppRoutes.tsx'),
     catalog: source('fortuneforge.client/src/pages/games/OtherGamesPage.tsx'),
     slotRoutes: source('fortuneforge.client/src/games/slots/routeRegistry.ts'),
     runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
+    slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
+    starterCatalog: source('fortuneforge.client/src/games/slots/emptySlotsGame/catalog.ts'),
   })
-  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes and ${slotSmokeInventory.length} slot contracts`)
+  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes, ${slotSmokeInventory.length} playable slot contracts and ${shellOnlySmokeInventory.length} shell-only starter`)
 }
 
 function source(relativePath) {
   return readFileSync(`${root}${relativePath}`, 'utf8')
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function assert(condition, message) {

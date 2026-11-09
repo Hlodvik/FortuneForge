@@ -43,11 +43,11 @@ describe('combined game loading registry', () => {
   it('combines the three manifests into unique game identities, images, and aliases', () => {
     expect(GAME_LOADING_PRESENTATIONS).toEqual([...LOADING_PRESENTATIONS_A, ...LOADING_PRESENTATIONS_B, ...LOADING_PRESENTATIONS_C])
     expect(Object.isFrozen(GAME_LOADING_PRESENTATIONS)).toBe(true)
-    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(41)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(41)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(41)
+    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(40)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(40)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(40)
     const routes = GAME_LOADING_PRESENTATIONS.flatMap(entry => entry.routes)
-    expect(routes).toHaveLength(63)
+    expect(routes).toHaveLength(61)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -57,7 +57,7 @@ describe('combined game loading registry', () => {
     for (const group of ['non-slots', 'slots']) {
       const directory = new URL(`../../assets/catalogue/${group}/`, import.meta.url)
       const files = readdirSync(directory).filter(file => file.endsWith('.artwork.json'))
-      expect(files).toHaveLength(group === 'non-slots' ? 21 : 20)
+      expect(files).toHaveLength(group === 'non-slots' ? 21 : 19)
       for (const filename of files) {
         const metadata = JSON.parse(readFileSync(new URL(filename, directory), 'utf8')) as ArtworkMetadata
         expect(metadataIds.has(metadata.id)).toBe(false)
@@ -74,13 +74,13 @@ describe('combined game loading registry', () => {
         totalBytes += metadata.bytes
       }
     }
-    expect(metadataIds.size).toBe(41)
+    expect(metadataIds.size).toBe(40)
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id))).toEqual(metadataIds)
     expect(totalBytes).toBeLessThan(3_000_000)
   })
 
-  it('matches all twenty slot canonical/demo aliases to the existing route registry without loading engines', () => {
-    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(20)
+  it('matches all nineteen playable slot canonical/demo aliases to the existing route registry without loading engines', () => {
+    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(19)
     for (const slot of SLOT_ROUTE_DEFINITIONS) {
       const entry = GAME_LOADING_PRESENTATIONS.find(entry => entry.id === slot.id)!
       expect(entry.title).toBe(slot.title)
@@ -123,6 +123,9 @@ describe('combined game loading registry', () => {
     for (const id of ['horse-flight', 'asteroids', 'flappy', 'snake']) {
       expect(GAME_LOADING_PRESENTATIONS.some(entry => entry.id === id)).toBe(false)
       expect(resolveGameLoadingEntry(`/games/${id}`)).toBeUndefined()
+    }
+    for (const route of ['/slots/jungle-jackpot', '/slots/jungle-jackpot/demo', '/slots/empty-slots-game']) {
+      expect(resolveGameLoadingEntry(route), route).toBeUndefined()
     }
   })
 

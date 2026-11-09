@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { createElement, createRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
+import { NEON_NIGHTS_SLOT_GAME as STANDALONE_NEON_NIGHTS_SLOT_GAME } from '@fortuneforge/games-neon-nights/manifest'
 import { WinHelpDialog } from '../../features/slots/WinHelpDialog'
 import { describeSpinOutcome } from '../../features/slots/presentation/spinPresentation'
 import { GODS_TUMBLE_SYMBOLS } from './godsOfOlympus/tumble'
@@ -18,6 +19,7 @@ import { SLOT_GAME_CATALOG } from './catalog'
 import { createSlotExperienceRouteMap, type SlotGameManifest } from './shared/slotGameManifest'
 
 const SLOT_GAME_MANIFESTS = await loadAllSlotGameManifests()
+const SHARED_HOST_SLOT_GAME_MANIFESTS = SLOT_GAME_MANIFESTS.filter(game => game.id !== 'neon-nights')
 
 function requireGame(id: string): SlotGameManifest {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === id)
@@ -46,7 +48,6 @@ const ROBOT_REVOLUTION_SLOT_GAME = requireGame('robot-revolution')
 const PHANTOM_MANOR_SLOT_GAME = requireGame('phantom-manor')
 const OCEAN_ODYSSEY_SLOT_GAME = requireGame('ocean-odyssey')
 const DRAGON_HOARD_SLOT_GAME = requireGame('dragon-hoard')
-const JUNGLE_JACKPOT_SLOT_GAME = requireGame('jungle-jackpot')
 const CANDY_CARNIVAL_SLOT_GAME = requireGame('candy-carnival')
 const DESERT_TREASURES_SLOT_GAME = requireGame('desert-treasures')
 const NEON_NIGHTS_SLOT_GAME = requireGame('neon-nights')
@@ -57,7 +58,7 @@ const REEL_SYMBOL_CATALOG_GAME_IDS = [
   'gold-foundry',
   'rainbow-realm',
   'reel-riches',
-  ...SECOND_WAVE_SLOT_GAME_IDS,
+  ...SECOND_WAVE_SLOT_GAME_IDS.filter(id => id !== 'neon-nights'),
 ] as const
 function expectDefinedSymbol(gameId: string, symbol: SlotSymbolId) {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === gameId)
@@ -67,7 +68,7 @@ function expectDefinedSymbol(gameId: string, symbol: SlotSymbolId) {
 
 describe('slot game manifests', () => {
   it('maps every lightweight route definition to exactly one matching manifest loader', async () => {
-    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(20)
+    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(19)
     for (const route of SLOT_ROUTE_DEFINITIONS) {
       const game = await route.load()
       expect(game.id).toBe(route.id)
@@ -78,6 +79,22 @@ describe('slot game manifests', () => {
       expect(game.experience.shellBackdrop).toBe(route.shellBackdrop)
       expect(route.serverGameIds).toContain(game.experience.rules.gameId)
     }
+  })
+
+  it('uses the standalone Neon manifest and keeps Empty Slots as a separate catalogue starter', () => {
+    expect(NEON_NIGHTS_SLOT_GAME).toBe(STANDALONE_NEON_NIGHTS_SLOT_GAME)
+    expect(NEON_NIGHTS_SLOT_GAME.routes).toEqual({ play: '/slots/neon-nights', demo: '/slots/neon-nights/demo' })
+    expect(NEON_NIGHTS_SLOT_GAME.experience.rules.gameId).toBe('neon-nights-v1')
+    expect(NEON_NIGHTS_SLOT_GAME.experience.symbols.serverSymbolSetId).toBe('neon-arcade-symbols-v2')
+    expect(NEON_NIGHTS_SLOT_GAME.catalog).toMatchObject({ id: 'neon-nights', title: 'Neon Nights' })
+    expect(NEON_NIGHTS_SLOT_GAME.catalog.image).toBe(NEON_NIGHTS_SLOT_GAME.experience.symbols.definitions['7']?.image)
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'neon-nights')?.image).toMatch(/neon-nights-title-v1\.webp$/)
+    expect(SLOT_GAME_CATALOG).toHaveLength(20)
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')).toMatchObject({
+      title: 'Empty Slots Game', image: '', playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
+      serverGameIds: ['empty-slots-v1'],
+    })
+    expect(SLOT_GAME_MANIFESTS.some(game => game.id === 'empty-slots-game' || game.id === 'jungle-jackpot')).toBe(false)
   })
 
   it('keeps game, catalog, experience, and route identifiers unique', () => {
@@ -108,7 +125,7 @@ describe('slot game manifests', () => {
       expect(game.experience.rules.initialReels.flat(), game.id).not.toContain('8')
     }
     expect([...paylineCounts].sort((left, right) => left - right)).toEqual([
-      14, 16, 19, ...Array(17).fill(23),
+      14, 16, 19, ...Array(16).fill(23),
     ])
     for (const game of SLOT_GAME_MANIFESTS) {
       const patternIds = game.experience.help.paylinePatternIds ??
@@ -165,7 +182,7 @@ describe('slot game manifests', () => {
       [COSMIC_FORTUNE_SLOT_GAME, null, 'star-orbit'],
     ] as const
 
-    expect(SLOT_GAME_MANIFESTS).toHaveLength(20)
+    expect(SLOT_GAME_MANIFESTS).toHaveLength(19)
     for (const [game, actorName, presentation] of newGames) {
       expect(game.routes.play).toBe(`/slots/${game.id}`)
       expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
@@ -219,25 +236,23 @@ describe('slot game manifests', () => {
     expect(symbols.definitions.RAND_1).toBeUndefined()
   })
 
-  it('registers ten second-wave games with complete distinct themed contracts', () => {
-    expect(SECOND_WAVE_SLOT_GAMES).toHaveLength(10)
-    expect(new Set(SECOND_WAVE_SLOT_GAMES.map((game) => game.id)).size).toBe(10)
+  it('registers nine second-wave games with complete distinct themed contracts', () => {
+    expect(SECOND_WAVE_SLOT_GAMES).toHaveLength(9)
+    expect(new Set(SECOND_WAVE_SLOT_GAMES.map((game) => game.id)).size).toBe(9)
 
     for (const game of SECOND_WAVE_SLOT_GAMES) {
       expect(game.routes.play).toBe(`/slots/${game.id}`)
       expect(game.routes.demo).toBe(`/slots/${game.id}/demo`)
       expect(game.experience.cabinet.backdropImage).toMatch(/\.webp$/)
+      if (game.id === 'neon-nights') continue
       const hasNoCollections = new Set([
         'robot-revolution',
         'phantom-manor',
         'candy-carnival',
         'nordic-legends',
-        'neon-nights',
       ]).has(game.id)
       expect(game.experience.features.collections?.entries ?? []).toHaveLength(hasNoCollections ? 0 : 4)
-      if (game.id !== 'neon-nights') {
-        expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
-      }
+      expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
       expect(new Set(
@@ -251,12 +266,12 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('gives every non-Wukong/Pirates game its own settled-outcome narrative', () => {
-    const themedGames = SLOT_GAME_MANIFESTS.filter((game) =>
+  it('gives every non-Wukong/Pirates shared-host game its own settled-outcome narrative', () => {
+    const themedGames = SHARED_HOST_SLOT_GAME_MANIFESTS.filter((game) =>
       game.id !== 'wukong-journey-to-the-west' && game.id !== 'pirates-fortune',
     )
 
-    expect(themedGames).toHaveLength(18)
+    expect(themedGames).toHaveLength(16)
     for (const game of themedGames) {
       const narrative = game.experience.outcomeNarrative
       expect(narrative, `${game.id} is missing outcome copy`).toBeDefined()
@@ -295,18 +310,18 @@ describe('slot game manifests', () => {
       })
     }
     expect(new Set(themedGames.map((game) => game.experience.outcomeNarrative?.bigWinTitle)).size)
-      .toBe(18)
+      .toBe(16)
     expect(new Set(themedGames.map((game) => game.experience.cabinet.celebrationEffect)).size)
-      .toBe(18)
+      .toBe(16)
   })
 
   it('gives free-spin rounds distinct, named feature contracts', () => {
-    const features = SLOT_GAME_MANIFESTS
+    const features = SHARED_HOST_SLOT_GAME_MANIFESTS
       .filter((game) => game.id !== 'gold-foundry')
       .map((game) => game.experience.features.specialRound)
 
     expect(features.every(Boolean)).toBe(true)
-    expect(new Set(features.map((feature) => feature?.id)).size).toBe(19)
+    expect(new Set(features.map((feature) => feature?.id)).size).toBe(17)
     for (const feature of features) {
       expect(feature?.title).toBeTruthy()
       expect(feature?.earnLabel).toBeTruthy()
@@ -441,7 +456,6 @@ describe('slot game manifests', () => {
 
   it('gives the remaining showcase slots matched special rounds and audio', () => {
     const featured = [
-      [JUNGLE_JACKPOT_SLOT_GAME, 'jungle-temple-trek', 'jungle-jackpot-audio-v1', 22, 3, 6, true],
       [CANDY_CARNIVAL_SLOT_GAME, 'candy-sugar-parade', 'candy-carnival-audio-v1', 20, 4, 5, false],
       [DESERT_TREASURES_SLOT_GAME, 'desert-pharaoh-passage', 'desert-treasures-audio-v1', 24, 3, 7, true],
       [NORDIC_LEGENDS_SLOT_GAME, 'nordic-valhalla-voyage', 'nordic-legends-audio-v1', 28, 4, 6, false],
@@ -466,14 +480,15 @@ describe('slot game manifests', () => {
       COSMIC_FORTUNE_SLOT_GAME, HIGH_NOON_FORTUNE_SLOT_GAME, GODS_OF_OLYMPUS_SLOT_GAME,
       PIRATES_FORTUNE_SLOT_GAME, ROYAL_DRAW_SLOT_GAME, SAMURAI_FORTUNE_SLOT_GAME,
       ROBOT_REVOLUTION_SLOT_GAME, PHANTOM_MANOR_SLOT_GAME, OCEAN_ODYSSEY_SLOT_GAME,
-      DRAGON_HOARD_SLOT_GAME, JUNGLE_JACKPOT_SLOT_GAME, CANDY_CARNIVAL_SLOT_GAME,
-      DESERT_TREASURES_SLOT_GAME, NEON_NIGHTS_SLOT_GAME, NORDIC_LEGENDS_SLOT_GAME,
+      DRAGON_HOARD_SLOT_GAME, CANDY_CARNIVAL_SLOT_GAME,
+      DESERT_TREASURES_SLOT_GAME, NORDIC_LEGENDS_SLOT_GAME,
     ]
 
     expect(featured.filter((game) => game.experience.features.energy)).toHaveLength(4)
-    expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(10)
-    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(6)
-    expect(new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle)).size).toBeGreaterThan(7)
+    expect(featured.filter((game) => !game.experience.features.moneyGrab)).toHaveLength(8)
+    expect(featured.filter((game) => !game.experience.features.collections)).toHaveLength(5)
+    expect([...new Set(featured.map((game) => game.experience.features.specialRound?.earnStyle))].sort())
+      .toEqual(['altar', 'buckets', 'cards', 'gates', 'orbit', 'stack', 'trail'])
   })
 
   it('defines every symbol referenced by rules, help, and optional features', () => {

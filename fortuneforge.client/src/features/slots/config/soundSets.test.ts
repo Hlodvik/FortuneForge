@@ -125,8 +125,8 @@ describe('catalogue audio provenance and allocation', () => {
   it('keeps shared-host audio allocations separate from standalone Neon', async () => {
     // Neon owns its audio contract checks inside its client package.
     const manifests = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
-    expect(manifests).toHaveLength(19)
-    expect(allSoundSets).toHaveLength(20)
+    expect(manifests).toHaveLength(18)
+    expect(allSoundSets).toHaveLength(19)
     for (const game of manifests) {
       const sounds = game.experience.sounds
       expect(allSoundSets).toContain(sounds)

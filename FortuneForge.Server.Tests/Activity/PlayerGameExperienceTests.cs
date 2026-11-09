@@ -202,10 +202,14 @@ public sealed class PlayerGameExperienceTests
     }
 
     [Fact]
-    public void Full_slot_coverage_reads_all_twenty_canonical_keys_and_the_historical_wukong_alias()
+    public void Full_slot_coverage_reads_all_current_catalogue_keys_and_the_historical_wukong_alias()
     {
         var keys = AuthoritativeGameExperienceCoverage.GuardKeys("alice");
-        Assert.Equal(20, keys.Count); Assert.Equal(21, keys.Values.Sum(value => value.Count));
+        var currentSlotIds = Catalog.CatalogContract.Entries.Where(game => game.Route.StartsWith("/slots/", StringComparison.Ordinal))
+            .Select(game => game.Id).ToHashSet(StringComparer.Ordinal);
+        Assert.Subset(keys.Keys.ToHashSet(StringComparer.Ordinal), currentSlotIds);
+        Assert.Equal(keys.Count + 1, keys.Values.Sum(value => value.Count));
+        Assert.Single(keys["empty-slots-game"]);
         Assert.Equal(2, keys["wukong-journey-to-the-west"].Count);
         Assert.Contains("alice_" + AcceptedGameActivityReader.Hash("classic-demo-v1"), keys["wukong-journey-to-the-west"]);
         Assert.DoesNotContain(keys.Values.SelectMany(value => value), key => key.StartsWith("bob_", StringComparison.Ordinal));

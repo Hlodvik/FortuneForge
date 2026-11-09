@@ -49,7 +49,7 @@ afterEach(() => { cleanups.splice(0).forEach(cleanup => cleanup()); vi.clearAllT
 
 describe('authoritative shared player-game read', () => {
   it('requires every canonical title and keeps unknown distinct from a proven negative', () => {
-    expect(ids).toHaveLength(45)
+    expect(ids).toHaveLength(44)
     const value = body(), row = value.games[0]!
     expect(store.parseExperienceResponse(value).games.every(item => item.hasPlayed === null)).toBe(true)
     Object.assign(row, { state: 'known', hasPlayed: false, provenance: ['complete-authoritative-coverage'], coverage: 'complete' })

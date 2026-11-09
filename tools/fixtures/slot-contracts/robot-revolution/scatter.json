@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "994b4574-f8ad-4aff-97ca-667c041d2738",
+        "spinId": "fd1dc1be-fa4b-4ac7-a383-05b6cb2c924d",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -119,7 +121,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6c04c77b-36a0-4f6c-9dad-e06911f34943",
+        "spinId": "38039faf-8f62-497d-9dee-5cfb9de66d23",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -187,6 +189,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -219,7 +222,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9fda72a9-1e37-4e33-aca0-ea8682706a05",
+        "spinId": "e6ed3584-b042-467c-bd3a-4dab2e13b16b",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -352,6 +355,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -384,7 +388,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "829cb196-4baa-4205-ad80-675a95a54590",
+        "spinId": "b0615bcd-df9a-4765-b4c1-785ef5509c20",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -452,6 +456,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -484,7 +489,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "cf7fccdd-1407-4766-8fd1-02b1d80ecf57",
+        "spinId": "8096da5d-e872-4530-a8ae-bc431c53763e",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -552,6 +557,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -584,7 +590,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "32a9086b-27e2-4513-8779-4c27bd6c454c",
+        "spinId": "faadcfe4-ee5d-4c36-a03d-70b87c8acde0",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -652,6 +658,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -684,7 +691,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "2568bf56-4f17-4229-a4db-adcd11750162",
+        "spinId": "f20110ca-3924-4d5a-8e99-0cbe7a81db69",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -752,6 +759,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -784,7 +792,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "073f0432-cacf-460e-94f0-368722619385",
+        "spinId": "1d3c1452-7ae8-405f-a57c-4017136794e5",
         "gameId": "robot-revolution-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -883,6 +891,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

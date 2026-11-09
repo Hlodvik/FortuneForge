@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "5c982101-a626-4894-a5b5-a219c5611cf4",
+        "spinId": "e33659ea-51f1-4c31-a795-7a89406e4772",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -145,6 +147,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -190,13 +198,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9cd029af-2d70-4057-b456-65f5d37ba27c",
+        "spinId": "73324379-0fe7-460a-a48d-a6919eb43902",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -254,6 +268,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -287,6 +302,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -332,13 +353,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "8ff9fe3b-6c02-48b9-b675-47c198ed3f1f",
+        "spinId": "3036cb03-2670-4a78-a40f-66fe0167e46c",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -461,6 +488,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -492,6 +520,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -537,13 +571,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "86825a67-2535-40e0-994f-877051d15cc7",
+        "spinId": "2c686b2f-73a3-4e42-a3aa-8e0bdafd8a1f",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -601,6 +641,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -632,6 +673,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -677,13 +724,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "c062394c-1101-41d1-a94f-a8cdaae900a5",
+        "spinId": "0916c96a-849c-43d1-b664-43b867cac018",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -741,6 +794,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -772,6 +826,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -817,13 +877,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "adeb3dd9-d0a9-43ff-8e17-f3e19a68462e",
+        "spinId": "4f858d70-8be0-4adf-afff-f1041557e17e",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -916,6 +982,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -947,6 +1014,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -992,13 +1065,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "5d9dfb3c-0593-406d-87cd-43c2dfbd1417",
+        "spinId": "052e525e-7a5f-4aca-8490-f731f38d5c1e",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1056,6 +1135,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1089,6 +1169,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
@@ -1134,13 +1220,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "3af56385-77be-4a47-93f9-ee855dc1420a",
+        "spinId": "9d4b7387-de68-44a2-aa94-447f698e8894",
         "gameId": "pirates-fortune-v1",
         "reelSetId": "pirates-fortune-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1229,6 +1321,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1260,6 +1353,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 25
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 25

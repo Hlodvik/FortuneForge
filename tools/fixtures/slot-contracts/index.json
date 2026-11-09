@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "exportedUtc": "2026-11-03T06:10:41.8700849Z",
+  "exportedUtc": "2026-11-09T21:59:59.3299597Z",
   "games": [
     {
       "route": {
@@ -1063,11 +1063,11 @@
         "collectionTarget": 40,
         "collectionAwardedSpins": 10,
         "usesCollections": true,
-        "usesEnergy": true,
+        "usesEnergy": false,
         "usesDirectValueTokens": true,
         "scatterFeatureMode": null,
         "collectionFeatureMode": "sync-paw-rand",
-        "baseReelSetId": null,
+        "baseReelSetId": "arcane-archives-lightning-reels-v1",
         "targetHitRate": null,
         "paylinePatternIds": [
           1,
@@ -1137,8 +1137,8 @@
         },
         {
           "scenario": "collection-sync",
-          "seed": 13,
-          "responses": 16,
+          "seed": 3,
+          "responses": 11,
           "triggerRows": 4,
           "continuationRows": [
             4
@@ -1196,21 +1196,6 @@
           "replayMatchesExceptSpinId": true
         },
         {
-          "scenario": "energy-completion",
-          "seed": 3,
-          "responses": 11,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 10,
-          "triggerMode": "sync-paw-rand",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
           "scenario": "direct-token-award",
           "seed": 2,
           "responses": 1,
@@ -1225,8 +1210,10 @@
         }
       ],
       "missingScenarios": [],
-      "responses": 74,
-      "unavailable": []
+      "responses": 58,
+      "unavailable": [
+        "Energy disabled in actual engine profile."
+      ]
     },
     {
       "route": {
@@ -1502,27 +1489,27 @@
       "profile": {
         "gameId": "neon-nights-v1",
         "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 6,
+        "scatterAwardedSpins": 0,
         "collectionTarget": 26,
-        "collectionAwardedSpins": 7,
-        "usesCollections": true,
+        "collectionAwardedSpins": 0,
+        "usesCollections": false,
         "usesEnergy": false,
         "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
-        "collectionFeatureMode": "sync",
-        "baseReelSetId": null,
+        "collectionFeatureMode": null,
+        "baseReelSetId": "neon-arcade-reels-v3",
         "targetHitRate": null,
         "paylinePatternIds": null,
-        "payoutMultiplier": 1
+        "payoutMultiplier": 0.82
       },
-      "payoutMultiplier": 1,
+      "payoutMultiplier": 0.82,
       "observedRows": [
         4
       ],
       "scenarios": [
         {
           "scenario": "base-loss",
-          "seed": 0,
+          "seed": 1,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -1535,134 +1522,6 @@
         },
         {
           "scenario": "base-win",
-          "seed": 1,
-          "responses": 1,
-          "triggerRows": 4,
-          "continuationRows": [],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 0,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "scatter",
-          "seed": 106,
-          "responses": 7,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 6,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 6,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-sync",
-          "seed": 2,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rows",
-          "seed": 29,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-paw",
-          "seed": 2,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rand",
-          "seed": 1,
-          "responses": 8,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 7,
-          "triggerMode": "sync",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        }
-      ],
-      "missingScenarios": [],
-      "responses": 41,
-      "unavailable": [
-        "Energy disabled in actual engine profile.",
-        "Direct-value tokens and collectors disabled in actual engine profile."
-      ]
-    },
-    {
-      "route": {
-        "id": "jungle-jackpot",
-        "title": "Jungle Jackpot",
-        "playPath": "/slots/jungle-jackpot",
-        "demoPath": "/slots/jungle-jackpot/demo",
-        "gameId": "jungle-jackpot-v1"
-      },
-      "statusEndpoint": 204,
-      "paylineCount": 23,
-      "profile": {
-        "gameId": "jungle-jackpot-v1",
-        "scatterRequiredSymbols": 3,
-        "scatterAwardedSpins": 6,
-        "collectionTarget": 22,
-        "collectionAwardedSpins": 8,
-        "usesCollections": true,
-        "usesEnergy": false,
-        "usesDirectValueTokens": false,
-        "scatterFeatureMode": null,
-        "collectionFeatureMode": "sync-rows-paw",
-        "baseReelSetId": null,
-        "targetHitRate": 0.32,
-        "paylinePatternIds": null,
-        "payoutMultiplier": 0.866
-      },
-      "payoutMultiplier": 0.866,
-      "observedRows": [
-        4,
-        6
-      ],
-      "scenarios": [
-        {
-          "scenario": "base-loss",
           "seed": 0,
           "responses": 1,
           "triggerRows": 4,
@@ -1673,99 +1532,13 @@
           "triggerMode": null,
           "finalRemaining": 0,
           "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "base-win",
-          "seed": 1,
-          "responses": 1,
-          "triggerRows": 4,
-          "continuationRows": [],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 0,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "scatter",
-          "seed": 106,
-          "responses": 7,
-          "triggerRows": 4,
-          "continuationRows": [
-            4
-          ],
-          "triggerFreeSpinsAwarded": 6,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 6,
-          "triggerMode": null,
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-sync",
-          "seed": 2,
-          "responses": 15,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 8,
-          "triggerMode": "sync-rows-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rows",
-          "seed": 29,
-          "responses": 15,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 8,
-          "triggerMode": "sync-rows-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-paw",
-          "seed": 2,
-          "responses": 15,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 8,
-          "triggerMode": "sync-rows-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
-        },
-        {
-          "scenario": "collection-rand",
-          "seed": 1,
-          "responses": 9,
-          "triggerRows": 4,
-          "continuationRows": [
-            6
-          ],
-          "triggerFreeSpinsAwarded": 0,
-          "triggerCollectionFreeSpinsAwarded": 0,
-          "triggerRemaining": 8,
-          "triggerMode": "sync-rows-paw",
-          "finalRemaining": 0,
-          "replayMatchesExceptSpinId": true
         }
       ],
       "missingScenarios": [],
-      "responses": 63,
+      "responses": 2,
       "unavailable": [
+        "Scatter awards disabled in actual engine profile; no scatter scenario invented.",
+        "Collections disabled in actual engine profile; no collection scenario invented.",
         "Energy disabled in actual engine profile.",
         "Direct-value tokens and collectors disabled in actual engine profile."
       ]
@@ -2588,8 +2361,8 @@
         "usesDirectValueTokens": false,
         "scatterFeatureMode": null,
         "collectionFeatureMode": "rows-paw",
-        "baseReelSetId": "midnight-vault-reels-v1",
-        "targetHitRate": null,
+        "baseReelSetId": "midnight-vault-reels-v2",
+        "targetHitRate": 0.21,
         "paylinePatternIds": null,
         "payoutMultiplier": 1.0
       },
@@ -2614,7 +2387,7 @@
         },
         {
           "scenario": "base-win",
-          "seed": 4,
+          "seed": 12,
           "responses": 1,
           "triggerRows": 4,
           "continuationRows": [],
@@ -2712,9 +2485,9 @@
       ]
     }
   ],
-  "gameCount": 20,
-  "scenarioCount": 132,
-  "responseCount": 899,
+  "gameCount": 19,
+  "scenarioCount": 119,
+  "responseCount": 781,
   "generator": "Actual in-process DemoSlotsController \u002B shared engine; no HTTP listener, live request, account settlement, Firestore, tuning or backend source edits.",
   "randomness": "System.Random(seed), fresh controller/service/pity state for each searched scenario; production RNG is unchanged.",
   "collectionState": "Collection cases seed the real engine track at target-1; they do not prove a complete natural collection history.",

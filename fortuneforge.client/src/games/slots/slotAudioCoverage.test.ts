@@ -4,10 +4,11 @@ import { createThemedSlotAudio } from '../../features/slots/config/themedSlotAud
 import { DEFAULT_SLOT_SOUNDS } from '../../features/slots/config/soundSets'
 
 describe('slot audio coverage', () => {
-  it('gives sixteen titles complete suites plus a dedicated Gold Foundry palette', async () => {
-    const games = await loadAllSlotGameManifests()
-    expect(games).toHaveLength(20)
-    expect(games.filter(game => game.experience.sounds.events.themeSuite)).toHaveLength(17)
+  it('gives retained host titles complete suites plus a dedicated Gold Foundry palette', async () => {
+    // Neon verifies its package-owned audio through its independent client tests.
+    const games = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
+    expect(games).toHaveLength(18)
+    expect(games.filter(game => game.experience.sounds.events.themeSuite)).toHaveLength(15)
     const excluded = ['dragon-hoard', 'wukong-journey-to-the-west', 'pirates-fortune']
     for (const game of games) {
       const { cues, events } = game.experience.sounds

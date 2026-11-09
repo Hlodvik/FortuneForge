@@ -3,7 +3,7 @@
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
     "seed": 0,
-    "engineVersion": "shared-slots-engine-v1",
+    "engineVersion": "arcane-lightning-collector-v1",
     "gameId": "arcane-archives-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -54,9 +54,9 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "bfdc0681-823c-4646-b8df-83558a9d6b98",
+        "spinId": "7953238c-1853-4d7f-a133-fcfbe1989890",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -65,7 +65,7 @@
           46,
           52,
           49,
-          35,
+          107,
           13
         ],
         "reels": [
@@ -77,27 +77,27 @@
           ],
           [
             "2",
-            "POWER",
+            "6",
             "4",
-            "BOLT"
+            "2"
           ],
           [
             "POWER",
             "4",
             "3",
-            "BANANA"
+            "6"
           ],
           [
-            "4",
-            "POWER",
             "5",
-            "3"
+            "3",
+            "3",
+            "5"
           ],
           [
             "6",
             "2",
-            "5",
-            "RAND_05"
+            "RAND_1",
+            "2"
           ]
         ],
         "payout": {
@@ -108,14 +108,16 @@
         "fiveMatchPityTriggered": false,
         "freeSpinsAwarded": 0,
         "specialPointsAwarded": 0,
-        "energyAwarded": 1,
+        "energyAwarded": 0,
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
-        "energyBalance": 1,
+        "energyBalance": 0,
         "energyMultiplierApplied": false,
         "payoutMultiplier": 1,
         "monkeyPawCount": 0,
@@ -143,6 +145,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40

@@ -41,7 +41,9 @@ describe('foreground game presence', () => {
   })
   it('maps catalogue games and keeps delisted game routes available for direct play', () => {
     expect(HOME_GAME_CATALOG).toHaveLength(40)
-    for (const game of HOME_GAME_CATALOG) expect(presenceGameId(game.href)).toBe(game.id)
+    for (const game of HOME_GAME_CATALOG.filter(game => game.id !== 'empty-slots-game')) expect(presenceGameId(game.href)).toBe(game.id)
+    expect(presenceGameId('/slots/empty-slots-game')).toBeUndefined()
+    expect(presenceGameId('/slots/jungle-jackpot')).toBeUndefined()
     expect(presenceGameId('/cards/free-solitaire')).toBe('free-solitaire')
     expect(HOME_GAME_CATALOG.some(game => game.id === 'liars-dice')).toBe(false)
     expect(presenceGameId('/games/liars-dice')).toBe('liars-dice')

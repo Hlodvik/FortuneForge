@@ -287,8 +287,10 @@ export function useSlotsPageController({
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isReloadPromptOpen, setIsReloadPromptOpen] = useState(false)
+  const audioUnlockGameRef = useRef<string | null>(null)
   const playedSuiteResultRef = useRef<string | null>(null)
   const playedSuiteCollectionsRef = useRef<{ spinId: string; tracks: Set<string> } | null>(null)
+  const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
   const hasShownGodsTumbleShowcaseRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
@@ -549,13 +551,15 @@ export function useSlotsPageController({
     } else if (specialAmbienceCue !== undefined) {
       stopLoop(specialAmbienceCue)
     }
-    startLoop(activeAmbienceCue)
+    if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(activeAmbienceCue)
     const unlockAudio = (event: Event) => {
       if (!event.isTrusted) return
+      audioUnlockGameRef.current = gameId
       startLoop(activeAmbienceCue)
     }
     const retryVisibleAudio = () => {
-      if (document.visibilityState === 'visible') startLoop(activeAmbienceCue)
+      if (document.visibilityState === 'visible' &&
+        (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) startLoop(activeAmbienceCue)
     }
     window.addEventListener('pointerdown', unlockAudio)
     window.addEventListener('keydown', unlockAudio)
@@ -574,6 +578,7 @@ export function useSlotsPageController({
     gameId,
     isSpecialSpinInProgress,
     rainbowBonusSummary,
+    requiresAudioGesture,
     soundSet.events.ambience,
     soundSet.events.autoSpinAmbience,
     soundSet.events.specialAmbience,

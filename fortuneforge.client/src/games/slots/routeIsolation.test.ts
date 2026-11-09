@@ -6,11 +6,16 @@ import { SLOT_GAME_CATALOG } from './catalog'
 import { SLOT_ROUTE_DEFINITIONS } from './routeRegistry'
 
 describe('slot route resource isolation', () => {
-  it('keeps lightweight route and catalog registries in lockstep', () => {
-    expect(SLOT_GAME_CATALOG.map((game) => game.id)).toEqual(
+  it('keeps playable route and catalog registries in lockstep with the separate empty starter', () => {
+    const starter = SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')!
+    expect(starter).toMatchObject({ title: 'Empty Slots Game', image: '', description: '',
+      playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game', serverGameIds: ['empty-slots-v1'] })
+    expect(SLOT_ROUTE_DEFINITIONS.some(route => route.id === starter.id)).toBe(false)
+    const playableCatalog = SLOT_GAME_CATALOG.filter(game => game.id !== starter.id)
+    expect(playableCatalog.map((game) => game.id)).toEqual(
       SLOT_ROUTE_DEFINITIONS.map((route) => route.id),
     )
-    for (const game of SLOT_GAME_CATALOG) {
+    for (const game of playableCatalog) {
       const route = SLOT_ROUTE_DEFINITIONS.find((candidate) => candidate.id === game.id)
       expect(route).toBeDefined()
       expect(game.playHref).toBe(route?.playPath)

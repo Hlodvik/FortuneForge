@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "e28d3aaf-4ecd-47d8-9692-53194ccf0283",
+        "spinId": "3acf1a99-d542-4113-ab6d-756a1107593e",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -147,6 +149,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -190,13 +198,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "098884f6-4f32-4d0a-a067-d1e64ab79e01",
+        "spinId": "8ac893d4-9c24-4790-97bb-26948b2e417d",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -264,6 +278,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -299,6 +314,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -342,13 +363,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ca2771e2-6d47-409a-bb35-e90437ceff7e",
+        "spinId": "d17fb980-be2d-4677-a473-bdeed2aeec6a",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -416,6 +443,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -451,6 +479,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -494,13 +528,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ef63e368-2da2-420b-bf5f-f42e2cacecda",
+        "spinId": "cce0bb0b-c80f-40f6-a42a-56aa5a00b87d",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -568,6 +608,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 11,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -601,6 +642,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -644,13 +691,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "51240a9e-61a5-4e70-945a-581c55176e65",
+        "spinId": "77ba1a30-75d5-4498-bc8e-deb46c2f23fe",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -718,6 +771,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 10,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -751,6 +805,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -794,13 +854,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9afba3dc-5d68-4819-9b7d-0187c9983630",
+        "spinId": "c97e23f8-8991-4af2-ab51-f004f58f839d",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -868,6 +934,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -903,6 +970,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -946,13 +1019,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d74f2f29-89b7-414d-9846-c387c65698bf",
+        "spinId": "3015331a-1399-43b2-b528-a6e7fb33cbff",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1051,6 +1130,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1084,6 +1164,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1127,13 +1213,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "fe54b7d0-f6fb-434c-879d-4464776a8df1",
+        "spinId": "73102574-3f15-4f49-b0f5-c6a05dc674fb",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1232,6 +1324,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1267,6 +1360,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1310,13 +1409,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6d45454e-df0d-457d-bca3-2cbee4d24bbc",
+        "spinId": "57982b22-8eab-4f2c-8786-d631e4e8aeaa",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1423,6 +1528,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1456,6 +1562,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1499,13 +1611,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "37f3b0dd-c51f-4cd0-8766-09475e54c931",
+        "spinId": "c0666f4e-e32a-44ce-acce-d93b87d70092",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1573,6 +1691,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1608,6 +1727,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1651,13 +1776,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "4ce22c8f-dd75-441b-a258-ad1615000fad",
+        "spinId": "cc074ea5-0697-4f01-b7a1-358c31b1f636",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1725,6 +1856,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1758,6 +1890,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1801,13 +1939,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a68f995d-5611-4a12-b589-a77ebf88d039",
+        "spinId": "793a2be6-713a-42ea-8597-df50385a00ae",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1910,6 +2054,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1943,6 +2088,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1986,13 +2137,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "473b453e-01b4-4982-bd82-d01a6ad8e04a",
+        "spinId": "8665da86-d022-4ee4-9afb-69704deb87a6",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2091,6 +2248,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -2124,6 +2282,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -2167,13 +2331,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0db6d0e4-8ed9-4294-bed6-f22d29dd3d6d",
+        "spinId": "3e02b697-c00a-4fb2-85c7-e87a29377085",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2241,6 +2411,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -2274,6 +2445,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -2317,13 +2494,19 @@
             "count": 0,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "26921787-1afc-4596-a5af-8e8bfcc423d6",
+        "spinId": "f60e191d-6ecd-47de-9277-2aa9ba4bfbf7",
         "gameId": "desert-treasures-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2418,6 +2601,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -2453,6 +2637,12 @@
             "sealId": "rand",
             "count": 0,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],

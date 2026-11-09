@@ -5,7 +5,7 @@ import { SlotSymbol } from '../../../features/slots/components/SlotSymbol'
 import { createSlotRulesSet } from '../../../features/slots/config/slotExperienceSets'
 import { selectWinSoundEvent } from '../../../features/slots/presentation/spinPresentation'
 import type { SlotResponsiveImages } from '../../../features/slots/config/symbolSets'
-import { JUNGLE_JACKPOT_DEFINITION } from '../jungleJackpot/definition'
+import { SAMURAI_FORTUNE_DEFINITION } from '../samuraiFortune/definition'
 import { createShowcaseSlotGame } from './createShowcaseSlotGame'
 import { createThemedSymbolSet, type ThemedSymbolSetOptions } from './themedSymbolSet'
 
@@ -43,18 +43,18 @@ describe('opt-in additional ordinary slot symbols', () => {
   })
 
   it('retains the legacy showcase server identity, idle reels and symbol count without opt-ins', () => {
-    const game = createShowcaseSlotGame(JUNGLE_JACKPOT_DEFINITION)
+    const game = createShowcaseSlotGame(SAMURAI_FORTUNE_DEFINITION)
     expect(game.experience.symbols.serverSymbolSetId).toBe('classic-symbols-v3')
     expect(game.experience.symbols.definitions['8']).toBeUndefined()
     expect(Object.keys(game.experience.symbols.definitions)).toHaveLength(23)
-    expect(game.experience.rules.initialReels).toEqual(createSlotRulesSet(JUNGLE_JACKPOT_DEFINITION.serverGameId).initialReels)
+    expect(game.experience.rules.initialReels).toEqual(createSlotRulesSet(SAMURAI_FORTUNE_DEFINITION.serverGameId).initialReels)
     expect(game.experience.rules.initialReels.flat()).not.toContain('8')
   })
 
   it('forwards an explicit server identity, idle grid and custom guide only for the opted-in game', () => {
     const initialReels = [['8', '2', '3', '4']] as const
     const entries = [{ symbol: '8' as const, firstLabel: '3', firstValue: '4×', secondLabel: '5', secondValue: '14×' }]
-    const game = createShowcaseSlotGame({ ...JUNGLE_JACKPOT_DEFINITION,
+    const game = createShowcaseSlotGame({ ...SAMURAI_FORTUNE_DEFINITION,
       serverGameId: 'dragon-hoard-v1', serverSymbolSetId: 'midnight-vault-symbols-v1', initialReels,
       additionalSymbolSpecs: { '8': ['Cash briefcase', '▣', responsive[96]] },
       responsiveImages: { [responsive[96]]: responsive }, symbolGuide: { entries, note: 'Game-specific audited guide.' },

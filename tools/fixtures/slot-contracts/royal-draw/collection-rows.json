@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a0c6b00b-4456-4996-a620-e704e82f563e",
+        "spinId": "a4819de6-28ce-492c-9969-d849b0ece686",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -145,6 +147,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -190,13 +198,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "995df69f-d4ed-4ce8-be30-4aae228bce82",
+        "spinId": "d8051136-d54f-4b83-b321-84ab704ea2c8",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -264,6 +278,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -297,6 +312,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -342,13 +363,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "bcd72242-17b9-4da3-8889-065e3da52286",
+        "spinId": "7e8f0cad-76a6-49b2-9cd2-579404da3516",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -416,6 +443,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -449,6 +477,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -494,13 +528,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "021e334b-36af-4b77-a2cc-629fafc9c7a0",
+        "spinId": "6ae45b46-412d-4862-a7f6-40fd231995e2",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -568,6 +608,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -599,6 +640,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -644,13 +691,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "59765ac5-e695-4b1e-b5c6-61826577691f",
+        "spinId": "53b565c0-5b9a-4bc8-99b5-85c60bed9925",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -765,6 +818,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -796,6 +850,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -841,13 +901,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6ea22b52-6dc2-4bc2-9b49-719012239e98",
+        "spinId": "d3902720-304e-4338-a6c9-dafded2297c0",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -915,6 +981,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -948,6 +1015,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -993,13 +1066,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "552f8593-d667-4cf1-a2d3-73afdc36809c",
+        "spinId": "bcc58c04-d33c-43f6-8bed-04fc8eaec109",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1067,6 +1146,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1098,6 +1178,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -1143,13 +1229,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "rows-rand",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "59575806-8295-4f03-9163-3b888e0cad02",
+        "spinId": "dfb24c41-318d-40ee-bf48-fe68775ec63c",
         "gameId": "royal-draw-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1217,6 +1309,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1248,6 +1341,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24

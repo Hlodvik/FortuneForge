@@ -119,9 +119,9 @@ describe('Shared sidecar slot controls', () => {
     expect(document.body.querySelector('[aria-label="Choose bet"]')).toBeNull()
   })
 
-  it('uses the shared placement hook for all 17 eligible catalog games and keeps the three exclusions on their existing controls', async () => {
-    const games = await loadAllSlotGameManifests()
-    expect(games).toHaveLength(20)
+  it('uses the shared placement hook for all 15 eligible host games and keeps the three exclusions on their existing controls', async () => {
+    const games = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
+    expect(games).toHaveLength(18)
     const excluded = new Set(['dragon-hoard', 'wukong-journey-to-the-west', 'pirates-fortune'])
     let sharedCount = 0
     for (const game of games) {
@@ -145,6 +145,6 @@ describe('Shared sidecar slot controls', () => {
         expect(page.querySelector(originalVariant), game.id).not.toBeNull()
       }
     }
-    expect(sharedCount).toBe(17)
+    expect(sharedCount).toBe(15)
   }, 20_000)
 })

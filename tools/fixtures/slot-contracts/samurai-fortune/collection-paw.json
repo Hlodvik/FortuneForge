@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "125be4aa-4fd3-4b8b-9557-ad4aa5747abc",
+        "spinId": "cf48c56d-83a9-4c7c-96b2-592f8866801b",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -146,6 +148,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -191,13 +199,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "fcc34b6b-cd44-42fa-9488-a7e3ab6c29db",
+        "spinId": "820a2c9e-4d15-44b3-b9a5-853313fd8686",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -255,6 +269,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -286,6 +301,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -331,13 +352,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1f538237-1c13-4b5a-9604-3bd189dd0d81",
+        "spinId": "93b43c30-f1b6-4fc0-90ba-128de29c95c5",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -395,6 +422,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -428,6 +456,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -473,13 +507,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0f72eda7-6d1a-41f3-8ef3-70a2b5570180",
+        "spinId": "60e84684-d12b-4159-a9a6-1c4fca1cc0fc",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -537,6 +577,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -570,6 +611,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -615,13 +662,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "9fb5387e-92e1-4187-b093-971f5cc963c7",
+        "spinId": "bed960d1-d44a-4bc4-a6ac-4ae7d9d786bb",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -679,6 +732,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -710,6 +764,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -755,13 +815,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "3fc268f0-06d8-48bf-8298-4bc1330c9eb7",
+        "spinId": "19cda1bd-6c32-4c27-b527-33b8386eca0b",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -850,6 +916,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -881,6 +948,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -926,13 +999,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "32652eb4-2350-4a28-8ab1-bc2da77e1da9",
+        "spinId": "1e3c91fb-3ff7-42f7-8247-4806a7a58d15",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1025,6 +1104,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1058,6 +1138,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
@@ -1103,13 +1189,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
           }
         ],
         "freeSpinFeatureMode": "sync-paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "309cf807-9313-4692-b1df-bba49d6163d1",
+        "spinId": "5390d19c-d4f6-428b-8985-b79b5e017d4e",
         "gameId": "samurai-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1167,6 +1259,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1198,6 +1291,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 26
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 26

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto'
 import { readFile } from 'node:fs/promises'
 import { dirname, resolve, relative, isAbsolute } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { realpathSync } from 'node:fs'
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const json = async path => JSON.parse(await readFile(path, 'utf8'))
@@ -12,7 +13,8 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
   const root = resolve(directory)
   const index = await json(resolve(root, 'index.json'))
   const provenance = await json(resolve(root, 'source-provenance.json'))
-  assert.equal(index.gameCount, 20)
+  // Empty Slots intentionally has no playable slot presentation to capture.
+  assert.equal(index.gameCount, 19)
   assert.equal(index.games.length, index.gameCount)
   assert.equal(new Set(index.games.map(game => game.route.id)).size, index.gameCount)
   assert.equal(new Set(index.games.map(game => game.route.gameId)).size, index.gameCount)
@@ -68,7 +70,7 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
   return { directory: root, games: index.gameCount, scenarios, responses, files, sourceHashesCurrent: requireCurrent, index, provenance }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
   const directory = process.argv.slice(2).find(argument => !argument.startsWith('--'))
     ?? resolve(repository, 'tools/fixtures/slot-contracts')
   const result = await verifySlotContracts(directory, { requireCurrent: process.argv.includes('--require-current') })

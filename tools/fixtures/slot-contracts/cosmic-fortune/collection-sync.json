@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "aa8636d9-7094-4504-9a83-95ec4da72ef3",
+        "spinId": "cc232156-4bd3-4b62-a39f-ffcf6324c0bd",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -146,6 +148,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
@@ -191,13 +199,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ae1b07a4-d448-48bc-b2a8-7488297368c3",
+        "spinId": "83b062fb-6fe3-423e-bfbd-09570977398e",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -265,6 +279,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -300,6 +315,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -343,13 +364,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "7d54013e-5380-4652-95b0-a4500f86aecb",
+        "spinId": "d49e47c7-6ff1-4e2b-82dc-e2b19c4f19de",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -482,6 +509,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -515,6 +543,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -558,13 +592,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "5e851566-9391-4790-b057-9b7fdc26b662",
+        "spinId": "730ef953-cbad-4137-a05a-53ed3ddbef5d",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -632,6 +672,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -665,6 +706,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -708,13 +755,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "97d7c76b-532a-4720-afdc-9a18ed870436",
+        "spinId": "05661a2f-3670-4f0f-9d70-5effc97a9aa3",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -782,6 +835,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -815,6 +869,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -858,13 +918,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a2d640b7-d0e9-4502-a785-bd5f4cb60564",
+        "spinId": "60c35aee-2c81-47d8-b0e2-d34b161f5f3a",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -932,6 +998,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -965,6 +1032,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1008,13 +1081,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "7cc1aea2-32b7-468d-bda5-9ad99cf4ef40",
+        "spinId": "d9f5b600-23a4-49aa-b096-a38ad298a076",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1177,6 +1256,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1210,6 +1290,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1253,13 +1339,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f103f34f-bcb2-45d4-9c95-5e0004ed929c",
+        "spinId": "b22b4842-7b41-465d-b3bb-f5a8ba5a22ed",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1327,6 +1419,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1362,6 +1455,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1405,13 +1504,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "3fbbfcc6-508e-41c5-b73b-429232d99141",
+        "spinId": "351df183-8240-4508-8b87-e79e1675a337",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1479,6 +1584,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1512,6 +1618,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1555,13 +1667,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "74c556c6-86e0-4fa3-aaac-9462f1d3d875",
+        "spinId": "f1089c31-64f3-4279-8d79-ceaf33196c86",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1629,6 +1747,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1664,6 +1783,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -1707,13 +1832,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d09ab3ba-d2d4-4309-9b05-b806cccc6f0d",
+        "spinId": "d4611170-29ce-4604-9eec-727dd065ae2f",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1952,6 +2083,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1987,6 +2119,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -2030,13 +2168,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "ca04f2f5-94c8-4eaa-ae65-d22b88eb622f",
+        "spinId": "a92e3116-fc64-4712-813d-7506e9526a8e",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2104,6 +2248,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -2139,6 +2284,12 @@
             "sealId": "rand",
             "count": 3,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -2182,13 +2333,19 @@
             "count": 3,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b0c531cf-5736-49c7-8955-f67a0a3b3bc7",
+        "spinId": "b7049e3d-d81a-4bbe-b0c1-9ecf161608cb",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2287,6 +2444,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -2322,6 +2480,12 @@
             "sealId": "rand",
             "count": 3,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],
@@ -2365,13 +2529,19 @@
             "count": 3,
             "averageWagerPoints": 2,
             "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 24
           }
         ],
         "freeSpinFeatureMode": "sync-rows",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0a784bc8-5546-4f3e-9b9e-d02452d15c74",
+        "spinId": "8cbe3305-7cba-44ce-9802-af0b0332f3e5",
         "gameId": "cosmic-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -2470,6 +2640,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -2505,6 +2676,12 @@
             "sealId": "rand",
             "count": 3,
             "averageWagerPoints": 2,
+            "requiredCount": 24
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 24
           }
         ],

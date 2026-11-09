@@ -205,11 +205,13 @@ public sealed class AdminManagementContractTests
             (free.DisplayName, free.Category, free.Route, free.DefaultVisible, free.BotsSupported));
         Assert.Equal(("Mines", "casino", "/games/mines", true, false),
             (mines.DisplayName, mines.Category, mines.Route, mines.DefaultVisible, mines.BotsSupported));
-        Assert.Equal(CatalogContract.AnalyticsIds, GameAnalyticsOutbox.GameIds.OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.Equal(CatalogContract.AnalyticsIds,
+            GameAnalyticsOutbox.GameIds.Intersect(CatalogContract.Ids, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
         Assert.Equal(CatalogContract.UntrackedArcadeIds,
             CatalogContract.Ids.Except(GameAnalyticsOutbox.GameIds, StringComparer.Ordinal).ToArray());
         Assert.Equal(new[] { "liars-dice" },
-            GameAnalyticsOutbox.GameIds.Except(CatalogContract.DefaultVisibleIds, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+            GameAnalyticsOutbox.GameIds.Intersect(CatalogContract.Ids, StringComparer.Ordinal)
+                .Except(CatalogContract.DefaultVisibleIds, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
     }
 
     [Fact]

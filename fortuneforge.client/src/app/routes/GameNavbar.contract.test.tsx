@@ -58,7 +58,7 @@ describe('all registered production games share canonical navigation', () => {
       expect(route.entry, route.path).toBeDefined()
       expect(routeModules[route.entry!.module], route.path).toBeTypeOf('function')
     }
-    expect(slotSmokeInventory).toHaveLength(20)
+    expect(slotSmokeInventory).toHaveLength(19)
     expect(new Set(SLOT_ROUTE_DEFINITIONS.map(route => route.playPath))).toEqual(new Set(slotSmokeInventory.map(([route]) => `/slots/${route}`)))
   })
 

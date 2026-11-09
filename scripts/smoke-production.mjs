@@ -1,8 +1,9 @@
-import { gameSmokeRoutes, slotSmokeInventory } from './game-smoke-inventory.mjs'
+import { gameSmokeRoutes, shellOnlySmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const baseUrl = normalizeBaseUrl(process.env.FORTUNE_FORGE_URL ?? process.argv[2] ?? 'https://fortuneforgegame.web.app')
 
 if (gameSmokeRoutes.length !== 45) throw new Error(`Smoke inventory must contain 45 games, found ${gameSmokeRoutes.length}.`)
+if (slotSmokeInventory.length !== 19) throw new Error(`Smoke inventory must contain 19 playable slot contracts, found ${slotSmokeInventory.length}.`)
 
 console.log(`Fortune Forge production smoke: ${baseUrl}`)
 
@@ -12,7 +13,7 @@ for (const route of ['/home', ...gameSmokeRoutes]) {
   assert(response.ok, `${route} returned ${response.status}`)
   assert(html.includes('<div id="root"></div>'), `${route} did not return the application shell`)
 }
-console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell`)
+console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell (${shellOnlySmokeInventory.length} shell-only starter)`)
 
 for (const [route, gameId] of slotSmokeInventory) {
   const status = await request(`${baseUrl}/api/slots/demo/status?gameId=${encodeURIComponent(gameId)}`)

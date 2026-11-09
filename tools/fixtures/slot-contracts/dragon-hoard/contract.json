@@ -19,8 +19,8 @@
     "usesDirectValueTokens": false,
     "scatterFeatureMode": null,
     "collectionFeatureMode": "rows-paw",
-    "baseReelSetId": "midnight-vault-reels-v1",
-    "targetHitRate": null,
+    "baseReelSetId": "midnight-vault-reels-v2",
+    "targetHitRate": 0.21,
     "paylinePatternIds": null,
     "payoutMultiplier": 1.0
   },
@@ -120,8 +120,8 @@
     ]
   },
   "math": {
-    "reelSetId": "midnight-vault-reels-v1",
-    "paytableId": "midnight-vault-paytable-v2",
+    "reelSetId": "midnight-vault-reels-v2",
+    "paytableId": "midnight-vault-paytable-v3",
     "payoutMultiplier": 1.0,
     "paylinePayoutSteps": [
       0,
@@ -151,7 +151,7 @@
     "fiveMatchPityMissLimit": 12,
     "targets": {
       "rtp": 0.90,
-      "hitRate": 0.30,
+      "hitRate": 0.21,
       "volatility": null
     }
   },
@@ -327,87 +327,87 @@
     {
       "symbolId": "2",
       "matchLength": 5,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "3",
+      "matchLength": 5,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "4",
+      "matchLength": 5,
       "multiplier": 4
     },
     {
-      "symbolId": "3",
+      "symbolId": "5",
       "matchLength": 3,
       "multiplier": 1
     },
     {
-      "symbolId": "3",
+      "symbolId": "5",
       "matchLength": 5,
-      "multiplier": 2
+      "multiplier": 4
     },
     {
-      "symbolId": "4",
+      "symbolId": "6",
       "matchLength": 3,
       "multiplier": 1
     },
     {
-      "symbolId": "4",
-      "matchLength": 5,
-      "multiplier": 7
-    },
-    {
-      "symbolId": "5",
-      "matchLength": 3,
-      "multiplier": 2
-    },
-    {
-      "symbolId": "5",
-      "matchLength": 5,
-      "multiplier": 7
-    },
-    {
-      "symbolId": "6",
-      "matchLength": 3,
-      "multiplier": 2
-    },
-    {
       "symbolId": "6",
       "matchLength": 5,
-      "multiplier": 8
+      "multiplier": 4
     },
     {
       "symbolId": "7",
+      "matchLength": 3,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "7",
+      "matchLength": 5,
+      "multiplier": 6
+    },
+    {
+      "symbolId": "ACE",
       "matchLength": 3,
       "multiplier": 3
     },
     {
-      "symbolId": "7",
-      "matchLength": 5,
-      "multiplier": 11
-    },
-    {
-      "symbolId": "ACE",
-      "matchLength": 3,
-      "multiplier": 5
-    },
-    {
       "symbolId": "ACE",
       "matchLength": 5,
-      "multiplier": 18
+      "multiplier": 10
     },
     {
       "symbolId": "POWER",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "POWER",
+      "matchLength": 5,
+      "multiplier": 2
+    },
+    {
+      "symbolId": "8",
       "matchLength": 3,
       "multiplier": 2
     },
     {
-      "symbolId": "POWER",
-      "matchLength": 5,
-      "multiplier": 4
-    },
-    {
-      "symbolId": "8",
-      "matchLength": 3,
-      "multiplier": 4
-    },
-    {
       "symbolId": "8",
       "matchLength": 5,
-      "multiplier": 14
+      "multiplier": 8
     }
   ],
   "observedRows": [
@@ -435,7 +435,7 @@
     },
     {
       "scenario": "base-win",
-      "seed": 4,
+      "seed": 12,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],

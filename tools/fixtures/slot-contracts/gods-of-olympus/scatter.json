@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "4680febc-04d7-4745-ab1d-1159f75339ef",
+        "spinId": "805bd929-7727-4920-b80b-87e2c7f8aa5b",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -143,6 +145,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -188,13 +196,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "18560b5d-73ca-4936-99c5-7102c0deff20",
+        "spinId": "7260cd08-f3e6-4df3-99cc-b6f491503b72",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -287,6 +301,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -318,6 +333,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -363,13 +384,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6a03a426-0792-4d08-87a9-4ef0223f2c1f",
+        "spinId": "d4548652-15b2-4438-b485-772d99865531",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -462,6 +489,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -493,6 +521,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -538,13 +572,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "da47cee5-ce69-4b9e-b620-07f3339e98fe",
+        "spinId": "ac79cc99-d377-437f-af3f-16d41166621e",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -602,6 +642,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -633,6 +674,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -678,13 +725,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1aa0d9a5-d31e-4e94-8e9d-73bc36c68db3",
+        "spinId": "d08cc1e3-aa92-462c-89d8-a5d54254d82a",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -742,6 +795,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -775,6 +829,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -820,13 +880,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b5b9a94f-abc3-4857-8273-2b6d1ba220c8",
+        "spinId": "f4b55669-0256-4afa-839a-32f7b657605a",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -884,6 +950,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -918,6 +985,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
@@ -963,13 +1036,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "710da071-0b0e-4273-8824-098eea57d4f7",
+        "spinId": "a3163f84-fc2c-4d6e-8799-4177637fe1da",
         "gameId": "gods-of-olympus-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -1027,6 +1106,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1058,6 +1138,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 28
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 28

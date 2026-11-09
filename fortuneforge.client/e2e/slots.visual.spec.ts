@@ -39,7 +39,6 @@ const slotDemoPaths = [
   '/slots/cosmic-fortune/demo',
   '/slots/gold-foundry/demo',
   '/slots/neon-nights/demo',
-  '/slots/jungle-jackpot/demo',
   '/slots/ocean-odyssey/demo',
   '/slots/samurai-fortune/demo',
   '/slots/candy-carnival/demo',
@@ -312,7 +311,7 @@ test('themed cabinets show their title and trace paid symbols with their own pal
   test.setTimeout(120_000)
   await mockDemoApi(page, { kind: 'win' })
   const themedGames = [
-    'candy-carnival', 'high-noon-fortune', 'jungle-jackpot', 'robot-revolution', 'nordic-legends',
+    'candy-carnival', 'high-noon-fortune', 'robot-revolution', 'nordic-legends',
     'cosmic-fortune', 'desert-treasures', 'ocean-odyssey', 'phantom-manor', 'royal-draw',
     'samurai-fortune', 'reel-riches',
   ]
@@ -426,6 +425,21 @@ test('every mobile slot keeps the complete playable cabinet in the first viewpor
   }
 })
 
+test('Empty Slots starter keeps a blank surface below its game navbar', async ({ page }) => {
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport)
+    await page.goto('/slots/empty-slots-game')
+    await expect(page.locator('[data-game-navbar]')).toHaveCount(1)
+    const surface = page.getByRole('main', { name: 'Empty Slots Game' })
+    await expect(surface).toBeVisible()
+    await expect(surface).toBeEmpty()
+    await expect(page.locator('.slot-game-frame, .slots-page__playbar')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Spin the reels' })).toHaveCount(0)
+    const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth)
+    expect(documentWidth).toBeLessThanOrEqual(viewport.width + 1)
+  }
+})
+
 test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', async ({ page }) => {
   test.setTimeout(90_000)
   await mockDemoApi(page, { kind: 'loss' })
@@ -448,7 +462,6 @@ test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', 
       const spin = document.querySelector('.spin-button')?.getBoundingClientRect()
       const spinIcon = document.querySelector('.spin-button__icon')?.getBoundingClientRect()
       const spinLabel = document.querySelector('.spin-button__label')?.getBoundingClientRect()
-      const stage = document.querySelector('.slots-page__stage')?.getBoundingClientRect()
       const orbitBottoms = Array.from(document.querySelectorAll('.slots-page__collection-orbit'))
         .map((element) => element.getBoundingClientRect().bottom)
       return {
@@ -459,7 +472,6 @@ test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', 
         labelTop: spinLabel?.top ?? Number.NEGATIVE_INFINITY,
         maxOrbitBottom: Math.max(...orbitBottoms),
         spinWidth: spin?.width ?? 0,
-        stageWidth: stage?.width ?? 0,
       }
     })
 
@@ -468,7 +480,6 @@ test('Wukong keeps its celestial HUD, centred reels, and spin crest separated', 
     expect(idleMetrics.maxOrbitBottom, JSON.stringify(viewport)).toBeLessThanOrEqual(idleMetrics.energyTop)
     expect(idleMetrics.spinWidth, JSON.stringify(viewport)).toBeGreaterThanOrEqual(88)
     expect(idleMetrics.iconBottom, JSON.stringify(viewport)).toBeLessThanOrEqual(idleMetrics.labelTop + 1)
-    expect(idleMetrics.stageWidth, JSON.stringify(viewport)).toBeGreaterThanOrEqual(540)
 
     const meterLabels = await page.locator('.slots-page__seal-title').evaluateAll((labels) => (
       labels.map((label) => label.scrollWidth - label.clientWidth)

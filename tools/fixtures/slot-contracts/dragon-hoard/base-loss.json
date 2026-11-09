@@ -54,11 +54,11 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "302fc397-8a88-44f2-a4b9-50402cc0eb07",
+        "spinId": "4ad4f045-0bfc-4763-86d3-6348eaffc135",
         "gameId": "dragon-hoard-v1",
-        "reelSetId": "midnight-vault-reels-v1",
+        "reelSetId": "midnight-vault-reels-v2",
         "symbolSetId": "midnight-vault-symbols-v1",
-        "paytableId": "midnight-vault-paytable-v2",
+        "paytableId": "midnight-vault-paytable-v3",
         "wagerPoints": 2,
         "pointValueInCents": 25,
         "reelStops": [
@@ -71,32 +71,32 @@
         "reels": [
           [
             "7",
-            "2",
+            "8",
             "7",
-            "3"
+            "6"
           ],
           [
             "2",
             "POWER",
-            "4",
+            "6",
             "8"
           ],
           [
             "5",
-            "4",
+            "7",
             "3",
             "6"
           ],
           [
             "4",
             "POWER",
-            "5",
+            "7",
             "3"
           ],
           [
             "6",
             "2",
-            "5",
+            "7",
             "2"
           ]
         ],
@@ -112,6 +112,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

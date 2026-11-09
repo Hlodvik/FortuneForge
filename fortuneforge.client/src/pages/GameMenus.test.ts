@@ -38,11 +38,13 @@ describe('game category menus', () => {
     }
   })
 
-  it('renders the slot menu with all twenty demo games and a card-room link', () => {
+  it('renders the slot menu with all nineteen playable demo games and a card-room link', () => {
     const markup = renderToStaticMarkup(createElement(DemoSlotsLibraryPage))
     const demoLinks = markup.match(/aria-label="Play demo:/g) ?? []
 
-    expect(demoLinks).toHaveLength(20)
+    expect(demoLinks).toHaveLength(19)
+    expect(markup).not.toContain('/slots/jungle-jackpot')
+    expect(markup).not.toContain('/slots/empty-slots-game')
     expect(markup).toContain('aria-label="Game categories"')
     expect(markup).toContain('href="/demo" aria-current="page"')
     expect(markup).toContain('href="/demo/cards"')
@@ -53,7 +55,7 @@ describe('game category menus', () => {
   it('omits ready labels from authenticated slot cards', () => {
     const markup = renderToStaticMarkup(createElement(SlotsLibraryPage, { account }))
 
-    expect(markup.match(/machine-card--slot/g)).toHaveLength(20)
+    expect(markup.match(/machine-card--slot/g)).toHaveLength(19)
     expect(markup).not.toContain('Ready to play')
   })
 
@@ -89,7 +91,7 @@ describe('game category menus', () => {
     expect(markup).toContain('>Dice games</h2>')
     expect(markup).toContain('>New games</h2>')
     expect(markup).toContain('>Slot machines</h2>')
-    expect(markup).toContain('>20 games</span>')
+    expect(markup).toContain('>19 games</span>')
     expect(markup).not.toContain('>Etc.</h2>')
     expect(markup).toContain('href="/cards/hearts"')
     expect(markup).not.toContain('href="/games/liars-dice"')

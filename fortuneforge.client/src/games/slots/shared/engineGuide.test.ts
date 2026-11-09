@@ -30,8 +30,8 @@ it('retains the server sources that produced the independently exported guide co
     const current = readFileSync(new URL(`../../../../../${path}`, import.meta.url))
     expect(createHash('sha256').update(current).digest('hex'), `Re-export actual engine evidence after changing ${path}`).toBe(expected)
   }
-  expect(fixture.games).toHaveLength(20)
-  expect(audited).toHaveLength(16)
+  expect(fixture.games).toHaveLength(19)
+  expect(audited).toHaveLength(15)
 })
 
 describe.each(audited)('$catalog.title audited guide', game => {

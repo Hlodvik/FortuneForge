@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "899362a4-424a-41e3-b327-03f106ce61e5",
+        "spinId": "dee0337d-f947-4072-8e0d-bd12d6dc1cc3",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -119,7 +121,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a5a5b249-af69-4168-9394-f30b205f55a0",
+        "spinId": "06b28f6a-dd49-4269-9f13-db1e8ca6acc3",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -177,6 +179,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -209,7 +212,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "906789ba-0342-4a32-8965-744d3437ec54",
+        "spinId": "217e2eec-c1ca-4d03-a0fc-0203055699ad",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -267,6 +270,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -299,7 +303,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b79ad763-e70a-48b5-a52f-6fa4849315b1",
+        "spinId": "75f38a86-42e4-4918-a935-faf114ec9573",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -439,6 +443,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -471,7 +476,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a489eab9-fe26-4fb3-8a5a-5bf5fc8a4512",
+        "spinId": "f949349f-56d7-46fc-bd61-95677822d6d2",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -529,6 +534,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -561,7 +567,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a6448ba7-3a24-4bff-a306-c37ce222c6ff",
+        "spinId": "3ecb1a1b-7fab-44f1-a4cd-68ebe8b41d36",
         "gameId": "phantom-manor-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -619,6 +625,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

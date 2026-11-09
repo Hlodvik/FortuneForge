@@ -11,18 +11,18 @@
   "profile": {
     "gameId": "neon-nights-v1",
     "scatterRequiredSymbols": 3,
-    "scatterAwardedSpins": 6,
+    "scatterAwardedSpins": 0,
     "collectionTarget": 26,
-    "collectionAwardedSpins": 7,
-    "usesCollections": true,
+    "collectionAwardedSpins": 0,
+    "usesCollections": false,
     "usesEnergy": false,
     "usesDirectValueTokens": false,
     "scatterFeatureMode": null,
-    "collectionFeatureMode": "sync",
-    "baseReelSetId": null,
+    "collectionFeatureMode": null,
+    "baseReelSetId": "neon-arcade-reels-v3",
     "targetHitRate": null,
     "paylinePatternIds": null,
-    "payoutMultiplier": 1
+    "payoutMultiplier": 0.82
   },
   "layout": {
     "reelCount": 5,
@@ -30,24 +30,33 @@
     "paylineCount": 23
   },
   "symbols": {
-    "symbolSetId": "classic-symbols-v3",
+    "symbolSetId": "neon-arcade-symbols-v2",
     "wildSymbolId": "ACE",
+    "paylineSymbolIds": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "7",
+      "ACE",
+      "SEAL_SYNC",
+      "SEAL_ROWS",
+      "SEAL_PAW"
+    ],
     "nativeWildMatchLengths": [
       3,
       5
     ],
     "wildSubstitutionMatchLengths": [
+      3,
       5
     ]
   },
   "symbolSet": {
-    "id": "classic-symbols-v3",
+    "id": "neon-arcade-symbols-v2",
     "symbols": [
       {
         "id": "2"
-      },
-      {
-        "id": "3"
       },
       {
         "id": "4"
@@ -56,49 +65,10 @@
         "id": "5"
       },
       {
-        "id": "6"
-      },
-      {
         "id": "7"
       },
       {
-        "id": "ACE"
-      },
-      {
-        "id": "FREE"
-      },
-      {
-        "id": "POWER"
-      },
-      {
-        "id": "BOLT"
-      },
-      {
-        "id": "BANANA"
-      },
-      {
-        "id": "PAW"
-      },
-      {
-        "id": "RAND_05"
-      },
-      {
-        "id": "RAND_1"
-      },
-      {
-        "id": "RAND_15"
-      },
-      {
-        "id": "RAND_2"
-      },
-      {
-        "id": "RAND_3"
-      },
-      {
-        "id": "RAND_4"
-      },
-      {
-        "id": "RAND_5"
+        "id": "3"
       },
       {
         "id": "SEAL_SYNC"
@@ -110,6 +80,21 @@
         "id": "SEAL_PAW"
       },
       {
+        "id": "BANANA"
+      },
+      {
+        "id": "ACE"
+      },
+      {
+        "id": "FREE"
+      },
+      {
+        "id": "6"
+      },
+      {
+        "id": "POWER"
+      },
+      {
         "id": "SEAL_RAND"
       }
     ]
@@ -119,34 +104,19 @@
     "allowMultipleRunsPerPayline": true
   },
   "wagering": {
-    "pointValueInCents": 25,
-    "minimumWagerPoints": 2,
-    "maximumWagerPoints": 2000,
-    "wagerIncrementPoints": 2,
+    "pointValueInCents": 1,
+    "minimumWagerPoints": 50,
+    "maximumWagerPoints": 50000,
+    "wagerIncrementPoints": 50,
     "allowedWagerPoints": []
   },
-  "freeGames": {
-    "symbolId": "FREE",
-    "requiredSymbols": 3,
-    "awardedSpins": 6,
-    "visibleFrequencyDivisor": 2
-  },
+  "freeGames": null,
   "energy": null,
-  "specialPoints": {
-    "symbolId": "POWER",
-    "threeMatchPoints": 1,
-    "fiveMatchPoints": 2,
-    "activationCost": 8,
-    "commonSymbolIds": [
-      "2",
-      "3",
-      "4"
-    ]
-  },
+  "specialPoints": null,
   "math": {
-    "reelSetId": "classic-reels-v4",
-    "paytableId": "classic-paytable-v4",
-    "payoutMultiplier": 1,
+    "reelSetId": "neon-arcade-reels-v3",
+    "paytableId": "neon-arcade-paytable-v2",
+    "payoutMultiplier": 0.82,
     "paylinePayoutSteps": [
       0,
       0,
@@ -174,8 +144,8 @@
     ],
     "fiveMatchPityMissLimit": 12,
     "targets": {
-      "rtp": 0.90,
-      "hitRate": 0.30,
+      "rtp": null,
+      "hitRate": null,
       "volatility": null
     }
   },
@@ -384,16 +354,6 @@
       "multiplier": 6
     },
     {
-      "symbolId": "6",
-      "matchLength": 3,
-      "multiplier": 2
-    },
-    {
-      "symbolId": "6",
-      "matchLength": 5,
-      "multiplier": 8
-    },
-    {
       "symbolId": "7",
       "matchLength": 3,
       "multiplier": 3
@@ -414,28 +374,47 @@
       "multiplier": 18
     },
     {
-      "symbolId": "POWER",
+      "symbolId": "SEAL_SYNC",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "SEAL_SYNC",
+      "matchLength": 5,
+      "multiplier": 4
+    },
+    {
+      "symbolId": "SEAL_ROWS",
+      "matchLength": 3,
+      "multiplier": 1
+    },
+    {
+      "symbolId": "SEAL_ROWS",
+      "matchLength": 5,
+      "multiplier": 5
+    },
+    {
+      "symbolId": "SEAL_PAW",
       "matchLength": 3,
       "multiplier": 2
     },
     {
-      "symbolId": "POWER",
+      "symbolId": "SEAL_PAW",
       "matchLength": 5,
-      "multiplier": 4
+      "multiplier": 8
     }
   ],
   "observedRows": [
     4
   ],
   "observedActiveModes": [
-    null,
-    "sync"
+    null
   ],
   "statusEndpoint": 204,
   "scenarios": [
     {
       "scenario": "base-loss",
-      "seed": 0,
+      "seed": 1,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],
@@ -448,7 +427,7 @@
     },
     {
       "scenario": "base-win",
-      "seed": 1,
+      "seed": 0,
       "responses": 1,
       "triggerRows": 4,
       "continuationRows": [],
@@ -458,85 +437,12 @@
       "triggerMode": null,
       "finalRemaining": 0,
       "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "scatter",
-      "seed": 106,
-      "responses": 7,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 6,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 6,
-      "triggerMode": null,
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "collection-sync",
-      "seed": 2,
-      "responses": 8,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 7,
-      "triggerMode": "sync",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "collection-rows",
-      "seed": 29,
-      "responses": 8,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 7,
-      "triggerMode": "sync",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "collection-paw",
-      "seed": 2,
-      "responses": 8,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 7,
-      "triggerMode": "sync",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
-      "scenario": "collection-rand",
-      "seed": 1,
-      "responses": 8,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 7,
-      "triggerMode": "sync",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
     }
   ],
   "missingScenarios": [],
   "unavailable": [
+    "Scatter awards disabled in actual engine profile; no scatter scenario invented.",
+    "Collections disabled in actual engine profile; no collection scenario invented.",
     "Energy disabled in actual engine profile.",
     "Direct-value tokens and collectors disabled in actual engine profile."
   ]

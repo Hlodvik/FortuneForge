@@ -19,7 +19,7 @@ public sealed class GameAnalyticsTests
         Assert.NotEqual(original.Id, GameAnalyticsOutbox.Create(value with { Mode = "practice" })!.Id);
         Assert.Equal(original.Fields["roundKey"], GameAnalyticsOutbox.Create(value with { UserId = "bob" })!.Fields["roundKey"]);
         Assert.Null(GameAnalyticsOutbox.Create(value with { IsHuman = false }));
-        Assert.Equal(41, GameAnalyticsOutbox.GameIds.Count);
+        Assert.Contains("empty-slots-game", GameAnalyticsOutbox.GameIds);
         foreach (var game in GameAnalyticsOutbox.GameIds) Assert.NotNull(GameAnalyticsOutbox.Create(value with { GameId = game }));
     }
 

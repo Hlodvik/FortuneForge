@@ -15,11 +15,11 @@
     "collectionTarget": 40,
     "collectionAwardedSpins": 10,
     "usesCollections": true,
-    "usesEnergy": true,
+    "usesEnergy": false,
     "usesDirectValueTokens": true,
     "scatterFeatureMode": null,
     "collectionFeatureMode": "sync-paw-rand",
-    "baseReelSetId": null,
+    "baseReelSetId": "arcane-archives-lightning-reels-v1",
     "targetHitRate": null,
     "paylinePatternIds": [
       1,
@@ -148,10 +148,7 @@
     "awardedSpins": 5,
     "visibleFrequencyDivisor": 2
   },
-  "energy": {
-    "symbolId": "BOLT",
-    "pointsPerVisibleSymbol": 1
-  },
+  "energy": null,
   "specialPoints": {
     "symbolId": "POWER",
     "threeMatchPoints": 1,
@@ -164,7 +161,7 @@
     ]
   },
   "math": {
-    "reelSetId": "classic-reels-v4",
+    "reelSetId": "arcane-archives-lightning-reels-v1",
     "paytableId": "classic-paytable-v4",
     "payoutMultiplier": 0.716,
     "paylinePayoutSteps": [
@@ -440,8 +437,8 @@
     },
     {
       "scenario": "collection-sync",
-      "seed": 13,
-      "responses": 16,
+      "seed": 3,
+      "responses": 11,
       "triggerRows": 4,
       "continuationRows": [
         4
@@ -499,21 +496,6 @@
       "replayMatchesExceptSpinId": true
     },
     {
-      "scenario": "energy-completion",
-      "seed": 3,
-      "responses": 11,
-      "triggerRows": 4,
-      "continuationRows": [
-        4
-      ],
-      "triggerFreeSpinsAwarded": 0,
-      "triggerCollectionFreeSpinsAwarded": 0,
-      "triggerRemaining": 10,
-      "triggerMode": "sync-paw-rand",
-      "finalRemaining": 0,
-      "replayMatchesExceptSpinId": true
-    },
-    {
       "scenario": "direct-token-award",
       "seed": 2,
       "responses": 1,
@@ -528,5 +510,7 @@
     }
   ],
   "missingScenarios": [],
-  "unavailable": []
+  "unavailable": [
+    "Energy disabled in actual engine profile."
+  ]
 }

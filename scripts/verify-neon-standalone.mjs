@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs'
 import { dirname, extname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -96,7 +96,7 @@ export function verifyNeonStandalone(root = repositoryRoot) {
   return { errors, engineRoot: label(engineRoot), clientRoot: label(clientRoot) }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(resolve(process.argv[1])) === realpathSync(fileURLToPath(import.meta.url))) {
   const report = verifyNeonStandalone()
   if (report.errors.length) {
     report.errors.forEach(error => console.error(error))

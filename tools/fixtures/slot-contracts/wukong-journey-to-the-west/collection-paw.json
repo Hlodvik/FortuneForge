@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "fa06313d-dd83-4bbe-b4a9-e3d0f3a1e3ea",
+        "spinId": "f2651f59-735b-41a4-880a-8d6dc16437a2",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 10,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -145,6 +147,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
@@ -190,13 +198,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d67d2276-837b-4b6c-834b-3320941bc9c4",
+        "spinId": "eb3f0e46-d0d8-4b61-975c-02cfc54f5ecf",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -289,6 +303,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -320,6 +335,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
@@ -365,13 +386,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "2357dd06-14ec-4532-9ffa-9abacd399aae",
+        "spinId": "04ef3605-58a2-442a-a1b6-a964bb58aad0",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -476,6 +503,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -509,6 +537,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
@@ -554,13 +588,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "24f22d79-8d7c-4463-8987-8fb7d17c7c23",
+        "spinId": "c6affa87-be3f-44b1-bfac-500f637d8a23",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -618,6 +658,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -653,6 +694,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -696,13 +743,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6048f1cc-8f13-43f2-bcd3-551f364f9c2c",
+        "spinId": "21680c50-93c9-413a-b37b-f52a93e107d8",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -803,6 +856,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -836,6 +890,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -879,13 +939,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "4a6494f3-4376-47b8-a812-eed5527c023c",
+        "spinId": "2f82ece1-a956-48fe-89cb-a80ee14b5753",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -978,6 +1044,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1013,6 +1080,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -1056,13 +1129,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "4a222d5b-c207-4f31-8466-1ed8dd87c3ea",
+        "spinId": "2d745ca6-661d-4949-8542-023387e13da9",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1151,6 +1230,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1184,6 +1264,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -1227,13 +1313,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "c5aff2ca-66ff-4a0d-80f2-2edce53e6a4f",
+        "spinId": "a6529168-1b13-44b8-b065-87cfeec21483",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1291,6 +1383,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1326,6 +1419,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -1369,13 +1468,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "7c7d64fa-6709-4c81-994b-24a1b2702b11",
+        "spinId": "7f097e37-be23-407b-82d8-cfc61078f2d6",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1468,6 +1573,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1503,6 +1609,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -1546,13 +1658,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "1a42ec38-f315-4ce9-83ae-46aa35ff1887",
+        "spinId": "7aea7de1-92f3-4fb5-a809-4689e9e20d07",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1641,6 +1759,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1674,6 +1793,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],
@@ -1717,13 +1842,19 @@
             "count": 1,
             "averageWagerPoints": 2,
             "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
           }
         ],
         "freeSpinFeatureMode": "paw",
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "19ce679d-a88d-44d8-98f4-eb0fd375455e",
+        "spinId": "b510b243-16f7-4937-949c-f838f4424307",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -1854,6 +1985,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1887,6 +2019,12 @@
             "sealId": "rand",
             "count": 1,
             "averageWagerPoints": 2,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 40
           }
         ],

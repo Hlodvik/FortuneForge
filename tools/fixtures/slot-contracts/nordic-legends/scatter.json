@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "75dd3a9b-e6ac-472c-8c5b-e45943ea2a35",
+        "spinId": "b012a57f-cdf8-4f6c-b1f4-fe3d6db3ef80",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -119,7 +121,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "99755b10-a6e6-48b4-858c-e8f83fdff9c3",
+        "spinId": "5c5a8934-c598-447f-b217-fe9f90526068",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -177,6 +179,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -209,7 +212,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "a9ccb130-0144-45fb-943d-2010f14b3b64",
+        "spinId": "7cb0c896-065f-4751-8d00-535713d4b7ae",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -267,6 +270,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -299,7 +303,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f27a4bed-a6f0-4c97-bee7-290058995c4e",
+        "spinId": "c5da8f4f-c7db-468b-a83e-dc1d1bb5cd91",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -357,6 +361,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -389,7 +394,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "72a11e49-4e40-4584-a68e-2788f6bb292e",
+        "spinId": "13e75859-d0ea-4b03-8667-12d9f7963e56",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -478,6 +483,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -510,7 +516,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "64a7cafa-9112-4075-a0f3-03fab2f9a2e7",
+        "spinId": "cb7a4187-6c72-4545-b8cc-0b5d99d6fb78",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -568,6 +574,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -600,7 +607,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "c6e4e6f8-eb01-48ff-8f44-74123d37a7df",
+        "spinId": "1812dd45-ee0d-4800-bdd5-172ff4b482f4",
         "gameId": "nordic-legends-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -658,6 +665,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

@@ -2,14 +2,14 @@
   "scenario": "base-win",
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
-    "seed": 1,
-    "engineVersion": "shared-slots-engine-v1",
+    "seed": 0,
+    "engineVersion": "neon-arcade-special-plays-v8",
     "gameId": "neon-nights-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
     "deterministicCaveat": "Public response replay compared field-for-field except fresh response.spinId."
   },
-  "wagerPoints": 2,
+  "wagerPoints": 50,
   "initialState": {
     "initialCollectionMode": null,
     "initialEnergy": 0,
@@ -19,117 +19,97 @@
     {
       "request": {
         "gameId": "neon-nights-v1",
-        "wagerPoints": 2,
+        "wagerPoints": 50,
         "useFreeSpin": false,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "energyBalance": 0,
-        "sealCollections": [
-          {
-            "sealId": "sync",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "rows",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "paw",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "rand",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          }
-        ],
+        "sealCollections": [],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "e0437348-dd05-4944-808b-044f5b997b83",
+        "spinId": "8692d471-6617-4a4d-8ed2-9cb4bb0758fe",
         "gameId": "neon-nights-v1",
-        "reelSetId": "classic-reels-v4",
-        "symbolSetId": "classic-symbols-v3",
-        "paytableId": "classic-paytable-v4",
-        "wagerPoints": 2,
-        "pointValueInCents": 25,
+        "reelSetId": "neon-arcade-reels-v3",
+        "symbolSetId": "neon-arcade-symbols-v2",
+        "paytableId": "neon-arcade-paytable-v2",
+        "wagerPoints": 50,
+        "pointValueInCents": 1,
         "reelStops": [
-          15,
-          6,
-          29,
-          48,
-          41
+          2974,
+          3347,
+          3145,
+          2286,
+          843
         ],
         "reels": [
           [
-            "3",
-            "BANANA",
-            "3",
-            "POWER"
+            "SEAL_SYNC",
+            "SEAL_ROWS",
+            "ACE",
+            "3"
           ],
           [
             "3",
-            "SEAL_RAND",
-            "POWER",
-            "FREE"
-          ],
-          [
-            "3",
-            "FREE",
-            "POWER",
-            "6"
-          ],
-          [
-            "POWER",
-            "2",
-            "3",
-            "BANANA"
-          ],
-          [
-            "3",
-            "2",
+            "SEAL_PAW",
             "2",
             "4"
+          ],
+          [
+            "SEAL_PAW",
+            "SEAL_PAW",
+            "BANANA",
+            "3"
+          ],
+          [
+            "5",
+            "SEAL_SYNC",
+            "2",
+            "3"
+          ],
+          [
+            "4",
+            "3",
+            "SEAL_ROWS",
+            "SEAL_SYNC"
           ]
         ],
         "payout": {
-          "totalPoints": 2,
+          "totalPoints": 82,
           "paylines": [
             {
-              "paylineId": 1,
-              "amountPoints": 2,
+              "paylineId": 8,
+              "amountPoints": 82,
               "matches": [
                 {
                   "match": {
-                    "paylineId": 1,
-                    "symbolId": "3",
+                    "paylineId": 8,
+                    "symbolId": "SEAL_PAW",
                     "matchLength": 3,
                     "positions": [
                       {
                         "reel": 0,
-                        "row": 0
+                        "row": 2
                       },
                       {
                         "reel": 1,
-                        "row": 0
+                        "row": 1
                       },
                       {
                         "reel": 2,
                         "row": 0
                       }
                     ],
-                    "wildPositions": []
+                    "wildPositions": [
+                      {
+                        "reel": 0,
+                        "row": 2
+                      }
+                    ]
                   },
-                  "multiplier": 1,
-                  "amountPoints": 2
+                  "multiplier": 2,
+                  "amountPoints": 82
                 }
               ]
             }
@@ -143,6 +123,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -152,41 +134,25 @@
         "monkeyPawCount": 0,
         "moneyGrabPoints": 0,
         "bananaBonusPoints": 0,
-        "sealsAwarded": {
-          "SEAL_RAND": 1
-        },
-        "sealCollections": [
-          {
-            "sealId": "sync",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "rows",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "paw",
-            "count": 0,
-            "averageWagerPoints": 0,
-            "requiredCount": 26
-          },
-          {
-            "sealId": "rand",
-            "count": 1,
-            "averageWagerPoints": 2,
-            "requiredCount": 26
-          }
-        ],
+        "sealsAwarded": {},
+        "sealCollections": [],
         "collectionFreeSpinsAwarded": 0,
         "freeSpinFeatureMode": null,
         "bonusRound": null,
         "queuedBonusRounds": [],
         "awardedBonusRounds": [],
-        "midnightBonusState": null
+        "midnightBonusState": null,
+        "neonArcade": {
+          "modelId": "neon-arcade-local-v4",
+          "calibrated": false,
+          "bonusSymbolCount": 0,
+          "boostPercentPerSymbol": 25,
+          "paylineBoostMultiplier": 1,
+          "unboostedPaylinePoints": 82,
+          "paylineBoostPoints": 0,
+          "featureGamesEnabled": true,
+          "activators": []
+        }
       }
     }
   ]

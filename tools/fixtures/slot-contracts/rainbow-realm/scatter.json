@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "38a42e1a-ccd3-42e5-b88c-4c537fa1ebf3",
+        "spinId": "0ffc1e13-d534-4bda-9ae1-15648aff9f16",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -112,6 +112,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 10,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -145,6 +147,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
@@ -190,13 +198,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d9d25bda-4757-4a29-b3c7-23c13e82fadf",
+        "spinId": "199f3a76-762d-46ad-973c-ec8e3aedfbe5",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -254,6 +268,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 9,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -285,6 +300,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
@@ -330,13 +351,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "54c51073-9a85-40b5-9886-f54ffd96ca4d",
+        "spinId": "5fb84997-da95-4c4d-925b-51b1c97b4212",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -394,6 +421,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 8,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -427,6 +455,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
@@ -472,13 +506,19 @@
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "fbadeefc-e58d-401f-b5ce-55d69b6eb27d",
+        "spinId": "f7464467-ff2e-45b5-9733-ca8be45a253d",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -536,6 +576,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 7,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -572,6 +613,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -615,13 +662,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "fe86091c-68de-4e7e-a1d8-e6da68c44d59",
+        "spinId": "18ca3195-311a-4a8d-91f2-f08f02b8204c",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -679,6 +732,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 6,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -712,6 +766,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -755,13 +815,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b5ec1b48-8716-4d2c-a833-fe071868ea20",
+        "spinId": "6d8e77b0-1a9f-48aa-baec-ab35935b96f6",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -819,6 +885,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -854,6 +921,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -897,13 +970,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "48482bf6-493e-4b1b-bc3e-cc97575df1f4",
+        "spinId": "fdbb68d0-f917-4476-b8ce-c939badbd0b8",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -961,6 +1040,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -997,6 +1077,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -1040,13 +1126,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "837a284c-c952-42b2-89d7-4b74a6c7260e",
+        "spinId": "ee0345ce-e29b-4368-993b-0098ad26fea6",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -1104,6 +1196,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1137,6 +1230,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -1180,13 +1279,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b51ce321-1573-48fa-b3dc-24d79f78ee26",
+        "spinId": "0466e58e-ee59-4d21-bd5a-accfd0c471a6",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -1244,6 +1349,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1279,6 +1385,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -1322,13 +1434,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "2f370b14-bf38-4e3e-a5b8-b892411ae2af",
+        "spinId": "f6cf1e74-4c09-4022-8b1e-42a96c9cf86b",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -1386,6 +1504,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -1421,6 +1540,12 @@
             "sealId": "rand",
             "count": 2,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],
@@ -1464,13 +1589,19 @@
             "count": 2,
             "averageWagerPoints": 2,
             "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 60
           }
         ],
         "freeSpinFeatureMode": null,
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "140bd11d-942d-4b1a-9640-9d5ad6b66618",
+        "spinId": "5d34fb4e-7553-49e7-9645-c3f8f9a95f56",
         "gameId": "rainbow-realm-fruits-v1",
         "reelSetId": "rainbow-realm-reels-v1",
         "symbolSetId": "rainbow-realm-symbols-v1",
@@ -1528,6 +1659,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -1563,6 +1695,12 @@
             "sealId": "rand",
             "count": 3,
             "averageWagerPoints": 2,
+            "requiredCount": 60
+          },
+          {
+            "sealId": "arcade",
+            "count": 0,
+            "averageWagerPoints": 0,
             "requiredCount": 60
           }
         ],

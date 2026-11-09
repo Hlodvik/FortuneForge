@@ -3,7 +3,7 @@
   "source": {
     "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
     "seed": 2,
-    "engineVersion": "shared-slots-engine-v1",
+    "engineVersion": "arcane-lightning-collector-v1",
     "gameId": "arcane-archives-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -54,9 +54,9 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "4efa621f-3210-4314-a00a-382e46963584",
+        "spinId": "3451f58f-48ca-4718-836a-4f7cdbaa5ca4",
         "gameId": "arcane-archives-v1",
-        "reelSetId": "classic-reels-v4",
+        "reelSetId": "arcane-archives-lightning-reels-v1",
         "symbolSetId": "classic-symbols-v3",
         "paytableId": "classic-paytable-v4",
         "wagerPoints": 2,
@@ -65,7 +65,7 @@
           49,
           25,
           10,
-          63,
+          189,
           6
         ],
         "reels": [
@@ -89,9 +89,9 @@
           ],
           [
             "3",
-            "7",
-            "5",
-            "4"
+            "4",
+            "3",
+            "7"
           ],
           [
             "7",
@@ -143,6 +143,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -176,6 +178,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40

@@ -48,7 +48,13 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/cards/hearts' },
 ]
 
+// Starter surfaces return the app shell but do not expose a playable demo spin.
+export const shellOnlySmokeInventory = [
+  { smokePath: '/slots/empty-slots-game' },
+]
+
 export const gameSmokeRoutes = [
   ...nonSlotSmokeInventory.map(({ smokePath }) => smokePath),
   ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
+  ...shellOnlySmokeInventory.map(({ smokePath }) => smokePath),
 ]

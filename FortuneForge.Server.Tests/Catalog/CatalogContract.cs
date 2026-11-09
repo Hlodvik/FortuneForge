@@ -41,7 +41,7 @@ internal static class CatalogContract
         ("cosmic-fortune", "/slots/cosmic-fortune"),
         ("gold-foundry", "/slots/gold-foundry"),
         ("neon-nights", "/slots/neon-nights"),
-        ("jungle-jackpot", "/slots/jungle-jackpot"),
+        ("empty-slots-game", "/slots/empty-slots-game"),
         ("ocean-odyssey", "/slots/ocean-odyssey"),
         ("samurai-fortune", "/slots/samurai-fortune"),
         ("candy-carnival", "/slots/candy-carnival"),

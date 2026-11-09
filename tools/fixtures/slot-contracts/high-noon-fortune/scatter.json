@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "b510d3ac-de6e-4061-820b-a2cb96e2e2f6",
+        "spinId": "d040ed68-f25f-49de-b06a-abac625c1b11",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -87,6 +87,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 5,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -119,7 +121,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "7ca10f8b-859b-4002-8c5a-f97cb9d12d1a",
+        "spinId": "870c1681-0483-4d3c-917c-2008070c167b",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -177,6 +179,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 4,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -209,7 +212,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "f2b1c71c-edc1-474f-a1dc-0013e7733fc6",
+        "spinId": "e70d81db-3e7d-4756-b656-2b6d10fbbd37",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -267,6 +270,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 3,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -299,7 +303,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "60af4c65-f187-482b-a0da-dd9ae97ee018",
+        "spinId": "69dae14b-6c07-494d-94df-5d9038515322",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -357,6 +361,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 2,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -389,7 +394,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "6e75a56b-74b0-491f-925a-a3f1ae4fcd38",
+        "spinId": "41b7257e-e405-4ddb-a3e7-46ab19b04310",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -447,6 +452,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 1,
         "freeSpinWagerPoints": 2,
         "specialPointsBalance": 0,
@@ -479,7 +485,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d245af08-cc34-4ced-85d5-2f446072c15c",
+        "spinId": "96ef9bff-74df-4e4f-a23b-901e2a33a584",
         "gameId": "high-noon-fortune-v1",
         "reelSetId": "classic-reels-v4",
         "symbolSetId": "classic-symbols-v3",
@@ -572,6 +578,7 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": true,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,

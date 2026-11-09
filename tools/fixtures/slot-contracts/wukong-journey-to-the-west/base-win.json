@@ -54,7 +54,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "0a632ea5-7001-44e9-9c40-a61deb7899af",
+        "spinId": "a4433218-e222-43ec-8805-593449cde6d2",
         "gameId": "wukong-journey-v1",
         "reelSetId": "wukong-reels-v1",
         "symbolSetId": "classic-symbols-v3",
@@ -139,6 +139,8 @@
         "specialBoostApplied": false,
         "slotsCreditsBalance": null,
         "isFreeSpin": false,
+        "chargedWagerCents": 50,
+        "neonDiscoSpinsRemaining": 0,
         "freeSpinsRemaining": 0,
         "freeSpinWagerPoints": null,
         "specialPointsBalance": 0,
@@ -172,6 +174,12 @@
           },
           {
             "sealId": "rand",
+            "count": 0,
+            "averageWagerPoints": 0,
+            "requiredCount": 40
+          },
+          {
+            "sealId": "arcade",
             "count": 0,
             "averageWagerPoints": 0,
             "requiredCount": 40

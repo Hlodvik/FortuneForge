@@ -20,8 +20,9 @@ for (const item of index.games) {
     basePaytable = contract.paytable
   }
   const nativeWildMatchLengths = isGoldFoundry ? '[3,4,5]' : '[3,5]'
+  const substitutionMatchLengths = contract.gameId === 'neon-nights-v1' ? '[3,5]' : '[5]'
   if (JSON.stringify(contract.symbols.nativeWildMatchLengths) !== nativeWildMatchLengths ||
-      JSON.stringify(contract.symbols.wildSubstitutionMatchLengths) !== '[5]') throw new Error('Wild-match rules need guide support')
+      JSON.stringify(contract.symbols.wildSubstitutionMatchLengths) !== substitutionMatchLengths) throw new Error(`Wild-match rules need guide support: ${contract.gameId}`)
   if (contract.gameId !== 'rainbow-realm-fruits-v1' && contract.math.paylinePayoutSteps.some(step => step !== 0)) throw new Error('Non-uniform payline prices need guide support')
   const p = contract.profile
   engineFixtures.push({ gameId: contract.gameId, profile: p, layout: contract.layout,
@@ -37,7 +38,7 @@ for (const item of index.games) {
     scatterFeatureMode: p.scatterFeatureMode, collectionFeatureMode: p.collectionFeatureMode,
   })
 }
-if (games.length !== 20) throw new Error('The engine export must contain the whole catalogue')
+if (games.length !== 19) throw new Error('The engine export must contain all nineteen playable slots')
 const basePayouts = {}
 for (const rule of basePaytable) {
   basePayouts[rule.symbolId] ??= {}
@@ -52,7 +53,9 @@ await writeFile(resolve(fixtureDirectory, 'engineGuide-contracts.json'), JSON.st
   source: 'Actual in-process OptionsSlotsDefinitionProvider, not client manifests',
   exportedUtc: index.exportedUtc, assemblySha256: provenance.assemblySha256,
   sourceSha256: Object.fromEntries(Object.entries(provenance.sourceSha256).filter(([path]) =>
-    path.startsWith('FortuneForge.Server/Slots/') || path === 'FortuneForge.Server/appsettings.json')),
+    path.startsWith('FortuneForge.Server/Slots/') || path === 'FortuneForge.Server/appsettings.json' ||
+    path.startsWith('games/NeonNights/src/') || path.startsWith('games/EmptySlots/src/') ||
+    path.startsWith('games/shared/FortuneForge.Games.Slots.Contracts/'))),
   games: engineFixtures,
 }, null, 2), 'utf8')
 console.log(`Exported ${games.length} engine guide contracts to ${output}`)

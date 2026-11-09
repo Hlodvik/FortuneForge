@@ -45,8 +45,8 @@ const selectedMetadata = ['non-slots', 'slots'].flatMap(group => {
 
 describe('landing and home catalogue presentation art', () => {
   it('selects every unique metadata-approved export with a bounded image budget', () => {
-    expect(selectedMetadata).toHaveLength(41)
-    expect(new Set(selectedMetadata.map(({ metadata }) => metadata.id)).size).toBe(41)
+    expect(selectedMetadata).toHaveLength(40)
+    expect(new Set(selectedMetadata.map(({ metadata }) => metadata.id)).size).toBe(40)
     const slotRoutes = new Map(SLOT_ROUTE_DEFINITIONS.map(definition => [definition.id, definition.playPath]))
     const selectedSources = new Set<string>()
     let totalBytes = 0
@@ -69,12 +69,12 @@ describe('landing and home catalogue presentation art', () => {
       totalBytes += metadata.bytes
     }
 
-    expect(selectedSources.size).toBe(41)
+    expect(selectedSources.size).toBe(40)
     expect(totalBytes).toBeLessThan(3_000_000)
   })
 
   it('resolves every slot play/demo alias from the actual route registry to the same art', () => {
-    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(20)
+    expect(SLOT_ROUTE_DEFINITIONS).toHaveLength(19)
     for (const definition of SLOT_ROUTE_DEFINITIONS) {
       const art = getCataloguePresentationArt(definition.playPath)
       expect(art, definition.id).toBeDefined()
@@ -105,13 +105,16 @@ describe('landing and home catalogue presentation art', () => {
     for (const route of [undefined, null, '', '/', 'toString', '__proto__', 'constructor', '/games/not-listed', '/slots/not-listed/demo', '/games/horse-flight', '/games/asteroids', '/games/flappy', '/games/snake']) {
       expect(getCataloguePresentationArt(route)).toBeUndefined()
     }
+    for (const route of ['/slots/jungle-jackpot', '/slots/jungle-jackpot/demo', '/slots/empty-slots-game']) {
+      expect(getCataloguePresentationArt(route), route).toBeUndefined()
+    }
   })
 
   it('imports only selected image URLs, with no playable game code or archived integration', () => {
     const source = readFileSync(new URL('./cataloguePresentationArt.ts', import.meta.url), 'utf8')
     const imports = [...source.matchAll(/^import .+ from '([^']+)'$/gm)].map(match => match[1])
-    expect(imports).toHaveLength(41)
-    expect(new Set(imports).size).toBe(41)
+    expect(imports).toHaveLength(40)
+    expect(new Set(imports).size).toBe(40)
     for (const path of imports) expect(path).toMatch(/^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/[a-z0-9-]+\.webp$/)
     expect(source).not.toContain('import(')
     expect(source).not.toContain('nonSlotCatalogueArt')

@@ -71,7 +71,9 @@ describe('account home', () => {
     expect(host.querySelectorAll('.home-lobby__game-card')).toHaveLength(40)
     expect(new Set(Array.from(host.querySelectorAll('.home-lobby__game-card')).map(card => card.getAttribute('href'))).size).toBe(40)
     expect(host.querySelector('a[href="/games/liars-dice"]')).toBeNull()
-    expect(host.querySelector('.home-lobby__game-card > span')).toBeNull()
+    const starter = host.querySelector('a[href="/slots/empty-slots-game"]')!
+    expect(starter.querySelector('.home-lobby__art-fallback')).not.toBeNull()
+    expect(host.querySelectorAll('.home-lobby__game-card > span')).toHaveLength(1)
     expect(Array.from(host.querySelectorAll('.home-lobby__filters button')).map(button => button.textContent)).toEqual(['Popular', 'Slots', 'Card games', 'Table games', 'Other games'])
     expect(host.querySelector('.game-catalogue-rail')).not.toBeNull()
     expect(host.querySelector('.home-lobby__game-grid')).toBeNull()

@@ -39,9 +39,9 @@ beforeEach(() => {
 afterEach(() => { act(() => root.unmount()); host.remove(); vi.clearAllTimers(); vi.useRealTimers(); vi.unstubAllGlobals() })
 
 describe('player-game knowledge during universal shared loading', () => {
-  it('covers the actual45game/67route inventory, including20distinct slots and hidden playable games, with one batch', async () => {
-    expect(paid).toHaveLength(45); expect(demo).toHaveLength(22)
-    expect(new Set(paid.map(gameExperienceIdentity)).size).toBe(45)
+  it('covers the 44-game/65-route inventory, including 19 distinct slots and hidden playable games, with one batch', async () => {
+    expect(paid).toHaveLength(44); expect(demo).toHaveLength(21)
+    expect(new Set(paid.map(gameExperienceIdentity)).size).toBe(44)
     await act(async () => root.render(<>{[...paid, ...demo].map(path => <GameLoadingRouteProvider key={path}
       entry={resolveGameLoadingEntry(path)} pathname={path}><Probe label={path} /></GameLoadingRouteProvider>)}</>))
     expect(api.fetch).toHaveBeenCalledTimes(1)
@@ -59,7 +59,7 @@ describe('player-game knowledge during universal shared loading', () => {
       expect(output.dataset.player, path).toBe('')
     }
     for (const id of ['asteroids', 'flappy', 'snake', 'horse-flight']) expect(gameExperienceIdentity(`/games/${id}`)).toBe(id)
-    expect(new Set(inventory.slotSmokeInventory.map(([route]) => gameExperienceIdentity(`/slots/${route}`))).size).toBe(20)
+    expect(new Set(inventory.slotSmokeInventory.map(([route]) => gameExperienceIdentity(`/slots/${route}`))).size).toBe(19)
   })
 
   it('provides explicit loading then proven knowledge while the playable module is still pending', async () => {

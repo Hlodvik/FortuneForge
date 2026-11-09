@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -58,7 +58,7 @@ export function verifyCiEmulatorOrder(workflow) {
     testSteps: dotnetTests.map(step => step.index), navbarStep: navbar.index }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   const result = verifyCiEmulatorOrder(readFileSync(resolve('.github/workflows/ci.yml'), 'utf8'))
   console.log(`Verified CI emulator provisioning before ${result.testSteps.length} .NET test steps and canonical navbar verification before frontend checks (Firebase CLI ${result.firebaseCli}).`)
 }

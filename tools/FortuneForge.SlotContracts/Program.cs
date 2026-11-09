@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using FortuneForge.Games.Slots;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Bonuses;
@@ -35,13 +36,28 @@ var routePattern = "id: '([^']+)', title: (?:'([^']*)'|\"([^\"]*)\"),.*?playPath
 var routes = Regex.Matches(routesSource, routePattern, RegexOptions.Singleline).Select(match =>
     new Route(match.Groups[1].Value, match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value,
         match.Groups[4].Value, match.Groups[5].Value, match.Groups[6].Value)).ToArray();
-Require(routes.Length == 20 && routes.Select(route => route.GameId).Distinct().Count() == 20, "Actual route registry must supply exactly20 unique profiles.");
+// Empty Slots is a blank handoff surface, outside the playable slot registry.
+Require(routes.Length == 19 && routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly19 unique playable profiles.");
 Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)), "Catalogue profile missing.");
-var sourcePaths = Directory.GetFiles(Path.Combine(repository, "FortuneForge.Server/Slots"), "*.cs", SearchOption.AllDirectories)
+var sourceDirectories = new[]
+{
+    "FortuneForge.Server/Slots",
+    "games/NeonNights/src/FortuneForge.Games.NeonNights",
+    "games/EmptySlots/src/FortuneForge.Games.EmptySlots",
+    "games/shared/FortuneForge.Games.Slots.Contracts"
+};
+var sourcePaths = sourceDirectories.SelectMany(directory =>
+        Directory.EnumerateFiles(Path.Combine(repository, directory), "*", SearchOption.AllDirectories))
+    .Where(file => (Path.GetExtension(file) is ".cs" or ".json" or ".csproj") &&
+        !file.Replace('\\', '/').Contains("/bin/", StringComparison.Ordinal) &&
+        !file.Replace('\\', '/').Contains("/obj/", StringComparison.Ordinal))
     .Select(file => Path.GetRelativePath(repository, file).Replace('\\', '/'))
     .Append("FortuneForge.Server/appsettings.json").Append("FortuneForge.Server/Controllers/DemoSlotsController.cs")
     .Append(routeFile).Append("FortuneForge.Server/RoundAudit/DemoSlotRoundRecording.cs")
-    .Append("FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs").Order(StringComparer.Ordinal).ToArray();
+    .Append("FortuneForge.Server/Accounts/Security/AntiAbuseRateLimiting.cs")
+    .Append("tools/FortuneForge.SlotContracts/Program.cs")
+    .Append("tools/FortuneForge.SlotContracts/FortuneForge.SlotContracts.csproj")
+    .Order(StringComparer.Ordinal).ToArray();
 var sourceHashes = sourcePaths.ToDictionary(path => path, path => Hash(Path.Combine(repository, path)));
 var modes = new[] { "sync", "rows", "paw", "rand" };
 var seals = new[] { "SEAL_SYNC", "SEAL_ROWS", "SEAL_PAW", "SEAL_RAND" };
@@ -256,7 +272,8 @@ static object ScenarioSummary(FixtureCase item) => new
 void WriteNew(string directory, string filename, object value)
 {
     using var file = new FileStream(Path.Combine(directory, filename), FileMode.CreateNew, FileAccess.Write);
-    JsonSerializer.Serialize(file, value, json);
+    // Match the repository's LF policy on Windows as well as Linux.
+    file.Write(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(value, json).ReplaceLineEndings("\n") + "\n"));
 }
 static void NormalizeNewRoundIds(JsonNode? node, Guid spinId)
 {

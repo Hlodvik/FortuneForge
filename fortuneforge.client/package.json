@@ -10,7 +10,8 @@
     "test": "vitest run --exclude e2e/**",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "prebuild": "node ../scripts/build-jade-dragon.mjs"
   },
   "dependencies": {
     "@fortuneforge/client-presentation": "0.1.0",

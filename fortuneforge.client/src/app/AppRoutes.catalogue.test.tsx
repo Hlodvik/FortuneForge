@@ -23,6 +23,7 @@ vi.mock('./routes/SlotGameRoute', () => ({ SlotGameRoute: () => <main>Slot game<
 vi.mock('../pages/slots/SlotsLibraryPage', () => ({ DemoSlotsLibraryPage: () => <main>Public slot demos</main> }))
 vi.mock('../pages/cards/CardGameLibraryPage', () => ({ CardGameLibraryPage: () => <main>Public card demos</main> }))
 
+vi.mock('../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({ account: { userId: 'test' }, error: null, isLoading: false, reload: vi.fn() }) }))
 import { AppRoutes } from './AppRoutes'
 
 let host: HTMLDivElement, root: Root
@@ -89,13 +90,13 @@ describe('home replaces separate authenticated catalogues', () => {
     expect(state.replace).not.toHaveBeenCalled()
   })
 
-  it('opens the empty slot starter with shared navigation and an empty game surface', async () => {
+  it('opens Jade Dragon with shared navigation and the connected game surface', async () => {
     await import('./routes/EmptySlotsGameRoute')
     await renderRoute('/slots/empty-slots-game')
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
-    const surface = host.querySelector('main[aria-label="Empty Slots Game"]')!
+    const surface = host.querySelector('main[aria-label="Jade Dragon: The Golden Pearl"]')!
     expect(surface).not.toBeNull()
-    expect(surface.children).toHaveLength(0)
+    expect(surface.querySelector('iframe')?.getAttribute('src')).toBe('/games/jade-dragon/index.html')
     expect(host.querySelector('button.spin-button, audio, video, [data-game-loading]')).toBeNull()
     expect(state.replace).not.toHaveBeenCalled()
     expect(state.legacyLoads).not.toHaveBeenCalled()

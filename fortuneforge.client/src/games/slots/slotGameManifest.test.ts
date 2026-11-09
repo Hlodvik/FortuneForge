@@ -81,7 +81,7 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('uses the standalone Neon manifest and keeps Empty Slots as a separate catalogue starter', () => {
+  it('uses the standalone Neon manifest and keeps Jade Dragon as a separate connected surface', () => {
     expect(NEON_NIGHTS_SLOT_GAME).toBe(STANDALONE_NEON_NIGHTS_SLOT_GAME)
     expect(NEON_NIGHTS_SLOT_GAME.routes).toEqual({ play: '/slots/neon-nights', demo: '/slots/neon-nights/demo' })
     expect(NEON_NIGHTS_SLOT_GAME.experience.rules.gameId).toBe('neon-nights-v1')
@@ -91,7 +91,7 @@ describe('slot game manifests', () => {
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'neon-nights')?.image).toMatch(/neon-nights-title-v1\.webp$/)
     expect(SLOT_GAME_CATALOG).toHaveLength(20)
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')).toMatchObject({
-      title: 'Empty Slots Game', image: '', playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
+      title: 'Jade Dragon: The Golden Pearl', image: '/games/jade-dragon/textures/living-art/dragon.webp', playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
       serverGameIds: ['empty-slots-v1'],
     })
     expect(SLOT_GAME_MANIFESTS.some(game => game.id === 'empty-slots-game' || game.id === 'jungle-jackpot')).toBe(false)

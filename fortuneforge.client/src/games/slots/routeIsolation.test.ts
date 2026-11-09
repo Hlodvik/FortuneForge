@@ -6,9 +6,9 @@ import { SLOT_GAME_CATALOG } from './catalog'
 import { SLOT_ROUTE_DEFINITIONS } from './routeRegistry'
 
 describe('slot route resource isolation', () => {
-  it('keeps playable route and catalog registries in lockstep with the separate empty starter', () => {
+  it('keeps playable route and catalog registries in lockstep with the separate Jade Dragon surface', () => {
     const starter = SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')!
-    expect(starter).toMatchObject({ title: 'Empty Slots Game', image: '', description: '',
+    expect(starter).toMatchObject({ title: 'Jade Dragon: The Golden Pearl', image: '/games/jade-dragon/textures/living-art/dragon.webp', description: expect.stringContaining('jade sanctuary'),
       playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game', serverGameIds: ['empty-slots-v1'] })
     expect(SLOT_ROUTE_DEFINITIONS.some(route => route.id === starter.id)).toBe(false)
     const playableCatalog = SLOT_GAME_CATALOG.filter(game => game.id !== starter.id)

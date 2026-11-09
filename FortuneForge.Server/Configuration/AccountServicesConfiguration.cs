@@ -21,10 +21,15 @@ public static class AccountServicesConfiguration
             configuration,
             Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST")));
         services.AddSingleton<IPasswordHashingService, Pbkdf2PasswordHashingService>();
-        services.AddSingleton(_ => FirebaseApp.Create(new AppOptions
+        services.AddSingleton(provider => FirebaseApp.Create(new AppOptions
         {
             ProjectId = configuration["GoogleCloud:ProjectId"],
-            Credential = GoogleCredential.GetApplicationDefault()
+            // Local demo requests still construct FirebaseAuth through AccountService's DI graph.
+            // Avoid requiring production ADC for an explicitly validated localhost emulator.
+            Credential = CanUseEmulatorCredential(provider.GetRequiredService<IHostEnvironment>().IsDevelopment(),
+                configuration["GoogleCloud:ProjectId"], Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST"))
+                    ? GoogleCredential.FromAccessToken("owner")
+                    : GoogleCredential.GetApplicationDefault()
         }));
         services.AddSingleton(provider =>
             FirebaseAuth.GetAuth(provider.GetRequiredService<FirebaseApp>()));
@@ -37,6 +42,10 @@ public static class AccountServicesConfiguration
 
         return services;
     }
+
+    internal static bool CanUseEmulatorCredential(bool development, string? projectId, string? emulatorHost) =>
+        development && projectId?.StartsWith("demo-", StringComparison.Ordinal) == true &&
+        TryValidateLocalEmulatorHost(emulatorHost ?? "", out _);
 
     internal static FirestoreDb CreateFirestore(
         IConfiguration configuration,

@@ -124,6 +124,7 @@ public sealed class SlotsController(
             }
 
             var account = accountResult.Value;
+            FortuneForge.Server.Slots.Games.EmptySlots.JadeDragonWagerPolicy.Validate(request.GameId, request.WagerPoints, request.UseFreeSpin);
             spinService.ValidateRequest(request.GameId, request.WagerPoints, request.UseFreeSpin);
             var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
             var specialBoostCost = request.UseSpecialBoost

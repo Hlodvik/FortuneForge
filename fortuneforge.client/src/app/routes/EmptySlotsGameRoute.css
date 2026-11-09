@@ -1,9 +1,1 @@
-.empty-slots-game {
-  min-height: 100svh;
-  background: #090a0d;
-}
-
-.empty-slots-game__surface {
-  min-height: calc(100svh - 4rem);
-  background: #090a0d;
-}
+.empty-slots-game{min-height:100svh;background:#061b12}.empty-slots-game__surface{height:calc(100svh - 4rem);min-height:620px;background:#061b12}.empty-slots-game__surface>iframe{display:block;width:100%;height:100%;border:0;background:#061b12}@media(max-width:600px){.empty-slots-game__surface{min-height:780px}}

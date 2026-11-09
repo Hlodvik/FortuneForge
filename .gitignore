@@ -67,3 +67,6 @@ coverage/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Generated Jade Dragon presentation
+fortuneforge.client/public/games/jade-dragon/

@@ -9,6 +9,7 @@ import arcaneArchives from '../../assets/catalogue/slots/arcane-archives-title-v
 import cosmicFortune from '../../assets/catalogue/slots/cosmic-fortune-title-v1.webp'
 import goldFoundry from '../../assets/catalogue/slots/gold-foundry-title-v1.webp'
 import neonNights from '../../assets/catalogue/slots/neon-nights-title-v1.webp'
+import jadeDragon from '../../assets/catalogue/slots/jade-dragon-title-v1.webp'
 import oceanOdyssey from '../../assets/catalogue/slots/ocean-odyssey-title-v1.webp'
 import samuraiFortune from '../../assets/catalogue/slots/samurai-fortune-title-v1.webp'
 import type { GameLoadingEntry } from './types'
@@ -62,6 +63,11 @@ export const LOADING_PRESENTATIONS_B: readonly GameLoadingEntry[] = [
     id: 'neon-nights', title: 'Neon Nights',
     routes: ['/slots/neon-nights', '/slots/neon-nights/demo'],
     image: neonNights, background: '#070b2d', accent: '#ff4fd8',
+  },
+  {
+    id: 'empty-slots-game', title: 'Jade Dragon: The Golden Pearl',
+    routes: ['/slots/empty-slots-game'],
+    image: jadeDragon, background: '#061b12', accent: '#e8c77d',
   },
   {
     id: 'ocean-odyssey', title: 'Ocean Odyssey',

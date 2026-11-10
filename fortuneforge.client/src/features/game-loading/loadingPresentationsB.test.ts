@@ -8,11 +8,11 @@ import { LOADING_PRESENTATIONS_B } from './loadingPresentationsB'
 
 const assignedIds = [
   'dragon-tiger', 'andar-bahar', 'hi-lo', 'casino-war', 'video-poker', 'keno', 'sic-bo',
-  'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights',
+  'arcane-archives', 'cosmic-fortune', 'gold-foundry', 'neon-nights', 'empty-slots-game',
   'ocean-odyssey', 'samurai-fortune',
 ] as const
 
-const nonSlotComponents: Readonly<Record<string, string>> = {
+const appRouteComponents: Readonly<Record<string, string>> = {
   'dragon-tiger': 'AuthenticatedDragonTigerRoute',
   'andar-bahar': 'AuthenticatedAndarBaharRoute',
   'hi-lo': 'AuthenticatedHiLoRoute',
@@ -20,13 +20,14 @@ const nonSlotComponents: Readonly<Record<string, string>> = {
   'video-poker': 'AuthenticatedVideoPokerRoute',
   keno: 'AuthenticatedKenoRoute',
   'sic-bo': 'AuthenticatedSicBoRoute',
+  'empty-slots-game': 'EmptySlotsGameRoute',
 }
 
 describe('B game loading presentations', () => {
-  it('covers its thirteen assigned games and nineteen unique existing paths', () => {
+  it('covers its fourteen games and twenty unique existing paths', () => {
     expect(LOADING_PRESENTATIONS_B.map((entry) => entry.id)).toEqual(assignedIds)
     const routes = LOADING_PRESENTATIONS_B.flatMap((entry) => entry.routes)
-    expect(routes).toHaveLength(19)
+    expect(routes).toHaveLength(20)
     expect(new Set(routes).size).toBe(routes.length)
 
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
@@ -38,7 +39,7 @@ describe('B game loading presentations', () => {
         expect(entry.routes).toEqual([slot.playPath, slot.demoPath].filter((route) => route !== null))
       } else {
         const paths = appMappings
-          .filter((match) => match[2] === nonSlotComponents[entry.id])
+          .filter((match) => match[2] === appRouteComponents[entry.id])
           .map((match) => match[1])
         expect(paths).toHaveLength(1)
         expect(entry.routes).toEqual(paths)
@@ -90,7 +91,7 @@ describe('B game loading presentations', () => {
     const source = readFileSync(new URL('./loadingPresentationsB.ts', import.meta.url), 'utf8')
     const runtimeImports = [...source.matchAll(/^import (?!type\b).+ from '([^']+)'/gm)]
       .map((match) => match[1])
-    expect(runtimeImports).toHaveLength(13)
+    expect(runtimeImports).toHaveLength(14)
     expect(runtimeImports.every((path) => /^\.\.\/\.\.\/assets\/catalogue\/(?:non-slots|slots)\/.+\.webp$/.test(path))).toBe(true)
     expect(source).toContain("import type { GameLoadingEntry } from './types'")
     expect(source).not.toMatch(/\bimport\s*\(/)

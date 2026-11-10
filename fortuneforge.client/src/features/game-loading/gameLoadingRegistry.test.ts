@@ -43,11 +43,11 @@ describe('combined game loading registry', () => {
   it('combines the three manifests into unique game identities, images, and aliases', () => {
     expect(GAME_LOADING_PRESENTATIONS).toEqual([...LOADING_PRESENTATIONS_A, ...LOADING_PRESENTATIONS_B, ...LOADING_PRESENTATIONS_C])
     expect(Object.isFrozen(GAME_LOADING_PRESENTATIONS)).toBe(true)
-    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(40)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(40)
-    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(40)
+    expect(GAME_LOADING_PRESENTATIONS).toHaveLength(41)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id)).size).toBe(41)
+    expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.image)).size).toBe(41)
     const routes = GAME_LOADING_PRESENTATIONS.flatMap(entry => entry.routes)
-    expect(routes).toHaveLength(61)
+    expect(routes).toHaveLength(62)
     expect(new Set(routes).size).toBe(routes.length)
   })
 
@@ -57,7 +57,7 @@ describe('combined game loading registry', () => {
     for (const group of ['non-slots', 'slots']) {
       const directory = new URL(`../../assets/catalogue/${group}/`, import.meta.url)
       const files = readdirSync(directory).filter(file => file.endsWith('.artwork.json'))
-      expect(files).toHaveLength(group === 'non-slots' ? 21 : 19)
+      expect(files).toHaveLength(group === 'non-slots' ? 21 : 20)
       for (const filename of files) {
         const metadata = JSON.parse(readFileSync(new URL(filename, directory), 'utf8')) as ArtworkMetadata
         expect(metadataIds.has(metadata.id)).toBe(false)
@@ -74,7 +74,7 @@ describe('combined game loading registry', () => {
         totalBytes += metadata.bytes
       }
     }
-    expect(metadataIds.size).toBe(40)
+    expect(metadataIds.size).toBe(41)
     expect(new Set(GAME_LOADING_PRESENTATIONS.map(entry => entry.id))).toEqual(metadataIds)
     expect(totalBytes).toBeLessThan(3_000_000)
   })
@@ -87,6 +87,20 @@ describe('combined game loading registry', () => {
       expect(entry.routes).toEqual([slot.playPath, slot.demoPath].filter(route => route !== null))
       for (const route of entry.routes) expect(resolveGameLoadingEntry(route)).toBe(entry)
     }
+  })
+
+  it('registers Jade Dragon artwork for its one authenticated standalone route', () => {
+    const entry = GAME_LOADING_PRESENTATIONS.find(entry => entry.id === 'empty-slots-game')!
+    expect(entry).toMatchObject({
+      title: 'Jade Dragon: The Golden Pearl',
+      routes: ['/slots/empty-slots-game'],
+      image: expect.stringContaining('/jade-dragon-title-v1.webp'),
+    })
+    expect(resolveGameLoadingEntry('/slots/empty-slots-game')).toBe(entry)
+    expect(resolveGameLoadingEntry('/slots/empty-slots-game/demo')).toBeUndefined()
+    expect(SLOT_ROUTE_DEFINITIONS.some(slot => slot.id === entry.id)).toBe(false)
+    const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
+    expect(appRoutes).toContain("pathname === '/slots/empty-slots-game') route = <EmptySlotsGameRoute")
   })
 
   it('prepares the non-slot identities and matches active route aliases', () => {
@@ -124,7 +138,7 @@ describe('combined game loading registry', () => {
       expect(GAME_LOADING_PRESENTATIONS.some(entry => entry.id === id)).toBe(false)
       expect(resolveGameLoadingEntry(`/games/${id}`)).toBeUndefined()
     }
-    for (const route of ['/slots/jungle-jackpot', '/slots/jungle-jackpot/demo', '/slots/empty-slots-game']) {
+    for (const route of ['/slots/jungle-jackpot', '/slots/jungle-jackpot/demo']) {
       expect(resolveGameLoadingEntry(route), route).toBeUndefined()
     }
   })

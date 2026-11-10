@@ -2,6 +2,7 @@ using FortuneForge.Server.Activity;
 using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Catalog;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Craps;
@@ -103,8 +104,14 @@ public sealed class PlayerGameExperienceFirestoreTests(BlackjackTableFirestoreEm
             { ["userId"] = "bob", ["gameId"] = "invented", ["spinId"] = "invalid", ["createdAt"] = Timestamp.FromDateTime(Now) });
         await batch.CommitAsync();
         using var store = Store(database); var response = await store.ReadAsync("alice", default);
+        var currentSlots = CatalogContract.Entries
+            .Where(game => game.Route.StartsWith("/slots/", StringComparison.Ordinal))
+            .Select(game => game.Id).ToArray();
+        Assert.Equal(20, currentSlots.Length);
         Assert.Equal(20, response.Games.Count(game => game.HasPlayed == true));
-        foreach (var canonical in AcceptedGameActivityReader.SlotIds.Values)
+        // Retired runtime IDs remain readable as legacy input, not current catalogue games.
+        Assert.DoesNotContain(response.Games, game => game.GameId == "jungle-jackpot");
+        foreach (var canonical in currentSlots)
         {
             var game = Game(response, canonical);
             Assert.True(game.HasPlayed); Assert.Equal("partial", game.Coverage); Assert.Null(game.FirstPlayedAtUtc);

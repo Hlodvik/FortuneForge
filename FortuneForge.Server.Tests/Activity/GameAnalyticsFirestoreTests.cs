@@ -10,6 +10,10 @@ namespace FortuneForge.Server.Tests.Activity;
 [Collection("Blackjack table Firestore emulator")]
 public sealed class GameAnalyticsFirestoreTests(BlackjackTableFirestoreEmulatorFixture fixture)
 {
+    // Financial analytics retain retired games so historical settlements remain visible.
+    private static readonly IReadOnlyList<string> ExpectedAnalyticsIds = CatalogContract.AnalyticsIds
+        .Append("jungle-jackpot").Order(StringComparer.Ordinal).ToArray();
+
     private sealed class Clock(DateTime now) : TimeProvider
     {
         internal DateTime Now = now;
@@ -27,8 +31,8 @@ public sealed class GameAnalyticsFirestoreTests(BlackjackTableFirestoreEmulatorF
         {
             var global = await store.ReadAsync(period, null, null, default);
             Assert.Equal(new GameAnalyticsMetrics(2, 1, 2, 0, 0, 2, 0, 400, 400, 200, 200), global.Totals);
-            Assert.Equal(CatalogContract.AnalyticsIds, global.Games.Select(game => game.GameId).ToArray());
-            Assert.Equal(CatalogContract.AnalyticsIds.Count, global.Games.Select(game => game.GameId).Distinct(StringComparer.Ordinal).Count());
+            Assert.Equal(ExpectedAnalyticsIds, global.Games.Select(game => game.GameId).ToArray());
+            Assert.Equal(ExpectedAnalyticsIds.Count, global.Games.Select(game => game.GameId).Distinct(StringComparer.Ordinal).Count());
             Assert.Equal(global.Totals, global.Games.Single(game => game.GameId == "blackjack").Metrics);
             var player = await store.ReadAsync(period, null, "alice", default);
             Assert.Equal(new GameAnalyticsMetrics(1, 1, 1, 0, 0, 1, 0, 100, 300, 200, 0), player.Totals);
@@ -52,7 +56,7 @@ public sealed class GameAnalyticsFirestoreTests(BlackjackTableFirestoreEmulatorF
         foreach (var user in new string?[] { null, "alice" })
         {
             var report = await store.ReadAsync("alltime", null, user, default);
-            Assert.Equal(CatalogContract.AnalyticsIds, report.Games.Select(game => game.GameId).ToArray());
+            Assert.Equal(ExpectedAnalyticsIds, report.Games.Select(game => game.GameId).ToArray());
             Assert.Equal(new GameAnalyticsMetrics(3, 3, 2, 0, 1, 2, 0, 300, 300, 200, 200), report.Totals);
             Assert.Equal(new GameAnalyticsMetrics(1, 1, 0, 0, 1), report.Games.Single(game => game.GameId == "free-solitaire").Metrics);
             Assert.Equal(new GameAnalyticsMetrics(1, 1, 1, 0, 0, 1, 0, 100, 300, 200, 0), report.Games.Single(game => game.GameId == "solitaire").Metrics);

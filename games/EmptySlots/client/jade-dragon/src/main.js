@@ -11,10 +11,10 @@ const $=s=>document.querySelector(s),money=cents=>new Intl.NumberFormat('en-ZA',
 const audio=new GameAudio(),reduced=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const wait=ms=>new Promise(resolve=>setTimeout(resolve,reduced?80:ms));
 let state=null,rules=null,balance=0,bet=20,busy=false,auto=false,ready=false,uncertain=false,win=0,timer,featureTotal=0,modal=false,instantRequested=false,skipCountdown=null;
-const instantCheckbox=document.createElement('label');instantCheckbox.className='instant-results';instantCheckbox.innerHTML='<input id="instant-results" type="checkbox"> <span>Instant results</span>';$('#spin').after(instantCheckbox);
+const instantCheckbox=document.createElement('label');instantCheckbox.className='instant-results';instantCheckbox.innerHTML='<input id="instant-results" type="checkbox"> <span>2× speed</span>';$('#spin').after(instantCheckbox);
 function finishCurrentSpin(){if(!busy)return;instantRequested=true;skipCountdown?.();renderer?.finishSpin();}
-$('#instant-results').addEventListener('change',()=>{if($('#instant-results').checked)finishCurrentSpin();});
-function countdown(){return new Promise(resolve=>{const done=()=>{clearTimeout(timeout);skipCountdown=null;resolve();};const timeout=setTimeout(done,reduced?80:450);skipCountdown=done;});}
+$('#instant-results').addEventListener('change',()=>{if(renderer)renderer.speed=$('#instant-results').checked?2:1;});
+function countdown(){return new Promise(resolve=>{const done=()=>{clearTimeout(timeout);skipCountdown=null;resolve();};const timeout=setTimeout(done,reduced?80:450/(renderer?.speed||1));skipCountdown=done;});}
 const artHost=document.createElement('div');artHost.className='fortune-arrival';$('#bonus-arrival').prepend(artHost);const art=new LivingArtwork(artHost);
 let renderer;try{renderer=new JadeRenderer($('#canvas-host'));renderer.setGrid([['S01','S02','S03','S04'],['S04','S05','S06','S01'],['S07','S08','S01','S02'],['S05','S02','S04','S03'],['S08','S01','S03','S04']]);}catch{$('#message').textContent='3D could not start. Enable browser hardware acceleration and reload.';}
 function update(){
@@ -40,7 +40,7 @@ async function arrival(mode,count){const overlay=$('#bonus-arrival');overlay.dat
 async function spin(boost=false){
  if(!ready||busy||modal||uncertain)return;const free=state.freeSpinsRemaining>0,wager=free?state.freeSpinWagerPoints:bet;
  if(!free&&balance<wager*25){stop();$('#message').textContent='Your balance is too low for this bet.';return;}
- busy=true;instantRequested=$('#instant-results').checked;win=0;$('#free-games-popup').hidden=true;update();audio.spin();
+ busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;win=0;$('#free-games-popup').hidden=true;update();audio.spin();
  try{
   if(free&&!instantRequested){$('#free-popup-count').textContent=state.freeSpinsRemaining;$('#free-games-popup').hidden=false;await countdown();$('#free-games-popup').hidden=true;}
   // No local outcome generation, stake subtraction, payout calculation or localStorage wallet.

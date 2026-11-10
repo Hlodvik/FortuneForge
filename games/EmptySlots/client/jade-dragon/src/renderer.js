@@ -39,9 +39,9 @@ export class JadeRenderer{
   this.layout();
   if(!this.fontRequested){this.fontRequested=true;document.fonts.load('700 52px "Cormorant Garamond"').then(()=>this.refreshLabels()).catch(()=>{});}
  }
- async spin(grid,{instant=false}={}){this.setGrid(grid);this.wins=new Set();if(!this.motion||instant){this.renderer.render(this.scene,this.camera);return;}const start=performance.now();await new Promise(resolve=>{this.animation={start,resolve};});}
+ async spin(grid,{instant=false}={}){this.setGrid(grid);this.wins=new Set();if(!this.motion||instant){this.renderer.render(this.scene,this.camera);return;}const start=performance.now();await new Promise(resolve=>{this.animation={last:start,elapsed:0,resolve};});}
  finishSpin(){if(!this.animation)return;const {resolve}=this.animation;this.animation=null;for(const cell of this.objects){cell.group.position.y=cell.y;cell.group.scale.y=1;}this.renderer.render(this.scene,this.camera);resolve();}
  celebrate(result){this.wins=new Set(result.payout.paylines.flatMap(line=>line.matches.flatMap(p=>p.match.positions.map(({reel,row})=>`${reel}:${row}`))));}
- frame(now){const t=now/1000;for(const cell of this.objects){if(this.animation){const elapsed=(now-this.animation.start)/1000,stop=1.10+cell.col*.18,p=Math.min(1,elapsed/stop);cell.group.position.y=cell.y+(1-p)*Math.sin(elapsed*14+cell.row)*.45;cell.group.scale.y=.85+.15*p;}else{cell.group.position.y=cell.y;cell.group.scale.y=1;if(cell.model)cell.model.rotation.y=this.motion?Math.sin(t*.7+cell.col)*.12:0;cell.bg.material.color.set(this.wins?.has(`${cell.col}:${cell.row}`)?'#466d25':(cell.col+cell.row)%2?'#0a3024':'#102b21');}}
-  if(this.animation&&now-this.animation.start>2050)this.finishSpin();this.renderer.render(this.scene,this.camera);}
+ frame(now){const t=now/1000;if(this.animation){this.animation.elapsed+=Math.max(0,now-this.animation.last)*(this.speed||1);this.animation.last=now;}for(const cell of this.objects){if(this.animation){const elapsed=this.animation.elapsed/1000,stop=1.8+cell.col*.28,p=Math.min(1,elapsed/stop);cell.group.position.y=cell.y+(1-p)*Math.sin(elapsed*9+cell.row)*.45;cell.group.scale.y=.85+.15*p;}else{cell.group.position.y=cell.y;cell.group.scale.y=1;if(cell.model)cell.model.rotation.y=this.motion?Math.sin(t*.7+cell.col)*.12:0;cell.bg.material.color.set(this.wins?.has(`${cell.col}:${cell.row}`)?'#466d25':(cell.col+cell.row)%2?'#0a3024':'#102b21');}}
+  if(this.animation&&this.animation.elapsed>=3200)this.finishSpin();this.renderer.render(this.scene,this.camera);}
 }

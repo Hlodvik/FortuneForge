@@ -38,6 +38,7 @@ import nordicLegends from '../../assets/catalogue/slots/nordic-legends-title-v2.
 import desertTreasures from '../../assets/catalogue/slots/desert-treasures-title-v2.webp'
 import robotRevolution from '../../assets/catalogue/slots/robot-revolution-title-v2.webp'
 import dragonHoard from '../../assets/catalogue/slots/midnight-vault-catalogue-title-768x384.webp'
+import jadeDragon from '../../assets/catalogue/slots/jade-dragon-title-v1.webp'
 
 export type CataloguePresentationArt = Readonly<{
   src: string
@@ -82,6 +83,7 @@ const artByRoute: ReadonlyMap<string, CataloguePresentationArt> = new Map([
   ['/slots/cosmic-fortune', artwork(cosmicFortune)],
   ['/slots/gold-foundry', artwork(goldFoundry)],
   ['/slots/neon-nights', artwork(neonNights)],
+  ['/slots/empty-slots-game', artwork(jadeDragon)],
   ['/slots/ocean-odyssey', artwork(oceanOdyssey)],
   ['/slots/samurai-fortune', artwork(samuraiFortune)],
   ['/slots/candy-carnival', artwork(candyCarnival)],

@@ -9,7 +9,7 @@ export function useVerifiedTestCatalogue() {
     '/games/baccarat', '/games/casino-war', '/games/keno', '/games/sic-bo',
     '/games/roulette', '/games/craps', '/games/liars-dice', '/games/asteroids',
     '/games/flappy', '/games/2048', '/games/drop-merge', '/games/snake',
-    '/games/mines',
+    '/games/mines', '/slots/empty-slots-game',
     ...SLOT_ROUTE_DEFINITIONS.map(game => game.playPath!).filter(Boolean),
   ]
   notifyCatalogueChanged({ version: 1, games: [

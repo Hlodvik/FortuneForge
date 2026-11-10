@@ -1,5 +1,7 @@
 import './style.css';
 import './fortune.css';
+import './laptop.css';
+import './fit-viewport.js';
 import {callHost} from './bridge.js';
 import {JadeRenderer} from './renderer.js';
 import {LivingArtwork} from './living-art.js';

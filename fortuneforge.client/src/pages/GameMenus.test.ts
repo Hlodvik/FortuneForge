@@ -55,7 +55,10 @@ describe('game category menus', () => {
   it('omits ready labels from authenticated slot cards', () => {
     const markup = renderToStaticMarkup(createElement(SlotsLibraryPage, { account }))
 
-    expect(markup.match(/machine-card--slot/g)).toHaveLength(19)
+    expect(markup.match(/machine-card--slot/g)).toHaveLength(20)
+    expect(markup).toContain('Jade Dragon: The Golden Pearl')
+    expect(markup).toContain('href="/slots/empty-slots-game"')
+    expect(markup).toContain('jade-dragon-title-v1.webp')
     expect(markup).not.toContain('Ready to play')
   })
 
@@ -91,7 +94,7 @@ describe('game category menus', () => {
     expect(markup).toContain('>Dice games</h2>')
     expect(markup).toContain('>New games</h2>')
     expect(markup).toContain('>Slot machines</h2>')
-    expect(markup).toContain('>19 games</span>')
+    expect(markup).toContain('>20 games</span>')
     expect(markup).not.toContain('>Etc.</h2>')
     expect(markup).toContain('href="/cards/hearts"')
     expect(markup).not.toContain('href="/games/liars-dice"')

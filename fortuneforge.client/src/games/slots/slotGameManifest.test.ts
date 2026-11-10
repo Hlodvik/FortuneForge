@@ -91,7 +91,7 @@ describe('slot game manifests', () => {
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'neon-nights')?.image).toMatch(/neon-nights-title-v1\.webp$/)
     expect(SLOT_GAME_CATALOG).toHaveLength(20)
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')).toMatchObject({
-      title: 'Jade Dragon: The Golden Pearl', image: '/games/jade-dragon/textures/living-art/dragon.webp', playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
+      title: 'Jade Dragon: The Golden Pearl', image: expect.stringContaining('/jade-dragon-title-v1.webp'), playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
       serverGameIds: ['empty-slots-v1'],
     })
     expect(SLOT_GAME_MANIFESTS.some(game => game.id === 'empty-slots-game' || game.id === 'jungle-jackpot')).toBe(false)

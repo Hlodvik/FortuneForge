@@ -72,8 +72,10 @@ describe('account home', () => {
     expect(new Set(Array.from(host.querySelectorAll('.home-lobby__game-card')).map(card => card.getAttribute('href'))).size).toBe(40)
     expect(host.querySelector('a[href="/games/liars-dice"]')).toBeNull()
     const starter = host.querySelector('a[href="/slots/empty-slots-game"]')!
-    expect(starter.querySelector('.home-lobby__art-fallback')).not.toBeNull()
-    expect(host.querySelectorAll('.home-lobby__game-card > span')).toHaveLength(1)
+    expect(starter.querySelector('strong')?.textContent).toBe('Jade Dragon: The Golden Pearl')
+    expect(starter.querySelector('img')?.getAttribute('src')).toBe(getCataloguePresentationArt('/slots/empty-slots-game')!.src)
+    expect(starter.querySelector('.home-lobby__art-fallback')).toBeNull()
+    expect(host.querySelectorAll('.home-lobby__game-card > span')).toHaveLength(0)
     expect(Array.from(host.querySelectorAll('.home-lobby__filters button')).map(button => button.textContent)).toEqual(['Popular', 'Slots', 'Card games', 'Table games', 'Other games'])
     expect(host.querySelector('.game-catalogue-rail')).not.toBeNull()
     expect(host.querySelector('.home-lobby__game-grid')).toBeNull()
@@ -174,8 +176,8 @@ describe('account home', () => {
     if (label !== 'Popular') expect(host.querySelector('.game-catalogue-rail__arrow')).toBeNull()
     if (label === 'Slots') {
       const routes = Array.from(host.querySelectorAll('.home-lobby__game-card')).map(card => card.getAttribute('href'))
-      expect(routes.slice(0, 8)).toEqual([
-        '/slots/neon-nights', '/slots/gods-of-olympus', '/slots/arcane-archives', '/slots/gold-foundry',
+      expect(routes.slice(0, 9)).toEqual([
+        '/slots/neon-nights', '/slots/empty-slots-game', '/slots/gods-of-olympus', '/slots/arcane-archives', '/slots/gold-foundry',
         '/slots/rainbow-realm', '/slots/pirates-fortune', '/slots/candy-carnival', '/slots/wukong',
       ])
     }

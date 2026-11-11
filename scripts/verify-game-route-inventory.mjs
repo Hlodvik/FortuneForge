@@ -1,14 +1,14 @@
 import { readFileSync, realpathSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { gameSmokeRoutes, nonSlotSmokeInventory, shellOnlySmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
+import { embeddedSlotSmokeInventory, gameSmokeRoutes, nonSlotSmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
-export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runtimeCatalog, slotCatalog, starterCatalog }) {
+export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runtimeCatalog, slotCatalog, jadeCatalog }) {
   assert(gameSmokeRoutes.length === 45, `expected 45 smoke routes, found ${gameSmokeRoutes.length}`)
   assert(new Set(gameSmokeRoutes).size === gameSmokeRoutes.length, 'smoke routes must be unique')
   assert(slotSmokeInventory.length === 19, `expected 19 playable slot contracts, found ${slotSmokeInventory.length}`)
-  assert(shellOnlySmokeInventory.length === 1 && shellOnlySmokeInventory[0].smokePath === '/slots/empty-slots-game',
-    'the Empty Slots starter must retain separate shell-only coverage')
+  assert(embeddedSlotSmokeInventory.length === 1 && embeddedSlotSmokeInventory[0].smokePath === '/slots/jade-dragon',
+    'Jade Dragon must retain embedded-client coverage')
 
   const registeredSlots = [...slotRoutes.matchAll(/playPath:\s*'([^']+)',\s*demoPath:\s*'([^']+)',\s*serverGameIds:\s*\[([^\]]*)\]/g)]
   assert(registeredSlots.length === 19, `expected 19 playable slot route definitions, found ${registeredSlots.length}`)
@@ -28,7 +28,7 @@ export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runti
     const expectedPaths = [
       ...slotSmokeInventory.map(([route]) => `/slots/${route}`),
       ...nonSlotSmokeInventory.map(({ smokePath, catalogPath = smokePath }) => catalogPath),
-      ...shellOnlySmokeInventory.map(({ smokePath }) => smokePath),
+      ...embeddedSlotSmokeInventory.map(({ smokePath }) => smokePath),
     ]
     assert(new Set(expectedPaths).size === 45, 'runtime catalogue coverage must contain 45 distinct routes')
     assert(runtimeGames.size === 45, `expected 45 runtime catalogue routes, found ${runtimeGames.size}`)
@@ -50,18 +50,18 @@ export function verifyGameRouteInventory({ appRoutes, catalog, slotRoutes, runti
     }
   }
 
-  for (const { smokePath } of shellOnlySmokeInventory) {
-    assert(appRoutes.includes(`pathname === '${smokePath}') route = <EmptySlotsGameRoute />`),
-      `${smokePath} is missing its custom starter route in AppRoutes`)
+  for (const { smokePath } of embeddedSlotSmokeInventory) {
+    assert(appRoutes.includes(`pathname === '${smokePath}') route = <JadeDragonRoute />`),
+      `${smokePath} is missing its custom Jade Dragon route in AppRoutes`)
     assert(!registeredSlots.some(([, playPath, demoPath]) => playPath === smokePath || demoPath.startsWith(`${smokePath}/`)),
-      `${smokePath} must remain shell-only rather than a playable slot contract`)
+      `${smokePath} must remain an embedded client rather than a generic slot contract`)
     if (runtimeGames) assert(runtimeGames.get(smokePath) === true, `${smokePath} runtime default visibility must be true`)
-    assert(starterCatalog?.includes(`playHref: '${smokePath}'`), `${smokePath} is missing from the starter catalog`)
+    assert(jadeCatalog?.includes(`playHref: '${smokePath}'`), `${smokePath} is missing from the Jade Dragon catalog`)
     const definitions = slotCatalog?.match(/const catalogDefinitions:[\s\S]*?=\s*\[([\s\S]*?)\n\]/)?.[1] ?? ''
-    assert(/import\s*\{\s*EMPTY_SLOTS_GAME_CATALOG\s*\}\s*from\s*'\.\/emptySlotsGame\/catalog'/.test(slotCatalog ?? '')
-      && /^\s*EMPTY_SLOTS_GAME_CATALOG,\s*$/m.test(definitions)
-      && /if\s*\(catalog\.id === EMPTY_SLOTS_GAME_CATALOG\.id\) return EMPTY_SLOTS_GAME_CATALOG/.test(slotCatalog ?? ''),
-      `${smokePath} must remain in the slot catalog through its custom starter entry`)
+    assert(/import\s*\{\s*JADE_DRAGON_CATALOG\s*\}\s*from\s*'\.\/jadeDragon\/catalog'/.test(slotCatalog ?? '')
+      && /^\s*JADE_DRAGON_CATALOG,\s*$/m.test(definitions)
+      && /if\s*\(catalog\.id === JADE_DRAGON_CATALOG\.id\) return JADE_DRAGON_CATALOG/.test(slotCatalog ?? ''),
+      `${smokePath} must remain in the slot catalog through its Jade Dragon entry`)
     assert(/const slotGames:[^\n]*= SLOT_GAME_CATALOG\.map\(catalogGameFromSlot\)/.test(catalog)
       && /href: game\.playHref \?\? undefined/.test(catalog),
       `${smokePath} requires the slot catalog mapping in the game catalog`)
@@ -92,9 +92,9 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     slotRoutes: source('fortuneforge.client/src/games/slots/routeRegistry.ts'),
     runtimeCatalog: source('FortuneForge.Server/Admin/Management/AdminManagementCatalog.cs'),
     slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
-    starterCatalog: source('fortuneforge.client/src/games/slots/emptySlotsGame/catalog.ts'),
+    jadeCatalog: source('fortuneforge.client/src/games/slots/jadeDragon/catalog.ts'),
   })
-  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes, ${slotSmokeInventory.length} playable slot contracts and ${shellOnlySmokeInventory.length} shell-only starter`)
+  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes, ${slotSmokeInventory.length} demo-capable slot packages and ${embeddedSlotSmokeInventory.length} embedded Jade Dragon package (20 slots)`)
 }
 
 function source(relativePath) {

@@ -91,6 +91,10 @@ public sealed class GoldFoundryCrucibleTests
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(auditStore.Capture!.Summary, auditStore.Capture.PayloadJson));
 
         Assert.IsType<BadRequestObjectResult>(await controller.Spin(stale with { UseFreeSpin = true }, default));
+        Assert.IsType<BadRequestObjectResult>(await controller.Spin(stale with
+        {
+            MidnightBonusState = new([], new Dictionary<string, long>(), new Dictionary<string, long>())
+        }, default));
     }
 
     [Fact]

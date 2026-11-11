@@ -23,9 +23,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\games\EmptySlots\src\FortuneForge.Games.EmptySlots\FortuneForge.Games.EmptySlots.csproj" />
+    <ProjectReference Include="..\games\JadeDragon\src\FortuneForge.Games.JadeDragon\FortuneForge.Games.JadeDragon.csproj" />
     <ProjectReference Include="..\games\shared\FortuneForge.Games.Slots.Contracts\FortuneForge.Games.Slots.Contracts.csproj" />
+    <ProjectReference Include="..\games\shared\FortuneForge.Games.Slots.Runtime\FortuneForge.Games.Slots.Runtime.csproj" />
+    <ProjectReference Include="..\games\Wukong\src\FortuneForge.Games.Wukong\FortuneForge.Games.Wukong.csproj" />
+    <ProjectReference Include="..\games\RainbowRealm\src\FortuneForge.Games.RainbowRealm\FortuneForge.Games.RainbowRealm.csproj" />
+    <ProjectReference Include="..\games\PiratesFortune\src\FortuneForge.Games.PiratesFortune\FortuneForge.Games.PiratesFortune.csproj" />
+    <ProjectReference Include="..\games\GodsOfOlympus\src\FortuneForge.Games.GodsOfOlympus\FortuneForge.Games.GodsOfOlympus.csproj" />
+    <ProjectReference Include="..\games\ReelRiches\src\FortuneForge.Games.ReelRiches\FortuneForge.Games.ReelRiches.csproj" />
+    <ProjectReference Include="..\games\HighNoonFortune\src\FortuneForge.Games.HighNoonFortune\FortuneForge.Games.HighNoonFortune.csproj" />
+    <ProjectReference Include="..\games\RoyalDraw\src\FortuneForge.Games.RoyalDraw\FortuneForge.Games.RoyalDraw.csproj" />
+    <ProjectReference Include="..\games\ArcaneArchives\src\FortuneForge.Games.ArcaneArchives\FortuneForge.Games.ArcaneArchives.csproj" />
+    <ProjectReference Include="..\games\CosmicFortune\src\FortuneForge.Games.CosmicFortune\FortuneForge.Games.CosmicFortune.csproj" />
+    <ProjectReference Include="..\games\OceanOdyssey\src\FortuneForge.Games.OceanOdyssey\FortuneForge.Games.OceanOdyssey.csproj" />
+    <ProjectReference Include="..\games\SamuraiFortune\src\FortuneForge.Games.SamuraiFortune\FortuneForge.Games.SamuraiFortune.csproj" />
+    <ProjectReference Include="..\games\CandyCarnival\src\FortuneForge.Games.CandyCarnival\FortuneForge.Games.CandyCarnival.csproj" />
+    <ProjectReference Include="..\games\PhantomManor\src\FortuneForge.Games.PhantomManor\FortuneForge.Games.PhantomManor.csproj" />
+    <ProjectReference Include="..\games\NordicLegends\src\FortuneForge.Games.NordicLegends\FortuneForge.Games.NordicLegends.csproj" />
+    <ProjectReference Include="..\games\DesertTreasures\src\FortuneForge.Games.DesertTreasures\FortuneForge.Games.DesertTreasures.csproj" />
+    <ProjectReference Include="..\games\RobotRevolution\src\FortuneForge.Games.RobotRevolution\FortuneForge.Games.RobotRevolution.csproj" />
     <ProjectReference Include="..\games\NeonNights\src\FortuneForge.Games.NeonNights\FortuneForge.Games.NeonNights.csproj" />
+    <ProjectReference Include="..\games\MidnightVault\src\FortuneForge.Games.MidnightVault\FortuneForge.Games.MidnightVault.csproj" />
+    <ProjectReference Include="..\games\GoldFoundry\src\FortuneForge.Games.GoldFoundry\FortuneForge.Games.GoldFoundry.csproj" />
     <ProjectReference Include="..\games\ThreeCardPoker\src\FortuneForge.Games.ThreeCardPoker\FortuneForge.Games.ThreeCardPoker.csproj" />
     <ProjectReference Include="..\games\HouseHoldem\src\FortuneForge.Games.HouseHoldem\FortuneForge.Games.HouseHoldem.csproj" />
     <ProjectReference Include="..\games\Asteroids\src\FortuneForge.Games.Asteroids\FortuneForge.Games.Asteroids.csproj" />

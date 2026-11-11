@@ -43,6 +43,7 @@ public sealed partial class FirestoreAccountStore
                 {
                     ["userId"] = userId,
                     ["neonDiscoSpinsRemaining"] = NeonArcadeSlotDefinitions.DiscoPlaySpins,
+                    ["neonDiscoMultiplier"] = NeonDiscoCascade.InitialMultiplier,
                     ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
                 }, SetOptions.MergeAll);
                 return true;
@@ -65,7 +66,7 @@ public sealed partial class FirestoreAccountStore
                 ["userId"] = userId,
                 ["freeSpinWagerPoints"] = wagerPoints,
                 ["freeSpinWagerCents"] = RandMoney.PointsToCents(wagerPoints, pointValueInCents),
-                ["freeSpinFeatureMode"] = arcadeRows ? NeonArcadeBonus.PaidArcadeFeatureMode : string.Empty,
+                ["freeSpinFeatureMode"] = arcadeRows ? NeonArcadeBonus.PaidCarFeatureMode : string.Empty,
                 ["freeSpinMathModelId"] = string.Empty,
                 ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
             }, SetOptions.MergeAll);

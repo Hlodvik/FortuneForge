@@ -1,0 +1,24 @@
+Midnight Vault background music
+
+"I Knew a Guy" Kevin MacLeod (incompetech.com)
+Licensed under Creative Commons: By Attribution 4.0 License
+https://creativecommons.org/licenses/by/4.0/
+
+Official track page:
+https://incompetech.com/music/royalty-free/index.html?Search=Search&isrc=USUAN1100199
+
+Official unmodified recording:
+https://incompetech.com/music/royalty-free/mp3-royaltyfree/I%20Knew%20a%20Guy.mp3
+
+Downloaded October 31, 2026 (Central time). No edits, encoding, normalization,
+trimming or remixing were performed. The game plays it quietly with repetition.
+
+Local file: i-knew-a-guy-kevin-macleod.mp3
+Bytes: 6044335
+SHA-256: 10e3480eefcbefe839f69dfff27d99991e16c23981072fca769f38eb21aab50c
+
+Composer attribution does not imply endorsement of FortuneForge.
+
+Win cue: vault-win-noir.wav is an edited 3.2-second excerpt from this recording
+(156.849–160.049 seconds), with short fades and playback gain adjustment.
+The background MP3 remains unmodified. The same attribution and CC BY 4.0 apply.

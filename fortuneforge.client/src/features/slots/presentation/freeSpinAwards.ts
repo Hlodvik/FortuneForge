@@ -2,13 +2,10 @@ import type { SpinResult } from '../types/slots'
 
 /** Presentation only: some demo responses put collection awards in the balance. */
 export function getPresentedFreeSpinsAwarded(
-  result: Pick<SpinResult, 'freeSpinsAwarded' | 'freeSpinsRemaining'> & Partial<Pick<SpinResult, 'gameId' | 'awardedBonusRounds'>>,
+  result: Pick<SpinResult, 'freeSpinsAwarded' | 'freeSpinsRemaining'>,
   previousRemaining: number,
   consumedFreeSpin: boolean,
 ): number {
-  if (result.gameId === 'dragon-hoard-v1' && Array.isArray(result.awardedBonusRounds)) {
-    return result.awardedBonusRounds.reduce((sum, round) => sum + round.totalSpins, 0)
-  }
   const reported = Number.isSafeInteger(result.freeSpinsAwarded) && result.freeSpinsAwarded >= 0
     ? result.freeSpinsAwarded : 0
   if (!Number.isSafeInteger(previousRemaining) || previousRemaining < 0 ||

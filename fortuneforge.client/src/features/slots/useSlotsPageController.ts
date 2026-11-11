@@ -43,15 +43,17 @@ import {
   SpinRequestError,
   type SlotState,
 } from './services/slotsApi'
-import type { GridPosition, LightningCollection, MidnightVaultBonusRound, MidnightVaultDemoState, PaylinePayout, SlotSealCollection, SlotSymbolId, SpinResult } from './types/slots'
+import type {
+  GodsTumbleAward,
+  GodsTumbleStep,
+  GridPosition,
+  LightningCollection,
+  PaylinePayout,
+  SlotSealCollection,
+  SlotSymbolId,
+  SpinResult,
+} from './types/slots'
 import type { AccountSummary } from '../account/services/accountsApi'
-import {
-  GODS_TUMBLE_COLUMNS,
-  GODS_TUMBLE_GAME_ID,
-  GODS_TUMBLE_INITIAL_REELS,
-  type GodsTumbleAward,
-  type GodsTumbleStep,
-} from '../../games/slots/godsOfOlympus/tumble'
 
 type GodsTumbleFrame = Pick<GodsTumbleStep, 'cleared' | 'dropRows' | 'amountPoints'> & {
   totalPoints: number
@@ -170,6 +172,7 @@ export function useSlotsPageController({
     help,
     mascot: mascotSet,
     outcomeNarrative,
+    presentation,
     rules,
     sounds: soundSet,
     symbols: symbolSet,
@@ -184,10 +187,11 @@ export function useSlotsPageController({
     reelTravelRowCount,
     wagerOptions,
   } = rules
-  const usesGodsTumble = gameId === GODS_TUMBLE_GAME_ID
+  const tumbleRules = rules.tumble
+  const usesGodsTumble = tumbleRules !== undefined
   const isPaidGodsTumble = usesGodsTumble && !demoMode
   const featureSet = usesGodsTumble && demoMode ? tumbleDemoFeatures : experienceSet.features
-  const initialReels = usesGodsTumble ? GODS_TUMBLE_INITIAL_REELS : rules.initialReels
+  const initialReels = tumbleRules?.initialReels ?? rules.initialReels
   const energyCompletionAward = featureSet.energy?.completionAward
   const defaultSealCollections = useMemo<SlotSealCollection[]>(
     () => featureSet.collections?.entries.map((collection) => ({
@@ -257,9 +261,6 @@ export function useSlotsPageController({
   const [freeSpinsRemaining, setFreeSpinsRemaining] = useState(0)
   const [freeSpinWagerPoints, setFreeSpinWagerPoints] = useState<number | null>(null)
   const [freeSpinFeatureMode, setFreeSpinFeatureMode] = useState<string | null>(null)
-  const [midnightBonusState, setMidnightBonusState] = useState<MidnightVaultDemoState | null>(null)
-  const [midnightBonusRound, setMidnightBonusRound] = useState<MidnightVaultBonusRound | null>(null)
-  const [midnightQueuedRounds, setMidnightQueuedRounds] = useState(0)
   const [hasSpecialRoundStarted, setHasSpecialRoundStarted] = useState(false)
   const [isSpecialSpinInProgress, setIsSpecialSpinInProgress] = useState(false)
   const [isSpecialSpinDelayActive, setIsSpecialSpinDelayActive] = useState(false)
@@ -287,10 +288,8 @@ export function useSlotsPageController({
   const [isHelpOpen, setIsHelpOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isReloadPromptOpen, setIsReloadPromptOpen] = useState(false)
-  const audioUnlockGameRef = useRef<string | null>(null)
   const playedSuiteResultRef = useRef<string | null>(null)
   const playedSuiteCollectionsRef = useRef<{ spinId: string; tracks: Set<string> } | null>(null)
-  const requiresAudioGesture = gameId === 'dragon-hoard-v1'
   const spinInProgressRef = useRef(false)
   const hasShownGodsTumbleShowcaseRef = useRef(false)
   const stopSpinRequestedRef = useRef(false)
@@ -310,7 +309,7 @@ export function useSlotsPageController({
   const freeSpinBadgeTimerRef = useRef<number | null>(null)
   const specialSpinDelayTimerRef = useRef<number | null>(null)
   const [isStopRequested, setIsStopRequested] = useState(false)
-  const isGodsTumbleBoard = usesGodsTumble && displayedReels.length === GODS_TUMBLE_COLUMNS
+  const isGodsTumbleBoard = tumbleRules !== undefined && displayedReels.length === tumbleRules.columns
   const isSpinServiceDisabled = spinAvailability !== 'available'
   const spinAvailabilityMessage = !isSpinServiceDisabled
     ? null
@@ -514,14 +513,14 @@ export function useSlotsPageController({
 
   useEffect(() => {
     const buttonClickCue = soundSet.events.buttonClick
-    if ((!soundSet.events.themeSuite && gameId !== 'dragon-hoard-v1') || buttonClickCue === undefined) return
+    if (!soundSet.events.themeSuite || buttonClickCue === undefined) return
 
     const onButtonClick = (event: MouseEvent) => {
       if (!event.isTrusted || !(event.target instanceof Element)) return
       const control = event.target.closest('button, summary, [role="button"]')
       if (control === null || control.matches('.spin-button, :disabled, [aria-disabled="true"]') ||
         control.closest('[inert]') !== null) return
-      if (soundSet.events.themeSuite && control.closest('.slots-page__wager-control, .pirates-spin-controls__bet-stepper') !== null) return
+      if (soundSet.events.themeSuite && control.closest('.slots-page__wager-control, .sidecar-spin-controls__bet-stepper') !== null) return
       // The main spin control handles its own cues. Capture also reaches
       // dialog portals and the payment bell while this cabinet is mounted.
       playCue(buttonClickCue)
@@ -551,15 +550,13 @@ export function useSlotsPageController({
     } else if (specialAmbienceCue !== undefined) {
       stopLoop(specialAmbienceCue)
     }
-    if (!requiresAudioGesture || audioUnlockGameRef.current === gameId) startLoop(activeAmbienceCue)
+    startLoop(activeAmbienceCue)
     const unlockAudio = (event: Event) => {
       if (!event.isTrusted) return
-      audioUnlockGameRef.current = gameId
       startLoop(activeAmbienceCue)
     }
     const retryVisibleAudio = () => {
-      if (document.visibilityState === 'visible' &&
-        (!requiresAudioGesture || audioUnlockGameRef.current === gameId)) startLoop(activeAmbienceCue)
+      if (document.visibilityState === 'visible') startLoop(activeAmbienceCue)
     }
     window.addEventListener('pointerdown', unlockAudio)
     window.addEventListener('keydown', unlockAudio)
@@ -578,7 +575,6 @@ export function useSlotsPageController({
     gameId,
     isSpecialSpinInProgress,
     rainbowBonusSummary,
-    requiresAudioGesture,
     soundSet.events.ambience,
     soundSet.events.autoSpinAmbience,
     soundSet.events.specialAmbience,
@@ -644,8 +640,6 @@ export function useSlotsPageController({
     setFreeSpinsRemaining(state.freeSpinsRemaining)
     setFreeSpinWagerPoints(state.freeSpinWagerPoints)
     setFreeSpinFeatureMode(state.freeSpinFeatureMode)
-    setMidnightBonusRound(state.bonusRound ?? null)
-    setMidnightQueuedRounds(state.queuedBonusRounds?.length ?? 0)
     setEnergyBalance(state.energyBalance)
     if (award) setEnergyAward(award)
     setSealCollections(state.sealCollections.length > 0 ? state.sealCollections : defaultSealCollections)
@@ -664,9 +658,6 @@ export function useSlotsPageController({
     slotStateRevisionGuardRef.current.advance()
     const requestedRevision = slotStateRevisionGuardRef.current.capture()
     setFreeSpinsRemaining(0)
-    setMidnightBonusState(null)
-    setMidnightBonusRound(null)
-    setMidnightQueuedRounds(0)
     setFreeSpinWagerPoints(null)
     setFreeSpinFeatureMode(null)
     setHasSpecialRoundStarted(false)
@@ -902,26 +893,18 @@ export function useSlotsPageController({
       return
     }
 
-    const midnightAward = gameId === 'dragon-hoard-v1'
-      ? result.awardedBonusRounds?.find(round => round.id === result.bonusRound?.id && round.id.includes(':collection:'))
-      : undefined
-    const collectionFreeSpinsAwarded = gameId === 'dragon-hoard-v1'
-      ? midnightAward?.totalSpins ?? 0
-      : collectionFeature.presentation === 'gem-hoard'
+    const collectionFreeSpinsAwarded = collectionFeature.presentation === 'gem-hoard'
       ? result.collectionFreeSpinsAwarded ?? 0
       : getPresentedFreeSpinsAwarded(result, freeSpinsRemaining, result.isFreeSpin)
     const awardedModes = new Set(result.freeSpinFeatureMode?.split('-') ?? [])
-    const awardedCollectionId = gameId === 'dragon-hoard-v1'
-      ? midnightAward?.id.split(':')[2] ?? null
-      : collectionFeature.presentation === 'gem-hoard' &&
+    const awardedCollectionId = collectionFeature.presentation === 'gem-hoard' &&
       collectionFreeSpinsAwarded > 0
       ? collectionFeature.entries.find((entry) =>
         awardedModes.has(entry.id) && (result.sealsAwarded[entry.symbol] ?? 0) > 0,
       )?.id ?? null
       : null
     const presentCollectionAward = (collectionId: string | null) => {
-      if (!collectionId || !collectionFeature.completionDialog || !isCurrentPresentation(signal) ||
-        gameId === 'dragon-hoard-v1' && result.isFreeSpin) {
+      if (!collectionId || !collectionFeature.completionDialog || !isCurrentPresentation(signal)) {
         return
       }
       setIsAutoSpinning(false)
@@ -1553,7 +1536,7 @@ export function useSlotsPageController({
     setBestWin(null)
     setWinningPaylineCount(0)
     setBonusPositions([])
-    const spinInitialReels = expectsGodsTumble ? GODS_TUMBLE_INITIAL_REELS : rules.initialReels
+    const spinInitialReels = expectsGodsTumble && tumbleRules ? tumbleRules.initialReels : rules.initialReels
     const regularRowCount = spinInitialReels[0]?.length ?? 4
     const expectedRowCount = getSpinRowCount(
       expectedFreeSpin,
@@ -1643,15 +1626,14 @@ export function useSlotsPageController({
             energyBalance,
             sealCollections,
             freeSpinFeatureMode,
-            ...(gameId === 'dragon-hoard-v1' ? { midnightBonusState } : {}),
             ...(expectsGodsTumble ? { olympusTumbleShowcase: showGodsTumbleShowcase } : {}),
-          })
+          }, tumbleRules)
         : await requestSpin({
             gameId,
             wagerPoints: wagerForSpin,
             useFreeSpin: expectedFreeSpin,
             useSpecialBoost: requestedSpecialBoost,
-          })
+          }, tumbleRules)
 
       const energyAwardResult = energyCompletionAward?.decode(result)
       if (energyAwardResult === null) {
@@ -1813,11 +1795,6 @@ export function useSlotsPageController({
           : null,
       )
       setFreeSpinFeatureMode(result.freeSpinFeatureMode)
-      if (gameId === 'dragon-hoard-v1') {
-        setMidnightBonusState(result.midnightBonusState ?? null)
-        setMidnightBonusRound(result.bonusRound ?? null)
-        setMidnightQueuedRounds(result.queuedBonusRounds?.length ?? 0)
-      }
       let resultSoundEvent: SlotResultSoundEvent | null = winSoundCue
       if (presentedFreeSpinsAwarded > 0 || (
         gameId === 'reel-riches-v1' && !expectedFreeSpin && result.freeSpinsRemaining > freeSpinsRemaining
@@ -2138,8 +2115,6 @@ export function useSlotsPageController({
     isEnergyAwardCompleting,
     featureSet,
     freeSpinFeatureMode,
-    midnightBonusRound,
-    midnightQueuedRounds,
     freeSpinsRemaining,
     hasCompletedSpin,
     godsTumbleFrame,
@@ -2173,6 +2148,7 @@ export function useSlotsPageController({
     moneyGrabPresentation,
     pageBackdropStyle,
     pointValueInCents,
+    presentation,
     prefersReducedMotion,
     reelMotion,
     reelStripStyle,

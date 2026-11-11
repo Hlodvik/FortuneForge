@@ -32,10 +32,14 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         string? featureMode,
         int? persistedPityMisses,
         bool isFreeSpin,
-        bool isNeonDiscoPlay = false)
+        bool isNeonDiscoPlay = false,
+        int neonDiscoMultiplier = NeonDiscoCascade.InitialMultiplier)
     {
-        if (isNeonDiscoPlay && (isFreeSpin || featureMode is not null))
+        if (isNeonDiscoPlay && (isFreeSpin || featureMode is not null || specialBoostApplied))
             throw new ArgumentException("A Disco cascade requires its own paid play state.", nameof(isNeonDiscoPlay));
+        if (!NeonDiscoCascade.IsValidMultiplier(neonDiscoMultiplier) ||
+            !isNeonDiscoPlay && neonDiscoMultiplier != NeonDiscoCascade.InitialMultiplier)
+            throw new ArgumentOutOfRangeException(nameof(neonDiscoMultiplier));
         var game = definitions.GetGame(NeonArcadeSlotDefinitions.GameId)
             ?? throw new KeyNotFoundException($"Game '{NeonArcadeSlotDefinitions.GameId}' was not found.");
         if (!NeonArcadeSlotDefinitions.IsModel(game))
@@ -69,7 +73,8 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
                 pity.ConsecutiveFiveMisses = persisted;
             }
             return SpinLocked(game, effectiveReelSet, symbolSet, paytable, wagerPoints,
-                pity, specialBoostApplied, currentEnergyBalance, featureMode, isFreeSpin, isNeonDiscoPlay);
+                pity, specialBoostApplied, currentEnergyBalance, featureMode, isFreeSpin, isNeonDiscoPlay,
+                neonDiscoMultiplier);
         }
     }
 
@@ -84,8 +89,12 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         long currentEnergyBalance,
         string? featureMode,
         bool isFreeSpin,
-        bool isNeonDiscoPlay)
+        bool isNeonDiscoPlay,
+        int neonDiscoMultiplier)
     {
+        if (isNeonDiscoPlay)
+            return SpinDiscoLocked(game, wagerPoints, pity, currentEnergyBalance, neonDiscoMultiplier);
+
         var effectiveGame = CreateEffectiveGame(game, featureMode);
         var pityMissesBefore = pity.ConsecutiveFiveMisses;
         var pityTriggered = string.IsNullOrWhiteSpace(featureMode) &&
@@ -124,23 +133,6 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
             TotalPoints = checked(bonus.Payout.TotalPoints + sevenPaylines.Sum(line => line.AmountPoints))
         };
         var sevenPoints = sevenPaylines.Sum(line => line.AmountPoints);
-        NeonDiscoCascadeOutcome? discoCascade = null;
-        NeonDiscoCascadeAudit? discoCascadeAudit = null;
-        if (isNeonDiscoPlay)
-        {
-            var drawIndexes = new List<int>();
-            int Draw(int upperBound)
-            {
-                var index = random.Next(upperBound);
-                drawIndexes.Add(index);
-                return index;
-            }
-            discoCascade = NeonDiscoCascade.Resolve(outcome.VisibleReels, effectiveGame,
-                reelSet, symbolSet, paytable, wagerPoints, combinationEvaluator,
-                payoutCalculator, Draw, out sevenPoints);
-            discoCascadeAudit = new NeonDiscoCascadeAudit(drawIndexes);
-            payout = new SpinPayout(discoCascade.TotalPoints, []);
-        }
         var specialPointsAwarded = NeonSpecialPoints.CalculateAward(evaluations, effectiveGame);
         var energyAwarded = game.Energy is null ? 0 :
             outcome.VisibleReels.Sum(reel => reel.Count(symbol =>
@@ -156,12 +148,46 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
             IsFreeSpin = isFreeSpin,
             BananaBonusPoints = sevenPoints,
             NeonArcade = bonus.Evidence,
-            NeonDiscoCascade = discoCascade,
             EngineAudit = new NeonEngineAudit(
                 NeonArcadeSlotDefinitions.EngineVersion, DateTime.UtcNow, game, effectiveGame,
                 reelSet, symbolSet, paytable, pityMissesBefore,
                 currentEnergyBalance, featureMode, generationAttempts,
-                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels, bonus.Evidence, discoCascadeAudit)
+                rawOutcome.VisibleReels, frequencyOutcome.VisibleReels, bonus.Evidence, null)
+        };
+    }
+
+    private NeonSpinOutcome SpinDiscoLocked(GameDefinition baseGame, long wagerPoints,
+        PityState pity, long currentEnergyBalance, int startingMultiplier)
+    {
+        var game = NeonDiscoDefinitions.CreateGame(baseGame);
+        var symbols = definitions.GetSymbolSet(NeonDiscoDefinitions.SymbolSetId)
+            ?? NeonDiscoDefinitions.CreateSymbolSet();
+        var reels = definitions.GetReelSet(NeonDiscoDefinitions.ReelSetId)
+            ?? NeonDiscoDefinitions.CreateReelSet();
+        var paytable = definitions.GetPaytable(NeonDiscoDefinitions.PaytableId)
+            ?? NeonDiscoDefinitions.CreatePaytable();
+        var initial = reelGenerator.Generate(game, reels, symbols);
+        var draws = new List<int>();
+        int Draw(int maximum)
+        {
+            var value = random.Next(maximum);
+            draws.Add(value);
+            return value;
+        }
+        var cascade = NeonDiscoCascade.Resolve(initial.VisibleReels, game, reels,
+            symbols, paytable, wagerPoints, combinationEvaluator, payoutCalculator, Draw, out _, startingMultiplier);
+        var payout = new SpinPayout(cascade.TotalPoints, []);
+        var bonus = NeonArcadeBonus.Apply(new(0, []), initial.VisibleReels);
+        return new(Guid.NewGuid(), baseGame.Id, reels.Id, symbols.Id, paytable.Id,
+            wagerPoints, game.Wagering.PointValueInCents, initial.StopIndexes,
+            initial.VisibleReels, payout, pity.ConsecutiveFiveMisses, false, 0, 0, 0, false)
+        {
+            NeonArcade = bonus.Evidence,
+            NeonDiscoCascade = cascade,
+            EngineAudit = new(NeonArcadeSlotDefinitions.EngineVersion, DateTime.UtcNow,
+                baseGame, game, reels, symbols, paytable, pity.ConsecutiveFiveMisses,
+                currentEnergyBalance, null, 1, initial.VisibleReels, initial.VisibleReels,
+                bonus.Evidence, new NeonDiscoCascadeAudit(draws) { StartingMultiplier = startingMultiplier })
         };
     }
 

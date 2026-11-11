@@ -9,11 +9,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-ea4c903b-f1f9-45cb-8091-07ffeec5c0ce.png",
   "referencePaths": [
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/phantomManor/definition.ts",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-gates-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-moonlit-manor-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-restless-phantom-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/phantom-manor/optimized/phantom-manor-cabinet-emblem-v2.webp",
+    "games/PhantomManor/client/FortuneForge.Games.PhantomManor.Client/src/definition.ts",
+    "games/PhantomManor/client/FortuneForge.Games.PhantomManor.Client/src/assets/art/optimized/phantom-manor-gates-v2.webp",
+    "games/PhantomManor/client/FortuneForge.Games.PhantomManor.Client/src/assets/art/optimized/phantom-manor-moonlit-manor-v2.webp",
+    "games/PhantomManor/client/FortuneForge.Games.PhantomManor.Client/src/assets/art/optimized/phantom-manor-restless-phantom-v2.webp",
+    "games/PhantomManor/client/FortuneForge.Games.PhantomManor.Client/src/assets/art/optimized/phantom-manor-cabinet-emblem-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-162248ee-818c-4675-b0e8-36347a4eb176.png"
   ],
   "visualCheck": [

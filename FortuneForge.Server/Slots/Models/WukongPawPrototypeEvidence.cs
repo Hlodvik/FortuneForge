@@ -9,9 +9,9 @@ public sealed record WukongPawPrototypeEvidence(
     int? ForcedPawColumn,
     bool InjectEarnSymbol)
 {
-    public const string RuleVersion = "wukong-every-paw-preview-v1";
-    public const string EngineVersion = "shared-slots-engine-v1/wukong-every-paw-preview-v1";
-    public const string EarnSymbolId = "PAW_EARN_SCROLL";
+    public const string RuleVersion = FortuneForge.Games.Wukong.WukongPawPrototypeEvidence.RuleVersion;
+    public const string EngineVersion = FortuneForge.Games.Wukong.WukongPawPrototypeEvidence.EngineVersion;
+    public const string EarnSymbolId = FortuneForge.Games.Wukong.WukongPawPrototypeEvidence.EarnSymbolId;
     public string CollectionRule { get; init; } = RuleVersion;
     public bool SyntheticOnly { get; init; } = true;
 }

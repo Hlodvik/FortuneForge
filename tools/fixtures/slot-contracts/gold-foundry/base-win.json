@@ -1,9 +1,9 @@
 {
   "scenario": "base-win",
   "source": {
-    "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
+    "generator": "Actual in-process DemoSlotsController \u002B SpinService routed game engine",
     "seed": 6,
-    "engineVersion": "gold-foundry-reel-collector-v1",
+    "engineVersion": "gold-foundry-engine-v2",
     "gameId": "gold-foundry-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "64234856-845c-4ac3-9c3d-e3f4a4873418",
+        "spinId": "12861e9b-5760-4458-8398-3a0fe91d260a",
         "gameId": "gold-foundry-v1",
         "reelSetId": "gold-foundry-reels-v1",
         "symbolSetId": "gold-foundry-symbols-v1",

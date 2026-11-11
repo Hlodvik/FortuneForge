@@ -41,7 +41,7 @@ internal static class CatalogContract
         ("cosmic-fortune", "/slots/cosmic-fortune"),
         ("gold-foundry", "/slots/gold-foundry"),
         ("neon-nights", "/slots/neon-nights"),
-        ("empty-slots-game", "/slots/empty-slots-game"),
+        ("empty-slots-game", "/slots/jade-dragon"),
         ("ocean-odyssey", "/slots/ocean-odyssey"),
         ("samurai-fortune", "/slots/samurai-fortune"),
         ("candy-carnival", "/slots/candy-carnival"),
@@ -54,7 +54,12 @@ internal static class CatalogContract
 
     internal static IReadOnlyList<string> DefaultHiddenIds { get; } = ["asteroids", "flappy", "horse-flight", "liars-dice", "snake"];
     internal static IReadOnlyList<string> UntrackedArcadeIds { get; } = ["asteroids", "flappy", "horse-flight", "snake"];
+    // Retired catalogue entries remain in analytics so reports can still project
+    // settlements written before a game was replaced or renamed.
+    internal static IReadOnlyList<string> HistoricalAnalyticsIds { get; } = ["jungle-jackpot"];
     internal static IReadOnlyList<string> Ids { get; } = Entries.Select(game => game.Id).ToArray();
     internal static IReadOnlyList<string> DefaultVisibleIds { get; } = Ids.Except(DefaultHiddenIds, StringComparer.Ordinal).ToArray();
     internal static IReadOnlyList<string> AnalyticsIds { get; } = Ids.Except(UntrackedArcadeIds, StringComparer.Ordinal).ToArray();
+    internal static IReadOnlyList<string> AnalyticsProjectionIds { get; } = AnalyticsIds
+        .Concat(HistoricalAnalyticsIds).Order(StringComparer.Ordinal).ToArray();
 }

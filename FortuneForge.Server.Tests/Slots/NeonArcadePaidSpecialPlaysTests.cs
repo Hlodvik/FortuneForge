@@ -18,14 +18,14 @@ namespace FortuneForge.Server.Tests.Slots;
 public sealed class NeonArcadePaidSpecialPlaysTests
 {
     [Fact]
-    public async Task ArcadeCabinetAwardsSevenPaidLockedWagerSpinsWithThreePayingRows()
+    public async Task CarAwardsSevenPaidLockedWagerSpinsWithThreePayingRows()
     {
         var provider = NeonArcadeTests.Definitions();
         var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
         var baseStops = Enumerable.Range(0, 4)
             .Select(reel => StartFor(strips[reel], "3", 0, 4))
-            .Append(StartFor(strips[4], "SEAL_RAND", 0, 4))
+            .Append(StartFor(strips[4], "6", 0, 4))
             .ToArray();
         var bonusStops = Enumerable.Range(0, 5)
             .Select(reel => StartFor(strips[reel], "3", 4, 7))
@@ -44,7 +44,7 @@ public sealed class NeonArcadePaidSpecialPlaysTests
 
         Assert.Equal(7, award.FreeSpinsRemaining);
         Assert.Equal(150, award.FreeSpinWagerPoints);
-        Assert.Equal(NeonArcadeBonus.PaidArcadeFeatureMode, award.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidCarFeatureMode, award.FreeSpinFeatureMode);
         Assert.Equal(150, award.ChargedWagerCents);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(audit.Capture!.Summary, audit.Capture.PayloadJson));
 
@@ -63,7 +63,7 @@ public sealed class NeonArcadePaidSpecialPlaysTests
         Assert.True(paidSpin.IsFreeSpin); // Consumes an awarded play, but still charges the locked wager.
         Assert.Equal(150, paidSpin.ChargedWagerCents);
         Assert.Equal(6, paidSpin.FreeSpinsRemaining);
-        Assert.Equal(NeonArcadeBonus.PaidArcadeFeatureMode, paidSpin.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidCarFeatureMode, paidSpin.FreeSpinFeatureMode);
         Assert.All(paidSpin.Reels, reel => Assert.Equal(7, reel.Count));
         Assert.Contains(paidSpin.Payout.Paylines, line => line.PaylineId == 24 && line.AmountPoints > 0);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(audit.Capture!.Summary, audit.Capture.PayloadJson));

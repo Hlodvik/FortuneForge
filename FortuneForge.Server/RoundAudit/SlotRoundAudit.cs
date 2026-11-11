@@ -22,12 +22,16 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
-        if (audit.EngineVersion == FortuneForge.Games.EmptySlots.EmptySlotsEngine.Version)
-            return Slots.Games.EmptySlots.EmptySlotsAudit.Check(result, settledPayout);
-        if (result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+        if (audit.EngineVersion == FortuneForge.Games.JadeDragon.JadeDragonEngine.Version)
+            return Slots.Games.JadeDragon.JadeDragonAudit.Check(result, settledPayout);
+        if (result.GameId == SlotSpecialRoundProfiles.JadeDragonGameId)
             return [new("slot-empty-version-mismatch", "error",
-                "Empty Slots evidence must use its owned engine version.")];
-        if (audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion)
+                "Jade Dragon evidence must use its owned engine version.")];
+        if (audit.EngineVersion == FortuneForge.Games.MidnightVault.MidnightVaultEngine.Version)
+            return Slots.Games.MidnightVault.MidnightVaultAudit.Check(result, settledPayout);
+        if (audit.EngineVersion == FortuneForge.Games.GoldFoundry.GoldFoundryEngine.Version)
+            return GoldFoundryAudit.Check(result, settledPayout);
+        if (NeonArcadeSlotDefinitions.SupportsPackageReplay(audit.EngineVersion))
         {
             var findings = NeonOutcomeReplay.Check(
                 FortuneForge.Server.Slots.Games.NeonNights.NeonNightsEngine.ToPackage(result, audit),

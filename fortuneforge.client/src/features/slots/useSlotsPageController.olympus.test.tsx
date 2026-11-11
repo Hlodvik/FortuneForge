@@ -2,8 +2,8 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { expect, it, vi } from 'vitest'
-import { GODS_OF_OLYMPUS_SLOT_GAME } from '../../games/slots/godsOfOlympus/manifest'
-import { GODS_TUMBLE_INITIAL_REELS } from '../../games/slots/godsOfOlympus/tumble'
+import { GODS_OF_OLYMPUS_SLOT_GAME } from '@fortuneforge/games-gods-of-olympus/manifest'
+import { GODS_TUMBLE_INITIAL_REELS } from '@fortuneforge/games-gods-of-olympus/tumble'
 import type { SpinResult } from './types/slots'
 import { useSlotsPageController, type SlotsPageController } from './useSlotsPageController'
 
@@ -26,6 +26,8 @@ vi.mock('./presentation/spinLifecycle', async (importOriginal) => ({
 
 const experience = GODS_OF_OLYMPUS_SLOT_GAME.experience
 const wagerPoints = experience.rules.wagerOptions[0]
+const asHostReels = (reels: readonly (readonly string[])[]): SpinResult['reels'] =>
+  reels.map((reel) => [...reel]) as SpinResult['reels']
 
 function response(reels: SpinResult['reels'], isFreeSpin: boolean, balance: number): SpinResult {
   return {
@@ -52,15 +54,16 @@ it('plays an owed extra-row Trial before switching to paid tumbles and settles t
     return null
   }
 
-  const legacyReels: SpinResult['reels'] = experience.rules.initialReels.map((reel) => [...reel, '2', '3'])
+  const legacyReels = asHostReels(experience.rules.initialReels.map((reel) => [...reel, '2', '3']))
+  const tumbleInitialReels = asHostReels(GODS_TUMBLE_INITIAL_REELS)
   mocks.state.mockResolvedValueOnce({
     freeSpinsRemaining: 1, freeSpinWagerPoints: wagerPoints, freeSpinFeatureMode: 'rows',
     specialPointsBalance: 0, energyBalance: 0, sealCollections: [],
   })
   mocks.request.mockResolvedValueOnce(response(legacyReels, true, 42.75))
     .mockResolvedValueOnce({
-      ...response(GODS_TUMBLE_INITIAL_REELS, false, 39.25),
-      olympusTumble: { initialReels: GODS_TUMBLE_INITIAL_REELS, steps: [], totalPoints: 0 },
+      ...response(tumbleInitialReels, false, 39.25),
+      olympusTumble: { initialReels: tumbleInitialReels, steps: [], totalPoints: 0 },
     })
 
   try {
@@ -74,7 +77,7 @@ it('plays an owed extra-row Trial before switching to paid tumbles and settles t
     expect(mocks.request.mock.calls[1][0]).toEqual({
       gameId: experience.rules.gameId, wagerPoints, useFreeSpin: false, useSpecialBoost: false,
     })
-    expect(controller.displayedReels).toEqual(GODS_TUMBLE_INITIAL_REELS)
+    expect(controller.displayedReels).toEqual(tumbleInitialReels)
     expect(controller.balance).toBe(39.25)
   } finally {
     act(() => root.unmount())

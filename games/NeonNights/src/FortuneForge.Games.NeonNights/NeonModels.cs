@@ -1,11 +1,19 @@
+using System.Text.Json.Serialization;
 using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.NeonNights;
 
-public sealed record NeonDiscoCascadeAudit(IReadOnlyList<int> DrawIndexes);
+public sealed record NeonDiscoCascadeAudit(IReadOnlyList<int> DrawIndexes)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? StartingMultiplier { get; init; }
+}
 public sealed record NeonDiscoCascadeStep(IReadOnlyList<GridPosition> Cleared,
     IReadOnlyList<IReadOnlyList<string>> Reels,
-    IReadOnlyList<IReadOnlyList<int>> DropRows, SpinPayout Payout);
+    IReadOnlyList<IReadOnlyList<int>> DropRows, SpinPayout Payout)
+{
+    public int Multiplier { get; init; } = 1;
+}
 public sealed record NeonDiscoCascadeOutcome(IReadOnlyList<IReadOnlyList<string>> InitialReels,
     IReadOnlyList<NeonDiscoCascadeStep> Steps, long TotalPoints);
 

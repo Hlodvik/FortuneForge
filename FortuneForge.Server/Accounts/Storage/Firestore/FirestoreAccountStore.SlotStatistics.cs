@@ -52,8 +52,8 @@ public sealed partial class FirestoreAccountStore
         SlotSpecialRoundProfile? profile,
         bool freezeProgress = false)
     {
-        var trackIds = result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId
-            ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null;
+        var trackIds = result.GameId == SlotSpecialRoundProfiles.JadeDragonGameId
+            ? FortuneForge.Games.JadeDragon.JadeDragonCollections.TrackIds : null;
         var counts = ReadLongMap(guardSnapshot, "sealCounts", trackIds);
         var wagerCents = ReadSealWagerCents(guardSnapshot, trackIds);
         if (profile is null)
@@ -87,9 +87,9 @@ public sealed partial class FirestoreAccountStore
         var spinWagerCents = RandMoney.PointsToCents(
             result.WagerPoints,
             result.PointValueInCents);
-        if (result.GameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+        if (result.GameId == SlotSpecialRoundProfiles.JadeDragonGameId)
         {
-            var progress = FortuneForge.Games.EmptySlots.EmptySlotsCollections.AdvancePaid(
+            var progress = FortuneForge.Games.JadeDragon.JadeDragonCollections.AdvancePaid(
                 counts, wagerCents.ToDictionary(pair => pair.Key,
                     pair => RandMoney.CentsToPoints(pair.Value, result.PointValueInCents), StringComparer.Ordinal),
                 result.SealsAwarded, result.WagerPoints, result.FreeSpinsAwarded);
@@ -260,13 +260,13 @@ public sealed partial class FirestoreAccountStore
         string gameId) =>
         SlotSpecialRoundProfiles.TryGet(gameId, out var profile) && profile.UsesCollections
             ? CreateSealCollections(
-                ReadLongMap(guardSnapshot, "sealCounts", gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
-                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null),
-                ReadSealWagerCents(guardSnapshot, gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
-                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null),
+                ReadLongMap(guardSnapshot, "sealCounts", gameId == SlotSpecialRoundProfiles.JadeDragonGameId
+                    ? FortuneForge.Games.JadeDragon.JadeDragonCollections.TrackIds : null),
+                ReadSealWagerCents(guardSnapshot, gameId == SlotSpecialRoundProfiles.JadeDragonGameId
+                    ? FortuneForge.Games.JadeDragon.JadeDragonCollections.TrackIds : null),
                 pointValueInCents,
-                profile.CollectionTarget, gameId == SlotSpecialRoundProfiles.EmptySlotsGameId
-                    ? FortuneForge.Games.EmptySlots.EmptySlotsCollections.TrackIds : null)
+                profile.CollectionTarget, gameId == SlotSpecialRoundProfiles.JadeDragonGameId
+                    ? FortuneForge.Games.JadeDragon.JadeDragonCollections.TrackIds : null)
             : [];
 
     private static Dictionary<string, long> ReadSealWagerCents(DocumentSnapshot snapshot,

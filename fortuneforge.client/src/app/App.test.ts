@@ -49,7 +49,7 @@ describe('app shell slot media isolation', () => {
   })
 
   it('preserves Wukong’s own cloud cabinet artwork and the other intentional slot themes', () => {
-    const wukongTheme = readFileSync(new URL('../games/slots/wukong/cabinetTheme.ts', import.meta.url), 'utf8')
+    const wukongTheme = readFileSync(new URL('../../../games/Wukong/client/FortuneForge.Games.Wukong.Client/src/cabinetTheme.ts', import.meta.url), 'utf8')
     expect(wukongTheme).toContain('neon-jewel-clouds-gold.png')
     expect(wukongTheme).toContain('pageBackdropImage: neonJewelCloudsGold')
     for (const route of SLOT_ROUTE_DEFINITIONS) {

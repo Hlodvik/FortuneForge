@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* HighNoonFortune uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='frontier-dust']::before { content: '✦ ★ ✦ ★ ✦'; animation-name: result-frontier-dust; }
+
+@keyframes result-frontier-dust {
+  0% { opacity: 0; transform: translateX(-36%) skewX(-12deg); }
+  25% { opacity: 0.92; }
+  100% { opacity: 0; transform: translateX(38%) skewX(12deg); }
+}

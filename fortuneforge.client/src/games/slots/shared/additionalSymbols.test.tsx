@@ -5,8 +5,8 @@ import { SlotSymbol } from '../../../features/slots/components/SlotSymbol'
 import { createSlotRulesSet } from '../../../features/slots/config/slotExperienceSets'
 import { selectWinSoundEvent } from '../../../features/slots/presentation/spinPresentation'
 import type { SlotResponsiveImages } from '../../../features/slots/config/symbolSets'
-import { SAMURAI_FORTUNE_DEFINITION } from '../samuraiFortune/definition'
-import { createShowcaseSlotGame } from './createShowcaseSlotGame'
+import { SAMURAI_FORTUNE_DEFINITION } from '@fortuneforge/games-samurai-fortune'
+import { createShowcaseSlotGame } from '@fortuneforge/slot-game-runtime/showcase'
 import { createThemedSymbolSet, type ThemedSymbolSetOptions } from './themedSymbolSet'
 
 const requiredIds = ['2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER', 'BOLT', 'BANANA', 'PAW',
@@ -58,6 +58,7 @@ describe('opt-in additional ordinary slot symbols', () => {
       serverGameId: 'dragon-hoard-v1', serverSymbolSetId: 'midnight-vault-symbols-v1', initialReels,
       additionalSymbolSpecs: { '8': ['Cash briefcase', '▣', responsive[96]] },
       responsiveImages: { [responsive[96]]: responsive }, symbolGuide: { entries, note: 'Game-specific audited guide.' },
+      guidePolicy: { preserveExistingGuide: true },
     })
     expect(game.experience.symbols.serverSymbolSetId).toBe('midnight-vault-symbols-v1')
     expect(game.experience.rules.initialReels).toEqual(initialReels)

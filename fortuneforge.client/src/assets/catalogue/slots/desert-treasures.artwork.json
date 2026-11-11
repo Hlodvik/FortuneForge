@@ -9,11 +9,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-2f358120-d74e-4284-bb64-2127471553e5.png",
   "referencePaths": [
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/desertTreasures/definition.ts",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-sun-dunes-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-great-golden-pyramid-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-guardian-sphinx-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/desert-treasures/optimized/desert-treasures-jeweled-scarab-v2.webp",
+    "games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/definition.ts",
+    "games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/assets/art/optimized/desert-treasures-sun-dunes-v2.webp",
+    "games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/assets/art/optimized/desert-treasures-great-golden-pyramid-v2.webp",
+    "games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/assets/art/optimized/desert-treasures-guardian-sphinx-v2.webp",
+    "games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/assets/art/optimized/desert-treasures-jeweled-scarab-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-2a2a35d4-b167-4ab4-96e4-51bd11e4bf32.png"
   ],
   "visualCheck": [

@@ -207,6 +207,8 @@ public sealed class AdminManagementContractTests
             (mines.DisplayName, mines.Category, mines.Route, mines.DefaultVisible, mines.BotsSupported));
         Assert.Equal(CatalogContract.AnalyticsIds,
             GameAnalyticsOutbox.GameIds.Intersect(CatalogContract.Ids, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
+        Assert.Equal(CatalogContract.HistoricalAnalyticsIds,
+            GameAnalyticsOutbox.GameIds.Except(CatalogContract.Ids, StringComparer.Ordinal).OrderBy(id => id, StringComparer.Ordinal).ToArray());
         Assert.Equal(CatalogContract.UntrackedArcadeIds,
             CatalogContract.Ids.Except(GameAnalyticsOutbox.GameIds, StringComparer.Ordinal).ToArray());
         Assert.Equal(new[] { "liars-dice" },

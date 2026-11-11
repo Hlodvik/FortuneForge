@@ -1,0 +1,41 @@
+.neon-disco-clusters {
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.neon-disco-clusters__award {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: neon-disco-cluster-award 420ms cubic-bezier(.2, .8, .3, 1) both;
+}
+
+.neon-disco-clusters__amount {
+  stroke: #761e0b;
+  stroke-width: 2.8px;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  font: italic 900 clamp(18px, 2.2vw, 29px)/1 Georgia, 'Times New Roman', serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -.055em;
+  filter: drop-shadow(0 1px 0 #4d1008) drop-shadow(0 0 4px #fff59b) drop-shadow(0 0 9px #ffad21);
+}
+
+@keyframes neon-disco-cluster-award {
+  0% { opacity: 0; transform: translateY(4px) scale(.86); }
+  45% { opacity: 1; transform: translateY(-2px) scale(1.12); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.neon-disco-clusters[data-reduced-motion='true'] .neon-disco-clusters__award {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neon-disco-clusters__award { animation: none; }
+}

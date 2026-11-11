@@ -27,6 +27,8 @@ if (arguments.TryGetValue("--require-server-sha", out var requiredServerHash) &&
 var runtimeEngine = new { assemblyPath = loadedServerPath, sha256 = loadedServerHash,
     bytes = new FileInfo(loadedServerPath).Length };
 string[] SourceFiles() => Directory.EnumerateFiles(Path.Combine(root, "FortuneForge.Server/Slots"), "*.cs", SearchOption.AllDirectories)
+    .Concat(Directory.EnumerateFiles(Path.Combine(root, "games/MidnightVault/src/FortuneForge.Games.MidnightVault"), "*", SearchOption.TopDirectoryOnly)
+        .Where(path => Path.GetExtension(path) is ".cs" or ".csproj"))
     .Concat(Directory.EnumerateFiles(Path.Combine(root, "tools/FortuneForge.MidnightVaultMath"), "*.cs", SearchOption.TopDirectoryOnly))
     .Append(configurationPath).Append(Path.Combine(root, "FortuneForge.Server/Controllers/DemoSlotsController.cs"))
     .Append(Path.Combine(root, "FortuneForge.Server.Tests/Slots/MidnightVaultIntegerPayoutTests.cs"))
@@ -93,7 +95,7 @@ var serverAssemblyStable = EngineAssemblyStable();
 var report = new
 {
     schemaVersion = "midnight-vault-queued-calibration-v2", gameId = Definitions.GameId, startedUtc = started, finishedUtc = DateTime.UtcNow,
-    engineVersion = FortuneForge.Server.Slots.Spins.SpinService.AuditEngineVersion,
+    engineVersion = FortuneForge.Games.MidnightVault.MidnightVaultEngine.Version,
     runtimeEngine, engineAssemblyStable = serverAssemblyStable,
     scope = "Headless real SpinService.SpinAdmitted with pure MidnightVaultBonusRounds queue and exact weighted gem totals. No account store, wallet, HTTP, or other games are exercised.",
     policy = new { rtpTarget = actualGame.Math.Targets.Rtp, hitRateTarget = actualGame.Math.Targets.HitRate, tolerance = 0.02m,

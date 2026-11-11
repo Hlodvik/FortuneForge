@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
+  <Project Path="src/FortuneForge.Games.JadeDragon/FortuneForge.Games.JadeDragon.csproj" />
+</Solution>

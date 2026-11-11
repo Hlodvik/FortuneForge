@@ -1,0 +1,10 @@
+.slots-page[data-special-round='samurai-blade-trial'] {
+  --special-round-accent: #ffd272;
+  --special-round-deep: #75222e;
+  --special-round-ink: #200b10;
+}
+
+.slots-page[data-special-round='samurai-blade-trial'] .slots-page__spin-controls .spin-button {
+  border-radius: 0.48rem;
+  clip-path: polygon(10% 0, 90% 0, 100% 14%, 100% 86%, 90% 100%, 10% 100%, 0 86%, 0 14%);
+}

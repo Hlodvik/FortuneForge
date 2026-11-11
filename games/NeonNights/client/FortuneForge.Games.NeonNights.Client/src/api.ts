@@ -1,4 +1,6 @@
-import { NEON_GAME_ID, neonSymbolIds, type NeonAuthenticatedFetch, type NeonSpinRequest, type NeonSpinResult, type NeonState } from './types.js'
+import type { GridPosition } from '@fortuneforge/slot-client-core'
+import { stepDiscoMultiplier } from './roundState.js'
+import { NEON_GAME_ID, NEON_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonDiscoMultiplier, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
 
 type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number }
 export class NeonRequestError extends Error {
@@ -19,47 +21,100 @@ export class NeonRequestError extends Error {
 }
 const record = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value)
 const natural = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
-const symbol = (value: unknown) => typeof value === 'string' && (neonSymbolIds as readonly string[]).includes(value)
-const position = (value: unknown, rows: number) => record(value) && natural(value.reel) && value.reel < 5 && natural(value.row) && value.row < rows
-function reels(value: unknown, rows?: number): value is NeonSpinResult['reels'] {
+const discoMultiplier = (value: unknown): value is NeonDiscoMultiplier => discoMultipliers.some(tier => tier === value)
+const normalizeDiscoMultiplier = (value: unknown) =>
+  record(value) && value.neonDiscoMultiplier === undefined ? { ...value, neonDiscoMultiplier: 1 } : value
+const symbol = (value: unknown, allowed: readonly string[]): value is NeonSymbolId => typeof value === 'string' && allowed.includes(value)
+const position = (value: unknown, rows: number): value is GridPosition => record(value) && natural(value.reel) && value.reel < 5 && natural(value.row) && value.row < rows
+function reels(value: unknown, rows?: number, allowed: readonly string[] = neonBaseSymbolIds): value is NeonSpinResult['reels'] {
   return Array.isArray(value) && value.length === 5 && value.every(reel => Array.isArray(reel) &&
-    (rows === undefined ? reel.length === 4 || reel.length === 7 : reel.length === rows) && reel.every(symbol)) &&
+    (rows === undefined ? reel.length === 4 || reel.length === 7 : reel.length === rows) && reel.every(cell => symbol(cell, allowed))) &&
     value.every(reel => reel.length === value[0].length)
 }
-function payout(value: unknown, rows: number): boolean {
+type ValidatedPayout = { totalPoints: number; paylines: { paylineId: number; amountPoints: number; matches: {
+  amountPoints: number; multiplier: number; match: { symbolId: NeonSymbolId; matchLength: number; positions: GridPosition[]; wildPositions: GridPosition[] }
+}[] }[] }
+function payout(value: unknown, rows: number, allowed: readonly string[] = neonBaseSymbolIds): value is ValidatedPayout {
   return record(value) && natural(value.totalPoints) && Array.isArray(value.paylines) && value.paylines.every(line =>
     record(line) && natural(line.paylineId) && natural(line.amountPoints) && Array.isArray(line.matches) && line.matches.every(paid =>
       record(paid) && natural(paid.amountPoints) && typeof paid.multiplier === 'number' && Number.isFinite(paid.multiplier) && paid.multiplier >= 0 &&
-      record(paid.match) && symbol(paid.match.symbolId) && natural(paid.match.matchLength) &&
+      record(paid.match) && symbol(paid.match.symbolId, allowed) && natural(paid.match.matchLength) &&
       Array.isArray(paid.match.positions) && paid.match.positions.every(cell => position(cell, rows)) &&
       Array.isArray(paid.match.wildPositions) && paid.match.wildPositions.every(cell => position(cell, rows))))
 }
+const cellKey = ({ reel, row }: GridPosition) => `${reel}:${row}`
+function clusterCells(paid: ValidatedPayout, board: NeonSpinResult['reels']): Set<string> | null {
+  const all = new Set<string>()
+  let total = 0
+  for (const line of paid.paylines) {
+    if (line.matches.length !== 1 || line.amountPoints <= 0) return null
+    const award = line.matches[0]
+    const match = award.match
+    const cells = new Set(match.positions.map(cellKey))
+    if (match.matchLength < 4 || match.matchLength !== match.positions.length || cells.size !== match.positions.length ||
+      match.wildPositions.length !== 0 || award.amountPoints !== line.amountPoints) return null
+    const pending = [match.positions[0]]
+    const connected = new Set<string>()
+    while (pending.length > 0) {
+      const cell = pending.pop()!
+      const key = cellKey(cell)
+      if (connected.has(key)) continue
+      if (board[cell.reel][cell.row] !== match.symbolId || all.has(key)) return null
+      connected.add(key)
+      for (const neighbour of [
+        { reel: cell.reel - 1, row: cell.row }, { reel: cell.reel + 1, row: cell.row },
+        { reel: cell.reel, row: cell.row - 1 }, { reel: cell.reel, row: cell.row + 1 },
+      ]) {
+        if (board[neighbour.reel]?.[neighbour.row] !== match.symbolId) continue
+        if (!cells.has(cellKey(neighbour))) return null
+        pending.push(neighbour)
+      }
+    }
+    if (connected.size !== cells.size) return null
+    for (const key of cells) all.add(key)
+    total += line.amountPoints
+  }
+  return all.size > 0 && total === paid.totalPoints ? all : null
+}
 export function isNeonState(value: unknown): value is NeonState {
-  return record(value) && natural(value.freeSpinsRemaining) && natural(value.neonDiscoSpinsRemaining) &&
+  return record(value) && natural(value.freeSpinsRemaining) && natural(value.neonDiscoSpinsRemaining) && discoMultiplier(value.neonDiscoMultiplier) &&
     (value.freeSpinWagerPoints === null || natural(value.freeSpinWagerPoints)) &&
     (value.freeSpinFeatureMode === null || typeof value.freeSpinFeatureMode === 'string')
 }
 export function isNeonSpinResult(value: unknown): value is NeonSpinResult {
+  if (!record(value)) return false
+  const disco = value.symbolSetId === NEON_DISCO_SYMBOL_SET_ID
+  const allowed = disco ? neonDiscoSymbolIds : neonBaseSymbolIds
   if (!record(value) || value.gameId !== NEON_GAME_ID || typeof value.spinId !== 'string' ||
-    value.symbolSetId !== 'neon-arcade-symbols-v2' || value.pointValueInCents !== 1 || !natural(value.wagerPoints) ||
-    !reels(value.reels) || !payout(value.payout, value.reels[0].length) || !isNeonState({ ...value }) ||
+    (!disco && value.symbolSetId !== 'neon-arcade-symbols-v3') || value.pointValueInCents !== 1 || !natural(value.wagerPoints) ||
+    !reels(value.reels, disco ? 4 : undefined, allowed) || !payout(value.payout, value.reels[0].length, allowed) || !isNeonState({ ...value }) ||
     typeof value.isFreeSpin !== 'boolean' || !natural(value.freeSpinsAwarded) || !natural(value.bananaBonusPoints) ||
     (value.slotsCreditsBalance !== null && (typeof value.slotsCreditsBalance !== 'number' || !Number.isFinite(value.slotsCreditsBalance))) ||
     !record(value.neonArcade) || typeof value.neonArcade.featureGamesEnabled !== 'boolean' || !natural(value.neonArcade.bonusSymbolCount) ||
     !Array.isArray(value.neonArcade.activators) || !value.neonArcade.activators.every(activator => record(activator) &&
-      ['car', 'disco-ball', 'arcade-cabinet'].includes(String(activator.kind)) && ['6', 'POWER', 'SEAL_RAND'].includes(String(activator.symbolId)) &&
+      ((activator.kind === 'car' && activator.symbolId === '6') || (activator.kind === 'disco-ball' && activator.symbolId === 'POWER')) &&
       Array.isArray(activator.positions) && activator.positions.every(cell => position(cell, (value.reels as NeonSpinResult['reels'])[0].length)))) return false
-  if (value.neonDiscoCascade == null) return true
+  if (!disco) return value.neonDiscoCascade == null
+  if (value.isFreeSpin || value.freeSpinsAwarded !== 0 || value.bananaBonusPoints !== 0 ||
+    value.neonArcade.bonusSymbolCount !== 0 || value.neonArcade.activators.length !== 0) return false
   const cascade = value.neonDiscoCascade
-  if (!record(cascade) || !reels(cascade.initialReels, 4) || !Array.isArray(cascade.steps) || cascade.steps.length > 16 ||
+  if (!record(cascade) || !reels(cascade.initialReels, 4, allowed) || !Array.isArray(cascade.steps) || cascade.steps.length > 16 ||
     !natural(cascade.totalPoints) || !record(value.payout) || cascade.totalPoints !== value.payout.totalPoints ||
     JSON.stringify(cascade.initialReels) !== JSON.stringify(value.reels)) return false
   let total = 0
+  let board = cascade.initialReels
+  let expectedMultiplier: NeonDiscoMultiplier | undefined
   for (const step of cascade.steps) {
-    if (!record(step) || !reels(step.reels, 4) || !payout(step.payout, 4) || !record(step.payout) ||
+    if (!record(step) || !discoMultiplier(step.multiplier) || (expectedMultiplier !== undefined && step.multiplier !== expectedMultiplier) ||
+      !reels(step.reels, 4, allowed) || !payout(step.payout, 4, allowed) ||
       !Array.isArray(step.cleared) || step.cleared.length === 0 || !step.cleared.every(cell => position(cell, 4)) ||
       !Array.isArray(step.dropRows) || step.dropRows.length !== 5 || !step.dropRows.every(reel => Array.isArray(reel) && reel.length === 4 && reel.every(count => natural(count) && count <= 4))) return false
-    total += Number(step.payout.totalPoints)
+    const paidCells = clusterCells(step.payout, board)
+    if (!paidCells || paidCells.size !== step.cleared.length || !step.cleared.every(cell => paidCells.has(cellKey(cell))) ||
+      new Set(step.cleared.map(cellKey)).size !== paidCells.size) return false
+    total += step.payout.totalPoints
+    board = step.reels
+    expectedMultiplier = stepDiscoMultiplier(step.multiplier, 1)
   }
   return total === cascade.totalPoints
 }
@@ -81,7 +136,7 @@ export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch) {
       if (response.status !== 204) throw new Error('The Neon Nights game service is offline.')
     },
     async state(): Promise<NeonState> {
-      const result = await responseJson(await authenticated(`/api/slots/state?gameId=${NEON_GAME_ID}`, { method: 'GET' }))
+      const result = normalizeDiscoMultiplier(await responseJson(await authenticated(`/api/slots/state?gameId=${NEON_GAME_ID}`, { method: 'GET' })))
       if (!isNeonState(result)) throw new Error('The Neon Nights server returned an invalid state.')
       return result
     },
@@ -91,11 +146,11 @@ export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch) {
         ? await fetch('/api/slots/demo/spins', { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...common, ...request.state, energyBalance: 0, sealCollections: [] }) })
         : await authenticated('/api/slots/spins', { method: 'POST', body: JSON.stringify({ ...common, useSpecialBoost: false }) })
-      const result = await responseJson(response)
+      const result = normalizeDiscoMultiplier(await responseJson(response))
       if (!isNeonSpinResult(result)) throw new Error('The Neon Nights server returned an invalid reel result.')
       return result
     },
-    async trigger(kind: 'car' | 'disco-ball' | 'arcade-cabinet', wagerPoints: number): Promise<NeonState> {
+    async trigger(kind: 'car' | 'disco-ball', wagerPoints: number): Promise<NeonState> {
       const response = await authenticated('/api/slots/admin/neon-trigger', { method: 'POST', body: JSON.stringify({ symbol: kind, wagerPoints }) })
       if (!response.ok) await responseJson(response)
       return this.state()

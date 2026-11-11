@@ -1,0 +1,13 @@
+@import '@fortuneforge/slot-client-core/styles.css';
+@import './goldCrucible.css';
+@import './goldFoundryCabinet.css';
+
+.slots-page[data-slot-theme='gold-foundry-cabinet-v1'] .slots-page__accessible-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+

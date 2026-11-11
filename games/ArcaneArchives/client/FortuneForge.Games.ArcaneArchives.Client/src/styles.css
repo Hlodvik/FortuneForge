@@ -1,0 +1,11 @@
+@import './runtimeOverrides.css';
+@import './arcaneArchivesWordmark.css';
+@import './lightningCollection.css';
+
+.slots-page__result-atmosphere[data-celebration='arcane-orbit']::before { content: '✧ ☾ ✦ ☾ ✧'; animation-name: result-arcane-orbit; }
+
+@keyframes result-arcane-orbit {
+  0% { opacity: 0; transform: rotate(-120deg) scale(0.48); }
+  30% { opacity: 0.95; transform: rotate(16deg) scale(1.08); }
+  100% { opacity: 0; transform: rotate(150deg) scale(1.22); }
+}

@@ -1,0 +1,11 @@
+@import './runtimeOverrides.css';
+@import './godsTumble.css';
+
+.slots-page__result-atmosphere[data-celebration='olympus-storm']::before { content: '⚡ ✦ ⚡ ✦ ⚡'; animation-name: result-olympus-storm; }
+
+@keyframes result-olympus-storm {
+  0%, 16% { opacity: 0; transform: scaleX(0.74); filter: brightness(1); }
+  24%, 46% { opacity: 1; transform: scaleX(1.06); filter: brightness(1.8); }
+  32%, 58% { opacity: 0.2; }
+  100% { opacity: 0; transform: scaleX(1.2); filter: brightness(1); }
+}

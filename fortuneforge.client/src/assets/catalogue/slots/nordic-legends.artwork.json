@@ -9,11 +9,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6468d618-e2e4-4d50-be7a-60c1c5cdc1f5.png",
   "referencePaths": [
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/nordicLegends/definition.ts",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-fjord-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-dragon-prow-longship-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-winged-valkyrie-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/nordic-legends/optimized/nordic-legends-mjolnir-thunder-v2.webp",
+    "games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/definition.ts",
+    "games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/assets/art/optimized/nordic-legends-fjord-v2.webp",
+    "games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/assets/art/optimized/nordic-legends-dragon-prow-longship-v2.webp",
+    "games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/assets/art/optimized/nordic-legends-winged-valkyrie-v2.webp",
+    "games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/assets/art/optimized/nordic-legends-mjolnir-thunder-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-a6c3076e-92a6-4171-ab26-36b0320e99e5.png"
   ],
   "visualCheck": [

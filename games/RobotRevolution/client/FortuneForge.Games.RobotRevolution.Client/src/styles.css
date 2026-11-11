@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* RobotRevolution uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='robot-circuit']::before { content: '⚙ ✦ ▣ ✦ ⚙'; animation-name: result-robot-circuit; }
+
+@keyframes result-robot-circuit {
+  0% { opacity: 0; transform: scaleX(0.24) scaleY(1.6); filter: brightness(0.8); }
+  25% { opacity: 1; transform: scaleX(1.08) scaleY(0.94); filter: brightness(2); }
+  100% { opacity: 0; transform: scaleX(1.3) scaleY(1.18); filter: brightness(1); }
+}

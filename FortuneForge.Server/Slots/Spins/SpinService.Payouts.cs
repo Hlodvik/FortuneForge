@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
-using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
@@ -20,15 +19,6 @@ public sealed partial class SpinService
             symbols.Sum(RainbowRealmCharmHarvest.WagerMultiplier) * Math.Min(basketCount, 2));
         var bananas = CalculateBananaPayouts(reels, wagerPoints, payoutMultiplier);
         return new FeaturePayout(basketCount, harvest, bananas.Sum(payout => payout.AmountPoints), bananas, harvest);
-    }
-
-    private static FeaturePayout CalculateFoundryFeaturePayout(
-        IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints)
-    {
-        var (collectorCount, ingotPayout) = GoldFoundryReelCollector.Calculate(reels, wagerPoints);
-        var hammerPayouts = CalculateBananaPayouts(reels, wagerPoints, 1m);
-        return new FeaturePayout(collectorCount, ingotPayout, hammerPayouts.Sum(payout => payout.AmountPoints),
-            hammerPayouts, ingotPayout);
     }
 
     private static FeaturePayout CalculateFeaturePayout(

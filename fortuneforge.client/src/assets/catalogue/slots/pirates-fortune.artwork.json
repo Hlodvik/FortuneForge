@@ -10,11 +10,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-b8767166-1ea6-4ee4-9c56-27b366f45032.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/piratesFortune/catalog.ts",
-    "fortuneforge.client/src/games/slots/piratesFortune/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/piratesFortune/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/pirates-fortune/optimized/pirates-cove.png",
-    "fortuneforge.client/src/assets/slots/games/pirates-fortune/optimized/doubloon-purse.png",
+    "games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/catalog.ts",
+    "games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/cabinetTheme.ts",
+    "games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/symbols.ts",
+    "games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/assets/art/optimized/pirates-cove.png",
+    "games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/assets/art/optimized/doubloon-purse.png",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-88acd6ae-6f33-4431-92f5-68fbc2da3e23.png"
   ],
   "visualCheck": {

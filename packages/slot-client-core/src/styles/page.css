@@ -283,11 +283,6 @@
     drop-shadow(0 0 1.55rem rgb(255 61 122 / 88%));
 }
 
-.slots-page__seal-flyover--gem-hoard {
-  animation-name: pirate-gem-pour;
-  animation-delay: var(--treasure-gem-delay, 0ms);
-}
-
 .slots-page__money-grab {
   position: fixed;
   z-index: 148;

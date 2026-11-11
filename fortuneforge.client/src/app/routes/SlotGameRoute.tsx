@@ -6,6 +6,8 @@ import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 
 const SlotsPage = lazy(() => import('../../pages/slots/SlotsPage').then(module => ({ default: module.SlotsPage })))
 const NeonNightsHost = lazy(() => import('./NeonNightsHost').then(module => ({ default: module.NeonNightsHost })))
+const MidnightVaultHost = lazy(() => import('./MidnightVaultHost').then(module => ({ default: module.MidnightVaultHost })))
+const GoldFoundryHost = lazy(() => import('./GoldFoundryHost').then(module => ({ default: module.GoldFoundryHost })))
 
 export function SlotGameRoute({
   definition,
@@ -19,6 +21,16 @@ export function SlotGameRoute({
   if (definition.id === 'neon-nights') {
     return <Suspense fallback={<AuthenticatedRouteState error={null} loadingLabel="Opening Neon Nights…" errorTitle="Neon Nights could not be opened." onRetry={() => window.location.reload()} />}>
       {pathname === definition.demoPath ? <NeonNightsHost demoMode onSpinStateChange={onSpinStateChange} /> : <AuthenticatedNeonNights returnPath={pathname} onSpinStateChange={onSpinStateChange} />}
+    </Suspense>
+  }
+  if (definition.id === 'dragon-hoard') {
+    return <Suspense fallback={<AuthenticatedRouteState error={null} loadingLabel="Opening Midnight Vault…" errorTitle="Midnight Vault could not be opened." onRetry={() => window.location.reload()} />}>
+      {pathname === definition.demoPath ? <MidnightVaultHost demoMode onSpinStateChange={onSpinStateChange} /> : <AuthenticatedMidnightVault returnPath={pathname} onSpinStateChange={onSpinStateChange} />}
+    </Suspense>
+  }
+  if (definition.id === 'gold-foundry') {
+    return <Suspense fallback={<AuthenticatedRouteState error={null} loadingLabel="Opening Gold Foundry…" errorTitle="Gold Foundry could not be opened." onRetry={() => window.location.reload()} />}>
+      {pathname === definition.demoPath ? <GoldFoundryHost demoMode onSpinStateChange={onSpinStateChange} /> : <AuthenticatedGoldFoundry returnPath={pathname} onSpinStateChange={onSpinStateChange} />}
     </Suspense>
   }
   return <LegacySlotGameRoute definition={definition} pathname={pathname} onSpinStateChange={onSpinStateChange} />
@@ -83,4 +95,16 @@ function AuthenticatedNeonNights({ returnPath, onSpinStateChange }: { returnPath
   const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
   if (isLoading || account === null) return <AuthenticatedRouteState error={error} loadingLabel="Opening Neon Nights…" errorTitle="Neon Nights could not be opened." onRetry={reload} />
   return <NeonNightsHost account={account} onSpinStateChange={onSpinStateChange} />
+}
+
+function AuthenticatedMidnightVault({ returnPath, onSpinStateChange }: { returnPath: string; onSpinStateChange?: (isSpinning: boolean) => void }) {
+  const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
+  if (isLoading || account === null) return <AuthenticatedRouteState error={error} loadingLabel="Opening Midnight Vault…" errorTitle="Midnight Vault could not be opened." onRetry={reload} />
+  return <MidnightVaultHost account={account} onSpinStateChange={onSpinStateChange} />
+}
+
+function AuthenticatedGoldFoundry({ returnPath, onSpinStateChange }: { returnPath: string; onSpinStateChange?: (isSpinning: boolean) => void }) {
+  const { account, error, isLoading, reload } = useAuthenticatedAccount(returnPath)
+  if (isLoading || account === null) return <AuthenticatedRouteState error={error} loadingLabel="Opening Gold Foundry…" errorTitle="Gold Foundry could not be opened." onRetry={reload} />
+  return <GoldFoundryHost account={account} onSpinStateChange={onSpinStateChange} />
 }

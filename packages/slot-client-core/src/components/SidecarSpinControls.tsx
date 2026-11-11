@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { formatRand, slotPointsToRand } from '../slotPagePresentation'
 import { SpinButton } from './SpinButton'
@@ -11,6 +11,8 @@ type SidecarSpinControlsProps = {
   isFreeSpinBadgePopping: boolean
   isSpinning: boolean
   isStopRequested: boolean
+  allowStop?: boolean
+  autoSpinReplacement?: ReactNode
   onAutoSpinChange: (active: boolean) => void
   onSelectWager: (index: number) => void
   onSpin: () => void
@@ -31,6 +33,8 @@ export function SidecarSpinControls({
   isFreeSpinBadgePopping,
   isSpinning,
   isStopRequested,
+  allowStop = true,
+  autoSpinReplacement,
   onAutoSpinChange,
   onSelectWager,
   onSpin,
@@ -76,11 +80,11 @@ export function SidecarSpinControls({
       const maxRight = viewportLeft + viewportWidth - margin
       const maxBottom = viewportTop + viewportHeight - margin
 
-      menu.style.setProperty('--pirate-bet-viewport-width', `${viewportWidth}px`)
+      menu.style.setProperty('--sidecar-bet-viewport-width', `${viewportWidth}px`)
       menu.style.maxHeight = `${Math.max(0, maxBottom - minTop)}px`
       const { width, height } = menu.getBoundingClientRect()
       const leftOfButton = anchor.left - gap - width
-      const opensBeside = getComputedStyle(controls).getPropertyValue('--pirate-bet-placement').trim() === 'left' &&
+      const opensBeside = getComputedStyle(controls).getPropertyValue('--sidecar-bet-placement').trim() === 'left' &&
         leftOfButton >= minLeft
 
       let left = leftOfButton
@@ -133,9 +137,9 @@ export function SidecarSpinControls({
     }
   }, [isBetOpen])
 
-  const autoSpinButton = (
+  const autoSpinControl = autoSpinReplacement ?? (
     <button
-      className={`pirates-spin-controls__small${isAutoSpinning ? ' pirates-spin-controls__small--active' : ''}`}
+      className={`sidecar-spin-controls__small${isAutoSpinning ? ' sidecar-spin-controls__small--active' : ''}`}
       type="button"
       disabled={disabled}
       aria-label={isAutoSpinning ? 'Stop autospin' : 'Start autospin'}
@@ -153,14 +157,16 @@ export function SidecarSpinControls({
   )
 
   return (
-    <div className="pirates-spin-controls" ref={controlsRef} aria-label="Autospin, bet, and spin controls" data-wager-first={wagerFirst || undefined}>
-      {!specialControlsActive && (
+    <div className="sidecar-spin-controls" ref={controlsRef}
+      aria-label={specialControlsActive ? 'Spin controls' : autoSpinReplacement != null ? 'Bet and spin controls' : 'Autospin, bet, and spin controls'}
+      data-wager-first={wagerFirst || undefined}>
+      {specialControlsActive ? autoSpinReplacement : (
         <>
-          {!wagerFirst && autoSpinButton}
-          <div className="pirates-spin-controls__bet-wrap">
+          {!wagerFirst && autoSpinControl}
+          <div className="sidecar-spin-controls__bet-wrap">
             <button
               ref={betButtonRef}
-              className={`pirates-spin-controls__small${isBetOpen ? ' pirates-spin-controls__small--active' : ''}`}
+              className={`sidecar-spin-controls__small${isBetOpen ? ' sidecar-spin-controls__small--active' : ''}`}
               type="button"
               aria-label={`Change bet, currently ${formatRand(activeWager)}`}
               aria-haspopup="dialog"
@@ -172,7 +178,7 @@ export function SidecarSpinControls({
                 setIsBetOpen((open) => !open)
               }}
             >
-              <svg viewBox="0 0 48 48" aria-hidden="true" className="pirates-spin-controls__coins">
+              <svg viewBox="0 0 48 48" aria-hidden="true" className="sidecar-spin-controls__coins">
                 <ellipse cx="27" cy="16" rx="12" ry="4.5" />
                 {/* Draw only the parts of the right stack visible behind the left stack. */}
                 <path d="M15 16v8M39 16v11c0 2.5-5.4 4.5-12 4.5M39 22c0 2.5-5.4 4.5-12 4.5h-.7" />
@@ -182,7 +188,7 @@ export function SidecarSpinControls({
             </button>
             {isBetOpen && !betLocked && createPortal(
               <div
-                className="pirates-spin-controls__bet-menu"
+                className="sidecar-spin-controls__bet-menu"
                 id={betMenuId}
                 ref={betMenuRef}
                 role="dialog"
@@ -198,8 +204,8 @@ export function SidecarSpinControls({
                   setIsBetOpen(false)
                 }}
               >
-                <span className="pirates-spin-controls__bet-heading">BET</span>
-                <div className="pirates-spin-controls__bet-stepper">
+                <span className="sidecar-spin-controls__bet-heading">BET</span>
+                <div className="sidecar-spin-controls__bet-stepper">
                   <button type="button" aria-label="Decrease bet" disabled={wagerIndex === 0}
                     onClick={() => onSelectWager(wagerIndex - 1)}>
                     <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true">
@@ -222,26 +228,27 @@ export function SidecarSpinControls({
                   value={wagerIndex}
                   onChange={(event) => onSelectWager(Number(event.currentTarget.value))}
                 />
-                <div className="pirates-spin-controls__bet-limits"><span>{formatRand(minWager)}</span><span>{formatRand(maxWager)}</span></div>
+                <div className="sidecar-spin-controls__bet-limits"><span>{formatRand(minWager)}</span><span>{formatRand(maxWager)}</span></div>
               </div>,
               document.body,
             )}
           </div>
-          {wagerFirst && autoSpinButton}
+          {wagerFirst && autoSpinControl}
         </>
       )}
 
-      <div className="pirates-spin-controls__spin">
+      <div className="sidecar-spin-controls__spin">
         <div className="slots-page__spin-button-shell">
           <SpinButton
             disabled={disabled}
             isSpinning={isSpinning}
             isStopRequested={isStopRequested}
+            allowStop={allowStop}
             onSpin={() => {
               setIsBetOpen(false)
               onSpin()
             }}
-            variant="pirate-loop"
+            variant="sidecar-loop"
           />
           {showFreeSpinBadge && !specialControlsActive && (
             <span
@@ -254,7 +261,7 @@ export function SidecarSpinControls({
           )}
         </div>
       </div>
-      {!specialControlsActive && <div className="pirates-spin-controls__bet-readout">BET <strong>{formatRand(activeWager)}</strong></div>}
+      {!specialControlsActive && <div className="sidecar-spin-controls__bet-readout">BET <strong>{formatRand(activeWager)}</strong></div>}
     </div>
   )
 }

@@ -254,51 +254,6 @@
   stroke: none;
 }
 
-.spin-button--pirate-helm .spin-button__icon {
-  width: 96%;
-  height: 96%;
-  filter: drop-shadow(0 0.12rem 0.16rem rgb(25 6 1 / 74%));
-}
-
-.spin-button--pirate-helm:not(.spin-button--active) .spin-button__icon {
-  width: 96%;
-  height: 96%;
-  transform: none;
-}
-
-.spin-button__helm-rim {
-  stroke: #f9d67f;
-  stroke-width: 32;
-}
-
-.spin-button__helm-inner-rim {
-  stroke: #71320d;
-  stroke-width: 9;
-}
-
-.spin-button__helm-spoke {
-  stroke: #f1bd55;
-  stroke-width: 21;
-}
-
-.spin-button__helm-handle {
-  fill: #a95b23;
-  stroke: #ffe19a;
-  stroke-width: 9;
-}
-
-.spin-button__helm-hub {
-  fill: #6f3411;
-  stroke: #f7cf70;
-  stroke-width: 16;
-}
-
-.spin-button__helm-boss {
-  fill: #fff0ae;
-  stroke: #8c4215;
-  stroke-width: 8;
-}
-
 .spin-button__stop-icon {
   fill: currentColor;
   stroke: none;

@@ -2,6 +2,23 @@ using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
+using FortuneForge.Games.Slots.Runtime;
+using ArcaneEngine = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine;
+using CandyEngine = FortuneForge.Games.CandyCarnival.CandyCarnivalEngine;
+using CosmicEngine = FortuneForge.Games.CosmicFortune.CosmicFortuneEngine;
+using DesertEngine = FortuneForge.Games.DesertTreasures.DesertTreasuresEngine;
+using OlympusEngine = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusEngine;
+using HighNoonEngine = FortuneForge.Games.HighNoonFortune.HighNoonFortuneEngine;
+using NordicEngine = FortuneForge.Games.NordicLegends.NordicLegendsEngine;
+using OceanEngine = FortuneForge.Games.OceanOdyssey.OceanOdysseyEngine;
+using PhantomEngine = FortuneForge.Games.PhantomManor.PhantomManorEngine;
+using PiratesEngine = FortuneForge.Games.PiratesFortune.PiratesFortuneEngine;
+using RainbowEngine = FortuneForge.Games.RainbowRealm.RainbowRealmEngine;
+using ReelRichesEngine = FortuneForge.Games.ReelRiches.ReelRichesEngine;
+using RobotEngine = FortuneForge.Games.RobotRevolution.RobotRevolutionEngine;
+using RoyalEngine = FortuneForge.Games.RoyalDraw.RoyalDrawEngine;
+using SamuraiEngine = FortuneForge.Games.SamuraiFortune.SamuraiFortuneEngine;
+using WukongEngine = FortuneForge.Games.Wukong.WukongEngine;
 
 namespace FortuneForge.Server.Slots.Bonuses;
 
@@ -37,27 +54,27 @@ public sealed record SlotSpecialRoundProgress(
 
 public static class SlotSpecialRoundProfiles
 {
-    public const string WukongGameId = "wukong-journey-v1";
-    public const string RainbowRealmGameId = "rainbow-realm-fruits-v1";
-    public const string CosmicFortuneGameId = "cosmic-fortune-v1";
-    public const string HighNoonFortuneGameId = "high-noon-fortune-v1";
-    public const string GodsOfOlympusGameId = "gods-of-olympus-v1";
-    public const string PiratesFortuneGameId = "pirates-fortune-v1";
-    public const string RoyalDrawGameId = "royal-draw-v1";
-    public const string SamuraiFortuneGameId = "samurai-fortune-v1";
-    public const string RobotRevolutionGameId = "robot-revolution-v1";
-    public const string PhantomManorGameId = "phantom-manor-v1";
-    public const string OceanOdysseyGameId = "ocean-odyssey-v1";
-    public const string DragonHoardGameId = "dragon-hoard-v1";
-    public const string EmptySlotsGameId = "empty-slots-v1";
+    public const string WukongGameId = WukongEngine.GameId;
+    public const string RainbowRealmGameId = RainbowEngine.GameId;
+    public const string CosmicFortuneGameId = CosmicEngine.GameId;
+    public const string HighNoonFortuneGameId = HighNoonEngine.GameId;
+    public const string GodsOfOlympusGameId = OlympusEngine.GameId;
+    public const string PiratesFortuneGameId = PiratesEngine.GameId;
+    public const string RoyalDrawGameId = RoyalEngine.GameId;
+    public const string SamuraiFortuneGameId = SamuraiEngine.GameId;
+    public const string RobotRevolutionGameId = RobotEngine.GameId;
+    public const string PhantomManorGameId = PhantomEngine.GameId;
+    public const string OceanOdysseyGameId = OceanEngine.GameId;
+    public const string DragonHoardGameId = MidnightVaultSlotDefinitions.GameId;
+    public const string JadeDragonGameId = "empty-slots-v1";
     // Historical identifier retained for saved evidence and source compatibility.
     public const string JungleJackpotGameId = "jungle-jackpot-v1";
-    public const string CandyCarnivalGameId = "candy-carnival-v1";
-    public const string DesertTreasuresGameId = "desert-treasures-v1";
+    public const string CandyCarnivalGameId = CandyEngine.GameId;
+    public const string DesertTreasuresGameId = DesertEngine.GameId;
     public const string NeonNightsGameId = NeonArcadeSlotDefinitions.GameId;
-    public const string NordicLegendsGameId = "nordic-legends-v1";
-    public const string ReelRichesGameId = "reel-riches-v1";
-    public const string ArcaneArchivesGameId = "arcane-archives-v1";
+    public const string NordicLegendsGameId = NordicEngine.GameId;
+    public const string ReelRichesGameId = ReelRichesEngine.GameId;
+    public const string ArcaneArchivesGameId = ArcaneEngine.GameId;
 
     private static readonly string[] Modes = ["sync", "rows", "paw", "rand", "arcade"];
     private static readonly IReadOnlyDictionary<string, string> ModesBySeal =
@@ -71,97 +88,30 @@ public static class SlotSpecialRoundProfiles
     private static readonly IReadOnlyDictionary<string, SlotSpecialRoundProfile> Profiles =
         new Dictionary<string, SlotSpecialRoundProfile>(StringComparer.Ordinal)
         {
-            [WukongGameId] = new(
-                WukongGameId,
-                3,
-                0,
-                40,
-                10,
-                BaseReelSetId: WukongBaseReelSet.Id,
-                PayoutMultiplier: 0.946m),
-            [RainbowRealmGameId] = new(
-                RainbowRealmGameId,
-                3,
-                10,
-                60,
-                10,
-                UsesEnergy: false,
-                UsesDirectValueTokens: false,
-                BaseReelSetId: RainbowRealmSlotDefinitions.ReelSetId),
-            [CosmicFortuneGameId] = new(
-                CosmicFortuneGameId, 3, 6, 24, 7, true, true, false, null, "sync-rows",
-                PayoutMultiplier: 0.856m),
-            [HighNoonFortuneGameId] = new(
-                HighNoonFortuneGameId, 3, 5, 20, 8, false, false, true, "sync",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 1.105m),
-            [GodsOfOlympusGameId] = new(GodsOfOlympusGameId, 4, 6, 28, 6, true, false, false, null, "paw-rand"),
-            [PiratesFortuneGameId] = new(
-                PiratesFortuneGameId,
-                3,
-                7,
-                PiratesGemBonus.MaximumGems,
-                10,
-                true,
-                false,
-                true,
-                null,
-                null,
-                PiratesFortuneBaseReelSet.Id,
-                0.32m,
-                PayoutMultiplier: 0.665m),
-            [RoyalDrawGameId] = new(
-                RoyalDrawGameId, 3, 6, 24, 7, true, true, true, null, "rows-rand",
-                PayoutMultiplier: 0.942m),
-            [SamuraiFortuneGameId] = new(
-                SamuraiFortuneGameId, 4, 6, 26, 7, true, false, false, null, "sync-paw",
-                PayoutMultiplier: 1.057m),
-            [RobotRevolutionGameId] = new(
-                RobotRevolutionGameId, 3, 7, 24, 8, false, false, false, "rows",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 1.126m),
-            [PhantomManorGameId] = new(
-                PhantomManorGameId, 3, 5, 18, 9, false, false, false, "paw",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 1.139m),
-            [OceanOdysseyGameId] = new(
-                OceanOdysseyGameId, 4, 6, 28, 6, true, true, false, null, "sync-rand",
-                PayoutMultiplier: 1.071m),
-            [DragonHoardGameId] = new(
-                DragonHoardGameId, 3, 10, 30, 10, true, false, false, null, "rows-paw",
-                BaseReelSetId: MidnightVaultBaseReelSet.CurrentId,
-                TargetHitRate: MidnightVaultSlotDefinitions.TargetHitRate,
-                PayoutMultiplier: 1.0m),
-            [EmptySlotsGameId] = Games.EmptySlots.EmptySlotsEngine.Profile,
-            [CandyCarnivalGameId] = new(
-                CandyCarnivalGameId, 4, 5, 20, 8, false, false, false, "rand",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 1.179m),
-            [DesertTreasuresGameId] = new(
-                DesertTreasuresGameId, 3, 7, 24, 7, true, true, true, null, "rows",
-                PayoutMultiplier: 0.977m),
+            [WukongGameId] = FromPackage(WukongEngine.Profile),
+            [RainbowRealmGameId] = FromPackage(RainbowEngine.Profile),
+            [CosmicFortuneGameId] = FromPackage(CosmicEngine.Profile),
+            [HighNoonFortuneGameId] = FromPackage(HighNoonEngine.Profile),
+            [GodsOfOlympusGameId] = FromPackage(OlympusEngine.Profile),
+            [PiratesFortuneGameId] = FromPackage(PiratesEngine.Profile),
+            [RoyalDrawGameId] = FromPackage(RoyalEngine.Profile),
+            [SamuraiFortuneGameId] = FromPackage(SamuraiEngine.Profile),
+            [RobotRevolutionGameId] = FromPackage(RobotEngine.Profile),
+            [PhantomManorGameId] = FromPackage(PhantomEngine.Profile),
+            [OceanOdysseyGameId] = FromPackage(OceanEngine.Profile),
+            [DragonHoardGameId] = Games.MidnightVault.MidnightVaultEngine.Profile,
+            [JadeDragonGameId] = Games.JadeDragon.JadeDragonEngine.Profile,
+            [CandyCarnivalGameId] = FromPackage(CandyEngine.Profile),
+            [DesertTreasuresGameId] = FromPackage(DesertEngine.Profile),
             // Historical host/audit descriptor only; preserve its recorded
             // values. Current Neon bypasses these scatter/collection policies.
             [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
                 BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId,
                 PayoutMultiplier: NeonArcadeSlotDefinitions.PayoutMultiplier),
-            [NordicLegendsGameId] = new(
-                NordicLegendsGameId, 4, 6, 28, 6, false, false, true, "sync-paw",
-                TargetHitRate: 0.32m,
-                PayoutMultiplier: 1.158m),
-            [ReelRichesGameId] = new(
-                ReelRichesGameId, 3, 5, 40, 10,
-                CollectionFeatureMode: "sync-rows-rand",
-                TargetHitRate: 0.29m,
-                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23]),
-            [ArcaneArchivesGameId] = new(
-                ArcaneArchivesGameId, 3, 5, 40, 10,
-                UsesEnergy: false,
-                CollectionFeatureMode: "sync-paw-rand",
-                BaseReelSetId: ArcaneLightningCollector.ReelSetId,
-                PaylinePatternIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 18, 19, 20, 21, 22, 23],
-                PayoutMultiplier: 0.716m),
-            [GoldFoundrySlotDefinitions.GameId] = GoldFoundrySlotDefinitions.Profile
+            [NordicLegendsGameId] = FromPackage(NordicEngine.Profile),
+            [ReelRichesGameId] = FromPackage(ReelRichesEngine.Profile),
+            [ArcaneArchivesGameId] = FromPackage(ArcaneEngine.Profile),
+            [GoldFoundrySlotDefinitions.GameId] = Games.GoldFoundry.GoldFoundryEngine.Profile
         };
 
     public static bool TryGet(string gameId, out SlotSpecialRoundProfile profile) =>
@@ -169,9 +119,25 @@ public static class SlotSpecialRoundProfiles
 
     public static IReadOnlyList<SlotSpecialRoundProfile> All { get; } = Profiles.Values.ToArray();
 
+    private static SlotSpecialRoundProfile FromPackage(SlotProfile profile) => new(
+        profile.GameId,
+        profile.ScatterRequiredSymbols,
+        profile.ScatterAwardedSpins,
+        profile.CollectionTarget,
+        profile.CollectionAwardedSpins,
+        profile.UsesCollections,
+        profile.UsesEnergy,
+        profile.UsesDirectValueTokens,
+        profile.ScatterFeatureMode,
+        profile.CollectionFeatureMode,
+        profile.BaseReelSetId,
+        profile.TargetHitRate,
+        profile.PaylinePatternIds,
+        profile.PayoutMultiplier);
+
     public static bool IsFeatureMode(string? value)
     {
-        if (value == FortuneForge.Games.EmptySlots.EmptySlotsCollections.CollectionFeatureMode) return true;
+        if (value == FortuneForge.Games.JadeDragon.JadeDragonCollections.CollectionFeatureMode) return true;
         if (string.IsNullOrWhiteSpace(value)) return false;
 
         var modes = value.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -190,8 +156,8 @@ public static class SlotSpecialRoundProfiles
         bool energyCompleted,
         Guid spinId = default)
     {
-        if (profile.GameId == EmptySlotsGameId)
-            return Games.EmptySlots.EmptySlotsEngine.SettleCollections(current, awarded, wagerPoints);
+        if (profile.GameId == JadeDragonGameId)
+            return Games.JadeDragon.JadeDragonEngine.SettleCollections(current, awarded, wagerPoints);
         if (!profile.UsesCollections)
         {
             return new SlotSpecialRoundProgress(0, null, []);

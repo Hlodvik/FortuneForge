@@ -39,7 +39,7 @@ public sealed class SlotsController(
             return StatusCode(StatusCodes.Status403Forbidden,
                 new { error = "Only administrators can start a Neon preview round." });
 
-        if (request.Symbol is not ("car" or "disco-ball" or "arcade-cabinet"))
+        if (request.Symbol is not ("car" or "disco-ball"))
             return BadRequest(new { error = "Unknown Neon Special Plays symbol." });
 
         try
@@ -52,7 +52,7 @@ public sealed class SlotsController(
                 account.UserId,
                 request.WagerPoints,
                 pointValueInCents,
-                request.Symbol == "arcade-cabinet",
+                request.Symbol == "car",
                 request.Symbol == "disco-ball",
                 cancellationToken);
             if (!granted)
@@ -124,6 +124,8 @@ public sealed class SlotsController(
             }
 
             var account = accountResult.Value;
+            FortuneForge.Server.Slots.Games.JadeDragon.JadeDragonWagerPolicy.Validate(
+                request.GameId, request.WagerPoints, request.UseFreeSpin);
             spinService.ValidateRequest(request.GameId, request.WagerPoints, request.UseFreeSpin);
             var pointValueInCents = spinService.GetPointValueInCents(request.GameId);
             var specialBoostCost = request.UseSpecialBoost
@@ -174,6 +176,7 @@ public sealed class SlotsController(
                     ? admission.ChargedWagerCents : 0,
                 FreeSpinsRemaining = settlement.FreeSpinsRemaining,
                 NeonDiscoSpinsRemaining = settlement.NeonDiscoSpinsRemaining,
+                NeonDiscoMultiplier = settlement.NeonDiscoMultiplier,
                 FreeSpinWagerPoints = settlement.FreeSpinWagerPoints,
                 SpecialPointsBalance = settlement.SpecialPointsBalance,
                 EnergyBalance = settlement.EnergyBalance,

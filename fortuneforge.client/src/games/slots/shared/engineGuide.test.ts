@@ -1,8 +1,7 @@
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { GOLD_FOUNDRY_GAME_ID } from '../goldFoundry/identity'
-import type { SlotSymbolId } from '../../../features/slots/types/slots'
+import { GOLD_FOUNDRY_GAME_ID } from '@fortuneforge/games-gold-foundry/manifest'
 import { loadAllSlotGameManifests } from '..'
 import { getSlotEngineGuideContract, withEngineGuide } from './engineGuide'
 
@@ -17,7 +16,7 @@ type EngineContract = {
   layout: { paylineCount: number }
   math: { payoutMultiplier: number; paylinePayoutSteps: number[] }
   symbols: { nativeWildMatchLengths: number[]; wildSubstitutionMatchLengths: number[] }
-  paytable: { symbolId: SlotSymbolId; matchLength: number; multiplier: number }[]
+  paytable: { symbolId: string; matchLength: number; multiplier: number }[]
 }
 const fixture = JSON.parse(readFileSync(new URL('./__fixtures__/engineGuide-contracts.json', import.meta.url), 'utf8')) as {
   sourceSha256: Record<string, string>; games: EngineContract[]
@@ -38,7 +37,7 @@ describe.each(audited)('$catalog.title audited guide', game => {
   const experience = game.experience
   const engine = fixture.games.find(candidate => candidate.gameId === experience.rules.gameId)!
   const profile = engine.profile
-  const entry = (symbol: SlotSymbolId) => experience.symbols.guideEntries.find(candidate => candidate.symbol === symbol)
+  const entry = (symbol: string) => experience.symbols.guideEntries.find(candidate => candidate.symbol === symbol)
 
   it('matches effective paths, scatter awards and collection thresholds from the real provider', () => {
     const pathIds = profile.paylinePatternIds ?? Array.from({ length: engine.layout.paylineCount }, (_, index) => index + 1)

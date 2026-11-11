@@ -9,11 +9,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-ca3df2c9-84d0-4060-94c9-a14b47c7a88c.png",
   "referencePaths": [
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/candyCarnival/definition.ts",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/candy-carnival-fair-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/candy-carnival-cabinet-emblem-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/rainbow-lollipop.png",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/candy-carnival/optimized/golden-candy-carousel.png",
+    "games/CandyCarnival/client/FortuneForge.Games.CandyCarnival.Client/src/definition.ts",
+    "games/CandyCarnival/client/FortuneForge.Games.CandyCarnival.Client/src/assets/art/optimized/candy-carnival-fair-v2.webp",
+    "games/CandyCarnival/client/FortuneForge.Games.CandyCarnival.Client/src/assets/art/optimized/candy-carnival-cabinet-emblem-v2.webp",
+    "games/CandyCarnival/client/FortuneForge.Games.CandyCarnival.Client/src/assets/art/optimized/rainbow-lollipop.png",
+    "games/CandyCarnival/client/FortuneForge.Games.CandyCarnival.Client/src/assets/art/optimized/golden-candy-carousel.png",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-b522114b-cde5-463c-b851-fe89e0af12e0.png"
   ],
   "visualCheck": [

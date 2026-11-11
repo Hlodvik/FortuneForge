@@ -85,9 +85,10 @@ public sealed class MidnightVaultDefinitionTests
         var reels = provider.GetReelSet(game.Math.ReelSetId)!;
         var stops = reels.Reels.Select(reel => reel.IndexOf("8")).ToArray();
         Assert.All(stops, stop => Assert.True(stop >= 0));
+        var draws = new FixedStopsThenQuietRandom(stops);
         var spin = new SpinService(provider,
-            new CryptoReelGenerator(new FixedStopsRandom(stops)),
-            new CombinationEvaluator(), new PayoutCalculator(), new QuietFeatureRandom());
+            new CryptoReelGenerator(draws),
+            new CombinationEvaluator(), new PayoutCalculator(), draws);
 
         var result = spin.Spin(game.Id, 100, "midnight-definition-test", false, freeSpinFeatureMode: mode);
 
@@ -301,9 +302,10 @@ public sealed class MidnightVaultDefinitionTests
         var active = provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!;
         var legacy = MidnightVaultSlotDefinitions.CreateGameForPaytable(active, MidnightVaultSlotDefinitions.LegacyPaytableId);
         var reels = provider.GetReelSet(legacy.Math.ReelSetId)!;
+        var draws = new FixedStopsThenQuietRandom(reels.Reels.Select(reel => reel.IndexOf("8")));
         var engine = new SpinService(new FixedGameProvider(provider, legacy),
-            new CryptoReelGenerator(new FixedStopsRandom(reels.Reels.Select(reel => reel.IndexOf("8")))),
-            new CombinationEvaluator(), new PayoutCalculator(), new QuietFeatureRandom());
+            new CryptoReelGenerator(draws),
+            new CombinationEvaluator(), new PayoutCalculator(), draws);
 
         var oldResult = engine.Spin(legacy.Id, 100, "midnight-legacy-evidence-test", false);
         var frozen = JsonSerializer.Deserialize<SlotSpinEngineAudit>(JsonSerializer.Serialize(oldResult.EngineAudit))!;
@@ -400,9 +402,10 @@ public sealed class MidnightVaultDefinitionTests
         var provider = Provider(ReadOptions());
         var game = MidnightVaultSlotDefinitions.CreateGameForPaytable(provider.GetGame(SlotSpecialRoundProfiles.DragonHoardGameId)!, model);
         var reels = provider.GetReelSet(game.Math.ReelSetId)!;
+        var draws = new FixedStopsThenQuietRandom(reels.Reels.Select(reel => reel.IndexOf(stopSymbol)));
         return new SpinService(new FixedGameProvider(provider, game),
-            new CryptoReelGenerator(new FixedStopsRandom(reels.Reels.Select(reel => reel.IndexOf(stopSymbol)))),
-            new CombinationEvaluator(), new PayoutCalculator(), new QuietFeatureRandom())
+            new CryptoReelGenerator(draws),
+            new CombinationEvaluator(), new PayoutCalculator(), draws)
             .Spin(game.Id, 100, "midnight-version-proof", false, freeSpinFeatureMode: mode);
     }
 
@@ -439,6 +442,18 @@ public sealed class MidnightVaultDefinitionTests
     private sealed class QuietFeatureRandom : IRandomIndexSource
     {
         public int Next(int maximumExclusive) => maximumExclusive == 100 ? 47 : 0;
+    }
+
+    private sealed class FixedStopsThenQuietRandom(IEnumerable<int> stops) : IRandomIndexSource
+    {
+        private readonly Queue<int> remainingStops = new(stops);
+        public int Next(int maximumExclusive)
+        {
+            if (remainingStops.Count == 0) return maximumExclusive == 100 ? 47 : 0;
+            var stop = remainingStops.Dequeue();
+            Assert.InRange(stop, 0, maximumExclusive - 1);
+            return stop;
+        }
     }
 
     private sealed class FixedGameProvider(ISlotsDefinitionProvider source, GameDefinition selected) : ISlotsDefinitionProvider

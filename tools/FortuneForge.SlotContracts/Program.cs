@@ -36,14 +36,16 @@ var routePattern = "id: '([^']+)', title: (?:'([^']*)'|\"([^\"]*)\"),.*?playPath
 var routes = Regex.Matches(routesSource, routePattern, RegexOptions.Singleline).Select(match =>
     new Route(match.Groups[1].Value, match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value,
         match.Groups[4].Value, match.Groups[5].Value, match.Groups[6].Value)).ToArray();
-// Empty Slots is a blank handoff surface, outside the playable slot registry.
+// Jade Dragon is a blank handoff surface, outside the playable slot registry.
 Require(routes.Length == 19 && routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly19 unique playable profiles.");
 Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)), "Catalogue profile missing.");
 var sourceDirectories = new[]
 {
     "FortuneForge.Server/Slots",
+    "games/MidnightVault/src/FortuneForge.Games.MidnightVault",
+    "games/GoldFoundry/src/FortuneForge.Games.GoldFoundry",
     "games/NeonNights/src/FortuneForge.Games.NeonNights",
-    "games/EmptySlots/src/FortuneForge.Games.EmptySlots",
+    "games/JadeDragon/src/FortuneForge.Games.JadeDragon",
     "games/shared/FortuneForge.Games.Slots.Contracts"
 };
 var sourcePaths = sourceDirectories.SelectMany(directory =>
@@ -129,7 +131,7 @@ foreach (var route in routes)
         {
             scenario = scenario.Name, source = new
             {
-                generator = "Actual in-process DemoSlotsController + SpinService + CryptoReelGenerator",
+                generator = "Actual in-process DemoSlotsController + SpinService routed game engine",
                 scenario.Seed, engineVersion = scenario.Steps[0].Response.EngineAudit?.EngineVersion ?? SpinService.AuditEngineVersion,
                 gameId = route.GameId,
                 noHttpServerOrAccountSettlement = true, scenario.ReplayMatchesExceptSpinId,

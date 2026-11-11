@@ -1,4 +1,4 @@
-import { gameSmokeRoutes, shellOnlySmokeInventory, slotSmokeInventory } from './game-smoke-inventory.mjs'
+import { embeddedSlotSmokeInventory, gameSmokeRoutes, slotSmokeInventory } from './game-smoke-inventory.mjs'
 
 const baseUrl = normalizeBaseUrl(process.env.FORTUNE_FORGE_URL ?? process.argv[2] ?? 'https://fortuneforgegame.web.app')
 
@@ -13,7 +13,7 @@ for (const route of ['/home', ...gameSmokeRoutes]) {
   assert(response.ok, `${route} returned ${response.status}`)
   assert(html.includes('<div id="root"></div>'), `${route} did not return the application shell`)
 }
-console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell (${shellOnlySmokeInventory.length} shell-only starter)`)
+console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell (${embeddedSlotSmokeInventory.length} embedded Jade Dragon package)`)
 
 for (const [route, gameId] of slotSmokeInventory) {
   const status = await request(`${baseUrl}/api/slots/demo/status?gameId=${encodeURIComponent(gameId)}`)

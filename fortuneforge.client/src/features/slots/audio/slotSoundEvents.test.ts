@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_SLOT_SOUNDS, CANDY_CARNIVAL_SOUNDS, PIRATES_FORTUNE_SOUNDS } from '../config/soundSets'
+import { CANDY_CARNIVAL_SOUNDS } from '@fortuneforge/games-candy-carnival/sounds'
+import { PIRATES_FORTUNE_SOUNDS } from '@fortuneforge/games-pirates-fortune/sounds'
+import { DEFAULT_SLOT_SOUNDS } from '../config/soundSets'
 import type { SlotResultSoundEvent } from '../config/soundSets'
 import type { SpinResult } from '../types/slots'
 import { getCollectionArrivalCue, getSuiteResultCue } from './slotSoundEvents'

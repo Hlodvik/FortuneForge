@@ -51,6 +51,7 @@ coverage/
 # Local standalone Neon API and test builds.
 /output/neon-standalone-api/
 /output/neon-standalone-tests/
+/output/neon-disco-api/
 
 # Logs and local process output
 *.log
@@ -67,3 +68,6 @@ coverage/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Generated Jade Dragon presentation
+fortuneforge.client/public/games/jade-dragon/

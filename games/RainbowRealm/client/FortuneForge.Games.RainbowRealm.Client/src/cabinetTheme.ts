@@ -1,0 +1,27 @@
+import sunriseValley from './assets/art/background/rainbow-realm-sunrise-valley-page-v1.webp'
+import rainbowAppleMedallion from './assets/art/responsive/rainbow-apple-medallion-192.webp'
+import cherrySymbol from './assets/art/responsive/cherry-192.webp'
+import type { SlotCabinetTheme } from '@fortuneforge/slot-client-core'
+
+export const RAINBOW_REALM_CABINET_THEME: SlotCabinetTheme = {
+  id: 'rainbow-realm-fruit-arcade-v1',
+  chrome: 'simple',
+  accessibleName: 'Rainbow Realm fruit slot machine',
+  eyebrow: 'Fortune Forge presents',
+  title: 'Rainbow Realm',
+  subtitle: 'Fruit Frenzy',
+  celebrationEffect: 'orchard-cascade',
+  emblemImage: cherrySymbol,
+  accentImage: rainbowAppleMedallion,
+  pageBackdropImage: sunriseValley,
+  palette: {
+    shellTop: '#ff5d46',
+    shellBottom: '#4f1a62',
+    panel: '#24124d',
+    trim: '#ffd95b',
+    trimBright: '#fff8b8',
+    accent: '#40cfff',
+    glow: '#ff85b7',
+    text: '#fff8dc',
+  },
+}

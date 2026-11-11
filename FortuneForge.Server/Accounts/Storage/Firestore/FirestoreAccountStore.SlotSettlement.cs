@@ -53,12 +53,16 @@ public sealed partial class FirestoreAccountStore
         var isMidnightGame = result.GameId == SlotSpecialRoundProfiles.DragonHoardGameId;
         var isGoldFoundry = result.GameId == GoldFoundrySlotDefinitions.GameId;
         var isNeon = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+        if (isGoldFoundry && result.ChargedWagerCents != admission.ChargedWagerCents)
+            throw new InvalidOperationException("Gold Foundry's outcome differs from its admitted wager charge.");
         var isNeonDiscoPlay = isNeon && admission.IsNeonDiscoPlay;
         if (!isNeon && admission.IsNeonDiscoPlay)
             throw new InvalidOperationException("A Disco admission is only valid for Neon Nights.");
         if (isNeon &&
             (result.IsFreeSpin != admission.IsFreeSpin ||
              (result.NeonDiscoCascade is not null) != admission.IsNeonDiscoPlay ||
+             isNeonDiscoPlay && (result.EngineAudit.NeonDiscoCascade?.StartingMultiplier ??
+                 NeonDiscoCascade.InitialMultiplier) != admission.NeonDiscoMultiplier ||
              admission.ChargedWagerCents !=
              (NeonPlayPolicy.ChargesWager(admission.IsFreeSpin, admission.FreeSpinFeatureMode)
                  ? RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents) : 0) ||
@@ -132,6 +136,7 @@ public sealed partial class FirestoreAccountStore
                     admissionSnapshot.GetValue<bool>("isFreeSpin") != isFreeSpin ||
                     (admissionSnapshot.ContainsField("isNeonDiscoPlay") &&
                         admissionSnapshot.GetValue<bool>("isNeonDiscoPlay")) != admission.IsNeonDiscoPlay ||
+                    isNeon && ReadNeonDiscoMultiplier(admissionSnapshot, "neonDiscoMultiplierBefore") != admission.NeonDiscoMultiplier ||
                     admissionSnapshot.GetValue<bool>("specialBoostApplied") != result.SpecialBoostApplied ||
                     (ReadString(admissionSnapshot, "mathModelId") ?? string.Empty) != (admission.MathModelId ?? string.Empty) ||
                     (isMidnightGame && ReadString(admissionSnapshot, "freeSpinFeatureMode") != admission.FreeSpinFeatureMode) ||
@@ -181,6 +186,8 @@ public sealed partial class FirestoreAccountStore
                 var currentSpecialPoints = ReadLong(specialPointsSnapshot, "available");
                 var currentEnergy = ignoreLegacyEnergy ? 0 : ReadLong(energySnapshot, "available");
                 var neonDiscoSpinsBefore = isNeon ? ReadNeonDiscoSpinsRemaining(guardSnapshot) : 0;
+                var neonDiscoMultiplierBefore = neonDiscoSpinsBefore > 0
+                    ? ReadNeonDiscoMultiplier(guardSnapshot) : NeonDiscoCascade.InitialMultiplier;
                 if (existingResult.Exists)
                 {
                     var existingSealCollections = CreateSealCollections(
@@ -210,11 +217,15 @@ public sealed partial class FirestoreAccountStore
                         existingSealCollections,
                         ReadString(guardSnapshot, "freeSpinFeatureMode"),
                         checked((int)ReadLong(existingResult, "sealFreeSpinsAwarded")))
-                    { NeonDiscoSpinsRemaining = neonDiscoSpinsBefore };
+                    {
+                        NeonDiscoSpinsRemaining = neonDiscoSpinsBefore,
+                        NeonDiscoMultiplier = isNeon ? neonDiscoMultiplierBefore : null
+                    };
                 }
 
                 if (isNeon &&
                     (ReadLong(admissionSnapshot, "neonDiscoSpinsBefore") != neonDiscoSpinsBefore ||
+                     admission.NeonDiscoMultiplier != neonDiscoMultiplierBefore ||
                      admission.IsNeonDiscoPlay !=
                          (!isFreeSpin && currentFreeGames == 0 && neonDiscoSpinsBefore > 0)))
                     throw new InvalidOperationException("Neon's Disco play state differs from its admitted counter.");
@@ -330,6 +341,10 @@ public sealed partial class FirestoreAccountStore
                 var neonDiscoSpinsRemaining = isNeon
                     ? NeonPlayPolicy.NextDiscoSpins(neonDiscoSpinsBefore, isNeonDiscoPlay, result.NeonArcade)
                     : 0;
+                var neonDiscoMultiplier = isNeon
+                    ? NeonPlayPolicy.NextDiscoMultiplier(neonDiscoMultiplierBefore, neonDiscoSpinsRemaining,
+                        result.NeonDiscoCascade, result.NeonArcade)
+                    : (int?)null;
                 var settlement = new SlotSpinSettlement(
                     balanceAfterPayoutRand, midnightProgress is null ? checked((int)freeGamesRemaining) :
                         midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
@@ -344,7 +359,8 @@ public sealed partial class FirestoreAccountStore
                     CruciblePourValueCents = crucible?.PourValueCents,
                     CruciblePoured = crucible?.Poured,
                     CruciblePayoutCents = crucible?.PayoutCents,
-                    NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining
+                    NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
+                    NeonDiscoMultiplier = neonDiscoMultiplier
                 };
 
                 if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId))
@@ -358,12 +374,18 @@ public sealed partial class FirestoreAccountStore
                         energyBonus.PayoutMultiplier, piratesGemEvidence,
                         outcomeSchemaVersion = SlotOutcomeSchemaVersion };
                     object evidence = payload;
-                    if (crucible is not null)
+                    if (isNeon || crucible is not null)
                     {
                         var json = JsonSerializer.SerializeToNode(payload, FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json)!.AsObject();
-                        json["crucible"] = JsonSerializer.SerializeToNode(
-                            new { wageredBeforeCents = crucibleWageredBeforeCents, settlement = crucible },
-                            FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
+                        if (isNeon)
+                        {
+                            json["neonDiscoMultiplierBefore"] = neonDiscoMultiplierBefore;
+                            json["neonDiscoMultiplier"] = neonDiscoMultiplier;
+                        }
+                        if (crucible is not null)
+                            json["crucible"] = JsonSerializer.SerializeToNode(
+                                new { wageredBeforeCents = crucibleWageredBeforeCents, settlement = crucible },
+                                FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture.Json);
                         evidence = json;
                     }
                     FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
@@ -541,7 +563,10 @@ public sealed partial class FirestoreAccountStore
                     ["updatedAt"] = Timestamp.FromDateTime(createdAtUtc)
                 };
                 if (isNeon)
+                {
                     guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsRemaining;
+                    guardData["neonDiscoMultiplier"] = neonDiscoMultiplier!.Value;
+                }
                 if (crucible is not null)
                     guardData["crucibleWageredCents"] = crucible.WageredCents;
                 if (midnightProgress is not null || totalFreeSpinsAwarded > 0 ||

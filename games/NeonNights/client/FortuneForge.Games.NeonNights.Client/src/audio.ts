@@ -8,6 +8,7 @@ import roll from './assets/audio/reel-roll.ogg'
 import land from './assets/audio/reel-land.ogg'
 import bonusRoll from './assets/audio/bonus-reel-roll.ogg'
 import bonusLand from './assets/audio/bonus-reel-land.ogg'
+import discoColumnLand from './assets/audio/disco-column-land.ogg'
 import nice from './assets/audio/win-nice-v1.ogg'
 import miss from './assets/audio/no-win.ogg'
 import bonusEntry from './assets/audio/bonus-entry.ogg'
@@ -30,6 +31,7 @@ export const NEON_NIGHTS_SOUNDS: SlotSoundSet = {
     'button-click': cue(button, .58), 'bet-step': cue(bet, .54), 'lever-pull': cue(launch, .65),
     'reel-spin': cue(roll, .40, 'effect', true), 'reel-stop': cue(land, .62),
     'special-reel-spin': cue(bonusRoll, .40, 'effect', true), 'special-reel-stop': cue(bonusLand, .60),
+    'disco-column-land': cue(discoColumnLand, .38),
     'low-win': cue(nice, .58, 'result'), 'premium-win': cue(nice, .58, 'result'),
     'five-casino-win': cue(nice, .58, 'result'), 'triple-sevens': cue(nice, .58, 'result'),
     'bonus-entry': cue(bonusEntry, .68, 'result'), 'bonus-complete': cue(bonusComplete, .66, 'result'),

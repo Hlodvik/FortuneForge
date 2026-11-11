@@ -1,5 +1,5 @@
 import type { SlotExperienceSet } from '../../../features/slots/config/slotExperienceSets'
-import type { SlotSymbolGuideEntry } from '../../../features/slots/config/symbolSets'
+import type { SlotSymbolGuideEntry } from '@fortuneforge/slot-client-core/config/symbolSets'
 import contracts from './engineGuideContracts'
 
 export type SlotEngineGuideContract = {

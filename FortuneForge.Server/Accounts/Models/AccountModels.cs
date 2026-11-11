@@ -64,6 +64,7 @@ public sealed record SlotSpinAdmission(
     public string? RequestId { get; init; }
     public int PityMissesBefore { get; init; }
     public bool IsNeonDiscoPlay { get; init; }
+    public int NeonDiscoMultiplier { get; init; } = NeonDiscoCascade.InitialMultiplier;
     public string? MathModelId { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
@@ -94,6 +95,8 @@ public sealed record SlotSpinSettlement(
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public IReadOnlyList<MidnightVaultBonusRound> AwardedBonusRounds { get; init; } = [];
     public int NeonDiscoSpinsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? NeonDiscoMultiplier { get; init; }
 }
 
 public sealed record SlotStateResponse(
@@ -111,6 +114,8 @@ public sealed record SlotStateResponse(
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> QueuedBonusRounds { get; init; } = [];
     public int NeonDiscoSpinsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? NeonDiscoMultiplier { get; init; }
 }
 
 public sealed record AccountSummary(

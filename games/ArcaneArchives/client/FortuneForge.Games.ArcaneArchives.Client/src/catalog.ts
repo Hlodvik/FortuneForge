@@ -1,0 +1,12 @@
+import type { SlotGameCatalogDefinition } from '@fortuneforge/slot-game-runtime/manifest'
+import { ARCANE_ARCHIVES_VISUALS as art } from './visuals'
+
+export const ARCANE_ARCHIVES_CATALOG: SlotGameCatalogDefinition = {
+  id: 'arcane-archives',
+  title: 'Arcane Archives',
+  shortTitle: 'Arcane Archives',
+  description: 'Open the forbidden stacks, build four seal shelves, and let an enchanted satchel gather raw mana.',
+  image: art.owl,
+  imagePresentation: 'contain',
+  slotDivBackgroundImage: art.backdrop,
+}

@@ -15,6 +15,7 @@ const catalogueAnchor = 'home-lobby-games-title'
 const legacyCatalogueHash = `#${catalogueAnchor}`
 const featuredSlotRanks = new Map([
   'neon-nights',
+  'empty-slots-game',
   'gods-of-olympus',
   'arcane-archives',
   'gold-foundry',
@@ -200,7 +201,6 @@ function LobbyGameCard({ game }: { game: LobbyGame }) {
 }
 
 function LobbyArtwork({ game, priority = false }: { game: LobbyGame; priority?: boolean }) {
-  if (game.href === '/slots/empty-slots-game') return <span className="home-lobby__art-fallback" aria-hidden="true" />
   const artwork = getCataloguePresentationArt(game.href)
   const src = artwork?.src ?? game.image
   return src ? <ResponsiveSlotImage imageSrcSet={artwork?.imageSrcSet} className={`home-lobby__game-art${game.imagePresentation === 'contain' && !artwork ? ' home-lobby__game-art--contain' : ''}`} src={src} alt="" width={artwork?.width ?? 768} height={artwork?.height ?? 384} loading={priority ? 'eager' : 'lazy'} decoding="async" draggable="false" /> : <span className="home-lobby__art-fallback" aria-hidden="true">✧</span>

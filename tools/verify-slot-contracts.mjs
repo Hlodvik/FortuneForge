@@ -13,7 +13,7 @@ export async function verifySlotContracts(directory, { requireCurrent = false } 
   const root = resolve(directory)
   const index = await json(resolve(root, 'index.json'))
   const provenance = await json(resolve(root, 'source-provenance.json'))
-  // Empty Slots intentionally has no playable slot presentation to capture.
+  // Jade Dragon intentionally has no playable slot presentation to capture.
   assert.equal(index.gameCount, 19)
   assert.equal(index.games.length, index.gameCount)
   assert.equal(new Set(index.games.map(game => game.route.id)).size, index.gameCount)

@@ -22,6 +22,22 @@ export type SlotGameManifest = {
   experience: SlotExperienceSet
 }
 
+type PackagedSlotGameManifestEnvelope = Omit<SlotGameManifest, 'experience'> & {
+  experience: unknown
+}
+
+/**
+ * Package clients and the legacy host currently publish structurally identical
+ * experience contracts from separate declaration roots. Keep that transitional
+ * type assertion at this single boundary while still checking the manifest ID,
+ * routes and catalogue envelope.
+ */
+export function adoptPackagedSlotGameManifest(
+  manifest: PackagedSlotGameManifestEnvelope,
+): SlotGameManifest {
+  return manifest as SlotGameManifest
+}
+
 // Keep this helper deliberately small: manifests remain ordinary typed data
 // that artists can copy, review, and preview without learning a framework.
 export function defineSlotGame(manifest: SlotGameManifest): SlotGameManifest {

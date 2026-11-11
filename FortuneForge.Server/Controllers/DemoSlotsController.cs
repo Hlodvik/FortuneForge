@@ -24,7 +24,8 @@ public sealed record DemoSpinRequest(
     MidnightVaultDemoState? MidnightBonusState = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] long CrucibleWageredCents = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] bool? OlympusTumbleShowcase = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int NeonDiscoSpinsRemaining = 0);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int NeonDiscoSpinsRemaining = 0,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NeonDiscoMultiplier = null);
 
 [ApiController]
 [Route("api/slots/demo")]
@@ -59,11 +60,15 @@ public sealed class DemoSlotsController(
     {
         try
         {
+            var isNeon = request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+            if (!isNeon && request.NeonDiscoMultiplier is not null)
+                throw new ArgumentException("Only Neon Nights supports a Disco multiplier.", nameof(request.NeonDiscoMultiplier));
+            var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
+            if (isGoldFoundry)
+                GoldFoundryDemoBoundary.Validate(request);
             if (request.OlympusTumbleShowcase is { } showcase)
                 return await SpinOlympusTumble(request, showcase, cancellationToken);
 
-            var isGoldFoundry = request.GameId == GoldFoundrySlotDefinitions.GameId;
-            var isNeon = request.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
             if (request.NeonDiscoSpinsRemaining < 0 ||
                 request.NeonDiscoSpinsRemaining > NeonArcadeSlotDefinitions.DiscoPlaySpins ||
                 !isNeon && request.NeonDiscoSpinsRemaining != 0)
@@ -91,14 +96,13 @@ public sealed class DemoSlotsController(
                 throw new ArgumentException("Special Plays use the wager from the triggering spin.", nameof(request));
             var isNeonDiscoPlay = isNeon && !request.UseFreeSpin &&
                 request.NeonDiscoSpinsRemaining > 0;
+            var neonDiscoMultiplierBefore = request.NeonDiscoMultiplier ?? NeonDiscoCascade.InitialMultiplier;
+            if (!NeonDiscoCascade.IsValidMultiplier(neonDiscoMultiplierBefore) ||
+                request.NeonDiscoSpinsRemaining == 0 && neonDiscoMultiplierBefore != NeonDiscoCascade.InitialMultiplier)
+                throw new ArgumentOutOfRangeException(nameof(request.NeonDiscoMultiplier));
 
             if (request.GameId == SlotSpecialRoundProfiles.DragonHoardGameId)
                 return await SpinMidnight(request, cancellationToken);
-            if (isGoldFoundry)
-            {
-                GoldFoundrySlotDefinitions.ValidateSpinRequest(request.UseFreeSpin);
-                GoldFoundryCrucible.ValidateDemoWager(request.CrucibleWageredCents);
-            }
             spinService.ValidateRequest(request.GameId, request.WagerPoints);
             SlotSpecialRoundProfiles.TryGet(request.GameId, out var profile);
             var usesEnergy = !isNeon && profile?.UsesEnergy != false;
@@ -115,7 +119,8 @@ public sealed class DemoSlotsController(
                     ? request.FreeSpinFeatureMode
                     : null,
                 isFreeSpin: isNeon && request.UseFreeSpin,
-                isNeonDiscoPlay: isNeonDiscoPlay);
+                isNeonDiscoPlay: isNeonDiscoPlay,
+                neonDiscoMultiplier: isNeonDiscoPlay ? neonDiscoMultiplierBefore : NeonDiscoCascade.InitialMultiplier);
             if (isGoldFoundry)
             {
                 var settled = GoldFoundryCrucible.SettleDemo(engineResult, currentEnergy, request.CrucibleWageredCents);
@@ -172,6 +177,8 @@ public sealed class DemoSlotsController(
                     : 0,
                 FreeSpinsRemaining = freeSpinsRemaining,
                 NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
+                NeonDiscoMultiplier = isNeon ? NeonPlayPolicy.NextDiscoMultiplier(neonDiscoMultiplierBefore,
+                    neonDiscoSpinsRemaining, engineResult.NeonDiscoCascade, engineResult.NeonArcade) : null,
                 FreeSpinWagerPoints = freeSpinWagerPoints,
                 EnergyBalance = energy.FinalEnergyBalance,
                 EnergyMultiplierApplied = energy.MultiplierApplied,

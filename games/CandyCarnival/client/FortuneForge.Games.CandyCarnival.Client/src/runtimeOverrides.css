@@ -1,0 +1,9 @@
+.slots-page[data-special-round='candy-sugar-parade'] {
+  --special-round-accent: #ffb6e4;
+  --special-round-deep: #a52877;
+  --special-round-ink: #2e0d35;
+}
+
+.slots-page[data-special-round='candy-sugar-parade'] .slots-page__spin-controls .spin-button {
+  border-radius: 999px;
+}

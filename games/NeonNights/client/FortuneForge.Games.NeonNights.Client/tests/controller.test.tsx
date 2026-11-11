@@ -34,19 +34,19 @@ it('recovers the authoritative locked wager after an awarded-round conflict', as
     expect(c.spinError).toBeNull()
   } finally { act(() => root.unmount()) }
 })
-it('the Arcade intro expands only its own cabinet before any next spin', async () => {
+it('Car Plays expand the cabinet and wait for a manual spin', async () => {
   vi.useFakeTimers()
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const root = createRoot(document.createElement('div'))
   let c!: NeonNightsController
   function Harness() { c = useNeonNights({ account }); return null }
   mocks.state.mockResolvedValueOnce(emptyNeonState)
-  mocks.trigger.mockResolvedValueOnce({ ...emptyNeonState, freeSpinsRemaining: 7, freeSpinWagerPoints: 50, freeSpinFeatureMode: 'arcade-rows' })
+  mocks.trigger.mockResolvedValueOnce({ ...emptyNeonState, freeSpinsRemaining: 7, freeSpinWagerPoints: 50, freeSpinFeatureMode: 'car-rows' })
   try {
     await act(async () => root.render(<Harness />))
-    await act(async () => c.triggerAdmin('SEAL_RAND'))
-    expect(c.specialIntro?.symbol).toBe('SEAL_RAND')
-    act(() => { c.setIsHelpOpen(true); c.finishSpecialIntro('SEAL_RAND') })
+    await act(async () => c.triggerAdmin('6'))
+    expect(c.specialIntro?.symbol).toBe('6')
+    act(() => { c.finishSpecialIntro('6') })
     expect(c.arcadeExpanding).toBe(true)
     expect(c.displayedReels.every(reel => reel.length === 7)).toBe(true)
     expect(mocks.noop).toHaveBeenCalledWith('arcade-expansion')
@@ -55,6 +55,8 @@ it('the Arcade intro expands only its own cabinet before any next spin', async (
     act(() => { vi.advanceTimersByTime(1) })
     expect(c.arcadeExpanding).toBe(false)
     expect(c.specialActive).toBe(true)
+    act(() => { vi.advanceTimersByTime(6000) })
+    expect(c.state.freeSpinsRemaining).toBe(7)
     expect(mocks.spin).not.toHaveBeenCalled()
   } finally { act(() => root.unmount()) }
 })

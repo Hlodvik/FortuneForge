@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* PhantomManor uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='phantom-mist']::before { content: '☾ ✧ 👻 ✧ ☾'; animation-name: result-phantom-mist; }
+
+@keyframes result-phantom-mist {
+  0% { opacity: 0; transform: translateX(-24%) scaleY(0.7); filter: blur(0.12rem); }
+  34% { opacity: 0.78; }
+  100% { opacity: 0; transform: translateX(28%) scaleY(1.25); filter: blur(0.28rem); }
+}

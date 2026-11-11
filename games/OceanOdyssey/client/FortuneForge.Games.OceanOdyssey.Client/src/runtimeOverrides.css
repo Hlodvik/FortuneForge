@@ -1,0 +1,9 @@
+.slots-page[data-special-round='ocean-pearl-voyage'] {
+  --special-round-accent: #78f4e6;
+  --special-round-deep: #075785;
+  --special-round-ink: #031725;
+}
+
+.slots-page[data-special-round='ocean-pearl-voyage'] .slots-page__spin-controls .spin-button {
+  border-radius: 48% 48% 42% 42%;
+}

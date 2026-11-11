@@ -1,4 +1,5 @@
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 
@@ -6,17 +7,12 @@ namespace FortuneForge.Server.Slots.Games.GoldFoundry;
 
 internal static class GoldFoundryCrucible
 {
-    public const string RuleVersion = "gold-foundry-crucible-v2";
-    // One charge per visible coal on the existing strips. At the base reel
-    // frequency, collecting 100 charges normally takes hundreds of spins.
-    public const long Capacity = EnergyBonus.MeterCapacityPoints;
-    private const long MaximumDemoWageredCents = 1_000_000_000_000;
-    private const decimal PayoutRate = 0.15m;
+    public const string RuleVersion = GoldFoundryCrucibleRules.RuleVersion;
+    public const long Capacity = GoldFoundryCrucibleRules.Capacity;
 
     public static void ValidateDemoWager(long wageredCents)
     {
-        if (wageredCents is < 0 or > MaximumDemoWageredCents)
-            throw new ArgumentOutOfRangeException(nameof(wageredCents), "Invalid demo crucible wager total.");
+        GoldFoundryCrucibleRules.ValidateDemoWager(wageredCents);
     }
 
     public static SlotStateResponse CreateState(long wageredCents, long energyBalance) =>
@@ -30,7 +26,8 @@ internal static class GoldFoundryCrucible
     {
         var audit = result.EngineAudit;
         if (audit is null || !GoldFoundrySlotDefinitions.IsModel(audit.BaseGame) ||
-            audit.EngineVersion != GoldFoundryReelCollector.EngineVersion || audit.CrucibleRuleVersion != RuleVersion ||
+            audit.EngineVersion != FortuneForge.Games.GoldFoundry.GoldFoundryEngine.Version ||
+            audit.CrucibleRuleVersion != RuleVersion ||
             admission.IsFreeSpin || result.IsFreeSpin || audit.IsDerivedFreeSpin ||
             audit.FreeSpinFeatureMode is not null || result.FreeSpinsAwarded != 0 || result.SealsAwarded.Count != 0)
             throw new InvalidOperationException("The Gold Foundry outcome differs from its accepted paid spin.");
@@ -50,22 +47,16 @@ internal static class GoldFoundryCrucible
         };
     }
 
-    public static long PourValueCents(long wageredCents) =>
-        checked((long)decimal.Floor(wageredCents * PayoutRate));
+    public static long PourValueCents(long wageredCents) => GoldFoundryCrucibleRules.PourValueCents(wageredCents);
 
     public static GoldFoundryCrucibleSettlement Settle(
         long energyBefore, int energyAwarded, long wageredBeforeCents, long chargedWagerCents)
     {
-        ArgumentOutOfRangeException.ThrowIfNegative(wageredBeforeCents);
-        ArgumentOutOfRangeException.ThrowIfNegative(chargedWagerCents);
-        var startingEnergy = Math.Clamp(energyBefore, 0, Capacity);
-        var fullEnergy = Math.Min(Capacity, startingEnergy + Math.Max(0, energyAwarded));
-        var qualifyingWagerCents = energyAwarded > 0 ? chargedWagerCents : 0;
-        var wageredCents = checked(wageredBeforeCents + qualifyingWagerCents);
-        var poured = fullEnergy == Capacity && wageredCents > 0;
-        return new(
-            poured ? 0 : fullEnergy, fullEnergy, fullEnergy - startingEnergy,
-            poured ? 0 : wageredCents, poured, poured ? PourValueCents(wageredCents) : 0);
+        var settlement = GoldFoundryCrucibleRules.Settle(
+            energyBefore, energyAwarded, wageredBeforeCents, chargedWagerCents);
+        return new(settlement.EnergyBalance, settlement.MeterBalanceBeforeReset,
+            settlement.EnergyAddedToMeter, settlement.WageredCents, settlement.Poured,
+            settlement.PayoutCents);
     }
 }
 

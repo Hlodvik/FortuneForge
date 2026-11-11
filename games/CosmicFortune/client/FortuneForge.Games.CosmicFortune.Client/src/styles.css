@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* CosmicFortune uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='cosmic-streak']::before { content: '✦ ⋆ ✧ ⋆ ✦'; animation-name: result-cosmic-streak; }
+
+@keyframes result-cosmic-streak {
+  0% { opacity: 0; transform: translate3d(-44%, 44%, 0) skewX(-18deg); }
+  22% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(45%, -46%, 0) skewX(-18deg); }
+}

@@ -425,14 +425,14 @@ test('every mobile slot keeps the complete playable cabinet in the first viewpor
   }
 })
 
-test('Empty Slots starter keeps a blank surface below its game navbar', async ({ page }) => {
+test('Jade Dragon keeps its connected presentation below the shared navbar', async ({ page }) => {
   for (const viewport of [{ width: 1366, height: 768 }, { width: 390, height: 844 }]) {
     await page.setViewportSize(viewport)
-    await page.goto('/slots/empty-slots-game')
+    await page.goto('/slots/jade-dragon')
     await expect(page.locator('[data-game-navbar]')).toHaveCount(1)
-    const surface = page.getByRole('main', { name: 'Empty Slots Game' })
+    const surface = page.getByRole('main', { name: 'Jade Dragon: The Golden Pearl' })
     await expect(surface).toBeVisible()
-    await expect(surface).toBeEmpty()
+    await expect(surface.locator('iframe[title="Jade Dragon slot game"]')).toHaveAttribute('src', '/games/jade-dragon/index.html')
     await expect(page.locator('.slot-game-frame, .slots-page__playbar')).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Spin the reels' })).toHaveCount(0)
     const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth)
@@ -590,7 +590,7 @@ test('Pirates controls, gem hints, and interaction guards stay intact', async ({
   expect(helpContainment).toBe(true)
 
   const spin = page.getByRole('button', { name: 'Spin the reels' })
-  await expect(spin).toHaveClass(/spin-button--pirate-loop/)
+  await expect(spin).toHaveClass(/spin-button--sidecar-loop/)
   const wheel = await spin.evaluate((button) => {
     const buttonBox = button.getBoundingClientRect()
     const iconBox = button.querySelector('.spin-button__icon')?.getBoundingClientRect()

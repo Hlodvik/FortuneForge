@@ -10,11 +10,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-df88c498-e5ad-46fb-95ce-0e5dbb0e12f9.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/highNoonFortune/catalog.ts",
-    "fortuneforge.client/src/games/slots/highNoonFortune/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/highNoonFortune/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/high-noon-fortune/optimized/high-noon-town-v2.webp",
-    "fortuneforge.client/src/assets/slots/games/high-noon-fortune/optimized/high-noon-stagecoach-v2.webp",
+    "games/HighNoonFortune/client/FortuneForge.Games.HighNoonFortune.Client/src/catalog.ts",
+    "games/HighNoonFortune/client/FortuneForge.Games.HighNoonFortune.Client/src/cabinetTheme.ts",
+    "games/HighNoonFortune/client/FortuneForge.Games.HighNoonFortune.Client/src/symbols.ts",
+    "games/HighNoonFortune/client/FortuneForge.Games.HighNoonFortune.Client/src/assets/art/optimized/high-noon-town-v2.webp",
+    "games/HighNoonFortune/client/FortuneForge.Games.HighNoonFortune.Client/src/assets/art/optimized/high-noon-stagecoach-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-2e546928-9cae-42c2-882c-31bb3f6fef6f.png"
   ],
   "visualCheck": {

@@ -5,9 +5,8 @@ import { describe, expect, it } from 'vitest'
 import { NEON_NIGHTS_SLOT_GAME as STANDALONE_NEON_NIGHTS_SLOT_GAME } from '@fortuneforge/games-neon-nights/manifest'
 import { WinHelpDialog } from '../../features/slots/WinHelpDialog'
 import { describeSpinOutcome } from '../../features/slots/presentation/spinPresentation'
-import { GODS_TUMBLE_SYMBOLS } from './godsOfOlympus/tumble'
-import { WUKONG_FEATURE_SYMBOL_IDS } from './wukong/symbols'
-import type { SlotSymbolId } from '../../features/slots/types/slots'
+import { GODS_TUMBLE_SYMBOLS } from '@fortuneforge/games-gods-of-olympus/tumble'
+import { WUKONG_FEATURE_SYMBOL_IDS } from '@fortuneforge/games-wukong'
 import { getSlotSymbolValueLabel, slotPointsToRand } from '../../features/slots/slotPagePresentation'
 import { getSlotAnimationSymbolIds } from '../../features/slots/config/symbolSets'
 import {
@@ -60,7 +59,7 @@ const REEL_SYMBOL_CATALOG_GAME_IDS = [
   'reel-riches',
   ...SECOND_WAVE_SLOT_GAME_IDS.filter(id => id !== 'neon-nights'),
 ] as const
-function expectDefinedSymbol(gameId: string, symbol: SlotSymbolId) {
+function expectDefinedSymbol(gameId: string, symbol: string) {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === gameId)
   expect(game, `missing game ${gameId}`).toBeDefined()
   expect(game?.experience.symbols.definitions[symbol], `${gameId} is missing ${symbol}`).toBeDefined()
@@ -81,7 +80,7 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('uses the standalone Neon manifest and keeps Empty Slots as a separate catalogue starter', () => {
+  it('uses the standalone Neon manifest and the independently embedded Jade Dragon package', () => {
     expect(NEON_NIGHTS_SLOT_GAME).toBe(STANDALONE_NEON_NIGHTS_SLOT_GAME)
     expect(NEON_NIGHTS_SLOT_GAME.routes).toEqual({ play: '/slots/neon-nights', demo: '/slots/neon-nights/demo' })
     expect(NEON_NIGHTS_SLOT_GAME.experience.rules.gameId).toBe('neon-nights-v1')
@@ -91,9 +90,11 @@ describe('slot game manifests', () => {
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'neon-nights')?.image).toMatch(/neon-nights-title-v1\.webp$/)
     expect(SLOT_GAME_CATALOG).toHaveLength(20)
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')).toMatchObject({
-      title: 'Empty Slots Game', image: '', playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game',
+      title: 'Jade Dragon: The Golden Pearl', shortTitle: 'Jade Dragon',
+      playHref: '/slots/jade-dragon', demoHref: '/slots/jade-dragon',
       serverGameIds: ['empty-slots-v1'],
     })
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')?.image).toMatch(/jade-dragon-title-v1\.webp$/)
     expect(SLOT_GAME_MANIFESTS.some(game => game.id === 'empty-slots-game' || game.id === 'jungle-jackpot')).toBe(false)
   })
 
@@ -212,7 +213,8 @@ describe('slot game manifests', () => {
     expect(symbols.definitions.SEAL_RAND?.wagerMultiplier).toBe(2)
     const arcaneCatalogImage = ARCANE_ARCHIVES_SLOT_GAME.catalog.image
     expect(arcaneCatalogImage).toMatch(/arcane-archives-owl-v2\.webp$/)
-    expect(SLOT_GAME_CATALOG.find(game => game.id === 'arcane-archives')?.image).toBe(arcaneCatalogImage)
+    expect(SLOT_GAME_CATALOG.find(game => game.id === 'arcane-archives')?.image)
+      .toMatch(/arcane-archives-title-v1\.webp$/)
   })
 
   it('registers Gold Foundry with cash ingots and no new free-spin features', () => {
@@ -233,6 +235,10 @@ describe('slot game manifests', () => {
     expect(symbols.guideEntries.filter(entry => entry.firstLabel === '3 / 4')
       .map(entry => entry.symbol)).toEqual(expect.arrayContaining(['SEAL_ROWS', 'SEAL_SYNC', 'SEAL_PAW', 'SEAL_RAND']))
     expect(symbols.guideEntries.find(entry => entry.symbol === 'PAW')?.firstLabel).toBe('1 crucible')
+    expect(symbols.definitions.SEAL_ROWS?.wagerMultiplier).toBe(0.5)
+    expect(symbols.definitions.SEAL_SYNC?.wagerMultiplier).toBe(1)
+    expect(symbols.definitions.SEAL_PAW?.wagerMultiplier).toBe(1.5)
+    expect(symbols.definitions.SEAL_RAND?.wagerMultiplier).toBe(2)
     expect(symbols.definitions.RAND_1).toBeUndefined()
   })
 
@@ -364,7 +370,7 @@ describe('slot game manifests', () => {
 
     expect(symbols).not.toHaveLength(0)
     for (const symbol of symbols) {
-      expect(symbol?.image).toContain('/src/assets/slots/games/candy-carnival/')
+      expect(symbol?.image.toLowerCase()).toContain('candy-carnival')
     }
   })
 
@@ -549,7 +555,7 @@ describe('slot game manifests', () => {
     )
     expect(WUKONG_SLOT_GAME.experience.symbols.definitions['2']?.label).not.toContain('Nimbus')
     expect(Object.values(WUKONG_SLOT_GAME.experience.symbols.definitions)
-      .filter((definition) => definition.label.toLowerCase().includes('nimbus')),
+      .filter((definition) => definition?.label.toLowerCase().includes('nimbus')),
     ).toHaveLength(1)
     expect(collections?.every((collection) => collection.rewardDescription)).toBe(true)
     expect(collections?.map((collection) => collection.displayLabel)).toEqual([

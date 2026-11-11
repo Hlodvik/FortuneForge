@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\games\shared\FortuneForge.Games.Slots.Contracts\FortuneForge.Games.Slots.Contracts.csproj" />
+    <ProjectReference Include="..\..\games\MidnightVault\src\FortuneForge.Games.MidnightVault\FortuneForge.Games.MidnightVault.csproj" />
     <ProjectReference Include="..\..\games\NeonNights\src\FortuneForge.Games.NeonNights\FortuneForge.Games.NeonNights.csproj" />
     <ProjectReference Include="..\..\FortuneForge.Server\FortuneForge.Server.csproj" />
   </ItemGroup>

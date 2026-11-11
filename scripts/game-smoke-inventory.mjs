@@ -48,13 +48,13 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/cards/hearts' },
 ]
 
-// Starter surfaces return the app shell but do not expose a playable demo spin.
-export const shellOnlySmokeInventory = [
-  { smokePath: '/slots/empty-slots-game' },
+// Jade Dragon is a real embedded client package without a public demo route.
+export const embeddedSlotSmokeInventory = [
+  { smokePath: '/slots/jade-dragon' },
 ]
 
 export const gameSmokeRoutes = [
   ...nonSlotSmokeInventory.map(({ smokePath }) => smokePath),
   ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
-  ...shellOnlySmokeInventory.map(({ smokePath }) => smokePath),
+  ...embeddedSlotSmokeInventory.map(({ smokePath }) => smokePath),
 ]

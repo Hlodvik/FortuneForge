@@ -9,11 +9,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-d0b31992-13a8-4e1b-b132-135f0824eb57.png",
   "referencePaths": [
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/games/slots/robotRevolution/definition.ts",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-megacity-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-titan-construction-mech-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-service-android-v2.webp",
-    "C:/Users/Lctiv/source/repos/FortuneForge-consolidated/fortuneforge.client/src/assets/slots/games/robot-revolution/optimized/robot-revolution-sentient-ai-core-v2.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/definition.ts",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/optimized/robot-revolution-megacity-v2.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/optimized/robot-revolution-titan-construction-mech-v2.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/optimized/robot-revolution-service-android-v2.webp",
+    "games/RobotRevolution/client/FortuneForge.Games.RobotRevolution.Client/src/assets/art/optimized/robot-revolution-sentient-ai-core-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-9ed2-7423-91e8-a25495b25e79/exec-6f199ca8-7f4f-40f4-8cbb-ba44b197504e.png"
   ],
   "visualCheck": [

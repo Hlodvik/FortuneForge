@@ -2,8 +2,8 @@
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { RAINBOW_REALM_SLOT_GAME } from '../../games/slots/rainbowRealm/manifest'
-import { OCEAN_ODYSSEY_SLOT_GAME } from '../../games/slots/oceanOdyssey/manifest'
+import { RAINBOW_REALM_SLOT_GAME } from '@fortuneforge/games-rainbow-realm/manifest'
+import { OCEAN_ODYSSEY_SLOT_GAME } from '@fortuneforge/games-ocean-odyssey/manifest'
 import type { SlotExperienceSet } from './config/slotExperienceSets'
 import { SlotsPageView } from './SlotsPageView'
 import type { SpinResult } from './types/slots'
@@ -35,12 +35,14 @@ vi.mock('./presentation/spinLifecycle', async importOriginal => ({
 }))
 
 const experience = RAINBOW_REALM_SLOT_GAME.experience
+const asHostReels = (reels: readonly (readonly string[])[]): SpinResult['reels'] =>
+  reels.map((reel) => [...reel]) as SpinResult['reels']
 function response(remaining: number, points = 0, isFreeSpin = false): SpinResult {
   return {
     spinId: `presentation-${remaining}-${points}`, gameId: experience.rules.gameId,
     reelSetId: 'presentation', symbolSetId: experience.symbols.serverSymbolSetId!, paytableId: 'presentation',
     wagerPoints: experience.rules.wagerOptions[0], pointValueInCents: experience.rules.pointValueInCents,
-    reelStops: experience.rules.initialReels.map(() => 0), reels: experience.rules.initialReels.map(reel => [...reel]),
+    reelStops: experience.rules.initialReels.map(() => 0), reels: asHostReels(experience.rules.initialReels),
     consecutiveFiveMisses: 0, fiveMatchPityTriggered: false, isFreeSpin,
     freeSpinsAwarded: isFreeSpin ? 0 : remaining, freeSpinsRemaining: remaining,
     freeSpinWagerPoints: remaining > 0 ? experience.rules.wagerOptions[0] : null,

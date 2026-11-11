@@ -13,10 +13,10 @@
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-25d33983-48e6-4adf-87da-19bd22266538.png",
   "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-fc6f4175-754f-4dd6-b51a-997667743754.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/samuraiFortune/definition.ts",
-    "fortuneforge.client/src/games/slots/samuraiFortune/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/samurai-fortune/optimized/samurai-fortune-bridge-v2.webp",
-    "fortuneforge.client/src/assets/slots/games/samurai-fortune/optimized/samurai-fortune-forged-katana-v2.webp"
+    "games/SamuraiFortune/client/FortuneForge.Games.SamuraiFortune.Client/src/definition.ts",
+    "games/SamuraiFortune/client/FortuneForge.Games.SamuraiFortune.Client/src/symbols.ts",
+    "games/SamuraiFortune/client/FortuneForge.Games.SamuraiFortune.Client/src/assets/art/optimized/samurai-fortune-bridge-v2.webp",
+    "games/SamuraiFortune/client/FortuneForge.Games.SamuraiFortune.Client/src/assets/art/optimized/samurai-fortune-forged-katana-v2.webp"
   ],
   "visualCheck": {
     "fullSize": "Inspected final master and 768x384 WebP. Exact Samurai Fortune title; forged katana with navy/gold hilt and red tassel, blossom garden, red bridge, lanterns and mountain castle preserve existing identity. No new warrior/deity, writing on lanterns, extra copy, fake UI or claims.",

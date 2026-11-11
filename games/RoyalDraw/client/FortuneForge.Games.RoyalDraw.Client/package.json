@@ -1,0 +1,30 @@
+{
+  "name": "@fortuneforge/games-royal-draw",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "files": ["dist", "README.md"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./manifest": { "types": "./dist/manifest.d.ts", "import": "./dist/manifest.js" },
+    "./catalog": { "types": "./dist/catalog.d.ts", "import": "./dist/catalog.js" },
+    "./sounds": { "types": "./dist/sounds.d.ts", "import": "./dist/sounds.js" },
+    "./styles.css": "./dist/styles.css"
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
+    "test": "npm run build",
+    "build": "tsc -p tsconfig.build.json && node scripts/copy-static.mjs"
+  },
+  "dependencies": {
+    "@fortuneforge/slot-client-core": "0.1.0",
+    "@fortuneforge/slot-game-runtime": "0.1.0"
+  },
+  "peerDependencies": { "react": "^19.0.0", "react-dom": "^19.0.0" },
+  "devDependencies": {
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "typescript": "~6.0.3",
+    "vite": "^8.1.6"
+  }
+}

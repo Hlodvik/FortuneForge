@@ -10,11 +10,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-8acf7bf0-71e8-4ea5-b023-295bc69d6e04.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/royalDraw/catalog.ts",
-    "fortuneforge.client/src/games/slots/royalDraw/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/royalDraw/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/royal-draw/optimized/royal-draw-poker-salon-v2.webp",
-    "fortuneforge.client/src/assets/slots/games/royal-draw/optimized/royal-draw-royal-flush-v2.webp",
+    "games/RoyalDraw/client/FortuneForge.Games.RoyalDraw.Client/src/catalog.ts",
+    "games/RoyalDraw/client/FortuneForge.Games.RoyalDraw.Client/src/cabinetTheme.ts",
+    "games/RoyalDraw/client/FortuneForge.Games.RoyalDraw.Client/src/symbols.ts",
+    "games/RoyalDraw/client/FortuneForge.Games.RoyalDraw.Client/src/assets/art/optimized/royal-draw-poker-salon-v2.webp",
+    "games/RoyalDraw/client/FortuneForge.Games.RoyalDraw.Client/src/assets/art/optimized/royal-draw-royal-flush-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-45984751-8843-426e-ae21-09a97c346560.png"
   ],
   "visualCheck": {

@@ -1,170 +1,80 @@
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Slots.Games;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
-using FortuneForge.Server.Slots.Reels;
 using Microsoft.Extensions.Options;
 
 namespace FortuneForge.Server.Slots.Configuration;
 
-public sealed class OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> options) : ISlotsDefinitionProvider
+/// <summary>
+/// Host definition adapter. Playable slot definitions come from first-class
+/// game packages; appsettings no longer owns any game math.
+/// </summary>
+public sealed class OptionsSlotsDefinitionProvider : ISlotsDefinitionProvider
 {
+    public OptionsSlotsDefinitionProvider() { }
+
+    // Source-compatible bridge for tools and historical tests. Package-owned
+    // definitions intentionally ignore host configuration.
+    public OptionsSlotsDefinitionProvider(IOptions<SlotsOptions> _) { }
+
     public GameDefinition? GetGame(string id)
     {
-        if (id == SlotSpecialRoundProfiles.EmptySlotsGameId)
-            return Games.EmptySlots.EmptySlotsEngine.CreateGame();
+        if (id == SlotSpecialRoundProfiles.JadeDragonGameId)
+            return Games.JadeDragon.JadeDragonEngine.CreateGame();
         if (id == NeonArcadeSlotDefinitions.GameId)
             return NeonArcadeSlotDefinitions.CreateGame();
+        if (id == MidnightVaultSlotDefinitions.GameId)
+            return MidnightVaultSlotDefinitions.CreateGame();
         if (id == GoldFoundrySlotDefinitions.GameId)
             return GoldFoundrySlotDefinitions.CreateGame();
-        var configured = options.Value.GameDefinitions
-            .SingleOrDefault(game => string.Equals(game.Id, id, StringComparison.Ordinal));
-        if (configured is not null)
-        {
-            return SlotSpecialRoundProfiles.TryGet(id, out var configuredProfile)
-                ? ApplyProfile(configured, configuredProfile)
-                : configured;
-        }
-        if (id == SlotSpecialRoundProfiles.WukongGameId ||
-            !SlotSpecialRoundProfiles.TryGet(id, out var profile))
-        {
-            return null;
-        }
-
-        var template = options.Value.ClassicProfileTemplate;
-        return template is null ? null : ApplyProfile(template, profile);
+        return StandaloneSlotPackageRegistry.GetGame(id);
     }
 
-    public SymbolSetDefinition? GetSymbolSet(string id) =>
-        id == "empty-slots-symbols-v1"
-            ? Games.EmptySlots.EmptySlotsEngine.CreateSymbolSet()
-            : id == GoldFoundrySlotDefinitions.SymbolSetId
-            ? GoldFoundrySlotDefinitions.CreateSymbolSet()
-            : id == RainbowRealmSlotDefinitions.SymbolSetId
-            ? RainbowRealmSlotDefinitions.CreateSymbolSet()
-            : string.Equals(id, NeonArcadeSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
-            ? NeonArcadeSlotDefinitions.CreateSymbolSet()
-            : string.Equals(id, MidnightVaultSlotDefinitions.SymbolSetId, StringComparison.Ordinal)
-            ? MidnightVaultSlotDefinitions.CreateSymbolSet()
-            : options.Value.SymbolSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
+    public SymbolSetDefinition? GetSymbolSet(string id)
+    {
+        if (id == "empty-slots-symbols-v1")
+            return Games.JadeDragon.JadeDragonEngine.CreateSymbolSet();
+        if (id == GoldFoundrySlotDefinitions.SymbolSetId)
+            return GoldFoundrySlotDefinitions.CreateSymbolSet();
+        if (id == NeonArcadeSlotDefinitions.SymbolSetId)
+            return NeonArcadeSlotDefinitions.CreateSymbolSet();
+        if (id == MidnightVaultSlotDefinitions.SymbolSetId)
+            return MidnightVaultSlotDefinitions.CreateSymbolSet();
+        return StandaloneSlotPackageRegistry.GetSymbolSet(id);
+    }
 
     public ReelSetDefinition? GetReelSet(string id)
     {
         if (id == "empty-slots-reels-v1")
-            return Games.EmptySlots.EmptySlotsEngine.CreateReelSet();
-        if (id == ArcaneLightningCollector.ReelSetId)
-        {
-            var game = options.Value.GameDefinitions.SingleOrDefault(game =>
-                game.Id == SlotSpecialRoundProfiles.ArcaneArchivesGameId) ?? options.Value.ClassicProfileTemplate;
-            var source = game is null ? null : options.Value.ReelSets.SingleOrDefault(set => set.Id == game.Math.ReelSetId);
-            return source is null ? null : ArcaneArchivesBaseReelSet.Create(source);
-        }
+            return Games.JadeDragon.JadeDragonEngine.CreateReelSet();
         if (id == GoldFoundrySlotDefinitions.ReelSetId)
             return GoldFoundrySlotDefinitions.CreateReelSet();
-        if (id == RainbowRealmSlotDefinitions.ReelSetId)
-            return RainbowRealmSlotDefinitions.Reels;
-        if (string.Equals(id, NeonArcadeSlotDefinitions.ReelSetId, StringComparison.Ordinal))
+        if (id == NeonArcadeSlotDefinitions.ReelSetId)
             return NeonArcadeSlotDefinitions.CreateReelSet();
-        if (string.Equals(id, MidnightVaultBaseReelSet.Id, StringComparison.Ordinal))
+        if (id == MidnightVaultBaseReelSet.Id)
             return MidnightVaultBaseReelSet.Create();
-        if (string.Equals(id, MidnightVaultBaseReelSet.CurrentId, StringComparison.Ordinal))
+        if (id == MidnightVaultBaseReelSet.CurrentId)
             return MidnightVaultBaseReelSet.CreateCurrent();
-        if (string.Equals(id, PiratesFortuneBaseReelSet.Id, StringComparison.Ordinal))
-        {
-            return PiratesFortuneBaseReelSet.Definition;
-        }
-        if (string.Equals(id, WukongBaseReelSet.Id, StringComparison.Ordinal))
-        {
-            var prototype = options.Value.GameDefinitions.SingleOrDefault(game =>
-                string.Equals(game.Id, SlotSpecialRoundProfiles.WukongGameId, StringComparison.Ordinal));
-            var source = prototype is null
-                ? null
-                : options.Value.ReelSets.SingleOrDefault(set =>
-                    string.Equals(set.Id, prototype.Math.ReelSetId, StringComparison.Ordinal));
-            return source is null ? null : WukongBaseReelSet.Create(source);
-        }
-
-        return options.Value.ReelSets.SingleOrDefault(set => string.Equals(set.Id, id, StringComparison.Ordinal));
+        return StandaloneSlotPackageRegistry.GetReelSet(id);
     }
 
     public PaytableDefinition? GetPaytable(string id)
     {
         if (id == "empty-slots-paytable-v1")
-            return Games.EmptySlots.EmptySlotsEngine.CreatePaytable();
+            return Games.JadeDragon.JadeDragonEngine.CreatePaytable();
         if (id == GoldFoundrySlotDefinitions.PaytableId)
             return GoldFoundrySlotDefinitions.CreatePaytable();
-        if (id == RainbowRealmSlotDefinitions.PaytableId)
-            return RainbowRealmSlotDefinitions.CreatePaytable();
-        if (string.Equals(id, NeonArcadeSlotDefinitions.PaytableId, StringComparison.Ordinal))
+        if (id == NeonArcadeSlotDefinitions.PaytableId)
             return NeonArcadeSlotDefinitions.CreatePaytable();
-        if (string.Equals(id, MidnightVaultSlotDefinitions.PaytableId, StringComparison.Ordinal))
+        if (id == NeonArcadeSlotDefinitions.PreviousPaytableId)
+            return NeonArcadeSlotDefinitions.CreatePreviousPaytable();
+        if (id == MidnightVaultSlotDefinitions.PaytableId)
             return MidnightVaultSlotDefinitions.CreatePaytable();
-        if (string.Equals(id, MidnightVaultSlotDefinitions.PreviousPaytableId, StringComparison.Ordinal))
+        if (id == MidnightVaultSlotDefinitions.PreviousPaytableId)
             return MidnightVaultSlotDefinitions.CreatePreviousPaytable();
-        if (string.Equals(id, MidnightVaultSlotDefinitions.LegacyPaytableId, StringComparison.Ordinal))
+        if (id == MidnightVaultSlotDefinitions.LegacyPaytableId)
             return MidnightVaultSlotDefinitions.CreateLegacyPaytable();
-
-        return options.Value.Paytables.SingleOrDefault(table => string.Equals(table.Id, id, StringComparison.Ordinal));
+        return StandaloneSlotPackageRegistry.GetPaytable(id);
     }
-
-    private static GameDefinition ApplyProfile(GameDefinition source, SlotSpecialRoundProfile profile)
-    {
-        var paylineIndexes = profile.PaylinePatternIds?
-            .Select(patternId => patternId - 1)
-            .ToArray();
-
-        return new GameDefinition
-        {
-            Id = profile.GameId,
-            Layout = paylineIndexes is null
-                ? source.Layout
-                : new GameLayoutDefinition
-                {
-                    ReelCount = source.Layout.ReelCount,
-                    VisibleRows = source.Layout.VisibleRows,
-                    PaylineCount = paylineIndexes.Length
-                },
-            Symbols = profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
-                ? RainbowRealmSlotDefinitions.CreateSymbolRules(source.Symbols)
-                : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
-                ? MidnightVaultSlotDefinitions.CreateSymbolRules(source.Symbols)
-                : source.Symbols,
-            Matching = source.Matching,
-            Math = CloneMath(source.Math, profile, paylineIndexes),
-            Wagering = source.Wagering,
-            FreeGames = source.FreeGames is null || profile.ScatterAwardedSpins <= 0
-                ? null
-                : profile.Configure(source.FreeGames),
-            SpecialPoints = source.SpecialPoints,
-            Energy = profile.UsesEnergy ? source.Energy : null,
-            Paylines = paylineIndexes is null
-                ? source.Paylines
-                : paylineIndexes.Select(index => source.Paylines[index]).ToList()
-        };
-    }
-
-    private static GameMathDefinition CloneMath(
-        GameMathDefinition source,
-        SlotSpecialRoundProfile profile,
-        IReadOnlyList<int>? paylineIndexes) => new()
-    {
-        ReelSetId = profile.BaseReelSetId ?? source.ReelSetId,
-        PaytableId = profile.GameId == SlotSpecialRoundProfiles.RainbowRealmGameId
-            ? RainbowRealmSlotDefinitions.PaytableId
-            : string.Equals(profile.GameId, SlotSpecialRoundProfiles.DragonHoardGameId, StringComparison.Ordinal)
-            ? MidnightVaultSlotDefinitions.PaytableId
-            : source.PaytableId,
-        PayoutMultiplier = profile.PayoutMultiplier,
-        PaylinePayoutSteps = paylineIndexes is null
-            ? source.PaylinePayoutSteps
-            : paylineIndexes.Select(index => source.PaylinePayoutSteps[index]).ToList(),
-        FiveMatchPityMissLimit = source.FiveMatchPityMissLimit,
-        Targets = profile.TargetHitRate is { } targetHitRate
-            ? new GameMathTargets
-            {
-                Rtp = source.Targets.Rtp,
-                HitRate = targetHitRate,
-                Volatility = source.Targets.Volatility
-            }
-            : source.Targets
-    };
 }

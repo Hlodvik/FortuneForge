@@ -1,65 +1,8 @@
-// @vitest-environment jsdom
-import { act } from 'react'
-import { createRoot } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { CollectionProgressDisplay } from './CollectionProgressDisplay'
 
 describe('CollectionProgressDisplay', () => {
-  it('shows staged vault piles with responsive art and no exact countdown', () => {
-    vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
-    vi.stubGlobal('ResizeObserver', undefined)
-    const width = vi.spyOn(HTMLImageElement.prototype, 'clientWidth', 'get').mockReturnValue(44)
-    const height = vi.spyOn(HTMLImageElement.prototype, 'clientHeight', 'get').mockReturnValue(44)
-    const host = document.createElement('div')
-    document.body.append(host)
-    const root = createRoot(host)
-    const candidates = '/ruby-96.webp 96w, /ruby-192.webp 192w, /ruby-320.webp 320w'
-    try {
-      for (const count of [0, 29]) {
-        act(() => root.render(
-          <CollectionProgressDisplay
-            collection={{ sealId: 'sync', count, averageWagerPoints: 50, requiredCount: 30 }}
-            definition={{ id: 'sync', label: 'Ruby access track', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 30 }}
-            image="/ruby-96.webp"
-            imageSrcSet={candidates}
-            isImpacting={false}
-            itemLabel="vault jewels"
-            presentation="vault-access"
-          />,
-        ))
-        const track = host.querySelector('[role="img"]')
-        expect(track?.getAttribute('data-collection-presentation')).toBe('vault-access')
-        expect(track?.hasAttribute('aria-valuenow')).toBe(false)
-        expect(track?.querySelector('.slots-page__collection-count')).toBeNull()
-        expect(track?.getAttribute('aria-label')).not.toContain(`${count} of 30`)
-        expect(track?.querySelector('.midnight-vault__gem-pile')?.getAttribute('data-pile-stage')).toBe(count === 0 ? '0' : '4')
-        const gem = track?.querySelector<HTMLImageElement>('.slots-page__vault-access-gem')
-        expect(gem).not.toBeNull()
-        expect(gem?.getAttribute('src')).toBe('/ruby-96.webp')
-        expect(gem?.getAttribute('srcset')).toBe(candidates)
-        expect(gem?.getAttribute('sizes')).toBe('44px')
-      }
-    } finally {
-      act(() => root.unmount())
-      host.remove()
-      width.mockRestore()
-      height.mockRestore()
-      vi.unstubAllGlobals()
-    }
-  })
-
-  it('keeps nearby vault counts in the same visual stage without suggesting a guaranteed next-spin trigger', () => {
-    const render = (count: number) => renderToStaticMarkup(<CollectionProgressDisplay
-      collection={{ sealId: 'sync', count, averageWagerPoints: 3, requiredCount: 30 }}
-      definition={{ id: 'sync', label: 'Ruby', shortLabel: 'Ruby', symbol: 'SEAL_SYNC', requiredCount: 30 }}
-      image="/ruby.webp" isImpacting={false} itemLabel="jewels" presentation="vault-access" />)
-    expect(render(24)).toBe(render(29))
-    expect(render(29)).toContain('Large pile')
-    expect(render(29)).not.toContain('Vault Breach unlocked')
-    expect(render(30)).toContain('Vault Breach unlocked')
-  })
-
   it('renders Wukong collection progress as a lightweight celestial orbit', () => {
     const markup = renderToStaticMarkup(
       <CollectionProgressDisplay

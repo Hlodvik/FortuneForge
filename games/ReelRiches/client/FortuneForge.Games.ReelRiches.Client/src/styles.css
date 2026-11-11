@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+@import './reelRichesFeature.css';
+
+.slots-page__result-atmosphere[data-celebration='reel-ripple']::before { content: '🐟 ◌ 🐚 ◌ 🐟'; animation-name: result-reel-ripple; }
+
+@keyframes result-reel-ripple {
+  0% { opacity: 0; transform: translateY(26%) scale(0.62); }
+  28% { opacity: 1; transform: translateY(0) scale(1.08); }
+  100% { opacity: 0; transform: translateY(-14%) scale(1.34); }
+}

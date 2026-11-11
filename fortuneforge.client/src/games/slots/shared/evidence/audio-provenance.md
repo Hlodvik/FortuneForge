@@ -10,7 +10,7 @@ Neon Nights selects the CC0 NICE voice recording for paid wins and the supplied 
 
 The Arcade Plays row expansion uses the user-supplied `SI_Blazer_fx_energy_powerup_hifi_holy.wav` from the Blazer Retro Anime FX Splice pack. The copied runtime file is `public/assets/slots/audio-suites/v1/neon-nights/arcade-expansion.wav`; its saved user volume and mute settings apply.
 
-The eligible slugs are `cosmic-fortune`, `high-noon-fortune`, `gods-of-olympus`, `royal-draw`, `samurai-fortune`, `robot-revolution`, `phantom-manor`, `ocean-odyssey`, `candy-carnival`, `desert-treasures`, `neon-nights`, `nordic-legends`, `rainbow-realm`, `arcane-archives`, and `reel-riches`. Midnight Vault (`dragon-hoard`), Wukong and Pirates retain their existing selections. Gold Foundry supplies a separate forge palette and reuses five original synthesized result stingers. [Gold Foundry audio sources](../../../../../public/assets/slots/gold-foundry/v1/audio/SOURCE.txt)
+The eligible slugs are `cosmic-fortune`, `high-noon-fortune`, `gods-of-olympus`, `royal-draw`, `samurai-fortune`, `robot-revolution`, `phantom-manor`, `ocean-odyssey`, `candy-carnival`, `desert-treasures`, `neon-nights`, `nordic-legends`, `rainbow-realm`, `arcane-archives`, and `reel-riches`. Midnight Vault (`dragon-hoard`), Wukong and Pirates retain their existing selections. Gold Foundry supplies a separate package-owned forge palette and reuses five original synthesized result stingers. [Gold Foundry audio sources](../../../../../../games/GoldFoundry/client/FortuneForge.Games.GoldFoundry.Client/src/assets/audio/SOURCE.txt)
 
 The baseline music switches between one base and one bonus bed; Arcane Archives now keeps its selected loop running in both modes. Auto play adds no extra music layer. Base/bonus reel textures and landings are separate. The four collection cues map to the existing `sync`, `rows`, `paw`, and `rand` tracks, with at most one accent per track per result and one live voice per track. Shared collection filenames retain the Neon delivery identities (`flamingo`, `dice`, `sunset`, `arcade`); they do not rename other games' symbols. Each result chooses one complete stinger, with actual bonus completion taking priority over a simultaneous win stinger. The 777 cue reads the authoritative separate `bananaBonusPoints` award. Completion is dispatched only from a newly processed final free-spin response, not mounting or restoring a page. User volume, mute and results-only preferences remain effective; no `Audio` objects are created on hook mount.
 
@@ -26,7 +26,7 @@ The separate non-slot `src/features/audio/ambientGameMusic.ts` still imports `cy
 
 All sound-set IDs, cue IDs, semantic event selections, existing categories, loop flags and volumes remain. This preserves the recorded OpenTracks selection for a future cleared delivery decision. Reel Riches' original procedural bonus-only arrangement remains active. At the user's subsequent request, Midnight Vault now uses the separately licensed CC BY 4.0 noir recording [I Knew a Guy](../../dragonHoard/evidence/audio-provenance.md); its earlier OpenTracks candidate remains retired. The other nineteen base music selections remain disabled.
 
-| Existing source filename under `src/assets/slots/ambient/` | Recorded track page | Catalogue selections |
+| Recorded source | Recorded track page | Catalogue selections |
 |---|---|---|
 | `ancient-sword.mp3` | [An Ancient Sword, 23147](https://dova-s.jp/en/bgm/detail/23147) | Gods of Olympus |
 | `asian-dragon.mp3` | [Asian Dragon, 19980](https://dova-s.jp/en/bgm/detail/19980) | Samurai Fortune; Wukong |
@@ -34,11 +34,11 @@ All sound-set IDs, cue IDs, semantic event selections, existing categories, loop
 | `casino-rock.mp3` | [Casino de Rock, 18657](https://dova-s.jp/en/bgm/detail/18657) | Royal Draw; shared default |
 | `country-trail.mp3` | [Wagon Wheel Jazz, 23708](https://dova-s.jp/en/bgm/detail/23708) | High Noon Fortune |
 | `cyber-night.mp3` | [Cyber-style BGM, 8334](https://dova-s.jp/en/bgm/detail/8334) | Cosmic Fortune; Neon Nights; Robot Revolution; Midnight Vault |
-| `desert-wind.mp3` | [Swirling desert wind, 23035](https://dova-s.jp/en/bgm/detail/23035) | Desert Treasures |
+| `games/DesertTreasures/client/FortuneForge.Games.DesertTreasures.Client/src/assets/audio/ambient/desert-wind.mp3` | [Swirling desert wind, 23035](https://dova-s.jp/en/bgm/detail/23035) | Desert Treasures |
 | `forest-journey.mp3` | [A Journey in the Forest, 23670](https://dova-s.jp/en/bgm/detail/23670) | Rainbow Realm special ambience (disabled) |
 | `haunted-chimes.mp3` | [Horror chime ambience, 21024](https://dova-s.jp/en/bgm/detail/21024) | Arcane Archives; Phantom Manor |
-| `nordic-atmosphere.mp3` | [Nordic Atmosphere, 20973](https://dova-s.jp/en/bgm/detail/20973) | Nordic Legends |
-| `pirate-voyage.mp3` | [Pirate Ship Dungeon, 21763](https://dova-s.jp/en/bgm/detail/21763) | Ocean Odyssey; Pirates' Fortune manual/autoplay; Reel Riches base game |
+| `games/NordicLegends/client/FortuneForge.Games.NordicLegends.Client/src/assets/audio/ambient/nordic-atmosphere.mp3` | [Nordic Atmosphere, 20973](https://dova-s.jp/en/bgm/detail/20973) | Nordic Legends |
+| `games/PiratesFortune/client/FortuneForge.Games.PiratesFortune.Client/src/assets/audio/ambient/pirate-voyage.mp3` | [Pirate Ship Dungeon, 21763](https://dova-s.jp/en/bgm/detail/21763) | Ocean Odyssey; Pirates' Fortune manual/autoplay; Reel Riches base game |
 
 These track mappings come from the retained ambient credits and current sound configuration. The general license pages were read directly for this decision; the table is not a claim of a new track-by-track creator-terms audit. No explicit user-selected music instruction was found in the scoped repository evidence. Recorded game-specific selections remain identifiable and can be reviewed with music off.
 

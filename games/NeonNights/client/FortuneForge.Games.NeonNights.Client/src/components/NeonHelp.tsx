@@ -19,7 +19,8 @@ export function NeonHelp() {
     <>
         <p className="win-help__intro">
           Matching symbols must connect across neighboring reels. {wildDefinition.label}{' '}
-          is the highest-value symbol and can substitute on a full five-symbol payline.
+          substitutes for regular paying symbols in three- and five-symbol matches.
+          A win requires at least one regular paying symbol.
         </p>
 
         <div className="win-help__rules">

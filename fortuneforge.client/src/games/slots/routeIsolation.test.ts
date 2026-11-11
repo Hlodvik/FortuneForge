@@ -1,17 +1,18 @@
 /// <reference types="node" />
 
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { SLOT_GAME_CATALOG } from './catalog'
 import { SLOT_ROUTE_DEFINITIONS } from './routeRegistry'
 
 describe('slot route resource isolation', () => {
-  it('keeps playable route and catalog registries in lockstep with the separate empty starter', () => {
-    const starter = SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')!
-    expect(starter).toMatchObject({ title: 'Empty Slots Game', image: '', description: '',
-      playHref: '/slots/empty-slots-game', demoHref: '/slots/empty-slots-game', serverGameIds: ['empty-slots-v1'] })
-    expect(SLOT_ROUTE_DEFINITIONS.some(route => route.id === starter.id)).toBe(false)
-    const playableCatalog = SLOT_GAME_CATALOG.filter(game => game.id !== starter.id)
+  it('keeps generic routes in lockstep with the independently embedded Jade Dragon client', () => {
+    const jade = SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')!
+    expect(jade).toMatchObject({ title: 'Jade Dragon: The Golden Pearl', shortTitle: 'Jade Dragon',
+      playHref: '/slots/jade-dragon', demoHref: '/slots/jade-dragon', serverGameIds: ['empty-slots-v1'] })
+    expect(jade.image).toMatch(/jade-dragon-title-v1\.webp$/)
+    expect(SLOT_ROUTE_DEFINITIONS.some(route => route.id === jade.id)).toBe(false)
+    const playableCatalog = SLOT_GAME_CATALOG.filter(game => game.id !== jade.id)
     expect(playableCatalog.map((game) => game.id)).toEqual(
       SLOT_ROUTE_DEFINITIONS.map((route) => route.id),
     )
@@ -30,14 +31,25 @@ describe('slot route resource isolation', () => {
     const slotIndexSource = source('./index.ts')
     const routeRegistrySource = source('./routeRegistry.ts')
     const catalogSource = source('./catalog.ts')
+    const catalogLoadersSource = source('./catalogLoaders.ts')
 
     expect(appRoutesSource).not.toMatch(/^import .*\.\.\/pages\//m)
     expect(appRoutesSource).toContain("lazy(() => import('../pages/")
     expect(appSource).not.toContain('SLOT_EXPERIENCE_SETS_BY_ROUTE')
     expect(slotIndexSource).not.toMatch(/^import .*\/manifest/m)
     expect(routeRegistrySource).not.toMatch(/^import .*\/manifest/m)
-    expect(routeRegistrySource).toContain("load: () => import('./wukong/manifest')")
+    expect(routeRegistrySource).not.toContain('@fortuneforge/games-')
+    expect(existsSync(new URL('./slotManifestLoaders.ts', import.meta.url))).toBe(false)
+    for (const route of SLOT_ROUTE_DEFINITIONS) {
+      const loaderPath = `./manifestLoaders/${route.id}.ts`
+      const loaderSource = source(loaderPath)
+      expect(routeRegistrySource).toContain(`import('./manifestLoaders/${route.id}')`)
+      expect(loaderSource.match(/\bimport\(/g)).toHaveLength(1)
+      expect(loaderSource).toContain('export const loadSlotManifest')
+    }
     expect(catalogSource).not.toContain('/manifest')
+    expect(catalogLoadersSource).not.toContain('/manifest')
+    expect(catalogLoadersSource).not.toContain('@fortuneforge/games-')
   })
 })
 

@@ -67,6 +67,8 @@ public sealed partial class FirestoreAccountStore
                 var energySnapshot = snapshots[4];
                 var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
                 var neonDiscoSpinsBefore = isNeon ? ReadNeonDiscoSpinsRemaining(guardSnapshot) : 0;
+                var neonDiscoMultiplierBefore = neonDiscoSpinsBefore > 0
+                    ? ReadNeonDiscoMultiplier(guardSnapshot) : NeonDiscoCascade.InitialMultiplier;
                 var energyBalance = isNeon || gameId == SlotSpecialRoundProfiles.RainbowRealmGameId
                     ? 0 : ReadLong(energySnapshot, "available");
                 var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
@@ -293,7 +295,10 @@ public sealed partial class FirestoreAccountStore
                 if (isMidnight)
                     foreach (var pair in MidnightBonusGuardData(roundsAfter, pointValueInCents)) guardData[pair.Key] = pair.Value;
                 if (isNeon)
+                {
                     guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsBefore;
+                    guardData["neonDiscoMultiplier"] = neonDiscoMultiplierBefore;
+                }
                 transaction.Set(guardReference, guardData, SetOptions.MergeAll);
                 var admissionData = new Dictionary<string, object>
                 {
@@ -329,6 +334,8 @@ public sealed partial class FirestoreAccountStore
                     ["auditNextAttemptAtUtc"] = Timestamp.FromDateTime(startedAtUtc.AddMinutes(2)),
                     ["startedAtUtc"] = Timestamp.FromDateTime(startedAtUtc)
                 };
+                if (isNeon)
+                    admissionData["neonDiscoMultiplierBefore"] = neonDiscoMultiplierBefore;
                 if (isMidnight)
                 {
                     admissionData["midnightBonusRoundsBefore"] = MidnightRoundsData(roundsBefore);
@@ -352,6 +359,7 @@ public sealed partial class FirestoreAccountStore
                     RequestId = requestObservation?.RequestId,
                     PityMissesBefore = pityMissesBefore,
                     IsNeonDiscoPlay = isNeonDiscoPlay,
+                    NeonDiscoMultiplier = neonDiscoMultiplierBefore,
                     MathModelId = mathModelId,
                     BonusRound = admittedRound,
                     BonusRoundsBeforeAdmission = roundsBefore

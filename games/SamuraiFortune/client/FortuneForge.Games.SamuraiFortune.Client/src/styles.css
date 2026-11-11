@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* SamuraiFortune uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='samurai-blossom']::before { content: '🌸 ✦ ⚔ ✦ 🌸'; animation-name: result-samurai-blossom; }
+
+@keyframes result-samurai-blossom {
+  0% { opacity: 0; transform: translateY(-40%) rotate(-14deg); }
+  30% { opacity: 0.96; transform: translateY(0) rotate(5deg); }
+  100% { opacity: 0; transform: translateY(42%) rotate(16deg); }
+}

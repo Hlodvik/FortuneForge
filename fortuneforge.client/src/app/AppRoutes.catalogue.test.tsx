@@ -89,15 +89,20 @@ describe('home replaces separate authenticated catalogues', () => {
     expect(state.replace).not.toHaveBeenCalled()
   })
 
-  it('opens the empty slot starter with shared navigation and an empty game surface', async () => {
-    await import('./routes/EmptySlotsGameRoute')
-    await renderRoute('/slots/empty-slots-game')
+  it('opens Jade Dragon with shared navigation and its connected presentation', async () => {
+    await import('./routes/JadeDragonRoute')
+    await renderRoute('/slots/jade-dragon')
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
-    const surface = host.querySelector('main[aria-label="Empty Slots Game"]')!
+    const surface = host.querySelector('main[aria-label="Jade Dragon: The Golden Pearl"]')!
     expect(surface).not.toBeNull()
-    expect(surface.children).toHaveLength(0)
+    expect(surface.querySelector('iframe')?.getAttribute('src')).toBe('/games/jade-dragon/index.html')
     expect(host.querySelector('button.spin-button, audio, video, [data-game-loading]')).toBeNull()
     expect(state.replace).not.toHaveBeenCalled()
     expect(state.legacyLoads).not.toHaveBeenCalled()
+  })
+
+  it('redirects the retired scaffold URL to Jade Dragon', async () => {
+    await renderRoute('/slots/empty-slots-game')
+    expect(state.replace).toHaveBeenCalledExactlyOnceWith('/slots/jade-dragon')
   })
 })

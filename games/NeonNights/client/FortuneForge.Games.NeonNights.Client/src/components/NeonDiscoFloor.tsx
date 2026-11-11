@@ -81,7 +81,7 @@ function getPulseCenter(beat: number): Point {
   return pulseCenters[beat]!
 }
 
-function drawDiscoFloor(ctx: CanvasRenderingContext2D, width: number, height: number, time: number | null, bpm: number) {
+function drawDiscoFloor(ctx: CanvasRenderingContext2D, width: number, height: number, time: number, bpm: number) {
   const floorShade = ctx.createLinearGradient(0, 0, 0, height)
   floorShade.addColorStop(0, '#080e22')
   floorShade.addColorStop(.55, '#0b1430')
@@ -101,11 +101,11 @@ function drawDiscoFloor(ctx: CanvasRenderingContext2D, width: number, height: nu
   const columns = width < 600 ? 14 : width < 1100 ? 16 : 22
   const rows = height > width ? 18 : 14
   const beatInterval = 60 / bpm
-  const latestBeat = time === null ? -1 : Math.floor(time / beatInterval)
+  const latestBeat = Math.floor(time / beatInterval)
   const pulses: Array<{ x: number; y: number; radius: number; strength: number; color: readonly [number, number, number]; beat: number }> = []
   // One new impact per bass/snare beat. Earlier impacts expand and fade for 2½ beats.
   for (let beat = Math.max(0, latestBeat - 2); beat <= latestBeat; beat += 1) {
-    const ageInBeats = ((time ?? 0) - beat * beatInterval) / beatInterval
+    const ageInBeats = (time - beat * beatInterval) / beatInterval
     if (ageInBeats < 0 || ageInBeats >= 2.5) continue
     const { x, y } = getPulseCenter(beat)
     const colorIndex = getPulseColorIndex(beat)
@@ -201,11 +201,20 @@ export function NeonDiscoFloor({ bpm, getPlaybackSeconds }: { bpm: number; getPl
     const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
     let frame = 0
     let lastDraw = -Infinity
+    let anchorTime = performance.now()
+    let anchorSeconds = 0
 
     const render = (timestamp: number) => {
       if (timestamp - lastDraw >= 1000 / 24) {
         lastDraw = timestamp
-        drawDiscoFloor(ctx, canvas.clientWidth, canvas.clientHeight, motionPreference.matches ? .48 : getPlaybackSeconds(), bpm)
+        const now = performance.now()
+        const playbackSeconds = getPlaybackSeconds()
+        if (playbackSeconds !== null) {
+          anchorTime = now
+          anchorSeconds = playbackSeconds
+        }
+        const pulseTime = anchorSeconds + (now - anchorTime) / 1000
+        drawDiscoFloor(ctx, canvas.clientWidth, canvas.clientHeight, motionPreference.matches ? .48 : pulseTime, bpm)
       }
       if (!motionPreference.matches) frame = window.requestAnimationFrame(render)
     }

@@ -1,0 +1,10 @@
+.slots-page[data-special-round='desert-pharaoh-passage'] {
+  --special-round-accent: #ffe18a;
+  --special-round-deep: #955615;
+  --special-round-ink: #2a1608;
+}
+
+.slots-page[data-special-round='desert-pharaoh-passage'] .slots-page__spin-controls .spin-button {
+  border-radius: 0.38rem;
+  clip-path: polygon(50% 0, 100% 24%, 100% 100%, 0 100%, 0 24%);
+}

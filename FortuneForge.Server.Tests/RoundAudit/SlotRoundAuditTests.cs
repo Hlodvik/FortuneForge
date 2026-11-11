@@ -323,19 +323,25 @@ public sealed class SlotRoundAuditTests
             ? PiratesGemEvidence(result) : null;
         var payoutCents = RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents)
             + (crucible?.PayoutCents ?? 0);
+        var isNeon = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+        var isDisco = result.NeonDiscoCascade is not null;
+        var discoBefore = isDisco ? 1 : 0;
+        var multiplierBefore = result.EngineAudit?.NeonDiscoCascade?.StartingMultiplier ?? NeonDiscoCascade.InitialMultiplier;
+        var discoRemaining = isNeon ? NeonPlayPolicy.NextDiscoSpins(discoBefore, isDisco, result.NeonArcade) : 0;
         return SinglePlayerRoundRecord.Create(catalogueGameId, result.SpinId.ToString("N"),
             "audit-test-player", wagerCents, payoutCents, DateTime.UtcNow, DateTime.UtcNow,
             "slotSpinResults", result.SpinId.ToString("N"),
             new
             {
                 result, result.IsFreeSpin, engineAudit = result.EngineAudit, settledPayout, piratesGemEvidence,
-                isNeonDiscoPlay = result.NeonDiscoCascade is not null,
+                isNeonDiscoPlay = isDisco,
                 activeFreeSpinFeatureMode = result.EngineAudit!.FreeSpinFeatureMode,
                 payoutMultiplier = 1m,
-                neonDiscoSpinsBefore = 0,
-                neonDiscoSpinsRemaining = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
-                    ? NeonPlayPolicy.NextDiscoSpins(0, result.NeonDiscoCascade is not null, result.NeonArcade)
-                    : 0,
+                neonDiscoSpinsBefore = discoBefore,
+                neonDiscoSpinsRemaining = discoRemaining,
+                neonDiscoMultiplierBefore = multiplierBefore,
+                neonDiscoMultiplier = NeonPlayPolicy.NextDiscoMultiplier(multiplierBefore, discoRemaining,
+                    result.NeonDiscoCascade, result.NeonArcade),
                 crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible }
             },
             "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;

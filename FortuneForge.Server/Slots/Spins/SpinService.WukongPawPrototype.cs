@@ -16,7 +16,7 @@ public sealed partial class SpinService
             admission.SessionId, admission.AdmissionId ?? string.Empty, admission.GrantId,
             admission.WagerPoints, admission.ForcedPawColumn, admission.InjectEarnSymbol);
         return SpinCore(SlotSpecialRoundProfiles.WukongGameId, admission.WagerPoints,
-            $"synthetic-paw-preview:{admission.SessionId}", false, 0, null, null, false, null, evidence);
+            $"synthetic-paw-preview:{admission.SessionId}", false, 0, null, null, false, evidence);
     }
 
     private static void ValidateWukongPawPrototype(
@@ -33,16 +33,17 @@ public sealed partial class SpinService
 
     private static ReelOutcome ApplyWukongPawPrototype(ReelOutcome outcome, WukongPawPrototypeEvidence evidence)
     {
-        var reels = outcome.VisibleReels.Select(reel => reel.ToArray()).ToArray();
-        // Illustrative fixture injection has no configured earning probability or award.
-        if (evidence.InjectEarnSymbol)
+        var packageEvidence = new FortuneForge.Games.Wukong.WukongPawPrototypeEvidence(
+            evidence.SessionId, evidence.AdmissionId, evidence.GrantId,
+            evidence.WagerPoints, evidence.ForcedPawColumn, evidence.InjectEarnSymbol)
         {
-            var earnColumn = ((evidence.ForcedPawColumn ?? 0) + 1) % reels.Length;
-            reels[earnColumn][^1] = WukongPawPrototypeEvidence.EarnSymbolId;
-        }
-        // Placement is fixed before admission. It participates in normal evaluation,
-        // pity and awards; no settled result is edited after generation.
-        if (evidence.ForcedPawColumn is { } column) reels[column][0] = MonkeyPawSymbolId;
-        return outcome with { VisibleReels = reels.Select(reel => (IReadOnlyList<string>)reel).ToArray() };
+            CollectionRule = evidence.CollectionRule,
+            SyntheticOnly = evidence.SyntheticOnly
+        };
+        return outcome with
+        {
+            VisibleReels = FortuneForge.Games.Wukong.WukongPawPrototype.Apply(
+                outcome.VisibleReels, packageEvidence)
+        };
     }
 }

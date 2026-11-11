@@ -21,19 +21,35 @@ public sealed partial class SpinService
         string? freeSpinFeatureMode = null,
         int? persistedPityMisses = null,
         bool isFreeSpin = false,
-        bool isNeonDiscoPlay = false)
+        bool isNeonDiscoPlay = false,
+        int neonDiscoMultiplier = NeonDiscoCascade.InitialMultiplier)
     {
         if (gameId == SlotSpecialRoundProfiles.NeonNightsGameId)
             return neonNightsEngine.Spin(wagerPoints, playerId, specialBoostApplied,
                 currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, isFreeSpin,
-                isNeonDiscoPlay);
-        if (isNeonDiscoPlay)
+                isNeonDiscoPlay, neonDiscoMultiplier);
+        if (isNeonDiscoPlay || neonDiscoMultiplier != NeonDiscoCascade.InitialMultiplier)
             throw new ArgumentException("Only Neon Nights supports Disco cascades.", nameof(isNeonDiscoPlay));
-        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
-            return emptySlotsEngine.Spin(wagerPoints, playerId, specialBoostApplied,
+        if (gameId == SlotSpecialRoundProfiles.JadeDragonGameId)
+            return jadeDragonEngine.Spin(wagerPoints, playerId, specialBoostApplied,
                 currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, isFreeSpin);
+        if (gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
+        {
+            var model = definitions.GetGame(gameId)?.Math.PaytableId
+                ?? MidnightVaultSlotDefinitions.PaytableId;
+            return midnightVaultEngine.Spin(wagerPoints, playerId, specialBoostApplied,
+                currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, isFreeSpin,
+                model);
+        }
+        if (gameId == GoldFoundrySlotDefinitions.GameId)
+            return goldFoundryEngine.Spin(wagerPoints, playerId, specialBoostApplied,
+                currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, isFreeSpin);
+        if (useStandaloneSlotPackages && standaloneSlotPackages.TrySpin(gameId, wagerPoints, playerId,
+                specialBoostApplied, currentEnergyBalance, freeSpinFeatureMode,
+                persistedPityMisses, isFreeSpin, out var packaged))
+            return packaged;
         return SpinCore(gameId, wagerPoints, playerId,
-            specialBoostApplied, currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, false, null,
+            specialBoostApplied, currentEnergyBalance, freeSpinFeatureMode, persistedPityMisses, false,
             isFreeSpin: isFreeSpin);
     }
 
@@ -41,11 +57,11 @@ public sealed partial class SpinService
     {
         if (admission.AdmissionId == Guid.Empty || admission.CooldownRemaining is not null)
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
-        if (gameId == SlotSpecialRoundProfiles.EmptySlotsGameId)
+        if (gameId == SlotSpecialRoundProfiles.JadeDragonGameId)
         {
             if (admission.MathModelId is not null || admission.IsNeonDiscoPlay)
-                throw new ArgumentException("Empty Slots Game does not accept a foreign math model.", nameof(admission));
-            return emptySlotsEngine.Spin(admission.WagerPoints, playerId,
+                throw new ArgumentException("Jade Dragon does not accept a foreign math model.", nameof(admission));
+            return jadeDragonEngine.Spin(admission.WagerPoints, playerId,
                 admission.SpecialBoostApplied, admission.EnergyBalance,
                 admission.FreeSpinFeatureMode, admission.PityMissesBefore, admission.IsFreeSpin);
         }
@@ -67,53 +83,56 @@ public sealed partial class SpinService
             var neon = neonNightsEngine.Spin(admission.WagerPoints, playerId,
                 admission.SpecialBoostApplied, admission.EnergyBalance,
                 admission.FreeSpinFeatureMode, admission.PityMissesBefore, admission.IsFreeSpin,
-                admission.IsNeonDiscoPlay);
+                admission.IsNeonDiscoPlay, admission.IsNeonDiscoPlay
+                    ? admission.NeonDiscoMultiplier : NeonDiscoCascade.InitialMultiplier);
             return neon with { ChargedWagerCents = admission.ChargedWagerCents };
         }
+        if (gameId == SlotSpecialRoundProfiles.DragonHoardGameId)
+        {
+            var midnight = midnightVaultEngine.Spin(admission.WagerPoints, playerId,
+                admission.SpecialBoostApplied, admission.EnergyBalance, admission.FreeSpinFeatureMode,
+                admission.PityMissesBefore, admission.IsFreeSpin, admission.MathModelId);
+            return midnight with { ChargedWagerCents = admission.ChargedWagerCents };
+        }
         if (gameId == GoldFoundrySlotDefinitions.GameId)
-            GoldFoundrySlotDefinitions.ValidateSpinRequest(admission.IsFreeSpin);
-        var derived = admission.IsFreeSpin &&
-            (gameId == SlotSpecialRoundProfiles.DragonHoardGameId ||
-             gameId == SlotSpecialRoundProfiles.ArcaneArchivesGameId && definitions.GetGame(gameId) is { } arcaneGame &&
-             ArcaneLightningCollector.IsModel(arcaneGame));
+        {
+            if (admission.MathModelId is not null || admission.IsNeonDiscoPlay)
+                throw new ArgumentException("Gold Foundry does not accept a foreign math model.", nameof(admission));
+            var foundry = goldFoundryEngine.Spin(admission.WagerPoints, playerId,
+                admission.SpecialBoostApplied, admission.EnergyBalance, admission.FreeSpinFeatureMode,
+                admission.PityMissesBefore, admission.IsFreeSpin);
+            return foundry with { ChargedWagerCents = admission.ChargedWagerCents };
+        }
+        if (useStandaloneSlotPackages && standaloneSlotPackages.TrySpin(gameId,
+                admission.WagerPoints, playerId, admission.SpecialBoostApplied,
+                admission.EnergyBalance, admission.FreeSpinFeatureMode,
+                admission.PityMissesBefore, admission.IsFreeSpin, out var packaged))
+            return packaged with { ChargedWagerCents = admission.ChargedWagerCents };
         var result = SpinCore(gameId, admission.WagerPoints, playerId, admission.SpecialBoostApplied,
             admission.EnergyBalance, admission.FreeSpinFeatureMode, admission.PityMissesBefore,
-            derived, admission.MathModelId, isFreeSpin: admission.IsFreeSpin,
-            olympusLegacyCarry: admission.IsFreeSpin && gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId);
+            false, isFreeSpin: admission.IsFreeSpin);
         return result with
         {
             IsFreeSpin = admission.IsFreeSpin,
-            EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = derived }
+            EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = false }
         };
     }
 
     internal SpinResult SpinMidnightDemo(long wagerPoints, string playerId, MidnightVaultBonusRound? round)
     {
-        var result = SpinCore(SlotSpecialRoundProfiles.DragonHoardGameId, wagerPoints, playerId,
-            false, 0, round?.FeatureMode, null, round is not null,
-            round?.MathModelId ?? MidnightVaultSlotDefinitions.PaytableId);
-        return result with
-        {
-            IsFreeSpin = round is not null,
-            EngineAudit = result.EngineAudit! with { IsDerivedFreeSpin = round is not null }
-        };
+        return midnightVaultEngine.Spin(wagerPoints, playerId, false, 0, round?.FeatureMode,
+            null, round is not null, round?.MathModelId ?? MidnightVaultSlotDefinitions.PaytableId);
     }
 
     private SpinResult SpinCore(string gameId, long wagerPoints, string playerId,
         bool specialBoostApplied, long currentEnergyBalance, string? freeSpinFeatureMode,
-        int? persistedPityMisses, bool derivedFreeSpin, string? mathModelId,
-        WukongPawPrototypeEvidence? pawPrototype = null, bool isFreeSpin = false, bool olympusLegacyCarry = false)
+        int? persistedPityMisses, bool derivedFreeSpin,
+        WukongPawPrototypeEvidence? pawPrototype = null, bool isFreeSpin = false)
     {
         var game = definitions.GetGame(gameId)
             ?? throw new KeyNotFoundException($"Game '{gameId}' was not found.");
-        if (mathModelId is not null)
-            game = MidnightVaultSlotDefinitions.CreateGameForPaytable(game, mathModelId);
         if (derivedFreeSpin && ArcaneLightningCollector.IsModel(game))
             ArcaneLightningCollector.ValidateCarryWager(game, wagerPoints);
-        else if (derivedFreeSpin)
-            MidnightVaultBonusPolicy.ValidateDerivedWager(wagerPoints);
-        else if (olympusLegacyCarry)
-            ValidateOlympusCarryWager(game, wagerPoints);
         else
             ValidateWager(game, wagerPoints);
         if (string.IsNullOrWhiteSpace(playerId))
@@ -187,11 +206,8 @@ public sealed partial class SpinService
         bool isFreeSpin,
         WukongPawPrototypeEvidence? pawPrototype = null)
     {
-        var foundry = GoldFoundrySlotDefinitions.IsModel(game);
         var rainbowHarvest = RainbowRealmSlotDefinitions.IsModel(game);
         var arcaneLightning = ArcaneLightningCollector.IsModel(game);
-        if (foundry)
-            freeSpinFeatureMode = null;
         var effectiveGame = CreateEffectiveSpinGame(game, freeSpinFeatureMode);
         var pityTriggered = string.IsNullOrWhiteSpace(freeSpinFeatureMode) &&
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
@@ -199,18 +215,6 @@ public sealed partial class SpinService
         var maximumAttempts = pityTriggered ? MaximumPityGenerationAttempts : 1;
         var pityMissesBefore = pityState.ConsecutiveFiveMisses;
         SlotSpecialRoundProfiles.TryGet(game.Id, out var featureProfile);
-        if (game.Id == SlotSpecialRoundProfiles.DragonHoardGameId && featureProfile is not null)
-            featureProfile = featureProfile with
-            {
-                PayoutMultiplier = game.Math.PayoutMultiplier,
-                TargetHitRate = game.Math.PaytableId == MidnightVaultSlotDefinitions.PaytableId
-                    ? MidnightVaultSlotDefinitions.TargetHitRate
-                    : null,
-                ScatterAwardedSpins = game.FreeGames!.AwardedSpins,
-                CollectionAwardedSpins = game.Math.PaytableId == MidnightVaultSlotDefinitions.LegacyPaytableId
-                    ? MidnightVaultSlotDefinitions.LegacyCollectionAwardedSpins
-                    : MidnightVaultSlotDefinitions.BonusRoundSpins
-            };
         ReelOutcome? outcome = null;
         ReelOutcome? rawOutcome = null;
         ReelOutcome? frequencyOutcome = null;
@@ -223,8 +227,7 @@ public sealed partial class SpinService
             rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
             frequencyOutcome = FreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
             outcome = frequencyOutcome;
-            if (!foundry)
-                outcome = ApplyFeatureSymbols(outcome, effectiveGame, arcaneLightning ? 0 : currentEnergyBalance, freeSpinFeatureMode);
+            outcome = ApplyFeatureSymbols(outcome, effectiveGame, arcaneLightning ? 0 : currentEnergyBalance, freeSpinFeatureMode);
             if (pawPrototype is not null)
                 outcome = ApplyWukongPawPrototype(outcome, pawPrototype);
             evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
@@ -246,9 +249,7 @@ public sealed partial class SpinService
             ? 0
             : checked(pityState.ConsecutiveFiveMisses + 1);
         var payout = payoutCalculator.Calculate(evaluations, effectiveGame, paytable, wagerPoints);
-        var featurePayout = foundry
-            ? CalculateFoundryFeaturePayout(outcome.VisibleReels, wagerPoints)
-            : rainbowHarvest
+        var featurePayout = rainbowHarvest
             ? CalculateRainbowFeaturePayout(outcome.VisibleReels, wagerPoints, game.Math.PayoutMultiplier)
             : CalculateFeaturePayout(
             outcome.VisibleReels,
@@ -291,8 +292,7 @@ public sealed partial class SpinService
         {
             IsFreeSpin = isFreeSpin,
             EngineAudit = new SlotSpinEngineAudit(
-                foundry ? GoldFoundryReelCollector.EngineVersion :
-                    rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion :
+                rainbowHarvest ? RainbowRealmSlotDefinitions.EngineVersion :
                     arcaneLightning ? ArcaneLightningCollector.EngineVersion :
                     pawPrototype is null ? AuditEngineVersion : WukongPawPrototypeEvidence.EngineVersion,
                 DateTime.UtcNow, game, effectiveGame, reelSet,
@@ -300,14 +300,13 @@ public sealed partial class SpinService
                 currentEnergyBalance, freeSpinFeatureMode, generationAttempts,
                 rawOutcome.VisibleReels, frequencyOutcome.VisibleReels)
             {
-                WukongPawPrototype = pawPrototype,
-                CrucibleRuleVersion = foundry ? GoldFoundryCrucible.RuleVersion : null
+                WukongPawPrototype = pawPrototype
             },
             MonkeyPawCount = featurePayout.MonkeyPawCount,
             MoneyGrabPoints = featurePayout.MoneyGrabPoints,
             BananaBonusPoints = featurePayout.BananaBonusPoints,
             LightningCollection = lightningCollection,
-            SealsAwarded = !foundry ? CountSealSymbols(outcome.VisibleReels) : new Dictionary<string, int>()
+            SealsAwarded = CountSealSymbols(outcome.VisibleReels)
         };
     }
 

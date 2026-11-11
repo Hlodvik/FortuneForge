@@ -1,6 +1,8 @@
-import type { GodsTumbleResult } from '../../../games/slots/godsOfOlympus/tumble'
+import type { SlotSymbolId as SharedSlotSymbolId } from '@fortuneforge/slot-client-core'
 
-export const slotSymbolIds = [
+export type SlotSymbolId = SharedSlotSymbolId
+
+export const slotSymbolIds: readonly SlotSymbolId[] = [
   '2',
   '3',
   '4',
@@ -29,13 +31,38 @@ export const slotSymbolIds = [
   'SEAL_ROWS',
   'SEAL_PAW',
   'SEAL_RAND',
-] as const
-
-export type SlotSymbolId = (typeof slotSymbolIds)[number]
+]
 
 export type GridPosition = {
   reel: number
   row: number
+}
+
+export type SlotTumbleRules = Readonly<{
+  columns: number
+  rows: number
+  symbols: readonly SlotSymbolId[]
+  initialReels: readonly (readonly SlotSymbolId[])[]
+}>
+
+export type GodsTumbleAward = {
+  symbol: SlotSymbolId
+  amountPoints: number
+  positions: GridPosition[]
+}
+
+export type GodsTumbleStep = {
+  awards: GodsTumbleAward[]
+  cleared: GridPosition[]
+  reels: SlotSymbolId[][]
+  dropRows: number[][]
+  amountPoints: number
+}
+
+export type GodsTumbleResult = {
+  initialReels: SlotSymbolId[][]
+  steps: GodsTumbleStep[]
+  totalPoints: number
 }
 
 export type LightningCollection = {
@@ -71,21 +98,6 @@ export type SlotSealCollection = {
   requiredCount: number
 }
 
-export type MidnightVaultBonusRound = {
-  id: string
-  totalSpins: number
-  remainingSpins: number
-  wagerPoints: number
-  featureMode: string | null
-  mathModelId: string
-}
-
-export type MidnightVaultDemoState = {
-  rounds: MidnightVaultBonusRound[]
-  collectionCounts: Record<string, number>
-  collectionWagerPoints: Record<string, number>
-}
-
 export type SpinResult = {
   olympusTumble?: GodsTumbleResult
   spinId: string
@@ -105,19 +117,11 @@ export type SpinResult = {
   collectionFreeSpinsAwarded?: number
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
-  bonusRound?: MidnightVaultBonusRound | null
-  queuedBonusRounds?: MidnightVaultBonusRound[]
-  awardedBonusRounds?: MidnightVaultBonusRound[]
-  midnightBonusState?: MidnightVaultDemoState | null
   specialPointsAwarded: number
   specialPointsBalance: number
   energyAwarded: number
   energyBalance: number
   energyMultiplierApplied: boolean
-  crucibleWageredCents?: number
-  cruciblePourValueCents?: number
-  cruciblePoured?: boolean
-  cruciblePayoutCents?: number
   payoutMultiplier: number
   monkeyPawCount: number
   moneyGrabPoints: number

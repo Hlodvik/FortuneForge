@@ -13,10 +13,10 @@
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-717a4f8f-86d2-4fd0-8b83-66477173a719.png",
   "initialMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-8584-7c91-9b7d-6f21787bd2f0/exec-3a135ec5-0539-4dbd-a5da-5de52cfc293f.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/oceanOdyssey/definition.ts",
-    "fortuneforge.client/src/games/slots/oceanOdyssey/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/ocean-odyssey/optimized/ocean-odyssey-pearl-kingdom-v2.webp",
-    "fortuneforge.client/src/assets/slots/games/ocean-odyssey/optimized/ocean-odyssey-royal-ocean-pearl-v2.webp"
+    "games/OceanOdyssey/client/FortuneForge.Games.OceanOdyssey.Client/src/definition.ts",
+    "games/OceanOdyssey/client/FortuneForge.Games.OceanOdyssey.Client/src/symbols.ts",
+    "games/OceanOdyssey/client/FortuneForge.Games.OceanOdyssey.Client/src/assets/art/optimized/ocean-odyssey-pearl-kingdom-v2.webp",
+    "games/OceanOdyssey/client/FortuneForge.Games.OceanOdyssey.Client/src/assets/art/optimized/ocean-odyssey-royal-ocean-pearl-v2.webp"
   ],
   "visualCheck": {
     "fullSize": "Inspected final master and 768x384 WebP. Exact Ocean Odyssey title. Iridescent pearl, scalloped gold-edged shell, cyan/sapphire water, lilac coral and submerged palace arch preserve identity. No deity characters, extra copy, fake UI or claims.",

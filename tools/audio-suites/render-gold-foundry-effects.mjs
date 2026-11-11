@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 // Original Foundry Foley. Generate mono 16-bit PCM without samples or dependencies.
 const rate = 24_000
 const tau = 2 * Math.PI
-const output = new URL('../../fortuneforge.client/public/assets/slots/gold-foundry/v1/audio/', import.meta.url)
+const output = new URL('../../games/GoldFoundry/client/FortuneForge.Games.GoldFoundry.Client/src/assets/audio/', import.meta.url)
 await mkdir(output, { recursive: true })
 
 function rise(t, start, end) {

@@ -35,7 +35,7 @@ const AuthenticatedHeartsRoute = lazy(() => import('./routes/HeartsRoute').then(
 const AuthenticatedRouletteRoute = lazy(() => import('./routes/RouletteRoute').then((module) => ({ default: module.AuthenticatedRouletteRoute })))
 const AuthenticatedCrapsRoute = lazy(() => import('./routes/CrapsRoute').then((module) => ({ default: module.AuthenticatedCrapsRoute })))
 const AuthenticatedLiarsDiceRoute = lazy(() => import('./routes/LiarsDiceRoute').then((module) => ({ default: module.AuthenticatedLiarsDiceRoute })))
-const EmptySlotsGameRoute = lazy(() => import('./routes/EmptySlotsGameRoute').then((module) => ({ default: module.EmptySlotsGameRoute })))
+const JadeDragonRoute = lazy(() => import('./routes/JadeDragonRoute').then((module) => ({ default: module.JadeDragonRoute })))
 const SlotGameRoute = lazy(() => import('./routes/SlotGameRoute').then((module) => ({ default: module.SlotGameRoute })))
 const CreateAccountPage = lazy(() => import('../pages/auth/CreateAccountPage').then((module) => ({ default: module.CreateAccountPage })))
 const LoginPage = lazy(() => import('../pages/auth/LoginPage').then((module) => ({ default: module.LoginPage })))
@@ -98,7 +98,8 @@ export function AppRoutes({
   else if (pathname === '/cards/texas-holdem') route = <AuthenticatedTexasHoldemRoute />
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />
   else if (pathname === '/cards/free-solitaire') route = <AuthenticatedFreeSolitaireRoute />
-  else if (pathname === '/slots/empty-slots-game') route = <EmptySlotsGameRoute />
+  else if (pathname === '/slots/empty-slots-game') route = <LegacyJadeDragonRedirect />
+  else if (pathname === '/slots/jade-dragon') route = <JadeDragonRoute />
   else if (slotRoute !== null) {
     route = <SlotGameRoute definition={slotRoute} pathname={pathname} onSpinStateChange={onSpinStateChange} />
   }
@@ -122,7 +123,7 @@ export function AppRoutes({
   return (
     <GameLoadingRouteProvider entry={loadingEntry} pathname={pathname}>
       <RouteErrorBoundary key={pathname} pathname={pathname}>
-        <Suspense fallback={pathname === '/slots/empty-slots-game' ? null : <RouteStateLayout pathname={pathname} entry={loadingEntry}>{loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}</RouteStateLayout>}>{route}</Suspense>
+        <Suspense fallback={pathname === '/slots/jade-dragon' ? null : <RouteStateLayout pathname={pathname} entry={loadingEntry}>{loadingEntry ? <GameLoadingScreen entry={loadingEntry} /> : <RouteLoadingState />}</RouteStateLayout>}>{route}</Suspense>
       </RouteErrorBoundary>
     </GameLoadingRouteProvider>
   )
@@ -138,6 +139,11 @@ function LegacyBalanceRedirect() {
     window.location.replace(`/balance${window.location.search}${window.location.hash}`)
   }, [])
   return <RouteStateLayout><main className="route-state" role="status">Opening your balance…</main></RouteStateLayout>
+}
+
+function LegacyJadeDragonRedirect() {
+  useEffect(() => { window.location.replace('/slots/jade-dragon') }, [])
+  return <RouteStateLayout><main className="route-state" role="status">Opening Jade Dragon…</main></RouteStateLayout>
 }
 
 function RainbowRealmPreviewRedirect() {

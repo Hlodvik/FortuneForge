@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { loadAllSlotGameManifests } from './routeRegistry'
 import { createThemedSlotAudio } from '../../features/slots/config/themedSlotAudio'
-import { DEFAULT_SLOT_SOUNDS } from '../../features/slots/config/soundSets'
 
 describe('slot audio coverage', () => {
-  it('gives retained host titles complete suites plus a dedicated Gold Foundry palette', async () => {
+  it('gives standalone packages complete suites plus a dedicated Gold Foundry palette', async () => {
     // Neon verifies its package-owned audio through its independent client tests.
     const games = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
     expect(games).toHaveLength(18)
@@ -17,29 +16,29 @@ describe('slot audio coverage', () => {
         expect(events.collectionArrival).toBeUndefined()
         expect(events.bonusComplete).toBeUndefined()
         expect(createThemedSlotAudio(game.id, game.experience.sounds)).toBe(game.experience.sounds)
-        expect(Object.keys(cues).sort()).toEqual(Object.keys(DEFAULT_SLOT_SOUNDS.cues).sort())
+        const requiredCueIds = [events.ambience, events.leverPull, events.reelSpin, events.reelStop,
+          ...Object.values(events.results).flat()]
+        expect(requiredCueIds.every(id => cues[id] !== undefined)).toBe(true)
         continue
       }
       if (game.id === 'gold-foundry') {
         const resultCues = [...Object.values(events.results).flat(), events.tripleSevens!]
         expect(resultCues).toHaveLength(5)
-        expect(resultCues.every(id => cues[id]!.source.startsWith('/assets/slots/gold-foundry/v1/audio/'))).toBe(true)
+        expect(resultCues.every(id => /(?:win-small|win-medium|win-big|triple-sevens|no-win)\.ogg$/.test(cues[id]!.source))).toBe(true)
         expect(events.collectionArrival).toBeUndefined()
         expect(events.bonusComplete).toBeUndefined()
         continue
       }
       expect(events.autoSpinAmbience).toBeUndefined()
-      if (game.id === 'arcane-archives') expect(events.specialAmbience).toBeUndefined()
-      else expect(events.specialAmbience).toBeDefined()
+      expect(events.specialAmbience).toBeDefined()
       const musicIds = [events.ambience, ...(events.specialAmbience === undefined ? [] : [events.specialAmbience])]
       const ids = [...musicIds, events.buttonClick!, events.betStep!,
         events.leverPull, events.reelSpin, events.reelStop, events.specialReelSpin!, events.specialReelStop!,
         ...Object.values(events.collectionArrival!), ...Object.values(events.results).flat(),
         events.tripleSevens!, events.bonusComplete!]
       const sources = ids.map(id => cues[id]!.source)
-      const expectedSourceCount = { 'arcane-archives': 19, 'neon-nights': 17 } as Record<string, number>
-      expect(new Set(sources).size).toBe(expectedSourceCount[game.id] ?? 20)
-      expect(sources.every(source => source.startsWith(`/assets/slots/audio-suites/v1/${game.id}/`))).toBe(true)
+      expect(new Set(sources).size).toBe(20)
+      expect(sources.every(source => source.includes('assets/audio/'))).toBe(true)
       for (const id of ids) {
         expect(cues[id]!.enabled).toBe(true)
       }

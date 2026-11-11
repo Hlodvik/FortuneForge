@@ -111,11 +111,14 @@ public sealed class ArcaneLightningCollectorTests
             var visible = Enumerable.Range(0, game.Layout.VisibleRows).Select(row => strip[(stop + row) % strip.Count]).ToArray();
             return !visible.Contains("FREE") && visible.Contains(symbols[reel]) &&
                 visible.Contains("BOLT") == (reel == 2 && lightningCount > 0);
-        }));
+        })).ToArray();
         // Skip legacy mana, paws and wands. Inject one Fortune seal into a common cell.
         int[] featureRolls = [0, 1, 1, 0, 0, 1, 0, 3];
+        int[] packageRolls = lightningCount == 2
+            ? [.. stops, 2, 1, .. featureRolls]
+            : [.. stops, .. featureRolls];
         return new SpinService(provider, new CryptoReelGenerator(new ScriptedRandom(stops)), new CombinationEvaluator(),
-            new PayoutCalculator(), new ScriptedRandom(lightningCount == 2 ? [2, 1, .. featureRolls] : featureRolls));
+            new PayoutCalculator(), new ScriptedRandom(packageRolls));
     }
 
     private sealed class ScriptedRandom(IEnumerable<int> values) : IRandomIndexSource

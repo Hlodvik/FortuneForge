@@ -4,8 +4,9 @@ type SpinButtonProps = {
   disabled?: boolean
   isSpinning?: boolean
   isStopRequested?: boolean
+  allowStop?: boolean
   onSpin: () => void
-  variant?: 'default' | 'pirate-helm' | 'pirate-loop' | 'vault-dial'
+  variant?: 'default' | 'helm' | 'sidecar-loop' | 'vault-dial'
   iconSrc?: string
 }
 
@@ -13,11 +14,13 @@ export function SpinButton({
   disabled = false,
   isSpinning = false,
   isStopRequested = false,
+  allowStop = true,
   onSpin,
   variant = 'default',
   iconSrc,
 }: SpinButtonProps) {
-  const isActive = isSpinning || isStopRequested
+  const isRunning = isSpinning || isStopRequested
+  const isActive = allowStop && isRunning
   const [spinBurstKey, setSpinBurstKey] = useState(0)
 
   const handleClick = () => {
@@ -27,21 +30,21 @@ export function SpinButton({
 
   return (
     <button
-      className={`spin-button${isActive ? ' spin-button--active' : ''}${isStopRequested ? ' spin-button--stopping' : ''}${variant === 'default' ? '' : ` spin-button--${variant}`}${iconSrc ? ' spin-button--custom-icon' : ''}`}
+      className={`spin-button${isActive ? ' spin-button--active' : ''}${isActive && isStopRequested ? ' spin-button--stopping' : ''}${variant === 'default' ? '' : ` spin-button--${variant}`}${iconSrc ? ' spin-button--custom-icon' : ''}`}
       type="button"
       onClick={handleClick}
-      disabled={disabled && !isActive}
+      disabled={(disabled || isRunning) && !isActive}
       aria-label={isActive ? 'Stop the spin' : 'Spin the reels'}
     >
       <svg
         key={spinBurstKey}
-        className={`spin-button__icon${spinBurstKey > 0 && !isActive ? ' spin-button__icon--burst' : ''}`}
+        className={`spin-button__icon${spinBurstKey > 0 && !isRunning ? ' spin-button__icon--burst' : ''}`}
         viewBox="0 0 512 512"
         aria-hidden="true"
       >
         {isActive
           ? <rect className="spin-button__stop-icon" x="168" y="168" width="176" height="176" rx="24" />
-          : variant === 'pirate-helm' ? (
+          : variant === 'helm' ? (
             <g className="spin-button__helm" fill="none" stroke="currentColor" strokeLinecap="round">
               {Array.from({ length: 8 }, (_, index) => (
                 <g key={index} transform={`rotate(${index * 45} 256 256)`}>
@@ -54,8 +57,8 @@ export function SpinButton({
               <circle className="spin-button__helm-hub" cx="256" cy="256" r="58" />
               <circle className="spin-button__helm-boss" cx="256" cy="256" r="18" />
             </g>
-          ) : variant === 'pirate-loop' ? (
-            <g className="spin-button__pirate-loop" fill="none" stroke="currentColor" strokeWidth="45" strokeLinecap="round" strokeLinejoin="round">
+          ) : variant === 'sidecar-loop' ? (
+            <g className="spin-button__sidecar-loop" fill="none" stroke="currentColor" strokeWidth="45" strokeLinecap="round" strokeLinejoin="round">
               <path d="M393 184a157 157 0 1 0 21 114" />
               <path d="M393 100v90h-90" />
             </g>
@@ -82,7 +85,7 @@ export function SpinButton({
           )}
       </svg>
       <strong className="spin-button__label">
-        {isStopRequested ? 'Stopping' : isSpinning ? 'Stop' : 'Spin'}
+        {isActive ? isStopRequested ? 'Stopping' : 'Stop' : 'Spin'}
       </strong>
     </button>
   )

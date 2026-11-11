@@ -10,11 +10,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-6798fc66-b863-4f47-9bbc-baf5183c2fc3.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/godsOfOlympus/catalog.ts",
-    "fortuneforge.client/src/games/slots/godsOfOlympus/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/godsOfOlympus/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/gods-of-olympus/optimized/olympus-terrace.png",
-    "fortuneforge.client/src/assets/slots/games/gods-of-olympus/optimized/zeus-gauntlet.png",
+    "games/GodsOfOlympus/client/FortuneForge.Games.GodsOfOlympus.Client/src/catalog.ts",
+    "games/GodsOfOlympus/client/FortuneForge.Games.GodsOfOlympus.Client/src/cabinetTheme.ts",
+    "games/GodsOfOlympus/client/FortuneForge.Games.GodsOfOlympus.Client/src/symbols.ts",
+    "games/GodsOfOlympus/client/FortuneForge.Games.GodsOfOlympus.Client/src/assets/art/optimized/olympus-terrace.png",
+    "games/GodsOfOlympus/client/FortuneForge.Games.GodsOfOlympus.Client/src/assets/art/optimized/zeus-gauntlet.png",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-371517cd-481f-4498-a0c3-fc3b74d31954.png"
   ],
   "visualCheck": {

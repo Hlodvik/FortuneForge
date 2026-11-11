@@ -10,11 +10,11 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-653ce992-ffe0-42a6-b7f9-21f3e55de764.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/reelRiches/catalog.ts",
-    "fortuneforge.client/src/games/slots/reelRiches/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/reelRiches/symbols.ts",
-    "fortuneforge.client/src/assets/slots/games/reel-riches/optimized/reel-riches-lake-v2.webp",
-    "fortuneforge.client/src/assets/slots/games/reel-riches/optimized/reel-riches-blue-marlin-v2.webp",
+    "games/ReelRiches/client/FortuneForge.Games.ReelRiches.Client/src/catalog.ts",
+    "games/ReelRiches/client/FortuneForge.Games.ReelRiches.Client/src/cabinetTheme.ts",
+    "games/ReelRiches/client/FortuneForge.Games.ReelRiches.Client/src/symbols.ts",
+    "games/ReelRiches/client/FortuneForge.Games.ReelRiches.Client/src/assets/art/optimized/reel-riches-lake-v2.webp",
+    "games/ReelRiches/client/FortuneForge.Games.ReelRiches.Client/src/assets/art/optimized/reel-riches-blue-marlin-v2.webp",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-2f38ebd4-c2d9-4cfd-a94a-a5636c8ca210.png"
   ],
   "visualCheck": {

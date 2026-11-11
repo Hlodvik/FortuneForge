@@ -65,16 +65,11 @@ export function CollectionProgressDisplay({
 }: CollectionProgressDisplayProps) {
   const visualCount = displayCount ?? collection.count
   const isGemHoard = presentation === 'gem-hoard'
-  const isVaultAccess = presentation === 'vault-access'
-  const vaultStage = visualCount >= collection.requiredCount || isCelebrating ? 5
-    : visualCount <= 0 ? 0 : Math.min(4, Math.floor(visualCount / collection.requiredCount * 4) + 1)
-  const vaultStageLabel = ['Empty pile', 'First jewels', 'Growing pile', 'Rich pile', 'Large pile', 'Vault Breach unlocked'][vaultStage]
   const isTackleMound = presentation === 'tackle-creel' && Boolean(containerImage)
   const progress = isGemHoard
     ? displayCount !== undefined || isCelebrating
       ? 100
       : Number((94 * (1 - Math.exp(-Math.max(0, visualCount) / 8))).toFixed(1))
-    : isVaultAccess ? [0, 20, 40, 65, 85, 100][vaultStage]
     : Math.min(100, visualCount / collection.requiredCount * 100)
   const tackleReveal = progress === 0
     ? 0
@@ -86,9 +81,7 @@ export function CollectionProgressDisplay({
   const collectionName = isGemHoard ? `${definition.shortLabel} gems` : definition.label
   const collectible = isGemHoard ? `${definition.shortLabel} gems` : itemLabel
   const rewardDescription = definition.rewardDescription ?? 'Fill it to unlock a special round.'
-  const collectionHint = isVaultAccess
-    ? `${collectionName}: ${vaultStageLabel}. Matching gems grow this pile toward a 10-spin bonus round. Its wager is the collected gems' weighted average.`
-    : definition.progressDescription
+  const collectionHint = definition.progressDescription
     ? `${collectionName}: ${definition.progressDescription} ${rewardDescription}`
     : isGemHoard
     ? `${collectionName}: land matching gems anywhere on the reels to grow the pile and build the chance of a feature. ${rewardDescription}`
@@ -100,13 +93,13 @@ export function CollectionProgressDisplay({
       className={`slots-page__seal-collection slots-page__seal-collection--${collection.sealId} slots-page__seal-collection--${presentation}${isImpacting ? ' slots-page__seal-collection--impact' : ''}${isCelebrating ? ' slots-page__seal-collection--celebrating' : ''}`}
       data-seal-id={collection.sealId}
       data-collection-presentation={presentation}
-      role={isGemHoard || isVaultAccess ? 'img' : 'progressbar'}
-      aria-label={isVaultAccess ? collectionHint : `${definition.label}: ${collectionHint}`}
-      aria-describedby={isVaultAccess ? undefined : tooltipId}
-      aria-valuemin={isGemHoard || isVaultAccess ? undefined : 0}
-      aria-valuemax={isGemHoard || isVaultAccess ? undefined : collection.requiredCount}
-      aria-valuenow={isGemHoard || isVaultAccess ? undefined : collection.count}
-      tabIndex={isVaultAccess ? undefined : 0}
+      role={isGemHoard ? 'img' : 'progressbar'}
+      aria-label={`${definition.label}: ${collectionHint}`}
+      aria-describedby={tooltipId}
+      aria-valuemin={isGemHoard ? undefined : 0}
+      aria-valuemax={isGemHoard ? undefined : collection.requiredCount}
+      aria-valuenow={isGemHoard ? undefined : collection.count}
+      tabIndex={0}
       style={{ '--collection-progress': `${progress}%` } as CSSProperties}
     >
       <span className="slots-page__collection-visual" aria-hidden="true">
@@ -139,15 +132,6 @@ export function CollectionProgressDisplay({
             </span>
             <ResponsiveSlotImage className="slots-page__collection-garnish" imageSrcSet={imageSrcSet} src={image} alt="" />
           </>
-        ) : isVaultAccess ? (
-          <span className="midnight-vault__gem-pile" data-pile-stage={vaultStage}>
-            {piratePileLayout.slice(0, [1, 2, 4, 6, 8, 10][vaultStage]).map((layout, index) => (
-              <ResponsiveSlotImage className="slots-page__vault-access-gem" key={index}
-                imageSrcSet={imageSrcSet} src={image} alt="" draggable={false}
-                style={{ '--pile-x': `${layout.x * 23}%`, '--pile-y': `${layout.y * 22}%`,
-                  '--pile-rotate': `${layout.rotate}deg`, '--pile-scale': layout.scale } as CSSProperties} />
-            ))}
-          </span>
         ) : isGemHoard ? (
           <span className="slots-page__pirate-gem-pile">
             {piratePileLayout.map((layout, index) => (
@@ -207,32 +191,32 @@ export function CollectionProgressDisplay({
 
       <span className="slots-page__seal-details">
         <strong className="slots-page__seal-title" aria-hidden={definition.displayLabel ? true : undefined}>
-          {definition.displayLabel ?? (isVaultAccess ? definition.shortLabel : definition.label)}
+          {definition.displayLabel ?? definition.label}
         </strong>
-        {(isGemHoard || isVaultAccess) && (
+        {isGemHoard && (
           <span className="slots-page__pirate-gem-meter" aria-hidden="true"><span /></span>
         )}
-        {showCount && !isGemHoard && !isVaultAccess && (
+        {showCount && !isGemHoard && (
           <span className="slots-page__collection-count" aria-hidden="true">
             <b>{collection.count}</b>
             <small>/{collection.requiredCount}</small>
           </span>
         )}
-        {statusDetail && !isVaultAccess && (
+        {statusDetail && (
           <span className="slots-page__collection-status-detail" aria-live="polite">
             {statusDetail}
           </span>
         )}
       </span>
 
-      {!isVaultAccess && <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
+      <span className="slots-page__collection-tooltip" id={tooltipId} role="tooltip">
         <span className="slots-page__collection-tooltip-kicker">Collection reward</span>
         <strong>{collectionName}</strong>
         <span className="slots-page__collection-tooltip-copy">Land {collectible} anywhere on the reels to bank them.</span>
         <span className="slots-page__collection-tooltip-progress">
           {isGemHoard ? rewardDescription : <><b>{collection.count}/{collection.requiredCount}</b> collected · {rewardDescription}</>}
         </span>
-      </span>}
+      </span>
     </div>
   )
 }

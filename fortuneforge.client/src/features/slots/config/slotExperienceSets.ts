@@ -1,60 +1,10 @@
-import type { MascotSet } from '../../../games/slots/shared/mascot/mascotTypes'
-import type { SlotSymbolId } from '../types/slots'
-import type { SlotFeatureSet, SlotHelpDefinition } from './slotFeatures'
-import type { SlotCabinetTheme } from './cabinetThemes'
-import type { SlotOutcomeNarrative } from './outcomeNarratives'
-import type { SlotSoundSet } from './soundSets'
-import type { SlotSymbolSet } from './symbolSets'
+// Compatibility barrel for the host. The neutral runtime is the single source
+// of truth so package manifests and host routes cannot drift structurally.
+export { createSlotRulesSet } from '@fortuneforge/slot-game-runtime/experience'
 
-export type SlotRulesSet = {
-  gameId: string
-  initialReels: readonly (readonly SlotSymbolId[])[]
-  pointValueInCents: number
-  wagerOptions: readonly number[]
-  autoSpinDelayMs: number
-  autoSpinSpeedMultiplier: number
-  baseSpinSpeedMultiplier: number
-  reelTravelRowCount: number
-  specialBoostCost: number
-  energyMeterCapacity: number
-}
-
-export type SlotExperienceSet = {
-  id: string
-  cabinet: SlotCabinetTheme
-  features: SlotFeatureSet
-  help: SlotHelpDefinition
-  outcomeNarrative?: SlotOutcomeNarrative
-  shellBackdrop: 'default-clouds' | 'theme'
-  symbols: SlotSymbolSet
-  mascot: MascotSet | null
-  sounds: SlotSoundSet
-  rules: SlotRulesSet
-}
-
-const BASE_SLOT_RULES_SET: Omit<SlotRulesSet, 'gameId'> = {
-  initialReels: [
-    ['2', '3', '4', 'BOLT'],
-    ['3', '4', '5', '6'],
-    ['4', '5', '6', '7'],
-    ['5', '6', '7', 'ACE'],
-    ['FREE', '7', 'ACE', 'POWER'],
-  ],
-  pointValueInCents: 25,
-  wagerOptions: Array.from({ length: 1_000 }, (_, index) => (index + 1) * 2),
-  autoSpinDelayMs: 1_000,
-  autoSpinSpeedMultiplier: 3,
-  baseSpinSpeedMultiplier: 1,
-  reelTravelRowCount: 8,
-  specialBoostCost: 8,
-  energyMeterCapacity: 100,
-}
-
-export const createSlotRulesSet = (
-  gameId: string,
-  overrides: Partial<Omit<SlotRulesSet, 'gameId'>> = {},
-): SlotRulesSet => ({
-  ...BASE_SLOT_RULES_SET,
-  ...overrides,
-  gameId,
-})
+export type {
+  SlotExperiencePresentation,
+  SlotExperienceSet,
+  SlotPresentationFlyover,
+  SlotRulesSet,
+} from '@fortuneforge/slot-game-runtime/experience'

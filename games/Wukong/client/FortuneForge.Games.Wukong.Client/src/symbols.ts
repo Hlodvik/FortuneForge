@@ -1,0 +1,86 @@
+import celestialLightningBoltSymbol from './assets/art/symbols/celestial-lightning-bolt.png'
+import celestialGourdSymbol from './assets/art/symbols/wukong/celestial-gourd.png'
+import celestialStaffSymbol from './assets/art/symbols/wukong/celestial-staff.png'
+import goldenCircletSymbol from './assets/art/symbols/wukong/golden-circlet.png'
+import immortalityPeachSymbol from './assets/art/symbols/wukong/immortality-peach.png'
+import jadeDragonPearlSymbol from './assets/art/symbols/wukong/jade-dragon-pearl.png'
+import nimbusCloudPlatformSymbol from './assets/art/symbols/wukong/nimbus-cloud-platform.png'
+import celestialBananaBunchSymbol from './assets/art/symbols/wukong/celestial-banana-bunch.png'
+import randValueTokenSymbol from './assets/art/symbols/wukong/rand-value-token.png'
+import wukongMonkeyPawSymbol from './assets/art/symbols/wukong/wukong-monkey-paw.png'
+import wukongMedallionSymbol from './assets/art/symbols/wukong/wukong-medallion.png'
+import wukongPowerSealSymbol from './assets/art/symbols/wukong/wukong-power-seal.png'
+import wukongPowerSealBlueSymbol from './assets/art/symbols/wukong/wukong-power-seal-blue.png'
+import wukongPowerSealJadeSymbol from './assets/art/symbols/wukong/wukong-power-seal-jade.png'
+import wukongPowerSealOrangeSymbol from './assets/art/symbols/wukong/wukong-power-seal-orange.png'
+import { type SlotSymbolDefinition, type SlotSymbolId, type SlotSymbolSet } from '@fortuneforge/slot-client-core'
+import { CLASSIC_SLOT_SYMBOL_SET_ID } from '@fortuneforge/slot-game-runtime/symbols'
+
+export const WUKONG_FEATURE_SYMBOL_IDS = [
+  'BANANA',
+  'PAW',
+  'RAND_05',
+  'RAND_1',
+  'RAND_15',
+  'RAND_2',
+  'RAND_3',
+  'RAND_4',
+  'RAND_5',
+  'SEAL_SYNC',
+  'SEAL_ROWS',
+  'SEAL_PAW',
+  'SEAL_RAND',
+] as const satisfies readonly SlotSymbolId[]
+
+const WUKONG_FEATURE_SYMBOL_DEFINITIONS: Readonly<Record<
+  (typeof WUKONG_FEATURE_SYMBOL_IDS)[number],
+  SlotSymbolDefinition
+>> = {
+  BANANA: { id: 'BANANA', label: 'Celestial banana bunch', image: celestialBananaBunchSymbol, animatedImage: celestialBananaBunchSymbol },
+  PAW: { id: 'PAW', label: 'Wukong grab', image: wukongMonkeyPawSymbol, animatedImage: wukongMonkeyPawSymbol },
+  RAND_05: { id: 'RAND_05', label: 'Rand 0.5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 0.5 },
+  RAND_1: { id: 'RAND_1', label: 'Rand 1× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 1 },
+  RAND_15: { id: 'RAND_15', label: 'Rand 1.5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 1.5 },
+  RAND_2: { id: 'RAND_2', label: 'Rand 2× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 2 },
+  RAND_3: { id: 'RAND_3', label: 'Rand 3× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 3 },
+  RAND_4: { id: 'RAND_4', label: 'Rand 4× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 4 },
+  RAND_5: { id: 'RAND_5', label: 'Rand 5× wager value', image: randValueTokenSymbol, animatedImage: randValueTokenSymbol, wagerMultiplier: 5 },
+  SEAL_SYNC: { id: 'SEAL_SYNC', label: 'Sync power seal', image: wukongPowerSealSymbol, animatedImage: wukongPowerSealSymbol },
+  SEAL_ROWS: { id: 'SEAL_ROWS', label: 'Rows power seal', image: wukongPowerSealBlueSymbol, animatedImage: wukongPowerSealBlueSymbol },
+  SEAL_PAW: { id: 'SEAL_PAW', label: 'Paw power seal', image: wukongPowerSealOrangeSymbol, animatedImage: wukongPowerSealOrangeSymbol },
+  SEAL_RAND: { id: 'SEAL_RAND', label: 'Rand power seal', image: wukongPowerSealJadeSymbol, animatedImage: wukongPowerSealJadeSymbol },
+}
+
+export const WUKONG_SYMBOLS: SlotSymbolSet = {
+  id: 'wukong-treasures-v3',
+  serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
+  definitions: {
+    '2': { id: '2', label: 'Staff strike', image: celestialStaffSymbol, animatedImage: celestialStaffSymbol },
+    '3': { id: '3', label: 'Immortality peach', image: immortalityPeachSymbol, animatedImage: immortalityPeachSymbol },
+    '4': { id: '4', label: 'Celestial gourd', image: celestialGourdSymbol, animatedImage: celestialGourdSymbol },
+    '5': { id: '5', label: 'Jade dragon pearl', image: jadeDragonPearlSymbol, animatedImage: jadeDragonPearlSymbol },
+    '6': { id: '6', label: 'Golden circlet', image: goldenCircletSymbol, animatedImage: goldenCircletSymbol },
+    '7': { id: '7', label: 'Celestial staff', image: celestialStaffSymbol, animatedImage: celestialStaffSymbol },
+    ACE: { id: 'ACE', label: 'Wukong medallion', image: wukongMedallionSymbol, animatedImage: wukongMedallionSymbol },
+    POWER: { id: 'POWER', label: 'Nimbus power surge', image: nimbusCloudPlatformSymbol, animatedImage: nimbusCloudPlatformSymbol },
+    BOLT: { id: 'BOLT', label: 'Energy bolt', image: celestialLightningBoltSymbol, animatedImage: celestialLightningBoltSymbol },
+    ...WUKONG_FEATURE_SYMBOL_DEFINITIONS,
+  },
+  guideEntries: [
+    { symbol: '2', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '4×' },
+    { symbol: '3', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '2×' },
+    { symbol: '4', firstLabel: '3–4', firstValue: '1×', secondLabel: '5', secondValue: '7×' },
+    { symbol: '5', firstLabel: '3–4', firstValue: '2×', secondLabel: '5', secondValue: '6×' },
+    { symbol: '6', firstLabel: '3–4', firstValue: '2×', secondLabel: '5', secondValue: '8×' },
+    { symbol: '7', firstLabel: '3–4', firstValue: '3×', secondLabel: '5', secondValue: '11×' },
+    { symbol: 'ACE', firstLabel: '3–4', firstValue: '5×', secondLabel: '5', secondValue: '18×' },
+    { symbol: 'POWER', firstLabel: '3–4', firstValue: '2× +1 point', secondLabel: '5', secondValue: '4× +2 points' },
+    { symbol: 'BOLT', firstLabel: 'Any', firstValue: 'visible', secondLabel: 'Earn', secondValue: '+1 energy' },
+    { symbol: 'BANANA', firstLabel: '3', firstValue: 'row/column/diag', secondLabel: 'Pays', secondValue: '3×' },
+    { symbol: 'PAW', firstLabel: 'Base game', firstValue: 'grabs R coins', secondLabel: 'Paw quest', secondValue: 'adds 2–5 paws' },
+    { symbol: 'SEAL_SYNC', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 sync spins' },
+    { symbol: 'SEAL_ROWS', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 +2 row spins' },
+    { symbol: 'SEAL_PAW', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 paw spins' },
+    { symbol: 'SEAL_RAND', firstLabel: 'Any', firstValue: 'collect 40', secondLabel: 'Award', secondValue: '10 rand spins' },
+  ],
+}

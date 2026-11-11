@@ -93,7 +93,7 @@ public sealed class PlayerGameExperienceFirestoreTests(BlackjackTableFirestoreEm
     }
 
     [Fact]
-    public async Task Legacy_runtime_slot_ids_cover_all_twenty_games_in_one_owner_scoped_page()
+    public async Task Legacy_runtime_slot_ids_cover_all_current_games_and_ignore_the_retired_jungle_identity()
     {
         var database = Database(); var batch = database.StartBatch();
         foreach (var (runtime, canonical) in AcceptedGameActivityReader.SlotIds)
@@ -103,13 +103,17 @@ public sealed class PlayerGameExperienceFirestoreTests(BlackjackTableFirestoreEm
             { ["userId"] = "bob", ["gameId"] = "invented", ["spinId"] = "invalid", ["createdAt"] = Timestamp.FromDateTime(Now) });
         await batch.CommitAsync();
         using var store = Store(database); var response = await store.ReadAsync("alice", default);
-        Assert.Equal(20, response.Games.Count(game => game.HasPlayed == true));
-        foreach (var canonical in AcceptedGameActivityReader.SlotIds.Values)
+        var currentSlotIds = AcceptedGameActivityReader.SlotIds.Values
+            .Where(PlayerGameExperienceProjection.GameIds.Contains).ToArray();
+        Assert.Equal(20, currentSlotIds.Length);
+        Assert.Equal(currentSlotIds.Length, response.Games.Count(game => game.HasPlayed == true));
+        foreach (var canonical in currentSlotIds)
         {
             var game = Game(response, canonical);
             Assert.True(game.HasPlayed); Assert.Equal("partial", game.Coverage); Assert.Null(game.FirstPlayedAtUtc);
             Assert.Contains("legacy-slotSpinResults", game.Provenance);
         }
+        Assert.DoesNotContain(response.Games, game => game.GameId == "jungle-jackpot");
     }
 
     [Fact]

@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* NordicLegends uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='nordic-aurora']::before { content: '❄ ✦ ⚔ ✦ ❄'; animation-name: result-nordic-aurora; }
+
+@keyframes result-nordic-aurora {
+  0% { opacity: 0; transform: translateY(24%) skewX(-20deg); }
+  28% { opacity: 0.92; transform: translateY(0) skewX(8deg); }
+  100% { opacity: 0; transform: translateY(-20%) skewX(-14deg); }
+}

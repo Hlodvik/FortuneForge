@@ -1,0 +1,18 @@
+{
+  "id": "empty-slots-game",
+  "title": "Jade Dragon: The Golden Pearl",
+  "file": "jade-dragon-title-v1.webp",
+  "width": 768,
+  "height": 384,
+  "bytes": 103350,
+  "generator": "built-in imagegen",
+  "prompt": "Create one premium game catalogue cover image, landscape exactly 2:1 aspect ratio. This is a production thumbnail for the existing fantasy slot game Jade Dragon: The Golden Pearl. It must read beautifully at 384 by 192 pixels.\nA magnificent emerald Chinese dragon curves along the left side and upper corner of a deep jade palace scene; a luminous iridescent golden pearl floats near the lower center. Misty mountains, a hint of a distant lantern-lit pagoda, delicate gold cloud engraving, rich lacquered greens and restrained antique gold, with a warm cinematic glow. Match an elegant, polished high-end 3D game-art style; refined, magical and inviting.\nThe title is the dominant focal point in the central safe area: exact large lettering \"JADE DRAGON\" in a beautifully substantial gold engraved serif, with exact smaller subtitle \"THE GOLDEN PEARL\". High contrast and exceptional small-size legibility. Leave comfortable clear space around the text; keep title and pearl within the middle 80 percent so the cover can crop safely. Dragon detail must not crowd or obscure the lettering.\nThe result is finished edge-to-edge artwork for a game card, not a mockup board. No cabinet, no reels, no buttons, no browser chrome, no border, no extra wording, no promotional claims, no watermark.",
+  "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a1c1e9-6f5a-7ee2-8b7e-d8862fc398e8/exec-19419f19-d56d-48ef-87dd-2edaa31e172d.png",
+  "referencePaths": [],
+  "visualCheck": {
+    "fullSize": "Jade Dragon title and Golden Pearl subtitle are legible; the jade dragon and pearl match the game theme.",
+    "thumbnail": "Wide title-card composition keeps the title and dragon visible at catalogue size.",
+    "compression": "768 by 384 WebP, 103350 bytes; below the 180 KB runtime limit."
+  },
+  "status": "ready-for-parent-review"
+}

@@ -1,0 +1,9 @@
+.slots-page[data-special-round='phantom-midnight-seance'] {
+  --special-round-accent: #c5a5ff;
+  --special-round-deep: #372756;
+  --special-round-ink: #120d20;
+}
+
+.slots-page[data-special-round='phantom-midnight-seance'] .slots-page__spin-controls .spin-button {
+  border-radius: 50%;
+}

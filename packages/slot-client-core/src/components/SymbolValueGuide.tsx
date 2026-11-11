@@ -119,7 +119,7 @@ function SymbolValuePanel({
       )}
       <div className="symbol-value-guide__heading">
         <strong id={headingId}>Symbol values</strong>
-        {wager === undefined
+        {wager === undefined || symbolSet.guideSubtitle
           ? <span>{symbolSet.guideSubtitle ?? '3 in a row · 5 in a row'}</span>
           : <span className="symbol-value-guide__heading-key">
               <span className="symbol-value-guide__heading-three">3 in a row</span>

@@ -14,7 +14,7 @@ public static class NeonOutcomeReplay
         void Flag(string code, string message) => findings.Add(new(code, message));
         var audit = result.EngineAudit;
         var game = audit.EffectiveGame;
-        if (audit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion ||
+        if (!NeonArcadeSlotDefinitions.SupportsPackageReplay(audit.EngineVersion) ||
             result.GameId != NeonArcadeSlotDefinitions.GameId ||
             audit.BaseGame.Id != result.GameId || game.Id != result.GameId ||
             result.ReelSetId != audit.ReelSet.Id || result.PaytableId != audit.Paytable.Id ||
@@ -50,11 +50,16 @@ public static class NeonOutcomeReplay
             Flag("slot-frequency-stage-mismatch", "Neon's inactive scatter-frequency stage changed the window.");
         try
         {
+            if (game.Symbols.SymbolSetId == NeonDiscoDefinitions.SymbolSetId)
+            {
+                CheckClusterDisco(result, settledPayout, findings);
+                return findings;
+            }
             var evaluator = new NeonCombinationEvaluator();
             var calculator = new NeonPayoutCalculator();
             var evaluations = evaluator.Evaluate(result.Reels, game, audit.SymbolSet);
             var bonus = NeonArcadeBonus.Apply(calculator.Calculate(evaluations, game, audit.Paytable,
-                result.WagerPoints), result.Reels, isFreeSpin: result.IsFreeSpin);
+                result.WagerPoints), result.Reels, isFreeSpin: result.IsFreeSpin, engineVersion: audit.EngineVersion);
             if (!Same(bonus.Evidence, result.NeonArcade) || !Same(audit.NeonArcade, result.NeonArcade))
                 Flag("slot-neon-arcade-mismatch", "The Neon boost or activators do not replay from the visible reels.");
             if (result.FreeSpinsAwarded != bonus.FreeSpinsAwarded)
@@ -107,6 +112,65 @@ public static class NeonOutcomeReplay
             Flag("slot-replay-failed", "The captured Neon outcome could not be replayed.");
         }
         return findings;
+    }
+
+    private static void CheckClusterDisco(NeonSpinOutcome result, SpinPayout settled,
+        List<NeonReplayFinding> findings)
+    {
+        void Flag(string code, string message) => findings.Add(new(code, message));
+        var audit = result.EngineAudit;
+        var game = audit.EffectiveGame;
+        if (!NeonArcadeSlotDefinitions.SupportsClusterDisco(audit.EngineVersion) || result.IsFreeSpin ||
+            result.SpecialBoostApplied || audit.FreeSpinFeatureMode is not null ||
+            game.Layout.ReelCount != 5 || game.Layout.VisibleRows != 4 || game.Paylines.Count != 0 ||
+            game.FreeGames is not null || game.SpecialPoints is not null || game.Energy is not null ||
+            game.Symbols.WildSymbolId != string.Empty ||
+            result.NeonDiscoCascade is null || audit.NeonDiscoCascade is null)
+        {
+            Flag("slot-neon-disco-mode-mismatch", "Cluster Disco requires its own paid seven-symbol state.");
+            return;
+        }
+        var usesCurrentMath = audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion;
+        var reelSetId = usesCurrentMath ? NeonDiscoDefinitions.ReelSetId : NeonDiscoDefinitions.PreviousReelSetId;
+        var paytableId = usesCurrentMath ? NeonDiscoDefinitions.PaytableId : NeonDiscoDefinitions.PreviousPaytableId;
+        if (game.Math.ReelSetId != reelSetId || game.Math.PaytableId != paytableId ||
+            audit.ReelSet.Id != reelSetId || audit.Paytable.Id != paytableId)
+            Flag("slot-neon-disco-math-mismatch", "The captured Disco reels and paytable do not match its engine version.");
+        if (!Same(result.Reels, audit.ReelsAfterFreeGameFrequency))
+            Flag("slot-neon-disco-grid-mismatch", "The initial Disco window changed after generation.");
+        var bonus = NeonArcadeBonus.Apply(new(0, []), result.Reels, engineVersion: audit.EngineVersion);
+        if (!Same(bonus.Evidence, result.NeonArcade) || !Same(audit.NeonArcade, result.NeonArcade) ||
+            result.FreeSpinsAwarded != 0 || result.SpecialPointsAwarded != 0 ||
+            result.EnergyAwarded != 0 || result.BananaBonusPoints != 0)
+            Flag("slot-neon-arcade-mismatch", "Cluster Disco must not award base-game features or bonuses.");
+        if (result.FiveMatchPityTriggered || result.ConsecutiveFiveMisses != audit.PityMissesBefore ||
+            audit.GenerationAttempts != 1)
+            Flag("slot-pity-state-mismatch", "Disco must preserve the base-game pity state.");
+        var startingMultiplier = audit.NeonDiscoCascade.StartingMultiplier;
+        if (NeonArcadeSlotDefinitions.SupportsDiscoMultiplierCarry(audit.EngineVersion) != startingMultiplier.HasValue ||
+            startingMultiplier is { } multiplier && !NeonDiscoCascade.IsValidMultiplier(multiplier))
+        {
+            Flag("slot-neon-disco-multiplier-mismatch", "The Disco starting multiplier differs from its captured rule.");
+            return;
+        }
+        var draws = audit.NeonDiscoCascade.DrawIndexes;
+        var cursor = 0;
+        int Draw(int maximum)
+        {
+            if (cursor >= draws.Count || draws[cursor] < 0 || draws[cursor] >= maximum)
+                throw new ArgumentException("Invalid captured Disco refill draw.");
+            return draws[cursor++];
+        }
+        var cascade = NeonDiscoCascade.Resolve(result.Reels, game, audit.ReelSet, audit.SymbolSet,
+            audit.Paytable, result.WagerPoints, new(), new(), Draw, out _,
+            startingMultiplier ?? NeonDiscoCascade.InitialMultiplier);
+        if (cursor != draws.Count || !Same(cascade, result.NeonDiscoCascade))
+            Flag("slot-neon-disco-steps-mismatch", "Disco clusters, multipliers, or refill draws do not replay.");
+        var expected = new SpinPayout(cascade.TotalPoints, []);
+        if (!Same(expected, result.Payout))
+            Flag("slot-payout-total-mismatch", "The Disco total does not reconcile with its captured clusters.");
+        if (!Same(expected, settled))
+            Flag("slot-settlement-mismatch", "The settled Disco payout differs from its replayed award.");
     }
 
     private static bool Same<T>(T left, T right) => JsonSerializer.Serialize(left) == JsonSerializer.Serialize(right);

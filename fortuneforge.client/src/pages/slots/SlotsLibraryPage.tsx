@@ -25,7 +25,7 @@ export function SlotsLibraryPage({ account }: { account: AccountSummary }) {
         </section>
 
         <section className="machine-library" aria-label="Available slot machines">
-          {SLOT_GAME_CATALOG.map((game) => (
+          {SLOT_GAME_CATALOG.filter(game => game.demoHref !== game.playHref).map((game) => (
             <MachineCard game={game} key={game.id} />
           ))}
         </section>

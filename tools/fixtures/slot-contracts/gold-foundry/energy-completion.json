@@ -1,9 +1,9 @@
 {
   "scenario": "energy-completion",
   "source": {
-    "generator": "Actual in-process DemoSlotsController \u002B SpinService \u002B CryptoReelGenerator",
+    "generator": "Actual in-process DemoSlotsController \u002B SpinService routed game engine",
     "seed": 0,
-    "engineVersion": "gold-foundry-reel-collector-v1",
+    "engineVersion": "gold-foundry-engine-v2",
     "gameId": "gold-foundry-v1",
     "noHttpServerOrAccountSettlement": true,
     "replayMatchesExceptSpinId": true,
@@ -29,7 +29,7 @@
         "midnightBonusState": null
       },
       "response": {
-        "spinId": "d1dddfdb-f27f-4483-b08c-74735729df9f",
+        "spinId": "6bd88e80-66b4-420b-884b-2514755bac1d",
         "gameId": "gold-foundry-v1",
         "reelSetId": "gold-foundry-reels-v1",
         "symbolSetId": "gold-foundry-symbols-v1",

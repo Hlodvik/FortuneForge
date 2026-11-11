@@ -1,0 +1,9 @@
+.slots-page[data-special-round='nordic-valhalla-voyage'] {
+  --special-round-accent: #a7ffe3;
+  --special-round-deep: #315c6b;
+  --special-round-ink: #091b29;
+}
+
+.slots-page[data-special-round='nordic-valhalla-voyage'] .slots-page__spin-controls .spin-button {
+  border-radius: 42% 42% 0.7rem 0.7rem;
+}

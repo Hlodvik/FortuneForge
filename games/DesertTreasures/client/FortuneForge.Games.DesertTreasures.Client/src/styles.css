@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* DesertTreasures uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='desert-sandstorm']::before { content: '☀ ✦ 🔺 ✦ ☀'; animation-name: result-desert-sandstorm; }
+
+@keyframes result-desert-sandstorm {
+  0% { opacity: 0; transform: translate3d(-38%, 24%, 0) skewX(-16deg); }
+  28% { opacity: 0.9; }
+  100% { opacity: 0; transform: translate3d(42%, -12%, 0) skewX(16deg); }
+}

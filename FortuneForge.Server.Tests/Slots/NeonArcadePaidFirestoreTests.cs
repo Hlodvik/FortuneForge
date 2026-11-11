@@ -51,7 +51,7 @@ public sealed class NeonArcadePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
         var state = await reloaded.GetSlotStateAsync(UserId, GameId, 1m, default);
         Assert.Equal(7, state.FreeSpinsRemaining);
         Assert.Equal(150L, state.FreeSpinWagerPoints);
-        Assert.Null(state.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidCarFeatureMode, state.FreeSpinFeatureMode);
         await Assert.ThrowsAsync<SlotFreeSpinsRequiredException>(() => Admit(reloaded, 50, false));
 
         // Legacy collections could lock an odd quarter-rand wager. A cent value

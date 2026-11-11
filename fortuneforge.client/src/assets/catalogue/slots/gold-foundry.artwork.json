@@ -9,8 +9,8 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a19f4a-096a-70c3-b014-224b0e0aefc4/exec-646a719c-7a7b-41be-8f1a-535041b0ce07.png",
   "referencePaths": [
-    "fortuneforge.client/src/assets/slots/games/gold-foundry/casting-hall.webp",
-    "fortuneforge.client/src/assets/slots/games/gold-foundry/crucible.webp"
+    "games/GoldFoundry/client/FortuneForge.Games.GoldFoundry.Client/src/assets/art/casting-hall.webp",
+    "games/GoldFoundry/client/FortuneForge.Games.GoldFoundry.Client/src/assets/art/crucible.webp"
   ],
   "status": "ready-for-parent-review"
 }

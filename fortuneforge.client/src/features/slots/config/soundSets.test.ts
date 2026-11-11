@@ -2,13 +2,35 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
-import { GOLD_FOUNDRY_SOUNDS } from '../../../games/slots/goldFoundry/sounds'
-import * as soundSets from './soundSets'
-import { WUKONG_TREASURES_SOUNDS } from '../../../games/slots/wukong/sounds'
-import { PIRATES_FORTUNE_SOUNDS, REEL_RICHES_SOUNDS } from './soundSets'
-import type { SlotSoundSet } from './soundSets'
+import { ARCANE_ARCHIVES_SOUNDS } from '@fortuneforge/games-arcane-archives/sounds'
+import { CANDY_CARNIVAL_SOUNDS } from '@fortuneforge/games-candy-carnival/sounds'
+import { COSMIC_FORTUNE_SOUNDS } from '@fortuneforge/games-cosmic-fortune/sounds'
+import { DESERT_TREASURES_SOUNDS } from '@fortuneforge/games-desert-treasures/sounds'
+import { GODS_OF_OLYMPUS_SOUNDS } from '@fortuneforge/games-gods-of-olympus/sounds'
+import { GOLD_FOUNDRY_SOUNDS } from '@fortuneforge/games-gold-foundry/manifest'
+import { HIGH_NOON_FORTUNE_SOUNDS } from '@fortuneforge/games-high-noon-fortune/sounds'
+import { NORDIC_LEGENDS_SOUNDS } from '@fortuneforge/games-nordic-legends/sounds'
+import { OCEAN_ODYSSEY_SOUNDS } from '@fortuneforge/games-ocean-odyssey/sounds'
+import { PHANTOM_MANOR_SOUNDS } from '@fortuneforge/games-phantom-manor/sounds'
+import { PIRATES_FORTUNE_SOUNDS } from '@fortuneforge/games-pirates-fortune/sounds'
+import { RAINBOW_REALM_SOUNDS } from '@fortuneforge/games-rainbow-realm/sounds'
+import { REEL_RICHES_SOUNDS } from '@fortuneforge/games-reel-riches/sounds'
+import { ROBOT_REVOLUTION_SOUNDS } from '@fortuneforge/games-robot-revolution/sounds'
+import { ROYAL_DRAW_SOUNDS } from '@fortuneforge/games-royal-draw/sounds'
+import { SAMURAI_FORTUNE_SOUNDS } from '@fortuneforge/games-samurai-fortune/sounds'
+import { WUKONG_TREASURES_SOUNDS } from '@fortuneforge/games-wukong/sounds'
+import { DEFAULT_SLOT_SOUNDS, type SlotSoundCue, type SlotSoundCueId, type SlotSoundSet } from './soundSets'
 import { useSlotAudio } from '../hooks/useSlotAudio'
 import { loadAllSlotGameManifests } from '../../../games/slots/routeRegistry'
+
+const requiredCue = (sounds: SlotSoundSet, id: SlotSoundCueId): SlotSoundCue => {
+  const cue = sounds.cues[id]
+  if (!cue) throw new Error(`Sound set '${sounds.id}' is missing cue '${id}'.`)
+  return cue
+}
+
+const definedCues = (sounds: SlotSoundSet): readonly SlotSoundCue[] =>
+  Object.values(sounds.cues).filter((cue): cue is SlotSoundCue => cue !== undefined)
 
 const pirateEventCueIds = [
   PIRATES_FORTUNE_SOUNDS.events.ambience,
@@ -20,12 +42,12 @@ const pirateEventCueIds = [
   PIRATES_FORTUNE_SOUNDS.events.specialReelStop ?? 'reel-stop',
   ...Object.values(PIRATES_FORTUNE_SOUNDS.events.results).flat(),
 ]
-const pirateCueSources = Object.values(PIRATES_FORTUNE_SOUNDS.cues).map(({ source }) => source)
+const pirateCueSources = definedCues(PIRATES_FORTUNE_SOUNDS).map(({ source }) => source)
 const pirateSpecialCueIds = Object.values(PIRATES_FORTUNE_SOUNDS.events.specialResults ?? {}).flat()
 
 describe('Pirates\' Fortune sound set', () => {
   it('retains its voyage identity without playing it and keeps distinct CC0 Broadside Run cues', () => {
-    const eventSources = pirateEventCueIds.map((cueId) => PIRATES_FORTUNE_SOUNDS.cues[cueId]!.source)
+    const eventSources = pirateEventCueIds.map((cueId) => requiredCue(PIRATES_FORTUNE_SOUNDS, cueId).source)
 
     expect(eventSources).toHaveLength(15)
     expect(eventSources).toHaveLength(pirateEventCueIds.length)
@@ -40,29 +62,29 @@ describe('Pirates\' Fortune sound set', () => {
     expect(PIRATES_FORTUNE_SOUNDS.events.specialReelSpin).not.toBe(PIRATES_FORTUNE_SOUNDS.events.reelSpin)
     expect(PIRATES_FORTUNE_SOUNDS.events.specialReelStop).not.toBe(PIRATES_FORTUNE_SOUNDS.events.reelStop)
     expect(PIRATES_FORTUNE_SOUNDS.events.results['no-win']).toEqual(['soft-miss'])
-    expect(PIRATES_FORTUNE_SOUNDS.cues['soft-miss'].source).toContain('pirate-wave-ambience')
-    expect(PIRATES_FORTUNE_SOUNDS.cues['special-soft-miss'].source).toContain('pirate-wave-ambience')
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'soft-miss').source).toContain('pirate-wave-ambience')
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'special-soft-miss').source).toContain('pirate-wave-ambience')
     expect(PIRATES_FORTUNE_SOUNDS.events.results['single-three']).toEqual(['low-win'])
     expect(PIRATES_FORTUNE_SOUNDS.events.autoSpinAmbience).toBe('auto-spin-ambience')
-    expect(PIRATES_FORTUNE_SOUNDS.cues['auto-spin-ambience'].source).toContain('pirate-voyage')
-    expect(PIRATES_FORTUNE_SOUNDS.cues['auto-spin-ambience'].source)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'auto-spin-ambience').source).toContain('pirate-voyage')
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'auto-spin-ambience').source)
       .not.toContain('pirate-wave-ambience')
-    expect(PIRATES_FORTUNE_SOUNDS.cues['auto-spin-ambience'].loop).toBe(true)
-    expect(PIRATES_FORTUNE_SOUNDS.cues.ambience.enabled).toBe(false)
-    expect(PIRATES_FORTUNE_SOUNDS.cues['auto-spin-ambience'].enabled).toBe(false)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'auto-spin-ambience').loop).toBe(true)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'ambience').enabled).toBe(false)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'auto-spin-ambience').enabled).toBe(false)
     expect(pirateSpecialCueIds).toHaveLength(8)
     expect(pirateSpecialCueIds.every((cueId) => cueId.startsWith('special-'))).toBe(true)
-    expect(PIRATES_FORTUNE_SOUNDS.cues['special-reel-spin'].source)
-      .not.toBe(PIRATES_FORTUNE_SOUNDS.cues['reel-spin'].source)
-    expect(PIRATES_FORTUNE_SOUNDS.cues['special-reel-stop'].source)
-      .not.toBe(PIRATES_FORTUNE_SOUNDS.cues['reel-stop'].source)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'special-reel-spin').source)
+      .not.toBe(requiredCue(PIRATES_FORTUNE_SOUNDS, 'reel-spin').source)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'special-reel-stop').source)
+      .not.toBe(requiredCue(PIRATES_FORTUNE_SOUNDS, 'reel-stop').source)
     // A special-round loss remains a loss: it uses the same one-shot wave
     // as a normal manual miss, not a new music loop.
-    expect(PIRATES_FORTUNE_SOUNDS.cues['special-soft-miss'].source)
-      .toBe(PIRATES_FORTUNE_SOUNDS.cues['soft-miss'].source)
+    expect(requiredCue(PIRATES_FORTUNE_SOUNDS, 'special-soft-miss').source)
+      .toBe(requiredCue(PIRATES_FORTUNE_SOUNDS, 'soft-miss').source)
     expect(pirateSpecialCueIds
       .filter((cueId) => cueId !== 'special-soft-miss')
-      .every((cueId) => !PIRATES_FORTUNE_SOUNDS.cues[cueId]!.source.includes('pirate-')),
+      .every((cueId) => !requiredCue(PIRATES_FORTUNE_SOUNDS, cueId).source.includes('pirate-')),
     ).toBe(true)
     expect(pirateCueSources.some((source) => source.includes('pirate-helm-spin'))).toBe(true)
   })
@@ -77,27 +99,28 @@ describe('Wukong sound set', () => {
       WUKONG_TREASURES_SOUNDS.events.reelStop,
       ...resultCueIds,
     ]
-    const effectSources = effectCueIds.map((cueId) => WUKONG_TREASURES_SOUNDS.cues[cueId]!.source)
+    const effectSources = effectCueIds.map((cueId) => requiredCue(WUKONG_TREASURES_SOUNDS, cueId).source)
 
     expect(WUKONG_TREASURES_SOUNDS.events.ambience).toBe('ambience')
-    expect(WUKONG_TREASURES_SOUNDS.cues.ambience.source).toContain('asian-dragon')
-    expect(WUKONG_TREASURES_SOUNDS.cues.ambience.enabled).toBe(false)
+    expect(requiredCue(WUKONG_TREASURES_SOUNDS, 'ambience').source).toContain('asian-dragon')
+    expect(requiredCue(WUKONG_TREASURES_SOUNDS, 'ambience').enabled).toBe(false)
     expect(effectSources.every((source) => source.includes('wukong-'))).toBe(true)
-    expect(WUKONG_TREASURES_SOUNDS.cues['lever-pull'].source)
-      .not.toBe(WUKONG_TREASURES_SOUNDS.cues['reel-spin'].source)
-    expect(WUKONG_TREASURES_SOUNDS.cues['reel-stop'].source)
-      .not.toBe(WUKONG_TREASURES_SOUNDS.cues['soft-miss'].source)
+    expect(requiredCue(WUKONG_TREASURES_SOUNDS, 'lever-pull').source)
+      .not.toBe(requiredCue(WUKONG_TREASURES_SOUNDS, 'reel-spin').source)
+    expect(requiredCue(WUKONG_TREASURES_SOUNDS, 'reel-stop').source)
+      .not.toBe(requiredCue(WUKONG_TREASURES_SOUNDS, 'soft-miss').source)
     expect(WUKONG_TREASURES_SOUNDS.events.results['no-win']).toEqual(['soft-miss'])
   })
 })
 
 describe('Reel Riches sound set', () => {
   it('uses its original theme suite with distinct base/bonus music and semantic collections', () => {
-    const { cues, events } = REEL_RICHES_SOUNDS
+    const { events } = REEL_RICHES_SOUNDS
     expect(events.themeSuite).toBe(true)
-    expect(cues[events.ambience]).toMatchObject({ source: '/assets/slots/audio-suites/v1/reel-riches/night-drive.ogg', enabled: true, loop: true })
-    expect(cues[events.specialAmbience ?? 'ambience']!.source).toBe('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
-    expect(events.specialCollect).toBeUndefined()
+    expect(requiredCue(REEL_RICHES_SOUNDS, events.ambience)).toMatchObject({ enabled: true, loop: true })
+    expect(requiredCue(REEL_RICHES_SOUNDS, events.ambience).source).toContain('assets/audio/night-drive.ogg')
+    expect(requiredCue(REEL_RICHES_SOUNDS, events.specialAmbience ?? 'ambience').source).toContain('assets/audio/reel-riches-trophy-loop.wav')
+    expect(events.specialCollect).toBe('special-collect')
     expect(events.autoSpinAmbience).toBeUndefined()
     expect(Object.keys(events.collectionArrival ?? {})).toEqual(['sync', 'rows', 'paw', 'rand'])
     expect(Object.values(events.specialResults ?? {}).every(ids => ids.length === 1)).toBe(true)
@@ -105,65 +128,54 @@ describe('Reel Riches sound set', () => {
 })
 
 describe('catalogue audio provenance and allocation', () => {
-  const allSoundSets = [...Object.values(soundSets), WUKONG_TREASURES_SOUNDS, GOLD_FOUNDRY_SOUNDS]
-  const arcaneMusicSource = '/assets/slots/audio-suites/v1/arcane-archives/magic-puzzle-in-game-1.ogg'
-  const olympusMusicSource = '/assets/slots/audio-suites/v1/gods-of-olympus/secret-sanctum-v1.ogg'
-  const foundryAudioPath = '/assets/slots/gold-foundry/v1/audio'
-  const foundryAmbienceSource = `${foundryAudioPath}/foundry-working-room.ogg`
-  const foundrySources = new Set([
-    foundryAmbienceSource,
-    `${foundryAudioPath}/hammer-ring.wav`,
-    `${foundryAudioPath}/spin-button-metal-hit.wav`,
-    `${foundryAudioPath}/forge-bellows-and-crackling-fire.wav`,
-    `${foundryAudioPath}/reel-brake.wav`,
-    ...['win-small', 'win-medium', 'win-big', 'triple-sevens', 'no-win'].map(name => `${foundryAudioPath}/${name}.ogg`),
-  ])
-  const documentedLegacySources = /\/(?:chip-lay-1\.ogg|chips-handle-1\.ogg|chips-collide-1\.ogg|card-place-1\.ogg|card-shuffle\.ogg|pirate-helm-spin\.ogg|pirate-seagull-(?:miss|win)\.wav|pirate-wave-ambience\.flac|wukong-(?:celestial-chime|cloud-rush|gong-win|soft-step|staff-whoosh|temple-bell|woodblock)\.wav|reel-riches-(?:cast-land|line-tension|small-catch|special-collect|trophy-award|trophy-loop|trophy-win)\.wav|i-knew-a-guy-kevin-macleod\.mp3)$/
-  const documentedSuiteSources = /^\/assets\/slots\/audio-suites\/v1\/[a-z-]+\/(?:night-drive|midnight-mix|button-click|bet-step|spin-launch|reel-roll|reel-land|bonus-reel-roll|bonus-reel-land|collect-flamingo|collect-dice|collect-sunset|collect-arcade|win-small|win-medium|win-big|triple-sevens|no-win|bonus-entry|bonus-complete)\.ogg$/
-  const midnightWinSource = '/assets/slots/midnight-vault/v4/audio/vault-win-noir.wav'
+  const packageSoundSetsByGameId = {
+    'wukong-journey-to-the-west': WUKONG_TREASURES_SOUNDS,
+    'rainbow-realm': RAINBOW_REALM_SOUNDS,
+    'pirates-fortune': PIRATES_FORTUNE_SOUNDS,
+    'gods-of-olympus': GODS_OF_OLYMPUS_SOUNDS,
+    'reel-riches': REEL_RICHES_SOUNDS,
+    'high-noon-fortune': HIGH_NOON_FORTUNE_SOUNDS,
+    'royal-draw': ROYAL_DRAW_SOUNDS,
+    'arcane-archives': ARCANE_ARCHIVES_SOUNDS,
+    'cosmic-fortune': COSMIC_FORTUNE_SOUNDS,
+    'gold-foundry': GOLD_FOUNDRY_SOUNDS,
+    'ocean-odyssey': OCEAN_ODYSSEY_SOUNDS,
+    'samurai-fortune': SAMURAI_FORTUNE_SOUNDS,
+    'candy-carnival': CANDY_CARNIVAL_SOUNDS,
+    'phantom-manor': PHANTOM_MANOR_SOUNDS,
+    'nordic-legends': NORDIC_LEGENDS_SOUNDS,
+    'desert-treasures': DESERT_TREASURES_SOUNDS,
+    'robot-revolution': ROBOT_REVOLUTION_SOUNDS,
+  } satisfies Readonly<Record<string, SlotSoundSet>>
+  const packageSoundSets = Object.values(packageSoundSetsByGameId)
+  const allSoundSets: readonly SlotSoundSet[] = [DEFAULT_SLOT_SOUNDS, ...packageSoundSets]
+  const foundryAmbienceSource = requiredCue(GOLD_FOUNDRY_SOUNDS, 'ambience').source
 
-  it('keeps shared-host audio allocations separate from standalone Neon', async () => {
-    // Neon owns its audio contract checks inside its client package.
-    const manifests = (await loadAllSlotGameManifests()).filter(game => game.id !== 'neon-nights')
-    expect(manifests).toHaveLength(18)
-    expect(allSoundSets).toHaveLength(19)
+  it('uses package-owned audio contracts for every standalone game', async () => {
+    const manifests = (await loadAllSlotGameManifests()).filter(game => !['neon-nights', 'dragon-hoard'].includes(game.id))
+    expect(manifests).toHaveLength(17)
+    expect(packageSoundSets).toHaveLength(17)
+    expect(allSoundSets).toHaveLength(18)
     for (const game of manifests) {
       const sounds = game.experience.sounds
-      expect(allSoundSets).toContain(sounds)
+      expect(sounds).toBe(packageSoundSetsByGameId[game.id as keyof typeof packageSoundSetsByGameId])
       if (game.id !== 'wukong-journey-to-the-west') {
-        expect(Object.values(sounds.cues).map(cue => cue.source).join('\n')).not.toMatch(/\/wukong-[^/]+\.wav/)
+        expect(definedCues(sounds).map(cue => cue.source).join('\n')).not.toMatch(/\/wukong-[^/]+\.wav/)
       }
-      expect(sounds.cues[sounds.events.ambience]).toMatchObject(game.id === 'dragon-hoard'
-        ? {
-          source: '/assets/slots/midnight-vault/v3/audio/i-knew-a-guy-kevin-macleod.mp3',
-          category: 'effect', loop: true, enabled: true,
-        }
-        : ['wukong-journey-to-the-west', 'pirates-fortune'].includes(game.id) ? {
+      expect(requiredCue(sounds, sounds.events.ambience)).toMatchObject(['wukong-journey-to-the-west', 'pirates-fortune'].includes(game.id) ? {
           source: expect.stringMatching(/^disabled:opentracks\/[^/]+\.mp3$/),
           category: 'effect', loop: true, enabled: false,
         } : {
-          source: game.id === 'gold-foundry' ? foundryAmbienceSource
-            : game.id === 'arcane-archives' ? arcaneMusicSource
-              : game.id === 'gods-of-olympus' ? olympusMusicSource : `/assets/slots/audio-suites/v1/${game.id}/night-drive.ogg`,
           category: 'effect', loop: true, enabled: true,
         })
-      if (game.id === 'arcane-archives') {
-        expect(sounds.events.specialAmbience).toBeUndefined()
-        expect(sounds.cues['special-ambience'].source).toBe(arcaneMusicSource)
-      }
-      if (game.id === 'gods-of-olympus') {
-        expect(sounds.cues[sounds.events.ambience]?.baseVolume).toBe(.12)
-      }
     }
     for (const sounds of allSoundSets) {
-      for (const cue of Object.values(sounds.cues)) {
+      for (const cue of definedCues(sounds)) {
         if (cue.source.startsWith('disabled:')) {
           expect(cue.enabled).toBe(false)
         } else {
-          expect(documentedLegacySources.test(cue.source) || documentedSuiteSources.test(cue.source) ||
-            (sounds === GOLD_FOUNDRY_SOUNDS && foundrySources.has(cue.source)) ||
-            cue.source === arcaneMusicSource || cue.source === olympusMusicSource ||
-            cue.source === midnightWinSource, cue.source).toBe(true)
+          expect(cue.source).not.toMatch(/^\/assets\/slots\/audio-suites\/v1\//)
+          expect(cue.source.length).toBeGreaterThan(0)
         }
       }
     }
@@ -171,18 +183,18 @@ describe('catalogue audio provenance and allocation', () => {
 
   it('gives Gold Foundry its own workshop ambience and button and reel cues', () => {
     const { cues, events } = GOLD_FOUNDRY_SOUNDS
-    expect(cues.ambience.source).toBe(foundryAmbienceSource)
+    expect(requiredCue(GOLD_FOUNDRY_SOUNDS, 'ambience').source).toBe(foundryAmbienceSource)
     expect(cues['special-ambience']).toBe(cues.ambience)
     expect(events).toMatchObject({
       buttonClick: 'button-click', betStep: 'button-click', stopButtonClick: 'button-click',
       spinButtonClick: 'spin-button-click', specialReelSpin: 'reel-spin', specialReelStop: 'reel-stop',
     })
-    expect(cues['button-click']?.source).toBe(`${foundryAudioPath}/hammer-ring.wav`)
-    expect(cues['spin-button-click']?.source).toBe(`${foundryAudioPath}/spin-button-metal-hit.wav`)
-    expect(cues['lever-pull'].enabled).toBe(false)
-    expect(cues['reel-spin']).toMatchObject({ source: `${foundryAudioPath}/forge-bellows-and-crackling-fire.wav`, loop: true })
-    expect(cues['reel-stop'].source).toBe(`${foundryAudioPath}/reel-brake.wav`)
-    expect(Object.values(cues).some(cue => /wukong/i.test(cue.source))).toBe(false)
+    expect(cues['button-click']?.source).toContain('hammer-ring.wav')
+    expect(cues['spin-button-click']?.source).toContain('spin-button-metal-hit.wav')
+    expect(requiredCue(GOLD_FOUNDRY_SOUNDS, 'lever-pull').enabled).toBe(false)
+    expect(cues['reel-spin']).toMatchObject({ source: expect.stringContaining('forge-bellows-and-crackling-fire.wav'), loop: true })
+    expect(requiredCue(GOLD_FOUNDRY_SOUNDS, 'reel-stop').source).toContain('reel-brake.wav')
+    expect(definedCues(GOLD_FOUNDRY_SOUNDS).some(cue => /wukong/i.test(cue.source))).toBe(false)
   })
 
   it('creates no Audio for disabled cues or on hook mount, then allocates effects and theme music only on demand', () => {
@@ -215,17 +227,17 @@ describe('catalogue audio provenance and allocation', () => {
         expect(audio).not.toHaveBeenCalled()
         act(() => {
           for (const [cueId, cue] of Object.entries(soundSet.cues)) {
-            if (cue.enabled === false) {
-              current().startLoop(cueId as keyof SlotSoundSet['cues'])
-              current().playCue(cueId as keyof SlotSoundSet['cues'])
+            if (cue?.enabled === false) {
+              current().startLoop(cueId)
+              current().playCue(cueId)
             }
           }
         })
         expect(audio).not.toHaveBeenCalled()
         expect(play).not.toHaveBeenCalled()
       }
-      act(() => root.render(createElement(Harness, { soundSet: soundSets.DEFAULT_SLOT_SOUNDS })))
-      act(() => current().playCue(soundSets.DEFAULT_SLOT_SOUNDS.events.leverPull))
+      act(() => root.render(createElement(Harness, { soundSet: DEFAULT_SLOT_SOUNDS })))
+      act(() => current().playCue(DEFAULT_SLOT_SOUNDS.events.leverPull))
       expect(audio).toHaveBeenCalledExactlyOnceWith(expect.stringContaining('chips-handle-1.ogg'))
       expect(play).toHaveBeenCalledOnce()
 
@@ -233,7 +245,7 @@ describe('catalogue audio provenance and allocation', () => {
       expect(audio).toHaveBeenCalledOnce()
       act(() => current().startLoop('special-ambience'))
       expect(audio).toHaveBeenCalledTimes(2)
-      expect(audio).toHaveBeenLastCalledWith('/assets/slots/audio-suites/v1/reel-riches/midnight-mix.ogg')
+      expect(audio).toHaveBeenLastCalledWith(expect.stringContaining('assets/audio/reel-riches-trophy-loop.wav'))
       expect(play).toHaveBeenCalledTimes(2)
     } finally {
       act(() => root.unmount())

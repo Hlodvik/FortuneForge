@@ -1,17 +1,15 @@
-import orchardBase from '../../assets/slots/backgrounds/optimized/rainbow-realm-prismatic-orchard-v3-base.webp'
-import pinwheelFlower from '../../assets/slots/backgrounds/optimized/rainbow-realm-pinwheel-flower.png'
-import energyBolt from '../../assets/slots/symbols/optimized/celestial-lightning-bolt.png'
-import cherry from '../../assets/slots/symbols/cherry.gif'
-import goldenApple from '../../assets/slots/symbols/golden-apple.gif'
-import grape from '../../assets/slots/symbols/grape-bunch.gif'
-import lemon from '../../assets/slots/symbols/lemon.gif'
-import mango from '../../assets/slots/symbols/mango.gif'
-import orange from '../../assets/slots/symbols/orange.gif'
-import powerCoin from '../../assets/slots/symbols/optimized/rainbow-realm-power-coin.png'
-import watermelon from '../../assets/slots/symbols/watermelon-slice.gif'
-import { RainbowRealmMachine } from '../../features/slots/components/RainbowRealmMachine'
+import {
+  RAINBOW_REALM_PREVIEW_ENERGY_BOLT as energyBolt,
+  RAINBOW_REALM_PREVIEW_ORCHARD as orchardBase,
+  RAINBOW_REALM_PREVIEW_PINWHEEL as pinwheelFlower,
+  RAINBOW_REALM_PREVIEW_POWER_COIN as powerCoin,
+  RAINBOW_REALM_PREVIEW_SYMBOLS,
+} from '@fortuneforge/games-rainbow-realm/presentation'
+import { RainbowRealmMachine } from '@fortuneforge/games-rainbow-realm/RainbowRealmMachine'
 import { InGameShell } from '../../components/InGameShell'
 import '../index.css'
+
+const { cherry, goldenApple, grape, lemon, mango, orange, watermelon } = RAINBOW_REALM_PREVIEW_SYMBOLS
 
 const previewReels = [
   [cherry, grape, lemon],

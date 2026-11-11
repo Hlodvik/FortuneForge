@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+@import './candyCarnivalCabinet.css';
+
+.slots-page__result-atmosphere[data-celebration='candy-sprinkles']::before { content: '● ✦ ● ✦ ●'; animation-name: result-candy-sprinkles; }
+
+@keyframes result-candy-sprinkles {
+  0% { opacity: 0; transform: scale(0.38) rotate(-22deg); }
+  25% { opacity: 1; transform: scale(1.16) rotate(5deg); }
+  100% { opacity: 0; transform: scale(1.42) rotate(20deg); }
+}

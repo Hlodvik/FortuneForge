@@ -1,10 +1,66 @@
 <Solution>
-  <Folder Name="/games/EmptySlots/">
-    <Project Path="EmptySlots/src/FortuneForge.Games.EmptySlots/FortuneForge.Games.EmptySlots.csproj" />
+  <Folder Name="/games/JadeDragon/">
+    <Project Path="JadeDragon/src/FortuneForge.Games.JadeDragon/FortuneForge.Games.JadeDragon.csproj" />
   </Folder>
   <Folder Name="/games/NeonNights/">
     <Project Path="NeonNights/src/FortuneForge.Games.NeonNights/FortuneForge.Games.NeonNights.csproj" />
     <Project Path="NeonNights/tests/FortuneForge.Games.NeonNights.Tests/FortuneForge.Games.NeonNights.Tests.csproj" />
+  </Folder>
+  <Folder Name="/games/MidnightVault/">
+    <Project Path="MidnightVault/src/FortuneForge.Games.MidnightVault/FortuneForge.Games.MidnightVault.csproj" />
+    <Project Path="MidnightVault/tests/FortuneForge.Games.MidnightVault.Tests/FortuneForge.Games.MidnightVault.Tests.csproj" />
+  </Folder>
+  <Folder Name="/games/GoldFoundry/">
+    <Project Path="GoldFoundry/src/FortuneForge.Games.GoldFoundry/FortuneForge.Games.GoldFoundry.csproj" />
+    <Project Path="GoldFoundry/tests/FortuneForge.Games.GoldFoundry.Tests/FortuneForge.Games.GoldFoundry.Tests.csproj" />
+  </Folder>
+  <Folder Name="/games/Wukong/">
+    <Project Path="Wukong/src/FortuneForge.Games.Wukong/FortuneForge.Games.Wukong.csproj" />
+  </Folder>
+  <Folder Name="/games/RainbowRealm/">
+    <Project Path="RainbowRealm/src/FortuneForge.Games.RainbowRealm/FortuneForge.Games.RainbowRealm.csproj" />
+  </Folder>
+  <Folder Name="/games/PiratesFortune/">
+    <Project Path="PiratesFortune/src/FortuneForge.Games.PiratesFortune/FortuneForge.Games.PiratesFortune.csproj" />
+  </Folder>
+  <Folder Name="/games/GodsOfOlympus/">
+    <Project Path="GodsOfOlympus/src/FortuneForge.Games.GodsOfOlympus/FortuneForge.Games.GodsOfOlympus.csproj" />
+  </Folder>
+  <Folder Name="/games/ReelRiches/">
+    <Project Path="ReelRiches/src/FortuneForge.Games.ReelRiches/FortuneForge.Games.ReelRiches.csproj" />
+  </Folder>
+  <Folder Name="/games/HighNoonFortune/">
+    <Project Path="HighNoonFortune/src/FortuneForge.Games.HighNoonFortune/FortuneForge.Games.HighNoonFortune.csproj" />
+  </Folder>
+  <Folder Name="/games/RoyalDraw/">
+    <Project Path="RoyalDraw/src/FortuneForge.Games.RoyalDraw/FortuneForge.Games.RoyalDraw.csproj" />
+  </Folder>
+  <Folder Name="/games/ArcaneArchives/">
+    <Project Path="ArcaneArchives/src/FortuneForge.Games.ArcaneArchives/FortuneForge.Games.ArcaneArchives.csproj" />
+  </Folder>
+  <Folder Name="/games/CosmicFortune/">
+    <Project Path="CosmicFortune/src/FortuneForge.Games.CosmicFortune/FortuneForge.Games.CosmicFortune.csproj" />
+  </Folder>
+  <Folder Name="/games/OceanOdyssey/">
+    <Project Path="OceanOdyssey/src/FortuneForge.Games.OceanOdyssey/FortuneForge.Games.OceanOdyssey.csproj" />
+  </Folder>
+  <Folder Name="/games/SamuraiFortune/">
+    <Project Path="SamuraiFortune/src/FortuneForge.Games.SamuraiFortune/FortuneForge.Games.SamuraiFortune.csproj" />
+  </Folder>
+  <Folder Name="/games/CandyCarnival/">
+    <Project Path="CandyCarnival/src/FortuneForge.Games.CandyCarnival/FortuneForge.Games.CandyCarnival.csproj" />
+  </Folder>
+  <Folder Name="/games/PhantomManor/">
+    <Project Path="PhantomManor/src/FortuneForge.Games.PhantomManor/FortuneForge.Games.PhantomManor.csproj" />
+  </Folder>
+  <Folder Name="/games/NordicLegends/">
+    <Project Path="NordicLegends/src/FortuneForge.Games.NordicLegends/FortuneForge.Games.NordicLegends.csproj" />
+  </Folder>
+  <Folder Name="/games/DesertTreasures/">
+    <Project Path="DesertTreasures/src/FortuneForge.Games.DesertTreasures/FortuneForge.Games.DesertTreasures.csproj" />
+  </Folder>
+  <Folder Name="/games/RobotRevolution/">
+    <Project Path="RobotRevolution/src/FortuneForge.Games.RobotRevolution/FortuneForge.Games.RobotRevolution.csproj" />
   </Folder>
   <Folder Name="/games/AndarBahar/">
     <Project Path="AndarBahar/src/FortuneForge.Games.AndarBahar/FortuneForge.Games.AndarBahar.csproj" />
@@ -108,6 +164,7 @@
     <Project Path="Keno/samples/FortuneForge.Games.Keno.Web/FortuneForge.Games.Keno.Web.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="shared/FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
     <Project Path="shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
     <Project Path="shared/FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
     <Project Path="shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />

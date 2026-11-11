@@ -41,8 +41,12 @@ public sealed partial class FirestoreAccountStore
                     var remaining = checked((int)ReadLong(state[1], "available"));
                     var wager = remaining > 0 ? ReadNeonCarryWagerPoints(state[0], pointValueInCents) : (long?)null;
                     var mode = remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null;
+                    var discoRemaining = ReadNeonDiscoSpinsRemaining(state[0]);
                     return new SlotStateResponse(remaining, wager, 0, 0, [], mode)
-                    { NeonDiscoSpinsRemaining = ReadNeonDiscoSpinsRemaining(state[0]) };
+                    {
+                        NeonDiscoSpinsRemaining = discoRemaining,
+                        NeonDiscoMultiplier = discoRemaining > 0 ? ReadNeonDiscoMultiplier(state[0]) : NeonDiscoCascade.InitialMultiplier
+                    };
                 }
                 var rounds = ReadMidnightBonusRounds(state[0], ReadLong(state[1], "available"), pointValueInCents);
                 var active = rounds.FirstOrDefault();
@@ -109,6 +113,16 @@ public sealed partial class FirestoreAccountStore
         if (remaining < 0 || remaining > NeonArcadeSlotDefinitions.DiscoPlaySpins)
             throw new InvalidOperationException("The saved Neon Disco play balance is invalid.");
         return checked((int)remaining);
+    }
+
+    private static int ReadNeonDiscoMultiplier(DocumentSnapshot snapshot, string field = "neonDiscoMultiplier")
+    {
+        if (!snapshot.ContainsField(field))
+            return NeonDiscoCascade.InitialMultiplier;
+        var multiplier = ReadLong(snapshot, field);
+        if (!NeonDiscoCascade.IsValidMultiplier(multiplier))
+            throw new InvalidOperationException("The saved Neon Disco multiplier is invalid.");
+        return (int)multiplier;
     }
 
     private static IReadOnlyList<MidnightVaultBonusRound> ReadMidnightBonusRounds(

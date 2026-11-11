@@ -1,0 +1,10 @@
+@import './runtimeOverrides.css';
+/* RoyalDraw uses the neutral slot runtime without extra package CSS. */
+
+.slots-page__result-atmosphere[data-celebration='royal-card-fan']::before { content: '♥ ♠ ♦ ♣ ♥'; animation-name: result-royal-card-fan; }
+
+@keyframes result-royal-card-fan {
+  0% { opacity: 0; transform: rotate(-26deg) scale(0.5); }
+  32% { opacity: 1; transform: rotate(4deg) scale(1.08); }
+  100% { opacity: 0; transform: rotate(20deg) scale(1.28); }
+}

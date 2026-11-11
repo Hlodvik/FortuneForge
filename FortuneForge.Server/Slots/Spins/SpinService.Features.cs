@@ -98,7 +98,7 @@ public sealed partial class SpinService
             Matching = game.Matching,
             Math = game.Math,
             Wagering = game.Wagering,
-            FreeGames = game.FreeGames is null || profile is null || game.Id == SlotSpecialRoundProfiles.DragonHoardGameId
+            FreeGames = game.FreeGames is null || profile is null
                 ? game.FreeGames
                 : profile.Configure(game.FreeGames),
             SpecialPoints = game.SpecialPoints,

@@ -10,12 +10,12 @@
   "generator": "built-in imagegen",
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-65b2417e-cd1d-4167-84e6-dfd6318d342d.png",
   "referencePaths": [
-    "fortuneforge.client/src/games/slots/wukong/catalog.ts",
-    "fortuneforge.client/src/games/slots/wukong/cabinetTheme.ts",
-    "fortuneforge.client/src/games/slots/wukong/manifest.ts",
-    "fortuneforge.client/src/assets/slots/games/wukong/mascot/wukong-idle-staff.png",
-    "fortuneforge.client/src/assets/slots/symbols/wukong/celestial-staff.png",
-    "fortuneforge.client/src/assets/slots/backgrounds/optimized/neon-jewel-clouds-gold.png",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/catalog.ts",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/cabinetTheme.ts",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/manifest.ts",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/assets/art/mascot/wukong-idle-staff.png",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/assets/art/symbols/wukong/celestial-staff.png",
+    "games/Wukong/client/FortuneForge.Games.Wukong.Client/src/assets/art/background/neon-jewel-clouds-gold.png",
     "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-f81c6092-402b-467f-b037-4cff63db8a76.png"
   ],
   "visualCheck": {

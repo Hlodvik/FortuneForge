@@ -8,7 +8,7 @@ public static class NeonPlayPolicy
 {
     public static bool IsFeatureMode(string? value) => !string.IsNullOrWhiteSpace(value) &&
         value.Split('-', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } parts &&
-        parts.All(part => part is "sync" or "rows" or "paw" or "rand" or "arcade");
+        parts.All(part => part is "sync" or "rows" or "paw" or "rand" or "arcade" or "car");
 
     public static bool HasFeatureMode(string? value, string mode) =>
         IsFeatureMode(value) &&
@@ -17,15 +17,26 @@ public static class NeonPlayPolicy
 
     public static int NextDiscoSpins(int current, bool consumedDiscoPlay, NeonArcadeEvidence? evidence)
     {
-        if (current < 0 || current > NeonArcadeSlotDefinitions.DiscoPlaySpins)
+        var grant = evidence is null || evidence.ModelId == NeonArcadeSlotDefinitions.ModelId
+            ? NeonArcadeSlotDefinitions.DiscoPlaySpins
+            : NeonArcadeSlotDefinitions.PreviousDiscoPlaySpins;
+        if (current < 0 || current > grant)
             throw new ArgumentOutOfRangeException(nameof(current));
         return evidence?.Activators.Any(activator => activator.SymbolId == "POWER") == true
-            ? NeonArcadeSlotDefinitions.DiscoPlaySpins
+            ? grant
             : Math.Max(0, current - (consumedDiscoPlay ? 1 : 0));
     }
 
     public static bool ChargesWager(bool usesAwardedPlay, string? featureMode) =>
         !usesAwardedPlay || NeonArcadeBonus.IsPaidArcadeMode(featureMode);
+
+    public static int NextDiscoMultiplier(int current, int spinsRemaining, NeonDiscoCascadeOutcome? cascade,
+        NeonArcadeEvidence? evidence)
+    {
+        if (spinsRemaining == 0 || evidence?.Activators.Any(activator => activator.SymbolId == "POWER") == true)
+            return NeonDiscoCascade.InitialMultiplier;
+        return cascade is null ? current : NeonDiscoCascade.MultiplierAfterSpin(current, cascade.Steps.Count);
+    }
 
     public static NeonAwardedPlayState AdvanceAwardedPlays(long remainingAfterConsumption,
         bool usedAwardedPlay, string? previousFeatureMode, int awardedPlays,

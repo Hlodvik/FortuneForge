@@ -1,7 +1,7 @@
 # Neon Nights backend package
 
 This project owns Neon Nights' definitions, reel generation, matching, payout
-rounding, feature awards, paid Arcade/Disco transitions, and cascade refills.
+rounding, feature awards, paid Car/Disco transitions, and cascade refills.
 It builds without the Fortune Forge host and without another game package.
 
 Its only project dependency is `FortuneForge.Games.Slots.Contracts`, which holds

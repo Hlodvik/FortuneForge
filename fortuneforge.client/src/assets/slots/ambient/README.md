@@ -10,8 +10,5 @@ Each file keeps its source title so a future maintainer can verify the track pag
 - `casino-rock.mp3` — [Casino de Rock (DOVA 18657)](https://dova-s.jp/en/bgm/detail/18657)
 - `country-trail.mp3` — [Wagon Wheel Jazz (DOVA 23708)](https://dova-s.jp/en/bgm/detail/23708)
 - `cyber-night.mp3` — [Cyber-style BGM (DOVA 8334), TAKAO Masaki](https://dova-s.jp/en/bgm/detail/8334)
-- `desert-wind.mp3` — [Swirling desert wind (DOVA 23035)](https://dova-s.jp/en/bgm/detail/23035)
 - `forest-journey.mp3` — [A Journey in the Forest (DOVA 23670)](https://dova-s.jp/en/bgm/detail/23670)
 - `haunted-chimes.mp3` — [Horror chime ambience (DOVA 21024), Aisyu](https://dova-s.jp/en/bgm/detail/21024)
-- `nordic-atmosphere.mp3` — [Nordic Atmosphere (DOVA 20973)](https://dova-s.jp/en/bgm/detail/20973)
-- `pirate-voyage.mp3` — [Pirate Ship Dungeon (DOVA 21763), KK](https://dova-s.jp/en/bgm/detail/21763)

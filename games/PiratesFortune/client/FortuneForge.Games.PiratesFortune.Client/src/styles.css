@@ -1,0 +1,44 @@
+@import './runtimeOverrides.css';
+@import './piratesGemMeter.css';
+@import './piratesSpinControls.css';
+
+.slot-game-frame[data-cabinet-theme='pirates-fortune-moonlit-cove-v1']::before {
+  background: url('./assets/art/pirates-cabinet-u-frame.png') center / 100% 100% no-repeat;
+}
+
+.slots-page[data-slot-theme='pirates-fortune-moonlit-cove-v1'] .slots-page__seal-flyover--gem-hoard {
+  animation-name: pirate-gem-pour;
+  animation-delay: var(--treasure-gem-delay, 0ms);
+}
+
+@keyframes pirate-gem-pour {
+  0% {
+    opacity: 0;
+    transform: translate3d(var(--treasure-gem-start-x), var(--treasure-gem-start-y), 0) scale(0.58) rotate(var(--treasure-gem-rotate));
+  }
+
+  12% {
+    opacity: 1;
+    transform: translate3d(var(--treasure-gem-start-x), calc(var(--treasure-gem-start-y) + 0.55rem), 0) scale(0.88) rotate(0deg);
+  }
+
+  58% {
+    opacity: 1;
+    transform: translate3d(
+      calc(var(--seal-travel-x) + var(--treasure-gem-end-x)),
+      calc(var(--seal-travel-y) - var(--treasure-gem-drop-height)),
+      0
+    ) scale(0.64) rotate(var(--treasure-gem-rotate));
+    animation-timing-function: cubic-bezier(0.22, 0.68, 0.32, 1);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translate3d(calc(var(--seal-travel-x) + var(--treasure-gem-end-x)), calc(var(--seal-travel-y) + var(--treasure-gem-end-y)), 0) scale(0.16) rotate(calc(var(--treasure-gem-rotate) + 42deg));
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(calc(var(--seal-travel-x) + var(--treasure-gem-end-x)), calc(var(--seal-travel-y) + var(--treasure-gem-end-y)), 0) scale(0.08) rotate(calc(var(--treasure-gem-rotate) + 58deg));
+  }
+}

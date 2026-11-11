@@ -22,7 +22,7 @@ public sealed class SlotSpecialRoundProfilesTests
     [InlineData(SlotSpecialRoundProfiles.PhantomManorGameId, 3, 5, 18, 9)]
     [InlineData(SlotSpecialRoundProfiles.OceanOdysseyGameId, 4, 6, 28, 6)]
     [InlineData(SlotSpecialRoundProfiles.DragonHoardGameId, 3, 10, 30, 10)]
-    [InlineData(SlotSpecialRoundProfiles.EmptySlotsGameId, 3, 6, 22, 8)]
+    [InlineData(SlotSpecialRoundProfiles.JadeDragonGameId, 3, 6, 22, 8)]
     [InlineData(SlotSpecialRoundProfiles.CandyCarnivalGameId, 4, 5, 20, 8)]
     [InlineData(SlotSpecialRoundProfiles.DesertTreasuresGameId, 3, 7, 24, 7)]
     [InlineData(SlotSpecialRoundProfiles.NeonNightsGameId, 3, 0, 26, 0)]
@@ -61,7 +61,7 @@ public sealed class SlotSpecialRoundProfilesTests
             SlotSpecialRoundProfiles.PhantomManorGameId,
             SlotSpecialRoundProfiles.OceanOdysseyGameId,
             SlotSpecialRoundProfiles.DragonHoardGameId,
-            SlotSpecialRoundProfiles.EmptySlotsGameId,
+            SlotSpecialRoundProfiles.JadeDragonGameId,
             SlotSpecialRoundProfiles.CandyCarnivalGameId,
             SlotSpecialRoundProfiles.DesertTreasuresGameId,
             SlotSpecialRoundProfiles.NeonNightsGameId,

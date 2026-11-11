@@ -61,9 +61,22 @@ internal static class SlotEvidenceReplayAudit
                 ((demo || usesOlympusTumble) && summary.TableId != summary.RoundId))
                 findings.Add(new("slot-evidence-identity-mismatch", "error",
                     "The saved spin identity differs from its audit summary."));
-            if (engineAudit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion)
+            if (NeonArcadeSlotDefinitions.SupportsPackageReplay(engineAudit.EngineVersion))
                 findings.AddRange(InspectCurrentNeon(root, data, result, response, engineAudit,
                     settledPayout, summary, demo));
+            else if (engineAudit.EngineVersion == FortuneForge.Games.MidnightVault.MidnightVaultEngine.Version)
+            {
+                if (demo)
+                    findings.AddRange(InspectMidnightDemo(
+                        data.GetProperty("request").Deserialize<DemoSpinRequest>(RoundAuditCapture.Json)
+                            ?? throw new JsonException("Missing Midnight Vault demo request."),
+                        result, response!, engineAudit));
+                else if (data.TryGetProperty("outcomeSchemaVersion", out var midnightSchema) && midnightSchema.GetInt64() >= 7)
+                    findings.AddRange(InspectMidnightAdmission(data, result, engineAudit, settledPayout, summary));
+                else
+                    findings.Add(new("slot-midnight-schema-mismatch", "error",
+                        "The owned Midnight Vault outcome requires its versioned settlement evidence."));
+            }
             else if (demo)
                 findings.AddRange(InspectDemo(data, result, response!, engineAudit));
             else if (usesOlympusTumble)
@@ -97,11 +110,13 @@ internal static class SlotEvidenceReplayAudit
     {
         var findings = new List<RoundAuditFinding>();
         void Flag(string code, string message) => findings.Add(new(code, "error", message));
+        var carriesMultiplier = NeonArcadeSlotDefinitions.SupportsDiscoMultiplierCarry(audit.EngineVersion);
         if (demo)
         {
             var request = data.GetProperty("request").Deserialize<DemoSpinRequest>(RoundAuditCapture.Json)
                 ?? throw new JsonException("Missing Neon demo request.");
             var discoPlay = !request.UseFreeSpin && request.NeonDiscoSpinsRemaining > 0;
+            var multiplierBefore = request.NeonDiscoMultiplier ?? NeonDiscoCascade.InitialMultiplier;
             var progress = NeonPlayPolicy.AdvanceAwardedPlays(
                 request.FreeSpinsRemaining - (request.UseFreeSpin ? 1 : 0), request.UseFreeSpin,
                 request.FreeSpinFeatureMode, engine.FreeSpinsAwarded, engine.WagerPoints, engine.NeonArcade);
@@ -130,19 +145,27 @@ internal static class SlotEvidenceReplayAudit
                 JsonSerializer.Serialize(response.Payout) != JsonSerializer.Serialize(settled) ||
                 JsonSerializer.Serialize(engine.NeonArcade) != JsonSerializer.Serialize(response.NeonArcade))
                 Flag("slot-neon-demo-progression-mismatch", "The Neon response differs from its captured play and progression rules.");
+            if (carriesMultiplier &&
+                (!NeonDiscoCascade.IsValidMultiplier(multiplierBefore) ||
+                 request.NeonDiscoSpinsRemaining == 0 && multiplierBefore != NeonDiscoCascade.InitialMultiplier ||
+                 discoPlay && audit.NeonDiscoCascade?.StartingMultiplier != multiplierBefore ||
+                 response!.NeonDiscoMultiplier != NeonPlayPolicy.NextDiscoMultiplier(multiplierBefore,
+                     response.NeonDiscoSpinsRemaining, engine.NeonDiscoCascade, engine.NeonArcade)))
+                Flag("slot-neon-disco-multiplier-mismatch", "The Disco multiplier does not match the captured demo spin.");
             return findings;
         }
 
         var isFreeSpin = data.GetProperty("isFreeSpin").GetBoolean();
         var activeMode = data.GetProperty("activeFreeSpinFeatureMode").GetString();
         var isDisco = data.GetProperty("isNeonDiscoPlay").GetBoolean();
+        var discoSpinsBefore = data.GetProperty("neonDiscoSpinsBefore").GetInt32();
+        var discoSpinsRemaining = data.GetProperty("neonDiscoSpinsRemaining").GetInt32();
         var wagerCents = NeonPlayPolicy.ChargesWager(isFreeSpin, activeMode)
             ? RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents) : 0;
         var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, engine.PointValueInCents);
         if (isFreeSpin != engine.IsFreeSpin || isDisco != (engine.NeonDiscoCascade is not null) ||
             data.GetProperty("payoutMultiplier").GetDecimal() != 1m ||
-            data.GetProperty("neonDiscoSpinsRemaining").GetInt32() != NeonPlayPolicy.NextDiscoSpins(
-                data.GetProperty("neonDiscoSpinsBefore").GetInt32(), isDisco, engine.NeonArcade) ||
+            discoSpinsRemaining != NeonPlayPolicy.NextDiscoSpins(discoSpinsBefore, isDisco, engine.NeonArcade) ||
             root.GetProperty("sourceCollection").GetString() != "slotSpinResults" ||
             root.GetProperty("sourceDocumentId").GetString() != engine.SpinId.ToString("N") ||
             root.GetProperty("wagerCents").GetInt64() != wagerCents || root.GetProperty("payoutCents").GetInt64() != payoutCents ||
@@ -151,6 +174,15 @@ internal static class SlotEvidenceReplayAudit
             string.IsNullOrWhiteSpace(participant.ActorId) || participant.WagerCents != wagerCents ||
             participant.PayoutCents != payoutCents || participant.NetCents != payoutCents - wagerCents)
             Flag("slot-neon-financial-mismatch", "The Neon admission or replayed amounts differ from the paid receipt.");
+        if (carriesMultiplier &&
+            (!data.TryGetProperty("neonDiscoMultiplierBefore", out var before) || !before.TryGetInt32(out var admittedMultiplier) ||
+             !NeonDiscoCascade.IsValidMultiplier(admittedMultiplier) ||
+             discoSpinsBefore == 0 && admittedMultiplier != NeonDiscoCascade.InitialMultiplier ||
+             isDisco && audit.NeonDiscoCascade?.StartingMultiplier != admittedMultiplier ||
+             !data.TryGetProperty("neonDiscoMultiplier", out var after) || !after.TryGetInt32(out var multiplierAfter) ||
+             multiplierAfter != NeonPlayPolicy.NextDiscoMultiplier(admittedMultiplier,
+                 discoSpinsRemaining, engine.NeonDiscoCascade, engine.NeonArcade)))
+            Flag("slot-neon-disco-multiplier-mismatch", "The Disco multiplier does not match the captured paid admission and settlement.");
         return findings;
     }
 
@@ -311,7 +343,7 @@ internal static class SlotEvidenceReplayAudit
         if (request.GameId != engine.GameId || request.WagerPoints != engine.WagerPoints ||
             request.FreeSpinsRemaining < 0 ||
             !NeonArcadeSlotDefinitions.UsesExpandedArcadeGrid(audit.EngineVersion) && request.FreeSpinsRemaining > 1_000 ||
-            request.NeonDiscoSpinsRemaining is < 0 or > NeonArcadeSlotDefinitions.DiscoPlaySpins ||
+            request.NeonDiscoSpinsRemaining is < 0 or > NeonArcadeSlotDefinitions.PreviousDiscoPlaySpins ||
             request.GameId != SlotSpecialRoundProfiles.NeonNightsGameId && request.NeonDiscoSpinsRemaining != 0 ||
             request.EnergyBalance is < 0 or > 100 ||
             request.UseFreeSpin && request.FreeSpinsRemaining == 0 ||

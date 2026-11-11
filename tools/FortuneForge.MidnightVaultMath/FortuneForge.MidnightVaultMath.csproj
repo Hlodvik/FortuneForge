@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../games/shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
+    <ProjectReference Include="../../games/MidnightVault/src/FortuneForge.Games.MidnightVault/FortuneForge.Games.MidnightVault.csproj" />
     <ProjectReference Include="..\..\FortuneForge.Server\FortuneForge.Server.csproj" />
     <Compile Include="..\..\FortuneForge.Server.Tests\Slots\MidnightVaultIntegerPayoutTests.cs" Link="IndependentIntegerOracle.cs" />
   </ItemGroup>

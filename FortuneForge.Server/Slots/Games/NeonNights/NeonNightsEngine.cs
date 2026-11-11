@@ -34,10 +34,11 @@ internal sealed class NeonNightsEngine(ISlotsDefinitionProvider definitions, IRa
 
     internal SpinResult Spin(long wagerPoints, string playerId, bool specialBoostApplied,
         long currentEnergyBalance, string? featureMode, int? persistedPityMisses,
-        bool isFreeSpin, bool isNeonDiscoPlay = false)
+        bool isFreeSpin, bool isNeonDiscoPlay = false,
+        int neonDiscoMultiplier = NeonDiscoCascade.InitialMultiplier)
     {
         var result = engine.Spin(wagerPoints, playerId, specialBoostApplied,
-            currentEnergyBalance, featureMode, persistedPityMisses, isFreeSpin, isNeonDiscoPlay);
+            currentEnergyBalance, featureMode, persistedPityMisses, isFreeSpin, isNeonDiscoPlay, neonDiscoMultiplier);
         var audit = result.EngineAudit;
         SlotSpecialRoundProfiles.TryGet(result.GameId, out var profile);
         return new SpinResult(result.SpinId, result.GameId, result.ReelSetId, result.SymbolSetId,

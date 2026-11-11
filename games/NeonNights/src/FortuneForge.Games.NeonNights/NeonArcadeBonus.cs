@@ -24,16 +24,21 @@ public sealed record NeonArcadeSettlement(
 public static class NeonArcadeBonus
 {
     public const string PaidArcadeFeatureMode = "arcade-rows";
+    public const string PaidCarFeatureMode = "car-rows";
 
     private static readonly (string Kind, string Symbol)[] ActivatorRoles =
         [("car", "6"), ("disco-ball", "POWER"), ("arcade-cabinet", "SEAL_RAND")];
 
     public static bool IsPaidArcadeMode(string? featureMode) =>
-        string.Equals(featureMode, PaidArcadeFeatureMode, StringComparison.Ordinal);
+        featureMode is PaidCarFeatureMode or PaidArcadeFeatureMode;
 
-    public static string? AwardedFeatureMode(NeonArcadeEvidence? evidence) =>
-        evidence?.Activators.Any(role => role.Kind == "arcade-cabinet") == true
-            ? PaidArcadeFeatureMode : null;
+    public static string? AwardedFeatureMode(NeonArcadeEvidence? evidence)
+    {
+        if (evidence is null) return null;
+        if (evidence.ModelId is NeonArcadeSlotDefinitions.PreviousCarModelId or NeonArcadeSlotDefinitions.ModelId)
+            return evidence.Activators.Any(role => role.Kind == "car") ? PaidCarFeatureMode : null;
+        return evidence.Activators.Any(role => role.Kind == "arcade-cabinet") ? PaidArcadeFeatureMode : null;
+    }
 
     public static NeonArcadeSettlement Apply(
         SpinPayout paylinePayout,
@@ -49,13 +54,17 @@ public static class NeonArcadeBonus
         var multiplier = checked(1m + bonusCount * boostPercentPerSymbol / 100m);
         var payout = bonusCount == 0 || paylinePayout.TotalPoints == 0
             ? paylinePayout : MultiplyCentPayout(paylinePayout, multiplier);
-        var activators = ActivatorRoles.Select(role => new NeonArcadeActivator(role.Kind, role.Symbol,
+        var usesPaidCarPlays = NeonArcadeSlotDefinitions.UsesPaidCarPlays(engineVersion);
+        var activators = ActivatorRoles
+            .Where(role => !usesPaidCarPlays || role.Symbol != "SEAL_RAND")
+            .Select(role => new NeonArcadeActivator(role.Kind, role.Symbol,
             positions.Where(cell => cell.Symbol == role.Symbol).Select(cell => cell.Position).ToArray()))
             .Where(role => role.Positions.Count > 0).ToArray();
         var featureGamesEnabled = NeonArcadeSlotDefinitions.SupportsSpecialPlays(engineVersion);
         var canAward = featureGamesEnabled &&
             (!isFreeSpin || NeonArcadeSlotDefinitions.SupportsFreeSpinRetriggers(engineVersion));
-        // The disco ball enters its own paid play state; car and arcade add plays.
+        // Current car symbols start paid expanded plays. Historical cabinet
+        // activations remain available only when replaying their captured version.
         var award = canAward && activators.Any(role => role.SymbolId != "POWER")
             ? NeonArcadeSlotDefinitions.SpecialPlaySpins : 0;
         return new(payout, new(NeonArcadeSlotDefinitions.ModelIdForEngine(engineVersion), false, bonusCount,

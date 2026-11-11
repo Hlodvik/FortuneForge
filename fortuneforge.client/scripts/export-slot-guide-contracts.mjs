@@ -54,7 +54,8 @@ await writeFile(resolve(fixtureDirectory, 'engineGuide-contracts.json'), JSON.st
   exportedUtc: index.exportedUtc, assemblySha256: provenance.assemblySha256,
   sourceSha256: Object.fromEntries(Object.entries(provenance.sourceSha256).filter(([path]) =>
     path.startsWith('FortuneForge.Server/Slots/') || path === 'FortuneForge.Server/appsettings.json' ||
-    path.startsWith('games/NeonNights/src/') || path.startsWith('games/EmptySlots/src/') ||
+    path.startsWith('games/GoldFoundry/src/') || path.startsWith('games/MidnightVault/src/') ||
+    path.startsWith('games/NeonNights/src/') || path.startsWith('games/JadeDragon/src/') ||
     path.startsWith('games/shared/FortuneForge.Games.Slots.Contracts/'))),
   games: engineFixtures,
 }, null, 2), 'utf8')

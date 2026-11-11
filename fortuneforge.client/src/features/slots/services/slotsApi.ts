@@ -1,12 +1,10 @@
-import { isSlotSymbolId, type MidnightVaultBonusRound, type MidnightVaultDemoState, type SlotSealCollection, type SpinResult } from '../types/slots'
-import { fetchWithAccountSession } from '../../account/services/accountsApi'
-
 import {
-  GODS_TUMBLE_COLUMNS,
-  GODS_TUMBLE_GAME_ID,
-  GODS_TUMBLE_ROWS,
-  GODS_TUMBLE_SYMBOLS,
-} from '../../../games/slots/godsOfOlympus/tumble'
+  isSlotSymbolId,
+  type SlotSealCollection,
+  type SlotTumbleRules,
+  type SpinResult,
+} from '../types/slots'
+import { fetchWithAccountSession } from '../../account/services/accountsApi'
 
 type SpinRequest = {
   gameId: string
@@ -21,13 +19,10 @@ type DemoSpinRequest = Omit<SpinRequest, 'useSpecialBoost'> & {
   energyBalance: number
   sealCollections: SlotSealCollection[]
   freeSpinFeatureMode: string | null
-  midnightBonusState?: MidnightVaultDemoState | null
   olympusTumbleShowcase?: boolean
 }
 
 export type SlotState = {
-  bonusRound?: MidnightVaultBonusRound | null
-  queuedBonusRounds?: MidnightVaultBonusRound[]
   freeSpinsRemaining: number
   freeSpinWagerPoints: number | null
   specialPointsBalance: number
@@ -82,7 +77,10 @@ export async function requestDemoAvailability(gameId: string, signal?: AbortSign
   }
 }
 
-export async function requestSpin(request: SpinRequest): Promise<SpinResult> {
+export async function requestSpin(
+  request: SpinRequest,
+  tumbleRules?: SlotTumbleRules,
+): Promise<SpinResult> {
   const response = await fetchWithAccountSession('/api/slots/spins', {
     method: 'POST',
     body: JSON.stringify(request),
@@ -102,14 +100,17 @@ export async function requestSpin(request: SpinRequest): Promise<SpinResult> {
     throw new Error('The spin server returned an invalid reel result.')
   }
 
-  if (request.gameId === GODS_TUMBLE_GAME_ID && !request.useFreeSpin) {
-    validateGodsTumbleResult(result, request, false)
+  if (tumbleRules && !request.useFreeSpin) {
+    validateGodsTumbleResult(result, request, false, tumbleRules)
   }
 
   return result
 }
 
-export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinResult> {
+export async function requestDemoSpin(
+  request: DemoSpinRequest,
+  tumbleRules?: SlotTumbleRules,
+): Promise<SpinResult> {
   const response = await fetch('/api/slots/demo/spins', {
     method: 'POST',
     credentials: 'omit',
@@ -132,7 +133,8 @@ export async function requestDemoSpin(request: DemoSpinRequest): Promise<SpinRes
   }
 
   if (request.olympusTumbleShowcase !== undefined) {
-    validateGodsTumbleResult(result, request, true)
+    if (!tumbleRules) throw new Error('The tumble spin is missing its game-owned rules.')
+    validateGodsTumbleResult(result, request, true, tumbleRules)
   }
 
   return result
@@ -163,7 +165,6 @@ export async function requestSlotState(gameId: string): Promise<SlotState> {
     || !Array.isArray(state.sealCollections)
     || !state.sealCollections.every(isSlotSealCollection)
     || (state.freeSpinFeatureMode !== null && typeof state.freeSpinFeatureMode !== 'string')
-    || !validOptionalBonusFields(state)
   ) {
     throw new Error('The slot server returned an invalid bonus state.')
   }
@@ -232,7 +233,6 @@ function isSpinResult(result: unknown): result is SpinResult {
     result.sealCollections.every(isSlotSealCollection) &&
     (result.freeSpinFeatureMode === null || typeof result.freeSpinFeatureMode === 'string') &&
     typeof result.specialBoostApplied === 'boolean' &&
-    validOptionalBonusFields(result) &&
     (result.slotsCreditsBalance === null || typeof result.slotsCreditsBalance === 'number') &&
     Array.isArray(result.reels) &&
     result.reels.length > 0 &&
@@ -275,38 +275,39 @@ function validateGodsTumbleResult(
   result: SpinResult,
   request: Pick<SpinRequest, 'gameId' | 'wagerPoints'>,
   isDemo: boolean,
+  rules: SlotTumbleRules,
 ) {
   const balance = result.slotsCreditsBalance
   if (result.gameId !== request.gameId || result.wagerPoints !== request.wagerPoints ||
     (isDemo ? balance !== null : balance === null || !Number.isFinite(balance) || balance < 0) ||
-    !validGodsTumbleResult(result)
+    !validGodsTumbleResult(result, rules)
   ) {
     throw new Error('The spin server returned an invalid Olympus tumble result.')
   }
 }
 
-function validGodsTumbleResult(result: SpinResult): boolean {
+function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): boolean {
   const tumble: unknown = result.olympusTumble
   if (!isRecord(tumble)) return false
   const { initialReels, steps, totalPoints } = tumble
-  if (!validGodsTumbleReels(initialReels) ||
+  if (!validGodsTumbleReels(initialReels, rules) ||
     !Array.isArray(steps) || steps.length > 12 ||
     !isNonNegativeInteger(totalPoints) || totalPoints !== result.payout.totalPoints ||
     result.payout.paylines.length !== 0 ||
     result.isFreeSpin || result.freeSpinsAwarded !== 0 || result.freeSpinsRemaining !== 0 ||
-    !validGodsTumbleReels(result.reels) ||
+    !validGodsTumbleReels(result.reels, rules) ||
     !result.reels.every((reel, column) => reel.every((symbol, row) => symbol === initialReels[column][row]))
   ) return false
 
   let reels = initialReels
   let total = 0
   for (const step of steps) {
-    if (!isRecord(step) || !validGodsTumbleReels(step.reels) || !isNonNegativeInteger(step.amountPoints) ||
+    if (!isRecord(step) || !validGodsTumbleReels(step.reels, rules) || !isNonNegativeInteger(step.amountPoints) ||
       !Array.isArray(step.awards) || step.awards.length === 0 || step.awards.length > 3 ||
-      !Array.isArray(step.cleared) || step.cleared.length > GODS_TUMBLE_COLUMNS * GODS_TUMBLE_ROWS ||
-      !Array.isArray(step.dropRows) || step.dropRows.length !== GODS_TUMBLE_COLUMNS ||
-      !step.dropRows.every(reel => Array.isArray(reel) && reel.length === GODS_TUMBLE_ROWS &&
-        reel.every(rows => isNonNegativeInteger(rows) && rows <= GODS_TUMBLE_ROWS))
+      !Array.isArray(step.cleared) || step.cleared.length > rules.columns * rules.rows ||
+      !Array.isArray(step.dropRows) || step.dropRows.length !== rules.columns ||
+      !step.dropRows.every(reel => Array.isArray(reel) && reel.length === rules.rows &&
+        reel.every(rows => isNonNegativeInteger(rows) && rows <= rules.rows))
     ) return false
 
     const awardedCells = new Set<number>()
@@ -314,18 +315,18 @@ function validGodsTumbleResult(result: SpinResult): boolean {
     for (const award of step.awards) {
       if (!isRecord(award) || !isNonNegativeInteger(award.amountPoints) ||
         !Array.isArray(award.positions) || award.positions.length < 8 ||
-        award.positions.length > GODS_TUMBLE_COLUMNS * GODS_TUMBLE_ROWS
+        award.positions.length > rules.columns * rules.rows
       ) return false
       for (const position of award.positions) {
-        if (!isGodsTumblePosition(position) || reels[position.reel][position.row] !== award.symbol) return false
-        const key = godsTumbleCellKey(position)
+        if (!isGodsTumblePosition(position, rules) || reels[position.reel][position.row] !== award.symbol) return false
+        const key = godsTumbleCellKey(position, rules)
         if (awardedCells.has(key)) return false
         awardedCells.add(key)
       }
       stepPoints += award.amountPoints
     }
     if (stepPoints !== step.amountPoints || step.cleared.length !== awardedCells.size ||
-      !step.cleared.every(position => isGodsTumblePosition(position) && awardedCells.delete(godsTumbleCellKey(position)))
+      !step.cleared.every(position => isGodsTumblePosition(position, rules) && awardedCells.delete(godsTumbleCellKey(position, rules)))
     ) return false
     total += stepPoints
     reels = step.reels
@@ -333,50 +334,29 @@ function validGodsTumbleResult(result: SpinResult): boolean {
   return total === totalPoints
 }
 
-function validGodsTumbleReels(value: unknown): value is SpinResult['reels'] {
-  return Array.isArray(value) && value.length === GODS_TUMBLE_COLUMNS &&
-    value.every(reel => Array.isArray(reel) && reel.length === GODS_TUMBLE_ROWS &&
-      reel.every(symbol => GODS_TUMBLE_SYMBOLS.includes(symbol)))
+function validGodsTumbleReels(value: unknown, rules: SlotTumbleRules): value is SpinResult['reels'] {
+  return Array.isArray(value) && value.length === rules.columns &&
+    value.every(reel => Array.isArray(reel) && reel.length === rules.rows &&
+      reel.every(symbol => rules.symbols.includes(symbol)))
 }
 
-function isGodsTumblePosition(value: unknown): value is { reel: number; row: number } {
-  return isRecord(value) && isNonNegativeInteger(value.reel) && value.reel < GODS_TUMBLE_COLUMNS &&
-    isNonNegativeInteger(value.row) && value.row < GODS_TUMBLE_ROWS
+function isGodsTumblePosition(
+  value: unknown,
+  rules: SlotTumbleRules,
+): value is { reel: number; row: number } {
+  return isRecord(value) && isNonNegativeInteger(value.reel) && value.reel < rules.columns &&
+    isNonNegativeInteger(value.row) && value.row < rules.rows
 }
 
-function godsTumbleCellKey({ reel, row }: { reel: number; row: number }): number {
-  return reel * GODS_TUMBLE_ROWS + row
+function godsTumbleCellKey(
+  { reel, row }: { reel: number; row: number },
+  rules: SlotTumbleRules,
+): number {
+  return reel * rules.rows + row
 }
 
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
-}
-
-function isMidnightRound(value: unknown): value is MidnightVaultBonusRound {
-  return isRecord(value) && typeof value.id === 'string' && value.id.length > 0 &&
-    Number.isSafeInteger(value.totalSpins) && Number(value.totalSpins) > 0 && Number(value.totalSpins) <= 1000 &&
-    Number.isSafeInteger(value.remainingSpins) && Number(value.remainingSpins) > 0 && Number(value.remainingSpins) <= Number(value.totalSpins) &&
-    Number.isSafeInteger(value.wagerPoints) && Number(value.wagerPoints) >= 2 && Number(value.wagerPoints) <= 2000 &&
-    (value.featureMode === null || typeof value.featureMode === 'string') &&
-    (value.mathModelId === 'midnight-vault-paytable-v1' || value.mathModelId === 'midnight-vault-paytable-v2')
-}
-
-function validOptionalBonusFields(value: Record<string, unknown>): boolean {
-  if (value.bonusRound != null && !isMidnightRound(value.bonusRound)) return false
-  for (const field of ['queuedBonusRounds', 'awardedBonusRounds']) {
-    if (value[field] !== undefined && (!Array.isArray(value[field]) || !value[field].every(isMidnightRound))) return false
-  }
-  if (value.midnightBonusState != null) {
-    const state = value.midnightBonusState
-    if (!isRecord(state) || !Array.isArray(state.rounds) || !state.rounds.every(isMidnightRound) ||
-      !isRecord(state.collectionCounts) || !isRecord(state.collectionWagerPoints)) return false
-    for (const field of ['collectionCounts', 'collectionWagerPoints'] as const) {
-      const amounts = state[field]
-      if (!isRecord(amounts) || !Object.entries(amounts).every(([key, amount]) => ['sync', 'rows', 'paw', 'rand'].includes(key) &&
-        Number.isSafeInteger(amount) && Number(amount) >= 0 && Number(amount) <= (field === 'collectionCounts' ? 29 : 58000))) return false
-    }
-  }
-  return true
 }
 
 function isSlotSealCollection(value: unknown): value is SlotSealCollection {

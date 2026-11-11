@@ -1,0 +1,104 @@
+/* Fit the cabinet at every width; keep its unscaled dimensions stable. */
+.game-shell {
+  width: var(--jade-fit-width, min(1280px, 100%));
+  zoom: var(--jade-laptop-scale, 1);
+}
+
+.machine { max-width: 1038px; }
+.topbar nav { margin-left: auto; }
+
+.strip-eyebrow, .fortune-seal b, .feature-meter > span,
+.ways, .pearl-promise > span, .bonus-multiplier,
+.credit-readout > span, .bet-control > span, .win-readout > span,
+#spin-label, .auto-button, .paytable-button {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.strip-eyebrow { font-size: 15px; }
+.fortune-seal b, .feature-meter > span { font-size: 13px; }
+.credit-readout > span, .bet-control > span, .win-readout > span { font-size: 16px; }
+
+@media (min-width: 600px) {
+  .reel-stage { aspect-ratio: 1.60; }
+}
+
+/* Compact the surrounding chrome in short windows and narrow desktop panes. */
+@media (min-width: 600px) and (max-height: 900px) {
+  .game-shell {
+    padding: 0 24px;
+  }
+
+  .topbar { height: 32px; }
+  .brand { font-size: 9px; gap: 8px; }
+  .brand-mark { font-size: 26px; }
+  .icon-button { width: 26px; height: 26px; font-size: 16px; }
+  .game-title { padding: 2px 0 6px; }
+  .title-flourish { display: none; }
+  .game-title h1 { font-size: 34px; margin: 2px 0; }
+  .game-title > p { font-size: 8px; margin-top: 4px; }
+
+  .machine {
+    width: min(100%, max(778px, calc((100svh - 300px) * 1.60)));
+    max-width: 1038px;
+  }
+
+  .feature-strip { min-height: 44px; padding: 6px 12px; gap: 10px; }
+  .feature-strip > div:first-child { max-width: 170px; }
+  .feature-strip > div > strong { font-size: 12px; color: #dcebd8; }
+  .strip-eyebrow { font-size: 15px; }
+  .fortune-seal { min-width: 44px; padding: 2px; font-size: 15px; }
+  .fortune-seal b { margin-bottom: 3px; font-size: 13px; color: #e9deb7; }
+  .feature-meter { min-width: 76px; }
+  .feature-meter > span { font-size: 13px; }
+  .feature-meter > strong { font-size: 22px !important; }
+  .machine-top { padding: 5px 14px; font-size: 13px; letter-spacing: .04em; }
+  .pearl-promise > span, .bonus-multiplier { font-size: 13px; }
+  .ways strong { font-size: 16px; }
+  .message-bar { height: auto; min-height: 34px; padding: 6px 12px; font-size: 13px; line-height: 1.3; color: #dcebd8; }
+  .message-bar p { min-width: 0; }
+
+  .control-deck {
+    min-height: 0;
+    grid-template-columns: 1.25fr 1.1fr 1.2fr 1fr;
+    gap: 14px;
+    padding: 8px 14px;
+  }
+
+  .credit-readout > span, .bet-control > span, .win-readout > span {
+    font-size: 16px;
+    letter-spacing: .06em;
+    color: #dcebd8;
+    font-weight: 700;
+  }
+  .credit-readout strong, .win-readout strong { font-size: 28px; color: #fff1cc; }
+  .credit-readout small, .win-readout small { font-size: 12px; color: #c3d7c7; font-weight: 500; }
+  .bet-control { padding-left: 14px; }
+  .bet-control strong { font-size: 24px; color: #fff1cc; }
+  .bet-control button { width: 28px; height: 28px; }
+  .bet-control > div { gap: 8px; }
+  .spin-control { gap: 3px; margin: 0; }
+  #spin { min-width: 110px; height: 44px; }
+  .spin-arrows { font-size: 26px; }
+  #spin-label { font-size: 18px; }
+  .auto-button { min-width: 110px; height: 28px; font-size: 15px; }
+  .keyboard-hint, .paytable-button { display: none; }
+  .boost-row { padding: 6px 0 4px; }
+  .boost-row button { padding: 5px 12px; font-size: 12px; }
+  .game-footer { padding: 6px 5px; font-size: 7px; }
+  .game-footer p { font-size: 10px; }
+}
+
+@media (min-width: 600px) and (max-width: 799px) and (max-height: 900px) {
+  .game-shell { padding: 0 12px; }
+  .control-deck {
+    grid-template-columns: 1fr 1.1fr 1fr;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+  .credit-readout { grid-column: 1; grid-row: 1; }
+  .bet-control { grid-column: 1; grid-row: 2; padding-left: 0; border: 0; }
+  .spin-control { grid-column: 2; grid-row: 1 / span 2; }
+  .win-readout { grid-column: 3; grid-row: 1; text-align: right; }
+}

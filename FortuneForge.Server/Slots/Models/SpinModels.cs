@@ -79,6 +79,8 @@ public sealed record SpinResult(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public long ChargedWagerCents { get; init; }
     public int NeonDiscoSpinsRemaining { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? NeonDiscoMultiplier { get; init; }
     public int FreeSpinsRemaining { get; init; }
     public long? FreeSpinWagerPoints { get; init; }
     public int SpecialPointsBalance { get; init; }

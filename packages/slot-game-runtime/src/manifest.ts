@@ -1,0 +1,42 @@
+import type { SlotExperienceSet } from './experience.js'
+
+export type SlotGameCatalogDefinition = {
+  id: string
+  title: string
+  shortTitle: string
+  description: string
+  image: string
+  imagePresentation: 'contain' | 'cover'
+  /** Keeps edge-to-edge emblems clear of the catalogue-card frame. */
+  imageScale?: 'standard' | 'compact'
+  slotDivBackgroundImage?: string
+}
+
+export type SlotGameManifest = {
+  id: string
+  routes: {
+    play: string | null
+    demo: string
+  }
+  catalog: SlotGameCatalogDefinition
+  experience: SlotExperienceSet
+}
+
+/** Manifests stay ordinary typed data that packages can copy and preview. */
+export function defineSlotGame(manifest: SlotGameManifest): SlotGameManifest {
+  return manifest
+}
+
+export function createSlotExperienceRouteMap(
+  manifests: readonly SlotGameManifest[],
+): Readonly<Record<string, SlotExperienceSet>> {
+  const routes: Record<string, SlotExperienceSet> = {}
+  for (const manifest of manifests) {
+    for (const route of [manifest.routes.play, manifest.routes.demo]) {
+      if (route === null) continue
+      if (routes[route]) throw new Error(`Duplicate slot route '${route}'.`)
+      routes[route] = manifest.experience
+    }
+  }
+  return routes
+}

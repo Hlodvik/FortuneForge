@@ -53,6 +53,8 @@ public sealed class NeonCombinationEvaluator
         var original = rows.Select((row, reel) => reels[reel][row]).ToArray();
         var assignments = new string[game.Layout.ReelCount];
         var candidates = new Dictionary<string, MatchCandidate>(StringComparer.Ordinal);
+        // Older captured paytables allowed a run of wilds to pay on its own.
+        var requiresNaturalMatch = game.Math.PaytableId == NeonArcadeSlotDefinitions.PaytableId;
 
         ExploreAssignments(0);
         return new PaylineEvaluation(paylineId, candidates.Values.ToArray());
@@ -106,7 +108,8 @@ public sealed class NeonCombinationEvaluator
                     length >= game.Matching.MinimumRunLength &&
                     IsAllowedRunShape(rows, start, length, game.Layout.ReelCount) &&
                     (!usesWildSubstitution || wildSubstitutionMatchLengths.Contains(length)) &&
-                    (!isNativeWild || nativeWildMatchLengths.Contains(length)))
+                    (!isNativeWild || nativeWildMatchLengths.Contains(length)) &&
+                    (!requiresNaturalMatch || Enumerable.Range(start, length).Any(reel => original[reel] != wildId)))
                 {
                     var positions = Enumerable.Range(start, length)
                         .Select(reel => new GridPosition(reel, rows[reel]))

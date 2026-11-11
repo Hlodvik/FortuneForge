@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "games": [
+    { "folder": "Wukong", "routeId": "wukong-journey-to-the-west", "serverGameId": "wukong-journey-v1", "clientPackage": "@fortuneforge/games-wukong", "playPath": "/slots/wukong", "demoPath": "/slots/wukong/demo" },
+    { "folder": "RainbowRealm", "routeId": "rainbow-realm", "serverGameId": "rainbow-realm-fruits-v1", "clientPackage": "@fortuneforge/games-rainbow-realm", "playPath": "/slots/rainbow-realm", "demoPath": "/slots/rainbow-realm/demo" },
+    { "folder": "PiratesFortune", "routeId": "pirates-fortune", "serverGameId": "pirates-fortune-v1", "clientPackage": "@fortuneforge/games-pirates-fortune", "playPath": "/slots/pirates-fortune", "demoPath": "/slots/pirates-fortune/demo" },
+    { "folder": "GodsOfOlympus", "routeId": "gods-of-olympus", "serverGameId": "gods-of-olympus-v1", "clientPackage": "@fortuneforge/games-gods-of-olympus", "playPath": "/slots/gods-of-olympus", "demoPath": "/slots/gods-of-olympus/demo" },
+    { "folder": "ReelRiches", "routeId": "reel-riches", "serverGameId": "reel-riches-v1", "clientPackage": "@fortuneforge/games-reel-riches", "playPath": "/slots/reel-riches", "demoPath": "/slots/reel-riches/demo" },
+    { "folder": "HighNoonFortune", "routeId": "high-noon-fortune", "serverGameId": "high-noon-fortune-v1", "clientPackage": "@fortuneforge/games-high-noon-fortune", "playPath": "/slots/high-noon-fortune", "demoPath": "/slots/high-noon-fortune/demo" },
+    { "folder": "RoyalDraw", "routeId": "royal-draw", "serverGameId": "royal-draw-v1", "clientPackage": "@fortuneforge/games-royal-draw", "playPath": "/slots/royal-draw", "demoPath": "/slots/royal-draw/demo" },
+    { "folder": "ArcaneArchives", "routeId": "arcane-archives", "serverGameId": "arcane-archives-v1", "clientPackage": "@fortuneforge/games-arcane-archives", "playPath": "/slots/arcane-archives", "demoPath": "/slots/arcane-archives/demo" },
+    { "folder": "CosmicFortune", "routeId": "cosmic-fortune", "serverGameId": "cosmic-fortune-v1", "clientPackage": "@fortuneforge/games-cosmic-fortune", "playPath": "/slots/cosmic-fortune", "demoPath": "/slots/cosmic-fortune/demo" },
+    { "folder": "GoldFoundry", "routeId": "gold-foundry", "serverGameId": "gold-foundry-v1", "clientPackage": "@fortuneforge/games-gold-foundry", "playPath": "/slots/gold-foundry", "demoPath": "/slots/gold-foundry/demo" },
+    { "folder": "NeonNights", "routeId": "neon-nights", "serverGameId": "neon-nights-v1", "clientPackage": "@fortuneforge/games-neon-nights", "playPath": "/slots/neon-nights", "demoPath": "/slots/neon-nights/demo" },
+    { "folder": "JadeDragon", "routeId": "jade-dragon", "title": "Jade Dragon: The Golden Pearl", "serverGameId": "empty-slots-v1", "clientKind": "embedded-package", "clientPackage": "@fortuneforge/jade-dragon-presentation", "clientRoot": "games/JadeDragon/client/jade-dragon", "hostEntry": "fortuneforge.client/src/app/routes/JadeDragonRoute.tsx", "playPath": "/slots/jade-dragon" },
+    { "folder": "OceanOdyssey", "routeId": "ocean-odyssey", "serverGameId": "ocean-odyssey-v1", "clientPackage": "@fortuneforge/games-ocean-odyssey", "playPath": "/slots/ocean-odyssey", "demoPath": "/slots/ocean-odyssey/demo" },
+    { "folder": "SamuraiFortune", "routeId": "samurai-fortune", "serverGameId": "samurai-fortune-v1", "clientPackage": "@fortuneforge/games-samurai-fortune", "playPath": "/slots/samurai-fortune", "demoPath": "/slots/samurai-fortune/demo" },
+    { "folder": "CandyCarnival", "routeId": "candy-carnival", "serverGameId": "candy-carnival-v1", "clientPackage": "@fortuneforge/games-candy-carnival", "playPath": "/slots/candy-carnival", "demoPath": "/slots/candy-carnival/demo" },
+    { "folder": "PhantomManor", "routeId": "phantom-manor", "serverGameId": "phantom-manor-v1", "clientPackage": "@fortuneforge/games-phantom-manor", "playPath": "/slots/phantom-manor", "demoPath": "/slots/phantom-manor/demo" },
+    { "folder": "NordicLegends", "routeId": "nordic-legends", "serverGameId": "nordic-legends-v1", "clientPackage": "@fortuneforge/games-nordic-legends", "playPath": "/slots/nordic-legends", "demoPath": "/slots/nordic-legends/demo" },
+    { "folder": "DesertTreasures", "routeId": "desert-treasures", "serverGameId": "desert-treasures-v1", "clientPackage": "@fortuneforge/games-desert-treasures", "playPath": "/slots/desert-treasures", "demoPath": "/slots/desert-treasures/demo" },
+    { "folder": "RobotRevolution", "routeId": "robot-revolution", "serverGameId": "robot-revolution-v1", "clientPackage": "@fortuneforge/games-robot-revolution", "playPath": "/slots/robot-revolution", "demoPath": "/slots/robot-revolution/demo" },
+    { "folder": "MidnightVault", "routeId": "dragon-hoard", "serverGameId": "dragon-hoard-v1", "clientPackage": "@fortuneforge/games-midnight-vault", "playPath": "/slots/dragon-hoard", "demoPath": "/slots/dragon-hoard/demo" }
+  ]
+}

@@ -9,10 +9,10 @@ public sealed record ArcaneLightningCollection(
 
 internal static class ArcaneLightningCollector
 {
-    internal const string EngineVersion = "arcane-lightning-collector-v1";
-    internal const string ReelSetId = "arcane-archives-lightning-reels-v1";
-    internal const string CollectorSymbolId = "BOLT";
-    internal const int PaylineId = 902;
+    internal const string EngineVersion = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine.EngineVersion;
+    internal const string ReelSetId = FortuneForge.Games.ArcaneArchives.ArcaneArchivesEngine.ReelSetId;
+    internal const string CollectorSymbolId = FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.CollectorSymbolId;
+    internal const int PaylineId = FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.PaylineId;
 
     internal static bool IsModel(GameDefinition game) =>
         game.Id == SlotSpecialRoundProfiles.ArcaneArchivesGameId && game.Math.ReelSetId == ReelSetId;
@@ -30,42 +30,24 @@ internal static class ArcaneLightningCollector
     internal static ArcaneLightningCollection? Calculate(
         IReadOnlyList<IReadOnlyList<string>> reels, long wagerPoints)
     {
-        GridPosition? collector = null;
-        var values = new List<ArcaneConstellationValue>();
-        for (var reel = 0; reel < reels.Count; reel++)
-        {
-            for (var row = 0; row < reels[reel].Count; row++)
-            {
-                var symbol = reels[reel][row];
-                if (symbol == CollectorSymbolId)
-                    collector ??= new GridPosition(reel, row);
-
-                var multiplier = symbol switch
-                {
-                    "7" => 0.5m,
-                    "POWER" => 1m,
-                    "SEAL_RAND" => 2m,
-                    _ => 0m
-                };
-                if (multiplier > 0)
-                    values.Add(new ArcaneConstellationValue(reel, row,
-                        checked((long)Math.Round(wagerPoints * multiplier, MidpointRounding.AwayFromZero))));
-            }
-        }
-
-        return collector is { } position && values.Count > 0
-            ? new ArcaneLightningCollection(position, values.ToArray(), values.Sum(value => value.AmountPoints))
-            : null;
+        var package = FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.Calculate(
+            reels, wagerPoints);
+        return package is null ? null : new ArcaneLightningCollection(
+            package.Collector,
+            package.Cells.Select(cell => new ArcaneConstellationValue(
+                cell.Reel, cell.Row, cell.AmountPoints)).ToArray(),
+            package.TotalPoints);
     }
 
     internal static PaylinePayout CreatePayout(ArcaneLightningCollection collection, long wagerPoints)
     {
-        var positions = new[] { collection.Collector }
-            .Concat(collection.Cells.Select(cell => new GridPosition(cell.Reel, cell.Row)))
-            .ToArray();
-        var multiplier = checked((long)Math.Ceiling(collection.TotalPoints / (decimal)wagerPoints));
-        return new PaylinePayout(PaylineId, collection.TotalPoints,
-            [new PaidMatch(new SymbolMatch(PaylineId, CollectorSymbolId, positions.Length, positions, []),
-                multiplier, collection.TotalPoints)]);
+        var package = new FortuneForge.Games.ArcaneArchives.ArcaneLightningCollection(
+            collection.Collector,
+            collection.Cells.Select(cell =>
+                new FortuneForge.Games.ArcaneArchives.ArcaneConstellationValue(
+                    cell.Reel, cell.Row, cell.AmountPoints)).ToArray(),
+            collection.TotalPoints);
+        return FortuneForge.Games.ArcaneArchives.ArcaneLightningCollector.CreatePayout(
+            package, wagerPoints);
     }
 }

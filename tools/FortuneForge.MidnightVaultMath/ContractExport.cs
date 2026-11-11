@@ -1,7 +1,6 @@
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Models;
-using FortuneForge.Server.Slots.Spins;
 
 internal static class ContractExport
 {
@@ -19,7 +18,8 @@ internal static class ContractExport
         return new
         {
             schemaVersion = "midnight-vault-effective-contract-v1", generatedUtc = DateTime.UtcNow, gameId = game.Id,
-            engineVersion = SpinService.AuditEngineVersion, symbolSetId = symbols.Id, reelSetId = reels.Id, paytableId = paytable.Id,
+            engineVersion = FortuneForge.Games.MidnightVault.MidnightVaultEngine.Version,
+            symbolSetId = symbols.Id, reelSetId = reels.Id, paytableId = paytable.Id,
             activeSymbolIds = active, baseReelSymbolIds = baseIds, definedSymbolIds = symbols.Symbols.Select(symbol => symbol.Id),
             artworkLabels = new Dictionary<string, string>
             {

@@ -1,0 +1,10 @@
+.slots-page[data-special-round='robot-overclock'] {
+  --special-round-accent: #54ffe2;
+  --special-round-deep: #075269;
+  --special-round-ink: #041923;
+}
+
+.slots-page[data-special-round='robot-overclock'] .slots-page__spin-controls .spin-button {
+  border-radius: 0.32rem;
+  box-shadow: inset 0 0 0 2px rgb(84 255 226 / 28%), 0 0 1rem rgb(84 255 226 / 42%);
+}

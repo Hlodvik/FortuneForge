@@ -1,0 +1,10 @@
+{
+  "id": "drop-merge",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.DropMerge.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

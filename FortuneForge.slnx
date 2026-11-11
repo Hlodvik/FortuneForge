@@ -89,6 +89,7 @@
   </Folder>
   <Folder Name="/Games/Craps/">
     <Project Path="games/Craps/src/FortuneForge.Games.Craps/FortuneForge.Games.Craps.csproj" />
+    <Project Path="games/Craps/server/FortuneForge.Games.Craps.Server/FortuneForge.Games.Craps.Server.csproj" />
   </Folder>
   <Folder Name="/Games/Drop Merge/">
     <Project Path="games/DropMerge/src/FortuneForge.Games.DropMerge/FortuneForge.Games.DropMerge.csproj" />

@@ -1,5 +1,5 @@
-using System.Security.Cryptography;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -11,11 +11,12 @@ using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Games.Craps;
 
-/// <summary>Account-backed Craps. Each accepted action and its wallet effects commit together.</summary>
+/// <summary>Account-backed Craps. Each accepted action commits together with its wallet effects.</summary>
 public sealed class FirestorePaidCrapsStore
 {
     private readonly FirestoreDb database;
     private readonly Func<DicePair> draw;
+    private readonly Action<Transaction, GameSecurityEventDocument>? writeActivity;
     private const string Currency = "slotsCredits";
     private const decimal MinimumStake = 1m;
     private const decimal MaximumStake = 100m;
@@ -24,9 +25,11 @@ public sealed class FirestorePaidCrapsStore
         Converters = { new DieValueJsonConverter() },
     };
 
-    public FirestorePaidCrapsStore(FirestoreDb database, Func<DicePair>? draw = null)
+    public FirestorePaidCrapsStore(FirestoreDb database, Func<DicePair>? draw = null,
+        Action<Transaction, GameSecurityEventDocument>? writeActivity = null)
     {
         this.database = database;
+        this.writeActivity = writeActivity;
         this.draw = draw ?? (() => new DicePair(
             new DieValue(RandomNumberGenerator.GetInt32(1, 7)),
             new DieValue(RandomNumberGenerator.GetInt32(1, 7))));
@@ -243,8 +246,7 @@ public sealed class FirestorePaidCrapsStore
             .Document(GameSecurityEventDocuments.ManifestId("craps", round.Id.ToString("N"))),
             new Dictionary<string, object> { ["gameId"] = "craps", ["instanceId"] = round.Id.ToString("N"),
                 ["eventIds"] = FieldValue.ArrayUnion(observation.Id), ["schemaVersion"] = 1L }, SetOptions.MergeAll);
-        Activity.AcceptedGameTransactionWitness.Write(database, observation,
-            (reference, fields) => transaction.Set(reference, fields, SetOptions.MergeAll));
+        writeActivity?.Invoke(transaction, observation);
     }
 
     private static PaidCrapsExtra[] InitialExtras(IReadOnlyList<CrapsExtraBetRequest>? requests)

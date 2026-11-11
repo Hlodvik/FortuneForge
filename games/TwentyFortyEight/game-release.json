@@ -1,0 +1,10 @@
+{
+  "id": "2048",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.TwentyFortyEight.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

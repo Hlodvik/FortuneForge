@@ -1,0 +1,10 @@
+{
+  "id": "keno",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Keno.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

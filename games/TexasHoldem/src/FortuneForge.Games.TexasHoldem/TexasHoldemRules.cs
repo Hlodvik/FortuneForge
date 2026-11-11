@@ -22,7 +22,7 @@ public static class TexasHoldemRules
         return deck;
     }
 
-    public static HoldemHandValue Evaluate(IReadOnlyList<string> cards) => TexasHoldemHandEvaluator.Evaluate(cards);
+    public static HoldemHandValue Evaluate(IReadOnlyList<string> cards) => HoldemHandEvaluator.Evaluate(cards);
 
     public static (int Rank, string Suit) Parse(string card)
     {

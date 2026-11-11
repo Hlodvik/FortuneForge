@@ -1,0 +1,10 @@
+{
+  "id": "hearts",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Hearts.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

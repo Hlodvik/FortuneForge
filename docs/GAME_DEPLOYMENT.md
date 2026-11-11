@@ -46,8 +46,8 @@ active pointer for the specified game.
 
 This command publishes local artifacts. Live promotion and website routing to
 independently hosted engines are still in development. Combined local releases
-are registered for the 19 slots that use the shared slots API, Jade Dragon, Andar
-Bahar, Dragon Tiger, Hi-Lo, and Mines.
+are registered for the 19 slots that use the shared slots API, Jade Dragon, and
+the games listed below.
 
 Classic slots publish their own manifest, styles, and media using the shared slot
 view. Their backend build selects one engine project and uses the shared
@@ -57,6 +57,13 @@ Jade Dragon publishes its own HTML entry and artwork for the site's iframe. Its
 backend artifact runs the game engine for demo play. The site continues to use
 its existing paid Jade Dragon API.
 
-Andar Bahar, Dragon Tiger, Hi-Lo, and Mines publish browser modules and selected
-`FortuneForge.Games.PackagedGame.Server` workers. For local integration work,
-these workers require a loopback Firestore emulator and an explicit demo account.
+Andar Bahar, Craps, Dragon Tiger, Hi-Lo, and Mines publish browser modules and
+selected `FortuneForge.Games.PackagedGame.Server` workers. For local integration
+work, these workers require a loopback Firestore emulator and an explicit demo
+account.
+
+2048, Baccarat, Casino War, Drop Merge, Hearts, Keno, Roulette, Sic Bo, Texas
+Hold’em, and Video Poker publish browser modules and selected
+`FortuneForge.Games.GameCompute.Server` workers. Their internal HTTP endpoints
+execute game rules. The site API still owns account sessions, wallet
+transactions, and multiplayer coordination.

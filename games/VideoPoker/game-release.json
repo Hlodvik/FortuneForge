@@ -1,0 +1,10 @@
+{
+  "id": "video-poker",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.VideoPoker.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

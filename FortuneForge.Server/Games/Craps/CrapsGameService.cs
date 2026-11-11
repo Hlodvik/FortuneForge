@@ -209,5 +209,3 @@ public sealed class CrapsGameService(IGameAnalyticsSink? analytics = null, IGame
         public decimal? TotalReturn { get; set; }
     }
 }
-
-public sealed class CrapsAccessException() : InvalidOperationException("That Craps table is not available.");

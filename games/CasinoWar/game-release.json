@@ -1,0 +1,10 @@
+{
+  "id": "casino-war",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.CasinoWar.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

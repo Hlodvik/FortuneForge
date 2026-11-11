@@ -1,0 +1,10 @@
+{
+  "id": "texas-holdem",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.TexasHoldem.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

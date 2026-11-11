@@ -6,6 +6,16 @@ type GameSelection<Props> =
   | { Game: ComponentType<Props>; pending: null }
   | { Game: null; pending: ReactElement }
 
+export function useBundledGameStyles(styles: string | undefined) {
+  useInsertionEffect(() => {
+    if (styles === undefined) return
+    const stylesheet = document.createElement('style')
+    stylesheet.textContent = styles
+    document.head.append(stylesheet)
+    return () => stylesheet.remove()
+  }, [styles])
+}
+
 export function useReleasedGame<Props>(
   gameId: string,
   title: string,
@@ -13,15 +23,7 @@ export function useReleasedGame<Props>(
   bundledStyles: string,
 ): GameSelection<Props> {
   const { state, retry } = useGameRelease<Props>(gameId)
-  const useBundledStyles = state.status === 'local'
-
-  useInsertionEffect(() => {
-    if (!useBundledStyles) return
-    const stylesheet = document.createElement('style')
-    stylesheet.textContent = bundledStyles
-    document.head.append(stylesheet)
-    return () => stylesheet.remove()
-  }, [bundledStyles, useBundledStyles])
+  useBundledGameStyles(state.status === 'local' ? bundledStyles : undefined)
 
   if (state.status === 'loading' || state.status === 'error') {
     return {

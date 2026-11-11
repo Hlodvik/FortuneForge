@@ -118,7 +118,6 @@ describe('credit Texas Hold’em v2 composition', () => {
     const pageSource = source('./CreditTexasHoldemPage.tsx')
 
     expect(pageSource).toContain("from '@fortuneforge/games-texas-holdem'")
-    expect(pageSource).toContain("import '@fortuneforge/games-texas-holdem/styles.css'")
     expect(pageSource).not.toContain("import './texasHoldem.css'")
     expect(pageSource).not.toContain("import './pokerClientHoldem.css'")
     expect(pageSource).toContain('renderCard={renderHoldemCard}')

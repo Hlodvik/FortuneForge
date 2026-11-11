@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type MouseEventHandler } from 'react'
-import { HoldemActionBar, HoldemLobby, HoldemQueue, HoldemTableSurface } from '@fortuneforge/games-texas-holdem'
-import '@fortuneforge/games-texas-holdem/styles.css'
+import { HoldemActionBar, HoldemLobby, HoldemQueue, HoldemTableSurface, type TexasHoldemBrowserViews } from '@fortuneforge/games-texas-holdem'
+import bundledStyles from '@fortuneforge/games-texas-holdem/styles.css?inline'
 import { InGameShell } from '../../../components/InGameShell'
 import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
 import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
+import { useBundledGameStyles } from '../../../features/game-releases/useReleasedGame'
 import { useGameLeaveGuard } from '../../../features/navigation/GameLeaveGuard'
 import { getCurrentAccount, type AccountSummary } from '../../../features/account/services/accountsApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
@@ -40,7 +41,12 @@ type Availability =
   | Readonly<{ kind: 'disabled'; message: string }>
   | Readonly<{ kind: 'error'; message: string }>
 
-export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) {
+export function CreditTexasHoldemPage({ account, views }: {
+  account: AccountSummary
+  views?: TexasHoldemBrowserViews
+}) {
+  const Lobby = views?.HoldemLobby ?? HoldemLobby
+  useBundledGameStyles(views ? undefined : bundledStyles)
   const [availability, setAvailability] = useState<Availability>({ kind: 'loading' })
   const [balanceCredits, setBalanceCredits] = useState(account.balances.slotsCredits)
   const [pending, setPending] = useState<PendingCreditHoldemMutation | null>(null)
@@ -220,9 +226,9 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
       <main className="ff-holdem-main">
         <CreditHoldemGameHeader muted={muted} onToggleSound={() => setMuted(value => !value)}
           tableRules={tableRules} actionDeadlineSeconds={status.actionDeadlineSeconds} maximumSeats={status.maximumSeats}/>
-        {session.kind === 'idle' && findingTable && <FindingTableView busy={busy} />}
+        {session.kind === 'idle' && findingTable && <FindingTableView busy={busy} Queue={views?.HoldemQueue} />}
         {session.kind === 'idle' && !findingTable && (
-          <HoldemLobby rules={tableRules} selectedRuleId={selectedRule.id} balanceCredits={balanceCredits} busy={busy}
+          <Lobby rules={tableRules} selectedRuleId={selectedRule.id} balanceCredits={balanceCredits} busy={busy}
             buyInAmount={displayedBuyIn} onBuyInAmountChange={setBuyInAmount}
             onSelectRule={id => { setSelectedRuleId(id); setBuyInAmount(null) }}
             onJoin={(rule, amount) => void mutate(creditHoldemJoinFingerprint(rule.id, session.version, amount),
@@ -231,6 +237,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
         {session.kind === 'queue' && (
           <FindingTableView
             busy={busy}
+            Queue={views?.HoldemQueue}
             cancel={() => void mutate(`leave-queue:${session.ticketId}:${session.version}`,
               (key) => cancelCreditHoldemQueue(session.ticketId, session.version, key))}
           />
@@ -238,6 +245,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
         {session.kind === 'match' && (
           <TableView
             table={session.table}
+            views={views}
             version={session.version}
             busy={busy}
             act={(action, raiseTo) => void mutate(
@@ -253,6 +261,7 @@ export function CreditTexasHoldemPage({ account }: { account: AccountSummary }) 
         {session.kind === 'result' && (
           <CreditHoldemResultView
             session={session}
+            Surface={views?.HoldemTableSurface}
             busy={busy}
             next={() => void mutate(`next:${session.matchId}:${session.version}`,
               (key) => dealNextCreditHoldemHand(session.matchId, session.version, key))}
@@ -372,15 +381,17 @@ export function CreditHoldemGameHeader({ muted, onToggleSound, tableRules = [], 
 
 function credits(value: number): string { return `R${value.toFixed(2)}` }
 
-export function FindingTableView({ busy, cancel }: {
+export function FindingTableView({ busy, cancel, Queue = HoldemQueue }: {
   busy: boolean
   cancel?: () => void
+  Queue?: typeof HoldemQueue
 }) {
-  return <HoldemQueue busy={busy} onCancel={cancel}/>
+  return <Queue busy={busy} onCancel={cancel}/>
 }
 
-export function CreditHoldemResultView({ session, busy, next, leave }: {
+export function CreditHoldemResultView({ session, busy, next, leave, Surface }: {
   session: CreditHoldemResultSession; busy: boolean; next: () => void; leave: () => void
+  Surface?: typeof HoldemTableSurface
 }) {
   const current = session.standings.find((standing) => standing.isCurrentPlayer)
   const wonHand = current !== undefined
@@ -397,7 +408,7 @@ export function CreditHoldemResultView({ session, busy, next, leave }: {
       : handName ?? 'Hand complete'
   return (
     <section className="ff-holdem-result">
-      <CreditHoldemTableSurface table={session.finalTable} revealDelay={130} />
+      <CreditHoldemTableSurface table={session.finalTable} revealDelay={130} Surface={Surface} />
       <div className={`ff-holdem-result__outcome${wonHand ? ' is-win' : ''}`} role="status">
         <strong>{outcome}</strong>
       </div>
@@ -409,24 +420,28 @@ export function CreditHoldemResultView({ session, busy, next, leave }: {
   )
 }
 
-function TableView({ table, version, busy, act, leave }: {
+function TableView({ table, version, busy, act, leave, views }: {
   table: CreditHoldemTable
   version: number
   busy: boolean
   act: (action: CreditHoldemAction, raiseTo?: number) => void
   leave: () => void
+  views?: TexasHoldemBrowserViews
 }) {
+  const ActionBar = views?.HoldemActionBar ?? HoldemActionBar
   return (
     <section className="ff-holdem-match" data-version={version}>
-      <CreditHoldemTableSurface table={table} revealDelay={260} />
-      <HoldemActionBar table={table} busy={busy} onAction={act} onLeave={leave}/>
+      <CreditHoldemTableSurface table={table} revealDelay={260} Surface={views?.HoldemTableSurface} />
+      <ActionBar table={table} busy={busy} onAction={act} onLeave={leave}/>
       <details className="ff-holdem-hand-history"><summary>History</summary><ol>{table.actionLog?.map(entry => <li key={entry.sequence}><b>{entry.displayName}</b><span>{entry.action}{entry.amount > 0 ? ` · R${chips(entry.amount)}` : ''}</span></li>) ?? table.seats.filter(seat => seat.lastAction || seat.committed > 0).map(seat => <li key={seat.seatId}><b>{seat.displayName}</b><span>{seat.lastAction ?? seat.status} · R{chips(seat.committed)}</span></li>)}</ol></details>
     </section>
   )
 }
 
-export function CreditHoldemTableSurface({ table, revealDelay }: { table: CreditHoldemTable; revealDelay: number }) {
-  return <HoldemTableSurface table={table} renderCard={renderHoldemCard} revealDelay={revealDelay}/>
+export function CreditHoldemTableSurface({ table, revealDelay, Surface = HoldemTableSurface }: {
+  table: CreditHoldemTable; revealDelay: number; Surface?: typeof HoldemTableSurface
+}) {
+  return <Surface table={table} renderCard={renderHoldemCard} revealDelay={revealDelay}/>
 }
 
 function renderHoldemCard(card: CreditHoldemCard | undefined, index: number, scope: string) {
@@ -453,6 +468,7 @@ function legacyRule(status: CreditHoldemStatus): CreditHoldemTableRule {
 
 /** Deterministic actual-table fixture for the 3:2 library thumbnail capture. */
 export function CreditTexasHoldemPreview() {
+  useBundledGameStyles(bundledStyles)
   const [muted, setMuted] = useState(false)
   const cardAudioClick = useCardAudioClick()
   return <InGameShell title="Texas Hold’em" bodyClassName="ff-holdem-shell-body">

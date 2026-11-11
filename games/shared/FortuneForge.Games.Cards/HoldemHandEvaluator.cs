@@ -1,10 +1,8 @@
-using FortuneForge.Games.Cards;
-
-namespace FortuneForge.Games.TexasHoldem;
+namespace FortuneForge.Games.Cards;
 
 public sealed record HoldemHandValue(int Category, string Name, ulong Score);
 
-public static class TexasHoldemHandEvaluator
+public static class HoldemHandEvaluator
 {
     public static HoldemHandValue Evaluate(IReadOnlyList<string> cardCodes) =>
         Evaluate(cardCodes.Select(CardCode.Parse).ToArray());

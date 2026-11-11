@@ -81,8 +81,13 @@ public static class FortuneForgeStartup
             provider.GetRequiredService<FortuneForge.Server.Activity.IGameAnalyticsSink>(),
             provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>()));
         builder.Services.AddHostedService<RouletteTableWorker>();
-        builder.Services.AddSingleton(provider => new FortuneForge.Server.Games.Craps.FirestorePaidCrapsStore(
-            provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>()));
+        builder.Services.AddSingleton(provider =>
+        {
+            var database = provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>();
+            return new FirestorePaidCrapsStore(database, writeActivity: (transaction, observation) =>
+                Activity.AcceptedGameTransactionWitness.Write(database, observation,
+                    (reference, fields) => transaction.Set(reference, fields, Google.Cloud.Firestore.SetOptions.MergeAll)));
+        });
         builder.Services.AddDragonTigerServer(options =>
         {
             options.ReadRateLimitPolicy = RateLimitPolicies.SlotReads;

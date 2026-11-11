@@ -1,0 +1,10 @@
+{
+  "id": "sic-bo",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.SicBo.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

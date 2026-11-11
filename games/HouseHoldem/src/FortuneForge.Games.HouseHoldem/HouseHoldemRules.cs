@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using FortuneForge.Games.Cards;
-using FortuneForge.Games.TexasHoldem;
 
 namespace FortuneForge.Games.HouseHoldem;
 
@@ -147,8 +146,8 @@ public static class HouseHoldemRules
 
         var playerCards = round.PlayerCards.Concat(round.CommunityCards).ToArray();
         var dealerCards = round.DealerCards.Concat(round.CommunityCards).ToArray();
-        var player = TexasHoldemHandEvaluator.Evaluate(playerCards);
-        var dealer = TexasHoldemHandEvaluator.Evaluate(dealerCards);
+        var player = HoldemHandEvaluator.Evaluate(playerCards);
+        var dealer = HoldemHandEvaluator.Evaluate(dealerCards);
         var playerRank = HandRank(player, playerCards);
         var dealerRank = HandRank(dealer, dealerCards);
         var dealerQualifies = dealer.Category >= 1;

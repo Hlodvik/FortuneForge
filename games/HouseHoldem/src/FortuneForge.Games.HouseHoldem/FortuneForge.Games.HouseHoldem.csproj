@@ -7,6 +7,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../shared/FortuneForge.Games.Cards/FortuneForge.Games.Cards.csproj" />
-    <ProjectReference Include="../../../TexasHoldem/src/FortuneForge.Games.TexasHoldem/FortuneForge.Games.TexasHoldem.csproj" />
   </ItemGroup>
 </Project>

@@ -1,3 +1,4 @@
+using FortuneForge.Games.Cards;
 using FortuneForge.Games.TexasHoldem;
 
 namespace FortuneForge.Games.Tests;
@@ -26,11 +27,11 @@ public sealed class TexasHoldemHandEvaluatorTests
     [Fact]
     public void EvaluatorPreservesCanonicalServerOrdering()
     {
-        var straightFlush = TexasHoldemHandEvaluator.Evaluate(
+        var straightFlush = HoldemHandEvaluator.Evaluate(
             ["A|spades", "K|spades", "Q|spades", "J|spades", "10|spades", "2|clubs", "3|diamonds"]);
-        var quads = TexasHoldemHandEvaluator.Evaluate(
+        var quads = HoldemHandEvaluator.Evaluate(
             ["A|spades", "A|hearts", "A|diamonds", "A|clubs", "K|spades", "2|clubs", "3|diamonds"]);
-        var fullHouse = TexasHoldemHandEvaluator.Evaluate(
+        var fullHouse = HoldemHandEvaluator.Evaluate(
             ["K|spades", "K|hearts", "K|diamonds", "Q|clubs", "Q|spades", "2|clubs", "3|diamonds"]);
 
         Assert.Equal((8, "straight-flush"), (straightFlush.Category, straightFlush.Name));
@@ -42,9 +43,9 @@ public sealed class TexasHoldemHandEvaluatorTests
     [Fact]
     public void EvaluatorTreatsAceAsLowOnlyForTheWheel()
     {
-        var wheel = TexasHoldemHandEvaluator.Evaluate(
+        var wheel = HoldemHandEvaluator.Evaluate(
             ["A|spades", "2|hearts", "3|diamonds", "4|clubs", "5|spades", "K|clubs", "Q|diamonds"]);
-        var sixHigh = TexasHoldemHandEvaluator.Evaluate(
+        var sixHigh = HoldemHandEvaluator.Evaluate(
             ["2|spades", "3|hearts", "4|diamonds", "5|clubs", "6|spades", "K|clubs", "Q|diamonds"]);
 
         Assert.Equal("straight", wheel.Name);
@@ -54,7 +55,7 @@ public sealed class TexasHoldemHandEvaluatorTests
     [Fact]
     public void EvaluatorRejectsAnInvalidCardCount()
     {
-        Assert.Throws<ArgumentException>(() => TexasHoldemHandEvaluator.Evaluate(
+        Assert.Throws<ArgumentException>(() => HoldemHandEvaluator.Evaluate(
             ["A|spades", "K|spades", "Q|spades", "J|spades"]));
     }
 }

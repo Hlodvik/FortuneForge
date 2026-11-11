@@ -19,7 +19,6 @@ const packagedGameEntryPoints = [
   ['./SicBoRoute.tsx', '@fortuneforge/games-sic-bo'],
   ['./SnakeRoute.tsx', '@fortuneforge/games-snake'],
   ['./TwentyFortyEightRoute.tsx', '@fortuneforge/games-2048'],
-  ['../../pages/cards/texasHoldem/CreditTexasHoldemPage.tsx', '@fortuneforge/games-texas-holdem'],
   ['./VideoPokerRoute.tsx', '@fortuneforge/games-video-poker'],
 ] as const
 
@@ -36,6 +35,15 @@ describe('packaged game styles', () => {
     expect(source).not.toContain("import '@fortuneforge/games-flappy/styles.css'")
     const styles = readFileSync(new URL('../../pages/games/flappy/FlappyFreeRunPage.css', import.meta.url), 'utf8')
     expect(styles).not.toMatch(/(?:^|\n)\s*(?:body\b|:root\b|\*\s*\{|button\s*\{|a\s*\{)/)
+  })
+  it('loads Hold’em styles in bundled and published mode', () => {
+    const route = readFileSync(new URL('./TexasHoldemRoute.tsx', import.meta.url), 'utf8')
+    const page = readFileSync(new URL('../../pages/cards/texasHoldem/CreditTexasHoldemPage.tsx', import.meta.url), 'utf8')
+    const entry = readFileSync(new URL('../../../../games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client/src/browser.ts', import.meta.url), 'utf8')
+    expect(route).toContain("import bundledStyles from '@fortuneforge/games-texas-holdem/styles.css?inline'")
+    expect(route).toMatch(/useReleasedGame\([^\n]+bundledStyles/)
+    expect(page).toContain('useBundledGameStyles(views ? undefined : bundledStyles)')
+    expect(entry).toContain("import './holdem.css'")
   })
   it.each(packagedGameEntryPoints)('%s loads its package stylesheet', (relativePath, packageName) => {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')

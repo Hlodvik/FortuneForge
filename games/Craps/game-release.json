@@ -1,0 +1,10 @@
+{
+  "id": "craps",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Craps.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

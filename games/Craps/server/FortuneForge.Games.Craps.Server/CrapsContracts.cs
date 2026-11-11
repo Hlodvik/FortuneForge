@@ -11,3 +11,5 @@ public sealed record CrapsExtraBetResponse(string Kind, decimal Stake, bool Reso
 public sealed record CrapsRollResponse(int RollNumber, int First, int Second, int Total, string? Result);
 public sealed record CrapsOutcomeResponse(int First, int Second, int Total, string Result, bool IsTerminal, decimal? TotalReturn);
 public sealed record CrapsErrorResponse(string Code, string Message);
+
+public sealed class CrapsAccessException() : InvalidOperationException("That Craps table is not available.");

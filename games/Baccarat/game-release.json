@@ -1,0 +1,10 @@
+{
+  "id": "baccarat",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Baccarat.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

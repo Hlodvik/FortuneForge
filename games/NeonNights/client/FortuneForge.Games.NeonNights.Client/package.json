@@ -9,7 +9,6 @@
     "./manifest": { "types": "./dist/manifest.d.ts", "import": "./dist/manifest.js" },
     "./styles.css": "./dist/styles.css"
   },
-  "gameRelease": { "entry": "src/browser.ts" },
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "npm run build && node --test tests/*.test.mjs && vitest run",

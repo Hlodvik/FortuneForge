@@ -1,0 +1,10 @@
+{
+  "id": "neon-nights",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.NeonNights.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "project": "server/FortuneForge.Games.NeonNights.Server/FortuneForge.Games.NeonNights.Server.csproj"
+  }
+}

@@ -1,11 +1,11 @@
-# Independent game frontend releases
+# Independent game releases
 
-Neon Nights is the first game configured for the shared frontend release command.
-The command selects an npm game workspace, builds its local workspace dependencies,
-and bundles its configured browser entry into a versioned release. It activates the
-release by replacing that game's local `active.json` after the build succeeds.
+The shared release command builds one game's browser and backend artifacts.
+Each game registers its entry points in its own `game-release.json`. The game ID
+comes from that configuration, so it can differ from the npm workspace and
+internal API identifiers.
 
-From the repository root, build and serve the local release.
+From the repository root, build Neon Nights and serve its browser release.
 
 ```powershell
 npm run deploy:game -- neon-nights
@@ -19,14 +19,26 @@ $env:VITE_GAME_RELEASE_BASE_URL = 'http://127.0.0.1:4193'
 npm run dev --workspace fortuneforge.client
 ```
 
-Open `/slots/neon-nights/demo` on the website. The website reads the active
-manifest when the route opens, loads the corresponding browser module and CSS, and
-uses the existing game API. Run the same game command again to publish another
-version. Reload the route to open the newly active version.
+Open `/slots/neon-nights/demo`. The website loads the active browser module and
+CSS with its shared React runtime. The standard site API still handles play in
+the website demo.
 
-A game joins the frontend release flow by declaring a `gameRelease.entry` in its
-workspace manifest. The entry must export a React component as its default export.
-The website supplies its React runtime to the game build.
+The command writes the runnable backend to the private
+`artifacts/game-engine-releases/games/<game-id>/releases/<backend-release-id>`
+directory. The active browser manifest also records that backend release ID.
+To run the Neon engine locally, start its DLL from that directory.
 
-This phase publishes to the local `artifacts/game-releases` directory. Live artifact
-hosting, live promotion and independent engine deployment are separate work.
+```powershell
+dotnet ./FortuneForge.Games.NeonNights.Server.dll --urls http://127.0.0.1:5193
+```
+
+The engine responds at `/healthz` and accepts Neon demo spin inputs at
+`POST /internal/v1/demo/spins`.
+
+For an art, audio, or UI release, use `npm run deploy:game -- neon-nights --assets-only`.
+The new browser release keeps the backend release selected by the previous
+combined release.
+
+This command publishes local artifacts. Live promotion and website routing to
+independently hosted engines are still in development. Neon Nights is the first
+game registered for combined releases.

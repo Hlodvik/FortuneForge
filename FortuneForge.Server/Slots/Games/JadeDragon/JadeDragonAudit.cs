@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Slots.Models;
 using PackageEngine = FortuneForge.Games.JadeDragon.JadeDragonEngine;
 using PackageGenerator = FortuneForge.Games.JadeDragon.Reels.CryptoReelGenerator;
@@ -13,6 +14,62 @@ namespace FortuneForge.Server.Slots.Games.JadeDragon;
 internal static class JadeDragonAudit
 {
     private static readonly PackageEngine Engine = new();
+
+    internal static IReadOnlyList<RoundAuditFinding> CheckCascade(SpinResult result, SpinPayout settled)
+    {
+        var audit = result.EngineAudit!;
+        var game = JadeDragonCascadeEngine.CreateDefinition();
+        if (result.GameId != game.Id || result.ReelSetId != JadeDragonCascadeRules.Version ||
+            result.SymbolSetId != JadeDragonCascadeRules.Version || result.PaytableId != JadeDragonCascadeRules.Version ||
+            result.PointValueInCents != JadeDragonCascadeRules.WagerPointValueInCents ||
+            result.PayoutPointValueInCents != JadeDragonCascadeRules.PayoutPointValueInCents ||
+            !Same(audit.BaseGame, game) || !Same(audit.EffectiveGame, game) ||
+            !Same(audit.ReelSet, JadeDragonCascadeEngine.CreateReelSet()) ||
+            !Same(audit.SymbolSet, JadeDragonCascadeEngine.CreateSymbolSet()) ||
+            !Same(audit.Paytable, JadeDragonCascadeEngine.CreatePaytable()) || audit.FeatureProfile is not null)
+            return [new("slot-jade-cascade-rules-mismatch", "error",
+                "The captured rules differ from the Jade Dragon cascade engine.")];
+
+        if (result.ReelStops.Count != 0 || audit.GenerationAttempts != 1 ||
+            audit.FreeSpinFeatureMode is not null || audit.IsDerivedFreeSpin != result.IsFreeSpin ||
+            audit.PityMissesBefore < 0 || audit.EnergyBalanceBefore < 0 ||
+            result.ConsecutiveFiveMisses != audit.PityMissesBefore ||
+            result.FiveMatchPityTriggered || result.SpecialBoostApplied ||
+            result.SpecialPointsAwarded != 0 || result.EnergyAwarded != 0 ||
+            result.MonkeyPawCount != 0 || result.MoneyGrabPoints != 0 || result.BananaBonusPoints != 0 ||
+            result.SealsAwarded.Count != 0 || result.CollectionFreeSpinsAwarded != 0 ||
+            result.BonusRound is not null || result.QueuedBonusRounds.Count != 0 ||
+            result.AwardedBonusRounds.Count != 0 || result.MidnightBonusState is not null ||
+            result.EnergyMultiplierApplied || result.PayoutMultiplier != 1m ||
+            result.NeonArcade is not null || result.NeonDiscoCascade is not null ||
+            result.OlympusTumble is not null || result.LightningCollection is not null ||
+            audit.WukongPawPrototype is not null || audit.NeonArcade is not null ||
+            audit.NeonDiscoCascade is not null || audit.OlympusTumble is not null ||
+            audit.CrucibleRuleVersion is not null)
+            return [new("slot-jade-cascade-state-mismatch", "error",
+                "The cascade outcome contains unrelated feature state.")];
+
+        try
+        {
+            if (audit.JadeDragonCascadeDraws is not { } draws)
+                throw new ArgumentException("Jade Dragon cascade draws are missing.");
+            var expected = JadeDragonCascadeEngine.Replay(result.WagerPoints, result.IsFreeSpin, draws);
+            if (!Same(expected, result.JadeDragonCascade) || !Same(expected.InitialReels, result.Reels) ||
+                !Same(expected.InitialReels, audit.RawGeneratedReels) ||
+                !Same(expected.InitialReels, audit.ReelsAfterFreeGameFrequency) ||
+                result.FreeSpinsAwarded != expected.FreeSpinsAwarded ||
+                result.Payout.TotalPoints != expected.TotalPoints || settled.TotalPoints != expected.TotalPoints ||
+                result.Payout.Paylines.Count != 0 || settled.Paylines.Count != 0)
+                return [new("slot-jade-cascade-outcome-mismatch", "error",
+                    "The boards, awards, or settlement do not match the captured Jade Dragon draws.")];
+        }
+        catch (Exception exception) when (exception is ArgumentException or OverflowException)
+        {
+            return [new("slot-jade-cascade-draw-invalid", "error",
+                "The saved draw sequence cannot reproduce the Jade Dragon cascade.")];
+        }
+        return [];
+    }
 
     internal static IReadOnlyList<RoundAuditFinding> Check(SpinResult result, SpinPayout settled)
     {

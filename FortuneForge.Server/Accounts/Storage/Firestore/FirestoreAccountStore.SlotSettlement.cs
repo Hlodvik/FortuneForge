@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -32,6 +33,22 @@ public sealed partial class FirestoreAccountStore
         {
             throw new InvalidOperationException("Slot outcome has no matching admission or engine audit.");
         }
+        var isJadeCascade = result.EngineAudit.EngineVersion == JadeDragonCascadeRules.Version;
+        if (isJadeCascade || admission.MathModelId == JadeDragonCascadeRules.Version ||
+            result.JadeDragonCascade is not null || result.PayoutPointValueInCents is not null)
+        {
+            if (!isJadeCascade || result.GameId != JadeDragonEngine.GameId ||
+                admission.MathModelId != JadeDragonCascadeRules.Version ||
+                result.IsFreeSpin != admission.IsFreeSpin || admission.SpecialBoostApplied ||
+                admission.FreeSpinFeatureMode is not null ||
+                result.JadeDragonCascade is null ||
+                result.PointValueInCents != JadeDragonCascadeRules.WagerPointValueInCents ||
+                result.PayoutPointValueInCents != JadeDragonCascadeRules.PayoutPointValueInCents ||
+                result.ChargedWagerCents != admission.ChargedWagerCents ||
+                admission.ChargedWagerCents != (admission.IsFreeSpin ? 0 :
+                    RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents)))
+                throw new InvalidOperationException("Jade Dragon's cascade does not match its admitted wager or engine.");
+        }
         var isOlympusTumble = OlympusTumbleDemo.SupportsEngineVersion(result.EngineAudit.EngineVersion);
         if (isOlympusTumble || OlympusTumbleDemo.SupportsEngineVersion(admission.MathModelId))
         {
@@ -44,7 +61,7 @@ public sealed partial class FirestoreAccountStore
                 admission.ChargedWagerCents != RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents))
                 throw new InvalidOperationException("Olympus tumble outcome differs from its admitted wager or model.");
         }
-        else if (admission.MathModelId is not null &&
+        else if (!isJadeCascade && admission.MathModelId is not null &&
             (result.PaytableId != admission.MathModelId ||
              result.EngineAudit.BaseGame.Math.PaytableId != admission.MathModelId ||
              result.IsFreeSpin != admission.IsFreeSpin ||
@@ -86,6 +103,7 @@ public sealed partial class FirestoreAccountStore
         var frozenSettlementField = isMidnightGame ? "midnightSettlementJson" :
             isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" :
             isOlympusTumble ? "olympusTumbleSettlementJson" :
+            isJadeCascade ? "jadeDragonCascadeSettlementJson" :
             isNeonDiscoPlay ? "neonDiscoSettlementJson" : null;
         var engineOutcomeSha256 = frozenSettlementField is not null ? EngineOutcomeSha256(result) : null;
 
@@ -142,6 +160,11 @@ public sealed partial class FirestoreAccountStore
                     (isMidnightGame && ReadString(admissionSnapshot, "freeSpinFeatureMode") != admission.FreeSpinFeatureMode) ||
                     (isOlympusTumble && (ReadLong(admissionSnapshot, "freeSpinsBefore") != 0 ||
                         ReadLong(admissionSnapshot, "energyBalanceBefore") != admission.EnergyBalance)) ||
+                    (isJadeCascade &&
+                        (ReadLong(admissionSnapshot, "freeSpinsBefore") !=
+                            admission.FreeSpinsRemaining + (isFreeSpin ? 1L : 0L) ||
+                         ReadLong(admissionSnapshot, "energyBalanceBefore") != admission.EnergyBalance ||
+                         ReadString(admissionSnapshot, "freeSpinFeatureMode") is not null)) ||
                     admissionSnapshot.GetValue<long>("pityMissesBefore") != admission.PityMissesBefore)
                 {
                     throw new InvalidOperationException("Slot admission receipt does not match the engine result.");
@@ -154,7 +177,7 @@ public sealed partial class FirestoreAccountStore
                     throw new InvalidOperationException("Slot admission has already been used.");
                 }
                 if (frozenSettlementField is not null && existingResult.Exists &&
-                    (isMidnightGame || arcaneLightning || isOlympusTumble || isNeonDiscoPlay ||
+                    (isMidnightGame || arcaneLightning || isOlympusTumble || isJadeCascade || isNeonDiscoPlay ||
                         ReadString(existingResult, "engineOutcomeSha256") is not null))
                 {
                     if (admissionStatus != "settled" || ReadString(existingResult, "userId") != userId ||
@@ -250,12 +273,15 @@ public sealed partial class FirestoreAccountStore
                     throw new InvalidOperationException("The crucible charge differs from the admitted spin.");
                 if (isOlympusTumble && (currentFreeGames != 0 || currentEnergy != admission.EnergyBalance))
                     throw new InvalidOperationException("Olympus legacy balances changed during the admitted spin.");
+                if (isJadeCascade && (currentFreeGames != admission.FreeSpinsRemaining ||
+                    currentEnergy != admission.EnergyBalance))
+                    throw new InvalidOperationException("Jade Dragon's balances changed during the admitted spin.");
                 var crucibleWageredBeforeCents = isGoldFoundry ? ReadLong(guardSnapshot, "crucibleWageredCents") : 0;
                 var crucible = isGoldFoundry
                     ? GoldFoundryCrucible.Settle(currentEnergy, result.EnergyAwarded,
                         crucibleWageredBeforeCents, chargedWagerCents)
                     : null;
-                var energyBonus = isNeon ? new EnergyBonusSettlement(result.Payout, 0, 0, 0, false, 1m) : isOlympusTumble
+                var energyBonus = isNeon ? new EnergyBonusSettlement(result.Payout, 0, 0, 0, false, 1m) : isOlympusTumble || isJadeCascade
                     ? new EnergyBonusSettlement(result.Payout, currentEnergy, currentEnergy, 0, false, 1m)
                     : crucible?.AsEnergySettlement(result.Payout) ?? EnergyBonus.Settle(
                         specialRoundProfile?.UsesEnergy != false ? currentEnergy : 0,
@@ -283,7 +309,7 @@ public sealed partial class FirestoreAccountStore
                 else if (isNeon) sealSettlement = new(new Dictionary<string, long>(),
                     new Dictionary<string, long>(), 0, null, 0, [], false);
                 else sealSettlement = SettleSealCollections(guardSnapshot, result, energyBonus.MultiplierApplied,
-                    specialRoundProfile, freezeProgress: isOlympusTumble);
+                    specialRoundProfile, freezeProgress: isOlympusTumble || isJadeCascade);
                 PiratesGemSettlementEvidence? piratesGemEvidence = piratesGemCountsBefore is null
                     ? null
                     : new(
@@ -298,11 +324,11 @@ public sealed partial class FirestoreAccountStore
                 var settledPayout = energyBonus.Payout;
                 var outcomeFindings = SlotRoundAudit.Check(result, settledPayout, isPaid: true);
                 var outcomeVerified = !outcomeFindings.Any(finding => finding.Severity == "error");
-                if ((isOlympusTumble || isNeonDiscoPlay) && !outcomeVerified)
+                if ((isOlympusTumble || isNeonDiscoPlay || isJadeCascade) && !outcomeVerified)
                     throw new InvalidOperationException("The paid cascade outcome could not be verified.");
                 var payoutCents = checked(RandMoney.PointsToCents(
                     settledPayout.TotalPoints,
-                    result.PointValueInCents) + (crucible?.PayoutCents ?? 0));
+                    result.PayoutPointValueInCents ?? result.PointValueInCents) + (crucible?.PayoutCents ?? 0));
                 var netCents = checked(payoutCents - chargedWagerCents);
                 var isWin = settledPayout.TotalPoints > 0 || crucible?.PayoutCents > 0;
                 var balanceAfterWagerCents = checked(availableCents - chargedWagerCents);
@@ -466,6 +492,8 @@ public sealed partial class FirestoreAccountStore
                     resultData["engineOutcomeSha256"] = engineOutcomeSha256!;
                     resultData[frozenSettlementField] = JsonSerializer.Serialize(settlement);
                 }
+                if (isJadeCascade)
+                    resultData["payoutPointValueInCents"] = JadeDragonCascadeRules.PayoutPointValueInCents;
                 if (crucible is not null)
                 {
                     resultData["crucibleWageredBeforeCents"] = crucibleWageredBeforeCents;
@@ -573,7 +601,7 @@ public sealed partial class FirestoreAccountStore
                     sealSettlement.SealsChanged ||
                     (!isFreeSpin && currentFreeGames > 0) ||
                     (isFreeSpin && currentFreeGames == 0 &&
-                        (isNeon || !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode))))
+                        (isNeon || isJadeCascade || !string.IsNullOrWhiteSpace(activeFreeSpinFeatureMode))))
                 {
                     guardData["userId"] = userId;
                     guardData["freeSpinWagerPoints"] = nextFreeSpinWagerPoints;
@@ -700,6 +728,8 @@ public sealed partial class FirestoreAccountStore
                 JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
             _ when result.NeonDiscoCascade is not null =>
                 JsonSerializer.Serialize(new { snapshot, result.NeonDiscoCascade }),
+            JadeDragonCascadeRules.Version =>
+                JsonSerializer.Serialize(new { snapshot, result.JadeDragonCascade, result.PayoutPointValueInCents }),
             _ => JsonSerializer.Serialize(snapshot)
         };
         return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(json)));

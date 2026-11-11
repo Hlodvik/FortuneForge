@@ -22,6 +22,12 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        if (audit.EngineVersion == FortuneForge.Games.JadeDragon.JadeDragonCascadeRules.Version)
+            return Slots.Games.JadeDragon.JadeDragonAudit.CheckCascade(result, settledPayout);
+        if (audit.JadeDragonCascadeDraws is not null || result.JadeDragonCascade is not null ||
+            result.PayoutPointValueInCents is not null)
+            return [new("slot-jade-cascade-version-mismatch", "error",
+                "The cascade evidence requires the Jade Dragon cascade engine.")];
         if (audit.EngineVersion == FortuneForge.Games.JadeDragon.JadeDragonEngine.Version)
             return Slots.Games.JadeDragon.JadeDragonAudit.Check(result, settledPayout);
         if (result.GameId == SlotSpecialRoundProfiles.JadeDragonGameId)

@@ -79,6 +79,12 @@ if (!string.IsNullOrWhiteSpace(requestedGameId))
 if (requestedGameId is null || requestedGameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId)
     OlympusTumbleSimulation.Run(paidSpinCount, seed, releaseRtpCeiling);
 
+if (requestedGameId is null || requestedGameId == SlotSpecialRoundProfiles.JadeDragonGameId)
+{
+    JadeDragonCascadeSimulation.Run(paidSpinCount, seed, releaseRtpCeiling);
+    gamesToAnalyze.RemoveAll(game => game.Id == SlotSpecialRoundProfiles.JadeDragonGameId);
+}
+
 GameDefinition game = null!;
 SymbolSetDefinition symbolSet = null!;
 ReelSetDefinition reelSet = null!;

@@ -23,7 +23,8 @@ public sealed partial class FirestoreAccountStore
         var isMidnight = gameId == SlotSpecialRoundProfiles.DragonHoardGameId;
         var isGoldFoundry = gameId == GoldFoundrySlotDefinitions.GameId;
         var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
-        if (isMidnight || isGoldFoundry || isNeon)
+        var isJade = gameId == SlotSpecialRoundProfiles.JadeDragonGameId;
+        if (isMidnight || isGoldFoundry || isNeon || isJade)
             return await database.RunTransactionAsync(async transaction =>
             {
                 if (isGoldFoundry)
@@ -36,6 +37,18 @@ public sealed partial class FirestoreAccountStore
                 var state = await transaction.GetAllSnapshotsAsync([
                     guardReference, BalanceDocument(userId, GameCurrencyId(FreeGamesCurrencyId, gameId)),
                     BalanceDocument(userId, specialPointsCurrencyId), BalanceDocument(userId, energyCurrencyId)], cancellationToken);
+                if (isJade)
+                {
+                    var remaining = checked((int)ReadLong(state[1], "available"));
+                    var cents = ReadLong(state[0], "freeSpinWagerCents");
+                    if (cents <= 0)
+                        cents = checked(ReadLong(state[0], "freeSpinWagerPoints") * RandMoney.CentsPerRand);
+                    var wager = remaining > 0 && cents > 0 ? RandMoney.CentsToPoints(cents, pointValueInCents) : (long?)null;
+                    return new SlotStateResponse(remaining, wager,
+                        checked((int)ReadLong(state[2], "available")), ReadLong(state[3], "available"),
+                        CreateSealCollections(state[0], pointValueInCents, gameId),
+                        remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null);
+                }
                 if (isNeon)
                 {
                     var remaining = checked((int)ReadLong(state[1], "available"));

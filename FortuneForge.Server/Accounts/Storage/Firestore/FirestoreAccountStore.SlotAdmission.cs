@@ -6,6 +6,7 @@ using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.JadeDragon;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Accounts.Storage;
@@ -28,6 +29,7 @@ public sealed partial class FirestoreAccountStore
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
 
         var admissionId = Guid.NewGuid();
+        var isJade = gameId == JadeDragonEngine.GameId;
         var isOlympusTumble = gameId == SlotSpecialRoundProfiles.GodsOfOlympusGameId && !useFreeSpin;
         if (isOlympusTumble && useSpecialBoost)
             throw new ArgumentException("Olympus tumble spins do not use the classic special-point boost.", nameof(useSpecialBoost));
@@ -156,7 +158,7 @@ public sealed partial class FirestoreAccountStore
                 }
                 if (isOlympusTumble && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
-                if (isNeon && !useFreeSpin && freeGamesAvailable > 0)
+                if ((isNeon || isJade) && !useFreeSpin && freeGamesAvailable > 0)
                     throw new SlotFreeSpinsRequiredException();
                 var isNeonDiscoPlay = isNeon && !useFreeSpin && neonDiscoSpinsBefore > 0;
                 if (useSpecialBoost && specialBoostCost <= 0)
@@ -179,6 +181,23 @@ public sealed partial class FirestoreAccountStore
                     effectiveWagerPoints = RandMoney.CentsToPoints(storedFreeSpinWagerCents, pointValueInCents);
                 var admittedRound = isMidnight && useFreeSpin ? roundsBefore.FirstOrDefault() : null;
                 string? mathModelId = isOlympusTumble ? OlympusTumbleDemo.EngineVersion : null;
+                if (isJade)
+                {
+                    mathModelId = useFreeSpin ? ReadString(guardSnapshot, "freeSpinMathModelId") :
+                        JadeDragonCascadeRules.Version;
+                    if (mathModelId is not null and not JadeDragonCascadeRules.Version)
+                        throw new InvalidOperationException("The saved Jade Dragon free games use an unknown engine.");
+                    if (mathModelId == JadeDragonCascadeRules.Version)
+                    {
+                        if (useSpecialBoost)
+                            throw new ArgumentException("Jade Dragon cascades do not use a special-point boost.");
+                        if (pointValueInCents != JadeDragonCascadeRules.WagerPointValueInCents ||
+                            useFreeSpin && (storedFreeSpinWagerCents <= 0 || storedFreeSpinFeatureMode is not null))
+                            throw new InvalidOperationException("The Jade Dragon cascade wager or free games are invalid.");
+                        JadeDragonCascadeRules.ValidateWager(effectiveWagerPoints);
+                        Slots.Games.JadeDragon.JadeDragonWagerPolicy.Validate(gameId, effectiveWagerPoints, useFreeSpin: false);
+                    }
+                }
                 if (isMidnight)
                 {
                     if (!useFreeSpin && roundsBefore.Count > 0)

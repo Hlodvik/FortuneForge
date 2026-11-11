@@ -3,10 +3,19 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { loadArtwork, paintArtwork } from './living-art.js';
 import { createSymbol } from './models.js';
 import { planReelStops, reelDistance } from './reel-motion.js';
-import { SYMBOLS, validateGrid } from './symbols.js';
+import { CASCADE_SYMBOL_IDS, SYMBOLS, validateGrid } from './symbols.js';
+import phoenixArtwork from './artwork/phoenix.svg';
+import knotArtwork from './artwork/knot.svg';
 
 const BOARD_HEIGHT = 6.35;
-const ARTWORK = { S07: 'dragon', S08: 'pearl', S20: 'bonus', S21: 'pearl', S22: 'dragon' };
+const ARTWORK = {
+  S07: 'dragon', S08: 'pearl', S20: 'bonus', S21: 'pearl', S22: 'dragon',
+  dragon: 'dragon', pearl: 'pearl', phoenix: 'phoenix', knot: 'knot',
+};
+const CASCADE_AWARD_TIME = .65;
+const CASCADE_CLEAR_TIME = .30;
+const CASCADE_DROP_TIME = .48;
+const cellKey = (reel, row) => reel + ':' + row;
 // These icons fill the moving strip while the host settles the round.
 const ROLLING_ICONS = ['S01', 'S02', 'S05', 'S04', 'S06', 'S03'];
 
@@ -50,7 +59,7 @@ export class JadeRenderer {
     this.tileMaterials = ['#102b21', '#0a3024', '#466d25'].map(color =>
       new T.MeshBasicMaterial({ color, transparent: true, opacity: .85 }),
     );
-    for (const kind of new Set(Object.values(ARTWORK))) {
+    for (const kind of ['dragon', 'pearl', 'bonus']) {
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = 256;
       const texture = new T.CanvasTexture(canvas);
@@ -70,12 +79,26 @@ export class JadeRenderer {
       });
     }
 
+    const textures = new T.TextureLoader();
+    for (const [kind, url] of Object.entries({ phoenix: phoenixArtwork, knot: knotArtwork })) {
+      textures.load(url, texture => {
+        texture.colorSpace = T.SRGBColorSpace;
+        this.artwork.set(kind, { texture });
+        for (const reel of this.reels) {
+          for (const cell of reel.cells) {
+            if (ARTWORK[cell.id] === kind) this.setSymbol(cell, cell.id, true);
+          }
+        }
+      });
+    }
+
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
     this.resize();
     this.renderer.setAnimationLoop(now => this.frame(now));
     this.renderer.domElement.addEventListener('webglcontextlost', event => {
       event.preventDefault();
+      this.contextLost = true;
       this.host.dispatchEvent(new Event('renderer-lost'));
     });
     document.fonts.load('700 52px "Cormorant Garamond"').then(() => this.refreshLabels()).catch(() => {});
@@ -223,14 +246,16 @@ export class JadeRenderer {
   drawReel(col, distance, landing) {
     const wholeRows = Math.floor(distance);
     const offset = distance - wholeRows;
+    const icons = CASCADE_SYMBOL_IDS.includes(this.grid[0][0]) ? CASCADE_SYMBOL_IDS : ROLLING_ICONS;
     this.reels[col].cells.forEach((cell, index) => {
       const row = index - 1;
       const stripRow = row - wholeRows;
       const landedId = landing?.grid[col][stripRow + landing.stop.row];
       const originalId = this.grid[col][stripRow];
-      const icon = ROLLING_ICONS[((stripRow - col) % ROLLING_ICONS.length + ROLLING_ICONS.length) % ROLLING_ICONS.length];
+      const icon = icons[((stripRow - col) % icons.length + icons.length) % icons.length];
       this.setSymbol(cell, landedId ?? originalId ?? icon);
       cell.slot.position.y = this.rowY(row + offset);
+      cell.slot.scale.setScalar(1);
       cell.slot.visible = row >= 0 || offset > 0;
     });
   }
@@ -261,7 +286,7 @@ export class JadeRenderer {
     if (!this.animation || instant) {
       this.animation = null;
       this.setGrid(grid);
-      this.renderer.render(this.scene, this.camera);
+      if (!this.contextLost) this.renderer.render(this.scene, this.camera);
       onLand(grid.length - 1);
       return Promise.resolve();
     }
@@ -278,22 +303,93 @@ export class JadeRenderer {
     this.animation = null;
     const result = animation.settlement;
     this.setGrid(result?.grid ?? this.grid);
-    this.renderer.render(this.scene, this.camera);
+    if (!this.contextLost) this.renderer.render(this.scene, this.camera);
     if (result) {
       if (animation.landed < result.grid.length) result.onLand(result.grid.length - 1);
       result.resolve();
     }
   }
 
-  celebrate(result) {
-    this.wins = new Set(result.payout.paylines.flatMap(line =>
-      line.matches.flatMap(p => p.match.positions.map(({ reel, row }) => reel + ':' + row)),
-    ));
+  highlight(positions) {
+    this.clearWins();
+    this.wins = new Set(positions.map(({ reel, row }) => cellKey(reel, row)));
     this.reels.forEach((reel, col) => {
       reel.backgrounds.forEach((tile, row) => {
-        if (this.wins.has(col + ':' + row)) tile.material = this.tileMaterials[2];
+        if (this.wins.has(cellKey(col, row))) tile.material = this.tileMaterials[2];
       });
     });
+  }
+
+  celebrate(result) {
+    this.highlight(result.payout.paylines.flatMap(line =>
+      line.matches.flatMap(p => p.match.positions),
+    ));
+  }
+
+  playCascadeStep(step) {
+    validateGrid(step.reels);
+    if (!this.motion || this.contextLost) {
+      this.setGrid(step.reels);
+      return Promise.resolve();
+    }
+    this.highlight(step.awards.flatMap(award => award.positions));
+    return new Promise(resolve => {
+      this.cascade = {
+        step,
+        cleared: new Set(step.cleared.map(({ reel, row }) => cellKey(reel, row))),
+        hasDrop: step.dropRows.some(reel => reel.some(distance => distance > 0)),
+        time: 0,
+        last: performance.now(),
+        dropping: false,
+        resolve,
+      };
+    });
+  }
+
+  advanceCascade(now) {
+    const cascade = this.cascade;
+    if (!cascade) return;
+    cascade.time += Math.max(0, now - cascade.last) * this.speed / 1000;
+    cascade.last = now;
+    if (cascade.time < CASCADE_AWARD_TIME) return;
+
+    const dropStart = CASCADE_AWARD_TIME + CASCADE_CLEAR_TIME;
+    if (!cascade.hasDrop || cascade.time >= dropStart + CASCADE_DROP_TIME) {
+      this.finishCascade();
+      return;
+    }
+    if (cascade.time >= dropStart && !cascade.dropping) {
+      this.clearWins();
+      this.setGrid(cascade.step.reels);
+      cascade.dropping = true;
+    }
+  }
+
+  finishCascade() {
+    const cascade = this.cascade;
+    if (!cascade) return;
+    this.cascade = null;
+    this.clearWins();
+    this.setGrid(cascade.step.reels);
+    cascade.resolve();
+  }
+
+  poseCascadeCell(cell, col, row) {
+    const cascade = this.cascade;
+    if (!cascade || row < 0 || cascade.time < CASCADE_AWARD_TIME) return false;
+
+    if (cascade.dropping) {
+      const progress = (cascade.time - CASCADE_AWARD_TIME - CASCADE_CLEAR_TIME) / CASCADE_DROP_TIME;
+      const distance = cascade.step.dropRows[col][row];
+      cell.slot.position.y = this.rowY(row - distance * (1 - progress ** 2));
+      return distance > 0;
+    }
+    if (cascade.cleared.has(cellKey(col, row))) {
+      const progress = (cascade.time - CASCADE_AWARD_TIME) / CASCADE_CLEAR_TIME;
+      cell.slot.scale.setScalar(1 - progress);
+      return true;
+    }
+    return false;
   }
 
   paintSymbolArt(kind, time) {
@@ -323,6 +419,8 @@ export class JadeRenderer {
   }
 
   frame(now) {
+    if (this.contextLost) return;
+    this.advanceCascade(now);
     const animation = this.animation;
     const result = animation?.settlement;
     if (animation) {
@@ -345,8 +443,10 @@ export class JadeRenderer {
       reel.cells.forEach((cell, index) => {
         if (!cell.slot.visible) return;
         if (cell.sprite.visible) this.visibleArtwork.add(ARTWORK[cell.id]);
-        this.poseSymbol(cell, now / 1000 + col * .49 + index * .31, moving,
-          this.wins?.has(col + ':' + (index - 1)));
+        const row = index - 1;
+        const cascading = this.poseCascadeCell(cell, col, row);
+        this.poseSymbol(cell, now / 1000 + col * .49 + index * .31, moving || cascading,
+          this.wins?.has(cellKey(col, row)));
       });
     });
 

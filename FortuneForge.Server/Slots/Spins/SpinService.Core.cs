@@ -64,6 +64,7 @@ public sealed partial class SpinService(
     // SpinCore so their supplied definitions, reels, and evaluators are actually used.
     private readonly bool useStandaloneSlotPackages = definitions is OptionsSlotsDefinitionProvider;
     private readonly Games.JadeDragon.JadeDragonEngine jadeDragonEngine = new(random);
+    private readonly Games.JadeDragon.JadeDragonCascadeAdapter jadeDragonCascade = new(random);
     private readonly NeonNightsEngine neonNightsEngine = new(
         definitions, random);
     private readonly MidnightVaultEngine midnightVaultEngine = new(random, reelGenerator);

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Slots.Bonuses;
 
 namespace FortuneForge.Server.Slots.Models;
@@ -36,6 +37,9 @@ public sealed record SlotSpinEngineAudit(
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleEvidence? OlympusTumble { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? JadeDragonCascadeDraws { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? CrucibleRuleVersion { get; init; }
@@ -118,4 +122,10 @@ public sealed record SpinResult(
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleOutcome? OlympusTumble { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public JadeDragonCascadeOutcome? JadeDragonCascade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? PayoutPointValueInCents { get; init; }
 }

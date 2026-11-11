@@ -59,6 +59,8 @@ public sealed partial class SpinService
             throw new ArgumentException("An accepted slot admission is required.", nameof(admission));
         if (gameId == SlotSpecialRoundProfiles.JadeDragonGameId)
         {
+            if (admission.MathModelId == FortuneForge.Games.JadeDragon.JadeDragonCascadeRules.Version)
+                return jadeDragonCascade.Spin(admission);
             if (admission.MathModelId is not null || admission.IsNeonDiscoPlay)
                 throw new ArgumentException("Jade Dragon does not accept a foreign math model.", nameof(admission));
             return jadeDragonEngine.Spin(admission.WagerPoints, playerId,

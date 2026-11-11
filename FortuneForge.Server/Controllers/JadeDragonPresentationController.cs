@@ -1,5 +1,6 @@
 using FortuneForge.Games.JadeDragon;
 using Microsoft.AspNetCore.Mvc;
+using Cascade = FortuneForge.Games.JadeDragon.JadeDragonCascadeRules;
 
 namespace FortuneForge.Server.Controllers;
 
@@ -13,17 +14,35 @@ public sealed class JadeDragonPresentationController : ControllerBase
     public IActionResult Get()
     {
         var engine = new JadeDragonEngine();
-        var definition = engine.Definition;
+        var definition = JadeDragonCascadeEngine.CreateDefinition();
         return Ok(new
         {
             gameId = JadeDragonEngine.GameId,
-            engineVersion = JadeDragonEngine.Version,
-            title = "Jade Dragon: The Golden Pearl",
+            engineVersion = Cascade.Version,
+            title = "Jade Dragon",
             layout = definition.Layout,
             wagering = definition.Wagering,
             freeGames = definition.FreeGames,
             symbols = engine.SymbolMetadata,
-            payoutScale = definition.Math.PayoutMultiplier,
+            payoutScale = Cascade.PayoutScale,
+            payoutPointValueInCents = Cascade.PayoutPointValueInCents,
+            cascadeRules = new
+            {
+                ways = Cascade.Ways,
+                baseMultipliers = Cascade.BaseMultipliers,
+                freeSpinMultipliers = Cascade.BonusMultipliers,
+                symbols = Cascade.Symbols.Select(symbol => new
+                {
+                    id = symbol.Id,
+                    payouts = symbol.Pays?.Select(pay => pay * Cascade.PayoutScale).ToArray() ?? []
+                }).ToArray(),
+                requiredPearls = Cascade.RequiredPearls,
+                baseFreeSpins = Cascade.BaseFreeSpins,
+                retriggerFreeSpins = Cascade.RetriggerFreeSpins,
+                spinsPerExtraPearl = Cascade.SpinsPerExtraPearl,
+                maximumWinningSteps = Cascade.MaximumWinningSteps,
+                maximumWinMultiplier = Cascade.MaximumWinMultiplier
+            },
             collectionThreshold = 22,
             collectionSpins = 8,
             collectionFeatureMode = "copy-expand-wild",

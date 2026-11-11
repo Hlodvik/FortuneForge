@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Spins;
@@ -13,7 +14,8 @@ public sealed record SpinRequest(
     string GameId,
     long WagerPoints,
     bool UseFreeSpin,
-    bool UseSpecialBoost);
+    bool UseSpecialBoost,
+    string? JadeDragonEngineVersion = null);
 
 public sealed record NeonAdminTriggerRequest(string Symbol, long WagerPoints);
 
@@ -124,6 +126,9 @@ public sealed class SlotsController(
             }
 
             var account = accountResult.Value;
+            if (request.GameId == JadeDragonEngine.GameId &&
+                request.JadeDragonEngineVersion != JadeDragonCascadeRules.Version)
+                return BadRequest(new { error = "Reload Jade Dragon to use the current game rules." });
             FortuneForge.Server.Slots.Games.JadeDragon.JadeDragonWagerPolicy.Validate(
                 request.GameId, request.WagerPoints, request.UseFreeSpin);
             spinService.ValidateRequest(request.GameId, request.WagerPoints, request.UseFreeSpin);
@@ -172,7 +177,8 @@ public sealed class SlotsController(
                 CollectionFreeSpinsAwarded = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
                     ? settlement.SealFreeSpinsAwarded : 0,
                 IsFreeSpin = admission.IsFreeSpin,
-                ChargedWagerCents = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId
+                ChargedWagerCents = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId ||
+                    result.JadeDragonCascade is not null
                     ? admission.ChargedWagerCents : 0,
                 FreeSpinsRemaining = settlement.FreeSpinsRemaining,
                 NeonDiscoSpinsRemaining = settlement.NeonDiscoSpinsRemaining,

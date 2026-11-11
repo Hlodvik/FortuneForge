@@ -2,9 +2,15 @@
 
 Jade Dragon: The Golden Pearl is the finished identity of this package. The former
 Empty Slots scaffold has been retired. Game ID: `empty-slots-v1`. Engine version:
-`empty-slots-engine-v1`.
+`jade-dragon-cascade-v2` for new rounds. `empty-slots-engine-v1` remains the
+legacy model for previously awarded free games and replay.
 
 ## Start here
+
+New cascade rules and random-draw replay live in `JadeDragonCascadeRules.cs`
+and `JadeDragonCascadeEngine.cs`. The host owns the admission and wallet
+transaction. V2 wagers use 25-cent points and v2 payouts use whole cents.
+The notes and sample below describe the legacy engine.
 
 1. Read `games/JadeDragon/SYMBOLS.md` and the embedded
    `games/JadeDragon/src/FortuneForge.Games.JadeDragon/Data/jade-dragon.json`.

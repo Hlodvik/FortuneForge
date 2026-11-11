@@ -39,9 +39,17 @@ public sealed class JadeDragonPresentationTests
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
         Assert.Equal("empty-slots-v1", root.GetProperty("gameId").GetString());
+        Assert.Equal("jade-dragon-cascade-v2", root.GetProperty("engineVersion").GetString());
         Assert.Equal(23, root.GetProperty("symbols").GetArrayLength());
         Assert.Equal(4, root.GetProperty("layout").GetProperty("visibleRows").GetInt32());
         Assert.Equal(10000, root.GetProperty("maximumPresentationBetCents").GetInt32());
+        var cascade = root.GetProperty("cascadeRules");
+        Assert.Equal(1024, cascade.GetProperty("ways").GetInt32());
+        Assert.Equal(new[] { 1, 2, 3, 5 }, cascade.GetProperty("baseMultipliers").Deserialize<int[]>());
+        Assert.Equal(new[] { 2, 4, 6, 10 }, cascade.GetProperty("freeSpinMultipliers").Deserialize<int[]>());
+        Assert.Equal(1, root.GetProperty("payoutPointValueInCents").GetInt32());
+        Assert.Equal(25, root.GetProperty("wagering").GetProperty("pointValueInCents").GetInt32());
+        Assert.False(cascade.GetProperty("symbols")[0].TryGetProperty("weight", out _));
         Assert.False(root.TryGetProperty("reelSet", out _));
         Assert.False(root.TryGetProperty("balance", out _));
     }

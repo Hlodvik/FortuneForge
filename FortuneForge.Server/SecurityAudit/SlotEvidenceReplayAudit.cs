@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
@@ -61,7 +62,22 @@ internal static class SlotEvidenceReplayAudit
                 ((demo || usesOlympusTumble) && summary.TableId != summary.RoundId))
                 findings.Add(new("slot-evidence-identity-mismatch", "error",
                     "The saved spin identity differs from its audit summary."));
-            if (NeonArcadeSlotDefinitions.SupportsPackageReplay(engineAudit.EngineVersion))
+            if (engineAudit.EngineVersion == JadeDragonCascadeRules.Version)
+            {
+                var wagerCents = result.IsFreeSpin ? 0 :
+                    RandMoney.PointsToCents(result.WagerPoints, JadeDragonCascadeRules.WagerPointValueInCents);
+                var payoutCents = RandMoney.PointsToCents(
+                    settledPayout.TotalPoints, JadeDragonCascadeRules.PayoutPointValueInCents);
+                if (demo || data.GetProperty("admittedMathModelId").GetString() != JadeDragonCascadeRules.Version ||
+                    data.GetProperty("isFreeSpin").GetBoolean() != result.IsFreeSpin ||
+                    result.ChargedWagerCents != wagerCents ||
+                    summary.Participants is not [{ IsAccountBacked: true } participant] ||
+                    participant.WagerCents != wagerCents || participant.PayoutCents != payoutCents ||
+                    participant.NetCents != payoutCents - wagerCents)
+                    findings.Add(new("slot-jade-cascade-ledger-mismatch", "error",
+                        "The Jade Dragon cascade does not match the admitted wager and cent settlement."));
+            }
+            else if (NeonArcadeSlotDefinitions.SupportsPackageReplay(engineAudit.EngineVersion))
                 findings.AddRange(InspectCurrentNeon(root, data, result, response, engineAudit,
                     settledPayout, summary, demo));
             else if (engineAudit.EngineVersion == FortuneForge.Games.MidnightVault.MidnightVaultEngine.Version)

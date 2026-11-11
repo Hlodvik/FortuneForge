@@ -16,6 +16,7 @@ param(
     [string]$RollbackReason = '',
     [switch]$SkipTestSuites,
     [switch]$LivePlaytest,
+    [switch]$TestFree,
     [string]$TestWaiverReason = ''
 )
 
@@ -26,7 +27,7 @@ $region = 'us-east4'
 $serviceName = 'fortuneforge-api'
 $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
-Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest
+Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
 if ($ContinuousAudit -and $Target -eq 'hosting') { throw '-ContinuousAudit applies only to an API release.' }
 
 function Invoke-Checked {
@@ -555,8 +556,9 @@ $record = [ordered]@{
     candidateSha = $candidateSha
     toolingSha = $mainSha
     verificationPlan = $verificationPlan
-    testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }
-    broadTestSuitesDeferred = [bool]$SkipTestSuites
+    testSuiteWaiver = [ordered]@{ skipped = [bool]($SkipTestSuites -or $TestFree); reason = $TestWaiverReason }
+    broadTestSuitesDeferred = [bool]($SkipTestSuites -or $TestFree)
+    preDeploymentTestsSkipped = [bool]$TestFree
     livePlaytest = [bool]$LivePlaytest
     continuousAudit = [bool]$ContinuousAudit
     focusedTestScopes = if ($LivePlaytest) { @(Get-ReleaseFocusedTestScopes) } else { @() }
@@ -600,17 +602,26 @@ try {
     if ($AllowRollback) { $verificationArguments += '-Rollback' }
     if ($AdoptUnstampedLive) { $verificationArguments += '-Adoption' }
     if ($LivePlaytest) { $verificationArguments += '-LivePlaytest' }
-    if ($SkipTestSuites) {
+    if ($TestFree) {
+        Write-Warning "All pre-deployment automated tests are NOT RUN. Waiver: $TestWaiverReason"
+        $verificationArguments += @('-TestFree', '-TestWaiverReason', $TestWaiverReason)
+    }
+    elseif ($SkipTestSuites) {
         Write-Warning "Broad application test suites deferred. Fixed focused tests remain mandatory for live playtests. Waiver: $TestWaiverReason"
         $verificationArguments += @('-SkipTestSuites', '-TestWaiverReason', $TestWaiverReason)
     }
     Invoke-Checked -Executable 'powershell.exe' -Arguments $verificationArguments -WorkingDirectory $releaseCheckout
     if ($LivePlaytest) { $record.focusedTestsStatus = 'passed' }
-    # Guard tests use synthetic command responses, never disposable repositories.
-    Invoke-Checked -Executable 'powershell.exe' -Arguments @(
-        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
-        (Join-Path $repoRoot 'scripts/tests/deploy-guardrails.tests.ps1')
-    ) -WorkingDirectory $repoRoot
+    if ($TestFree) {
+        Write-Warning 'Deployment guardrail tests are NOT RUN on the explicit test-free route.'
+    }
+    else {
+        # Guard tests use synthetic command responses, never disposable repositories.
+        Invoke-Checked -Executable 'powershell.exe' -Arguments @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+            (Join-Path $repoRoot 'scripts/tests/deploy-guardrails.tests.ps1')
+        ) -WorkingDirectory $repoRoot
+    }
     $sourceChanges = & git -C $releaseCheckout status --porcelain=v1 --untracked-files=normal
     if ($LASTEXITCODE -ne 0 -or $sourceChanges) {
         throw 'Verification changed tracked or untracked source in the release checkout.'

@@ -100,13 +100,46 @@ unusual file modes, or any uncertainty use the full suite. API/combined releases
 rollbacks, adoption, and missing/unavailable baselines default to the full suite.
 There is no force-scoped override.
 
-Qualified releases run the affected game's checks/tests, every game build,
+Qualified releases run the affected game's checks and any test script, every game build,
 shared web tests, lint/build, ownership/route checks, release guardrails and the
 normal full production smoke. Only unrelated game checks/tests and .NET tests
 are skipped. Clean checkouts still need every game built for package exports.
 The verifier independently recalculates the plan. The release record saves the
 baseline, candidate, tooling SHA, mode, workspace, reason, and changed paths.
 Standalone `npm run verify:release` defaults to the full suite.
+
+### Explicit test-free deployment
+
+When the owner explicitly requests deployment without any pre-deployment test
+runner, use the dedicated route:
+
+```powershell
+npm run deploy:test-free
+```
+
+It deploys both API and Hosting by default. Pass a narrower target after npm's
+argument separator when needed:
+
+```powershell
+npm run deploy:test-free -- -Target hosting
+npm run deploy:test-free -- -Target api
+```
+
+This route skips the game and host npm test suites, all .NET test projects,
+focused live-playtest scopes, and the deployment guardrail test script. It
+retains dependency installation, source/route/navbar/CI-order policy checks,
+game type checks and builds, lint, the web production build, immutable-source
+and live-target race guards, release stamps, and publication integrity checks.
+The normal production smoke still runs after publication to confirm the
+deployed endpoints. The release record identifies the test-free mode and its
+fixed explicit waiver reason; it never reports skipped tests as passed.
+
+This route controls only the local guarded deployment. A push or pull request
+can still trigger the independent GitHub Actions test workflow; use the existing
+documented `[skip ci]` commit-message mechanism separately when appropriate.
+`-TestFree` cannot be combined with `-LivePlaytest`, whose purpose is to retain
+the fixed focused backend test scopes. The ordinary deployment routes keep their
+existing verification behavior.
 
 ### Explicit Hosting test-suite waiver
 
@@ -143,7 +176,7 @@ investigation. There is no caller-supplied filter or evidence-reuse override.
 Every scope must produce a fresh nonempty TRX report with every test passed;
 zero matches, missing reports, skips, failures and aborted runs refuse publication.
 Reports remain under the unique ignored `artifacts/releases/focused-*` directory.
-Broad npm application tests and the five full .NET project suites are deferred;
+Broad npm application tests and the full server .NET test project are deferred;
 this mode does not establish full-suite or slot calibration acceptance.
 
 The release record stores the mode, waiver reason, deferred broad suites, fixed

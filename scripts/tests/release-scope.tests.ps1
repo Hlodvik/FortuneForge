@@ -16,8 +16,8 @@ function New-ScopeChange([string]$Path, [string]$Status = 'M', [string]$OldMode 
 $scopeWorkspace = 'games/DragonTiger/client/FortuneForge.Games.DragonTiger.Client'
 $otherWorkspace = 'games/HiLo/client/FortuneForge.Games.HiLo.Client'
 $scopeWorkspaces = @(
-    [pscustomobject]@{ Path = $scopeWorkspace; Name = '@fortuneforge/games-dragon-tiger'; HasCheck = $true; HasTest = $true },
-    [pscustomobject]@{ Path = $otherWorkspace; Name = '@fortuneforge/games-hi-lo'; HasCheck = $true; HasTest = $true }
+    [pscustomobject]@{ Path = $scopeWorkspace; Name = '@fortuneforge/games-dragon-tiger'; HasCheck = $true },
+    [pscustomobject]@{ Path = $otherWorkspace; Name = '@fortuneforge/games-hi-lo'; HasCheck = $true }
 )
 $visual = New-ScopeChange "$scopeWorkspace/src/dragonTiger.css"
 $companion = New-ScopeChange "$scopeWorkspace/src/DragonTigerGame.test.tsx"
@@ -54,18 +54,18 @@ foreach ($target in @('api', 'all')) {
 }
 $scopedCommands = @(Get-ReleaseVerificationCommands -Plan $scoped -Repository $scopeRepoRoot)
 $scopedText = ($scopedCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
-foreach ($required in @('verify:game-source', 'verify:game-routes', 'verify:game-navbar', 'verify:ci-emulator', 'games:build', 'web:test', 'lint', 'web:build', 'check --workspace @fortuneforge/games-dragon-tiger', 'test --workspace @fortuneforge/games-dragon-tiger')) {
+foreach ($required in @('verify:game-source', 'verify:game-routes', 'verify:game-navbar', 'verify:ci-emulator', 'games:build', 'web:test', 'lint', 'web:build', 'check --workspace @fortuneforge/games-dragon-tiger', 'test --workspace @fortuneforge/games-dragon-tiger --if-present')) {
     Assert-ScopeEqual $scopedText.Contains($required) $true "scoped plan retains $required"
 }
 Assert-ScopeEqual @($scopedCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 0 'scoped checks omit .NET'
 Assert-ScopeEqual $scopedText.Contains('run games:check') $false 'scoped checks omit unrelated checks'
 $fullCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'test') -Repository $scopeRepoRoot)
-Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 5 'full suite retains all five .NET projects'
+Assert-ScopeEqual @($fullCommands | Where-Object { $_.Executable -ceq 'dotnet' }).Count 1 'full suite retains the server test project'
 $fullText = ($fullCommands | ForEach-Object { $_.Arguments -join ' ' }) -join "`n"
-foreach ($project in @('FortuneForge.Server.Tests.csproj', 'FortuneForge.Games.DragonTiger.Tests.csproj',
-    'FortuneForge.Games.HiLo.Engine.Tests.csproj', 'FortuneForge.Games.HiLo.Server.Tests.csproj',
-    'FortuneForge.Games.AndarBahar.Tests.csproj')) {
-    Assert-ScopeEqual $fullText.Contains($project) $true "full suite retains $project"
+Assert-ScopeEqual $fullText.Contains('FortuneForge.Server.Tests.csproj') $true 'full suite retains the server test project'
+foreach ($project in @('FortuneForge.Games.DragonTiger.Tests.csproj', 'FortuneForge.Games.HiLo.Engine.Tests.csproj',
+    'FortuneForge.Games.HiLo.Server.Tests.csproj', 'FortuneForge.Games.AndarBahar.Tests.csproj')) {
+    Assert-ScopeEqual $fullText.Contains($project) $false "full suite omits stale hardcoded game project $project"
 }
 Assert-ScopeEqual $fullText.Contains('run games:check') $true 'full suite retains all game checks'
 Assert-ScopeEqual $fullText.Contains("run test`n") $true 'full suite retains all client tests'
@@ -78,6 +78,14 @@ foreach ($reason in @('', '   ')) {
     Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -SkipTestSuites -TestWaiverReason $reason } 'missing waiver reason'
 }
 Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -TestWaiverReason 'Orphan reason' } 'reason without explicit waiver'
+foreach ($target in @('hosting', 'api', 'all')) {
+    Assert-ReleaseTestWaiver -Target $target -TestFree -TestWaiverReason 'Owner requested the explicit test-free route.'
+}
+foreach ($reason in @('', '   ', "`n")) {
+    Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target all -TestFree -TestWaiverReason $reason } 'test-free route requires an honest nonempty reason'
+}
+Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target all -TestFree -SkipTestSuites -TestWaiverReason 'Conflicting modes' } 'test-free route cannot combine with the broad-suite waiver'
+Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target all -TestFree -LivePlaytest -TestWaiverReason 'Conflicting modes' } 'test-free route cannot combine with live playtest'
 Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target all -LivePlaytest } 'playtest without explicit suite waiver'
 Assert-ScopeThrows { Assert-ReleaseTestWaiver -Target hosting -LivePlaytest -SkipTestSuites -TestWaiverReason 'Owner request' } 'playtest cannot masquerade as hosting-only'
 foreach ($target in @('api', 'all')) {
@@ -109,6 +117,18 @@ foreach ($required in @('verify:game-source', 'verify:game-routes', 'verify:game
     Assert-ScopeEqual $playtestText.Contains($required) $true "playtest retains $required"
 }
 Assert-ScopeEqual @($playtestCommands | Where-Object { $_.Executable -ceq 'npm.cmd' -and $_.Arguments[1] -cin @('test', 'web:test') }).Count 0 'broad npm tests explicitly deferred'
+
+$testFreeCommands = @(Get-ReleaseVerificationCommands -Plan (New-ReleaseVerificationPlan -FullReason 'test-free') `
+    -Repository $scopeRepoRoot -Target all -TestFree -TestWaiverReason 'Owner requested the explicit test-free route.')
+$testFreeText = ($testFreeCommands | ForEach-Object { $_.Executable + ' ' + ($_.Arguments -join ' ') }) -join "`n"
+Assert-ScopeEqual @($testFreeCommands | Where-Object {
+    ($_.Executable -ceq 'dotnet' -and $_.Arguments[0] -ceq 'test') -or
+    ($_.Executable -ceq 'npm.cmd' -and $_.Arguments[0] -ceq 'run' -and
+        $_.Arguments[1] -cin @('test', 'web:test', 'verify:game-navbar', 'verify:ci-emulator'))
+}).Count 0 'test-free command plan contains no test runner or npm wrapper that embeds node:test'
+foreach ($required in @('verify-game-navbar.mjs', 'verify-ci-emulator-order.mjs', 'games:check', 'games:build', 'lint', 'web:build')) {
+    Assert-ScopeEqual $testFreeText.Contains($required) $true "test-free route retains non-test check $required"
+}
 
 # Synthetic reports only: never invoke .NET, SDK/cloud commands or copy a repo.
 $focusedReport = [IO.Path]::GetTempFileName()
@@ -156,14 +176,18 @@ Assert-ScopeEqual ((Get-ReleaseToolPaths) -contains 'scripts/tests/release-scope
 $waiverGuard = 'Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason'
 Assert-ScopeEqual ($scopeDeploySource.IndexOf($waiverGuard) -lt $scopeDeploySource.IndexOf('function Get-LiveHosting')) $true 'invalid waiver rejected before live reads'
 Assert-ScopeEqual $scopeDeploySource.Contains("@('-SkipTestSuites', '-TestWaiverReason', `$TestWaiverReason)") $true 'waiver switch and exact reason forwarded to trusted verifier'
-Assert-ScopeEqual $scopeDeploySource.Contains('testSuiteWaiver = [ordered]@{ skipped = [bool]$SkipTestSuites; reason = $TestWaiverReason }') $true 'release record reports waiver rather than passed tests'
-foreach ($required in @('broadTestSuitesDeferred = [bool]$SkipTestSuites', 'focusedTestScopes = if ($LivePlaytest)', "focusedTestsStatus = if (`$LivePlaytest)", "ciStatus = 'not-checked; no CI success claimed'", "`$verificationArguments += '-LivePlaytest'")) {
+Assert-ScopeEqual $scopeDeploySource.Contains('testSuiteWaiver = [ordered]@{ skipped = [bool]($SkipTestSuites -or $TestFree); reason = $TestWaiverReason }') $true 'release record reports every waiver rather than passed tests'
+foreach ($required in @('broadTestSuitesDeferred = [bool]($SkipTestSuites -or $TestFree)', 'preDeploymentTestsSkipped = [bool]$TestFree',
+    'focusedTestScopes = if ($LivePlaytest)', "focusedTestsStatus = if (`$LivePlaytest)", "ciStatus = 'not-checked; no CI success claimed'",
+    "`$verificationArguments += '-LivePlaytest'", "`$verificationArguments += @('-TestFree', '-TestWaiverReason', `$TestWaiverReason)",
+    "if (`$TestFree)", 'Deployment guardrail tests are NOT RUN')) {
     Assert-ScopeEqual $scopeDeploySource.Contains($required) $true "playtest records and forwards $required"
 }
 $scopeVerifySource = Get-Content -LiteralPath (Join-Path $scopeRepoRoot 'scripts/verify-release.ps1') -Raw
 Assert-ScopeEqual $scopeVerifySource.Contains($waiverGuard) $true 'verifier independently rejects invalid waiver flags'
 Assert-ScopeEqual $scopeVerifySource.Contains('standalone verification does not accept waivers') $true 'standalone verification cannot waive suites'
 Assert-ScopeEqual $scopeVerifySource.Contains('application test suites NOT RUN under the recorded waiver') $true 'verification does not claim waived tests passed'
+Assert-ScopeEqual $scopeVerifySource.Contains('all pre-deployment automated tests were NOT RUN under the recorded waiver') $true 'test-free verification never claims skipped tests passed'
 Assert-ScopeEqual $scopeVerifySource.Contains('Assert-ReleaseFocusedTestResult -Path $command.FocusedResultPath') $true 'verifier checks actual focused results after execution'
 Assert-ScopeEqual $scopeVerifySource.Contains('Focused report already exists before its test run') $true 'stale focused evidence rejected'
 
@@ -224,7 +248,7 @@ $originalBuildInputs = & $module { (Get-Item Function:Assert-ReleaseBuildInputs)
             }
             'show' {
                 if ($Arguments[1].EndsWith(':package.json')) { $output = @('{"workspaces":["' + $state.Workspace + '"]}') }
-                else { $output = @('{"name":"@fortuneforge/games-dragon-tiger","scripts":{"check":"check","test":"test"}}') }
+                else { $output = @('{"name":"@fortuneforge/games-dragon-tiger","scripts":{"check":"check"}}') }
             }
             default { throw "Unexpected Git inspection command: $($Arguments -join ' ')" }
         }
@@ -233,7 +257,7 @@ $originalBuildInputs = & $module { (Get-Item Function:Assert-ReleaseBuildInputs)
 } $fixture
 try {
     $plan = Get-ReleaseVerificationPlan -Repository $scopeRepoRoot -CandidateSha $shaC -HostingBaseSha $shaA -Target hosting
-    Assert-ScopeEqual $plan.mode 'game-visual' 'complete NUL Git diff and committed workspace manifests'
+    Assert-ScopeEqual $plan.mode 'game-visual' 'complete NUL Git diff and committed workspace manifest without a test script'
     Assert-ReleaseCheckout -Repository $scopeRepoRoot -Sha $shaC
     Assert-ScopeThrows { Assert-ReleaseCheckout -Repository $scopeRepoRoot -Sha $shaA } 'exact candidate mismatch'
     $fixture.Branch = ''

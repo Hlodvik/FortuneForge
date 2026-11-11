@@ -4,15 +4,16 @@ param(
     [ValidateSet('all', 'api', 'hosting')][string]$Target = 'all',
     [string]$HostingBaseSha = '', [string]$ExpectedMode = '', [string]$ExpectedWorkspace = '',
     [switch]$Rollback, [switch]$Adoption,
-    [switch]$SkipTestSuites, [string]$TestWaiverReason = '', [switch]$LivePlaytest
+    [switch]$SkipTestSuites, [string]$TestWaiverReason = '', [switch]$LivePlaytest,
+    [switch]$TestFree
 )
 
 $ErrorActionPreference = 'Stop'
 $toolingRoot = Split-Path -Parent $PSScriptRoot
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
-Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest
-if ($SkipTestSuites -and (-not $Repository -or -not $ExpectedSha -or -not $ExpectedToolingSha -or -not $ExpectedMode)) {
-    throw 'A test-suite waiver requires the guarded immutable release context; standalone verification does not accept waivers.'
+Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
+if (($SkipTestSuites -or $TestFree) -and (-not $Repository -or -not $ExpectedSha -or -not $ExpectedToolingSha -or -not $ExpectedMode)) {
+    throw 'A test waiver requires the guarded immutable release context; standalone verification does not accept waivers.'
 }
 $repoRoot = if ($Repository) { (Resolve-Path -LiteralPath $Repository).Path } else { $toolingRoot }
 # Check the committed database manifest before any build or verification command.
@@ -68,7 +69,8 @@ else {
 }
 Write-Host "`nVerification mode: $($plan.mode) $($plan.workspace)" -ForegroundColor Yellow
 Write-Host "Scope reason: $($plan.reason)"
-if ($SkipTestSuites) { Write-Warning "Broad application test suites NOT RUN. Waiver: $TestWaiverReason" }
+if ($TestFree) { Write-Warning "All pre-deployment automated tests are NOT RUN. Waiver: $TestWaiverReason" }
+elseif ($SkipTestSuites) { Write-Warning "Broad application test suites NOT RUN. Waiver: $TestWaiverReason" }
 $focusedResultsDirectory = ''
 if ($LivePlaytest) {
     # Fresh ignored reports are produced by this run, never reused as assurance.
@@ -77,13 +79,16 @@ if ($LivePlaytest) {
     [System.IO.Directory]::CreateDirectory($focusedResultsDirectory) | Out-Null
     Write-Host "Mandatory focused test reports: $focusedResultsDirectory"
 }
-foreach ($command in @(Get-ReleaseVerificationCommands -Plan $plan -Repository $repoRoot -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -FocusedResultsDirectory $focusedResultsDirectory)) {
+foreach ($command in @(Get-ReleaseVerificationCommands -Plan $plan -Repository $repoRoot -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree -FocusedResultsDirectory $focusedResultsDirectory)) {
     if ($command.PSObject.Properties['FocusedResultPath'] -and (Test-Path -LiteralPath $command.FocusedResultPath)) { throw 'Focused report already exists before its test run.' }
     Invoke-Checked -Executable $command.Executable -Arguments $command.Arguments
     if ($command.PSObject.Properties['FocusedResultPath']) { Assert-ReleaseFocusedTestResult -Path $command.FocusedResultPath }
 }
 if ($ExpectedSha) { Assert-ReleaseCheckout -Repository $repoRoot -Sha $ExpectedSha }
-if ($LivePlaytest) {
+if ($TestFree) {
+    Write-Host "`nFortune Forge release build/checks passed ($($plan.mode)); all pre-deployment automated tests were NOT RUN under the recorded waiver." -ForegroundColor Yellow
+}
+elseif ($LivePlaytest) {
     Write-Host "`nLive-playtest build/checks and all fixed focused backend test scopes passed; broader application suites deferred under the recorded waiver. CI status is not claimed." -ForegroundColor Yellow
 }
 elseif ($SkipTestSuites) {

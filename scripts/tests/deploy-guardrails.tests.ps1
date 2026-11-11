@@ -271,10 +271,15 @@ $verifySource = Get-Content -LiteralPath (Join-Path $repoRoot 'scripts/verify-re
 foreach ($source in @($deploySource, $verifySource)) {
     Assert-Equal $source.Contains('[switch]$LivePlaytest') $true 'both release entry points expose explicit live-playtest mode'
     Assert-Equal $source.Contains('-LivePlaytest:$LivePlaytest') $true 'both release entry points independently bind playtest policy'
+    Assert-Equal $source.Contains('[switch]$TestFree') $true 'both release entry points expose the explicit test-free route'
+    Assert-Equal $source.Contains('-TestFree:$TestFree') $true 'both release entry points independently bind test-free policy'
 }
 Assert-Throws { Assert-ReleaseTestWaiver -Target all -SkipTestSuites -TestWaiverReason 'Owner request' } 'default combined release cannot waive tests'
 Assert-Throws { Assert-ReleaseTestWaiver -Target all -LivePlaytest -SkipTestSuites } 'playtest requires a recorded reason'
 Assert-ReleaseTestWaiver -Target all -LivePlaytest -SkipTestSuites -TestWaiverReason 'Explicit incremental playtest; broad assurance deferred.'
+Assert-Throws { Assert-ReleaseTestWaiver -Target all -TestFree } 'test-free route requires a recorded reason'
+Assert-Throws { Assert-ReleaseTestWaiver -Target all -TestFree -LivePlaytest -SkipTestSuites -TestWaiverReason 'Conflicting modes' } 'test-free route rejects other waiver modes'
+Assert-ReleaseTestWaiver -Target all -TestFree -TestWaiverReason 'Owner explicitly requested the test-free route.'
 Assert-Equal ($verifySource.IndexOf('Assert-NonRedundantFirestoreCompositeIndexes -Definitions') -lt $verifySource.IndexOf('function Invoke-Checked')) $true 'manifest validated before standalone verification commands'
 $expectedIndexRead = $deploySource.IndexOf('$expectedIndexes = @(Get-ExpectedFirestoreIndexes -Checkout $releaseCheckout)')
 $redundantIndexGuard = $deploySource.IndexOf('Assert-NonRedundantFirestoreCompositeIndexes -Definitions $expectedIndexes', $expectedIndexRead)

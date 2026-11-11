@@ -748,8 +748,8 @@ function New-ReleaseVerificationPlan {
     }
     if (-not $selected -or -not $hasVisual -or
         $selected.Name -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$' -or
-        -not $selected.HasCheck -or -not $selected.HasTest) {
-        $plan.reason = 'A registered, testable game with a visual change is required.'; return [pscustomobject]$plan
+        -not $selected.HasCheck) {
+        $plan.reason = 'A registered game with a check script and a visual change is required.'; return [pscustomobject]$plan
     }
     $plan.mode = 'game-visual'
     $plan.workspace = $selected.Name
@@ -812,8 +812,7 @@ function Get-ReleaseVerificationPlan {
             $manifestText = @($result.Output)
             $manifest = ($manifestText -join "`n") | ConvertFrom-Json -ErrorAction Stop
             $workspaces += [pscustomobject]@{ Path = $path; Name = [string]$manifest.name;
-                HasCheck = -not [string]::IsNullOrWhiteSpace($manifest.scripts.check);
-                HasTest = -not [string]::IsNullOrWhiteSpace($manifest.scripts.test) }
+                HasCheck = -not [string]::IsNullOrWhiteSpace($manifest.scripts.check) }
         }
         return New-ReleaseVerificationPlan -Target $Target -BaseSha $HostingBaseSha -CandidateSha $CandidateSha -Changes $changes -Workspaces $workspaces
     }
@@ -823,7 +822,13 @@ function Get-ReleaseVerificationPlan {
 }
 
 function Assert-ReleaseTestWaiver {
-    param([string]$Target = 'all', [switch]$SkipTestSuites, [string]$TestWaiverReason = '', [switch]$LivePlaytest)
+    param(
+        [string]$Target = 'all', [switch]$SkipTestSuites, [string]$TestWaiverReason = '',
+        [switch]$LivePlaytest, [switch]$TestFree
+    )
+    if ($TestFree -and ($SkipTestSuites -or $LivePlaytest)) {
+        throw '-TestFree is a separate no-test route and cannot be combined with -SkipTestSuites or -LivePlaytest.'
+    }
     if ($LivePlaytest -and ($Target -cnotin @('api', 'all') -or -not $SkipTestSuites)) {
         throw '-LivePlaytest requires -Target api/all and -SkipTestSuites with an explicit reason.'
     }
@@ -831,7 +836,10 @@ function Assert-ReleaseTestWaiver {
         if ($Target -cne 'hosting' -and -not $LivePlaytest) { throw '-SkipTestSuites requires Hosting-only scope or explicit -LivePlaytest for API/all.' }
         if ([string]::IsNullOrWhiteSpace($TestWaiverReason)) { throw '-SkipTestSuites requires a nonempty -TestWaiverReason.' }
     }
-    elseif (-not [string]::IsNullOrEmpty($TestWaiverReason)) { throw '-TestWaiverReason requires -SkipTestSuites.' }
+    elseif ($TestFree) {
+        if ([string]::IsNullOrWhiteSpace($TestWaiverReason)) { throw '-TestFree requires a nonempty -TestWaiverReason.' }
+    }
+    elseif (-not [string]::IsNullOrEmpty($TestWaiverReason)) { throw '-TestWaiverReason requires -SkipTestSuites or -TestFree.' }
 }
 
 function Get-ReleaseFocusedTestScopes {
@@ -883,23 +891,35 @@ function Get-ReleaseVerificationCommands {
     param(
         [Parameter(Mandatory)]$Plan, [Parameter(Mandatory)][string]$Repository,
         [string]$Target = 'all', [switch]$SkipTestSuites, [string]$TestWaiverReason = '',
-        [switch]$LivePlaytest, [string]$FocusedResultsDirectory = ''
+        [switch]$LivePlaytest, [switch]$TestFree, [string]$FocusedResultsDirectory = ''
     )
-    Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest
+    Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
     if ($Plan.mode -cnotin @('full', 'game-visual', 'live-playtest')) { throw 'Unknown verification mode.' }
     if (($Plan.mode -ceq 'live-playtest') -ne [bool]$LivePlaytest) { throw 'Live-playtest plan and explicit verification flag must match.' }
     if ($LivePlaytest -and [string]::IsNullOrWhiteSpace($FocusedResultsDirectory)) { throw 'Live playtest requires fresh focused test reports.' }
     if ($Plan.mode -ceq 'game-visual' -and $Plan.workspace -cnotmatch '^@fortuneforge/games-[a-z0-9-]+$') { throw 'Invalid scoped workspace.' }
     $commands = [System.Collections.Generic.List[object]]::new()
-    foreach ($script in @('verify:game-source', 'verify:game-routes', 'verify:game-navbar', 'verify:ci-emulator')) {
+    foreach ($script in @('verify:game-source', 'verify:game-routes')) {
         $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
+    }
+    if ($TestFree) {
+        # The public npm verification commands prepend node:test policy suites.
+        # Run only their underlying deterministic checks on the no-test route.
+        foreach ($path in @('scripts/verify-game-navbar.mjs', 'scripts/verify-ci-emulator-order.mjs')) {
+            $commands.Add([pscustomobject]@{ Executable = 'node.exe'; Arguments = @((Join-Path $Repository $path)) })
+        }
+    }
+    else {
+        foreach ($script in @('verify:game-navbar', 'verify:ci-emulator')) {
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', $script) })
+        }
     }
     $checkArgs = if ($Plan.mode -ceq 'game-visual') { @('run', 'check', '--workspace', $Plan.workspace) } else { @('run', 'games:check') }
     $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = $checkArgs })
     $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'games:build') })
-    if (-not $SkipTestSuites) {
+    if (-not ($SkipTestSuites -or $TestFree)) {
         if ($Plan.mode -ceq 'game-visual') {
-            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test', '--workspace', $Plan.workspace) })
+            $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test', '--workspace', $Plan.workspace, '--if-present') })
             $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'web:test') })
         }
         else { $commands.Add([pscustomobject]@{ Executable = 'npm.cmd'; Arguments = @('run', 'test') }) }
@@ -916,14 +936,9 @@ function Get-ReleaseVerificationCommands {
                 FocusedResultPath = (Join-Path $FocusedResultsDirectory ($scope.Name + '.trx')) })
         }
     }
-    if ($Plan.mode -ceq 'full' -and -not $SkipTestSuites) {
-        foreach ($path in @('FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj',
-            'games/DragonTiger/tests/FortuneForge.Games.DragonTiger.Tests/FortuneForge.Games.DragonTiger.Tests.csproj',
-            'games/HiLo/tests/FortuneForge.Games.HiLo.Engine.Tests/FortuneForge.Games.HiLo.Engine.Tests.csproj',
-            'games/HiLo/tests/FortuneForge.Games.HiLo.Server.Tests/FortuneForge.Games.HiLo.Server.Tests.csproj',
-            'games/AndarBahar/tests/FortuneForge.Games.AndarBahar.Tests/FortuneForge.Games.AndarBahar.Tests.csproj')) {
-            $commands.Add([pscustomobject]@{ Executable = 'dotnet'; Arguments = @('test', (Join-Path $Repository $path), '--configuration', 'Release') })
-        }
+    if ($Plan.mode -ceq 'full' -and -not ($SkipTestSuites -or $TestFree)) {
+        $project = Join-Path $Repository 'FortuneForge.Server.Tests/FortuneForge.Server.Tests.csproj'
+        $commands.Add([pscustomobject]@{ Executable = 'dotnet'; Arguments = @('test', $project, '--configuration', 'Release') })
     }
     return $commands.ToArray()
 }

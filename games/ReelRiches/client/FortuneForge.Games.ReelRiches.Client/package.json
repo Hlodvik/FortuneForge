@@ -14,7 +14,6 @@
   },
   "scripts": {
     "check": "tsc -p tsconfig.json --noEmit",
-    "test": "npm run build",
     "build": "tsc -p tsconfig.build.json && node scripts/copy-static.mjs"
   },
   "dependencies": {

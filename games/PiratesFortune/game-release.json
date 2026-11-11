@@ -1,0 +1,11 @@
+{
+  "id": "pirates-fortune",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.PiratesFortune.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "PIRATES_FORTUNE_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

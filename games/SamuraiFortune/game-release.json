@@ -1,0 +1,11 @@
+{
+  "id": "samurai-fortune",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.SamuraiFortune.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "SAMURAI_FORTUNE_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

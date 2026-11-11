@@ -46,12 +46,14 @@ async function findGame(gameId) {
   return { directory: await realpath(directory), config }
 }
 
-async function buildBackend(project, directory, gameId, releaseId) {
+async function buildBackend(project, directory, gameId, releaseId, gamePackage) {
   if (!project.endsWith('.csproj')) throw new Error('Backend release requires a .NET executable project')
   const assembly = basename(project, '.csproj')
   const entry = assembly + '.dll'
   await mkdir(directory, { recursive: true })
-  run('dotnet', ['publish', project, '--configuration', 'Release', '--no-self-contained', '--output', directory])
+  const args = ['publish', project, '--configuration', 'Release', '--no-self-contained', '--output', directory]
+  if (gamePackage) args.push('-p:GamePackage=' + gamePackage)
+  run('dotnet', args)
   for (const file of [entry, assembly + '.runtimeconfig.json', assembly + '.deps.json']) {
     if (!(await stat(join(directory, file))).isFile()) throw new Error('Missing backend artifact: ' + file)
   }
@@ -59,10 +61,30 @@ async function buildBackend(project, directory, gameId, releaseId) {
   await writeFile(join(directory, 'release.json'), descriptor, { flag: 'wx' })
 }
 
-async function buildFrontend(frontend, entry, directory) {
+async function buildFrontend(frontend, entry, directory, manifestExport) {
   const requireFromWorkspace = createRequire(join(frontend, 'package.json'))
-  const { build } = await import(pathToFileURL(requireFromWorkspace.resolve('vite')).href)
+  const { build, normalizePath } = await import(pathToFileURL(requireFromWorkspace.resolve('vite')).href)
+  const manifestEntry = 'virtual:fortuneforge-slot-release'
+  const resolvedManifestEntry = '\0' + manifestEntry
+  const plugins = []
+  if (manifestExport !== undefined) {
+    if (typeof manifestExport !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(manifestExport)) {
+      throw new Error('Invalid slot manifest export: ' + manifestExport)
+    }
+    plugins.push({
+      name: 'fortuneforge-slot-release-entry',
+      resolveId(id) { if (id === manifestEntry) return resolvedManifestEntry },
+      load(id) {
+        if (id !== resolvedManifestEntry) return
+        return [
+          'import { ' + manifestExport + ' as manifest } from ' + JSON.stringify(normalizePath(entry)),
+          'export default function SlotRelease({ renderSlot }) { return renderSlot(manifest) }',
+        ].join('\n')
+      },
+    })
+  }
   const bundle = await build({
+    plugins,
     root: frontend,
     configFile: false,
     envFile: false,
@@ -75,7 +97,7 @@ async function buildFrontend(frontend, entry, directory) {
       cssCodeSplit: false,
       modulePreload: false,
       rolldownOptions: {
-        input: entry,
+        input: plugins.length ? manifestEntry : entry,
         external: Object.keys(gameHostRuntime),
         preserveEntrySignatures: 'strict',
         output: { paths: gameHostRuntime },
@@ -124,7 +146,11 @@ async function publishGame(gameId, assetsOnly) {
   const game = await findGame(gameId)
   const frontend = await resolveWithin(game.directory, game.config.frontend?.directory)
   const entry = await resolveWithin(frontend, game.config.frontend?.entry)
-  const project = assetsOnly ? null : await resolveWithin(game.directory, game.config.backend?.project)
+  const gamePackage = game.config.backend?.kind === 'classic-slot' ? basename(game.directory) : null
+  if (gamePackage && !/^[A-Z][A-Za-z0-9]*$/.test(gamePackage)) throw new Error('Invalid classic slot package directory')
+  const project = assetsOnly ? null : gamePackage
+    ? join(repository, 'games', 'shared', 'FortuneForge.Games.ClassicSlot.Server', 'FortuneForge.Games.ClassicSlot.Server.csproj')
+    : await resolveWithin(game.directory, game.config.backend?.project)
   const releaseId = randomUUID()
   const gameDirectory = join(repository, 'artifacts', 'game-releases', 'games', gameId)
   const releaseDirectory = join(gameDirectory, 'releases', releaseId)
@@ -142,8 +168,8 @@ async function publishGame(gameId, assetsOnly) {
     ])
   }
   await mkdir(releaseDirectory, { recursive: true })
-  const browser = await buildFrontend(frontend, entry, releaseDirectory)
-  if (project) await buildBackend(project, join(backendRoot, releaseId), gameId, releaseId)
+  const browser = await buildFrontend(frontend, entry, releaseDirectory, game.config.frontend.manifestExport)
+  if (project) await buildBackend(project, join(backendRoot, releaseId), gameId, releaseId, gamePackage)
 
   await activateRelease(gameDirectory, backendRoot, assetsOnly, { gameId, releaseId, contractVersion: 1, ...browser })
   console.log('Activated local ' + gameId + ' release ' + releaseId)

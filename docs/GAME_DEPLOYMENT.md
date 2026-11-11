@@ -40,5 +40,9 @@ The new browser release keeps the backend release selected by the previous
 combined release.
 
 This command publishes local artifacts. Live promotion and website routing to
-independently hosted engines are still in development. Neon Nights, Midnight
-Vault, and Gold Foundry are registered for combined local releases.
+independently hosted engines are still in development. Combined local releases
+are registered for the 19 slots that use the shared slots API.
+
+Classic slots publish their own manifest, styles, and media using the shared slot
+view. Their backend build selects one engine project and uses the shared
+`FortuneForge.Games.ClassicSlot.Server` executable.

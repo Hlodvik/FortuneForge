@@ -1,0 +1,11 @@
+{
+  "id": "rainbow-realm",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.RainbowRealm.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "RAINBOW_REALM_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

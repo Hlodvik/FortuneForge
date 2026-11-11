@@ -1,0 +1,11 @@
+{
+  "id": "candy-carnival",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.CandyCarnival.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "CANDY_CARNIVAL_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

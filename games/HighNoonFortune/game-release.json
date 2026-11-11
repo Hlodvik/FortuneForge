@@ -1,0 +1,11 @@
+{
+  "id": "high-noon-fortune",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.HighNoonFortune.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "HIGH_NOON_FORTUNE_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "gods-of-olympus",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.GodsOfOlympus.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "GODS_OF_OLYMPUS_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "arcane-archives",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.ArcaneArchives.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "ARCANE_ARCHIVES_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

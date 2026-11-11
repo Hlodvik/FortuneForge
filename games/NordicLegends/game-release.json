@@ -1,0 +1,11 @@
+{
+  "id": "nordic-legends",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.NordicLegends.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "NORDIC_LEGENDS_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

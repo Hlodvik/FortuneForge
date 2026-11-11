@@ -1,0 +1,11 @@
+{
+  "id": "desert-treasures",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.DesertTreasures.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "DESERT_TREASURES_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

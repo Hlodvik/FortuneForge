@@ -1,0 +1,11 @@
+{
+  "id": "reel-riches",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.ReelRiches.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "REEL_RICHES_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

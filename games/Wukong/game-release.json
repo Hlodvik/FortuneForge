@@ -1,0 +1,11 @@
+{
+  "id": "wukong",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Wukong.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "WUKONG_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

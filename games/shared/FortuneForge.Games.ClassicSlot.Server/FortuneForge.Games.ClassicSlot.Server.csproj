@@ -1,0 +1,26 @@
+<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>obj/$(GamePackage)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/$(GamePackage)/</BaseOutputPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.Web" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <SelectedEngineProject>../../$(GamePackage)/src/FortuneForge.Games.$(GamePackage)/FortuneForge.Games.$(GamePackage).csproj</SelectedEngineProject>
+    <DefineConstants Condition="'$(GamePackage)' == 'GodsOfOlympus'">$(DefineConstants);OLYMPUS_TUMBLE</DefineConstants>
+    <DefineConstants Condition="'$(GamePackage)' == 'ArcaneArchives'">$(DefineConstants);ARCANE_LIGHTNING</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
+    <ProjectReference Include="$(SelectedEngineProject)" Condition="Exists('$(SelectedEngineProject)')" />
+    <Using Include="FortuneForge.Games.$(GamePackage).$(GamePackage)Engine" Alias="SelectedEngine" />
+  </ItemGroup>
+  <Target Name="RequireSelectedSlotPackage" BeforeTargets="Restore;PrepareForBuild">
+    <Error Condition="'$(GamePackage)' == '' Or !Exists('$(SelectedEngineProject)')" Text="Supply a valid GamePackage for the selected classic slot." />
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.Web" />
+</Project>

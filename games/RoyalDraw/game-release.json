@@ -1,0 +1,11 @@
+{
+  "id": "royal-draw",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.RoyalDraw.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "ROYAL_DRAW_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

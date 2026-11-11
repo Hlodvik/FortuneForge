@@ -22,7 +22,7 @@ export type SlotGameManifest = {
   experience: SlotExperienceSet
 }
 
-type PackagedSlotGameManifestEnvelope = Omit<SlotGameManifest, 'experience'> & {
+export type PackagedSlotGameManifestEnvelope = Omit<SlotGameManifest, 'experience'> & {
   experience: unknown
 }
 

@@ -4,6 +4,7 @@ export type SlotRouteDefinition = Readonly<{
   id: string
   title: string
   shortTitle: string
+  gameReleaseId?: string
   playPath: string | null
   demoPath: string
   serverGameIds: readonly string[]
@@ -13,7 +14,7 @@ export type SlotRouteDefinition = Readonly<{
 
 const slotRouteMetadata = [
   {
-    id: 'wukong-journey-to-the-west', title: "Wukong's Journey to the West", shortTitle: "Wukong's Journey",
+    id: 'wukong-journey-to-the-west', gameReleaseId: 'wukong', title: "Wukong's Journey to the West", shortTitle: "Wukong's Journey",
     playPath: '/slots/wukong', demoPath: '/slots/wukong/demo', serverGameIds: ['wukong-journey-v1'], shellBackdrop: 'theme',
   },
   {

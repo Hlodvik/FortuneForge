@@ -1,0 +1,11 @@
+{
+  "id": "ocean-odyssey",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.OceanOdyssey.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "OCEAN_ODYSSEY_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "id": "cosmic-fortune",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.CosmicFortune.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "COSMIC_FORTUNE_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

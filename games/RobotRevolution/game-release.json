@@ -1,0 +1,11 @@
+{
+  "id": "robot-revolution",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.RobotRevolution.Client",
+    "entry": "src/manifest.ts",
+    "manifestExport": "ROBOT_REVOLUTION_SLOT_GAME"
+  },
+  "backend": {
+    "kind": "classic-slot"
+  }
+}

@@ -1,7 +1,8 @@
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
 import type { SlotRouteDefinition } from '../../games/slots'
-import type { SlotGameManifest } from '../../games/slots/shared/slotGameManifest'
+import { adoptPackagedSlotGameManifest, type PackagedSlotGameManifestEnvelope, type SlotGameManifest } from '../../games/slots/shared/slotGameManifest'
+import { useGameRelease } from '../../features/game-releases/useGameRelease'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 
 const SlotsPage = lazy(() => import('../../pages/slots/SlotsPage').then(module => ({ default: module.SlotsPage })))
@@ -36,7 +37,40 @@ export function SlotGameRoute({
   return <LegacySlotGameRoute definition={definition} pathname={pathname} onSpinStateChange={onSpinStateChange} />
 }
 
-function LegacySlotGameRoute({ definition, pathname, onSpinStateChange }: { definition: SlotRouteDefinition; pathname: string; onSpinStateChange?: (isSpinning: boolean) => void }) {
+type ClassicSlotRouteProps = {
+  definition: SlotRouteDefinition
+  pathname: string
+  onSpinStateChange?: (isSpinning: boolean) => void
+}
+
+type ClassicSlotBrowserProps = {
+  renderSlot: (manifest: PackagedSlotGameManifestEnvelope) => ReactNode
+}
+
+function LegacySlotGameRoute(props: ClassicSlotRouteProps) {
+  const { definition } = props
+  const { state, retry } = useGameRelease<ClassicSlotBrowserProps>(definition.gameReleaseId ?? definition.id)
+
+  if (state.status === 'local') return <BundledSlotGameRoute {...props} />
+  if (state.status === 'ready') {
+    const { Game } = state
+    return <Game renderSlot={manifest => {
+      if (manifest?.id !== definition.id || manifest.routes?.play !== definition.playPath ||
+        manifest.routes.demo !== definition.demoPath) {
+        return <AuthenticatedRouteState error="The published game does not match this route."
+          loadingLabel={'Opening ' + definition.shortTitle + '…'}
+          errorTitle={definition.title + ' could not be opened.'} onRetry={retry} />
+      }
+      return <ResolvedSlotGameRoute {...props} manifest={adoptPackagedSlotGameManifest(manifest)} />
+    }} />
+  }
+  return <AuthenticatedRouteState error={state.status === 'error' ? state.error : null}
+    loadingLabel={'Opening ' + definition.shortTitle + '…'}
+    errorTitle={definition.title + ' could not be opened.'} onRetry={retry} />
+}
+
+function BundledSlotGameRoute(props: ClassicSlotRouteProps) {
+  const { definition } = props
   const [attempt, setAttempt] = useState(0)
   const [manifest, setManifest] = useState<SlotGameManifest | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -67,6 +101,10 @@ function LegacySlotGameRoute({ definition, pathname, onSpinStateChange }: { defi
     )
   }
 
+  return <ResolvedSlotGameRoute {...props} manifest={manifest} />
+}
+
+function ResolvedSlotGameRoute({ definition, pathname, onSpinStateChange, manifest }: ClassicSlotRouteProps & { manifest: SlotGameManifest }) {
   if (pathname === definition.demoPath) {
     return <Suspense fallback={<AuthenticatedRouteState error={null} loadingLabel={`Opening ${definition.shortTitle}…`} errorTitle={`${definition.title} could not be opened.`} onRetry={() => window.location.reload()} />}><SlotsPage demoMode experienceSet={manifest.experience} onSpinStateChange={onSpinStateChange} /></Suspense>
   }

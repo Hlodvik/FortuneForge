@@ -4,9 +4,9 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { planGameWorkspaceTasks } from './game-workspace-plan.mjs'
 
-const task = process.argv[2]
-if (!task) {
-  console.error('Usage: node scripts/run-game-workspaces.mjs <script>')
+const [task, workspaceName, scope, ...extra] = process.argv.slice(2)
+if (!task || extra.length || (scope && (scope !== '--dependencies-only' || task !== 'build' || !workspaceName))) {
+  console.error('Usage: node scripts/run-game-workspaces.mjs <script> [workspace] [--dependencies-only]')
   process.exit(2)
 }
 
@@ -18,7 +18,8 @@ const workspaces = (rootPackage.workspaces ?? []).map((path) => ({
 }))
 const packagesByName = new Map(workspaces.map(({ packageJson }) => [packageJson.name, packageJson]))
 
-for (const { name, script, skip } of planGameWorkspaceTasks(workspaces, task)) {
+for (const { name, script, skip } of planGameWorkspaceTasks(workspaces, task, workspaceName)) {
+  if (scope === '--dependencies-only' && name === workspaceName) continue
   if (skip) {
     console.log(`Skipping ${name}: no ${script} script`)
     continue

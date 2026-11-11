@@ -1,5 +1,5 @@
 /** Order game tasks and their local workspace prerequisites, excluding the host. */
-export function planGameWorkspaceTasks(workspaces, task) {
+export function planGameWorkspaceTasks(workspaces, task, workspaceName) {
   const byName = new Map()
   for (const workspace of workspaces) {
     const name = workspace.packageJson.name
@@ -24,7 +24,10 @@ export function planGameWorkspaceTasks(workspaces, task) {
     ordered.push(workspace)
   }
 
-  for (const workspace of workspaces.filter(({ path }) => path.startsWith('games/'))) visit(workspace)
+  const gameWorkspaces = workspaces.filter(({ path, packageJson }) =>
+    path.startsWith('games/') && (!workspaceName || packageJson.name === workspaceName))
+  if (workspaceName && gameWorkspaces.length !== 1) throw new Error(`Unknown game workspace: ${workspaceName}`)
+  for (const workspace of gameWorkspaces) visit(workspace)
 
   return ordered.flatMap(({ path, packageJson }) => {
     const commands = []

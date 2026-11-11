@@ -7,6 +7,6 @@ export function goldIsolation(root: string): Plugin {
     gameLabel: 'Gold Foundry',
     pluginName: 'verify-gold-foundry-module-loading',
     clientRoot: 'games/GoldFoundry/client/FortuneForge.Games.GoldFoundry.Client',
-    hostEntry: 'fortuneforge.client/src/app/routes/GoldFoundryHost.tsx',
+    hostEntry: 'fortuneforge.client/src/app/routes/GoldFoundryBundled.ts',
   })
 }

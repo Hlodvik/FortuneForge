@@ -40,5 +40,5 @@ The new browser release keeps the backend release selected by the previous
 combined release.
 
 This command publishes local artifacts. Live promotion and website routing to
-independently hosted engines are still in development. Neon Nights is the first
-game registered for combined releases.
+independently hosted engines are still in development. Neon Nights, Midnight
+Vault, and Gold Foundry are registered for combined local releases.

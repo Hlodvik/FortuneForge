@@ -43,6 +43,7 @@ async function spin(boost=false){
  busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;win=0;$('#free-games-popup').hidden=true;update();
  try{
   if(free&&!instantRequested){$('#free-popup-count').textContent=state.freeSpinsRemaining;$('#free-games-popup').hidden=false;await countdown();$('#free-games-popup').hidden=true;}
+  if(!ready||uncertain)return;
   // No local outcome generation, stake subtraction, payout calculation or localStorage wallet.
   if(!instantRequested)renderer.startSpin();
   audio.spin();

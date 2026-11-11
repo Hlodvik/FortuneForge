@@ -74,6 +74,7 @@ describe('account home', () => {
     const jade = host.querySelector('a[href="/slots/jade-dragon"]')!
     expect(jade.querySelector('strong')?.textContent).toBe('Jade Dragon: The Golden Pearl')
     expect(jade.querySelector('.home-lobby__game-art')).not.toBeNull()
+    expect(jade.querySelector('img')?.getAttribute('src')).toBe(getCataloguePresentationArt('/slots/jade-dragon')?.src)
     expect(jade.querySelector('.home-lobby__art-fallback')).toBeNull()
     expect(host.querySelectorAll('.home-lobby__game-card > span')).toHaveLength(0)
     expect(Array.from(host.querySelectorAll('.home-lobby__filters button')).map(button => button.textContent)).toEqual(['Popular', 'Slots', 'Card games', 'Table games', 'Other games'])

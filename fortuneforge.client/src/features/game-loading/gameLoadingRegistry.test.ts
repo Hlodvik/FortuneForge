@@ -98,6 +98,9 @@ describe('combined game loading registry', () => {
     })
     expect(resolveGameLoadingEntry('/slots/jade-dragon')).toBe(entry)
     expect(resolveGameLoadingEntry('/slots/jade-dragon/demo')).toBeUndefined()
+    expect(SLOT_ROUTE_DEFINITIONS.some(slot => slot.id === entry.id)).toBe(false)
+    const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
+    expect(appRoutes).toContain("pathname === '/slots/jade-dragon') route = <JadeDragonRoute")
   })
 
   it('prepares the non-slot identities and matches active route aliases', () => {

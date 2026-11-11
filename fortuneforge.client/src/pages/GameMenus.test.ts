@@ -55,10 +55,9 @@ describe('game category menus', () => {
   it('omits ready labels from authenticated slot cards', () => {
     const markup = renderToStaticMarkup(createElement(SlotsLibraryPage, { account }))
 
-    expect(markup.match(/machine-card--slot/g)).toHaveLength(20)
-    expect(markup).toContain('Jade Dragon: The Golden Pearl')
-    expect(markup).toContain('href="/slots/jade-dragon"')
-    expect(markup).toContain('jade-dragon-title-v1.webp')
+    expect(markup.match(/machine-card--slot/g)).toHaveLength(19)
+    expect(markup).toContain('href="/slots/neon-nights"')
+    expect(markup).not.toContain('href="/slots/jade-dragon"')
     expect(markup).not.toContain('Ready to play')
   })
 
@@ -105,7 +104,8 @@ describe('game category menus', () => {
     expect(markup).not.toContain('href="/games/horse-flight"')
     expect(markup).toContain('href="/games/2048"')
     expect(markup).toContain('href="/games/drop-merge"')
-    expect(markup).toContain('all-games-card__image--contain all-games-card__image--compact')
+    expect(markup).toContain('href="/slots/jade-dragon"')
+    expect(markup).toContain('jade-dragon-title-v1.webp')
     expect(markup).not.toContain('>☀</span>')
   })
 

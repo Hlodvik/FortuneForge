@@ -98,7 +98,6 @@ export function AppRoutes({
   else if (pathname === '/cards/texas-holdem') route = <AuthenticatedTexasHoldemRoute />
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />
   else if (pathname === '/cards/free-solitaire') route = <AuthenticatedFreeSolitaireRoute />
-  else if (pathname === '/slots/empty-slots-game') route = <LegacyJadeDragonRedirect />
   else if (pathname === '/slots/jade-dragon') route = <JadeDragonRoute />
   else if (slotRoute !== null) {
     route = <SlotGameRoute definition={slotRoute} pathname={pathname} onSpinStateChange={onSpinStateChange} />
@@ -139,11 +138,6 @@ function LegacyBalanceRedirect() {
     window.location.replace(`/balance${window.location.search}${window.location.hash}`)
   }, [])
   return <RouteStateLayout><main className="route-state" role="status">Opening your balance…</main></RouteStateLayout>
-}
-
-function LegacyJadeDragonRedirect() {
-  useEffect(() => { window.location.replace('/slots/jade-dragon') }, [])
-  return <RouteStateLayout><main className="route-state" role="status">Opening Jade Dragon…</main></RouteStateLayout>
 }
 
 function RainbowRealmPreviewRedirect() {

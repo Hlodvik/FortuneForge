@@ -2,6 +2,7 @@ using FortuneForge.Server.Activity;
 using FortuneForge.Server.Accounts.Storage;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Tests.Blackjack.Table;
+using FortuneForge.Server.Tests.Catalog;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Craps;
@@ -105,7 +106,11 @@ public sealed class PlayerGameExperienceFirestoreTests(BlackjackTableFirestoreEm
         using var store = Store(database); var response = await store.ReadAsync("alice", default);
         var currentSlotIds = AcceptedGameActivityReader.SlotIds.Values
             .Where(PlayerGameExperienceProjection.GameIds.Contains).ToArray();
+        var catalogueSlotIds = CatalogContract.Entries
+            .Where(game => game.Route.StartsWith("/slots/", StringComparison.Ordinal))
+            .Select(game => game.Id);
         Assert.Equal(20, currentSlotIds.Length);
+        Assert.Equal(catalogueSlotIds.Order(StringComparer.Ordinal), currentSlotIds.Order(StringComparer.Ordinal));
         Assert.Equal(currentSlotIds.Length, response.Games.Count(game => game.HasPlayed == true));
         foreach (var canonical in currentSlotIds)
         {

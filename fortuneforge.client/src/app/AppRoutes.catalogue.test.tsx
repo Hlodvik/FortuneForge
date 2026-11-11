@@ -23,6 +23,7 @@ vi.mock('./routes/SlotGameRoute', () => ({ SlotGameRoute: () => <main>Slot game<
 vi.mock('../pages/slots/SlotsLibraryPage', () => ({ DemoSlotsLibraryPage: () => <main>Public slot demos</main> }))
 vi.mock('../pages/cards/CardGameLibraryPage', () => ({ CardGameLibraryPage: () => <main>Public card demos</main> }))
 
+vi.mock('../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({ account: { userId: 'test' }, error: null, isLoading: false, reload: vi.fn() }) }))
 import { AppRoutes } from './AppRoutes'
 
 let host: HTMLDivElement, root: Root
@@ -101,8 +102,9 @@ describe('home replaces separate authenticated catalogues', () => {
     expect(state.legacyLoads).not.toHaveBeenCalled()
   })
 
-  it('redirects the retired scaffold URL to Jade Dragon', async () => {
+  it('leaves the retired scaffold URL unavailable', async () => {
     await renderRoute('/slots/empty-slots-game')
-    expect(state.replace).toHaveBeenCalledExactlyOnceWith('/slots/jade-dragon')
+    expect(state.replace).not.toHaveBeenCalled()
+    expect(host.querySelector('main[aria-label="Jade Dragon: The Golden Pearl"]')).toBeNull()
   })
 })

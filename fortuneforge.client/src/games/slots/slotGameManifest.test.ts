@@ -3,6 +3,7 @@ import { createElement, createRef } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { NEON_NIGHTS_SLOT_GAME as STANDALONE_NEON_NIGHTS_SLOT_GAME } from '@fortuneforge/games-neon-nights/manifest'
+import { getCataloguePresentationArt } from '../../features/catalog/cataloguePresentationArt'
 import { WinHelpDialog } from '../../features/slots/WinHelpDialog'
 import { describeSpinOutcome } from '../../features/slots/presentation/spinPresentation'
 import { GODS_TUMBLE_SYMBOLS } from '@fortuneforge/games-gods-of-olympus/tumble'
@@ -18,7 +19,7 @@ import { SLOT_GAME_CATALOG } from './catalog'
 import { createSlotExperienceRouteMap, type SlotGameManifest } from './shared/slotGameManifest'
 
 const SLOT_GAME_MANIFESTS = await loadAllSlotGameManifests()
-const SHARED_HOST_SLOT_GAME_MANIFESTS = SLOT_GAME_MANIFESTS.filter(game => game.id !== 'neon-nights')
+const STANDALONE_SLOT_GAME_IDS = new Set(['dragon-hoard', 'gold-foundry', 'neon-nights'])
 
 function requireGame(id: string): SlotGameManifest {
   const game = SLOT_GAME_MANIFESTS.find((candidate) => candidate.id === id)
@@ -84,7 +85,7 @@ describe('slot game manifests', () => {
     expect(NEON_NIGHTS_SLOT_GAME).toBe(STANDALONE_NEON_NIGHTS_SLOT_GAME)
     expect(NEON_NIGHTS_SLOT_GAME.routes).toEqual({ play: '/slots/neon-nights', demo: '/slots/neon-nights/demo' })
     expect(NEON_NIGHTS_SLOT_GAME.experience.rules.gameId).toBe('neon-nights-v1')
-    expect(NEON_NIGHTS_SLOT_GAME.experience.symbols.serverSymbolSetId).toBe('neon-arcade-symbols-v2')
+    expect(NEON_NIGHTS_SLOT_GAME.experience.symbols.serverSymbolSetId).toBe('neon-arcade-symbols-v3')
     expect(NEON_NIGHTS_SLOT_GAME.catalog).toMatchObject({ id: 'neon-nights', title: 'Neon Nights' })
     expect(NEON_NIGHTS_SLOT_GAME.catalog.image).toBe(NEON_NIGHTS_SLOT_GAME.experience.symbols.definitions['7']?.image)
     expect(SLOT_GAME_CATALOG.find(game => game.id === 'neon-nights')?.image).toMatch(/neon-nights-title-v1\.webp$/)
@@ -117,7 +118,7 @@ describe('slot game manifests', () => {
     expect(serverSymbolSetIds).toEqual(SLOT_GAME_MANIFESTS.map(game =>
       game.id === 'dragon-hoard' ? 'midnight-vault-symbols-v1'
         : game.id === 'gold-foundry' ? 'gold-foundry-symbols-v1'
-        : game.id === 'neon-nights' ? 'neon-arcade-symbols-v2'
+        : game.id === 'neon-nights' ? 'neon-arcade-symbols-v3'
         : game.id === 'rainbow-realm' ? 'rainbow-realm-symbols-v1' : 'classic-symbols-v3'))
     expect(GODS_TUMBLE_SYMBOLS).toContain('8')
     expect(GODS_OF_OLYMPUS_SLOT_GAME.experience.symbols.definitions['8']?.label).toBe('Olympian sapphire')
@@ -261,11 +262,19 @@ describe('slot game manifests', () => {
       expect(game.experience.help.extraSections).toHaveLength(game.id === 'dragon-hoard' ? 4 : 2)
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'BOLT')).toBe(Boolean(game.experience.features.energy))
       expect(game.experience.symbols.guideEntries.some(entry => entry.symbol === 'PAW')).toBe(Boolean(game.experience.features.moneyGrab))
+      const symbolIds = Object.keys(game.experience.symbols.definitions)
       expect(new Set(
         Object.values(game.experience.symbols.definitions)
           .flatMap((definition) => definition ? [definition.label] : []),
-      ).size).toBe(23)
-      expect(Object.keys(game.experience.symbols.definitions)).toHaveLength(game.id === 'dragon-hoard' ? 24 : 23)
+      ).size, game.id).toBe(game.id === 'dragon-hoard' ? 15 : 23)
+      if (game.id === 'dragon-hoard') {
+        expect(symbolIds.sort()).toEqual([
+          '2', '3', '4', '5', '6', '7', '8', 'ACE', 'BANANA', 'FREE', 'POWER',
+          'SEAL_PAW', 'SEAL_RAND', 'SEAL_ROWS', 'SEAL_SYNC',
+        ])
+        continue
+      }
+      expect(symbolIds, game.id).toHaveLength(23)
       for (const symbol of WUKONG_FEATURE_SYMBOL_IDS) {
         expect(game.experience.symbols.definitions[symbol]).toBeDefined()
       }
@@ -273,11 +282,11 @@ describe('slot game manifests', () => {
   })
 
   it('gives every non-Wukong/Pirates shared-host game its own settled-outcome narrative', () => {
-    const themedGames = SHARED_HOST_SLOT_GAME_MANIFESTS.filter((game) =>
-      game.id !== 'wukong-journey-to-the-west' && game.id !== 'pirates-fortune',
+    const themedGames = SLOT_GAME_MANIFESTS.filter((game) =>
+      !STANDALONE_SLOT_GAME_IDS.has(game.id) && game.id !== 'wukong-journey-to-the-west' && game.id !== 'pirates-fortune',
     )
 
-    expect(themedGames).toHaveLength(16)
+    expect(themedGames).toHaveLength(14)
     for (const game of themedGames) {
       const narrative = game.experience.outcomeNarrative
       expect(narrative, `${game.id} is missing outcome copy`).toBeDefined()
@@ -316,14 +325,14 @@ describe('slot game manifests', () => {
       })
     }
     expect(new Set(themedGames.map((game) => game.experience.outcomeNarrative?.bigWinTitle)).size)
-      .toBe(16)
+      .toBe(themedGames.length)
     expect(new Set(themedGames.map((game) => game.experience.cabinet.celebrationEffect)).size)
-      .toBe(16)
+      .toBe(themedGames.length)
   })
 
   it('gives free-spin rounds distinct, named feature contracts', () => {
-    const features = SHARED_HOST_SLOT_GAME_MANIFESTS
-      .filter((game) => game.id !== 'gold-foundry')
+    const features = SLOT_GAME_MANIFESTS
+      .filter((game) => game.id !== 'gold-foundry' && game.id !== 'neon-nights')
       .map((game) => game.experience.features.specialRound)
 
     expect(features.every(Boolean)).toBe(true)
@@ -336,15 +345,17 @@ describe('slot game manifests', () => {
     }
   })
 
-  it('uses a representative reel symbol for the reel-art catalog cards', () => {
+  it('keeps representative reel art in game manifests and title art in the lobby catalogue', () => {
     for (const gameId of REEL_SYMBOL_CATALOG_GAME_IDS) {
       const game = requireGame(gameId)
       const reelSymbol = game.experience.symbols.definitions[gameId === 'gold-foundry' ? 'PAW' : '7']
       const catalogEntry = SLOT_GAME_CATALOG.find((candidate) => candidate.id === gameId)
+      const catalogueArt = getCataloguePresentationArt(game.routes.play)
 
       expect(reelSymbol).toBeDefined()
       expect(game.catalog.image).toBe(reelSymbol?.image)
-      expect(catalogEntry?.image).toBe(reelSymbol?.image)
+      expect(catalogueArt, gameId).toBeDefined()
+      expect(catalogEntry?.image, gameId).toBe(catalogueArt?.src)
       expect(decodeSymbolImage(reelSymbol?.image)).not.toContain('Segoe UI Emoji')
     }
   })
@@ -370,7 +381,7 @@ describe('slot game manifests', () => {
 
     expect(symbols).not.toHaveLength(0)
     for (const symbol of symbols) {
-      expect(symbol?.image.toLowerCase()).toContain('candy-carnival')
+      expect(symbol?.image).toMatch(/\/games\/CandyCarnival\/client\/FortuneForge\.Games\.CandyCarnival\.Client\/(?:dist|src)\/assets\/art\/optimized\//i)
     }
   })
 

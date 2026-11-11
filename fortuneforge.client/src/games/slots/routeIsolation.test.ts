@@ -9,6 +9,7 @@ describe('slot route resource isolation', () => {
   it('keeps generic routes in lockstep with the independently embedded Jade Dragon client', () => {
     const jade = SLOT_GAME_CATALOG.find(game => game.id === 'empty-slots-game')!
     expect(jade).toMatchObject({ title: 'Jade Dragon: The Golden Pearl', shortTitle: 'Jade Dragon',
+      description: expect.stringContaining('jade sanctuary'),
       playHref: '/slots/jade-dragon', demoHref: '/slots/jade-dragon', serverGameIds: ['empty-slots-v1'] })
     expect(jade.image).toMatch(/jade-dragon-title-v1\.webp$/)
     expect(SLOT_ROUTE_DEFINITIONS.some(route => route.id === jade.id)).toBe(false)

@@ -2,7 +2,7 @@
 // This does not create or impersonate a freely rotating 3D character mesh.
 const images=new Map();
 export const ART_BY_BONUS={garden:'bonus',moon:'pearl',wrath:'dragon'};
-function load(kind){
+export function loadArtwork(kind){
  if(!images.has(kind))images.set(kind,new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Artwork could not load: '+kind));image.src=`/games/jade-dragon/textures/living-art/${kind}.webp`;}));
  return images.get(kind);
 }
@@ -13,16 +13,41 @@ export class LivingArtwork{
   host.addEventListener('pointermove',event=>{const r=host.getBoundingClientRect();this.pointer={x:(event.clientX-r.left)/r.width-.5,y:(event.clientY-r.top)/r.height-.5};});host.addEventListener('pointerleave',()=>{this.pointer={x:0,y:0};});
   document.addEventListener('visibilitychange',()=>{cancelAnimationFrame(this.raf);if(this.active&&!document.hidden)this.animate();});
  }
- static preload(){return Promise.all(['dragon','pearl','bonus'].map(load));}
+ static preload(){return Promise.all(['dragon','pearl','bonus'].map(loadArtwork));}
  resize(){const dpr=Math.min(devicePixelRatio,1.75);this.width=this.host.clientWidth;this.height=this.host.clientHeight;this.canvas.width=Math.max(1,Math.round(this.width*dpr));this.canvas.height=Math.max(1,Math.round(this.height*dpr));this.ctx.setTransform(dpr,0,0,dpr,0,0);if(this.active&&this.image)this.draw();}
  async start(kind){const serial=++this.serial;cancelAnimationFrame(this.raf);this.kind=kind;this.active=true;this.playing=true;this.image=null;this.time=0;this.intensity=0;this.host.dataset.art=kind;this.host.dataset.state='loading';
-  try{const image=await load(kind);if(serial!==this.serial)return;this.image=image;this.host.dataset.state='ready';this.resize();this.animate();}
+  try{const image=await loadArtwork(kind);if(serial!==this.serial)return;this.image=image;this.host.dataset.state='ready';this.resize();this.animate();}
   catch(error){if(serial===this.serial){this.active=false;this.host.dataset.state='error';}throw error;}
  }
  stop(){this.serial++;this.active=false;cancelAnimationFrame(this.raf);this.ctx.clearRect(0,0,this.width||1,this.height||1);}
  toggle(){this.playing=!this.playing;return this.playing;}
  burst(){this.intensity=1;if(this.reduced)this.draw();}
  animate(){cancelAnimationFrame(this.raf);let last=performance.now();const frame=now=>{if(!this.active||document.hidden)return;const dt=Math.min((now-last)/1000,.05);last=now;if(this.playing&&!this.reduced){this.time+=dt;this.intensity=Math.max(0,this.intensity-dt*.55);}this.draw();if(!this.reduced)this.raf=requestAnimationFrame(frame);};frame(last);}
+ draw() {
+  paintArtwork(this.ctx, {
+   image: this.image, width: this.width, height: this.height, kind: this.kind,
+   time: this.time, intensity: this.intensity, pointer: this.pointer, reduced: this.reduced,
+  });
+ }
+}
+
+export function paintArtwork(context, options) {
+ new ArtworkFrame(context, options).draw();
+}
+
+class ArtworkFrame {
+ constructor(context, { image, width, height, kind, time = 0, intensity = 0, pointer = { x: 0, y: 0 }, reduced = false }) {
+  this.ctx = context;
+  this.image = image;
+  this.width = width;
+  this.height = height;
+  this.kind = kind;
+  this.time = reduced ? 0 : time;
+  this.intensity = intensity;
+  this.pointer = pointer;
+  this.reduced = reduced;
+ }
+
  light(x,y,r,color,alpha=1){const c=this.ctx,g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${color},${alpha})`);g.addColorStop(.25,`rgba(${color},${alpha*.45})`);g.addColorStop(1,`rgba(${color},0)`);c.fillStyle=g;c.fillRect(x-r,y-r,r*2,r*2);}
  draw(){
   if(!this.image||!this.width||!this.height)return;const c=this.ctx,w=this.width,h=this.height,t=this.time,kind=this.kind;

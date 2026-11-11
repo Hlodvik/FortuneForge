@@ -1,0 +1,10 @@
+{
+  "id": "gold-foundry",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.GoldFoundry.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "project": "server/FortuneForge.Games.GoldFoundry.Server/FortuneForge.Games.GoldFoundry.Server.csproj"
+  }
+}

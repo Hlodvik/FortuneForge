@@ -7,6 +7,6 @@ export function neonIsolation(root: string): Plugin {
     gameLabel: 'Neon Nights',
     pluginName: 'verify-neon-module-loading',
     clientRoot: 'games/NeonNights/client/FortuneForge.Games.NeonNights.Client',
-    hostEntry: 'fortuneforge.client/src/app/routes/NeonNightsHost.tsx',
+    hostEntry: 'fortuneforge.client/src/app/routes/NeonNightsBundled.ts',
   })
 }

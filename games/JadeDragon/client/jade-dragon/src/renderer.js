@@ -1,47 +1,360 @@
 import * as T from 'three';
-import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
-import {createSymbol} from './models.js';
-import {SYMBOLS,validateGrid} from './symbols.js';
-export class JadeRenderer{
- constructor(host){this.host=host;this.motion=!matchMedia('(prefers-reduced-motion:reduce)').matches;this.renderer=new T.WebGLRenderer({antialias:true,alpha:true});this.renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.92;host.append(this.renderer.domElement);this.scene=new T.Scene();this.camera=new T.OrthographicCamera(-5.2,5.2,3.5,-3.5,.1,50);this.camera.position.z=20;const env=new T.PMREMGenerator(this.renderer),room=new RoomEnvironment();this.environment=env.fromScene(room,.04);room.dispose();env.dispose();this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.5;this.scene.add(new T.AmbientLight('#e8ffe3',.6));const light=new T.DirectionalLight('#ffe7ab',2.5);light.position.set(-3,5,8);this.scene.add(light);this.tiles=new T.Group();this.scene.add(this.tiles);this.objects=[];this.time=0;this.labels=new Map();this.art=new Map();for(const [id,file] of [['S07','dragon'],['S08','pearl'],['S20','bonus'],['S21','pearl'],['S22','dragon']]){const texture=new T.TextureLoader().load(`/games/jade-dragon/textures/living-art/${file}.webp`);texture.colorSpace=T.SRGBColorSpace;this.art.set(id,texture);}this.observer=new ResizeObserver(()=>this.resize());this.observer.observe(host);this.resize();this.renderer.setAnimationLoop(now=>this.frame(now));this.renderer.domElement.addEventListener('webglcontextlost',event=>{event.preventDefault();this.host.dispatchEvent(new Event('renderer-lost'));});}
- resize(){
-  const w=this.host.clientWidth,h=this.host.clientHeight;if(!w||!h)return;
-  const aspect=w/h,width=Math.max(10.4,7*aspect),height=Math.max(7,10.4/aspect);
-  this.camera.left=-width/2;this.camera.right=width/2;this.camera.top=height/2;this.camera.bottom=-height/2;
-  this.camera.updateProjectionMatrix();this.renderer.setSize(w,h);this.layout();
- }
- layout(){
-  const step=(this.camera.right-this.camera.left-.75)/5;
-  for(const cell of this.objects){cell.group.position.x=(cell.col-2)*step;cell.bg.scale.x=(step-.05)/1.88;}
- }
- refreshLabels(){
-  const previous=[...this.labels.values()];this.labels.clear();
-  if(this.grid)for(const cell of this.objects)cell.label.material.map=this.label(this.grid[cell.col][cell.row]);
-  for(const texture of previous)texture.dispose();
- }
- label(id){
-  if(this.labels.has(id))return this.labels.get(id);
-  const canvas=document.createElement('canvas');canvas.width=300;canvas.height=48;
-  const c=canvas.getContext('2d'),name=SYMBOLS[id][1].toUpperCase();
-  const font=size=>`700 ${size}px "Cormorant Garamond", Georgia, serif`;
-  c.font=font(52);let metrics=c.measureText(name);
-  const glyphHeight=metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent;
-  if(glyphHeight>0){c.font=font(52*38/glyphHeight);metrics=c.measureText(name);}
-  const baseline=(canvas.height+metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent)/2;
-  c.textAlign='center';c.fillStyle='#fff0bd';c.strokeStyle='#031b12';c.lineWidth=2;
-  c.strokeText(name,150,baseline,284);c.fillText(name,150,baseline,284);
-  const texture=new T.CanvasTexture(canvas);this.labels.set(id,texture);return texture;
- }
- setGrid(grid){validateGrid(grid);for(const cell of this.objects){cell.label.material.dispose();cell.bg.material.dispose();cell.bg.geometry.dispose();if(cell.art)cell.art.material.dispose();}this.tiles.clear();this.objects=[];this.grid=grid;const rows=grid[0].length,step=6.35/rows;
-  for(let col=0;col<5;col++)for(let row=0;row<rows;row++){const id=grid[col][row],group=new T.Group();group.position.set((col-2)*1.93,(rows/2-.5-row)*step,0);const bg=new T.Mesh(new T.PlaneGeometry(1.88,step-.05),new T.MeshBasicMaterial({color:(col+row)%2?'#0a3024':'#102b21',transparent:true,opacity:.85}));bg.position.z=-.6;group.add(bg);let art=null,model=null;
-   if(this.art.has(id)){art=new T.Sprite(new T.SpriteMaterial({map:this.art.get(id),transparent:true,depthWrite:false}));art.scale.set(step*.91,step*.91,1);art.position.y=.07;group.add(art);}else{model=createSymbol(SYMBOLS[id][0]);model.scale.setScalar(Math.min(.70,step*.43));model.position.y=.10;if(id==='S06')model.rotation.z=.20;if(id==='S09')model.rotation.y=.45;group.add(model);}
-   const label=new T.Sprite(new T.SpriteMaterial({map:this.label(id),transparent:true,depthWrite:false}));label.scale.set(1.7,.27,1);label.position.set(0,-step*.40,.9);group.add(label);this.tiles.add(group);this.objects.push({group,model,label,bg,art,col,row,y:group.position.y});}
-  this.layout();
-  if(!this.fontRequested){this.fontRequested=true;document.fonts.load('700 52px "Cormorant Garamond"').then(()=>this.refreshLabels()).catch(()=>{});}
- }
- async spin(grid,{instant=false}={}){this.setGrid(grid);this.wins=new Set();if(!this.motion||instant){this.renderer.render(this.scene,this.camera);return;}const start=performance.now();await new Promise(resolve=>{this.animation={last:start,elapsed:0,resolve};});}
- finishSpin(){if(!this.animation)return;const {resolve}=this.animation;this.animation=null;for(const cell of this.objects){cell.group.position.y=cell.y;cell.group.scale.y=1;}this.renderer.render(this.scene,this.camera);resolve();}
- celebrate(result){this.wins=new Set(result.payout.paylines.flatMap(line=>line.matches.flatMap(p=>p.match.positions.map(({reel,row})=>`${reel}:${row}`))));}
- frame(now){const t=now/1000;if(this.animation){this.animation.elapsed+=Math.max(0,now-this.animation.last)*(this.speed||1);this.animation.last=now;}for(const cell of this.objects){if(this.animation){const elapsed=this.animation.elapsed/1000,stop=1.8+cell.col*.28,p=Math.min(1,elapsed/stop);cell.group.position.y=cell.y+(1-p)*Math.sin(elapsed*9+cell.row)*.45;cell.group.scale.y=.85+.15*p;}else{cell.group.position.y=cell.y;cell.group.scale.y=1;if(cell.model)cell.model.rotation.y=this.motion?Math.sin(t*.7+cell.col)*.12:0;cell.bg.material.color.set(this.wins?.has(`${cell.col}:${cell.row}`)?'#466d25':(cell.col+cell.row)%2?'#0a3024':'#102b21');}}
-  if(this.animation&&this.animation.elapsed>=3200)this.finishSpin();this.renderer.render(this.scene,this.camera);}
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { loadArtwork, paintArtwork } from './living-art.js';
+import { createSymbol } from './models.js';
+import { planReelStops, reelDistance } from './reel-motion.js';
+import { SYMBOLS, validateGrid } from './symbols.js';
+
+const BOARD_HEIGHT = 6.35;
+const ARTWORK = { S07: 'dragon', S08: 'pearl', S20: 'bonus', S21: 'pearl', S22: 'dragon' };
+// These icons fill the moving strip while the host settles the round.
+const ROLLING_ICONS = ['S01', 'S02', 'S05', 'S04', 'S06', 'S03'];
+
+export class JadeRenderer {
+  constructor(host) {
+    this.host = host;
+    this.motion = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.speed = 1;
+    this.labels = new Map();
+    this.models = new Map();
+    this.artwork = new Map();
+    this.visibleArtwork = new Set();
+    this.reels = [];
+    this.renderer = new T.WebGLRenderer({ antialias: true, alpha: true });
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    this.renderer.toneMapping = T.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = .92;
+    host.append(this.renderer.domElement);
+
+    this.scene = new T.Scene();
+    this.camera = new T.OrthographicCamera(-5.2, 5.2, 3.5, -3.5, .1, 50);
+    this.camera.position.z = 20;
+    const environment = new T.PMREMGenerator(this.renderer);
+    const room = new RoomEnvironment();
+    this.scene.environment = environment.fromScene(room, .04).texture;
+    room.dispose();
+    environment.dispose();
+    const halfBoard = BOARD_HEIGHT / 2;
+    this.renderer.clippingPlanes = [
+      new T.Plane(new T.Vector3(0, 1, 0), halfBoard),
+      new T.Plane(new T.Vector3(0, -1, 0), halfBoard),
+    ];
+    this.scene.environmentIntensity = .5;
+    this.scene.add(new T.AmbientLight('#e8ffe3', .6));
+    const light = new T.DirectionalLight('#ffe7ab', 2.5);
+    light.position.set(-3, 5, 8);
+    this.scene.add(light);
+
+    this.tiles = new T.Group();
+    this.scene.add(this.tiles);
+    this.tileMaterials = ['#102b21', '#0a3024', '#466d25'].map(color =>
+      new T.MeshBasicMaterial({ color, transparent: true, opacity: .85 }),
+    );
+    for (const kind of new Set(Object.values(ARTWORK))) {
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = 256;
+      const texture = new T.CanvasTexture(canvas);
+      texture.colorSpace = T.SRGBColorSpace;
+      const artwork = { ctx: canvas.getContext('2d'), texture };
+      this.artwork.set(kind, artwork);
+      loadArtwork(kind).then(image => {
+        artwork.image = image;
+        this.paintSymbolArt(kind, 0);
+      }).catch(() => {
+        artwork.failed = true;
+        for (const reel of this.reels) {
+          for (const cell of reel.cells) {
+            if (ARTWORK[cell.id] === kind) this.setSymbol(cell, cell.id, true);
+          }
+        }
+      });
+    }
+
+    this.observer = new ResizeObserver(() => this.resize());
+    this.observer.observe(host);
+    this.resize();
+    this.renderer.setAnimationLoop(now => this.frame(now));
+    this.renderer.domElement.addEventListener('webglcontextlost', event => {
+      event.preventDefault();
+      this.host.dispatchEvent(new Event('renderer-lost'));
+    });
+    document.fonts.load('700 52px "Cormorant Garamond"').then(() => this.refreshLabels()).catch(() => {});
+  }
+
+  resize() {
+    const w = this.host.clientWidth;
+    const h = this.host.clientHeight;
+    if (!w || !h) return;
+    const aspect = w / h;
+    const width = Math.max(10.4, 7 * aspect);
+    const height = Math.max(7, 10.4 / aspect);
+    this.camera.left = -width / 2;
+    this.camera.right = width / 2;
+    this.camera.top = height / 2;
+    this.camera.bottom = -height / 2;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
+    this.layout();
+  }
+
+  layout() {
+    if (!this.reels.length) return;
+    const step = (this.camera.right - this.camera.left - .75) / this.reels.length;
+    this.reels.forEach((reel, col) => {
+      reel.group.position.x = (col - (this.reels.length - 1) / 2) * step;
+      for (const tile of reel.backgrounds) tile.scale.x = (step - .05) / 1.88;
+    });
+  }
+
+  refreshLabels() {
+    const previous = [...this.labels.values()];
+    this.labels.clear();
+    for (const reel of this.reels) {
+      for (const cell of reel.cells) cell.label.material.map = this.label(cell.id);
+    }
+    for (const texture of previous) texture.dispose();
+  }
+
+  label(id) {
+    if (this.labels.has(id)) return this.labels.get(id);
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 48;
+    const ctx = canvas.getContext('2d');
+    const name = SYMBOLS[id][1].toUpperCase();
+    const font = size => '700 ' + size + 'px "Cormorant Garamond", Georgia, serif';
+    ctx.font = font(52);
+    let metrics = ctx.measureText(name);
+    const glyphHeight = metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+    if (glyphHeight > 0) {
+      ctx.font = font(52 * 38 / glyphHeight);
+      metrics = ctx.measureText(name);
+    }
+    const baseline = (canvas.height + metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fff0bd';
+    ctx.strokeStyle = '#031b12';
+    ctx.lineWidth = 2;
+    ctx.strokeText(name, 150, baseline, 284);
+    ctx.fillText(name, 150, baseline, 284);
+    const texture = new T.CanvasTexture(canvas);
+    this.labels.set(id, texture);
+    return texture;
+  }
+
+  rowY(row) {
+    return (this.rows / 2 - .5 - row) * this.rowHeight;
+  }
+
+  makeBoard(reelCount, rows) {
+    if (this.rows === rows && this.reels.length === reelCount) return;
+    for (const reel of this.reels) {
+      for (const cell of reel.cells) {
+        cell.label.material.dispose();
+        cell.sprite.material.dispose();
+      }
+    }
+    this.tiles.clear();
+    this.rows = rows;
+    this.rowHeight = BOARD_HEIGHT / rows;
+    this.tileGeometry?.dispose();
+    this.tileGeometry = new T.PlaneGeometry(1.88, this.rowHeight - .05);
+
+    this.reels = Array.from({ length: reelCount }, (_, col) => {
+      const group = new T.Group();
+      this.tiles.add(group);
+      const backgrounds = Array.from({ length: rows }, (_, row) => {
+        const tile = new T.Mesh(this.tileGeometry, this.tileMaterials[(col + row) % 2]);
+        tile.position.set(0, this.rowY(row), -.6);
+        group.add(tile);
+        return tile;
+      });
+      // A buffer tile above the board enters as the bottom tile leaves.
+      const cells = Array.from({ length: rows + 1 }, () => {
+        const slot = new T.Group();
+        const visual = new T.Group();
+        const sprite = new T.Sprite(new T.SpriteMaterial({ transparent: true, depthWrite: false }));
+        const artSize = this.rowHeight;
+        sprite.scale.set(artSize, artSize, 1);
+        sprite.position.y = .07;
+        visual.add(sprite);
+        const label = new T.Sprite(new T.SpriteMaterial({ transparent: true, depthWrite: false }));
+        label.scale.set(1.7, .27, 1);
+        label.position.set(0, -this.rowHeight * .40, .9);
+        slot.add(visual, label);
+        group.add(slot);
+        return { slot, visual, sprite, label, models: new Map() };
+      });
+      return { group, backgrounds, cells };
+    });
+    this.layout();
+  }
+
+  setSymbol(cell, id, force = false) {
+    if (cell.id === id && !force) return;
+    cell.id = id;
+    cell.label.material.map = this.label(id);
+    cell.label.material.needsUpdate = true;
+    if (cell.model) cell.model.visible = false;
+    cell.model = null;
+    const kind = ARTWORK[id];
+    const artwork = this.artwork.get(kind);
+    cell.sprite.visible = Boolean(artwork && !artwork.failed);
+    if (cell.sprite.visible) {
+      cell.sprite.material.map = artwork.texture;
+      cell.sprite.material.needsUpdate = true;
+      return;
+    }
+
+    const modelKind = SYMBOLS[id][0];
+    if (!cell.models.has(modelKind)) {
+      if (!this.models.has(modelKind)) this.models.set(modelKind, createSymbol(modelKind));
+      const model = this.models.get(modelKind).clone();
+      model.scale.setScalar(Math.min(.70, this.rowHeight * .43));
+      model.position.y = .10;
+      cell.models.set(modelKind, model);
+      cell.visual.add(model);
+    }
+    cell.model = cell.models.get(modelKind);
+    cell.model.visible = true;
+    cell.model.rotation.set(0, id === 'S09' ? .45 : 0, id === 'S06' ? .20 : 0);
+  }
+
+  drawReel(col, distance, landing) {
+    const wholeRows = Math.floor(distance);
+    const offset = distance - wholeRows;
+    this.reels[col].cells.forEach((cell, index) => {
+      const row = index - 1;
+      const stripRow = row - wholeRows;
+      const landedId = landing?.grid[col][stripRow + landing.stop.row];
+      const originalId = this.grid[col][stripRow];
+      const icon = ROLLING_ICONS[((stripRow - col) % ROLLING_ICONS.length + ROLLING_ICONS.length) % ROLLING_ICONS.length];
+      this.setSymbol(cell, landedId ?? originalId ?? icon);
+      cell.slot.position.y = this.rowY(row + offset);
+      cell.slot.visible = row >= 0 || offset > 0;
+    });
+  }
+
+  setGrid(grid) {
+    validateGrid(grid);
+    this.grid = grid;
+    this.makeBoard(grid.length, grid[0].length);
+    this.reels.forEach((_, col) => this.drawReel(col, 0));
+  }
+
+  clearWins() {
+    this.wins = new Set();
+    this.reels.forEach((reel, col) => {
+      reel.backgrounds.forEach((tile, row) => {
+        tile.material = this.tileMaterials[(col + row) % 2];
+      });
+    });
+  }
+
+  startSpin() {
+    this.clearWins();
+    if (this.motion) this.animation = { last: performance.now(), time: 0, landed: 0 };
+  }
+
+  settleSpin(grid, { instant, onLand }) {
+    validateGrid(grid);
+    if (!this.animation || instant) {
+      this.animation = null;
+      this.setGrid(grid);
+      this.renderer.render(this.scene, this.camera);
+      onLand(grid.length - 1);
+      return Promise.resolve();
+    }
+    this.makeBoard(grid.length, grid[0].length);
+    const stops = planReelStops(this.animation.time, grid.length);
+    return new Promise(resolve => {
+      this.animation.settlement = { grid, stops, onLand, resolve };
+    });
+  }
+
+  finishSpin() {
+    const animation = this.animation;
+    if (!animation) return;
+    this.animation = null;
+    const result = animation.settlement;
+    this.setGrid(result?.grid ?? this.grid);
+    this.renderer.render(this.scene, this.camera);
+    if (result) {
+      if (animation.landed < result.grid.length) result.onLand(result.grid.length - 1);
+      result.resolve();
+    }
+  }
+
+  celebrate(result) {
+    this.wins = new Set(result.payout.paylines.flatMap(line =>
+      line.matches.flatMap(p => p.match.positions.map(({ reel, row }) => reel + ':' + row)),
+    ));
+    this.reels.forEach((reel, col) => {
+      reel.backgrounds.forEach((tile, row) => {
+        if (this.wins.has(col + ':' + row)) tile.material = this.tileMaterials[2];
+      });
+    });
+  }
+
+  paintSymbolArt(kind, time) {
+    const artwork = this.artwork.get(kind);
+    if (!artwork.image) return;
+    paintArtwork(artwork.ctx, {
+      image: artwork.image, width: 256, height: 256, kind, time, reduced: !this.motion,
+    });
+    artwork.texture.needsUpdate = true;
+  }
+
+  poseSymbol(cell, time, moving, winning) {
+    const animated = this.motion && !moving;
+    const lift = animated && winning ? (1 + Math.sin(time * 6)) * .05 : 0;
+    cell.visual.position.y = lift;
+    cell.visual.scale.setScalar(1 + lift);
+    if (!cell.model) return;
+
+    const kind = SYMBOLS[cell.id][0];
+    const turn = animated && (kind === 'coin' || kind === 'jade') ? time * 1.35 : 0;
+    const sway = animated ? Math.sin(time * 2.4) : 0;
+    cell.model.rotation.y = (cell.id === 'S09' ? .45 : 0) + turn + sway * .12;
+    cell.model.rotation.z = (cell.id === 'S06' ? .20 : 0) + sway * (kind === 'koi' ? .25 : .09);
+    cell.model.position.y = .10 + sway * (kind === 'koi' ? .13 : .045);
+    cell.model.position.x = kind === 'koi' ? Math.cos(time * 2.4) * (animated ? .12 : 0) : 0;
+    if (animated && kind === 'lotus') cell.visual.scale.setScalar(1 + lift + sway * .06);
+  }
+
+  frame(now) {
+    const animation = this.animation;
+    const result = animation?.settlement;
+    if (animation) {
+      animation.time += Math.max(0, now - animation.last) * this.speed / 1000;
+      animation.last = now;
+    }
+    this.visibleArtwork.clear();
+
+    this.reels.forEach((reel, col) => {
+      const stop = result?.stops[col];
+      const moving = Boolean(animation && (!stop || animation.time < stop.end));
+      if (animation) {
+        const distance = reelDistance(animation.time, stop);
+        this.drawReel(col, distance, stop && { grid: result.grid, stop });
+      }
+      if (stop && !moving && animation.landed === col) {
+        animation.landed++;
+        result.onLand(col);
+      }
+      reel.cells.forEach((cell, index) => {
+        if (!cell.slot.visible) return;
+        if (cell.sprite.visible) this.visibleArtwork.add(ARTWORK[cell.id]);
+        this.poseSymbol(cell, now / 1000 + col * .49 + index * .31, moving,
+          this.wins?.has(col + ':' + (index - 1)));
+      });
+    });
+
+    if (this.motion && this.visibleArtwork.size && now - (this.lastArtFrame ?? -Infinity) >= 50) {
+      this.lastArtFrame = now;
+      for (const kind of this.visibleArtwork) this.paintSymbolArt(kind, now / 1000);
+    }
+    if (result && animation.landed === this.reels.length) this.finishSpin();
+    else this.renderer.render(this.scene, this.camera);
+  }
 }

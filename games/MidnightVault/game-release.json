@@ -1,0 +1,10 @@
+{
+  "id": "midnight-vault",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.MidnightVault.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "project": "server/FortuneForge.Games.MidnightVault.Server/FortuneForge.Games.MidnightVault.Server.csproj"
+  }
+}

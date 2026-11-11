@@ -5,6 +5,7 @@ import { midnightIsolation } from './build/midnightIsolation.js'
 import { neonIsolation } from './build/neonIsolation.js'
 import { goldIsolation } from './build/goldIsolation.js'
 import { slotPackageIsolation } from './build/slotPackageIsolation.js'
+import { gameHostRuntimePlugin } from './build/gameHostRuntime.js'
 
 // A distinct asset namespace prevents browsers from reusing legacy catalogue
 // chunks after a Hosting release. The content hash still changes per build.
@@ -15,6 +16,7 @@ const repositoryRoot = fileURLToPath(new URL('..', import.meta.url))
 export default defineConfig({
   plugins: [
     react(),
+    gameHostRuntimePlugin(),
     neonIsolation(repositoryRoot),
     midnightIsolation(repositoryRoot),
     goldIsolation(repositoryRoot),

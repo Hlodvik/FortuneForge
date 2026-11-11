@@ -40,18 +40,22 @@ async function arrival(mode,count){const overlay=$('#bonus-arrival');overlay.dat
 async function spin(boost=false){
  if(!ready||busy||modal||uncertain)return;const free=state.freeSpinsRemaining>0,wager=free?state.freeSpinWagerPoints:bet;
  if(!free&&balance<wager*25){stop();$('#message').textContent='Your balance is too low for this bet.';return;}
- busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;win=0;$('#free-games-popup').hidden=true;update();audio.spin();
+ busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;win=0;$('#free-games-popup').hidden=true;update();
  try{
   if(free&&!instantRequested){$('#free-popup-count').textContent=state.freeSpinsRemaining;$('#free-games-popup').hidden=false;await countdown();$('#free-games-popup').hidden=true;}
   // No local outcome generation, stake subtraction, payout calculation or localStorage wallet.
+  if(!instantRequested)renderer.startSpin();
+  audio.spin();
   const result=await callHost('spin',{wagerPoints:wager,useFreeSpin:free,useSpecialBoost:boost});
   validateGrid(result.reels);state=result;balance=result.balanceCents;win=result.payout.totalPoints*result.pointValueInCents;
   if(free)featureTotal+=win;else featureTotal=0;
-  await renderer.spin(result.reels,{instant:instantRequested});renderer.celebrate(result);audio.land(4);if(win>0)audio.win(win>=wager*25*20);
+  await renderer.settleSpin(result.reels,{instant:instantRequested,onLand:reel=>audio.land(reel)});
+  if(!ready)return;
+  renderer.celebrate(result);if(win>0)audio.win(win>=wager*25*20);
   $('#grid-accessible').textContent=result.reels.map((r,i)=>`Reel ${i+1}: ${r.map(id=>SYMBOLS[id][1]).join(', ')}`).join('. ');
   $('#message').textContent=win>0?`${money(win)} won · confirmed by Fortune Forge`:'Round complete. Your next spin is up to you.';
   if(result.freeSpinsRemaining>0&&(!free||result.freeSpinsAwarded>0)){await arrival(result.freeSpinFeatureMode?'dragon':'pearl',result.freeSpinsRemaining);}
- }catch(error){stop();uncertain=true;$('#message').textContent=`${error.message} Reload to recover the server balance; this request will not be repeated automatically.`;}
+ }catch(error){renderer.finishSpin();stop();uncertain=true;$('#message').textContent=`${error.message} Reload to recover the server balance; this request will not be repeated automatically.`;}
  finally{busy=false;update();if(auto&&!document.hidden&&!uncertain)timer=setTimeout(()=>spin(),win?900:500);}
 }
 function renderRules(){const host=$('#paytable');host.innerHTML='';for(const symbol of rules.symbols){if(!symbol.paylinePayoutRules.length)continue;const row=document.createElement('div');row.className='paytable-row';for(const text of [SYMBOLS[symbol.symbolId]?.[1]??symbol.symbolId,...[3,4,5].map(n=>symbol.paylinePayoutRules.find(p=>p.matchLength===n)?.multiplier??'—')]){const node=document.createElement('span');node.textContent=text;row.append(node);}host.append(row);}}
@@ -60,6 +64,6 @@ for(const [id,delta] of [['#bet-minus',-1],['#bet-plus',1]])$(id).onclick=()=>{i
 const openRules=()=>{stop();modal=true;$('#rules').showModal();update();};$('#info').onclick=openRules;$('#rules-button').onclick=openRules;$('#close-rules').onclick=()=>$('#rules').close();$('#rules').addEventListener('close',()=>{modal=false;update();});
 $('#sound').onclick=async()=>{const enabled=await audio.toggle();$('#sound').classList.toggle('sound-on',enabled);$('#sound').setAttribute('aria-label',enabled?'Mute sound':'Enable sound');};
 $('#fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});
-document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});addEventListener('pagehide',stop);$('#canvas-host').addEventListener('renderer-lost',()=>{stop();ready=false;uncertain=true;$('#message').textContent='Graphics paused. Reload to recover your server balance.';update();});
-document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['BUTTON','INPUT','SELECT','A'].includes(document.activeElement?.tagName)){e.preventDefault();if(!auto)spin();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});addEventListener('pagehide',stop);$('#canvas-host').addEventListener('renderer-lost',()=>{stop();ready=false;uncertain=true;finishCurrentSpin();$('#message').textContent='Graphics paused. Reload to recover your server balance.';update();});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&!e.repeat&&!['BUTTON','INPUT','SELECT','A'].includes(document.activeElement?.tagName)){e.preventDefault();if(!auto){if(busy)finishCurrentSpin();else spin();}}});
 init();

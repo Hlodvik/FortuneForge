@@ -49,6 +49,29 @@ independently hosted engines are still in development. Combined local releases
 are registered for the 19 slots that use the shared slots API, Jade Dragon, and
 the games listed below.
 
+### Cloud browser assets
+
+The assets-only publisher uses a Cloud Storage bucket set up to serve game
+artifacts with CORS for the site. The website build and release terminal use
+`VITE_GAME_RELEASE_BASE_URL=https://storage.googleapis.com/<bucket>/`. The
+release terminal uses the active `gcloud` account for writes. Once that host is
+configured, stage a local release, upload its browser files, then inspect and
+promote its pointer using the returned generation.
+
+```powershell
+npm run deploy:game -- neon-nights --assets-only --stage
+npm run deploy:game -- neon-nights --assets-only --browser-bucket <bucket> --publish-browser <release-id>
+npm run deploy:game -- neon-nights --assets-only --browser-bucket <bucket> --inspect
+npm run deploy:game -- neon-nights --assets-only --browser-bucket <bucket> --promote <release-id> --if-generation <generation>
+```
+
+Each uploaded release uses an immutable path. Promotion updates only that game's
+browser pointer and keeps any backend release already selected there. An absent
+pointer reports generation `0`. Roll back by using `--rollback` with a retained
+browser release ID and the current generation.
+
+### Local package coverage
+
 Classic slots publish their own manifest, styles, and media using the shared slot
 view. Their backend build selects one engine project and uses the shared
 `FortuneForge.Games.ClassicSlot.Server` executable.

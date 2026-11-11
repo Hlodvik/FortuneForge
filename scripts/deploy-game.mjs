@@ -5,7 +5,7 @@ import { createRequire } from 'node:module'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
-import { activateRelease, isReleaseId, readActiveBackendReleaseId, stageRelease } from './game-release-activation.mjs'
+import { activateRelease, isGameId, isReleaseId, readActiveBackendReleaseId, stageRelease } from './game-release-activation.mjs'
 import { gameHostRuntime } from './game-release-runtime.mjs'
 
 const repository = fileURLToPath(new URL('../', import.meta.url))
@@ -172,26 +172,71 @@ async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, s
   }
 }
 
+async function publishCloudBrowser(gameId, options) {
+  await findGame(gameId)
+  const bucket = options['browser-bucket']
+  const assetBase = new URL(process.env.VITE_GAME_RELEASE_BASE_URL ?? 'https://invalid.invalid/')
+  if (assetBase.href.replace(/\/$/, '') !== 'https://storage.googleapis.com/' + bucket) {
+    throw new Error('Set VITE_GAME_RELEASE_BASE_URL to the configured public game-release bucket URL')
+  }
+  const credentials = spawnSync('gcloud', ['auth', 'print-access-token'], {
+    encoding: 'utf8', shell: process.platform === 'win32', windowsHide: true,
+  })
+  if (credentials.error || credentials.status !== 0) throw new Error('Configure gcloud authentication for game releases')
+  const { createGameReleaseStorage } = await import('./game-release-storage.mjs')
+  const storage = createGameReleaseStorage({ bucket, accessToken: credentials.stdout.trim() })
+
+  if (options.inspect) {
+    console.log(JSON.stringify(await storage.readActive(gameId), null, 2))
+    return
+  }
+  const upload = options['publish-browser']
+  if (upload !== undefined) {
+    const { objectCount } = await storage.stageBrowserRelease({ repository, gameId, releaseId: upload })
+    console.log('Staged ' + objectCount + ' cloud browser artifacts for ' + gameId + ' release ' + upload)
+    return
+  }
+  const releaseId = options.promote ?? options.rollback
+  const { generation } = await storage.promoteBrowserRelease({
+    gameId, releaseId, expectedGeneration: options['if-generation'],
+  })
+  console.log('Activated cloud browser release ' + releaseId + ' for ' + gameId + ' at generation ' + generation)
+}
+
 const { values, positionals } = parseArgs({
   allowPositionals: true,
   options: {
     'assets-only': { type: 'boolean' }, stage: { type: 'boolean' },
     promote: { type: 'string' }, rollback: { type: 'string' },
+    'browser-bucket': { type: 'string' }, 'publish-browser': { type: 'string' },
+    'if-generation': { type: 'string' }, inspect: { type: 'boolean' },
   },
 })
 const [gameId] = positionals
 const selected = values.promote ?? values.rollback
-const invalidMode = values.promote !== undefined && values.rollback !== undefined ||
-  selected !== undefined && (values.stage || values['assets-only'] || !isReleaseId(selected))
-if (positionals.length !== 1 || gameId.length > 128 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(gameId) || invalidMode) {
-  throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only] [--stage | --promote <release-id> | --rollback <release-id>]')
+const bucket = values['browser-bucket']
+const upload = values['publish-browser']
+const generation = values['if-generation']
+const invalidSelection = values.promote !== undefined && values.rollback !== undefined ||
+  selected !== undefined && !isReleaseId(selected)
+const invalidCloudMode = bucket === undefined
+  ? upload !== undefined || generation !== undefined || values.inspect || selected !== undefined && (values.stage || values['assets-only'])
+  : !bucket || !values['assets-only'] || values.stage ||
+    [upload !== undefined, selected !== undefined, values.inspect === true].filter(Boolean).length !== 1 ||
+    upload !== undefined && !isReleaseId(upload) ||
+    (selected === undefined ? generation !== undefined : !/^(0|[1-9][0-9]*)$/.test(generation ?? ''))
+if (positionals.length !== 1 || !isGameId(gameId) || invalidSelection || invalidCloudMode) {
+  throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only] [--stage | --promote <release-id> | --rollback <release-id>]\n' +
+    'Cloud browser releases require --assets-only --browser-bucket <bucket> and one of --inspect, --publish-browser <release-id>, or --promote/--rollback <release-id> --if-generation <generation>')
 }
 const target = {
   gameId,
   gameDirectory: join(repository, 'artifacts', 'game-releases', 'games', gameId),
   backendRoot: join(repository, 'artifacts', 'game-engine-releases', 'games', gameId, 'releases'),
 }
-if (selected !== undefined) {
+if (bucket !== undefined) {
+  await publishCloudBrowser(gameId, values)
+} else if (selected !== undefined) {
   await activateRelease({ ...target, releaseId: selected, rollback: values.rollback !== undefined })
   console.log('Activated local ' + gameId + ' release ' + selected)
 } else {

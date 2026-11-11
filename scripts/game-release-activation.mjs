@@ -10,18 +10,22 @@ export function isReleaseId(value) {
   return typeof value === 'string' && releaseIdentifier.test(value)
 }
 
+export function isGameId(value) {
+  return typeof value === 'string' && value.length <= 128 && gameIdentifier.test(value)
+}
+
 function assertReleaseIdentity(gameId, releaseId) {
-  if (typeof gameId !== 'string' || gameId.length > 128 || !gameIdentifier.test(gameId) || !isReleaseId(releaseId)) {
+  if (!isGameId(gameId) || !isReleaseId(releaseId)) {
     throw new Error('Invalid game or release ID')
   }
 }
 
-function isAssetPath(value, extension) {
-  return typeof value === 'string' && extension.test(value) &&
+export function isAssetPath(value, extension) {
+  return typeof value === 'string' && (!extension || extension.test(value)) &&
     value.split('/').every(segment => assetSegment.test(segment))
 }
 
-async function assertArtifactPath(path, directory = false) {
+export async function assertArtifactPath(path, directory = false) {
   const actual = await realpath(path)
   if (relative(path, actual)) throw new Error('Release artifacts cannot use redirected paths: ' + path)
   const info = await stat(actual)
@@ -40,13 +44,14 @@ async function readDescriptor(path, optional = false) {
   }
 }
 
-function browserDescriptor(value, gameId, releaseId) {
+export function browserDescriptor(value, gameId, releaseId, { allowBrowserOnly = false } = {}) {
   assertReleaseIdentity(gameId, releaseId)
   const kind = value?.kind
   const entryExtension = kind === 'frame' ? /\.html$/i : /\.[cm]?js$/i
   if (value?.gameId !== gameId || value.releaseId !== releaseId || value.contractVersion !== 1 ||
     (kind !== undefined && kind !== 'module' && kind !== 'frame') ||
-    !isReleaseId(value.backendReleaseId) || !isAssetPath(value.entry, entryExtension) ||
+    !(isReleaseId(value.backendReleaseId) || (allowBrowserOnly && value.backendReleaseId === undefined)) ||
+    !isAssetPath(value.entry, entryExtension) ||
     !Array.isArray(value.styles) || !value.styles.every(path => isAssetPath(path, /\.css$/i)) ||
     (kind === 'frame' && value.styles.length !== 0)) {
     throw new Error('Invalid browser descriptor for game release ' + releaseId)

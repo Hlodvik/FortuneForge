@@ -38,10 +38,12 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
     fetchWithAccountSession={fetchWithAccountSession}
     presentation={presentation}
     onCardAudioClick={onCardAudioClick}
-    renderShell={({ balanceCredits, ...shell }) => <InGameShell
-      {...shell}
+    renderShell={({ balanceCredits, title, className, bodyClassName, children }) => <InGameShell
       account={{ ...account, balances: { ...account.balances, slotsCredits: balanceCredits } }}
-    />}
+      title={title}
+      className={className}
+      bodyClassName={bodyClassName}
+    >{children}</InGameShell>}
   />
 }
 

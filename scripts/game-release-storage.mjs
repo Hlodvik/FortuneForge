@@ -158,8 +158,13 @@ export function createGameReleaseStorage({ bucket, accessToken, fetchImpl = glob
     for (const asset of [release.entry, ...release.styles]) {
       if (!names.has(asset)) throw new Error('The staged browser release is missing ' + asset)
     }
+    const navbarPolicy = release.kind === 'frame' ? null : await import('./verify-game-navbar.mjs')
     for (const file of files) {
-      await uploadImmutable(prefix + '/' + file.name, await readFile(file.path), file.contentType)
+      const bytes = await readFile(file.path)
+      if (navbarPolicy && file.contentType === 'text/css') {
+        navbarPolicy.assertReleasedGameStyles(bytes.toString('utf8'), file.path)
+      }
+      await uploadImmutable(prefix + '/' + file.name, bytes, file.contentType)
     }
     await uploadImmutable(prefix + '/release.json', jsonBytes(release), jsonType)
     return { release, objectCount: files.length + 1 }

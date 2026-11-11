@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url'
 // Regression policy, not a runtime security sandbox. We inspect first-party static
 // imports/exports, literal lazy imports, directly imported vendor CSS, JSX provider
 // calls and common local DOM aliases/helpers. External library JavaScript remains
-// trusted dependency code. Computed imports and runtime stylesheet injection fail
-// closed; arbitrary generated JavaScript, cross-module dataflow and custom render
-// factories still require code review and the browser style-fingerprint checks.
+// trusted dependency code. The host game release loader has three explicit sinks.
+// The registered module entries and their CSS are inspected before publication.
+// Other computed imports and runtime stylesheet injection fail closed.
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const hostRequire = createRequire(path.join(repositoryRoot, 'fortuneforge.client/package.json'))
 const ts = hostRequire('typescript')
@@ -23,6 +23,15 @@ const sharedCss = file => /^(?:fortuneforge\.client\/src\/index\.css|fortuneforg
 const gamePresentation = file => /^(?:games\/|fortuneforge\.client\/src\/(?:features\/slots\/|games\/|app\/routes\/|pages\/(?:cards|games)\/))/.test(normalize(file))
 const providerSource = file => /^fortuneforge\.client\/src\/components\/[^/]+\.[jt]sx?$/.test(normalize(file)) && sharedProviders.has(path.basename(file).replace(/\.[^.]+$/, ''))
 const keyframes = node => { for (let item = node.parent; item; item = item.parent) if (item.type === 'atrule' && /keyframes$/i.test(item.name)) return true; return false }
+const releaseFeature = 'fortuneforge.client/src/features/game-releases/'
+
+function hostReleaseSink(file, node, source, owner) {
+  if (normalize(file) !== releaseFeature + source) return false
+  for (let parent = node.parent; parent; parent = parent.parent) {
+    if (ts.isFunctionDeclaration(parent)) return parent.name?.text === owner
+  }
+  return false
+}
 
 // Split only at the current selector level; strings, escapes and functions stay intact.
 function splitSelectors(value) {
@@ -122,6 +131,14 @@ export function inspectCss(text, file, { shared = sharedCss(file), game = gamePr
   return findings
 }
 
+export function assertReleasedGameStyles(text, file) {
+  const findings = inspectCss(text, file, { game: true, shared: false })
+  if (findings.length) throw new Error(findings.map(({ line, code, message }) => file + ':' + line + ' [' + code + '] ' + message).join('\n'))
+  postcss.parse(text, { from: file }).walkAtRules('import', () => {
+    throw new Error('Published module styles must bundle their CSS imports: ' + file)
+  })
+}
+
 const unwrap = node => {
   while (node && (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isNonNullExpression(node) || ts.isTypeAssertionExpression(node))) node = node.expression
   return node
@@ -145,7 +162,20 @@ export function inspectSource(text, file) {
   const ast = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, /x$/.test(file) ? ts.ScriptKind.TSX : ts.ScriptKind.TS)
   const findings = [], constants = new Map(), components = new Map([['SiteNavbar', 'SiteNavbar'], ['InGameNavbar', 'InGameNavbar'], ['InGameShell', 'InGameShell']])
   const add = (node, code, message) => findings.push({ file, line: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1, code, message })
+  const inlineStyles = new Set(), styleHooks = new Map()
   walk(ast, node => {
+    if (ts.isImportDeclaration(node) && ts.isStringLiteralLike(node.moduleSpecifier)) {
+      const specifier = node.moduleSpecifier.text
+      if (/\.css\?inline$/.test(specifier) && node.importClause?.name) inlineStyles.add(node.importClause.name.text)
+      const bindings = node.importClause?.namedBindings
+      if (specifier.endsWith('/features/game-releases/useReleasedGame') && bindings && ts.isNamedImports(bindings)) {
+        for (const binding of bindings.elements) {
+          const name = binding.propertyName?.text ?? binding.name.text
+          if (name === 'useBundledGameStyles') styleHooks.set(binding.name.text, 0)
+          if (name === 'useReleasedGame') styleHooks.set(binding.name.text, 3)
+        }
+      }
+    }
     if (ts.isImportDeclaration(node) && node.importClause?.namedBindings) {
       const bindings = node.importClause.namedBindings
       if (ts.isNamedImports(bindings)) for (const binding of bindings.elements) {
@@ -156,6 +186,12 @@ export function inspectSource(text, file) {
         for (const name of ['SiteNavbar', 'InGameNavbar', 'InGameShell']) components.set(bindings.name.text + '.' + name, name)
     }
   })
+  function staticStyleArgument(node) {
+    node = unwrap(node)
+    if (!node) return false
+    if (ts.isConditionalExpression(node)) return staticStyleArgument(node.whenTrue) && staticStyleArgument(node.whenFalse)
+    return ts.isIdentifier(node) && (node.text === 'undefined' || inlineStyles.has(node.text))
+  }
   for (let pass = 0; pass < 4; pass++) walk(ast, node => {
     if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
       const value = stringValue(node.initializer, constants)
@@ -266,8 +302,15 @@ export function inspectSource(text, file) {
       add(node, 'navbar-dom-mutation', 'Shared navigation properties cannot be incremented or decremented.')
     if (!providerSource(file) && ts.isNewExpression(node) && node.expression.getText(ast) === 'CSSStyleSheet')
       add(node, 'runtime-style-injection', 'Constructed runtime stylesheets cannot establish a static navigation boundary.')
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && styleHooks.has(node.expression.text) &&
+      !staticStyleArgument(node.arguments[styleHooks.get(node.expression.text)]))
+      add(node, 'runtime-style-injection', 'Bundled game styles require a statically inspected CSS import with ?inline.')
     if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
-      if (!providerSource(file) && (node.expression.name.text === 'createElement' && /^(?:style|link)$/.test(stringValue(node.arguments[0], constants) ?? '') || /^(?:insertRule|replaceSync)$/.test(node.expression.name.text)))
+      const element = node.expression.name.text === 'createElement' ? stringValue(node.arguments[0], constants) : undefined
+      const releaseStylesheet = node.expression.getText(ast) === 'document.createElement' &&
+        ((element === 'link' && hostReleaseSink(file, node, 'useGameRelease.ts', 'loadStylesheet')) ||
+          (element === 'style' && hostReleaseSink(file, node, 'useReleasedGame.tsx', 'useBundledGameStyles')))
+      if (!providerSource(file) && !releaseStylesheet && (/^(?:style|link)$/.test(element ?? '') || /^(?:insertRule|replaceSync)$/.test(node.expression.name.text)))
         add(node, 'runtime-style-injection', 'Runtime stylesheets must use statically inspected CSS imports.')
       if (mutatingCalls.has(node.expression.name.text) && forbiddenMutation(node.expression.expression))
         add(node, 'navbar-dom-mutation', 'Game/page code cannot mutate shared navigation or global presentation.')
@@ -285,7 +328,7 @@ function filesBelow(directory) {
 }
 const ignoredSource = file => /(?:\.d\.ts$|(?:^|\/)(?:__tests__|__mocks__)(?:\/)|\.(?:test|spec)\.[^.]+$)/.test(normalize(file))
 
-export function inspectRepository(root = repositoryRoot) {
+export function inspectRepository(root = repositoryRoot, { releaseId } = {}) {
   const findings = [], sourceFiles = new Set(), cssFiles = new Set(), graph = [], queue = []
   const read = file => fs.readFileSync(file, 'utf8')
   const relative = file => normalize(path.relative(root, file))
@@ -331,14 +374,43 @@ export function inspectRepository(root = repositoryRoot) {
     }
     graph.push({ from: relative(from), specifier, to: relative(target) }); queue.push(target)
   }
-  const hostEntry = resolveLocal(path.join(root, 'fortuneforge.client/src/main'))
-  if (hostEntry) queue.push(hostEntry)
-  else findings.push({ file: 'fortuneforge.client/src/main.tsx', line: 1, code: 'missing-host-entry', message: 'The frontend runtime entry is required.' })
-  for (const workspace of packages.values()) if (workspace.workspace.startsWith('games/') || workspace.workspace.startsWith('packages/')) {
-    const entry = resolveLocal(path.join(workspace.folder, 'src/index'))
-    if (entry) queue.push(entry)
-    else findings.push({ file: workspace.workspace, line: 1, code: 'missing-workspace-entry', message: 'Cannot establish a source runtime entry for this workspace.' })
+  if (releaseId === undefined) {
+    const hostEntry = resolveLocal(path.join(root, 'fortuneforge.client/src/main'))
+    if (hostEntry) queue.push(hostEntry)
+    else findings.push({ file: 'fortuneforge.client/src/main.tsx', line: 1, code: 'missing-host-entry', message: 'The frontend runtime entry is required.' })
+    for (const workspace of packages.values()) if (workspace.workspace.startsWith('games/') || workspace.workspace.startsWith('packages/')) {
+      const entry = resolveLocal(path.join(workspace.folder, 'src/index'))
+      if (entry) queue.push(entry)
+      else findings.push({ file: workspace.workspace, line: 1, code: 'missing-workspace-entry', message: 'Cannot establish a source runtime entry for this workspace.' })
+    }
   }
+  const games = path.join(root, 'games')
+  const releaseEntries = new Set()
+  if (fs.existsSync(games)) for (const folder of fs.readdirSync(games, { withFileTypes: true })) {
+    if (!folder.isDirectory()) continue
+    const game = path.join(games, folder.name)
+    const configPath = path.join(game, 'game-release.json')
+    if (!fs.existsSync(configPath)) continue
+    try {
+      const { id, frontend } = JSON.parse(read(configPath))
+      if (releaseId !== undefined && id !== releaseId) continue
+      if (releaseEntries.has(id)) throw new Error('Duplicate game release ID: ' + id)
+      releaseEntries.add(id)
+      if (frontend?.kind === 'frame') continue // Frame CSS is isolated from the host document.
+      const directory = fs.realpathSync(path.resolve(game, frontend.directory))
+      const entry = fs.realpathSync(path.resolve(directory, frontend.entry))
+      if (!normalize(directory).startsWith(normalize(game) + '/') ||
+          !normalize(entry).startsWith(normalize(directory) + '/') ||
+          !sourceExtension.test(entry) || !fs.statSync(entry).isFile()) {
+        throw new Error('The module release must have a source entry inside its game directory.')
+      }
+      queue.push(entry)
+    } catch (error) {
+      findings.push({ file: relative(configPath), line: 1, code: 'invalid-release-entry', message: error.message })
+    }
+  }
+  if (releaseId !== undefined && !releaseEntries.has(releaseId))
+    findings.push({ file: 'games', line: 1, code: 'missing-release-entry', message: 'No registered browser release for ' + releaseId })
   while (queue.length) {
     const file = queue.shift()
     if (sourceFiles.has(file) || cssFiles.has(file)) continue
@@ -359,13 +431,16 @@ export function inspectRepository(root = repositoryRoot) {
       if ((ts.isImportDeclaration(node) && !node.importClause?.isTypeOnly || ts.isExportDeclaration(node) && !node.isTypeOnly) && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) dependency(file, node.moduleSpecifier.text)
       if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
         if (ts.isStringLiteralLike(node.arguments[0])) dependency(file, node.arguments[0].text)
-        else findings.push({ file: relative(file), line: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1, code: 'dynamic-runtime-import', message: 'Computed runtime imports require an explicit enumerable boundary.' })
+        else if (!(node.arguments[0]?.getText(ast) === 'assets.entry.href' &&
+          hostReleaseSink(relative(file), node, 'useGameRelease.ts', 'loadComponent')))
+          findings.push({ file: relative(file), line: ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1, code: 'dynamic-runtime-import', message: 'Computed runtime imports require an explicit enumerable boundary.' })
       }
     })
   }
   // Preview and integration JSX must obey the same provider API even though standalone
   // document framing CSS is deliberately outside the production runtime style graph.
-  const allSource = new Set([...sourceFiles, ...filesBelow(path.join(root, 'games')), ...filesBelow(path.join(root, 'fortuneforge.client/src'))].filter(file => sourceExtension.test(file) && !ignoredSource(file)))
+  const roots = releaseId === undefined ? [...filesBelow(games), ...filesBelow(path.join(root, 'fortuneforge.client/src'))] : []
+  const allSource = new Set([...sourceFiles, ...roots].filter(file => sourceExtension.test(file) && !ignoredSource(file)))
   for (const file of allSource) findings.push(...inspectSource(read(file), relative(file)))
   const unique = [...new Map(findings.map(finding => [JSON.stringify(finding), finding])).values()]
   return { findings: unique, sourceFiles: sourceFiles.size, checkedJsxSources: allSource.size, cssFiles: cssFiles.size, graph }

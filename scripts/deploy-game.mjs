@@ -149,6 +149,18 @@ async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, s
   const backendReleaseId = assetsOnly
     ? await readActiveBackendReleaseId({ gameDirectory, backendRoot, gameId }) : releaseId
 
+  const navbarPolicy = game.config.frontend.kind === 'frame'
+    ? null : await import('./verify-game-navbar.mjs')
+  if (navbarPolicy) {
+    const { findings } = navbarPolicy.inspectRepository(repository, { releaseId: gameId })
+    if (findings.length > 0) {
+      const diagnostics = findings.map(({ file, line, code, message }) =>
+        `${file}:${line} [${code}] ${message}`,
+      )
+      throw new Error(`Game release ${gameId} failed the navbar policy:\n${diagnostics.join('\n')}`)
+    }
+  }
+
   const { workspaces } = await readJson(join(repository, 'package.json'))
   if (workspaces.some(path => resolve(repository, path) === frontend)) {
     const { name } = await readJson(join(frontend, 'package.json'))
@@ -159,6 +171,12 @@ async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, s
   }
   await mkdir(releaseDirectory, { recursive: true })
   const browser = await buildFrontend(frontend, entry, releaseDirectory, game.config.frontend)
+  if (navbarPolicy) {
+    for (const style of browser.styles) {
+      const file = join(releaseDirectory, style)
+      navbarPolicy.assertReleasedGameStyles(await readFile(file, 'utf8'), file)
+    }
+  }
   if (project) await buildBackend(project, join(backendRoot, releaseId), gameId, releaseId, gamePackage)
 
   await stageRelease({

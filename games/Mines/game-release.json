@@ -1,0 +1,10 @@
+{
+  "id": "mines",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Mines.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

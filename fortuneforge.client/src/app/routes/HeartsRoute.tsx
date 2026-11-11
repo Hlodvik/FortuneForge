@@ -1,5 +1,6 @@
-import { HeartsGame, HttpHeartsGateway, type HeartsCard, type HeartsParticipation } from '@fortuneforge/games-hearts'
-import '@fortuneforge/games-hearts/styles.css'
+import { HeartsGame as BundledHeartsGame, HttpHeartsGateway, type HeartsCard, type HeartsParticipation } from '@fortuneforge/games-hearts'
+import bundledStyles from '@fortuneforge/games-hearts/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { InGameShell } from '../../components/InGameShell'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -38,6 +39,9 @@ function HeartsSession({ initialAccount }: Readonly<{ initialAccount: AccountSum
             ? 'Your practice hand is still being opened. Leaving this page may lose your progress. No account credits are at stake.'
             : 'Leaving this page loses your current practice progress. No account credits are at stake.',
   })
+  const { Game: HeartsGame, pending } = useReleasedGame('hearts', 'Hearts', BundledHeartsGame, bundledStyles)
+  if (HeartsGame === null) return pending
+
   return <InGameShell account={account} title="Hearts" bodyClassName="hearts-shell-body">
     <HeartsGame key={account.userId} gateway={gateway} balance={account.balances.slotsCredits} onBalanceChange={publishBalance} onParticipationChange={setParticipation} renderCard={renderHeartsCard} />
   </InGameShell>

@@ -3,7 +3,7 @@
 const images=new Map();
 export const ART_BY_BONUS={garden:'bonus',moon:'pearl',wrath:'dragon'};
 export function loadArtwork(kind){
- if(!images.has(kind))images.set(kind,new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Artwork could not load: '+kind));image.src=`/games/jade-dragon/textures/living-art/${kind}.webp`;}));
+ if(!images.has(kind))images.set(kind,new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(Error('Artwork could not load: '+kind));image.src=`${import.meta.env.BASE_URL}textures/living-art/${kind}.webp`;}));
  return images.get(kind);
 }
 export class LivingArtwork{

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AndarBaharGame, HttpAndarBaharGateway, type AndarBaharCard } from '@fortuneforge/games-andar-bahar'
-import '@fortuneforge/games-andar-bahar/styles.css'
+import { AndarBaharGame as BundledAndarBaharGame, HttpAndarBaharGateway, type AndarBaharCard } from '@fortuneforge/games-andar-bahar'
+import bundledStyles from '@fortuneforge/games-andar-bahar/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -49,6 +50,9 @@ function AndarBaharSession({ initialAccount }: Readonly<{ initialAccount: Accoun
     }).catch(() => undefined)
   }, [initialAccount.userId])
   const scope = `${initialAccount.userId}:${practiceMode ? 'practice' : 'account'}`
+
+  const { Game: AndarBaharGame, pending } = useReleasedGame('andar-bahar', 'Andar Bahar', BundledAndarBaharGame, bundledStyles)
+  if (AndarBaharGame === null) return pending
 
   return <InGameShell account={account} reportTitle="Andar Bahar" className="andar-bahar-page" bodyClassName="andar-bahar-route__body">
     <AndarBaharGame key={scope} playerId={scope} gateway={gateway} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />

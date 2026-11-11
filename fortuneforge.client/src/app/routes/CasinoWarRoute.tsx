@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { CasinoWarGame, HttpCasinoWarGateway } from '@fortuneforge/games-casino-war'
-import '@fortuneforge/games-casino-war/styles.css'
+import { CasinoWarGame as BundledCasinoWarGame, HttpCasinoWarGateway } from '@fortuneforge/games-casino-war'
+import bundledStyles from '@fortuneforge/games-casino-war/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { renderStandardCardFace } from '../../games/cards/shared/renderStandardCardFace'
 import '../../games/cards/shared/playingCards.css'
 import '../../games/cards/shared/packagedCardFaces.css'
@@ -29,6 +30,9 @@ function CasinoWarSession({ initialAccount }: Readonly<{ initialAccount: Account
   const refreshBalance = useCallback(() => {
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
+
+  const { Game: CasinoWarGame, pending } = useReleasedGame('casino-war', 'Casino War', BundledCasinoWarGame, bundledStyles)
+  if (CasinoWarGame === null) return pending
 
   return <InGameShell account={account} reportTitle="Casino War" className="player-page">
     <CasinoWarGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderStandardCardFace} />

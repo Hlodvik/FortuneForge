@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { HttpKenoGateway, KenoGame } from '@fortuneforge/games-keno'
-import '@fortuneforge/games-keno/styles.css'
+import { HttpKenoGateway, KenoGame as BundledKenoGame } from '@fortuneforge/games-keno'
+import bundledStyles from '@fortuneforge/games-keno/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -22,6 +23,9 @@ function KenoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
   const refreshBalance = useCallback(() => {
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
+
+  const { Game: KenoGame, pending } = useReleasedGame('keno', 'Keno', BundledKenoGame, bundledStyles)
+  if (KenoGame === null) return pending
 
   return <InGameShell account={account} title="Keno" className="player-page">
     <KenoGame gateway={gateway} playerId={account.userId} onBalanceChange={refreshBalance} />

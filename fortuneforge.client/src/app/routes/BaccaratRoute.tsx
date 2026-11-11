@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BaccaratGame, HttpBaccaratGateway, type BaccaratCard } from '@fortuneforge/games-baccarat'
-import '@fortuneforge/games-baccarat/styles.css'
+import { BaccaratGame as BundledBaccaratGame, HttpBaccaratGateway, type BaccaratCard } from '@fortuneforge/games-baccarat'
+import bundledStyles from '@fortuneforge/games-baccarat/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -38,6 +39,9 @@ function BaccaratSession({ initialAccount }: Readonly<{ initialAccount: AccountS
   const refreshBalance = useCallback(() => {
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
+
+  const { Game: BaccaratGame, pending } = useReleasedGame('baccarat', 'Baccarat', BundledBaccaratGame, bundledStyles)
+  if (BaccaratGame === null) return pending
 
   return <InGameShell account={account} title="Baccarat" className="baccarat-page" bodyClassName="baccarat-route__body">
     <BaccaratGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} renderCardFace={renderCardFace} />

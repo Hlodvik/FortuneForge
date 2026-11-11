@@ -37,9 +37,20 @@ describe('packaged game styles', () => {
     const styles = readFileSync(new URL('../../pages/games/flappy/FlappyFreeRunPage.css', import.meta.url), 'utf8')
     expect(styles).not.toMatch(/(?:^|\n)\s*(?:body\b|:root\b|\*\s*\{|button\s*\{|a\s*\{)/)
   })
-  it.each(packagedGameEntryPoints)('%s imports the package stylesheet', (relativePath, packageName) => {
+  it.each(packagedGameEntryPoints)('%s loads its package stylesheet', (relativePath, packageName) => {
     const source = readFileSync(new URL(relativePath, import.meta.url), 'utf8')
 
-    expect(source).toContain(`import '${packageName}/styles.css'`)
+    if (!source.includes('useReleasedGame(')) {
+      expect(source).toContain(`import '${packageName}/styles.css'`)
+      return
+    }
+
+    expect(source).toContain(`import bundledStyles from '${packageName}/styles.css?inline'`)
+    expect(source).toMatch(/useReleasedGame\([^\n]+bundledStyles/)
+    const game = relativePath.slice(2, -'Route.tsx'.length)
+    const client = new URL(`../../../../games/${game}/client/FortuneForge.Games.${game}.Client/src/`, import.meta.url)
+    expect(readFileSync(new URL('browser.ts', client), 'utf8')).toContain(`export { ${game}Game as default } from './index.js'`)
+    const packageSource = ['index.ts', `${game}Game.tsx`].map(path => readFileSync(new URL(path, client), 'utf8')).join('\n')
+    expect(packageSource).toMatch(/^import '\.\/[^']+\.css'/m)
   })
 })

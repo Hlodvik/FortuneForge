@@ -1,0 +1,10 @@
+{
+  "id": "andar-bahar",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.AndarBahar.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

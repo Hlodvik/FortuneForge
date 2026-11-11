@@ -1,0 +1,10 @@
+{
+  "id": "dragon-tiger",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.DragonTiger.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "packaged-game"
+  }
+}

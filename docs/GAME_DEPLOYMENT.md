@@ -39,10 +39,24 @@ For an art, audio, or UI release, use `npm run deploy:game -- neon-nights --asse
 The new browser release keeps the backend release selected by the previous
 combined release.
 
+Add `--stage` to build the artifacts and print their release ID without making
+them active. Use `--promote <release-id>` to select a staged release or
+`--rollback <release-id>` to restore a previously active one. Both update the
+active pointer for the specified game.
+
 This command publishes local artifacts. Live promotion and website routing to
 independently hosted engines are still in development. Combined local releases
-are registered for the 19 slots that use the shared slots API.
+are registered for the 19 slots that use the shared slots API, Jade Dragon, Andar
+Bahar, Dragon Tiger, Hi-Lo, and Mines.
 
 Classic slots publish their own manifest, styles, and media using the shared slot
 view. Their backend build selects one engine project and uses the shared
 `FortuneForge.Games.ClassicSlot.Server` executable.
+
+Jade Dragon publishes its own HTML entry and artwork for the site's iframe. Its
+backend artifact runs the game engine for demo play. The site continues to use
+its existing paid Jade Dragon API.
+
+Andar Bahar, Dragon Tiger, Hi-Lo, and Mines publish browser modules and selected
+`FortuneForge.Games.PackagedGame.Server` workers. For local integration work,
+these workers require a loopback Firestore emulator and an explicit demo account.

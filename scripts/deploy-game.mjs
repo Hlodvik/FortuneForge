@@ -1,13 +1,20 @@
 import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { mkdir, open, readFile, readdir, realpath, rename, stat, unlink, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { parseArgs } from 'node:util'
+import { activateRelease, isReleaseId, readActiveBackendReleaseId, stageRelease } from './game-release-activation.mjs'
 import { gameHostRuntime } from './game-release-runtime.mjs'
 
 const repository = fileURLToPath(new URL('../', import.meta.url))
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'))
+const sharedBackendProjects = new Map([
+  ['classic-slot', 'FortuneForge.Games.ClassicSlot.Server'],
+  ['packaged-game', 'FortuneForge.Games.PackagedGame.Server'],
+  ['game-compute', 'FortuneForge.Games.GameCompute.Server'],
+])
 
 async function readOptionalJson(path) {
   try {
@@ -61,7 +68,13 @@ async function buildBackend(project, directory, gameId, releaseId, gamePackage) 
   await writeFile(join(directory, 'release.json'), descriptor, { flag: 'wx' })
 }
 
-async function buildFrontend(frontend, entry, directory, manifestExport) {
+async function buildFrontend(frontend, entry, directory, config) {
+  const { kind = 'module', manifestExport } = config
+  const isFrame = kind === 'frame'
+  if (kind !== 'module' && !isFrame) throw new Error('Unknown browser release kind: ' + kind)
+  if (isFrame && (manifestExport !== undefined || basename(entry) !== 'index.html')) {
+    throw new Error('A frame release requires index.html as its browser entry')
+  }
   const requireFromWorkspace = createRequire(join(frontend, 'package.json'))
   const { build, normalizePath } = await import(pathToFileURL(requireFromWorkspace.resolve('vite')).href)
   const manifestEntry = 'virtual:fortuneforge-slot-release'
@@ -87,8 +100,8 @@ async function buildFrontend(frontend, entry, directory, manifestExport) {
     plugins,
     root: frontend,
     configFile: false,
-    envFile: false,
-    publicDir: false,
+    envDir: false,
+    publicDir: isFrame ? 'public' : false,
     base: './',
     build: {
       outDir: directory,
@@ -98,66 +111,43 @@ async function buildFrontend(frontend, entry, directory, manifestExport) {
       modulePreload: false,
       rolldownOptions: {
         input: plugins.length ? manifestEntry : entry,
-        external: Object.keys(gameHostRuntime),
-        preserveEntrySignatures: 'strict',
-        output: { paths: gameHostRuntime },
+        ...(isFrame ? {} : {
+          external: Object.keys(gameHostRuntime),
+          preserveEntrySignatures: 'strict',
+          output: { paths: gameHostRuntime },
+        }),
       },
     },
   })
   const output = Array.isArray(bundle) ? bundle.flatMap(result => result.output) : bundle.output
+  if (isFrame) {
+    if (!output.some(item => item.type === 'asset' && item.fileName === 'index.html')) {
+      throw new Error('Frame build did not emit index.html')
+    }
+    return { kind, entry: 'index.html', styles: [] }
+  }
   const entryChunk = output.find(item => item.type === 'chunk' && item.isEntry && item.exports.includes('default'))
   if (!entryChunk) throw new Error('The browser entry must export a default component')
   const styles = output.filter(item => item.type === 'asset' && item.fileName.endsWith('.css')).map(item => item.fileName)
   return { entry: entryChunk.fileName, styles }
 }
 
-async function activateRelease(gameDirectory, backendRoot, assetsOnly, release) {
-  const active = join(gameDirectory, 'active.json')
-  const lockPath = join(backendRoot, 'active.lock')
-  const lock = await open(lockPath, 'wx')
-  const pending = join(gameDirectory, '.' + release.releaseId + '.json')
-  try {
-    let backendReleaseId = release.releaseId
-    if (assetsOnly) {
-      backendReleaseId = (await readOptionalJson(active))?.backendReleaseId
-      if (typeof backendReleaseId !== 'string' || !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(backendReleaseId)) {
-        throw new Error('Publish a combined game release before using --assets-only')
-      }
-      const backend = await readJson(join(backendRoot, backendReleaseId, 'release.json'))
-      if (backend.gameId !== release.gameId || backend.releaseId !== backendReleaseId) {
-        throw new Error('The active backend release does not match this game')
-      }
-    }
-    const descriptor = JSON.stringify({ ...release, backendReleaseId }, null, 2) + '\n'
-    await writeFile(join(gameDirectory, 'releases', release.releaseId, 'release.json'), descriptor, { flag: 'wx' })
-    await writeFile(pending, descriptor, { flag: 'wx' })
-    await rename(pending, active)
-  } finally {
-    try {
-      await unlink(pending).catch(error => { if (error.code !== 'ENOENT') throw error })
-    } finally {
-      await lock.close()
-      await unlink(lockPath)
-    }
-  }
-}
-
-async function publishGame(gameId, assetsOnly) {
+async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, stageOnly) {
   const game = await findGame(gameId)
   const frontend = await resolveWithin(game.directory, game.config.frontend?.directory)
   const entry = await resolveWithin(frontend, game.config.frontend?.entry)
-  const gamePackage = game.config.backend?.kind === 'classic-slot' ? basename(game.directory) : null
-  if (gamePackage && !/^[A-Z][A-Za-z0-9]*$/.test(gamePackage)) throw new Error('Invalid classic slot package directory')
-  const project = assetsOnly ? null : gamePackage
-    ? join(repository, 'games', 'shared', 'FortuneForge.Games.ClassicSlot.Server', 'FortuneForge.Games.ClassicSlot.Server.csproj')
+  const backendKind = game.config.backend?.kind
+  const sharedBackend = sharedBackendProjects.get(backendKind)
+  if (backendKind !== undefined && !sharedBackend) throw new Error('Unknown backend release kind: ' + backendKind)
+  const gamePackage = sharedBackend ? basename(game.directory) : null
+  if (gamePackage && !/^[A-Z][A-Za-z0-9]*$/.test(gamePackage)) throw new Error('Invalid game package directory')
+  const project = assetsOnly ? null : sharedBackend
+    ? join(repository, 'games', 'shared', sharedBackend, sharedBackend + '.csproj')
     : await resolveWithin(game.directory, game.config.backend?.project)
   const releaseId = randomUUID()
-  const gameDirectory = join(repository, 'artifacts', 'game-releases', 'games', gameId)
   const releaseDirectory = join(gameDirectory, 'releases', releaseId)
-  const backendRoot = join(repository, 'artifacts', 'game-engine-releases', 'games', gameId, 'releases')
-  if (assetsOnly && !(await readOptionalJson(join(gameDirectory, 'active.json')))?.backendReleaseId) {
-    throw new Error('Publish a combined game release before using --assets-only')
-  }
+  const backendReleaseId = assetsOnly
+    ? await readActiveBackendReleaseId({ gameDirectory, backendRoot, gameId }) : releaseId
 
   const { workspaces } = await readJson(join(repository, 'package.json'))
   if (workspaces.some(path => resolve(repository, path) === frontend)) {
@@ -168,15 +158,42 @@ async function publishGame(gameId, assetsOnly) {
     ])
   }
   await mkdir(releaseDirectory, { recursive: true })
-  const browser = await buildFrontend(frontend, entry, releaseDirectory, game.config.frontend.manifestExport)
+  const browser = await buildFrontend(frontend, entry, releaseDirectory, game.config.frontend)
   if (project) await buildBackend(project, join(backendRoot, releaseId), gameId, releaseId, gamePackage)
 
-  await activateRelease(gameDirectory, backendRoot, assetsOnly, { gameId, releaseId, contractVersion: 1, ...browser })
-  console.log('Activated local ' + gameId + ' release ' + releaseId)
+  await stageRelease({
+    gameDirectory, backendRoot,
+    release: { gameId, releaseId, backendReleaseId, contractVersion: 1, ...browser },
+  })
+  if (stageOnly) console.log('Staged local ' + gameId + ' release ' + releaseId)
+  else {
+    await activateRelease({ gameDirectory, backendRoot, gameId, releaseId })
+    console.log('Activated local ' + gameId + ' release ' + releaseId)
+  }
 }
 
-const [gameId, option, ...extra] = process.argv.slice(2)
-if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(gameId ?? '') || (option && option !== '--assets-only') || extra.length) {
-  throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only]')
+const { values, positionals } = parseArgs({
+  allowPositionals: true,
+  options: {
+    'assets-only': { type: 'boolean' }, stage: { type: 'boolean' },
+    promote: { type: 'string' }, rollback: { type: 'string' },
+  },
+})
+const [gameId] = positionals
+const selected = values.promote ?? values.rollback
+const invalidMode = values.promote !== undefined && values.rollback !== undefined ||
+  selected !== undefined && (values.stage || values['assets-only'] || !isReleaseId(selected))
+if (positionals.length !== 1 || gameId.length > 128 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(gameId) || invalidMode) {
+  throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only] [--stage | --promote <release-id> | --rollback <release-id>]')
 }
-await publishGame(gameId, option === '--assets-only')
+const target = {
+  gameId,
+  gameDirectory: join(repository, 'artifacts', 'game-releases', 'games', gameId),
+  backendRoot: join(repository, 'artifacts', 'game-engine-releases', 'games', gameId, 'releases'),
+}
+if (selected !== undefined) {
+  await activateRelease({ ...target, releaseId: selected, rollback: values.rollback !== undefined })
+  console.log('Activated local ' + gameId + ' release ' + selected)
+} else {
+  await publishGame(target, values['assets-only'], values.stage)
+}

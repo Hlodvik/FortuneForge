@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HttpMinesGateway, MinesGame } from '@fortuneforge/games-mines'
-import '@fortuneforge/games-mines/styles.css'
+import { HttpMinesGateway, MinesGame as BundledMinesGame } from '@fortuneforge/games-mines'
+import bundledStyles from '@fortuneforge/games-mines/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -37,6 +38,9 @@ function MinesAccountSession({ initialAccount }: Readonly<{ initialAccount: Acco
         && identity.current === requestedUser && next.userId === requestedUser) setAccount(next)
     }).catch(() => undefined)
   }, [initialAccount.userId])
+
+  const { Game: MinesGame, pending } = useReleasedGame('mines', 'Mines', BundledMinesGame, bundledStyles)
+  if (MinesGame === null) return pending
 
   return <InGameShell account={account} reportTitle="Mines" className="mines-page">
     <MinesGame key={scope} playerId={scope} gateway={gateway} currencySymbol="R" onBalanceChange={refreshBalance} />

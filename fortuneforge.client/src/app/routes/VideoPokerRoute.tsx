@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { HttpVideoPokerGateway, VideoPokerGame } from '@fortuneforge/games-video-poker'
-import '@fortuneforge/games-video-poker/styles.css'
+import { HttpVideoPokerGateway, VideoPokerGame as BundledVideoPokerGame } from '@fortuneforge/games-video-poker'
+import bundledStyles from '@fortuneforge/games-video-poker/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { renderStandardCardFace } from '../../games/cards/shared/renderStandardCardFace'
 import '../../games/cards/shared/playingCards.css'
 import '../../games/cards/shared/packagedCardFaces.css'
@@ -29,6 +30,9 @@ function VideoPokerSession({ initialAccount }: Readonly<{ initialAccount: Accoun
   const refreshBalance = useCallback(() => {
     void getCurrentAccount().then(setAccount).catch(() => undefined)
   }, [])
+
+  const { Game: VideoPokerGame, pending } = useReleasedGame('video-poker', 'Video Poker', BundledVideoPokerGame, bundledStyles)
+  if (VideoPokerGame === null) return pending
 
   return <InGameShell account={account} title="Video Poker" className="player-page video-poker-page">
     <VideoPokerGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} showTitle={false} renderCardFace={renderStandardCardFace} />

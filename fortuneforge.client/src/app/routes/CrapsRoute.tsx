@@ -1,5 +1,6 @@
-import { CrapsGame, HttpCrapsGateway } from '@fortuneforge/games-craps'
-import '@fortuneforge/games-craps/styles.css'
+import { CrapsGame as BundledCrapsGame, HttpCrapsGateway } from '@fortuneforge/games-craps'
+import bundledStyles from '@fortuneforge/games-craps/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
@@ -25,6 +26,9 @@ function CrapsSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
       if (next.userId === initialAccount.userId) setAccount(next)
     }).catch(() => undefined)
   }, [initialAccount.userId])
+
+  const { Game: CrapsGame, pending } = useReleasedGame('craps', 'Craps', BundledCrapsGame, bundledStyles)
+  if (CrapsGame === null) return pending
 
   return <InGameShell account={account} title="Craps" className="craps-page" bodyClassName="craps-route__body">
     <CrapsGame playerId={account.userId} gateway={gateway} requirePaid onBalanceChange={refreshBalance} />

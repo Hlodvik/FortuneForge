@@ -1,0 +1,11 @@
+{
+  "id": "jade-dragon",
+  "frontend": {
+    "directory": "client/jade-dragon",
+    "entry": "index.html",
+    "kind": "frame"
+  },
+  "backend": {
+    "project": "server/FortuneForge.Games.JadeDragon.Server/FortuneForge.Games.JadeDragon.Server.csproj"
+  }
+}

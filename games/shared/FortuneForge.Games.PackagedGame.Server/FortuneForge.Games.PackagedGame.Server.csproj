@@ -1,0 +1,25 @@
+<Project>
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>obj/$(GamePackage)/</BaseIntermediateOutputPath>
+    <BaseOutputPath>bin/$(GamePackage)/</BaseOutputPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk.Web" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultItems>false</EnableDefaultItems>
+    <GameServerDirectory>../../$(GamePackage)/server</GameServerDirectory>
+    <GameServerProject>$(GameServerDirectory)/FortuneForge.Games.$(GamePackage).Server/FortuneForge.Games.$(GamePackage).Server.csproj</GameServerProject>
+    <GameWorkerModule>$(GameServerDirectory)/GameWorkerModule.cs</GameWorkerModule>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs;DemoGameAccount.cs" />
+    <Compile Include="$(GameWorkerModule)" Link="GameWorkerModule.cs" Condition="Exists('$(GameWorkerModule)')" />
+    <ProjectReference Include="$(GameServerProject)" Condition="Exists('$(GameWorkerModule)') And Exists('$(GameServerProject)')" />
+    <PackageReference Include="Google.Cloud.Firestore" Version="4.3.0" />
+  </ItemGroup>
+  <Target Name="RequireSelectedGameServer" BeforeTargets="Restore;PrepareForBuild">
+    <Error Condition="'$(GamePackage)' == '' Or !Exists('$(GameWorkerModule)') Or !Exists('$(GameServerProject)')" Text="Supply a GamePackage with a packaged game worker module and server project." />
+  </Target>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk.Web" />
+</Project>

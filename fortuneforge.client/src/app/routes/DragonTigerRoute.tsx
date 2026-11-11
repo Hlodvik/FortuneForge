@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DragonTigerGame, HttpDragonTigerGateway, type DragonTigerCard } from '@fortuneforge/games-dragon-tiger'
-import '@fortuneforge/games-dragon-tiger/styles.css'
+import { DragonTigerGame as BundledDragonTigerGame, HttpDragonTigerGateway, type DragonTigerCard } from '@fortuneforge/games-dragon-tiger'
+import bundledStyles from '@fortuneforge/games-dragon-tiger/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -40,6 +41,9 @@ function DragonTigerSession({ initialAccount }: Readonly<{ initialAccount: Accou
       if (next.userId === initialAccount.userId) setAccount(next)
     }).catch(() => undefined)
   }, [initialAccount.userId])
+
+  const { Game: DragonTigerGame, pending } = useReleasedGame('dragon-tiger', 'Dragon Tiger', BundledDragonTigerGame, bundledStyles)
+  if (DragonTigerGame === null) return pending
 
   return <InGameShell account={account} reportTitle="Dragon Tiger" className="dragon-tiger-page">
     <DragonTigerGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />

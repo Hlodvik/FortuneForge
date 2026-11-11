@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { HiLoGame, HttpHiLoGateway, type HiLoCard } from '@fortuneforge/games-hi-lo'
-import '@fortuneforge/games-hi-lo/styles.css'
+import { HiLoGame as BundledHiLoGame, HttpHiLoGateway, type HiLoCard } from '@fortuneforge/games-hi-lo'
+import bundledStyles from '@fortuneforge/games-hi-lo/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -40,6 +41,9 @@ function HiLoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumma
       if (next.userId === initialAccount.userId) setAccount(next)
     }).catch(() => undefined)
   }, [initialAccount.userId])
+
+  const { Game: HiLoGame, pending } = useReleasedGame('hi-lo', 'Hi-Lo', BundledHiLoGame, bundledStyles)
+  if (HiLoGame === null) return pending
 
   return <InGameShell account={account} title="Hi-Lo" className="hi-lo-page">
     <HiLoGame key={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} onBalanceChange={practiceMode ? undefined : refreshBalance} renderCardFace={renderCardFace} />

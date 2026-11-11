@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { HttpSicBoGateway, SicBoGame } from '@fortuneforge/games-sic-bo'
-import '@fortuneforge/games-sic-bo/styles.css'
+import { HttpSicBoGateway, SicBoGame as BundledSicBoGame } from '@fortuneforge/games-sic-bo'
+import bundledStyles from '@fortuneforge/games-sic-bo/styles.css?inline'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
 import { InGameShell } from '../../components/InGameShell'
 import { fetchWithAccountSession, getCurrentAccount, type AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
@@ -37,6 +38,9 @@ function SicBoSession({ initialAccount }: Readonly<{ initialAccount: AccountSumm
       if (mounted.current && revision === balanceRevision.current && next.userId === initialAccount.userId) setAccount(next)
     }).catch(() => undefined)
   }, [initialAccount.userId])
+
+  const { Game: SicBoGame, pending } = useReleasedGame('sic-bo', 'Sic Bo', BundledSicBoGame, bundledStyles)
+  if (SicBoGame === null) return pending
 
   return <InGameShell account={account} title="Sic Bo" className="player-page sic-bo-page">
     <SicBoGame gateway={gateway} playerId={`${account.userId}:${practiceMode ? 'practice' : 'account'}`} roundOwnerId={account.userId} recoveryMode={practiceMode ? 'practice' : 'account'} showTitle onBalanceChange={practiceMode ? undefined : refreshBalance} />

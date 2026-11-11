@@ -1,0 +1,10 @@
+{
+  "id": "blackjack",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.Blackjack.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import '@fontsource-variable/sora'
+import { useCallback, useEffect, useRef, useState, type ComponentType } from 'react'
+import { SolitaireBoard, type SolitaireBoardProps } from '@fortuneforge/games-solitaire'
 import { GameOutcomeBanner } from '../../../components/GameOutcomeBanner'
 import type { AccountSummary } from '../../../features/account/services/accountsApi'
 import { InGameShell } from '../../../components/InGameShell'
@@ -26,7 +26,6 @@ import {
   type SolitaireFreeReplayCommand,
   type SolitaireFreeRun,
 } from '../../../games/cards/solitaire/solitaireFreeRunApi'
-import { SolitaireBoard } from '../../../games/cards/solitaire/SolitaireBoard'
 import {
   applyLocalSolitaireCommand,
   autoFinishLocalSolitaire,
@@ -35,7 +34,7 @@ import {
   projectRedactedDraw,
   SolitaireRuleError,
 } from '../../../games/cards/solitaire/solitaireEngine'
-import { useCardAudioClick } from '../../../games/cards/shared/cardAudio'
+import { playCardAudio, useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import '../../../games/cards/shared/playingCards.css'
 import { formatDuration } from '../../../games/cards/solitaire/solitaireDisplay'
@@ -56,15 +55,16 @@ import {
   type SolitaireResultSession,
   type SolitaireSession,
 } from '../../../games/cards/solitaire/solitaireTypes'
-import './solitaire.css'
 
 export type CompetitiveSolitairePageProps = Readonly<{
   account: AccountSummary
   freeOnly?: boolean
+  Board?: ComponentType<SolitaireBoardProps>
 }>
 
 type SolitaireContentProps = Readonly<{
   freeOnly?: boolean
+  Board?: ComponentType<SolitaireBoardProps>
   availability: SolitaireAvailability
   balanceCredits: number
   busy: boolean
@@ -119,11 +119,11 @@ type FreeHistoryEntry = Readonly<{
   commands: readonly SolitaireFreeReplayCommand[]
 }>
 
-export function FreeSolitairePage({ account }: { account: AccountSummary }) {
-  return <CompetitiveSolitairePage account={account} freeOnly />
+export function FreeSolitairePage({ account, Board }: Omit<CompetitiveSolitairePageProps, 'freeOnly'>) {
+  return <CompetitiveSolitairePage account={account} Board={Board} freeOnly />
 }
 
-export function CompetitiveSolitairePage({ account, freeOnly = false }: CompetitiveSolitairePageProps) {
+export function CompetitiveSolitairePage({ account, freeOnly = false, Board }: CompetitiveSolitairePageProps) {
   const [availability, setAvailability] = useState<SolitaireAvailability>(freeOnly
     ? { kind: 'ready', session: { kind: 'idle' } }
     : { kind: 'loading' })
@@ -771,6 +771,7 @@ export function CompetitiveSolitairePage({ account, freeOnly = false }: Competit
         </div>
       )}
       <SolitaireContent
+        Board={Board}
         freeOnly={freeOnly}
         availability={availability}
         balanceCredits={balanceCredits}
@@ -967,7 +968,7 @@ function SessionPanel(props: SolitaireContentProps & { session: SolitaireSession
   if (session.kind === 'queued') return <QueuePanel queue={session} busy={props.busy} onCancel={() => props.onCancel(session)} />
   if (session.kind === 'result') return <ResultPanel result={session} busy={props.busy}
     onClaim={() => props.onClaim(session)} onReturn={() => props.onCloseCompleted(session.matchId)} />
-  return <MatchPanel match={session} busy={props.busy}
+  return <MatchPanel match={session} busy={props.busy} Board={props.Board ?? SolitaireBoard}
     onCommand={(command) => props.onCommand(session, command)}
     onClose={() => props.onCloseCompleted(session.matchId)}
     setupOpen={props.competitiveSetupMatchId === session.matchId}
@@ -1102,6 +1103,7 @@ export function SolitaireHistoryPanel({ items, loading, loadingMore = false, has
 function MatchPanel({
   match,
   busy,
+  Board,
   setupOpen,
   playerCount,
   buyInCredits,
@@ -1117,6 +1119,7 @@ function MatchPanel({
 }: {
   match: SolitaireMatchSession
   busy: boolean
+  Board: ComponentType<SolitaireBoardProps>
   setupOpen: boolean
   playerCount: SolitairePlayerCount
   buyInCredits: SolitaireBuyIn
@@ -1160,7 +1163,7 @@ function MatchPanel({
             onClick={() => onCommand({ type: 'acknowledge-warning' })}>Acknowledge</button>
         </div>
       )}
-      <SolitaireBoard game={match.game} autoWinning={autoWinning}
+      <Board game={match.game} autoWinning={autoWinning} playCardAudio={playCardAudio}
         busy={busy || !playing || match.isPaused || autoWinning || warning !== null}
         onCommand={onCommand} />
       <div className="solitaire-match__controls">
@@ -1239,6 +1242,7 @@ function PauseRemainingTime({ match }: { match: SolitaireMatchSession }) {
 }
 
 function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
+  const Board = props.Board ?? SolitaireBoard
   const [hintRequestId, setHintRequestId] = useState(0)
   return (
     <main className="solitaire-main">
@@ -1254,7 +1258,7 @@ function FreePanel(props: SolitaireContentProps & { game: SolitaireGame }) {
             onHint={() => setHintRequestId((value) => value + 1)}
           />
         </div>
-        <SolitaireBoard game={props.game} autoWinning={props.freeAutoWinning}
+        <Board game={props.game} autoWinning={props.freeAutoWinning} playCardAudio={playCardAudio}
           busy={props.freePaused || props.freePauseBusy || props.freeComplete || props.freeAutoWinning || props.freeSubmitting}
           hintRequestId={hintRequestId}
           onCommand={props.onFreeCommand} />

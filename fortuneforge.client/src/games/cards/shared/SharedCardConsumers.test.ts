@@ -10,7 +10,8 @@ describe('canonical court-card consumers', () => {
     expect(route).toContain('playingCards.css')
   })
   it('Solitaire uses the same court geometry rather than its old inset rank panel', () => {
-    expect(source('../solitaire/SolitaireBoard.tsx')).toContain('<CourtCardSymbol rank={card.rank} />')
+    expect(source('../../../../../games/Solitaire/client/FortuneForge.Games.Solitaire.Client/src/SolitaireBoard.tsx'))
+      .toContain('<CourtCardSymbol rank={card.rank} />')
   })
   it.each(['../../../app/routes/HeartsRoute.tsx', '../../../app/routes/AndarBaharRoute.tsx', '../../../app/routes/DragonTigerRoute.tsx', '../../../app/routes/HiLoRoute.tsx'])('%s uses the canonical PlayingCard', path => {
     expect(source(path)).toContain('PlayingCard')

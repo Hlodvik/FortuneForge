@@ -1,0 +1,19 @@
+{
+  "name": "@fortuneforge/games-blackjack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "files": ["dist"],
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./table-api": { "types": "./dist/tableApi.d.ts", "import": "./dist/tableApi.js" },
+    "./styles.css": "./dist/index.css"
+  },
+  "scripts": {
+    "check": "tsc -p tsconfig.json --noEmit",
+    "build": "vite build && tsc -p tsconfig.build.json"
+  },
+  "dependencies": { "@fortuneforge/client-presentation": "0.1.0" },
+  "peerDependencies": { "react": "^19.0.0" },
+  "devDependencies": { "@types/react": "^19.2.17", "typescript": "~6.0.2", "vite": "^8.1.1" }
+}

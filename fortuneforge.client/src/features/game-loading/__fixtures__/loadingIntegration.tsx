@@ -9,7 +9,7 @@ import '../../../app/styles/index.css'
 import '../../../pages/cards/blackjack/blackjack.css'
 import '../../../pages/cards/threeCardPoker/threeCardPoker.css'
 import '../../../pages/cards/houseHoldem/houseHoldem.css'
-import '../../../pages/cards/solitaire/solitaire.css'
+import '@fortuneforge/games-solitaire/styles.css'
 import '@fortuneforge/games-texas-holdem/styles.css'
 
 // Review-only entry point, excluded from the app's imports and production routes.

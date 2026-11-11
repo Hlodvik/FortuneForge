@@ -1,71 +1,19 @@
 import { fetchWithAccountSession } from '../../../features/account/services/accountsApi'
-import type { CardRank, CardSuit, PlayingCardModel } from '../shared/cards'
+import type { CardRank, PlayingCardModel } from '../shared/cards'
+import {
+  contractVersion,
+  type PendingThreeCardPokerMutation, type ThreeCardPokerAction, type ThreeCardPokerHand,
+  type ThreeCardPokerMutationResponse, type ThreeCardPokerSeat, type ThreeCardPokerSession,
+  type ThreeCardPokerStatus, type ThreeCardPokerTable, type ThreeCardPokerCard,
+} from '@fortuneforge/games-three-card-poker'
+export { validThreeCardPokerWager } from '@fortuneforge/games-three-card-poker'
+export type {
+  PendingThreeCardPokerMutation, ThreeCardPokerAction, ThreeCardPokerCard, ThreeCardPokerHand,
+  ThreeCardPokerMutationResponse, ThreeCardPokerPlaySession, ThreeCardPokerQueueSession,
+  ThreeCardPokerSeat, ThreeCardPokerSession, ThreeCardPokerStatus, ThreeCardPokerTable,
+} from '@fortuneforge/games-three-card-poker'
 
 const basePath = '/api/cards/three-card-poker/table'
-const contractVersion = 'cards.three-card-poker.table.v1'
-
-export type ThreeCardPokerAction = 'play' | 'fold'
-export type ThreeCardPokerStatus = Readonly<{
-  available: boolean
-  minimumWager: number
-  maximumWager: number
-  wagerIncrement: number
-  minimumStartOccupancy: number
-  tableCapacity: number
-  humanGraceSeconds: number
-  actionDeadlineSeconds: number
-  dealerRule: string
-  pairPlusAllowed: boolean
-  anteBonusPaytable: string
-  pairPlusPaytable: string
-  pairPlusPaysOnFold: boolean
-}>
-export type ThreeCardPokerCard = Readonly<{ rank?: string | null; suit?: CardSuit | null; hidden: boolean }>
-export type ThreeCardPokerHand = Readonly<{ cards: readonly ThreeCardPokerCard[]; rank: string | null }>
-export type ThreeCardPokerSeat = Readonly<{
-  seatId: string
-  displayName: string
-  seat: number
-  status: string
-  ante: number
-  pairPlus: number
-  playWager: number
-  totalWager: number
-  payout: number
-  anteBonusPayout: number
-  pairPlusPayout: number
-  outcome?: string | null
-  lastAction?: string | null
-  hand: ThreeCardPokerHand
-  isCurrentPlayer: boolean
-}>
-export type ThreeCardPokerTable = Readonly<{
-  tableId: string
-  phase: string
-  round: number
-  dealer: ThreeCardPokerHand
-  seats: readonly ThreeCardPokerSeat[]
-  activeSeat: number | null
-  legalActions: readonly ThreeCardPokerAction[]
-  createdAtUtc: string
-  updatedAtUtc: string
-  actionDeadlineAtUtc: string | null
-  wagerDeadlineAtUtc: string | null
-  transition: string | null
-  nextTransitionAtUtc: string | null
-  remainingActionMilliseconds: number
-  remainingWagerMilliseconds: number
-  remainingTransitionMilliseconds: number
-}>
-type SessionBase = Readonly<{ contractVersion: typeof contractVersion; version: number }>
-export type ThreeCardPokerQueueSession = SessionBase & Readonly<{
-  kind: 'queue'; ticketId: string; position: number; joinedAtUtc: string
-  humanGraceEndsAtUtc: string; players: readonly ThreeCardPokerSeat[]
-}>
-export type ThreeCardPokerPlaySession = SessionBase & Readonly<{ kind: 'table'; table: ThreeCardPokerTable }>
-export type ThreeCardPokerSession = (SessionBase & Readonly<{ kind: 'idle' }>) | ThreeCardPokerQueueSession | ThreeCardPokerPlaySession
-export type ThreeCardPokerMutationResponse = Readonly<{ session: ThreeCardPokerSession; balanceCredits: number }>
-export type PendingThreeCardPokerMutation = Readonly<{ fingerprint: string; idempotencyKey: string }>
 
 type Problem = Readonly<{ code?: string; error?: string; detail?: string }>
 export class ThreeCardPokerRequestError extends Error {
@@ -120,13 +68,6 @@ export function toThreeCardPokerPlayingCard(card: ThreeCardPokerCard, index: num
   const rank = rankValue(card.rank)
   return rank === null ? null : { id: `${scope}-${index}-${card.rank}-${card.suit}`, rank, suit: card.suit }
 }
-export function validThreeCardPokerWager(value: number, status: ThreeCardPokerStatus, optional = false): boolean {
-  if (optional && value === 0) return true
-  if (!Number.isFinite(value) || value < status.minimumWager || value > status.maximumWager) return false
-  const increments = (value - status.minimumWager) / status.wagerIncrement
-  return Math.abs(increments - Math.round(increments)) < .000001
-}
-
 async function mutation(suffix: string, method: 'POST' | 'DELETE', body: Record<string, unknown>, key: string): Promise<ThreeCardPokerMutationResponse> {
   return readResponse(await fetchWithAccountSession(`${basePath}${suffix}`, {
     method, headers: new Headers({ 'Content-Type': 'application/json', 'Idempotency-Key': key }), body: JSON.stringify(body),

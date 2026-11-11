@@ -1,0 +1,213 @@
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  affordableHouseHoldemAction, houseHoldemChipValues as chipValues, minimumHouseHoldemBankroll,
+  validHouseHoldemAnte, validHouseHoldemTrips,
+  type HouseHoldemAction, type HouseHoldemCard, type HouseHoldemRound, type HouseHoldemStatus,
+  type HouseHoldemBetSpot as Spot, type HouseHoldemChipValue as ChipValue,
+  type HouseHoldemDealPresentation as DealPresentation, type HouseHoldemLoadState as LoadState,
+  type HouseHoldemPlacement as Placement,
+} from './model.js'
+
+const money = (value: number) => `R${value.toFixed(2)}`
+const limitMoney = (value: number) => money(value).replace(/\.00$/, '')
+const cents = (value: number) => Math.round(value * 100)
+
+type RenderCard = (card: HouseHoldemCard | null, scope: string, index: number) => ReactNode
+type ChipImages = Readonly<Record<ChipValue, string>>
+
+export type HouseHoldemContentProps = Readonly<{
+  loadState: LoadState; round: HouseHoldemRound | null; balance: number; ante: number; trips: number
+  placements: readonly Placement[]; selectedChip: ChipValue; chipPickerOpen: boolean; busy: boolean
+  requestPending: boolean; waitingForDeal: boolean; showOpeningBetHint?: boolean
+  dealPresentation: DealPresentation | null; onDismissResult: () => void
+  onPlace: (spot: Spot) => void; onUndo: () => void; onDeal: () => void; onAct: (action: HouseHoldemAction) => void
+  onSelectChip: (value: ChipValue) => void; onTogglePicker: () => void; onRefresh: () => void
+  loading: ReactNode; renderCard: RenderCard; chipImages: ChipImages
+}>
+
+export type HouseHoldemGameProps = HouseHoldemContentProps & Readonly<{
+  renderSupportControls: (guide: ReactNode) => ReactNode
+}>
+
+export function HouseHoldemGame({ renderSupportControls, ...props }: HouseHoldemGameProps) {
+  const status = props.loadState.kind === 'ready' ? props.loadState.status : null
+  return <>
+    <HouseHoldemContent {...props} />
+    {status && renderSupportControls(<HouseHoldemHowToPlay status={status} />)}
+  </>
+}
+
+export function HouseHoldemContent(props: HouseHoldemContentProps) {
+  const { loadState, round, waitingForDeal } = props
+  if (loadState.kind === 'loading') return props.loading
+  if (loadState.kind !== 'ready') return <main className="blackjack-main blackjack-state" role={loadState.kind === 'error' ? 'alert' : 'status'}><h1>{loadState.kind === 'error' ? 'The table is offline.' : 'The table is unavailable.'}</h1><p>{loadState.message}</p><button type="button" onClick={props.onRefresh}>Try again</button></main>
+  const status = loadState.status
+  const shownRound = waitingForDeal ? null : round
+  const dealing = props.dealPresentation?.roundId === round?.roundId && round?.phase === 'preflop' ? props.dealPresentation : null
+  const playerVisibleCount = dealing ? (dealing.step >= 4 ? 2 : dealing.step >= 3 ? 1 : 0) : 2
+  const dealerVisibleCount = dealing ? Math.min(dealing.step, 2) : 2
+  const betting = round === null || round.phase === 'settled'
+  const shownAnte = betting ? props.ante : round.ante
+  const shownTrips = betting ? props.trips : round.trips
+  const placedAnteChips = props.placements.filter((item) => item.spot === 'ante').map((item) => item.value)
+  const placedTripsChips = props.placements.filter((item) => item.spot === 'trips').map((item) => item.value)
+  const anteChips = betting ? placedAnteChips : chipsForAmount(round.ante, placedAnteChips)
+  const tripsChips = betting ? placedTripsChips : chipsForAmount(round.trips, placedTripsChips)
+  const canPlaceAnte = betting && !props.busy && !props.requestPending && shownAnte + props.selectedChip <= status.maximumAnte && cents(minimumHouseHoldemBankroll(Math.max(shownAnte + props.selectedChip, status.minimumAnte), shownTrips)) <= cents(props.balance)
+  const awaitingMainBet = round === null && shownAnte === 0 && canPlaceAnte
+  const onPlaceMainBet = canPlaceAnte ? () => props.onPlace('ante') : undefined
+  const canPlaceTrips = round === null && !props.busy && !props.requestPending && shownTrips + props.selectedChip <= status.maximumTrips && cents(minimumHouseHoldemBankroll(Math.max(shownAnte, status.minimumAnte), shownTrips + props.selectedChip)) <= cents(props.balance)
+  const canDeal = betting && !props.busy && !props.requestPending && validHouseHoldemAnte(props.ante, status) && validHouseHoldemTrips(props.trips, status) && cents(minimumHouseHoldemBankroll(props.ante, props.trips)) <= cents(props.balance)
+  const controls = dealing || waitingForDeal ? [] : round?.allowedActions ?? []
+  return <main className="blackjack-main blackjack-game"><section className="blackjack-table" aria-label="House Hold’em table" data-phase={dealing || waitingForDeal ? 'dealing' : round?.phase ?? 'betting'} onClickCapture={round?.phase === 'settled' && !props.busy && !props.requestPending ? (event) => {
+    event.preventDefault()
+    event.stopPropagation()
+    props.onDismissResult()
+  } : undefined}>
+    <div className="blackjack-playfield">
+      <div className="three-card-poker-limits">MIN ANTE {limitMoney(status.minimumAnte)} <span>•</span> MAX ANTE {limitMoney(status.maximumAnte)}</div>
+      <div className="blackjack-dealer"><CardGroup renderCard={props.renderCard} label="Dealer" cards={shownRound?.dealerCards ?? null} showBacks={shownRound !== null && shownRound.phase !== 'settled'} visibleCount={dealerVisibleCount} count={2} scope="dealer" handLabel={shownRound?.dealerHand ?? null} /></div>
+      <div className="house-holdem-board" role="group" aria-label="Community cards"><CardGroup renderCard={props.renderCard} label="" cards={shownRound?.board ?? []} count={5} scope="board" /></div>
+      <div className="three-card-poker-felt house-holdem-felt" aria-hidden="true"><strong>House Hold’em</strong><span className="house-holdem-felt__underline" /></div>
+      <div className="three-card-poker-player" role="group" aria-label="Your hand"><CardGroup renderCard={props.renderCard} label="" cards={shownRound?.playerCards ?? []} showBacks={!!dealing} visibleCount={playerVisibleCount} concealCards={!!dealing} count={2} scope="player" handLabel={dealing ? null : shownRound?.playerHand ?? null} /></div>
+      <div className="three-card-poker-bets" aria-label="Betting spots" data-awaiting-main-bet={awaitingMainBet}>
+        <BetSpot chipImages={props.chipImages} kind="trips" label="Trips" amount={shownTrips} chips={tripsChips} onPlace={canPlaceTrips ? () => props.onPlace('trips') : undefined} disabled={!canPlaceTrips} />
+        <BetSpot chipImages={props.chipImages} kind="ante" label="Ante" amount={shownAnte} chips={anteChips} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
+        {awaitingMainBet && props.showOpeningBetHint && <div className="house-holdem-opening-bet-hint" role="status">
+          Place chips here to play
+          <svg viewBox="0 0 100 18" preserveAspectRatio="none" aria-hidden="true" focusable="false"><path d="M50 0 20 15m0-6v6l7-1M50 0l30 15m-7-1 7 1V9" /></svg>
+        </div>}
+        <BetSpot chipImages={props.chipImages} kind="blind" label="Blind" amount={betting ? props.ante : round.blind} chips={betting ? anteChips : chipsForAmount(round.blind, anteChips)} onPlace={onPlaceMainBet} disabled={!canPlaceAnte} />
+        <BetSpot chipImages={props.chipImages} kind="play" label="Wager" amount={shownRound?.play ?? 0} chips={chipsForAmount(shownRound?.play ?? 0)} disabled />
+      </div>
+    </div>
+    {shownRound?.phase === 'settled' && <RoundResult round={shownRound} onDismiss={props.onDismissResult} />}
+    <div className="blackjack-actions" aria-label="House Hold’em controls">
+      <div className="three-card-poker-action-stats"><span>Bet <strong>{money(shownRound ? shownRound.totalWager : props.ante * 2 + props.trips)}</strong></span><span>Balance <strong>{money(props.balance)}</strong></span><span>Win <strong>{money(shownRound?.phase === 'settled' ? shownRound.payout : 0)}</strong></span></div>
+      {betting ? <div className="three-card-poker-wager-wrap">
+        <div className="three-card-poker-chip-picker" role="group" aria-label="Chips">
+          <button className="three-card-poker-chip-picker__selected" type="button" aria-label={`Choose chip value, currently ${money(props.selectedChip)}`} aria-expanded={props.chipPickerOpen} disabled={props.busy || props.requestPending} onClick={props.onTogglePicker}><img src={props.chipImages[props.selectedChip]} alt="" /></button>
+          {props.chipPickerOpen && <div className="three-card-poker-chip-picker__options">{chipValues.map((value) => <button className={`three-card-poker-chip-option${props.selectedChip === value ? ' is-selected' : ''}`} type="button" aria-label={`Select ${money(value)} chip`} aria-pressed={props.selectedChip === value} disabled={props.busy || props.requestPending || value > Math.max(status.maximumAnte, status.maximumTrips) || value > props.balance} onClick={() => props.onSelectChip(value)} key={value}><img src={props.chipImages[value]} alt="" /></button>)}</div>}
+        </div>
+        <button className="three-card-poker-action-orb three-card-poker-action-orb--undo" type="button" aria-label="Undo chip" disabled={props.busy || props.requestPending || props.placements.length === 0} onClick={props.onUndo}><CloseIcon /></button>
+        <button className="three-card-poker-action-orb three-card-poker-action-orb--deal" type="button" aria-label="Deal" disabled={!canDeal} onClick={props.onDeal}><CardStackIcon /></button>
+      </div> : controls.length > 0 ? <div className="three-card-poker-wager-wrap house-holdem-decision-actions">{controls.map((action) => <button type="button" className={`three-card-poker-action-orb${action === 'play-4x' || action === 'play-2x' ? ' three-card-poker-action-orb--deal' : ''} house-holdem-action house-holdem-action--${action}`} aria-label={actionLabel(action)} disabled={props.busy || props.requestPending || !affordableHouseHoldemAction(round, action)} onClick={() => props.onAct(action)} key={action}>{action === 'fold' ? <CloseIcon /> : shortActionLabel(action)}</button>)}</div> : null}
+    </div>
+  </section></main>
+}
+
+function CardGroup({ label, cards, count, scope, showBacks = false, visibleCount = count, concealCards = false, handLabel, renderCard }: {
+  label: string; cards: readonly HouseHoldemCard[] | null; count: number; scope: string; showBacks?: boolean; visibleCount?: number; concealCards?: boolean; handLabel?: string | null; renderCard: RenderCard
+}) {
+  return <div className="blackjack-hand">
+    {(label || handLabel) && <div className="blackjack-hand__heading">{label && <h2>{label}</h2>}{handLabel && <small>{formatLabel(handLabel)}</small>}</div>}
+    <div className="blackjack-hand__cards">{Array.from({ length: count }, (_, index) => {
+      const card = cards?.[index]
+      if (index >= visibleCount) return <span className="three-card-poker-card-outline" key={`${scope}-outline-${index}`} aria-hidden="true" />
+      if (concealCards && card) return <span className="ff-card-slot blackjack-card-enter" key={`${scope}-hidden-${index}`}>{renderCard(null, scope, index)}</span>
+      if (card) return <span className="ff-card-slot blackjack-card-enter" key={`${scope}-${index}-${card.rank}-${card.suit}`}>{renderCard(card, scope, index)}</span>
+      if (showBacks) return <span className="ff-card-slot blackjack-card-enter" key={`${scope}-hidden-${index}`}>{renderCard(null, scope, index)}</span>
+      return <span className="three-card-poker-card-outline" key={`${scope}-outline-${index}`} aria-hidden="true" />
+    })}</div>
+  </div>
+}
+
+function BetSpot({ kind, label, amount, chips, onPlace, disabled, chipImages }: { kind: 'trips' | 'ante' | 'blind' | 'play'; label: string; amount: number; chips: readonly ChipValue[]; onPlace?: () => void; disabled: boolean; chipImages: ChipImages }) {
+  const tipId = useId()
+  const help = {
+    trips: 'Optional side bet on your final five-card hand. It can pay even if you fold.',
+    ante: 'Your required opening bet against the dealer. Blind automatically matches it; Trips is optional.',
+    blind: 'Automatically matches your Ante. Place chips on Ante or Blind to increase both wagers. A strong hand that beats the dealer can earn a bonus.',
+    play: 'Your Play bet: 3× or 4× Ante before the flop, 2× after it, or 1× at the river.',
+  }[kind]
+  const contents = <><span className="three-card-poker-chip-stack" aria-hidden="true">{chips.slice(-4).map((value, index) => <img className="three-card-poker-chip" src={chipImages[value]} alt="" style={{ '--chip-index': index } as CSSProperties} key={`${kind}-${index}-${value}`} />)}</span><strong className="three-card-poker-bet-spot__amount">{money(amount)}</strong></>
+  const className = `three-card-poker-bet-spot house-holdem-bet-spot house-holdem-bet-spot--${kind}`
+  const spot = onPlace ? <button className={className} type="button" aria-label={`Place chip on ${label}`} aria-describedby={tipId} disabled={disabled} onClick={onPlace} data-active="true" data-empty={chips.length === 0}>{contents}</button>
+    : <div className={className} aria-label={kind === 'play' ? 'Wager spot' : `${label} wager`} aria-describedby={tipId} data-empty={chips.length === 0}>{contents}</div>
+  return <div className="house-holdem-bet-spot-wrap" data-disabled={disabled}>
+    {spot}
+    <button className="three-card-poker-bet-spot__label house-holdem-bet-spot__help" type="button" aria-label={`About ${label}`} aria-describedby={tipId}>{label}</button>
+    <span className="house-holdem-bet-spot__tip" id={tipId} role="tooltip">{help}</span>
+  </div>
+}
+
+function RoundResult({ round, onDismiss }: { round: HouseHoldemRound; onDismiss: () => void }) {
+  const net = cents(round.payout - round.totalWager) / 100
+  const title = net > 0 ? 'Win' : net < 0 ? 'Loss' : 'Push'
+  const breakdown = round.payoutBreakdown
+  return <div className={`three-card-poker-result three-card-poker-result--${title.toLowerCase()}`} role="status" aria-label="Round result">
+    <button className="house-holdem-result-close" type="button" aria-label="Dismiss result" onClick={onDismiss}><CloseIcon /></button>
+    <strong className="three-card-poker-result__title">{title}</strong>
+    {breakdown && <dl><div><dt>Ante</dt><dd>{money(breakdown.ante)}</dd></div><div><dt>Blind</dt><dd>{money(breakdown.blind)}</dd></div><div><dt>Trips</dt><dd>{money(breakdown.trips)}</dd></div><div><dt>Wager</dt><dd>{money(breakdown.play)}</dd></div></dl>}
+    <strong className="three-card-poker-result__net">{net >= 0 ? '+' : '−'}{money(Math.abs(net))}</strong>
+  </div>
+}
+
+function chipsForAmount(amount: number, placedChips: readonly ChipValue[] = []): readonly ChipValue[] {
+  if (!Number.isInteger(amount) || amount <= 0) return []
+  if (placedChips.reduce((total, value) => total + value, 0) === amount) return placedChips
+  const chips: ChipValue[] = []
+  let remaining = amount
+  for (const value of [...chipValues].reverse()) {
+    while (remaining >= value && chips.length < 24) { chips.push(value); remaining -= value }
+  }
+  return chips
+}
+
+function shortActionLabel(action: HouseHoldemAction): ReactNode {
+  if (action === 'check') return 'Check'
+  if (action === 'fold') return 'Fold'
+  return `${action.slice(-2, -1)}×`
+}
+function actionLabel(action: HouseHoldemAction): string {
+  if (action === 'check') return 'Check'
+  if (action === 'fold') return 'Fold'
+  const multiplier = action.slice(-2, -1)
+  return `Wager ${multiplier} ${multiplier === '1' ? 'time' : 'times'} your Ante`
+}
+function formatLabel(value: string): string { return value.replaceAll('-', ' ').replace(/\b\w/g, (character) => character.toUpperCase()) }
+
+function CardStackIcon() {
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect x="12" y="11" width="38" height="43" rx="4" fill="#062c37" stroke="#c8fff8" strokeWidth="3" transform="rotate(-11 31 32)"/><rect x="17" y="11" width="38" height="43" rx="4" fill="#f4fcf6" stroke="#0d5560" strokeWidth="2.5"/><path d="M36 18l12 15-12 15-12-15z" fill="#267797"/><path d="M36 24l7 9-7 9-7-9z" fill="#bce9ee"/></svg>
+}
+function CloseIcon() {
+  return <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M21 21 43 43M43 21 21 43" fill="none" stroke="currentColor" strokeWidth="7" strokeLinecap="round" /></svg>
+}
+
+const blindPays = [
+  ['Royal flush', '500:1'], ['Straight flush', '50:1'], ['Four of a kind', '10:1'],
+  ['Full house', '3:1'], ['Flush', '3:2'], ['Straight', '1:1'],
+] as const
+const tripsPays = [
+  ['Royal flush', '50:1'], ['Straight flush', '40:1'], ['Four of a kind', '30:1'],
+  ['Full house', '9:1'], ['Flush', '7:1'], ['Straight', '4:1'], ['Three of a kind', '3:1'],
+] as const
+
+export function HouseHoldemHowToPlay({ status, defaultOpen = false }: { status: HouseHoldemStatus; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  const id = useId()
+  const container = useRef<HTMLDivElement>(null)
+  const trigger = useRef<HTMLButtonElement>(null)
+  const closeButton = useRef<HTMLButtonElement>(null)
+  const close = () => { setOpen(false); trigger.current?.focus() }
+  useEffect(() => {
+    if (!open) return
+    closeButton.current?.focus()
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    const outside = (event: PointerEvent) => { if (!container.current?.contains(event.target as Node)) setOpen(false) }
+    document.addEventListener('keydown', escape)
+    document.addEventListener('pointerdown', outside)
+    return () => { document.removeEventListener('keydown', escape); document.removeEventListener('pointerdown', outside) }
+  }, [open])
+  return <div className="blackjack-help" ref={container}><button className="blackjack-help__button" ref={trigger} type="button" aria-label="How to play House Hold’em" aria-expanded={open} aria-controls={id} onClick={() => setOpen((value) => !value)}>?</button>{open && <section className="blackjack-help__panel" id={id} role="dialog" aria-label="How to play House Hold’em">
+    <header><div><small>House Hold’em guide</small><h2>How to play</h2></div><button ref={closeButton} type="button" aria-label="Close how to play" onClick={close}>×</button></header>
+    <p>Place an Ante and a matching Blind to receive two cards. Trips is an optional wager on the strength of your final five-card hand.</p>
+    <div className="blackjack-help__actions"><span><strong>Before the flop</strong>Check or wager 3× or 4× your Ante.</span><span><strong>After the flop</strong>If you checked, check again or wager 2× your Ante.</span><span><strong>At the river</strong>If you have not wagered, wager 1× your Ante or fold.</span></div>
+    <p>Your best five-card hand uses any combination of your two cards and the five community cards. The dealer must have at least a pair to qualify. The Blind and Trips wagers pay according to their hand paytables.</p>
+    <dl className="blackjack-help__rules"><div><dt>Ante</dt><dd>{money(status.minimumAnte)}–{money(status.maximumAnte)}</dd></div><div><dt>Blind</dt><dd>Matches your Ante</dd></div><div><dt>Trips</dt><dd>Optional, up to {money(status.maximumTrips)}</dd></div></dl>
+    <div className="house-holdem-guide-paytables">
+      <section aria-label="Blind payouts"><h3>Blind payouts</h3><dl>{blindPays.map(([hand, odds]) => <div key={hand}><dt>{hand}</dt><dd>{odds}</dd></div>)}</dl><p>Pays only when you beat the dealer. A lower winning hand or tie returns the Blind.</p></section>
+      <section aria-label="Trips payouts"><h3>Trips payouts</h3><dl>{tripsPays.map(([hand, odds]) => <div key={hand}><dt>{hand}</dt><dd>{odds}</dd></div>)}</dl><p>Based on your final hand, even if you fold. Lower hands lose.</p></section>
+    </div>
+  </section>}</div>
+}

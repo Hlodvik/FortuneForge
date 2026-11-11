@@ -2,6 +2,8 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
+const solitaireStyles = '../../../../games/Solitaire/client/FortuneForge.Games.Solitaire.Client/src/solitaire.css'
+
 function source(path: string) {
   return readFileSync(new URL(path, import.meta.url), 'utf8')
 }
@@ -14,8 +16,8 @@ function declarations(path: string, selector: string): string[] {
 
 describe('legacy host green table materials', () => {
   it.each([
-    ['./blackjack/blackjack.css', '.blackjack-table'],
-    ['./solitaire/solitaire.css', '.solitaire-board'],
+    ['../../../../games/Blackjack/client/FortuneForge.Games.Blackjack.Client/src/blackjack.css', '.blackjack-table'],
+    [solitaireStyles, '.solitaire-board'],
     ['./texasHoldem/texasHoldem.css', '.holdem-table'],
   ])('%s uses the approved shared material for every felt background override', (path, selector) => {
     const backgrounds = declarations(path, selector).flatMap(block =>
@@ -29,14 +31,14 @@ describe('legacy host green table materials', () => {
   })
 
   it('keeps the mobile Solitaire background on the material instead of reverting to flat green', () => {
-    const backgrounds = declarations('./solitaire/solitaire.css', '.solitaire-board')
+    const backgrounds = declarations(solitaireStyles, '.solitaire-board')
       .filter(block => /\bbackground\s*:/.test(block))
     expect(backgrounds).toHaveLength(2)
     expect(backgrounds.every(block => block.includes('--ff-casino-felt-material'))).toBe(true)
   })
 
   it('uses the shared green felt on Three Card Poker and the House Hold’em table that inherits it', () => {
-    const table = declarations('./threeCardPoker/threeCardPoker.css', '.three-card-poker-page .blackjack-table')
+    const table = declarations('../../../../games/ThreeCardPoker/client/FortuneForge.Games.ThreeCardPoker.Client/src/threeCardPoker.css', '.three-card-poker-page .blackjack-table')
       .find(block => /\bbackground\s*:/.test(block))
     expect(table).toContain('var(--ff-casino-felt-material,')
     expect(table).not.toContain('#07506a')

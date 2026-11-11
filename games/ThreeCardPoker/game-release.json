@@ -1,0 +1,10 @@
+{
+  "id": "three-card-poker",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.ThreeCardPoker.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

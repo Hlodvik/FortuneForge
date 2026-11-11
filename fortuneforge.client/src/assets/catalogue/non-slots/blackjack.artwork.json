@@ -10,7 +10,7 @@
   "sourceMasterPath": "C:/Users/Lctiv/.codex/generated_images/01a17671-679d-7b33-a055-a25c53ef2395/exec-59c46df7-f803-4ace-9824-90ef8a6df5db.png",
   "referencePaths": [
     "games/shared/visuals/emerald-felt-v2.webp",
-    "fortuneforge.client/src/pages/cards/blackjack/blackjack.css",
+    "games/Blackjack/client/FortuneForge.Games.Blackjack.Client/src/blackjack.css",
     "fortuneforge.client/src/assets/cards/previews/blackjack-game.png",
     "fortuneforge.client/src/pages/cards/threeCardPoker/chip-25.png",
     "fortuneforge.client/src/pages/cards/threeCardPoker/chip-5.png",

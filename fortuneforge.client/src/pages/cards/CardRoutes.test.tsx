@@ -70,7 +70,7 @@ describe('card game route integration', () => {
   })
 
   it('reserves a visible playing-card height for Solitaire controls', () => {
-    const solitaireStyles = source('./solitaire/solitaire.css')
+    const solitaireStyles = source('../../../../games/Solitaire/client/FortuneForge.Games.Solitaire.Client/src/solitaire.css')
 
     expect(solitaireStyles).toMatch(/\.solitaire-card-button\s*\{[^}]*aspect-ratio:\s*0\.704;/s)
   })

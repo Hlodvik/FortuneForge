@@ -44,10 +44,10 @@ them active. Use `--promote <release-id>` to select a staged release or
 `--rollback <release-id>` to restore a previously active one. Both update the
 active pointer for the specified game.
 
-This command publishes local artifacts. Live promotion and website routing to
-independently hosted engines are still in development. Combined local releases
-are registered for the 19 slots that use the shared slots API, Jade Dragon, and
-the games listed below.
+The default command publishes local artifacts. Combined live promotion and
+website routing to independently hosted engines are still in development.
+Combined local releases are registered for the 19 slots that use the shared
+slots API, Jade Dragon, and the games listed below.
 
 ### Cloud browser assets
 
@@ -85,8 +85,13 @@ selected `FortuneForge.Games.PackagedGame.Server` workers. For local integration
 work, these workers require a loopback Firestore emulator and an explicit demo
 account.
 
-2048, Baccarat, Casino War, Drop Merge, Hearts, Keno, Roulette, Sic Bo, Texas
-Hold’em, and Video Poker publish browser modules and selected
+2048, Baccarat, Blackjack, Casino War, Drop Merge, Hearts, House Hold’em, Keno,
+Roulette, Sic Bo, Solitaire, Texas Hold’em, Three Card Poker, and Video Poker
+publish browser modules and selected
 `FortuneForge.Games.GameCompute.Server` workers. Their internal HTTP endpoints
 execute game rules. The site API still owns account sessions, wallet
 transactions, and multiplayer coordination.
+
+Free and Competitive Solitaire share the `solitaire` release. The same browser
+board and rules worker serve both modes, while the site selects the appropriate
+session and API flow for each route.

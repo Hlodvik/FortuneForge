@@ -14,9 +14,9 @@ const pageSources = [
 
 const tableStyles = [
   './texasHoldem.css',
-  '../houseHoldem/houseHoldem.css',
-  '../blackjack/blackjack.css',
-  '../threeCardPoker/threeCardPoker.css',
+  '../../../../../games/HouseHoldem/client/FortuneForge.Games.HouseHoldem.Client/src/houseHoldem.css',
+  '../../../../../games/Blackjack/client/FortuneForge.Games.Blackjack.Client/src/blackjack.css',
+  '../../../../../games/ThreeCardPoker/client/FortuneForge.Games.ThreeCardPoker.Client/src/threeCardPoker.css',
   '../../../../../games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client/src/holdem.css',
 ] as const
 

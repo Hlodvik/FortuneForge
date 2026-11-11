@@ -1,5 +1,9 @@
+import { SolitaireBoard } from '@fortuneforge/games-solitaire'
+import bundledStyles from '@fortuneforge/games-solitaire/styles.css?inline'
+import type { AccountSummary } from '../../features/account/services/accountsApi'
 import { useAuthenticatedAccount } from '../../features/account/useAuthenticatedAccount'
-import { CompetitiveSolitairePage } from '../../pages/cards/solitaire/CompetitiveSolitairePage'
+import { useReleasedGame } from '../../features/game-releases/useReleasedGame'
+import { CompetitiveSolitairePage, FreeSolitairePage } from '../../pages/cards/solitaire/CompetitiveSolitairePage'
 import { AuthenticatedRouteState } from './AuthenticatedRouteState'
 
 export function AuthenticatedSolitaireRoute() {
@@ -8,5 +12,12 @@ export function AuthenticatedSolitaireRoute() {
   if (isLoading || account === null) {
     return <AuthenticatedRouteState error={error} loadingLabel="Opening competitive Solitaire…" errorTitle="Competitive Solitaire could not be opened." onRetry={reload} />
   }
-  return <CompetitiveSolitairePage account={account} />
+  return <ReleasedSolitaireSession key={account.userId} account={account} />
+}
+
+export function ReleasedSolitaireSession({ account, freeOnly = false }: { account: AccountSummary; freeOnly?: boolean }) {
+  const { Game: Board, pending } = useReleasedGame('solitaire', 'Solitaire', SolitaireBoard, bundledStyles)
+  if (!Board) return pending
+  return freeOnly ? <FreeSolitairePage account={account} Board={Board} /> :
+    <CompetitiveSolitairePage account={account} Board={Board} />
 }

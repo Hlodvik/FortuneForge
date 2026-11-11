@@ -1,40 +1,11 @@
 import { fetchWithAccountSession } from '../../../features/account/services/accountsApi'
-import type { CardRank, CardSuit, PlayingCardModel } from '../shared/cards'
+import type { CardRank, PlayingCardModel } from '../shared/cards'
+import type { HouseHoldemAction, HouseHoldemCard, HouseHoldemRound, HouseHoldemStatus } from '@fortuneforge/games-house-holdem'
+
+export type { HouseHoldemAction, HouseHoldemCard, HouseHoldemPhase, HouseHoldemRound, HouseHoldemStatus } from '@fortuneforge/games-house-holdem'
+export { affordableHouseHoldemAction, minimumHouseHoldemBankroll, validHouseHoldemAnte, validHouseHoldemTrips } from '@fortuneforge/games-house-holdem'
 
 const basePath = '/api/games/house-holdem'
-
-export type HouseHoldemAction = 'check' | 'play-3x' | 'play-4x' | 'play-2x' | 'play-1x' | 'fold'
-export type HouseHoldemPhase = 'preflop' | 'flop' | 'river' | 'settled'
-export type HouseHoldemCard = Readonly<{ rank: string; suit: CardSuit }>
-export type HouseHoldemStatus = Readonly<{
-  available: boolean
-  balance: number
-  activeRoundId: string | null
-  minimumAnte: number
-  maximumAnte: number
-  wagerIncrement: number
-  maximumTrips: number
-}>
-export type HouseHoldemRound = Readonly<{
-  roundId: string
-  balance: number
-  phase: HouseHoldemPhase
-  ante: number
-  blind: number
-  trips: number
-  play: number
-  totalWager: number
-  payout: number
-  playerCards: readonly HouseHoldemCard[]
-  dealerCards: readonly HouseHoldemCard[] | null
-  board: readonly HouseHoldemCard[]
-  playerHand: string | null
-  dealerHand: string | null
-  result: string | null
-  allowedActions: readonly HouseHoldemAction[]
-  canAdvance: boolean
-  payoutBreakdown: Readonly<{ ante: number; blind: number; trips: number; play: number }> | null
-}>
 
 type Problem = Readonly<{ code?: string; error?: string; detail?: string; title?: string; message?: string }>
 
@@ -77,30 +48,6 @@ export function actHouseHoldemRound(roundId: string, action: HouseHoldemAction, 
 
 export function advanceHouseHoldemRound(roundId: string, idempotencyKey: string): Promise<HouseHoldemRound> {
   return request(`${basePath}/rounds/${encodeURIComponent(roundId)}/advance`, post({}, idempotencyKey), isRound)
-}
-
-export function validHouseHoldemAnte(amount: number, status: HouseHoldemStatus): boolean {
-  if (!Number.isFinite(amount) || amount < status.minimumAnte || amount > status.maximumAnte) return false
-  const steps = (amount - status.minimumAnte) / status.wagerIncrement
-  return Math.abs(steps - Math.round(steps)) < .000001
-}
-
-export function validHouseHoldemTrips(amount: number, status: HouseHoldemStatus): boolean {
-  if (amount === 0) return true
-  if (!Number.isFinite(amount) || amount < status.minimumAnte || amount > status.maximumTrips) return false
-  const steps = (amount - status.minimumAnte) / status.wagerIncrement
-  return Math.abs(steps - Math.round(steps)) < .000001
-}
-
-export function minimumHouseHoldemBankroll(ante: number, trips: number): number {
-  // Ante + matching Blind are debited at deal; a final 1× Play is still mandatory unless the player folds.
-  return Math.round((ante * 3 + trips) * 100) / 100
-}
-
-export function affordableHouseHoldemAction(round: HouseHoldemRound, action: HouseHoldemAction): boolean {
-  if (!round.allowedActions.includes(action)) return false
-  const multiplier = action.startsWith('play-') ? Number(action.slice(-2, -1)) : 0
-  return round.balance * 100 + .000001 >= round.ante * multiplier * 100
 }
 
 export function toHouseHoldemPlayingCard(card: HouseHoldemCard, scope: string, index: number): PlayingCardModel {

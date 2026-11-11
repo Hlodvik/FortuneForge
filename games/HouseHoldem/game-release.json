@@ -1,0 +1,10 @@
+{
+  "id": "house-holdem",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.HouseHoldem.Client",
+    "entry": "src/browser.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

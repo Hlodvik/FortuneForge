@@ -11,5 +11,5 @@ export function AuthenticatedBlackjackRoute() {
   if (account === null) {
     return <AuthenticatedRouteState error={error} loadingLabel="" errorTitle="The Blackjack table could not be opened." onRetry={reload} />
   }
-  return <BlackjackTablePage account={account} />
+  return <BlackjackTablePage key={account.userId} account={account} />
 }

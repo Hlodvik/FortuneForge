@@ -21,6 +21,8 @@ export function hostedSlotIsolation({
   const manifestLoaderRoot = normalized(resolve(root, 'fortuneforge.client/src/games/slots/manifestLoaders')) + '/'
   const routeRoot = normalized(resolve(root, 'fortuneforge.client/src/app/routes')) + '/'
   const isHostEntry = (id: string) => id === allowedHostEntry || id.startsWith(`${allowedHostEntry}?`)
+  const isApplicationRouteEntry = (id: string) => id.startsWith(routeRoot) &&
+    /(?:route|host)\.[cm]?[jt]sx?(?:\?|$)/.test(id)
 
   return {
     name: pluginName,
@@ -51,7 +53,7 @@ export function hostedSlotIsolation({
       for (const chunk of closure(routeChunk)) for (const id of modulesOf(chunk)) {
         if (id.startsWith(gamesRoot)) errors.add(`${gameLabel} host chunk loads a game client package: ${id}`)
         if (id.startsWith(manifestLoaderRoot)) errors.add(`${gameLabel} host chunk loads another slot route: ${id}`)
-        if (id.startsWith(routeRoot) && !isHostEntry(id)) errors.add(`${gameLabel} host chunk loads another application route: ${id}`)
+        if (isApplicationRouteEntry(id) && !isHostEntry(id)) errors.add(`${gameLabel} host chunk loads another application route: ${id}`)
       }
       for (const chunk of chunks.values()) {
         if (chunk.fileName === routeChunk.fileName) continue

@@ -1,5 +1,6 @@
 using FortuneForge.Games.Hearts;
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
@@ -54,7 +55,8 @@ internal sealed partial class FirestorePaidHeartsStore
                     var latest = Read(await tx.GetSnapshotAsync(Match(id), ct));
                     if (!ActionIsDue(latest, now)) return false;
                     var balances = await BalancesAsync(tx, latest, ct);
-                    AdvanceDueAction(tx, latest, balances, now, seed);
+                    var userId = GameSecurityContext.Current?.UserId ?? latest.Players.First(player => player.IsAccountBacked).UserId;
+                    await AdvanceDueActionAsync(tx, latest, balances, now, seed, userId, ct);
                     return true;
                 }, ct);
             }
@@ -65,12 +67,12 @@ internal sealed partial class FirestorePaidHeartsStore
     private static bool ActionIsDue(PaidHeartsMatch match, DateTime now) =>
         match.Status == "match" && match.NextActionAtUtc is { } due && now >= due;
 
-    private void AdvanceDueAction(Transaction tx, PaidHeartsMatch match,
-        IReadOnlyDictionary<string, long> balances, DateTime now, uint nextSeed)
+    private async Task AdvanceDueActionAsync(Transaction tx, PaidHeartsMatch match,
+        IReadOnlyDictionary<string, long> balances, DateTime now, uint nextSeed, string userId, CancellationToken ct)
     {
         if (match.State!.Round.Phase == HeartsPhase.Complete)
         {
-            match.State = HeartsMatchEngine.StartNextRound(match.State, nextSeed);
+            match.State = await HeartsWorker.NextRoundAsync(gameWorker, userId, match.State, nextSeed, ct);
             match.RecentTrick = null;
             match.Message = "A new round has been dealt.";
         }
@@ -90,7 +92,7 @@ internal sealed partial class FirestorePaidHeartsStore
                     actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++))
                 : new PlayHeartsCard(seat, HeartsManagedActionPolicy.ChooseCard(round, seat,
                     actor.SkillLevel, actor.DecisionSeed, actor.DecisionVersion++));
-            Apply(match, action);
+            Apply(match, await HeartsWorker.ApplyAsync(gameWorker, userId, match.State, action, ct));
             if (actor.IsAccountBacked && actor.MissedTurns > 0)
                 match.Message = $"{actor.DisplayName} was removed when their turn timer expired and forfeited their entry. Their remaining cards will be played automatically.";
         }
@@ -177,10 +179,10 @@ internal sealed partial class FirestorePaidHeartsStore
         }, ct);
     }
 
-    private void Start(PaidHeartsMatch match, DateTime now, uint seed)
+    private void Start(PaidHeartsMatch match, DateTime now, HeartsMatchState initialState)
     {
         match.Status = "match";
-        match.State = HeartsMatchEngine.Start(seed, 100);
+        match.State = initialState;
         match.InitialHumanEntryCents = checked(match.EntryCents * match.Players.Count(player => player.IsAccountBacked));
         match.Message = "Pass three cards to the left.";
         match.AdmissionClaim = null;
@@ -190,10 +192,9 @@ internal sealed partial class FirestorePaidHeartsStore
         Schedule(match, now);
     }
 
-    private static void Apply(PaidHeartsMatch match, HeartsCommand command)
+    private static void Apply(PaidHeartsMatch match, HeartsMatchTransition transition)
     {
         var before = match.State!.Round.CompletedTricks.Count;
-        var transition = HeartsMatchEngine.Apply(match.State, command);
         match.State = transition.State;
         match.Message = transition.Message;
         if (transition.State.Round.CompletedTricks.Count > before)

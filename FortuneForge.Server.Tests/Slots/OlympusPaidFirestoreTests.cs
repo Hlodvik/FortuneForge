@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Games.GodsOfOlympus;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -159,7 +160,7 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
         var evidence = await ReadAudit(player.Database, result);
         Assert.True(evidence.GetProperty("isFreeSpin").GetBoolean());
         Assert.Equal("paw-rand", evidence.GetProperty("activeFreeSpinFeatureMode").GetString());
-        Assert.Equal(SpinService.AuditEngineVersion, evidence.GetProperty("engineAudit").GetProperty("engineVersion").GetString());
+        Assert.Equal(GodsOfOlympusEngine.ClassicEngineVersion, evidence.GetProperty("engineAudit").GetProperty("engineVersion").GetString());
     }
 
     private async Task<PaidPlayer> CreatePlayer()

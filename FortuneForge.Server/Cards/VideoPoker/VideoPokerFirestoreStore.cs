@@ -4,14 +4,16 @@ using System.Text;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.VideoPoker;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.VideoPoker;
 
-internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPokerStore
+internal sealed class VideoPokerFirestoreStore(FirestoreDb database, GameWorkerClient? workers = null) : IVideoPokerStore
 {
     private const string SlotsCreditsCurrencyId = "slotsCredits";
     private const string AvailableFractionalCentsField = "availableFractionalCents";
+    private static readonly string GameId = VideoPokerModule.Descriptor.Id;
 
     public Task<VideoPokerStoreResult> StartAsync(
         string userId,
@@ -53,7 +55,9 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             if (balanceCents < wagerCents)
                 throw new VideoPokerInsufficientCreditsException(balanceCents, wagerCents);
 
-            var round = VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered);
+            var round = workers?.IsConfigured(GameId) == true
+                ? await DealOnWorkerAsync(userId, coinsWagered, handCount, shuffledDecks, cancellationToken)
+                : VideoPokerRoundEngine.Deal(shuffledDecks, coinsWagered);
             var remainingCents = checked(balanceCents - wagerCents);
             transaction.Create(roundReference, RoundData(roundId, userId, round, idempotencyKey, nowUtc));
             FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "video-poker", roundId,
@@ -121,7 +125,9 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             if (snapshots[2].Exists || snapshots[3].Exists)
                 throw new InvalidOperationException("A Video Poker draw ledger already exists without a completed round.");
 
-            var completed = VideoPokerRoundEngine.Draw(stored.Round, heldPositions);
+            var completed = workers?.IsConfigured(GameId) == true
+                ? await DrawOnWorkerAsync(userId, stored.Round, heldPositions, cancellationToken)
+                : VideoPokerRoundEngine.Draw(stored.Round, heldPositions);
             var payoutCents = checked(completed.Results.Sum(result => result.PaytableOutcome.CreditsWon) * VideoPokerMoney.CoinValueCents);
             var finalBalanceCents = checked(balanceCents + payoutCents);
             transaction.Update(roundReference, CompletedRoundData(completed, idempotencyKey, nowUtc));
@@ -139,6 +145,39 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
             return new VideoPokerStoreResult(stored.RoundId, completed, finalBalanceCents);
         }, cancellationToken: cancellationToken);
     }
+
+    private async Task<VideoPokerRound> DealOnWorkerAsync(string userId, int coinsWagered, int handCount,
+        IReadOnlyList<IReadOnlyList<PlayingCard>> decks, CancellationToken cancellationToken)
+    {
+        var round = await workers!.InvokeAsync<VideoPokerComputeDealRequest, VideoPokerRound>(
+            GameId, userId, VideoPokerCompute.DealRoute, new(coinsWagered, handCount, decks), cancellationToken);
+        if (round.Status != VideoPokerRoundStatus.AwaitingDraw || round.CoinsWagered != coinsWagered ||
+            round.HandCount != handCount || round.InitialDeal is null ||
+            !round.InitialDeal.Cards.SequenceEqual(decks[0].Take(VideoPokerDeal.CardCount)) ||
+            round.RemainingDecks.IsDefault || round.RemainingDecks.Length != handCount)
+            throw new GameWorkerUnavailableException(GameId);
+        return round;
+    }
+
+    private async Task<VideoPokerRound> DrawOnWorkerAsync(string userId, VideoPokerRound round,
+        VideoPokerHeldCardPositions heldPositions, CancellationToken cancellationToken)
+    {
+        var request = new VideoPokerComputeDrawRequest(
+            OrderedDecks(round).Select(deck => deck.ToArray()).ToArray(), round.CoinsWagered, heldPositions.Positions);
+        var completed = await workers!.InvokeAsync<VideoPokerComputeDrawRequest, VideoPokerRound>(
+            GameId, userId, VideoPokerCompute.DrawRoute, request, cancellationToken);
+        if (completed.Status != VideoPokerRoundStatus.Completed || completed.HandCount != round.HandCount ||
+            completed.CoinsWagered != round.CoinsWagered || completed.InitialDeal is null ||
+            !completed.InitialDeal.Cards.SequenceEqual(round.InitialDeal.Cards) || completed.HeldCardPositions is null ||
+            !completed.HeldCardPositions.Positions.SequenceEqual(heldPositions.Positions) ||
+            completed.Results.IsDefault || completed.Results.Length != round.HandCount ||
+            completed.Results.Any(hand => hand?.PaytableOutcome is null || hand.PaytableOutcome.CreditsWon < 0))
+            throw new GameWorkerUnavailableException(GameId);
+        return completed;
+    }
+
+    private static IEnumerable<IEnumerable<PlayingCard>> OrderedDecks(VideoPokerRound round) =>
+        round.RemainingDecks.Select(deck => round.InitialDeal.Cards.Concat(deck));
 
     internal static string CreateLookupKey(string value) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
@@ -162,8 +201,8 @@ internal sealed class VideoPokerFirestoreStore(FirestoreDb database) : IVideoPok
         ["userId"] = userId,
         ["coinsWagered"] = (long)round.CoinsWagered,
         ["handCount"] = (long)round.HandCount,
-        ["decks"] = round.RemainingDecks
-            .SelectMany(deck => round.InitialDeal.Cards.Concat(deck))
+        ["decks"] = OrderedDecks(round)
+            .SelectMany(deck => deck)
             .Select(CardCode.Format)
             .ToArray(),
         ["status"] = "awaiting-draw",

@@ -9,7 +9,7 @@ internal static class GameWorkerModule
     internal static void Configure(WebApplicationBuilder builder) => builder.Services.AddMinesServer(options =>
         options.AllowedOrigins = builder.Configuration.GetSection("GameWorker:AllowedOrigins").Get<string[]>() ?? []);
 
-    internal static void Map(WebApplication app, DemoGameAccount? account) =>
-        app.MapMines((_, _) => Task.FromResult<MinesAccount?>(
-            account is null ? null : new MinesAccount(account.UserId)));
+    internal static void Map(WebApplication app, GameWorkerAccountResolver resolveUserId) =>
+        app.MapMines((context, _) => Task.FromResult<MinesAccount?>(
+            resolveUserId(context) is { } userId ? new MinesAccount(userId) : null));
 }

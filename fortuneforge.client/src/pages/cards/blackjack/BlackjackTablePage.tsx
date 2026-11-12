@@ -12,6 +12,7 @@ import { fetchWithAccountSession, type AccountSummary } from '../../../features/
 import { GameLoadingScreen } from '../../../features/game-loading/GameLoadingScreen'
 import { resolveGameLoadingEntry } from '../../../features/game-loading/gameLoadingRegistry'
 import { useBundledGameStyles, useReleasedGame } from '../../../features/game-releases/useReleasedGame'
+import { isPublicBlackjackTableResponse } from '../../../games/cards/blackjack/blackjackTableApi'
 import { PlayingCard } from '../../../games/cards/shared/PlayingCard'
 import { playCardAudio, useCardAudioClick } from '../../../games/cards/shared/cardAudio'
 import '../../../games/cards/shared/playingCards.css'
@@ -36,6 +37,7 @@ export function BlackjackTablePage({ account }: { account: AccountSummary }) {
   return <Game
     startingBalanceCredits={account.balances.slotsCredits}
     fetchWithAccountSession={fetchWithAccountSession}
+    isPublicResponse={isPublicBlackjackTableResponse}
     presentation={presentation}
     onCardAudioClick={onCardAudioClick}
     renderShell={({ balanceCredits, title, className, bodyClassName, children }) => <InGameShell

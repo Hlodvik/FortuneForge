@@ -17,7 +17,7 @@ const current = {
   jadeCatalog: source('fortuneforge.client/src/games/slots/jadeDragon/catalog.ts'),
 }
 
-test('all 45 routes cover 19 demo-capable slots and the embedded Jade Dragon package, with physical and resolved-alias CLI execution', () => {
+test('all 45 routes cover 19 slot contracts and the embedded Jade Dragon package, with physical and resolved-alias CLI execution', () => {
   assert.doesNotThrow(() => verifyGameRouteInventory(current))
   assert.equal(gameSmokeRoutes.length, 45)
   assert.equal(slotSmokeInventory.length, 19)
@@ -42,7 +42,7 @@ test('all 45 routes cover 19 demo-capable slots and the embedded Jade Dragon pac
   for (const args of [[physical], ['--input-type=module', '-e', aliasMain]]) {
     const cli = spawnSync(process.execPath, args, { encoding: 'utf8' })
     assert.equal(cli.status, 0, cli.stderr)
-    assert.match(cli.stdout, /45 routes, 19 demo-capable slot packages and 1 embedded Jade Dragon package \(20 slots\)/)
+    assert.match(cli.stdout, /45 routes, 19 slot contracts and 1 embedded Jade Dragon package \(20 slots\)/)
   }
 })
 

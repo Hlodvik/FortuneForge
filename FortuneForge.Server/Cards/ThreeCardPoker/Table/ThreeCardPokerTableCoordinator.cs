@@ -1,3 +1,5 @@
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Server.GameWorkers;
 using System.Globalization;
 using System.Security.Cryptography;
 using FortuneForge.Server.Bots;
@@ -10,7 +12,10 @@ internal sealed record ThreeCardPokerTableCoordinatorResult(ThreeCardPokerTableS
 internal sealed class ThreeCardPokerTableCoordinator(
     Func<IReadOnlyList<string>>? deckFactory = null,
     Func<ulong>? seedFactory = null,
-    IManagedTablePopulationDirector? managedPopulationDirector = null)
+    IManagedTablePopulationDirector? managedPopulationDirector = null,
+    GameWorkerClient? gameWorker = null,
+    string workerAccountId = "table-deadline",
+    CancellationToken workerCancellation = default)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -24,18 +29,18 @@ internal sealed class ThreeCardPokerTableCoordinator(
     private readonly IManagedTablePopulationDirector population =
         managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
-    public ThreeCardPokerTableCoordinatorResult Get(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> GetAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult Join(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> JoinAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -45,7 +50,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var ticketId = ThreeCardPokerTableIds.Hash($"{userId}\n{idempotencyKey}");
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "join", ticketId, detail))
@@ -78,11 +83,11 @@ internal sealed class ThreeCardPokerTableCoordinator(
         state.Tables[tableId] = table;
         state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
         state.Guards[GuardKey(userId, idempotencyKey)] = new("join", ticketId, detail, nowUtc);
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult Cancel(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> CancelAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -92,7 +97,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "cancel", ticketId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -108,7 +113,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult Wager(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> WagerAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -122,7 +127,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         _ = ThreeCardPokerMoney.ToWagerCents(ThreeCardPokerMoney.ToRand(wagerCents));
         if (pairPlusCents != 0) _ = ThreeCardPokerMoney.ToWagerCents(ThreeCardPokerMoney.ToRand(pairPlusCents));
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = $"{wagerCents}:{pairPlusCents}:{expectedVersion}";
         if (Replay(state, userId, idempotencyKey, "wager", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -161,11 +166,11 @@ internal sealed class ThreeCardPokerTableCoordinator(
                 roundReference,
                 nowUtc));
         }
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult SitOut(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> SitOutAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -175,7 +180,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "sit-out", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -198,11 +203,11 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
         state.Guards[GuardKey(userId, idempotencyKey)] = new("sit-out", tableId, detail, nowUtc);
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult Action(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> ActionAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -213,7 +218,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         action = action.Trim().ToLowerInvariant();
         var detail = $"{action}:{expectedVersion}";
         if (Replay(state, userId, idempotencyKey, "action", tableId, detail))
@@ -222,10 +227,12 @@ internal sealed class ThreeCardPokerTableCoordinator(
         if (table.Version != expectedVersion)
             throw new ThreeCardPokerTableConflictException("The Three Card Poker table changed. Reconnect before acting.");
         var player = table.Players.Single(value => value.ActorId == userId);
-        if (!ThreeCardPokerTableEngine.LegalActions(table, player).Contains(action))
+        var offer = (await LegalActionsAsync(table, player))
+            .SingleOrDefault(value => value.Action == action);
+        if (offer is null)
             throw new ThreeCardPokerTableIllegalActionException("That Three Card Poker action is not legal now.");
         var isPlayAction = table.Phase == ThreeCardPokerTablePhases.Active;
-        var additionalWager = ThreeCardPokerTableEngine.AdditionalWagerFor(player, action);
+        var additionalWager = offer.AdditionalWagerCents;
         if (additionalWager > 0)
         {
             Debit(balances, userId, additionalWager);
@@ -239,9 +246,10 @@ internal sealed class ThreeCardPokerTableCoordinator(
                 $"{tableId}-round-{table.RoundNumber}",
                 nowUtc));
         }
-        ThreeCardPokerTableEngine.ApplyAction(table, userId, action, nowUtc);
+        await ApplyTransitionAsync(table, "action", nowUtc, userId, action);
         if (isPlayAction)
         {
+            player = table.Players.Single(value => value.ActorId == userId);
             player.ConsecutiveMissedActionRounds = 0;
             player.LastMissedActionRound = 0;
         }
@@ -249,7 +257,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableCoordinatorResult Leave(
+    public async ValueTask<ThreeCardPokerTableCoordinatorResult> LeaveAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -259,7 +267,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "leave", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -287,28 +295,28 @@ internal sealed class ThreeCardPokerTableCoordinator(
             table.Version = checked(table.Version + 1);
             table.UpdatedAtUtc = nowUtc;
             if (ApplyPopulationDecision(state, table, journal, nowUtc))
-                StartIfReady(table, nowUtc);
+                await StartIfReadyAsync(table, nowUtc);
         }
         else
         {
-            ThreeCardPokerTableEngine.MarkLeaving(table, player, nowUtc);
+            await ApplyTransitionAsync(table, "leave", nowUtc, player.ActorId);
         }
         state.Sessions[userId] = new(ThreeCardPokerTableSessionKinds.Idle, null, null);
         state.Guards[GuardKey(userId, idempotencyKey)] = new("leave", tableId, detail, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public ThreeCardPokerTableJournal Sweep(
+    public async ValueTask<ThreeCardPokerTableJournal> SweepAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         DateTime nowUtc)
     {
         var journal = new ThreeCardPokerTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         return journal;
     }
 
-    private void Advance(
+    private async ValueTask AdvanceAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         ThreeCardPokerTableJournal journal,
@@ -326,36 +334,36 @@ internal sealed class ThreeCardPokerTableCoordinator(
                 RetireLegacyBettingTable(state, balances, journal, table, nowUtc);
                 continue;
             }
-            if (table.Phase is ThreeCardPokerTablePhases.Dealing or ThreeCardPokerTablePhases.Active or ThreeCardPokerTablePhases.Dealer)
-                ThreeCardPokerTableEngine.AdvanceAutomatedTurns(table, nowUtc);
+            if (ThreeCardPokerTableEngine.HasDueAutomatedTurn(table, nowUtc))
+                await ApplyTransitionAsync(table, "advance", nowUtc);
             if (IsSoloTable(table) && table.Phase == ThreeCardPokerTablePhases.Active &&
                 table.ActiveSeat is not null && table.Transition is null)
                 table.ActionDeadlineAtUtc = table.UpdatedAtUtc.Add(SoloActionDuration);
-            AdvanceManagedPlayerTurns(table, nowUtc);
-            if (table.Phase == ThreeCardPokerTablePhases.Settlement) CompleteSettlement(state, balances, journal, table, nowUtc);
+            await AdvanceManagedPlayerTurnsAsync(table, nowUtc);
+            if (table.Phase == ThreeCardPokerTablePhases.Settlement) await CompleteSettlementAsync(state, balances, journal, table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Betting && table.Transition == "next-round-countdown" &&
                 table.NextTransitionAtUtc is { } countdownEndsAt && nowUtc >= countdownEndsAt)
             {
                 table.Transition = null;
                 table.NextTransitionAtUtc = null;
                 table.UpdatedAtUtc = countdownEndsAt;
-                StartIfReady(table, countdownEndsAt);
+                await StartIfReadyAsync(table, countdownEndsAt);
             }
-            AdvanceManagedWagerTurns(table, nowUtc);
+            await AdvanceManagedWagerTurnsAsync(table, nowUtc);
             if (table.Phase == ThreeCardPokerTablePhases.Betting && table.Transition == "wager-lock" &&
                 table.NextTransitionAtUtc is { } readyAt && nowUtc >= readyAt)
             {
                 table.Transition = null;
                 table.NextTransitionAtUtc = null;
-                StartIfReady(table, nowUtc, adjustmentElapsed: true);
+                await StartIfReadyAsync(table, nowUtc, adjustmentElapsed: true);
             }
             if (table.Phase == ThreeCardPokerTablePhases.Betting &&
                 table.WagerDeadlineAtUtc is { } deadline && nowUtc >= deadline)
             {
-                ApplyWagerDeadline(state, table, journal, nowUtc);
+                await ApplyWagerDeadlineAsync(state, table, journal, nowUtc);
             }
         }
-        StartNewTables(state, balances, journal, nowUtc);
+        await StartNewTablesAsync(state, balances, journal, nowUtc);
     }
 
     private void RetireLegacyBettingTable(
@@ -383,7 +391,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         CloseTable(state, table, journal);
     }
 
-    private static void AdvanceManagedPlayerTurns(ThreeCardPokerTableState table, DateTime nowUtc)
+    private async ValueTask AdvanceManagedPlayerTurnsAsync(ThreeCardPokerTableState table, DateTime nowUtc)
     {
         if (table.Phase is not (ThreeCardPokerTablePhases.Active) ||
             table.ActiveSeat is not { } activeSeat)
@@ -417,9 +425,9 @@ internal sealed class ThreeCardPokerTableCoordinator(
             table.ActionDeadlineAtUtc = null;
             if (nowUtc < decisionAt) return;
             ThreeCardPokerManagedSeat.ClearActionReadyAt(player);
-            var available = ThreeCardPokerTableEngine.LegalActions(table, player);
+            var available = (await LegalActionsAsync(table, player)).Select(value => value.Action).ToArray();
             var action = ThreeCardPokerManagedActionPolicy.Choose(table, player, available);
-            ThreeCardPokerTableEngine.ApplyAction(table, player.ActorId, action, nowUtc);
+            await ApplyTransitionAsync(table, "action", nowUtc, player.ActorId, action);
             return;
         }
 
@@ -434,8 +442,8 @@ internal sealed class ThreeCardPokerTableCoordinator(
             player.LastMissedActionRound = table.RoundNumber;
         }
         var releaseAfterRound = player.ConsecutiveMissedActionRounds >= 2;
-        ThreeCardPokerTableEngine.ApplyAction(table, player.ActorId, ThreeCardPokerActions.Fold, nowUtc);
-        if (releaseAfterRound) player.LeavingAfterRound = true;
+        await ApplyTransitionAsync(table, "action", nowUtc, player.ActorId, ThreeCardPokerActions.Fold);
+        if (releaseAfterRound) table.Players.Single(value => value.ActorId == player.ActorId).LeavingAfterRound = true;
     }
 
     private static TimeSpan ManagedPause(TimeSpan minimum, TimeSpan maximum)
@@ -444,7 +452,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         return minimum.Add(TimeSpan.FromMilliseconds(RandomNumberGenerator.GetInt32(range)));
     }
 
-    private void StartNewTables(
+    private async ValueTask StartNewTablesAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         ThreeCardPokerTableJournal journal,
@@ -473,11 +481,11 @@ internal sealed class ThreeCardPokerTableCoordinator(
             state.Tables[tableId] = table;
             MarkTicketMatched(state, ticket);
             state.Sessions[ticket.UserId] = new(ThreeCardPokerTableSessionKinds.Table, null, tableId);
-            StartIfReady(table, nowUtc);
+            await StartIfReadyAsync(table, nowUtc);
         }
     }
 
-    private void ApplyWagerDeadline(
+    private async ValueTask ApplyWagerDeadlineAsync(
         ThreeCardPokerTableLobbyState state,
         ThreeCardPokerTableState table,
         ThreeCardPokerTableJournal journal,
@@ -505,10 +513,10 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.Transition = null;
         table.NextTransitionAtUtc = null;
         if (ApplyPopulationDecision(state, table, journal, nowUtc))
-            StartIfReady(table, nowUtc);
+            await StartIfReadyAsync(table, nowUtc);
     }
 
-    private void CompleteSettlement(
+    private async ValueTask CompleteSettlementAsync(
         ThreeCardPokerTableLobbyState state,
         IDictionary<string, long> balances,
         ThreeCardPokerTableJournal journal,
@@ -519,7 +527,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         {
             if (table.Transition == "settlement-display" &&
                 table.NextTransitionAtUtc is { } displayEndsAt && nowUtc >= displayEndsAt)
-                BeginNextRoundCountdown(state, journal, table, displayEndsAt);
+                await BeginNextRoundCountdownAsync(state, journal, table, displayEndsAt);
             return;
         }
         var roundId = $"{table.TableId}-round-{table.RoundNumber}";
@@ -585,7 +593,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.UpdatedAtUtc = nowUtc;
     }
 
-    private void BeginNextRoundCountdown(
+    private async ValueTask BeginNextRoundCountdownAsync(
         ThreeCardPokerTableLobbyState state,
         ThreeCardPokerTableJournal journal,
         ThreeCardPokerTableState table,
@@ -618,7 +626,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.NextTransitionAtUtc = nowUtc.Add(ThreeCardPokerTableEngine.NextRoundCountdownDuration);
         table.WagerDeadlineAtUtc = null;
         if (!ApplyPopulationDecision(state, table, journal, nowUtc)) return;
-        ThreeCardPokerTableEngine.PrepareForBetting(table);
+        await ApplyTransitionAsync(table, "prepare-betting", nowUtc);
         foreach (var player in table.Players)
         {
             player.NextWagerCents = 0;
@@ -629,7 +637,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.UpdatedAtUtc = nowUtc;
     }
 
-    private void StartIfReady(
+    private async ValueTask StartIfReadyAsync(
         ThreeCardPokerTableState table,
         DateTime nowUtc,
         bool adjustmentElapsed = false)
@@ -639,7 +647,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         if (table.Transition == "wager-lock")
         {
             if (adjustmentElapsed)
-                ThreeCardPokerTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc);
+                await ApplyTransitionAsync(table, "begin-deal", nowUtc);
             return;
         }
         if (table.Transition is "human-wager" or "managed-wager") return;
@@ -648,7 +656,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         {
             if (table.Players.Count > 0 && table.Players.All(player => player.Status == "sitting-out"))
             {
-                ThreeCardPokerTableEngine.PrepareForBetting(table);
+                await ApplyTransitionAsync(table, "prepare-betting", nowUtc);
                 foreach (var player in table.Players)
                     player.Status = ThreeCardPokerManagedSeat.IsManaged(player) ? "waiting-to-wager" : "awaiting-wager";
                 table.Transition = "next-round-countdown";
@@ -668,7 +676,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
             table.UpdatedAtUtc = nowUtc;
             return;
         }
-        ThreeCardPokerTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc);
+        await ApplyTransitionAsync(table, "begin-deal", nowUtc);
     }
 
     private bool ApplyPopulationDecision(
@@ -839,7 +847,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         ThreeCardPokerManagedSeat.SetBaseWager(player, Math.Clamp(wager, ThreeCardPokerMoney.MinimumWagerCents, ThreeCardPokerMoney.MaximumWagerCents));
     }
 
-    private void AdvanceManagedWagerTurns(ThreeCardPokerTableState table, DateTime nowUtc)
+    private async ValueTask AdvanceManagedWagerTurnsAsync(ThreeCardPokerTableState table, DateTime nowUtc)
     {
         if (table.Phase != ThreeCardPokerTablePhases.Betting ||
             table.Transition != "managed-wager")
@@ -877,7 +885,7 @@ internal sealed class ThreeCardPokerTableCoordinator(
         table.Transition = null;
         table.NextTransitionAtUtc = null;
         table.UpdatedAtUtc = effectiveReadyAt;
-        StartIfReady(table, effectiveReadyAt);
+        await StartIfReadyAsync(table, effectiveReadyAt);
     }
 
     private static bool ScheduleNextWagerTurn(ThreeCardPokerTableState table, DateTime nowUtc)
@@ -916,4 +924,95 @@ internal sealed class ThreeCardPokerTableCoordinator(
 
     private static bool IsSoloTable(ThreeCardPokerTableState table) =>
         table.Players.Count == 1 && !ThreeCardPokerManagedSeat.IsManaged(table.Players[0]);
+
+    private static string WorkerGameId => ThreeCardPokerModule.Descriptor.Id;
+    private GameWorkerClient? Worker => gameWorker?.IsConfigured(WorkerGameId) == true ? gameWorker : null;
+
+    private async ValueTask ApplyTransitionAsync(
+        ThreeCardPokerTableState table, string transition, DateTime nowUtc, string? actorId = null, string? action = null)
+    {
+        if (Worker is null)
+        {
+            switch (transition)
+            {
+                case "prepare-betting": ThreeCardPokerTableEngine.PrepareForBetting(table); break;
+                case "begin-deal": ThreeCardPokerTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc); break;
+                case "advance": ThreeCardPokerTableEngine.AdvanceAutomatedTurns(table, nowUtc); break;
+                case "action": ThreeCardPokerTableEngine.ApplyAction(table, actorId!, action!, nowUtc); break;
+                case "leave":
+                    var player = table.Players.Single(value => value.ActorId == actorId);
+                    ThreeCardPokerTableEngine.MarkLeaving(table, player, nowUtc);
+                    break;
+                default: throw new ArgumentOutOfRangeException(nameof(transition));
+            }
+            return;
+        }
+
+        var result = await ComputeAsync<ThreeCardPokerTableState>(transition,
+            new { PrivateTable = table, NowUtc = nowUtc, ActorId = actorId, Action = action });
+        if (result.TableId != table.TableId || result.CreatedAtUtc != table.CreatedAtUtc ||
+            result.Version < table.Version || result.RoundNumber < table.RoundNumber ||
+            !SameMetadata(table.HostMetadata, result.HostMetadata) ||
+            result.Players is null || result.Players.Count != table.Players.Count ||
+            !table.Players.Zip(result.Players).All(pair =>
+                pair.First.ActorId == pair.Second.ActorId && pair.First.PublicSeatId == pair.Second.PublicSeatId &&
+                pair.First.DisplayName == pair.Second.DisplayName && pair.First.Seat == pair.Second.Seat &&
+                pair.First.SessionId == pair.Second.SessionId && pair.First.SessionStartedAtUtc == pair.Second.SessionStartedAtUtc &&
+                SameMetadata(pair.First.HostMetadata, pair.Second.HostMetadata)))
+            throw new GameWorkerUnavailableException(WorkerGameId);
+
+        table.UpdatedAtUtc = result.UpdatedAtUtc;
+        table.Phase = result.Phase;
+        table.Version = result.Version;
+        table.RoundNumber = result.RoundNumber;
+        table.RoundStartedAtUtc = result.RoundStartedAtUtc;
+        table.RoundSeed = result.RoundSeed;
+        table.Deck = result.Deck;
+        table.NextCardIndex = result.NextCardIndex;
+        table.DealerCards = result.DealerCards;
+        table.ActiveSeat = result.ActiveSeat;
+        table.ActionDeadlineAtUtc = result.ActionDeadlineAtUtc;
+        table.WagerDeadlineAtUtc = result.WagerDeadlineAtUtc;
+        table.PendingSeat = result.PendingSeat;
+        table.Transition = result.Transition;
+        table.NextTransitionAtUtc = result.NextTransitionAtUtc;
+        table.DealerVisibleCardCount = result.DealerVisibleCardCount;
+        table.RoundAccountingSettled = result.RoundAccountingSettled;
+        table.Players.Clear();
+        table.Players.AddRange(result.Players);
+    }
+
+    private async ValueTask<TableActionOffer[]> LegalActionsAsync(ThreeCardPokerTableState table, ThreeCardPokerTablePlayer player)
+    {
+        if (Worker is null)
+            return ThreeCardPokerTableEngine.LegalActions(table, player).Select(action =>
+                new TableActionOffer(action, ThreeCardPokerTableEngine.AdditionalWagerFor(player, action))).ToArray();
+
+        var result = await ComputeAsync<TableActionOffer[]>("legal-actions",
+            new { PrivateTable = table, ActorId = player.ActorId });
+        if (result.Any(value => value is null || string.IsNullOrWhiteSpace(value.Action) || value.AdditionalWagerCents < 0) ||
+            result.Select(value => value.Action).Distinct(StringComparer.Ordinal).Count() != result.Length)
+            throw new GameWorkerUnavailableException(WorkerGameId);
+        return result;
+    }
+
+    private async Task<T> ComputeAsync<T>(string transition, object request)
+    {
+        try
+        {
+            return await Worker!.InvokeAsync<object, T>(WorkerGameId,
+                GameSecurityContext.Current?.UserId ?? workerAccountId,
+                "/internal/v1/tables/" + transition, request, workerCancellation);
+        }
+        catch (GameWorkerRequestRejectedException error)
+        {
+            throw new GameWorkerUnavailableException(WorkerGameId, error);
+        }
+    }
+
+    private static bool SameMetadata(Dictionary<string, string> expected, Dictionary<string, string>? actual) =>
+        actual is not null && expected.Count == actual.Count &&
+        expected.All(pair => actual.TryGetValue(pair.Key, out var value) && value == pair.Value);
+
+    private sealed record TableActionOffer(string Action, long AdditionalWagerCents);
 }

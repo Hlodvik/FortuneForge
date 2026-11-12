@@ -3,6 +3,7 @@ using FortuneForge.Games.Hearts;
 using FortuneForge.Games.TrickTaking;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Hearts;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Matchmaking;
 using FortuneForge.Server.Admin.Management;
 using Google.Cloud.Firestore;
@@ -18,14 +19,16 @@ internal sealed partial class FirestorePaidHeartsStore
     private readonly IMultiplayerMatchmaker matchmaking;
     private readonly PaidHeartsOptions options;
     private readonly ILogger<FirestorePaidHeartsStore>? logger;
+    private readonly GameWorkerClient? gameWorker;
 
     public FirestorePaidHeartsStore(FirestoreDb database, IMultiplayerMatchmaker matchmaking, PaidHeartsOptions? options = null,
-        ILogger<FirestorePaidHeartsStore>? logger = null)
+        ILogger<FirestorePaidHeartsStore>? logger = null, GameWorkerClient? gameWorker = null)
     {
         this.database = database;
         this.matchmaking = matchmaking;
         this.options = options ?? new();
         this.logger = logger;
+        this.gameWorker = gameWorker;
         this.options.Validate();
     }
 
@@ -179,7 +182,8 @@ internal sealed partial class FirestorePaidHeartsStore
                 match.Version++;
                 match.UpdatedAtUtc = now;
                 var deal = house is null && match.Players.Count == 4;
-                if (deal) Start(match, now, PaidHeartsIds.Seed());
+                if (deal)
+                    Start(match, now, await HeartsWorker.StartAsync(gameWorker, userId, PaidHeartsIds.Seed(), 100, ct));
                 batch.Set(Balance(userId), BalanceData(balance - cents, now));
                 Ledger(batch, $"{match.Id}-entry-{actor.EntryId}", userId, -cents, balance - cents, "hearts-entry", key, now);
                 batch.Set(Session(userId), new Dictionary<string, object> { ["matchId"] = match.Id, ["updatedAt"] = Timestamp.FromDateTime(now) });
@@ -248,7 +252,7 @@ internal sealed partial class FirestorePaidHeartsStore
             }
             match.Version++;
             match.UpdatedAtUtc = now;
-            Start(match, now, shuffleSeed);
+            Start(match, now, await HeartsWorker.StartAsync(gameWorker, userId, shuffleSeed, 100, ct));
             WriteFunding(tx, match, now);
             tx.Set(Partition(match.EntryCents), new Dictionary<string, object> { ["matchId"] = "" });
             Write(tx, match, now);
@@ -284,7 +288,7 @@ internal sealed partial class FirestorePaidHeartsStore
                 // Commit the authoritative timeout in this same transaction. Do
                 // not throw after advancing: that would roll back the timeout
                 // and let a late card/pass keep racing the worker indefinitely.
-                AdvanceDueAction(tx, match, balances, now, nextSeed);
+                await AdvanceDueActionAsync(tx, match, balances, now, nextSeed, userId, ct);
                 if (operation != "leave" || match.Status != "match" || actor.HasLeft)
                 {
                     tx.Create(Guard(userId, key), GuardData(operation, id, detail, now));
@@ -320,7 +324,7 @@ internal sealed partial class FirestorePaidHeartsStore
                 if (match.Status != "match" || actor.HasLeft) throw new PaidHeartsConflictException("You cannot act at this table.");
                 if (operation == "next-round")
                 {
-                    match.State = HeartsMatchEngine.StartNextRound(match.State!, nextSeed);
+                    match.State = await HeartsWorker.NextRoundAsync(gameWorker, userId, match.State!, nextSeed, ct);
                     match.RecentTrick = null;
                     match.Message = "A new round has been dealt.";
                 }
@@ -332,7 +336,7 @@ internal sealed partial class FirestorePaidHeartsStore
                         "card" when cards?.Count == 1 => new PlayHeartsCard(actor.Seat, CardCode.Parse(cards[0])),
                         _ => throw new ArgumentException("This Hearts action is not supported.")
                     };
-                    Apply(match, command);
+                    Apply(match, await HeartsWorker.ApplyAsync(gameWorker, userId, match.State!, command, ct));
                 }
                 if (match.State!.Winner is not null) Settle(tx, match, balances, now);
                 else Schedule(match, now);

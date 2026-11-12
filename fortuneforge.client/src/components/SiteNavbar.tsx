@@ -96,7 +96,7 @@ export function SiteNavbar({
   return <header className={classes} data-site-navbar data-game-navbar={isGame ? true : undefined}>
     <div className="site-navbar__leading">
       <SiteBrand href={signedIn ? '/home' : '/'} className="player-shell-header__brand" onNavigate={onNavigate} />
-      {isGame && <a className="player-shell-header__games" href={signedIn ? '/home' : '/demo'} onClick={onNavigate}>Other Games</a>}
+      {isGame && <a className="player-shell-header__games" href={signedIn ? '/home' : '/#discover-games'} onClick={onNavigate}>Other Games</a>}
     </div>
     {!isGame && title && <strong className="in-game-navbar__title">{title}</strong>}
     {!isGame && actions && <div className="site-navbar__actions in-game-navbar__actions">{actions}</div>}

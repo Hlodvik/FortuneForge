@@ -6,6 +6,7 @@ using FortuneForge.Server.Bots.Roulette;
 using FortuneForge.Server.Matchmaking;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Server.Activity;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Games.Abstractions.Auditing;
 using System.Text.Json;
@@ -33,6 +34,7 @@ public sealed class RouletteGameService
     private readonly IManagedTablePopulationDirector population;
     private readonly IGameAnalyticsSink? analytics;
     private readonly IGameSecurityEventSink? securityEvents;
+    private readonly GameWorkerClient? worker;
 
     public RouletteGameService() : this(new MultiplayerMatchmaker(), new ManagedTablePopulationDirector()) { }
 
@@ -40,12 +42,13 @@ public sealed class RouletteGameService
         IMultiplayerMatchmaker matchmaking,
         IManagedTablePopulationDirector? managedPopulationDirector = null,
         IGameAnalyticsSink? analytics = null,
-        IGameSecurityEventSink? securityEvents = null)
+        IGameSecurityEventSink? securityEvents = null, GameWorkerClient? worker = null)
     {
         this.matchmaking = matchmaking;
         population = managedPopulationDirector ?? new ManagedTablePopulationDirector();
         this.analytics = analytics;
         this.securityEvents = securityEvents;
+        this.worker = worker;
     }
 
     public RouletteStatusResponse Status() => new(
@@ -111,15 +114,19 @@ public sealed class RouletteGameService
         AuditResponseAsync(() => ClearBets(userId, roundId), "bets-cleared", cancellationToken);
 
     public Task<RouletteRoundResponse> SpinAuditedAsync(string userId, Guid roundId, CancellationToken cancellationToken = default) =>
-        AuditResponseAsync(() => Spin(userId, roundId), "spun", cancellationToken);
+        AuditResponseAsync(() => SpinAsync(userId, roundId, cancellationToken), "spun", cancellationToken);
 
-    private async Task<RouletteRoundResponse> AuditResponseAsync(Func<RouletteRoundResponse> action,
+    private Task<RouletteRoundResponse> AuditResponseAsync(Func<RouletteRoundResponse> action,
+        string eventKind, CancellationToken cancellationToken) =>
+        AuditResponseAsync(() => Task.FromResult(action()), eventKind, cancellationToken);
+
+    private async Task<RouletteRoundResponse> AuditResponseAsync(Func<Task<RouletteRoundResponse>> action,
         string eventKind, CancellationToken cancellationToken)
     {
         await auditGate.WaitAsync(cancellationToken);
         try
         {
-            var response = action();
+            var response = await action();
             RouletteAuditSnapshot snapshot;
             lock (gate)
             {
@@ -224,12 +231,50 @@ public sealed class RouletteGameService
             var result = RouletteEngine.Spin(
                 table.State,
                 new RoulettePocket(RandomNumberGenerator.GetInt32(0, 37)));
-            table.State = result.State;
-            foreach (var returns in result.Settlements.GroupBy(settlement => settlement.PlayerId))
-                if (table.Balances.ContainsKey(returns.Key))
-                    table.Balances[returns.Key] += returns.Sum(settlement => settlement.TotalReturn);
-            RecordCompletion(table, DateTime.UtcNow);
+            SettleSpin(table, result, DateTime.UtcNow);
         });
+
+    private async Task<RouletteRoundResponse> SpinAsync(string userId, Guid roundId, CancellationToken cancellationToken)
+    {
+        if (worker?.IsConfigured("roulette") != true) return Spin(userId, roundId);
+        var state = Read(userId, roundId, (table, _) => table.State);
+        if (!state.Bets.Any(bet => bet.PlayerId == userId))
+            throw new RouletteRuleException("Place a bet before spinning.");
+        var result = await ResolveSpinAsync(worker, userId, state, cancellationToken);
+        lock (gate)
+        {
+            if (!tables.TryGetValue(roundId, out var table) || !table.HasPlayer(userId))
+                throw new RouletteAccessException();
+            if (!ReferenceEquals(table.State, state)) throw new RouletteRuleException("The table changed. Try again.");
+            SettleSpin(table, result, DateTime.UtcNow);
+            table.Touch();
+            return ToResponse(table, userId);
+        }
+    }
+
+    private static async Task<RouletteSpinOutcome> ResolveSpinAsync(GameWorkerClient worker, string userId,
+        RouletteRoundState state, CancellationToken cancellationToken)
+    {
+        var result = await worker.InvokeAsync<object, RouletteSpinOutcome>("roulette", userId,
+            "/internal/v1/rounds/spin", new { state.RoundId, Bets = state.Bets.Select(bet => new
+            {
+                bet.PlayerId, bet.Kind, bet.Stake, bet.Number,
+                Numbers = bet.Numbers.IsDefault ? Array.Empty<int>() : bet.Numbers.ToArray()
+            }).ToArray() }, cancellationToken);
+        if (result.State.RoundId != state.RoundId || result.State.Phase != RouletteRoundPhase.Settled ||
+            result.State.Bets.Length != state.Bets.Length || result.State.WinningPocket is null)
+            throw new GameWorkerUnavailableException("roulette");
+        return result;
+    }
+
+    private void SettleSpin(RouletteTable table, RouletteSpinOutcome result, DateTime nowUtc)
+    {
+        table.State = result.State;
+        foreach (var returns in result.Settlements.GroupBy(settlement => settlement.PlayerId))
+            if (table.Balances.ContainsKey(returns.Key))
+                table.Balances[returns.Key] += returns.Sum(settlement => settlement.TotalReturn);
+        RecordCompletion(table, nowUtc);
+    }
 
     private RouletteRoundResponse Change(
         string userId,
@@ -278,7 +323,9 @@ public sealed class RouletteGameService
         return table;
     }
 
-    public void Sweep(DateTime nowUtc)
+    public void Sweep(DateTime nowUtc) => Sweep(nowUtc, resolveManagedLocally: true);
+
+    private void Sweep(DateTime nowUtc, bool resolveManagedLocally)
     {
         lock (gate)
         {
@@ -302,13 +349,11 @@ public sealed class RouletteGameService
                     nowUtc - table.UpdatedAtUtc >= ManagedBettingDuration)
                 {
                     PrepareManagedBets(table);
+                    if (!resolveManagedLocally) continue;
                     var result = RouletteEngine.Spin(
                         table.State,
                         new RoulettePocket(RandomNumberGenerator.GetInt32(0, 37)));
-                    table.State = result.State;
-                    foreach (var returns in result.Settlements.GroupBy(item => item.PlayerId))
-                        table.Balances[returns.Key] += returns.Sum(item => item.TotalReturn);
-                    RecordCompletion(table, nowUtc);
+                    SettleSpin(table, result, nowUtc);
                     table.Touch(nowUtc);
                 }
                 else if (table.State.Phase == RouletteRoundPhase.Settled &&
@@ -333,7 +378,12 @@ public sealed class RouletteGameService
             lock (gate) before = tables.ToDictionary(pair => pair.Key,
                 pair => (pair.Value, Fingerprint(pair.Value)));
             Exception? failure = null;
-            try { Sweep(nowUtc); }
+            try
+            {
+                var remote = worker?.IsConfigured("roulette") == true;
+                Sweep(nowUtc, resolveManagedLocally: !remote);
+                if (remote) await ResolveManagedSpinsAsync(worker!, nowUtc, cancellationToken);
+            }
             catch (Exception exception) { failure = exception; }
             List<RouletteAuditSnapshot> changed = [];
             lock (gate)
@@ -348,6 +398,24 @@ public sealed class RouletteGameService
             if (failure is not null) throw failure;
         }
         finally { auditGate.Release(); }
+    }
+
+    private async Task ResolveManagedSpinsAsync(GameWorkerClient remote, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        (Guid TableId, RouletteRoundState State)[] pending;
+        lock (gate) pending = tables.Values.Where(table => table.HumanCount == 0 &&
+                table.State.Phase == RouletteRoundPhase.Open && nowUtc - table.UpdatedAtUtc >= ManagedBettingDuration)
+            .Select(table => (table.Id, table.State)).ToArray();
+        await Task.WhenAll(pending.Select(async entry =>
+        {
+            var result = await ResolveSpinAsync(remote, "roulette-table-worker", entry.State, cancellationToken);
+            lock (gate)
+            {
+                if (!tables.TryGetValue(entry.TableId, out var table) || !ReferenceEquals(table.State, entry.State)) return;
+                SettleSpin(table, result, nowUtc);
+                table.Touch(nowUtc);
+            }
+        }));
     }
 
     private static string Fingerprint(RouletteTable table) => GameSecurityEventDocuments.Hash(JsonSerializer.Serialize(new

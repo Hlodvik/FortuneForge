@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,7 +14,8 @@ public sealed class VideoPokerController(
     FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<VideoPokerController> logger) : ControllerBase
+    ILogger<VideoPokerController> logger,
+    GameWorkerClient? workers = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -88,7 +90,7 @@ public sealed class VideoPokerController(
     private VideoPokerService Service() => new(
         IsPractice
             ? HttpContext.RequestServices.GetRequiredService<PracticeVideoPokerStore>()
-            : new VideoPokerFirestoreStore(database),
+            : new VideoPokerFirestoreStore(database, workers),
         TimeProvider.System);
 
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
@@ -112,6 +114,7 @@ internal static class VideoPokerHttp
         VideoPokerInsufficientCreditsException insufficient => controller.Conflict(new VideoPokerErrorResponse(
             "insufficient-slot-credits", exception.Message)),
         VideoPokerRoundConflictException => controller.Conflict(new VideoPokerErrorResponse("video-poker-round-conflict", exception.Message)),
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new VideoPokerErrorResponse("video-poker-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new VideoPokerErrorResponse("video-poker-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

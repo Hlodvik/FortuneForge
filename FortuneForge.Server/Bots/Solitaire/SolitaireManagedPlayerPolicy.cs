@@ -8,12 +8,13 @@ internal static class SolitaireManagedPlayerPolicy
 {
     private const string SkillKey = "managed-skill";
 
-    public static SolitairePlayerState Start(SolitaireMatch match, int seat, ManagedPlayerProfile profile)
+    public static SolitairePlayerState Start(SolitaireMatch match, int seat, ManagedPlayerProfile profile,
+        SolitaireGameState? seededBoard = null)
     {
         ManagedPlayerSkillLevels.Validate(profile.SkillLevel);
         return new SolitairePlayerState(
             match.MatchId, profile.UserId, profile.PlayerName, seat,
-            SolitairePlayerStatuses.Playing, SolitaireEngine.CreateGame(match.DealSeed, match.DrawCount),
+            SolitairePlayerStatuses.Playing, seededBoard ?? SolitaireEngine.CreateGame(match.DealSeed, match.DrawCount),
             1, null, null, 0, false)
         {
             StartedAtUtc = match.StartedAtUtc,

@@ -199,8 +199,19 @@ public static class BlackjackTableEngine
         table.UpdatedAtUtc = nowUtc;
     }
 
+    public static bool HasDueAutomatedTurn(BlackjackTableState table, DateTime nowUtc)
+    {
+        if (table.Phase is BlackjackTablePhases.Dealing or BlackjackTablePhases.Dealer)
+            return table.NextTransitionAtUtc is not { } due || nowUtc >= due;
+        if (table.Phase is not (BlackjackTablePhases.Active or BlackjackTablePhases.Insurance)) return false;
+        if (table.Transition == "action-settle")
+            return table.NextTransitionAtUtc is not { } settleAt || nowUtc >= settleAt;
+        return table.ActiveSeat is not { } seat || !table.Players.Any(player => player.Seat == seat);
+    }
+
     public static void AdvanceAutomatedTurns(BlackjackTableState table, DateTime nowUtc)
     {
+        if (!HasDueAutomatedTurn(table, nowUtc)) return;
         if (table.Phase == BlackjackTablePhases.Dealing)
         {
             AdvanceInitialDeal(table, nowUtc);
@@ -211,11 +222,8 @@ public static class BlackjackTableEngine
             AdvanceDealer(table, nowUtc);
             return;
         }
-        if (table.Phase is not (BlackjackTablePhases.Active or BlackjackTablePhases.Insurance)) return;
-
         if (table.Transition == "action-settle")
         {
-            if (table.NextTransitionAtUtc is { } settleAt && nowUtc < settleAt) return;
             var pending = table.PendingSeat is { } seat ? table.Players.SingleOrDefault(player => player.Seat == seat) : null;
             table.PendingSeat = null;
             table.Transition = null;

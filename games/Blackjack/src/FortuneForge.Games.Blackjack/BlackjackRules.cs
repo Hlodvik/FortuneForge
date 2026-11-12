@@ -53,21 +53,25 @@ public static class BlackjackRules
             nowUtc);
     }
 
-    public static BlackjackGame ApplyAction(BlackjackGame game, string action, DateTime nowUtc)
+    public static string ValidateAction(BlackjackGame game, string action)
     {
         if (game.Status != BlackjackStatuses.Active)
-        {
             throw new BlackjackConflictException("This Blackjack hand has already finished.");
-        }
 
-        return action.Trim().ToLowerInvariant() switch
+        var normalized = action.Trim().ToLowerInvariant();
+        if (normalized is not (BlackjackActions.Hit or BlackjackActions.Stand or BlackjackActions.Double))
+            throw new ArgumentException("Choose hit, stand, or double.", nameof(action));
+        return normalized;
+    }
+
+    public static BlackjackGame ApplyAction(BlackjackGame game, string action, DateTime nowUtc) =>
+        ValidateAction(game, action) switch
         {
             BlackjackActions.Hit => Hit(game, nowUtc),
             BlackjackActions.Stand => FinishDealer(game, game.PlayerCards, game.TotalWagerCents, nowUtc),
             BlackjackActions.Double => Double(game, nowUtc),
-            _ => throw new ArgumentException("Choose hit, stand, or double.", nameof(action))
+            _ => throw new ArgumentOutOfRangeException(nameof(action))
         };
-    }
 
     public static BlackjackHandValue Score(IReadOnlyList<string> cards)
     {

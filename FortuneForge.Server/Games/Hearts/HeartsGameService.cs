@@ -8,6 +8,7 @@ using FortuneForge.Server.Bots.Hearts;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.SecurityAudit;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Games.Abstractions.Auditing;
 
 namespace FortuneForge.Server.Games.Hearts;
@@ -19,7 +20,8 @@ public sealed class HeartsGameService(
     IHeartsOnboardingStore? onboarding = null,
     ILogger<HeartsGameService>? logger = null,
     IGameAnalyticsSink? analytics = null,
-    IGameSecurityEventSink? securityEvents = null)
+    IGameSecurityEventSink? securityEvents = null,
+    GameWorkerClient? gameWorker = null)
 {
     private const PlayerSeat HumanSeat = PlayerSeat.North;
     private static readonly TimeSpan LeaseHeartbeatInterval = TimeSpan.FromMinutes(5);
@@ -118,7 +120,7 @@ public sealed class HeartsGameService(
         var targetScore = request.TargetScore ?? HeartsMatchEngine.DefaultTargetScore;
         var seed = request.Seed ?? NextSeed();
         var requestedSkillLevel = ParseDifficulty(request.Difficulty);
-        var initialState = HeartsMatchEngine.Start(seed, targetScore);
+        var initialState = await HeartsWorker.StartAsync(gameWorker, userId, seed, targetScore, cancellationToken);
         var matchId = Guid.NewGuid();
         var assignmentId = AssignmentId(matchId);
         var reservedAtUtc = UtcNow();
@@ -190,7 +192,7 @@ public sealed class HeartsGameService(
         ChangeAsync(userId, matchId, session =>
         {
             var parsed = cards.Select(CardCode.Parse).ToArray();
-            ApplyHumanAction(session, new PassHeartsCards(HumanSeat, parsed));
+            return ApplyHumanActionAsync(session, new PassHeartsCards(HumanSeat, parsed), cancellationToken);
         }, "human-pass", cancellationToken);
 
     public Task<HeartsMatchResponse> PlayCardAsync(
@@ -199,13 +201,15 @@ public sealed class HeartsGameService(
         string card,
         CancellationToken cancellationToken = default) =>
         ChangeAsync(userId, matchId, session =>
-            ApplyHumanAction(session, new PlayHeartsCard(HumanSeat, CardCode.Parse(card))), "human-card", cancellationToken);
+            ApplyHumanActionAsync(session, new PlayHeartsCard(HumanSeat, CardCode.Parse(card)), cancellationToken),
+            "human-card", cancellationToken);
 
     public Task<HeartsMatchResponse> AdvanceAsync(
         string userId,
         Guid matchId,
         CancellationToken cancellationToken = default) =>
-        ChangeAsync(userId, matchId, AdvanceManagedTurn, "managed-advance-request", cancellationToken);
+        ChangeAsync(userId, matchId, session => AdvanceManagedTurnAsync(session, cancellationToken),
+            "managed-advance-request", cancellationToken);
 
     internal async Task AdvanceDueManagedTurnsAsync(
         CancellationToken cancellationToken = default)
@@ -232,15 +236,11 @@ public sealed class HeartsGameService(
                     continue;
                 }
             }
+            if (!await AdvanceManagedTurnAsync(session, cancellationToken))
+                continue;
             bool heartbeatDue;
             lock (session.SyncRoot)
             {
-                if (session.IsCancelled || !session.OpponentsThinking ||
-                    session.NextManagedActionAtUtc is not { } actionAt ||
-                    UtcNow() < actionAt)
-                    continue;
-
-                AdvanceManagedTurn(session);
                 RecordCompletion(session);
                 if (IsFinished(session) && !session.ManagedPlayersReleased)
                     session.ManagedReleasePending = true;
@@ -266,20 +266,25 @@ public sealed class HeartsGameService(
         Guid matchId,
         uint? seed,
         CancellationToken cancellationToken = default) =>
-        ChangeAsync(userId, matchId, session =>
+        ChangeAsync(userId, matchId, async session =>
         {
             if (session.IsTrial) throw new HeartsRuleException("The trial has one hand. Start a free game or join a competitive table to keep playing.");
-            session.State = HeartsMatchEngine.StartNextRound(session.State, seed ?? NextSeed());
-            session.LastCompletedTrick = null;
-            session.Message = $"Round {session.State.RoundNumber} is ready. Pass three cards {DirectionName(session.State.PassDirection)}.";
-            session.ClearScheduledTurn();
-            PrepareManagedTurn(session);
+            var next = await HeartsWorker.NextRoundAsync(gameWorker, userId, session.State, seed ?? NextSeed(), cancellationToken);
+            lock (session.SyncRoot)
+            {
+                RequireActive(session);
+                session.State = next;
+                session.LastCompletedTrick = null;
+                session.Message = $"Round {session.State.RoundNumber} is ready. Pass three cards {DirectionName(session.State.PassDirection)}.";
+                session.ClearScheduledTurn();
+                PrepareManagedTurn(session);
+            }
         }, "next-round", cancellationToken);
 
     private async Task<HeartsMatchResponse> ChangeAsync(
         string userId,
         Guid matchId,
-        Action<HeartsSession> action,
+        Func<HeartsSession, Task> action,
         string eventKind,
         CancellationToken cancellationToken)
     {
@@ -287,28 +292,24 @@ public sealed class HeartsGameService(
         await session.AuditGate.WaitAsync(cancellationToken);
         try
         {
-        HeartsMatchResponse response;
-        bool heartbeatDue;
-        lock (session.SyncRoot)
-        {
-            if (session.IsExpired) throw new HeartsAccessException();
-            if (session.IsCancelled) throw new HeartsRuleException(session.IsTrial ? "This trial has ended. Choose Learn to play to start another." : "This free table has ended. Start another free game to play.");
-            action(session);
-            RecordCompletion(session);
-            if (IsFinished(session) && !session.ManagedPlayersReleased)
-                session.ManagedReleasePending = true;
-            heartbeatDue = session.TryClaimLeaseHeartbeat(
-                UtcNow(), LeaseHeartbeatInterval);
-            response = ToResponse(session);
-        }
-        await RecordAsync(session, eventKind, cancellationToken);
-        await PersistTrialCompletionAsync(session, cancellationToken);
-        await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
-        if (heartbeatDue)
-        {
-            await HeartbeatAsync(session, matchId, cancellationToken);
-        }
-        return response;
+            lock (session.SyncRoot) RequireActive(session);
+            await action(session);
+            HeartsMatchResponse response;
+            bool heartbeatDue;
+            lock (session.SyncRoot)
+            {
+                RecordCompletion(session);
+                if (IsFinished(session) && !session.ManagedPlayersReleased)
+                    session.ManagedReleasePending = true;
+                heartbeatDue = session.TryClaimLeaseHeartbeat(UtcNow(), LeaseHeartbeatInterval);
+                response = ToResponse(session);
+            }
+            await RecordAsync(session, eventKind, cancellationToken);
+            await PersistTrialCompletionAsync(session, cancellationToken);
+            await ReleaseProfilesAsync(session, cancellationToken, throwOnFailure: false);
+            if (heartbeatDue)
+                await HeartbeatAsync(session, matchId, cancellationToken);
+            return response;
         }
         finally { session.AuditGate.Release(); }
     }
@@ -449,61 +450,75 @@ public sealed class HeartsGameService(
         session.Message = "This Hearts table expired after inactivity. Start another game to play.";
     }
 
-    private void ApplyHumanAction(HeartsSession session, HeartsCommand command)
+    private static void RequireActive(HeartsSession session)
     {
-        if (session.State.Round.Phase == HeartsPhase.Playing && session.State.Round.Turn != HumanSeat)
-            throw new HeartsRuleException($"It is {DisplayName(session, session.State.Round.Turn)}'s turn.");
-        var completedBefore = session.State.Round.CompletedTricks.Count;
-        var transition = HeartsMatchEngine.Apply(session.State, command);
-        session.State = transition.State;
-        RememberCompletedTrick(session, completedBefore);
-        session.Message = transition.Message;
-        session.ClearScheduledTurn();
-        PrepareManagedTurn(session);
+        if (session.IsExpired) throw new HeartsAccessException();
+        if (session.IsCancelled)
+            throw new HeartsRuleException(session.IsTrial
+                ? "This trial has ended. Choose Learn to play to start another."
+                : "This free table has ended. Start another free game to play.");
     }
 
-    private void AdvanceManagedTurn(HeartsSession session)
+    private async Task ApplyHumanActionAsync(HeartsSession session, HeartsCommand command, CancellationToken cancellationToken)
     {
-        if (!session.OpponentsThinking ||
-            session.NextManagedActionAtUtc is not { } actionAt ||
-            UtcNow() < actionAt)
-            return;
-
-        var round = session.State.Round;
-        HeartsCommand command;
-        if (round.Phase == HeartsPhase.Passing)
+        var state = session.State;
+        if (state.Round.Phase == HeartsPhase.Playing && state.Round.Turn != HumanSeat)
+            throw new HeartsRuleException($"It is {DisplayName(session, state.Round.Turn)}'s turn.");
+        var transition = await HeartsWorker.ApplyAsync(gameWorker, session.UserId, state, command, cancellationToken);
+        lock (session.SyncRoot)
         {
-            if (!round.SubmittedPasses.Any(pass => pass.Seat == HumanSeat))
+            RequireActive(session);
+            ApplyTransition(session, transition, state.Round.CompletedTricks.Count);
+        }
+    }
+
+    private async Task<bool> AdvanceManagedTurnAsync(HeartsSession session, CancellationToken cancellationToken)
+    {
+        HeartsMatchState state;
+        HeartsCommand command;
+        ManagedActor actor;
+        lock (session.SyncRoot)
+        {
+            if (session.IsCancelled || !session.OpponentsThinking ||
+                session.NextManagedActionAtUtc is not { } actionAt || UtcNow() < actionAt)
+                return false;
+
+            state = session.State;
+            var round = state.Round;
+            if (round.Phase == HeartsPhase.Passing && round.SubmittedPasses.Any(pass => pass.Seat == HumanSeat))
+            {
+                var seat = NextPassingManagedSeat(round);
+                actor = session.ManagedActors[seat];
+                command = new PassHeartsCards(seat, HeartsManagedActionPolicy.ChoosePass(
+                    round, seat, actor.Profile.SkillLevel, actor.DecisionSeed, actor.DecisionVersion));
+            }
+            else if (round.Phase == HeartsPhase.Playing && ManagedSeats.Contains(round.Turn))
+            {
+                var seat = round.Turn;
+                actor = session.ManagedActors[seat];
+                command = new PlayHeartsCard(seat, HeartsManagedActionPolicy.ChooseCard(
+                    round, seat, actor.Profile.SkillLevel, actor.DecisionSeed, actor.DecisionVersion));
+            }
+            else
             {
                 session.ClearScheduledTurn();
-                return;
+                return true;
             }
-            var seat = NextPassingManagedSeat(round);
-            var actor = session.ManagedActors[seat];
-            command = new PassHeartsCards(
-                seat,
-                HeartsManagedActionPolicy.ChoosePass(
-                    round, seat, actor.Profile.SkillLevel,
-                    actor.DecisionSeed, actor.NextDecisionVersion()));
-        }
-        else if (round.Phase == HeartsPhase.Playing && ManagedSeats.Contains(round.Turn))
-        {
-            var seat = round.Turn;
-            var actor = session.ManagedActors[seat];
-            command = new PlayHeartsCard(
-                seat,
-                HeartsManagedActionPolicy.ChooseCard(
-                    round, seat, actor.Profile.SkillLevel,
-                    actor.DecisionSeed, actor.NextDecisionVersion()));
-        }
-        else
-        {
-            session.ClearScheduledTurn();
-            return;
         }
 
-        var completedBefore = round.CompletedTricks.Count;
-        var transition = HeartsMatchEngine.Apply(session.State, command);
+        var transition = await HeartsWorker.ApplyAsync(gameWorker, session.UserId, state, command, cancellationToken);
+        lock (session.SyncRoot)
+        {
+            ExpireIfDue(session, UtcNow());
+            if (session.IsCancelled) return false;
+            actor.RecordDecision();
+            ApplyTransition(session, transition, state.Round.CompletedTricks.Count);
+        }
+        return true;
+    }
+
+    private void ApplyTransition(HeartsSession session, HeartsMatchTransition transition, int completedBefore)
+    {
         session.State = transition.State;
         RememberCompletedTrick(session, completedBefore);
         session.Message = transition.Message;
@@ -616,12 +631,12 @@ public sealed class HeartsGameService(
 
     private sealed class ManagedActor(HeartsManagedPlayer profile)
     {
-        private int decisionVersion;
         private int timingVersion;
+        public int DecisionVersion { get; private set; }
         public HeartsManagedPlayer Profile { get; } = profile;
         public ulong DecisionSeed { get; } = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong)));
         private ulong TimingSeed { get; } = BitConverter.ToUInt64(RandomNumberGenerator.GetBytes(sizeof(ulong)));
-        public int NextDecisionVersion() => decisionVersion++;
+        public void RecordDecision() => DecisionVersion++;
         public TimeSpan NextThinkDelay()
         {
             var random = new DeterministicManagedPlayerRandom(

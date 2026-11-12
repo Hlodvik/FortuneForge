@@ -25,7 +25,10 @@ vi.mock('../../../games/cards/solitaire/solitaireFreeRunApi', async (importOrigi
   completeSolitaireFreeRun: vi.fn(),
   setSolitaireFreeRunPaused: vi.fn(),
 }))
-vi.mock('../../../games/cards/shared/cardAudio', () => ({ useCardAudioClick: () => () => undefined }))
+vi.mock('../../../games/cards/shared/cardAudio', () => ({
+  playCardAudio: vi.fn(),
+  useCardAudioClick: () => () => undefined,
+}))
 
 const startedAtUtc = '2026-10-16T12:00:00Z'
 const firstRun: SolitaireFreeRun = {

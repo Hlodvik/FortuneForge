@@ -9,7 +9,7 @@ internal static class GameWorkerModule
     internal static void Configure(WebApplicationBuilder builder) => builder.Services.AddHiLoServer(options =>
         options.AllowedOrigins = builder.Configuration.GetSection("GameWorker:AllowedOrigins").Get<string[]>() ?? []);
 
-    internal static void Map(WebApplication app, DemoGameAccount? account) =>
-        app.MapHiLo((_, _) => Task.FromResult<HiLoAccount?>(
-            account is null ? null : new HiLoAccount(account.UserId)));
+    internal static void Map(WebApplication app, GameWorkerAccountResolver resolveUserId) =>
+        app.MapHiLo((context, _) => Task.FromResult<HiLoAccount?>(
+            resolveUserId(context) is { } userId ? new HiLoAccount(userId) : null));
 }

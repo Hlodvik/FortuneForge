@@ -44,9 +44,9 @@ public sealed class NeonArcadeTests
             Assert.Equal(836, strip.Count(symbol => symbol == "SEAL_ROWS"));
             Assert.Equal(1860, strip.Count(symbol => symbol is "SEAL_SYNC" or "SEAL_ROWS" or "SEAL_PAW"));
             Assert.Equal(16, strip.Count(symbol => symbol == "FREE"));
-            Assert.Single(strip, symbol => symbol == "6");
+            Assert.Equal(2, strip.Count(symbol => symbol == "6"));
             Assert.Single(strip, symbol => symbol == "POWER");
-            Assert.Single(strip, symbol => symbol == "SEAL_RAND");
+            Assert.DoesNotContain("SEAL_RAND", strip);
         });
         Assert.False(strips[0].SequenceEqual(strips[1]));
         Assert.Equal(strips[0], provider.GetReelSet(game.Math.ReelSetId)!.Reels[0]);
@@ -261,7 +261,7 @@ public sealed class NeonArcadeTests
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;
         var stops = new[] { Start(strips[0], "6"), Start(strips[1], "POWER"),
             Start(strips[2], "3"), Start(strips[3], "SEAL_ROWS"), Start(strips[4], "SEAL_PAW") };
-        var random = new Stops([.. stops, .. stops, .. stops, .. stops]);
+        var random = new Stops([.. stops, .. stops, .. stops, .. stops, .. stops]);
         var engine = new SpinService(provider, new CryptoReelGenerator(random), new CombinationEvaluator(), new PayoutCalculator(), random);
         var store = new DemoAudit();
         var controller = new DemoSlotsController(engine, store, NullLogger<DemoSlotsController>.Instance)
@@ -275,10 +275,14 @@ public sealed class NeonArcadeTests
         Assert.Equal(7, award.FreeSpinsAwarded);
         Assert.Equal(7, award.FreeSpinsRemaining);
         Assert.Equal(150, award.FreeSpinWagerPoints);
-        Assert.Null(award.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidCarFeatureMode, award.FreeSpinFeatureMode);
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
-        var continuation = start with { UseFreeSpin = true, FreeSpinsRemaining = 7, FreeSpinWagerPoints = 150 };
+        var continuation = start with
+        {
+            UseFreeSpin = true, FreeSpinsRemaining = 7, FreeSpinWagerPoints = 150,
+            FreeSpinFeatureMode = award.FreeSpinFeatureMode
+        };
         Assert.IsType<BadRequestObjectResult>(await controller.Spin(
             continuation with { WagerPoints = 200 }, CancellationToken.None));
         Assert.IsType<BadRequestObjectResult>(await controller.Spin(
@@ -290,18 +294,22 @@ public sealed class NeonArcadeTests
         Assert.Equal(7, consumed.FreeSpinsAwarded);
         Assert.Equal(13, consumed.FreeSpinsRemaining);
         Assert.Equal(150, consumed.FreeSpinWagerPoints);
-        Assert.Null(consumed.FreeSpinFeatureMode);
+        Assert.Equal(NeonArcadeBonus.PaidCarFeatureMode, consumed.FreeSpinFeatureMode);
+        Assert.Equal(150, consumed.ChargedWagerCents);
+        Assert.All(consumed.Reels, reel => Assert.Equal(7, reel.Count));
         Assert.Empty(SlotEvidenceReplayAudit.Inspect(store.Capture!.Summary, store.Capture.PayloadJson));
 
-        var baseOnlyEvidence = consumed.NeonArcade! with { ModelId = NeonArcadeSlotDefinitions.PreviousModelId };
-        var baseOnlyAudit = consumed.EngineAudit! with
+        var legacy = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(await controller.Spin(
+            continuation with { FreeSpinFeatureMode = null }, CancellationToken.None)).Value);
+        var baseOnlyEvidence = legacy.NeonArcade! with { ModelId = NeonArcadeSlotDefinitions.PreviousModelId };
+        var baseOnlyAudit = legacy.EngineAudit! with
         {
             EngineVersion = NeonArcadeSlotDefinitions.BaseOnlyEngineVersion,
             NeonArcade = baseOnlyEvidence
         };
-        var baseOnlyResult = consumed with { EngineAudit = baseOnlyAudit, NeonArcade = baseOnlyEvidence };
-        Assert.Empty(SlotRoundAudit.Check(baseOnlyResult with { FreeSpinsAwarded = 0 }, consumed.Payout));
-        Assert.Contains(SlotRoundAudit.Check(baseOnlyResult, consumed.Payout),
+        var baseOnlyResult = legacy with { EngineAudit = baseOnlyAudit, NeonArcade = baseOnlyEvidence };
+        Assert.Empty(SlotRoundAudit.Check(baseOnlyResult with { FreeSpinsAwarded = 0 }, legacy.Payout));
+        Assert.Contains(SlotRoundAudit.Check(baseOnlyResult, legacy.Payout),
             finding => finding.Code == "slot-free-spins-mismatch");
 
         var aboveLimit = Assert.IsType<SpinResult>(Assert.IsType<OkObjectResult>(await controller.Spin(

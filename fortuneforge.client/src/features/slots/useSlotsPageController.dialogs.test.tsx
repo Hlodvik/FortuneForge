@@ -108,17 +108,34 @@ describe('symbol guide pauses slot controls', () => {
     expect(controller.freeSpinsRemaining).toBe(4)
   })
 
-  it('keeps target ambience unloaded on mount and synthetic events while other themes retain their behavior', async () => {
-    await mount(DRAGON_HOARD_SLOT_GAME.experience)
-    expect(mocks.startLoop).not.toHaveBeenCalled()
-    act(() => window.dispatchEvent(new Event('pointerdown')))
-    act(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x' })))
-    act(() => window.dispatchEvent(new Event('focus')))
-    act(() => window.dispatchEvent(new Event('pageshow')))
-    act(() => document.dispatchEvent(new Event('visibilitychange')))
-    expect(mocks.startLoop).not.toHaveBeenCalled()
-    await mount(OCEAN_ODYSSEY_SLOT_GAME.experience)
-    expect(mocks.startLoop).toHaveBeenCalledWith(OCEAN_ODYSSEY_SLOT_GAME.experience.sounds.events.ambience)
+  it('requests theme ambience on mount and retries when the page becomes active and visible', async () => {
+    const visibility = vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden')
+    const ambience = DRAGON_HOARD_SLOT_GAME.experience.sounds.events.ambience
+    const dispatchPageEvents = () => act(() => {
+      window.dispatchEvent(new Event('focus'))
+      window.dispatchEvent(new Event('pageshow'))
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    try {
+      await mount(DRAGON_HOARD_SLOT_GAME.experience)
+      expect(mocks.startLoop.mock.calls).toEqual([[ambience]])
+      dispatchPageEvents()
+      expect(mocks.startLoop).toHaveBeenCalledTimes(1)
+
+      visibility.mockReturnValue('visible')
+      act(() => {
+        window.dispatchEvent(new Event('pointerdown'))
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x' }))
+      })
+      expect(mocks.startLoop).toHaveBeenCalledTimes(1)
+      dispatchPageEvents()
+      expect(mocks.startLoop.mock.calls).toEqual([[ambience], [ambience], [ambience], [ambience]])
+
+      await mount(OCEAN_ODYSSEY_SLOT_GAME.experience)
+      expect(mocks.startLoop).toHaveBeenLastCalledWith(OCEAN_ODYSSEY_SLOT_GAME.experience.sounds.events.ambience)
+    } finally {
+      visibility.mockRestore()
+    }
   })
 })
 

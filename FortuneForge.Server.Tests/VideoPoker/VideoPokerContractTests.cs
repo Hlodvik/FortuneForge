@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.VideoPoker;
 using FortuneForge.Server.Cards.VideoPoker;
@@ -11,6 +12,24 @@ namespace FortuneForge.Server.Tests.VideoPoker;
 
 public sealed class VideoPokerContractTests
 {
+    [Fact]
+    public void WorkerRoundJsonPreservesPrivateDeckAndCompletedHand()
+    {
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var deal = VideoPokerRoundEngine.Deal(RoyalFlushDeck(), 5);
+        var restored = Assert.IsType<VideoPokerRound>(
+            JsonSerializer.Deserialize<VideoPokerRound>(JsonSerializer.Serialize(deal, json), json));
+        Assert.Equal(deal.InitialDeal.Cards.ToArray(), restored.InitialDeal.Cards.ToArray());
+        Assert.Equal(deal.RemainingDeck.ToArray(), restored.RemainingDeck.ToArray());
+
+        var holds = new VideoPokerHeldCardPositions(Enum.GetValues<VideoPokerCardPosition>());
+        var drawn = VideoPokerRoundEngine.Draw(restored, holds);
+        var completed = Assert.IsType<VideoPokerRound>(
+            JsonSerializer.Deserialize<VideoPokerRound>(JsonSerializer.Serialize(drawn, json), json));
+        Assert.Equal(holds.Positions.ToArray(), completed.HeldCardPositions!.Positions.ToArray());
+        Assert.Equal(drawn.Result!.PaytableOutcome, completed.Result!.PaytableOutcome);
+    }
+
     [Fact]
     public void FeatureGate_IsDisabledByDefaultAndRequiresExplicitTrueConfiguration()
     {

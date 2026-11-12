@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 
@@ -12,7 +13,8 @@ public static class PaidHeartsConfiguration
         services.AddSingleton(options);
         services.AddSingleton(provider => new FirestorePaidHeartsStore(
             provider.GetRequiredService<FirestoreDb>(), provider.GetRequiredService<IMultiplayerMatchmaker>(), options,
-            provider.GetRequiredService<ILogger<FirestorePaidHeartsStore>>()));
+            provider.GetRequiredService<ILogger<FirestorePaidHeartsStore>>(),
+            provider.GetService<GameWorkerClient>()));
         services.AddHostedService<PaidHeartsWorker>();
         return services;
     }

@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Security;
 using Google.Cloud.Firestore;
@@ -12,7 +13,8 @@ public sealed class BlackjackController(
     FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<BlackjackController> logger) : ControllerBase
+    ILogger<BlackjackController> logger,
+    GameWorkerClient? gameWorker = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -105,7 +107,7 @@ public sealed class BlackjackController(
         }
     }
 
-    private BlackjackService Service() => new(new FirestoreBlackjackStore(database));
+    private BlackjackService Service() => new(new FirestoreBlackjackStore(database, gameWorker));
 
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null
@@ -125,77 +127,6 @@ public sealed class BlackjackController(
             AccountSessionCookie.Read(Request),
             cancellationToken);
         return result.Value;
-    }
-}
-
-[ApiController]
-[Route("api/cards/blackjack/demo")]
-public sealed class DemoBlackjackController(
-    ILogger<DemoBlackjackController> logger) : ControllerBase
-{
-    private static readonly DemoBlackjackService Service = new();
-
-    [HttpGet("status")]
-    [EnableRateLimiting(RateLimitPolicies.SlotReads)]
-    public ActionResult Status() => Ok(BlackjackHttp.Status());
-
-    [HttpPost("games")]
-    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public ActionResult Start(
-        BlackjackStartRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        [FromHeader(Name = "X-Demo-Session-Id")] string? demoSessionId)
-    {
-        try
-        {
-            var result = Service.Start(
-                demoSessionId ?? string.Empty,
-                request,
-                idempotencyKey ?? string.Empty);
-            return CreatedAtAction(nameof(Get), new { gameId = result.GameId }, result);
-        }
-        catch (Exception exception)
-        {
-            return BlackjackHttp.FromException(this, exception, logger);
-        }
-    }
-
-    [HttpGet("games/{gameId}")]
-    [EnableRateLimiting(RateLimitPolicies.SlotReads)]
-    public ActionResult Get(
-        string gameId,
-        [FromHeader(Name = "X-Demo-Session-Id")] string? demoSessionId)
-    {
-        try
-        {
-            return Ok(Service.Get(demoSessionId ?? string.Empty, gameId));
-        }
-        catch (Exception exception)
-        {
-            return BlackjackHttp.FromException(this, exception, logger);
-        }
-    }
-
-    [HttpPost("games/{gameId}/actions")]
-    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
-    public ActionResult Act(
-        string gameId,
-        BlackjackActionRequest request,
-        [FromHeader(Name = "Idempotency-Key")] string? idempotencyKey,
-        [FromHeader(Name = "X-Demo-Session-Id")] string? demoSessionId)
-    {
-        try
-        {
-            return Ok(Service.Act(
-                demoSessionId ?? string.Empty,
-                gameId,
-                request,
-                idempotencyKey ?? string.Empty));
-        }
-        catch (Exception exception)
-        {
-            return BlackjackHttp.FromException(this, exception, logger);
-        }
     }
 }
 
@@ -233,6 +164,12 @@ internal static class BlackjackHttp
                 return controller.Conflict(new
                 {
                     code = "blackjack-state-conflict",
+                    error = exception.Message
+                });
+            case GameWorkerUnavailableException:
+                return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    code = "game-worker-unavailable",
                     error = exception.Message
                 });
             case ArgumentException:

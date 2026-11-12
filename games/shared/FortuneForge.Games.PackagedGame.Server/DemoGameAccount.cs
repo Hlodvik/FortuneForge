@@ -15,34 +15,27 @@ internal sealed record DemoGameAccount(string UserId, FirestoreDb Database)
             string.IsNullOrWhiteSpace(emulatorHost))
             return null;
 
+        if (string.IsNullOrWhiteSpace(userId) || userId.IndexOfAny(['/', '\\']) >= 0)
+            throw new InvalidOperationException("Local game workers require GameWorker:DemoUserId.");
+
+        return new DemoGameAccount(userId, CreateEmulatorDatabase(configuration, projectId, emulatorHost));
+    }
+
+    internal static FirestoreDb CreateEmulatorDatabase(IConfiguration configuration, string? projectId, string? emulatorHost)
+    {
         if (projectId is null || !projectId.StartsWith("demo-", StringComparison.Ordinal) ||
-            projectId.Length == "demo-".Length || !IsLoopbackEmulator(emulatorHost) ||
-            string.IsNullOrWhiteSpace(userId) || userId.IndexOfAny(['/', '\\']) >= 0)
+            projectId.Length == "demo-".Length || !IsLoopbackEmulator(emulatorHost))
         {
             throw new InvalidOperationException(
-                "Game calls require a demo-* project, a loopback FIRESTORE_EMULATOR_HOST, and GameWorker:DemoUserId.");
+                "Local game calls require a demo-* project and a loopback FIRESTORE_EMULATOR_HOST.");
         }
 
-        var database = new FirestoreDbBuilder
+        return new FirestoreDbBuilder
         {
             ProjectId = projectId,
             DatabaseId = configuration["GoogleCloud:FirestoreDatabaseId"] ?? "(default)",
             EmulatorDetection = EmulatorDetection.EmulatorOnly
         }.Build();
-        return new DemoGameAccount(userId, database);
-    }
-
-    internal async Task<decimal> ReadWalletBalanceAsync(CancellationToken cancellationToken)
-    {
-        var wallet = await Database.Collection("userBalances").Document(UserId + "_slotsCredits")
-            .GetSnapshotAsync(cancellationToken);
-        if (!wallet.Exists) return 0;
-
-        var whole = wallet.GetValue<long>("available");
-        var cents = wallet.TryGetValue<long>("availableFractionalCents", out var fractional) ? fractional : 0;
-        if (whole < 0 || cents is < 0 or > 99)
-            throw new InvalidOperationException("The emulator wallet balance is invalid.");
-        return whole + cents / 100m;
     }
 
     internal static bool IsLocalRequest(HttpContext context)

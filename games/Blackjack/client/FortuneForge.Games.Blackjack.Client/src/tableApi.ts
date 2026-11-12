@@ -187,7 +187,30 @@ export function stableBlackjackTableMutation(
     : { fingerprint, idempotencyKey: createBlackjackTableRequestId() }
 }
 
-export function createBlackjackTableApi(fetchWithAccountSession: typeof fetch) {
+export function createBlackjackTableApi(
+  fetchWithAccountSession: typeof fetch,
+  isPublicResponse?: (value: unknown) => boolean,
+) {
+  async function readResponse<T>(
+    response: Response,
+    validator: (value: unknown) => value is T,
+    label: string,
+  ): Promise<T> {
+    const value = await response.json().catch(() => null) as unknown
+    if (!response.ok) {
+      const problem = isRecord(value) ? value as BlackjackTableProblem : null
+      throw new BlackjackTableRequestError(
+        problem?.error ?? problem?.detail ?? `${label} request failed (${response.status}).`,
+        response.status,
+        problem,
+      )
+    }
+    if (isPublicResponse?.(value) === false || !validator(value)) {
+      throw new Error(`The server returned an invalid ${label.toLowerCase()} response.`)
+    }
+    return value
+  }
+
   async function getBlackjackTableStatus(signal?: AbortSignal): Promise<BlackjackTableStatus> {
     const response = await fetchWithAccountSession(`${basePath}/status`, {
       method: 'GET', cache: 'no-store', signal,
@@ -344,45 +367,6 @@ export function toBlackjackTablePlayingCard(
   const rank = rankValue(card.rank)
   if (rank === null) return null
   return { id: `${scope}-${card.suit}-${card.rank}-${index}`, suit: card.suit, rank }
-}
-
-async function readResponse<T>(
-  response: Response,
-  validator: (value: unknown) => value is T,
-  label: string,
-): Promise<T> {
-  const value = await response.json().catch(() => null) as unknown
-  if (!response.ok) {
-    const problem = isRecord(value) ? value as BlackjackTableProblem : null
-    throw new BlackjackTableRequestError(
-      problem?.error ?? problem?.detail ?? `${label} request failed (${response.status}).`,
-      response.status,
-      problem,
-    )
-  }
-  if (hasForbiddenPublicField(value) || !validator(value)) {
-    throw new Error(`The server returned an invalid ${label.toLowerCase()} response.`)
-  }
-  return value
-}
-
-function hasForbiddenPublicField(value: unknown): boolean {
-  if (Array.isArray(value)) return value.some(hasForbiddenPublicField)
-  if (!isRecord(value)) {
-    return typeof value === 'string' && /^(?:bot|actor|user):/i.test(value)
-  }
-  return Object.entries(value).some(([key, child]) => {
-    const normalized = key.replace(/[^a-z0-9]/gi, '').toLowerCase()
-    return normalized.includes('bot')
-      || normalized.includes('skill')
-      || normalized.includes('seed')
-      || normalized === 'actorid'
-      || normalized === 'userid'
-      || normalized === 'accountid'
-      || normalized === 'deck'
-      || normalized.startsWith('raw')
-      || hasForbiddenPublicField(child)
-  })
 }
 
 function isBlackjackTableStatus(value: unknown): value is BlackjackTableStatus {

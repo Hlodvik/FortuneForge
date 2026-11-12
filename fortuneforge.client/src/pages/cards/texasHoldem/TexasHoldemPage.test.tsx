@@ -12,7 +12,7 @@ describe('TexasHoldemPage account neutrality', () => {
     expect(markup).toContain('Practice chips · no account wagering')
     expect(markup).toContain('Account-neutral practice table')
     expect(markup).toContain('data-game-navbar="true"')
-    expect(markup).toContain('href="/demo"')
+    expect(markup).toContain('href="/#discover-games"')
     expect(markup).not.toContain('holdem-header"')
     expect(markup).not.toContain('holdem-brand')
     expect(markup).toContain('Ada')

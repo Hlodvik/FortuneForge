@@ -2,6 +2,7 @@ using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Spins;
@@ -24,7 +25,8 @@ public sealed record NeonAdminTriggerRequest(string Symbol, long WagerPoints);
 public sealed class SlotsController(
     SpinService spinService,
     AccountService accountService,
-    ILogger<SlotsController> logger) : ControllerBase
+    ILogger<SlotsController> logger,
+    GameWorkerClient? workers = null) : ControllerBase
 {
     private static readonly TimeSpan SpinCooldown = TimeSpan.FromMilliseconds(500);
 
@@ -146,7 +148,10 @@ public sealed class SlotsController(
                 specialBoostCost,
                 DateTime.UtcNow,
                 SpinCooldown,
-                cancellationToken);
+                cancellationToken,
+                workers?.IsConfigured(request.GameId) == true
+                    ? (pending, token) => PaidSlotWorker.ResolveAsync(workers, request.GameId, account.UserId, pending, token)
+                    : null);
             if (admission.CooldownRemaining is { } remaining)
             {
                 var retryAfterMilliseconds = Math.Max(1, (int)Math.Ceiling(remaining.TotalMilliseconds));
@@ -159,7 +164,7 @@ public sealed class SlotsController(
                 });
             }
 
-            var result = spinService.SpinAdmitted(request.GameId, admission, account.UserId);
+            var result = admission.ResolvedOutcome ?? spinService.SpinAdmitted(request.GameId, admission, account.UserId);
             var settlement = await accountService.RecordSlotSpinAsync(
                 account.UserId,
                 result,
@@ -199,6 +204,10 @@ public sealed class SlotsController(
                 AwardedBonusRounds = settlement.AwardedBonusRounds
             };
             return Ok(result);
+        }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = exception.Message });
         }
         catch (KeyNotFoundException exception)
         {

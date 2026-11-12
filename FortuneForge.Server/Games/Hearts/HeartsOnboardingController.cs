@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -50,8 +51,10 @@ public sealed class HeartsOnboardingController(
         if (!configuration.GetValue("Features:HeartsEnabled", false))
             return StatusCode(503, new HeartsErrorResponse("hearts-disabled", "Hearts is not available yet."));
         var account = (await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
-        return account is null
-            ? Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."))
-            : await action(account);
+        if (account is null)
+            return Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."));
+        try { return await action(account); }
+        catch (GameWorkerUnavailableException exception)
+        { return StatusCode(503, new HeartsErrorResponse("hearts-unavailable", exception.Message)); }
     }
 }

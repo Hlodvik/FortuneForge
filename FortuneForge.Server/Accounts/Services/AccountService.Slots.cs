@@ -35,7 +35,8 @@ public sealed partial class AccountService
         int specialBoostCost,
         DateTime startedAtUtc,
         TimeSpan cooldown,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
     {
         return accountStore.BeginSlotSpinAsync(
             userId,
@@ -47,7 +48,8 @@ public sealed partial class AccountService
             specialBoostCost,
             startedAtUtc,
             cooldown,
-            cancellationToken);
+            cancellationToken,
+            resolveOutcome);
     }
 
     public Task<SlotStateResponse> GetSlotStateAsync(

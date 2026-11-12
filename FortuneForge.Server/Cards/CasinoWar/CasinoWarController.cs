@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,7 +10,8 @@ namespace FortuneForge.Server.Cards.CasinoWar;
 
 [ApiController]
 [Route("api/games/casino-war")]
-public sealed class CasinoWarController(FirestoreDb database, AccountService accountService, IConfiguration configuration, ILogger<CasinoWarController> logger) : ControllerBase
+public sealed class CasinoWarController(FirestoreDb database, AccountService accountService,
+    IConfiguration configuration, ILogger<CasinoWarController> logger, GameWorkerClient? workers = null) : ControllerBase
 {
     [HttpGet("status")][EnableRateLimiting(RateLimitPolicies.SlotReads)] public async Task<ActionResult> Status(CancellationToken cancellationToken)
     {
@@ -32,7 +34,7 @@ public sealed class CasinoWarController(FirestoreDb database, AccountService acc
         try { return Ok(await Service().DecideAsync(account.UserId, roundId, request, idempotencyKey ?? string.Empty, cancellationToken)); } catch (Exception exception) { return CasinoWarHttp.FromException(this, exception, logger); }
     }
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:CasinoWarEnabled", false);
-    private CasinoWarService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeCasinoWarStore>() : new CasinoWarFirestoreStore(database), TimeProvider.System);
+    private CasinoWarService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeCasinoWarStore>() : new CasinoWarFirestoreStore(database, workers), TimeProvider.System);
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true && values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new CasinoWarErrorResponse("casino-war-disabled", "Casino War is still being verified and cannot accept a wager yet."));
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) => (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
@@ -45,6 +47,8 @@ internal static class CasinoWarHttp
         CasinoWarRoundNotFoundException => controller.NotFound(new CasinoWarErrorResponse("casino-war-round-not-found", exception.Message)),
         CasinoWarInsufficientCreditsException => controller.Conflict(new CasinoWarErrorResponse("insufficient-slot-credits", exception.Message)),
         CasinoWarRoundConflictException => controller.Conflict(new CasinoWarErrorResponse("casino-war-round-conflict", exception.Message)),
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
+            new CasinoWarErrorResponse("casino-war-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new CasinoWarErrorResponse("casino-war-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

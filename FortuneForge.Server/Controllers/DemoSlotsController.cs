@@ -8,7 +8,6 @@ using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Spins;
 using FortuneForge.Server.RoundAudit;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace FortuneForge.Server.Controllers;
 
@@ -27,8 +26,7 @@ public sealed record DemoSpinRequest(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)] int NeonDiscoSpinsRemaining = 0,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] int? NeonDiscoMultiplier = null);
 
-[ApiController]
-[Route("api/slots/demo")]
+[NonController]
 public sealed class DemoSlotsController(
     SpinService spinService,
     IDemoSlotAuditStore auditStore,
@@ -36,7 +34,6 @@ public sealed class DemoSlotsController(
 {
     private const string DemoPlayerId = "public-demo";
 
-    [HttpGet("status")]
     public IActionResult Status([FromQuery] string gameId)
     {
         try
@@ -54,8 +51,6 @@ public sealed class DemoSlotsController(
         }
     }
 
-    [HttpPost("spins")]
-    [EnableRateLimiting(RateLimitPolicies.SlotSpins)]
     public async Task<ActionResult> Spin(DemoSpinRequest request, CancellationToken cancellationToken)
     {
         try

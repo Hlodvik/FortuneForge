@@ -1,5 +1,5 @@
 export function walletPracticeModeEnabled(): boolean {
-  return new URLSearchParams(window.location.search).get('mode') === 'practice'
+  return import.meta.env.DEV && new URLSearchParams(window.location.search).get('mode') === 'practice'
 }
 
 export function practiceAccountFetch(baseFetch: typeof fetch): typeof fetch {

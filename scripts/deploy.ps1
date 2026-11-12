@@ -17,7 +17,8 @@ param(
     [switch]$SkipTestSuites,
     [switch]$LivePlaytest,
     [switch]$TestFree,
-    [string]$TestWaiverReason = ''
+    [string]$TestWaiverReason = '',
+    [string]$GameWorkerBindingsFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,6 +30,94 @@ $baseUrl = 'https://fortuneforgegame.web.app'
 Import-Module (Join-Path $PSScriptRoot 'ReleaseGuardrails.psm1') -Force
 Assert-ReleaseTestWaiver -Target $Target -SkipTestSuites:$SkipTestSuites -TestWaiverReason $TestWaiverReason -LivePlaytest:$LivePlaytest -TestFree:$TestFree
 if ($ContinuousAudit -and $Target -eq 'hosting') { throw '-ContinuousAudit applies only to an API release.' }
+if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile') -and $Target -eq 'hosting') {
+    throw '-GameWorkerBindingsFile applies only to a release that includes the API.'
+}
+
+function Read-GameWorkerBindings {
+    param([string]$Path)
+
+    try {
+        $file = Get-Item -LiteralPath $Path -ErrorAction Stop
+        if ($file -isnot [System.IO.FileInfo]) { throw 'Expected a bindings file.' }
+        $json = [System.IO.File]::ReadAllText($file.FullName)
+        if (-not $json.TrimStart().StartsWith('{')) { throw 'Expected a JSON object.' }
+        $document = ConvertFrom-Json -InputObject $json -ErrorAction Stop
+    }
+    catch { throw 'Could not read the game worker bindings JSON object.' }
+
+    $keys = @($document.PSObject.Properties.Name)
+    if ($keys.Count -ne 1 -or $keys[0] -cne 'bindings' -or
+        $document.bindings -isnot [array] -or $document.bindings.Count -eq 0) {
+        throw 'Game worker bindings require a nonempty bindings array.'
+    }
+
+    $gameIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $origins = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $index = 0
+    foreach ($binding in $document.bindings) {
+        $index++
+        $names = @($binding.PSObject.Properties.Name)
+        if ($binding -isnot [pscustomobject] -or $names.Count -ne 3 -or
+            $names -cnotcontains 'gameId' -or $names -cnotcontains 'url' -or $names -cnotcontains 'signingSecret') {
+            throw "Game worker binding $index requires only gameId, url, and signingSecret."
+        }
+        if ($binding.gameId -isnot [string] -or $binding.gameId.Length -gt 128 -or
+            $binding.gameId -cnotmatch '\A[a-z0-9]+(?:-[a-z0-9]+)*\z') {
+            throw "Game worker binding $index has an invalid runtime game ID."
+        }
+        if ($binding.url -isnot [string] -or $binding.url.Length -gt 253 -or
+            $binding.url -cnotmatch '\Ahttps://(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+run\.app/?\z') {
+            throw "Game worker binding $index requires a Cloud Run HTTPS origin."
+        }
+        if ($binding.signingSecret -isnot [string] -or
+            $binding.signingSecret -cnotmatch '\A[A-Za-z0-9_-]{1,255}:[1-9][0-9]{0,18}\z') {
+            throw "Game worker binding $index requires a same-project secret name with a pinned numeric version."
+        }
+
+        $origin = $binding.url.TrimEnd('/')
+        if (-not $gameIds.Add($binding.gameId) -or -not $origins.Add($origin)) {
+            throw "Game worker binding $index duplicates a runtime game ID or worker origin."
+        }
+        [pscustomobject]@{ gameId = $binding.gameId; url = $origin; signingSecret = $binding.signingSecret }
+    }
+}
+
+function Get-ApiWorkerDeployFlags {
+    param([string]$SourceSha, [object[]]$Bindings)
+
+    $variables = @("FF_RELEASE_SHA=$SourceSha")
+    $secretReferences = @()
+    foreach ($binding in $Bindings) {
+        $prefix = "GameWorkers__$($binding.gameId)__"
+        $variables += "${prefix}Url=$($binding.url)"
+        $secretReferences += "${prefix}SigningKey=$($binding.signingSecret)"
+    }
+    "--update-env-vars=$($variables -join ',')"
+    if ($secretReferences.Count -gt 0) { "--update-secrets=$($secretReferences -join ',')" }
+}
+
+function Assert-ApiWorkerBindings {
+    param($Revision, [object[]]$Bindings)
+
+    foreach ($binding in $Bindings) {
+        $prefix = "GameWorkers__$($binding.gameId)__"
+        $variables = @($Revision.spec.containers[0].env)
+        $url = @($variables | Where-Object { $_.name -ceq "${prefix}Url" })
+        $key = @($variables | Where-Object { $_.name -ceq "${prefix}SigningKey" })
+        $secretName, $secretVersion = $binding.signingSecret -split ':', 2
+        if ($url.Count -ne 1 -or $url[0].value -cne $binding.url -or $key.Count -ne 1 -or
+            $key[0].valueFrom.secretKeyRef.name -cne $secretName -or
+            [string]$key[0].valueFrom.secretKeyRef.key -cne $secretVersion) {
+            throw "The candidate API revision lacks the expected binding for $($binding.gameId). Traffic was not changed."
+        }
+    }
+}
+
+$gameWorkerBindings = @()
+if ($PSBoundParameters.ContainsKey('GameWorkerBindingsFile')) {
+    $gameWorkerBindings = @(Read-GameWorkerBindings -Path $GameWorkerBindingsFile)
+}
 
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments, [string]$WorkingDirectory)
@@ -476,7 +565,13 @@ if ($InspectLive -and $PreflightOnly) { throw 'Choose either live inspection or 
 $localPreflight = $null
 if (-not $InspectLive) {
     $localPreflight = Get-ReleaseLocalPreflight -Repository $repoRoot -Commit $Commit
-    if ($PreflightOnly) { $localPreflight; return }
+    if ($PreflightOnly) {
+        if ($gameWorkerBindings.Count -gt 0) {
+            $localPreflight | Add-Member -NotePropertyName GameWorkerBindings -NotePropertyValue $gameWorkerBindings
+        }
+        $localPreflight
+        return
+    }
 }
 
 $hostingBefore = $null
@@ -545,6 +640,7 @@ $record = [ordered]@{
     apiBuildTag = ''
     apiImageDigest = ''
     apiImageReference = ''
+    gameWorkerBindings = $gameWorkerBindings
     firestoreIndexPublicationSha256 = ''
     firestoreIndexConfigSha256 = ''
     firestorePublishedIndexCount = 0
@@ -733,10 +829,10 @@ try {
             '--image', $builtImage.Image,
             '--region', $region, '--project', $project,
             '--max-instances', '1', '--no-traffic',
-            "--update-env-vars=FF_RELEASE_SHA=$candidateSha",
             "--update-labels=ff-source-sha=$candidateSha",
             '--quiet'
         )
+        $apiDeployArguments += @(Get-ApiWorkerDeployFlags -SourceSha $candidateSha -Bindings $gameWorkerBindings)
         if ($ContinuousAudit) { $apiDeployArguments += @('--min-instances', '1', '--no-cpu-throttling') }
         Invoke-Checked -Executable 'gcloud.cmd' -Arguments $apiDeployArguments -WorkingDirectory $releaseCheckout
 
@@ -750,6 +846,7 @@ try {
             throw 'New Cloud Run revision lacks the expected source stamp; traffic was not changed.'
         }
         Assert-ApiRevisionImage -Revision $newRevision -ExpectedImage $builtImage.Image
+        Assert-ApiWorkerBindings -Revision $newRevision -Bindings $gameWorkerBindings
         $record.newApiRevision = $newApiRevision
         Write-ReleaseRecord -Record $record -Path $recordPath
 

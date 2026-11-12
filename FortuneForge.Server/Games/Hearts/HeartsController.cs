@@ -2,6 +2,7 @@ using FortuneForge.Games.Hearts;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -93,6 +94,7 @@ public sealed class HeartsController(
     private async Task<ActionResult> ExecuteAsync(Func<Task<HeartsMatchResponse>> action)
     {
         try { return Ok(await action()); }
+        catch (GameWorkerUnavailableException exception) { return StatusCode(503, new HeartsErrorResponse("hearts-unavailable", exception.Message)); }
         catch (HeartsAccessException exception) { return NotFound(new HeartsErrorResponse("hearts-match-not-found", exception.Message)); }
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or HeartsRuleException)
         { return BadRequest(new HeartsErrorResponse("hearts-invalid-action", exception.Message)); }

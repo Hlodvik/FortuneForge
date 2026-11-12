@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,7 +10,7 @@ namespace FortuneForge.Server.Dice.SicBo;
 
 [ApiController]
 [Route("api/games/sic-bo")]
-public sealed class SicBoController(FirestoreDb database, AccountService accountService, IConfiguration configuration, ILogger<SicBoController> logger) : ControllerBase
+public sealed class SicBoController(FirestoreDb database, AccountService accountService, IConfiguration configuration, ILogger<SicBoController> logger, GameWorkerClient? workers = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -49,7 +50,7 @@ public sealed class SicBoController(FirestoreDb database, AccountService account
     }
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:SicBoEnabled", false);
-    private SicBoService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeSicBoStore>() : new SicBoFirestoreStore(database), TimeProvider.System);
+    private SicBoService Service() => new(IsPractice ? HttpContext.RequestServices.GetRequiredService<PracticeSicBoStore>() : new SicBoFirestoreStore(database, workers), TimeProvider.System);
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true && values.Any(value => string.Equals(value, "true", StringComparison.OrdinalIgnoreCase));
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new SicBoErrorResponse("sic-bo-disabled", "Sic Bo is still being verified and cannot accept a wager yet."));
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) => (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
@@ -62,6 +63,7 @@ internal static class SicBoHttp
         SicBoRoundNotFoundException => controller.NotFound(new SicBoErrorResponse("sic-bo-round-not-found", exception.Message)),
         SicBoInsufficientCreditsException => controller.Conflict(new SicBoErrorResponse("insufficient-slot-credits", exception.Message)),
         SicBoRoundConflictException => controller.Conflict(new SicBoErrorResponse("sic-bo-round-conflict", exception.Message)),
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new SicBoErrorResponse("sic-bo-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new SicBoErrorResponse("sic-bo-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

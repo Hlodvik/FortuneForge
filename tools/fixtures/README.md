@@ -1,7 +1,7 @@
 # Versioned browser and guide inputs
 
 `midnight-vault/` contains seven captured public demo scenarios plus index and
-engine provenance. `slot-contracts/` contains the twenty-game capture consumed
+engine provenance. `slot-contracts/` contains the nineteen-game capture consumed
 by the guide exporter and contract verifier. These are intentional test/tool
 inputs, not build output. Their initial promotion hashes and original paths
 are recorded in the integration inventory; the dated originals remain on disk.

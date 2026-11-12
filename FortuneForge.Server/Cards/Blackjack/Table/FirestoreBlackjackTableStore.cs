@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using System.Text.Json;
 using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
@@ -16,6 +17,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private static readonly TimeSpan GuardRetention = TimeSpan.FromDays(7);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
+    private readonly GameWorkerClient? gameWorker;
     private readonly Func<IReadOnlyList<string>>? deckFactory;
     private readonly Func<ulong>? seedFactory;
     private readonly IMultiplayerMatchmaker matchmaking;
@@ -33,9 +35,11 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         Func<ulong>? seedFactory,
         IMultiplayerMatchmaker? multiplayerMatchmaker = null,
         IManagedTablePopulationDirector? managedPopulationDirector = null,
-        bool multiplayerEnabled = true)
+        bool multiplayerEnabled = true,
+        GameWorkerClient? gameWorker = null)
     {
         this.database = database;
+        this.gameWorker = gameWorker;
         this.deckFactory = deckFactory;
         this.seedFactory = seedFactory;
         matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
@@ -61,7 +65,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             userId,
             null,
             false,
-            (coordinator, state, balances) => coordinator.Get(state, balances, userId, nowUtc),
+            (coordinator, state, balances) => coordinator.GetAsync(state, balances, userId, nowUtc),
             nowUtc,
             cancellationToken);
     }
@@ -87,11 +91,11 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
             return await ReadCurrentSessionAsync(userId, nowUtc, cancellationToken);
         }
 
-        BlackjackTableCoordinatorResult Command(
+        ValueTask<BlackjackTableCoordinatorResult> Command(
             BlackjackTableCoordinator coordinator,
             BlackjackTableLobbyState state,
             IDictionary<string, long> balances) =>
-            coordinator.Join(
+            coordinator.JoinAsync(
                 state,
                 balances,
                 userId,
@@ -170,7 +174,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Cancel(
+            (coordinator, state, balances) => coordinator.CancelAsync(
                 state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -186,7 +190,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Wager(
+            (coordinator, state, balances) => coordinator.WagerAsync(
                 state, balances, userId, tableId, wagerCents, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -201,7 +205,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.SitOut(
+            (coordinator, state, balances) => coordinator.SitOutAsync(
                 state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -217,7 +221,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Action(
+            (coordinator, state, balances) => coordinator.ActionAsync(
                 state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -232,7 +236,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Leave(
+            (coordinator, state, balances) => coordinator.LeaveAsync(
                 state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -309,7 +313,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
     private async Task<BlackjackTableStoreResult> ExecuteResolvedAsync(
         string userId,
         string idempotencyKey,
-        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, ValueTask<BlackjackTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -325,7 +329,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         string userId,
         string? idempotencyKey,
         bool requireAcceptingShard,
-        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, ValueTask<BlackjackTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -357,7 +361,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
         string userId,
         string? idempotencyKey,
         bool requireAcceptingShard,
-        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, BlackjackTableCoordinatorResult> command,
+        Func<BlackjackTableCoordinator, BlackjackTableLobbyState, IDictionary<string, long>, ValueTask<BlackjackTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -371,7 +375,8 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled,
+                        gameWorker, userId, cancellationToken);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -400,7 +405,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
 
                     var prior = StateReferences.Capture(state, userId);
                     var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
-                    var result = command(coordinator, state, loaded.Current);
+                    var result = await command(coordinator, state, loaded.Current);
                     var commandGuard = guardKey is not null && state.Guards.TryGetValue(guardKey, out var value)
                         ? value
                         : null;
@@ -454,7 +459,8 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                 {
                     var supply = new BlackjackManagedPlayerSupply(reservations, generateWhenEmpty: false);
                     var coordinator = new BlackjackTableCoordinator(
-                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled);
+                        deckFactory, seedFactory, supply, matchmaking, population, allowManagedArrivals, multiplayerEnabled,
+                        gameWorker, workerCancellation: cancellationToken);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -463,7 +469,7 @@ internal sealed class FirestoreBlackjackTableStore : IBlackjackTableStore
                     var durableBefore = DurableStateJson(state);
                     var prior = StateReferences.Capture(state, null);
                     var loaded = await ReadBalancesAsync(transaction, state, null, cancellationToken);
-                    var journal = coordinator.Sweep(state, loaded.Current, nowUtc);
+                    var journal = await coordinator.SweepAsync(state, loaded.Current, nowUtc);
                     Normalize(state);
                     state.Guards.Clear();
                     WriteMutation(

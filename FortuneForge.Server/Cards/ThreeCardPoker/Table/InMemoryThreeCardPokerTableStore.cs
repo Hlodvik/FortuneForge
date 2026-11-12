@@ -50,7 +50,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string userId,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Get(state, balances, userId, nowUtc), cancellationToken);
+        Execute(() => coordinator.GetAsync(state, balances, userId, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> JoinAsync(
         string userId,
@@ -59,7 +59,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Join(
+        Execute(() => coordinator.JoinAsync(
             state, balances, userId, displayName, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> CancelAsync(
@@ -69,7 +69,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Cancel(
+        Execute(() => coordinator.CancelAsync(
             state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> WagerAsync(
@@ -81,7 +81,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Wager(
+        Execute(() => coordinator.WagerAsync(
             state, balances, userId, tableId, wagerCents, pairPlusCents, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> SitOutAsync(
@@ -91,7 +91,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.SitOut(
+        Execute(() => coordinator.SitOutAsync(
             state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> ActionAsync(
@@ -102,7 +102,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Action(
+        Execute(() => coordinator.ActionAsync(
             state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<ThreeCardPokerTableStoreResult> LeaveAsync(
@@ -112,7 +112,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Leave(
+        Execute(() => coordinator.LeaveAsync(
             state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
@@ -120,7 +120,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Apply(coordinator.Sweep(state, balances, nowUtc));
+            Apply(coordinator.SweepAsync(state, balances, nowUtc).GetAwaiter().GetResult());
             return Task.CompletedTask;
         }
     }
@@ -160,7 +160,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
     }
 
     private Task<ThreeCardPokerTableStoreResult> Execute(
-        Func<ThreeCardPokerTableCoordinatorResult> command,
+        Func<ValueTask<ThreeCardPokerTableCoordinatorResult>> command,
         CancellationToken cancellationToken)
     {
         lock (gate)
@@ -170,7 +170,7 @@ internal sealed class InMemoryThreeCardPokerTableStore(
             var priorBalances = new Dictionary<string, long>(balances, StringComparer.Ordinal);
             try
             {
-                var result = command();
+                var result = command().GetAwaiter().GetResult();
                 Apply(result.Journal);
                 return Task.FromResult(result.Store);
             }

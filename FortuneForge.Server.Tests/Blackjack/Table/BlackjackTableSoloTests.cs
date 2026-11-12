@@ -63,7 +63,7 @@ public sealed class BlackjackTableSoloTests
         Assert.Equal("multiplayer", oldSession.Table.Mode);
 
         var soloCoordinator = new BlackjackTableCoordinator(multiplayerEnabled: false);
-        var afterSwitch = soloCoordinator.Get(multiplayerStore.StateForTest,
+        var afterSwitch = await soloCoordinator.GetAsync(multiplayerStore.StateForTest,
             new Dictionary<string, long> { ["player"] = 10_000 }, "player", Start.AddSeconds(7));
 
         Assert.IsType<BlackjackTableIdleSessionResponse>(afterSwitch.Store.Session);

@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -55,9 +56,14 @@ public sealed class TwentyFortyEightController(TwentyFortyEightGameService games
     private async Task<ActionResult> WithAccountAsync(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
-        return account.Value is null
-            ? Unauthorized(new TwentyFortyEightErrorResponse("2048-authentication-required", "Sign in to play 2048."))
-            : await action(account.Value);
+        if (account.Value is null)
+            return Unauthorized(new TwentyFortyEightErrorResponse("2048-authentication-required", "Sign in to play 2048."));
+        try { return await action(account.Value); }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new TwentyFortyEightErrorResponse("2048-worker-unavailable", exception.Message));
+        }
     }
 
     private async Task<ActionResult> ExecuteAsync(Func<Task<TwentyFortyEightGameResponse>> action)

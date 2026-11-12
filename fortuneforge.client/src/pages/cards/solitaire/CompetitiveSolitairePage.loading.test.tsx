@@ -13,7 +13,10 @@ vi.mock('../../../games/cards/solitaire/solitaireApi', async importOriginal => (
   ...await importOriginal<typeof import('../../../games/cards/solitaire/solitaireApi')>(),
   getSolitaireSession: reads.session,
 }))
-vi.mock('../../../games/cards/shared/cardAudio', () => ({ useCardAudioClick: () => () => undefined }))
+vi.mock('../../../games/cards/shared/cardAudio', () => ({
+  playCardAudio: vi.fn(),
+  useCardAudioClick: () => () => undefined,
+}))
 
 import { CompetitiveSolitairePage, SolitaireContent } from './CompetitiveSolitairePage'
 

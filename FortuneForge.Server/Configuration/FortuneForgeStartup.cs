@@ -79,7 +79,8 @@ public static class FortuneForgeStartup
             provider.GetRequiredService<FortuneForge.Server.Matchmaking.IMultiplayerMatchmaker>(),
             provider.GetRequiredService<IManagedTablePopulationDirector>(),
             provider.GetRequiredService<FortuneForge.Server.Activity.IGameAnalyticsSink>(),
-            provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>()));
+            provider.GetRequiredService<FortuneForge.Server.SecurityAudit.IGameSecurityEventSink>(),
+            provider.GetRequiredService<GameWorkers.GameWorkerClient>()));
         builder.Services.AddHostedService<RouletteTableWorker>();
         builder.Services.AddSingleton(provider =>
         {
@@ -137,6 +138,9 @@ public static class FortuneForgeStartup
         builder.Services.AddSingleton<PracticeBaccaratStore>();
         builder.Services.AddSingleton<PracticeCasinoWarStore>();
         builder.Services.AddSingleton<PracticeSicBoStore>();
+        builder.Services.AddHttpClient<GameWorkers.GameWorkerClient>(client =>
+                client.MaxResponseContentBufferSize = 8 * 1024 * 1024)
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 
         return builder;
     }

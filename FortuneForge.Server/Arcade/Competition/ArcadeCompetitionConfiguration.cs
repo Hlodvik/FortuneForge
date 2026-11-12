@@ -3,6 +3,7 @@ using FortuneForge.Server.Arcade.Asteroids;
 using FortuneForge.Server.Arcade.Flappy;
 using FortuneForge.Server.Arcade.HorseFlight;
 using FortuneForge.Server.Cards.Solitaire;
+using FortuneForge.Server.GameWorkers;
 
 namespace FortuneForge.Server.Arcade.Competition;
 
@@ -56,7 +57,8 @@ public static class ArcadeCompetitionConfiguration
             provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>()));
         services.AddSingleton(provider => new FirestoreSolitaireFreeRunService(
             provider.GetRequiredService<Google.Cloud.Firestore.FirestoreDb>(),
-            provider.GetRequiredService<TimeProvider>()));
+            provider.GetRequiredService<TimeProvider>(),
+            gameWorker: provider.GetRequiredService<GameWorkerClient>()));
         services.AddSingleton(provider => new ArcadeCompetitionService(
             provider.GetRequiredService<IArcadeCompetitionStore>(),
             provider.GetRequiredService<TimeProvider>(),

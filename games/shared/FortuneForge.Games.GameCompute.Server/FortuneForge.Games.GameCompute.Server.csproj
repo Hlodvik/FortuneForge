@@ -12,12 +12,18 @@
     <SelectedEngineProject>$(SelectedGameDirectory)/src/FortuneForge.Games.$(GamePackage)/FortuneForge.Games.$(GamePackage).csproj</SelectedEngineProject>
     <SelectedComputeModule>$(SelectedGameDirectory)/server/GameComputeModule.cs</SelectedComputeModule>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(GamePackage)' == 'FreeSolitaire'">
+    <SelectedEngineProject>../../Solitaire/src/FortuneForge.Games.Solitaire/FortuneForge.Games.Solitaire.csproj</SelectedEngineProject>
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs;GameComputeEndpoints.cs" />
     <Compile Include="$(SelectedComputeModule)" Link="GameComputeModule.cs" Condition="Exists('$(SelectedComputeModule)')" />
     <ProjectReference Include="../FortuneForge.Games.Abstractions/FortuneForge.Games.Abstractions.csproj" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
     <ProjectReference Include="$(SelectedEngineProject)" Condition="Exists('$(SelectedEngineProject)')" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(GamePackage)' == 'Solitaire' Or '$(GamePackage)' == 'FreeSolitaire'">
+    <Compile Include="../../Solitaire/server/SolitaireComputeEndpoints.cs" Link="SolitaireComputeEndpoints.cs" />
   </ItemGroup>
   <Target Name="RequireSelectedComputeModule" BeforeTargets="Restore;PrepareForBuild">
     <Error Condition="'$(GamePackage)' == '' Or !Exists('$(SelectedEngineProject)') Or !Exists('$(SelectedComputeModule)')"

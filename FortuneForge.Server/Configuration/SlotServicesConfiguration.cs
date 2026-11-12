@@ -5,7 +5,6 @@ using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
-using FortuneForge.Server.RoundAudit;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -22,7 +21,6 @@ public static class SlotServicesConfiguration
         services.AddSingleton<IPayoutCalculator, PayoutCalculator>();
         services.AddSingleton<StandaloneSlotPackageRegistry>();
         services.AddSingleton<SpinService>();
-        services.AddSingleton<IDemoSlotAuditStore, FirestoreDemoSlotAuditStore>();
 
         return services;
     }

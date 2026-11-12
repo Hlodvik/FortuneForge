@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Google.Cloud.Firestore;
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Solitaire;
+using FortuneForge.Server.GameWorkers;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -171,11 +173,24 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                                 "Resume the Solitaire game before making a move.");
                         }
                         SolitaireGameState nextGame;
+                        bool won;
                         try
                         {
-                            nextGame = SolitaireEngine.Apply(player.Game, command);
+                            if (gameWorker?.IsConfigured(ComputeGameId) == true)
+                            {
+                                var outcome = await gameWorker.InvokeAsync<SolitaireBoardApplyRequest, SolitaireBoardSnapshot>(
+                                    ComputeGameId, userId, SolitaireBoardCompute.ApplyRoute,
+                                    new(player.Game, command), cancellationToken);
+                                nextGame = outcome.PrivateState;
+                                won = outcome.Won;
+                            }
+                            else
+                            {
+                                nextGame = SolitaireEngine.Apply(player.Game, command);
+                                won = SolitaireEngine.IsWon(nextGame);
+                            }
                         }
-                        catch (SolitaireIllegalMoveException)
+                        catch (Exception exception) when (exception is SolitaireIllegalMoveException or GameWorkerRequestRejectedException)
                         {
                             updated = AddIntegrityWarning(
                                 player,
@@ -185,7 +200,6 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                                 "That action was not legal from the last verified board position.");
                             break;
                         }
-                        var won = SolitaireEngine.IsWon(nextGame);
                         var elapsedMilliseconds = won
                             ? ActiveElapsedMilliseconds(graph.Match, player, nowUtc)
                             : (long?)null;
@@ -451,16 +465,44 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     graph.ManagedPlayersReleasePending
                         ? graph.Players.Where(player => !player.IsAccountBacked && IsTerminal(player)).ToArray()
                         : [], true);
-            var players = graph.Players.Select(player =>
+            var worker = gameWorker?.IsConfigured(ComputeGameId) == true ? gameWorker : null;
+            var batches = new List<(int PlayerIndex, SolitaireBoardCommandBatch Batch)>();
+            var players = graph.Players.Select((player, index) =>
             {
                 if (player.Status != SolitairePlayerStatuses.Playing) return player;
                 if (!player.IsAccountBacked)
-                    return SolitaireManagedPlayerProgression.Advance(match, player, nowUtc);
+                {
+                    List<SolitaireCommandRequest>? commands = worker is null ? null : [];
+                    var planned = SolitaireManagedPlayerProgression.Advance(match, player, nowUtc, commands);
+                    if (commands is { Count: > 0 })
+                        batches.Add((index, new SolitaireBoardCommandBatch(player.Game, commands)));
+                    return planned;
+                }
                 var advanced = AdvancePause(match, player, nowUtc);
                 return advanced.PausedAtUtc is null && nowUtc >= PlayerDeadline(match, advanced)
                     ? ExpirePlayer(advanced, PlayerDeadline(match, advanced))
                     : advanced;
             }).ToArray();
+            if (worker is not null && batches.Count > 0)
+            {
+                var userId = GameSecurityContext.Current?.UserId ?? graph.Players.First(player => player.IsAccountBacked).UserId;
+                var result = await worker.InvokeAsync<SolitaireBoardBatchRequest, SolitaireBoardBatchResult>(
+                    ComputeGameId, userId, SolitaireBoardCompute.ApplyBatchesRoute,
+                    new(batches.Select(entry => entry.Batch).ToArray()), cancellationToken);
+                if (result.Boards is null || result.Boards.Count != batches.Count)
+                    throw new GameWorkerUnavailableException(ComputeGameId);
+                for (var index = 0; index < batches.Count; index++)
+                {
+                    var playerIndex = batches[index].PlayerIndex;
+                    var planned = players[playerIndex];
+                    var board = result.Boards[index] ?? throw new GameWorkerUnavailableException(ComputeGameId);
+                    if (planned.ElapsedMilliseconds is long elapsed)
+                        board = SolitaireManagedPlayerProgression.FinalBoard(board, elapsed);
+                    if (JsonSerializer.Serialize(board, JsonOptions) != JsonSerializer.Serialize(planned.Game, JsonOptions))
+                        throw new GameWorkerUnavailableException(ComputeGameId);
+                    players[playerIndex] = planned with { Game = board };
+                }
+            }
             foreach (var player in players.Where(player => player.IsAccountBacked && IsTerminal(player) &&
                 graph.Players.First(original => original.UserId == player.UserId).Status == SolitairePlayerStatuses.Playing))
             {

@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Google.Cloud.Firestore;
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Server.GameWorkers;
 
 namespace FortuneForge.Server.Cards.Solitaire;
 
@@ -15,25 +16,25 @@ public sealed class FirestoreSolitaireFreeRunService
     internal const string CollectionName = "solitaireFreeRuns";
     private const string RunIdPrefix = "solitaire_free_";
     internal const string LegacyGameId = "solitaire";
-    internal const string StandaloneGameId = "free-solitaire";
-    // A fully populated move command is roughly 120 bytes in the JSON envelope.
-    // Keep an accepted replay beneath the application's 32 KB request-body limit.
-    private const int MaximumCommands = 256;
+    internal const string StandaloneGameId = SolitaireBoardCompute.FreeGameId;
     private static readonly Regex IdempotencyKeyPattern = new("^[A-Za-z0-9_-]{16,128}$", RegexOptions.CultureInvariant);
     private static readonly Regex DigestPattern = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant);
     private static readonly JsonSerializerOptions CanonicalJson = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
     private readonly TimeProvider timeProvider;
     private readonly Func<uint> createSeed;
+    private readonly GameWorkerClient? gameWorker;
 
     internal FirestoreSolitaireFreeRunService(
         FirestoreDb database,
         TimeProvider timeProvider,
-        Func<uint>? createSeed = null)
+        Func<uint>? createSeed = null,
+        GameWorkerClient? gameWorker = null)
     {
         this.database = database ?? throw new ArgumentNullException(nameof(database));
         this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         this.createSeed = createSeed ?? CreateCryptographicNonZeroSeed;
+        this.gameWorker = gameWorker;
     }
 
     internal Task<SolitaireFreeRunStartResult> StartAsync(
@@ -89,6 +90,12 @@ public sealed class FirestoreSolitaireFreeRunService
                 proposedSeed = source.Seed;
             }
 
+            var game = WorkerFor(gameId) is { } worker
+                ? (await worker.InvokeAsync<SolitaireBoardStartRequest, SolitaireBoardSnapshot>(
+                    gameId, authenticatedUserId, SolitaireBoardCompute.StartRoute,
+                    new SolitaireBoardStartRequest(drawCount, proposedSeed), cancellationToken)).PrivateState
+                : SolitaireEngine.CreateGame(proposedSeed, drawCount);
+
             var document = new Dictionary<string, object>
             {
                 ["runId"] = runId,
@@ -104,7 +111,7 @@ public sealed class FirestoreSolitaireFreeRunService
             if (replayRunId is not null) document["replayRunId"] = replayRunId;
             transaction.Create(reference, document);
             FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, gameId, runId,
-                0, startedAtUtc.UtcDateTime, new { seed = proposedSeed, drawCount, replayRunId, game = SolitaireEngine.CreateGame(proposedSeed, drawCount) },
+                0, startedAtUtc.UtcDateTime, new { seed = proposedSeed, drawCount, replayRunId, game },
                 [authenticatedUserId], "free-run-start");
             return new SolitaireFreeRunStartResult(runId, proposedSeed, drawCount, startedAtUtc, false, gameId);
         }, cancellationToken: cancellationToken);
@@ -118,8 +125,8 @@ public sealed class FirestoreSolitaireFreeRunService
     {
         ValidateUser(authenticatedUserId);
         ArgumentNullException.ThrowIfNull(commands);
-        if (commands.Count > MaximumCommands)
-            throw new ArgumentException($"A Solitaire replay may contain at most {MaximumCommands} commands.", nameof(commands));
+        if (commands.Count > SolitaireBoardCompute.MaximumReplayCommands)
+            throw new ArgumentException($"A Solitaire replay may contain at most {SolitaireBoardCompute.MaximumReplayCommands} commands.", nameof(commands));
 
         var normalized = commands.Select(Normalize).ToArray();
         var canonical = JsonSerializer.Serialize(normalized, CanonicalJson);
@@ -140,24 +147,18 @@ public sealed class FirestoreSolitaireFreeRunService
             if (stored.Status != "started")
                 throw new InvalidOperationException("The Solitaire free run is not available for completion.");
 
-            var game = SolitaireEngine.CreateGame(stored.Seed, stored.DrawCount);
-            for (var index = 0; index < normalized.Length; index++)
-            {
-                var command = normalized[index];
-                try
-                {
-                    game = SolitaireEngine.Apply(game, new SolitaireCommandRequest(
-                        command.Type, index + 1, command.From, command.StartIndex, command.To, command.Column));
-                }
-                catch (SolitaireIllegalMoveException exception)
-                {
-                    throw new ArgumentException($"Replay command {index + 1} is illegal: {exception.Message}", nameof(commands), exception);
-                }
-            }
-
-            var terminal = SolitaireEngine.IsWon(game) ? "won" : "submitted";
             var elapsedMilliseconds = ActiveElapsedMilliseconds(stored, completedAtUtc);
-            var score = SolitaireScoreRules.FinalScore(game, elapsedMilliseconds);
+            var replay = new SolitaireBoardReplayRequest(stored.Seed, stored.DrawCount, normalized
+                .Select((command, index) => new SolitaireCommandRequest(
+                    command.Type, index + 1, command.From, command.StartIndex, command.To, command.Column)).ToArray(),
+                elapsedMilliseconds);
+            var outcome = WorkerFor(stored.GameId) is { } worker
+                ? await worker.InvokeAsync<SolitaireBoardReplayRequest, SolitaireBoardReplayResult>(
+                    stored.GameId, authenticatedUserId, SolitaireBoardCompute.ReplayRoute, replay, cancellationToken)
+                : SolitaireBoardCompute.Replay(replay);
+            var game = outcome.PrivateState;
+            var terminal = outcome.Won ? "won" : "submitted";
+            var score = outcome.Score;
             FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, stored.GameId, runId,
                 game.Moves, completedAtUtc.UtcDateTime, new { stored, game, commands = normalized, replayDigest = digest, score, elapsedMilliseconds, terminal },
                 [authenticatedUserId], "free-replay-complete");
@@ -335,6 +336,9 @@ public sealed class FirestoreSolitaireFreeRunService
         if (string.IsNullOrWhiteSpace(userId))
             throw new ArgumentException("An authenticated user is required.", nameof(userId));
     }
+
+    private GameWorkerClient? WorkerFor(string gameId) =>
+        gameId == StandaloneGameId && gameWorker?.IsConfigured(gameId) == true ? gameWorker : null;
 
     private static void ValidateGameId(string gameId)
     {

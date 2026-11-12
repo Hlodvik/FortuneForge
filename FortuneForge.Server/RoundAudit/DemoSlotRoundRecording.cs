@@ -1,9 +1,7 @@
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.Controllers;
-using FortuneForge.Server.SecurityAudit;
 using FortuneForge.Server.Slots.Models;
-using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.RoundAudit;
 
@@ -42,28 +40,5 @@ internal static class DemoSlotRoundRecording
                 entry.ResponseResult
             }, "slot-demo-nonfinancial-v1", SlotRoundAudit.AuditorVersion,
             [new("public-demo", "Public demo", false, 0, 0, 0)], findings);
-    }
-}
-
-internal sealed class FirestoreDemoSlotAuditStore(FirestoreDb database) : IDemoSlotAuditStore
-{
-    public async Task RecordAsync(DemoSlotAuditEntry entry, CancellationToken cancellationToken)
-    {
-        var capture = DemoSlotRoundRecording.Capture(entry);
-        await database.RunTransactionAsync(transaction =>
-        {
-            RoundAuditFirestore.Write(transaction, database, capture);
-            GameSecurityJournal.Write(transaction, database, capture.Summary.GameId,
-                capture.Summary.RoundId, 1, entry.CompletedAtUtc, new
-                {
-                    mode = "demo",
-                    financial = false,
-                    entry.Request,
-                    entry.EngineResult,
-                    engineAudit = entry.EngineResult.EngineAudit,
-                    entry.ResponseResult
-                }, [], "demo-spin-completed");
-            return Task.FromResult(true);
-        }, cancellationToken: cancellationToken);
     }
 }

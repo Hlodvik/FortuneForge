@@ -90,7 +90,7 @@ describe('authenticated route pending presentation', () => {
     act(() => root.render(<GameLoadingRouteProvider entry={entry}><PendingState /></GameLoadingRouteProvider>))
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
     expect(host.querySelector('a[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/')
-    expect(host.querySelector('a[href="/demo"]')).not.toBeNull()
+    expect(host.querySelector('a[href="/#discover-games"]')).not.toBeNull()
     act(() => root.render(<GameLoadingRouteProvider entry={entry}><PendingState error="Resources unavailable" /></GameLoadingRouteProvider>))
     expect(host.querySelector('[role="alert"] a')?.getAttribute('href')).toBe('/')
     expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)

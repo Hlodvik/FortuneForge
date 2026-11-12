@@ -97,6 +97,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             var matchId = selectedMatch?.MatchId ?? CreateLookupKey($"solitaire-match\n{partitionKey}\n{ticketId}");
             var seat = selectedMatch is null ? 1 : selectedMatch.PlayerIds.Count + 1;
             var seed = selectedMatch?.DealSeed ?? dealSeed;
+            var game = await CreateBoardAsync(userId, seed, drawCount, cancellationToken);
             var existingPlayerSnapshots = selectedMatch is null ? [] : await Task.WhenAll(selectedMatch.PlayerIds.Select(id =>
                 transaction.GetSnapshotAsync(PlayerDocument(matchId, id), cancellationToken)));
             var existingPlayers = selectedMatch is null ? [] : existingPlayerSnapshots.Select(snapshot => ReadPlayer(snapshot, selectedMatch)).ToArray();
@@ -106,7 +107,6 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
             var ticketData = TicketData(ticket);
             ticketData["dealSeed"] = (long)seed;
             transaction.Create(ticketReference, ticketData);
-            var game = SolitaireEngine.CreateGame(seed, drawCount);
             var joinedPlayer = new SolitairePlayerState(
                 matchId, userId, displayName, seat, SolitairePlayerStatuses.Playing,
                 game, 1, null, null, 0, false)

@@ -18,7 +18,8 @@ public static class CreditHoldemConfiguration
                 provider.GetRequiredService<FirestoreDb>(),
                 provider.GetRequiredService<IOptions<CreditHoldemOptions>>().Value.AllowSingleHumanBotFill,
                 provider.GetRequiredService<IMultiplayerMatchmaker>(),
-                provider.GetRequiredService<IManagedTablePopulationDirector>()));
+                provider.GetRequiredService<IManagedTablePopulationDirector>(),
+                provider.GetService<GameWorkers.GameWorkerClient>()));
         services.AddSingleton<CreditHoldemService>();
         services.AddHostedService<CreditHoldemWorker>();
         return services;

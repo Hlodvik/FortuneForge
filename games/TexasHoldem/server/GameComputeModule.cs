@@ -1,5 +1,3 @@
-using System.Buffers.Binary;
-using System.Security.Cryptography;
 using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.TexasHoldem;
 
@@ -16,8 +14,8 @@ internal static class GameComputeModule
             ArgumentNullException.ThrowIfNull(request.Seats);
             ArgumentException.ThrowIfNullOrWhiteSpace(request.MatchId);
             var tableRule = CreditHoldemTableRules.Resolve(request.TableRuleId);
-            return CreditHoldemEngine.Deal(request.MatchId, request.Seats, CreditHoldemTableRules.Partition(tableRule.Id),
-                GenerateSeed(), request.Now.UtcDateTime, tableRule.Id, request.UsesBuyInEscrow);
+            return CreditHoldemEngine.Deal(request.MatchId, request.Seats, request.PartitionKey,
+                request.Seed, request.Now.UtcDateTime, tableRule.Id, request.UsesBuyInEscrow);
         }, isRuleViolation: IsRuleViolation);
         app.MapComputeAction("/internal/v1/tables/next-hand", (NextHandRequest request) =>
         {
@@ -26,7 +24,7 @@ internal static class GameComputeModule
             return new
             {
                 PrivateTable = CreditHoldemEngine.StartNextHand(request.PrivateTable, request.Balances,
-                    GenerateSeed(), request.MinimumHumans, request.Now.UtcDateTime)
+                    request.Seed, request.MinimumHumans, request.Now.UtcDateTime)
             };
         }, isRuleViolation: IsRuleViolation);
         app.MapComputeAction("/internal/v1/tables/action", (ActionRequest request) =>
@@ -59,15 +57,13 @@ internal static class GameComputeModule
         }, isRuleViolation: IsRuleViolation);
     }
 
-    private static ulong GenerateSeed() => BinaryPrimitives.ReadUInt64LittleEndian(RandomNumberGenerator.GetBytes(sizeof(ulong)));
-
     private static bool IsRuleViolation(Exception error) => error is InvalidOperationException or
         CreditHoldemConflictException or CreditHoldemNotFoundException or CreditHoldemIllegalActionException;
 
-    private sealed record DealRequest(string MatchId, CreditHoldemSeatAssignment[] Seats, DateTimeOffset Now,
+    private sealed record DealRequest(string MatchId, CreditHoldemSeatAssignment[] Seats, string PartitionKey, ulong Seed, DateTimeOffset Now,
         string TableRuleId = CreditHoldemTableRules.StandardId, bool UsesBuyInEscrow = false);
     private sealed record NextHandRequest(CreditHoldemMatch PrivateTable, IReadOnlyDictionary<string, long> Balances,
-        int MinimumHumans, DateTimeOffset Now);
+        ulong Seed, int MinimumHumans, DateTimeOffset Now);
     private sealed record TableRequest(CreditHoldemMatch PrivateTable, DateTimeOffset Now);
     private sealed record ActionRequest(CreditHoldemMatch PrivateTable, string ActorId, string Action, int? RaiseTo, DateTimeOffset Now);
     private sealed record LeaveRequest(CreditHoldemMatch PrivateTable, string ActorId, DateTimeOffset Now);

@@ -13,13 +13,17 @@ public static class GameServiceHost
         return app;
     }
 
-    public static void MapDemoAction<TRequest, TOutcome>(
-        this WebApplication app, string route, Func<TRequest, TOutcome> action)
+    public static void MapGameAction<TRequest, TOutcome>(
+        this WebApplication app, string route, Func<TRequest, TOutcome> action,
+        Func<TRequest, string>? accountSelector = null)
     {
-        app.MapPost(route, ([FromBody] TRequest request) =>
+        app.MapPost(route, ([FromBody] TRequest request, HttpContext context) =>
         {
             try
             {
+                var verified = GameWorkerAuthentication.GetAccountId(context);
+                if (verified is not null && accountSelector is not null && verified != accountSelector(request))
+                    return Results.StatusCode(StatusCodes.Status403Forbidden);
                 return Results.Ok(action(request));
             }
             catch (ArgumentException exception)

@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
@@ -242,6 +243,12 @@ internal static class BlackjackTableHttp
                 return controller.Conflict(new { code = "blackjack-table-state-conflict", error = exception.Message });
             case BlackjackTableIllegalActionException:
                 return controller.BadRequest(new { code = "illegal-blackjack-action", error = exception.Message });
+            case GameWorkerUnavailableException:
+                return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new
+                {
+                    code = "game-worker-unavailable",
+                    error = exception.Message
+                });
             case ArgumentException:
                 return controller.BadRequest(new { error = exception.Message });
             default:

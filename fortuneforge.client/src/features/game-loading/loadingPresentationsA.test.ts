@@ -18,7 +18,7 @@ const slotIds = [
 ] as const
 
 describe('A game loading presentations', () => {
-  it('covers exactly the fourteen assigned games with unique existing play/demo aliases', () => {
+  it('covers the fourteen assigned games and keeps retired card aliases out of app routes', () => {
     const expectedIds = [...nonSlots.map(([id]) => id), ...slotIds]
     expect(LOADING_PRESENTATIONS_A.map(({ id }) => id)).toEqual(expectedIds)
     expect(new Set(LOADING_PRESENTATIONS_A.map(({ id }) => id)).size).toBe(14)
@@ -31,7 +31,10 @@ describe('A game loading presentations', () => {
       const entry = LOADING_PRESENTATIONS_A.find((entry) => entry.id === id)!
       expect(entry.title).toBe(title)
       expect([...entry.routes].sort()).toEqual([...routes].sort())
-      for (const route of routes) expect(appSource).toContain(`pathname === '${route}'`)
+      for (const route of routes) {
+        if (route.startsWith('/demo/')) expect(appSource).not.toContain(`pathname === '${route}'`)
+        else expect(appSource).toContain(`pathname === '${route}'`)
+      }
     }
     for (const id of slotIds) {
       const slot = SLOT_ROUTE_DEFINITIONS.find((slot) => slot.id === id)!

@@ -92,6 +92,8 @@ public sealed record CasinoWarRound
 
 public static class CasinoWarRoundEngine
 {
+    public const int WarCardsRequired = 10;
+
     public static CasinoWarRound Start(IReadOnlyList<PlayingCard> orderedShoe, decimal primaryStake)
     {
         ArgumentNullException.ThrowIfNull(orderedShoe);
@@ -162,7 +164,6 @@ public static class CasinoWarRoundEngine
 
     private static CasinoWarRound CompleteWar(CasinoWarRound round)
     {
-        const int WarCardsRequired = 10;
         if (round.OrderedShoe.Length < WarCardsRequired)
             throw new ArgumentException($"The ordered shoe requires at least {WarCardsRequired} cards to go to war.", nameof(round));
 

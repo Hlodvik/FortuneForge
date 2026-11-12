@@ -4,11 +4,12 @@ using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.SicBo;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Dice.SicBo;
 
-internal sealed class SicBoFirestoreStore(FirestoreDb database) : ISicBoStore
+internal sealed class SicBoFirestoreStore(FirestoreDb database, GameWorkerClient? workers = null) : ISicBoStore
 {
     private const string CurrencyId = "slotsCredits";
     private const string FractionField = "availableFractionalCents";
@@ -46,7 +47,11 @@ internal sealed class SicBoFirestoreStore(FirestoreDb database) : ISicBoStore
             var totalStake = checked(bets.Sum(bet => bet.StakeCents));
             if (balance < totalStake) throw new SicBoInsufficientCreditsException(balance, totalStake);
             var stored = new SicBoStoreRound(roundId, userId, bets.ToArray(), roll);
-            var returned = ReturnCents(stored);
+            var gameId = SicBoModule.Descriptor.Id;
+            var useWorker = workers?.IsConfigured(gameId) == true;
+            var returned = useWorker ? await WorkerReturnAsync(stored, gameId, cancellationToken) : ReturnCents(stored);
+            var verified = SicBoOutcomeAudit.Verify(stored, totalStake, returned);
+            if (useWorker && !verified) throw new GameWorkerUnavailableException(gameId);
             var afterWager = checked(balance - totalStake);
             var finalBalance = checked(afterWager + returned);
 
@@ -54,7 +59,7 @@ internal sealed class SicBoFirestoreStore(FirestoreDb database) : ISicBoStore
             FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
                 "sic-bo", roundId, userId, totalStake, returned, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
                 "sicBoRounds", roundId, stored, "sic-bo-bets-and-dice-v1",
-                SicBoOutcomeAudit.Verify(stored, totalStake, returned), SicBoOutcomeAudit.Version);
+                verified, SicBoOutcomeAudit.Version);
             transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerRef, Ledger(wagerRef.Id, userId, -totalStake, afterWager, "sic-bo-wager", idempotencyKey, nowUtc));
             if (returned > 0) transaction.Create(payoutRef, Ledger(payoutRef.Id, userId, returned, finalBalance, "sic-bo-payout", $"{idempotencyKey}-payout", nowUtc));
@@ -129,6 +134,17 @@ internal sealed class SicBoFirestoreStore(FirestoreDb database) : ISicBoStore
             throw new InvalidOperationException("The Sic Bo settlement is corrupt.");
         }
         return stored;
+    }
+
+    private async Task<long> WorkerReturnAsync(SicBoStoreRound stored, string gameId, CancellationToken cancellationToken)
+    {
+        var request = new SicBoComputeRequest(stored.Roll.Values,
+            stored.Bets.Select(bet => SicBoComputeBet.FromDomain(SicBoMoney.ToDomain(bet))).ToArray());
+        var result = await workers!.InvokeAsync<SicBoComputeRequest, SicBoComputeResult>(
+            gameId, stored.UserId, SicBoCompute.ResolveRoute, request, cancellationToken);
+        if (result.Returns is null || result.Returns.Count != stored.Bets.Count || result.Returns.Any(value => value < 0))
+            throw new GameWorkerUnavailableException(gameId);
+        return checked(result.Returns.Sum(ToCents));
     }
 
     private static long ReturnCents(SicBoStoreRound stored) => checked(stored.Bets.Sum(bet => ToCents(SicBoPaytable.Settle(SicBoMoney.ToDomain(bet), stored.Roll).TotalReturn)));

@@ -1,4 +1,3 @@
-using System.Net;
 using FortuneForge.Games.Hosting;
 
 namespace FortuneForge.Games.GameCompute.Server;
@@ -12,7 +11,7 @@ internal static class GameComputeEndpoints
         if (!route.StartsWith("/internal/v1/", StringComparison.Ordinal))
             throw new ArgumentException("Game compute actions require an internal route.", nameof(route));
 
-        app.MapDemoAction(route, (TRequest request) =>
+        app.MapGameAction(route, (TRequest request) =>
         {
             try
             {
@@ -24,17 +23,4 @@ internal static class GameComputeEndpoints
             }
         });
     }
-
-    internal static bool IsLocalServiceCall(HttpContext context)
-    {
-        var host = context.Request.Host.Host;
-        return context.Connection.RemoteIpAddress is { } remote && IsLoopback(remote) &&
-            (string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase) ||
-                IPAddress.TryParse(host.Trim('[', ']'), out var hostAddress) && IsLoopback(hostAddress)) &&
-            !context.Request.Headers.ContainsKey("Origin") &&
-            !context.Request.Headers.ContainsKey("Sec-Fetch-Site");
-    }
-
-    private static bool IsLoopback(IPAddress address) =>
-        IPAddress.IsLoopback(address.IsIPv4MappedToIPv6 ? address.MapToIPv4() : address);
 }

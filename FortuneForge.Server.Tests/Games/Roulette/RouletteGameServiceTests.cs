@@ -1,3 +1,5 @@
+using System.Text.Json;
+using FortuneForge.Games.Roulette;
 using FortuneForge.Server.Games.Roulette;
 using Xunit;
 
@@ -5,6 +7,21 @@ namespace FortuneForge.Server.Tests.Games.Roulette;
 
 public sealed class RouletteGameServiceTests
 {
+    [Fact]
+    public void Worker_result_preserves_the_winning_pocket_and_its_settlement()
+    {
+        var round = RouletteEngine.PlaceBet(RouletteEngine.OpenRound("worker-round"),
+            new RouletteBet("player-a", RouletteBetKind.Straight, 2m, 17, []));
+        var outcome = RouletteEngine.Spin(round, new RoulettePocket(17));
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var restored = Assert.IsType<RouletteSpinOutcome>(
+            JsonSerializer.Deserialize<RouletteSpinOutcome>(JsonSerializer.Serialize(outcome, json), json));
+
+        Assert.Equal(17, restored.WinningPocket.Number);
+        Assert.Equal(17, restored.State.WinningPocket?.Number);
+        Assert.Equal(72m, Assert.Single(restored.Settlements).TotalReturn);
+    }
+
     [Fact]
     public void Players_join_the_oldest_open_table_and_keep_separate_balances()
     {

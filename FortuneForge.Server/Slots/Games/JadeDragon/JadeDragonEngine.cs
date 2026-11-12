@@ -57,44 +57,49 @@ internal sealed class JadeDragonEngine(IRandomIndexSource random)
                 persistedPityMisses ?? pity.Misses, featureMode,
                 isFreeSpin || featureMode is not null, currentEnergyBalance);
             pity.Misses = outcome.ConsecutiveFiveMisses;
-            var audit = outcome.EngineAudit
-                ?? throw new InvalidOperationException("Jade Dragon did not produce engine evidence.");
-            var payout = new SpinPayout(outcome.Payout.TotalPoints,
-                outcome.Payout.Paylines.Select(line => new PaylinePayout(line.PaylineId,
-                    line.AmountPoints, line.Matches.Select(paid => new PaidMatch(
-                        new SymbolMatch(paid.Match.PaylineId, paid.Match.SymbolId,
-                            paid.Match.MatchLength,
-                            paid.Match.Positions.Select(position =>
-                                new GridPosition(position.Reel, position.Row)).ToArray(),
-                            paid.Match.WildPositions.Select(position =>
-                                new GridPosition(position.Reel, position.Row)).ToArray()),
-                        paid.Multiplier, paid.AmountPoints)).ToArray())).ToArray());
-            return new SpinResult(outcome.SpinId, outcome.GameId, outcome.ReelSetId,
-                outcome.SymbolSetId, outcome.PaytableId, outcome.WagerPoints,
-                outcome.PointValueInCents, outcome.ReelStops, outcome.Reels, payout,
-                outcome.ConsecutiveFiveMisses, outcome.FiveMatchPityTriggered,
-                outcome.FreeSpinsAwarded, outcome.SpecialPointsAwarded, outcome.EnergyAwarded,
-                outcome.SpecialBoostApplied)
-            {
-                IsFreeSpin = isFreeSpin,
-                MonkeyPawCount = outcome.CollectorCount,
-                MoneyGrabPoints = outcome.CollectorPayoutPoints,
-                BananaBonusPoints = outcome.PatternPayoutPoints,
-                SealsAwarded = outcome.CollectionSymbolsAwarded,
-                EngineAudit = new SlotSpinEngineAudit(audit.EngineVersion, audit.GeneratedAtUtc,
-                    MapContract<GameDefinition>(audit.BaseGame),
-                    MapContract<GameDefinition>(audit.EffectiveGame),
-                    MapContract<ReelSetDefinition>(audit.ReelSet),
-                    MapContract<SymbolSetDefinition>(audit.SymbolSet),
-                    MapContract<PaytableDefinition>(audit.Paytable), Profile,
-                    audit.PityMissesBefore, audit.EnergyBalanceBefore, audit.FreeSpinFeatureMode,
-                    audit.GenerationAttempts, audit.RawGeneratedReels,
-                    audit.ReelsAfterFreeGameFrequency)
-                {
-                    IsDerivedFreeSpin = audit.IsDerivedFreeSpin
-                }
-            };
+            return MapOutcome(outcome, isFreeSpin);
         }
+    }
+
+    internal static SpinResult MapOutcome(FortuneForge.Games.JadeDragon.Models.SpinResult outcome, bool isFreeSpin)
+    {
+        var audit = outcome.EngineAudit
+            ?? throw new InvalidOperationException("Jade Dragon did not produce engine evidence.");
+        var payout = new SpinPayout(outcome.Payout.TotalPoints,
+            outcome.Payout.Paylines.Select(line => new PaylinePayout(line.PaylineId,
+                line.AmountPoints, line.Matches.Select(paid => new PaidMatch(
+                    new SymbolMatch(paid.Match.PaylineId, paid.Match.SymbolId,
+                        paid.Match.MatchLength,
+                        paid.Match.Positions.Select(position =>
+                            new GridPosition(position.Reel, position.Row)).ToArray(),
+                        paid.Match.WildPositions.Select(position =>
+                            new GridPosition(position.Reel, position.Row)).ToArray()),
+                    paid.Multiplier, paid.AmountPoints)).ToArray())).ToArray());
+        return new SpinResult(outcome.SpinId, outcome.GameId, outcome.ReelSetId,
+            outcome.SymbolSetId, outcome.PaytableId, outcome.WagerPoints,
+            outcome.PointValueInCents, outcome.ReelStops, outcome.Reels, payout,
+            outcome.ConsecutiveFiveMisses, outcome.FiveMatchPityTriggered,
+            outcome.FreeSpinsAwarded, outcome.SpecialPointsAwarded, outcome.EnergyAwarded,
+            outcome.SpecialBoostApplied)
+        {
+            IsFreeSpin = isFreeSpin,
+            MonkeyPawCount = outcome.CollectorCount,
+            MoneyGrabPoints = outcome.CollectorPayoutPoints,
+            BananaBonusPoints = outcome.PatternPayoutPoints,
+            SealsAwarded = outcome.CollectionSymbolsAwarded,
+            EngineAudit = new SlotSpinEngineAudit(audit.EngineVersion, audit.GeneratedAtUtc,
+                MapContract<GameDefinition>(audit.BaseGame),
+                MapContract<GameDefinition>(audit.EffectiveGame),
+                MapContract<ReelSetDefinition>(audit.ReelSet),
+                MapContract<SymbolSetDefinition>(audit.SymbolSet),
+                MapContract<PaytableDefinition>(audit.Paytable), Profile,
+                audit.PityMissesBefore, audit.EnergyBalanceBefore, audit.FreeSpinFeatureMode,
+                audit.GenerationAttempts, audit.RawGeneratedReels,
+                audit.ReelsAfterFreeGameFrequency)
+            {
+                IsDerivedFreeSpin = audit.IsDerivedFreeSpin
+            }
+        };
     }
 
     // The deployed host currently owns its DTOs; the package uses neutral slot

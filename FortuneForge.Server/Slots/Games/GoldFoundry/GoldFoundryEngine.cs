@@ -21,8 +21,12 @@ internal sealed class GoldFoundryEngine(ISlotsDefinitionProvider definitions, IR
     internal SpinResult Spin(long wagerPoints, string playerId, bool specialBoostApplied,
         long currentEnergyBalance, string? featureMode, int? persistedPityMisses, bool isFreeSpin)
     {
-        var outcome = engine.Spin(wagerPoints, playerId, specialBoostApplied, currentEnergyBalance,
-            featureMode, persistedPityMisses, isFreeSpin);
+        return MapOutcome(engine.Spin(wagerPoints, playerId, specialBoostApplied, currentEnergyBalance,
+            featureMode, persistedPityMisses, isFreeSpin));
+    }
+
+    internal static SpinResult MapOutcome(GoldFoundrySpinOutcome outcome)
+    {
         var audit = outcome.EngineAudit;
         return new(outcome.SpinId, outcome.GameId, outcome.ReelSetId, outcome.SymbolSetId,
             outcome.PaytableId, outcome.WagerPoints, outcome.PointValueInCents, outcome.ReelStops,

@@ -39,7 +39,7 @@ describe.each(games)('$catalog.title site navigation', game => {
     expect(navbar.querySelector('button[aria-label="Open settings"]')).toBeNull()
     expect(navbar.textContent).not.toContain(game.experience.cabinet.title)
     expect(navbar.querySelector('[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe(demoMode ? '/' : '/home')
-    expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe(demoMode ? '/demo' : '/home')
+    expect(navbar.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe(demoMode ? '/#discover-games' : '/home')
     const balance = navbar.querySelector('.site-header-balance')!
     expect(navbar.querySelectorAll('.site-header-balance')).toHaveLength(1)
     expect(balance.tagName).toBe(demoMode ? 'SPAN' : 'A')
@@ -70,7 +70,7 @@ it('gives the public Rainbow Realm preview canonical public game exits', () => {
   host.innerHTML = renderToStaticMarkup(<RainbowRealmMachinePreview />)
   expect(host.querySelectorAll('[data-site-navbar]')).toHaveLength(1)
   expect(host.querySelector('[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/')
-  expect(host.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/demo')
+  expect(host.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/#discover-games')
   expect(host.querySelector('[data-site-navbar]')?.textContent).not.toContain('Rainbow Realm Preview')
   expect(host.querySelector('.landing-bar')).toBeNull()
 })

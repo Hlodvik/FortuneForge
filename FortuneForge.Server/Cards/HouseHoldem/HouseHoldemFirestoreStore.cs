@@ -1,16 +1,19 @@
 using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FortuneForge.Games.HouseHoldem;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 
 namespace FortuneForge.Server.Cards.HouseHoldem;
 
 /// <summary>All wagers, phase changes and payouts are committed with the round in one Firestore transaction.</summary>
-internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHoldemStore
+internal sealed class HouseHoldemFirestoreStore(FirestoreDb database, GameWorkerClient? worker = null) : IHouseHoldemStore
 {
+    private const string GameId = "house-holdem";
     private const string CurrencyId = "slotsCredits";
     private const string FractionalCentsField = "availableFractionalCents";
 
@@ -47,7 +50,13 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
             if (!string.IsNullOrEmpty(activeRoundId))
                 throw new HouseHoldemRoundConflictException("Finish the current House Hold'em hand before starting another.");
 
-            var round = HouseHoldemRules.StartRound(shuffledDeck, anteCents, tripsCents);
+            var round = worker?.IsConfigured(GameId) == true
+                ? (await worker.InvokeAsync<object, WorkerRound>(GameId, userId, "/internal/v1/rounds/start",
+                    new { Deck = shuffledDeck, AnteCents = anteCents, TripsCents = tripsCents }, cancellationToken)).PrivateRound
+                : HouseHoldemRules.StartRound(shuffledDeck, anteCents, tripsCents);
+            if (round.AnteCents != anteCents || round.TripsCents != tripsCents || round.BlindCents != anteCents ||
+                round.PlayWagerCents != 0 || round.PayoutCents != 0 || round.Phase != HouseHoldemPhases.Preflop)
+                throw new GameWorkerUnavailableException(GameId);
             var wagerCents = round.TotalWagerCents;
             // The final Play wager is mandatory unless the player folds. Keep one Ante
             // available so a hand cannot start with folding as its only affordable option.
@@ -127,7 +136,30 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
                 throw new InvalidOperationException("A House Hold'em result exists before the round settled.");
 
             long debitCents;
-            if (command == HouseHoldemCommands.Advance)
+            if (worker?.IsConfigured(GameId) == true)
+            {
+                var before = stored.Round;
+                try
+                {
+                    var snapshot = await worker.InvokeAsync<object, WorkerRound>(GameId, userId,
+                        command == HouseHoldemCommands.Advance ? "/internal/v1/rounds/advance" : "/internal/v1/rounds/act",
+                        command == HouseHoldemCommands.Advance ? before : new { Round = before, Action = command }, cancellationToken);
+                    var round = snapshot.PrivateRound;
+                    if (round.AnteCents != before.AnteCents || round.BlindCents != before.BlindCents || round.TripsCents != before.TripsCents ||
+                        !round.PlayerCards.SequenceEqual(before.PlayerCards) || !round.DealerCards.SequenceEqual(before.DealerCards) ||
+                        !round.CommunityCards.SequenceEqual(before.CommunityCards) || round.PlayWagerCents < before.PlayWagerCents ||
+                        round.PayoutCents < 0)
+                        throw new GameWorkerUnavailableException(GameId);
+                    debitCents = checked(round.PlayWagerCents - before.PlayWagerCents);
+                    if (balanceCents < debitCents) throw new HouseHoldemInsufficientCreditsException(balanceCents, debitCents);
+                    stored = stored with { Round = round };
+                }
+                catch (GameWorkerRequestRejectedException)
+                {
+                    throw new HouseHoldemRoundConflictException("That House Hold'em action is not legal at this stage of the hand.");
+                }
+            }
+            else if (command == HouseHoldemCommands.Advance)
             {
                 if (!HouseHoldemRules.CanAdvance(stored.Round))
                     throw new HouseHoldemRoundConflictException("This House Hold'em hand is waiting for an action.");
@@ -217,6 +249,7 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
         ["anteCents"] = round.AnteCents,
         ["tripsCents"] = round.TripsCents,
         ["deck"] = deck.ToArray(),
+        ["privateRoundJson"] = JsonSerializer.Serialize(round),
         ["steps"] = Array.Empty<string>(),
         ["phase"] = round.Phase,
         ["totalWagerCents"] = round.TotalWagerCents,
@@ -231,6 +264,7 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
         HouseHoldemRound round, IReadOnlyList<string> steps, DateTimeOffset nowUtc) => new()
     {
         ["steps"] = steps.ToArray(),
+        ["privateRoundJson"] = JsonSerializer.Serialize(round),
         ["phase"] = round.Phase,
         ["totalWagerCents"] = round.TotalWagerCents,
         ["payoutCents"] = round.PayoutCents,
@@ -312,14 +346,24 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
         HouseHoldemRound round;
         try
         {
-            round = HouseHoldemRules.RestoreRound(deck, anteCents, tripsCents);
-            foreach (var step in steps)
+            if (snapshot.TryGetValue<string>("privateRoundJson", out var json))
             {
-                if (step == HouseHoldemCommands.Advance) HouseHoldemRules.Advance(round);
-                else HouseHoldemRules.ApplyAction(round, step);
+                round = JsonSerializer.Deserialize<HouseHoldemRound>(json) ??
+                    throw new InvalidOperationException("The House Hold'em round snapshot is missing.");
+                if (round.AnteCents != anteCents || round.TripsCents != tripsCents)
+                    throw new InvalidOperationException("The House Hold'em snapshot has different wagers.");
+            }
+            else
+            {
+                round = HouseHoldemRules.RestoreRound(deck, anteCents, tripsCents);
+                foreach (var step in steps)
+                {
+                    if (step == HouseHoldemCommands.Advance) HouseHoldemRules.Advance(round);
+                    else HouseHoldemRules.ApplyAction(round, step);
+                }
             }
         }
-        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException)
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException or JsonException)
         {
             throw new InvalidOperationException("The House Hold'em round history is corrupt.", exception);
         }
@@ -353,4 +397,6 @@ internal sealed class HouseHoldemFirestoreStore(FirestoreDb database) : IHouseHo
     private sealed record StoredRound(
         string RoundId, string UserId, HouseHoldemRound Round,
         IReadOnlyList<string> Steps, DateTimeOffset CreatedAt);
+
+    private sealed record WorkerRound(HouseHoldemRound PrivateRound);
 }

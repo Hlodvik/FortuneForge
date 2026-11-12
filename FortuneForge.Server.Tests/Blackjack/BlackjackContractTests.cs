@@ -12,10 +12,9 @@ namespace FortuneForge.Server.Tests.Blackjack;
 public sealed class BlackjackContractTests
 {
     [Fact]
-    public void Controllers_ExposeRealAndDemoStatusGameAndActionRoutes()
+    public void Controller_ExposesStatusGameAndActionRoutes()
     {
         AssertControllerRoutes(typeof(BlackjackController), "api/cards/blackjack");
-        AssertControllerRoutes(typeof(DemoBlackjackController), "api/cards/blackjack/demo");
     }
 
     [Fact]

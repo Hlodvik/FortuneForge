@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Matchmaking;
@@ -15,7 +16,8 @@ public static class BlackjackTableConfiguration
                 null,
                 provider.GetRequiredService<IMultiplayerMatchmaker>(),
                 provider.GetRequiredService<IManagedTablePopulationDirector>(),
-                provider.GetRequiredService<IConfiguration>().GetValue("Features:BlackjackMultiplayerEnabled", false)));
+                provider.GetRequiredService<IConfiguration>().GetValue("Features:BlackjackMultiplayerEnabled", false),
+                provider.GetService<GameWorkerClient>()));
         services.AddSingleton<BlackjackTableService>();
         services.AddHostedService<BlackjackTableWorker>();
         return services;

@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 
@@ -17,7 +18,8 @@ public static class CompetitiveSolitaireConfiguration
             provider.GetRequiredService<FirestoreDb>(),
             provider.GetRequiredService<CompetitiveSolitaireOptions>(),
             provider.GetRequiredService<IMultiplayerMatchmaker>(),
-            provider.GetRequiredService<ILogger<FirestoreCompetitiveSolitaireStore>>()));
+            provider.GetRequiredService<ILogger<FirestoreCompetitiveSolitaireStore>>(),
+            provider.GetService<GameWorkerClient>()));
         services.AddSingleton<ICompetitiveSolitaireStore>(provider =>
             provider.GetRequiredService<FirestoreCompetitiveSolitaireStore>());
         services.AddSingleton<CompetitiveSolitaireService>();

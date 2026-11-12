@@ -2,6 +2,7 @@ using FortuneForge.Games.Roulette;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -67,6 +68,11 @@ public sealed class RouletteController(RouletteGameService games, AccountService
     private async Task<ActionResult> ExecuteAsync(Func<Task<RouletteRoundResponse>> action)
     {
         try { return Ok(await action()); }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new RouletteErrorResponse("roulette-worker-unavailable", exception.Message));
+        }
         catch (RouletteAccessException exception) { return NotFound(new RouletteErrorResponse("roulette-round-not-found", exception.Message)); }
         catch (Exception exception) when (exception is ArgumentException or ArgumentOutOfRangeException or RouletteRuleException)
         { return BadRequest(new RouletteErrorResponse("roulette-invalid-action", exception.Message)); }

@@ -44,6 +44,9 @@ public static class OlympusTumbleRules
     public static bool SupportsEngineVersion(string? value) =>
         value is LegacyEngineVersion or EngineVersionV2 or EngineVersion;
 
+    public static bool SupportsPaidEngineVersion(string? value) =>
+        value is EngineVersionV2 or EngineVersion;
+
     public static OlympusTumbleOutcome Resolve(string engineVersion, long wagerPoints,
         bool showcase, Func<int, int> nextIndex)
     {

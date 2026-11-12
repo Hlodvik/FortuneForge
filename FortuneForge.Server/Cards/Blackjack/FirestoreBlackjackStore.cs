@@ -1,13 +1,16 @@
+using FortuneForge.Server.GameWorkers;
 using System.Security.Cryptography;
 using System.Text;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.Blackjack;
 
-internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjackStore
+internal sealed class FirestoreBlackjackStore(FirestoreDb database, GameWorkerClient? gameWorker = null) : IBlackjackStore
 {
     private const string SlotsCreditsCurrencyId = "slotsCredits";
     private const string AvailableFractionalCentsField = "availableFractionalCents";
+    private static string WorkerGameId => BlackjackModule.Descriptor.Id;
+    private GameWorkerClient? Worker => gameWorker?.IsConfigured(WorkerGameId) == true ? gameWorker : null;
 
     public Task<BlackjackStoreResult> StartAsync(
         string userId,
@@ -22,6 +25,7 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
         var balanceReference = BalanceDocument(userId);
         var wagerReference = BalanceTransactionDocument($"{gameId}-wager");
         var payoutReference = BalanceTransactionDocument($"{gameId}-payout");
+        Task<BlackjackGame>? workerDeal = null;
 
         return database.RunTransactionAsync(
             async transaction =>
@@ -45,12 +49,14 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                     throw new BlackjackInsufficientCreditsException(availableCents, wagerCents);
                 }
 
-                var game = BlackjackRules.Deal(
-                    gameId,
-                    userId,
-                    wagerCents,
-                    shuffledDeck,
-                    nowUtc);
+                var game = Worker is null
+                    ? BlackjackRules.Deal(gameId, userId, wagerCents, shuffledDeck, nowUtc)
+                    : await (workerDeal ??= ComputeAsync(userId, "deal",
+                        new { GameId = gameId, UserId = userId, WagerCents = wagerCents, NowUtc = nowUtc }, cancellationToken));
+                if (game.GameId != gameId || game.UserId != userId || game.WagerCents != wagerCents ||
+                    game.TotalWagerCents != wagerCents || game.Version != 1 || game.PayoutCents < 0 ||
+                    game.CreatedAtUtc != nowUtc || game.UpdatedAtUtc != nowUtc)
+                    throw new GameWorkerUnavailableException(WorkerGameId);
                 var afterWagerCents = checked(availableCents - wagerCents);
                 var finalBalanceCents = checked(afterWagerCents + game.PayoutCents);
 
@@ -178,7 +184,21 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                 var afterActionChargeCents = isDouble
                     ? checked(availableCents - game.WagerCents)
                     : availableCents;
-                var updated = BlackjackRules.ApplyAction(game, normalizedAction, nowUtc);
+                BlackjackGame updated;
+                if (Worker is null)
+                    updated = BlackjackRules.ApplyAction(game, normalizedAction, nowUtc);
+                else
+                {
+                    BlackjackRules.ValidateAction(game, normalizedAction);
+                    updated = await ComputeAsync(userId, "action",
+                        new { Game = game, Action = normalizedAction, NowUtc = nowUtc }, cancellationToken);
+                    if (updated.GameId != gameId || updated.UserId != userId || updated.WagerCents != game.WagerCents ||
+                        updated.TotalWagerCents != checked(game.TotalWagerCents + (isDouble ? game.WagerCents : 0)) ||
+                        updated.Version != checked(game.Version + 1) || updated.PayoutCents < 0 ||
+                        updated.CreatedAtUtc != game.CreatedAtUtc || updated.UpdatedAtUtc != nowUtc ||
+                        updated.Deck is null || !updated.Deck.SequenceEqual(game.Deck))
+                        throw new GameWorkerUnavailableException(WorkerGameId);
+                }
                 var payoutCents = updated.Status == BlackjackStatuses.Completed
                     ? updated.PayoutCents
                     : 0;
@@ -238,6 +258,20 @@ internal sealed class FirestoreBlackjackStore(FirestoreDb database) : IBlackjack
                 return new BlackjackStoreResult(updated, finalBalanceCents);
             },
             cancellationToken: cancellationToken);
+    }
+
+    private async Task<BlackjackGame> ComputeAsync(string userId, string operation, object request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await Worker!.InvokeAsync<object, BlackjackGame>(WorkerGameId, userId,
+                "/internal/v1/solo/" + operation, request, cancellationToken);
+        }
+        catch (GameWorkerRequestRejectedException error)
+        {
+            throw new GameWorkerUnavailableException(WorkerGameId, error);
+        }
     }
 
     internal static string CreateLookupKey(string value)

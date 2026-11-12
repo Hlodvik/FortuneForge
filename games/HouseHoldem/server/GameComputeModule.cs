@@ -12,7 +12,7 @@ internal static class GameComputeModule
     internal static void Map(WebApplication app)
     {
         app.MapComputeAction("/internal/v1/rounds/start", (StartRequest request) =>
-            Snapshot(HouseHoldemRules.StartRound(HouseHoldemRules.CreateShuffledDeck(), request.AnteCents, request.TripsCents)));
+            Snapshot(HouseHoldemRules.StartRound(request.Deck, request.AnteCents, request.TripsCents)));
         app.MapComputeAction("/internal/v1/rounds/act", (ActRequest request) =>
         {
             ArgumentNullException.ThrowIfNull(request.Round);
@@ -28,7 +28,7 @@ internal static class GameComputeModule
 
     private static RoundSnapshot Snapshot(HouseHoldemRound round) => new(round, HouseHoldemRules.ToPlayerView(round));
 
-    private sealed record StartRequest(long AnteCents, long TripsCents = 0);
+    private sealed record StartRequest(IReadOnlyList<string> Deck, long AnteCents, long TripsCents);
     private sealed record ActRequest(HouseHoldemRound Round, string Action);
     private sealed record RoundSnapshot(HouseHoldemRound PrivateRound, HouseHoldemPlayerView PlayerView);
 }

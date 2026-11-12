@@ -1,4 +1,5 @@
 using System.Text.Json;
+using FortuneForge.Games.Wukong;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Games.GoldFoundry;
@@ -194,7 +195,9 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Null(game.Energy);
         Assert.Equal(PiratesFortuneBaseReelSet.Id, game.Math.ReelSetId);
         Assert.Equal(0.32m, game.Math.Targets.HitRate);
-        Assert.Same(PiratesFortuneBaseReelSet.Definition, provider.GetReelSet(game.Math.ReelSetId));
+        var reels = Assert.IsType<ReelSetDefinition>(provider.GetReelSet(game.Math.ReelSetId));
+        Assert.Equal(PiratesFortuneBaseReelSet.Definition.SymbolSetId, reels.SymbolSetId);
+        Assert.Equal(PiratesFortuneBaseReelSet.Definition.Reels, reels.Reels);
     }
 
     [Fact]
@@ -227,12 +230,7 @@ public sealed class SlotSpecialRoundProfilesTests
         Assert.Null(wukong.FreeGames);
         Assert.Equal(WukongBaseReelSet.Id, wukong.Math.ReelSetId);
         Assert.DoesNotContain("FREE", wukongReels.Reels.SelectMany(reel => reel));
-        Assert.All(wukongReels.Reels, reel =>
-        {
-            Assert.Single(reel, symbol => symbol == "5");
-            Assert.Single(reel, symbol => symbol == "6");
-            Assert.Single(reel, symbol => symbol == "7");
-        });
+        Assert.Equal(WukongEngine.CreateReelSet().Reels, wukongReels.Reels);
         Assert.Equal(RainbowRealmSlotDefinitions.ReelSetId, rainbow.Math.ReelSetId);
         Assert.Equal(10, rainbow.FreeGames?.AwardedSpins);
     }
@@ -252,26 +250,18 @@ public sealed class SlotSpecialRoundProfilesTests
     }
 
     [Fact]
-    public void OptionsProvider_ResolvesEveryOtherTitleWithoutWukongConfigured()
+    public void OptionsProvider_ResolvesEveryPackagedTitleWithoutHostDefinitions()
     {
-        using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "appsettings.json")));
-        var options = settings.RootElement.GetProperty("Slots")
-            .Deserialize<SlotsOptions>(new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
-        var template = Assert.IsType<GameDefinition>(options.ClassicProfileTemplate);
-        var original = new OptionsSlotsDefinitionProvider(Options.Create(options));
+        var original = new OptionsSlotsDefinitionProvider();
+        var template = Prototype();
         var provider = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
         {
             ClassicProfileTemplate = template,
-            GameDefinitions = options.GameDefinitions.Where(game => game.Id != SlotSpecialRoundProfiles.WukongGameId).ToList(),
-            SymbolSets = options.SymbolSets,
-            ReelSets = options.ReelSets,
-            Paytables = options.Paytables
+            GameDefinitions = [Prototype(SlotSpecialRoundProfiles.WukongGameId)]
         }));
 
-        Assert.Null(provider.GetGame(SlotSpecialRoundProfiles.WukongGameId));
         Assert.Null(provider.GetGame(template.Id));
-        foreach (var profile in SlotSpecialRoundProfiles.All.Where(
-                     profile => profile.GameId != SlotSpecialRoundProfiles.WukongGameId))
+        foreach (var profile in SlotSpecialRoundProfiles.All)
         {
             var game = Assert.IsType<GameDefinition>(provider.GetGame(profile.GameId));
             Assert.Equal(JsonSerializer.Serialize(original.GetGame(profile.GameId)), JsonSerializer.Serialize(game));
@@ -279,13 +269,8 @@ public sealed class SlotSpecialRoundProfilesTests
             Assert.NotNull(provider.GetPaytable(game.Math.PaytableId));
         }
 
-        var wukongOnly = new OptionsSlotsDefinitionProvider(Options.Create(new SlotsOptions
-        {
-            GameDefinitions = [Prototype(SlotSpecialRoundProfiles.WukongGameId)]
-        }));
         Assert.Equal(GoldFoundrySlotDefinitions.PaytableId,
-            wukongOnly.GetGame(GoldFoundrySlotDefinitions.GameId)?.Math.PaytableId);
-        Assert.Null(wukongOnly.GetGame(SlotSpecialRoundProfiles.CosmicFortuneGameId));
+            provider.GetGame(GoldFoundrySlotDefinitions.GameId)?.Math.PaytableId);
     }
 
     private static GameDefinition Prototype(string id = "classic-profile-template-v1") => new()

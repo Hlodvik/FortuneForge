@@ -186,6 +186,8 @@ internal static class CreditHoldemHttp
     {
         switch (exception)
         {
+            case GameWorkers.GameWorkerUnavailableException:
+                return controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = exception.Message });
             case CreditHoldemNotFoundException:
                 return controller.NotFound(new { error = exception.Message });
             case CreditHoldemInsufficientCreditsException insufficient:

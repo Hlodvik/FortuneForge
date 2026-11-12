@@ -2,6 +2,7 @@ using FortuneForge.Games.Hearts;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -82,6 +83,7 @@ public sealed class PaidHeartsController(
         var account = (await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), ct)).Value;
         if (account is null) return Unauthorized(new HeartsErrorResponse("hearts-authentication-required", "Sign in to play Hearts."));
         try { return Ok(await action(account)); }
+        catch (GameWorkerUnavailableException exception) { return StatusCode(503, new HeartsErrorResponse("hearts-unavailable", exception.Message)); }
         catch (HeartsAccessException exception) { return NotFound(new HeartsErrorResponse("hearts-match-not-found", exception.Message)); }
         catch (PaidHeartsInsufficientFundsException exception) { return StatusCode(402, new HeartsErrorResponse("hearts-insufficient-funds", exception.Message)); }
         catch (PaidHeartsConflictException exception) { return Conflict(new HeartsErrorResponse("hearts-conflict", exception.Message)); }

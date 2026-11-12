@@ -22,7 +22,7 @@ export const slotSmokeInventory = [
 
 export const nonSlotSmokeInventory = [
   { smokePath: '/games/keno' },
-  { smokePath: '/demo/cards/blackjack', catalogPath: '/cards/blackjack' },
+  { smokePath: '/cards/blackjack' },
   { smokePath: '/games/casino-war' },
   { smokePath: '/games/baccarat' },
   { smokePath: '/games/dragon-tiger' },
@@ -34,7 +34,7 @@ export const nonSlotSmokeInventory = [
   { smokePath: '/games/craps' },
   { smokePath: '/games/liars-dice', listed: false },
   { smokePath: '/games/sic-bo' },
-  { smokePath: '/demo/cards/texas-holdem', catalogPath: '/cards/texas-holdem' },
+  { smokePath: '/cards/texas-holdem' },
   { smokePath: '/cards/three-card-poker' },
   { smokePath: '/cards/house-holdem' },
   { smokePath: '/games/flappy', listed: false },
@@ -55,6 +55,6 @@ export const embeddedSlotSmokeInventory = [
 
 export const gameSmokeRoutes = [
   ...nonSlotSmokeInventory.map(({ smokePath }) => smokePath),
-  ...slotSmokeInventory.map(([route]) => `/slots/${route}/demo`),
+  ...slotSmokeInventory.map(([route]) => `/slots/${route}`),
   ...embeddedSlotSmokeInventory.map(({ smokePath }) => smokePath),
 ]

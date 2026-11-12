@@ -32,7 +32,7 @@ public static class OlympusTumbleDemo
         FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.SupportsEngineVersion(engineVersion);
 
     internal static bool SupportsPaidEngineVersion(string? engineVersion) =>
-        engineVersion is EngineVersionV2 or EngineVersion;
+        FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.SupportsPaidEngineVersion(engineVersion);
 
     // Classic collection awards can lock an average between two cash wagers.
     internal static bool IsLegacyCarryWager(GameWageringDefinition wagering, long wagerPoints) =>

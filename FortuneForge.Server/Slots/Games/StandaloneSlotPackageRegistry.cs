@@ -1,4 +1,5 @@
 using FortuneForge.Games.Slots.Runtime;
+using GodsOfOlympusTumbleSpinOutcome = FortuneForge.Games.GodsOfOlympus.GodsOfOlympusTumbleSpinOutcome;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Models;
 using FortuneForge.Server.Slots.Reels;
@@ -130,11 +131,16 @@ public sealed class StandaloneSlotPackageRegistry
             return false;
         }
 
-        var outcome = spin(wagerPoints, playerId, specialBoostApplied,
-            currentEnergyBalance, featureMode, persistedPityMisses, isFreeSpin);
+        result = MapOutcome(spin(wagerPoints, playerId, specialBoostApplied,
+            currentEnergyBalance, featureMode, persistedPityMisses, isFreeSpin));
+        return true;
+    }
+
+    internal static SpinResult MapOutcome(ClassicSlotSpinOutcome outcome)
+    {
         SlotSpecialRoundProfiles.TryGet(outcome.GameId, out var profile);
         var audit = outcome.Audit;
-        result = new SpinResult(outcome.SpinId, outcome.GameId, outcome.ReelSetId,
+        return new SpinResult(outcome.SpinId, outcome.GameId, outcome.ReelSetId,
             outcome.SymbolSetId, outcome.PaytableId, outcome.WagerPoints,
             outcome.PointValueInCents, outcome.ReelStops, outcome.Reels,
             outcome.Payout, outcome.ConsecutiveFiveMisses,
@@ -160,13 +166,20 @@ public sealed class StandaloneSlotPackageRegistry
                 : null,
             SealsAwarded = outcome.CollectionsAwarded
         };
-        return true;
     }
 
     public SpinResult SpinOlympusTumble(string engineVersion, long wagerPoints,
         bool showcase, int pityMissesBefore, long energyBalanceBefore)
     {
-        var package = olympusEngine.SpinTumble(wagerPoints, showcase, engineVersion);
+        return MapTumble(olympusEngine.SpinTumble(wagerPoints, showcase, engineVersion), showcase,
+            pityMissesBefore, energyBalanceBefore);
+    }
+
+    internal static SpinResult MapTumble(GodsOfOlympusTumbleSpinOutcome package, bool showcase,
+        int pityMissesBefore, long energyBalanceBefore)
+    {
+        var engineVersion = package.EngineVersion;
+        var wagerPoints = package.WagerPoints;
         var symbols = OlympusEngine.CreateSymbolSet();
         var reels = OlympusEngine.CreateReelSet();
         var paytable = OlympusEngine.CreatePaytable();

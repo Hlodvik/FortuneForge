@@ -7,12 +7,12 @@ const experience = NEON_NIGHTS_SLOT_GAME.experience
 const contract = engineContracts.games.find(game => game.gameId === 'neon-nights-v1')!
 const activeSymbols = [
   '2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER', 'BANANA',
-  'SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW', 'SEAL_RAND',
+  'SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW',
 ] as const
 
 describe('Neon arcade presentation contract', () => {
   it('keeps the same cash wager range with cent precision and no collection or scatter awards', () => {
-    expect(experience.symbols.serverSymbolSetId).toBe('neon-arcade-symbols-v2')
+    expect(experience.symbols.serverSymbolSetId).toBe(contract.symbols.symbolSetId)
     expect(experience.rules.pointValueInCents).toBe(contract.wagering.pointValueInCents)
     expect(experience.rules.wagerOptions).toHaveLength(1_000)
     expect(slotPointsToRand(experience.rules.wagerOptions[0], experience.rules.pointValueInCents)).toBe(.5)
@@ -29,7 +29,7 @@ describe('Neon arcade presentation contract', () => {
     })
   })
 
-  it('presents all fourteen active symbols and line awards from the server paytable', () => {
+  it('presents all thirteen active symbols and line awards from the server paytable', () => {
     expect([...new Set(experience.symbols.animationSymbolIds ?? [])].sort()).toEqual([...activeSymbols].sort())
     for (const symbol of activeSymbols) expect(experience.symbols.definitions[symbol]).toBeDefined()
     const idle = experience.rules.initialReels.flat()
@@ -42,6 +42,9 @@ describe('Neon arcade presentation contract', () => {
       const shown = payout.matchLength === 3 ? guide?.firstValue : guide?.secondValue
       expect(shown, `${payout.symbolId}/${payout.matchLength}`).toBe(`${payout.multiplier}×`)
     }
+    const wild = experience.symbols.guideEntries.find(entry => entry.symbol === contract.symbols.wildSymbolId)
+    expect(wild).toMatchObject({ firstLabel: 'Wild', firstValue: 'Substitutes on paylines' })
+    expect(wild?.secondValue).toBeUndefined()
     expect(idle).not.toContain('BOLT')
     expect(idle).not.toContain('PAW')
   })
@@ -50,16 +53,12 @@ describe('Neon arcade presentation contract', () => {
     const bonus = experience.symbols.guideEntries.find(entry => entry.symbol === 'FREE')
     expect(bonus).toMatchObject({ firstLabel: 'Each BONUS', firstValue: '+25% to payline wins' })
     expect(bonus?.secondValue).toBeUndefined()
-    for (const symbol of ['6', 'SEAL_RAND']) {
-      expect(contract.paytable.some(payout => payout.symbolId === symbol)).toBe(false)
-      expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)).toMatchObject({
-        firstLabel: 'Special Plays',
-        firstValue: symbol === 'SEAL_RAND' ? '7 paid plays · locked wager' : '7 free plays',
-      })
-      expect(experience.symbols.guideEntries.find(entry => entry.symbol === symbol)?.secondValue).toBeUndefined()
-    }
+    const sportsCar = experience.symbols.guideEntries.find(entry => entry.symbol === '6')
+    expect(contract.paytable.some(payout => payout.symbolId === '6')).toBe(false)
+    expect(sportsCar).toMatchObject({ firstLabel: 'Car Plays', firstValue: '7 paid plays · locked wager' })
+    expect(sportsCar?.secondValue).toBeUndefined()
     expect(experience.symbols.guideEntries.find(entry => entry.symbol === 'POWER')).toMatchObject({
-      firstLabel: 'Disco Plays', firstValue: '10 paid cascade spins',
+      firstLabel: 'Disco Plays', firstValue: '12 paid cascade spins',
     })
     const visibleCopy = [
       experience.features.specialRound?.earnLabel,

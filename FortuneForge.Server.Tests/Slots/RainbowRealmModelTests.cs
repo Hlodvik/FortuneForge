@@ -84,16 +84,28 @@ public sealed class RainbowRealmModelTests
     [Fact]
     public void HistoricalRainbowKeepsTokenPayoutAndSunshineWhenReplayed()
     {
-        var options = ReadOptions();
-        var provider = new OptionsSlotsDefinitionProvider(Options.Create(options));
-        var original = options.GameDefinitions.Single(game => game.Id == GameId);
+        var provider = new OptionsSlotsDefinitionProvider();
+        var original = Assert.IsType<GameDefinition>(provider.GetGame(GameId));
         var legacy = new GameDefinition
         {
             Id = original.Id,
             Layout = original.Layout,
-            Symbols = original.Symbols,
+            Symbols = new GameSymbolRules
+            {
+                SymbolSetId = "classic-symbols-v3",
+                WildSymbolId = original.Symbols.WildSymbolId,
+                NativeWildMatchLengths = original.Symbols.NativeWildMatchLengths,
+                WildSubstitutionMatchLengths = original.Symbols.WildSubstitutionMatchLengths
+            },
             Matching = original.Matching,
-            Math = original.Math,
+            Math = new GameMathDefinition
+            {
+                ReelSetId = "classic-reels-v4",
+                PaytableId = "classic-paytable-v4",
+                FiveMatchPityMissLimit = original.Math.FiveMatchPityMissLimit,
+                PaylinePayoutSteps = original.Math.PaylinePayoutSteps,
+                Targets = original.Math.Targets
+            },
             Wagering = original.Wagering,
             FreeGames = original.FreeGames,
             SpecialPoints = original.SpecialPoints,

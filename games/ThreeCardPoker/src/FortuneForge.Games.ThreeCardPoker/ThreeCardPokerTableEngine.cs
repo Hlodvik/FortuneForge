@@ -135,9 +135,14 @@ public static class ThreeCardPokerTableEngine
         Changed(table, nowUtc);
     }
 
+    public static bool HasDueAutomatedTurn(ThreeCardPokerTableState table, DateTime nowUtc) =>
+        table.NextTransitionAtUtc is { } deadline && nowUtc >= deadline &&
+        (table.Phase is ThreeCardPokerTablePhases.Dealing or ThreeCardPokerTablePhases.Dealer ||
+            table.Phase == ThreeCardPokerTablePhases.Active && table.Transition == "action-settle");
+
     public static void AdvanceAutomatedTurns(ThreeCardPokerTableState table, DateTime nowUtc)
     {
-        if (table.NextTransitionAtUtc is not { } deadline || nowUtc < deadline) return;
+        if (!HasDueAutomatedTurn(table, nowUtc)) return;
         if (table.Phase == ThreeCardPokerTablePhases.Dealing)
         {
             // Preserve card-by-card table animation while advancing missed timer ticks.

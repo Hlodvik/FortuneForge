@@ -1,3 +1,4 @@
+using FortuneForge.Games.Hosting;
 using System.Security.Cryptography;
 using FortuneForge.Games.Abstractions;
 using FortuneForge.Games.Blackjack;
@@ -10,6 +11,22 @@ internal static class GameComputeModule
 
     internal static void Map(WebApplication app)
     {
+        app.MapGameAction("/internal/v1/solo/deal", (SoloDealRequest request) =>
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.GameId);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.UserId);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(request.WagerCents);
+            return BlackjackRules.Deal(request.GameId, request.UserId, request.WagerCents,
+                BlackjackRules.CreateShuffledDeck(), RequireUtc(request.NowUtc));
+        }, request => request.UserId);
+        app.MapGameAction("/internal/v1/solo/action", (SoloActionRequest request) =>
+        {
+            ArgumentNullException.ThrowIfNull(request.Game);
+            ArgumentException.ThrowIfNullOrWhiteSpace(request.Action);
+            try { return BlackjackRules.ApplyAction(request.Game, request.Action, RequireUtc(request.NowUtc)); }
+            catch (BlackjackConflictException exception) { throw new ArgumentException(exception.Message, exception); }
+        }, request => request.Game?.UserId ?? "");
+
         app.MapComputeAction("/internal/v1/tables/prepare-betting", (TableRequest request) =>
         {
             ValidateBettingTable(request.PrivateTable);
@@ -78,6 +95,8 @@ internal static class GameComputeModule
         BlackjackTableConflictException or BlackjackTableNotFoundException or
         BlackjackTableIllegalActionException;
 
+    private sealed record SoloDealRequest(string GameId, string UserId, long WagerCents, DateTime NowUtc);
+    private sealed record SoloActionRequest(BlackjackGame Game, string Action, DateTime NowUtc);
     private sealed record TableRequest(BlackjackTableState PrivateTable);
     private sealed record TimedTableRequest(BlackjackTableState PrivateTable, DateTime NowUtc);
     private sealed record PlayerRequest(BlackjackTableState PrivateTable, string ActorId);

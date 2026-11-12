@@ -1,3 +1,4 @@
+using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Bots.Solitaire;
 using FortuneForge.Server.Matchmaking;
@@ -190,6 +191,8 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 var payout = checked(pool * 90 / 100);
                 var seedSnapshot = snapshots.First(snapshot => snapshot.Id == first.TicketId);
                 var seed = checked((uint)ReadLong(seedSnapshot, "dealSeed"));
+                var game = await CreateBoardAsync(GameSecurityContext.Current?.UserId ?? first.UserId,
+                    seed, first.DrawCount, cancellationToken);
                 var match = new SolitaireMatch(
                     matchId, playerCount, first.BuyInCents, pool, payout, checked(pool - payout), seed,
                     nowUtc, nowUtc.Add(SolitaireCompetitionRules.MatchDuration), PlayingMatchStatus,
@@ -216,7 +219,6 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     ["fundedAt"] = Timestamp.FromDateTime(nowUtc),
                     ["schemaVersion"] = 1L
                 });
-                var game = SolitaireEngine.CreateGame(seed, match.DrawCount);
                 var securityPlayers = new List<SolitairePlayerState>();
                 for (var index = 0; index < humans.Count; index++)
                 {
@@ -240,7 +242,7 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                 for (var index = 0; index < managedProfiles.Length; index++)
                 {
                     var player = SolitaireManagedPlayerProgression.Initialize(match,
-                        SolitaireManagedPlayerPolicy.Start(match, humans.Count + index + 1, managedProfiles[index]));
+                        SolitaireManagedPlayerPolicy.Start(match, humans.Count + index + 1, managedProfiles[index], game));
                     player.HostMetadata[ManagedAssignmentMetadataKey] = currentAssignmentId;
                     securityPlayers.Add(player);
                     transaction.Create(PlayerDocument(matchId, player.UserId), PlayerData(player));
@@ -524,8 +526,11 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore
                     StartedAtUtc = nowUtc,
                     DeadlineAtUtc = nowUtc.Add(SolitaireCompetitionRules.MatchDuration)
                 };
+                var game = await CreateBoardAsync(GameSecurityContext.Current?.UserId ??
+                    priorPlayers.First(player => player.IsAccountBacked).UserId,
+                    playerClock.DealSeed, playerClock.DrawCount, cancellationToken);
                 var player = SolitaireManagedPlayerProgression.Initialize(playerClock,
-                    SolitaireManagedPlayerPolicy.Start(playerClock, latest.PlayerIds.Count + 1, proposed));
+                    SolitaireManagedPlayerPolicy.Start(playerClock, latest.PlayerIds.Count + 1, proposed, game));
                 player.HostMetadata[ManagedAssignmentMetadataKey] = assignmentId;
 
                 WriteSecurityState(transaction, updated, priorPlayers.Append(player).ToArray(), nowUtc, "managed-seat-admitted");

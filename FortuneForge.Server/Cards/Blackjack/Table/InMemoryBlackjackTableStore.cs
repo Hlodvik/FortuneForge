@@ -51,7 +51,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string userId,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Get(state, balances, userId, nowUtc), cancellationToken);
+        Execute(() => coordinator.GetAsync(state, balances, userId, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> JoinAsync(
         string userId,
@@ -60,7 +60,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Join(
+        Execute(() => coordinator.JoinAsync(
             state, balances, userId, displayName, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> CancelAsync(
@@ -70,7 +70,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Cancel(
+        Execute(() => coordinator.CancelAsync(
             state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> WagerAsync(
@@ -81,7 +81,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Wager(
+        Execute(() => coordinator.WagerAsync(
             state, balances, userId, tableId, wagerCents, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> SitOutAsync(
@@ -91,7 +91,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.SitOut(
+        Execute(() => coordinator.SitOutAsync(
             state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> ActionAsync(
@@ -102,7 +102,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Action(
+        Execute(() => coordinator.ActionAsync(
             state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task<BlackjackTableStoreResult> LeaveAsync(
@@ -112,7 +112,7 @@ internal sealed class InMemoryBlackjackTableStore(
         string idempotencyKey,
         DateTime nowUtc,
         CancellationToken cancellationToken) =>
-        Execute(() => coordinator.Leave(
+        Execute(() => coordinator.LeaveAsync(
             state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc), cancellationToken);
 
     public Task SweepAsync(DateTime nowUtc, CancellationToken cancellationToken)
@@ -120,7 +120,7 @@ internal sealed class InMemoryBlackjackTableStore(
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Apply(coordinator.Sweep(state, balances, nowUtc));
+            Apply(coordinator.SweepAsync(state, balances, nowUtc).GetAwaiter().GetResult());
             return Task.CompletedTask;
         }
     }
@@ -160,13 +160,13 @@ internal sealed class InMemoryBlackjackTableStore(
     }
 
     private Task<BlackjackTableStoreResult> Execute(
-        Func<BlackjackTableCoordinatorResult> command,
+        Func<ValueTask<BlackjackTableCoordinatorResult>> command,
         CancellationToken cancellationToken)
     {
         lock (gate)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var result = command();
+            var result = command().GetAwaiter().GetResult();
             Apply(result.Journal);
             return Task.FromResult(result.Store);
         }

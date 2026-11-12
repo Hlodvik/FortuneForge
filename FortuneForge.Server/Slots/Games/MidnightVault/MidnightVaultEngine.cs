@@ -20,8 +20,12 @@ internal sealed class MidnightVaultEngine(IRandomIndexSource random, IReelGenera
         long currentEnergyBalance, string? featureMode, int? persistedPityMisses,
         bool isFreeSpin, string? mathModelId)
     {
-        var outcome = engine.Spin(wagerPoints, playerId, specialBoostApplied, currentEnergyBalance,
-            featureMode, persistedPityMisses, isFreeSpin, mathModelId);
+        return MapOutcome(engine.Spin(wagerPoints, playerId, specialBoostApplied, currentEnergyBalance,
+            featureMode, persistedPityMisses, isFreeSpin, mathModelId));
+    }
+
+    internal static SpinResult MapOutcome(MidnightVaultSpinOutcome outcome)
+    {
         var audit = outcome.EngineAudit;
         return new SpinResult(outcome.SpinId, outcome.GameId, outcome.ReelSetId, outcome.SymbolSetId,
             outcome.PaytableId, outcome.WagerPoints, outcome.PointValueInCents, outcome.ReelStops,

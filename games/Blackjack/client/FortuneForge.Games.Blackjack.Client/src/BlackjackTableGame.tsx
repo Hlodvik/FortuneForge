@@ -40,6 +40,7 @@ type DealerPositionStyle = CSSProperties & {
 export interface BlackjackTableGameProps {
   startingBalanceCredits: number
   fetchWithAccountSession: typeof fetch
+  isPublicResponse?: (value: unknown) => boolean
   presentation: BlackjackTablePresentationServices
   onCardAudioClick: MouseEventHandler<HTMLElement>
   renderShell: (props: {
@@ -57,7 +58,9 @@ export function BlackjackTableGame(props: BlackjackTableGameProps) {
   </BlackjackTablePresentation>
 }
 
-function BlackjackTableController({ startingBalanceCredits, fetchWithAccountSession, onCardAudioClick, renderShell }: BlackjackTableGameProps) {
+function BlackjackTableController({
+  startingBalanceCredits, fetchWithAccountSession, isPublicResponse, onCardAudioClick, renderShell,
+}: BlackjackTableGameProps) {
   const {
     cancelBlackjackTableQueue,
     getBlackjackTableSnapshot,
@@ -67,7 +70,10 @@ function BlackjackTableController({ startingBalanceCredits, fetchWithAccountSess
     postBlackjackTableAction,
     postBlackjackTableWager,
     sitOutBlackjackTableRound,
-  } = useMemo(() => createBlackjackTableApi(fetchWithAccountSession), [fetchWithAccountSession])
+  } = useMemo(
+    () => createBlackjackTableApi(fetchWithAccountSession, isPublicResponse),
+    [fetchWithAccountSession, isPublicResponse],
+  )
   const { playCardAudio } = useBlackjackTablePresentation()
   const [availability, setAvailability] = useState<Availability>({ kind: 'loading' })
   const [balanceCredits, setBalanceCredits] = useState(startingBalanceCredits)

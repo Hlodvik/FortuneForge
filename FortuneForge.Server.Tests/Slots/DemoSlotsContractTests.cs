@@ -13,7 +13,6 @@ using FortuneForge.Server.RoundAudit;
 using FortuneForge.Games.Abstractions.Auditing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -23,27 +22,9 @@ namespace FortuneForge.Server.Tests.Slots;
 public sealed class DemoSlotsContractTests
 {
     [Fact]
-    public void DemoController_IsPublicRateLimitedAndUsesTheSharedEngineWithAnAuditStore()
+    public void LegacyDemoReplayHarness_IsNotAnHttpController()
     {
-        var route = Assert.Single(typeof(DemoSlotsController)
-            .GetCustomAttributes(typeof(RouteAttribute), inherit: true)
-            .Cast<RouteAttribute>());
-        Assert.Equal("api/slots/demo", route.Template);
-
-        var status = typeof(DemoSlotsController).GetMethod(nameof(DemoSlotsController.Status));
-        Assert.NotNull(status);
-        Assert.Equal("status", Assert.Single(status
-            .GetCustomAttributes(typeof(HttpGetAttribute), inherit: true)
-            .Cast<HttpGetAttribute>()).Template);
-
-        var spin = typeof(DemoSlotsController).GetMethod(nameof(DemoSlotsController.Spin));
-        Assert.NotNull(spin);
-        Assert.Equal("spins", Assert.Single(spin
-            .GetCustomAttributes(typeof(HttpPostAttribute), inherit: true)
-            .Cast<HttpPostAttribute>()).Template);
-        Assert.Equal("slot-spins", Assert.Single(spin
-            .GetCustomAttributes(typeof(EnableRateLimitingAttribute), inherit: true)
-            .Cast<EnableRateLimitingAttribute>()).PolicyName);
+        Assert.Single(typeof(DemoSlotsController).GetCustomAttributes(typeof(NonControllerAttribute), inherit: true));
 
         var dependencies = Assert.Single(typeof(DemoSlotsController).GetConstructors())
             .GetParameters()

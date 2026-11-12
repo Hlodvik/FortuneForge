@@ -4,12 +4,15 @@ using System.Text;
 using FortuneForge.Games.Baccarat;
 using FortuneForge.Games.Cards;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
+using FortuneForge.Server.RoundAudit;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.Baccarat;
 
-internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratStore
+internal sealed class BaccaratFirestoreStore(FirestoreDb database, GameWorkerClient? workers = null) : IBaccaratStore
 {
+    private static readonly string GameId = BaccaratModule.Descriptor.Id;
     private const string SlotsCreditsCurrencyId = "slotsCredits";
     private const string AvailableFractionalCentsField = "availableFractionalCents";
 
@@ -64,26 +67,19 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
 
             var shoe = snapshots[5].Exists ? ReadShoe(snapshots[5], userId) : new BaccaratShoe(shuffledShoe.ToArray(), 0);
             if (shoe.NextIndex >= 312) shoe = new BaccaratShoe(shuffledShoe.ToArray(), 0);
-            var round = PuntoBancoRoundDealer.Deal(shoe.Cards.Skip(shoe.NextIndex).ToArray());
-            var nextShoeIndex = checked(shoe.NextIndex + round.ConsumedCards.Length);
-            var stake = BaccaratMoney.ToRand(stakeCents);
-            var settlement = PuntoBancoPaytable.Settle(betSide, stake, round);
-            var playerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(playerPairStakeCents), round.PlayerHand);
-            var bankerPairSettlement = PuntoBancoPaytable.SettlePair(BaccaratMoney.ToRand(bankerPairStakeCents), round.BankerHand);
-            var returnedCentsForRound = BaccaratMoney.ToCents(
-                settlement.TotalReturn + playerPairSettlement.TotalReturn + bankerPairSettlement.TotalReturn);
+            var deal = new BaccaratComputeRequest(shoe.Cards.Skip(shoe.NextIndex).Take(6).ToArray(), betSide,
+                BaccaratMoney.ToRand(stakeCents), BaccaratMoney.ToRand(playerPairStakeCents), BaccaratMoney.ToRand(bankerPairStakeCents));
+            var stored = await ResolveRoundAsync(userId, roundId, shoe, deal, totalStakeCents, cancellationToken);
+            var returnedCentsForRound = BaccaratMoney.ToCents(stored.CombinedTotalReturn);
             var balanceAfterWagerCents = checked(balanceCents - totalStakeCents);
             var finalBalanceCents = checked(balanceAfterWagerCents + returnedCentsForRound);
-            var stored = new BaccaratStoreRound(roundId, userId, betSide, round, settlement,
-                playerPairSettlement, bankerPairSettlement, nextShoeIndex, shoe.Cards.Count - nextShoeIndex);
-
             transaction.Create(roundReference, RoundData(stored, idempotencyKey, nowUtc));
             FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
                 "baccarat", roundId, userId, totalStakeCents, returnedCentsForRound, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
                 "baccaratRounds", roundId, stored, "baccarat-deal-and-side-bets-v1",
                 FortuneForge.Server.RoundAudit.BaccaratOutcomeAudit.Verify(stored, totalStakeCents, returnedCentsForRound),
                 FortuneForge.Server.RoundAudit.BaccaratOutcomeAudit.Version);
-            transaction.Set(shoeReference, ShoeData(userId, shoe.Cards, nextShoeIndex, nowUtc));
+            transaction.Set(shoeReference, ShoeData(userId, shoe.Cards, stored.ShoeCardsUsed, nowUtc));
             transaction.Set(balanceReference, BalanceUpdate(finalBalanceCents, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerReference, BalanceTransactionData(
                 wagerReference.Id, userId, -totalStakeCents, balanceAfterWagerCents, "baccarat-wager", idempotencyKey, nowUtc));
@@ -95,6 +91,35 @@ internal sealed class BaccaratFirestoreStore(FirestoreDb database) : IBaccaratSt
             transaction.Create(eventReference, RoundEventData(roundId, userId, idempotencyKey, nowUtc));
             return new BaccaratStoreResult(stored, finalBalanceCents);
         }, cancellationToken: cancellationToken);
+    }
+
+    private async Task<BaccaratStoreRound> ResolveRoundAsync(string userId, string roundId, BaccaratShoe shoe,
+        BaccaratComputeRequest request, long totalStakeCents, CancellationToken cancellationToken)
+    {
+        var remote = workers?.IsConfigured(GameId) == true;
+        try
+        {
+            var result = remote
+                ? await workers!.InvokeAsync<BaccaratComputeRequest, BaccaratComputeResult>(
+                    GameId, userId, BaccaratCompute.ResolveRoute, request, cancellationToken)
+                : BaccaratCompute.Resolve(request);
+            if (result.Round is null || result.MainBet is null || result.PlayerPair is null || result.BankerPair is null)
+                throw new ArgumentException("The Baccarat result is incomplete.");
+            var round = result.Round.ToRound();
+            var nextIndex = checked(shoe.NextIndex + round.ConsumedCards.Length);
+            var stored = new BaccaratStoreRound(roundId, userId, request.BetSide, round, result.MainBet,
+                result.PlayerPair, result.BankerPair, nextIndex, shoe.Cards.Count - nextIndex);
+            if (remote && (!round.ConsumedCards.SequenceEqual(request.OrderedCards.Take(round.ConsumedCards.Length)) ||
+                result.MainBet.Stake != request.Stake || result.PlayerPair.Stake != request.PlayerPairStake ||
+                result.BankerPair.Stake != request.BankerPairStake ||
+                !BaccaratOutcomeAudit.Verify(stored, totalStakeCents, BaccaratMoney.ToCents(stored.CombinedTotalReturn))))
+                throw new GameWorkerUnavailableException(GameId);
+            return stored;
+        }
+        catch (Exception exception) when (remote && exception is (ArgumentException or InvalidOperationException or OverflowException))
+        {
+            throw new GameWorkerUnavailableException(GameId, exception);
+        }
     }
 
     public async Task<BaccaratStoreResult?> GetAsync(string userId, string roundId, CancellationToken cancellationToken)

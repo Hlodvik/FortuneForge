@@ -68,6 +68,7 @@ public sealed record SlotSpinAdmission(
     public string? MathModelId { get; init; }
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
+    internal SpinResult? ResolvedOutcome { get; init; }
 }
 
 public sealed record SlotSpinSettlement(

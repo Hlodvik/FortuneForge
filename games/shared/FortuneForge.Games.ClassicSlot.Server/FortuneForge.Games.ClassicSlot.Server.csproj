@@ -10,11 +10,12 @@
     <EnableDefaultItems>false</EnableDefaultItems>
     <SelectedEngineProject>../../$(GamePackage)/src/FortuneForge.Games.$(GamePackage)/FortuneForge.Games.$(GamePackage).csproj</SelectedEngineProject>
     <DefineConstants Condition="'$(GamePackage)' == 'GodsOfOlympus'">$(DefineConstants);OLYMPUS_TUMBLE</DefineConstants>
-    <DefineConstants Condition="'$(GamePackage)' == 'ArcaneArchives'">$(DefineConstants);ARCANE_LIGHTNING</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Program.cs" />
+    <Compile Include="ClassicPaidSlotOutcomes.cs" />
     <ProjectReference Include="../FortuneForge.Games.Hosting/FortuneForge.Games.Hosting.csproj" />
+    <ProjectReference Include="../FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
     <ProjectReference Include="../FortuneForge.Games.Slots.Runtime/FortuneForge.Games.Slots.Runtime.csproj" />
     <ProjectReference Include="$(SelectedEngineProject)" Condition="Exists('$(SelectedEngineProject)')" />
     <Using Include="FortuneForge.Games.$(GamePackage).$(GamePackage)Engine" Alias="SelectedEngine" />

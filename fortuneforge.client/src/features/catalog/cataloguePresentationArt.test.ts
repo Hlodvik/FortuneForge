@@ -95,7 +95,7 @@ describe('landing and home catalogue presentation art', () => {
       expect(getCataloguePresentationArt(`${route}/?source=home#play`)).toBe(getCataloguePresentationArt(route))
     }
     for (const id of ['blackjack', 'texas-holdem']) {
-      expect(appRoutes).toContain(`pathname === '/demo/cards/${id}'`)
+      expect(appRoutes).not.toContain(`pathname === '/demo/cards/${id}'`)
       expect(getCataloguePresentationArt(`/demo/cards/${id}`)).toBe(getCataloguePresentationArt(`/cards/${id}`))
     }
     expect(getCataloguePresentationArt('/demo/cards/hearts')).toBeUndefined()

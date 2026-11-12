@@ -7,6 +7,7 @@ using FortuneForge.Games.AndarBahar.Server;
 using FortuneForge.Games.Mines.Server;
 using FortuneForge.Server.Activity;
 using FortuneForge.Server.Risk;
+using FortuneForge.Server.GameWorkers;
 
 namespace FortuneForge.Server.Configuration;
 
@@ -35,6 +36,16 @@ public static class FortuneForgePipeline
                 context.Response.Headers.CacheControl = "no-store, max-age=0";
                 context.Response.Headers.Pragma = "no-cache";
                 context.Response.Headers.XContentTypeOptions = "nosniff";
+
+                // Reject legacy demo and practice requests before they can reach a game or wallet.
+                if (context.Request.Path.StartsWithSegments("/api/slots/demo") ||
+                    context.Request.Path.StartsWithSegments("/api/cards/blackjack/demo") ||
+                    (!app.Environment.IsDevelopment() &&
+                        context.Request.Headers.ContainsKey("X-FortuneForge-Practice")))
+                {
+                    context.Response.StatusCode = StatusCodes.Status404NotFound;
+                    return;
+                }
             }
 
             await next();
@@ -44,6 +55,7 @@ public static class FortuneForgePipeline
         FortuneForge.Server.SecurityAudit.GameSecurityRequestConfiguration.UseGameSecurityRequests(app);
         app.UsePlayerRiskEnforcement();
         app.UseGameActivity();
+        app.UsePackagedGameWorkerForwarding();
 
         app.MapControllers();
         app.MapDragonTiger(async (context, cancellationToken) =>

@@ -6,10 +6,6 @@ import { resolveGameLoadingEntry } from '../features/game-loading/gameLoadingReg
 import type { SlotRouteDefinition } from '../games/slots'
 
 const LandingPage = lazy(() => import('../pages/landing/LandingPage').then((module) => ({ default: module.LandingPage })))
-const DemoSlotsLibraryPage = lazy(() => import('../pages/slots/SlotsLibraryPage').then((module) => ({ default: module.DemoSlotsLibraryPage })))
-const DemoCardLibraryPage = lazy(() => import('../pages/cards/CardGameLibraryPage').then((module) => ({ default: module.CardGameLibraryPage })))
-const DemoBlackjackPage = lazy(() => import('../pages/cards/blackjack/BlackjackPage').then((module) => ({ default: module.BlackjackPage })))
-const DemoTexasHoldemPage = lazy(() => import('../pages/cards/texasHoldem/TexasHoldemPage').then((module) => ({ default: module.TexasHoldemPage })))
 const AuthenticatedBlackjackRoute = lazy(() => import('./routes/BlackjackRoute').then((module) => ({ default: module.AuthenticatedBlackjackRoute })))
 const AuthenticatedThreeCardPokerRoute = lazy(() => import('./routes/ThreeCardPokerRoute').then((module) => ({ default: module.AuthenticatedThreeCardPokerRoute })))
 const AuthenticatedHouseHoldemRoute = lazy(() => import('./routes/HouseHoldemRoute').then((module) => ({ default: module.AuthenticatedHouseHoldemRoute })))
@@ -66,10 +62,6 @@ export function AppRoutes({
   let route: ReactNode
 
   if (pathname === '/') route = <LandingPage />
-  else if (pathname === '/demo') route = <DemoSlotsLibraryPage />
-  else if (pathname === '/demo/cards') route = <DemoCardLibraryPage demoMode />
-  else if (pathname === '/demo/cards/blackjack') route = <DemoBlackjackPage demoMode />
-  else if (pathname === '/demo/cards/texas-holdem') route = <DemoTexasHoldemPage />
   else if (pathname === '/slots') route = <CatalogueHomeRedirect href="/home?category=Slots" />
   else if (pathname === '/cards') route = <CatalogueHomeRedirect href="/home?category=Cards" />
   else if (pathname === '/games') route = <CatalogueHomeRedirect href="/home" />
@@ -99,10 +91,9 @@ export function AppRoutes({
   else if (pathname === '/cards/solitaire') route = <AuthenticatedSolitaireRoute />
   else if (pathname === '/cards/free-solitaire') route = <AuthenticatedFreeSolitaireRoute />
   else if (pathname === '/slots/jade-dragon') route = <JadeDragonRoute />
-  else if (slotRoute !== null) {
+  else if (slotRoute !== null && pathname === slotRoute.playPath) {
     route = <SlotGameRoute definition={slotRoute} pathname={pathname} onSpinStateChange={onSpinStateChange} />
   }
-  else if (pathname === '/slots/rainbow-realm-preview') route = <RainbowRealmPreviewRedirect />
   else if (pathname === '/create-account') route = <CreateAccountPage />
   else if (pathname === '/login') route = <LoginPage />
   else if (pathname === '/verify-email') route = <VerifyEmailPage />
@@ -138,11 +129,6 @@ function LegacyBalanceRedirect() {
     window.location.replace(`/balance${window.location.search}${window.location.hash}`)
   }, [])
   return <RouteStateLayout><main className="route-state" role="status">Opening your balance…</main></RouteStateLayout>
-}
-
-function RainbowRealmPreviewRedirect() {
-  useEffect(() => { window.location.replace('/slots/rainbow-realm/demo') }, [])
-  return <RouteStateLayout><main className="route-state" role="status">Opening Rainbow Realm…</main></RouteStateLayout>
 }
 
 function RouteLoadingState() {

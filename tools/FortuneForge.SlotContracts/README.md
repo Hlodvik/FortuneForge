@@ -10,12 +10,13 @@ From the repository root, choose a new output directory:
 ```powershell
 dotnet run --project tools/FortuneForge.SlotContracts --configuration Release -- . artifacts/slot-contracts/review
 node tools/verify-slot-contracts.mjs artifacts/slot-contracts/review --require-current
-node tools/import-slot-contracts.mjs artifacts/slot-contracts/review --apply
-node fortuneforge.client/scripts/export-slot-guide-contracts.mjs
+node fortuneforge.client/scripts/export-slot-guide-contracts.mjs artifacts/slot-contracts/review
 ```
 
-The last command regenerates presentation contracts and must be reviewed with
-the corresponding server changes. Capture files use CreateNew; previous runs
+The last command regenerates the shared presentation contracts from the current
+capture. Jade Dragon uses its dedicated guide. To refresh the versioned browser
+scenario fixtures, also run `node tools/import-slot-contracts.mjs artifacts/slot-contracts/review --apply`.
+Capture files use CreateNew; previous runs
 are preserved. Fresh source and loaded-assembly hashes are recorded, source
 hashes must remain stable during capture, and missing required scenarios fail.
 Always rebuild after changing server source; recorded hashes are provenance,

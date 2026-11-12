@@ -23,7 +23,8 @@ public sealed partial class FirestoreAccountStore
         int specialBoostCost,
         DateTime startedAtUtc,
         TimeSpan cooldown,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null)
     {
         if (gameId == GoldFoundrySlotDefinitions.GameId)
             GoldFoundrySlotDefinitions.ValidateSpinRequest(useFreeSpin);
@@ -239,6 +240,32 @@ public sealed partial class FirestoreAccountStore
                     ? specialPointsAvailable - specialBoostCost
                     : specialPointsAvailable;
 
+                var admission = new SlotSpinAdmission(
+                    effectiveWagerPoints,
+                    chargedWagerCents,
+                    useFreeSpin,
+                    isMidnight ? roundsAfter.FirstOrDefault()?.RemainingSpins ?? 0 : checked((int)remainingAfterAdmission),
+                    useSpecialBoost,
+                    checked((int)specialPointsAfterAdmission),
+                    null,
+                    energyBalance,
+                    activeFreeSpinFeatureMode)
+                {
+                    AdmissionId = admissionId,
+                    StartedAtUtc = startedAtUtc,
+                    RequestId = requestObservation?.RequestId,
+                    PityMissesBefore = pityMissesBefore,
+                    IsNeonDiscoPlay = isNeonDiscoPlay,
+                    NeonDiscoMultiplier = neonDiscoMultiplierBefore,
+                    MathModelId = mathModelId,
+                    BonusRound = admittedRound,
+                    BonusRoundsBeforeAdmission = roundsBefore
+                };
+                // The worker only computes outcomes. Failure aborts this transaction before
+                // any admission, wallet, or entitlement change can become durable.
+                if (resolveOutcome is not null)
+                    admission = admission with { ResolvedOutcome = await resolveOutcome(admission, cancellationToken) };
+
                 if (useFreeSpin)
                 {
                     transaction.Update(freeGamesReference, new Dictionary<string, object>
@@ -362,27 +389,7 @@ public sealed partial class FirestoreAccountStore
                     admissionData["midnightAdmittedRound"] = admittedRound is null ? null! : MidnightRoundData(admittedRound);
                 }
                 transaction.Create(admissionReference, admissionData);
-                return new SlotSpinAdmission(
-                    effectiveWagerPoints,
-                    chargedWagerCents,
-                    useFreeSpin,
-                    isMidnight ? roundsAfter.FirstOrDefault()?.RemainingSpins ?? 0 : checked((int)remainingAfterAdmission),
-                    useSpecialBoost,
-                    checked((int)specialPointsAfterAdmission),
-                    null,
-                    energyBalance,
-                    activeFreeSpinFeatureMode)
-                {
-                    AdmissionId = admissionId,
-                    StartedAtUtc = startedAtUtc,
-                    RequestId = requestObservation?.RequestId,
-                    PityMissesBefore = pityMissesBefore,
-                    IsNeonDiscoPlay = isNeonDiscoPlay,
-                    NeonDiscoMultiplier = neonDiscoMultiplierBefore,
-                    MathModelId = mathModelId,
-                    BonusRound = admittedRound,
-                    BonusRoundsBeforeAdmission = roundsBefore
-                };
+                return admission;
             },
             cancellationToken: cancellationToken);
     }

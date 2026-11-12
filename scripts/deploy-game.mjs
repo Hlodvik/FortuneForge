@@ -7,6 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseArgs } from 'node:util'
 import { activateRelease, isGameId, isReleaseId, readActiveBackendReleaseId, stageRelease } from './game-release-activation.mjs'
 import { gameHostRuntime } from './game-release-runtime.mjs'
+import { gameWorkerOptions, publishGameWorker } from './game-worker-release.mjs'
 
 const repository = fileURLToPath(new URL('../', import.meta.url))
 const readJson = async path => JSON.parse(await readFile(path, 'utf8'))
@@ -58,7 +59,7 @@ async function buildBackend(project, directory, gameId, releaseId, gamePackage) 
   const assembly = basename(project, '.csproj')
   const entry = assembly + '.dll'
   await mkdir(directory, { recursive: true })
-  const args = ['publish', project, '--configuration', 'Release', '--no-self-contained', '--output', directory]
+  const args = ['publish', project, '--configuration', 'Release', '--no-self-contained', '-p:UseAppHost=false', '--output', directory]
   if (gamePackage) args.push('-p:GamePackage=' + gamePackage)
   run('dotnet', args)
   for (const file of [entry, assembly + '.runtimeconfig.json', assembly + '.deps.json']) {
@@ -132,10 +133,7 @@ async function buildFrontend(frontend, entry, directory, config) {
   return { entry: entryChunk.fileName, styles }
 }
 
-async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, stageOnly) {
-  const game = await findGame(gameId)
-  const frontend = await resolveWithin(game.directory, game.config.frontend?.directory)
-  const entry = await resolveWithin(frontend, game.config.frontend?.entry)
+async function selectBackend(game, assetsOnly = false) {
   const backendKind = game.config.backend?.kind
   const sharedBackend = sharedBackendProjects.get(backendKind)
   if (backendKind !== undefined && !sharedBackend) throw new Error('Unknown backend release kind: ' + backendKind)
@@ -144,6 +142,14 @@ async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, s
   const project = assetsOnly ? null : sharedBackend
     ? join(repository, 'games', 'shared', sharedBackend, sharedBackend + '.csproj')
     : await resolveWithin(game.directory, game.config.backend?.project)
+  return { project, gamePackage }
+}
+
+async function publishGame({ gameId, gameDirectory, backendRoot }, assetsOnly, stageOnly) {
+  const game = await findGame(gameId)
+  const frontend = await resolveWithin(game.directory, game.config.frontend?.directory)
+  const entry = await resolveWithin(frontend, game.config.frontend?.entry)
+  const { project, gamePackage } = await selectBackend(game, assetsOnly)
   const releaseId = randomUUID()
   const releaseDirectory = join(gameDirectory, 'releases', releaseId)
   const backendReleaseId = assetsOnly
@@ -228,6 +234,7 @@ const { values, positionals } = parseArgs({
     promote: { type: 'string' }, rollback: { type: 'string' },
     'browser-bucket': { type: 'string' }, 'publish-browser': { type: 'string' },
     'if-generation': { type: 'string' }, inspect: { type: 'boolean' },
+    ...gameWorkerOptions,
   },
 })
 const [gameId] = positionals
@@ -235,6 +242,8 @@ const selected = values.promote ?? values.rollback
 const bucket = values['browser-bucket']
 const upload = values['publish-browser']
 const generation = values['if-generation']
+const workerMode = Object.keys(gameWorkerOptions).some(key => values[key] !== undefined)
+const mixedWorkerMode = workerMode && Object.keys(values).some(key => !(key in gameWorkerOptions))
 const invalidSelection = values.promote !== undefined && values.rollback !== undefined ||
   selected !== undefined && !isReleaseId(selected)
 const invalidCloudMode = bucket === undefined
@@ -243,16 +252,20 @@ const invalidCloudMode = bucket === undefined
     [upload !== undefined, selected !== undefined, values.inspect === true].filter(Boolean).length !== 1 ||
     upload !== undefined && !isReleaseId(upload) ||
     (selected === undefined ? generation !== undefined : !/^(0|[1-9][0-9]*)$/.test(generation ?? ''))
-if (positionals.length !== 1 || !isGameId(gameId) || invalidSelection || invalidCloudMode) {
+if (positionals.length !== 1 || !isGameId(gameId) || invalidSelection || invalidCloudMode || mixedWorkerMode) {
   throw new Error('Usage: npm run deploy:game -- <game-id> [--assets-only] [--stage | --promote <release-id> | --rollback <release-id>]\n' +
-    'Cloud browser releases require --assets-only --browser-bucket <bucket> and one of --inspect, --publish-browser <release-id>, or --promote/--rollback <release-id> --if-generation <generation>')
+    'Cloud browser releases require --assets-only --browser-bucket <bucket> and one of --inspect, --publish-browser <release-id>, or --promote/--rollback <release-id> --if-generation <generation>\n' +
+    'Private worker publishing uses --publish-worker <release-id> and the worker settings in docs/GAME_DEPLOYMENT.md')
 }
 const target = {
   gameId,
   gameDirectory: join(repository, 'artifacts', 'game-releases', 'games', gameId),
   backendRoot: join(repository, 'artifacts', 'game-engine-releases', 'games', gameId, 'releases'),
 }
-if (bucket !== undefined) {
+if (workerMode) {
+  const { project } = await selectBackend(await findGame(gameId))
+  await publishGameWorker({ ...target, repository, expectedEntry: basename(project, '.csproj') + '.dll' }, values)
+} else if (bucket !== undefined) {
   await publishCloudBrowser(gameId, values)
 } else if (selected !== undefined) {
   await activateRelease({ ...target, releaseId: selected, rollback: values.rollback !== undefined })

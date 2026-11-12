@@ -4,17 +4,21 @@ using System.Text;
 using FortuneForge.Games.Cards;
 using FortuneForge.Games.CasinoWar;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Cards.CasinoWar;
 
-internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWarStore
+internal sealed class CasinoWarFirestoreStore(FirestoreDb database, GameWorkerClient? workers = null) : ICasinoWarStore
 {
+    private static readonly string GameId = CasinoWarModule.Descriptor.Id;
     private const string CurrencyId = "slotsCredits";
     private const string FractionField = "availableFractionalCents";
     public Task<CasinoWarStoreResult> StartAsync(string userId, string idempotencyKey, long primaryStakeCents, long tieStakeCents, IReadOnlyList<PlayingCard> shuffledShoe, DateTimeOffset nowUtc, CancellationToken cancellationToken)
     {
-        if (shuffledShoe.Count < 10) throw new ArgumentException("A Casino War shoe requires at least ten cards.", nameof(shuffledShoe));
+        if (shuffledShoe.Count < CasinoWarRoundEngine.WarCardsRequired)
+            throw new ArgumentException("A Casino War shoe requires at least ten cards.", nameof(shuffledShoe));
+        var deck = shuffledShoe.Take(CasinoWarRoundEngine.WarCardsRequired).ToArray();
         var roundId = Hash($"{userId}\n{idempotencyKey}");
         var roundRef = RoundDocument(roundId); var balanceRef = BalanceDocument(userId);
         var wagerRef = LedgerDocument($"casino-war-{roundId}-opening-wager"); var tiePayoutRef = LedgerDocument($"casino-war-{roundId}-tie-payout"); var primaryPayoutRef = LedgerDocument($"casino-war-{roundId}-opening-primary-payout"); var eventRef = EventDocument(roundId, "opening");
@@ -37,11 +41,11 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             if (reads[2].Exists || reads[3].Exists || reads[4].Exists || reads[5].Exists) throw new InvalidOperationException("A Casino War opening ledger exists without its round.");
             var openingCharge = checked(primaryStakeCents + tieStakeCents);
             if (balance < openingCharge) throw new CasinoWarInsufficientCreditsException(balance, openingCharge);
-            var round = CasinoWarRoundEngine.Start(shuffledShoe.Take(10).ToArray(), CasinoWarMoney.ToRand(primaryStakeCents));
-            var tie = tieStakeCents == 0 ? null : CasinoWarTieBetPaytable.Settle(round.Opening, CasinoWarMoney.ToRand(tieStakeCents));
+            var (round, tie) = await StartRoundAsync(userId, deck, CasinoWarMoney.ToRand(primaryStakeCents),
+                CasinoWarMoney.ToRand(tieStakeCents), cancellationToken);
             var tieReturnCents = ToCents(tie?.TotalReturn ?? 0m); var primaryReturnCents = ToCents(round.Settlement?.TotalReturn ?? 0m);
             var afterCharge = checked(balance - openingCharge); var finalBalance = checked(afterCharge + tieReturnCents + primaryReturnCents);
-            var stored = new CasinoWarStoreRound(roundId, userId, round, tie, shuffledShoe.Take(10).ToArray());
+            var stored = new CasinoWarStoreRound(roundId, userId, round, tie, deck);
             if (round.Phase != CasinoWarRoundPhase.Completed)
                 FortuneForge.Server.SecurityAudit.GameSecurityJournal.Write(transaction, database, "casino-war", roundId,
                     0, nowUtc.UtcDateTime, stored, [userId], "opening");
@@ -83,7 +87,10 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             if (reads[2].Exists || reads[3].Exists || reads[4].Exists) throw new InvalidOperationException("A Casino War decision ledger exists without a completed round.");
             var extraCharge = decision == CasinoWarTieDecision.GoToWar ? ToCents(stored.Round.PrimaryStake) : 0;
             if (balance < extraCharge) throw new CasinoWarInsufficientCreditsException(balance, extraCharge);
-            var completed = CasinoWarRoundEngine.Decide(stored.Round, decision); var payoutCents = ToCents(completed.Settlement!.TotalReturn); var afterCharge = checked(balance - extraCharge); var finalBalance = checked(afterCharge + payoutCents);
+            var completed = workers?.IsConfigured(GameId) == true
+                ? await DecideOnWorkerAsync(userId, stored, decision, cancellationToken)
+                : CasinoWarRoundEngine.Decide(stored.Round, decision);
+            var payoutCents = ToCents(completed.Settlement!.TotalReturn); var afterCharge = checked(balance - extraCharge); var finalBalance = checked(afterCharge + payoutCents);
             var updated = stored with { Round = completed };
             FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
                 "casino-war", roundId, userId, checked(ToCents(completed.PrimaryStake) + ToCents(stored.TieSettlement?.Stake ?? 0m) + extraCharge),
@@ -96,6 +103,47 @@ internal sealed class CasinoWarFirestoreStore(FirestoreDb database) : ICasinoWar
             if (extraCharge > 0 || payoutCents > 0) transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(eventRef, Event(roundId, userId, "decision", idempotencyKey, nowUtc)); return new CasinoWarStoreResult(updated, finalBalance);
         }, cancellationToken: cancellationToken);
+    }
+
+    private async Task<(CasinoWarRound Round, CasinoWarTieBetSettlement? Tie)> StartRoundAsync(string userId,
+        IReadOnlyList<PlayingCard> deck, decimal primaryStake, decimal tieStake, CancellationToken cancellationToken)
+    {
+        if (workers?.IsConfigured(GameId) != true)
+        {
+            var localRound = CasinoWarRoundEngine.Start(deck, primaryStake);
+            return (localRound, tieStake == 0 ? null : CasinoWarTieBetPaytable.Settle(localRound.Opening, tieStake));
+        }
+
+        try
+        {
+            var result = await workers.InvokeAsync<CasinoWarComputeStartRequest, CasinoWarComputeStartResult>(
+                GameId, userId, CasinoWarCompute.StartRoute, new(deck, primaryStake, tieStake), cancellationToken);
+            if (result.Round is null) throw new ArgumentException("The Casino War opening is missing.");
+            var round = result.Round.VerifyAndRestore(deck, primaryStake, decision: null);
+            var expectedTie = tieStake == 0 ? null : CasinoWarTieBetPaytable.Settle(round.Opening, tieStake);
+            if (result.TieSettlement != expectedTie) throw new ArgumentException("The Casino War tie settlement differs from the opening.");
+            return (round, result.TieSettlement);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException)
+        {
+            throw new GameWorkerUnavailableException(GameId, exception);
+        }
+    }
+
+    private async Task<CasinoWarRound> DecideOnWorkerAsync(string userId, CasinoWarStoreRound stored,
+        CasinoWarTieDecision decision, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var stake = stored.Round.PrimaryStake;
+            var result = await workers!.InvokeAsync<CasinoWarComputeDecisionRequest, CasinoWarComputeRound>(
+                GameId, userId, CasinoWarCompute.DecideRoute, new(stored.Deck, stake, decision), cancellationToken);
+            return result.VerifyAndRestore(stored.Deck, stake, decision);
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or OverflowException)
+        {
+            throw new GameWorkerUnavailableException(GameId, exception);
+        }
     }
 
     internal static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

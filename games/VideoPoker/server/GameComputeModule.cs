@@ -11,10 +11,17 @@ internal static class GameComputeModule
 
     internal static void Map(WebApplication app)
     {
-        app.MapComputeAction("/internal/v1/rounds/deal", (DealRequest request) =>
+        app.MapComputeAction(VideoPokerCompute.DealRoute, (VideoPokerComputeDealRequest request) =>
         {
             if (request.HandCount is not (1 or 3 or 5))
                 throw new ArgumentOutOfRangeException(nameof(request), "Choose one, three, or five hands.");
+
+            if (request.PrivateDecks is { } suppliedDecks)
+            {
+                if (suppliedDecks.Count != request.HandCount)
+                    throw new ArgumentException("The private deck count must match the hand count.");
+                return VideoPokerRoundEngine.Deal(suppliedDecks, request.CoinsWagered);
+            }
 
             var decks = new PlayingCard[request.HandCount][];
             for (var index = 0; index < decks.Length; index++)
@@ -24,19 +31,13 @@ internal static class GameComputeModule
                 decks[index] = deck;
             }
 
-            var round = VideoPokerRoundEngine.Deal(decks, request.CoinsWagered);
-            return new { round.InitialDeal, round.CoinsWagered, round.HandCount, PrivateDecks = decks };
+            return VideoPokerRoundEngine.Deal(decks, request.CoinsWagered);
         });
 
-        app.MapComputeAction("/internal/v1/rounds/draw", (DrawRequest request) =>
+        app.MapComputeAction(VideoPokerCompute.DrawRoute, (VideoPokerComputeDrawRequest request) =>
         {
             var round = VideoPokerRoundEngine.Deal(request.PrivateDecks, request.CoinsWagered);
-            var result = VideoPokerRoundEngine.Draw(round, new VideoPokerHeldCardPositions(request.HeldPositions));
-            return new { result.Status, result.Draws, result.Results };
+            return VideoPokerRoundEngine.Draw(round, new VideoPokerHeldCardPositions(request.HeldPositions));
         });
     }
-
-    private sealed record DealRequest(int CoinsWagered, int HandCount = 1);
-    private sealed record DrawRequest(IReadOnlyList<IReadOnlyList<PlayingCard>> PrivateDecks, int CoinsWagered,
-        IReadOnlyList<VideoPokerCardPosition> HeldPositions);
 }

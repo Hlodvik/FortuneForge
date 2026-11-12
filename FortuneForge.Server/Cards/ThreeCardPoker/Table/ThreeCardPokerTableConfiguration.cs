@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Bots;
 using FortuneForge.Server.Matchmaking;
@@ -14,7 +15,8 @@ public static class ThreeCardPokerTableConfiguration
                 null,
                 null,
                 provider.GetRequiredService<IMultiplayerMatchmaker>(),
-                provider.GetRequiredService<IManagedTablePopulationDirector>()));
+                provider.GetRequiredService<IManagedTablePopulationDirector>(),
+                provider.GetService<GameWorkerClient>()));
         services.AddSingleton<ThreeCardPokerTableService>();
         services.AddHostedService<ThreeCardPokerTableWorker>();
         return services;

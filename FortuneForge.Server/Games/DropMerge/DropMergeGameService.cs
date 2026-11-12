@@ -4,35 +4,54 @@ using FortuneForge.Games.DropMerge;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Activity;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.SecurityAudit;
 
 namespace FortuneForge.Server.Games.DropMerge;
 
 /// <summary>Owns account-isolated, free-play Drop Merge sessions.</summary>
-public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, IGameSecurityEventSink? securityEvents = null)
+public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, IGameSecurityEventSink? securityEvents = null,
+    GameWorkerClient? worker = null)
 {
+    private const string WorkerId = "drop-merge";
     private readonly ConcurrentDictionary<Guid, DropMergeSession> games = new();
 
     public DropMergeStatusResponse Status() => new(true, DropMergeEngine.DefaultColumns, DropMergeEngine.DefaultRows, DropMergeEngine.FirstBigTile, "account-free-play");
 
-    public DropMergeGameResponse Start(string userId, uint? seed) => ToResponse(Create(userId, seed));
+    public DropMergeGameResponse Start(string userId, uint? seed) => ToResponse(Create(userId, DropMergeEngine.Start(Seed(seed))));
 
     public async Task<DropMergeGameResponse> StartAuditedAsync(string userId, uint? seed, CancellationToken cancellationToken = default)
     {
-        var response = Start(userId, seed);
-        try { await RecordAsync(games[response.GameId], "started", cancellationToken); }
-        catch { games.TryRemove(response.GameId, out _); throw; }
-        return response;
+        var session = Create(userId, await OpenBoardAsync(userId, seed, cancellationToken));
+        try { await RecordAsync(session, "started", cancellationToken); }
+        catch { games.TryRemove(session.Id, out _); throw; }
+        return ToResponse(session);
     }
 
     public Task<DropMergeGameResponse> DropAuditedAsync(string userId, Guid gameId, int column, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Drop(userId, gameId, column), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, async session =>
+        {
+            var before = session.State;
+            var transition = worker?.IsConfigured(WorkerId) == true
+                ? await worker.InvokeAsync<object, DropMergeTransition>(WorkerId, userId, "/internal/v1/games/drop",
+                    new { State = before, Column = column }, cancellationToken)
+                : DropMergeEngine.Drop(before, column);
+            return Change(userId, gameId, current =>
+            {
+                if (!ReferenceEquals(current.State, before)) throw new DropMergeRuleException("The board changed. Refresh and try again.");
+                ApplyDrop(current, transition);
+            });
+        }, cancellationToken);
 
     public Task<DropMergeGameResponse> UndoAuditedAsync(string userId, Guid gameId, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Undo(userId, gameId), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, _ => Task.FromResult(Undo(userId, gameId)), cancellationToken);
 
     public Task<DropMergeGameResponse> ResetAuditedAsync(string userId, Guid gameId, uint? seed, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Reset(userId, gameId, seed), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, async _ =>
+        {
+            var board = await OpenBoardAsync(userId, seed, cancellationToken);
+            return Change(userId, gameId, session => ApplyReset(session, board));
+        }, cancellationToken);
 
     public DropMergeGameResponse Get(string userId, Guid gameId)
     {
@@ -45,9 +64,11 @@ public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, I
         }
     }
 
-    public DropMergeGameResponse Drop(string userId, Guid gameId, int column) => Change(userId, gameId, session =>
+    public DropMergeGameResponse Drop(string userId, Guid gameId, int column) =>
+        Change(userId, gameId, session => ApplyDrop(session, DropMergeEngine.Drop(session.State, column)));
+
+    private static void ApplyDrop(DropMergeSession session, DropMergeTransition transition)
     {
-        var transition = DropMergeEngine.Drop(session.State, column);
         if (transition.Event is not DropMergeEventType.NoMove)
             session.History.Push(session.State);
         session.State = transition.State;
@@ -60,7 +81,7 @@ public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, I
         session.IntroducedTile = transition.IntroducedTile;
         session.MergeSteps = transition.MergeSteps;
         session.Message = transition.Message;
-    });
+    }
 
     public DropMergeGameResponse Undo(string userId, Guid gameId) => Change(userId, gameId, session =>
     {
@@ -79,9 +100,12 @@ public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, I
         session.Message = "Drop undone.";
     });
 
-    public DropMergeGameResponse Reset(string userId, Guid gameId, uint? seed) => Change(userId, gameId, session =>
+    public DropMergeGameResponse Reset(string userId, Guid gameId, uint? seed) =>
+        Change(userId, gameId, session => ApplyReset(session, DropMergeEngine.Start(Seed(seed))));
+
+    private static void ApplyReset(DropMergeSession session, DropMergeState board)
     {
-        session.State = DropMergeEngine.Start(Seed(seed));
+        session.State = board;
         session.RunId = Guid.NewGuid();
         session.CompletionEpisode = 1;
         session.StartedAtUtc = DateTime.UtcNow;
@@ -97,11 +121,19 @@ public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, I
         session.IntroducedTile = 0;
         session.MergeSteps = Array.Empty<DropMergeMergeStep>();
         session.Message = "New run started. Drop the tile into any column.";
-    });
+    }
 
-    private DropMergeSession Create(string userId, uint? seed)
+    private Task<DropMergeState> OpenBoardAsync(string userId, uint? seed, CancellationToken cancellationToken)
     {
-        var session = new DropMergeSession(userId, DropMergeEngine.Start(Seed(seed)));
+        var value = Seed(seed);
+        return worker?.IsConfigured(WorkerId) == true
+            ? worker.InvokeAsync<object, DropMergeState>(WorkerId, userId, "/internal/v1/games/start", new { Seed = value }, cancellationToken)
+            : Task.FromResult(DropMergeEngine.Start(value));
+    }
+
+    private DropMergeSession Create(string userId, DropMergeState board)
+    {
+        var session = new DropMergeSession(userId, board);
         if (!games.TryAdd(session.Id, session))
             throw new InvalidOperationException("Could not open a Drop Merge game.");
         return session;
@@ -130,14 +162,14 @@ public sealed class DropMergeGameService(IGameAnalyticsSink? analytics = null, I
     }
 
     private async Task<DropMergeGameResponse> ChangeAuditedAsync(string userId, Guid gameId,
-        Func<DropMergeGameResponse> change, CancellationToken cancellationToken)
+        Func<DropMergeSession, Task<DropMergeGameResponse>> change, CancellationToken cancellationToken)
     {
         if (!games.TryGetValue(gameId, out var session) || session.UserId != userId)
             throw new DropMergeAccessException();
         await session.AuditGate.WaitAsync(cancellationToken);
         try
         {
-            var response = change();
+            var response = await change(session);
             await RecordAsync(session, response.LastEvent, cancellationToken);
             return response;
         }

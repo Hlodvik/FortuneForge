@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.MidnightVault;
 using FortuneForge.Server.RoundAudit;
 using FortuneForge.Server.Controllers;
 using FortuneForge.Server.SecurityAudit;
@@ -13,6 +14,7 @@ using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.Accounts.Storage;
 using Microsoft.Extensions.Options;
 using Xunit;
 
@@ -313,6 +315,7 @@ public sealed class SlotRoundAuditTests
     private static FortuneForge.Games.Abstractions.Auditing.RoundAuditCapture SavedEvidence(SpinResult result)
     {
         var wagerCents = result.IsFreeSpin ? 0 : RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents);
+        result = result with { ChargedWagerCents = wagerCents };
         var crucible = result.GameId == GoldFoundrySlotDefinitions.GameId
             ? GoldFoundryCrucible.Settle(0, result.EnergyAwarded, 0, wagerCents)
             : null;
@@ -321,6 +324,8 @@ public sealed class SlotRoundAuditTests
         var catalogueGameId = FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds[result.GameId];
         var piratesGemEvidence = result.GameId == SlotSpecialRoundProfiles.PiratesFortuneGameId
             ? PiratesGemEvidence(result) : null;
+        var midnightBonusEvidence = result.EngineAudit?.EngineVersion == MidnightVaultEngine.Version
+            ? MidnightCashBonusEvidence(result) : null;
         var payoutCents = RandMoney.PointsToCents(settledPayout.TotalPoints, result.PointValueInCents)
             + (crucible?.PayoutCents ?? 0);
         var isNeon = result.GameId == SlotSpecialRoundProfiles.NeonNightsGameId;
@@ -334,6 +339,9 @@ public sealed class SlotRoundAuditTests
             new
             {
                 result, result.IsFreeSpin, engineAudit = result.EngineAudit, settledPayout, piratesGemEvidence,
+                outcomeSchemaVersion = FirestoreAccountStore.SlotOutcomeSchemaVersion,
+                admittedMathModelId = midnightBonusEvidence is null ? null : result.PaytableId,
+                midnightBonusEvidence,
                 isNeonDiscoPlay = isDisco,
                 activeFreeSpinFeatureMode = result.EngineAudit!.FreeSpinFeatureMode,
                 payoutMultiplier = 1m,
@@ -345,6 +353,16 @@ public sealed class SlotRoundAuditTests
                 crucible = crucible is null ? null : new { wageredBeforeCents = 0L, settlement = crucible }
             },
             "slot-reels-paylines-and-features-v1", true, SlotRoundAudit.AuditorVersion).Audit;
+    }
+
+    private static MidnightVaultBonusEvidence MidnightCashBonusEvidence(SpinResult result)
+    {
+        var emptyCollections = new Dictionary<string, long>();
+        var progress = MidnightVaultBonusRounds.Advance([], emptyCollections, emptyCollections,
+            result.SealsAwarded, result.WagerPoints, result.FreeSpinsAwarded,
+            result.EngineAudit!.FeatureProfile?.ScatterFeatureMode, result.PaytableId, result.SpinId);
+        return new MidnightVaultBonusEvidence(null, [], [], progress.Rounds, emptyCollections, emptyCollections,
+            progress.CollectionCounts, progress.CollectionWagerPoints, progress.AwardedRounds);
     }
 
     private static PiratesGemSettlementEvidence PiratesGemEvidence(SpinResult result)

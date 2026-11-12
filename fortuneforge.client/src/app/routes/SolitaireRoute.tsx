@@ -16,7 +16,9 @@ export function AuthenticatedSolitaireRoute() {
 }
 
 export function ReleasedSolitaireSession({ account, freeOnly = false }: { account: AccountSummary; freeOnly?: boolean }) {
-  const { Game: Board, pending } = useReleasedGame('solitaire', 'Solitaire', SolitaireBoard, bundledStyles)
+  const releaseId = freeOnly ? 'free-solitaire' : 'solitaire'
+  const title = freeOnly ? 'Solitaire' : 'Competitive Solitaire'
+  const { Game: Board, pending } = useReleasedGame(releaseId, title, SolitaireBoard, bundledStyles)
   if (!Board) return pending
   return freeOnly ? <FreeSolitairePage account={account} Board={Board} /> :
     <CompetitiveSolitairePage account={account} Board={Board} />

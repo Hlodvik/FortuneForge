@@ -3,11 +3,12 @@ using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Games.Keno;
 using FortuneForge.Server.Accounts.Models;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 
 namespace FortuneForge.Server.Numbers.Keno;
 
-internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
+internal sealed class KenoFirestoreStore(FirestoreDb database, GameWorkerClient? workers = null) : IKenoStore
 {
     private const string CurrencyId = "slotsCredits";
     private const string FractionField = "availableFractionalCents";
@@ -42,17 +43,25 @@ internal sealed class KenoFirestoreStore(FirestoreDb database) : IKenoStore
                 throw new InvalidOperationException("A Keno ledger exists without its round.");
             if (balance < wagerCents) throw new KenoInsufficientCreditsException(balance, wagerCents);
 
-            var played = KenoRoundEngine.Play(ticket, draw, StandardKenoPaytable.Instance);
-            var outcome = played.Result.PaytableOutcome ?? throw new InvalidOperationException("The Keno paytable did not resolve the round.");
+            var gameId = KenoModule.Descriptor.Id;
+            var useWorker = workers?.IsConfigured(gameId) == true;
+            var request = new KenoComputeRequest(ticket.Numbers, draw.Numbers);
+            var result = useWorker
+                ? await workers!.InvokeAsync<KenoComputeRequest, KenoComputeResult>(
+                    gameId, userId, KenoCompute.ResolveRoute, request, cancellationToken)
+                : KenoCompute.Resolve(request);
+            var outcome = result.PaytableOutcome ?? throw new GameWorkerUnavailableException(gameId);
             var payoutCents = KenoMoney.PayoutCents(wagerCents, outcome.Value);
             var balanceAfterWager = checked(balance - wagerCents);
             var finalBalance = checked(balanceAfterWager + payoutCents);
-            var stored = new KenoStoreRound(roundId, userId, ticket, draw, played.Result.HitCount, wagerCents, payoutCents, outcome.PaytableId);
+            var stored = new KenoStoreRound(roundId, userId, ticket, draw, result.HitCount, wagerCents, payoutCents, outcome.PaytableId);
+            var verified = KenoOutcomeAudit.Verify(stored);
+            if (useWorker && !verified) throw new GameWorkerUnavailableException(gameId);
             transaction.Create(roundRef, RoundData(stored, idempotencyKey, nowUtc));
             FortuneForge.Server.RoundAudit.SinglePlayerRoundRecording.Write(transaction, database,
                 "keno", roundId, userId, wagerCents, payoutCents, nowUtc.UtcDateTime, nowUtc.UtcDateTime,
                 "kenoRounds", roundId, stored, "keno-ticket-and-draw-v1",
-                KenoOutcomeAudit.Verify(stored), KenoOutcomeAudit.Version);
+                verified, KenoOutcomeAudit.Version);
             transaction.Set(balanceRef, BalanceUpdate(finalBalance, nowUtc), SetOptions.MergeAll);
             transaction.Create(wagerRef, BalanceTransactionData(wagerRef.Id, userId, -wagerCents, balanceAfterWager, "keno-wager", idempotencyKey, nowUtc));
             if (payoutCents > 0)

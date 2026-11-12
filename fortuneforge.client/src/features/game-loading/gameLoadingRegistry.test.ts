@@ -103,7 +103,7 @@ describe('combined game loading registry', () => {
     expect(appRoutes).toContain("pathname === '/slots/jade-dragon') route = <JadeDragonRoute")
   })
 
-  it('prepares the non-slot identities and matches active route aliases', () => {
+  it('prepares the non-slot identities and keeps retired aliases out of app routes', () => {
     const appRoutes = readFileSync(new URL('../../app/AppRoutes.tsx', import.meta.url), 'utf8')
     expect(Object.keys(nonSlotRoutes)).toHaveLength(21)
     for (const [id, route] of Object.entries(nonSlotRoutes)) {
@@ -112,7 +112,8 @@ describe('combined game loading registry', () => {
       expect(entry.routes).toEqual(expectedAliases)
       for (const alias of expectedAliases) {
         // Mines' production route is a separate integration, not enabled by loading art.
-        if (id !== 'mines') expect(appRoutes).toContain(`pathname === '${alias}'`)
+        if (alias.startsWith('/demo/')) expect(appRoutes).not.toContain(`pathname === '${alias}'`)
+        else if (id !== 'mines') expect(appRoutes).toContain(`pathname === '${alias}'`)
         expect(resolveGameLoadingEntry(alias)).toBe(entry)
       }
     }

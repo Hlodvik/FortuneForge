@@ -1,7 +1,15 @@
+using System.Security.Cryptography;
 using Google.Api.Gax;
 using Google.Cloud.Firestore;
 using FortuneForge.Server.Cards.Solitaire;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Games.Hosting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Solitaire;
@@ -106,6 +114,67 @@ public sealed class FirestoreSolitaireFreeRunServiceTests
             .GetSnapshotAsync()).Documents);
         Assert.Equal("free-solitaire", Field<string>(analytics, "gameId"));
         Assert.Equal(0L, Field<long>(analytics, "wagerCents"));
+        await AssertFinancialAndCompetitiveCollectionsRemainEmpty(database);
+    }
+
+    [Fact]
+    public async Task ConfiguredStandaloneFreeRunUsesSignedWorkerAndDoesNotCompleteDuringOutage()
+    {
+        var (database, _, clock) = CreateService(42);
+        var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var workerBuilder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
+        {
+            Args = ["--urls", "http://127.0.0.1:0"],
+            EnvironmentName = Environments.Development,
+        });
+        workerBuilder.Configuration["GameWorker:SigningKey"] = signingKey;
+        await using var worker = workerBuilder.Build();
+        worker.UseGameWorkerAuthentication(SolitaireBoardCompute.FreeGameId);
+        var startCalls = 0;
+        var replayCalls = 0;
+        worker.MapPost(SolitaireBoardCompute.StartRoute, (SolitaireBoardStartRequest request, HttpContext context) =>
+        {
+            Assert.Equal("user-1", GameWorkerAuthentication.GetAccountId(context));
+            Interlocked.Increment(ref startCalls);
+            return SolitaireBoardCompute.Snapshot(SolitaireEngine.CreateGame(request.Seed!.Value, request.DrawCount));
+        });
+        worker.MapPost(SolitaireBoardCompute.ReplayRoute, (SolitaireBoardReplayRequest request, HttpContext context) =>
+        {
+            Assert.Equal("user-1", GameWorkerAuthentication.GetAccountId(context));
+            return Interlocked.Increment(ref replayCalls) == 1
+                ? Results.StatusCode(StatusCodes.Status503ServiceUnavailable)
+                : Results.Json(SolitaireBoardCompute.Replay(request));
+        });
+        await worker.StartAsync();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["GameWorkers:free-solitaire:Url"] = Assert.Single(worker.Urls),
+            ["GameWorkers:free-solitaire:SigningKey"] = signingKey,
+        }).Build();
+        using var http = new HttpClient();
+        var client = new GameWorkerClient(http, configuration, worker.Environment,
+            TimeProvider.System, NullLogger<GameWorkerClient>.Instance);
+        var service = new FirestoreSolitaireFreeRunService(database, clock, () => 42, client);
+
+        var started = await service.StartAsync("free-solitaire-worker-0001", "user-1", 3, default,
+            gameId: SolitaireBoardCompute.FreeGameId);
+        var retry = await service.StartAsync("free-solitaire-worker-0001", "user-1", 3, default,
+            gameId: SolitaireBoardCompute.FreeGameId);
+        Assert.True(retry.WasAlreadyStarted);
+        Assert.Equal(1, startCalls);
+
+        var commands = new[] { new SolitaireFreeReplayCommand("draw", null, null, null, null) };
+        await Assert.ThrowsAsync<GameWorkerUnavailableException>(() => service.CompleteAsync(started.RunId, "user-1", commands, default));
+        var runs = database.Collection(FirestoreSolitaireFreeRunService.CollectionName);
+        var afterFailure = Assert.Single((await runs.GetSnapshotAsync()).Documents);
+        Assert.Equal("started", Field<string>(afterFailure, "status"));
+
+        var completed = await service.CompleteAsync(started.RunId, "user-1", commands, default);
+        Assert.Equal(1, completed.Moves);
+        Assert.Equal(SolitaireBoardCompute.FreeGameId, completed.GameId);
+        var repeated = await service.CompleteAsync(started.RunId, "user-1", commands, default);
+        Assert.True(repeated.WasAlreadyCompleted);
+        Assert.Equal(2, replayCalls);
         await AssertFinancialAndCompetitiveCollectionsRemainEmpty(database);
     }
 

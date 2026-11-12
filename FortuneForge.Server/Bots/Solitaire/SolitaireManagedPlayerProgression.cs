@@ -41,7 +41,8 @@ internal static class SolitaireManagedPlayerProgression
     internal static SolitairePlayerState Advance(
         SolitaireMatch match,
         SolitairePlayerState player,
-        DateTime nowUtc)
+        DateTime nowUtc,
+        ICollection<SolitaireCommandRequest>? commands = null)
     {
         RequireManaged(player);
         if (player.Status != SolitairePlayerStatuses.Playing) return player;
@@ -82,6 +83,7 @@ internal static class SolitaireManagedPlayerProgression
                 return Finish(match, current, dueAt);
 
             var nextGame = SolitaireEngine.Apply(current.Game, command);
+            commands?.Add(command);
             var metadata = new Dictionary<string, string>(current.HostMetadata, StringComparer.Ordinal);
             if (MadeProgress(current.Game, nextGame, command))
                 metadata[ProgressEventsKey] = checked(progressEvents + 1).ToString(CultureInfo.InvariantCulture);
@@ -125,21 +127,22 @@ internal static class SolitaireManagedPlayerProgression
     {
         var elapsedMilliseconds = Math.Max(0,
             (completedAtUtc.Ticks - StartedAt(match, player).Ticks) / TimeSpan.TicksPerMillisecond);
-        var won = SolitaireEngine.IsWon(player.Game);
-        var finalGame = player.Game with
-        {
-            Score = SolitaireScoreRules.FinalScore(player.Game, elapsedMilliseconds),
-            Message = won ? "Game complete" : "Run complete"
-        };
         return player with
         {
             Status = SolitairePlayerStatuses.Finished,
-            Game = finalGame,
+            Game = FinalBoard(player.Game, elapsedMilliseconds),
             Version = checked(player.Version + 1),
             ElapsedMilliseconds = elapsedMilliseconds,
             CompletedAtUtc = completedAtUtc
         };
     }
+
+    internal static SolitaireGameState FinalBoard(SolitaireGameState game, long elapsedMilliseconds) =>
+        game with
+        {
+            Score = SolitaireScoreRules.FinalScore(game, elapsedMilliseconds),
+            Message = SolitaireEngine.IsWon(game) ? "Game complete" : "Run complete"
+        };
 
     private static DateTime LastActionAt(SolitaireMatch match, SolitairePlayerState player)
     {

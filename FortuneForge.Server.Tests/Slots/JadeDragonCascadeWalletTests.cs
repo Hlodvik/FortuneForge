@@ -1,14 +1,22 @@
 using System.Security.Cryptography;
 using System.Text;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Games.Hosting;
+using FortuneForge.Games.Slots;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Storage;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Slots.Configuration;
 using FortuneForge.Server.Slots.Evaluation;
 using FortuneForge.Server.Slots.Payouts;
 using FortuneForge.Server.Slots.Reels;
 using FortuneForge.Server.Slots.Spins;
 using Google.Cloud.Firestore;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace FortuneForge.Server.Tests.Slots;
@@ -87,6 +95,73 @@ public sealed class JadeDragonCascadeWalletTests(MidnightVaultPaidEmulatorFixtur
         Assert.Equal(walletBeforeRetry.UpdateTime, (await player.Wallet.GetSnapshotAsync()).UpdateTime);
         Assert.Equal(ledgerCount, (await ledger.GetSnapshotAsync()).Count);
         Assert.Equal(9, (await reloaded.GetSlotStateAsync(UserId, GameId, PointValueInCents, default)).FreeSpinsRemaining);
+    }
+
+    [Fact]
+    public async Task SignedJadeWorkerOutcomeSettlesThroughTheSameWallet()
+    {
+        var player = await CreatePlayer();
+        var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+        var builder = WebApplication.CreateSlimBuilder(new WebApplicationOptions { EnvironmentName = Environments.Development });
+        builder.WebHost.UseUrls("http://127.0.0.1:0");
+        builder.Configuration["GameWorker:SigningKey"] = signingKey;
+        await using var worker = builder.Build();
+        worker.UseGameWorkerAuthentication(GameId);
+        var draws = new ScriptedDraws([
+            0, 0, 96, 96, 0, 82, 96, 35, 0, 82, 50, 66, 50, 82, 21, 35, 50, 66, 35, 21,
+            21, 50, 66, 35
+        ]);
+        var engine = new JadeDragonCascadeEngine(draws);
+        worker.MapGameAction(PaidSlotOutcomeProtocol.Route, (PaidSlotOutcomeRequest request) =>
+        {
+            Assert.Equal(UserId, request.PlayerId);
+            Assert.Equal(JadeDragonCascadeRules.Version, request.MathModelId);
+            return PaidSlotOutcomeResponse.Create(request, JadeDragonCascadeRules.Version,
+                engine.Spin(request.WagerPoints, request.IsFreeSpin));
+        }, request => request.PlayerId);
+        await worker.StartAsync();
+        using var http = new HttpClient();
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            [$"GameWorkers:{GameId}:Url"] = Assert.Single(worker.Urls),
+            [$"GameWorkers:{GameId}:SigningKey"] = signingKey
+        }).Build();
+        var client = new GameWorkerClient(http, configuration, worker.Environment,
+            TimeProvider.System, NullLogger<GameWorkerClient>.Instance);
+        var admission = await player.Store.BeginSlotSpinAsync(UserId, GameId, WagerPoints, PointValueInCents,
+            false, false, 0, DateTime.UtcNow, TimeSpan.Zero, default,
+            (pending, ct) => PaidSlotWorker.ResolveAsync(client, GameId, UserId, pending, ct));
+        Assert.NotNull(admission.ResolvedOutcome);
+        var settled = await player.Store.RecordSlotSpinAsync(UserId, admission.ResolvedOutcome, admission, DateTime.UtcNow, default);
+        Assert.Equal(995.47m, settled.SlotsCreditsBalance);
+        Assert.Equal(10, settled.FreeSpinsRemaining);
+    }
+
+    [Fact]
+    public async Task FailedWorkerDoesNotConsumeAnAwardedSpinOrCreateAnAdmission()
+    {
+        var player = await CreatePlayer();
+        await player.Guard.SetAsync(new Dictionary<string, object>
+        {
+            ["userId"] = UserId,
+            ["freeSpinWagerCents"] = 500L,
+            ["freeSpinMathModelId"] = JadeDragonCascadeRules.Version
+        });
+        await player.FreeGames.SetAsync(new Dictionary<string, object> { ["available"] = 2L, ["version"] = 0L });
+        var ledger = player.Database.Collection("balanceTransactions");
+        var ledgerCount = (await ledger.GetSnapshotAsync()).Count;
+        var wallet = await player.Wallet.GetSnapshotAsync();
+
+        await Assert.ThrowsAsync<GameWorkerUnavailableException>(() => player.Store.BeginSlotSpinAsync(
+            UserId, GameId, WagerPoints, PointValueInCents, useFreeSpin: true, useSpecialBoost: false,
+            specialBoostCost: 0, startedAtUtc: DateTime.UtcNow, cooldown: TimeSpan.Zero, cancellationToken: default,
+            resolveOutcome: (_, _) => throw new GameWorkerUnavailableException(GameId)));
+
+        Assert.Equal(2L, (await player.FreeGames.GetSnapshotAsync()).GetValue<long>("available"));
+        Assert.Equal(wallet.UpdateTime, (await player.Wallet.GetSnapshotAsync()).UpdateTime);
+        Assert.False((await player.Guard.GetSnapshotAsync()).ContainsField("activeAdmissionId"));
+        Assert.Empty((await player.Database.Collection("slotSpinAdmissions").GetSnapshotAsync()).Documents);
+        Assert.Equal(ledgerCount, (await ledger.GetSnapshotAsync()).Count);
     }
 
     [Fact]

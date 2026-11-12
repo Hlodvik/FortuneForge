@@ -55,7 +55,7 @@ describe('InGameNavbar', () => {
   it('routes public demos to the public home and demo library', () => {
     const markup = renderToStaticMarkup(<InGameNavbar authenticated={false} />)
     expect(markup).toContain('href="/"')
-    expect(markup).toContain('href="/demo"')
+    expect(markup).toContain('href="/#discover-games"')
     expect(markup).not.toContain('href="/home"')
     expect(markup).not.toContain('href="/games"')
   })
@@ -144,7 +144,7 @@ describe('InGameNavbar', () => {
     expect(host.querySelector('[aria-label="Demo player"]')).not.toBeNull()
     expect(host.querySelector('[aria-label="Account menu"],[aria-label="Report this game"]')).toBeNull()
     expect(host.querySelector('[aria-label="Fortune Forge home"]')?.getAttribute('href')).toBe('/')
-    expect(host.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/demo')
+    expect(host.querySelector('.player-shell-header__games')?.getAttribute('href')).toBe('/#discover-games')
   })
 
   it('orders Account, Add Funds and History in the sidebar and preserves the other exits', () => {

@@ -2,6 +2,7 @@
 import { act, useRef, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { MidnightVaultGame } from '@fortuneforge/games-midnight-vault'
 import { WinHelpDialog } from '../WinHelpDialog'
 import { InsufficientBalanceDialog } from '../InsufficientBalanceDialog'
 import { AudioSettingsDialog } from './AudioSettingsDialog'
@@ -41,6 +42,7 @@ beforeEach(() => {
 afterEach(() => {
   act(() => root.unmount())
   host.remove()
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
@@ -73,8 +75,11 @@ describe.each(['help', 'balance', 'audio', 'symbols'] as const)('%s dialog', kin
   })
 })
 
-it('keeps the Midnight Vault info trigger visually to a circle-i with an accessible name', () => {
-  act(() => root.render(<Harness kind="symbols" />))
+it('keeps the Midnight Vault info trigger visually to a circle-i with an accessible name', async () => {
+  vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: noop, removeEventListener: noop })))
+  vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined)
+  vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(noop)
+  await act(async () => root.render(<MidnightVaultGame />))
   const trigger = host.querySelector<HTMLButtonElement>('.symbol-value-guide__trigger')!
   expect(trigger.getAttribute('aria-label')).toBe('Symbol values')
   expect(trigger.querySelector('svg circle[cx="12"][cy="12"][r="9"]')).not.toBeNull()

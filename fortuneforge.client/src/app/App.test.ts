@@ -93,10 +93,11 @@ describe('app shell slot media isolation', () => {
   })
 
   it('marks playable routes without constraining game libraries or account pages', () => {
-    expect(renderApp('/slots/pirates-fortune/demo')).toContain('app-shell--game')
+    expect(renderApp('/slots/pirates-fortune')).toContain('app-shell--game')
     expect(renderApp('/games/keno')).toContain('app-shell--game')
     expect(renderApp('/cards/blackjack')).toContain('app-shell--game')
-    expect(renderApp('/demo/cards/blackjack')).toContain('app-shell--game')
+    expect(renderApp('/demo/cards/blackjack')).not.toContain('app-shell--game')
+    expect(renderApp('/slots/pirates-fortune/demo')).not.toContain('app-shell--game')
 
     expect(renderApp('/games')).not.toContain('app-shell--game')
     expect(renderApp('/cards')).not.toContain('app-shell--game')

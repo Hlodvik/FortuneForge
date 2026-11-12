@@ -32,12 +32,13 @@ Require(!validation.Failed, string.Join("\n", validation.Failures ?? []));
 var definitions = new OptionsSlotsDefinitionProvider(Options.Create(options));
 var routeFile = "fortuneforge.client/src/games/slots/routeRegistry.ts";
 var routesSource = File.ReadAllText(Path.Combine(repository, routeFile));
-var routePattern = "id: '([^']+)', title: (?:'([^']*)'|\"([^\"]*)\"),.*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
-var routes = Regex.Matches(routesSource, routePattern, RegexOptions.Singleline).Select(match =>
+var routePattern = "id: '([^']+)', (?:gameReleaseId: '[^']+', )?title: (?:'([^']*)'|\"([^\"]*)\"),[^{}]*?playPath: '([^']+)', demoPath: '([^']+)', serverGameIds: \\['([^']+)'\\]";
+var routes = Regex.Matches(routesSource, routePattern).Select(match =>
     new Route(match.Groups[1].Value, match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value,
         match.Groups[4].Value, match.Groups[5].Value, match.Groups[6].Value)).ToArray();
-// Jade Dragon is a blank handoff surface, outside the playable slot registry.
-Require(routes.Length == 19 && routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly19 unique playable profiles.");
+// Jade Dragon has a dedicated guide outside the shared demo registry.
+Require(routes.Length == 19 && routes.Select(route => route.Id).Distinct().Count() == 19 &&
+    routes.Select(route => route.GameId).Distinct().Count() == 19, "Actual route registry must supply exactly 19 unique playable profiles.");
 Require(routes.All(route => SlotSpecialRoundProfiles.TryGet(route.GameId, out _)), "Catalogue profile missing.");
 var sourceDirectories = new[]
 {

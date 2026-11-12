@@ -4,38 +4,58 @@ using FortuneForge.Games.TwentyFortyEight;
 using FortuneForge.Games.Abstractions.Analytics;
 using FortuneForge.Games.Abstractions.Auditing;
 using FortuneForge.Server.Activity;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.SecurityAudit;
 
 namespace FortuneForge.Server.Games.TwentyFortyEight;
 
 /// <summary>Owns account-isolated, free-play 2048 sessions.</summary>
-public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = null, IGameSecurityEventSink? securityEvents = null)
+public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = null, IGameSecurityEventSink? securityEvents = null,
+    GameWorkerClient? worker = null)
 {
+    private const string WorkerId = "2048";
     private readonly ConcurrentDictionary<Guid, TwentyFortyEightSession> games = new();
 
     public TwentyFortyEightStatusResponse Status() => new(true, TwentyFortyEightEngine.DefaultSize, TwentyFortyEightEngine.TargetTile, "account-free-play");
 
-    public TwentyFortyEightGameResponse Start(string userId, uint? seed) => ToResponse(Create(userId, seed));
+    public TwentyFortyEightGameResponse Start(string userId, uint? seed) => ToResponse(Create(userId, TwentyFortyEightEngine.Start(Seed(seed))));
 
     public async Task<TwentyFortyEightGameResponse> StartAuditedAsync(string userId, uint? seed, CancellationToken cancellationToken = default)
     {
-        var response = Start(userId, seed);
-        try { await RecordAsync(games[response.GameId], "started", cancellationToken); }
-        catch { games.TryRemove(response.GameId, out _); throw; }
-        return response;
+        var session = Create(userId, await OpenBoardAsync(userId, seed, cancellationToken));
+        try { await RecordAsync(session, "started", cancellationToken); }
+        catch { games.TryRemove(session.Id, out _); throw; }
+        return ToResponse(session);
     }
 
     public Task<TwentyFortyEightGameResponse> MoveAuditedAsync(string userId, Guid gameId, string? direction, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Move(userId, gameId, direction), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, async session =>
+        {
+            var before = session.State;
+            var parsedDirection = ParseDirection(direction);
+            var transition = worker?.IsConfigured(WorkerId) == true
+                ? await worker.InvokeAsync<object, TwentyFortyEightTransition>(WorkerId, userId, "/internal/v1/games/move",
+                    new { State = before, Direction = parsedDirection }, cancellationToken)
+                : TwentyFortyEightEngine.Move(before, parsedDirection);
+            return Change(userId, gameId, current =>
+            {
+                if (!ReferenceEquals(current.State, before)) throw new TwentyFortyEightRuleException("The board changed. Refresh and try again.");
+                ApplyMove(current, transition);
+            });
+        }, cancellationToken);
 
     public Task<TwentyFortyEightGameResponse> UndoAuditedAsync(string userId, Guid gameId, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Undo(userId, gameId), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, _ => Task.FromResult(Undo(userId, gameId)), cancellationToken);
 
     public Task<TwentyFortyEightGameResponse> ContinueAuditedAsync(string userId, Guid gameId, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Continue(userId, gameId), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, _ => Task.FromResult(Continue(userId, gameId)), cancellationToken);
 
     public Task<TwentyFortyEightGameResponse> ResetAuditedAsync(string userId, Guid gameId, uint? seed, CancellationToken cancellationToken = default) =>
-        ChangeAuditedAsync(userId, gameId, () => Reset(userId, gameId, seed), cancellationToken);
+        ChangeAuditedAsync(userId, gameId, async _ =>
+        {
+            var board = await OpenBoardAsync(userId, seed, cancellationToken);
+            return Change(userId, gameId, session => ApplyReset(session, board));
+        }, cancellationToken);
 
     public TwentyFortyEightGameResponse Get(string userId, Guid gameId)
     {
@@ -48,16 +68,18 @@ public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = 
         }
     }
 
-    public TwentyFortyEightGameResponse Move(string userId, Guid gameId, string? direction) => Change(userId, gameId, session =>
+    public TwentyFortyEightGameResponse Move(string userId, Guid gameId, string? direction) =>
+        Change(userId, gameId, session => ApplyMove(session, TwentyFortyEightEngine.Move(session.State, ParseDirection(direction))));
+
+    private static void ApplyMove(TwentyFortyEightSession session, TwentyFortyEightTransition transition)
     {
-        var transition = TwentyFortyEightEngine.Move(session.State, ParseDirection(direction));
         if (transition.Event is not TwentyFortyEightEventType.NoMove)
             session.History.Push(session.State);
         session.State = transition.State;
         session.LastEvent = EventName(transition.Event);
         session.ScoreGained = transition.ScoreGained;
         session.Message = transition.Message;
-    });
+    }
 
     public TwentyFortyEightGameResponse Undo(string userId, Guid gameId) => Change(userId, gameId, session =>
     {
@@ -81,9 +103,12 @@ public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = 
         session.Message = "Keep going. Build the largest tile you can.";
     });
 
-    public TwentyFortyEightGameResponse Reset(string userId, Guid gameId, uint? seed) => Change(userId, gameId, session =>
+    public TwentyFortyEightGameResponse Reset(string userId, Guid gameId, uint? seed) =>
+        Change(userId, gameId, session => ApplyReset(session, TwentyFortyEightEngine.Start(Seed(seed))));
+
+    private static void ApplyReset(TwentyFortyEightSession session, TwentyFortyEightState board)
     {
-        session.State = TwentyFortyEightEngine.Start(Seed(seed));
+        session.State = board;
         session.RunId = Guid.NewGuid();
         session.CompletionEpisode = 1;
         session.StartedAtUtc = DateTime.UtcNow;
@@ -93,11 +118,19 @@ public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = 
         session.LastEvent = "started";
         session.ScoreGained = 0;
         session.Message = "New game started.";
-    });
+    }
 
-    private TwentyFortyEightSession Create(string userId, uint? seed)
+    private Task<TwentyFortyEightState> OpenBoardAsync(string userId, uint? seed, CancellationToken cancellationToken)
     {
-        var session = new TwentyFortyEightSession(userId, TwentyFortyEightEngine.Start(Seed(seed)));
+        var value = Seed(seed);
+        return worker?.IsConfigured(WorkerId) == true
+            ? worker.InvokeAsync<object, TwentyFortyEightState>(WorkerId, userId, "/internal/v1/games/start", new { Seed = value }, cancellationToken)
+            : Task.FromResult(TwentyFortyEightEngine.Start(value));
+    }
+
+    private TwentyFortyEightSession Create(string userId, TwentyFortyEightState board)
+    {
+        var session = new TwentyFortyEightSession(userId, board);
         if (!games.TryAdd(session.Id, session))
             throw new InvalidOperationException("Could not open a 2048 game.");
         return session;
@@ -127,14 +160,14 @@ public sealed class TwentyFortyEightGameService(IGameAnalyticsSink? analytics = 
     }
 
     private async Task<TwentyFortyEightGameResponse> ChangeAuditedAsync(string userId, Guid gameId,
-        Func<TwentyFortyEightGameResponse> change, CancellationToken cancellationToken)
+        Func<TwentyFortyEightSession, Task<TwentyFortyEightGameResponse>> change, CancellationToken cancellationToken)
     {
         if (!games.TryGetValue(gameId, out var session) || session.UserId != userId)
             throw new TwentyFortyEightAccessException();
         await session.AuditGate.WaitAsync(cancellationToken);
         try
         {
-            var response = change();
+            var response = await change(session);
             await RecordAsync(session, response.LastEvent, cancellationToken);
             return response;
         }

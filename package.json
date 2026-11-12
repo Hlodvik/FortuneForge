@@ -45,6 +45,7 @@
     "games/Keno/client/FortuneForge.Games.Keno.Client",
     "games/SicBo/client/FortuneForge.Games.SicBo.Client",
     "games/Solitaire/client/FortuneForge.Games.Solitaire.Client",
+    "games/FreeSolitaire/client/FortuneForge.Games.FreeSolitaire.Client",
     "games/TexasHoldem/client/FortuneForge.Games.TexasHoldem.Client",
     "games/ThreeCardPoker/client/FortuneForge.Games.ThreeCardPoker.Client",
     "games/VideoPoker/client/FortuneForge.Games.VideoPoker.Client",

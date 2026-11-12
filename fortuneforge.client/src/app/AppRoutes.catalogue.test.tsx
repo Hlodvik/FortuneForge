@@ -20,8 +20,7 @@ vi.mock('./routes/GameHubRoute', () => {
 vi.mock('./routes/BlackjackRoute', () => ({ AuthenticatedBlackjackRoute: () => <main>Blackjack table</main> }))
 vi.mock('./routes/DragonTigerRoute', () => ({ AuthenticatedDragonTigerRoute: () => <main>Dragon Tiger table</main> }))
 vi.mock('./routes/SlotGameRoute', () => ({ SlotGameRoute: () => <main>Slot game</main> }))
-vi.mock('../pages/slots/SlotsLibraryPage', () => ({ DemoSlotsLibraryPage: () => <main>Public slot demos</main> }))
-vi.mock('../pages/cards/CardGameLibraryPage', () => ({ CardGameLibraryPage: () => <main>Public card demos</main> }))
+vi.mock('../pages/not-found/NotFoundPage', () => ({ NotFoundPage: () => <main>Game unavailable</main> }))
 
 vi.mock('../features/account/useAuthenticatedAccount', () => ({ useAuthenticatedAccount: () => ({ account: { userId: 'test' }, error: null, isLoading: false, reload: vi.fn() }) }))
 import { AppRoutes } from './AppRoutes'
@@ -35,7 +34,7 @@ beforeEach(() => {
   const browserWindow = window
   vi.stubGlobal('window', new Proxy(browserWindow, {
     get(target, key) {
-      return key === 'location' ? { replace: state.replace, pathname: state.pathname } : Reflect.get(target, key, target)
+      return key === 'location' ? { replace: state.replace, pathname: state.pathname, origin: target.location.origin } : Reflect.get(target, key, target)
     },
   }))
   host = document.createElement('div')
@@ -71,8 +70,6 @@ describe('home replaces separate authenticated catalogues', () => {
   it.each([
     ['/cards/blackjack', 'Blackjack table'],
     ['/games/dragon-tiger', 'Dragon Tiger table'],
-    ['/demo', 'Public slot demos'],
-    ['/demo/cards', 'Public card demos'],
   ])('leaves %s available without a catalogue redirect', async (pathname, content) => {
     await renderRoute(pathname)
     expect(host.textContent).toBe(content)
@@ -88,6 +85,13 @@ describe('home replaces separate authenticated catalogues', () => {
     await renderRoute('/slots/cosmic-fortune', slotRoute)
     expect(host.textContent).toBe('Slot game')
     expect(state.replace).not.toHaveBeenCalled()
+    await renderRoute(slotRoute.demoPath, slotRoute)
+    expect(host.textContent).toBe('Game unavailable')
+  })
+
+  it.each(['/demo', '/demo/cards', '/demo/cards/blackjack', '/demo/cards/texas-holdem'])('retires %s', async pathname => {
+    await renderRoute(pathname)
+    expect(host.textContent).toBe('Game unavailable')
   })
 
   it('opens Jade Dragon with shared navigation and its connected presentation', async () => {

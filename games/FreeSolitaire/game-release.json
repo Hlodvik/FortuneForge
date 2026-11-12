@@ -1,0 +1,10 @@
+{
+  "id": "free-solitaire",
+  "frontend": {
+    "directory": "client/FortuneForge.Games.FreeSolitaire.Client",
+    "entry": "src/index.ts"
+  },
+  "backend": {
+    "kind": "game-compute"
+  }
+}

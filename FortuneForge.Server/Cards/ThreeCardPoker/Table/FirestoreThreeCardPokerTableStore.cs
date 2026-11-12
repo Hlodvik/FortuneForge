@@ -1,3 +1,4 @@
+using FortuneForge.Server.GameWorkers;
 using System.Text.Json;
 using FortuneForge.Server.Bots;
 using Google.Cloud.Firestore;
@@ -15,6 +16,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
     private static readonly TimeSpan GuardRetention = TimeSpan.FromDays(7);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly FirestoreDb database;
+    private readonly GameWorkerClient? gameWorker;
     private readonly Func<IReadOnlyList<string>>? deckFactory;
     private readonly Func<ulong>? seedFactory;
     private readonly IMultiplayerMatchmaker matchmaking;
@@ -30,9 +32,11 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         Func<IReadOnlyList<string>>? deckFactory,
         Func<ulong>? seedFactory,
         IMultiplayerMatchmaker? multiplayerMatchmaker = null,
-        IManagedTablePopulationDirector? managedPopulationDirector = null)
+        IManagedTablePopulationDirector? managedPopulationDirector = null,
+        GameWorkerClient? gameWorker = null)
     {
         this.database = database;
+        this.gameWorker = gameWorker;
         this.deckFactory = deckFactory;
         this.seedFactory = seedFactory;
         matchmaking = multiplayerMatchmaker ?? new MultiplayerMatchmaker();
@@ -56,7 +60,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             stateId,
             userId,
             null,
-            (coordinator, state, balances) => coordinator.Get(state, balances, userId, nowUtc),
+            (coordinator, state, balances) => coordinator.GetAsync(state, balances, userId, nowUtc),
             nowUtc,
             cancellationToken);
     }
@@ -82,11 +86,11 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
             return await ReadCurrentSessionAsync(userId, nowUtc, cancellationToken);
         }
 
-        ThreeCardPokerTableCoordinatorResult Command(
+        ValueTask<ThreeCardPokerTableCoordinatorResult> Command(
             ThreeCardPokerTableCoordinator coordinator,
             ThreeCardPokerTableLobbyState state,
             IDictionary<string, long> balances) =>
-            coordinator.Join(
+            coordinator.JoinAsync(
                 state,
                 balances,
                 userId,
@@ -148,7 +152,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Cancel(
+            (coordinator, state, balances) => coordinator.CancelAsync(
                 state, balances, userId, ticketId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -165,7 +169,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Wager(
+            (coordinator, state, balances) => coordinator.WagerAsync(
                 state, balances, userId, tableId, wagerCents, pairPlusCents, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -180,7 +184,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.SitOut(
+            (coordinator, state, balances) => coordinator.SitOutAsync(
                 state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -196,7 +200,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Action(
+            (coordinator, state, balances) => coordinator.ActionAsync(
                 state, balances, userId, tableId, action, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -211,7 +215,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         ExecuteResolvedAsync(
             userId,
             idempotencyKey,
-            (coordinator, state, balances) => coordinator.Leave(
+            (coordinator, state, balances) => coordinator.LeaveAsync(
                 state, balances, userId, tableId, expectedVersion, idempotencyKey, nowUtc),
             nowUtc,
             cancellationToken);
@@ -289,7 +293,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
     private async Task<ThreeCardPokerTableStoreResult> ExecuteResolvedAsync(
         string userId,
         string idempotencyKey,
-        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ValueTask<ThreeCardPokerTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -304,7 +308,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         string initialStateId,
         string userId,
         string? idempotencyKey,
-        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ValueTask<ThreeCardPokerTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
@@ -333,14 +337,14 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         string stateId,
         string userId,
         string? idempotencyKey,
-        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ThreeCardPokerTableCoordinatorResult> command,
+        Func<ThreeCardPokerTableCoordinator, ThreeCardPokerTableLobbyState, IDictionary<string, long>, ValueTask<ThreeCardPokerTableCoordinatorResult>> command,
         DateTime nowUtc,
         CancellationToken cancellationToken)
     {
         var execution = await RunTransactionAsync(async transaction =>
                 {
                     var coordinator = new ThreeCardPokerTableCoordinator(
-                        deckFactory, seedFactory, population);
+                        deckFactory, seedFactory, population, gameWorker, userId, cancellationToken);
                     var stateReference = StateDocument(stateId);
                     var sessionReference = SessionDocument(userId);
                     var guardReference = string.IsNullOrEmpty(idempotencyKey)
@@ -366,7 +370,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                         state.Guards[guardKey] = ReadGuard(guardSnapshot);
                     var prior = StateReferences.Capture(state, userId);
                     var loaded = await ReadBalancesAsync(transaction, state, userId, cancellationToken);
-                    var result = command(coordinator, state, loaded.Current);
+                    var result = await command(coordinator, state, loaded.Current);
                     var commandGuard = guardKey is not null && state.Guards.TryGetValue(guardKey, out var value)
                         ? value
                         : null;
@@ -398,7 +402,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
         var execution = await RunTransactionAsync(async transaction =>
                 {
                     var coordinator = new ThreeCardPokerTableCoordinator(
-                        deckFactory, seedFactory, population);
+                        deckFactory, seedFactory, population, gameWorker, workerCancellation: cancellationToken);
                     var stateReference = StateDocument(stateId);
                     var stateSnapshot = await transaction.GetSnapshotAsync(stateReference, cancellationToken);
                     if (!stateSnapshot.Exists)
@@ -407,7 +411,7 @@ internal sealed class FirestoreThreeCardPokerTableStore : IThreeCardPokerTableSt
                     var durableBefore = DurableStateJson(state);
                     var prior = StateReferences.Capture(state, null);
                     var loaded = await ReadBalancesAsync(transaction, state, null, cancellationToken);
-                    var journal = coordinator.Sweep(state, loaded.Current, nowUtc);
+                    var journal = await coordinator.SweepAsync(state, loaded.Current, nowUtc);
                     Normalize(state);
                     state.Guards.Clear();
                     WriteMutation(

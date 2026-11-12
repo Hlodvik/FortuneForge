@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -50,9 +51,14 @@ public sealed class DropMergeController(DropMergeGameService games, AccountServi
     private async Task<ActionResult> WithAccountAsync(CancellationToken cancellationToken, Func<AccountSummary, Task<ActionResult>> action)
     {
         var account = await accounts.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken);
-        return account.Value is null
-            ? Unauthorized(new DropMergeErrorResponse("drop-merge-authentication-required", "Sign in to play Drop Merge."))
-            : await action(account.Value);
+        if (account.Value is null)
+            return Unauthorized(new DropMergeErrorResponse("drop-merge-authentication-required", "Sign in to play Drop Merge."));
+        try { return await action(account.Value); }
+        catch (GameWorkerUnavailableException exception)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                new DropMergeErrorResponse("drop-merge-worker-unavailable", exception.Message));
+        }
     }
 
     private async Task<ActionResult> ExecuteAsync(Func<Task<DropMergeGameResponse>> action)

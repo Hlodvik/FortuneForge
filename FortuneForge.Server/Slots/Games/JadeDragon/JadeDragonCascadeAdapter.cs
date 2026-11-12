@@ -16,7 +16,11 @@ internal sealed class JadeDragonCascadeAdapter(IRandomIndexSource random)
             admission.FreeSpinFeatureMode is not null)
             throw new ArgumentException("A Jade Dragon cascade admission is required.", nameof(admission));
 
-        var spin = engine.Spin(admission.WagerPoints, admission.IsFreeSpin);
+        return MapOutcome(engine.Spin(admission.WagerPoints, admission.IsFreeSpin), admission);
+    }
+
+    internal static SpinResult MapOutcome(JadeDragonCascadeSpin spin, SlotSpinAdmission admission)
+    {
         var outcome = spin.Outcome;
         var rules = JadeDragonCascadeEngine.CreateDefinition();
         return new SpinResult(spin.SpinId, rules.Id, rules.Math.ReelSetId,

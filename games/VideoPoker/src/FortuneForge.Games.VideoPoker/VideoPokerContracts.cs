@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 using FortuneForge.Games.Cards;
 
 namespace FortuneForge.Games.VideoPoker;
@@ -42,6 +43,9 @@ public sealed record VideoPokerDeal
             throw new ArgumentException("A Video Poker deal cannot contain duplicate cards.", nameof(cards));
     }
 
+    [JsonConstructor]
+    private VideoPokerDeal(ImmutableArray<PlayingCard> cards) : this((IEnumerable<PlayingCard>)cards) { }
+
     public ImmutableArray<PlayingCard> Cards { get; }
 }
 
@@ -58,6 +62,10 @@ public sealed record VideoPokerHeldCardPositions
         if (Positions.Any(position => !Enum.IsDefined(position)))
             throw new ArgumentOutOfRangeException(nameof(positions), "A held card position is invalid.");
     }
+
+    [JsonConstructor]
+    private VideoPokerHeldCardPositions(ImmutableArray<VideoPokerCardPosition> positions)
+        : this((IEnumerable<VideoPokerCardPosition>)positions) { }
 
     public ImmutableArray<VideoPokerCardPosition> Positions { get; }
 }

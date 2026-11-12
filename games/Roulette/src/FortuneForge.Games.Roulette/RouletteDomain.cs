@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.Roulette;
 
@@ -27,6 +28,7 @@ public enum RouletteRoundPhase
 
 public readonly record struct RoulettePocket
 {
+    [JsonConstructor]
     public RoulettePocket(int number)
     {
         if (number is < 0 or > 36)

@@ -12,20 +12,21 @@ internal static class GameComputeModule
 
     internal static void Map(WebApplication app)
     {
-        app.MapPost("/internal/v1/matches/start", () => Results.Ok(HeartsMatchEngine.Start(CreateSeed())));
-        app.MapComputeAction("/internal/v1/matches/pass", (PassRequest request) =>
+        app.MapComputeAction(HeartsCompute.StartRoute, (HeartsComputeStartRequest request) =>
+            HeartsMatchEngine.Start(request.Seed ?? CreateSeed(), request.TargetScore), isRuleViolation: IsRuleViolation);
+        app.MapComputeAction(HeartsCompute.PassRoute, (HeartsComputePassRequest request) =>
         {
             ValidateSeat(request.Seat);
             ArgumentNullException.ThrowIfNull(request.Cards);
             return HeartsMatchEngine.Apply(request.PrivateState, new PassHeartsCards(request.Seat, request.Cards));
         }, isRuleViolation: IsRuleViolation);
-        app.MapComputeAction("/internal/v1/matches/play", (PlayRequest request) =>
+        app.MapComputeAction(HeartsCompute.PlayRoute, (HeartsComputePlayRequest request) =>
         {
             ValidateSeat(request.Seat);
             return HeartsMatchEngine.Apply(request.PrivateState, new PlayHeartsCard(request.Seat, request.Card));
         }, isRuleViolation: IsRuleViolation);
-        app.MapComputeAction("/internal/v1/matches/next-round", (MatchRequest request) =>
-            HeartsMatchEngine.StartNextRound(request.PrivateState, CreateSeed()), isRuleViolation: IsRuleViolation);
+        app.MapComputeAction(HeartsCompute.NextRoundRoute, (HeartsComputeNextRoundRequest request) =>
+            HeartsMatchEngine.StartNextRound(request.PrivateState, request.Seed ?? CreateSeed()), isRuleViolation: IsRuleViolation);
         app.MapComputeAction("/internal/v1/matches/legal-cards", (LegalCardsRequest request) =>
         {
             ValidateSeat(request.Seat);
@@ -44,8 +45,5 @@ internal static class GameComputeModule
             throw new ArgumentOutOfRangeException(nameof(seat));
     }
 
-    private sealed record PassRequest(HeartsMatchState PrivateState, PlayerSeat Seat, IReadOnlyList<PlayingCard> Cards);
-    private sealed record PlayRequest(HeartsMatchState PrivateState, PlayerSeat Seat, PlayingCard Card);
-    private sealed record MatchRequest(HeartsMatchState PrivateState);
     private sealed record LegalCardsRequest(HeartsMatchState PrivateState, PlayerSeat Seat);
 }

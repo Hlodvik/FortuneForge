@@ -94,7 +94,7 @@ if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToP
     slotCatalog: source('fortuneforge.client/src/games/slots/catalog.ts'),
     jadeCatalog: source('fortuneforge.client/src/games/slots/jadeDragon/catalog.ts'),
   })
-  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes, ${slotSmokeInventory.length} demo-capable slot packages and ${embeddedSlotSmokeInventory.length} embedded Jade Dragon package (20 slots)`)
+  console.log(`✓ game inventory verified: ${gameSmokeRoutes.length} routes, ${slotSmokeInventory.length} slot contracts and ${embeddedSlotSmokeInventory.length} embedded Jade Dragon package (20 slots)`)
 }
 
 function source(relativePath) {

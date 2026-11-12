@@ -64,7 +64,8 @@ public interface IAccountStore
         int specialBoostCost,
         DateTime startedAtUtc,
         TimeSpan cooldown,
-        CancellationToken cancellationToken);
+        CancellationToken cancellationToken,
+        Func<SlotSpinAdmission, CancellationToken, Task<SpinResult>>? resolveOutcome = null);
 
     Task<SlotSpinSettlement> RecordSlotSpinAsync(
         string userId,

@@ -2,6 +2,7 @@ using FortuneForge.Games.HouseHoldem;
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -14,7 +15,7 @@ public sealed class HouseHoldemController(
     FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<HouseHoldemController> logger) : ControllerBase
+    ILogger<HouseHoldemController> logger, GameWorkerClient? worker = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -101,7 +102,7 @@ public sealed class HouseHoldemController(
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:HouseHoldemEnabled", false);
 
-    private HouseHoldemService Service() => new(new HouseHoldemFirestoreStore(database), TimeProvider.System);
+    private HouseHoldemService Service() => new(new HouseHoldemFirestoreStore(database, worker), TimeProvider.System);
 
     private ActionResult? Disabled() => IsEnabled(configuration)
         ? null
@@ -116,6 +117,8 @@ internal static class HouseHoldemHttp
 {
     public static ActionResult FromException(ControllerBase controller, Exception exception, ILogger logger) => exception switch
     {
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
+            new HouseHoldemErrorResponse("house-holdem-worker-unavailable", exception.Message)),
         HouseHoldemRoundNotFoundException => controller.NotFound(new HouseHoldemErrorResponse(
             "house-holdem-round-not-found", exception.Message)),
         HouseHoldemInsufficientCreditsException => controller.Conflict(new HouseHoldemErrorResponse(

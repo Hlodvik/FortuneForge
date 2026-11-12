@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Server.Bots;
+using FortuneForge.Server.GameWorkers;
 using FortuneForge.Server.Matchmaking;
 using Google.Cloud.Firestore;
 using Grpc.Core;
@@ -19,20 +20,24 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
     private const string SettledMatchStatus = "settled";
     private const string HouseFundedPoolModel = "house-funded-bot-pool-v1";
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly string ComputeGameId = SolitaireModule.Descriptor.Id;
     private readonly FirestoreDb database;
     private readonly CompetitiveSolitaireOptions options;
     private readonly IMultiplayerMatchmaker matchmaking;
     private readonly ILogger<FirestoreCompetitiveSolitaireStore>? logger;
+    private readonly GameWorkerClient? gameWorker;
 
     public FirestoreCompetitiveSolitaireStore(
         FirestoreDb database,
         CompetitiveSolitaireOptions? options = null,
         IMultiplayerMatchmaker? multiplayerMatchmaker = null,
-        ILogger<FirestoreCompetitiveSolitaireStore>? logger = null)
+        ILogger<FirestoreCompetitiveSolitaireStore>? logger = null,
+        GameWorkerClient? gameWorker = null)
     {
         this.database = database;
         this.options = options ?? new CompetitiveSolitaireOptions();
         this.logger = logger;
+        this.gameWorker = gameWorker;
         // Direct store consumers use the same persisted identities and assignment
         // leases as the application singleton; no local opponent fallback exists.
         var profiles = new FirestoreManagedPlayerProfileRepository(database);
@@ -40,6 +45,17 @@ internal sealed partial class FirestoreCompetitiveSolitaireStore : ICompetitiveS
             new ManagedPlayerProfileGenerator(profiles),
             profiles,
             new FirestoreManagedPlayerAssignmentStore(database)));
+    }
+
+    private async Task<SolitaireGameState> CreateBoardAsync(
+        string userId, uint seed, int drawCount, CancellationToken cancellationToken)
+    {
+        if (gameWorker?.IsConfigured(ComputeGameId) != true)
+            return SolitaireEngine.CreateGame(seed, drawCount);
+
+        var result = await gameWorker.InvokeAsync<SolitaireBoardStartRequest, SolitaireBoardSnapshot>(
+            ComputeGameId, userId, SolitaireBoardCompute.StartRoute, new(drawCount, seed), cancellationToken);
+        return result.PrivateState;
     }
 
     private async Task<T> RunTransactionAsync<T>(

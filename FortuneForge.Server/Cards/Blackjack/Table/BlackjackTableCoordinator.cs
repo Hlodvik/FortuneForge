@@ -1,3 +1,5 @@
+using FortuneForge.Games.Abstractions.Auditing;
+using FortuneForge.Server.GameWorkers;
 using System.Globalization;
 using System.Security.Cryptography;
 using FortuneForge.Server.Bots;
@@ -15,7 +17,10 @@ internal sealed class BlackjackTableCoordinator(
     IMultiplayerMatchmaker? multiplayerMatchmaker = null,
     IManagedTablePopulationDirector? managedPopulationDirector = null,
     bool allowManagedArrivals = true,
-    bool multiplayerEnabled = true)
+    bool multiplayerEnabled = true,
+    GameWorkerClient? gameWorker = null,
+    string workerAccountId = "table-deadline",
+    CancellationToken workerCancellation = default)
 {
     private static readonly TimeSpan MinimumManagedTurnPause = TimeSpan.FromMilliseconds(1_500);
     private static readonly TimeSpan MaximumManagedTurnPause = TimeSpan.FromMilliseconds(5_500);
@@ -30,18 +35,18 @@ internal sealed class BlackjackTableCoordinator(
     private readonly IManagedTablePopulationDirector population =
         managedPopulationDirector ?? new ManagedTablePopulationDirector();
 
-    public BlackjackTableCoordinatorResult Get(
+    public async ValueTask<BlackjackTableCoordinatorResult> GetAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult Join(
+    public async ValueTask<BlackjackTableCoordinatorResult> JoinAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -51,7 +56,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var ticketId = BlackjackTableIds.Hash($"{userId}\n{idempotencyKey}");
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "join", ticketId, detail))
@@ -68,7 +73,7 @@ internal sealed class BlackjackTableCoordinator(
             state.Tables.Add(soloTable.TableId, soloTable);
             state.Sessions[userId] = new(BlackjackTableSessionKinds.Table, null, soloTable.TableId);
             state.Guards[GuardKey(userId, idempotencyKey)] = new("join", ticketId, detail, nowUtc);
-            StartIfReady(soloTable, nowUtc);
+            await StartIfReadyAsync(soloTable, nowUtc);
             return Result(state, balances, userId, nowUtc, journal);
         }
         var target = matchmaking.FindLiveTable(
@@ -96,7 +101,7 @@ internal sealed class BlackjackTableCoordinator(
         {
             AdmitQueuedHumansAtBoundary(state, target, journal);
             target.UpdatedAtUtc = nowUtc;
-            StartIfReady(target, nowUtc);
+            await StartIfReadyAsync(target, nowUtc);
         }
         else if (target is not null && target.Players.Count < BlackjackTableEngine.Capacity)
         {
@@ -113,11 +118,11 @@ internal sealed class BlackjackTableCoordinator(
         {
             ScheduleGracefulManagedDeparture(target);
         }
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult Cancel(
+    public async ValueTask<BlackjackTableCoordinatorResult> CancelAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -127,7 +132,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "cancel", ticketId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -143,7 +148,7 @@ internal sealed class BlackjackTableCoordinator(
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult Wager(
+    public async ValueTask<BlackjackTableCoordinatorResult> WagerAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -154,7 +159,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = $"{wagerCents}:{expectedVersion}";
         if (Replay(state, userId, idempotencyKey, "wager", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -163,7 +168,7 @@ internal sealed class BlackjackTableCoordinator(
         {
             if (table.Version != expectedVersion)
                 throw new BlackjackTableConflictException("The Blackjack table changed. Reconnect before placing another wager.");
-            BeginNextRoundCountdown(state, journal, table, nowUtc);
+            await BeginNextRoundCountdownAsync(state, journal, table, nowUtc);
             expectedVersion = table.Version;
         }
         if (table.Phase != BlackjackTablePhases.Betting ||
@@ -199,11 +204,11 @@ internal sealed class BlackjackTableCoordinator(
                 roundReference,
                 nowUtc));
         }
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult SitOut(
+    public async ValueTask<BlackjackTableCoordinatorResult> SitOutAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -213,7 +218,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(System.Globalization.CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "sit-out", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -238,11 +243,11 @@ internal sealed class BlackjackTableCoordinator(
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
         state.Guards[GuardKey(userId, idempotencyKey)] = new("sit-out", tableId, detail, nowUtc);
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult Action(
+    public async ValueTask<BlackjackTableCoordinatorResult> ActionAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -253,7 +258,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         action = action.Trim().ToLowerInvariant();
         var detail = $"{action}:{expectedVersion}";
         if (Replay(state, userId, idempotencyKey, "action", tableId, detail))
@@ -262,10 +267,12 @@ internal sealed class BlackjackTableCoordinator(
         if (table.Version != expectedVersion)
             throw new BlackjackTableConflictException("The Blackjack table changed. Reconnect before acting.");
         var player = table.Players.Single(value => value.ActorId == userId);
-        if (!BlackjackTableEngine.LegalActions(table, player).Contains(action))
+        var offer = (await LegalActionsAsync(table, player))
+            .SingleOrDefault(value => value.Action == action);
+        if (offer is null)
             throw new BlackjackTableIllegalActionException("That Blackjack action is not legal now.");
         var isPlayAction = table.Phase == BlackjackTablePhases.Active;
-        var additionalWager = BlackjackTableEngine.AdditionalWagerFor(player, action);
+        var additionalWager = offer.AdditionalWagerCents;
         if (additionalWager > 0)
         {
             Debit(balances, userId, additionalWager);
@@ -285,9 +292,10 @@ internal sealed class BlackjackTableCoordinator(
                 $"{tableId}-round-{table.RoundNumber}",
                 nowUtc));
         }
-        BlackjackTableEngine.ApplyAction(table, userId, action, nowUtc);
+        await ApplyTransitionAsync(table, "action", nowUtc, userId, action);
         if (isPlayAction)
         {
+            player = table.Players.Single(value => value.ActorId == userId);
             player.ConsecutiveMissedActionRounds = 0;
             player.LastMissedActionRound = 0;
         }
@@ -295,7 +303,7 @@ internal sealed class BlackjackTableCoordinator(
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableCoordinatorResult Leave(
+    public async ValueTask<BlackjackTableCoordinatorResult> LeaveAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         string userId,
@@ -305,7 +313,7 @@ internal sealed class BlackjackTableCoordinator(
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         var detail = expectedVersion.ToString(CultureInfo.InvariantCulture);
         if (Replay(state, userId, idempotencyKey, "leave", tableId, detail))
             return Result(state, balances, userId, nowUtc, journal);
@@ -339,28 +347,28 @@ internal sealed class BlackjackTableCoordinator(
             table.Version = checked(table.Version + 1);
             table.UpdatedAtUtc = nowUtc;
             if (ApplyPopulationDecision(state, table, journal, nowUtc))
-                StartIfReady(table, nowUtc);
+                await StartIfReadyAsync(table, nowUtc);
         }
         else
         {
-            BlackjackTableEngine.MarkLeaving(table, player, nowUtc);
+            await ApplyTransitionAsync(table, "leave", nowUtc, player.ActorId);
         }
         state.Sessions[userId] = new(BlackjackTableSessionKinds.Idle, null, null);
         state.Guards[GuardKey(userId, idempotencyKey)] = new("leave", tableId, detail, nowUtc);
         return Result(state, balances, userId, nowUtc, journal);
     }
 
-    public BlackjackTableJournal Sweep(
+    public async ValueTask<BlackjackTableJournal> SweepAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         DateTime nowUtc)
     {
         var journal = new BlackjackTableJournal();
-        Advance(state, balances, journal, nowUtc);
+        await AdvanceAsync(state, balances, journal, nowUtc);
         return journal;
     }
 
-    private void Advance(
+    private async ValueTask AdvanceAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         BlackjackTableJournal journal,
@@ -375,44 +383,44 @@ internal sealed class BlackjackTableCoordinator(
                 DrainMultiplayerTable(state, table, journal);
                 continue;
             }
-            if (table.Phase is BlackjackTablePhases.Dealing or BlackjackTablePhases.Active or BlackjackTablePhases.Insurance or BlackjackTablePhases.Dealer)
-                BlackjackTableEngine.AdvanceAutomatedTurns(table, nowUtc);
-            ResolveLeavingSoloTurn(table, nowUtc);
-            AdvanceManagedPlayerTurns(table, nowUtc);
-            if (table.Phase == "settlement") CompleteSettlement(state, balances, journal, table, nowUtc);
+            if (BlackjackTableEngine.HasDueAutomatedTurn(table, nowUtc))
+                await ApplyTransitionAsync(table, "advance", nowUtc);
+            await ResolveLeavingSoloTurnAsync(table, nowUtc);
+            await AdvanceManagedPlayerTurnsAsync(table, nowUtc);
+            if (table.Phase == "settlement") await CompleteSettlementAsync(state, balances, journal, table, nowUtc);
             if (table.Phase == BlackjackTablePhases.Betting && table.Transition == "next-round-countdown" &&
                 table.NextTransitionAtUtc is { } countdownEndsAt && nowUtc >= countdownEndsAt)
             {
                 table.Transition = null;
                 table.NextTransitionAtUtc = null;
                 table.UpdatedAtUtc = countdownEndsAt;
-                StartIfReady(table, countdownEndsAt);
+                await StartIfReadyAsync(table, countdownEndsAt);
             }
-            AdvanceManagedWagerTurns(table, nowUtc);
+            await AdvanceManagedWagerTurnsAsync(table, nowUtc);
             if (table.Phase == BlackjackTablePhases.Betting && table.Transition == "wager-lock" &&
                 table.NextTransitionAtUtc is { } readyAt && nowUtc >= readyAt)
             {
                 table.Transition = null;
                 table.NextTransitionAtUtc = null;
-                StartIfReady(table, nowUtc, adjustmentElapsed: true);
+                await StartIfReadyAsync(table, nowUtc, adjustmentElapsed: true);
             }
             if (table.Phase == BlackjackTablePhases.Betting &&
                 table.WagerDeadlineAtUtc is { } deadline && nowUtc >= deadline)
             {
-                ApplyWagerDeadline(state, table, nowUtc);
+                await ApplyWagerDeadlineAsync(state, table, nowUtc);
             }
         }
-        if (multiplayerEnabled) StartNewTables(state, balances, journal, nowUtc);
-        else StartSoloTablesForQueuedTickets(state, nowUtc);
+        if (multiplayerEnabled) await StartNewTablesAsync(state, balances, journal, nowUtc);
+        else await StartSoloTablesForQueuedTicketsAsync(state, nowUtc);
     }
 
-    private static void ResolveLeavingSoloTurn(BlackjackTableState table, DateTime nowUtc)
+    private async ValueTask ResolveLeavingSoloTurnAsync(BlackjackTableState table, DateTime nowUtc)
     {
         if (!table.SoloMode || table.Transition is not null || table.ActiveSeat is not { } seat) return;
         var player = table.Players.SingleOrDefault(value => value.Seat == seat);
         if (player?.LeavingAfterRound != true) return;
         if (table.Phase is BlackjackTablePhases.Insurance or BlackjackTablePhases.Active)
-            BlackjackTableEngine.MarkLeaving(table, player, nowUtc);
+            await ApplyTransitionAsync(table, "leave", nowUtc, player.ActorId);
     }
 
     private static BlackjackTableState CreateSoloTable(BlackjackTableTicket ticket, DateTime nowUtc) => new()
@@ -426,7 +434,7 @@ internal sealed class BlackjackTableCoordinator(
         SoloMode = true
     };
 
-    private void StartSoloTablesForQueuedTickets(BlackjackTableLobbyState state, DateTime nowUtc)
+    private async ValueTask StartSoloTablesForQueuedTicketsAsync(BlackjackTableLobbyState state, DateTime nowUtc)
     {
         foreach (var ticket in state.Tickets.Where(value => value.Status == "queued").ToArray())
         {
@@ -434,11 +442,11 @@ internal sealed class BlackjackTableCoordinator(
             state.Tables.Add(table.TableId, table);
             MarkTicketMatched(state, ticket);
             state.Sessions[ticket.UserId] = new(BlackjackTableSessionKinds.Table, null, table.TableId);
-            StartIfReady(table, nowUtc);
+            await StartIfReadyAsync(table, nowUtc);
         }
     }
 
-    private static void AdvanceManagedPlayerTurns(BlackjackTableState table, DateTime nowUtc)
+    private async ValueTask AdvanceManagedPlayerTurnsAsync(BlackjackTableState table, DateTime nowUtc)
     {
         if (table.Phase is not (BlackjackTablePhases.Active or BlackjackTablePhases.Insurance) ||
             table.ActiveSeat is not { } activeSeat)
@@ -472,9 +480,9 @@ internal sealed class BlackjackTableCoordinator(
             table.ActionDeadlineAtUtc = null;
             if (nowUtc < decisionAt) return;
             BlackjackManagedSeat.ClearActionReadyAt(player);
-            var available = BlackjackTableEngine.LegalActions(table, player);
+            var available = (await LegalActionsAsync(table, player)).Select(value => value.Action).ToArray();
             var action = BlackjackManagedActionPolicy.Choose(table, player, available);
-            BlackjackTableEngine.ApplyAction(table, player.ActorId, action, nowUtc);
+            await ApplyTransitionAsync(table, "action", nowUtc, player.ActorId, action);
             return;
         }
 
@@ -483,7 +491,7 @@ internal sealed class BlackjackTableCoordinator(
             return;
         if (table.Phase == BlackjackTablePhases.Insurance)
         {
-            BlackjackTableEngine.ApplyAction(table, player.ActorId, BlackjackActions.DeclineInsurance, nowUtc);
+            await ApplyTransitionAsync(table, "action", nowUtc, player.ActorId, BlackjackActions.DeclineInsurance);
             return;
         }
         if (player.LastMissedActionRound != table.RoundNumber)
@@ -494,8 +502,8 @@ internal sealed class BlackjackTableCoordinator(
             player.LastMissedActionRound = table.RoundNumber;
         }
         var releaseAfterRound = player.ConsecutiveMissedActionRounds >= 2;
-        BlackjackTableEngine.ApplyAction(table, player.ActorId, BlackjackActions.Stand, nowUtc);
-        if (releaseAfterRound) player.LeavingAfterRound = true;
+        await ApplyTransitionAsync(table, "action", nowUtc, player.ActorId, BlackjackActions.Stand);
+        if (releaseAfterRound) table.Players.Single(value => value.ActorId == player.ActorId).LeavingAfterRound = true;
     }
 
     private static TimeSpan ManagedPause(TimeSpan minimum, TimeSpan maximum)
@@ -504,7 +512,7 @@ internal sealed class BlackjackTableCoordinator(
         return minimum.Add(TimeSpan.FromMilliseconds(RandomNumberGenerator.GetInt32(range)));
     }
 
-    private void StartNewTables(
+    private async ValueTask StartNewTablesAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         BlackjackTableJournal journal,
@@ -545,11 +553,11 @@ internal sealed class BlackjackTableCoordinator(
                 MarkTicketMatched(state, ticket);
                 state.Sessions[ticket.UserId] = new(BlackjackTableSessionKinds.Table, null, tableId);
             }
-            StartIfReady(table, nowUtc);
+            await StartIfReadyAsync(table, nowUtc);
         }
     }
 
-    private void ApplyWagerDeadline(
+    private async ValueTask ApplyWagerDeadlineAsync(
         BlackjackTableLobbyState state,
         BlackjackTableState table,
         DateTime nowUtc)
@@ -577,10 +585,10 @@ internal sealed class BlackjackTableCoordinator(
         table.NextTransitionAtUtc = null;
         if (table.Players.All(BlackjackManagedSeat.IsManaged))
             _ = population.Observe(PopulationObservation(table));
-        StartIfReady(table, nowUtc);
+        await StartIfReadyAsync(table, nowUtc);
     }
 
-    private void CompleteSettlement(
+    private async ValueTask CompleteSettlementAsync(
         BlackjackTableLobbyState state,
         IDictionary<string, long> balances,
         BlackjackTableJournal journal,
@@ -593,7 +601,7 @@ internal sealed class BlackjackTableCoordinator(
             if (table.Transition == "settlement-display" &&
                 table.NextTransitionAtUtc is { } displayEndsAt && nowUtc >= displayEndsAt)
             {
-                if (multiplayerEnabled) BeginNextRoundCountdown(state, journal, table, displayEndsAt);
+                if (multiplayerEnabled) await BeginNextRoundCountdownAsync(state, journal, table, displayEndsAt);
                 else DrainMultiplayerTable(state, table, journal);
             }
             return;
@@ -666,7 +674,7 @@ internal sealed class BlackjackTableCoordinator(
         table.UpdatedAtUtc = nowUtc;
     }
 
-    private void BeginNextRoundCountdown(
+    private async ValueTask BeginNextRoundCountdownAsync(
         BlackjackTableLobbyState state,
         BlackjackTableJournal journal,
         BlackjackTableState table,
@@ -693,7 +701,7 @@ internal sealed class BlackjackTableCoordinator(
         table.WagerDeadlineAtUtc = null;
         AdmitQueuedHumansAtBoundary(state, table, journal);
         if (!ApplyPopulationDecision(state, table, journal, nowUtc)) return;
-        BlackjackTableEngine.PrepareForBetting(table);
+        await ApplyTransitionAsync(table, "prepare-betting", nowUtc);
         foreach (var player in table.Players)
         {
             player.NextWagerCents = 0;
@@ -701,7 +709,7 @@ internal sealed class BlackjackTableCoordinator(
         }
         table.Version = checked(table.Version + 1);
         table.UpdatedAtUtc = nowUtc;
-        if (table.SoloMode) StartIfReady(table, nowUtc);
+        if (table.SoloMode) await StartIfReadyAsync(table, nowUtc);
     }
 
     private void AdmitQueuedHumansAtBoundary(
@@ -734,7 +742,7 @@ internal sealed class BlackjackTableCoordinator(
         }
     }
 
-    private void StartIfReady(
+    private async ValueTask StartIfReadyAsync(
         BlackjackTableState table,
         DateTime nowUtc,
         bool deadlineReached = false,
@@ -745,7 +753,7 @@ internal sealed class BlackjackTableCoordinator(
         if (table.Transition == "wager-lock")
         {
             if (adjustmentElapsed)
-                BlackjackTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc);
+                await ApplyTransitionAsync(table, "begin-deal", nowUtc);
             return;
         }
         if (table.Transition is "human-wager" or "managed-wager") return;
@@ -761,7 +769,7 @@ internal sealed class BlackjackTableCoordinator(
             table.UpdatedAtUtc = nowUtc;
             return;
         }
-        BlackjackTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc);
+        await ApplyTransitionAsync(table, "begin-deal", nowUtc);
     }
 
     private bool ApplyPopulationDecision(
@@ -1043,7 +1051,7 @@ internal sealed class BlackjackTableCoordinator(
         BlackjackManagedSeat.SetBaseWager(player, Math.Clamp(wager, BlackjackMoney.MinimumWagerCents, BlackjackMoney.MaximumWagerCents));
     }
 
-    private void AdvanceManagedWagerTurns(BlackjackTableState table, DateTime nowUtc)
+    private async ValueTask AdvanceManagedWagerTurnsAsync(BlackjackTableState table, DateTime nowUtc)
     {
         if (table.Phase != BlackjackTablePhases.Betting ||
             table.Transition != "managed-wager")
@@ -1081,7 +1089,7 @@ internal sealed class BlackjackTableCoordinator(
         table.Transition = null;
         table.NextTransitionAtUtc = null;
         table.UpdatedAtUtc = effectiveReadyAt;
-        StartIfReady(table, effectiveReadyAt);
+        await StartIfReadyAsync(table, effectiveReadyAt);
     }
 
     private static bool ScheduleNextWagerTurn(BlackjackTableState table, DateTime nowUtc)
@@ -1115,4 +1123,96 @@ internal sealed class BlackjackTableCoordinator(
 
     private static string GuardKey(string userId, string idempotencyKey) =>
         BlackjackTableIds.Hash($"{userId}\n{idempotencyKey}");
+
+    private static string WorkerGameId => BlackjackModule.Descriptor.Id;
+    private GameWorkerClient? Worker => gameWorker?.IsConfigured(WorkerGameId) == true ? gameWorker : null;
+
+    private async ValueTask ApplyTransitionAsync(
+        BlackjackTableState table, string transition, DateTime nowUtc, string? actorId = null, string? action = null)
+    {
+        if (Worker is null)
+        {
+            switch (transition)
+            {
+                case "prepare-betting": BlackjackTableEngine.PrepareForBetting(table); break;
+                case "begin-deal": BlackjackTableEngine.BeginDeal(table, createDeck(), createSeed(), nowUtc); break;
+                case "advance": BlackjackTableEngine.AdvanceAutomatedTurns(table, nowUtc); break;
+                case "action": BlackjackTableEngine.ApplyAction(table, actorId!, action!, nowUtc); break;
+                case "leave":
+                    var player = table.Players.Single(value => value.ActorId == actorId);
+                    BlackjackTableEngine.MarkLeaving(table, player, nowUtc);
+                    break;
+                default: throw new ArgumentOutOfRangeException(nameof(transition));
+            }
+            return;
+        }
+
+        var result = await ComputeAsync<BlackjackTableState>(transition,
+            new { PrivateTable = table, NowUtc = nowUtc, ActorId = actorId, Action = action });
+        if (result.TableId != table.TableId || result.CreatedAtUtc != table.CreatedAtUtc ||
+            result.SoloMode != table.SoloMode ||
+            result.Version < table.Version || result.RoundNumber < table.RoundNumber ||
+            !SameMetadata(table.HostMetadata, result.HostMetadata) ||
+            result.Players is null || result.Players.Count != table.Players.Count ||
+            !table.Players.Zip(result.Players).All(pair =>
+                pair.First.ActorId == pair.Second.ActorId && pair.First.PublicSeatId == pair.Second.PublicSeatId &&
+                pair.First.DisplayName == pair.Second.DisplayName && pair.First.Seat == pair.Second.Seat &&
+                pair.First.SessionId == pair.Second.SessionId && pair.First.SessionStartedAtUtc == pair.Second.SessionStartedAtUtc &&
+                SameMetadata(pair.First.HostMetadata, pair.Second.HostMetadata)))
+            throw new GameWorkerUnavailableException(WorkerGameId);
+
+        table.UpdatedAtUtc = result.UpdatedAtUtc;
+        table.Phase = result.Phase;
+        table.Version = result.Version;
+        table.RoundNumber = result.RoundNumber;
+        table.RoundStartedAtUtc = result.RoundStartedAtUtc;
+        table.RoundSeed = result.RoundSeed;
+        table.Deck = result.Deck;
+        table.NextCardIndex = result.NextCardIndex;
+        table.DealerCards = result.DealerCards;
+        table.ActiveSeat = result.ActiveSeat;
+        table.ActionDeadlineAtUtc = result.ActionDeadlineAtUtc;
+        table.WagerDeadlineAtUtc = result.WagerDeadlineAtUtc;
+        table.PendingSeat = result.PendingSeat;
+        table.Transition = result.Transition;
+        table.NextTransitionAtUtc = result.NextTransitionAtUtc;
+        table.DealerVisibleCardCount = result.DealerVisibleCardCount;
+        table.RoundAccountingSettled = result.RoundAccountingSettled;
+        table.Players.Clear();
+        table.Players.AddRange(result.Players);
+    }
+
+    private async ValueTask<TableActionOffer[]> LegalActionsAsync(BlackjackTableState table, BlackjackTablePlayer player)
+    {
+        if (Worker is null)
+            return BlackjackTableEngine.LegalActions(table, player).Select(action =>
+                new TableActionOffer(action, BlackjackTableEngine.AdditionalWagerFor(player, action))).ToArray();
+
+        var result = await ComputeAsync<TableActionOffer[]>("legal-actions",
+            new { PrivateTable = table, ActorId = player.ActorId });
+        if (result.Any(value => value is null || string.IsNullOrWhiteSpace(value.Action) || value.AdditionalWagerCents < 0) ||
+            result.Select(value => value.Action).Distinct(StringComparer.Ordinal).Count() != result.Length)
+            throw new GameWorkerUnavailableException(WorkerGameId);
+        return result;
+    }
+
+    private async Task<T> ComputeAsync<T>(string transition, object request)
+    {
+        try
+        {
+            return await Worker!.InvokeAsync<object, T>(WorkerGameId,
+                GameSecurityContext.Current?.UserId ?? workerAccountId,
+                "/internal/v1/tables/" + transition, request, workerCancellation);
+        }
+        catch (GameWorkerRequestRejectedException error)
+        {
+            throw new GameWorkerUnavailableException(WorkerGameId, error);
+        }
+    }
+
+    private static bool SameMetadata(Dictionary<string, string> expected, Dictionary<string, string>? actual) =>
+        actual is not null && expected.Count == actual.Count &&
+        expected.All(pair => actual.TryGetValue(pair.Key, out var value) && value == pair.Value);
+
+    private sealed record TableActionOffer(string Action, long AdditionalWagerCents);
 }

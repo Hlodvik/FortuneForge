@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\games\shared\FortuneForge.Games.Hosting\FortuneForge.Games.Hosting.csproj" />
     <ProjectReference Include="..\games\JadeDragon\src\FortuneForge.Games.JadeDragon\FortuneForge.Games.JadeDragon.csproj" />
     <ProjectReference Include="..\games\shared\FortuneForge.Games.Slots.Contracts\FortuneForge.Games.Slots.Contracts.csproj" />
     <ProjectReference Include="..\games\shared\FortuneForge.Games.Slots.Runtime\FortuneForge.Games.Slots.Runtime.csproj" />

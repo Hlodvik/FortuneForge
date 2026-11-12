@@ -9,11 +9,11 @@ import './styles/index.css'
 
 export default function App() {
   const [pathname, setPathname] = useState(() => window.location.pathname.replace(/\/+$/, '') || '/')
-  const slotRoute = findSlotRoute(pathname)
+  const matchedSlotRoute = findSlotRoute(pathname)
+  const slotRoute = matchedSlotRoute?.playPath === pathname ? matchedSlotRoute : null
   const isPlayableGameRoute = slotRoute !== null || (
     pathname.startsWith('/games/') ||
-    pathname.startsWith('/cards/') ||
-    pathname.startsWith('/demo/cards/')
+    pathname.startsWith('/cards/')
   )
   const usesThemeSpecificSlotBackdrop =
     slotRoute?.shellBackdrop === 'theme'
@@ -23,7 +23,7 @@ export default function App() {
     pathname === '/home' || pathname.startsWith('/home/') || pathname === '/balance' ? 'app-shell--home' : '',
     isPlayableGameRoute ? 'app-shell--game' : '',
     pathname.startsWith('/slots/') ? 'app-shell--slot-game' : '',
-    pathname === '/cards' || pathname.startsWith('/cards/') || pathname === '/demo/cards' || pathname.startsWith('/demo/cards/')
+    pathname === '/cards' || pathname.startsWith('/cards/')
       ? 'app-shell--card-room'
       : '',
     usesThemeSpecificSlotBackdrop ? 'app-shell--themed-slot-backdrop' : '',
@@ -44,7 +44,7 @@ export default function App() {
       if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return
       const destination = new URL(link.href, window.location.href)
       const destinationPath = destination.pathname.replace(/\/+$/, '') || '/'
-      if (destination.origin !== window.location.origin || findSlotRoute(destinationPath) === null) return
+      if (destination.origin !== window.location.origin || findSlotRoute(destinationPath)?.playPath !== destinationPath) return
 
       // Keep the catalogue click's browser audio activation in this document.
       event.preventDefault()

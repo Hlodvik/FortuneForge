@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -9,7 +10,7 @@ namespace FortuneForge.Server.Numbers.Keno;
 
 [ApiController]
 [Route("api/games/keno")]
-public sealed class KenoController(FirestoreDb database, AccountService accountService, IConfiguration configuration, ILogger<KenoController> logger) : ControllerBase
+public sealed class KenoController(FirestoreDb database, AccountService accountService, IConfiguration configuration, ILogger<KenoController> logger, GameWorkerClient? workers = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -52,7 +53,7 @@ public sealed class KenoController(FirestoreDb database, AccountService accountS
     }
 
     internal static bool IsEnabled(IConfiguration source) => source.GetValue("Features:KenoEnabled", false);
-    private KenoService Service() => new(new KenoFirestoreStore(database), TimeProvider.System);
+    private KenoService Service() => new(new KenoFirestoreStore(database, workers), TimeProvider.System);
     private ActionResult? Disabled() => IsEnabled(configuration) ? null : StatusCode(StatusCodes.Status503ServiceUnavailable, new KenoErrorResponse("keno-disabled", "Keno is still being verified and cannot start a round yet."));
     private async Task<AccountSummary?> AccountAsync(CancellationToken cancellationToken) => (await accountService.GetProfileAsync(AccountSessionCookie.Read(Request), cancellationToken)).Value;
 }
@@ -64,6 +65,7 @@ internal static class KenoHttp
         KenoRoundNotFoundException => controller.NotFound(new KenoErrorResponse("keno-round-not-found", exception.Message)),
         KenoInsufficientCreditsException => controller.Conflict(new KenoErrorResponse("insufficient-slot-credits", exception.Message)),
         KenoRoundConflictException => controller.Conflict(new KenoErrorResponse("keno-round-conflict", exception.Message)),
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable, new KenoErrorResponse("keno-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new KenoErrorResponse("keno-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

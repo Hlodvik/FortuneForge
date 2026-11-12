@@ -1,8 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
-using FortuneForge.Server.Matchmaking;
-using Google.Cloud.Firestore;
+using FortuneForge.Server.GameWorkers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -15,7 +14,6 @@ public sealed record SolitaireFreeRunReplayRequest(IReadOnlyList<SolitaireFreeRe
 [ApiController]
 [Route("api/solitaire")]
 public sealed class SolitaireController(
-    FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
     FirestoreSolitaireFreeRunService freeRunService,
@@ -323,17 +321,11 @@ public sealed class SolitaireController(
         }
     }
 
-    private CompetitiveSolitaireService Service() =>
-        new(new FirestoreCompetitiveSolitaireStore(
-            database,
-            new CompetitiveSolitaireOptions
-            {
-                AllowSingleHumanBotFill = IsSingleHumanBotFillEnabled(configuration)
-            },
-            services.GetRequiredService<IMultiplayerMatchmaker>()));
+    private CompetitiveSolitaireService Service() => services.GetRequiredService<CompetitiveSolitaireService>();
 
     private ActionResult FreeRunHttp(Exception exception) => exception switch
     {
+        GameWorkerUnavailableException => StatusCode(StatusCodes.Status503ServiceUnavailable, new { error = exception.Message }),
         ArgumentException => BadRequest(new { error = exception.Message }),
         InvalidOperationException => Conflict(new { error = exception.Message }),
         _ => SolitaireHttp.FromException(this, exception, logger),
@@ -374,6 +366,9 @@ internal static class SolitaireHttp
     {
         switch (exception)
         {
+            case GameWorkerUnavailableException:
+                return controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
+                    new { code = "solitaire-unavailable", error = exception.Message });
             case SolitaireNotFoundException:
                 return controller.NotFound(new { error = exception.Message });
             case SolitaireInsufficientCreditsException insufficient:

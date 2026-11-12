@@ -1,6 +1,7 @@
 using FortuneForge.Server.Accounts;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Accounts.Security;
+using FortuneForge.Server.GameWorkers;
 using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -13,7 +14,8 @@ public sealed class BaccaratController(
     FirestoreDb database,
     AccountService accountService,
     IConfiguration configuration,
-    ILogger<BaccaratController> logger) : ControllerBase
+    ILogger<BaccaratController> logger,
+    GameWorkerClient? workers = null) : ControllerBase
 {
     [HttpGet("status")]
     [EnableRateLimiting(RateLimitPolicies.SlotReads)]
@@ -72,7 +74,7 @@ public sealed class BaccaratController(
     private BaccaratService Service() => new(
         IsPractice
             ? HttpContext.RequestServices.GetRequiredService<PracticeBaccaratStore>()
-            : new BaccaratFirestoreStore(database),
+            : new BaccaratFirestoreStore(database, workers),
         TimeProvider.System);
 
     private bool IsPractice => HttpContext?.Request.Headers.TryGetValue("X-FortuneForge-Practice", out var values) == true &&
@@ -95,6 +97,8 @@ internal static class BaccaratHttp
         BaccaratRoundNotFoundException => controller.NotFound(new BaccaratErrorResponse("baccarat-round-not-found", exception.Message)),
         BaccaratInsufficientCreditsException => controller.Conflict(new BaccaratErrorResponse("insufficient-slot-credits", exception.Message)),
         BaccaratRoundConflictException => controller.Conflict(new BaccaratErrorResponse("baccarat-round-conflict", exception.Message)),
+        GameWorkerUnavailableException => controller.StatusCode(StatusCodes.Status503ServiceUnavailable,
+            new BaccaratErrorResponse("baccarat-unavailable", exception.Message)),
         ArgumentException => controller.BadRequest(new BaccaratErrorResponse("baccarat-invalid-request", exception.Message)),
         _ => Unexpected(controller, exception, logger),
     };

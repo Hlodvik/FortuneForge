@@ -3,7 +3,8 @@ import { embeddedSlotSmokeInventory, gameSmokeRoutes, slotSmokeInventory } from 
 const baseUrl = normalizeBaseUrl(process.env.FORTUNE_FORGE_URL ?? process.argv[2] ?? 'https://fortuneforgegame.web.app')
 
 if (gameSmokeRoutes.length !== 45) throw new Error(`Smoke inventory must contain 45 games, found ${gameSmokeRoutes.length}.`)
-if (slotSmokeInventory.length !== 19) throw new Error(`Smoke inventory must contain 19 playable slot contracts, found ${slotSmokeInventory.length}.`)
+const slotGameIds = [...slotSmokeInventory.map(([, gameId]) => gameId), 'empty-slots-v1']
+if (slotGameIds.length !== 20) throw new Error(`Smoke inventory must contain 20 playable slot contracts, found ${slotGameIds.length}.`)
 
 console.log(`Fortune Forge production smoke: ${baseUrl}`)
 
@@ -15,41 +16,22 @@ for (const route of ['/home', ...gameSmokeRoutes]) {
 }
 console.log(`✓ Home and ${gameSmokeRoutes.length} game routes returned the application shell (${embeddedSlotSmokeInventory.length} embedded Jade Dragon package)`)
 
-for (const [route, gameId] of slotSmokeInventory) {
-  const status = await request(`${baseUrl}/api/slots/demo/status?gameId=${encodeURIComponent(gameId)}`)
-  assert(status.status === 204, `${route} demo status returned ${status.status}`)
-
-  const spin = await request(`${baseUrl}/api/slots/demo/spins`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({
-      gameId,
-      wagerPoints: gameId === 'neon-nights-v1' ? 50 : 10,
-      useFreeSpin: false,
-      freeSpinsRemaining: 0,
-      freeSpinWagerPoints: null,
-      energyBalance: 0,
-      sealCollections: [],
-      freeSpinFeatureMode: null,
-      ...(gameId === 'gods-of-olympus-v1' ? { olympusTumbleShowcase: false } : {}),
-    }),
-  })
-  const result = await spin.json().catch(() => null)
-  assert(spin.ok, `${route} demo spin returned ${spin.status}: ${JSON.stringify(result)}`)
-  assert(result?.gameId === gameId, `${route} demo spin returned the wrong game profile`)
-  assert(typeof result?.spinId === 'string' && result.spinId.length > 0, `${route} demo spin did not return a spin ID`)
-  if (gameId === 'gods-of-olympus-v1') {
-    assert(result.reelSetId === 'olympus-tumble-demo-v3' && Array.isArray(result.olympusTumble?.steps),
-      `${route} did not return the active tumble model`)
-  }
-  if (gameId === 'neon-nights-v1') {
-    assert(result.neonArcade?.featureGamesEnabled === true && result.neonArcade?.boostPercentPerSymbol === 25,
-      `${route} did not return the active Special Plays model`)
-  }
-  console.log(`✓ ${route} (${gameId}) demo contract`)
+for (const gameId of slotGameIds) {
+  const state = await request(`${baseUrl}/api/slots/state?gameId=${encodeURIComponent(gameId)}`)
+  assert(state.status === 401, `${gameId} unauthenticated slot state returned ${state.status}`)
 }
 
-console.log(`✓ production smoke passed: ${gameSmokeRoutes.length} routes and ${slotSmokeInventory.length} live demo spins`)
+for (const path of ['/api/slots/demo/status?gameId=empty-slots-v1', '/api/cards/blackjack/demo/status']) {
+  const retired = await request(`${baseUrl}${path}`)
+  assert(retired.status === 404, `${path} should be retired, returned ${retired.status}`)
+}
+
+const practice = await request(`${baseUrl}/api/slots/state?gameId=empty-slots-v1`, {
+  headers: { 'X-FortuneForge-Practice': 'true' },
+})
+assert(practice.status === 404, `production practice request returned ${practice.status}`)
+
+console.log(`✓ production smoke passed: ${gameSmokeRoutes.length} game routes, ${slotGameIds.length} authenticated slot contracts, and no public demo API`)
 
 async function request(url, init, attempt = 1) {
   const response = await fetch(url, { ...init, signal: AbortSignal.timeout(20_000) })

@@ -1,0 +1,292 @@
+.machine {
+  --jade-control-art: url('./assets/jade-control-base.webp');
+  container: jade-cabinet / inline-size;
+  max-width: min(1038px, var(--jade-cabinet-width, 100%));
+  margin-top: var(--jade-cabinet-top, 0px);
+}
+
+@media (min-width: 521px) {
+  #jade-game:not(.bonus-active) .scene-art {
+    background-position-x: var(--jade-scene-x, 50%);
+  }
+
+  .control-deck {
+    /* Keep room for the gold rail's overhang after the viewport fit scales the cabinet. */
+    --jade-deck-width: clamp(100%, 110%, calc((100vw - 16px) / var(--jade-laptop-scale, 1) / 1.08));
+    width: var(--jade-deck-width);
+    margin-inline: calc((100% - var(--jade-deck-width)) / 2);
+  }
+}
+
+.topbar { height: 42px; border-bottom: 0; }
+
+.topbar .instant-results {
+  margin: 0;
+  padding: 2px 6px;
+  border: 1px solid #aa935c75;
+  border-radius: 12px;
+  background: #061a16df;
+}
+
+.cabinet-header {
+  position: relative;
+  z-index: 1;
+  margin-bottom: -2px;
+}
+
+.cabinet-title {
+  display: grid;
+  align-items: end;
+  aspect-ratio: 1536 / 257;
+  padding: 0 12% 4cqw;
+  background: url('./assets/jade-title-plaque.webp') center / 100% 100% no-repeat;
+  text-align: center;
+}
+
+.cabinet-title h1 {
+  margin: 0;
+  color: #ffe4a4;
+  font-size: clamp(21px, 7.2cqw, 62px);
+  font-weight: 700;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+  text-shadow: 0 2px 0 #623509, 0 4px 6px #000;
+  white-space: nowrap;
+}
+
+.cabinet-readouts, .feature-readout {
+  margin-inline: 1.8%;
+  border: 1px solid #c59e59a8;
+  background: linear-gradient(180deg, #103e2c, #052016);
+  box-shadow: inset 0 1px 0 #e4bf6840;
+  color: #f3db9d;
+}
+
+.cabinet-readouts {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: clamp(5px, 1.3cqw, 15px);
+  padding: clamp(5px, 1.1cqw, 10px) 3%;
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-weight: 700;
+}
+
+.cabinet-readouts .ways {
+  color: inherit;
+  font-size: clamp(9px, 2.1cqw, 15px);
+  white-space: nowrap;
+}
+
+.cabinet-readouts .ways strong { font-size: 1.1em; }
+.cabinet-readouts .multiplier-ladder { gap: clamp(3px, .8cqw, 9px); }
+
+.cabinet-readouts .fortune-seal {
+  min-width: 0;
+  padding: .17em .46em;
+  border: 1px solid #b8995e80;
+  border-radius: 1em;
+  background: #061b13;
+  color: inherit;
+  font-size: clamp(9px, 2.2cqw, 16px);
+  line-height: 1;
+}
+
+.cabinet-readouts .fortune-seal.active {
+  border-color: #ffe2a0;
+  background: #ffde96;
+  color: #172517;
+  box-shadow: 0 0 8px #f2c7647d;
+}
+
+.cabinet-readouts .pearl-promise { justify-content: flex-end; }
+.cabinet-readouts .pearl-promise > span {
+  display: inline;
+  margin: 0 0 0 .3em;
+  font-size: clamp(8px, 1.8cqw, 13px);
+  line-height: 1;
+  text-align: right;
+}
+
+.feature-readout:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 3%;
+  font: 700 clamp(12px, 2.55cqw, 18px)/1 'Cormorant Garamond', Georgia, serif;
+}
+
+.feature-readout span { display: block; font-size: .75em; margin-top: .25em; }
+.feature-total { flex: none; text-align: right; }
+
+.reel-window {
+  --rail-width: clamp(5px, 1.45cqw, 12px);
+  --window-radius: clamp(9px, 2.4cqw, 19px);
+  position: relative;
+  margin-bottom: -3px;
+  z-index: 1;
+}
+
+.reel-stage {
+  border: var(--rail-width) solid transparent;
+  border-radius: var(--window-radius);
+  background-clip: padding-box;
+}
+
+.reel-window-trim {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  overflow: hidden;
+  border-radius: var(--window-radius);
+  pointer-events: none;
+}
+
+.reel-window-trim > span {
+  position: absolute;
+  width: 100%;
+  height: var(--rail-width);
+  /* Show the straight gold rail at the top of the same image used on the base. */
+  background: var(--jade-control-art) center top / 114.3% 1161% no-repeat;
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--rail-width)) 100%, var(--rail-width) 100%);
+}
+
+.reel-window-trim > :nth-child(2) { bottom: 0; rotate: 180deg; }
+.reel-window-trim > :nth-child(3), .reel-window-trim > :nth-child(4) {
+  top: 0;
+  width: 100cqh;
+}
+.reel-window-trim > :nth-child(3) { left: var(--rail-width); transform-origin: top left; rotate: 90deg; }
+.reel-window-trim > :nth-child(4) { right: var(--rail-width); transform-origin: top right; rotate: -90deg; }
+
+.cabinet-message {
+  width: fit-content;
+  max-width: min(100%, 600px);
+  margin: 8px auto 0;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #061b14ef;
+  color: #ffebbc;
+  font-size: 13px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.cabinet-message:empty { margin: 0; padding: 0; }
+
+.control-deck {
+  position: relative;
+  isolation: isolate;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.22fr) minmax(0, 1fr) minmax(0, 1.22fr) minmax(0, 1fr);
+  grid-template-areas: 'balance bet spin win win';
+  gap: clamp(4px, 1.2cqw, 14px);
+  min-height: 0;
+  padding: 5px 7% 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.control-deck::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 -4%;
+  background: var(--jade-control-art) center / 100% 100% no-repeat;
+  pointer-events: none;
+}
+
+.credit-readout, .bet-control, .win-readout {
+  align-self: center;
+  text-align: center;
+  padding: 0;
+  border: 0;
+}
+
+.credit-readout { grid-area: balance; }
+.bet-control { grid-area: bet; }
+.win-readout { grid-area: win; }
+.spin-control { grid-area: spin; gap: 2px; margin: 0; }
+
+.credit-readout > span, .bet-control > span, .win-readout > span {
+  font-size: clamp(10px, 2.65cqw, 18px);
+  color: #f8df9a;
+  text-shadow: 0 1px 3px #00150f;
+}
+
+.credit-readout strong, .win-readout strong, .bet-control strong {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 700;
+  color: #fff1cc;
+  white-space: nowrap;
+}
+
+.credit-readout strong, .win-readout strong { font-size: clamp(15px, 3.9cqw, 30px); }
+.win-readout small { font-size: clamp(8px, 1.8cqw, 12px); }
+.bet-control strong { flex: none; font-size: clamp(13px, 3.2cqw, 24px); min-width: 0; }
+.bet-control > div { justify-content: center; gap: clamp(3px, .8cqw, 9px); }
+
+.bet-control button {
+  flex: none;
+  width: clamp(18px, 4cqw, 29px);
+  height: clamp(18px, 4cqw, 29px);
+  border-color: #bb9d57;
+  background: linear-gradient(#286e57, #0e382b);
+  color: #fff1cc;
+}
+
+#spin {
+  width: clamp(61px, 16cqw, 132px);
+  height: auto;
+  min-width: 0;
+  aspect-ratio: 384 / 366;
+  border: 0;
+  border-radius: 50%;
+  background: url('./assets/jade-spin-medallion.webp') center / contain no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 3px 3px #001b11bd);
+  color: #103d2b;
+}
+
+#spin:hover:enabled { filter: brightness(1.08) drop-shadow(0 3px 3px #001b11bd); }
+#spin:disabled { opacity: .85; }
+
+#spin-label {
+  width: 70%;
+  margin-top: 9%;
+  font-size: clamp(12px, 3.3cqw, 25px);
+  line-height: .9;
+  letter-spacing: .03em;
+}
+
+.auto-button {
+  height: clamp(22px, 4.6cqw, 30px);
+  min-width: 0;
+  width: max-content;
+  padding: 0 clamp(5px, 1.4cqw, 13px);
+  gap: 4px;
+  border: 1px solid #d4ab60;
+  box-shadow: inset 0 1px 0 #ffe8a04d, 0 2px 5px #0009;
+  background: linear-gradient(#2b6c50, #0c3022);
+  color: #ffedb6;
+  font-size: clamp(10px, 2.45cqw, 16px);
+}
+
+@container jade-cabinet (max-width: 520px) {
+  .control-deck {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: 'balance spin win' 'bet spin win';
+    padding: 8px 9% 12px;
+  }
+
+  .control-deck::before { inset-inline: -3%; }
+  .credit-readout { align-self: end; }
+  .bet-control { align-self: start; }
+}
+
+@container jade-cabinet (max-width: 370px) {
+  .cabinet-readouts .pearl-promise i { display: none; }
+  .cabinet-readouts .fortune-seal b { font-size: 7px; }
+}

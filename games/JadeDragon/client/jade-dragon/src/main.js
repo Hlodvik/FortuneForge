@@ -1,6 +1,7 @@
 import './style.css';
 import './fortune.css';
 import './laptop.css';
+import './cabinet.css';
 import './fit-viewport.js';
 import {callHost} from './bridge.js';
 import {JadeRenderer} from './renderer.js';
@@ -33,22 +34,26 @@ function update(){
  const free=state?.freeSpinsRemaining>0,points=free?state.freeSpinWagerPoints:bet;
  const cascade=rules?.cascadeRules;
  const inFreeFeature=free||(Boolean(cascade)&&busy&&roundIsFree);
- $('#balance').textContent=money(balance);$('#bet').textContent=money(points*pointValueInCents);$('#last-win').textContent=money(win);$('#round-total').textContent=money(inFreeFeature?featureTotal:win);
+ $('#balance').textContent=money(balance);$('#bet').textContent=money(points*pointValueInCents);$('#last-win').textContent=money(win);
  $('#spin').disabled=!ready||modal||auto||uncertain;$('#spin-label').textContent=busy?'REVEAL':free?'FREE SPIN':'SPIN';$('#spin').setAttribute('aria-label',busy?'Show current spin result instantly':'Spin reels');$('#spin').setAttribute('aria-busy',String(busy));
  for(const id of ['#bet-minus','#bet-plus'])$(id).disabled=!ready||busy||free||auto||uncertain;
  $('#bet-minus').disabled||=bet===BET_POINTS[0];$('#bet-plus').disabled||=bet===BET_POINTS.at(-1);
  $('#auto').disabled=!ready||uncertain;$('#auto-label').textContent=auto?'STOP AUTO':'AUTO';$('#auto').setAttribute('aria-pressed',String(auto));$('#auto').classList.toggle('active',auto);
  $('#jade-game').classList.toggle('bonus-active',inFreeFeature);$('#jade-game').dataset.bonus=state?.freeSpinFeatureMode?'wrath':inFreeFeature?'moon':'';
- $('#feature-name').textContent=state?.freeSpinFeatureMode?'DRAGON’S AWAKENING':inFreeFeature?'MOONLIT FREE GAMES':cascade?'JADE CASCADES':'JADE DRAGON';
- $('#feature-caption').textContent=free?`${state.freeSpinsRemaining} free games remaining · wager locked`:cascade?'Winning symbols clear and new symbols fall':'23 paylines · Server-settled outcomes';
- $('#feature-meter-label').textContent=inFreeFeature?'SESSION FEATURE WIN':'ROUND WIN';$('#free-spins').textContent=free?`${state.freeSpinsRemaining} free spins remaining`:maximumBet();
+ const featureCopy = $('#feature-copy');
+ featureCopy.hidden = !inFreeFeature;
+ if (inFreeFeature) {
+  $('#feature-name').textContent = state?.freeSpinFeatureMode ? 'Dragon’s Awakening' : 'Free Games';
+  $('#feature-caption').textContent = free ? `${state.freeSpinsRemaining} left · wager locked` : 'Final free spin';
+  $('#round-total').textContent = money(featureTotal);
+ }
+ $('#free-spins').textContent=free?`${state.freeSpinsRemaining} free spins remaining`:maximumBet();
  $('#free-games-badge').hidden=!free;$('#free-games-badge-count').textContent=`${state?.freeSpinsRemaining??0} LEFT`;
  $('#boost-row').hidden=Boolean(cascade);
  $('#boost').disabled=Boolean(cascade)||!ready||busy||free||auto||uncertain||(state?.specialPointsBalance??0)<8;$('#special-count').textContent=state?.specialPointsBalance??0;
  if(free)showFree();else $('#free-games-popup').hidden=true;
  if(cascade){
   const multipliers=(busy?roundIsFree:free)?cascade.freeSpinMultipliers:cascade.baseMultipliers;
-  $('#multiplier').textContent=cascadeMultiplier===null?'CASCADES':cascadeMultiplier+'× CASCADE';
   renderMultiplierLadder(multipliers);
   return;
  }
@@ -72,13 +77,12 @@ async function init(){
   const data=await callHost('init');
   state=data.state;balance=data.balanceCents;rules=data.rules;
   pointValueInCents=rules.wagering?.pointValueInCents??pointValueInCents;
-  $('#maximum-bet').textContent=maximumBet();
   if(rules.cascadeRules&&renderer&&!state.freeSpinsRemaining){
    const ids=CASCADE_SYMBOL_IDS;
    renderer.setGrid(Array.from({length:5},(_,reel)=>Array.from({length:4},(_,row)=>ids[(reel*3+row)%ids.length])));
   }
   renderRules();ready=Boolean(renderer);$('#loading').hidden=true;
-  $('#message').textContent='Your Fortune Forge balance is connected. Spin when ready.';
+  if (ready) $('#message').textContent = '';
   update();
  }catch(error){$('#loading p').textContent=error.message;$('#message').textContent=error.message;}
 }
@@ -115,7 +119,7 @@ async function spin(boost=false){
  if(!free&&balance<wager*pointValueInCents){stop();$('#message').textContent='Your balance is too low for this bet.';return;}
  const previousFeatureTotal=free?featureTotal:0;
  roundIsFree=free;busy=true;instantRequested=false;renderer.speed=$('#instant-results').checked?2:1;
- win=0;$('#free-games-popup').hidden=true;update();
+ win=0;$('#message').textContent='';$('#free-games-popup').hidden=true;update();
  try{
   if(free&&!instantRequested){$('#free-popup-count').textContent=state.freeSpinsRemaining;$('#free-games-popup').hidden=false;await countdown();$('#free-games-popup').hidden=true;}
   if(!ready||uncertain)return;
@@ -182,7 +186,7 @@ function renderRules() {
  const ways = number.format(cascade.ways);
  $('#ways-label').querySelector('strong').textContent = ways;
  $('#ways-label').lastChild.textContent = ' WAYS';
- $('#pearl-promise').textContent = cascade.requiredPearls + ' PEARLS UNLOCK FREE SPINS';
+ $('#pearl-promise').textContent = cascade.requiredPearls + ' PEARLS · FREE SPINS';
  $('#rules-summary').textContent = 'Match symbols on consecutive reels starting from the left. Each matching combination across those reels pays, with up to ' + ways + ' ways on the 5×4 grid.';
  $('#legacy-rules-details').hidden = true;
  const details = $('#cascade-rules-details');
@@ -206,7 +210,7 @@ function renderRules() {
 }
 $('#spin').onclick=event=>{if(busy||event.detail>1){finishCurrentSpin();return;}spin();};$('#boost').onclick=()=>spin(true);$('#auto').onclick=()=>{if(auto)stop();else{auto=true;update();if(!busy)spin();}};
 for(const [id,delta] of [['#bet-minus',-1],['#bet-plus',1]])$(id).onclick=()=>{if(busy||auto||state?.freeSpinsRemaining||uncertain)return;bet=BET_POINTS[Math.max(0,Math.min(BET_POINTS.length-1,BET_POINTS.indexOf(bet)+delta))];update();};
-const openRules=()=>{stop();modal=true;$('#rules').showModal();update();};$('#info').onclick=openRules;$('#rules-button').onclick=openRules;$('#close-rules').onclick=()=>$('#rules').close();$('#rules').addEventListener('close',()=>{modal=false;update();});
+const openRules=()=>{stop();modal=true;$('#rules').showModal();update();};$('#info').onclick=openRules;$('#close-rules').onclick=()=>$('#rules').close();$('#rules').addEventListener('close',()=>{modal=false;update();});
 $('#sound').onclick=async()=>{const enabled=await audio.toggle();$('#sound').classList.toggle('sound-on',enabled);$('#sound').setAttribute('aria-label',enabled?'Mute sound':'Enable sound');};
 $('#fullscreen').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});addEventListener('pagehide',stop);$('#canvas-host').addEventListener('renderer-lost',()=>{stop();ready=false;uncertain=true;finishCurrentSpin();$('#message').textContent='Graphics paused. Reload to recover your server balance.';update();});

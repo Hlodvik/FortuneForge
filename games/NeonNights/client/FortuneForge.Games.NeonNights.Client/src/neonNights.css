@@ -216,9 +216,21 @@
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger {
-  top: calc(4.35rem + max(0.9rem, env(safe-area-inset-top)));
-  bottom: auto;
   gap: 0.35rem;
+}
+
+@media (min-width: 641px) and (min-height: 501px), (min-width: 1051px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger {
+    top: calc(4.35rem + max(0.9rem, env(safe-area-inset-top)));
+    bottom: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger {
+    padding-inline: 0.55rem;
+    letter-spacing: 0.04em;
+  }
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger span {
@@ -760,8 +772,23 @@
   visibility: hidden;
 }
 
-.neon-admin-triggers {
+.neon-admin-triggers--shortcut {
   display: none;
+}
+
+.neon-admin-triggers--settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgb(114 232 255 / 28%);
+}
+
+.neon-admin-triggers--settings h3 {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .neon-round-summary-overlay {
@@ -894,7 +921,7 @@
 }
 
 @media (min-width: 1200px) and (min-height: 700px) {
-  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-admin-triggers {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-admin-triggers--shortcut {
     position: absolute;
     right: 0;
     bottom: calc(100% + 0.65rem);
@@ -902,40 +929,51 @@
     gap: 0.45rem;
   }
 
-  .neon-admin-triggers__button {
-    display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
-    padding: 0.2rem;
-    place-items: center;
-    border: 1px solid #72e8ff;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #182041, #0c0e20 74%);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%), 0 0 0.65rem rgb(71 213 255 / 28%);
-    cursor: pointer;
-  }
+}
 
-  .neon-admin-triggers__button img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
+.neon-admin-triggers__button {
+  display: flex;
+  width: 2.75rem;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border: 1px solid #72e8ff;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #182041, #0c0e20 74%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%), 0 0 0.65rem rgb(71 213 255 / 28%);
+  color: #e4fbff;
+  cursor: pointer;
+}
 
-  .neon-admin-triggers__button:hover:not(:disabled),
-  .neon-admin-triggers__button:focus-visible {
-    border-color: #ff85df;
-    box-shadow: 0 0 0.8rem rgb(255 87 206 / 56%);
-  }
+.neon-admin-triggers__button img {
+  width: 2rem;
+  height: 2rem;
+  object-fit: contain;
+}
 
-  .neon-admin-triggers__button:focus-visible {
-    outline: 2px solid #ffdcf5;
-    outline-offset: 2px;
-  }
+.neon-admin-triggers--settings .neon-admin-triggers__button {
+  width: 100%;
+  gap: 0.3rem;
+  padding-inline: 0.35rem;
+  border-radius: 0.65rem;
+  font: 700 0.8rem/1.15 Inter, system-ui, sans-serif;
+}
 
-  .neon-admin-triggers__button:disabled {
-    opacity: 0.4;
-    cursor: default;
-  }
+.neon-admin-triggers__button:hover:not(:disabled),
+.neon-admin-triggers__button:focus-visible {
+  border-color: #ff85df;
+  box-shadow: 0 0 0.8rem rgb(255 87 206 / 56%);
+}
+
+.neon-admin-triggers__button:focus-visible {
+  outline: 2px solid #ffdcf5;
+  outline-offset: 2px;
+}
+
+.neon-admin-triggers__button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 @keyframes neon-arcade-add-rows {

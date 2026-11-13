@@ -17,7 +17,7 @@ import { NeonSpecialPlaysIntro, type DiscoFlare } from './components/NeonSpecial
 import { neonDiscoSymbols } from './disco.js'
 import { isCarPlayMode, neonCarPlayMode } from './roundState.js'
 import type { NeonNightsController } from './useNeonNights.js'
-import { discoMultipliers, type NeonNightsGameProps, type NeonTriggerSymbol } from './types.js'
+import { discoMultipliers, type NeonNightsGameProps } from './types.js'
 import './styles.css'
 import './components/NeonDiscoIntroFlare.css'
 
@@ -63,7 +63,27 @@ export function NeonNightsView({ controller: c, renderShell }: { controller: Neo
   const special = c.specialActive || discoVisible || c.arcadeExpanding
   const openHelp = () => { c.setIsAutoSpinning(false); c.setIsHelpOpen(true) }
   const openSettings = () => { c.setIsAutoSpinning(false); c.setIsSettingsOpen(true) }
-  const canAdmin = (c.demoMode && import.meta.env.DEV) || c.account?.role.toLowerCase() === 'admin'
+  const canAdmin = c.demoMode ? import.meta.env.DEV : c.account?.role.toLowerCase() === 'admin'
+  const adminTriggersDisabled = c.spinAvailability !== 'available' || c.isSpinning || c.isAdminTriggering
+    || c.state.freeSpinsRemaining > 0 || c.state.neonDiscoSpinsRemaining > 0
+    || Boolean(c.roundSummary) || Boolean(c.specialIntro) || c.arcadeExpanding || choosingNitro
+  const renderAdminTriggers = (inSettings: boolean) => canAdmin && (
+    <div className={inSettings ? 'neon-admin-triggers neon-admin-triggers--settings' : 'neon-admin-triggers neon-admin-triggers--shortcut'}
+      role="group" aria-label="Admin Special Plays triggers">
+      {inSettings && <h3>Activate Special Plays</h3>}
+      {adminSymbols.map(({ symbol, label }) => (
+        <button key={symbol} className="neon-admin-triggers__button" type="button"
+          aria-label={`Trigger ${label} Special Plays`} disabled={adminTriggersDisabled}
+          onClick={async () => {
+            await c.triggerAdmin(symbol)
+            if (inSettings) c.setIsSettingsOpen(false)
+          }}>
+          <img src={getSlotSymbolDefinition(neonSymbols, symbol).image} alt="" />
+          {inSettings && <span>{label}</span>}
+        </button>
+      ))}
+    </div>
+  )
   const content = <div
     className={`slots-page slots-page--theme-backdrop${special ? ' slots-page--special-game' : ''}${c.isAutoSpinning || c.isStopRequested ? ' slots-page--fast-spin' : ''}`}
     style={c.pageStyle} data-slot-theme={neonCabinet.id} data-slot-controls="sidecar"
@@ -171,10 +191,7 @@ export function NeonNightsView({ controller: c, renderShell }: { controller: Neo
           <path d="m9 4 .8-2h4.4L15 4l2 .9 2.1-.2 2.2 3.8-1.3 1.8v2.3l1.3 1.8-2.2 3.8-2.1-.2-2 .9-.8 2H9.8l-.8-2-2-.9-2.1.2L2.7 14.4 4 12.6v-2.3L2.7 8.5l2.2-3.8 2.1.2Z" /><circle cx="12" cy="11.5" r="3" />
         </svg>
       </button>
-      {canAdmin && <div className="neon-admin-triggers" role="group" aria-label="Admin Special Plays triggers">{adminSymbols.map(({ symbol, label }) => <button
-        key={symbol} className="neon-admin-triggers__button" type="button" aria-label={`Trigger ${label} Special Plays`}
-        disabled={c.spinAvailability !== 'available' || c.isSpinning || c.isAdminTriggering || c.state.freeSpinsRemaining > 0 || c.state.neonDiscoSpinsRemaining > 0 || Boolean(c.roundSummary) || Boolean(c.specialIntro) || c.arcadeExpanding}
-        onClick={() => { void c.triggerAdmin(symbol as NeonTriggerSymbol) }}><img src={getSlotSymbolDefinition(neonSymbols, symbol).image} alt="" aria-hidden="true" /></button>)}</div>}
+      {renderAdminTriggers(false)}
     </div>
     {c.hasCompletedSpin && c.lastWin > 0 && <div key={c.resultKey} className="slots-page__result-atmosphere" data-celebration="neon-scan" data-outcome="win" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>}
     {special && <div className="slots-page__special-game-dimmer" aria-hidden="true" />}
@@ -210,7 +227,9 @@ export function NeonNightsView({ controller: c, renderShell }: { controller: Neo
       <button className="slots-page__mute-shortcut" type="button" aria-pressed={c.audio.preferences.mode === 'muted'} onClick={c.audio.toggleMuted}><kbd aria-hidden="true">M</kbd> Mute</button>
     </div>
     <AudioSettingsDialog theme="neon-nights" isOpen={c.isSettingsOpen} onClose={() => c.setIsSettingsOpen(false)} preferences={c.audio.preferences}
-      onToggleMuted={c.audio.toggleMuted} onToggleResultsOnly={c.audio.toggleResultsOnly} onVolumeChange={c.audio.setVolume} />
+      onToggleMuted={c.audio.toggleMuted} onToggleResultsOnly={c.audio.toggleResultsOnly} onVolumeChange={c.audio.setVolume}>
+      {renderAdminTriggers(true)}
+    </AudioSettingsDialog>
     <WinHelpDialog theme="neon-nights" isOpen={c.isHelpOpen} closeButtonRef={c.helpCloseButtonRef} onClose={() => c.setIsHelpOpen(false)} title="How to win" eyebrow="Neon Nights">
       {c.discoActive ? <NeonDiscoHelp wager={c.activeWager} /> : <NeonHelp carPlay={carControlsActive} />}
     </WinHelpDialog>

@@ -5,6 +5,7 @@ import { useSlotDialog, type SlotDialogTheme } from '../hooks/useSlotDialog'
 import { SlotDialogCloseIcon } from './SlotDialogCloseIcon'
 
 type AudioSettingsDialogProps = {
+  children?: ReactNode
   musicCredit?: ReactNode
   isOpen: boolean
   onClose: () => void
@@ -16,6 +17,7 @@ type AudioSettingsDialogProps = {
 }
 
 export function AudioSettingsDialog({
+  children,
   musicCredit,
   isOpen,
   onClose,
@@ -139,6 +141,7 @@ export function AudioSettingsDialog({
           <p className="audio-settings__note">Audio preferences are saved on this device.</p>
           {musicCredit && <p className="audio-settings__music-credit">{musicCredit}</p>}
         </div>
+        {children}
       </section>
     </div>
   )

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { neonDefaultWagerIndex } from '@fortuneforge/games-neon-nights/manifest'
 import { slotPointsToRand } from '../../../features/slots/slotPagePresentation'
 import engineContracts from '../shared/__fixtures__/engineGuide-contracts.json'
 import { NEON_NIGHTS_SLOT_GAME } from './manifest'
@@ -11,12 +12,13 @@ const activeSymbols = [
 ] as const
 
 describe('Neon arcade presentation contract', () => {
-  it('keeps the same cash wager range with cent precision and no collection or scatter awards', () => {
+  it('offers R0.50 through R100, starts at R3, and has no collection or scatter awards', () => {
     expect(experience.symbols.serverSymbolSetId).toBe(contract.symbols.symbolSetId)
     expect(experience.rules.pointValueInCents).toBe(contract.wagering.pointValueInCents)
-    expect(experience.rules.wagerOptions).toHaveLength(1_000)
+    expect(experience.rules.wagerOptions).toHaveLength(200)
     expect(slotPointsToRand(experience.rules.wagerOptions[0], experience.rules.pointValueInCents)).toBe(.5)
-    expect(slotPointsToRand(experience.rules.wagerOptions.at(-1)!, experience.rules.pointValueInCents)).toBe(500)
+    expect(slotPointsToRand(experience.rules.wagerOptions.at(-1)!, experience.rules.pointValueInCents)).toBe(100)
+    expect(slotPointsToRand(experience.rules.wagerOptions[neonDefaultWagerIndex], experience.rules.pointValueInCents)).toBe(3)
     expect(experience.rules.wagerOptions.every((wager, index) => wager === (index + 1) * 50)).toBe(true)
     expect(experience.features.collections).toBeUndefined()
     expect(experience.features.energy).toBeUndefined()

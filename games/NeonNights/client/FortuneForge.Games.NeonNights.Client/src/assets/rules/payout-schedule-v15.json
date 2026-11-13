@@ -1,0 +1,13 @@
+{
+  "base": 0.765,
+  "car": 1.23,
+  "discoFourSymbolAwards": {
+    "2": 137,
+    "4": 140,
+    "5": 143,
+    "7": 145,
+    "DISCO_MARTINI": 151,
+    "DISCO_SEVEN": 156,
+    "DISCO_BALL": 162
+  }
+}

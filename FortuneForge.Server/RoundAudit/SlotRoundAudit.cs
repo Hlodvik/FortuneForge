@@ -22,6 +22,8 @@ internal static class SlotRoundAudit
         if (result.EngineAudit is not { } audit)
             return [new("slot-engine-evidence-missing", "error",
                 "The engine's rules and generated reel evidence were not captured.")];
+        if (result.NeonNitroWild is not null && !NeonArcadeSlotDefinitions.SupportsNitroWild(audit.EngineVersion))
+            return [new("slot-neon-nitro-version-mismatch", "error", "Nitro evidence requires its versioned Neon engine.")];
         if (audit.EngineVersion == FortuneForge.Games.JadeDragon.JadeDragonCascadeRules.Version)
             return Slots.Games.JadeDragon.JadeDragonAudit.CheckCascade(result, settledPayout);
         if (audit.JadeDragonCascadeDraws is not null || result.JadeDragonCascade is not null ||

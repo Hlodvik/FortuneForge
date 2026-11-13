@@ -8,5 +8,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../../shared/FortuneForge.Games.Slots.Contracts/FortuneForge.Games.Slots.Contracts.csproj" />
+    <EmbeddedResource Include="../../client/FortuneForge.Games.NeonNights.Client/src/assets/rules/payout-schedule-v15.json"
+                      LogicalName="NeonNights.PayoutSchedule.v15.json" />
+    <EmbeddedResource Include="../../client/FortuneForge.Games.NeonNights.Client/src/assets/rules/wagering.json"
+                      LogicalName="NeonNights.Wagering.json" />
   </ItemGroup>
 </Project>

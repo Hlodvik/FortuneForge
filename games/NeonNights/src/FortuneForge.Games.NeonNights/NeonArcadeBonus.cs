@@ -25,6 +25,7 @@ public static class NeonArcadeBonus
 {
     public const string PaidArcadeFeatureMode = "arcade-rows";
     public const string PaidCarFeatureMode = "car-rows";
+    internal const string BoostSymbolId = "FREE";
 
     private static readonly (string Kind, string Symbol)[] ActivatorRoles =
         [("car", "6"), ("disco-ball", "POWER"), ("arcade-cabinet", "SEAL_RAND")];
@@ -50,7 +51,7 @@ public static class NeonArcadeBonus
         if (boostPercentPerSymbol < 0) throw new ArgumentOutOfRangeException(nameof(boostPercentPerSymbol));
         var positions = reels.SelectMany((reel, reelIndex) => reel.Select((symbol, rowIndex) =>
             (Symbol: symbol, Position: new GridPosition(reelIndex, rowIndex)))).ToArray();
-        var bonusCount = positions.Count(cell => cell.Symbol == "FREE");
+        var bonusCount = positions.Count(cell => cell.Symbol == BoostSymbolId);
         var multiplier = checked(1m + bonusCount * boostPercentPerSymbol / 100m);
         var payout = bonusCount == 0 || paylinePayout.TotalPoints == 0
             ? paylinePayout : MultiplyCentPayout(paylinePayout, multiplier);

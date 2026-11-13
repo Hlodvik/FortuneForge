@@ -5,15 +5,17 @@ import {
   SlotMachine, SlotSymbol, SymbolValueGuide, shouldUseAnimatedSymbol, WinHelpDialog,
 } from '@fortuneforge/slot-client-core'
 import { WinningPaylines, type ActivePaidPath } from '@fortuneforge/client-presentation/slots/paylines'
-import { neonCabinet, neonRules, neonSymbols } from './manifest.js'
+import { neonDiscoMusic } from './audio.js'
+import { neonCabinet, neonCarSymbols, neonRules, neonSymbols } from './manifest.js'
 import { NeonDiscoFloor } from './components/NeonDiscoFloor.js'
 import { NeonDiscoClusters } from './components/NeonDiscoClusters.js'
 import { NeonDiscoHelp } from './components/NeonDiscoHelp.js'
 import { NeonHelp } from './components/NeonHelp.js'
+import { NeonNitroFlights } from './components/NeonNitroFlights.js'
 import { NeonRoundSummary } from './components/NeonRoundSummary.js'
 import { NeonSpecialPlaysIntro, type DiscoFlare } from './components/NeonSpecialPlaysIntro.js'
 import { neonDiscoSymbols } from './disco.js'
-import { isCarPlayMode } from './roundState.js'
+import { isCarPlayMode, neonCarPlayMode } from './roundState.js'
 import type { NeonNightsController } from './useNeonNights.js'
 import { discoMultipliers, type NeonNightsGameProps, type NeonTriggerSymbol } from './types.js'
 import './styles.css'
@@ -21,10 +23,12 @@ import './components/NeonDiscoIntroFlare.css'
 
 const money = (amount: number) => `R${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount)}`
 const adminSymbols = [{ symbol: '6', label: 'Sports car' }, { symbol: 'POWER', label: 'Disco ball' }] as const
+const nitroBottleImage = getSlotSymbolDefinition(neonCarSymbols, 'NITRO').image
+const reelPickPulseMs = 1_000
 const paylineAppearance = { classPrefix: 'neon-winning-paylines', variant: 'neon', labelOffset: 22, labelMinimumY: 34,
   amountGradient: [{ offset: '0%', color: '#ffe54c' }, { offset: '24%', color: '#ffdb21' }, { offset: '49%', color: '#ffc00d' }, { offset: '76%', color: '#f99508' }, { offset: '100%', color: '#d45607' }] }
 
-export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { controller: NeonNightsController } & Pick<NeonNightsGameProps, 'renderShell' | 'paymentAlerts'>) {
+export function NeonNightsView({ controller: c, renderShell }: { controller: NeonNightsController } & Pick<NeonNightsGameProps, 'renderShell'>) {
   const cabinetRef = useRef<HTMLDivElement>(null)
   const [activePath, setActivePath] = useState<ActivePaidPath | null>(null)
   const [discoFlare, setDiscoFlare] = useState<DiscoFlare | null>(null)
@@ -33,6 +37,18 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
   const specialSpinCount = discoVisible ? c.state.neonDiscoSpinsRemaining
     : carControlsActive && !c.specialIntro ? c.state.freeSpinsRemaining : null
   const showSpinTotal = c.hasCompletedSpin && !c.isSpinning && c.winningPaylines.length > 1 && c.lastWin > 0
+  const nitro = c.nitroPresentation
+  const choice = c.nitroChoice
+  const choosingNitro = Boolean(choice) || c.isChoosingNitro
+  const showNitroOptions = Boolean(choice) && !c.isSpinning && !c.isChoosingNitro
+  const showRespinOptions = !choosingNitro && c.respinSelecting && c.canChooseRespin
+  const reelPick = showNitroOptions ? 'WILD' : showRespinOptions ? 'RESPIN' : null
+  const eligibleReels = showNitroOptions ? c.nitroChoiceReels : showRespinOptions ? c.respinReels : []
+  const pickReels = [...eligibleReels].sort((left, right) => left - right)
+  const showRoundSummary = c.roundSummary !== null && !reelPick && !c.isRespinning && !choosingNitro
+  const nitroBottles = nitro ?? choice?.neonNitroWild
+  const secondNitro = nitroBottles?.secondNitro
+  const nitroPhase = nitro?.phase ?? (showNitroOptions ? 'choosing' : undefined)
   const finishIntro = useCallback((flare?: DiscoFlare) => {
     if (flare && c.discoActive) setDiscoFlare(flare)
     if (c.specialIntro) c.finishSpecialIntro(c.specialIntro.symbol)
@@ -41,7 +57,9 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
   const highlighted = discoVisible
     ? c.cascadeFrame && c.cascadeFrame.phase !== 'drop' ? c.cascadeFrame.cleared : []
     : c.hasCompletedSpin && activePath?.resultKey === c.resultKey ? activePath.positions : fallbackPositions
-  const symbolSet = discoVisible ? neonDiscoSymbols : neonSymbols
+  const showCarValues = (carControlsActive && c.state.freeSpinFeatureMode === neonCarPlayMode) ||
+    c.roundSummary?.mode === neonCarPlayMode
+  const symbolSet = discoVisible ? neonDiscoSymbols : showCarValues ? neonCarSymbols : neonSymbols
   const special = c.specialActive || discoVisible || c.arcadeExpanding
   const openHelp = () => { c.setIsAutoSpinning(false); c.setIsHelpOpen(true) }
   const openSettings = () => { c.setIsAutoSpinning(false); c.setIsSettingsOpen(true) }
@@ -51,15 +69,20 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
     style={c.pageStyle} data-slot-theme={neonCabinet.id} data-slot-controls="sidecar"
     data-slot-celebration="neon-scan" data-special-round="neon-midnight-mix" data-special-earn-style="orbit"
     data-neon-arcade-expanding={c.arcadeExpanding ? 'true' : undefined}
-    data-neon-arcade-rows={c.displayedReels[0]?.length === 7 ? 'true' : undefined}
+    data-neon-arcade-rows={c.carCabinetExpanded ? 'true' : undefined}
     data-neon-car-round={carControlsActive ? 'true' : undefined}
     data-neon-disco-round={discoVisible ? 'true' : undefined} data-neon-disco-cascade={c.cascadeFrame?.phase}
     data-neon-disco-deal={c.discoDealPhase ?? undefined}
+    data-neon-nitro-phase={nitroPhase}
+    data-neon-respin-selection={showRespinOptions ? 'true' : undefined}
   >
     <main className="slots-page__main">
       <h1 className="slots-page__accessible-title">Neon Nights</h1>
       <div className="slots-page__layout"><div className="slots-page__stage">
-        <img className="slots-page__title-art" {...neonCabinet.titleArtwork} alt="" />
+        <div className="neon-title-lockup">
+          <img className="slots-page__title-art" {...neonCabinet.titleArtwork} alt="" />
+          {reelPick && <div className="neon-reel-pick-prompt" role="status">{reelPick}</div>}
+        </div>
         {discoVisible && <div className="neon-disco-multipliers" role="list" aria-label="Disco multipliers">
           {discoMultipliers.map(multiplier => <div className="neon-disco-multipliers__badge" role="listitem" key={multiplier}
             data-active={c.discoMultiplier === multiplier ? 'true' : undefined}
@@ -68,47 +91,76 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
           </div>)}
         </div>}
         <div ref={cabinetRef} className={`slots-page__cabinet-spotlight${special ? ' slots-page__cabinet-spotlight--lit' : ''}`}>
-          <SlotMachine cabinetTheme={neonCabinet} reelCount={5} renderReel={reelIndex => <div
-            className={`slot-reel__symbols slot-reel__symbols--${c.reelMotion[reelIndex]}`} style={c.reelStripStyle(reelIndex)}
-          >{c.displayedReels[reelIndex].map((symbol, rowIndex) => {
-            const order = highlighted.findIndex(cell => cell.reel === reelIndex && cell.row === rowIndex)
-            const cleared = c.cascadeFrame?.cleared.some(cell => cell.reel === reelIndex && cell.row === rowIndex) ?? false
-            const dropRows = c.cascadeFrame?.phase === 'drop' ? c.cascadeFrame.dropRows[reelIndex]?.[rowIndex] ?? 0 : 0
-            const tile = <SlotSymbol key={`row-${rowIndex}`} symbol={symbol} symbolSet={symbolSet}
-              reelIndex={reelIndex} rowIndex={rowIndex} animated={shouldUseAnimatedSymbol(c.reducedMotion, c.reelMotion[reelIndex])}
-              highlighted={order >= 0} highlightOrder={discoVisible ? 0 : order} />
-            if (c.discoDealPhase) return <div key={`row-${rowIndex}`}
-              className={`neon-disco-deal__cell neon-disco-deal__cell--${c.discoDealPhase}`}
-              style={c.discoDealStyle(reelIndex, rowIndex)}>{tile}</div>
-            return c.cascadeFrame && (cleared || dropRows > 0) ? <div key={`row-${rowIndex}`}
-              className={`neon-disco-cascade__cell neon-disco-cascade__cell--${dropRows > 0 ? 'drop' : c.cascadeFrame.phase}`}
-              style={dropRows > 0 ? { '--neon-disco-drop-rows': dropRows } as CSSProperties : undefined}>{tile}</div> : tile
-          })}</div>} />
+          <SlotMachine cabinetTheme={neonCabinet} reelCount={5} renderReel={reelIndex => {
+            const hasBottle = reelIndex === nitroBottles?.trigger.reel || reelIndex === secondNitro?.reel
+            const nitroReel = nitro && (reelIndex === nitro.targetReel ? 'target' : hasBottle ? 'bottle' : 'other')
+            const pickOrder = pickReels.indexOf(reelIndex)
+            const pickStyle = pickOrder < 0 ? undefined : {
+              '--neon-reel-pick-delay': `${pickOrder * reelPickPulseMs}ms`,
+              '--neon-reel-pick-cycle': `${pickReels.length * reelPickPulseMs}ms`,
+              '--neon-reel-pick-peak': `${50 / pickReels.length}%`, '--neon-reel-pick-end': `${100 / pickReels.length}%`,
+            } as CSSProperties
+            return <div className="neon-reel-face" data-neon-reel-pick={pickOrder >= 0 ? 'true' : undefined} style={pickStyle}>
+              <div className={`slot-reel__symbols slot-reel__symbols--${c.reelMotion[reelIndex]}`}
+                data-neon-nitro-reel={nitroReel ?? undefined} style={c.reelStripStyle(reelIndex)}>
+              {c.displayedReels[reelIndex].map((symbol, rowIndex) => {
+                const order = highlighted.findIndex(cell => cell.reel === reelIndex && cell.row === rowIndex)
+                const cleared = c.cascadeFrame?.cleared.some(cell => cell.reel === reelIndex && cell.row === rowIndex) ?? false
+                const dropRows = c.cascadeFrame?.phase === 'drop' ? c.cascadeFrame.dropRows[reelIndex]?.[rowIndex] ?? 0 : 0
+                const tile = <SlotSymbol key={`row-${rowIndex}`} symbol={symbol} symbolSet={symbolSet}
+                  reelIndex={reelIndex} rowIndex={rowIndex} animated={shouldUseAnimatedSymbol(c.reducedMotion, c.reelMotion[reelIndex])}
+                  highlighted={!reelPick && order >= 0} highlightOrder={discoVisible ? 0 : order} />
+                if (nitroPhase && (nitroBottles?.trigger.reel === reelIndex && nitroBottles.trigger.row === rowIndex ||
+                    secondNitro?.reel === reelIndex && secondNitro.row === rowIndex)) {
+                  return <div className="neon-nitro-bottle" key={`row-${rowIndex}`}>{tile}
+                    {symbol !== 'NITRO' && <img className="neon-nitro-bottle__afterimage" src={nitroBottleImage} alt="" aria-hidden="true" />}
+                  </div>
+                }
+                if (c.discoDealPhase) return <div key={`row-${rowIndex}`}
+                  className={`neon-disco-deal__cell neon-disco-deal__cell--${c.discoDealPhase}`}
+                  style={c.discoDealStyle(reelIndex, rowIndex)}>{tile}</div>
+                return c.cascadeFrame && (cleared || dropRows > 0) ? <div key={`row-${rowIndex}`}
+                  className={`neon-disco-cascade__cell neon-disco-cascade__cell--${dropRows > 0 ? 'drop' : c.cascadeFrame.phase}`}
+                  style={dropRows > 0 ? { '--neon-disco-drop-rows': dropRows } as CSSProperties : undefined}>{tile}</div> : tile
+                })}
+              </div>
+              {nitroReel === 'target' && <span className="neon-nitro-edge" aria-hidden="true" />}
+              {pickOrder >= 0 && <button className="neon-reel-pick-button" type="button"
+                aria-label={showNitroOptions ? `Turn reel ${reelIndex + 1} Wild` : `Respin reel ${reelIndex + 1}`}
+                onClick={() => { void (showNitroOptions ? c.chooseNitroReel(reelIndex) : c.chooseRespinReel(reelIndex)) }} />}
+            </div>
+          }} />
+          {nitro?.phase === 'expanding' && <NeonNitroFlights reel={nitro.targetReel}
+            image={getSlotSymbolDefinition(neonCarSymbols, 'ACE').image} />}
           {discoVisible ? <NeonDiscoClusters cabinetRef={cabinetRef} clusters={c.winningPaylines}
             resultKey={c.resultKey} visible={c.hasCompletedSpin && c.cascadeFrame !== null && c.cascadeFrame.phase !== 'drop'}
             reducedMotion={c.reducedMotion} formatAmount={points => `+${money(points / 100)}`} />
           : <WinningPaylines appearance={paylineAppearance} boardSelector=".slots-page__cabinet-spotlight"
             reelsSelector=".slot-machine__reels" cellSelector=".slot-symbol[data-reel-index][data-row-index]"
-            paylines={c.winningPaylines} resultKey={c.resultKey} visible={c.hasCompletedSpin}
+            paylines={c.winningPaylines} resultKey={c.resultKey} visible={c.hasCompletedSpin && !reelPick}
             reducedMotion={c.reducedMotion} formatWinAmount={points => `+${money(points / 100)}`} onActivePathChange={setActivePath} />}
         </div>
-        {!discoVisible && <div className="neon-spin-total">
+        {c.carCabinetExpanded || discoVisible ? <div className="neon-spin-total neon-round-subtotal">
+          <output className="neon-win-amount" aria-label={discoVisible ? 'Disco Plays subtotal' : 'Car Plays subtotal'}>{money(c.roundWinnings)}</output>
+        </div> : <div className="neon-spin-total">
           {showSpinTotal && <output className="neon-win-amount" aria-label="Total win">+{money(c.lastWin)}</output>}
         </div>}
         <div className="slots-page__playbar" aria-label="Wager and spin controls">
-          <SidecarSpinControls activeWager={c.activeWager} disabled={c.spinAvailability !== 'available' || Boolean(c.specialIntro) || Boolean(c.roundSummary) || c.arcadeExpanding}
+          <SidecarSpinControls activeWager={c.activeWager} disabled={c.spinAvailability !== 'available' || Boolean(c.specialIntro) || Boolean(c.roundSummary) || c.arcadeExpanding || c.isRespinning || choosingNitro}
             freeSpinsRemaining={c.state.freeSpinsRemaining} isAutoSpinning={c.isAutoSpinning} isFreeSpinBadgePopping={false}
             autoSpinReplacement={specialSpinCount === null ? undefined : (
               <output className="neon-special-spin-count" aria-label={discoVisible ? 'Disco spins remaining' : 'Car spins remaining'}>×{specialSpinCount}</output>
             )}
-            isSpinning={c.isSpinning} isStopRequested={c.isStopRequested} allowStop={!c.discoActive} onAutoSpinChange={active => { c.setSpinError(null); c.setIsAutoSpinning(active) }}
+            isSpinning={c.isSpinning} isStopRequested={c.isStopRequested} allowStop={!c.discoActive && !c.isRespinning} onAutoSpinChange={active => { c.setSpinError(null); c.setIsAutoSpinning(active) }}
             onSelectWager={c.selectWager} onSpin={c.handleSpinButtonClick} pointValueInCents={1} showFreeSpinBadge={false}
             specialControlsActive={carControlsActive} specialRoundLabel="Special Plays" wagerIndex={c.wagerIndex} wagerOptions={neonRules.wagerOptions} />
-          {paymentAlerts}
+          {showRespinOptions && c.roundSummary && <button type="button" className="neon-respin-button"
+            onClick={c.cancelRespinSelection}>Continue</button>}
         </div>
       </div></div>
     </main>
-    <SymbolValueGuide symbolSet={symbolSet} showSidePanel sidePanelClassName="symbol-value-guide--neon" showValueTokens={false}
+    <SymbolValueGuide symbolSet={symbolSet} showSidePanel={!c.specialIntro} sidePanelMode={special ? 'on-demand' : 'auto'}
+      sidePanelClassName="symbol-value-guide--neon" showValueTokens={false}
       wager={c.activeWager} isOpen={c.isSymbolGuideOpen} onOpenChange={c.setIsSymbolGuideOpen} />
     <div className="slots-page__utility-buttons neon-utility-buttons" role="group" aria-label="Game options">
       <button className="slots-page__help-button" type="button" aria-label="How to win" aria-haspopup="dialog" aria-expanded={c.isHelpOpen} onClick={openHelp}>
@@ -126,11 +178,9 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
     </div>
     {c.hasCompletedSpin && c.lastWin > 0 && <div key={c.resultKey} className="slots-page__result-atmosphere" data-celebration="neon-scan" data-outcome="win" aria-hidden="true">{Array.from({ length: 14 }, (_, index) => <i key={index} />)}</div>}
     {special && <div className="slots-page__special-game-dimmer" aria-hidden="true" />}
-    {discoVisible && <NeonDiscoFloor bpm={100} getPlaybackSeconds={c.getDiscoMusicTime} />}
-    {c.specialIntro && !c.isSpinning && <NeonSpecialPlaysIntro cabinetRef={cabinetRef} position={c.specialIntro.position} symbol={c.specialIntro.symbol}
-      symbolImage={getSlotSymbolDefinition(neonSymbols, c.specialIntro.symbol).image}
+    {discoVisible && <NeonDiscoFloor bpm={neonDiscoMusic.bpm} getPlaybackSeconds={c.getDiscoMusicTime} />}
+    {c.specialIntro && !c.isSpinning && <NeonSpecialPlaysIntro cabinetRef={cabinetRef} symbol={c.specialIntro.symbol}
       volume={c.audio.preferences.mode === 'muted' ? 0 : c.audio.preferences.volume / 100}
-      reducedMotion={c.reducedMotion}
       onDiscoMusicStart={c.discoActive ? c.startDiscoIntroMusic : undefined}
       onComplete={finishIntro} />}
     {discoFlare && createPortal(
@@ -145,15 +195,16 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
         }} />,
       document.body,
     )}
-    {c.roundSummary && <NeonRoundSummary cabinetRef={cabinetRef} title={isCarPlayMode(c.roundSummary.mode) ? 'Car Plays' : c.roundSummary.mode === 'neon-disco' ? 'Disco Plays' : 'Special Plays'}
-      amount={money(c.roundSummary.totalRand)} onDismiss={c.dismissRoundSummary} />}
+    {showRoundSummary && c.roundSummary && <NeonRoundSummary cabinetRef={cabinetRef} title={isCarPlayMode(c.roundSummary.mode) ? 'Car Plays' : c.roundSummary.mode === 'neon-disco' ? 'Disco Plays' : 'Special Plays'}
+      amount={money(c.roundSummary.totalRand)} onDismiss={c.dismissRoundSummary} busy={c.respinDismissPending}
+      error={c.spinError} />}
     {c.winAward && <div key={c.winAward.id}
       className={`slots-page__win-award slots-page__win-award--neon slots-page__win-award--${c.winAward.winTier} slots-page__win-award--${c.winAward.tier}${c.winAward.flight ? ' slots-page__win-award--flying' : ''}${c.winAward.flight === 'spin-total' ? ' neon-win-award--to-total' : ''}`}
       aria-hidden="true" style={{ left: c.winAward.left, top: c.winAward.top, animationDuration: `${c.winAward.durationMs}ms`, '--win-travel-x': `${c.winAward.travelX}px`, '--win-travel-y': `${c.winAward.travelY}px`, '--neon-win-total-scale': c.winAward.endScale } as CSSProperties}>
       {c.winAward.flight !== 'spin-total' && <span>{c.winAward.tier !== 'win' || c.winAward.winTier === 'big' ? 'BIG WIN!' : c.winAward.winTier === 'great' ? 'GREAT WIN!' : 'NICE!'}</span>}
       <strong className="neon-win-amount">+{money(c.winAward.displayAmount)}</strong>
     </div>}
-    {c.spinError && <footer className="slots-page__footer slots-page__footer--error"><div className="game-outcome game-outcome--error" role="status">{c.spinError}</div></footer>}
+    {c.spinError && !showRoundSummary && <div className="neon-spin-error" role="status">{c.spinError}</div>}
     <div className="slots-page__keyboard-help" role="group" aria-label="Keyboard controls">
       <span><kbd>Space</kbd> {c.discoActive ? 'Spin' : 'Spin / stop'}</span><span><kbd>←</kbd><kbd>→</kbd> Wager</span>
       <button className="slots-page__mute-shortcut" type="button" aria-pressed={c.audio.preferences.mode === 'muted'} onClick={c.audio.toggleMuted}><kbd aria-hidden="true">M</kbd> Mute</button>
@@ -161,7 +212,7 @@ export function NeonNightsView({ controller: c, renderShell, paymentAlerts }: { 
     <AudioSettingsDialog theme="neon-nights" isOpen={c.isSettingsOpen} onClose={() => c.setIsSettingsOpen(false)} preferences={c.audio.preferences}
       onToggleMuted={c.audio.toggleMuted} onToggleResultsOnly={c.audio.toggleResultsOnly} onVolumeChange={c.audio.setVolume} />
     <WinHelpDialog theme="neon-nights" isOpen={c.isHelpOpen} closeButtonRef={c.helpCloseButtonRef} onClose={() => c.setIsHelpOpen(false)} title="How to win" eyebrow="Neon Nights">
-      {c.discoActive ? <NeonDiscoHelp wager={c.activeWager} /> : <NeonHelp />}
+      {c.discoActive ? <NeonDiscoHelp wager={c.activeWager} /> : <NeonHelp carPlay={carControlsActive} />}
     </WinHelpDialog>
     <InsufficientBalanceDialog theme="neon-nights" isOpen={c.isReloadPromptOpen} closeButtonRef={c.reloadPromptCloseButtonRef}
       selectedWager={c.activeWager} balance={c.balance} recoveryHref={c.demoMode ? location.pathname : '/balance'} recoveryLabel={c.demoMode ? 'Reset balance' : 'Add Rand'} onClose={() => c.setIsReloadPromptOpen(false)} />

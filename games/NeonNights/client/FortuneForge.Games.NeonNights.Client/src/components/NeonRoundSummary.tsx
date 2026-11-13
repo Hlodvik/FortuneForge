@@ -8,9 +8,13 @@ type NeonRoundSummaryProps = {
   title: string
   amount: string
   onDismiss: () => void
+  busy?: boolean
+  respinLabel?: string
+  onRespin?: () => void
+  error?: string | null
 }
 
-export function NeonRoundSummary({ cabinetRef, title, amount, onDismiss }: NeonRoundSummaryProps) {
+export function NeonRoundSummary({ cabinetRef, title, amount, onDismiss, busy = false, respinLabel, onRespin, error }: NeonRoundSummaryProps) {
   const [bounds, setBounds] = useState<CabinetBounds | null>(null)
 
   useLayoutEffect(() => {
@@ -36,19 +40,23 @@ export function NeonRoundSummary({ cabinetRef, title, amount, onDismiss }: NeonR
     <div className="neon-round-summary-overlay" onClick={onDismiss}
       onKeyDown={(event) => { if (event.key === 'Escape') onDismiss() }}>
       <section
-        className="neon-round-summary"
+        className={`neon-round-summary${respinLabel || error ? ' neon-round-summary--actions' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={`${title} total won ${amount}`}
         style={bounds ?? undefined}
         onClick={(event) => event.stopPropagation()}
       >
-        <button className="neon-round-summary__continue" type="button" autoFocus onClick={onDismiss}>
+        <button className="neon-round-summary__continue" type="button" autoFocus disabled={busy} onClick={onDismiss}>
           <span>{title} complete</span>
           <small>Total won</small>
           <strong>{amount}</strong>
-          <em>Continue</em>
+          <em>{busy ? 'Continuing…' : 'Continue'}</em>
         </button>
+        {(respinLabel || error) && <div className="neon-round-summary__actions">
+          {respinLabel && <button className="neon-respin-button" type="button" disabled={busy} onClick={onRespin}>{respinLabel}</button>}
+          {error && <span role="alert">{error}</span>}
+        </div>}
       </section>
     </div>,
     document.body,

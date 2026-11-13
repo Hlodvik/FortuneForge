@@ -48,6 +48,11 @@ if (requestedGameArgumentIndex >= 0 && requestedGameArgumentIndex == args.Length
 var requestedGameId = requestedGameArgumentIndex >= 0
     ? args[requestedGameArgumentIndex + 1]
     : null;
+if (requestedGameId == NeonArcadeSlotDefinitions.GameId)
+{
+    NeonSlotSimulation.Run(paidSpinCount, seed, releaseRtpCeiling, args);
+    return;
+}
 
 var root = JsonSerializer.Deserialize<RootConfiguration>(
     File.ReadAllText(configurationPath),
@@ -101,20 +106,14 @@ var energyBalance = 0L;
 IReadOnlyList<SlotSealCollection> sealCollections = [];
 var lastFreeSpinsAwarded = 0;
 string? lastFreeSpinFeatureMode = null;
-long neonOrdinaryPaidSpins = 0;
-long neonOrdinaryPaidHits = 0;
-long neonOrdinaryPaidPayout = 0;
-long neonDiscoPaidSpins = 0;
-long neonDiscoPaidHits = 0;
-long neonDiscoPaidPayout = 0;
-long neonArcadePaidSpins = 0;
-long neonArcadePaidPayout = 0;
-long neonCarFreeSpins = 0;
-long neonCarFreePayout = 0;
-
 foreach (var configuredGame in gamesToAnalyze)
 {
     game = configuredGame;
+    if (game.Id == NeonArcadeSlotDefinitions.GameId)
+    {
+        NeonSlotSimulation.Run(paidSpinCount, seed, releaseRtpCeiling, args);
+        continue;
+    }
     specialRoundProfile = SlotSpecialRoundProfiles.TryGet(game.Id, out var profile)
         ? profile
         : null;
@@ -143,10 +142,6 @@ foreach (var configuredGame in gamesToAnalyze)
     sealCollections = [];
     lastFreeSpinsAwarded = 0;
     lastFreeSpinFeatureMode = null;
-    neonOrdinaryPaidSpins = neonOrdinaryPaidHits = neonOrdinaryPaidPayout = 0;
-    neonDiscoPaidSpins = neonDiscoPaidHits = neonDiscoPaidPayout = 0;
-    neonArcadePaidSpins = neonArcadePaidPayout = 0;
-    neonCarFreeSpins = neonCarFreePayout = 0;
 
     Console.WriteLine();
     Console.WriteLine($"Analyzing slot game: {game.Id}");
@@ -168,13 +163,6 @@ foreach (var configuredGame in gamesToAnalyze)
         continue;
     }
 
-    if (NeonArcadeSlotDefinitions.IsModel(game))
-    {
-        RunNeonCycles();
-        PrintReport();
-        continue;
-    }
-
     for (var paidSpin = 0; paidSpin < paidSpinCount; paidSpin++)
     {
         var cyclePayout = RunSpin(isFreeSpin: false, freeSpinFeatureMode: null);
@@ -192,91 +180,6 @@ foreach (var configuredGame in gamesToAnalyze)
     }
 
     PrintReport();
-}
-
-void RunNeonCycles()
-{
-    const string arcadeMode = "arcade-rows";
-    for (var paidCycle = 0; paidCycle < paidSpinCount; paidCycle++)
-    {
-        var cyclePayout = 0L;
-        var cycleWager = 0L;
-        var awardedPlaysPending = 0;
-        var discoPaidSpinsPending = 0;
-        string? featureMode = null;
-        var initialSpin = true;
-        var remainingSafetySpins = 2_000;
-
-        while (initialSpin || awardedPlaysPending > 0 || discoPaidSpinsPending > 0)
-        {
-            if (--remainingSafetySpins < 0)
-                throw new InvalidOperationException("The Neon Special Plays cycle did not terminate.");
-            var awardedPlay = !initialSpin && awardedPlaysPending > 0;
-            var discoPlay = !initialSpin && !awardedPlay && discoPaidSpinsPending > 0;
-            if (awardedPlay) awardedPlaysPending--;
-            else if (!initialSpin) discoPaidSpinsPending--;
-            var paidArcadePlay = awardedPlay && featureMode == arcadeMode;
-            var charged = !awardedPlay || paidArcadePlay;
-            var result = requestValidator.Spin(game.Id, wager, $"slot-math-{game.Id}",
-                specialBoostApplied: false, currentEnergyBalance: 0,
-                freeSpinFeatureMode: awardedPlay ? featureMode : null,
-                isFreeSpin: awardedPlay,
-                isNeonDiscoPlay: discoPlay);
-            if (result.NeonArcade is null || result.IsFreeSpin != awardedPlay ||
-                result.EnergyAwarded != 0 || result.SpecialPointsAwarded != 0 ||
-                (result.NeonDiscoCascade is not null) != discoPlay)
-                throw new InvalidOperationException("Neon math simulation did not resolve the active model.");
-
-            cyclePayout = checked(cyclePayout + result.Payout.TotalPoints);
-            if (charged) cycleWager = checked(cycleWager + wager);
-            var measuredPayout = result.NeonDiscoCascade is { } cascade
-                ? new SpinPayout(cascade.TotalPoints,
-                    cascade.Steps.SelectMany(step => step.Payout.Paylines).ToArray())
-                : result.Payout;
-            var fullMatch = measuredPayout.Paylines.SelectMany(line => line.Matches)
-                .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
-            statistics.RecordSpin(measuredPayout, fullMatch, result.FiveMatchPityTriggered,
-                isFreeSpin: !charged, freeSpinsAwarded: result.FreeSpinsAwarded,
-                specialPointsAwarded: result.SpecialPointsAwarded,
-                energyAwarded: result.EnergyAwarded, specialBoostApplied: false, wager: wager);
-            if (discoPlay)
-            {
-                neonDiscoPaidSpins++;
-                if (result.Payout.TotalPoints > 0) neonDiscoPaidHits++;
-                neonDiscoPaidPayout = checked(neonDiscoPaidPayout + result.Payout.TotalPoints);
-            }
-            else if (!awardedPlay)
-            {
-                neonOrdinaryPaidSpins++;
-                if (result.Payout.TotalPoints > 0) neonOrdinaryPaidHits++;
-                neonOrdinaryPaidPayout = checked(neonOrdinaryPaidPayout + result.Payout.TotalPoints);
-            }
-            else if (paidArcadePlay)
-            {
-                neonArcadePaidSpins++;
-                neonArcadePaidPayout = checked(neonArcadePaidPayout + result.Payout.TotalPoints);
-            }
-            else
-            {
-                neonCarFreeSpins++;
-                neonCarFreePayout = checked(neonCarFreePayout + result.Payout.TotalPoints);
-            }
-
-            if (result.FreeSpinsAwarded > 0)
-            {
-                awardedPlaysPending = checked(awardedPlaysPending + result.FreeSpinsAwarded);
-                if (!awardedPlay)
-                    featureMode = result.NeonArcade.Activators.Any(role => role.Kind == "arcade-cabinet")
-                        ? arcadeMode : null;
-            }
-            if (result.NeonArcade.Activators.Any(role => role.Kind == "disco-ball"))
-                discoPaidSpinsPending = 10;
-            if (awardedPlaysPending == 0) featureMode = null;
-            initialSpin = false;
-        }
-
-        statistics.RecordCycle(cyclePayout, cycleWager);
-    }
 }
 
 void RunFoundrySpins()
@@ -453,7 +356,6 @@ void ValidateSpecialPointBoost()
 
 long RunSpin(bool isFreeSpin, string? freeSpinFeatureMode)
 {
-    var isNeon = NeonArcadeSlotDefinitions.IsModel(game);
     var specialBoostApplied = game.SpecialPoints is { } specialRules &&
         specialPoints >= specialRules.ActivationCost;
     if (specialBoostApplied)
@@ -467,12 +369,7 @@ long RunSpin(bool isFreeSpin, string? freeSpinFeatureMode)
         $"slot-math-{game.Id}",
         specialBoostApplied,
         currentEnergy,
-        isFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(freeSpinFeatureMode)
-            ? freeSpinFeatureMode
-            : null,
-        isFreeSpin: isNeon && isFreeSpin);
-    if (isNeon && (result.NeonArcade is null || result.IsFreeSpin != isFreeSpin))
-        throw new InvalidOperationException("Neon math verification did not resolve the requested spin type on its active model.");
+        isFreeSpin && SlotSpecialRoundProfiles.IsFeatureMode(freeSpinFeatureMode) ? freeSpinFeatureMode : null);
     var hasFullMatch = result.Payout.Paylines
         .SelectMany(payline => payline.Matches)
         .Any(match => match.Match.MatchLength == game.Layout.ReelCount);
@@ -570,7 +467,7 @@ void PrintReport(long reportingWager = wager)
     }
 
     Console.WriteLine();
-    Console.WriteLine($"Overall RTP including {(NeonArcadeSlotDefinitions.IsModel(game) ? "Special Plays" : "free spins")}: {statistics.TotalPayout / (decimal)statistics.TotalPaidWager:P3}");
+    Console.WriteLine($"Overall RTP including free spins: {statistics.TotalPayout / (decimal)statistics.TotalPaidWager:P3}");
     Console.WriteLine($"Paid-spin payout RTP before free-spin value: {statistics.PaidSpinPayout / (decimal)statistics.TotalPaidWager:P3}");
     Console.WriteLine($"Resolved-spin hit rate: {statistics.HitSpins / (decimal)statistics.TotalSpins:P3}");
     Console.WriteLine($"Paid-cycle no-return rate: {statistics.ZeroCycles / (decimal)statistics.CycleCount:P3}");
@@ -579,23 +476,13 @@ void PrintReport(long reportingWager = wager)
     Console.WriteLine($"Five-match rate: {statistics.FullMatchSpins / (decimal)statistics.TotalSpins:P3}");
     Console.WriteLine($"Forced-pity rate: {statistics.PitySpins / (decimal)statistics.TotalSpins:P3}");
     Console.WriteLine($"Payout from forced-pity spins: {statistics.PityPayout / (decimal)statistics.TotalPaidWager:P3} of paid wager");
-    Console.WriteLine($"{(NeonArcadeSlotDefinitions.IsModel(game) ? "Special plays" : "Free spins")} awarded per paid spin: {statistics.FreeSpinsAwarded / (decimal)statistics.PaidSpins:N4}");
+    Console.WriteLine($"Free spins awarded per paid spin: {statistics.FreeSpinsAwarded / (decimal)statistics.PaidSpins:N4}");
     Console.WriteLine($"Special points awarded per paid spin: {statistics.SpecialPointsAwarded / (decimal)statistics.PaidSpins:N4}");
     Console.WriteLine($"Energy awarded per paid spin: {statistics.EnergyAwarded / (decimal)statistics.PaidSpins:N4}");
     Console.WriteLine($"Power-boosted resolved spins: {statistics.SpecialBoostSpins / (decimal)statistics.TotalSpins:P3}");
     Console.WriteLine($"Average return on a hit: {statistics.HitPayout / (decimal)Math.Max(1, statistics.HitSpins) / reportingWager:N2}x wager");
     Console.WriteLine($"Largest resolved-spin payout: {statistics.MaxSpinPayout / (decimal)reportingWager:N1}x wager");
-    Console.WriteLine($"Largest paid-cycle payout including {(NeonArcadeSlotDefinitions.IsModel(game) ? "Special Plays" : "free games")}: {statistics.MaxCyclePayout / (decimal)reportingWager:N1}x wager");
-    if (NeonArcadeSlotDefinitions.IsModel(game))
-    {
-        Console.WriteLine($"Neon ordinary paid-spin hit rate: {neonOrdinaryPaidHits / (decimal)neonOrdinaryPaidSpins:P3}");
-        Console.WriteLine($"Neon ordinary paid-spin return: {neonOrdinaryPaidPayout / (decimal)statistics.TotalPaidWager:P3} of all charged wagers ({neonOrdinaryPaidSpins:N0} spins)");
-        Console.WriteLine($"Neon disco paid-spin hit rate: {neonDiscoPaidHits / (decimal)Math.Max(1, neonDiscoPaidSpins):P3}");
-        Console.WriteLine($"Neon disco cascade return: {neonDiscoPaidPayout / (decimal)statistics.TotalPaidWager:P3} of all charged wagers ({neonDiscoPaidSpins:N0} spins)");
-        Console.WriteLine($"Neon paid arcade-play return: {neonArcadePaidPayout / (decimal)statistics.TotalPaidWager:P3} of all charged wagers ({neonArcadePaidSpins:N0} plays)");
-        Console.WriteLine($"Neon free car-play return: {neonCarFreePayout / (decimal)statistics.TotalPaidWager:P3} of all charged wagers ({neonCarFreeSpins:N0} plays)");
-    }
-
+    Console.WriteLine($"Largest paid-cycle payout including free games: {statistics.MaxCyclePayout / (decimal)reportingWager:N1}x wager");
     Console.WriteLine();
     Console.WriteLine("Payout contribution by paid symbol:");
     foreach (var contribution in statistics.SymbolPayout.OrderBy(pair => pair.Value))

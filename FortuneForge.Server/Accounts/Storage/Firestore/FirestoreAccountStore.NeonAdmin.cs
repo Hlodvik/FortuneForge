@@ -34,6 +34,7 @@ public sealed partial class FirestoreAccountStore
             var balance = snapshots[1];
             if (ReadLong(balance, "available") != 0 ||
                 ReadNeonDiscoSpinsRemaining(guard) != 0 ||
+                ReadPendingNeonNitroChoice(guard) is not null ||
                 !string.IsNullOrEmpty(ReadString(guard, "activeAdmissionId")))
                 return false;
 
@@ -44,6 +45,7 @@ public sealed partial class FirestoreAccountStore
                     ["userId"] = userId,
                     ["neonDiscoSpinsRemaining"] = NeonArcadeSlotDefinitions.DiscoPlaySpins,
                     ["neonDiscoMultiplier"] = NeonDiscoCascade.InitialMultiplier,
+                    ["neonDiscoRoundWinPoints"] = 0L,
                     ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
                 }, SetOptions.MergeAll);
                 return true;
@@ -68,6 +70,10 @@ public sealed partial class FirestoreAccountStore
                 ["freeSpinWagerCents"] = RandMoney.PointsToCents(wagerPoints, pointValueInCents),
                 ["freeSpinFeatureMode"] = arcadeRows ? NeonArcadeBonus.PaidCarFeatureMode : string.Empty,
                 ["freeSpinMathModelId"] = string.Empty,
+                ["neonCarRespinRoundId"] = arcadeRows ? receiptReference.Id : string.Empty,
+                ["neonCarRespinSourceSpinId"] = string.Empty,
+                ["neonCarRespinOfferJson"] = string.Empty,
+                ["neonCarRoundWinPoints"] = 0L,
                 ["updatedAt"] = Timestamp.FromDateTime(grantedAt)
             }, SetOptions.MergeAll);
             transaction.Create(receiptReference, BalanceTransactionData(

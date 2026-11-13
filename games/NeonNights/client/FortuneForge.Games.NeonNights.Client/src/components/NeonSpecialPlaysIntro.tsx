@@ -1,49 +1,48 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
-import { useSlotDialog, type GridPosition } from '@fortuneforge/slot-client-core'
+import { useSlotDialog } from '@fortuneforge/slot-client-core'
 import type { NeonTriggerSymbol } from '../types.js'
 import carVideo from '../assets/video/car-special-plays.mp4'
 import discoVideo from '../assets/video/disco-ball-special-plays-alpha.webm'
 import discoVideoFallback from '../assets/video/disco-ball-special-plays-v4.mp4'
+import discoRiser from '../assets/audio/disco-intro-riser.ogg'
 
 const clipTimeoutMs = 12_000
-const discoMusicCrossfadeSeconds = 0.38
-// The light at the edges of the clip blooms from 2.0s and peaks near 2.42s.
+const discoMusicStartSeconds = 2.53
+const discoMusicFadeInMs = 30
 const discoFlareStartSeconds = 2
 const discoFlarePeakSeconds = 2.42
-// Visible ball bounds in the first video frame and the trigger artwork, in source pixels.
-const discoFrame = { width: 1280, height: 720, ballX: 652.5, ballY: 391.5, ballDiameter: 460 }
-const discoSymbolArt = { width: 320, ballX: 159.5, ballY: 173.5, ballDiameter: 228 }
+const discoRiserGain = 0.65
+// Ball center in the first video frame, in source pixels.
+const discoFrame = { width: 1280, height: 720, ballX: 652.5, ballY: 391.5 }
 
 export type DiscoFlareOrigin = { x: number; y: number }
 export type DiscoFlare = DiscoFlareOrigin & { strength: number }
 
 type DiscoIntroLayout = {
   clip: CSSProperties
-  symbol: CSSProperties
   ballCenter: DiscoFlareOrigin
 }
 
 type NeonSpecialPlaysIntroProps = {
   cabinetRef: RefObject<HTMLDivElement | null>
-  position: GridPosition
   symbol: NeonTriggerSymbol
-  symbolImage: string
   volume: number
-  reducedMotion: boolean
   onDiscoMusicStart?: (fadeInMs: number) => void
   onComplete: (flare?: DiscoFlare) => void
 }
 
-export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImage, volume, reducedMotion, onDiscoMusicStart, onComplete }: NeonSpecialPlaysIntroProps) {
-  const [clipPrepared, setClipPrepared] = useState(false)
+export function NeonSpecialPlaysIntro({ cabinetRef, symbol, volume, onDiscoMusicStart, onComplete }: NeonSpecialPlaysIntroProps) {
   const [videoReady, setVideoReady] = useState(false)
   const [discoLayout, setDiscoLayout] = useState<DiscoIntroLayout>()
   const isDisco = symbol === 'POWER'
-  const growLayout = isDisco && clipPrepared && !reducedMotion ? discoLayout : undefined
   const dialogRef = useSlotDialog(true)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const riserRef = useRef<HTMLAudioElement>(null)
+  const riserStarted = useRef(false)
+  const volumeRef = useRef(volume)
   const videoFrame = useRef<number | null>(null)
+  const discoPlaybackFrame = useRef<number | null>(null)
   const videoFlareRef = useRef<HTMLDivElement>(null)
   const flareStrength = useRef(0)
   const musicStarted = useRef(false)
@@ -67,24 +66,7 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
         x: left + width / 2 + (discoFrame.ballX - discoFrame.width / 2) * frameScale,
         y: top + height / 2 + (discoFrame.ballY - discoFrame.height / 2) * frameScale,
       }
-      const symbolWidth = discoFrame.ballDiameter * frameScale * discoSymbolArt.width / discoSymbolArt.ballDiameter
-      const symbolLeft = ballCenter.x + (0.5 - discoSymbolArt.ballX / discoSymbolArt.width) * symbolWidth
-      const symbolTop = ballCenter.y + (0.5 - discoSymbolArt.ballY / discoSymbolArt.width) * symbolWidth
-      const source = cabinet.querySelector(
-        `[data-reel-index="${position.reel}"][data-row-index="${position.row}"] .slot-symbol__image`,
-      )?.getBoundingClientRect()
-      setDiscoLayout({
-        clip: { left, top, width, height },
-        symbol: {
-          left: symbolLeft,
-          top: symbolTop,
-          width: symbolWidth,
-          '--neon-special-intro-start-x': `${source ? source.left + source.width / 2 - symbolLeft : 0}px`,
-          '--neon-special-intro-start-y': `${source ? source.top + source.height / 2 - symbolTop : 0}px`,
-          '--neon-special-intro-start-scale': source?.width ? source.width / symbolWidth : 0.2,
-        } as CSSProperties,
-        ballCenter,
-      })
+      setDiscoLayout({ clip: { left, top, width, height }, ballCenter })
     }
     measure()
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measure)
@@ -96,12 +78,13 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
     }
-  }, [cabinetRef, isDisco, position])
+  }, [cabinetRef, isDisco])
 
   useEffect(() => {
     const video = videoRef.current
     return () => {
       if (videoFrame.current !== null) video?.cancelVideoFrameCallback(videoFrame.current)
+      if (discoPlaybackFrame.current !== null) window.cancelAnimationFrame(discoPlaybackFrame.current)
     }
   }, [])
 
@@ -109,6 +92,24 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
     const timer = window.setTimeout(() => finish(), clipTimeoutMs)
     return () => window.clearTimeout(timer)
   }, [finish])
+
+  useEffect(() => {
+    volumeRef.current = volume
+    const riser = riserRef.current
+    if (riser) riser.volume = volume * discoRiserGain
+    const video = videoRef.current
+    if (!video) return
+    video.volume = volume
+    video.muted = isDisco || volume === 0
+  }, [isDisco, volume])
+
+  const startRiser = useCallback(() => {
+    const riser = riserRef.current
+    if (!riser || riserStarted.current || completedRef.current) return
+    riserStarted.current = true
+    riser.volume = volumeRef.current * discoRiserGain
+    void riser.play().catch(() => {})
+  }, [])
 
   const startPlayback = useCallback(() => {
     const video = videoRef.current
@@ -118,8 +119,8 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
       return
     }
 
-    video.volume = volume
-    video.muted = volume === 0
+    video.volume = volumeRef.current
+    video.muted = isDisco || volumeRef.current === 0
     void video.play().catch(async () => {
       if (!video.isConnected || completedRef.current) return
       video.muted = true
@@ -129,13 +130,18 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
         if (video.isConnected) finish()
       }
     })
-  }, [finish, volume])
+  }, [finish, isDisco])
 
   useEffect(() => {
-    if (!isDisco || reducedMotion) startPlayback()
-  }, [isDisco, reducedMotion, startPlayback])
+    startPlayback()
+  }, [startPlayback])
 
   function syncDiscoFrame(video: HTMLVideoElement, seconds: number) {
+    if (!musicStarted.current && seconds >= discoMusicStartSeconds && onDiscoMusicStart) {
+      musicStarted.current = true
+      onDiscoMusicStart(discoMusicFadeInMs)
+    }
+
     const rise = Math.min(1, Math.max(0, (seconds - discoFlareStartSeconds) / (discoFlarePeakSeconds - discoFlareStartSeconds)))
     const fall = Math.max(0, seconds - discoFlarePeakSeconds)
     const strength = 0.88 * rise * (1 - Math.min(0.3, fall * 0.5))
@@ -149,41 +155,37 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
     const remaining = Math.max(0, video.duration - seconds)
     const progress = 1 - remaining / video.duration
     dialogRef.current?.style.setProperty('--neon-disco-intro-progress', String(progress))
-    if (remaining > discoMusicCrossfadeSeconds) return
-    if (!musicStarted.current) {
-      musicStarted.current = true
-      onDiscoMusicStart?.(remaining * 1000)
-    }
-    video.volume = volume * remaining / discoMusicCrossfadeSeconds
   }
 
   function handleVideoPlaying(video: HTMLVideoElement) {
+    if (isDisco && discoPlaybackFrame.current === null) {
+      const updateDiscoPlayback = () => {
+        discoPlaybackFrame.current = null
+        if (completedRef.current || video.paused || video.ended) return
+        syncDiscoFrame(video, video.currentTime)
+        discoPlaybackFrame.current = window.requestAnimationFrame(updateDiscoPlayback)
+      }
+      discoPlaybackFrame.current = window.requestAnimationFrame(updateDiscoPlayback)
+    }
     if (!video.requestVideoFrameCallback) {
       setVideoReady(true)
+      if (isDisco) startRiser()
       return
     }
     if (videoFrame.current !== null) video.cancelVideoFrameCallback(videoFrame.current)
-    let firstFrame = true
-    const drawFrame: VideoFrameRequestCallback = (_, frame) => {
+    videoFrame.current = video.requestVideoFrameCallback(() => {
       videoFrame.current = null
-      if (completedRef.current) return
-      if (firstFrame) {
-        firstFrame = false
+      if (!completedRef.current) {
         setVideoReady(true)
+        if (isDisco) startRiser()
       }
-      if (isDisco) {
-        syncDiscoFrame(video, frame.mediaTime)
-        videoFrame.current = video.requestVideoFrameCallback(drawFrame)
-      }
-    }
-    videoFrame.current = video.requestVideoFrameCallback(drawFrame)
+    })
   }
 
   return createPortal(
     <section
       className="neon-special-intro"
       data-trigger-symbol={symbol}
-      data-disco-grow={growLayout ? 'true' : undefined}
       data-video-ready={videoReady ? 'true' : undefined}
       ref={dialogRef}
       role="dialog"
@@ -191,6 +193,7 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
       aria-label="Special Plays intro"
       tabIndex={-1}
     >
+      {isDisco && <audio ref={riserRef} src={discoRiser} preload="auto" />}
       {isDisco && discoLayout && <div
         className="neon-disco-intro-flare neon-disco-intro-flare--video"
         ref={videoFlareRef}
@@ -200,15 +203,6 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
           '--disco-flare-y': `${discoLayout.ballCenter.y}px`,
         } as CSSProperties}
       />}
-      {growLayout && <img
-        className="neon-special-intro__symbol"
-        src={symbolImage}
-        alt=""
-        style={growLayout.symbol}
-        onAnimationEnd={event => {
-          if (event.animationName === 'neon-special-intro-grow') startPlayback()
-        }}
-      />}
       <video
         className="neon-special-intro__clip"
         style={discoLayout?.clip}
@@ -217,12 +211,7 @@ export function NeonSpecialPlaysIntro({ cabinetRef, position, symbol, symbolImag
         preload="auto"
         playsInline
         aria-hidden="true"
-        onLoadedData={() => setClipPrepared(true)}
         onPlaying={event => handleVideoPlaying(event.currentTarget)}
-        onTimeUpdate={event => {
-          const video = event.currentTarget
-          if (isDisco && !video.requestVideoFrameCallback) syncDiscoFrame(video, video.currentTime)
-        }}
         onEnded={() => {
           const origin = discoLayout?.ballCenter
           finish(isDisco && videoReady && origin && flareStrength.current > 0

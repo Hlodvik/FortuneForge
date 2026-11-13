@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
-import { isNeonSpinResult } from '../src/api'
-import { NEON_DISCO_SYMBOL_SET_ID, NEON_GAME_ID } from '../src/types'
+import { createNeonApi, isNeonSpinResult, isNeonState } from '../src/api'
+import { NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_GAME_ID } from '../src/types'
 
 const board = () => [
   ['2', '2', '4', '5'], ['2', '2', '5', '7'],
@@ -39,6 +39,58 @@ function discoResult() {
 it('accepts base results and a four-cell Disco cluster with exclusive Disco refills', () => {
   expect(isNeonSpinResult(baseResult())).toBe(true)
   expect(isNeonSpinResult(discoResult())).toBe(true)
+})
+
+it('accepts only the first eligible Car Plays Nitro and its adjacent expansion', () => {
+  const initialReels = Array.from({ length: 5 }, () => ['2', '4', '5', '7', '2', '4', '5'])
+  initialReels[1][2] = 'NITRO'
+  initialReels[2][4] = 'NITRO'
+  const reels = initialReels.map((reel, index) => index === 2 ? reel.map(() => 'ACE') : [...reel])
+  const evidence = { trigger: { reel: 1, row: 2 }, eligibleReel: 2, expandedReel: 2, initialReels }
+  const paired = { ...baseResult(), symbolSetId: NEON_CAR_SYMBOL_SET_ID, isFreeSpin: true, reels, neonNitroWild: evidence }
+
+  expect(isNeonSpinResult(paired)).toBe(true)
+  expect(isNeonSpinResult({ ...paired, isFreeSpin: false })).toBe(false)
+  expect(isNeonSpinResult({ ...paired, neonNitroWild: { ...evidence, eligibleReel: 3 } })).toBe(false)
+  expect(isNeonSpinResult({ ...paired, neonNitroWild: { ...evidence, trigger: { reel: 2, row: 4 } } })).toBe(false)
+  expect(isNeonSpinResult({ ...paired, reels: initialReels })).toBe(false)
+
+  const miss = initialReels.map(reel => [...reel])
+  miss[2][4] = '5'
+  miss[3][0] = 'NITRO'
+  miss[4][0] = 'NITRO'
+  expect(isNeonSpinResult({ ...paired, reels: miss, neonNitroWild: { ...evidence, initialReels: miss, expandedReel: null } })).toBe(true)
+  expect(isNeonSpinResult({ ...paired, reels: miss, neonNitroWild: null })).toBe(false)
+  miss[1][2] = '5'
+  miss[3][0] = '2'
+  expect(isNeonSpinResult({ ...paired, reels: miss, neonNitroWild: null })).toBe(true)
+})
+
+it('validates the third reel expansion and a persisted last-two-reel Nitro choice', async () => {
+  const initial = Array.from({ length: 5 }, () => ['2', '4', '5', '7', '2', '4', '5'])
+  initial[1][2] = 'NITRO'
+  initial[2][4] = 'NITRO'
+  const settled = initial.map((reel, column) => column === 3 ? reel.map(() => 'ACE') : reel)
+  expect(isNeonSpinResult({ ...baseResult(), symbolSetId: NEON_CAR_SYMBOL_SET_ID, isFreeSpin: true, reels: settled,
+    neonNitroWild: { trigger: { reel: 1, row: 2 }, secondNitro: { reel: 2, row: 4 }, eligibleReel: 2, expandedReel: 3, initialReels: initial } })).toBe(true)
+
+  const lastPair = Array.from({ length: 5 }, () => ['2', '4', '5', '7', '2', '4', '5'])
+  lastPair[3][2] = 'NITRO'
+  lastPair[4][1] = 'NITRO'
+  const evidence = { trigger: { reel: 3, row: 2 }, secondNitro: { reel: 4, row: 1 }, eligibleReel: 4, initialReels: lastPair }
+  const pendingNeonNitroChoice = { sourceKind: 'spin', spinId: 'pending-test', wagerPoints: 50, freeSpinsRemaining: 0,
+    initialReels: lastPair, eligibleReels: [0, 1, 2, 3, 4], neonNitroWild: { ...evidence, expandedReel: null, requiresChoice: true } }
+  const pending = { pendingNeonNitroChoice }
+  const result = { ...baseResult(), spinId: pendingNeonNitroChoice.spinId, symbolSetId: NEON_CAR_SYMBOL_SET_ID, isFreeSpin: true,
+    reels: lastPair.map((reel, column) => column === 0 ? reel.map(() => 'ACE') : reel),
+    neonNitroWild: { ...evidence, expandedReel: 0, requiresChoice: false } }
+  const api = createNeonApi(async path => path.endsWith('/nitro-choice') ? Response.json(result) : Response.json(pending, { status: 202 }))
+  expect(isNeonState({ ...baseResult(), ...pending })).toBe(true)
+  expect(isNeonState({ ...baseResult(), pendingNeonNitroChoice: { ...pendingNeonNitroChoice, eligibleReels: [0, 1, 2, 3, 3] } })).toBe(false)
+  const received = await api.spin({ wagerPoints: 50, useFreeSpin: true, state: { ...baseResult(), neonDiscoMultiplier: 1 } }, false)
+  if ('reels' in received) throw new Error('Expected a pending choice')
+  await expect(api.chooseNitro(received.pendingNeonNitroChoice, 0)).resolves.toEqual(result)
+  await expect(api.chooseNitro(received.pendingNeonNitroChoice, 1)).rejects.toThrow('invalid Nitro result')
 })
 
 it('keeps Disco-only symbols out of base play and base feature symbols out of every Disco board', () => {

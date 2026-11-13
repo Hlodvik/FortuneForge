@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -69,6 +70,8 @@ public sealed partial class FirestoreAccountStore
                 var specialPointsAvailable = ReadLong(specialPointsSnapshot, "available");
                 var energySnapshot = snapshots[4];
                 var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+                if (isNeon && ReadString(guardSnapshot, "pendingNeonNitroChoiceJson") is not null)
+                    throw new NeonNitroChoiceConflictException("Finish the pending Nitro reel choice before spinning again.");
                 var neonDiscoSpinsBefore = isNeon ? ReadNeonDiscoSpinsRemaining(guardSnapshot) : 0;
                 var neonDiscoMultiplierBefore = neonDiscoSpinsBefore > 0
                     ? ReadNeonDiscoMultiplier(guardSnapshot) : NeonDiscoCascade.InitialMultiplier;
@@ -265,6 +268,13 @@ public sealed partial class FirestoreAccountStore
                 // any admission, wallet, or entitlement change can become durable.
                 if (resolveOutcome is not null)
                     admission = admission with { ResolvedOutcome = await resolveOutcome(admission, cancellationToken) };
+                var pendingNitroResult = isNeon && admission.ResolvedOutcome?.NeonNitroWild?.RequiresChoice == true
+                    ? admission.ResolvedOutcome : null;
+                var pendingNitroOffer = pendingNitroResult is null ? null : CreateNeonNitroChoiceOffer(
+                    pendingNitroResult.SpinId, "spin", pendingNitroResult.WagerPoints,
+                    checked((int)remainingAfterAdmission), pendingNitroResult.NeonNitroWild!);
+                if (pendingNitroOffer is not null)
+                    admission = admission with { PendingNeonNitroChoice = pendingNitroOffer };
 
                 if (useFreeSpin)
                 {
@@ -344,6 +354,11 @@ public sealed partial class FirestoreAccountStore
                 {
                     guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsBefore;
                     guardData["neonDiscoMultiplier"] = neonDiscoMultiplierBefore;
+                    if (pendingNitroOffer is not null)
+                    {
+                        guardData["pendingNeonNitroChoiceJson"] = JsonSerializer.Serialize(pendingNitroOffer);
+                        guardData["pendingNeonNitroAdmissionId"] = admissionId.ToString("N");
+                    }
                 }
                 transaction.Set(guardReference, guardData, SetOptions.MergeAll);
                 var admissionData = new Dictionary<string, object>
@@ -381,7 +396,18 @@ public sealed partial class FirestoreAccountStore
                     ["startedAtUtc"] = Timestamp.FromDateTime(startedAtUtc)
                 };
                 if (isNeon)
+                {
                     admissionData["neonDiscoMultiplierBefore"] = neonDiscoMultiplierBefore;
+                    if (pendingNitroResult is not null)
+                    {
+                        admissionData["pendingNeonNitroSpinId"] = pendingNitroResult.SpinId.ToString("N");
+                        admissionData["pendingNeonNitroOutcomeJson"] = JsonSerializer.Serialize(
+                            Slots.Games.NeonNights.NeonNightsEngine.ToPackage(
+                                pendingNitroResult, pendingNitroResult.EngineAudit!));
+                        admissionData["pendingNeonNitroAdmissionJson"] = JsonSerializer.Serialize(admission with
+                            { ResolvedOutcome = null });
+                    }
+                }
                 if (isMidnight)
                 {
                     admissionData["midnightBonusRoundsBefore"] = MidnightRoundsData(roundsBefore);

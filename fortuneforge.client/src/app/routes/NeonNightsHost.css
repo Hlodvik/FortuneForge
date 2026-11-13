@@ -1,0 +1,10 @@
+/* Reserve the two rightmost positions for Neon’s rules and settings buttons. */
+.in-game-shell__body--slots:has(> [data-slot-theme='neon-nights-cabinet-v1']) > .game-support-controls {
+  right: calc(max(0.9rem, env(safe-area-inset-right)) + 6.6rem);
+  bottom: max(0.9rem, env(safe-area-inset-bottom));
+}
+
+.in-game-shell__body--slots:has(> [data-slot-theme='neon-nights-cabinet-v1']) > .game-support-controls > .in-game-navbar__report {
+  width: 2.75rem;
+  height: 2.75rem;
+}

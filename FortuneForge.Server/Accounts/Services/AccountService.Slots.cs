@@ -59,6 +59,22 @@ public sealed partial class AccountService
         CancellationToken cancellationToken) =>
         accountStore.GetSlotStateAsync(userId, gameId, pointValueInCents, cancellationToken);
 
+    public Task<NeonCarRespinSettlement> RespinNeonCarReelAsync(
+        string userId, Guid spinId, int reelIndex, CancellationToken cancellationToken) =>
+        accountStore.RespinNeonCarReelAsync(userId, spinId, reelIndex, cancellationToken);
+
+    public Task DismissNeonCarRespinAsync(
+        string userId, Guid spinId, CancellationToken cancellationToken) =>
+        accountStore.DismissNeonCarRespinAsync(userId, spinId, cancellationToken);
+
+    public Task<NeonNitroChoiceFinalization> FinalizeNeonNitroChoiceAsync(
+        string userId, Guid spinId, int reelIndex, CancellationToken cancellationToken) =>
+        accountStore.FinalizeNeonNitroChoiceAsync(userId, spinId, reelIndex, cancellationToken);
+
+    public Task<NeonCarRespinSettlement> FinalizeNeonCarRespinNitroChoiceAsync(
+        string userId, Guid spinId, int reelIndex, CancellationToken cancellationToken) =>
+        accountStore.FinalizeNeonCarRespinNitroChoiceAsync(userId, spinId, reelIndex, cancellationToken);
+
     public Task<bool> GrantNeonAdminSpecialPlaysAsync(
         string userId,
         long wagerPoints,

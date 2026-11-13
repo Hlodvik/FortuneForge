@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FortuneForge.Games.JadeDragon;
+using FortuneForge.Games.NeonNights;
 using FortuneForge.Server.Accounts.Models;
 using FortuneForge.Server.Slots.Bonuses;
 using FortuneForge.Server.Slots.Configuration;
@@ -73,10 +74,21 @@ public sealed partial class FirestoreAccountStore
         if (isGoldFoundry && result.ChargedWagerCents != admission.ChargedWagerCents)
             throw new InvalidOperationException("Gold Foundry's outcome differs from its admitted wager charge.");
         var isNeonDiscoPlay = isNeon && admission.IsNeonDiscoPlay;
+        var isNeonCarPlay = isNeon && admission.IsFreeSpin && admission.FreeSpinFeatureMode == NeonArcadeBonus.PaidCarFeatureMode;
+        if (isNeon && result.NeonNitroWild?.RequiresChoice == true)
+            throw new InvalidOperationException("A pending Nitro reel choice cannot settle a wager.");
+        var isNeonNitroResolved = isNeon && result.NeonNitroWild is
+            { SecondNitro: not null, ExpandedReel: not null, RequiresChoice: false };
+        var neonCarSource = isNeonCarPlay
+            ? Slots.Games.NeonNights.NeonNightsEngine.ToPackage(result, result.EngineAudit)
+            : null;
+        var neonCarEligibleReels = neonCarSource is null ? [] : NeonCarRespin.OfferReels(neonCarSource);
+        var neonCarSourceJson = neonCarEligibleReels.Count > 0 ? JsonSerializer.Serialize(neonCarSource) : null;
         if (!isNeon && admission.IsNeonDiscoPlay)
             throw new InvalidOperationException("A Disco admission is only valid for Neon Nights.");
         if (isNeon &&
             (result.IsFreeSpin != admission.IsFreeSpin ||
+             result.EngineAudit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode ||
              (result.NeonDiscoCascade is not null) != admission.IsNeonDiscoPlay ||
              isNeonDiscoPlay && (result.EngineAudit.NeonDiscoCascade?.StartingMultiplier ??
                  NeonDiscoCascade.InitialMultiplier) != admission.NeonDiscoMultiplier ||
@@ -85,7 +97,7 @@ public sealed partial class FirestoreAccountStore
                  ? RandMoney.PointsToCents(result.WagerPoints, result.PointValueInCents) : 0) ||
              admission.IsFreeSpin && result.FreeSpinsAwarded != 0 &&
              (result.FreeSpinsAwarded != NeonArcadeSlotDefinitions.SpecialPlaySpins ||
-              result.EngineAudit.EngineVersion != NeonArcadeSlotDefinitions.EngineVersion)))
+              !NeonArcadeSlotDefinitions.UsesCurrentDiscoMath(result.EngineAudit.EngineVersion))))
             throw new InvalidOperationException("Neon's bonus outcome differs from its accepted admission.");
         var arcaneLightning = result.EngineAudit.EngineVersion == ArcaneLightningCollector.EngineVersion;
         if (arcaneLightning &&
@@ -104,7 +116,8 @@ public sealed partial class FirestoreAccountStore
             isGoldFoundry ? "goldFoundrySettlementJson" : arcaneLightning ? "arcaneLightningSettlementJson" :
             isOlympusTumble ? "olympusTumbleSettlementJson" :
             isJadeCascade ? "jadeDragonCascadeSettlementJson" :
-            isNeonDiscoPlay ? "neonDiscoSettlementJson" : null;
+            isNeonDiscoPlay ? "neonDiscoSettlementJson" :
+            isNeonNitroResolved ? "neonNitroSettlementJson" : null;
         var engineOutcomeSha256 = frozenSettlementField is not null ? EngineOutcomeSha256(result) : null;
 
         var chargedWagerCents = admission.ChargedWagerCents;
@@ -176,6 +189,20 @@ public sealed partial class FirestoreAccountStore
                 {
                     throw new InvalidOperationException("Slot admission has already been used.");
                 }
+                var pendingNitroJson = isNeon ? ReadString(admissionSnapshot, "pendingNeonNitroOutcomeJson") : null;
+                if (pendingNitroJson is not null)
+                {
+                    if (!isNeonNitroResolved || result.NeonNitroWild?.ExpandedReel is not { } chosenReel ||
+                        ReadString(admissionSnapshot, "pendingNeonNitroSpinId") != result.SpinId.ToString("N"))
+                        throw new InvalidOperationException("The Nitro settlement has no matching pending choice.");
+                    var pendingNitro = JsonSerializer.Deserialize<NeonSpinOutcome>(pendingNitroJson)
+                        ?? throw new InvalidOperationException("The saved pending Nitro spin is invalid.");
+                    var expectedNitro = FortuneForge.Games.NeonNights.NeonNightsEngine.ResolveNitroChoice(
+                        pendingNitro, chosenReel);
+                    var actualNitro = Slots.Games.NeonNights.NeonNightsEngine.ToPackage(result, result.EngineAudit);
+                    if (JsonSerializer.Serialize(expectedNitro) != JsonSerializer.Serialize(actualNitro))
+                        throw new InvalidOperationException("The Nitro choice differs from its frozen original spin.");
+                }
                 if (frozenSettlementField is not null && existingResult.Exists &&
                     (isMidnightGame || arcaneLightning || isOlympusTumble || isJadeCascade || isNeonDiscoPlay ||
                         ReadString(existingResult, "engineOutcomeSha256") is not null))
@@ -242,7 +269,15 @@ public sealed partial class FirestoreAccountStore
                         checked((int)ReadLong(existingResult, "sealFreeSpinsAwarded")))
                     {
                         NeonDiscoSpinsRemaining = neonDiscoSpinsBefore,
-                        NeonDiscoMultiplier = isNeon ? neonDiscoMultiplierBefore : null
+                        NeonDiscoMultiplier = isNeon ? neonDiscoMultiplierBefore : null,
+                        NeonDiscoRoundWinPoints = neonDiscoSpinsBefore > 0
+                            ? ReadLong(guardSnapshot, "neonDiscoRoundWinPoints") : null,
+                        NeonCarRespinOffer = isNeon && ReadString(guardSnapshot, "neonCarRespinSourceSpinId") == spinKey
+                            ? ReadNeonCarRespinOffer(guardSnapshot) : null,
+                        NeonCarRoundWinPoints = isNeonCarPlay &&
+                            ReadString(existingResult, "neonCarRespinRoundId") is { } savedCarRoundId &&
+                            savedCarRoundId == ReadString(guardSnapshot, "neonCarRespinRoundId")
+                            ? ReadLong(guardSnapshot, "neonCarRoundWinPoints") : null
                     };
                 }
 
@@ -324,8 +359,8 @@ public sealed partial class FirestoreAccountStore
                 var settledPayout = energyBonus.Payout;
                 var outcomeFindings = SlotRoundAudit.Check(result, settledPayout, isPaid: true);
                 var outcomeVerified = !outcomeFindings.Any(finding => finding.Severity == "error");
-                if ((isOlympusTumble || isNeonDiscoPlay || isJadeCascade) && !outcomeVerified)
-                    throw new InvalidOperationException("The paid cascade outcome could not be verified.");
+                if ((isOlympusTumble || isNeonDiscoPlay || isNeonCarPlay || isJadeCascade) && !outcomeVerified)
+                    throw new InvalidOperationException("The paid feature outcome could not be verified.");
                 var payoutCents = checked(RandMoney.PointsToCents(
                     settledPayout.TotalPoints,
                     result.PayoutPointValueInCents ?? result.PointValueInCents) + (crucible?.PayoutCents ?? 0));
@@ -371,6 +406,20 @@ public sealed partial class FirestoreAccountStore
                     ? NeonPlayPolicy.NextDiscoMultiplier(neonDiscoMultiplierBefore, neonDiscoSpinsRemaining,
                         result.NeonDiscoCascade, result.NeonArcade)
                     : (int?)null;
+                var neonDiscoRoundWinPoints = neonDiscoSpinsBefore > 0
+                    ? ReadLong(guardSnapshot, "neonDiscoRoundWinPoints") : 0;
+                if (isNeonDiscoPlay)
+                    neonDiscoRoundWinPoints = checked(neonDiscoRoundWinPoints + settledPayout.TotalPoints);
+                var neonCarRoundId = isNeonCarPlay
+                    ? ReadString(guardSnapshot, "neonCarRespinRoundId") ?? spinKey
+                    : isNeon && neonProgress?.FeatureMode == NeonArcadeBonus.PaidCarFeatureMode
+                        ? spinKey : null;
+                var neonCarRoundWinPoints = isNeonCarPlay
+                    ? checked(ReadLong(guardSnapshot, "neonCarRoundWinPoints") + settledPayout.TotalPoints)
+                    : 0;
+                var neonCarOffer = isNeonCarPlay && settledPayout.TotalPoints == 0 && neonCarEligibleReels.Count > 0
+                    ? new NeonCarRespinOffer(result.SpinId, neonCarEligibleReels, result.Reels, neonCarRoundWinPoints)
+                    : null;
                 var settlement = new SlotSpinSettlement(
                     balanceAfterPayoutRand, midnightProgress is null ? checked((int)freeGamesRemaining) :
                         midnightProgress.Rounds.FirstOrDefault()?.RemainingSpins ?? 0,
@@ -386,7 +435,11 @@ public sealed partial class FirestoreAccountStore
                     CruciblePoured = crucible?.Poured,
                     CruciblePayoutCents = crucible?.PayoutCents,
                     NeonDiscoSpinsRemaining = neonDiscoSpinsRemaining,
-                    NeonDiscoMultiplier = neonDiscoMultiplier
+                    NeonDiscoMultiplier = neonDiscoMultiplier,
+                    NeonDiscoRoundWinPoints = isNeonDiscoPlay || neonDiscoSpinsRemaining > 0
+                        ? neonDiscoRoundWinPoints : null,
+                    NeonCarRespinOffer = neonCarOffer,
+                    NeonCarRoundWinPoints = isNeonCarPlay ? neonCarRoundWinPoints : null
                 };
 
                 if (FortuneForge.Server.Activity.AcceptedGameActivityReader.SlotIds.TryGetValue(result.GameId, out var catalogueGameId))
@@ -492,6 +545,21 @@ public sealed partial class FirestoreAccountStore
                     resultData["engineOutcomeSha256"] = engineOutcomeSha256!;
                     resultData[frozenSettlementField] = JsonSerializer.Serialize(settlement);
                 }
+                if (isNeonCarPlay)
+                {
+                    resultData["neonCarRespinRoundId"] = neonCarRoundId!;
+                    if (neonCarOffer is not null && neonCarSourceJson is not null)
+                    {
+                        resultData["neonCarRespinReceiptId"] = spinKey;
+                        resultData["neonCarRespinSourceJson"] = neonCarSourceJson;
+                    }
+                }
+                if (pendingNitroJson is not null)
+                {
+                    resultData["neonNitroChosenReel"] = (long)result.NeonNitroWild!.ExpandedReel!.Value;
+                    resultData["neonNitroFinalOutcomeJson"] = JsonSerializer.Serialize(
+                        Slots.Games.NeonNights.NeonNightsEngine.ToPackage(result, result.EngineAudit));
+                }
                 if (isJadeCascade)
                     resultData["payoutPointValueInCents"] = JadeDragonCascadeRules.PayoutPointValueInCents;
                 if (crucible is not null)
@@ -594,6 +662,13 @@ public sealed partial class FirestoreAccountStore
                 {
                     guardData["neonDiscoSpinsRemaining"] = neonDiscoSpinsRemaining;
                     guardData["neonDiscoMultiplier"] = neonDiscoMultiplier!.Value;
+                    guardData["neonDiscoRoundWinPoints"] = neonDiscoRoundWinPoints;
+                    guardData["neonCarRespinRoundId"] = neonCarRoundId ?? string.Empty;
+                    guardData["neonCarRespinSourceSpinId"] = neonCarOffer?.SpinId.ToString("N") ?? string.Empty;
+                    guardData["neonCarRespinOfferJson"] = neonCarOffer is null ? string.Empty : JsonSerializer.Serialize(neonCarOffer);
+                    guardData["neonCarRoundWinPoints"] = neonCarRoundWinPoints;
+                    guardData["pendingNeonNitroChoiceJson"] = string.Empty;
+                    guardData["pendingNeonNitroAdmissionId"] = string.Empty;
                 }
                 if (crucible is not null)
                     guardData["crucibleWageredCents"] = crucible.WageredCents;
@@ -728,6 +803,8 @@ public sealed partial class FirestoreAccountStore
                 JsonSerializer.Serialize(new { snapshot, result.OlympusTumble }),
             _ when result.NeonDiscoCascade is not null =>
                 JsonSerializer.Serialize(new { snapshot, result.NeonDiscoCascade }),
+            _ when result.NeonNitroWild?.SecondNitro is not null =>
+                JsonSerializer.Serialize(new { snapshot, result.NeonNitroWild }),
             JadeDragonCascadeRules.Version =>
                 JsonSerializer.Serialize(new { snapshot, result.JadeDragonCascade, result.PayoutPointValueInCents }),
             _ => JsonSerializer.Serialize(snapshot)

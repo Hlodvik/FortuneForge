@@ -19,3 +19,17 @@ export const FIVE_MATCH_PATTERNS = [
   [3, 2, 1, 0, 0], [0, 1, 0, 1, 0], [1, 2, 1, 2, 1], [2, 3, 2, 3, 2],
   [1, 0, 1, 0, 1], [2, 1, 2, 1, 2], [3, 2, 3, 2, 3],
 ] as const
+
+export const CAR_THREE_MATCH_EXAMPLES = [
+  { label: 'Top row straight across', rows: [0, 0, 0] },
+  { label: 'Sixth row straight across', rows: [5, 5, 5] },
+  { label: 'Diagonal down from row four to row six', rows: [3, 4, 5] },
+  { label: 'Diagonal up from row seven to row five', rows: [6, 5, 4] },
+] as const
+
+export const CAR_FIVE_MATCH_EXAMPLES = [
+  { label: 'Bottom row straight across', rows: [6, 6, 6, 6, 6] },
+  { label: 'Stepped route from row four to row seven', rows: [3, 4, 5, 6, 6] },
+  { label: 'V-shaped route across rows four to six', rows: [3, 4, 5, 4, 3] },
+  { label: 'Zigzag route across rows six and seven', rows: [6, 5, 6, 5, 6] },
+] as const

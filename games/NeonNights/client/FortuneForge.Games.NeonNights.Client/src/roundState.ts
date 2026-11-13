@@ -1,6 +1,7 @@
 import { discoMultipliers, type NeonDiscoMultiplier, type NeonState, type NeonTriggerSymbol } from './types.js'
 
 export const neonDiscoRoundSpins = 12
+export const neonCarPlayMode = 'car-rows'
 
 export const emptyNeonState: NeonState = {
   freeSpinsRemaining: 0, freeSpinWagerPoints: null, freeSpinFeatureMode: null,
@@ -14,7 +15,7 @@ export function getNeonWager(state: NeonState, chosenWager: number) {
   return state.freeSpinsRemaining > 0 ? state.freeSpinWagerPoints ?? chosenWager : chosenWager
 }
 export function isCarPlayMode(mode: string | null) {
-  return mode === 'car-rows' || mode === 'arcade-rows'
+  return mode === neonCarPlayMode || mode === 'arcade-rows'
 }
 export function getNeonCharge(state: NeonState, chosenWager: number) {
   return state.freeSpinsRemaining > 0 && !isCarPlayMode(state.freeSpinFeatureMode) ? 0 : getNeonWager(state, chosenWager)
@@ -25,6 +26,6 @@ export function getNeonRows(state: NeonState) {
 export function previewRound(symbol: NeonTriggerSymbol, wager: number): NeonState {
   return symbol === 'POWER' ? { ...emptyNeonState, neonDiscoSpinsRemaining: neonDiscoRoundSpins } : {
     ...emptyNeonState, freeSpinsRemaining: 7, freeSpinWagerPoints: wager,
-    freeSpinFeatureMode: 'car-rows',
+    freeSpinFeatureMode: neonCarPlayMode,
   }
 }

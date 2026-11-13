@@ -17,6 +17,15 @@ public sealed record NeonDiscoCascadeStep(IReadOnlyList<GridPosition> Cleared,
 public sealed record NeonDiscoCascadeOutcome(IReadOnlyList<IReadOnlyList<string>> InitialReels,
     IReadOnlyList<NeonDiscoCascadeStep> Steps, long TotalPoints);
 
+public sealed record NeonNitroWildOutcome(GridPosition Trigger, int EligibleReel, int? ExpandedReel,
+    IReadOnlyList<IReadOnlyList<string>> InitialReels)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public GridPosition? SecondNitro { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    public bool RequiresChoice { get; init; }
+}
+
 public sealed record NeonEngineAudit(
     string EngineVersion, DateTime GeneratedAtUtc,
     GameDefinition BaseGame, GameDefinition EffectiveGame,
@@ -37,5 +46,7 @@ public sealed record NeonSpinOutcome(
     public long BananaBonusPoints { get; init; }
     public required NeonArcadeEvidence NeonArcade { get; init; }
     public NeonDiscoCascadeOutcome? NeonDiscoCascade { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonNitroWildOutcome? NeonNitroWild { get; init; }
     public required NeonEngineAudit EngineAudit { get; init; }
 }

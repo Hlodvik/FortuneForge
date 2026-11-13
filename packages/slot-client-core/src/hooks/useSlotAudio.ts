@@ -19,7 +19,18 @@ type GaplessLoop = {
   fadeGain?: GainNode
   startedAt: number
   context: AudioContext
+  anchorCueId?: SlotSoundCueId
+  phaseStartedAt?: number
 }
+
+type LoopSync = { anchorCueId: SlotSoundCueId; intervalSeconds: number }
+
+type PendingGaplessLoop = {
+  anchorCueId?: SlotSoundCueId
+  startWhenAnchorReady?: () => void
+}
+
+const syncLookaheadSeconds = .01
 
 // Owns browser Audio objects and user preferences so SlotsPage only requests
 // semantic cues from the selected sound set.
@@ -29,19 +40,29 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
   const oneShotsRef = useRef<Map<HTMLAudioElement, SlotSoundCue>>(new Map())
   const loopsRef = useRef<Map<SlotSoundCueId, HTMLAudioElement>>(new Map())
   const gaplessLoopsRef = useRef<Map<SlotSoundCueId, GaplessLoop>>(new Map())
-  const pendingGaplessLoopsRef = useRef<Map<SlotSoundCueId, object>>(new Map())
+  const pendingGaplessLoopsRef = useRef<Map<SlotSoundCueId, PendingGaplessLoop>>(new Map())
   const decodedLoopsRef = useRef<Map<string, Promise<AudioBuffer>>>(new Map())
   const audioContextRef = useRef<AudioContext | null>(null)
 
   const stopGaplessLoop = useCallback((cueId: SlotSoundCueId) => {
-    pendingGaplessLoopsRef.current.delete(cueId)
-    const loop = gaplessLoopsRef.current.get(cueId)
-    if (loop === undefined) return
-    loop.source.stop()
-    loop.source.disconnect()
-    loop.fadeGain?.disconnect()
-    loop.gain.disconnect()
-    gaplessLoopsRef.current.delete(cueId)
+    const stopped = new Set([cueId])
+    for (const id of stopped) {
+      pendingGaplessLoopsRef.current.delete(id)
+      for (const [dependent, pending] of pendingGaplessLoopsRef.current) {
+        if (pending.anchorCueId === id) stopped.add(dependent)
+      }
+      const loop = gaplessLoopsRef.current.get(id)
+      if (loop !== undefined) {
+        loop.source.stop()
+        loop.source.disconnect()
+        loop.fadeGain?.disconnect()
+        loop.gain.disconnect()
+        gaplessLoopsRef.current.delete(id)
+      }
+      for (const [dependent, active] of gaplessLoopsRef.current) {
+        if (active.anchorCueId === id) stopped.add(dependent)
+      }
+    }
   }, [])
 
   const isCueAllowed = useCallback((cue: SlotSoundCue | undefined): cue is SlotSoundCue => {
@@ -91,6 +112,13 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
         return
       }
       loop.gain.gain.value = cue.baseVolume * volumeScale
+    })
+
+    pendingGaplessLoopsRef.current.forEach((pending, cueId) => {
+      if (!isCueAllowed(soundSet.cues[cueId]) ||
+          pending.anchorCueId !== undefined && !isCueAllowed(soundSet.cues[pending.anchorCueId])) {
+        stopGaplessLoop(cueId)
+      }
     })
 
     saveAudioPreferences(preferences)
@@ -185,13 +213,18 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
     }
   }, [getAudioContext, getDecodedLoop, soundSet])
 
-  const startLoop = useCallback((cueId: SlotSoundCueId, fadeInMs = 0) => {
+  const startPlaybackLoop = useCallback((cueId: SlotSoundCueId, fadeInMs: number, sync?: LoopSync) => {
     const cue = soundSet.cues[cueId]
     if (!isCueAllowed(cue)) {
       return
     }
 
-    if (soundSet.events.themeSuite && (cueId === soundSet.events.ambience || cueId === soundSet.events.specialAmbience)) {
+    if (sync !== undefined) {
+      const anchorCue = soundSet.cues[sync.anchorCueId]
+      if (sync.anchorCueId === cueId || !Number.isFinite(sync.intervalSeconds) || sync.intervalSeconds <= 0 ||
+          !cue.gaplessLoop || !isCueAllowed(anchorCue) || !anchorCue.gaplessLoop ||
+          typeof window.AudioContext !== 'function' || loopsRef.current.has(sync.anchorCueId)) return
+    } else if (soundSet.events.themeSuite && (cueId === soundSet.events.ambience || cueId === soundSet.events.specialAmbience)) {
       const musicIds = [soundSet.events.ambience, soundSet.events.specialAmbience]
       musicIds.forEach((otherId) => {
         if (otherId !== undefined && otherId !== cueId) stopLoop(otherId)
@@ -212,7 +245,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
     }
 
     if (loopsRef.current.has(cueId)) {
-      startMediaLoop()
+      if (sync === undefined) startMediaLoop()
       return
     }
 
@@ -223,47 +256,90 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
         if (gaplessLoopsRef.current.has(cueId) || pendingGaplessLoopsRef.current.has(cueId)) return
 
         const decoded = getDecodedLoop(cue.source, context)
-        const request = {}
+        const request: PendingGaplessLoop = { anchorCueId: sync?.anchorCueId }
         pendingGaplessLoopsRef.current.set(cueId, request)
-        void decoded.then((buffer) => {
-          if (pendingGaplessLoopsRef.current.get(cueId) !== request || !isCueAllowed(cue)) return
-          const source = context.createBufferSource()
-          const gain = context.createGain()
-          source.buffer = buffer
-          source.loop = true
-          if (cue.loopDurationSeconds !== undefined) {
-            source.loopEnd = Math.min(buffer.duration, cue.loopDurationSeconds)
+        const fail = () => {
+          if (pendingGaplessLoopsRef.current.get(cueId) !== request) return
+          stopGaplessLoop(cueId)
+          if (sync === undefined && isCueAllowed(cue)) startMediaLoop()
+        }
+        const startDecoded = (buffer: AudioBuffer) => {
+          if (pendingGaplessLoopsRef.current.get(cueId) !== request) return
+          if (!isCueAllowed(cue) || sync !== undefined && !isCueAllowed(soundSet.cues[sync.anchorCueId])) {
+            stopGaplessLoop(cueId)
+            return
           }
-          gain.gain.value = cue.baseVolume * preferencesRef.current.volume / 100
-          const startedAt = context.currentTime
-          let fadeGain: GainNode | undefined
-          if (Number.isFinite(fadeInMs) && fadeInMs > 0) {
-            fadeGain = context.createGain()
-            fadeGain.gain.setValueAtTime(0, startedAt)
-            fadeGain.gain.linearRampToValueAtTime(1, startedAt + fadeInMs / 1000)
-            source.connect(fadeGain).connect(gain)
-          } else {
-            source.connect(gain)
+
+          const anchor = sync === undefined ? undefined : gaplessLoopsRef.current.get(sync.anchorCueId)
+          if (sync !== undefined && anchor === undefined) {
+            request.startWhenAnchorReady = () => startDecoded(buffer)
+            return
           }
-          gain.connect(context.destination)
-          source.start(startedAt)
-          gaplessLoopsRef.current.set(cueId, { source, gain, fadeGain, startedAt, context })
-        }).catch(() => {
-          if (pendingGaplessLoopsRef.current.get(cueId) !== request || !isCueAllowed(cue)) return
-          startMediaLoop()
-        }).finally(() => {
-          if (pendingGaplessLoopsRef.current.get(cueId) === request) {
+
+          try {
+            const source = context.createBufferSource()
+            const gain = context.createGain()
+            const duration = Math.min(buffer.duration, cue.loopDurationSeconds ?? buffer.duration)
+            source.buffer = buffer
+            source.loop = true
+            if (cue.loopDurationSeconds !== undefined) source.loopEnd = duration
+            gain.gain.value = cue.baseVolume * preferencesRef.current.volume / 100
+
+            let startedAt = context.currentTime
+            let offset = 0
+            let phaseStartedAt: number | undefined
+            if (sync !== undefined && anchor !== undefined) {
+              phaseStartedAt = anchor.phaseStartedAt ?? anchor.startedAt
+              // Leave room for Web Audio to receive the scheduled start before the boundary.
+              const elapsed = Math.max(startedAt + syncLookaheadSeconds, anchor.startedAt) - phaseStartedAt
+              const nextInterval = Math.floor(elapsed / sync.intervalSeconds) + 1
+              startedAt = phaseStartedAt + nextInterval * sync.intervalSeconds
+              offset = nextInterval * sync.intervalSeconds % duration
+            }
+
+            let fadeGain: GainNode | undefined
+            if (Number.isFinite(fadeInMs) && fadeInMs > 0) {
+              fadeGain = context.createGain()
+              fadeGain.gain.setValueAtTime(0, startedAt)
+              fadeGain.gain.linearRampToValueAtTime(1, startedAt + fadeInMs / 1000)
+              source.connect(fadeGain).connect(gain)
+            } else {
+              source.connect(gain)
+            }
+            gain.connect(context.destination)
+            if (sync === undefined) source.start(startedAt)
+            else source.start(startedAt, offset)
+            gaplessLoopsRef.current.set(cueId, { source, gain, fadeGain, startedAt, context,
+              anchorCueId: sync?.anchorCueId, phaseStartedAt })
             pendingGaplessLoopsRef.current.delete(cueId)
+          } catch {
+            fail()
+            return
           }
-        })
+
+          for (const waiting of pendingGaplessLoopsRef.current.values()) {
+            if (waiting.anchorCueId === cueId) waiting.startWhenAnchorReady?.()
+          }
+        }
+        void decoded.then(startDecoded, fail)
         return
       } catch {
         // Older browsers can still play the standard media loop.
+        stopGaplessLoop(cueId)
       }
     }
 
-    startMediaLoop()
-  }, [getAudioContext, getDecodedLoop, isCueAllowed, soundSet, stopLoop])
+    if (sync === undefined) startMediaLoop()
+  }, [getAudioContext, getDecodedLoop, isCueAllowed, soundSet, stopGaplessLoop, stopLoop])
+
+  const startLoop = useCallback((cueId: SlotSoundCueId, fadeInMs = 0) => {
+    startPlaybackLoop(cueId, fadeInMs)
+  }, [startPlaybackLoop])
+
+  const startSyncedLoop = useCallback((cueId: SlotSoundCueId, anchorCueId: SlotSoundCueId,
+    intervalSeconds: number, fadeInMs = 0) => {
+    startPlaybackLoop(cueId, fadeInMs, { anchorCueId, intervalSeconds })
+  }, [startPlaybackLoop])
 
   const getLoopPlaybackSeconds = useCallback((cueId: SlotSoundCueId): number | null => {
     const loop = gaplessLoopsRef.current.get(cueId)
@@ -275,7 +351,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
         output.performanceTime > 0
         ? output.contextTime + (performance.now() - output.performanceTime) / 1000
         : loop.context.currentTime - loop.context.baseLatency
-      return Math.max(0, heardAt - loop.startedAt)
+      return heardAt < loop.startedAt ? 0 : heardAt - (loop.phaseStartedAt ?? loop.startedAt)
     }
     const audio = loopsRef.current.get(cueId)
     return audio !== undefined && !audio.paused ? audio.currentTime : null
@@ -310,6 +386,7 @@ export function useSlotAudio(soundSet: SlotSoundSet) {
     preloadLoop,
     setVolume,
     startLoop,
+    startSyncedLoop,
     stopLoop,
     stopResultCues,
     toggleMuted,

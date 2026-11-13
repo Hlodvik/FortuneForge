@@ -48,6 +48,37 @@ public static class NeonOutcomeReplay
             }
         if (!Same(audit.RawGeneratedReels, audit.ReelsAfterFreeGameFrequency))
             Flag("slot-frequency-stage-mismatch", "Neon's inactive scatter-frequency stage changed the window.");
+
+        var usesNitroWild = NeonArcadeSlotDefinitions.SupportsNitroWild(audit.EngineVersion) &&
+            NeonNitroWild.IsCarPlay(result.IsFreeSpin, audit.FreeSpinFeatureMode);
+        if (usesNitroWild)
+        {
+            if (game.Layout.VisibleRows != audit.BaseGame.Layout.VisibleRows + 3 ||
+                game.Symbols.WildSymbolId != audit.BaseGame.Symbols.WildSymbolId ||
+                game.Symbols.SymbolSetId != NeonArcadeSlotDefinitions.CarSymbolSetId ||
+                game.Math.ReelSetId != NeonArcadeSlotDefinitions.CarReelSetId ||
+                game.Math.PaytableId != NeonArcadeSlotDefinitions.CarPaytableId ||
+                game.Math.PayoutMultiplier != NeonArcadeSlotDefinitions.CarPayoutMultiplierForEngine(
+                    audit.EngineVersion, audit.BaseGame.Math.PayoutMultiplier) ||
+                result.SymbolSetId != NeonArcadeSlotDefinitions.CarSymbolSetId ||
+                result.ReelSetId != NeonArcadeSlotDefinitions.CarReelSetId ||
+                result.PaytableId != NeonArcadeSlotDefinitions.CarPaytableId ||
+                audit.GenerationAttempts != 1)
+                Flag("slot-neon-nitro-mode-mismatch", "The Nitro outcome differs from its captured Car Plays rules.");
+            if (NeonArcadeSlotDefinitions.UsesExpandedCarPaylines(audit.EngineVersion))
+            {
+                var expectedGame = NeonNightsEngine.CreateEffectiveGame(audit.BaseGame, audit.FreeSpinFeatureMode, result.IsFreeSpin);
+                if (game.Layout.PaylineCount != expectedGame.Layout.PaylineCount ||
+                    !Same(game.Paylines, expectedGame.Paylines) ||
+                    !game.Math.PaylinePayoutSteps.SequenceEqual(expectedGame.Math.PaylinePayoutSteps))
+                    return [.. findings, new("slot-neon-car-paylines-mismatch", "The Car Plays routes differ from the expanded payline map.")];
+            }
+        }
+        else if (result.NeonNitroWild is not null ||
+            result.ReelSetId == NeonArcadeSlotDefinitions.CarReelSetId ||
+            symbols.Contains(NeonNitroWild.SymbolId) ||
+            audit.RawGeneratedReels.Any(reel => reel.Contains(NeonNitroWild.SymbolId)))
+            Flag("slot-neon-nitro-mode-mismatch", "Nitro is only available in its versioned Car Plays mode.");
         try
         {
             if (game.Symbols.SymbolSetId == NeonDiscoDefinitions.SymbolSetId)
@@ -55,11 +86,23 @@ public static class NeonOutcomeReplay
                 CheckClusterDisco(result, settledPayout, findings);
                 return findings;
             }
+            var lineReels = result.Reels;
+            var landedReels = result.Reels;
+            if (usesNitroWild)
+            {
+                landedReels = audit.ReelsAfterFreeGameFrequency;
+                (lineReels, var evidence) = NeonNitroWild.Resolve(
+                    landedReels, game.Symbols.WildSymbolId, audit.EngineVersion, result.NeonNitroWild?.ExpandedReel);
+                if (!Same(lineReels, result.Reels) || !Same(evidence, result.NeonNitroWild))
+                    Flag("slot-neon-nitro-wild-mismatch", "The Nitro trigger or wild reel differs from the landed window.");
+            }
             var evaluator = new NeonCombinationEvaluator();
             var calculator = new NeonPayoutCalculator();
-            var evaluations = evaluator.Evaluate(result.Reels, game, audit.SymbolSet);
-            var bonus = NeonArcadeBonus.Apply(calculator.Calculate(evaluations, game, audit.Paytable,
-                result.WagerPoints), result.Reels, isFreeSpin: result.IsFreeSpin, engineVersion: audit.EngineVersion);
+            var evaluations = evaluator.Evaluate(lineReels, game, audit.SymbolSet, audit.EngineVersion);
+            var linePayout = calculator.Calculate(evaluations, game, audit.Paytable, result.WagerPoints);
+            var (expected, bonus, sevenPoints) = NeonNightsEngine.CalculatePayout(
+                linePayout, landedReels, result.WagerPoints, result.IsFreeSpin, audit.EngineVersion);
+            if (result.NeonNitroWild?.RequiresChoice == true) expected = new(0, []);
             if (!Same(bonus.Evidence, result.NeonArcade) || !Same(audit.NeonArcade, result.NeonArcade))
                 Flag("slot-neon-arcade-mismatch", "The Neon boost or activators do not replay from the visible reels.");
             if (result.FreeSpinsAwarded != bonus.FreeSpinsAwarded)
@@ -75,10 +118,6 @@ public static class NeonOutcomeReplay
                 result.ConsecutiveFiveMisses != (fullMatch ? 0 : checked(audit.PityMissesBefore + 1)) ||
                 expectedPity && !fullMatch)
                 Flag("slot-pity-state-mismatch", "The Neon pity transition differs from the captured outcome.");
-            var sevenLines = NeonNightsEngine.CalculateTripleSevenPayouts(result.Reels, result.WagerPoints);
-            var sevenPoints = sevenLines.Sum(line => line.AmountPoints);
-            var expected = new SpinPayout(checked(bonus.Payout.TotalPoints + sevenPoints),
-                [.. bonus.Payout.Paylines, .. sevenLines]);
             if (result.NeonDiscoCascade is not null || audit.NeonDiscoCascade is not null)
             {
                 if (result.IsFreeSpin || audit.FreeSpinFeatureMode is not null ||
@@ -130,9 +169,10 @@ public static class NeonOutcomeReplay
             Flag("slot-neon-disco-mode-mismatch", "Cluster Disco requires its own paid seven-symbol state.");
             return;
         }
-        var usesCurrentMath = audit.EngineVersion == NeonArcadeSlotDefinitions.EngineVersion;
+        var usesCurrentMath = NeonArcadeSlotDefinitions.UsesCurrentDiscoMath(audit.EngineVersion);
         var reelSetId = usesCurrentMath ? NeonDiscoDefinitions.ReelSetId : NeonDiscoDefinitions.PreviousReelSetId;
-        var paytableId = usesCurrentMath ? NeonDiscoDefinitions.PaytableId : NeonDiscoDefinitions.PreviousPaytableId;
+        var paytableId = NeonArcadeSlotDefinitions.UsesCurrentPayoutSchedule(audit.EngineVersion) ? NeonDiscoDefinitions.PaytableId
+            : usesCurrentMath ? NeonDiscoDefinitions.PreviousPairedPaytableId : NeonDiscoDefinitions.PreviousPaytableId;
         if (game.Math.ReelSetId != reelSetId || game.Math.PaytableId != paytableId ||
             audit.ReelSet.Id != reelSetId || audit.Paytable.Id != paytableId)
             Flag("slot-neon-disco-math-mismatch", "The captured Disco reels and paytable do not match its engine version.");

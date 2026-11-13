@@ -2,7 +2,7 @@
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
-import { NEON_NIGHTS_SOUNDS } from '../src/audio'
+import { getNeonWinReaction, NEON_NIGHTS_SOUNDS } from '../src/audio'
 import type { SlotSoundSet } from '@fortuneforge/slot-client-core'
 import { useSlotAudio } from '@fortuneforge/slot-client-core'
 
@@ -46,6 +46,32 @@ class FakeAudio {
 }
 
 describe('theme-suite audio lifecycle', () => {
+  it('uses the four new voice takes across the win tiers', () => mountedAudio((current, instances) => {
+    act(() => {
+      for (const award of [1, 2, 10, 500]) current().playCue(getNeonWinReaction(award, 1))
+    })
+    expect(instances.map(audio => audio.src.split('/').at(-1))).toEqual([
+      'win-nice-v2.ogg', 'win-nice-emphatic-v1.ogg', 'win-great-v1.ogg', 'win-perfect-v1.ogg',
+    ])
+  }))
+
+  it('randomly selects a Nice take for each regular base win', () => mountedAudio((current, instances) => {
+    const random = vi.spyOn(Math, 'random')
+      .mockReturnValueOnce(0.9).mockReturnValueOnce(0.9).mockReturnValueOnce(0.1).mockReturnValueOnce(0.5)
+    try {
+      act(() => {
+        for (const award of [1, 2, 1, 2, 10, 500]) current().playCue(getNeonWinReaction(award, 1, true))
+      })
+      expect(random).toHaveBeenCalledTimes(4)
+    } finally {
+      random.mockRestore()
+    }
+    expect(instances.map(audio => audio.src.split('/').at(-1))).toEqual([
+      'win-nice-v1.ogg', 'win-nice-v1.ogg', 'win-nice-v2.ogg', 'win-nice-emphatic-v1.ogg',
+      'win-great-v1.ogg', 'win-perfect-v1.ogg',
+    ])
+  }))
+
   it('keeps one music bed, retains concurrent reel texture, and obeys results-only/mute', () => mountedAudio((current, instances) => {
     act(() => { current().startLoop('ambience'); current().startLoop('reel-spin') })
     const [base, reels] = instances
@@ -65,7 +91,7 @@ describe('theme-suite audio lifecycle', () => {
     expect(instances.every(audio => audio.paused)).toBe(true)
     act(() => { current().startLoop('ambience'); current().playCue('collect-sync'); current().playCue('low-win') })
     expect(instances).toHaveLength(5)
-    expect(instances[4].src).toContain('win-nice-v1.ogg')
+    expect(instances[4].src).toContain('win-nice-v2.ogg')
     act(() => current().toggleMuted())
     expect(instances[4].paused).toBe(true)
   }))

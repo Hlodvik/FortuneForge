@@ -161,7 +161,7 @@ public static class NeonDiscoCascade
 
         for (var stepIndex = 0; stepIndex < MaximumWinningSteps; stepIndex++)
         {
-            var evaluations = evaluator.Evaluate(board, game, symbols);
+            var evaluations = evaluator.Evaluate(board, game, symbols, NeonArcadeSlotDefinitions.PreviousCascadeEngineVersion);
             var linePayout = payoutCalculator.Calculate(evaluations, game, paytable, wagerPoints);
             var boosted = NeonArcadeBonus.Apply(linePayout, board).Payout;
             var sevens = NeonNightsEngine.CalculateTripleSevenPayouts(board, wagerPoints);

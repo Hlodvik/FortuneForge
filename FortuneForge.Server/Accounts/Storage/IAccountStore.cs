@@ -80,6 +80,29 @@ public interface IAccountStore
         decimal pointValueInCents,
         CancellationToken cancellationToken);
 
+    Task<NeonCarRespinSettlement> RespinNeonCarReelAsync(
+        string userId,
+        Guid spinId,
+        int reelIndex,
+        CancellationToken cancellationToken);
+
+    Task DismissNeonCarRespinAsync(
+        string userId,
+        Guid spinId,
+        CancellationToken cancellationToken);
+
+    Task<NeonNitroChoiceFinalization> FinalizeNeonNitroChoiceAsync(
+        string userId,
+        Guid spinId,
+        int reelIndex,
+        CancellationToken cancellationToken);
+
+    Task<NeonCarRespinSettlement> FinalizeNeonCarRespinNitroChoiceAsync(
+        string userId,
+        Guid spinId,
+        int reelIndex,
+        CancellationToken cancellationToken);
+
     Task<bool> GrantNeonAdminSpecialPlaysAsync(
         string userId,
         long wagerPoints,

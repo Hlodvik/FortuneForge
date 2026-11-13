@@ -19,10 +19,11 @@ type SlotGameProps = PackagedSlotHostProps & {
   paymentAlerts?: ReactNode
 }
 
-export function PackagedSlotHost({ gameId, title, BundledGame, account, demoMode = false, onSpinStateChange }: PackagedSlotHostProps & {
+export function PackagedSlotHost({ gameId, title, BundledGame, account, demoMode = false, showPaymentAlerts = true, onSpinStateChange }: PackagedSlotHostProps & {
   gameId: string
   title: string
   BundledGame: ComponentType<SlotGameProps>
+  showPaymentAlerts?: boolean
 }) {
   const { state, retry } = useGameRelease<SlotGameProps>(gameId)
   const renderShell = useCallback(({ balance, onNavigate, children }: GameShellProps) => <InGameShell
@@ -36,6 +37,6 @@ export function PackagedSlotHost({ gameId, title, BundledGame, account, demoMode
   }
   const Game = state.status === 'ready' ? state.Game : BundledGame
   return <Game account={account} demoMode={demoMode} authenticatedFetch={fetchWithAccountSession}
-    renderShell={renderShell} paymentAlerts={demoMode ? undefined : <PaymentAlertsMenu />}
+    renderShell={renderShell} paymentAlerts={!demoMode && showPaymentAlerts ? <PaymentAlertsMenu /> : undefined}
     onSpinStateChange={onSpinStateChange} />
 }

@@ -1,0 +1,6 @@
+{
+  "minimumPoints": 50,
+  "maximumPoints": 10000,
+  "incrementPoints": 50,
+  "defaultPoints": 300
+}

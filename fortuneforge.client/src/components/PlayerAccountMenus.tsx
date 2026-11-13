@@ -1,10 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { AccountSummary } from '../features/account/services/accountsApi'
 import { logoutAccount } from '../features/account/services/accountsApi'
 import { HeaderBalance } from './HeaderBalance'
 
 export function PlayerAccountMenus({ account, showBalance = true }: { account: AccountSummary; showBalance?: boolean }) {
   const [loggingOut, setLoggingOut] = useState(false)
+  const menuRef = useRef<HTMLDetailsElement>(null)
+  const triggerRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const dismissOutside = (event: Event) => {
+      const menu = menuRef.current
+      if (menu?.open && event.target instanceof Node && !menu.contains(event.target)) menu.open = false
+    }
+    document.addEventListener('pointerdown', dismissOutside, true)
+    document.addEventListener('focusin', dismissOutside)
+    return () => {
+      document.removeEventListener('pointerdown', dismissOutside, true)
+      document.removeEventListener('focusin', dismissOutside)
+    }
+  }, [])
 
   async function logout() {
     setLoggingOut(true)
@@ -15,8 +30,15 @@ export function PlayerAccountMenus({ account, showBalance = true }: { account: A
   return (
       <div className="player-shell-header__menus">
         {showBalance && <HeaderBalance amount={account.balances.slotsCredits} href="/balance" />}
-        <details className="player-shell-menu player-shell-menu--more">
-          <summary aria-label="Account menu"><span></span><span></span><span></span></summary>
+        <details ref={menuRef} className="player-shell-menu player-shell-menu--more"
+          onKeyDown={event => {
+            if (event.key !== 'Escape' || !event.currentTarget.open) return
+            event.preventDefault()
+            event.stopPropagation()
+            event.currentTarget.open = false
+            triggerRef.current?.focus({ preventScroll: true })
+          }}>
+          <summary ref={triggerRef} aria-label="Account menu"><span></span><span></span><span></span></summary>
           <nav aria-label="Account menu">
             {account.role.toLowerCase() === 'admin' && <a href="/admin"><strong>Admin portal</strong><small>Players, games and operations</small></a>}
             <a href="/balance"><strong>Recharge</strong><small>Add Rand to play</small></a>

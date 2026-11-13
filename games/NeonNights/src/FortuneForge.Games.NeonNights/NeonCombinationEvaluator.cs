@@ -7,7 +7,8 @@ public sealed class NeonCombinationEvaluator
     public IReadOnlyList<PaylineEvaluation> Evaluate(
         IReadOnlyList<IReadOnlyList<string>> reels,
         GameDefinition game,
-        SymbolSetDefinition symbolSet)
+        SymbolSetDefinition symbolSet,
+        string engineVersion = NeonArcadeSlotDefinitions.EngineVersion)
     {
         ValidateGrid(reels, game);
         var wildId = game.Symbols.WildSymbolId;
@@ -34,7 +35,8 @@ public sealed class NeonCombinationEvaluator
                 regularIds,
                 nativeWildMatchLengths,
                 wildSubstitutionMatchLengths,
-                paylineSymbolIds))
+                paylineSymbolIds,
+                allowFourSymbolRuns: engineVersion != NeonArcadeSlotDefinitions.EngineVersion))
             .ToArray();
     }
 
@@ -48,13 +50,15 @@ public sealed class NeonCombinationEvaluator
         IReadOnlyList<string> regularIds,
         IReadOnlySet<int> nativeWildMatchLengths,
         IReadOnlySet<int> wildSubstitutionMatchLengths,
-        IReadOnlySet<string>? paylineSymbolIds)
+        IReadOnlySet<string>? paylineSymbolIds,
+        bool allowFourSymbolRuns)
     {
         var original = rows.Select((row, reel) => reels[reel][row]).ToArray();
         var assignments = new string[game.Layout.ReelCount];
         var candidates = new Dictionary<string, MatchCandidate>(StringComparer.Ordinal);
         // Older captured paytables allowed a run of wilds to pay on its own.
-        var requiresNaturalMatch = game.Math.PaytableId == NeonArcadeSlotDefinitions.PaytableId;
+        var requiresNaturalMatch = game.Math.PaytableId is NeonArcadeSlotDefinitions.PaytableId or
+            NeonArcadeSlotDefinitions.CarPaytableId;
 
         ExploreAssignments(0);
         return new PaylineEvaluation(paylineId, candidates.Values.ToArray());
@@ -106,7 +110,7 @@ public sealed class NeonCombinationEvaluator
                 if (!isFreeGameSymbol &&
                     (paylineSymbolIds is null || paylineSymbolIds.Contains(assignments[start])) &&
                     length >= game.Matching.MinimumRunLength &&
-                    IsAllowedRunShape(rows, start, length, game.Layout.ReelCount) &&
+                    IsAllowedRunShape(rows, start, length, game.Layout.ReelCount, allowFourSymbolRuns) &&
                     (!usesWildSubstitution || wildSubstitutionMatchLengths.Contains(length)) &&
                     (!isNativeWild || nativeWildMatchLengths.Contains(length)) &&
                     (!requiresNaturalMatch || Enumerable.Range(start, length).Any(reel => original[reel] != wildId)))
@@ -171,14 +175,15 @@ public sealed class NeonCombinationEvaluator
         IReadOnlyList<int> paylineRows,
         int start,
         int length,
-        int fullMatchLength)
+        int fullMatchLength,
+        bool allowFourSymbolRuns)
     {
         if (length == fullMatchLength)
         {
             return true;
         }
 
-        if (length is 3 or 4)
+        if (length == 3 || (length == 4 && allowFourSymbolRuns))
         {
             if (start != 0 && start != fullMatchLength - length)
             {

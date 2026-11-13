@@ -1,14 +1,17 @@
+using System.Text.Json;
 using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.NeonNights;
 
 /// <summary>
-/// Local, uncalibrated Neon arcade model with standard Special Plays.
+/// Neon arcade model with separate rules for Car Plays.
 /// </summary>
 public static class NeonArcadeSlotDefinitions
 {
     public const string GameId = "neon-nights-v1";
-    public const decimal PayoutMultiplier = 0.82m;
+    public const decimal PreviousBasePayoutMultiplier = 0.82m;
+    public static decimal PayoutMultiplier { get; } = NeonPayoutSchedule.BaseLineScale;
+    public static decimal CarPayoutMultiplier { get; } = NeonPayoutSchedule.CarLineScale;
     public const string PreviousModelId = "neon-arcade-local-v2";
     public const string PreviousDiscoModelId = "neon-arcade-local-v3";
     public const string PreviousClusterModelId = "neon-arcade-local-v4";
@@ -25,19 +28,28 @@ public static class NeonArcadeSlotDefinitions
     public const string PreviousCarEngineVersion = "neon-arcade-special-plays-v10";
     public const string PreviousTwelvePlayEngineVersion = "neon-arcade-special-plays-v11";
     public const string PreviousMultiplierCarryEngineVersion = "neon-arcade-special-plays-v12";
-    public const string EngineVersion = "neon-arcade-special-plays-v13";
+    public const string PreviousDiscoMathEngineVersion = "neon-arcade-special-plays-v13";
+    public const string PreviousNitroEngineVersion = "neon-arcade-special-plays-v14";
+    public const string PreviousPayoutScheduleEngineVersion = "neon-arcade-special-plays-v15";
+    public const string PreviousNitroChoiceEngineVersion = "neon-arcade-special-plays-v16";
+    internal const string ExpandedCarPaylinesEngineVersion = "neon-arcade-special-plays-v17";
+    public const string EngineVersion = "neon-arcade-special-plays-v18";
     public const string SymbolSetId = "neon-arcade-symbols-v3";
     public const string ReelSetId = "neon-arcade-reels-v4";
     public const string PreviousPaytableId = "neon-arcade-paytable-v3";
     public const string PaytableId = "neon-arcade-paytable-v4";
+    public const string CarSymbolSetId = "neon-car-symbols-v1";
+    public const string CarReelSetId = "neon-car-reels-v1";
+    public const string CarPaytableId = "neon-car-paytable-v1";
     public const decimal BoostPercentPerBonusSymbol = 25m;
     public const int SpecialPlaySpins = 7;
     public const int PreviousDiscoPlaySpins = 10;
     public const int DiscoPlaySpins = 12;
     public const long TripleSevenPatternMultiplier = 12;
     public const int StopsPerReel = 4096;
-    private const int MinimumWagerPoints = 50;
-    private const int MaximumWagerPoints = 50_000;
+    private const int PreviousMaximumWagerPoints = 50_000;
+    private static readonly JsonElement Wagering = LoadWagering();
+    private const int NitroStopsPerCarReel = 112;
 
     public static GameDefinition CreateGame() => new()
     {
@@ -89,7 +101,25 @@ public static class NeonArcadeSlotDefinitions
         engineVersion == PreviousTwelvePlayEngineVersion || SupportsDiscoMultiplierCarry(engineVersion);
 
     public static bool SupportsDiscoMultiplierCarry(string? engineVersion) =>
-        engineVersion is PreviousMultiplierCarryEngineVersion or EngineVersion;
+        engineVersion == PreviousMultiplierCarryEngineVersion || UsesCurrentDiscoMath(engineVersion);
+
+    public static bool UsesCurrentDiscoMath(string? engineVersion) =>
+        engineVersion == PreviousDiscoMathEngineVersion || SupportsNitroWild(engineVersion);
+
+    public static bool SupportsNitroWild(string? engineVersion) =>
+        engineVersion is PreviousNitroEngineVersion or PreviousPayoutScheduleEngineVersion || SupportsNitroChoice(engineVersion);
+
+    internal static bool SupportsNitroChoice(string? engineVersion) =>
+        engineVersion == PreviousNitroChoiceEngineVersion || UsesExpandedCarPaylines(engineVersion);
+
+    internal static bool UsesExpandedCarPaylines(string? engineVersion) =>
+        engineVersion is ExpandedCarPaylinesEngineVersion or EngineVersion;
+
+    internal static bool UsesCurrentPayoutSchedule(string? engineVersion) =>
+        engineVersion == PreviousPayoutScheduleEngineVersion || SupportsNitroChoice(engineVersion);
+
+    internal static decimal CarPayoutMultiplierForEngine(string engineVersion, decimal basePayoutMultiplier) =>
+        UsesCurrentPayoutSchedule(engineVersion) ? CarPayoutMultiplier : basePayoutMultiplier;
 
     public static bool SupportsPackageReplay(string? engineVersion) =>
         SupportsDiscoCascade(engineVersion);
@@ -142,16 +172,23 @@ public static class NeonArcadeSlotDefinitions
         Symbols = Weights.Select(row => new SymbolDefinition { Id = row.Symbol }).ToList()
     };
 
+    public static SymbolSetDefinition CreateCarSymbolSet() => new()
+    {
+        Id = CarSymbolSetId,
+        Symbols = [.. CreateSymbolSet().Symbols, new() { Id = NeonNitroWild.SymbolId }]
+    };
+
     public static PaytableDefinition CreatePaytable() => CreatePaytable(PaytableId, Payouts);
+    public static PaytableDefinition CreateCarPaytable() => CreatePaytable(CarPaytableId, Payouts, CarSymbolSetId);
 
     public static PaytableDefinition CreatePreviousPaytable() =>
         CreatePaytable(PreviousPaytableId, PreviousPayouts);
 
     private static PaytableDefinition CreatePaytable(string id,
-        IEnumerable<(string Symbol, long Three, long Five)> payouts) => new()
+        IEnumerable<(string Symbol, long Three, long Five)> payouts, string symbolSetId = SymbolSetId) => new()
     {
         Id = id,
-        SymbolSetId = SymbolSetId,
+        SymbolSetId = symbolSetId,
         Rules = payouts.SelectMany(row => new[]
         {
             new PayoutRule { SymbolId = row.Symbol, MatchLength = 3, Multiplier = row.Three },
@@ -160,7 +197,8 @@ public static class NeonArcadeSlotDefinitions
     };
 
     public static bool IsValidCarryWager(long wagerPoints) =>
-        wagerPoints is >= MinimumWagerPoints and <= MaximumWagerPoints;
+        // Existing Car rounds keep their triggering wager after the limit changes.
+        wagerPoints >= Wagering.GetProperty("minimumPoints").GetInt64() && wagerPoints <= PreviousMaximumWagerPoints;
 
     public static void ValidateCarryWager(long wagerPoints)
     {
@@ -171,22 +209,45 @@ public static class NeonArcadeSlotDefinitions
     public static GameWageringDefinition CreateCentWagering() => new()
     {
         PointValueInCents = 1m,
-        MinimumWagerPoints = MinimumWagerPoints,
-        MaximumWagerPoints = MaximumWagerPoints,
-        WagerIncrementPoints = 50
+        MinimumWagerPoints = Wagering.GetProperty("minimumPoints").GetInt64(),
+        MaximumWagerPoints = Wagering.GetProperty("maximumPoints").GetInt64(),
+        WagerIncrementPoints = Wagering.GetProperty("incrementPoints").GetInt64()
     };
+
+    private static JsonElement LoadWagering()
+    {
+        using var source = typeof(NeonArcadeSlotDefinitions).Assembly
+            .GetManifestResourceStream("NeonNights.Wagering.json")
+            ?? throw new InvalidOperationException("The Neon Nights wager configuration is missing.");
+        using var document = JsonDocument.Parse(source);
+        return document.RootElement.Clone();
+    }
 
     public static ReelSetDefinition CreateReelSet() => new()
     {
         Id = ReelSetId,
         SymbolSetId = SymbolSetId,
-        Reels = Enumerable.Range(0, 5).Select(CreateStrip).ToList()
+        Reels = Enumerable.Range(0, 5).Select(reel => CreateStrip(reel, 0)).ToList()
     };
 
-    private static List<string> CreateStrip(int reel)
+    public static ReelSetDefinition CreateCarReelSet() => new()
+    {
+        Id = CarReelSetId,
+        SymbolSetId = CarSymbolSetId,
+        Reels = Enumerable.Range(0, 5).Select(reel => CreateStrip(reel, NitroStopsPerCarReel)).ToList()
+    };
+
+    private static List<string> CreateStrip(int reel, int nitroStops)
     {
         var strip = Weights.SelectMany(row => Enumerable.Repeat(row.Symbol, row.Count)).ToList();
         if (strip.Count != StopsPerReel) throw new InvalidOperationException("Invalid Neon reel weights.");
+        if (nitroStops > 0)
+        {
+            // Replace Cassette stops before the shared shuffle to preserve every other symbol's stop.
+            var start = strip.IndexOf("3");
+            strip.RemoveRange(start, nitroStops);
+            strip.InsertRange(start, Enumerable.Repeat(NeonNitroWild.SymbolId, nitroStops));
+        }
         // Versioned, deterministic authoring permutation. Actual stop selection
         // still uses the engine's cryptographic random source.
         var state = unchecked(0x4e454f4eu + (uint)reel * 0x9e3779b9u);

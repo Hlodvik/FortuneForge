@@ -51,17 +51,18 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         if (string.IsNullOrWhiteSpace(playerId))
             throw new ArgumentException("An authenticated player id is required.", nameof(playerId));
 
-        var symbolSet = definitions.GetSymbolSet(game.Symbols.SymbolSetId)
-            ?? throw new KeyNotFoundException($"Symbol set '{game.Symbols.SymbolSetId}' was not found.");
-        var reelSet = definitions.GetReelSet(game.Math.ReelSetId)
-            ?? throw new KeyNotFoundException($"Reel set '{game.Math.ReelSetId}' was not found.");
-        var paytable = definitions.GetPaytable(game.Math.PaytableId)
-            ?? throw new KeyNotFoundException($"Paytable '{game.Math.PaytableId}' was not found.");
+        var effectiveGame = CreateEffectiveGame(game, featureMode, isFreeSpin);
+        var symbolSet = definitions.GetSymbolSet(effectiveGame.Symbols.SymbolSetId)
+            ?? throw new KeyNotFoundException($"Symbol set '{effectiveGame.Symbols.SymbolSetId}' was not found.");
+        var reelSet = definitions.GetReelSet(effectiveGame.Math.ReelSetId)
+            ?? throw new KeyNotFoundException($"Reel set '{effectiveGame.Math.ReelSetId}' was not found.");
+        var paytable = definitions.GetPaytable(effectiveGame.Math.PaytableId)
+            ?? throw new KeyNotFoundException($"Paytable '{effectiveGame.Math.PaytableId}' was not found.");
         if (!string.Equals(paytable.SymbolSetId, symbolSet.Id, StringComparison.Ordinal))
             throw new InvalidOperationException(
                 $"Paytable '{paytable.Id}' is not compatible with symbol set '{symbolSet.Id}'.");
         var effectiveReelSet = specialBoostApplied
-            ? NeonSpecialPoints.CreateBoostedReelSet(game, reelSet)
+            ? NeonSpecialPoints.CreateBoostedReelSet(effectiveGame, reelSet)
             : reelSet;
         var pity = pityStates.GetOrAdd(playerId, static _ => new PityState());
         lock (pity.SyncRoot)
@@ -72,7 +73,7 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
                     throw new ArgumentOutOfRangeException(nameof(persistedPityMisses));
                 pity.ConsecutiveFiveMisses = persisted;
             }
-            return SpinLocked(game, effectiveReelSet, symbolSet, paytable, wagerPoints,
+            return SpinLocked(game, effectiveGame, effectiveReelSet, symbolSet, paytable, wagerPoints,
                 pity, specialBoostApplied, currentEnergyBalance, featureMode, isFreeSpin, isNeonDiscoPlay,
                 neonDiscoMultiplier);
         }
@@ -80,6 +81,7 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
 
     private NeonSpinOutcome SpinLocked(
         GameDefinition game,
+        GameDefinition effectiveGame,
         ReelSetDefinition reelSet,
         SymbolSetDefinition symbolSet,
         PaytableDefinition paytable,
@@ -95,7 +97,7 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         if (isNeonDiscoPlay)
             return SpinDiscoLocked(game, wagerPoints, pity, currentEnergyBalance, neonDiscoMultiplier);
 
-        var effectiveGame = CreateEffectiveGame(game, featureMode);
+        var usesNitroWild = NeonNitroWild.IsCarPlay(isFreeSpin, featureMode);
         var pityMissesBefore = pity.ConsecutiveFiveMisses;
         var pityTriggered = string.IsNullOrWhiteSpace(featureMode) &&
             game.Math.FiveMatchPityMissLimit is { } pityLimit &&
@@ -103,7 +105,9 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         var maximumAttempts = pityTriggered ? MaximumPityGenerationAttempts : 1;
         ReelOutcome? rawOutcome = null;
         ReelOutcome? frequencyOutcome = null;
-        ReelOutcome? outcome = null;
+        ReelOutcome? featureOutcome = null;
+        IReadOnlyList<IReadOnlyList<string>>? finalReels = null;
+        NeonNitroWildOutcome? nitroWild = null;
         IReadOnlyList<PaylineEvaluation>? evaluations = null;
         var generationAttempts = 0;
 
@@ -112,47 +116,80 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
             generationAttempts++;
             rawOutcome = reelGenerator.Generate(effectiveGame, reelSet, symbolSet);
             frequencyOutcome = NeonFreeGameFrequency.Apply(rawOutcome, effectiveGame, random);
-            outcome = ApplyFeatureSymbols(frequencyOutcome, featureMode);
-            evaluations = combinationEvaluator.Evaluate(outcome.VisibleReels, effectiveGame, symbolSet);
+            featureOutcome = ApplyFeatureSymbols(frequencyOutcome, featureMode);
+            (finalReels, nitroWild) = usesNitroWild
+                ? NeonNitroWild.Resolve(featureOutcome.VisibleReels, effectiveGame.Symbols.WildSymbolId,
+                    NeonArcadeSlotDefinitions.EngineVersion)
+                : (featureOutcome.VisibleReels, null);
+            evaluations = combinationEvaluator.Evaluate(finalReels, effectiveGame, symbolSet);
             if (!pityTriggered || HasPayingFullMatch(evaluations, effectiveGame, paytable))
                 break;
         }
 
-        if (rawOutcome is null || frequencyOutcome is null || outcome is null || evaluations is null ||
+        if (rawOutcome is null || frequencyOutcome is null || featureOutcome is null ||
+            finalReels is null || evaluations is null ||
             pityTriggered && !HasPayingFullMatch(evaluations, effectiveGame, paytable))
             throw new InvalidOperationException("Neon Nights could not generate a five-match pity outcome.");
 
         pity.ConsecutiveFiveMisses = HasPayingFullMatch(evaluations, effectiveGame, paytable)
             ? 0 : checked(pity.ConsecutiveFiveMisses + 1);
         var linePayout = payoutCalculator.Calculate(evaluations, effectiveGame, paytable, wagerPoints);
-        var bonus = NeonArcadeBonus.Apply(linePayout, outcome.VisibleReels, isFreeSpin: isFreeSpin);
-        var sevenPaylines = CalculateTripleSevenPayouts(outcome.VisibleReels, wagerPoints);
-        var payout = sevenPaylines.Count == 0 ? bonus.Payout : bonus.Payout with
-        {
-            Paylines = [.. bonus.Payout.Paylines, .. sevenPaylines],
-            TotalPoints = checked(bonus.Payout.TotalPoints + sevenPaylines.Sum(line => line.AmountPoints))
-        };
-        var sevenPoints = sevenPaylines.Sum(line => line.AmountPoints);
+        // Landed side awards remain payable even when Nitro covers one of their symbols.
+        var (payout, bonus, sevenPoints) = CalculatePayout(linePayout, featureOutcome.VisibleReels, wagerPoints,
+            isFreeSpin, NeonArcadeSlotDefinitions.EngineVersion);
+        if (nitroWild?.RequiresChoice == true) payout = new(0, []);
         var specialPointsAwarded = NeonSpecialPoints.CalculateAward(evaluations, effectiveGame);
         var energyAwarded = game.Energy is null ? 0 :
-            outcome.VisibleReels.Sum(reel => reel.Count(symbol =>
+            finalReels.Sum(reel => reel.Count(symbol =>
                 string.Equals(symbol, game.Energy.SymbolId, StringComparison.Ordinal))) *
                 game.Energy.PointsPerVisibleSymbol;
 
         return new NeonSpinOutcome(
             Guid.NewGuid(), game.Id, reelSet.Id, symbolSet.Id, paytable.Id,
-            wagerPoints, game.Wagering.PointValueInCents, outcome.StopIndexes,
-            outcome.VisibleReels, payout, pity.ConsecutiveFiveMisses, pityTriggered,
+            wagerPoints, game.Wagering.PointValueInCents, featureOutcome.StopIndexes,
+            finalReels, payout, pity.ConsecutiveFiveMisses, pityTriggered,
             bonus.FreeSpinsAwarded, specialPointsAwarded, energyAwarded, specialBoostApplied)
         {
             IsFreeSpin = isFreeSpin,
             BananaBonusPoints = sevenPoints,
             NeonArcade = bonus.Evidence,
+            NeonNitroWild = nitroWild,
             EngineAudit = new NeonEngineAudit(
                 NeonArcadeSlotDefinitions.EngineVersion, DateTime.UtcNow, game, effectiveGame,
                 reelSet, symbolSet, paytable, pityMissesBefore,
                 currentEnergyBalance, featureMode, generationAttempts,
                 rawOutcome.VisibleReels, frequencyOutcome.VisibleReels, bonus.Evidence, null)
+        };
+    }
+
+    public static NeonSpinOutcome ResolveNitroChoice(NeonSpinOutcome pending, int selectedReel)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(selectedReel);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(selectedReel, pending.Reels.Count);
+        if (pending.NeonNitroWild?.RequiresChoice != true ||
+            NeonOutcomeReplay.Check(pending, pending.Payout).Count != 0)
+            throw new InvalidOperationException("The Nitro reel choice does not match a pending spin.");
+
+        var audit = pending.EngineAudit;
+        var game = audit.EffectiveGame;
+        var landedReels = audit.ReelsAfterFreeGameFrequency;
+        var (reels, nitro) = NeonNitroWild.Resolve(landedReels, game.Symbols.WildSymbolId, audit.EngineVersion, selectedReel);
+        var evaluations = new NeonCombinationEvaluator().Evaluate(reels, game, audit.SymbolSet, audit.EngineVersion);
+        var linePayout = new NeonPayoutCalculator().Calculate(evaluations, game, audit.Paytable, pending.WagerPoints);
+        var (payout, bonus, sevens) = CalculatePayout(
+            linePayout, landedReels, pending.WagerPoints, pending.IsFreeSpin, audit.EngineVersion);
+        var misses = HasPayingFullMatch(evaluations, game, audit.Paytable) ? 0 : checked(audit.PityMissesBefore + 1);
+        return pending with
+        {
+            Reels = reels,
+            NeonNitroWild = nitro,
+            Payout = payout,
+            NeonArcade = bonus.Evidence,
+            BananaBonusPoints = sevens,
+            FreeSpinsAwarded = bonus.FreeSpinsAwarded,
+            SpecialPointsAwarded = NeonSpecialPoints.CalculateAward(evaluations, game),
+            ConsecutiveFiveMisses = misses,
+            EngineAudit = audit with { NeonArcade = bonus.Evidence }
         };
     }
 
@@ -191,32 +228,58 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
         };
     }
 
-    private static GameDefinition CreateEffectiveGame(GameDefinition game, string? featureMode)
+    internal static GameDefinition CreateEffectiveGame(GameDefinition game, string? featureMode, bool usesAwardedPlay)
     {
         if (!NeonPlayPolicy.HasFeatureMode(featureMode, "rows")) return game;
 
         const int addedRows = 3;
+        var visibleRows = checked(game.Layout.VisibleRows + addedRows);
         var extraPaylines = Enumerable.Range(game.Layout.VisibleRows, addedRows)
             .Select(row => Enumerable.Repeat(row, game.Layout.ReelCount).ToList())
             .ToList();
+        var extraPayoutSteps = Enumerable.Repeat(0, extraPaylines.Count).ToList();
+        var usesNitroWild = NeonNitroWild.IsCarPlay(usesAwardedPlay, featureMode);
+        if (usesNitroWild)
+        {
+            var knownRoutes = game.Paylines.Concat(extraPaylines).Select(rows => string.Join(',', rows)).ToHashSet();
+            for (var route = 0; route < game.Paylines.Count; route++)
+            {
+                var rows = game.Paylines[route];
+                var bottom = rows.Max();
+                // Add each existing shape where it reaches the expanded area.
+                for (var offset = game.Layout.VisibleRows - bottom; offset < visibleRows - bottom; offset++)
+                {
+                    var shifted = rows.Select(row => row + offset).ToList();
+                    if (!knownRoutes.Add(string.Join(',', shifted))) continue;
+                    extraPaylines.Add(shifted);
+                    extraPayoutSteps.Add(game.Math.PaylinePayoutSteps[route]);
+                }
+            }
+        }
         return new GameDefinition
         {
             Id = game.Id,
             Layout = new GameLayoutDefinition
             {
                 ReelCount = game.Layout.ReelCount,
-                VisibleRows = checked(game.Layout.VisibleRows + addedRows),
+                VisibleRows = visibleRows,
                 PaylineCount = checked(game.Layout.PaylineCount + extraPaylines.Count)
             },
-            Symbols = game.Symbols,
+            Symbols = usesNitroWild ? new()
+            {
+                SymbolSetId = NeonArcadeSlotDefinitions.CarSymbolSetId,
+                WildSymbolId = game.Symbols.WildSymbolId,
+                NativeWildMatchLengths = game.Symbols.NativeWildMatchLengths,
+                WildSubstitutionMatchLengths = game.Symbols.WildSubstitutionMatchLengths,
+                PaylineSymbolIds = game.Symbols.PaylineSymbolIds
+            } : game.Symbols,
             Matching = game.Matching,
             Math = new GameMathDefinition
             {
-                ReelSetId = game.Math.ReelSetId,
-                PaytableId = game.Math.PaytableId,
-                PayoutMultiplier = game.Math.PayoutMultiplier,
-                PaylinePayoutSteps = [.. game.Math.PaylinePayoutSteps,
-                    .. Enumerable.Repeat(0, extraPaylines.Count)],
+                ReelSetId = usesNitroWild ? NeonArcadeSlotDefinitions.CarReelSetId : game.Math.ReelSetId,
+                PaytableId = usesNitroWild ? NeonArcadeSlotDefinitions.CarPaytableId : game.Math.PaytableId,
+                PayoutMultiplier = usesNitroWild ? NeonArcadeSlotDefinitions.CarPayoutMultiplier : game.Math.PayoutMultiplier,
+                PaylinePayoutSteps = [.. game.Math.PaylinePayoutSteps, .. extraPayoutSteps],
                 FiveMatchPityMissLimit = game.Math.FiveMatchPityMissLimit,
                 Targets = game.Math.Targets
             },
@@ -297,6 +360,18 @@ public sealed class NeonNightsEngine(ISlotDefinitionSource definitions, IGameRan
                 AddPattern([new(reel, row), new(reel + 1, row - 1), new(reel + 2, row - 2)]);
         }
         return payouts;
+    }
+
+    internal static (SpinPayout Payout, NeonArcadeSettlement Bonus, long SevenPoints) CalculatePayout(
+        SpinPayout linePayout, IReadOnlyList<IReadOnlyList<string>> landedReels, long wagerPoints,
+        bool isFreeSpin, string engineVersion)
+    {
+        var bonus = NeonArcadeBonus.Apply(linePayout, landedReels, isFreeSpin: isFreeSpin, engineVersion: engineVersion);
+        var sevenPaylines = CalculateTripleSevenPayouts(landedReels, wagerPoints);
+        var sevenPoints = sevenPaylines.Sum(line => line.AmountPoints);
+        var payout = sevenPaylines.Count == 0 ? bonus.Payout : new SpinPayout(
+            checked(bonus.Payout.TotalPoints + sevenPoints), [.. bonus.Payout.Paylines, .. sevenPaylines]);
+        return (payout, bonus, sevenPoints);
     }
 
     private static bool HasPayingFullMatch(

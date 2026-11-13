@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using FortuneForge.Games.JadeDragon;
 using FortuneForge.Server.Slots.Bonuses;
+using FortuneForge.Server.Accounts.Models;
 
 namespace FortuneForge.Server.Slots.Models;
 
@@ -85,6 +86,12 @@ public sealed record SpinResult(
     public int NeonDiscoSpinsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonDiscoRoundWinPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonCarRespinOffer? NeonCarRespinOffer { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonCarRoundWinPoints { get; init; }
     public int FreeSpinsRemaining { get; init; }
     public long? FreeSpinWagerPoints { get; init; }
     public int SpecialPointsBalance { get; init; }
@@ -119,6 +126,9 @@ public sealed record SpinResult(
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public NeonDiscoCascadeOutcome? NeonDiscoCascade { get; init; }
+
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonNitroWildOutcome? NeonNitroWild { get; init; }
 
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OlympusTumbleOutcome? OlympusTumble { get; init; }

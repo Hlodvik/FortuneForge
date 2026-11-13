@@ -1,5 +1,3 @@
-using FortuneForge.Server.Slots.Models;
-
 sealed class Statistics(IEnumerable<string> symbolIds)
 {
     private readonly List<(long Payout, long Wager)> _cycles = [];

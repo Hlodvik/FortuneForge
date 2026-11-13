@@ -1,19 +1,54 @@
 import { getSlotSymbolDefinition } from '@fortuneforge/slot-client-core'
 import { neonHelp, neonSymbols } from '../manifest.js'
-import { FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from '../paylinePatterns.js'
-export function NeonHelp() {
+import { CAR_FIVE_MATCH_EXAMPLES, CAR_THREE_MATCH_EXAMPLES, FIVE_MATCH_PATTERNS, THREE_MATCH_PATTERNS } from '../paylinePatterns.js'
+
+type PaylinePattern = { label: string; rows: readonly number[] }
+
+function PaylineDiagram({ label, rows, visibleRows }: PaylinePattern & { visibleRows: number }) {
+  const width = rows.length * 20
+  const rowY = (row: number) => 8 + row * 54 / (visibleRows - 1)
+
+  return (
+    <svg
+      className={`win-help__pictogram${rows.length === 5 ? ' win-help__pictogram--five' : ''}`}
+      viewBox={`0 0 ${width} 70`}
+      role="img"
+      aria-label={label}
+    >
+      <title>{label}</title>
+      <rect x="1" y="1" width={width - 2} height="68" rx="9" />
+      {Array.from({ length: visibleRows * rows.length }, (_, index) => (
+        <circle
+          key={index}
+          className="win-help__pictogram-dot"
+          cx={10 + index % rows.length * 20}
+          cy={rowY(Math.floor(index / rows.length))}
+          r="2.4"
+        />
+      ))}
+      <polyline points={rows.map((row, reel) => `${10 + reel * 20},${rowY(row)}`).join(' ')} />
+      {rows.map((row, reel) => (
+        <circle key={reel} className="win-help__pictogram-win" cx={10 + reel * 20} cy={rowY(row)} r="5" />
+      ))}
+    </svg>
+  )
+}
+
+export function NeonHelp({ carPlay = false }: { carPlay?: boolean }) {
   const help = neonHelp
   const symbolSet = neonSymbols
   const wildDefinition = getSlotSymbolDefinition(symbolSet, 'ACE')
   const paylinePatternIds = help.paylinePatternIds ??
     Array.from({ length: help.paylineCount }, (_, index) => index + 1)
-  const fiveMatchPatterns = paylinePatternIds.map((patternId) => {
+  const fiveMatchPatterns: readonly PaylinePattern[] = carPlay ? CAR_FIVE_MATCH_EXAMPLES : paylinePatternIds.map((patternId) => {
     const rows = FIVE_MATCH_PATTERNS[patternId - 1]
     if (!rows) {
       throw new Error(`Win-help payline pattern ${patternId} is not defined.`)
     }
-    return { patternId, rows }
+    return { label: `Valid five-symbol payline ${patternId}`, rows }
   })
+  const threeMatchPatterns = carPlay ? CAR_THREE_MATCH_EXAMPLES : THREE_MATCH_PATTERNS
+  const visibleRows = carPlay ? 7 : 4
 
   return (
     <>
@@ -29,51 +64,14 @@ export function NeonHelp() {
             <div>
               <h3>Three symbols</h3>
               <p>
-                The first win begins on reel 1 and crosses reels 1–3 in a straight row or one
-                clean diagonal direction.
+                Match across reels 1–3 in a straight row or a straight diagonal.
+                {carPlay && ' All seven rows are in play. On a diagonal, each step moves one row in the same direction.'}
               </p>
-              <div className="win-help__pictograms" aria-label="Allowed three-symbol paths">
-                {THREE_MATCH_PATTERNS.map((pattern) => (
-                  <svg
-                    key={pattern.label}
-                    className="win-help__pictogram"
-                    viewBox="0 0 60 70"
-                    role="img"
-                    aria-label={pattern.label}
-                  >
-                    <title>{pattern.label}</title>
-                    <rect x="1" y="1" width="58" height="68" rx="9" />
-                    {Array.from({ length: 12 }, (_, index) => {
-                      const column = index % 3
-                      const row = Math.floor(index / 3)
-                      return (
-                        <circle
-                          key={`${column}-${row}`}
-                          className="win-help__pictogram-dot"
-                          cx={10 + column * 20}
-                          cy={8 + row * 18}
-                          r="2.4"
-                        />
-                      )
-                    })}
-                    <polyline
-                      points={pattern.rows
-                        .map((row, column) => `${10 + column * 20},${8 + row * 18}`)
-                        .join(' ')}
-                    />
-                    {pattern.rows.map((row, column) => (
-                      <circle
-                        key={`${column}-${row}-win`}
-                        className="win-help__pictogram-win"
-                        cx={10 + column * 20}
-                        cy={8 + row * 18}
-                        r="5"
-                      />
-                    ))}
-                  </svg>
+              <div className="win-help__pictograms" aria-label={carPlay ? 'Examples of three-symbol paths' : 'Allowed three-symbol paths'}>
+                {threeMatchPatterns.map(pattern => (
+                  <PaylineDiagram key={pattern.label} {...pattern} visibleRows={visibleRows} />
                 ))}
               </div>
-              <p className="win-help__note">Three-symbol wins begin on reel 1.</p>
             </div>
           </article>
 
@@ -82,57 +80,20 @@ export function NeonHelp() {
             <div>
               <h3>Five symbols</h3>
               <p>
-                A matching symbol across all five reels wins on any of the game’s {help.paylineCount} full
-                payline patterns. {wildDefinition.label} symbols may substitute here.
-                {' '}{help.fiveMatchPayoutNote ?? 'The more central patterns pay more.'}
-                {' '}{help.fourMatchPayoutNote ?? 'Four-symbol runs do not pay.'}
+                {carPlay
+                  ? 'Match a symbol across all five reels on a base-game route. Those shapes also repeat at lower positions wherever they fit in the expanded grid.'
+                  : `A matching symbol across all five reels wins on any of the ${fiveMatchPatterns.length} routes shown.`}
               </p>
               <div
                 className="win-help__five-pictograms"
-                aria-label="All valid five-symbol paylines"
+                aria-label={carPlay ? 'Examples of five-symbol paylines' : 'All valid five-symbol paylines'}
               >
-                {fiveMatchPatterns.map(({ patternId, rows }) => (
-                  <svg
-                    key={patternId}
-                    className="win-help__pictogram win-help__pictogram--five"
-                    viewBox="0 0 100 70"
-                    role="img"
-                    aria-label={`Valid five-symbol payline ${patternId}`}
-                  >
-                    <title>{`Valid five-symbol payline ${patternId}`}</title>
-                    <rect x="1" y="1" width="98" height="68" rx="9" />
-                    {Array.from({ length: 20 }, (_, index) => {
-                      const column = index % 5
-                      const row = Math.floor(index / 5)
-                      return (
-                        <circle
-                          key={`${column}-${row}`}
-                          className="win-help__pictogram-dot"
-                          cx={10 + column * 20}
-                          cy={8 + row * 18}
-                          r="2.4"
-                        />
-                      )
-                    })}
-                    <polyline
-                      points={rows
-                        .map((row, column) => `${10 + column * 20},${8 + row * 18}`)
-                        .join(' ')}
-                    />
-                    {rows.map((row, column) => (
-                      <circle
-                        key={`${column}-${row}-win`}
-                        className="win-help__pictogram-win"
-                        cx={10 + column * 20}
-                        cy={8 + row * 18}
-                        r="5"
-                      />
-                    ))}
-                  </svg>
+                {fiveMatchPatterns.map(pattern => (
+                  <PaylineDiagram key={pattern.label} {...pattern} visibleRows={visibleRows} />
                 ))}
               </div>
               <p className="win-help__note">
-                Every winning route connects one matching symbol on each of the five reels.
+                Payline wins require three or five matching symbols.
               </p>
             </div>
           </article>

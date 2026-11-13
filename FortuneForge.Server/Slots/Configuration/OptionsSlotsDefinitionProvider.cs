@@ -39,6 +39,8 @@ public sealed class OptionsSlotsDefinitionProvider : ISlotsDefinitionProvider
             return GoldFoundrySlotDefinitions.CreateSymbolSet();
         if (id == NeonArcadeSlotDefinitions.SymbolSetId)
             return NeonArcadeSlotDefinitions.CreateSymbolSet();
+        if (id == NeonArcadeSlotDefinitions.CarSymbolSetId)
+            return NeonArcadeSlotDefinitions.CreateCarSymbolSet();
         if (id == MidnightVaultSlotDefinitions.SymbolSetId)
             return MidnightVaultSlotDefinitions.CreateSymbolSet();
         return StandaloneSlotPackageRegistry.GetSymbolSet(id);
@@ -52,6 +54,8 @@ public sealed class OptionsSlotsDefinitionProvider : ISlotsDefinitionProvider
             return GoldFoundrySlotDefinitions.CreateReelSet();
         if (id == NeonArcadeSlotDefinitions.ReelSetId)
             return NeonArcadeSlotDefinitions.CreateReelSet();
+        if (id == NeonArcadeSlotDefinitions.CarReelSetId)
+            return NeonArcadeSlotDefinitions.CreateCarReelSet();
         if (id == MidnightVaultBaseReelSet.Id)
             return MidnightVaultBaseReelSet.Create();
         if (id == MidnightVaultBaseReelSet.CurrentId)
@@ -67,6 +71,8 @@ public sealed class OptionsSlotsDefinitionProvider : ISlotsDefinitionProvider
             return GoldFoundrySlotDefinitions.CreatePaytable();
         if (id == NeonArcadeSlotDefinitions.PaytableId)
             return NeonArcadeSlotDefinitions.CreatePaytable();
+        if (id == NeonArcadeSlotDefinitions.CarPaytableId)
+            return NeonArcadeSlotDefinitions.CreateCarPaytable();
         if (id == NeonArcadeSlotDefinitions.PreviousPaytableId)
             return NeonArcadeSlotDefinitions.CreatePreviousPaytable();
         if (id == MidnightVaultSlotDefinitions.PaytableId)

@@ -69,9 +69,21 @@ internal static class PaidSlotWorker
                 admission.MathModelId is { } model && model != audit.EngineVersion && model != result.PaytableId)
                 throw new JsonException("The worker outcome differs from the admitted play.");
 
-            if ((result.JadeDragonCascade is not null || result.OlympusTumble is not null || admission.IsNeonDiscoPlay) &&
+            var isNeon = gameId == SlotSpecialRoundProfiles.NeonNightsGameId;
+            var isCarPlay = isNeon && admission.IsFreeSpin && admission.FreeSpinFeatureMode == NeonArcadeBonus.PaidCarFeatureMode;
+            if (isNeon && audit.FreeSpinFeatureMode != admission.FreeSpinFeatureMode)
+                throw new JsonException("The Neon worker outcome differs from the admitted feature mode.");
+
+            if (isNeon && result.NeonNitroWild?.RequiresChoice == true &&
+                (result.Payout.TotalPoints != 0 ||
+                 NeonOutcomeReplay.Check(Games.NeonNights.NeonNightsEngine.ToPackage(result, audit), result.Payout).Count != 0))
+                throw new JsonException("The pending Nitro outcome could not be replayed.");
+
+            if (result.NeonNitroWild?.RequiresChoice != true &&
+                (result.JadeDragonCascade is not null || result.OlympusTumble is not null || admission.IsNeonDiscoPlay ||
+                 isCarPlay || result.NeonNitroWild is not null) &&
                 SlotRoundAudit.Check(result, result.Payout, isPaid: true).Any(finding => finding.Severity == "error"))
-                throw new JsonException("The paid cascade outcome could not be replayed.");
+                throw new JsonException("The paid feature outcome could not be replayed.");
 
             return result with { ChargedWagerCents = admission.ChargedWagerCents };
         }

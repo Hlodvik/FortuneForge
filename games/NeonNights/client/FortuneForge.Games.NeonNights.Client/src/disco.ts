@@ -1,11 +1,12 @@
 import type { SlotSymbolSet } from '@fortuneforge/slot-client-core'
 import { NEON_NIGHTS_SYMBOL_IMAGES as images } from './symbols.js'
 import { NEON_DISCO_SYMBOL_SET_ID, type NeonDiscoSymbolId } from './types.js'
+import payoutSchedule from './assets/rules/payout-schedule-v15.json' with { type: 'json' }
 
-export const discoClusterValues = [
-  ['2', 'Jack', 275], ['4', 'Queen', 280], ['5', 'King', 286], ['7', 'Ace', 291],
-  ['DISCO_MARTINI', 'Martini', 302], ['DISCO_SEVEN', 'Neon seven', 313], ['DISCO_BALL', 'Neon disco ball', 324],
-] as const
+export const discoClusterValues = ([
+  ['2', 'Jack'], ['4', 'Queen'], ['5', 'King'], ['7', 'Ace'],
+  ['DISCO_MARTINI', 'Martini'], ['DISCO_SEVEN', 'Neon seven'], ['DISCO_BALL', 'Neon disco ball'],
+] as const).map(([symbol, label]) => [symbol, label, payoutSchedule.discoFourSymbolAwards[symbol]] as const)
 export const discoClusterSizes = Array.from({ length: 17 }, (_, index) => index + 4)
 export const discoAwardPercent = (fourSymbolAwardPercent: number, size: number) =>
   Math.floor(fourSymbolAwardPercent * (100 + 5 * (size - 4)) / 100)

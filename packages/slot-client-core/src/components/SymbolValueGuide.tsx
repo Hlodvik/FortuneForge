@@ -27,6 +27,8 @@ function SymbolValuePanel({
   headingId,
   onClose,
   onMinimize,
+  sidePanelMode,
+  focusMinimize = false,
   showValueTokens,
   symbolSet,
   panelRef,
@@ -37,6 +39,8 @@ function SymbolValuePanel({
   headingId?: string
   onClose?: () => void
   onMinimize?: () => void
+  sidePanelMode?: 'on-demand'
+  focusMinimize?: boolean
   showValueTokens: boolean
   symbolSet: SlotSymbolSet
   panelRef?: RefObject<HTMLElement | null>
@@ -101,6 +105,7 @@ function SymbolValuePanel({
       ref={panelRef}
       tabIndex={headingId ? -1 : undefined}
       data-slot-dialog-theme={headingId ? theme : undefined}
+      data-side-panel-mode={sidePanelMode}
       className={`symbol-value-guide ${className}`}
       aria-label={headingId ? undefined : 'Symbol values'}
       aria-labelledby={headingId}
@@ -127,6 +132,7 @@ function SymbolValuePanel({
               <span className="symbol-value-guide__heading-five">5 in a row</span>
             </span>}
         {onMinimize && <button
+          autoFocus={focusMinimize}
           className="symbol-value-guide__minimize"
           type="button"
           aria-label="Minimize symbol values"
@@ -150,10 +156,62 @@ function SymbolValuePanel({
   )
 }
 
+type SidePanelMode = 'auto' | 'on-demand'
+
+function SymbolValueSidePanel({
+  className,
+  mode,
+  show,
+  showValueTokens,
+  symbolSet,
+  wager,
+}: {
+  className: string
+  mode: SidePanelMode
+  show: boolean
+  showValueTokens: boolean
+  symbolSet: SlotSymbolSet
+  wager?: number
+}) {
+  const [minimized, setMinimized] = useState(mode === 'on-demand')
+  const focusRestoreButton = useRef(false)
+  if (!show) return null
+  const onDemand = mode === 'on-demand' ? mode : undefined
+
+  return createPortal(minimized ? (
+    <button
+      autoFocus={focusRestoreButton.current}
+      className={`symbol-value-guide__restore ${className}`.trim()}
+      data-side-panel-mode={onDemand}
+      type="button"
+      aria-label={onDemand ? 'Symbol values' : 'Restore symbol values'}
+      aria-controls="symbol-value-guide-side-panel"
+      aria-expanded="false"
+      onClick={() => setMinimized(false)}
+    >
+      <span aria-hidden="true">◆</span> Symbol values
+    </button>
+  ) : (
+    <SymbolValuePanel
+      className={`symbol-value-guide--side ${className}`.trim()}
+      sidePanelMode={onDemand}
+      focusMinimize={Boolean(onDemand)}
+      onMinimize={() => {
+        focusRestoreButton.current = true
+        setMinimized(true)
+      }}
+      showValueTokens={showValueTokens}
+      symbolSet={symbolSet}
+      wager={wager}
+    />
+  ), document.body)
+}
+
 export function SymbolValueGuide({
   symbolSet,
   showSidePanel = false,
   sidePanelClassName = '',
+  sidePanelMode = 'auto',
   showValueTokens = true,
   isOpen: controlledIsOpen,
   onOpenChange,
@@ -164,6 +222,7 @@ export function SymbolValueGuide({
   symbolSet: SlotSymbolSet
   showSidePanel?: boolean
   sidePanelClassName?: string
+  sidePanelMode?: SidePanelMode
   showValueTokens?: boolean
   isOpen?: boolean
   onOpenChange?: (open: boolean) => void
@@ -172,7 +231,6 @@ export function SymbolValueGuide({
   triggerContent?: ReactNode
 }) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
-  const [sidePanelMinimized, setSidePanelMinimized] = useState(false)
   const isOpen = controlledIsOpen ?? internalIsOpen
   const triggerRef = useRef<HTMLButtonElement>(null)
   const setOpen = useCallback((open: boolean) => {
@@ -184,33 +242,27 @@ export function SymbolValueGuide({
 
   return (
     <>
-      {showSidePanel && createPortal(sidePanelMinimized ? (
-        <button
-          autoFocus
-          className={`symbol-value-guide__restore ${sidePanelClassName}`.trim()}
-          type="button"
-          aria-label="Restore symbol values"
-          aria-controls="symbol-value-guide-side-panel"
-          aria-expanded="false"
-          onClick={() => setSidePanelMinimized(false)}
-        >
-          <span aria-hidden="true">◆</span> Symbol values
-        </button>
-      ) : (
-        <SymbolValuePanel
-          className={`symbol-value-guide--side ${sidePanelClassName}`.trim()}
-          onMinimize={() => setSidePanelMinimized(true)}
-          showValueTokens={showValueTokens}
-          symbolSet={symbolSet}
-          wager={wager}
-        />
-      ),
-        document.body,
-      )}
+      <SymbolValueSidePanel
+        className={sidePanelClassName}
+        mode="auto"
+        show={showSidePanel && sidePanelMode === 'auto'}
+        showValueTokens={showValueTokens}
+        symbolSet={symbolSet}
+        wager={wager}
+      />
+      {sidePanelMode === 'on-demand' && <SymbolValueSidePanel
+        className={sidePanelClassName}
+        mode={sidePanelMode}
+        show={showSidePanel}
+        showValueTokens={showValueTokens}
+        symbolSet={symbolSet}
+        wager={wager}
+      />}
 
       <button
         ref={triggerRef}
         className="symbol-value-guide__trigger"
+        data-side-panel-mode={showSidePanel && sidePanelMode === 'on-demand' ? sidePanelMode : undefined}
         type="button"
         aria-label="Symbol values"
         title="Symbol values"

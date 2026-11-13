@@ -123,7 +123,7 @@ export function SidecarSpinControls({
     window.addEventListener('scroll', repositionOnScroll, true)
     viewport?.addEventListener('resize', positionMenu)
     viewport?.addEventListener('scroll', positionMenu)
-    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('pointerdown', closeOutside, true)
     document.addEventListener('focusin', closeOutside)
     document.addEventListener('keydown', closeEscape)
     return () => {
@@ -131,7 +131,7 @@ export function SidecarSpinControls({
       window.removeEventListener('scroll', repositionOnScroll, true)
       viewport?.removeEventListener('resize', positionMenu)
       viewport?.removeEventListener('scroll', positionMenu)
-      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('pointerdown', closeOutside, true)
       document.removeEventListener('focusin', closeOutside)
       document.removeEventListener('keydown', closeEscape)
     }

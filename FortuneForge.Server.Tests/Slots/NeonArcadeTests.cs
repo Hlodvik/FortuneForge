@@ -26,7 +26,7 @@ public sealed class NeonArcadeTests
         var game = provider.GetGame(SlotSpecialRoundProfiles.NeonNightsGameId)!;
         Assert.Equal(1m, game.Wagering.PointValueInCents);
         Assert.Equal(50, game.Wagering.MinimumWagerPoints);
-        Assert.Equal(50000, game.Wagering.MaximumWagerPoints);
+        Assert.Equal(10_000, game.Wagering.MaximumWagerPoints);
         Assert.Equal(50, game.Wagering.WagerIncrementPoints);
         Assert.Null(game.FreeGames);
         Assert.Null(game.Energy);

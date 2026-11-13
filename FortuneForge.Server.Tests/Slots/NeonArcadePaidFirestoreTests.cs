@@ -88,6 +88,176 @@ public sealed class NeonArcadePaidFirestoreTests(MidnightVaultPaidEmulatorFixtur
     }
 
     [Fact]
+    public async Task PendingNitroChoiceSurvivesReloadAndSettlesOnceAtTheLockedWager()
+    {
+        const string playerId = "local-neon-pending-nitro-player";
+        var database = emulator.Database();
+        var store = new FirestoreAccountStore(database);
+        Assert.NotNull((await store.CreateAsync(playerId, playerId, playerId.ToUpperInvariant(),
+            playerId + "@example.test", "unused-local-test", "active", default)).Value);
+        var wallet = database.Collection("userBalances").Document(playerId + "_slotsCredits");
+        await wallet.UpdateAsync(new Dictionary<string, object>
+        {
+            ["available"] = 1_000L,
+            ["availableFractionalCents"] = 0L
+        });
+        Assert.True(await store.GrantNeonAdminSpecialPlaysAsync(
+            playerId, 150, 1m, arcadeRows: true, discoBall: false, cancellationToken: default));
+
+        var strips = NeonArcadeSlotDefinitions.CreateCarReelSet().Reels;
+        var stops = strips.Select((strip, reel) => Enumerable.Range(0, strip.Count).First(stop =>
+            Enumerable.Range(0, 7).Any(row => strip[(stop + row) % strip.Count] == "NITRO") ==
+            (reel >= 3))).ToArray();
+        var draws = new ReelStops(stops);
+        var engine = new SpinService(NeonArcadeTests.Definitions(), new CryptoReelGenerator(draws),
+            new CombinationEvaluator(), new PayoutCalculator(), draws);
+        var admission = await store.BeginSlotSpinAsync(playerId, GameId, 50, 1m,
+            useFreeSpin: true, useSpecialBoost: false, specialBoostCost: 0,
+            startedAtUtc: DateTime.UtcNow.AddSeconds(-5), cooldown: TimeSpan.Zero,
+            cancellationToken: default,
+            resolveOutcome: (accepted, _) => Task.FromResult(engine.SpinAdmitted(GameId, accepted, playerId)));
+        var offer = Assert.IsType<NeonNitroChoiceOffer>(admission.PendingNeonNitroChoice);
+        Assert.Equal("spin", offer.SourceKind);
+        Assert.Equal([0, 1, 2, 3, 4], offer.EligibleReels);
+        Assert.Equal(150, admission.WagerPoints);
+        Assert.Equal(150, admission.ChargedWagerCents);
+        Assert.True(admission.ResolvedOutcome?.NeonNitroWild?.RequiresChoice);
+        var pendingWallet = await wallet.GetSnapshotAsync();
+        Assert.Equal(1_000L, pendingWallet.GetValue<long>("available"));
+        var reloaded = new FirestoreAccountStore(database);
+        var state = await reloaded.GetSlotStateAsync(playerId, GameId, 1m, default);
+        Assert.Equal(offer.SpinId, state.PendingNeonNitroChoice?.SpinId);
+        Assert.Equal(6, state.FreeSpinsRemaining);
+        await Assert.ThrowsAsync<NeonNitroChoiceConflictException>(() => reloaded.BeginSlotSpinAsync(
+            playerId, GameId, 150, 1m, true, false, 0, DateTime.UtcNow,
+            TimeSpan.Zero, default));
+        Assert.False(await reloaded.GrantNeonAdminSpecialPlaysAsync(
+            playerId, 150, 1m, arcadeRows: true, discoBall: false, cancellationToken: default));
+
+        var chosen = await reloaded.FinalizeNeonNitroChoiceAsync(playerId, offer.SpinId, 2, default);
+        Assert.False(chosen.Result.NeonNitroWild?.RequiresChoice);
+        Assert.Equal(2, chosen.Result.NeonNitroWild?.ExpandedReel);
+        Assert.All(chosen.Result.Reels[2], symbol => Assert.Equal("ACE", symbol));
+        Assert.Equal(chosen.Result.Payout.TotalPoints, chosen.Settlement.Payout.TotalPoints);
+        Assert.Null((await reloaded.GetSlotStateAsync(playerId, GameId, 1m, default)).PendingNeonNitroChoice);
+        var repeated = await reloaded.FinalizeNeonNitroChoiceAsync(playerId, offer.SpinId, 2, default);
+        Assert.Equal(chosen.Result.Payout.TotalPoints, repeated.Result.Payout.TotalPoints);
+        Assert.Equal(chosen.Settlement.SlotsCreditsBalance, repeated.Settlement.SlotsCreditsBalance);
+        await Assert.ThrowsAsync<NeonNitroChoiceConflictException>(() =>
+            reloaded.FinalizeNeonNitroChoiceAsync(playerId, offer.SpinId, 1, default));
+    }
+
+    [Fact]
+    public async Task EachLosingPaidCarSpinOffersOneRespinAtTheLockedWager()
+    {
+        const string playerId = "local-neon-car-respin-player";
+        var database = emulator.Database();
+        var store = new FirestoreAccountStore(database);
+        Assert.NotNull((await store.CreateAsync(playerId, playerId, playerId.ToUpperInvariant(),
+            playerId + "@example.test", "unused-local-test", "active", default)).Value);
+        var wallet = database.Collection("userBalances").Document(playerId + "_slotsCredits");
+        await wallet.UpdateAsync(new Dictionary<string, object>
+        {
+            ["available"] = 1_000L,
+            ["availableFractionalCents"] = 0L
+        });
+
+        Assert.True(await store.GrantNeonAdminSpecialPlaysAsync(
+            playerId, 150, 1m, arcadeRows: true, discoBall: false, cancellationToken: default));
+        var draws = new SeededDraws(73);
+        var engine = new SpinService(NeonArcadeTests.Definitions(), new CryptoReelGenerator(draws),
+            new CombinationEvaluator(), new PayoutCalculator(), draws);
+        var started = DateTime.UtcNow.AddSeconds(-20);
+        async Task<SlotSpinAdmission> Admit() => await store.BeginSlotSpinAsync(playerId, GameId, 50, 1m,
+            useFreeSpin: true, useSpecialBoost: false, specialBoostCost: 0,
+            startedAtUtc: started = started.AddSeconds(1), cooldown: TimeSpan.Zero,
+            cancellationToken: default);
+        Task<SlotSpinSettlement> Settle(SlotSpinAdmission admission, bool winning = false)
+        {
+            var spin = Enumerable.Range(0, 100)
+                .Select(_ => engine.SpinAdmitted(GameId, admission, playerId))
+                .First(result => (result.Payout.TotalPoints > 0) == winning &&
+                    result.NeonNitroWild is null && result.FreeSpinsAwarded == 0);
+            return store.RecordSlotSpinAsync(playerId, spin, admission, DateTime.UtcNow, default);
+        }
+
+        var firstAdmission = await Admit();
+        Assert.Equal(150, firstAdmission.WagerPoints);
+        Assert.Equal(150, firstAdmission.ChargedWagerCents);
+        var first = await Settle(firstAdmission);
+        Assert.NotNull(first.NeonCarRespinOffer);
+        var staleSpinId = first.NeonCarRespinOffer.SpinId;
+
+        var pending = await Admit();
+        await Assert.ThrowsAsync<NeonCarRespinConflictException>(() => store.RespinNeonCarReelAsync(
+            playerId, staleSpinId, first.NeonCarRespinOffer.EligibleReels[0], default));
+        var latest = await Settle(pending);
+        var offer = latest.NeonCarRespinOffer;
+        Assert.NotNull(offer);
+        var source = await database.Collection("slotSpinResults")
+            .Document(offer.SpinId.ToString("N")).GetSnapshotAsync();
+        Assert.True(Encoding.UTF8.GetByteCount(source.GetValue<string>("neonCarRespinSourceJson")) < 500_000);
+        var beforeState = await store.GetSlotStateAsync(playerId, GameId, 1m, default);
+        Assert.Equal(offer.SpinId, beforeState.NeonCarRespinOffer?.SpinId);
+        Assert.Equal(offer.EligibleReels, beforeState.NeonCarRespinOffer?.EligibleReels);
+        var freeBefore = beforeState.FreeSpinsRemaining;
+        var balanceBefore = await wallet.GetSnapshotAsync();
+        var beforeCents = balanceBefore.GetValue<long>("available") * 100 +
+            balanceBefore.GetValue<long>("availableFractionalCents");
+
+        var selected = offer.EligibleReels[0];
+        var result = await store.RespinNeonCarReelAsync(playerId, offer.SpinId, selected, default);
+        Assert.False(result.AlreadyApplied);
+        Assert.Equal(offer.SpinId, result.SourceSpinId);
+        Assert.Equal(selected, result.ReelIndex);
+        Assert.Equal(Math.Max(0, result.Payout.TotalPoints - result.OriginalPayoutPoints), result.ImprovementPoints);
+        Assert.Equal((beforeCents + result.ImprovementPoints * 1m) / 100m, result.SlotsCreditsBalance);
+        var state = await store.GetSlotStateAsync(playerId, GameId, 1m, default);
+        Assert.Null(state.NeonCarRespinOffer);
+        Assert.Equal(freeBefore, state.FreeSpinsRemaining);
+        Assert.Equal(150, state.FreeSpinWagerPoints);
+
+        var nextAdmission = await Admit();
+        var nextLoss = await Settle(nextAdmission);
+        var nextOffer = Assert.IsType<NeonCarRespinOffer>(nextLoss.NeonCarRespinOffer);
+        Assert.NotEqual(offer.SpinId, nextOffer.SpinId);
+        var laterBalance = await wallet.GetSnapshotAsync();
+        var repeated = await store.RespinNeonCarReelAsync(playerId, offer.SpinId, selected, default);
+        Assert.True(repeated.AlreadyApplied);
+        Assert.Equal(result.Payout.TotalPoints, repeated.Payout.TotalPoints);
+        Assert.Equal(laterBalance.GetValue<long>("available") +
+            laterBalance.GetValue<long>("availableFractionalCents") / 100m,
+            repeated.SlotsCreditsBalance);
+        await Assert.ThrowsAsync<NeonCarRespinConflictException>(() => store.RespinNeonCarReelAsync(
+            playerId, offer.SpinId, (selected + 1) % 5, default));
+        await Assert.ThrowsAsync<NeonCarRespinConflictException>(() => store.RespinNeonCarReelAsync(
+            playerId, staleSpinId, first.NeonCarRespinOffer.EligibleReels[0], default));
+        var receipts = database.Collection("neonCarRespinReceipts");
+        var receipt = await receipts.Document(offer.SpinId.ToString("N")).GetSnapshotAsync();
+        Assert.True(receipt.Exists);
+        Assert.Equal(result.ImprovementPoints, receipt.GetValue<long>("improvementPoints"));
+
+        var nextRespin = await store.RespinNeonCarReelAsync(playerId, nextOffer.SpinId, nextOffer.EligibleReels[0], default);
+        Assert.False(nextRespin.AlreadyApplied);
+        Assert.Equal(nextOffer.SpinId, nextRespin.SourceSpinId);
+        Assert.True((await receipts.Document(nextOffer.SpinId.ToString("N")).GetSnapshotAsync()).Exists);
+        Assert.Null((await store.GetSlotStateAsync(playerId, GameId, 1m, default)).NeonCarRespinOffer);
+
+        var win = await Settle(await Admit(), winning: true);
+        Assert.True(win.Payout.TotalPoints > 0);
+        Assert.Null(win.NeonCarRespinOffer);
+
+        await Settle(await Admit(), winning: true);
+        await Settle(await Admit(), winning: true);
+        var finalLoss = await Settle(await Admit());
+        Assert.Equal(0, finalLoss.FreeSpinsRemaining);
+        var finalOffer = Assert.IsType<NeonCarRespinOffer>(finalLoss.NeonCarRespinOffer);
+        var finalRespin = await store.RespinNeonCarReelAsync(playerId, finalOffer.SpinId, finalOffer.EligibleReels[0], default);
+        Assert.False(finalRespin.AlreadyApplied);
+        Assert.Null((await store.GetSlotStateAsync(playerId, GameId, 1m, default)).NeonCarRespinOffer);
+    }
+
+    [Fact]
     public async Task DiscoAdmissionChargesEachPlayAndRejectsAnUnverifiedCascade()
     {
         const string playerId = "local-neon-disco-player";

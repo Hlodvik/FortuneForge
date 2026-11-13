@@ -1,6 +1,6 @@
 import type { GridPosition } from '@fortuneforge/slot-client-core'
 import { stepDiscoMultiplier } from './roundState.js'
-import { NEON_GAME_ID, NEON_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonDiscoMultiplier, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
+import { NEON_GAME_ID, NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonCarSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonCarRespinOffer, type NeonCarRespinResult, type NeonDiscoMultiplier, type NeonNitroChoice, type NeonPendingChoiceResponse, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
 
 type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number }
 export class NeonRequestError extends Error {
@@ -26,6 +26,11 @@ const normalizeDiscoMultiplier = (value: unknown) =>
   record(value) && value.neonDiscoMultiplier === undefined ? { ...value, neonDiscoMultiplier: 1 } : value
 const symbol = (value: unknown, allowed: readonly string[]): value is NeonSymbolId => typeof value === 'string' && allowed.includes(value)
 const position = (value: unknown, rows: number): value is GridPosition => record(value) && natural(value.reel) && value.reel < 5 && natural(value.row) && value.row < rows
+const reelIndex = (value: unknown): value is number => natural(value) && value < 5
+const sameReel = (first: readonly NeonSymbolId[], second: readonly NeonSymbolId[]) =>
+  first.length === second.length && first.every((cell, row) => cell === second[row])
+const sameBoard = (first: NeonSpinResult['reels'], second: NeonSpinResult['reels']) =>
+  first.length === second.length && first.every((reel, column) => sameReel(reel, second[column]))
 function reels(value: unknown, rows?: number, allowed: readonly string[] = neonBaseSymbolIds): value is NeonSpinResult['reels'] {
   return Array.isArray(value) && value.length === 5 && value.every(reel => Array.isArray(reel) &&
     (rows === undefined ? reel.length === 4 || reel.length === 7 : reel.length === rows) && reel.every(cell => symbol(cell, allowed))) &&
@@ -76,24 +81,83 @@ function clusterCells(paid: ValidatedPayout, board: NeonSpinResult['reels']): Se
   }
   return all.size > 0 && total === paid.totalPoints ? all : null
 }
+function isCarRespinOffer(value: unknown): value is NeonCarRespinOffer {
+  return record(value) && typeof value.spinId === 'string' && value.spinId.length > 0 &&
+    reels(value.reels, 7, neonCarSymbolIds) && natural(value.roundWinPoints) && Array.isArray(value.eligibleReels) &&
+    value.eligibleReels.every(index => natural(index) && index < 5) &&
+    new Set(value.eligibleReels).size === value.eligibleReels.length
+}
 export function isNeonState(value: unknown): value is NeonState {
   return record(value) && natural(value.freeSpinsRemaining) && natural(value.neonDiscoSpinsRemaining) && discoMultiplier(value.neonDiscoMultiplier) &&
     (value.freeSpinWagerPoints === null || natural(value.freeSpinWagerPoints)) &&
-    (value.freeSpinFeatureMode === null || typeof value.freeSpinFeatureMode === 'string')
+    (value.freeSpinFeatureMode === null || typeof value.freeSpinFeatureMode === 'string') &&
+    (value.neonCarRoundWinPoints == null || natural(value.neonCarRoundWinPoints)) &&
+    (value.neonDiscoRoundWinPoints == null || natural(value.neonDiscoRoundWinPoints)) &&
+    (value.neonCarRespinOffer == null || isCarRespinOffer(value.neonCarRespinOffer)) &&
+    (value.pendingNeonNitroChoice == null || isNitroChoice(value.pendingNeonNitroChoice))
+}
+function validNitroWild(value: unknown, settled: NeonSpinResult['reels'], allowPending = false): boolean {
+  if (value == null) return settled.slice(0, -1).every(reel => !reel.includes('NITRO'))
+  if (!record(value) || !reels(value.initialReels, 7, neonCarSymbolIds) || !position(value.trigger, 7)) return false
+
+  const initial = value.initialReels
+  const firstNitroReel = initial.slice(0, -1).findIndex(reel => reel.includes('NITRO'))
+  const eligibleReel = firstNitroReel + 1
+  if (firstNitroReel < 0 || value.trigger.reel !== firstNitroReel ||
+    value.trigger.row !== initial[firstNitroReel].indexOf('NITRO') || value.eligibleReel !== eligibleReel) return false
+
+  const secondRow = initial[eligibleReel].indexOf('NITRO')
+  let expandedReel: number | null = null
+  if (value.secondNitro != null) {
+    if (!position(value.secondNitro, 7) || secondRow < 0 || value.secondNitro.reel !== eligibleReel || value.secondNitro.row !== secondRow) return false
+    if (value.requiresChoice === true) {
+      if (!allowPending || eligibleReel !== 4) return false
+    } else if (eligibleReel < 4) expandedReel = eligibleReel + 1
+    else if (reelIndex(value.expandedReel)) expandedReel = value.expandedReel
+    else return false
+  } else {
+    // Older stored responses expanded the second bottle reel and did not identify its position.
+    if (value.requiresChoice === true || allowPending) return false
+    if (secondRow >= 0) expandedReel = eligibleReel
+  }
+  return value.expandedReel === expandedReel && settled.every((reel, reelIndex) =>
+    reel.every((symbolId, rowIndex) => symbolId === (reelIndex === expandedReel ? 'ACE' : initial[reelIndex][rowIndex])))
+}
+function isNitroChoice(value: unknown): value is NeonNitroChoice {
+  if (!record(value) || typeof value.spinId !== 'string' || value.spinId.length === 0 ||
+    !natural(value.wagerPoints) || value.wagerPoints === 0 || !natural(value.freeSpinsRemaining) ||
+    !reels(value.initialReels, 7, neonCarSymbolIds) || !Array.isArray(value.eligibleReels) || value.eligibleReels.length !== 5 ||
+    !value.eligibleReels.every(reelIndex) || new Set(value.eligibleReels).size !== 5 ||
+    !record(value.neonNitroWild) || value.neonNitroWild.requiresChoice !== true ||
+    !reels(value.neonNitroWild.initialReels, 7, neonCarSymbolIds) || !sameBoard(value.neonNitroWild.initialReels, value.initialReels) ||
+    !validNitroWild(value.neonNitroWild, value.initialReels, true)) return false
+  return value.sourceKind === 'spin' || (value.sourceKind === 'car-respin' && reelIndex(value.reelIndex) && natural(value.roundWinPoints))
+}
+
+function readPendingChoice(value: unknown, sourceKind: NeonNitroChoice['sourceKind']): NeonPendingChoiceResponse {
+  if (!record(value) || !isNitroChoice(value.pendingNeonNitroChoice) || value.pendingNeonNitroChoice.sourceKind !== sourceKind)
+    throw new Error('The Neon Nights server returned an invalid Nitro choice.')
+  return { pendingNeonNitroChoice: value.pendingNeonNitroChoice }
 }
 export function isNeonSpinResult(value: unknown): value is NeonSpinResult {
   if (!record(value)) return false
   const disco = value.symbolSetId === NEON_DISCO_SYMBOL_SET_ID
-  const allowed = disco ? neonDiscoSymbolIds : neonBaseSymbolIds
+  const car = value.symbolSetId === NEON_CAR_SYMBOL_SET_ID
+  const allowed = disco ? neonDiscoSymbolIds : car ? neonCarSymbolIds : neonBaseSymbolIds
+  const state = { ...value }
   if (!record(value) || value.gameId !== NEON_GAME_ID || typeof value.spinId !== 'string' ||
-    (!disco && value.symbolSetId !== 'neon-arcade-symbols-v3') || value.pointValueInCents !== 1 || !natural(value.wagerPoints) ||
-    !reels(value.reels, disco ? 4 : undefined, allowed) || !payout(value.payout, value.reels[0].length, allowed) || !isNeonState({ ...value }) ||
+    (!disco && !car && value.symbolSetId !== 'neon-arcade-symbols-v3') || value.pointValueInCents !== 1 || !natural(value.wagerPoints) ||
+    !reels(value.reels, disco ? 4 : car ? 7 : undefined, allowed) || !payout(value.payout, value.reels[0].length, allowed) || !isNeonState(state) ||
     typeof value.isFreeSpin !== 'boolean' || !natural(value.freeSpinsAwarded) || !natural(value.bananaBonusPoints) ||
     (value.slotsCreditsBalance !== null && (typeof value.slotsCreditsBalance !== 'number' || !Number.isFinite(value.slotsCreditsBalance))) ||
     !record(value.neonArcade) || typeof value.neonArcade.featureGamesEnabled !== 'boolean' || !natural(value.neonArcade.bonusSymbolCount) ||
     !Array.isArray(value.neonArcade.activators) || !value.neonArcade.activators.every(activator => record(activator) &&
       ((activator.kind === 'car' && activator.symbolId === '6') || (activator.kind === 'disco-ball' && activator.symbolId === 'POWER')) &&
       Array.isArray(activator.positions) && activator.positions.every(cell => position(cell, (value.reels as NeonSpinResult['reels'])[0].length)))) return false
+  if (car ? value.isFreeSpin !== true || !validNitroWild(value.neonNitroWild, value.reels) : value.neonNitroWild != null) return false
+  if (state.pendingNeonNitroChoice != null) return false
+  const offer = state.neonCarRespinOffer
+  if (offer && (!car || offer.spinId !== value.spinId || !sameBoard(offer.reels, value.reels))) return false
   if (!disco) return value.neonDiscoCascade == null
   if (value.isFreeSpin || value.freeSpinsAwarded !== 0 || value.bananaBonusPoints !== 0 ||
     value.neonArcade.bonusSymbolCount !== 0 || value.neonArcade.activators.length !== 0) return false
@@ -118,6 +182,20 @@ export function isNeonSpinResult(value: unknown): value is NeonSpinResult {
   }
   return total === cascade.totalPoints
 }
+function isCarRespinResult(value: unknown, spinId: string, selectedReel: number): value is NeonCarRespinResult {
+  if (!record(value) || value.sourceSpinId !== spinId || value.reelIndex !== selectedReel || !natural(value.stopIndex) ||
+    !reels(value.initialReels, 7, neonCarSymbolIds) || !reels(value.reels, 7, neonCarSymbolIds) ||
+    !payout(value.payout, 7, neonCarSymbolIds) || !natural(value.originalPayoutPoints) ||
+    value.improvementPoints !== Math.max(0, value.payout.totalPoints - value.originalPayoutPoints) ||
+    (value.roundWinPoints != null && !natural(value.roundWinPoints)) ||
+    typeof value.slotsCreditsBalance !== 'number' || !Number.isFinite(value.slotsCreditsBalance) ||
+    typeof value.alreadyApplied !== 'boolean') return false
+
+  const nitro = value.neonNitroWild
+  if (nitro == null) return sameBoard(value.initialReels, value.reels)
+  return record(nitro) && reels(nitro.initialReels, 7, neonCarSymbolIds) &&
+    sameBoard(nitro.initialReels, value.initialReels) && validNitroWild(nitro, value.reels)
+}
 async function responseJson(response: Response): Promise<unknown> {
   if (!response.ok) {
     const problem = await response.json().catch(() => null) as Problem | null
@@ -140,15 +218,47 @@ export function createNeonApi(authenticatedFetch?: NeonAuthenticatedFetch) {
       if (!isNeonState(result)) throw new Error('The Neon Nights server returned an invalid state.')
       return result
     },
-    async spin(request: NeonSpinRequest, demo: boolean): Promise<NeonSpinResult> {
+    async spin(request: NeonSpinRequest, demo: boolean): Promise<NeonSpinResult | NeonPendingChoiceResponse> {
       const common = { gameId: NEON_GAME_ID, wagerPoints: request.wagerPoints, useFreeSpin: request.useFreeSpin }
       const response = demo
         ? await fetch('/api/slots/demo/spins', { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...common, ...request.state, energyBalance: 0, sealCollections: [] }) })
         : await authenticated('/api/slots/spins', { method: 'POST', body: JSON.stringify({ ...common, useSpecialBoost: false }) })
       const result = normalizeDiscoMultiplier(await responseJson(response))
+      if (!demo && response.status === 202) return readPendingChoice(result, 'spin')
       if (!isNeonSpinResult(result)) throw new Error('The Neon Nights server returned an invalid reel result.')
       return result
+    },
+    async respin(offer: NeonCarRespinOffer, reelIndex: number): Promise<NeonCarRespinResult | NeonPendingChoiceResponse> {
+      const response = await authenticated('/api/slots/neon/car-respin', { method: 'POST', body: JSON.stringify({ spinId: offer.spinId, reelIndex }) })
+      const result = await responseJson(response)
+      if (response.status === 202) {
+        const pending = readPendingChoice(result, 'car-respin')
+        const choice = pending.pendingNeonNitroChoice
+        if (choice.spinId !== offer.spinId || choice.sourceKind !== 'car-respin' || choice.reelIndex !== reelIndex ||
+          !choice.initialReels.every((reel, index) => index === reelIndex || sameReel(reel, offer.reels[index])))
+          throw new Error('The Neon Nights server returned a Nitro choice for a different respin.')
+        return pending
+      }
+      if (!isCarRespinResult(result, offer.spinId, reelIndex) ||
+        !result.initialReels.every((reel, index) => index === reelIndex || sameReel(reel, offer.reels[index])))
+        throw new Error('The Neon Nights server returned an invalid respin result.')
+      return result
+    },
+    async chooseNitro(choice: NeonNitroChoice, reelIndex: number): Promise<NeonSpinResult | NeonCarRespinResult> {
+      const path = choice.sourceKind === 'spin' ? '/api/slots/neon/nitro-choice' : '/api/slots/neon/car-respin/nitro-choice'
+      const response = await authenticated(path, { method: 'POST', body: JSON.stringify({ spinId: choice.spinId, reelIndex }) })
+      const result = normalizeDiscoMultiplier(await responseJson(response))
+      const valid = choice.sourceKind === 'spin' ? isNeonSpinResult(result) && result.spinId === choice.spinId
+        : isCarRespinResult(result, choice.spinId, choice.reelIndex)
+      if (!valid || !record(result) || !record(result.neonNitroWild) || result.neonNitroWild.expandedReel !== reelIndex ||
+        !reels(result.neonNitroWild.initialReels, 7, neonCarSymbolIds) || !sameBoard(result.neonNitroWild.initialReels, choice.initialReels))
+        throw new Error('The Neon Nights server returned an invalid Nitro result.')
+      return result as NeonSpinResult | NeonCarRespinResult
+    },
+    async dismissRespin(spinId: string): Promise<void> {
+      const response = await authenticated('/api/slots/neon/car-respin/dismiss', { method: 'POST', body: JSON.stringify({ spinId }) })
+      if (!response.ok) await responseJson(response)
     },
     async trigger(kind: 'car' | 'disco-ball', wagerPoints: number): Promise<NeonState> {
       const response = await authenticated('/api/slots/admin/neon-trigger', { method: 'POST', body: JSON.stringify({ symbol: kind, wagerPoints }) })

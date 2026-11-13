@@ -18,7 +18,7 @@ public sealed class NeonDiscoClusterTests
         var payout = NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1);
         var match = Assert.Single(Assert.Single(payout.Paylines).Matches);
         Assert.Equal(4, match.Match.MatchLength);
-        Assert.Equal(275, match.AmountPoints);
+        Assert.Equal(137, match.AmountPoints);
 
         board = NonWinningBoard();
         for (var index = 0; index < 4; index++) board[index][index] = "2";
@@ -37,7 +37,7 @@ public sealed class NeonDiscoClusterTests
         var payout = NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1);
         Assert.Equal(2, payout.Paylines.Count);
         Assert.All(payout.Paylines, line => Assert.Equal(4, Assert.Single(line.Matches).Match.MatchLength));
-        Assert.Equal(550, payout.TotalPoints);
+        Assert.Equal(274, payout.TotalPoints);
     }
 
     [Fact]
@@ -81,13 +81,13 @@ public sealed class NeonDiscoClusterTests
         Assert.Equal(new[] { 1, 2, 3, 5, 5 }, result.Steps.Take(5).Select(step => step.Multiplier));
         Assert.All(result.Steps.Skip(3), step => Assert.Equal(5, step.Multiplier));
         Assert.Equal(result.Steps.Sum(step => step.Payout.TotalPoints), result.TotalPoints);
-        Assert.Equal(495, result.Steps[0].Payout.TotalPoints);
-        Assert.Equal(2_475, result.Steps[3].Payout.TotalPoints);
+        Assert.Equal(246, result.Steps[0].Payout.TotalPoints);
+        Assert.Equal(1_230, result.Steps[3].Payout.TotalPoints);
         var carried = NeonPlayPolicy.NextDiscoMultiplier(1, 11, result, null);
         Assert.Equal(5, carried);
         var nextSpin = Spin(carried);
         Assert.All(nextSpin.Steps, step => Assert.Equal(5, step.Multiplier));
-        Assert.Equal(2_475, nextSpin.Steps[0].Payout.TotalPoints);
+        Assert.Equal(1_230, nextSpin.Steps[0].Payout.TotalPoints);
 
         var miss = Resolve(NonWinningBoard(), Reels(NeonDiscoDefinitions.SymbolIds), _ => throw new InvalidOperationException());
         Assert.Empty(miss.Steps);
@@ -107,15 +107,17 @@ public sealed class NeonDiscoClusterTests
         var source = new NeonDefinitionSource();
         var minimumWager = Game.Wagering.MinimumWagerPoints;
         Assert.Equal(50, minimumWager);
-        Assert.Equal(275, Paytable.Rules.Min(rule => rule.Multiplier));
-        Assert.Equal(288, Paytable.Rules.Single(rule => rule.SymbolId == "2" && rule.MatchLength == 5).Multiplier);
-        Assert.Equal(138m, Math.Round(minimumWager * 275 * Game.Math.PayoutMultiplier, MidpointRounding.AwayFromZero));
+        Assert.Equal(137, Paytable.Rules.Min(rule => rule.Multiplier));
+        Assert.Equal(143, Paytable.Rules.Single(rule => rule.SymbolId == "2" && rule.MatchLength == 5).Multiplier);
+        Assert.Equal(69m, Math.Round(minimumWager * 137 * Game.Math.PayoutMultiplier, MidpointRounding.AwayFromZero));
         Assert.All(Paytable.Rules, rule => Assert.True(
             Math.Round(minimumWager * rule.Multiplier * Game.Math.PayoutMultiplier, MidpointRounding.AwayFromZero) >
             minimumWager));
         var previousPaytable = source.GetPaytable(NeonDiscoDefinitions.PreviousPaytableId)!;
         Assert.Equal(10, previousPaytable.Rules.Min(rule => rule.Multiplier));
         Assert.Equal(400, previousPaytable.Rules.Single(rule => rule.SymbolId == "2" && rule.MatchLength == 20).Multiplier);
+        var previousPairedPaytable = source.GetPaytable(NeonDiscoDefinitions.PreviousPairedPaytableId)!;
+        Assert.Equal(275, previousPairedPaytable.Rules.Min(rule => rule.Multiplier));
         var currentReels = source.GetReelSet(Game.Math.ReelSetId)!;
         var previousReels = source.GetReelSet(NeonDiscoDefinitions.PreviousReelSetId)!;
         Assert.False(currentReels.Reels[0].SequenceEqual(previousReels.Reels[0]));

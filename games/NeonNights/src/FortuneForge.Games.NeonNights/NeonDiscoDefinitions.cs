@@ -10,7 +10,8 @@ public static class NeonDiscoDefinitions
     public const string PreviousReelSetId = "neon-disco-reels-v1";
     public const string PreviousPaytableId = "neon-disco-paytable-v1";
     public const string ReelSetId = "neon-disco-reels-v2";
-    public const string PaytableId = "neon-disco-paytable-v2";
+    public const string PreviousPairedPaytableId = "neon-disco-paytable-v2";
+    public const string PaytableId = "neon-disco-paytable-v3";
     public const int MinimumClusterSize = 4;
     public const decimal PayoutScale = 0.01m;
     private const int MaximumClusterSize = 20;
@@ -20,7 +21,8 @@ public static class NeonDiscoDefinitions
         Array.AsReadOnly(new[] { "2", "4", "5", "7", "DISCO_MARTINI", "DISCO_SEVEN", "DISCO_BALL" });
 
     private static readonly long[] PreviousFourSymbolAwards = [10, 20, 30, 40, 60, 80, 100];
-    private static readonly long[] FourSymbolAwards = [275, 280, 286, 291, 302, 313, 324];
+    private static readonly long[] PreviousPairedFourSymbolAwards = [275, 280, 286, 291, 302, 313, 324];
+    private static readonly long[] FourSymbolAwards = SymbolIds.Select(NeonPayoutSchedule.DiscoFourSymbolAward).ToArray();
     private static readonly int[] PreviousSizeHalfUnits = [2, 3, 4, 6, 8, 10, 12, 16, 20, 24, 30, 36, 42, 50, 60, 70, 80];
 
     public static GameDefinition CreateGame(GameDefinition baseGame) => new()
@@ -48,11 +50,16 @@ public static class NeonDiscoDefinitions
     };
 
     public static PaytableDefinition CreatePaytable() =>
-        CreatePaytable(PaytableId, FourSymbolAwards, static (award, extraSymbols) => award * (100 + 5 * extraSymbols) / 100);
+        CreatePaytable(PaytableId, FourSymbolAwards, PairedSizeAward);
+
+    public static PaytableDefinition CreatePreviousPairedPaytable() =>
+        CreatePaytable(PreviousPairedPaytableId, PreviousPairedFourSymbolAwards, PairedSizeAward);
 
     public static PaytableDefinition CreatePreviousPaytable() =>
         CreatePaytable(PreviousPaytableId, PreviousFourSymbolAwards,
             static (award, extraSymbols) => award * PreviousSizeHalfUnits[extraSymbols] / 2);
+
+    private static long PairedSizeAward(long award, int extraSymbols) => award * (100 + 5 * extraSymbols) / 100;
 
     private static PaytableDefinition CreatePaytable(string id, IReadOnlyList<long> fourSymbolAwards,
         Func<long, int, long> sizeAward) => new()

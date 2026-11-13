@@ -91,7 +91,7 @@
 
 @media (min-width: 1500px) and (min-height: 720px) {
   .symbol-value-guide--neon.symbol-value-guide--side,
-.symbol-value-guide__restore.symbol-value-guide--neon {
+  .symbol-value-guide__restore.symbol-value-guide--neon {
     top: calc(4.35rem + clamp(0.7rem, 1.6vw, 1.7rem));
   }
 
@@ -116,33 +116,9 @@
   }
 }
 
-@media (min-width: 1750px) and (min-height: 720px) {
-  .symbol-value-guide--neon .symbol-value-guide__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .symbol-value-guide--neon .symbol-value-guide__item {
-    grid-column: 1 / -1;
-  }
-
-  .symbol-value-guide--neon .symbol-value-guide__item--compact {
-    grid-column: auto;
-    grid-template-columns: 2.5rem minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 0.3rem;
-    padding: 0.28rem 0.35rem;
-  }
-
-  .symbol-value-guide--neon .symbol-value-guide__item--compact .symbol-value-guide__artwork {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-}
-
-/* Keep the full fourteen-symbol guide visible on laptop-sized desktop views. */
-@media (min-width: 1500px) and (max-width: 1749px) and (min-height: 720px) {
+@media (min-width: 1500px) and (min-height: 720px) {
   .symbol-value-guide--neon.symbol-value-guide--side {
     max-height: calc(100dvh - 4.35rem - 2 * clamp(0.7rem, 1.6vw, 1.7rem));
-    overflow-y: visible;
   }
 
   .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item {
@@ -180,6 +156,23 @@
 
   .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item--single-value > span:nth-of-type(2) {
     grid-column: 3 / -1;
+  }
+}
+
+@media (min-width: 1750px) and (min-height: 800px) {
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__item {
+    grid-template-columns: 2.5rem minmax(0, 1fr) auto auto;
+    padding: 0.24rem 0.45rem;
+    font-size: 0.8rem;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__artwork {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .symbol-value-guide--neon.symbol-value-guide--side .symbol-value-guide__name {
+    font-size: 0.75rem;
   }
 }
 
@@ -223,6 +216,8 @@
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] > .symbol-value-guide__trigger {
+  top: calc(4.35rem + max(0.9rem, env(safe-area-inset-top)));
+  bottom: auto;
   gap: 0.35rem;
 }
 
@@ -249,13 +244,18 @@
   --neon-title-height: clamp(3rem, 15dvh, 8rem);
   --neon-tally-space: 0rem;
   --neon-win-total-height: 1.85rem;
+  --neon-win-total-font-size: clamp(1.05rem, 2.5vw, 1.85rem);
   --neon-win-total-space: calc(var(--neon-win-total-height) + 0.58rem);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1']:is([data-neon-arcade-rows='true'], [data-neon-disco-round='true']) {
+  --neon-win-total-height: 2.775rem;
+  --neon-win-total-font-size: clamp(1.575rem, 3.75vw, 2.775rem);
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-disco-round='true'] {
   --neon-disco-multiplier-size: clamp(2.75rem, 8dvh, 4.5rem);
   --neon-tally-space: calc(var(--neon-disco-multiplier-size) + 0.75rem);
-  --neon-win-total-space: 0rem;
 }
 
 .neon-disco-multipliers {
@@ -397,7 +397,7 @@
     0 0 2.15rem rgb(68 185 233 / 20%);
 }
 
-.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-disco-round='true'] .slots-page__main {
+.slots-page[data-slot-theme='neon-nights-cabinet-v1']:is([data-neon-disco-round='true'], [data-neon-arcade-rows='true']) .slots-page__main {
   position: relative;
   z-index: 12;
 }
@@ -511,16 +511,57 @@
   filter: drop-shadow(0 .055em 0 #451206) drop-shadow(0 0 .09em #fff4a0) drop-shadow(0 0 .24em #ffbd2c);
 }
 
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] :is(.slots-page__win-award--neon, .neon-round-subtotal) .neon-win-amount {
+  --neon-gold-bevel:
+    drop-shadow(0 -.026em 0 #fff7ce)
+    drop-shadow(0 .042em 0 #9e6411)
+    drop-shadow(0 .035em 0 #593700)
+    drop-shadow(0 0 .15em rgb(255 210 87 / 75%));
+  background-image: linear-gradient(180deg, #fffbe6 0%, #ffe490 29%, #fff0b3 43%, #efb640 50%, #d59622 77%, #ffc957 100%);
+  -webkit-text-stroke: .018em #ad771e;
+  text-shadow: none;
+  filter: var(--neon-gold-bevel);
+}
+
 .neon-spin-total {
   display: grid;
   block-size: var(--neon-win-total-height);
   place-items: center;
-  font-size: clamp(1.05rem, 2.5vw, 1.85rem);
+  font-size: var(--neon-win-total-font-size);
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-spin-total .neon-win-amount {
   font-size: inherit;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-spin-total:not(.neon-round-subtotal) .neon-win-amount {
   -webkit-text-stroke-width: 1px;
+}
+
+.neon-round-subtotal {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-round-subtotal .neon-win-amount {
+  transform-origin: center;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .neon-round-subtotal .neon-win-amount {
+    animation: neon-round-subtotal-breathe 3.4s ease-in-out infinite;
+  }
+}
+
+@keyframes neon-round-subtotal-breathe {
+  0%, 100% {
+    scale: 1;
+    filter: var(--neon-gold-bevel) brightness(.92);
+  }
+  50% {
+    scale: 1.035;
+    filter: var(--neon-gold-bevel) brightness(1.08);
+  }
 }
 
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-win-award--to-total {
@@ -612,6 +653,30 @@
   overflow-y: auto;
 }
 
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-arcade-rows='true'] .slots-page__main {
+  /* Leave room for the subtotal and cabinet glow inside the scroll viewport. */
+  padding-block-end: 1.75rem;
+}
+
+.neon-spin-error {
+  position: absolute;
+  z-index: 18;
+  inset-inline: 0;
+  inset-block-end: max(3.65rem, calc(2.75rem + env(safe-area-inset-bottom)));
+  width: fit-content;
+  max-width: min(32rem, calc(100% - 1.5rem));
+  margin-inline: auto;
+  box-sizing: border-box;
+  padding: .5rem .85rem;
+  border: 1px solid rgb(255 121 147 / 52%);
+  border-radius: .55rem;
+  background: #140d22;
+  color: #ffd5e0;
+  font: 650 .8rem/1.35 Inter, system-ui, sans-serif;
+  text-align: center;
+  pointer-events: none;
+}
+
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slots-page__title-art {
   display: block;
   justify-self: center;
@@ -636,8 +701,6 @@
 }
 
 .neon-special-intro[data-trigger-symbol='POWER'] {
-  --neon-special-intro-reveal-duration: 530ms;
-  --neon-special-intro-reveal-easing: cubic-bezier(0.25, 0.42, 0.55, 0.82);
   --neon-disco-intro-shade: rgb(6 4 16 / calc(0.55 + 0.25 * var(--neon-disco-intro-progress, 0)));
 }
 
@@ -645,25 +708,8 @@
   background: var(--neon-disco-intro-shade);
 }
 
-.neon-special-intro[data-disco-grow='true'] {
-  animation: neon-disco-intro-dim var(--neon-special-intro-reveal-duration) var(--neon-special-intro-reveal-easing) both;
-}
-
 .neon-special-intro:not([data-video-ready='true']) .neon-special-intro__clip {
   opacity: 0;
-}
-
-.neon-special-intro__symbol {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  z-index: 1;
-  width: min(72vw, 68dvh, 28rem);
-  aspect-ratio: 1;
-  object-fit: contain;
-  transform: translate(-50%, -50%);
-  filter: drop-shadow(0 0 1.1rem rgb(255 47 186 / 52%));
-  animation: neon-special-intro-grow var(--neon-special-intro-reveal-duration) var(--neon-special-intro-reveal-easing) both;
 }
 
 .neon-special-intro__clip {
@@ -684,10 +730,6 @@
   object-fit: contain;
   border-radius: 0.75rem;
   background: transparent;
-}
-
-.neon-special-intro[data-disco-grow='true'] .neon-special-intro__clip {
-  animation: neon-disco-intro-show-clip var(--neon-special-intro-reveal-duration) step-end both;
 }
 
 .slots-page[data-neon-arcade-rows='true'] .slot-game-frame[data-cabinet-theme='neon-nights-cabinet-v1'] {
@@ -804,6 +846,53 @@
   outline-offset: -6px;
 }
 
+.neon-round-summary--actions {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.neon-round-summary__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .55rem .75rem;
+  text-align: center;
+  color: #e5f7ff;
+  font: 650 .8rem/1.2 Inter, system-ui, sans-serif;
+}
+
+.neon-round-summary__actions {
+  min-height: 3.25rem;
+  padding: .65rem;
+  background: #131129;
+  border-top: 1px solid rgb(115 233 255 / 24%);
+}
+
+.neon-respin-button {
+  border: 1px solid rgb(112 234 255 / 80%);
+  border-radius: 999px;
+  padding: .55rem .9rem;
+  background: linear-gradient(150deg, #202953, #120c28);
+  color: #e4fbff;
+  box-shadow: inset 0 0 .6rem rgb(79 190 255 / 15%), 0 0 .7rem rgb(34 207 255 / 16%);
+  cursor: pointer;
+  font: 750 .8rem/1.1 Inter, system-ui, sans-serif;
+}
+
+.neon-respin-button:hover,
+.neon-respin-button:focus-visible {
+  background: #293768;
+}
+
+.neon-respin-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}
+
+[data-neon-respin-selection='true'] .slot-reel__content:not(:has(.neon-reel-pick-button)) {
+  filter: brightness(.65);
+}
+
 @media (min-width: 1200px) and (min-height: 700px) {
   .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .neon-admin-triggers {
     position: absolute;
@@ -906,33 +995,212 @@
   to { opacity: 1; filter: brightness(1); transform: translateY(0) scale(1); }
 }
 
-@keyframes neon-special-intro-grow {
-  from {
-    visibility: visible;
-    transform: translate(
-      calc(-50% + var(--neon-special-intro-start-x, 0px)),
-      calc(-50% + var(--neon-special-intro-start-y, 0px))
-    ) scale(var(--neon-special-intro-start-scale, 0.2));
+@media (prefers-reduced-motion: no-preference) {
+  [data-neon-nitro-phase] .slot-reel__content:has([data-neon-nitro-reel='other']) {
+    filter: brightness(.46) saturate(.72);
   }
-  to {
-    visibility: hidden;
-    transform: translate(-50%, -50%);
+
+  [data-neon-nitro-phase='anticipating'] .slot-reel__symbols--spinning[data-neon-nitro-reel='target'] {
+    animation-duration: 152ms;
+  }
+
+  .slots-page--fast-spin[data-neon-nitro-phase='anticipating'] .slot-reel__symbols--spinning[data-neon-nitro-reel='target'] {
+    animation-duration: 52ms;
+  }
+
+  .slots-page[data-neon-nitro-phase] .neon-nitro-bottle .slot-symbol--nitro .slot-symbol__image,
+  .slots-page[data-neon-nitro-phase] .neon-nitro-bottle__afterimage {
+    animation: neon-nitro-bottle-breathe 930ms ease-in-out infinite;
+    filter: drop-shadow(0 0 .25rem #e0faff) drop-shadow(0 0 .55rem #55ceff);
+  }
+
+  [data-neon-nitro-phase] .slot-reel:has([data-neon-nitro-reel='target']) {
+    z-index: 6;
+    scale: 1.055 1.035;
+    animation: neon-nitro-reel-pop 340ms cubic-bezier(.16, .8, .25, 1) both;
+  }
+
+  .neon-nitro-edge::before,
+  .neon-nitro-edge::after {
+    content: '';
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 0;
+    inline-size: min(30%, 1.4rem);
+    block-size: 34%;
+    background:
+      radial-gradient(ellipse at 24% 35%, #fff 0 5%, #78ecff 7% 9%, transparent 20%),
+      radial-gradient(ellipse at 81% 61%, #f6ddff 0 3%, #d06bff 6% 9%, transparent 17%),
+      radial-gradient(ellipse at 23% 87%, #a1f3ff 0 3%, #29c8ff 5% 7%, transparent 18%),
+      linear-gradient(158deg, transparent 38%, #29c8ff 42%, #dbfaff 45%, transparent 49%);
+    animation: neon-nitro-streak 590ms ease-out infinite;
+  }
+
+  .neon-nitro-edge::after {
+    inset-inline-start: auto;
+    inset-inline-end: 0;
+    animation-delay: -310ms;
+    scale: -1 1;
+  }
+
+  .neon-nitro-flight {
+    animation: neon-nitro-wild-fly var(--nitro-flight-duration) cubic-bezier(.58, .12, .7, 1) var(--nitro-flight-delay) both;
+  }
+
+  .neon-reel-face[data-neon-reel-pick='true'] {
+    animation: neon-reel-pick-pulse var(--neon-reel-pick-cycle)
+      linear(0, 1 var(--neon-reel-pick-peak), 0 var(--neon-reel-pick-end), 0) var(--neon-reel-pick-delay) infinite both;
   }
 }
 
-@keyframes neon-disco-intro-dim {
-  from { background-color: rgb(6 4 16 / 6%); }
-  to { background-color: var(--neon-disco-intro-shade); }
+.neon-reel-face {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-origin: center;
 }
 
-@keyframes neon-disco-intro-show-clip {
-  from { opacity: 0; }
-  to { opacity: var(--neon-disco-clip-opacity, 1); }
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-machine__reels:has(.neon-reel-pick-button) {
+  overflow: visible;
+}
+
+.slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-reel__content:has(.neon-reel-pick-button) {
+  z-index: auto;
+}
+
+.neon-reel-face[data-neon-reel-pick='true'] {
+  border-radius: .35rem;
+  background: linear-gradient(155deg, #19233a, #1d142d 75%);
+}
+
+.neon-nitro-bottle {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+}
+
+.neon-nitro-bottle__afterimage {
+  position: absolute;
+  inset: 9%;
+  width: 82%;
+  height: 82%;
+  object-fit: contain;
+  opacity: .43;
+  pointer-events: none;
+}
+
+.neon-nitro-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  overflow: hidden;
+  pointer-events: none;
+  border: 1px solid rgb(157 246 255 / 84%);
+  border-radius: .4rem;
+  box-shadow: inset .1rem 0 .8rem rgb(55 226 255 / 63%), inset -.1rem 0 .8rem rgb(172 94 255 / 59%);
+}
+
+.neon-nitro-flights {
+  position: absolute;
+  inset: 0;
+  z-index: 17;
+  pointer-events: none;
+}
+
+.neon-nitro-flight {
+  position: absolute;
+  display: block;
+  object-fit: contain;
+  opacity: 0;
+  filter: drop-shadow(0 0 .35rem #ff9dea) drop-shadow(0 0 .7rem #6de9ff);
+}
+
+.neon-title-lockup {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+}
+
+.neon-reel-pick-prompt {
+  position: absolute;
+  z-index: 18;
+  inset-block-end: 0;
+  inset-inline-start: 50%;
+  translate: -50% 36%;
+  scale: .91 1;
+  transform-origin: center;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #fff9d0 0%, #ffe88a 20%, #ffdc57 44%, #f5b32d 69%, #ffd059 100%);
+  background-clip: text;
+  color: transparent;
+  font: 900 clamp(1.35rem, 4.8dvh, 2.9rem)/1 'Barlow Condensed', 'Arial Narrow', Inter, system-ui, sans-serif;
+  letter-spacing: .075em;
+  paint-order: stroke fill;
+  -webkit-text-stroke: 1.25px #7a5018;
+  filter: drop-shadow(0 .04em 0 #7d4c10) drop-shadow(0 .11em .1em rgb(10 7 20 / 95%));
+  pointer-events: none;
+}
+
+[data-neon-respin-selection='true'] .neon-reel-pick-prompt {
+  inset-block: 50% auto;
+  translate: -50% -50%;
+  font-size: clamp(2.5rem, min(9dvh, 15vw), 6rem);
+}
+
+.neon-reel-pick-button {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  padding: 0;
+  border: 1px solid rgb(255 222 123 / 64%);
+  border-radius: .35rem;
+  background: rgb(236 177 64 / 7%);
+  cursor: pointer;
+}
+
+.neon-reel-pick-button:is(:hover, :focus-visible) {
+  border-color: #fff2bb;
+  background: rgb(243 190 82 / 20%);
+  box-shadow: inset 0 0 1.05rem rgb(255 217 113 / 60%);
+}
+
+.neon-reel-pick-button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -3px;
+}
+
+@keyframes neon-reel-pick-pulse {
+  from { z-index: 1; scale: 1; filter: brightness(1); }
+  to { z-index: 5; scale: 1.14 1.045; filter: brightness(1.22) drop-shadow(0 0 .35rem rgb(255 208 98 / 45%)); }
+}
+
+@keyframes neon-nitro-bottle-breathe {
+  0%, 100% { scale: 1.02; }
+  43% { scale: 1.24; }
+}
+
+@keyframes neon-nitro-reel-pop {
+  from { scale: 1; }
+  52% { scale: 1.08 1.055; }
+  to { scale: 1.055 1.035; }
+}
+
+@keyframes neon-nitro-streak {
+  from { transform: translateY(-100%); opacity: .25; }
+  38% { opacity: .85; }
+  to { transform: translateY(300%); opacity: 0; }
+}
+
+@keyframes neon-nitro-wild-fly {
+  from { transform: translate(-50%, calc(-50% + var(--nitro-flight-origin))) scale(.48); opacity: 0; }
+  20%, 93% { opacity: 1; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .neon-disco-multipliers__badge { transition: none; }
-  .neon-special-intro__symbol { animation: none; }
   .slots-page[data-slot-theme='neon-nights-cabinet-v1'] .slot-symbol__image { transition: none; }
   .neon-disco-cascade__cell--award,
   .neon-disco-cascade__cell--clear,
@@ -991,6 +1259,19 @@
 .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-arcade-rows='true'] .slots-page__layout {
   width: min(100%, 46rem, max(9rem, calc((100cqh - var(--neon-title-height) - var(--neon-tally-space) - var(--neon-win-total-space) - 1rem) * 0.95)));
   max-width: none;
+}
+
+@media (min-width: 1051px), (min-width: 641px) and (max-height: 500px) {
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-arcade-rows='true'] .slots-page__layout {
+    width: min(46rem, calc(100% - 2 * clamp(5rem, 9.4vw, 10.5rem)), max(9rem, calc((100cqh - var(--neon-title-height) - var(--neon-tally-space) - var(--neon-win-total-space) - 1rem) * 0.95)));
+  }
+
+  .slots-page[data-slot-theme='neon-nights-cabinet-v1'][data-neon-arcade-rows='true'] .slots-page__playbar {
+    left: calc(100% + 0.6rem);
+    right: auto;
+    justify-items: center;
+    display: grid;
+  }
 }
 
 

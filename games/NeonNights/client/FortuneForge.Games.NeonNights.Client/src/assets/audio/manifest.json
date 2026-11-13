@@ -3,9 +3,10 @@
   "slug": "neon-nights",
   "title": "Neon Nights",
   "originalComposition": false,
-  "theme": "User-approved original Neon Nights composition; exact existing WAV masters preserved.",
-  "bpm": 108,
+  "theme": "Synthwave pad and drums for base play, with the Neon Nights sound suite.",
+  "bpm": 110,
   "bonusBpm": 100,
+  "discoBpm": 105,
   "meter": 4,
   "palette": [
     "approved warm polysynth",
@@ -17,40 +18,72 @@
   "channels": 2,
   "sourceGenerator": "tools/audio-suites/render-themed-suites.mjs",
   "generatorSha256": "c210219097f6eefd50a0bdf748d204258f9092121fa5360e29d4fd289c870efd",
-  "provenance": "The twenty original Neon tracks retain their unchanged user-approved original synthesized PCM masters. The additional win-nice-v1 callout uses Sadiquecat’s original human recording “Joyful - Nice 2,” released under CC0, with local EQ, compression and slap delay. Source and license are documented beside this manifest. No commercial game audio is sampled. Special Plays music uses the user-supplied LEX WAV loop.",
+  "provenance": "Base and Disco music use user-supplied Zenhiser loops from Splice. The retained original Neon tracks use their unchanged user-approved synthesized PCM masters. The win-nice-v1 callout uses Sadiquecat’s original human recording “Joyful - Nice 2,” released under CC0, with local EQ, compression and slap delay. Source and license are documented beside this manifest. No commercial game audio is sampled. Car Plays music uses the user-supplied LEX WAV loop.",
   "tracks": [
     {
-      "id": "night-drive",
-      "title": "Night Drive · base music",
+      "id": "synthwave-pad-110bpm-v1",
+      "title": "Synthwave pad · base music",
       "group": "Music",
-      "file": "night-drive.ogg",
-      "url": "/assets/slots/audio-suites/v1/neon-nights/night-drive.ogg",
+      "file": "synthwave-pad-110bpm-v1.ogg",
       "loop": true,
       "volume": 0.62,
-      "description": "108 BPM. Warm polysynth chords, electric piano, syncopated bass and an understated drum-machine groove. 32-bar loop.",
-      "durationSeconds": 71.111111,
-      "peakDbfs": -2.048,
-      "rmsDbfs": -17.389,
+      "description": "110 BPM. Eight-bar synth pad loop in G, with pitch preserved from the 105 BPM source.",
+      "durationSeconds": 17.45453514739229,
+      "peakDbfs": -0.982,
+      "rmsDbfs": -20.133,
       "sampleRate": 44100,
       "channels": 2,
-      "frames": 3136000,
-      "decodedPeakDbfs": -1.845,
-      "decodedRmsDbfs": -17.377,
+      "frames": 769745,
+      "decodedPeakDbfs": -1.035,
+      "decodedRmsDbfs": -20.106,
       "decodeVerified": true,
-      "bytes": 1194127,
-      "sha256": "591cda43d109392caec26da20e92abb55d175ae592a21acdd77f50c9da2f4923",
+      "bytes": 362023,
+      "sha256": "177138317c88b85e76b1e32afce118475fcd7cc54cb98f205bef384079d99f11",
       "source": {
-        "type": "approved-original-wav-master",
-        "path": "output/artwork/neon-nights-2026-11-02/audio-suite-v1/night-drive.wav",
-        "sha256": "d312a736aa1a03ec5e9184b2f4ca84c06c5695649d8e7ed25f7b4d8c8efa4680",
-        "bytes": 12544044,
-        "masterPeakDbfs": -2.048,
-        "masterRmsDbfs": -17.389
+        "type": "user-supplied-wav",
+        "filename": "034_Looped_Pad_Synth_Loop_105bpm_G_-_80SW1_Zenhiser.wav",
+        "pack": "80's Synthwave Vol. 1",
+        "sha256": "840472a691f7d34b4648e779d347ccad65a97faeeb0226ca4496df5373b060ac",
+        "bytes": 4838552,
+        "bpm": 105,
+        "processing": "Rubber Band tempo ratio 110/105 at unity pitch, rendered across repeated source cycles with a 512-frame crossfade at the loop seam."
       },
       "encoding": {
         "codec": "vorbis",
         "container": "ogg",
-        "quality": 5
+        "quality": 6
+      }
+    },
+    {
+      "id": "base-drums-110bpm-v1",
+      "title": "Synthwave drums · base music",
+      "group": "Music",
+      "file": "base-drums-110bpm-v1.ogg",
+      "loop": true,
+      "volume": 0.58,
+      "description": "110 BPM. Eight-bar drum layer aligned to the base synth pad.",
+      "durationSeconds": 17.45453514739229,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 769745,
+      "decodedPeakDbfs": -1.231,
+      "decodedRmsDbfs": -15.995,
+      "decodeVerified": true,
+      "bytes": 370165,
+      "sha256": "475627c075c2b522a520ad184323185cc0e8e9b1e0d2a6179682ac45661572a2",
+      "source": {
+        "type": "user-supplied-wav",
+        "filename": "024_c__Drum_Loop_105bpm_G_-_80SW1_Zenhiser.wav",
+        "pack": "80's Synthwave Vol. 1",
+        "sha256": "689ec1cd8a16387ebc69e7967ef3884dfcba0a9d02a0fec92c559c1ac9dda56e",
+        "bytes": 4838552,
+        "bpm": 105,
+        "processing": "Rubber Band tempo ratio 110/105 at unity pitch with percussive transient detection. Middle repetition cut to the pad loop length."
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 6
       }
     },
     {
@@ -752,7 +785,7 @@
       "url": "/assets/slots/audio-suites/v1/neon-nights/special-plays-music-v1.ogg",
       "loop": true,
       "volume": 0.5,
-      "description": "100 BPM. Four-bar drum and synth bass loop for Special Plays.",
+      "description": "100 BPM. Four-bar drum and synth bass loop for Car Plays.",
       "durationSeconds": 9.6,
       "sampleRate": 44100,
       "channels": 2,
@@ -773,6 +806,68 @@
         "container": "ogg",
         "quality": 6
       }
+    },
+    {
+      "id": "disco-intro-riser",
+      "title": "Disco Ball intro riser",
+      "group": "Effects",
+      "file": "disco-intro-riser.ogg",
+      "loop": false,
+      "volume": 0.65,
+      "durationSeconds": 3.1571458333,
+      "sampleRate": 48000,
+      "channels": 2,
+      "frames": 151543,
+      "decodedPeakDbfs": -0.718,
+      "decodedRmsDbfs": -17.394,
+      "decodeVerified": true,
+      "bytes": 85127,
+      "sha256": "99345b3762107729baa744aad0eecfa9833787c600fc166cea231a7e88f8f00a",
+      "source": {
+        "type": "user-supplied-wav",
+        "filename": "AB_HYP2_ravepuppy_fx_riser_risers.wav",
+        "pack": "Hyper 2 - Hyperpop",
+        "sha256": "3a526fdfd49feef4daeac4c9a1a7117eb67010107c94be112002259192bacf19",
+        "bytes": 1974902,
+        "processing": "Trim 3.7 seconds from the start, with 8 ms and 24 ms edge fades."
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 6
+      }
+    },
+    {
+      "id": "disco-synthwave-105",
+      "title": "Synthwave loop · Disco Plays",
+      "group": "Music",
+      "file": "disco-synthwave-105.ogg",
+      "loop": true,
+      "volume": 0.5,
+      "description": "105 BPM. Eight-bar synthwave loop in D, with quarter-note floor pulses synchronized to the kick and snare.",
+      "durationSeconds": 18.285714285714285,
+      "sampleRate": 44100,
+      "channels": 2,
+      "frames": 806400,
+      "decodedPeakDbfs": -1.011,
+      "decodedRmsDbfs": -13.412,
+      "decodeVerified": true,
+      "bytes": 448384,
+      "sha256": "3dc33ebaaf067991d13421e730f24c112bea1499577541436e4b48d2e6a928cd",
+      "source": {
+        "type": "user-supplied-wav",
+        "filename": "056_Full_Loop_105bpm_D_-_80SW1_Zenhiser.wav",
+        "pack": "80's Synthwave Vol. 1",
+        "sha256": "fafbf9cb37806a8aaa1bc0ec8c70a567b8c9a889a4ee5e641da58615ebd97bbc",
+        "bytes": 4838552,
+        "bpm": 105,
+        "processing": "1.5 dB gain reduction for encoding headroom."
+      },
+      "encoding": {
+        "codec": "vorbis",
+        "container": "ogg",
+        "quality": 6
+      }
     }
   ],
   "originalMusicComposition": false,
@@ -781,6 +876,7 @@
     "premium-win": "win-nice-v1",
     "five-casino-win": "win-nice-v1",
     "triple-sevens": "win-nice-v1",
-    "special-ambience": "special-plays-music-v1"
+    "special-ambience": "special-plays-music-v1",
+    "disco-ambience": "disco-synthwave-105"
   }
 }

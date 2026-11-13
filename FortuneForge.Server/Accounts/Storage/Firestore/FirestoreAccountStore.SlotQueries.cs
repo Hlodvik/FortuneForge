@@ -55,10 +55,18 @@ public sealed partial class FirestoreAccountStore
                     var wager = remaining > 0 ? ReadNeonCarryWagerPoints(state[0], pointValueInCents) : (long?)null;
                     var mode = remaining > 0 ? ReadString(state[0], "freeSpinFeatureMode") : null;
                     var discoRemaining = ReadNeonDiscoSpinsRemaining(state[0]);
+                    var pendingNitroChoice = ReadPendingNeonNitroChoice(state[0]);
                     return new SlotStateResponse(remaining, wager, 0, 0, [], mode)
                     {
                         NeonDiscoSpinsRemaining = discoRemaining,
-                        NeonDiscoMultiplier = discoRemaining > 0 ? ReadNeonDiscoMultiplier(state[0]) : NeonDiscoCascade.InitialMultiplier
+                        NeonDiscoMultiplier = discoRemaining > 0 ? ReadNeonDiscoMultiplier(state[0]) : NeonDiscoCascade.InitialMultiplier,
+                        NeonDiscoRoundWinPoints = discoRemaining > 0
+                            ? ReadLong(state[0], "neonDiscoRoundWinPoints") : null,
+                        NeonCarRespinOffer = pendingNitroChoice is null
+                            ? ReadNeonCarRespinOffer(state[0]) : null,
+                        NeonCarRoundWinPoints = mode == NeonArcadeBonus.PaidCarFeatureMode
+                            ? ReadLong(state[0], "neonCarRoundWinPoints") : null,
+                        PendingNeonNitroChoice = pendingNitroChoice
                     };
                 }
                 var rounds = ReadMidnightBonusRounds(state[0], ReadLong(state[1], "available"), pointValueInCents);

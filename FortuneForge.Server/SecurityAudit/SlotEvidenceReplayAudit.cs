@@ -180,6 +180,7 @@ internal static class SlotEvidenceReplayAudit
             ? RandMoney.PointsToCents(engine.WagerPoints, engine.PointValueInCents) : 0;
         var payoutCents = RandMoney.PointsToCents(settled.TotalPoints, engine.PointValueInCents);
         if (isFreeSpin != engine.IsFreeSpin || isDisco != (engine.NeonDiscoCascade is not null) ||
+            NeonArcadeSlotDefinitions.SupportsNitroWild(audit.EngineVersion) && audit.FreeSpinFeatureMode != activeMode ||
             data.GetProperty("payoutMultiplier").GetDecimal() != 1m ||
             discoSpinsRemaining != NeonPlayPolicy.NextDiscoSpins(discoSpinsBefore, isDisco, engine.NeonArcade) ||
             root.GetProperty("sourceCollection").GetString() != "slotSpinResults" ||
@@ -510,6 +511,8 @@ internal static class SlotEvidenceReplayAudit
              JsonSerializer.Serialize(response.OlympusTumble, RoundAuditCapture.Json)) &&
         JsonSerializer.Serialize(engine.NeonDiscoCascade, RoundAuditCapture.Json) ==
             JsonSerializer.Serialize(response.NeonDiscoCascade, RoundAuditCapture.Json) &&
+        JsonSerializer.Serialize(engine.NeonNitroWild, RoundAuditCapture.Json) ==
+            JsonSerializer.Serialize(response.NeonNitroWild, RoundAuditCapture.Json) &&
         engine.SealsAwarded.Count == response.SealsAwarded.Count &&
         engine.SealsAwarded.All(pair => response.SealsAwarded.TryGetValue(pair.Key, out var count) && count == pair.Value);
 }

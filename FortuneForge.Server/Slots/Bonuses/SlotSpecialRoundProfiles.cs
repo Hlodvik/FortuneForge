@@ -107,7 +107,7 @@ public static class SlotSpecialRoundProfiles
             // values. Current Neon bypasses these scatter/collection policies.
             [NeonNightsGameId] = new(NeonNightsGameId, 3, 0, 26, 0, false, false, false,
                 BaseReelSetId: NeonArcadeSlotDefinitions.ReelSetId,
-                PayoutMultiplier: NeonArcadeSlotDefinitions.PayoutMultiplier),
+                PayoutMultiplier: NeonArcadeSlotDefinitions.PreviousBasePayoutMultiplier),
             [NordicLegendsGameId] = FromPackage(NordicEngine.Profile),
             [ReelRichesGameId] = FromPackage(ReelRichesEngine.Profile),
             [ArcaneArchivesGameId] = FromPackage(ArcaneEngine.Profile),

@@ -1,4 +1,5 @@
 using FortuneForge.Games.Abstractions.Analytics;
+using FortuneForge.Server.Accounts.Storage;
 using Google.Cloud.Firestore;
 using Grpc.Core;
 using System.Globalization;
@@ -104,13 +105,16 @@ internal sealed class FirestoreGameAnalyticsStore(FirestoreDb database, TimeProv
     {
         var paid = value.Mode == "paid";
         var known = paid && value.WagerCents is not null && value.PayoutCents is not null;
+        // A Car reel respin adjusts an already counted paid spin. Its outbox
+        // entry carries the extra payout into RTP without counting a new spin.
+        var payoutAdjustment = value.SourceCollection == NeonCarRespinReceipt.CollectionName;
         var net = known ? value.PayoutCents!.Value - value.WagerCents!.Value : 0;
         return new()
         {
-            ["humanRounds"] = FieldValue.Increment(1), ["uniqueRounds"] = FieldValue.Increment(firstRound ? 1 : 0),
-            ["paidRounds"] = FieldValue.Increment(paid ? 1 : 0), ["practiceRounds"] = FieldValue.Increment(value.Mode == "practice" ? 1 : 0),
+            ["humanRounds"] = FieldValue.Increment(payoutAdjustment ? 0 : 1), ["uniqueRounds"] = FieldValue.Increment(!payoutAdjustment && firstRound ? 1 : 0),
+            ["paidRounds"] = FieldValue.Increment(paid && !payoutAdjustment ? 1 : 0), ["practiceRounds"] = FieldValue.Increment(value.Mode == "practice" && !payoutAdjustment ? 1 : 0),
             ["freeRounds"] = FieldValue.Increment(value.Mode == "free" ? 1 : 0),
-            ["knownMoneyRounds"] = FieldValue.Increment(known ? 1 : 0), ["unknownMoneyRounds"] = FieldValue.Increment(paid && !known ? 1 : 0),
+            ["knownMoneyRounds"] = FieldValue.Increment(known && !payoutAdjustment ? 1 : 0), ["unknownMoneyRounds"] = FieldValue.Increment(paid && !known && !payoutAdjustment ? 1 : 0),
             ["wagerCents"] = FieldValue.Increment(known ? value.WagerCents!.Value : 0), ["payoutCents"] = FieldValue.Increment(known ? value.PayoutCents!.Value : 0),
             ["netWinCents"] = FieldValue.Increment(Math.Max(0, net)), ["netLossCents"] = FieldValue.Increment(Math.Max(0, -net)),
         };

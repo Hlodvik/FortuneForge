@@ -69,6 +69,7 @@ public sealed record SlotSpinAdmission(
     public MidnightVaultBonusRound? BonusRound { get; init; }
     public IReadOnlyList<MidnightVaultBonusRound> BonusRoundsBeforeAdmission { get; init; } = [];
     internal SpinResult? ResolvedOutcome { get; init; }
+    internal NeonNitroChoiceOffer? PendingNeonNitroChoice { get; init; }
 }
 
 public sealed record SlotSpinSettlement(
@@ -98,6 +99,12 @@ public sealed record SlotSpinSettlement(
     public int NeonDiscoSpinsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonDiscoRoundWinPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonCarRespinOffer? NeonCarRespinOffer { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonCarRoundWinPoints { get; init; }
 }
 
 public sealed record SlotStateResponse(
@@ -117,6 +124,14 @@ public sealed record SlotStateResponse(
     public int NeonDiscoSpinsRemaining { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? NeonDiscoMultiplier { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonDiscoRoundWinPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonCarRespinOffer? NeonCarRespinOffer { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? NeonCarRoundWinPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public NeonNitroChoiceOffer? PendingNeonNitroChoice { get; init; }
 }
 
 public sealed record AccountSummary(

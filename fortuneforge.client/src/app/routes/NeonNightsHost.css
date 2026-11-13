@@ -4,7 +4,3 @@
   bottom: max(0.9rem, env(safe-area-inset-bottom));
 }
 
-.in-game-shell__body--slots:has(> [data-slot-theme='neon-nights-cabinet-v1']) > .game-support-controls > .in-game-navbar__report {
-  width: 2.75rem;
-  height: 2.75rem;
-}

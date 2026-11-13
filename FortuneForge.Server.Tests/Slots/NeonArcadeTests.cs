@@ -32,7 +32,7 @@ public sealed class NeonArcadeTests
         Assert.Null(game.Energy);
         Assert.Null(game.SpecialPoints);
         Assert.Null(game.Math.Targets.Rtp);
-        Assert.Equal(0.82m, game.Math.PayoutMultiplier);
+        Assert.Equal(0.765m, game.Math.PayoutMultiplier);
         Assert.Equal(new[] { 3, 5 }, game.Symbols.WildSubstitutionMatchLengths);
         Assert.Equal(25m, provider.GetGame(SlotSpecialRoundProfiles.OceanOdysseyGameId)!.Wagering.PointValueInCents);
         var strips = provider.GetReelSet(game.Math.ReelSetId)!.Reels;

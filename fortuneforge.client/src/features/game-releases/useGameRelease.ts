@@ -1,4 +1,5 @@
 import { useEffect, useState, type ComponentType } from 'react'
+import { productionGameReleaseBaseUrl, productionGameReleaseId } from './productionGameRelease'
 
 type GameReleaseState<Content extends object> =
   | { status: 'local' | 'loading' }
@@ -122,7 +123,9 @@ function useRelease<Content extends object>(gameId: string, kind: ReleaseKind,
   return { state, retry: () => setAttempt(value => value + 1) }
 }
 
-export function useGameRelease<Props>(gameId: string, base = import.meta.env.VITE_GAME_RELEASE_BASE_URL?.trim()) {
+export function useGameRelease<Props>(gameId: string, base = import.meta.env.VITE_GAME_RELEASE_BASE_URL?.trim() ||
+  (import.meta.env.PROD && import.meta.env.MODE === 'production' && gameId === productionGameReleaseId
+    ? productionGameReleaseBaseUrl : undefined)) {
   return useRelease(gameId, 'module', loadComponent<Props>, base)
 }
 

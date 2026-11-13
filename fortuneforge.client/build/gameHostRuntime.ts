@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import type { Plugin, ResolvedConfig } from 'vite'
 import { gameHostRuntime } from '../../scripts/game-release-runtime.mjs'
+import { productionGameReleaseBaseUrl } from '../src/features/game-releases/productionGameRelease.js'
 
 const require = createRequire(import.meta.url)
 const virtualPrefix = 'virtual:fortuneforge-game-runtime/'
@@ -8,7 +9,8 @@ const virtualPrefix = 'virtual:fortuneforge-game-runtime/'
 export function gameHostRuntimePlugin(): Plugin {
   let config: ResolvedConfig
   const modules = Object.entries(gameHostRuntime)
-  const enabled = () => Boolean(config.env.VITE_GAME_RELEASE_BASE_URL?.trim())
+  const enabled = () => Boolean(config.env.VITE_GAME_RELEASE_BASE_URL?.trim() ||
+    (config.command === 'build' && config.mode === 'production' && productionGameReleaseBaseUrl))
 
   return {
     name: 'fortuneforge-game-host-runtime',

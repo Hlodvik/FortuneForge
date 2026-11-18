@@ -12,6 +12,16 @@
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
 }
 
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-symbol[data-symbol^='X'] .slot-symbol__artwork::after {
+  color: #fff0b0;
+  font: 900 clamp(0.8rem, 2.1vw, 1.45rem)/1 Georgia, serif;
+  text-shadow: 0 2px 3px #1c0a36, 0 0 0.55rem #ffbd41;
+}
+
+.slot-game-frame[data-cabinet-theme='gods-of-olympus-cabinet-v1'] .slot-symbol[data-symbol^='X'] .slot-symbol__image {
+  filter: drop-shadow(0 0 0.45rem rgb(255 188 62 / 62%));
+}
+
 .gods-tumble__cell {
   min-width: 0;
   min-height: 0;

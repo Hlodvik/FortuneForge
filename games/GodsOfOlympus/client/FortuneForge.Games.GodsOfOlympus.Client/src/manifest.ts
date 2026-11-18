@@ -52,8 +52,8 @@ const HELP: SlotHelpDefinition = {
   extraSections: [
     {
       badge: 'ZEUS',
-      title: 'Lightning volley',
-      body: 'Three lightning volleys in a row, column, or diagonal pay 3× the wager. Olympian Trials use wild-enhanced reel effects instead of direct multiplier tokens.',
+      title: 'Zeus multipliers',
+      body: 'A multiplier coin can land on the starting board or during a tumble. If the spin wins, all landed coins add together and multiply the total tumble award, up to 25×.',
     },
     {
       badge: 'GODS',

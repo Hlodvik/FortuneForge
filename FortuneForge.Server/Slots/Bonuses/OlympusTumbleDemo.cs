@@ -1,4 +1,5 @@
 using FortuneForge.Server.Slots.Models;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Server.Slots.Bonuses;
 
@@ -17,7 +18,13 @@ public sealed record OlympusTumbleStep(
 public sealed record OlympusTumbleOutcome(
     IReadOnlyList<IReadOnlyList<string>> InitialReels,
     IReadOnlyList<OlympusTumbleStep> Steps,
-    long TotalPoints);
+    long TotalPoints)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? BaseTotalPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Multiplier { get; init; }
+}
 
 public static class OlympusTumbleDemo
 {
@@ -25,6 +32,8 @@ public static class OlympusTumbleDemo
         FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.LegacyEngineVersion;
     public const string EngineVersionV2 =
         FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.EngineVersionV2;
+    public const string EngineVersionV3 =
+        FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.EngineVersionV3;
     public const string EngineVersion =
         FortuneForge.Games.GodsOfOlympus.OlympusTumbleRules.EngineVersion;
 
@@ -54,6 +63,10 @@ public static class OlympusTumbleDemo
                 step.Awards.Select(award => new OlympusTumbleAward(
                     award.Symbol, award.AmountPoints, award.Positions)).ToArray(),
                 step.Cleared, step.Reels, step.DropRows, step.AmountPoints)).ToArray(),
-            package.TotalPoints);
+            package.TotalPoints)
+        {
+            BaseTotalPoints = package.BaseTotalPoints,
+            Multiplier = package.Multiplier
+        };
     }
 }

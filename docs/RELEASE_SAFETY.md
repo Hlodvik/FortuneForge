@@ -77,6 +77,11 @@ The new Olympus tumble model reduced one symbol's base payout from 3× to
 2.5× without changing its draw weights or match tiers. At 250,000 spins per
 wager, it measured 93.962% RTP with independent holdouts of 93.831% and
 92.929%. Historical v1 and v2 outcomes still replay under their original rules.
+Olympus v4 adds rare 2×, 3×, 5×, and 10× coins to the tumble board. Coins
+collected during a winning spin add together, with a 25× cap, and multiply
+the completed tumble total. The first demo showcase includes a 2× coin.
+Independent 250,000-spin samples measured 94.51% and 93.75% RTP at each of
+the 2, 100, and 2,000-point wagers. Historical v3 outcomes replay unchanged.
 
 Hosting-only releases also inspect the serving API source stamp. The API must
 already be at the candidate, or be a locally available ancestor whose complete

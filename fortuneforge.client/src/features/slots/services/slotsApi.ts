@@ -5,6 +5,7 @@ import {
   type SpinResult,
 } from '../types/slots'
 import { fetchWithAccountSession } from '../../account/services/accountsApi'
+import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
 
 type SpinRequest = {
   gameId: string
@@ -289,7 +290,7 @@ function validateGodsTumbleResult(
 function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): boolean {
   const tumble: unknown = result.olympusTumble
   if (!isRecord(tumble)) return false
-  const { initialReels, steps, totalPoints } = tumble
+  const { initialReels, steps, totalPoints, baseTotalPoints, multiplier } = tumble
   if (!validGodsTumbleReels(initialReels, rules) ||
     !Array.isArray(steps) || steps.length > 12 ||
     !isNonNegativeInteger(totalPoints) || totalPoints !== result.payout.totalPoints ||
@@ -301,6 +302,8 @@ function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): bool
 
   let reels = initialReels
   let total = 0
+  let landedMultiplier = initialReels.flat().reduce((sum, symbol) =>
+    sum + (GODS_TUMBLE_MULTIPLIERS[symbol as keyof typeof GODS_TUMBLE_MULTIPLIERS] ?? 0), 0)
   for (const step of steps) {
     if (!isRecord(step) || !validGodsTumbleReels(step.reels, rules) || !isNonNegativeInteger(step.amountPoints) ||
       !Array.isArray(step.awards) || step.awards.length === 0 || step.awards.length > 3 ||
@@ -328,10 +331,21 @@ function validGodsTumbleResult(result: SpinResult, rules: SlotTumbleRules): bool
     if (stepPoints !== step.amountPoints || step.cleared.length !== awardedCells.size ||
       !step.cleared.every(position => isGodsTumblePosition(position, rules) && awardedCells.delete(godsTumbleCellKey(position, rules)))
     ) return false
+    for (let reel = 0; reel < rules.columns; reel++) {
+      const refills = step.cleared.filter(position => position.reel === reel).length
+      for (let row = 0; row < refills; row++) {
+        const symbol = step.reels[reel][row]
+        landedMultiplier += GODS_TUMBLE_MULTIPLIERS[symbol as keyof typeof GODS_TUMBLE_MULTIPLIERS] ?? 0
+      }
+    }
     total += stepPoints
     reels = step.reels
   }
-  return total === totalPoints
+  if (multiplier === undefined && baseTotalPoints === undefined) return total === totalPoints
+  return isNonNegativeInteger(baseTotalPoints) && baseTotalPoints === total &&
+    typeof multiplier === 'number' && Number.isInteger(multiplier) &&
+    multiplier === (total > 0 && landedMultiplier > 0 ? Math.min(landedMultiplier, 25) : 1) &&
+    totalPoints === baseTotalPoints * multiplier
 }
 
 function validGodsTumbleReels(value: unknown, rules: SlotTumbleRules): value is SpinResult['reels'] {

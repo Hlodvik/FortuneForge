@@ -126,6 +126,7 @@ public sealed class SlotRoundAuditTests
 
     [Theory]
     [InlineData(OlympusTumbleDemo.EngineVersionV2)]
+    [InlineData(OlympusTumbleDemo.EngineVersionV3)]
     [InlineData(OlympusTumbleDemo.EngineVersion)]
     public void OlympusPaidTumble_ReplaysDrawsAndBindsTheAdmissionAndSettlement(string engineVersion)
     {

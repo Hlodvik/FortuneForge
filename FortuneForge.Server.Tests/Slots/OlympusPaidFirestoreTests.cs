@@ -61,11 +61,12 @@ public sealed class OlympusPaidFirestoreTests(MidnightVaultPaidEmulatorFixture e
 
         // Eight "6" symbols win first, then a single "3" refill joins seven survivors.
         var otherSymbols = new[] { 0, 34, 51, 77, 85, 91, 96 };
-        var indexes = Enumerable.Repeat(66, 8).Concat(Enumerable.Repeat(17, 7))
+        var baseIndexes = Enumerable.Repeat(66, 8).Concat(Enumerable.Repeat(17, 7))
             .Concat(Enumerable.Range(0, 15).Select(i => otherSymbols[i % otherSymbols.Length]))
             .Append(17)
             .Concat(Enumerable.Range(0, 15).Select(i => otherSymbols[i % otherSymbols.Length]))
             .ToArray();
+        var indexes = admittedBeforeUpgrade ? baseIndexes : baseIndexes.Select(index => index * 2000).ToArray();
         var engine = Engine(new ScriptedDraws(indexes));
         var spin = engine.SpinAdmitted(GameId, admission, UserId);
         Assert.Equal(admission.MathModelId, spin.EngineAudit!.EngineVersion);

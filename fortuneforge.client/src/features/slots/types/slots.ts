@@ -1,4 +1,7 @@
 import type { SlotSymbolId as SharedSlotSymbolId } from '@fortuneforge/slot-client-core'
+import type { GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
+import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
+export type { GodsTumbleAward, GodsTumbleStep, GodsTumbleResult } from '@fortuneforge/games-gods-of-olympus/tumble'
 
 export type SlotSymbolId = SharedSlotSymbolId
 
@@ -31,6 +34,7 @@ export const slotSymbolIds: readonly SlotSymbolId[] = [
   'SEAL_ROWS',
   'SEAL_PAW',
   'SEAL_RAND',
+  ...Object.keys(GODS_TUMBLE_MULTIPLIERS),
 ]
 
 export type GridPosition = {
@@ -44,26 +48,6 @@ export type SlotTumbleRules = Readonly<{
   symbols: readonly SlotSymbolId[]
   initialReels: readonly (readonly SlotSymbolId[])[]
 }>
-
-export type GodsTumbleAward = {
-  symbol: SlotSymbolId
-  amountPoints: number
-  positions: GridPosition[]
-}
-
-export type GodsTumbleStep = {
-  awards: GodsTumbleAward[]
-  cleared: GridPosition[]
-  reels: SlotSymbolId[][]
-  dropRows: number[][]
-  amountPoints: number
-}
-
-export type GodsTumbleResult = {
-  initialReels: SlotSymbolId[][]
-  steps: GodsTumbleStep[]
-  totalPoints: number
-}
 
 export type LightningCollection = {
   collector: GridPosition

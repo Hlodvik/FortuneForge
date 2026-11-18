@@ -1,4 +1,5 @@
 import { ResponsiveSlotImage } from './components/ResponsiveSlotImage'
+import { GODS_TUMBLE_MULTIPLIERS } from '@fortuneforge/games-gods-of-olympus/tumble'
 import { useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -132,6 +133,10 @@ export function SlotsPageView(controller: SlotsPageController) {
   const specialIntroImage = presentation?.specialIntroImage
   const collectionFeature = isGodsTumbleBoard && !useFreeGameForNextSpin ? undefined : featureSet.collections
   const godsTumbleAward = godsTumbleFrame?.phase === 'award' ? godsTumbleFrame.award : null
+  const godsMultiplierPositions = godsTumbleFrame?.phase === 'multiplier'
+    ? displayedReels.flatMap((reel, reelIndex) => reel.flatMap((symbol, rowIndex) =>
+      Object.hasOwn(GODS_TUMBLE_MULTIPLIERS, symbol) ? [{ reel: reelIndex, row: rowIndex }] : []))
+    : []
   const godsTumbleHighlights = godsTumbleAward?.positions ??
     (godsTumbleFrame?.phase === 'clear' ? godsTumbleFrame.cleared : undefined)
   const formatTumbleAmount = (points: number) => formatVaultMoney(slotPointsToRand(points, controller.pointValueInCents))
@@ -464,6 +469,13 @@ export function SlotsPageView(controller: SlotsPageController) {
                   rows={displayedReels[0].length}
                   amount={`+${formatTumbleAmount(godsTumbleAward.amountPoints)}`}
                 />
+              ) : godsTumbleFrame?.phase === 'multiplier' && godsMultiplierPositions.length && TumbleAwardBadge ? (
+                <TumbleAwardBadge
+                  positions={godsMultiplierPositions}
+                  columns={displayedReels.length}
+                  rows={displayedReels[0].length}
+                  amount={`${godsTumbleFrame.multiplier}× · +${formatTumbleAmount(godsTumbleFrame.totalPoints)}`}
+                />
               ) : undefined}
               renderReel={(reelIndex) => (
               <div
@@ -552,7 +564,12 @@ export function SlotsPageView(controller: SlotsPageController) {
 
           {isGodsTumbleBoard && (
             <div className="gods-tumble__score" role="status" aria-atomic="true">
-              {godsTumbleFrame ? (
+              {godsTumbleFrame?.phase === 'multiplier' ? (
+                <>
+                  <span>Zeus multiplier {godsTumbleFrame.multiplier}×</span>
+                  <strong>{formatTumbleAmount(godsTumbleFrame.baseTotalPoints)} → {formatTumbleAmount(godsTumbleFrame.totalPoints)}</strong>
+                </>
+              ) : godsTumbleFrame ? (
                 <>
                   <span>Tumble {godsTumbleFrame.step} · +{formatTumbleAmount(godsTumbleAward?.amountPoints ?? godsTumbleFrame.amountPoints)}</span>
                   <strong>Total {formatTumbleAmount(godsTumbleFrame.totalPoints)}</strong>

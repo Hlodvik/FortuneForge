@@ -189,7 +189,11 @@ public sealed class StandaloneSlotPackageRegistry
                 step.Awards.Select(award => new OlympusTumbleAward(
                     award.Symbol, award.AmountPoints, award.Positions)).ToArray(),
                 step.Cleared, step.Reels, step.DropRows, step.AmountPoints)).ToArray(),
-            package.Outcome.TotalPoints);
+            package.Outcome.TotalPoints)
+        {
+            BaseTotalPoints = package.Outcome.BaseTotalPoints,
+            Multiplier = package.Outcome.Multiplier
+        };
 
         return new SpinResult(package.SpinId, package.GameId, engineVersion,
             symbols.Id, engineVersion, wagerPoints, package.PointValueInCents,

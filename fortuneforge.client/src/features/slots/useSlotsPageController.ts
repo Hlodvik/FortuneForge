@@ -58,7 +58,8 @@ import type { AccountSummary } from '../account/services/accountsApi'
 type GodsTumbleFrame = Pick<GodsTumbleStep, 'cleared' | 'dropRows' | 'amountPoints'> & {
   totalPoints: number
   step: number
-} & ({ phase: 'award'; award: GodsTumbleAward } | { phase: 'clear' | 'drop' })
+} & ({ phase: 'award'; award: GodsTumbleAward } | { phase: 'clear' | 'drop' } |
+  { phase: 'multiplier'; multiplier: number; baseTotalPoints: number })
 
 const tumbleDemoFeatures: SlotExperienceSet['features'] = {}
 const godsTumbleAwardMs = 650
@@ -1690,6 +1691,18 @@ export function useSlotsPageController({
           setDisplayedReels(reels)
           setGodsTumbleFrame({ ...frame, totalPoints, phase: 'drop' })
           if (!await waitForPresentation(prefersReducedMotionRef.current ? 120 : godsTumbleDropMs, presentationSignal)) break
+        }
+
+        if (tumble.multiplier && tumble.multiplier > 1 && tumble.baseTotalPoints !== undefined &&
+          !presentationSignal.aborted && isCurrentPresentation(presentationSignal)) {
+          setGodsTumbleFrame({
+            phase: 'multiplier', multiplier: tumble.multiplier,
+            baseTotalPoints: tumble.baseTotalPoints, totalPoints: tumble.totalPoints,
+            amountPoints: tumble.totalPoints - tumble.baseTotalPoints,
+            cleared: [], dropRows: [], step: tumble.steps.length,
+          })
+          setLastWin(slotPointsToRand(tumble.totalPoints, pointValueInCents))
+          await waitForPresentation(prefersReducedMotionRef.current ? 150 : 900, presentationSignal)
         }
 
         // Stop skips the remaining animation and settles the completed spin.

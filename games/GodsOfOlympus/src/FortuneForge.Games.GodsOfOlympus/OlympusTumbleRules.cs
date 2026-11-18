@@ -1,4 +1,5 @@
 using FortuneForge.Games.Slots;
+using System.Text.Json.Serialization;
 
 namespace FortuneForge.Games.GodsOfOlympus;
 
@@ -8,13 +9,20 @@ public sealed record OlympusTumbleStep(IReadOnlyList<OlympusTumbleAward> Awards,
     IReadOnlyList<GridPosition> Cleared, IReadOnlyList<IReadOnlyList<string>> Reels,
     IReadOnlyList<IReadOnlyList<int>> DropRows, long AmountPoints);
 public sealed record OlympusTumbleOutcome(IReadOnlyList<IReadOnlyList<string>> InitialReels,
-    IReadOnlyList<OlympusTumbleStep> Steps, long TotalPoints);
+    IReadOnlyList<OlympusTumbleStep> Steps, long TotalPoints)
+{
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public long? BaseTotalPoints { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Multiplier { get; init; }
+}
 
 public static class OlympusTumbleRules
 {
     public const string LegacyEngineVersion = "olympus-tumble-demo-v1";
     public const string EngineVersionV2 = "olympus-tumble-demo-v2";
-    public const string EngineVersion = "olympus-tumble-demo-v3";
+    public const string EngineVersionV3 = "olympus-tumble-demo-v3";
+    public const string EngineVersion = "olympus-tumble-demo-v4";
     private const int ReelCount = 6;
     private const int RowCount = 5;
     private const int MinimumMatchCount = 8;
@@ -32,6 +40,12 @@ public static class OlympusTumbleRules
     private static readonly (string Symbol, decimal Multiplier, int Weight)[] Symbols =
         V2Symbols.Select(value => value.Symbol == "6"
             ? (value.Symbol, 2.5m, value.Weight) : value).ToArray();
+    private static readonly (string Symbol, int Value, int Weight)[] MultiplierSymbols =
+        [("X2", 2, 5), ("X3", 3, 2), ("X5", 5, 1), ("X10", 10, 1)];
+    private static readonly string[] MultiplierPool = Symbols
+        .SelectMany(value => Enumerable.Repeat(value.Symbol, value.Weight * 2000))
+        .Concat(MultiplierSymbols.SelectMany(value =>
+            Enumerable.Repeat(value.Symbol, value.Weight))).ToArray();
     private static readonly string[][] ShowcaseReels =
     [
         ["2","3","2","8","4"], ["5","3","2","5","3"],
@@ -42,10 +56,10 @@ public static class OlympusTumbleRules
         ["3","4","5","6","7","8","A","J","2","3","4","5","6","7","2","3"];
 
     public static bool SupportsEngineVersion(string? value) =>
-        value is LegacyEngineVersion or EngineVersionV2 or EngineVersion;
+        value is LegacyEngineVersion or EngineVersionV2 or EngineVersionV3 or EngineVersion;
 
     public static bool SupportsPaidEngineVersion(string? value) =>
-        value is EngineVersionV2 or EngineVersion;
+        value is EngineVersionV2 or EngineVersionV3 or EngineVersion;
 
     public static OlympusTumbleOutcome Resolve(string engineVersion, long wagerPoints,
         bool showcase, Func<int, int> nextIndex)
@@ -56,17 +70,31 @@ public static class OlympusTumbleRules
         {
             LegacyEngineVersion => (LegacySymbols, 3),
             EngineVersionV2 => (V2Symbols, 4),
-            EngineVersion => (Symbols, 4),
+            EngineVersionV3 or EngineVersion => (Symbols, 4),
             _ => throw new ArgumentException("Unknown Olympus tumble rules.", nameof(engineVersion))
         };
-        var pool = rules.SelectMany(value => Enumerable.Repeat(value.Symbol, value.Weight)).ToArray();
+        var hasMultipliers = engineVersion == EngineVersion;
+        var pool = hasMultipliers ? MultiplierPool :
+            rules.SelectMany(value => Enumerable.Repeat(value.Symbol, value.Weight)).ToArray();
         var refillIndex = 0;
-        string Draw() => pool[nextIndex(pool.Length)];
+        var multiplierSum = 0;
+        string Draw()
+        {
+            var symbol = pool[nextIndex(pool.Length)];
+            if (hasMultipliers)
+                multiplierSum += MultiplierSymbols.FirstOrDefault(value => value.Symbol == symbol).Value;
+            return symbol;
+        }
         string Refill() => showcase && refillIndex < ShowcaseRefills.Length
             ? ShowcaseRefills[refillIndex++] : Draw();
         var initial = showcase ? ShowcaseReels.Select(reel => reel.ToArray()).ToArray() :
             Enumerable.Range(0, ReelCount).Select(_ => Enumerable.Range(0, RowCount)
                 .Select(_ => Draw()).ToArray()).ToArray();
+        if (showcase && hasMultipliers)
+        {
+            initial[5][4] = "X2";
+            multiplierSum = 2;
+        }
         var reels = initial;
         var steps = new List<OlympusTumbleStep>();
         var total = 0L;
@@ -114,7 +142,13 @@ public static class OlympusTumbleRules
             total = checked(total + amount); reels = nextReels;
             steps.Add(new(awards, cleared, reels, dropRows, amount));
         }
-        return new(initial, steps, total);
+        if (!hasMultipliers) return new(initial, steps, total);
+        var multiplier = total > 0 && multiplierSum > 0 ? Math.Min(multiplierSum, 25) : 1;
+        return new(initial, steps, checked(total * multiplier))
+        {
+            BaseTotalPoints = total,
+            Multiplier = multiplier
+        };
     }
 
     private static long CalculateAward(long wagerPoints, decimal multiplier,

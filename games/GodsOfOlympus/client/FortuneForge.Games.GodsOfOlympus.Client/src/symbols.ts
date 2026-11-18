@@ -20,8 +20,9 @@ import wingedSandal from './assets/art/optimized/winged-sandal.png'
 import zeusEagleCrest from './assets/art/optimized/zeus-eagle-crest.png'
 import zeusGauntlet from './assets/art/optimized/zeus-gauntlet.png'
 import { createThemedSymbolSet } from '@fortuneforge/slot-game-runtime/symbols'
+import { GODS_TUMBLE_MULTIPLIERS } from './tumble'
 
-export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
+const baseSymbols = createThemedSymbolSet({
   id: 'gods-of-olympus-symbols-v1',
   serverSymbolSetId: CLASSIC_SLOT_SYMBOL_SET_ID,
   symbols: {
@@ -61,3 +62,14 @@ export const GODS_OF_OLYMPUS_SYMBOLS = createThemedSymbolSet({
     SEAL_RAND: '6 Hermes spins',
   },
 })
+
+export const GODS_OF_OLYMPUS_SYMBOLS = {
+  ...baseSymbols,
+  definitions: {
+    ...baseSymbols.definitions,
+    ...Object.fromEntries(Object.entries(GODS_TUMBLE_MULTIPLIERS).map(([id, value]) => [
+      id, { id, label: `Zeus multiplier, ${value} times`, image: drachmaToken,
+        animatedImage: drachmaToken, valueLabel: `${value}×` },
+    ])),
+  },
+}

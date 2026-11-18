@@ -9,7 +9,8 @@ public sealed class OlympusTumbleDemoTests
     [Fact]
     public void ShowcaseUsesTwoDeterministicStepsAndKeepsSurvivorOrder()
     {
-        var result = OlympusTumbleDemo.Resolve(2, true, _ => throw new InvalidOperationException());
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, 2, true,
+            _ => throw new InvalidOperationException());
 
         Assert.Equal(6, result.InitialReels.Count);
         Assert.All(result.InitialReels, reel => Assert.Equal(5, reel.Count));
@@ -36,7 +37,7 @@ public sealed class OlympusTumbleDemoTests
     {
         var otherSymbols = new[] { 34, 51, 66, 77, 85, 91, 96 };
         var draws = 0;
-        var result = OlympusTumbleDemo.Resolve(2, false, _ =>
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, 2, false, _ =>
         {
             var index = draws++;
             if (index < 8) return 0;
@@ -67,7 +68,8 @@ public sealed class OlympusTumbleDemoTests
     {
         var draws = 0;
         var symbols = new[] { 0, 17, 34, 51, 66, 77 };
-        var result = OlympusTumbleDemo.Resolve(2, false, _ => symbols[draws++ % symbols.Length]);
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, 2, false,
+            _ => symbols[draws++ % symbols.Length]);
 
         Assert.Empty(result.Steps);
         Assert.Equal(0, result.TotalPoints);
@@ -84,7 +86,7 @@ public sealed class OlympusTumbleDemoTests
         foreach (var wager in new long[] { 2, 6, 100, 2000 })
         {
             var draws = 0;
-            var result = OlympusTumbleDemo.Resolve(wager, false, _ =>
+            var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, wager, false, _ =>
             {
                 var index = draws++;
                 return index < matchCount ? 77 : otherSymbols[(index - matchCount) % otherSymbols.Length];
@@ -101,7 +103,7 @@ public sealed class OlympusTumbleDemoTests
     public void RepeatedMaximumPayoutWinsStopAtTheTumbleLimit()
     {
         var draws = 0;
-        var result = OlympusTumbleDemo.Resolve(2_000, false, maximum =>
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, 2_000, false, maximum =>
         {
             Assert.Equal(100, maximum);
             return draws++ % 2 == 0 ? 96 : 91;
@@ -140,7 +142,7 @@ public sealed class OlympusTumbleDemoTests
             }
 
             var versionTwo = Resolve(OlympusTumbleDemo.EngineVersionV2);
-            var versionThree = Resolve(OlympusTumbleDemo.EngineVersion);
+            var versionThree = Resolve(OlympusTumbleDemo.EngineVersionV3);
             var oldStep = Assert.Single(versionTwo.Steps);
             var newStep = Assert.Single(versionThree.Steps);
             Assert.Equal("6", Assert.Single(newStep.Awards).Symbol);
@@ -150,5 +152,58 @@ public sealed class OlympusTumbleDemoTests
             Assert.Equal(versionTwoMinimumAward * (wager / 2), versionTwo.TotalPoints);
             Assert.Equal(versionThreeMinimumAward * (wager / 2), versionThree.TotalPoints);
         }
+    }
+
+    [Fact]
+    public void MultiplierCoinsAddAndMultiplyTheCompletedTumbleWin()
+    {
+        var otherSymbols = new[] { 34000, 68000, 102000, 132000, 154000, 170000, 182000 };
+        var indexes = Enumerable.Repeat(0, 8)
+            .Concat([200000, 200005])
+            .Concat(Enumerable.Range(0, 28).Select(index => otherSymbols[index % otherSymbols.Length]))
+            .ToArray();
+        var draws = 0;
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersion, 2, false,
+            maximum =>
+            {
+                Assert.Equal(200009, maximum);
+                return indexes[draws++];
+            });
+
+        Assert.Single(result.Steps);
+        Assert.Equal(1, result.BaseTotalPoints);
+        Assert.Equal(5, result.Multiplier);
+        Assert.Equal(5, result.TotalPoints);
+        Assert.Equal(indexes.Length, draws);
+        Assert.Equal(8, result.Steps[0].Cleared.Count);
+    }
+
+    [Fact]
+    public void ShowcaseDemonstratesTheMultiplierWithoutChangingHistoricalShowcases()
+    {
+        var current = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersion, 2, true,
+            _ => throw new InvalidOperationException());
+        var historical = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersionV3, 2, true,
+            _ => throw new InvalidOperationException());
+
+        Assert.Equal("X2", current.InitialReels[5][4]);
+        Assert.Equal(2, current.BaseTotalPoints);
+        Assert.Equal(2, current.Multiplier);
+        Assert.Equal(4, current.TotalPoints);
+        Assert.Equal(2, historical.TotalPoints);
+        Assert.Null(historical.Multiplier);
+    }
+
+    [Fact]
+    public void MultiplierCoinsCannotExceedTheSpinCap()
+    {
+        var draws = 0;
+        var result = OlympusTumbleDemo.Resolve(OlympusTumbleDemo.EngineVersion, 2, false,
+            _ => draws++ < 8 ? 0 : 200008);
+
+        Assert.Single(result.Steps);
+        Assert.Equal(1, result.BaseTotalPoints);
+        Assert.Equal(25, result.Multiplier);
+        Assert.Equal(25, result.TotalPoints);
     }
 }

@@ -114,7 +114,9 @@ public sealed class DemoSlotsContractTests
         var tumble = Assert.IsType<OlympusTumbleOutcome>(result.OlympusTumble);
         Assert.Equal(OlympusTumbleDemo.EngineVersion, result.ReelSetId);
         Assert.Equal(new long[] { 1, 1 }, tumble.Steps.Select(step => step.AmountPoints));
-        Assert.Equal(2, result.Payout.TotalPoints);
+        Assert.Equal(2, tumble.BaseTotalPoints);
+        Assert.Equal(2, tumble.Multiplier);
+        Assert.Equal(4, result.Payout.TotalPoints);
         Assert.Null(result.SlotsCreditsBalance);
 
         var entry = Assert.IsType<DemoSlotAuditEntry>(auditStore.Entry);
@@ -127,6 +129,11 @@ public sealed class DemoSlotsContractTests
             ResponseResult = result with { OlympusTumble = tumble with { TotalPoints = 3 } }
         });
         Assert.NotEmpty(SlotEvidenceReplayAudit.Inspect(altered.Summary, altered.PayloadJson));
+        var alteredMultiplier = DemoSlotRoundRecording.Capture(entry with
+        {
+            ResponseResult = result with { OlympusTumble = tumble with { Multiplier = 3 } }
+        });
+        Assert.NotEmpty(SlotEvidenceReplayAudit.Inspect(alteredMultiplier.Summary, alteredMultiplier.PayloadJson));
     }
 
     [Fact]

@@ -12,15 +12,18 @@ export const discoAwardPercent = (fourSymbolAwardPercent: number, size: number) 
   Math.floor(fourSymbolAwardPercent * (100 + 5 * (size - 4)) / 100)
 export const neonDiscoSymbols: SlotSymbolSet<NeonDiscoSymbolId> = {
   id: NEON_DISCO_SYMBOL_SET_ID, serverSymbolSetId: NEON_DISCO_SYMBOL_SET_ID,
-  definitions: Object.fromEntries(discoClusterValues.map(([id, label]) => [id, { id, label, image: images[id] }])),
-  animationSymbolIds: discoClusterValues.map(([id]) => id),
+  definitions: {
+    ...Object.fromEntries(discoClusterValues.map(([id, label]) => [id, { id, label, image: images[id] }])),
+    DISCO_WILD: { id: 'DISCO_WILD', label: 'Disco Wild', image: images.DISCO_WILD },
+  },
+  animationSymbolIds: [...discoClusterValues.map(([id]) => id), 'DISCO_WILD'],
   guideSubtitle: '4 symbols · 8 symbols · at ×1',
   guideSymbolGroups: [['2', '4', '5', '7']],
-  guideEntries: discoClusterValues.map(([symbol, , fourSymbolAwardPercent]) => ({
+  guideEntries: [...discoClusterValues.map(([symbol, , fourSymbolAwardPercent]) => ({
     symbol, compactInSidePanel: true, firstLabel: '4', firstValue: `${fourSymbolAwardPercent / 100}×`,
     secondLabel: '8', secondValue: `${discoAwardPercent(fourSymbolAwardPercent, 8) / 100}×`,
-  })),
-  guideNote: 'Match 4+ touching horizontally or vertically. Larger groups pay more. Cascade multiplier applies; see How to win for all sizes.',
+  })), { symbol: 'DISCO_WILD', compactInSidePanel: true, firstLabel: 'Wild', firstValue: 'Substitutes in clusters' }],
+  guideNote: 'Match 4+ touching horizontally or vertically. WILD substitutes in one paying group per cascade. Larger groups pay more. Cascade multiplier applies; see How to win for all sizes.',
 }
 
 export const discoInitialReels: NeonDiscoSymbolId[][] = [

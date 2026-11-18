@@ -459,38 +459,83 @@ public sealed class NeonPackageTests
         Assert.Equal(NeonDiscoDefinitions.SymbolSetId, disco.SymbolSetId);
         Assert.Equal(NeonDiscoDefinitions.ReelSetId, disco.ReelSetId);
         Assert.Equal(NeonDiscoDefinitions.PaytableId, disco.PaytableId);
-        Assert.All(disco.Reels.SelectMany(reel => reel), symbol => Assert.Contains(symbol, NeonDiscoDefinitions.SymbolIds));
+        Assert.All(disco.Reels.SelectMany(reel => reel), symbol => Assert.Contains(symbol, NeonDiscoDefinitions.AllSymbolIds));
         Assert.Empty(disco.NeonArcade.Activators);
         Assert.Equal(0, disco.FreeSpinsAwarded);
         Assert.Empty(NeonOutcomeReplay.Check(disco, disco.Payout));
         Assert.Contains(NeonOutcomeReplay.Check(disco with
         {
             EngineAudit = disco.EngineAudit with { EngineVersion = NeonArcadeSlotDefinitions.PreviousDiscoMathEngineVersion }
-        }, disco.Payout), finding => finding.Code == "slot-neon-disco-math-mismatch");
+        }, disco.Payout), finding => finding.Code == "slot-neon-disco-mode-mismatch");
 
         var previousPaytable = NeonDiscoDefinitions.CreatePreviousPairedPaytable();
+        var previousReels = NeonDiscoDefinitions.CreatePreviousSevenSymbolReelSet();
+        var previousSymbols = NeonDiscoDefinitions.CreatePreviousSymbolSet();
+        var previousStops = previousReels.Reels.Select(reel => reel.IndexOf("2")).ToArray();
+        var previousWindow = previousReels.Reels.Select((reel, index) =>
+            (IReadOnlyList<string>)Enumerable.Range(0, 4).Select(row => reel[(previousStops[index] + row) % reel.Count]).ToArray()).ToArray();
         var historicalGame = JsonSerializer.SerializeToNode(disco.EngineAudit.EffectiveGame)!;
         historicalGame["Math"]!["PaytableId"] = previousPaytable.Id;
+        historicalGame["Math"]!["ReelSetId"] = previousReels.Id;
+        historicalGame["Symbols"]!["SymbolSetId"] = previousSymbols.Id;
+        historicalGame["Symbols"]!["WildSymbolId"] = string.Empty;
+        historicalGame["Symbols"]!["WildSubstitutionMatchLengths"] = new JsonArray();
         var previousGame = historicalGame.Deserialize<GameDefinition>()!;
-        var draws = new Queue<int>(disco.EngineAudit.NeonDiscoCascade.DrawIndexes);
-        var previousCascade = NeonDiscoCascade.Resolve(disco.Reels, previousGame, disco.EngineAudit.ReelSet,
-            disco.EngineAudit.SymbolSet, previousPaytable, disco.WagerPoints, new(), new(), _ => draws.Dequeue(),
+        var previousDraws = new List<int>();
+        var previousRandom = new Random(73);
+        var previousCascade = NeonDiscoCascade.Resolve(previousWindow, previousGame, previousReels,
+            previousSymbols, previousPaytable, disco.WagerPoints, new(), new(), maximum =>
+            {
+                var draw = previousRandom.Next(maximum);
+                previousDraws.Add(draw);
+                return draw;
+            },
             out _, 2);
         var previousPayout = new SpinPayout(previousCascade.TotalPoints, []);
         var previousDisco = disco with
         {
             PaytableId = previousPaytable.Id,
+            ReelSetId = previousReels.Id,
+            SymbolSetId = previousSymbols.Id,
+            Reels = previousWindow,
+            ReelStops = previousStops,
             Payout = previousPayout,
             NeonDiscoCascade = previousCascade,
             EngineAudit = disco.EngineAudit with
             {
                 EngineVersion = NeonArcadeSlotDefinitions.PreviousDiscoMathEngineVersion,
                 EffectiveGame = previousGame,
-                Paytable = previousPaytable
+                ReelSet = previousReels,
+                SymbolSet = previousSymbols,
+                Paytable = previousPaytable,
+                RawGeneratedReels = previousWindow,
+                ReelsAfterFreeGameFrequency = previousWindow,
+                NeonDiscoCascade = new(previousDraws) { StartingMultiplier = 2 }
             }
         };
-        Assert.True(previousPayout.TotalPoints > disco.Payout.TotalPoints);
+        Assert.True(previousPayout.TotalPoints > 0);
         Assert.Empty(NeonOutcomeReplay.Check(previousDisco, previousPayout));
+        var sevenSymbolPaytable = NeonDiscoDefinitions.CreatePreviousSevenSymbolPaytable();
+        historicalGame["Math"]!["PaytableId"] = sevenSymbolPaytable.Id;
+        var sevenSymbolGame = historicalGame.Deserialize<GameDefinition>()!;
+        var replayDraws = new Queue<int>(previousDraws);
+        var sevenSymbolCascade = NeonDiscoCascade.Resolve(previousWindow, sevenSymbolGame, previousReels,
+            previousSymbols, sevenSymbolPaytable, disco.WagerPoints, new(), new(), _ => replayDraws.Dequeue(), out _, 2);
+        var sevenSymbolPayout = new SpinPayout(sevenSymbolCascade.TotalPoints, []);
+        var version18 = previousDisco with
+        {
+            PaytableId = sevenSymbolPaytable.Id,
+            Payout = sevenSymbolPayout,
+            NeonDiscoCascade = sevenSymbolCascade,
+            EngineAudit = previousDisco.EngineAudit with
+            {
+                EngineVersion = NeonArcadeSlotDefinitions.PreviousDiscoWildEngineVersion,
+                EffectiveGame = sevenSymbolGame,
+                Paytable = sevenSymbolPaytable
+            }
+        };
+        Assert.Empty(replayDraws);
+        Assert.Empty(NeonOutcomeReplay.Check(version18, sevenSymbolPayout));
         var wrongStartingTier = disco with
         {
             EngineAudit = disco.EngineAudit with
@@ -510,7 +555,7 @@ public sealed class NeonPackageTests
         {
             Assert.NotEmpty(step.Cleared);
             Assert.Equal(step.Payout.TotalPoints, step.Payout.Paylines.Sum(line => line.AmountPoints));
-            Assert.All(step.Reels.SelectMany(reel => reel), symbol => Assert.Contains(symbol, NeonDiscoDefinitions.SymbolIds));
+            Assert.All(step.Reels.SelectMany(reel => reel), symbol => Assert.Contains(symbol, NeonDiscoDefinitions.AllSymbolIds));
         });
         Assert.Throws<ArgumentException>(() => new NeonNightsEngine(new Draws(stops, 73))
             .Spin(150, "invalid", false, 0, "arcade-rows", 0, true, true));

@@ -2,16 +2,20 @@ using FortuneForge.Games.Slots;
 
 namespace FortuneForge.Games.NeonNights;
 
-// Disco owns its seven-symbol pool and cluster paytable independently of the
+// Disco owns its paying symbols, substitute and cluster paytable independently of the
 // base game's line awards and feature symbols.
 public static class NeonDiscoDefinitions
 {
-    public const string SymbolSetId = "neon-disco-symbols-v1";
+    public const string PreviousSymbolSetId = "neon-disco-symbols-v1";
+    public const string SymbolSetId = "neon-disco-symbols-v2";
+    public const string WildSymbolId = "DISCO_WILD";
     public const string PreviousReelSetId = "neon-disco-reels-v1";
     public const string PreviousPaytableId = "neon-disco-paytable-v1";
-    public const string ReelSetId = "neon-disco-reels-v2";
+    public const string PreviousSevenSymbolReelSetId = "neon-disco-reels-v2";
+    public const string ReelSetId = "neon-disco-reels-v3";
     public const string PreviousPairedPaytableId = "neon-disco-paytable-v2";
-    public const string PaytableId = "neon-disco-paytable-v3";
+    public const string PreviousSevenSymbolPaytableId = "neon-disco-paytable-v3";
+    public const string PaytableId = "neon-disco-paytable-v4";
     public const int MinimumClusterSize = 4;
     public const decimal PayoutScale = 0.01m;
     private const int MaximumClusterSize = 20;
@@ -19,6 +23,10 @@ public static class NeonDiscoDefinitions
     private const int PairedBlocksPerSymbol = 13;
     public static IReadOnlyList<string> SymbolIds { get; } =
         Array.AsReadOnly(new[] { "2", "4", "5", "7", "DISCO_MARTINI", "DISCO_SEVEN", "DISCO_BALL" });
+    public static IReadOnlyList<string> AllSymbolIds { get; } =
+        Array.AsReadOnly(SymbolIds.Append(WildSymbolId).ToArray());
+
+    internal static bool IsClusterSymbolSet(string id) => id is SymbolSetId or PreviousSymbolSetId;
 
     private static readonly long[] PreviousFourSymbolAwards = [10, 20, 30, 40, 60, 80, 100];
     private static readonly long[] PreviousPairedFourSymbolAwards = [275, 280, 286, 291, 302, 313, 324];
@@ -31,8 +39,10 @@ public static class NeonDiscoDefinitions
         Layout = new() { ReelCount = 5, VisibleRows = 4, PaylineCount = 0 },
         Symbols = new()
         {
-            SymbolSetId = SymbolSetId, WildSymbolId = string.Empty,
-            PaylineSymbolIds = [.. SymbolIds]
+            SymbolSetId = SymbolSetId, WildSymbolId = WildSymbolId,
+            PaylineSymbolIds = [.. SymbolIds],
+            WildSubstitutionMatchLengths = Enumerable.Range(MinimumClusterSize,
+                MaximumClusterSize - MinimumClusterSize + 1).ToList()
         },
         Matching = new() { MinimumRunLength = MinimumClusterSize },
         Math = new()
@@ -46,11 +56,20 @@ public static class NeonDiscoDefinitions
     public static SymbolSetDefinition CreateSymbolSet() => new()
     {
         Id = SymbolSetId,
+        Symbols = AllSymbolIds.Select(id => new SymbolDefinition { Id = id }).ToList()
+    };
+
+    public static SymbolSetDefinition CreatePreviousSymbolSet() => new()
+    {
+        Id = PreviousSymbolSetId,
         Symbols = SymbolIds.Select(id => new SymbolDefinition { Id = id }).ToList()
     };
 
     public static PaytableDefinition CreatePaytable() =>
-        CreatePaytable(PaytableId, FourSymbolAwards, PairedSizeAward);
+        CreatePaytable(PaytableId, FourSymbolAwards, PairedSizeAward, SymbolSetId);
+
+    public static PaytableDefinition CreatePreviousSevenSymbolPaytable() =>
+        CreatePaytable(PreviousSevenSymbolPaytableId, FourSymbolAwards, PairedSizeAward);
 
     public static PaytableDefinition CreatePreviousPairedPaytable() =>
         CreatePaytable(PreviousPairedPaytableId, PreviousPairedFourSymbolAwards, PairedSizeAward);
@@ -62,9 +81,9 @@ public static class NeonDiscoDefinitions
     private static long PairedSizeAward(long award, int extraSymbols) => award * (100 + 5 * extraSymbols) / 100;
 
     private static PaytableDefinition CreatePaytable(string id, IReadOnlyList<long> fourSymbolAwards,
-        Func<long, int, long> sizeAward) => new()
+        Func<long, int, long> sizeAward, string symbolSetId = PreviousSymbolSetId) => new()
     {
-        Id = id, SymbolSetId = SymbolSetId,
+        Id = id, SymbolSetId = symbolSetId,
         Rules = SymbolIds.SelectMany((symbol, index) =>
             Enumerable.Range(0, MaximumClusterSize - MinimumClusterSize + 1).Select(extraSymbols => new PayoutRule
             {
@@ -73,15 +92,42 @@ public static class NeonDiscoDefinitions
             })).ToList()
     };
 
-    public static ReelSetDefinition CreateReelSet() => CreateReelSet(ReelSetId, CreateStrip);
+    public static ReelSetDefinition CreateReelSet() => CreateReelSet(ReelSetId, CreateWildStrip, SymbolSetId);
+
+    public static ReelSetDefinition CreatePreviousSevenSymbolReelSet() =>
+        CreateReelSet(PreviousSevenSymbolReelSetId, CreateStrip);
 
     public static ReelSetDefinition CreatePreviousReelSet() => CreateReelSet(PreviousReelSetId, CreatePreviousStrip);
 
-    private static ReelSetDefinition CreateReelSet(string id, Func<int, List<string>> createStrip) => new()
+    private static ReelSetDefinition CreateReelSet(string id, Func<int, List<string>> createStrip,
+        string symbolSetId = PreviousSymbolSetId) => new()
     {
-        Id = id, SymbolSetId = SymbolSetId,
+        Id = id, SymbolSetId = symbolSetId,
         Reels = Enumerable.Range(0, 5).Select(createStrip).ToList()
     };
+
+    private static List<string> CreateWildStrip(int reel)
+    {
+        var strip = CreateStrip(reel);
+        // A single isolated stop from each paying symbol gives WILD seven of
+        // 896 stops. Existing paired blocks and strip length remain intact.
+        foreach (var symbol in SymbolIds)
+        {
+            var index = strip.FindIndex(stop => stop == symbol);
+            for (var candidate = 0; candidate < strip.Count; candidate++)
+            {
+                if (strip[candidate] == symbol &&
+                    strip[(candidate + strip.Count - 1) % strip.Count] != symbol &&
+                    strip[(candidate + 1) % strip.Count] != symbol)
+                {
+                    index = candidate;
+                    break;
+                }
+            }
+            strip[index] = WildSymbolId;
+        }
+        return strip;
+    }
 
     private static List<string> CreateStrip(int reel)
     {

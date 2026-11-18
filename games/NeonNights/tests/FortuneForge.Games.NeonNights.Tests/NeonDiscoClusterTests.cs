@@ -10,6 +10,102 @@ public sealed class NeonDiscoClusterTests
     private static readonly PaytableDefinition Paytable = NeonDiscoDefinitions.CreatePaytable();
 
     [Fact]
+    public void DiscoWildConnectsAnOrthogonalClusterAndReportsItsSubstitution()
+    {
+        var board = NonWinningBoard();
+        board[0][0] = "2";
+        board[1][0] = NeonDiscoDefinitions.WildSymbolId;
+        board[2][0] = "2";
+        board[2][1] = "2";
+        var payout = NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1);
+        var match = Assert.Single(Assert.Single(payout.Paylines).Matches);
+        Assert.Equal("2", match.Match.SymbolId);
+        Assert.Equal(4, match.Match.MatchLength);
+        Assert.Equal(new[] { new GridPosition(1, 0) }, match.Match.WildPositions);
+        Assert.Equal(137, match.AmountPoints);
+
+        board[1][0] = "5";
+        board[1][1] = NeonDiscoDefinitions.WildSymbolId;
+        board[2][1] = "7";
+        Assert.Empty(NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1).Paylines);
+    }
+
+    [Fact]
+    public void CompetingClustersUseEachWildOnceAndRetainOtherPayingGroups()
+    {
+        var board = NonWinningBoard();
+        board[0][0] = board[1][0] = board[1][1] = "2";
+        board[2][0] = NeonDiscoDefinitions.WildSymbolId;
+        board[3][0] = board[4][0] = board[3][1] = "DISCO_BALL";
+        board[3][2] = "5";
+        board[4][1] = "4";
+        var payout = NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1);
+        var match = Assert.Single(Assert.Single(payout.Paylines).Matches);
+        Assert.Equal("DISCO_BALL", match.Match.SymbolId);
+        Assert.Equal(new[] { new GridPosition(2, 0) }, match.Match.WildPositions);
+
+        board[0][1] = "2";
+        payout = NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1);
+        Assert.Equal(2, payout.Paylines.Count);
+        Assert.Equal(new[] { "DISCO_BALL", "2" }, payout.Paylines.Select(line => line.Matches[0].Match.SymbolId));
+        var cells = payout.Paylines.SelectMany(line => line.Matches[0].Match.Positions).ToArray();
+        Assert.Equal(cells.Length, cells.Distinct().Count());
+        Assert.Empty(payout.Paylines[1].Matches[0].Match.WildPositions);
+    }
+
+    [Fact]
+    public void WildsHaveNoNativePrizeAndWildOnlyGroupsRemainOnTheBoard()
+    {
+        var board = Enumerable.Range(0, 5)
+            .Select(_ => Enumerable.Repeat(NeonDiscoDefinitions.WildSymbolId, 4).ToArray()).ToArray();
+        Assert.DoesNotContain(Paytable.Rules, rule => rule.SymbolId == NeonDiscoDefinitions.WildSymbolId);
+        Assert.Empty(NeonDiscoCascade.EvaluateClusters(board, Game, Paytable, 100, 1).Paylines);
+        var result = Resolve(board, Reels(NeonDiscoDefinitions.AllSymbolIds),
+            _ => throw new InvalidOperationException("A non-paying WILD group must not draw refill symbols."));
+        Assert.Empty(result.Steps);
+        Assert.Equal(0, result.TotalPoints);
+    }
+
+    [Fact]
+    public void WinningWildClearsOnceAndRefillsWithTheCluster()
+    {
+        var board = NonWinningBoard();
+        board[0][2] = board[0][3] = board[1][2] = "2";
+        board[1][3] = NeonDiscoDefinitions.WildSymbolId;
+        var draws = new Queue<int>([4, 5, 6, 4]);
+        var result = Resolve(board, Reels(NeonDiscoDefinitions.AllSymbolIds), _ => draws.Dequeue());
+        var step = Assert.Single(result.Steps);
+        Assert.Equal(4, step.Cleared.Count);
+        Assert.Contains(new GridPosition(1, 3), step.Cleared);
+        Assert.Single(Assert.Single(Assert.Single(step.Payout.Paylines).Matches).Match.WildPositions);
+        Assert.Empty(draws);
+    }
+
+    [Fact]
+    public void WildCascadeOutcomesReplayAndRejectChangedSubstitutionEvidence()
+    {
+        var board = NonWinningBoard();
+        board[0][2] = board[0][3] = board[1][2] = "2";
+        board[1][3] = NeonDiscoDefinitions.WildSymbolId;
+        var outcome = new NeonNightsEngine(new DiscoFixtureDefinitions(board), new FixtureRandom())
+            .Spin(100, "disco-wild", false, 0, null, 0, false, true);
+        Assert.Equal(NeonArcadeSlotDefinitions.EngineVersion, outcome.EngineAudit.EngineVersion);
+        Assert.Equal(NeonDiscoDefinitions.SymbolSetId, outcome.SymbolSetId);
+        Assert.Contains(outcome.NeonDiscoCascade!.Steps.SelectMany(step => step.Payout.Paylines)
+            .SelectMany(line => line.Matches), match => match.Match.WildPositions.Count > 0);
+        Assert.Empty(NeonOutcomeReplay.Check(outcome, outcome.Payout));
+
+        var steps = outcome.NeonDiscoCascade.Steps.ToArray();
+        var lines = steps[0].Payout.Paylines.ToArray();
+        var paid = Assert.Single(lines[0].Matches);
+        lines[0] = lines[0] with { Matches = [paid with { Match = paid.Match with { WildPositions = [] } }] };
+        steps[0] = steps[0] with { Payout = steps[0].Payout with { Paylines = lines } };
+        var changed = outcome with { NeonDiscoCascade = outcome.NeonDiscoCascade with { Steps = steps } };
+        Assert.Contains(NeonOutcomeReplay.Check(changed, changed.Payout),
+            finding => finding.Code == "slot-neon-disco-steps-mismatch");
+    }
+
+    [Fact]
     public void FourMatchingSymbolsCanFormAnLButDiagonalMatchesDoNotConnect()
     {
         var board = NonWinningBoard();
@@ -121,8 +217,13 @@ public sealed class NeonDiscoClusterTests
         var currentReels = source.GetReelSet(Game.Math.ReelSetId)!;
         var previousReels = source.GetReelSet(NeonDiscoDefinitions.PreviousReelSetId)!;
         Assert.False(currentReels.Reels[0].SequenceEqual(previousReels.Reels[0]));
-        Assert.All(currentReels.Reels, strip => Assert.All(NeonDiscoDefinitions.SymbolIds,
-            symbol => Assert.Equal(128, strip.Count(stop => stop == symbol))));
+        Assert.All(currentReels.Reels, strip =>
+        {
+            Assert.Equal(896, strip.Count);
+            Assert.Equal(7, strip.Count(stop => stop == NeonDiscoDefinitions.WildSymbolId));
+            Assert.All(NeonDiscoDefinitions.SymbolIds,
+                symbol => Assert.Equal(127, strip.Count(stop => stop == symbol)));
+        });
     }
 
     [Fact]
@@ -158,4 +259,26 @@ public sealed class NeonDiscoClusterTests
         int startingMultiplier = 1) =>
         NeonDiscoCascade.Resolve(board, Game, reels, NeonDiscoDefinitions.CreateSymbolSet(),
             Paytable, 100, new(), new(), draw, out _, startingMultiplier);
+
+    private sealed class DiscoFixtureDefinitions(string[][] board) : ISlotDefinitionSource
+    {
+        private readonly NeonDefinitionSource definitions = new();
+        public GameDefinition? GetGame(string id) => definitions.GetGame(id);
+        public SymbolSetDefinition? GetSymbolSet(string id) => definitions.GetSymbolSet(id);
+        public PaytableDefinition? GetPaytable(string id) => definitions.GetPaytable(id);
+        public ReelSetDefinition? GetReelSet(string id) => id == NeonDiscoDefinitions.ReelSetId
+            ? ReelsFromBoard() : definitions.GetReelSet(id);
+        private ReelSetDefinition ReelsFromBoard() => new()
+        {
+            Id = NeonDiscoDefinitions.ReelSetId, SymbolSetId = NeonDiscoDefinitions.SymbolSetId,
+            Reels = board.Select(reel => reel.ToList()).ToList()
+        };
+    }
+
+    private sealed class FixtureRandom : IGameRandomSource
+    {
+        private readonly Random random = new(73);
+        private int calls;
+        public int Next(int maximumExclusive) => calls++ < 5 ? 0 : random.Next(maximumExclusive);
+    }
 }

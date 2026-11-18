@@ -3,13 +3,15 @@ import type { GridPosition, PaylinePayout } from '@fortuneforge/slot-client-core
 
 export const NEON_GAME_ID = 'neon-nights-v1'
 export const NEON_CAR_SYMBOL_SET_ID = 'neon-car-symbols-v1'
-export const NEON_DISCO_SYMBOL_SET_ID = 'neon-disco-symbols-v1'
+export const NEON_PREVIOUS_DISCO_SYMBOL_SET_ID = 'neon-disco-symbols-v1'
+export const NEON_DISCO_SYMBOL_SET_ID = 'neon-disco-symbols-v2'
 export const discoMultipliers = [1, 2, 3, 5] as const
 export type NeonDiscoMultiplier = typeof discoMultipliers[number]
 export const neonBaseSymbolIds = ['2', '3', '4', '5', '6', '7', 'ACE', 'FREE', 'POWER', 'BANANA', 'SEAL_SYNC', 'SEAL_ROWS', 'SEAL_PAW'] as const
 export const neonCarSymbolIds = [...neonBaseSymbolIds, 'NITRO'] as const
-export const neonDiscoSymbolIds = ['2', '4', '5', '7', 'DISCO_MARTINI', 'DISCO_BALL', 'DISCO_SEVEN'] as const
-export const neonSymbolIds = [...neonCarSymbolIds, 'DISCO_MARTINI', 'DISCO_BALL', 'DISCO_SEVEN'] as const
+export const neonDiscoPayingSymbolIds = ['2', '4', '5', '7', 'DISCO_MARTINI', 'DISCO_BALL', 'DISCO_SEVEN'] as const
+export const neonDiscoSymbolIds = [...neonDiscoPayingSymbolIds, 'DISCO_WILD'] as const
+export const neonSymbolIds = [...neonCarSymbolIds, 'DISCO_MARTINI', 'DISCO_BALL', 'DISCO_SEVEN', 'DISCO_WILD'] as const
 export type NeonSymbolId = typeof neonSymbolIds[number]
 export type NeonCarSymbolId = typeof neonCarSymbolIds[number]
 export type NeonDiscoSymbolId = typeof neonDiscoSymbolIds[number]

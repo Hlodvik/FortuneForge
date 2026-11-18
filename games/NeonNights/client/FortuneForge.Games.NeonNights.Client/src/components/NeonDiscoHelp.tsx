@@ -8,6 +8,10 @@ export function NeonDiscoHelp({ wager }: { wager: number }) {
     <p className="win-help__intro">Match four or more identical symbols touching horizontally or vertically. Groups can take any shape; diagonal touching does not connect them.</p>
     <div className="win-help__rules">
       <article className="win-help__rule">
+        <span className="win-help__rule-number">WILD</span>
+        <div><h3>Disco Wild</h3><p>WILD substitutes for any paying symbol in a connected group of four or more. If groups share a WILD, the highest-paying group uses it first. Each symbol pays once per cascade. A group made entirely of WILDs has no cash award.</p></div>
+      </article>
+      <article className="win-help__rule">
         <span className="win-help__rule-number">4+</span>
         <div><h3>Connected clusters</h3><p>Each winning group pays more than the wager, even at ×1. The award depends on the symbol and group size. All winning groups pay together and clear, then new symbols drop into the gaps.</p></div>
       </article>
@@ -31,6 +35,6 @@ export function NeonDiscoHelp({ wager }: { wager: number }) {
         </tr>)}</tbody>
       </table>
     </div>
-    <p className="win-help__fine-print">Disco uses only Jack, Queen, King, Ace, Martini, Neon Seven and Neon Disco Ball. Each spin costs one wager; its following cascades cost nothing extra.</p>
+    <p className="win-help__fine-print">Disco uses Jack, Queen, King, Ace, Martini, Neon Seven, Neon Disco Ball and Disco Wild. Each spin costs one wager; its following cascades cost nothing extra.</p>
   </>
 }

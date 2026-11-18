@@ -42,7 +42,7 @@ public static class NeonDiscoCascade
         out long sevenPoints,
         int startingMultiplier = InitialMultiplier)
     {
-        if (symbols.Id != NeonDiscoDefinitions.SymbolSetId)
+        if (!NeonDiscoDefinitions.IsClusterSymbolSet(symbols.Id))
             return ResolveLegacy(initialReels, game, reelSet, symbols, paytable,
                 wagerPoints, evaluator, payoutCalculator, draw, out sevenPoints);
 
@@ -50,11 +50,12 @@ public static class NeonDiscoCascade
             reelSet.Reels.Count != 5 || game.Layout.ReelCount != 5 || game.Layout.VisibleRows != 4 ||
             game.Symbols.SymbolSetId != symbols.Id || reelSet.SymbolSetId != symbols.Id || paytable.SymbolSetId != symbols.Id)
             throw new ArgumentException("The Disco board does not match its captured cluster rules.", nameof(initialReels));
-        var allowed = NeonDiscoDefinitions.SymbolIds.ToHashSet(StringComparer.Ordinal);
+        var allowed = (symbols.Id == NeonDiscoDefinitions.SymbolSetId
+            ? NeonDiscoDefinitions.AllSymbolIds : NeonDiscoDefinitions.SymbolIds).ToHashSet(StringComparer.Ordinal);
         if (!allowed.SetEquals(symbols.Symbols.Select(symbol => symbol.Id)) ||
             initialReels.SelectMany(reel => reel).Any(symbol => !allowed.Contains(symbol)) ||
             reelSet.Reels.Any(reel => reel.Count == 0 || reel.Any(symbol => !allowed.Contains(symbol))))
-            throw new ArgumentException("Disco uses only its seven ordinary symbols.", nameof(symbols));
+            throw new ArgumentException("Disco contains symbols outside its captured symbol set.", nameof(symbols));
 
         var startingTier = TierIndex(startingMultiplier);
         var pools = reelSet.Reels.Select(reel => reel.ToArray()).ToArray();
@@ -90,6 +91,9 @@ public static class NeonDiscoCascade
     {
         if (!IsValidMultiplier(multiplier))
             throw new ArgumentOutOfRangeException(nameof(multiplier));
+        if (game.Symbols.WildSymbolId == NeonDiscoDefinitions.WildSymbolId &&
+            board.Any(reel => reel.Contains(NeonDiscoDefinitions.WildSymbolId)))
+            return NeonDiscoWildClusters.Evaluate(board, game, paytable, wagerPoints, multiplier);
         var seen = new HashSet<GridPosition>();
         var paylines = new List<PaylinePayout>();
         var rules = paytable.Rules.ToDictionary(rule => (rule.SymbolId, rule.MatchLength));

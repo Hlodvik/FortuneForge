@@ -81,7 +81,7 @@ public static class NeonOutcomeReplay
             Flag("slot-neon-nitro-mode-mismatch", "Nitro is only available in its versioned Car Plays mode.");
         try
         {
-            if (game.Symbols.SymbolSetId == NeonDiscoDefinitions.SymbolSetId)
+            if (NeonDiscoDefinitions.IsClusterSymbolSet(game.Symbols.SymbolSetId))
             {
                 CheckClusterDisco(result, settledPayout, findings);
                 return findings;
@@ -159,19 +159,24 @@ public static class NeonOutcomeReplay
         void Flag(string code, string message) => findings.Add(new(code, message));
         var audit = result.EngineAudit;
         var game = audit.EffectiveGame;
+        var usesWild = NeonArcadeSlotDefinitions.SupportsDiscoWild(audit.EngineVersion);
+        var expectedSymbolSetId = usesWild ? NeonDiscoDefinitions.SymbolSetId : NeonDiscoDefinitions.PreviousSymbolSetId;
         if (!NeonArcadeSlotDefinitions.SupportsClusterDisco(audit.EngineVersion) || result.IsFreeSpin ||
             result.SpecialBoostApplied || audit.FreeSpinFeatureMode is not null ||
             game.Layout.ReelCount != 5 || game.Layout.VisibleRows != 4 || game.Paylines.Count != 0 ||
             game.FreeGames is not null || game.SpecialPoints is not null || game.Energy is not null ||
-            game.Symbols.WildSymbolId != string.Empty ||
+            game.Symbols.SymbolSetId != expectedSymbolSetId ||
+            game.Symbols.WildSymbolId != (usesWild ? NeonDiscoDefinitions.WildSymbolId : string.Empty) ||
             result.NeonDiscoCascade is null || audit.NeonDiscoCascade is null)
         {
-            Flag("slot-neon-disco-mode-mismatch", "Cluster Disco requires its own paid seven-symbol state.");
+            Flag("slot-neon-disco-mode-mismatch", "Cluster Disco requires its versioned paid symbol state.");
             return;
         }
         var usesCurrentMath = NeonArcadeSlotDefinitions.UsesCurrentDiscoMath(audit.EngineVersion);
-        var reelSetId = usesCurrentMath ? NeonDiscoDefinitions.ReelSetId : NeonDiscoDefinitions.PreviousReelSetId;
-        var paytableId = NeonArcadeSlotDefinitions.UsesCurrentPayoutSchedule(audit.EngineVersion) ? NeonDiscoDefinitions.PaytableId
+        var reelSetId = usesWild ? NeonDiscoDefinitions.ReelSetId
+            : usesCurrentMath ? NeonDiscoDefinitions.PreviousSevenSymbolReelSetId : NeonDiscoDefinitions.PreviousReelSetId;
+        var paytableId = usesWild ? NeonDiscoDefinitions.PaytableId
+            : NeonArcadeSlotDefinitions.UsesCurrentPayoutSchedule(audit.EngineVersion) ? NeonDiscoDefinitions.PreviousSevenSymbolPaytableId
             : usesCurrentMath ? NeonDiscoDefinitions.PreviousPairedPaytableId : NeonDiscoDefinitions.PreviousPaytableId;
         if (game.Math.ReelSetId != reelSetId || game.Math.PaytableId != paytableId ||
             audit.ReelSet.Id != reelSetId || audit.Paytable.Id != paytableId)

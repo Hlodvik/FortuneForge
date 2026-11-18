@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest'
 import { createNeonApi, isNeonSpinResult, isNeonState } from '../src/api'
-import { NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_GAME_ID } from '../src/types'
+import { NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_PREVIOUS_DISCO_SYMBOL_SET_ID, NEON_GAME_ID } from '../src/types'
 
 const board = () => [
   ['2', '2', '4', '5'], ['2', '2', '5', '7'],
@@ -39,6 +39,75 @@ function discoResult() {
 it('accepts base results and a four-cell Disco cluster with exclusive Disco refills', () => {
   expect(isNeonSpinResult(baseResult())).toBe(true)
   expect(isNeonSpinResult(discoResult())).toBe(true)
+})
+
+function wildDiscoResult() {
+  const value = discoResult()
+  value.reels[0][0] = value.neonDiscoCascade.initialReels[0][0] = 'DISCO_WILD'
+  value.neonDiscoCascade.steps[0].payout.paylines[0].matches[0].match.wildPositions = [{ reel: 0, row: 0 }]
+  return value
+}
+
+it('accepts connected Disco substitutions and validates the exact Wild positions', () => {
+  expect(isNeonSpinResult(wildDiscoResult())).toBe(true)
+  const missing = wildDiscoResult()
+  missing.neonDiscoCascade.steps[0].payout.paylines[0].matches[0].match.wildPositions = []
+  expect(isNeonSpinResult(missing)).toBe(false)
+  const falseWild = wildDiscoResult()
+  falseWild.neonDiscoCascade.steps[0].payout.paylines[0].matches[0].match.wildPositions.push({ reel: 1, row: 0 })
+  expect(isNeonSpinResult(falseWild)).toBe(false)
+  const repeated = wildDiscoResult()
+  repeated.neonDiscoCascade.steps[0].payout.paylines[0].matches[0].match.wildPositions.push({ reel: 0, row: 0 })
+  expect(isNeonSpinResult(repeated)).toBe(false)
+})
+
+it('keeps the previous seven-symbol Disco contract and rejects Wilds under that version', () => {
+  const previous = discoResult()
+  previous.symbolSetId = NEON_PREVIOUS_DISCO_SYMBOL_SET_ID
+  expect(isNeonSpinResult(previous)).toBe(true)
+  const previousWithWild = wildDiscoResult()
+  previousWithWild.symbolSetId = NEON_PREVIOUS_DISCO_SYMBOL_SET_ID
+  expect(isNeonSpinResult(previousWithWild)).toBe(false)
+})
+
+it('never pays Wild as a native symbol or uses its cell for two clusters', () => {
+  const nativeWild = wildDiscoResult()
+  const wildMatch = nativeWild.neonDiscoCascade.steps[0].payout.paylines[0].matches[0].match
+  for (const cell of wildMatch.positions) {
+    nativeWild.reels[cell.reel][cell.row] = nativeWild.neonDiscoCascade.initialReels[cell.reel][cell.row] = 'DISCO_WILD'
+  }
+  wildMatch.wildPositions = cleared()
+  wildMatch.symbolId = 'DISCO_WILD'
+  expect(isNeonSpinResult(nativeWild)).toBe(false)
+  wildMatch.symbolId = '2'
+  expect(isNeonSpinResult(nativeWild)).toBe(false)
+
+  const duplicate = wildDiscoResult()
+  const step = duplicate.neonDiscoCascade.steps[0]
+  step.payout.paylines.push(structuredClone(step.payout.paylines[0]))
+  step.payout.totalPoints = duplicate.payout.totalPoints = duplicate.neonDiscoCascade.totalPoints = 20
+  expect(isNeonSpinResult(duplicate)).toBe(false)
+})
+
+it('accepts the connected remainder after a competing Wild cluster claims its shared cells', () => {
+  const result = discoResult()
+  for (const grid of [result.reels, result.neonDiscoCascade.initialReels]) {
+    grid[1][0] = 'DISCO_WILD'
+    grid[1][2] = '2'
+    grid[3][0] = grid[3][1] = '4'
+  }
+  const queenCells = [{ reel: 1, row: 0 }, { reel: 2, row: 0 }, { reel: 3, row: 0 }, { reel: 3, row: 1 }]
+  const jackCells = [{ reel: 0, row: 0 }, { reel: 0, row: 1 }, { reel: 1, row: 1 }, { reel: 1, row: 2 }]
+  const step = result.neonDiscoCascade.steps[0]
+  const jack = structuredClone(step.payout.paylines[0])
+  jack.matches[0].match.positions = jackCells
+  const queen = structuredClone(jack)
+  queen.amountPoints = queen.matches[0].amountPoints = 20
+  queen.matches[0].match = { symbolId: '4', matchLength: 4, positions: queenCells, wildPositions: [{ reel: 1, row: 0 }] }
+  step.payout.paylines = [queen, jack]
+  step.cleared = [...queenCells, ...jackCells]
+  step.payout.totalPoints = result.payout.totalPoints = result.neonDiscoCascade.totalPoints = 30
+  expect(isNeonSpinResult(result)).toBe(true)
 })
 
 it('accepts only the first eligible Car Plays Nitro and its adjacent expansion', () => {

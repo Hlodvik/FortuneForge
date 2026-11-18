@@ -17,6 +17,7 @@ import tripleSevens from './assets/symbols/neon-nights-triple-sevens-v4.webp'
 import discoMartini from './assets/symbols/neon-nights-disco-martini-v1.png'
 import discoSeven from './assets/symbols/neon-nights-disco-seven-v1.png'
 import discoTubeBall from './assets/symbols/neon-nights-disco-tube-ball-v1.png'
+import discoWild from './assets/symbols/neon-nights-disco-wild-v1.png'
 
 export const NEON_NIGHTS_SYMBOL_IMAGES = {
   '2': neonJ, '3': cassette, '4': neonQ, '5': neonK, '6': sportsCar, '7': neonA,
@@ -25,6 +26,7 @@ export const NEON_NIGHTS_SYMBOL_IMAGES = {
   BANANA: tripleSevens,
   SEAL_SYNC: neonKoi, SEAL_ROWS: blueDice, SEAL_PAW: diamondShades,
   DISCO_MARTINI: discoMartini, DISCO_SEVEN: discoSeven, DISCO_BALL: discoTubeBall,
+  DISCO_WILD: discoWild,
   CABINET_EMBLEM: neonCabinetEmblem, BACKDROP: neonNightMarket,
 } as const
 

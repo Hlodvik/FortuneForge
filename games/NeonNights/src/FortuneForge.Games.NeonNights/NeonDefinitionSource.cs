@@ -11,6 +11,7 @@ public sealed class NeonDefinitionSource : ISlotDefinitionSource
         NeonArcadeSlotDefinitions.SymbolSetId => NeonArcadeSlotDefinitions.CreateSymbolSet(),
         NeonArcadeSlotDefinitions.CarSymbolSetId => NeonArcadeSlotDefinitions.CreateCarSymbolSet(),
         NeonDiscoDefinitions.SymbolSetId => NeonDiscoDefinitions.CreateSymbolSet(),
+        NeonDiscoDefinitions.PreviousSymbolSetId => NeonDiscoDefinitions.CreatePreviousSymbolSet(),
         _ => null
     };
     public ReelSetDefinition? GetReelSet(string id) => id switch
@@ -18,6 +19,7 @@ public sealed class NeonDefinitionSource : ISlotDefinitionSource
         NeonArcadeSlotDefinitions.ReelSetId => NeonArcadeSlotDefinitions.CreateReelSet(),
         NeonArcadeSlotDefinitions.CarReelSetId => NeonArcadeSlotDefinitions.CreateCarReelSet(),
         NeonDiscoDefinitions.ReelSetId => NeonDiscoDefinitions.CreateReelSet(),
+        NeonDiscoDefinitions.PreviousSevenSymbolReelSetId => NeonDiscoDefinitions.CreatePreviousSevenSymbolReelSet(),
         NeonDiscoDefinitions.PreviousReelSetId => NeonDiscoDefinitions.CreatePreviousReelSet(),
         _ => null
     };
@@ -27,6 +29,7 @@ public sealed class NeonDefinitionSource : ISlotDefinitionSource
         NeonArcadeSlotDefinitions.CarPaytableId => NeonArcadeSlotDefinitions.CreateCarPaytable(),
         NeonArcadeSlotDefinitions.PreviousPaytableId => NeonArcadeSlotDefinitions.CreatePreviousPaytable(),
         NeonDiscoDefinitions.PaytableId => NeonDiscoDefinitions.CreatePaytable(),
+        NeonDiscoDefinitions.PreviousSevenSymbolPaytableId => NeonDiscoDefinitions.CreatePreviousSevenSymbolPaytable(),
         NeonDiscoDefinitions.PreviousPairedPaytableId => NeonDiscoDefinitions.CreatePreviousPairedPaytable(),
         NeonDiscoDefinitions.PreviousPaytableId => NeonDiscoDefinitions.CreatePreviousPaytable(),
         _ => null

@@ -33,7 +33,8 @@ public static class NeonArcadeSlotDefinitions
     public const string PreviousPayoutScheduleEngineVersion = "neon-arcade-special-plays-v15";
     public const string PreviousNitroChoiceEngineVersion = "neon-arcade-special-plays-v16";
     internal const string ExpandedCarPaylinesEngineVersion = "neon-arcade-special-plays-v17";
-    public const string EngineVersion = "neon-arcade-special-plays-v18";
+    public const string PreviousDiscoWildEngineVersion = "neon-arcade-special-plays-v18";
+    public const string EngineVersion = "neon-arcade-special-plays-v19";
     public const string SymbolSetId = "neon-arcade-symbols-v3";
     public const string ReelSetId = "neon-arcade-reels-v4";
     public const string PreviousPaytableId = "neon-arcade-paytable-v3";
@@ -113,7 +114,9 @@ public static class NeonArcadeSlotDefinitions
         engineVersion == PreviousNitroChoiceEngineVersion || UsesExpandedCarPaylines(engineVersion);
 
     internal static bool UsesExpandedCarPaylines(string? engineVersion) =>
-        engineVersion is ExpandedCarPaylinesEngineVersion or EngineVersion;
+        engineVersion is ExpandedCarPaylinesEngineVersion or PreviousDiscoWildEngineVersion or EngineVersion;
+
+    internal static bool SupportsDiscoWild(string? engineVersion) => engineVersion == EngineVersion;
 
     internal static bool UsesCurrentPayoutSchedule(string? engineVersion) =>
         engineVersion == PreviousPayoutScheduleEngineVersion || SupportsNitroChoice(engineVersion);

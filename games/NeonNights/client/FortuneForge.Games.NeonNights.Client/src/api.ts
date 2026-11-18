@@ -1,6 +1,6 @@
 import type { GridPosition } from '@fortuneforge/slot-client-core'
 import { stepDiscoMultiplier } from './roundState.js'
-import { NEON_GAME_ID, NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonCarSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonCarRespinOffer, type NeonCarRespinResult, type NeonDiscoMultiplier, type NeonNitroChoice, type NeonPendingChoiceResponse, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
+import { NEON_GAME_ID, NEON_CAR_SYMBOL_SET_ID, NEON_DISCO_SYMBOL_SET_ID, NEON_PREVIOUS_DISCO_SYMBOL_SET_ID, discoMultipliers, neonBaseSymbolIds, neonCarSymbolIds, neonDiscoPayingSymbolIds, neonDiscoSymbolIds, type NeonAuthenticatedFetch, type NeonCarRespinOffer, type NeonCarRespinResult, type NeonDiscoMultiplier, type NeonNitroChoice, type NeonPendingChoiceResponse, type NeonSpinRequest, type NeonSpinResult, type NeonState, type NeonSymbolId } from './types.js'
 
 type Problem = { error?: string; detail?: string; code?: string; available?: number; required?: number; freeSpinsRemaining?: number; retryAfterMilliseconds?: number }
 export class NeonRequestError extends Error {
@@ -48,7 +48,7 @@ function payout(value: unknown, rows: number, allowed: readonly string[] = neonB
       Array.isArray(paid.match.wildPositions) && paid.match.wildPositions.every(cell => position(cell, rows))))
 }
 const cellKey = ({ reel, row }: GridPosition) => `${reel}:${row}`
-function clusterCells(paid: ValidatedPayout, board: NeonSpinResult['reels']): Set<string> | null {
+function clusterCells(paid: ValidatedPayout, board: NeonSpinResult['reels'], wildEnabled: boolean): Set<string> | null {
   const all = new Set<string>()
   let total = 0
   for (const line of paid.paylines) {
@@ -56,22 +56,32 @@ function clusterCells(paid: ValidatedPayout, board: NeonSpinResult['reels']): Se
     const award = line.matches[0]
     const match = award.match
     const cells = new Set(match.positions.map(cellKey))
+    const wilds = new Set(match.wildPositions.map(cellKey))
     if (match.matchLength < 4 || match.matchLength !== match.positions.length || cells.size !== match.positions.length ||
-      match.wildPositions.length !== 0 || award.amountPoints !== line.amountPoints) return null
+      !symbol(match.symbolId, neonDiscoPayingSymbolIds) || award.amountPoints !== line.amountPoints ||
+      wilds.size !== match.wildPositions.length || [...wilds].some(key => !cells.has(key)) ||
+      (!wildEnabled && wilds.size !== 0) || wilds.size === cells.size) return null
     const pending = [match.positions[0]]
     const connected = new Set<string>()
     while (pending.length > 0) {
       const cell = pending.pop()!
       const key = cellKey(cell)
       if (connected.has(key)) continue
-      if (board[cell.reel][cell.row] !== match.symbolId || all.has(key)) return null
+      const cellSymbol = board[cell.reel][cell.row]
+      const isWild = wildEnabled && cellSymbol === 'DISCO_WILD'
+      if ((cellSymbol !== match.symbolId && !isWild) || wilds.has(key) !== isWild || all.has(key)) return null
       connected.add(key)
       for (const neighbour of [
         { reel: cell.reel - 1, row: cell.row }, { reel: cell.reel + 1, row: cell.row },
         { reel: cell.reel, row: cell.row - 1 }, { reel: cell.reel, row: cell.row + 1 },
       ]) {
-        if (board[neighbour.reel]?.[neighbour.row] !== match.symbolId) continue
-        if (!cells.has(cellKey(neighbour))) return null
+        const neighbourKey = cellKey(neighbour)
+        if (wildEnabled) {
+          if (!cells.has(neighbourKey)) continue
+        } else {
+          if (board[neighbour.reel]?.[neighbour.row] !== match.symbolId) continue
+          if (!cells.has(neighbourKey)) return null
+        }
         pending.push(neighbour)
       }
     }
@@ -141,9 +151,10 @@ function readPendingChoice(value: unknown, sourceKind: NeonNitroChoice['sourceKi
 }
 export function isNeonSpinResult(value: unknown): value is NeonSpinResult {
   if (!record(value)) return false
-  const disco = value.symbolSetId === NEON_DISCO_SYMBOL_SET_ID
+  const discoWild = value.symbolSetId === NEON_DISCO_SYMBOL_SET_ID
+  const disco = discoWild || value.symbolSetId === NEON_PREVIOUS_DISCO_SYMBOL_SET_ID
   const car = value.symbolSetId === NEON_CAR_SYMBOL_SET_ID
-  const allowed = disco ? neonDiscoSymbolIds : car ? neonCarSymbolIds : neonBaseSymbolIds
+  const allowed = discoWild ? neonDiscoSymbolIds : disco ? neonDiscoPayingSymbolIds : car ? neonCarSymbolIds : neonBaseSymbolIds
   const state = { ...value }
   if (!record(value) || value.gameId !== NEON_GAME_ID || typeof value.spinId !== 'string' ||
     (!disco && !car && value.symbolSetId !== 'neon-arcade-symbols-v3') || value.pointValueInCents !== 1 || !natural(value.wagerPoints) ||
@@ -173,7 +184,7 @@ export function isNeonSpinResult(value: unknown): value is NeonSpinResult {
       !reels(step.reels, 4, allowed) || !payout(step.payout, 4, allowed) ||
       !Array.isArray(step.cleared) || step.cleared.length === 0 || !step.cleared.every(cell => position(cell, 4)) ||
       !Array.isArray(step.dropRows) || step.dropRows.length !== 5 || !step.dropRows.every(reel => Array.isArray(reel) && reel.length === 4 && reel.every(count => natural(count) && count <= 4))) return false
-    const paidCells = clusterCells(step.payout, board)
+    const paidCells = clusterCells(step.payout, board, discoWild)
     if (!paidCells || paidCells.size !== step.cleared.length || !step.cleared.every(cell => paidCells.has(cellKey(cell))) ||
       new Set(step.cleared.map(cellKey)).size !== paidCells.size) return false
     total += step.payout.totalPoints

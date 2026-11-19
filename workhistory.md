@@ -24,3 +24,10 @@ Earlier provenance comments and logs remain preserved in their existing files.
 
 - Edited: 2026-11-18T23:15:43-06:00 | Computer: Vinnabok | File: scripts/tests/release-scope.tests.ps1
   - Used .NET SHA-256 directly for binary fixture hashes so nested Windows PowerShell release checks do not depend on Get-FileHash module availability.
+
+- Edited: 2026-11-18T23:22:38-06:00 | Computer: Vinnabok | File: scripts/publish-site-hosting.mjs
+  - Added the selected Google quota project to every Hosting API and upload request, exposed an injectable HTTP transport, and kept transport/response errors free of credential-bearing details.
+- Edited: 2026-11-18T23:22:38-06:00 | Computer: Vinnabok | File: scripts/tests/site-hosting-release.test.mjs
+  - Verified quota attribution through the HTTP boundary and full synthetic publisher, exact gzip uploads, and credential-safe failure messages without live network calls.
+Edited: 2026-11-18T23:21:59-06:00 | Computer: VINNABOK | File: tools/security/RuntimeScanners.psm1 | Added scoped ZAP automation and explicit opt-in Schemathesis runners with bounded requests and environment-based credentials.
+Edited: 2026-11-18T23:21:59-06:00 | Computer: VINNABOK | File: tools/security/tests/runtime-scanners.tests.ps1 | Added offline safety, schema scope, token handling, command boundary, and exit-code checks for runtime scanners.

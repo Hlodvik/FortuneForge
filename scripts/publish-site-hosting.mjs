@@ -14,6 +14,7 @@ const apiOrigin = 'https://firebasehosting.googleapis.com'
 const apiBase = apiOrigin + '/v1beta1/'
 const mutablePaths = new Set(['/index.html', '/release.json'])
 const hashPattern = /^[a-f0-9]{64}$/
+const projectPattern = /^[a-z][a-z0-9-]{4,61}[a-z0-9]$/
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
 const jsonBytes = value => Buffer.from(JSON.stringify(value, null, 2) + '\n')
@@ -33,7 +34,7 @@ function versionName(name, site) {
 }
 
 function optionsForPublish(options) {
-  assert(/^[a-z][a-z0-9-]{4,61}[a-z0-9]$/.test(options.project ?? ''), 'A valid Firebase project is required')
+  assert(projectPattern.test(options.project ?? ''), 'A valid Firebase project is required')
   assert(/^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(options.site ?? ''), 'A valid Hosting site is required')
   versionName(options.baselineVersion, options.site)
   assert(new RegExp(`^sites/${options.site}/releases/[A-Za-z0-9_-]+$`).test(options.baselineRelease ?? ''),
@@ -173,22 +174,28 @@ function activeToken(project) {
   return result.stdout.trim()
 }
 
-function defaultRequest(token) {
+export function createHostingRequest(project, token, fetchImpl = fetch) {
+  assert(projectPattern.test(project ?? ''), 'A valid Firebase project is required')
   return async ({ method = 'GET', url, body, bytes }) => {
-    const response = await fetch(url, {
-      method,
-      redirect: 'error',
-      signal: AbortSignal.timeout(120_000),
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': bytes ? 'application/octet-stream' : 'application/json',
-      },
-      body: bytes ?? (body === undefined ? undefined : JSON.stringify(body)),
-    })
+    let response
+    try {
+      response = await fetchImpl(url, {
+        method,
+        redirect: 'error',
+        signal: AbortSignal.timeout(120_000),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'x-goog-user-project': project,
+          'Content-Type': bytes ? 'application/octet-stream' : 'application/json',
+        },
+        body: bytes ?? (body === undefined ? undefined : JSON.stringify(body)),
+      })
+    } catch { throw new Error('Firebase Hosting network request failed') }
     // Never put credentials, signed upload URLs, or response bodies in errors.
     assert(response.ok, `Firebase Hosting request failed (${response.status})`)
     if (bytes || response.status === 204) return {}
-    return response.json()
+    try { return await response.json() }
+    catch { throw new Error('Firebase Hosting returned an invalid JSON response') }
   }
 }
 
@@ -247,7 +254,8 @@ export async function publishSiteHosting(options, dependencies = {}) {
   const artifact = dependencies.files ?? await readSiteArtifact(options.directory)
   assertArtifactManifest(artifact, options.artifactManifest, options.sourceSha)
   const files = compressSiteFiles(artifact)
-  const request = dependencies.request ?? defaultRequest(await (dependencies.getToken ?? activeToken)(options.project))
+  const request = dependencies.request ?? createHostingRequest(options.project,
+    await (dependencies.getToken ?? activeToken)(options.project), dependencies.fetch)
   const sleep = dependencies.sleep ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)))
   const now = dependencies.now ?? (() => new Date().toISOString())
   const record = {

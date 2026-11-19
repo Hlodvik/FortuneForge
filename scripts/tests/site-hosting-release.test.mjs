@@ -7,7 +7,7 @@ import { basename, dirname, join } from 'node:path'
 import test from 'node:test'
 import { gunzipSync, gzipSync } from 'node:zlib'
 import {
-  assertArtifactManifest, assertExactManifest, compressSiteFiles, manifestDigest,
+  assertArtifactManifest, assertExactManifest, compressSiteFiles, createHostingRequest, manifestDigest,
   publishSiteHosting, readSiteArtifact, SITE_GAME_PREFIXES, siteServingConfig,
 } from '../publish-site-hosting.mjs'
 
@@ -145,6 +145,77 @@ function hostingFixture({ files = baselineFiles(), config = baseConfig(), marker
 const publish = fixture => publishSiteHosting(fixture.options, fixture.dependencies)
 const releaseRequests = fixture => fixture.requests.filter(request => request.method === 'POST'
   && new URL(request.url).pathname.endsWith('/releases'))
+
+test('HTTP transport sends project quota attribution on API calls and unmodified gzip uploads', async () => {
+  const requests = []
+  let jsonReads = 0
+  const request = createHostingRequest('quota-project', 'fake-access-token', async (url, options) => {
+    requests.push({ url, ...options })
+    return { ok: true, status: 200, json: async () => { jsonReads += 1; return { success: true } } }
+  })
+  const apiUrl = `https://firebasehosting.googleapis.com/v1beta1/sites/${site}/versions`
+  await request({ url: apiUrl })
+  await request({ method: 'POST', url: apiUrl, body: { sourceVersion: baselineVersion, finalize: false } })
+  await request({ method: 'PATCH', url: apiUrl + '/candidate', body: { status: 'FINALIZED' } })
+  const compressed = gzipSync(Buffer.from('exact site upload bytes'), { level: 9 })
+  await request({ method: 'POST',
+    url: `https://upload-firebasehosting.googleapis.com/upload/sites/${site}/versions/candidate/files/${digest(compressed)}`,
+    bytes: compressed })
+  for (const sent of requests) {
+    assert.equal(sent.headers['x-goog-user-project'], 'quota-project')
+    assert.equal(sent.headers.Authorization, 'Bearer fake-access-token')
+    assert.equal(sent.redirect, 'error')
+    assert.ok(sent.signal instanceof AbortSignal)
+  }
+  assert.equal(requests[0].body, undefined)
+  assert.equal(requests[1].body, JSON.stringify({ sourceVersion: baselineVersion, finalize: false }))
+  assert.equal(requests[2].headers['Content-Type'], 'application/json')
+  assert.equal(requests[3].headers['Content-Type'], 'application/octet-stream')
+  assert.equal(requests[3].body, compressed)
+  assert.equal(gunzipSync(requests[3].body).toString(), 'exact site upload bytes')
+  assert.equal(jsonReads, 3, 'uploads do not attempt to parse a JSON response')
+})
+
+test('publisher wires the selected project through the real HTTP transport for every API request and upload', async () => {
+  const fixture = hostingFixture()
+  const requestFixture = fixture.dependencies.request
+  delete fixture.dependencies.request
+  const calls = []
+  fixture.options.project = 'quota-project'
+  fixture.dependencies.getToken = project => { assert.equal(project, 'quota-project'); return 'fake-access-token' }
+  fixture.dependencies.fetch = async (url, options) => {
+    calls.push({ url, ...options })
+    assert.equal(options.headers['x-goog-user-project'], 'quota-project')
+    const result = await requestFixture({
+      url, method: options.method,
+      ...(typeof options.body === 'string' ? { body: JSON.parse(options.body) } : { bytes: options.body }),
+    })
+    return { ok: true, status: 200, json: async () => result }
+  }
+  const result = await publish(fixture)
+  assert.equal(result.state, 'released')
+  assert.equal(calls.filter(call => new URL(call.url).hostname === 'upload-firebasehosting.googleapis.com').length, 3)
+  assert.ok(calls.some(call => call.method === 'PATCH'))
+  assert.equal(releaseRequests(fixture).length, 1)
+})
+
+test('HTTP failures redact credentials, endpoint queries and response contents', async () => {
+  const url = 'https://firebasehosting.googleapis.com/v1beta1/sites/fortune-test/releases?private=endpoint-secret'
+  let bodyRead = false
+  const denied = createHostingRequest('quota-project', 'fake-secret-token', async () => ({
+    ok: false, status: 403, json: async () => { bodyRead = true; return { secret: 'response-secret' } },
+  }))
+  await assert.rejects(denied({ url }), { message: 'Firebase Hosting request failed (403)' })
+  assert.equal(bodyRead, false)
+  const unavailable = createHostingRequest('quota-project', 'fake-secret-token', async () => {
+    throw new Error('Transport included fake-secret-token and endpoint-secret')
+  })
+  await assert.rejects(unavailable({ url }), { message: 'Firebase Hosting network request failed' })
+  const malformed = createHostingRequest('quota-project', 'fake-secret-token', async () => ({
+    ok: true, status: 200, json: async () => { throw new Error('response-secret') },
+  }))
+  await assert.rejects(malformed({ url }), { message: 'Firebase Hosting returned an invalid JSON response' })
+})
 
 test('first site deployment preserves every game byte, aliases its existing index blob, and retains API config', async () => {
   const fixture = hostingFixture()
